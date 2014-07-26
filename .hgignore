@@ -1,0 +1,11 @@
+#jdoop ingore list
+
+#gradle dirs
+^.gradle
+^build
+
+#jdoop dist/runtime files
+^logs
+^out
+
+#add more here (e.g. for IDEs, etc.)
