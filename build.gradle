@@ -1,0 +1,45 @@
+apply plugin: 'groovy'
+apply plugin: 'application'
+
+//applicationDefaultJvmArgs = ["-Xmx2048m"]
+version = "0.1"
+
+sourceCompatibility = "1.6"
+mainClassName = 'doop.Main'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.0'
+}
+
+repositories {
+    mavenCentral()
+    flatDir(name: 'lib', dirs:'lib')
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:2.2.2", //Groovy
+            "commons-logging:commons-logging:1.1",  //Logging wrapper
+            "log4j:log4j:1.2.14",                   //Logging implementation
+            "commons-cli:commons-cli:1.2",          //Command line processor
+            "org.apache.velocity:velocity:1.7",     //Not Used
+            "org.anarres:jcpp:1.4.5",               //C preprocessor in Java
+            "commons-io:commons-io:2.4"             //File helper
+
+    runtime ":asm-debug-all:4.1",
+            ":doop",
+            ":jphantom:1.0-jar-with-dependencies"
+}
+
+applicationDistribution.from(file("$projectDir/logic")) {
+    into "logic"
+}
+
+run {
+    environment.DOOP_HOME = projectDir
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
+
+
+

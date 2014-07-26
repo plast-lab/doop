@@ -2,7 +2,7 @@
 
 #gradle dirs
 ^.gradle
-^build
+^build/
 
 #jdoop dist/runtime files
 ^logs
