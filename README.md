@@ -89,3 +89,15 @@ $ ./gradlew run -Pargs="context-insensitive ./lib/asm-debug-all-4.1.jar"
 
 will run the context-insensitive analysis on the asm-debug-all-4.1 jar.
 
+
+Run Web UI
+----------
+The first experimental version of the web UI has been added. Running:
+
+$ ./gradlew jettyRun
+
+starts the embedded jetty web container. To visit the web app open:
+
+http://localhost:8000/jdoop/pages/index.html
+
+in your web browser.
