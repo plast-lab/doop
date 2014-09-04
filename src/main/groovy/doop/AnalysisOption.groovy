@@ -6,10 +6,11 @@ package doop
  * A DOOP analysis option
  */
 class AnalysisOption<T>  {
+
     /**
-     * The name of the option as used internally by the code (e.g. by the preprocessor)
+     * The id of the option as used internally by the code (e.g. by the preprocessor)
      */
-    String name
+    String id
 
     /**
      * The description of the option (for the end-user)
@@ -27,17 +28,22 @@ class AnalysisOption<T>  {
     boolean forPreprocessor = false
 
     /**
-     * Indicates whether the option can be inserted by the command line
+     * Indicates whether the option can be inserted by the user
      */
-    boolean cli = false
+    boolean definedByUser = false
 
     /**
-     * The name of the option for the cli
+     * The name of the option (for the user)
      */
-    String cliName = null
+    String name = null
+
+    /**
+     * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).
+     */
+    String argName = null
 
     @Override
     String toString() {
-        return getName() + "=" + getValue()
+        return getId() + "=" + getValue()
     }
 }

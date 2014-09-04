@@ -2,23 +2,39 @@ package doop
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
 
 /**
+ * The entry point for the standalone doop app.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
  */
 class Main {
 
+    /**
+     * The entry point
+     */
     static void main(String[] args) {
 
-        //Bootstrapping errors bleed through
-        Doop.bootstrap()
+        String doopHome = System.getenv("DOOP_HOME")
+        if (!doopHome) {
+            println "DOOP_HOME environment variable is not set"
+            System.exit(-1)
+        }
+        String doopOut = System.getenv("DOOP_OUT")
+
+        Doop.initDoop(doopHome, doopOut)
+
+        //initialize logging
+        Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
         Log logger = LogFactory.getLog(Main)
 
         try {
 
-            CliBuilder builder = createCliProcessor()
+            CliBuilder builder = createCliBuilder()
             OptionAccessor cli = builder.parse(args)
             if (!args || cli.h) {
                 builder.usage()
@@ -26,93 +42,99 @@ class Main {
             }
 
             List<String> arguments = cli.arguments()
-            if (!arguments || arguments.size() != 2) { //TODO: One jar for now
+            if (!arguments || arguments.size() < 2) {
                 builder.usage()
                 return
             }
 
+            //change the log level according to the cli arg
+            String logLevel = cli.l
+            if (logLevel) {
+                switch (logLevel) {
+                    case "debug":
+                        Logger.getRootLogger().setLevel(Level.DEBUG)
+                        break
+                    case "info":
+                        Logger.getRootLogger().setLevel(Level.INFO)
+                        break
+                    case "error":
+                        Logger.getRootLogger().setLevel(Level.ERROR)
+                        break
+                    default:
+                        logger.info "Invalid log level: $logLevel - using default (info)"
+                }
+            }
+
             //The analysis is the first argument
             String name = arguments[0]
-            //The jar is the second (only one for now)
-            String jar = arguments[1]
+            //The jars are the following arguments
+            List<String> jars = arguments.drop(1)
 
-            Map<String, AnalysisOption> options = createAnalysisOptions(builder, cli)
-            options.JAR.value = jar
-            Analysis analysis = Doop.newAnalysis(name, options)
-            println "Processing analysis:"
-            println analysis
+            Map<String, AnalysisOption> options = createAnalysisOptions(cli)
+            Analysis analysis = new AnalysisFactory().newAnalysis(name, jars, options)
+            logger.info "Starting $name analysis on ${jars[0]}"
+            logger.debug analysis
 
-            long now = System.currentTimeMillis()
-            logger.debug("### Start of analysis: $name")
-
-            //TODO: Run them in parallel
-            analysis.preprocessLogic()
-            analysis.dealWithPhantomRefs()
-
-            String ms = "${System.currentTimeMillis() - now}ms"
-            logger.debug("### End of analysis: $name ($ms)")
-
-            println "Done ($ms)"
+            analysis.run()
 
         } catch (e) {
-            println "Error: ${e.getMessage()} (${e.getClass().getName()}). Check the log for details."
             logger.error(e.getMessage(), e)
             System.exit(-1)
         }
     }
 
 
-    //Perhaps use a property file instead?
-    private static CliBuilder createCliProcessor() {
+    /**
+     * Creates the cli args from the respective analysis options (the ones with their definedByUser property set to true)
+     */
+    private static CliBuilder createCliBuilder() {
+
+        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option -> option.definedByUser }
 
         CliBuilder cli = new CliBuilder(usage:'doop-java [OPTION]... ANALYSIS JAR')
-        //TODO: Generate the supported cli arguments from the analysis options
         cli.with {
-            h(longOpt: 'help',             'Show help')
-            m(longOpt: 'main',             'Specify the main class', args:1, argName:'mainClass')
-            _(longOpt: 'allow-phantom',    'Allow non-existent referenced jars')
-        }
-        return cli
+            h(longOpt: 'help', 'Display help and exit')
+            l(longOpt: 'level', 'Set the log level: debug, info or error (default: info)', args:1, argName: 'loglevel')
+            //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
 
-        /*
-        CliBuilder cli = new CliBuilder(usage:'doop-java [OPTION]... ANALYSIS JAR [-- [BLOXOPTION]...')
-        cli.with {
-            h(longOpt: 'help',             'Show help')
-            m(longOpt: 'main',             'Specify the main class')
-            c(longOpt: 'cache',            'The analysis will use the cached input relations, if such exist')
-            t(longOpt: 'transform-input' , 'Transform input by removing redundant instructions')
-            j(longOpt: 'jre'             , 'One of 1.3, 1.4, 1.5, 1.6 (default: system)')
-            i(longOpt: 'interactive'     , 'Enable interactive mode')
-            _(longOpt: 'allow-phantom'   , 'Allow non-existent referenced jars')
-            _(longOpt: 'solo-run'        , 'Perform checks to ensure no instance of bloxbatch is already running')
-            _(longOpt: 'log-memory-stats', 'Log virtual memory statistics (currently Linux only, uses vmstat)') //OS-specific
-            _(longOpt: 'full-stats'      , 'Load additional logic for collecting statistics')
-            _(longOpt: 'sanity'          , 'Load additional logic for sanity checks')
-            _(longOpt: 'averroes'        , 'Use averroes tool to create a placeholder library')
-            _(longOpt: 'tamiflex'        , 'File with tamiflex data (multiple occurrences disallowed)', args:1, argName:'FILE')
-            _(longOpt: 'dynamic'         , 'File with tab-separated data for Config:DynamicClass (multiple occurrences allowed)', args:1, argName:'FILE')
-            _(longOpt: 'client'          , 'Additional directory/file of client analysis to include', args:1, argName:'PATH')
-        }
-        return cli
-        */
-    }
-
-    private static Map<String, AnalysisOption> createAnalysisOptions(CliBuilder builder, OptionAccessor cli) {
-        Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
-        options.findAll { Map.Entry<String, AnalysisOption> entry ->
-            entry.value.cli
-        }.each { Map.Entry<String, AnalysisOption> entry ->
-            String cliOptionName = entry.value.cliName
-            if (builder.options.getOption(cliOptionName).hasArgs()) {
-                //if the cl option has args, the value of the arg defines the value of the respective analysis option
-                entry.value.value =  cli[(cliOptionName)]
-            }
-            else {
-                if (cli[cliOptionName]) {
-                    //a boolean cl option toggles the default value of the respective analysis option
-                    entry.value.value = !entry.value.value
+            cliOptions.each { AnalysisOption option ->
+                if (option.argName) {
+                    _(longOpt: option.name, option.description, args:1, argName:option.argName)
+                }
+                else {
+                    _(longOpt: option.name, option.description)
                 }
             }
+        }
+
+        return cli
+    }
+
+    /**
+     * Processes the cli args and generates a map of analysis options.
+     */
+    private static Map<String, AnalysisOption> createAnalysisOptions(OptionAccessor cli) {
+        Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
+        options.findAll { Map.Entry<String, AnalysisOption> entry ->
+            entry.value.definedByUser //get the cli options
+        }.each { Map.Entry<String, AnalysisOption> entry ->
+            AnalysisOption option = entry.value
+            String cliOptionName = option.name
+            def optionValue = cli[(cliOptionName)]
+            if (optionValue) {
+                //Only true-ish values are of interest (false or null values are ignored)
+                if (option.argName) {
+                    //if the cl option has an arg, the value of this arg defines the value of the respective
+                    // analysis option
+                    option.value = optionValue
+                }
+                else {
+                    //the cl option has no arg and thus it is a boolean flag, toggling the default value of
+                    // the respective analysis option
+                    option.value = !option.value
+                }
+            }
+
         }
         return options
     }

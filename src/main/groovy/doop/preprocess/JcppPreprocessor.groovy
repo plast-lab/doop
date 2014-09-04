@@ -1,7 +1,6 @@
 package doop.preprocess
 import doop.Analysis
 import doop.AnalysisOption
-import doop.preprocess.Preprocessor
 import org.anarres.cpp.*
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -16,7 +15,7 @@ class JcppPreprocessor implements Preprocessor {
 
     private Log logger = LogFactory.getLog(getClass())
     private final Listener listener = new Listener()
-    private final FileSystem fileSystem = new FileSystem()
+    private final FileSystem fileSystem = new FileSystem() //used only for debugging
 
     @Override
     void init() {
@@ -26,11 +25,11 @@ class JcppPreprocessor implements Preprocessor {
     @Override
     void preprocess(Analysis analysis, String basePath, String input, String output) {
 
-        logger.debug("preprocessing $input -> $output")
+        logger.debug("Preprocessing $input -> $output")
 
         org.anarres.cpp.Preprocessor preprocessor = new org.anarres.cpp.Preprocessor()
 
-        preprocessor.setFileSystem(fileSystem)
+        //preprocessor.setFileSystem(fileSystem)
         preprocessor.setListener(listener)
         preprocessor.setQuoteIncludePath([basePath])
 
@@ -40,18 +39,18 @@ class JcppPreprocessor implements Preprocessor {
         }.each { AnalysisOption option ->
             //if the value of the option is true, we add its name as a macro
             if (option.value) {
-                logger.debug("Adding macro ${option.name}")
-                preprocessor.addMacro(option.name)
+                logger.debug("Adding macro ${option.id}")
+                preprocessor.addMacro(option.id)
             }
         }
 
         preprocessor.addInput(new StringLexerSource("#include \"$input\" \n", true))
 
         BufferedWriter writer = new BufferedWriter(new FileWriter(output))
-        writer.withWriter { Writer it ->
+        writer.withWriter { Writer w ->
             Token token
             while((token = preprocessor.token()).getType() != Token.EOF) {
-                it.append token.getText()
+                w.append token.getText()
             }
         }
 

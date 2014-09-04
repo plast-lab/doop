@@ -10,11 +10,11 @@ import org.apache.velocity.app.event.implement.IncludeRelativePath
 import org.apache.velocity.runtime.RuntimeConstants
 
 /**
+ *
+ * A velocity-based preprocessor. This is experimental and may be removed.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
- *
- * The velocity preprocessor.
- * This is experimental and may be removed.
  */
 @Singleton class VelocityPreprocessor implements Preprocessor {
 
