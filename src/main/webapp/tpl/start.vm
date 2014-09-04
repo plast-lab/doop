@@ -1,0 +1,31 @@
+<div class="well">
+    <h2>New analysis</h2>
+
+    <form class="horizontal-form" role="form">
+
+        <label class="control-label" for="name">Analysis</label>
+        <div class="controls">
+            <input type="text" class="form-control input-block-level" id="name" name="name">
+        </div>
+
+        <label class="control-label" for="jars">Jars</label>
+        <div class="controls">
+            <input type="text" class="form-control input-block-level" id="jars" name="jars">
+        </div>
+
+        #foreach($option in $options)
+        <div class="form-group">
+            <label class="control-label" for="$!option.id">$!option.name</label>
+            <div class="controls">
+                #if($option.argName)
+                <input type="text" class="form-control input-block-level" id="$!option.id" name="$!option.id">
+                <span class="help-block">$option.description</span>
+                #else
+                <input type="checkbox"> $option.description
+                #end
+
+            </div>
+        </div>
+        #end
+    </form>
+</div>

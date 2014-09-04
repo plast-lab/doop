@@ -8,4 +8,6 @@
 ^logs
 ^out
 
-#add more here (e.g. for IDEs, etc.)
+#intellij idea files
+^.idea
+^jdoop.iml

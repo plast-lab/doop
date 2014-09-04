@@ -1,11 +1,19 @@
 apply plugin: 'groovy'
 apply plugin: 'application'
+apply plugin: 'war'
+apply plugin: 'jetty'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-version = "0.1"
+version = "0.3"
 
 sourceCompatibility = "1.6"
+//For the standalone app
 mainClassName = 'doop.Main'
+//For embedding the web app in Jetty
+stopKey = 'stop'
+stopPort = 8001
+httpPort = 8000
+
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.0'
@@ -13,21 +21,27 @@ task wrapper(type: Wrapper) {
 
 repositories {
     mavenCentral()
-    flatDir(name: 'lib', dirs:'lib')
+    maven {
+        url "http://maven.restlet.org/"
+    }
 }
 
 dependencies {
-    compile "org.codehaus.groovy:groovy-all:2.2.2", //Groovy
-            "commons-logging:commons-logging:1.1",  //Logging wrapper
-            "log4j:log4j:1.2.14",                   //Logging implementation
-            "commons-cli:commons-cli:1.2",          //Command line processor
-            "org.apache.velocity:velocity:1.7",     //Not Used
-            "org.anarres:jcpp:1.4.5",               //C preprocessor in Java
-            "commons-io:commons-io:2.4"             //File helper
+    compile "org.codehaus.groovy:groovy-all:2.3.3",          //Groovy
+            "commons-logging:commons-logging:1.1",           //Logging wrapper
+            "log4j:log4j:1.2.14",                            //Logging implementation
+            "commons-cli:commons-cli:1.2",                   //Command line processor
+            "org.anarres:jcpp:1.4.5",                        //C preprocessor in Java
+            "commons-io:commons-io:2.4",                     //File helper
+            "javax.servlet:servlet-api:2.5",                 //Used for the web app
+            "org.apache.velocity:velocity:1.7",              //Template engine
+            "org.restlet.jee:org.restlet:2.2.0"              //Web framework
 
-    runtime ":asm-debug-all:4.1",
-            ":doop",
-            ":jphantom:1.0-jar-with-dependencies"
+    runtime fileTree(dir: 'lib', include:'*.jar')            //All jars in the lib directory
+
+    runtime "org.restlet.jee:org.restlet.ext.servlet:2.2.0"  //Servlet adapter for Restlet framework
+
+    providedRuntime "javax.servlet:servlet-api:2.5"          //Provided by the container
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
@@ -41,5 +55,6 @@ run {
     }
 }
 
-
-
+war.from(file("$projectDir/logic")) {
+    into 'logic'
+}

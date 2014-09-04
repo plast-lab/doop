@@ -1,270 +1,184 @@
 package doop
-
-import org.apache.log4j.DailyRollingFileAppender
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
-import org.apache.log4j.PatternLayout
 /**
+ * Doop initialization and supported options.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
- *
- * Global DOOP configuration, logging and bootstrapping
  */
 class Doop {
 
-    private static final String DOOP = "doop"
-
-    private static final List<AnalysisOption> ANALYSIS_OPTIONS = [
-        //LOGICBLOX related options
+    static final List<AnalysisOption> ANALYSIS_OPTIONS = [
+        //LogicBlox related options (supporting different LogicBlox instance per analysis)
         new AnalysisOption<String>(
-            name:"LOGICBLOX_HOME",
+            id:"LOGICBLOX_HOME",
+            description: "set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable)",
+            value:System.getenv("LOGICBLOX_HOME"),
+            definedByUser:true,
+            name:"lbhome",
+            argName: "path"
+        ),
+        new AnalysisOption<String>(
+            id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
             value:null
         ),
         new AnalysisOption<String>(
-            name:"LD_LIBRARY_PATH",
+            id:"BLOXBATCH", //the value is set based on LOGICBLOX_HOME
             value:null
         ),
         new AnalysisOption<String>(
-            name:"bloxbatch",
-            value:null
-        ),
-        new AnalysisOption<String>(
-            name:"BLOX_OPTS",
+            id:"BLOX_OPTS",
             value:null
         ),
         //Main options
-        new AnalysisOption<String> (
-            name:"JAR",
-            value:null
-        ),
         new AnalysisOption<String>(
-            name:"MAIN_CLASS",
+            id:"MAIN_CLASS",
+            description:'Specify the main class',
             value:null,
-            cli: true,
-            cliName: "main"
+            definedByUser: true,
+            name: "main",
+            argName: 'mainClass'
         ),
         new AnalysisOption<String>(
-            name:"DYNAMICS",
+            id:"DYNAMICS",
             value:null
         ),
         new AnalysisOption<String>(
-            name:"TAMIFLEX",
+            id:"TAMIFLEX",
             value:null
         ),
         new AnalysisOption<String>(
-            name:"CLIENT_CODE",
+            id:"CLIENT_CODE",
             value:null
         ),
         //Misc options
-        new AnalysisOption<JRE>(
-            name:"JRE",
-            value:JRE.SYSTEM  //Generates options at runtime
+        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
+            id:"JRE",
+            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system)",
+            value:"system",
+            definedByUser:true,
+            name:"jre",
+            argName:"VERSION"
         ),
-        new AnalysisOption<JRE>(
-            name:"OS",
-            value:OS.OS_UNIX  //Generates options at runtime
+        new AnalysisOption<OS>(
+            id:"OS",
+            value:OS.OS_UNIX
         ),
         new AnalysisOption<Boolean>(
-            name:"ALLOW_PHANTOM",
-            value:true,
-            cli:true,
-            cliName: "allow-phantom"
+            id:"SSA",
+            description: 'Use ssa transformation for input.',
+            value:false,
+            definedByUser:true,
+            name: "ssa"
+        ),
+        new AnalysisOption<Boolean>(
+            id:"ALLOW_PHANTOM",
+            description: 'Allow non-existent referenced jars',
+            value:false,
+            definedByUser:true,
+            name: "allow-phantom"
+        ),
+        new AnalysisOption<Boolean>(
+            id:"AVERROES",
+            description: 'Use averroes tool to create a placeholder library',
+            value:false,
+            definedByUser:true,
+            name: "averroes"
         ),
         //Other preprocessor options
         new AnalysisOption<Boolean>(
-            name:"DACAPO",
+            id:"DACAPO",
             value:false,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"DACAPO_BACH",
+            id:"DACAPO_BACH",
             value:false,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
+            id:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
             value:true,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"REFLECTION_STRING_FLOW_ANALYSIS",
+            id:"REFLECTION_STRING_FLOW_ANALYSIS",
             value:true,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"ANALYZE_REFLECTION_SUBSTRINGS",
+            id:"ANALYZE_REFLECTION_SUBSTRINGS",
             value:true,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"MERGE_FIELD_AND_METHOD_SUBSTRINGS",
+            id:"MERGE_FIELD_AND_METHOD_SUBSTRINGS",
             value:true,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"MERGE_STRING_BUFFERS",
+            id:"MERGE_STRING_BUFFERS",
             value:true,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"EXCEPTIONS_PRECISE",
+            id:"EXCEPTIONS_PRECISE",
             value:true,
             forPreprocessor: true
         ),
         new AnalysisOption<Boolean>(
-            name:"PADDLE_COMPAT",
+            id:"PADDLE_COMPAT",
             value:false,
             forPreprocessor: true
-        )
+        ),
+        //jdoop-specific options
+        new AnalysisOption<String>(
+            id:"APP_REGEX",
+            description:"A regular expression for the Java package names to be analyzed",
+            value:null,
+            definedByUser:true,
+            name:"regex",
+            argName:"regular-expression"
+        ),
+        new AnalysisOption<String>(
+            id:"USE_JAVA_CPP",
+            description:"Use a full-java preprocessor for the logic files",
+            value:false,
+            definedByUser:true,
+            name:"jcpp"
+        ),
     ]
 
-    static final String DOOP_HOME = System.getenv("DOOP_HOME")
+    //Not the best pattern, but limits the source code size :)
+    static String doopHome
+    static String doopLogic
+    static String doopOut
 
-    static final String LOGIC_PATH = "$DOOP_HOME/logic"
-    static final String OUTPUT_PATH = "$DOOP_HOME/out"
 
+    static void initDoop(String homePath, String outPath) {
 
-    //Public methods
-    static void bootstrap() {
-        //check DOOP_HOME
-        if (!DOOP_HOME) {
-            throw new RuntimeException("DOOP_HOME environment variable is not set")
+        //Check doopHome
+        doopHome = homePath
+        Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome ")
+
+        doopLogic = "$doopHome/logic"
+
+        if (outPath) {
+            doopOut = outPath
         }
-        File f = new File(DOOP_HOME)
-        if (!f.exists() || !f.isDirectory()) {
-            throw new RuntimeException("DOOP_HOME environment variable is invalid: $DOOP_HOME")
+        else {
+            doopOut = "$doopHome/out"
         }
-
-        //initialize logging
-        initLogging("DEBUG", "${DOOP_HOME}/logs")
 
         //create all necessary files/folders
-        f = new File(OUTPUT_PATH)
+        File f = new File(doopOut)
         f.mkdirs()
-        if (!f.exists() || !f.isDirectory()) {
-            throw new RuntimeException("Could not create ouput directory: $OUTPUT_PATH")
-        }
-    }
-
-    static Analysis newAnalysis(String name, Map<String, AnalysisOption> options) {
-
-        //Verify that the name of the analysis is valid
-        String analysisPath = "$LOGIC_PATH/${name}/analysis.logic"
-        File f = new File(analysisPath)
-        if (!f.exists() || !f.isFile()) {
-            throw new RuntimeException("Unsupported analysis: $name")
-        }
-
-        //TODO: Generate analysis id - for now id = name
-        String id = name
-
-        Analysis analysis = new Analysis(
-            id     : id,
-            name   : name,
-            outDir : "$OUTPUT_PATH/$name",
-            options: options
-        )
-
-        //check the JRE version
-        checkJRE(analysis)
-
-        //TODO: check the OS
-        checkOS(analysis)
-
-
-        //TODO: check & verify the other options
-
-        //Create the outDir if required
-        f = new File(analysis.outDir)
-        f.mkdirs()
-        if(!f.exists() || !f.isDirectory()) {
-            throw new RuntimeException("Could not create analysis folder: ${analysis.outDir}")
-        }
-
-        return analysis
+        Helper.checkDirectoryOrThrowException(doopOut, "Could not create ouput directory: $doopOut ")
     }
 
     static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
         Map<String, AnalysisOption> options = [:]
-        ANALYSIS_OPTIONS.each { AnalysisOption option -> options[(option.name)] = option }
+        ANALYSIS_OPTIONS.each { AnalysisOption option -> options[(option.id)] = option }
         return options
     }
 
-    //Helper methods
-    private static void initLogging(String logLevel, String logDir) {
-        File dir = new File(logDir)
-        if (!dir.exists()) dir.mkdir();
-
-        String logFile =  "${logDir}/${DOOP}.log"
-
-        PatternLayout layout = new PatternLayout("%d [%t] %-5p %c - %m%n");
-        Logger root = Logger.getRootLogger();
-        root.setLevel(Level.toLevel(logLevel, Level.WARN));
-        DailyRollingFileAppender appender = new DailyRollingFileAppender(layout, logFile, "'.'yyyy-MM-dd");
-        root.addAppender(appender);
-    }
-
-    private static void checkJRE(Analysis analysis) {
-
-        JRE jreVersion
-
-        if (analysis.options.JRE.value == JRE.SYSTEM) {
-            String version = System.getProperty("java.class.version")
-            if (version.startsWith("51")) {
-                jreVersion = JRE.JRE17
-            }
-            else if (version.startsWith("50")) {
-                jreVersion = JRE.JRE16
-            }
-            else if (version.startsWith("49")) {
-                jreVersion = JRE.JRE15
-            }
-            else if (version.startsWith("48")) {
-                jreVersion = JRE.JRE14
-            }
-            else if (version.startsWith("47")) {
-                jreVersion = JRE.JRE13
-            }
-            else {
-                throw new RuntimeException("Unsupported Java major version: $version")
-            }
-        }
-        else {
-            jreVersion = analysis.options.JRE.value as JRE
-        }
-
-        //sanity check
-        EnumSet<JRE> supportedValues = EnumSet.allOf(JRE)
-        if (! (jreVersion in supportedValues)) {
-            throw new RuntimeException("Unsupported JRE version: $jreVersion")
-        }
-
-        //generate the JRE constant for preprocessor
-        AnalysisOption<Boolean> jreOption = new AnalysisOption<>(
-            name:jreVersion.name(),
-            value:true,
-            forPreprocessor: true
-        )
-        analysis.options[(jreOption.name)] = jreOption
-    }
-
-    private static void checkOS(Analysis analysis) {
-        //For now it is always OS.OS_UNIX (the default)
-
-        OS os = analysis.options.OS.value as OS
-
-        //sanity check
-        EnumSet<OS> supportedValues = EnumSet.allOf(OS)
-        if (! (os in supportedValues)) {
-            throw new RuntimeException("Unsupported OS: $os")
-        }
-
-        //generate the OS constant for preprocessor
-        AnalysisOption<Boolean> osOption = new AnalysisOption<>(
-            name:os.name(),
-            value:true,
-            forPreprocessor: true
-        )
-        analysis.options[(osOption.name)] = osOption
-    }
 }

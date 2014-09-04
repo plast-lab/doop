@@ -1,0 +1,98 @@
+2014-09-04 01:56:48,337 [Daemon] INFO  root - #############
+2014-09-04 01:56:48,347 [Daemon] INFO  root - jdoop started
+2014-09-04 01:56:48,347 [Daemon] INFO  root - #############
+2014-09-04 02:17:51,568 [Daemon] INFO  root - #############
+2014-09-04 02:17:51,577 [Daemon] INFO  root - jdoop started
+2014-09-04 02:17:51,579 [Daemon] INFO  root - #############
+2014-09-04 09:29:49,775 [Daemon] INFO  root - #############
+2014-09-04 09:29:49,785 [Daemon] INFO  root - jdoop started
+2014-09-04 09:29:49,785 [Daemon] INFO  root - #############
+2014-09-04 10:11:25,814 [Daemon] INFO  root - #############
+2014-09-04 10:11:25,824 [Daemon] INFO  root - jdoop started
+2014-09-04 10:11:25,824 [Daemon] INFO  root - #############
+2014-09-04 10:12:40,852 [Daemon] INFO  root - #############
+2014-09-04 10:12:40,857 [Daemon] INFO  root - jdoop started
+2014-09-04 10:12:40,862 [Daemon] INFO  root - #############
+2014-09-04 10:36:52,796 [Daemon] INFO  root - #############
+2014-09-04 10:36:52,806 [Daemon] INFO  root - jdoop started
+2014-09-04 10:36:52,806 [Daemon] INFO  root - #############
+2014-09-04 10:39:14,881 [303711272@qtp-911214936-0] ERROR doop.web.restlet.NewAnalysisResource - D:\share\niovity\projects\postdoc\jdoop\src\main\webapp\logic
+java.io.FileNotFoundException: D:\share\niovity\projects\postdoc\jdoop\src\main\webapp\logic
+	at org.codehaus.groovy.runtime.ResourceGroovyMethods.checkDir(ResourceGroovyMethods.java:1011)
+	at org.codehaus.groovy.runtime.ResourceGroovyMethods.eachFile(ResourceGroovyMethods.java:1030)
+	at org.codehaus.groovy.runtime.ResourceGroovyMethods.eachDir(ResourceGroovyMethods.java:1072)
+	at org.codehaus.groovy.runtime.dgm$785.invoke(Unknown Source)
+	at org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite$PojoMetaMethodSiteNoUnwrapNoCoerce.invoke(PojoMetaMethodSite.java:271)
+	at org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(PojoMetaMethodSite.java:53)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(CallSiteArray.java:45)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(AbstractCallSite.java:116)
+	at doop.web.restlet.NewAnalysisResource.prepareVelocityContext(NewAnalysisResource.groovy:24)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:601)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:207)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:56)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallCurrent(CallSiteArray.java:49)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:133)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:141)
+	at doop.web.restlet.VelocityResource.get(VelocityResource.groovy:31)
+	at org.restlet.resource.ServerResource.doHandle(ServerResource.java:452)
+	at org.restlet.resource.ServerResource.doNegotiatedHandle(ServerResource.java:683)
+	at org.restlet.resource.ServerResource.doConditionalHandle(ServerResource.java:357)
+	at org.restlet.resource.ServerResource.handle(ServerResource.java:1014)
+	at org.restlet.resource.Finder.handle(Finder.java:246)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.routing.Router.doHandle(Router.java:431)
+	at org.restlet.routing.Router.handle(Router.java:648)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.engine.application.StatusFilter.doHandle(StatusFilter.java:155)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.engine.CompositeHelper.handle(CompositeHelper.java:211)
+	at org.restlet.engine.application.ApplicationHelper.handle(ApplicationHelper.java:84)
+	at org.restlet.Application.handle(Application.java:384)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.routing.Router.doHandle(Router.java:431)
+	at org.restlet.routing.Router.handle(Router.java:648)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.routing.Router.doHandle(Router.java:431)
+	at org.restlet.routing.Router.handle(Router.java:648)
+	at org.restlet.routing.Filter.doHandle(Filter.java:159)
+	at org.restlet.routing.Filter.handle(Filter.java:206)
+	at org.restlet.engine.CompositeHelper.handle(CompositeHelper.java:211)
+	at org.restlet.Component.handle(Component.java:406)
+	at org.restlet.Server.handle(Server.java:516)
+	at org.restlet.engine.connector.ServerHelper.handle(ServerHelper.java:72)
+	at org.restlet.engine.adapter.HttpServerHelper.handle(HttpServerHelper.java:152)
+	at org.restlet.ext.servlet.ServerServlet.service(ServerServlet.java:1118)
+	at javax.servlet.http.HttpServlet.service(HttpServlet.java:820)
+	at org.mortbay.jetty.servlet.ServletHolder.handle(ServletHolder.java:511)
+	at org.mortbay.jetty.servlet.ServletHandler.handle(ServletHandler.java:390)
+	at org.mortbay.jetty.security.SecurityHandler.handle(SecurityHandler.java:216)
+	at org.mortbay.jetty.servlet.SessionHandler.handle(SessionHandler.java:182)
+	at org.mortbay.jetty.handler.ContextHandler.handle(ContextHandler.java:765)
+	at org.mortbay.jetty.webapp.WebAppContext.handle(WebAppContext.java:440)
+	at org.mortbay.jetty.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:230)
+	at org.mortbay.jetty.handler.HandlerCollection.handle(HandlerCollection.java:114)
+	at org.mortbay.jetty.handler.HandlerWrapper.handle(HandlerWrapper.java:152)
+	at org.mortbay.jetty.Server.handle(Server.java:326)
+	at org.mortbay.jetty.HttpConnection.handleRequest(HttpConnection.java:542)
+	at org.mortbay.jetty.HttpConnection$RequestHandler.headerComplete(HttpConnection.java:926)
+	at org.mortbay.jetty.HttpParser.parseNext(HttpParser.java:549)
+	at org.mortbay.jetty.HttpParser.parseAvailable(HttpParser.java:212)
+	at org.mortbay.jetty.HttpConnection.handle(HttpConnection.java:404)
+	at org.mortbay.io.nio.SelectChannelEndPoint.run(SelectChannelEndPoint.java:410)
+	at org.mortbay.thread.QueuedThreadPool$PoolThread.run(QueuedThreadPool.java:582)
+2014-09-04 10:41:58,298 [Daemon] INFO  root - #############
+2014-09-04 10:41:58,308 [Daemon] INFO  root - jdoop started
+2014-09-04 10:41:58,308 [Daemon] INFO  root - #############
