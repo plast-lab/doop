@@ -8,7 +8,7 @@ package doop
 class AnalysisOption<T>  {
 
     /**
-     * The id of the option as used internally by the code (e.g. by the preprocessor)
+     * The id of the option as used internally by the code (e.g. by the preprocessor, the web form, etc)
      */
     String id
 
@@ -26,21 +26,41 @@ class AnalysisOption<T>  {
      * Indicates whether the option affects the preprocessor
      */
     boolean forPreprocessor = false
+	
+	/**
+	 * The type of the preprocessor flag (ignored when forPreprocessor is false)
+	 */
+	PreprocessorFlag flagType = PreprocessorFlag.NORMAL_FLAG
 
     /**
-     * Indicates whether the option can be inserted by the user
+     * Indicates whether the option can be specified by the user in the web UI
      */
-    boolean definedByUser = false
+    boolean webUI = false
 
     /**
-     * The name of the option (for the user)
+     * The name of the option (for the end-user)
      */
     String name = null
+
+    /**
+     * Indicates whether the option can be specified by the user in the command line interface
+     */
+    boolean cli = false
 
     /**
      * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).
      */
     String argName = null
+	
+	/**
+	 * Indicates whether the option is "advanced". Advanced options are treated differently by the UIs.
+	 */
+	boolean isAdvanced = false
+
+    /**
+     * Indicates whether the options is a file.
+     */
+    boolean isFile = false
 
     @Override
     String toString() {

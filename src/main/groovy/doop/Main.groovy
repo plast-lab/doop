@@ -28,7 +28,7 @@ class Main {
         Doop.initDoop(doopHome, doopOut)
 
         //initialize logging
-        Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
+        Helper.initLogging("DEBUG", "${Doop.doopHome}/logs", true)
 
         Log logger = LogFactory.getLog(Main)
 
@@ -49,7 +49,7 @@ class Main {
 
             //change the log level according to the cli arg
             String logLevel = cli.l
-            if (logLevel) {
+            if (logLevel == true) {
                 switch (logLevel) {
                     case "debug":
                         Logger.getRootLogger().setLevel(Level.DEBUG)
@@ -65,14 +65,8 @@ class Main {
                 }
             }
 
-            //The analysis is the first argument
-            String name = arguments[0]
-            //The jars are the following arguments
-            List<String> jars = arguments.drop(1)
-
-            Map<String, AnalysisOption> options = createAnalysisOptions(cli)
-            Analysis analysis = new AnalysisFactory().newAnalysis(name, jars, options)
-            logger.info "Starting $name analysis on ${jars[0]}"
+            Analysis analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
+            logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
             logger.debug analysis
 
             analysis.run()
@@ -89,9 +83,14 @@ class Main {
      */
     private static CliBuilder createCliBuilder() {
 
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option -> option.definedByUser }
+        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option -> option.cli }
 
-        CliBuilder cli = new CliBuilder(usage:'doop-java [OPTION]... ANALYSIS JAR')
+        String usageHeader = "jdoop [OPTION]... ANALYSIS JAR\nAvailable analyses:\n${Helper.availableAnalyses(Doop.doopLogic).join(' ')}\nAvailable options:\n"
+
+        CliBuilder cli = new CliBuilder(
+			usage:  "jdoop [OPTION]... ANALYSIS JAR", 
+			header: "Available analyses:\n${Helper.availableAnalyses(Doop.doopLogic).join(' ')}"
+		)
         cli.with {
             h(longOpt: 'help', 'Display help and exit')
             l(longOpt: 'level', 'Set the log level: debug, info or error (default: info)', args:1, argName: 'loglevel')
@@ -108,34 +107,5 @@ class Main {
         }
 
         return cli
-    }
-
-    /**
-     * Processes the cli args and generates a map of analysis options.
-     */
-    private static Map<String, AnalysisOption> createAnalysisOptions(OptionAccessor cli) {
-        Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
-        options.findAll { Map.Entry<String, AnalysisOption> entry ->
-            entry.value.definedByUser //get the cli options
-        }.each { Map.Entry<String, AnalysisOption> entry ->
-            AnalysisOption option = entry.value
-            String cliOptionName = option.name
-            def optionValue = cli[(cliOptionName)]
-            if (optionValue) {
-                //Only true-ish values are of interest (false or null values are ignored)
-                if (option.argName) {
-                    //if the cl option has an arg, the value of this arg defines the value of the respective
-                    // analysis option
-                    option.value = optionValue
-                }
-                else {
-                    //the cl option has no arg and thus it is a boolean flag, toggling the default value of
-                    // the respective analysis option
-                    option.value = !option.value
-                }
-            }
-
-        }
-        return options
     }
 }

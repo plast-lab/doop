@@ -20,7 +20,7 @@ class CppPreprocessor implements Preprocessor {
     void init() { }
 
     @Override
-    void preprocess(Analysis analysis, String basePath, String input, String output) {
+    void preprocess(Analysis analysis, String basePath, String input, String output, String... includes) {
 
         logger.debug("Preprocessing $input -> $output")
 
@@ -31,8 +31,13 @@ class CppPreprocessor implements Preprocessor {
         }
 
         String macroCli = macros.collect{AnalysisOption option -> "-D${option.id}" }.join(" ")
-        String command = "cpp -CC -P $macroCli $basePath/$input $output"
-        logger.debug command
-        Helper.execCommand(command, analysis.externalCommandsEnvironment)
+
+        if (includes) {
+            String includeArgs = includes.collect{ "-include $it" }.join(" ")
+            Helper.execCommand("cpp -CC -P $macroCli $basePath/$input $includeArgs $output", analysis.commandsEnvironment)
+        }
+        else {
+            Helper.execCommand("cpp -CC -P $macroCli $basePath/$input $output", analysis.commandsEnvironment)
+        }
     }
 }
