@@ -11,5 +11,5 @@ import doop.Analysis
  */
 interface Preprocessor {
     void init()
-    void preprocess(Analysis analysis, String basePath, String input, String output)
+    void preprocess(Analysis analysis, String basePath, String input, String output, String... includes)
 }

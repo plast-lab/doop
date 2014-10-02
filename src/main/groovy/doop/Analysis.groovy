@@ -1,6 +1,7 @@
 package doop
 
 import doop.preprocess.Preprocessor
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -43,7 +44,7 @@ class Analysis implements Runnable {
     /**
      * The environment for running external commands
      */
-    Map<String, String> externalCommandsEnvironment
+    Map<String, String> commandsEnvironment
 
     /**
      * The preprocessor for the logic files of the analysis
@@ -52,6 +53,10 @@ class Analysis implements Runnable {
 
     String inputFilesChecksum
     String logicFilesChecksum
+	
+	File cacheFacts, cacheDatabase, database, humanDatabase, exportDir, factsDir, averroesDir
+
+    long sootTime, factsTime
 
     protected Analysis() {}
 
@@ -61,25 +66,49 @@ class Analysis implements Runnable {
     @Override
     void run() {
         Helper.execWithTiming (logger) {
-            preprocessLogic()
+			
+			initAnalysis()
+			
             createDatabase()
+
+            //TODO: We don't need the write-meta staff, do we?
+			
+			analyze()
         }
     }
+	
+	/**
+     * @return A string representation of the analysis
+     */
+    String toString() {
+        return [id:id, name:name, outDir:outDir].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+               "\n" +
+               options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n")
+    }
+	
 
     /**
-     * Precprocess the logic files of the analysis.
-     * Mimics the behavior of the init-analysis function of the doop run script.
+     * Precprocess the logic files of the analysis. Mimics the behavior of the init-analysis function of the run script.
      */
-    protected void preprocessLogic() {
+    protected void initAnalysis() {
 
         logger.info "Pre-processing the logic files"
 
         String basePath = "${Doop.doopLogic}/${name}"
         String baseLibPath = "${Doop.doopLogic}/library"
         String baseClientPath = "${Doop.doopLogic}/client"
+        String dacapoPath = "${Doop.doopLogic}/dacapo"
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            //process the dacapo logic
+            preprocessor.preprocess(this, dacapoPath, "declarations.logic",
+                                    "${outDir}/${name}-declarations.logic",
+                                    "${basePath}/declarations.logic")
+            preprocessor.preprocess(this, dacapoPath, "delta.logic",
+                                    "${outDir}/${name}-delta.logic",
+                                    "${basePath}/delta.logic")
+            preprocessor.preprocess(this, dacapoPath, "rules.logic",
+                                    "${outDir}/${name}.logic",
+                                    "${basePath}/analysis.logic")
         }
         else {
             preprocessor.preprocess(this, basePath, "declarations.logic", "${outDir}/${name}-declarations.logic")
@@ -90,40 +119,164 @@ class Analysis implements Runnable {
         preprocessor.preprocess(this, baseLibPath,    "reflection-delta.logic",     "${outDir}/reflection-delta.logic")
         preprocessor.preprocess(this, baseClientPath, "exception-flow-delta.logic", "${outDir}/exception-flow-delta.logic")
         preprocessor.preprocess(this, baseClientPath, "auxiliary-heap-allocations-delta.logic",
-                        "${outDir}/auxiliary-heap-allocations-delta.logic"
+                                "${outDir}/auxiliary-heap-allocations-delta.logic"
         )
+
+        //TODO: We don't need to calculate logic and input sums, do we?
+
+        //TODO: We don't need to annotate db paths, do we?
+
+		cacheFacts    = new File(outDir, "cacheFacts")
+		cacheDatabase = new File(outDir, "cacheDatabase")
+		database      = new File(outDir, "database")
+		humanDatabase = new File(outDir, "humanDatabase")
+        exportDir     = new File(outDir, "export")
+        factsDir      = new File(outDir, "facts")
+        averroesDir   = new File(outDir, "averroes")
     }
 
     /**
-     * Creates the lb database.
-     * Mimics the behavior of the create-database function of the doop run script.
+     * Creates the lb database. Mimics the behavior of the create-database function of the doop run script.
      */
     protected void createDatabase() {
 
-        String factsDir = "$outDir/facts"
-        logger.info "Creating facts directory: $factsDir"
-        new File(factsDir).mkdirs()
+		FileUtils.deleteQuietly(database)
+		
+		if (cacheDatabase.exists() && options.CACHE.value) {
+			//Skip if cache database already exists
+			logger.info "Using cached database $cacheDatabase"
+		}
+		else {
+			//Generate facts
+			if (cacheFacts.exists() && options.CACHE.value) {
+				logger.info "Using cached facts $cacheFacts"
+			}
+			else if (options.CSV.value) {
+                cacheFacts.mkdirs()
+                //mv exportDir/* to cacheFacts
+                Helper.moveDirectoryContents(exportDir, cacheFacts)
+			}
+			else {
+                logger.info "Generating facts in $cacheFacts"
 
-        //TODO: support caching
+                FileUtils.deleteQuietly(factsDir)
+                factsDir.mkdirs()
 
-        dealWithPhantomRefs()
+                runJPhantom()
 
-        //TODO: run averroes, if specified
+                runAverroes()
 
-        sootGenerateFacts(factsDir)
+                runSoot()
 
-        String dbDir = "$outDir/database"
-        new File(dbDir).mkdirs()
+                cacheFacts.mkdirs()
+                Helper.moveDirectoryContents(factsDir, cacheFacts)
+            }
 
-        initDatabase(dbDir)
+            logger.info "Database initialization"
 
+            initDatabase()
+		}
+
+        database.mkdirs()
+        FileUtils.copyDirectory(cacheDatabase, database)
+    }
+
+    /**
+     * Performs the main part of the analysis. Mimics the behavior of the analyze function of the doop run script.
+     */
+    protected void analyze() {
+
+        logger.info "Analysis Prologue"
+
+        //TODO: Support multiple values for DYNAMIC
+        if (options.DYNAMIC.value) {
+
+            //TODO: Check arity of DYNAMIC file
+
+            File dynImport = new File(outDir, "dynamic.import")
+            dynImport.newWriter().withWriter { Writer writer ->
+                writer.write """
+option,delimeter,"\t"
+option,hasColumnNames,false
+
+fromFile,"${options.DYNAMIC.value}",a,inv,b,type
+toPredicate,Config:DynamicClass,type,inv
+"""
+            }
+
+            bloxbatch database, "-import $dynImport"
+        }
+
+        if (!options.INCREMENTAL.value) {
+            logger.info "Loading $name declarations"
+            Helper.execWithTiming(logger) {
+                bloxbatch database, "-addBlock -file ${outDir}/${name}-declations.logic"
+
+                if (options.SANITY.value) {
+                    logger.info "Loading sanity rules"
+                    Helper.execWithTiming(logger) {
+                        bloxbatch database, "-addBlock -file ${Doop.doopLogic}/library/sanity.logic"
+                    }
+                }
+            }
+        }
+
+        logger.info "Loading $name delta rules"
+        long deltaTiming = Helper.execWithTiming(logger) {
+            bloxbatch database, "-execute -file ${outDir}/${name}-delta.logic"
+        }
+        bloxbatch database, "-execute '+Stats:Runtime(\"$name delta rules time (sec)\", $deltaTiming).'"
+
+        if (!options.DISABLE_REFLECTION.value) {
+            logger.info "Loading reflection delta rules"
+            long time1 = Helper.execWithTiming(logger) {
+                bloxbatch database, "-execute -file ${outDir}/reflection-delta.logic"
+            }
+
+            logger.info "Loading allocations delta rules"
+            long time2 = Helper.execWithTiming(logger) {
+                bloxbatch database, "-execute -file ${Doop.doopLogic}/library/reflection/allocations-delta.logic"
+            }
+
+            long total = time1 + time2
+            bloxbatch database, "-execute '+Stats:Runtime(\"reflection delta rules time (sec)\", $total).'"
+        }
+
+        logger.info "Loading client delta rules"
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-execute -file ${outDir}/exception-flow-delta.logic"
+        }
+
+        logger.info "Loading auxiliary delta rules"
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-execute -file ${outDir}/auxiliary-heap-allocations-delta.logic"
+        }
+
+        //TODO: Log memory statistics
+
+        //TODO: Run refinement logic
+
+        logger.info "Analysis Main Phase"
+
+        if (!options.INCREMENTAL.value) {
+            //TODO: Do we need the benchmark script?
+            //TODO: Read the bloxopts
+            long time = Helper.execWithTiming(logger) {
+                bloxbatch database, "-addBlock -file ${outDir}/${name}.logic"
+            }
+            bloxbatch database, "-execute '+Stats:Runtime(\"benchmark time(sec)\", $time).'"
+        }
+
+        //TODO: Run client extensions
+
+        //TODO: Kill memory logger
     }
 
 
     /**
      * Runs jphantom if phantom refs are not allowed
      */
-    protected void dealWithPhantomRefs(){
+    protected void runJPhantom(){
         if (!options.ALLOW_PHANTOM.value) {
 
             logger.info "Running jphantom to generate complement jar"
@@ -140,20 +293,43 @@ class Analysis implements Runnable {
             Helper.execJava(loader, "jphantom.Driver", params)
 
             //set the jar of the analysis to the complemented one
-            jars[0] = "$outDir/$newJar"
+            jars[0] = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
         }
     }
+	
+	/**
+	 * Runs averroes, if specified
+	 */
+	protected void runAverroes() {
+		if (options.AVERROES.value) {
+			logger.info "Running averroes"
+			
+			ClassLoader loader = averroesClassLoader()
+			Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
+			
+			//We change linked arg and injar for soot in the runSoot method
+		}
+	}
 
     /**
      * soot fact generation
      */
-    protected void sootGenerateFacts(String factsDir) {
+    protected void runSoot() {
 
         logger.info "Running soot to generate facts"
 
-        List<String> deps = jars.drop(1)
-        List<String> jreLinks = jreLinkArgs()
-        List<String> depArgs = (deps + jreLinks).collect { String arg -> ["-l", arg] }.flatten()
+        List<String> depArgs
+
+        if (options.AVERROES.value) {
+            //change linked arg and injar accordingly
+            jars[0] = Helper.checkFileOrThrowException("$averroesDir/oranizedApplication.jar", "Averroes invocation failed")
+            depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
+        }
+        else {
+            List<File> deps = jars.drop(1)
+            List<String> links = jreLinkArgs()
+            depArgs = deps.collect{ File f -> ["-l", f]}.flatten() + links.collect{ String arg -> ["-l", arg]}.flatten()
+        }
 
         String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
 
@@ -173,45 +349,98 @@ class Analysis implements Runnable {
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
-        //we invoke the main method reflectively to avoid adding soot as a compile-time dependency
         ClassLoader loader = sootClassLoader()
-        Helper.execJava(loader, "Main", params)
+        sootTime = Helper.execWithTiming(logger) {
+            //we invoke the main method reflectively to avoid adding soot as a compile-time dependency
+            Helper.execJava(loader, "Main", params)
+        }
     }
 
 
+    protected void initDatabase() {
 
-    protected void initDatabase(String dbDir) {
-
-        String bloxbatch = options.BLOXBATCH.value
-
-        Helper.execWithTiming(logger) {
-            logger.info "Creating database in $dbDir"
-            String command = "$bloxbatch -db $dbDir -create -overwrite -blocks base"
-            logger.debug command
-            Helper.execCommand(command, externalCommandsEnvironment)
+        if (options.INCREMENTAL.value) {
+            File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
+            logger.info "Copying precomputed database of library from $libDatabase"
+            Helper.execWithTiming(logger) {
+                Helper.copyDirectoryContents(libDatabase, cacheDatabase)
+            }
         }
+        else {
 
-        Helper.execWithTiming(logger) {
+            logger.info "Creating database in $cacheDatabase"
+            Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-create -overwrite -blocks base"
+            }
+
             logger.info "Loading fact declarations"
-            String command = "$bloxbatch -db $dbDir -addBlock -file ${Doop.doopHome}/logic/library/fact-declarations.logic"
-            logger.debug command
-            Helper.execCommand(command, externalCommandsEnvironment)
+            Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/fact-declarations.logic"
+            }
+
+            logger.info "Loading facts"
+            FileUtils.deleteDirectory(factsDir)
+            Helper.execCommand("ln -s $cacheFacts $factsDir", commandsEnvironment)
+
+            FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
+            FileUtils.touch(new File(factsDir, "Properties.facts"))
+
+            //TODO: Rewrite gen-import script
+            if (options.CSV.value) {
+                Helper.execCommand("${Doop.doopHome}/gen-import -csv $outDir/fact-declarations.import", commandsEnvironment)
+            }
+            else {
+                Helper.execCommand("${Doop.doopHome}/gen-import -text $outDir/fact-declarations.import", commandsEnvironment)
+            }
+
+            factsTime = Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-import $outDir/fact-declarations.import"
+            }
+
+            bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"soot-fact-generation time (sec)\", $sootTime).'"
+            bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"loading facts time (sec)\", $factsTime).'"
+
+            FileUtils.deleteQuietly(factsDir)
+
+            if (options.MAIN_CLASS.value) {
+                String mainClass = options.MAIN_CLASS.value
+                logger.info "Setting main class to $mainClass"
+                bloxbatch cacheDatabase, "-execute '+MainClass(x) <- ClassType(x), Type:Value(x:\"$mainClass\").'"
+            }
+
+            //TODO: run set-based logic
         }
     }
 
-    /**
-     * @return A string representation of the analysis
-     */
-    String toString() {
-        return [id:id, name:name, outDir:outDir].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
-               "\n" +
-               options.values().collect { AnalysisOption option -> option.toString() }.join("\n")
-    }
 
-    /**
+	/*
+	 * Sets all exception options/flags to false. The exception options are determined by their flagType.
+	 */
+	protected void disableAllExceptionOptions() {
+		logger.debug "Disabling all exception preprocessor flags"
+		options.values().each { AnalysisOption option ->
+			if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
+				option.value = false
+			}
+		}
+	}
+	
+	/*
+	 * Sets all constant options/flags to false. The constant options are determined by their flagType.
+	 */
+	protected void disableAllConstantOptions() {
+		logger.debug "Disabling all constant preprocessor flags"
+		options.values().each { AnalysisOption option ->
+			if (option.forPreprocessor && option.flagType == PreprocessorFlag.CONSTANT_FLAG) {
+				option.value = false
+			}
+		}
+	}
+
+	/**
      * Creates a new class loader for running jphantom
      */
-    private static ClassLoader phantomClassLoader() {
+    private ClassLoader phantomClassLoader() {
         //TODO: for now, we hard-code the jphantom jar
         String jphantom = "${Doop.doopHome}/lib/jphantom-1.0-jar-with-dependencies.jar"
         File f = Helper.checkFileOrThrowException(jphantom, "jphantom jar missing or invalid: $jphantom")
@@ -222,7 +451,7 @@ class Analysis implements Runnable {
     /**
      * Creates a new class loader for running soot
      */
-    private static ClassLoader sootClassLoader() {
+    private ClassLoader sootClassLoader() {
         //TODO: for now, we hard-code the soot jars
         String sootClasses = "${Doop.doopHome}/lib/sootclasses-2.5.0.jar"
         String sootFactGeneration = "${Doop.doopHome}/lib/soot-fact-generation.jar"
@@ -249,6 +478,74 @@ class Analysis implements Runnable {
             throw new RuntimeException("Only system JRE is currently supported")
         }
     }
+	
+	/**
+	 * Creates a new class loader for running averroes
+	 */
+	private ClassLoader averroesClassLoader() {
+		//TODO: for now, we hard-code the averroes jar and properties
+		String jar = "${Doop.doopHome}/lib/averroes-no-properties.jar"
+		String properties = "$outDir/averroes.properties"
 
+		//Determine the library jars
+		List<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
+		
+		//Create the averroes properties
+		Properties props = new Properties()
+		props.setProperty("application_includes", options.APP_REGEX.value as String)
+		props.setProperty("main_class", options.MAIN_CLASS as String)
+		props.setProperty("input_jar_files", jars[0] as String)
+		props.setProperty("library_jar_files", libraryJars.join(":"))
+		props.setProperty("dynamic_classes_file", options.DYNAMIC.value as String)
+		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
+		props.setProperty("output_dir", averroesDir as String)
+		props.setProperty("jre", javaAverroesLibrary())
+		
+		new File(properties).newWriter().withWriter { Writer writer ->
+			props.store(writer, null)
+		}
+		
+		File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
+		File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
+		
+		URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        return new URLClassLoader(classpath)
+	}
+	
+	/**
+	 * Generates a list for the jre libs for averroes 
+	 */
+	private List<String> jreAverroesLibraries() {
+		//TODO: deal with JRE versions other than system
 
+        if (options.JRE.value == "system") {
+            String javaHome = System.getProperty("java.home")
+            return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+        }
+        else {
+            throw new RuntimeException("Only system JRE is currently supported")
+        }
+	}	
+	
+	/**
+	 * Generates the full path to the rt.jar required by averroes
+	 */
+	private String javaAverroesLibrary() {
+		//TODO: deal with JRE versions other than system
+
+        if (options.JRE.value == "system") {
+            String javaHome = System.getProperty("java.home")
+            return "$javaHome/lib/rt.jar"
+        }
+        else {
+            throw new RuntimeException("Only system JRE is currently supported")
+        }
+	}
+
+    /**
+     * Invokes bloxbatch on the given database with the given params. Helper method for making the code more readable.
+     */
+    private void bloxbatch(File database, String params) {
+        Helper.execCommand("${options.BLOXBATCH.value} -db $database $params", commandsEnvironment)
+    }
 }

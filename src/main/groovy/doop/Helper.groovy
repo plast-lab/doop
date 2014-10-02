@@ -1,10 +1,14 @@
 package doop
 
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.log4j.*
 
 import java.lang.reflect.Method
-
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 /**
  * Various helper methods.
  *
@@ -12,6 +16,14 @@ import java.lang.reflect.Method
  * Date: 30/8/2014
  */
 class Helper {
+
+    private static final FileFilter ALL_FILES = [
+        accept: { File f -> f.isFile() }
+    ] as FileFilter
+
+    private static final FileFilter ALL_FILES_AND_DIRECTORIES = [
+        accept: { File f -> true }
+    ] as FileFilter
 
     /**
      * Initializes Log4j
@@ -43,9 +55,10 @@ class Helper {
     }
 
     /**
-     * Executes the given closure using the supplied logger to report its duration
+     * Executes the given closure using the supplied logger to report its duration in seconds. It also returns the
+     * duration.
      */
-    static void execWithTiming(Log logger, Closure closure) {
+    static long execWithTiming(Log logger, Closure closure) {
         long now = System.currentTimeMillis()
         try {
             closure.call()
@@ -55,9 +68,9 @@ class Helper {
         }
 
         //we measure the time only in error-free cases
-        long duration = System.currentTimeMillis() - now
-        logger.info "elapsed time: ${duration / 1000} sec"
-
+        long duration = (System.currentTimeMillis() - now) / 1000
+        logger?.info "elapsed time: $duration sec"
+        return duration
     }
 
     /**
@@ -90,11 +103,12 @@ class Helper {
      * Executes the given command as an external process, setting its environment to the supplied Map
      */
     static void execCommand(String command, Map<String, String> env) {
-        List<String> envList = env?.collect { Map.Entry entry -> "${entry.key}=${entry.value}" }
+		Logger.getRootLogger().debug "Executing $command"
+		List<String> envList = env?.collect { Map.Entry entry -> "${entry.key}=${entry.value}" }
         Process process = command.execute(envList, null)
         process.waitForProcessOutput(System.out as OutputStream, System.err as OutputStream)
         if (process.exitValue() != 0) {
-            throw new RuntimeException("Command exited with non-zero status: $command")
+            throw new RuntimeException("Command exited with non-zero status\n: $command")
         }
     }
 
@@ -135,5 +149,67 @@ class Helper {
         Object[] args = [params]
         Method main = Class.forName(mainClass).getMethod("main", parameterTypes)
         main.invoke(null, args)
+    }
+
+    /**
+     * Returns a list of the names of the available analyses in the given doop logic directory
+     */
+    static List<String> availableAnalyses(String doopLogicDir) {
+        List<String> analyses = []
+        new File(Doop.doopLogic).eachDir { File dir ->
+            if (dir.getName().indexOf("sensitive") != -1 ) {
+                File f = new File(dir, "analysis.logic")
+                if (f.exists() && f.isFile()) {
+                    analyses.push(dir.getName())
+                }
+            }
+        }
+        return analyses
+    }
+	
+	/*
+     * Returns a set of the packages contained in the given jar
+     */
+    static Set<String> getPackages(File jar) {
+
+        ZipFile zip = new ZipFile(jar)
+        Enumeration<? extends ZipEntry> entries = zip.entries()
+        List<String> packages = entries?.findAll { ZipEntry entry ->
+            entry.getName().endsWith(".class")
+        }.collect { ZipEntry entry ->
+            FilenameUtils.getPath(entry.getName()).replace('/' as char, '.' as char) + '*'
+        }
+        return (packages as Set)
+    }
+	
+	/**
+	 * Generates a checksum of the input string (in hex) using the supplied algorithm (SHA-256, MD5, etc).
+	 */
+	static String checksum(String s, String algorithm) {
+		MessageDigest digest = MessageDigest.getInstance(algorithm)
+		byte[] bytes = digest.digest(s.getBytes("UTF-8"))
+		BigInteger number = new BigInteger(1, bytes)
+		String checksum = number.toString(16)
+		int len = checksum.length()
+		while (len < 32) {
+			checksum = "0" + checksum
+		}
+		return checksum
+	}
+
+
+    /**
+     *  Moves the contents of the src directory to dest (as in: mv src/* dest).
+     */
+    static void moveDirectoryContents(File src, File dest) {
+        FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
+        FileUtils.cleanDirectory(src)
+    }
+
+    /**
+     * Copies the contents of the src directory to dest (as in: cp -R src/* dest).
+     */
+    static void copyDirectoryContents(File src, File dest) {
+        FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
     }
 }

@@ -2,12 +2,9 @@ package doop
 
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
-import org.apache.commons.io.FilenameUtils
+
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 /**
  * A Factory for creating Analysis objects.
@@ -27,11 +24,7 @@ class AnalysisFactory {
         //Verify that the name of the analysis is valid
         checkName(name)
 
-        //TODO: Generate analysis id - for now id = name
-        String id = name
-
         Analysis analysis = new Analysis(
-            id     : id,
             name   : name,
             outDir : "${Doop.doopOut}/$name",
             preprocessor: (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
@@ -40,23 +33,35 @@ class AnalysisFactory {
 
         //Verify that the jars exist
         checkJars(analysis, jars)
+		
+		//process the options
+        processOptions(analysis)
 
-        //check the JRE version
-        checkJRE(analysis)
+        //verify lb options
+		checkLogicBlox(analysis)
 
-        //check the OS
-        checkOS(analysis)
-
-        //check app regex
-        checkAppRegex(analysis)
-
-        //check LogicBlox
-        checkLogicBlox(analysis)
-
-        //init external commands environment
-        initExternalCommandsEnvironment(analysis)
-
-        //TODO: check & verify other options
+        //init the environment used for executing commands
+		initExternalCommandsEnvironment(analysis)
+			
+		//TODO: The COLOR option is not supported
+			
+		//TODO: Create empty jar
+			
+		//TODO: Check if input is given (incremental)
+		//TODO: If not, check-injar
+			
+		checkAppRegex(analysis)
+			
+		//We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
+			
+		//TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
+			
+		//TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
+		
+		//Generate the id
+		generateID(analysis)
+		
+		analysis.outDir = "${Doop.doopHome}/out/$name/${analysis.id}"
 
         //Create the outDir if required
         File f = new File(analysis.outDir)
@@ -80,15 +85,233 @@ class AnalysisFactory {
      * the analysis
      */
     protected void checkJars(Analysis analysis, List<String> jars) {
-        logger.debug "Verifying input jars: $jars"
+        logger.debug "Verifying analysis input jars: $jars"
+        if (!jars) throw new RuntimeException("No jars provided for the analysis")
         analysis.jars = jars.collect { String jar ->
             Helper.checkFileOrThrowException(jar, "Invalid jar: $jar")
         }
     }
+	
+	/**
+     * Processes the options of the analysis.
+     */
+    protected void processOptions(Analysis analysis) {
+	
+		logger.debug "Processing analysis options"
+		
+        Map<String, AnalysisOption> options = analysis.options
+		
+		/*
+		 * We mimic the checks of the run script for verifiability of this implementation, 
+		 * even though the majority of checks are not required.
+		 */
 
-    /**
-     * Checks the JRE version and injects the appropriate JRE option in the analysis (as expected by the preprocessor
-     * logic)
+        if (options.PADDLE_COMPAT.value) {
+			analysis.disableAllExceptionOptions()
+			logger.debug "The PADDLE_COMPAT option has been enabled"
+        }
+
+        if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
+			analysis.disableAllExceptionOptions()
+        }
+
+        if (options.EXCEPTIONS_IMPRECISE.value) {			
+			analysis.disableAllExceptionOptions()
+			options.EXCEPTIONS_IMPRECISE.value = true
+			logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
+			
+        }
+
+        if (options.DISABLE_MERGE_EXCEPTIONS.value) {
+			analysis.disableAllExceptionOptions()
+            options.EXCEPTIONS_PRECISE.value = true
+            options.SEPARATE_EXCEPTION_OBJECTS.value = true
+			logger.debug "The DISABLE_MERGE_EXCEPTIONS option has been enabled"
+        }
+
+        if (options.EXCEPTIONS_EXPERIMENTAL.value) {
+			analysis.disableAllExceptionOptions()
+			options.EXCEPTIONS_EXPERIMENTAL.value = true
+			logger.debug "The EXCEPTIONS_EXPERIMENTAL option has been enabled"
+        }
+
+        if (options.EXCEPTIONS_FILTER.value) {
+            logger.debug "The EXCEPTIONS_FILTER option has been enabled"
+        }
+
+        if (options.EXCEPTIONS_ORDER.value) {
+            logger.debug "The EXCEPTIONS_ORDER option has been enabled"
+        }
+
+        if (options.EXCEPTIONS_RANGE.value) {
+            logger.debug "The EXCEPTIONS_RANGE option has been enabled"
+        }
+
+        if (options.EXCEPTIONS_CS.value) {
+            logger.debug "The EXCEPTIONS_CS option has been enabled"
+        }
+
+        if (options.DISABLE_REFLECTION.value) {
+            logger.debug "The DISABLE_REFLECTION option has been enabled"
+            //NOTE:the flag noreflection is set but we don't need it as a separate option/flag 
+        }
+
+        if (options.CONTEXT_SENSITIVE_REFLECTION.value) {
+            logger.debug "The CONTEXT_SENSITIVE_REFLECTION option has been enabled"
+        }
+
+        if (options.CLIENT_EXCEPTION_FLOW.value) {
+            logger.debug "The CLIENT_EXCEPTION_FLOW option has been enabled"
+        }
+
+        if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
+			analysis.disableAllConstantOptions()
+			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
+			logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
+        }
+
+        if (options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value) {
+			analysis.disableAllConstantOptions()
+			options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
+			logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
+        }
+
+        if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
+			analysis.disableAllConstantOptions()
+			options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+			logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
+        }
+
+        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
+            logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been disabled"
+        }
+
+        if (!options.ANALYZE_REFLECTION_SUBSTRINGS.value) {
+            logger.debug "The ANALYZE_REFLECTION_SUBSTRINGS option has been disabled"
+        }
+
+        if (!options.MERGE_FIELD_AND_METHOD_SUBSTRINGS.value) { 
+            logger.debug "The MERGE_FIELD_AND_METHOD_SUBSTRINGS option has been disabled"
+        }
+
+        if (options.USE_BASED_REFLECTION_ANALYSIS.value) { 
+            logger.debug "The USE_BASED_REFLECTION_ANALYSIS option has been enabled"
+        }
+
+        if (options.INVENT_UNKNOWN_REFLECTIVE_OBJECTS.value) {
+            logger.debug "The INVENT_UNKNOWN_REFLECTIVE_OBJECTS option has been enabled"
+        }
+
+        if (options.REFINED_REFLECTION_OBJECTS.value) {
+            logger.debug "The REFINED_REFLECTION_OBJECTS option has been enabled"
+        }
+
+        if (!options.MERGE_STRING_BUFFERS.value) {
+            logger.debug "The MERGE_STRING_BUFFERS option has been disabled"
+        }
+
+        if (options.NO_CONTEXT_REPEAT.value) {
+            logger.debug "The NO_CONTEXT_REPEAT option has been enabled"
+        }
+
+        if (options.TRANSFORM_INPUT.value) {
+            options.SET_BASED.value = true
+			logger.debug "The TRANSFORM_INPUT option has been enabled"
+        }
+
+        if (options.SSA.value) {
+            logger.debug "The SSA option has been enabled"
+        }
+
+        if (options.CACHE.value) {
+            logger.debug "The CACHE option has been enabled"
+        }
+
+        if (options.STATS.value) {
+            logger.debug "The STATS option has been enabled"
+        }
+
+        if (options.SANITY.value) {
+            logger.debug "The SANITY option has been enabled"
+        }
+
+        if (options.MEMLOG.value) {
+            logger.debug "The MEMLOG option has been enabled"
+        }
+
+        if (options.SOLO.value) {
+            logger.debug "The SOLO option has been enabled"
+        }
+		
+		if (options.COLOR.value) {
+			logger.debug "The COLOR option has been enabled"
+		}
+		
+		if (options.INTERACTIVE.value) {
+			logger.debug "The INTERACTIVE option has been enabled"
+		}
+		
+		if (options.AVERROES.value) {
+			logger.debug "The AVERROES option has been enabled"
+		}
+		
+		if (options.ALLOW_PHANTOM.value) {
+			logger.debug "The ALLOW_PHANTOM option has been enabled"
+		}
+		
+		if (options.DACAPO.value) {
+			logger.debug "The DACAPO option has been enabled"
+		}
+		
+		if (options.DACAPO_BACH.value) {
+			logger.debug "The DACAPO_BACH option has been enabled"
+		}
+		
+		checkJRE(analysis)
+		
+		checkOS(analysis)
+		
+		if (options.MAIN_CLASS.value) {
+			logger.debug "The mainClass is set to ${options.MAIN.value}"
+		}
+		
+		if (options.INCREMENTAL.value) {
+			logger.debug "The INCREMENTAL option has been enabled"
+		}
+		
+		if (options.DYNAMIC.value) {
+			String dynFile = options.DYNAMIC.value
+			Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+			logger.debug "The DYNAMIC option has been set to ${dynFile}"
+		}
+		
+		if (options.TAMIFLEX.value) {
+			String tamFile = options.TAMIFLEX.value
+			Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+			logger.debug "The TAMIFLEX option has been set to ${tamFile}"
+		}
+		
+		if (options.CLIENT_CODE.value) {
+			String clFile = options.CLIENT_CODE.value
+			Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
+			options.CLIENT_EXTENSIONS.value = true
+			logger.debug "The CLIENT_CODE option has been set to ${clFile}"
+		}
+    }
+	
+	protected void generateID(Analysis analysis) {
+		logger.debug "Generating analysis ID"
+		
+		Map<String, AnalysisOption> options = analysis.options
+		
+		def idComponents = [analysis.name, options.MAIN_CLASS.value, options.APP_REGEX.value] + analysis.jars
+		String id = idComponents.collect { it.toString() }.join('-')
+		//Generate a sha256 cheksum of the id components
+		analysis.id = Helper.checksum(id, "SHA-256")
+	}
+	
+	/**
+     * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
     protected void checkJRE(Analysis analysis) {
 
@@ -141,25 +364,26 @@ class AnalysisFactory {
             default:
                 throw new RuntimeException("Invalid JRE version: $jreValue")
         }
-
-        //sanity check
+		
+		//sanity check
         EnumSet<JRE> supportedValues = EnumSet.allOf(JRE)
         if (! (jreVersion in supportedValues)) {
             throw new RuntimeException("Unsupported JRE version: $jreVersion")
         }
 
-        //generate the JRE constant for preprocessor
+        //generate the JRE constant for the preprocessor
         AnalysisOption<Boolean> jreOption = new AnalysisOption<>(
-                id:jreVersion.name(),
-                value:true,
-                forPreprocessor: true
+			id:jreVersion.name(),
+			value:true,
+			forPreprocessor: true
         )
         analysis.options[(jreOption.id)] = jreOption
-    }
-
-    //not used
-    private static void checkOS(Analysis analysis) {
-        //TODO: For now it is always OS.OS_UNIX (the default)
+	}
+	
+	/**
+	 * Checks the OS. For now, it is always OS.OS_UNIX (the default).
+	 */
+	protected void checkOS(Analysis analysis) {
 
         OS os = analysis.options.OS.value as OS
 
@@ -171,28 +395,38 @@ class AnalysisFactory {
 
         //generate the OS constant for preprocessor
         AnalysisOption<Boolean> osOption = new AnalysisOption<>(
-                id:os.name(),
-                value:true,
-                forPreprocessor: true
+			id:os.name(),
+			value:true,
+			forPreprocessor: true
         )
         analysis.options[(osOption.id)] = osOption
     }
-
-    /**
-     * If an app regex is not present, it generates one
+	
+	/**
+     * Determines application classes. If an app regex is not present, it generates one
      */
     protected void checkAppRegex(Analysis analysis) {
         if (!analysis.options.APP_REGEX.value) {
-            logger.debug "Generating an app regex"
-            analysis.options.APP_REGEX.value = generateAppRegex(analysis.jars)
+            logger.debug "Generating app regex"
+			
+			Set excluded = ["*", "**"] as Set
+			analysis.jars.drop(1).each { File jar ->
+				excluded += Helper.getPackages(jar)
+			}
+
+			Set<String> packages = Helper.getPackages(analysis.jars[0]) - excluded
+
+			analysis.options.APP_REGEX.value = packages.join(':')
         }
     }
-
-    /**
+	
+	/**
      * Verifies the correctness of the LogicBlox related options
      */
     protected void checkLogicBlox(Analysis analysis) {
 
+		//TODO: Process bloxopts
+	
         AnalysisOption lbhome = analysis.options.LOGICBLOX_HOME
         String lbHomePath = lbhome.value
 
@@ -205,10 +439,9 @@ class AnalysisFactory {
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         analysis.options.BLOXBATCH.value = bloxbatch
     }
-
-
-    /**
-     * Initializes the external commands environment, by:
+	
+	/**
+     * Initializes the external commands environment of the given analysis, by:
      * <ul>
      *     <li>adding the LD_LIBRARY_PATH option to the current environment
      *     <li>modifying PATH to also include the LD_LIBRARY_PATH option
@@ -218,11 +451,12 @@ class AnalysisFactory {
     protected Map<String, String> initExternalCommandsEnvironment(Analysis analysis) {
 
         logger.debug "Initializing the environment of the external commands"
-
-        AnalysisOption ldLibraryPath = analysis.options.LD_LIBRARY_PATH
-        Map<String, String> env = [:]
+        
+		Map<String, String> env = [:]
         env.putAll(System.getenv())
+		
         String path = env.PATH
+		AnalysisOption ldLibraryPath = analysis.options.LD_LIBRARY_PATH
         if (path) {
             path = "$path${File.pathSeparator}${ldLibraryPath.value}"
         }
@@ -232,38 +466,8 @@ class AnalysisFactory {
         env.PATH = path
         env.LD_LIBRARY_PATH = ldLibraryPath.value
         env.LOGICBLOX_HOME = analysis.options.LOGICBLOX_HOME.value
+        env.DOOP_HOME = Doop.doopHome
 
-        analysis.externalCommandsEnvironment = env
-    }
-
-    /*
-    Generates an app regex using the input jars
-     */
-    private static String generateAppRegex(List<File> jars) {
-        Set excluded = ["*", "**"] as Set
-        jars.drop(1).each { File jar ->
-            excluded += getPackages(jar)
-        }
-
-        Set<String> packages = getPackages(jars[0]) - excluded
-        //println "Excluded: $excluded"
-        //println "Packages: $packages"
-
-        return packages.join(':')
-    }
-
-    /*
-    Returns a set of the packages contained in the given jar
-     */
-    private static Set<String> getPackages(File jar) {
-
-        ZipFile zip = new ZipFile(jar)
-        Enumeration<? extends ZipEntry> entries = zip.entries()
-        List<String> packages = entries?.findAll { ZipEntry entry ->
-            entry.getName().endsWith(".class")
-        }.collect { ZipEntry entry ->
-            FilenameUtils.getPath(entry.getName()).replace('/' as char, '.' as char) + '*'
-        }
-        return (packages as Set)
+        analysis.commandsEnvironment = env
     }
 }

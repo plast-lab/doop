@@ -8,6 +8,9 @@
 ^logs
 ^out
 
+#jdoop webapp logs
+^src/main/webapp/logs/
+
 #intellij idea files
 ^.idea
 ^jdoop.iml

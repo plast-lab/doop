@@ -23,13 +23,13 @@ class JcppPreprocessor implements Preprocessor {
     }
 
     @Override
-    void preprocess(Analysis analysis, String basePath, String input, String output) {
+    void preprocess(Analysis analysis, String basePath, String input, String output, String... includes) {
 
         logger.debug("Preprocessing $input -> $output")
 
         org.anarres.cpp.Preprocessor preprocessor = new org.anarres.cpp.Preprocessor()
 
-        //preprocessor.setFileSystem(fileSystem)
+        //preprocessor.setFileSystem(fileSystem)  //used for debugging
         preprocessor.setListener(listener)
         preprocessor.setQuoteIncludePath([basePath])
 
@@ -44,10 +44,14 @@ class JcppPreprocessor implements Preprocessor {
             }
         }
 
+
+        includes?.each {
+            preprocessor.addInput(new StringLexerSource("#include $it \n", true))
+        }
+
         preprocessor.addInput(new StringLexerSource("#include \"$input\" \n", true))
 
-        BufferedWriter writer = new BufferedWriter(new FileWriter(output))
-        writer.withWriter { Writer w ->
+        new File(output).newWriter().withWriter { Writer w ->
             Token token
             while((token = preprocessor.token()).getType() != Token.EOF) {
                 w.append token.getText()
