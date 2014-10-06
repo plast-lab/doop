@@ -74,6 +74,28 @@ class Analysis implements Runnable {
             //TODO: We don't need the write-meta staff, do we?
 			
 			analyze()
+
+            long dbSize = FileUtils.sizeOfDirectory(database) * 1024
+            bloxbatch database, "-execute '+Stats:Runtime(\"100@ disk footprint (KB)\", $size).'"
+
+            //TODO: We don't need to link-result, do we?
+
+            getStats()
+
+            File f = null
+            try {
+                f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+            }
+            catch(e) {
+                logger.debug e.getMessage()
+            }
+
+            if(f) {
+                reanalyze()
+                //run-stats
+                //link-result
+                //show-stats
+            }
         }
     }
 	
@@ -270,6 +292,76 @@ toPredicate,Config:DynamicClass,type,inv
         //TODO: Run client extensions
 
         //TODO: Kill memory logger
+    }
+
+    /**
+     * Gets the statistics. Mimics the behavior of the get-stats function of the doop run script.
+     */
+    protected void getStats() {
+
+        String baseLibPath = "${Doop.doopLogic}/library"
+
+        preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
+        preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
+
+        long time1 = Helper.execWithTiming(logger) {
+            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
+        }
+        long time2 = 0
+
+        if (options.STATS.value) {
+            preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
+            time2 = Helper.execWithTiming(logger) {
+                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
+            }
+        }
+
+        long time3 = Helper.execWithTiming(logger) {
+            bloxbatch database, "execute -file ${outDir}/statistics-delta.logic >/dev/null"
+        }
+
+        long total = time1 + time2 + time3
+        bloxbatch database, "-execute '+Stats:Runtime(\"statistics time (sec)\", $total).'"
+
+        logger.info "Runtime metrics"
+        bloxbatch database, """-query Stats:Runtime | sort -n | sed -r 's/^ +([0-9]+[ab]?@ )?//' | awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
+
+        logger.info "Statistics"
+        bloxbatch database, """-query Stats:Metrics | sort -n | sed -r 's/^ +[0-9]+[ab]?@ //' | awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
+    }
+
+    /**
+     * Reanalyze. Mimics the behavior of the reanalyze function of the doop run script.
+     */
+    protected void reanalyze() {
+        logger.info "Loading ${name} refinement-delta rules"
+
+        preprocessor.preprocess(this, "${Doop.doopLogic}/${name}", "refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
+
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
+        }
+
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-exportCsv TempSiteToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+        }
+
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-exportCsv TempNegativeSiteFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+        }
+
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-exportCsv TempObjectToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+        }
+
+        Helper.execWithTiming(logger) {
+            bloxbatch database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+        }
+
+        createDatabase()
+        //TODO: We don't need to write-meta, do we?
+        options.REFINE.value = true
+        analyze()
     }
 
 

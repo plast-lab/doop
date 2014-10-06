@@ -320,6 +320,10 @@ class Doop {
             value:false,
         ),
         new AnalysisOption<Boolean>(
+            id:"REFINE",
+            value:false
+        ),
+        new AnalysisOption<Boolean>(
             id:"SSA",
             description: 'Use ssa transformation for input.',
             value:false,
