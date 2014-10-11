@@ -46,9 +46,9 @@ class AnalysisFactory {
 		//TODO: The COLOR option is not supported
 			
 		//TODO: Create empty jar
-			
+
 		//TODO: Check if input is given (incremental)
-		//TODO: If not, check-injar
+		//TODO: If not, check-injar (see checkjararg.sh that has dacapo & dacapo-bach hooks)
 			
 		checkAppRegex(analysis)
 			
