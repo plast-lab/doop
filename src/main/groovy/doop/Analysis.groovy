@@ -182,9 +182,13 @@ class Analysis implements Runnable {
                 FileUtils.deleteQuietly(factsDir)
                 factsDir.mkdirs()
 
-                runJPhantom()
+                if (!options.ALLOW_PHANTOM.value) {
+                    runJPhantom()
+                }
 
-                runAverroes()
+                if (options.AVERROES.value) {
+                    runAverroes()
+                }
 
                 runSoot()
 
@@ -270,7 +274,9 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         //TODO: Log memory statistics
 
-        refine()
+        if (options.REFINE.value) {
+            refine()
+        }
 
         logger.info "Analysis Main Phase"
 
@@ -363,38 +369,33 @@ toPredicate,Config:DynamicClass,type,inv"""
      * Runs jphantom if phantom refs are not allowed
      */
     protected void runJPhantom(){
-        if (!options.ALLOW_PHANTOM.value) {
+        logger.info "Running jphantom to generate complement jar"
 
-            logger.info "Running jphantom to generate complement jar"
+        String jar = jars[0]
+        String jarName = FilenameUtils.getBaseName(jar)
+        String jarExt = FilenameUtils.getExtension(jar)
+        String newJar = "${jarName}-complemented.${jarExt}"
+        String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
+        logger.debug "Params of jphantom: ${params.join(' ')}"
 
-            String jar = jars[0]
-            String jarName = FilenameUtils.getBaseName(jar)
-            String jarExt = FilenameUtils.getExtension(jar)
-            String newJar = "${jarName}-complemented.${jarExt}"
-            String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
-            logger.debug "Params of jphantom: ${params.join(' ')}"
+        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
+        ClassLoader loader = phantomClassLoader()
+        Helper.execJava(loader, "jphantom.Driver", params)
 
-            //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
-            ClassLoader loader = phantomClassLoader()
-            Helper.execJava(loader, "jphantom.Driver", params)
-
-            //set the jar of the analysis to the complemented one
-            jars[0] = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        }
+        //set the jar of the analysis to the complemented one
+        jars[0] = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
     }
 	
 	/**
 	 * Runs averroes, if specified
 	 */
 	protected void runAverroes() {
-		if (options.AVERROES.value) {
-			logger.info "Running averroes"
-			
-			ClassLoader loader = averroesClassLoader()
-			Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
-			
-			//We change linked arg and injar for soot in the runSoot method
-		}
+        logger.info "Running averroes"
+
+        ClassLoader loader = averroesClassLoader()
+        Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
+
+        //We change linked arg and injar for soot in the runSoot method
 	}
 
     /**
@@ -494,7 +495,9 @@ toPredicate,Config:DynamicClass,type,inv"""
                 bloxbatch cacheDatabase, "-execute '+MainClass(x) <- ClassType(x), Type:Value(x:\"$mainClass\").'"
             }
 
-            runSetBased()
+            if (options.SET_BASED.value) {
+                runSetBased()
+            }
         }
     }
 
@@ -549,17 +552,16 @@ toPredicate,NegativeObjectFilter,string"""
      * Mimics the behavior of the bin/set-based script.
      */
     protected void runSetBased() {
-        if (options.SET_BASED.value) {
-            logger.info "Preprocessing/transforming input facts: analysis"
-            Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/transform.logic"
-            }
 
-            2.times { int i ->
-                logger.info "Preprocessing/transforming input facts: transformation (step $i)"
-                Helper.execWithTiming(logger) {
-                    bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/transform-delta.logic"
-                }
+        logger.info "Preprocessing/transforming input facts: analysis"
+        Helper.execWithTiming(logger) {
+            bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/transform.logic"
+        }
+
+        2.times { int i ->
+            logger.info "Preprocessing/transforming input facts: transformation (step $i)"
+            Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/transform-delta.logic"
             }
         }
     }
