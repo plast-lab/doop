@@ -128,12 +128,12 @@ class ImportGenerator {
         String fileName = predicate.replaceAll(":", "-")
         String file = "facts/${fileName}.facts"
         w.write "fromFile,\"$file\""
-        arity.each { int i ->
+        arity.times { int i ->
             w.write ",column:$i,$predicate:$i"
         }
         w.write "\n"
         w.write "toPredicate,$predicate"
-        arity.each { int i ->
+        arity.times { int i ->
             w.write ",$predicate:$i"
         }
         w.write "\n"
