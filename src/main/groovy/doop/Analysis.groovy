@@ -92,9 +92,7 @@ class Analysis implements Runnable {
 
             if(f) {
                 reanalyze()
-                //run-stats
-                //link-result
-                //show-stats
+                getStats()
             }
         }
     }
@@ -477,16 +475,16 @@ toPredicate,Config:DynamicClass,type,inv
             FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
             FileUtils.touch(new File(factsDir, "Properties.facts"))
 
-            //TODO: Rewrite gen-import script
-            if (options.CSV.value) {
-                Helper.execCommand("${Doop.doopHome}/gen-import -csv $outDir/fact-declarations.import", commandsEnvironment)
+
+            File importFile = new File("$outDir/fact-declarations.import")
+            importFile.withWriter { Writer writer ->
+                ImportGenerator.Type type = options.CSV.value ? ImportGenerator.Type.CSV : ImportGenerator.Type.TEXT
+                new ImportGenerator(type, writer).generate()
             }
-            else {
-                Helper.execCommand("${Doop.doopHome}/gen-import -text $outDir/fact-declarations.import", commandsEnvironment)
-            }
+            Helper.checkFileOrThrowException(importFile, "Could not generate import file: $importFile")
 
             factsTime = Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-import $outDir/fact-declarations.import"
+                bloxbatch cacheDatabase, "-import $importFile"
             }
 
             bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"soot-fact-generation time (sec)\", $sootTime).'"
@@ -503,7 +501,6 @@ toPredicate,Config:DynamicClass,type,inv
             //TODO: run set-based logic
         }
     }
-
 
 	/*
 	 * Sets all exception options/flags to false. The exception options are determined by their flagType.

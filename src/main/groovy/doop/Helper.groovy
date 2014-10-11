@@ -78,8 +78,15 @@ class Helper {
      */
     static File checkFileOrThrowException(String file, String message) {
         if (!file) throw new RuntimeException(message)
+        return checkFileOrThrowException(new File(file), message)
+    }
 
-        File f = new File(file)
+    /**
+     * Checks that the given file exists or throws the given message
+     */
+    static File checkFileOrThrowException(File f, String message) {
+        if (!f) throw new RuntimeException(message)
+
         if (!f.exists() || !f.isFile() || !f.canRead()) {
             throw new RuntimeException(message)
         }
