@@ -3,6 +3,7 @@ package doop
 /**
  * The fact declarations import generator.
  * Mimics the behavior of the gen-import script.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 11/10/2014
  */
@@ -42,7 +43,7 @@ class ImportGenerator {
         writeImport "NullType", 1
         writeImport "ComponentType", 2
 
-        // relations (TODO bring entities forward)
+        // relations
         writeImport "StringConstant", 1
         // writeImport ReifiedClass 2
         writeImport "HeapAllocation:Type", 2
@@ -78,9 +79,9 @@ class ImportGenerator {
         writeImport "VirtualMethodInvocation:Base", 2
         writeImport "VirtualMethodInvocation:Signature", 2
         writeImport "VirtualMethodInvocation:In", 2
-        writeImport "VirtualMethodInvocation", 3 // TODO eliminate
+        writeImport "VirtualMethodInvocation", 3
 
-        writeImport "StaticMethodInvocation", 3 // TODO eliminate
+        writeImport "StaticMethodInvocation", 3
         writeImport "StaticMethodInvocation:In", 2
         writeImport "StaticMethodInvocation:Signature", 2
 
