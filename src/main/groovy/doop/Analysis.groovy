@@ -7,10 +7,10 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
 /**
+ * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
- *
- * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  */
 class Analysis implements Runnable {
 
@@ -214,15 +214,11 @@ class Analysis implements Runnable {
             //TODO: Check arity of DYNAMIC file
 
             File dynImport = new File(outDir, "dynamic.import")
-            dynImport.newWriter().withWriter { Writer writer ->
-                writer.write """
-option,delimeter,"\t"
+            Helper.writeToFile dynImport, """option,delimeter,"\t"
 option,hasColumnNames,false
 
 fromFile,"${options.DYNAMIC.value}",a,inv,b,type
-toPredicate,Config:DynamicClass,type,inv
-"""
-            }
+toPredicate,Config:DynamicClass,type,inv"""
 
             bloxbatch database, "-import $dynImport"
         }
@@ -274,7 +270,7 @@ toPredicate,Config:DynamicClass,type,inv
 
         //TODO: Log memory statistics
 
-        //TODO: Run refinement logic
+        refine()
 
         logger.info "Analysis Main Phase"
 
@@ -476,7 +472,7 @@ toPredicate,Config:DynamicClass,type,inv
             FileUtils.touch(new File(factsDir, "Properties.facts"))
 
 
-            File importFile = new File("$outDir/fact-declarations.import")
+            File importFile = new File(outDir, "fact-declarations.import")
             importFile.withWriter { Writer writer ->
                 ImportGenerator.Type type = options.CSV.value ? ImportGenerator.Type.CSV : ImportGenerator.Type.TEXT
                 new ImportGenerator(type, writer).generate()
@@ -503,6 +499,52 @@ toPredicate,Config:DynamicClass,type,inv
     }
 
     /**
+     * Activates refinement logic.
+     * Mimics the behavior of the bin/refine script.
+     */
+    protected void refine() {
+
+        //The files and their contents
+        Map<String, GString> files = [
+            "refine-site": """option,delimiter,","
+option,hasColumnNames,false
+option,quotedValues,true
+option,escapeQuotedValues,true
+
+fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSourceRef,CallGraphEdgeSourceRef
+toPredicate,SiteToRefine,CallGraphEdgeSourceRef""",
+
+            "negative-site": """option,delimiter,","
+option,hasColumnNames,false
+
+fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
+toPredicate,NegativeSiteFilter,string""",
+
+            "refine-object": """option,delimiter,","
+option,hasColumnNames,false
+option,quotedValues,true
+option,escapeQuotedValues,true
+
+fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocationRef,HeapAllocationRef
+toPredicate,ObjectToRefine,HeapAllocationRef""",
+
+            "negative-object": """option,delimiter,","
+option,hasColumnNames,false
+
+fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
+toPredicate,NegativeObjectFilter,string"""
+        ]
+
+        logger.info "loading $name refinement facts "
+        files.each { Map.Entry<String, GString> entry ->
+            File f = new File(outDir, "${name}-${entry.key}.import")
+            Helper.writeToFile f, entry.value
+            Helper.checkFileOrThrowException(f, "Could not create import file: $f")
+            bloxbatch database, "-import $f"
+        }
+    }
+
+    /**
      * Activates set-based logic that removes redundant input facts.
      * Mimics the behavior of the bin/set-based script.
      */
@@ -522,7 +564,7 @@ toPredicate,Config:DynamicClass,type,inv
         }
     }
 
-	/*
+	/**
 	 * Sets all exception options/flags to false. The exception options are determined by their flagType.
 	 */
 	protected void disableAllExceptionOptions() {
@@ -534,7 +576,7 @@ toPredicate,Config:DynamicClass,type,inv
 		}
 	}
 	
-	/*
+	/**
 	 * Sets all constant options/flags to false. The constant options are determined by their flagType.
 	 */
 	protected void disableAllConstantOptions() {

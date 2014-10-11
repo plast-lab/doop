@@ -174,7 +174,7 @@ class Helper {
         return analyses
     }
 	
-	/*
+	/**
      * Returns a set of the packages contained in the given jar
      */
     static Set<String> getPackages(File jar) {
@@ -218,5 +218,15 @@ class Helper {
      */
     static void copyDirectoryContents(File src, File dest) {
         FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
+    }
+
+    /**
+     * Writes the given string to the given file.
+     */
+    static File writeToFile(File f, String s) {
+        f.withWriter { Writer w ->
+            w.write s
+        }
+        return f
     }
 }
