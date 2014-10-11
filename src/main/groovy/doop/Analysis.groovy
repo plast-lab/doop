@@ -498,7 +498,27 @@ toPredicate,Config:DynamicClass,type,inv
                 bloxbatch cacheDatabase, "-execute '+MainClass(x) <- ClassType(x), Type:Value(x:\"$mainClass\").'"
             }
 
-            //TODO: run set-based logic
+            runSetBased()
+        }
+    }
+
+    /**
+     * Activates set-based logic that removes redundant input facts.
+     * Mimics the behavior of the bin/set-based script.
+     */
+    protected void runSetBased() {
+        if (options.SET_BASED.value) {
+            logger.info "Preprocessing/transforming input facts: analysis"
+            Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/transform.logic"
+            }
+
+            2.times { int i ->
+                logger.info "Preprocessing/transforming input facts: transformation (step $i)"
+                Helper.execWithTiming(logger) {
+                    bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/transform-delta.logic"
+                }
+            }
         }
     }
 
