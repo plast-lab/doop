@@ -280,9 +280,11 @@ class AnalysisFactory {
 		}
 		
 		if (options.DYNAMIC.value) {
-			String dynFile = options.DYNAMIC.value
-			Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-			logger.debug "The DYNAMIC option has been set to ${dynFile}"
+			List<String> dynFiles = options.DYNAMIC.value
+            dynFiles.each { String dynFile ->
+                Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+                logger.debug "The DYNAMIC option has been set to ${dynFile}"
+            }
 		}
 		
 		if (options.TAMIFLEX.value) {

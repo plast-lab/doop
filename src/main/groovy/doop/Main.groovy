@@ -4,7 +4,6 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-
 /**
  * The entry point for the standalone doop app.
  *
@@ -14,7 +13,7 @@ import org.apache.log4j.Logger
 class Main {
 
     /**
-     * The entry point
+     * The entry point.
      */
     static void main(String[] args) {
 
@@ -32,20 +31,29 @@ class Main {
 
         Log logger = LogFactory.getLog(Main)
 
+        logger.debug "Command line options: $args"
+
         try {
 
-            CliBuilder builder = createCliBuilder()
+            CliBuilder builder = CommandLineAnalysisFactory.createCliBuilder()
             OptionAccessor cli = builder.parse(args)
+
+            if (!cli) return
+
             if (!args || cli.h) {
                 builder.usage()
                 return
             }
 
+            /*
             List<String> arguments = cli.arguments()
+            logger.debug "Arguments: $arguments"
             if (!arguments || arguments.size() < 2) {
+                logger.debug "No arguments"
                 builder.usage()
                 return
             }
+            */
 
             //change the log level according to the cli arg
             String logLevel = cli.l
@@ -61,7 +69,7 @@ class Main {
                         Logger.getRootLogger().setLevel(Level.ERROR)
                         break
                     default:
-                        logger.info "Invalid log level: $logLevel - using default (info)"
+                        logger.info "Invalid log level: $logLevel - using default (debug)"
                 }
             }
 
@@ -75,37 +83,5 @@ class Main {
             logger.error(e.getMessage(), e)
             System.exit(-1)
         }
-    }
-
-
-    /**
-     * Creates the cli args from the respective analysis options (the ones with their definedByUser property set to true)
-     */
-    private static CliBuilder createCliBuilder() {
-
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option -> option.cli }
-
-        String usageHeader = "jdoop [OPTION]... ANALYSIS JAR\nAvailable analyses:\n${Helper.availableAnalyses(Doop.doopLogic).join(' ')}\nAvailable options:\n"
-
-        CliBuilder cli = new CliBuilder(
-			usage:  "jdoop [OPTION]... ANALYSIS JAR", 
-			header: "Available analyses:\n${Helper.availableAnalyses(Doop.doopLogic).join(' ')}"
-		)
-        cli.with {
-            h(longOpt: 'help', 'Display help and exit')
-            l(longOpt: 'level', 'Set the log level: debug, info or error (default: info)', args:1, argName: 'loglevel')
-            //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
-
-            cliOptions.each { AnalysisOption option ->
-                if (option.argName) {
-                    _(longOpt: option.name, option.description, args:1, argName:option.argName)
-                }
-                else {
-                    _(longOpt: option.name, option.description)
-                }
-            }
-        }
-
-        return cli
     }
 }

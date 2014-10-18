@@ -41,10 +41,10 @@ class Doop {
             name: "main",
             argName: 'mainClass'
         ),
-        new AnalysisOption<String>(
+        new AnalysisOption<List<String>>(
             id:"DYNAMIC",
-            description:"File with tab-separated data for Config:DynamicClass (multiple occurences allowed)",
-            value:null,
+            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a comma",
+            value:[],
             webUI:true,
             cli:true,
             name:"dynamic",
@@ -53,7 +53,7 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
-            description:"File with tamiflex data (multiple occurences disallowed)",
+            description:"File with tamiflex data",
             value:null,
             webUI:true,
             cli:true,
