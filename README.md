@@ -2,7 +2,7 @@
 
 This is a temporary readme file for the jdoop project (doop with a Java driver). 
 
-Currently, the project is a standalone Java application written in Groovy and managed by Gradle. 
+Currently, the project is both a standalone and a web application written in Groovy and managed by Gradle.
 
 Directory Structure
 -------------------
@@ -13,6 +13,7 @@ The project contains the following directories:
 * lib: the custom runtime dependencies of the project.
 * logic: the logic files (placed here and not in src/dist to allow running the analyses without installing the app).
 * src: the source files of the project.
+* webapp: the files of the web application.
 
 It also contains the gradle build files (build.gradle and settings.gradle) and the gradle invocation scripts (gradlew and gradlew.bat).
 
@@ -21,10 +22,10 @@ Dependecies
 
 Currently, the only requirement for either building or running jdoop is JDK 6 or higher. Neither Gradle nor Groovy is required to be installed manually.
 
-Build
------
+Build Standalone App
+--------------------
 
-Building the project refers to generating the runtime/distribution artifacts of jdoop.
+Building the standalone app refers to generating the runtime/distribution artifacts of jdoop.
 
 To do so, we issue the following:
 
@@ -42,8 +43,8 @@ To generate both (e.g. in order to release a new jdoop version and push it to th
 
 $ ./gradlew distZip distTar
 
-Install
--------
+Install Standalone App
+----------------------
 
 To install jdoop, we need to:
 
@@ -51,14 +52,21 @@ To install jdoop, we need to:
 * set the DOOP_HOME environment variable to point to the above directory.
 * setup JRE 6 or higher.
 
-Run
----
+Run Standalone App
+------------------
 
 We can invoke jdoop by issuing:
 
-$ DOOP_HOME>./bin/jdoop [OPTIONS] ANALYSIS JAR...
+$ DOOP_HOME>./bin/jdoop [OPTIONS]...
 
-The jdoop command line arguments will be similar if not identical to the arguments of the original doop.
+The jdoop command line arguments are similar to the arguments of the original doop, with the following difference: the
+analysis and the jar(s) are treated as options and not as arguments. For example, the doop invocation:
+
+$ >./run context-insensitive ./lib/asm-debug-all-4.1.jar
+
+should be given as follows in jdoop:
+
+$ DOOP_HOME>./bin/jdoop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
 
 The jdoop application creates two directories in the DOOP_HOME:
 
@@ -68,7 +76,7 @@ The jdoop application creates two directories in the DOOP_HOME:
 Local Install
 -------------
 
-Instead of generating the zip or tarball, we can instruct Gradle to install the application directly in our working directory:
+Instead of generating the zip or tarball, we can instruct Gradle to install the jdoop app directly in our working directory:
 
 $ ./gradlew installApp
 
@@ -85,18 +93,18 @@ $ ./gradlew run -Pargs="jdoop-command-line-arguments"
 
 For example, the following invocation:
 
-$ ./gradlew run -Pargs="context-insensitive ./lib/asm-debug-all-4.1.jar"
+$ ./gradlew run -Pargs="-a context-insensitive -j ./lib/asm-debug-all-4.1.jar"
 
 will run the context-insensitive analysis on the asm-debug-all-4.1 jar.
 
 
 Run Web UI
 ----------
-The first experimental version of the web UI has been added. Running:
+The run the web UI, we issue:
 
 $ ./gradlew jettyRun
 
-starts the embedded jetty web container. To visit the web app open:
+This starts the embedded jetty web container. To visit the web app open:
 
 http://localhost:8000/jdoop/pages/index.html
 
