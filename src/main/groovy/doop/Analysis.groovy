@@ -212,19 +212,21 @@ class Analysis implements Runnable {
 
         logger.info "Analysis Prologue"
 
-        //TODO: Support multiple values for DYNAMIC
         if (options.DYNAMIC.value) {
 
             //TODO: Check arity of DYNAMIC file
-
-            File dynImport = new File(outDir, "dynamic.import")
-            Helper.writeToFile dynImport, """option,delimeter,"\t"
+            List<String> dynFiles = options.DYNAMIC.value
+            dynFiles.eachWithIndex { String dynFile, Integer index ->
+                File dynImport = new File(outDir, "dynamic${index}.import")
+                Helper.writeToFile dynImport, """option,delimeter,"\t"
 option,hasColumnNames,false
 
-fromFile,"${options.DYNAMIC.value}",a,inv,b,type
+fromFile,"${dynFile}",a,inv,b,type
 toPredicate,Config:DynamicClass,type,inv"""
 
-            bloxbatch database, "-import $dynImport"
+                bloxbatch database, "-import $dynImport"
+            }
+
         }
 
         if (!options.INCREMENTAL.value) {
@@ -649,7 +651,17 @@ toPredicate,NegativeObjectFilter,string"""
 		props.setProperty("main_class", options.MAIN_CLASS as String)
 		props.setProperty("input_jar_files", jars[0] as String)
 		props.setProperty("library_jar_files", libraryJars.join(":"))
-		props.setProperty("dynamic_classes_file", options.DYNAMIC.value as String)
+
+        //Concatenate the dynamic files
+        if (options.DYNAMIC.value) {
+            List<String> dynFiles = options.DYNAMIC.value
+            File dynFileAll = new File(outDir, "all.dyn")
+            dynFiles.each {String dynFile ->
+                dynFileAll.append new File(dynFile).text
+            }
+            props.setProperty("dynamic_classes_file", dynFileAll as String)
+        }
+
 		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
 		props.setProperty("output_dir", averroesDir as String)
 		props.setProperty("jre", javaAverroesLibrary())
