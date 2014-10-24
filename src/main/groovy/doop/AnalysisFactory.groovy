@@ -2,7 +2,7 @@ package doop
 
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
-
+import doop.resolve.JarDependency
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
@@ -24,14 +24,24 @@ class AnalysisFactory {
         //Verify that the name of the analysis is valid
         checkName(name)
 
+        //Generate the id
+        String id = generateID(name, jars, options)
+
+        //Create the outDir if required
+        String outDir = "${Doop.doopHome}/out/$name/${id}"
+        File f = new File(outDir)
+        f.mkdirs()
+        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+
         Analysis analysis = new Analysis(
-            name   : name,
-            outDir : "${Doop.doopOut}/$name",
-            preprocessor: (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
-            options: options
+            name         : name,
+            id           : id,
+            outDir       : outDir,
+            preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
+            options      : options
         )
 
-        //Verify that the jars exist
+        //Resolve the jar dependencies
         checkJars(analysis, jars)
 		
 		//process the options
@@ -57,16 +67,6 @@ class AnalysisFactory {
 		//TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
 			
 		//TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
-		
-		//Generate the id
-		generateID(analysis)
-		
-		analysis.outDir = "${Doop.doopHome}/out/$name/${analysis.id}"
-
-        //Create the outDir if required
-        File f = new File(analysis.outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(analysis.outDir, "Could not create analysis directory: ${analysis.outDir}")
 
         return analysis
     }
@@ -81,14 +81,33 @@ class AnalysisFactory {
     }
 
     /**
-     * Given the list of jars (as filenames), the method validates that the jars exist and adds them as a List<File> in
-     * the analysis
+     * Generates the analysis ID, using its name, main class and jars.
+     *
+     * NOTE: With the jar dependency feature, the APP_REGEX is not being used (because it depends on the resolution
+     * of the jars, which depend on the ID).
+     * @param analysis
+     */
+    protected String generateID(String name, List<String> jars, Map<String, AnalysisOption> options) {
+        logger.debug "Generating analysis ID"
+
+        def idComponents = [name, options.MAIN_CLASS.value] + jars
+        String id = idComponents.collect { it.toString() }.join('-')
+        //Generate a sha256 cheksum of the id components
+        return Helper.checksum(id, "SHA-256")
+    }
+
+    /**
+     * Given the list of jars (as Strings), the method validates that the jars exist, using the jar resolution
+     * mechanism. It finally adds the jars as a List<JarDependency> in the analysis.
      */
     protected void checkJars(Analysis analysis, List<String> jars) {
         logger.debug "Verifying analysis input jars: $jars"
         if (!jars) throw new RuntimeException("No jars provided for the analysis")
         analysis.jars = jars.collect { String jar ->
-            Helper.checkFileOrThrowException(jar, "Invalid jar: $jar")
+            JarDependency jarDep = new JarDependency(jar, new File(analysis.outDir))
+            logger.debug "Resolving $jar"
+            jarDep.resolve()
+            return jarDep
         }
     }
 	
@@ -301,17 +320,6 @@ class AnalysisFactory {
 		}
     }
 	
-	protected void generateID(Analysis analysis) {
-		logger.debug "Generating analysis ID"
-		
-		Map<String, AnalysisOption> options = analysis.options
-		
-		def idComponents = [analysis.name, options.MAIN_CLASS.value, options.APP_REGEX.value] + analysis.jars
-		String id = idComponents.collect { it.toString() }.join('-')
-		//Generate a sha256 cheksum of the id components
-		analysis.id = Helper.checksum(id, "SHA-256")
-	}
-	
 	/**
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
@@ -405,18 +413,20 @@ class AnalysisFactory {
     }
 	
 	/**
-     * Determines application classes. If an app regex is not present, it generates one
+     * Determines application classes.
+     *
+     * If an app regex is not present, it generates one.
      */
     protected void checkAppRegex(Analysis analysis) {
         if (!analysis.options.APP_REGEX.value) {
             logger.debug "Generating app regex"
 			
 			Set excluded = ["*", "**"] as Set
-			analysis.jars.drop(1).each { File jar ->
-				excluded += Helper.getPackages(jar)
+			analysis.jars.drop(1).each { JarDependency jar ->
+				excluded += Helper.getPackages(jar.resolve())
 			}
 
-			Set<String> packages = Helper.getPackages(analysis.jars[0]) - excluded
+			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
 
 			analysis.options.APP_REGEX.value = packages.join(':')
         }

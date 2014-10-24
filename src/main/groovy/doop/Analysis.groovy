@@ -1,11 +1,11 @@
 package doop
-
 import doop.preprocess.Preprocessor
+import doop.resolve.Resolveable
+import doop.resolve.ResolvedFile
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  *
@@ -37,9 +37,9 @@ class Analysis implements Runnable {
     Map<String, AnalysisOption> options
 
     /**
-     * The jar files of the analysis
+     * The jar files/dependencies of the analysis
      */
-    List<File> jars
+    List<Resolveable> jars
 
     /**
      * The environment for running external commands
@@ -373,7 +373,7 @@ toPredicate,Config:DynamicClass,type,inv"""
     protected void runJPhantom(){
         logger.info "Running jphantom to generate complement jar"
 
-        String jar = jars[0]
+        String jar = jars[0].dependency
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -385,7 +385,8 @@ toPredicate,Config:DynamicClass,type,inv"""
         Helper.execJava(loader, "jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        jars[0] = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
+        File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
+        jars[0] = new ResolvedFile(f)
     }
 	
 	/**
@@ -415,9 +416,9 @@ toPredicate,Config:DynamicClass,type,inv"""
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
         }
         else {
-            List<File> deps = jars.drop(1)
+            List<Resolveable> deps = jars.drop(1)
             List<String> links = jreLinkArgs()
-            depArgs = deps.collect{ File f -> ["-l", f]}.flatten() + links.collect{ String arg -> ["-l", arg]}.flatten()
+            depArgs = deps.collect{ Resolveable r -> ["-l", r.resolve()]}.flatten() + links.collect{ String arg -> ["-l", arg]}.flatten()
         }
 
         String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
@@ -434,7 +435,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             params = params + ["-main", options.MAIN_CLASS.value]
         }
 
-        params = params + ["-d", factsDir, jars[0]]
+        params = params + ["-d", factsDir, jars[0].resolve()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -643,13 +644,13 @@ toPredicate,NegativeObjectFilter,string"""
 		String properties = "$outDir/averroes.properties"
 
 		//Determine the library jars
-		List<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
+		List<String> libraryJars = jars.drop(1).collect { it.resolve().toString() } + jreAverroesLibraries()
 		
 		//Create the averroes properties
 		Properties props = new Properties()
 		props.setProperty("application_includes", options.APP_REGEX.value as String)
 		props.setProperty("main_class", options.MAIN_CLASS as String)
-		props.setProperty("input_jar_files", jars[0] as String)
+		props.setProperty("input_jar_files", jars[0].resolve() as String)
 		props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
