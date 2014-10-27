@@ -1,7 +1,7 @@
 package doop
 import doop.preprocess.Preprocessor
-import doop.resolve.Resolveable
-import doop.resolve.ResolvedFile
+import doop.resolve.Dependency
+import doop.resolve.ResolvedDependency
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
@@ -39,7 +39,7 @@ class Analysis implements Runnable {
     /**
      * The jar files/dependencies of the analysis
      */
-    List<Resolveable> jars
+    List<Dependency> jars
 
     /**
      * The environment for running external commands
@@ -386,7 +386,7 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         //set the jar of the analysis to the complemented one
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        jars[0] = new ResolvedFile(f)
+        jars[0] = new ResolvedDependency(f)
     }
 	
 	/**
@@ -416,9 +416,9 @@ toPredicate,Config:DynamicClass,type,inv"""
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
         }
         else {
-            List<Resolveable> deps = jars.drop(1)
+            List<Dependency> deps = jars.drop(1)
             List<String> links = jreLinkArgs()
-            depArgs = deps.collect{ Resolveable r -> ["-l", r.resolve()]}.flatten() + links.collect{ String arg -> ["-l", arg]}.flatten()
+            depArgs = deps.collect{ Dependency r -> ["-l", r.resolve()]}.flatten() + links.collect{ String arg -> ["-l", arg]}.flatten()
         }
 
         String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
