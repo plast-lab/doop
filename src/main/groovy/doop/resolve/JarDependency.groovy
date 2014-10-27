@@ -1,35 +1,43 @@
 package doop.resolve
+
+import doop.Analysis
+
 /**
- * A jar dependency: a jar file that will ultimately reside in the local file system.
- *
- * Jar dependencies need to be resolved before being used.
+ * A jar dependency that can be resolved from:
+ * <ul>
+ *     <li>a local file</li>
+ *     <li>a remote URL</li>
+ *     <li>an Ivy dependency<li>
+ * </ul>
  *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 22/10/2014
  */
-class JarDependency implements Resolveable {
+class JarDependency implements Dependency {
 
     private File localFile
 
     String dependency
-    ResolutionContext ctx
-    ChainResolver resolver = new ChainResolver(new FileResolver(), new URLResolver())
+    Analysis analysis
+    ChainDependencyResolver resolver = new ChainDependencyResolver(new FileDependencyResolver(),
+                                                                   new URLDependencyResolver(),
+                                                                   new IvyDependencyResolver())
 
-    JarDependency(String dependency, File baseDir) {
+    JarDependency(String dependency, Analysis analysis) {
         this.dependency = dependency
-        ctx = new ResolutionContext(baseDir:baseDir)
+        this.analysis = analysis
     }
 
     //NOTE: Not thread-safe
     File resolve() {
         if (!localFile) {
-            localFile = resolver.resolve(dependency, ctx)
+            localFile = resolver.resolve(dependency, analysis)
         }
         return localFile
     }
 
     @Override
-    String subject() {
+    String dependency() {
         return dependency
     }
 

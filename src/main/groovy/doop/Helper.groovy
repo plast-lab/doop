@@ -229,4 +229,15 @@ class Helper {
         }
         return f
     }
+
+    /**
+     * Returns the stack trace of an exception as String.
+     */
+    static String stackTraceToString(Throwable t) {
+        StringBuilder sb = new StringBuilder()
+        t.getStackTrace().each { StackTraceElement elem ->
+            sb.append(elem.toString()).append('\n')
+        }
+        return sb.toString()
+    }
 }

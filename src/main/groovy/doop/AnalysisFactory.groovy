@@ -104,7 +104,7 @@ class AnalysisFactory {
         logger.debug "Verifying analysis input jars: $jars"
         if (!jars) throw new RuntimeException("No jars provided for the analysis")
         analysis.jars = jars.collect { String jar ->
-            JarDependency jarDep = new JarDependency(jar, new File(analysis.outDir))
+            JarDependency jarDep = new JarDependency(jar, analysis)
             logger.debug "Resolving $jar"
             jarDep.resolve()
             return jarDep
