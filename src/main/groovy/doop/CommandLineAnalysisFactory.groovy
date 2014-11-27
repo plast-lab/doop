@@ -13,7 +13,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     /**
      * Processes the cli args and generates a new analysis.
      *
-     * Note: To get the value of a cl option as a List, you need to append an s to its short name
+     * Note: To get the value of a cl option as a List, we need to append an s to its short name
      * (e.g., the short name of the DYNAMIC option is d, so we invoke ds). Obscure Cli builder feature.
      */
     Analysis newAnalysis(OptionAccessor cli) {
@@ -24,31 +24,28 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the jars of the analysis (short option: j)
         List<String> jars = cli.js
 
-        Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
+        Map<String, AnalysisOption> options = Doop.createAnalysisOptions()
         options.findAll { Map.Entry<String, AnalysisOption> entry ->
             entry.value.cli //get the cli options
         }.each { Map.Entry<String, AnalysisOption> entry ->
             AnalysisOption option = entry.value
-            if (option.id == "DYNAMIC") {
-                //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
-                //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
-                option.value = cli.ds
-            }
-            else {
-                String cliOptionName = option.name
-                def optionValue = cli[(cliOptionName)]
-                if (optionValue) {
-                    //Only true-ish values are of interest (false or null values are ignored)
-                    if (option.argName) {
-                        //if the cl option has an arg, the value of this arg defines the value of the respective
-                        // analysis option
-                        option.value = optionValue
-                    }
-                    else {
-                        //the cl option has no arg and thus it is a boolean flag, toggling the default value of
-                        // the respective analysis option
-                        option.value = !option.value
-                    }
+            String cliOptionName = option.name
+            def optionValue = cli[(cliOptionName)]
+            if (optionValue) {
+                if (option.id == "DYNAMIC") {
+                    //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
+                    //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
+                    option.value = cli.ds
+                }
+                else if (option.argName) { //Only true-ish values are of interest (false or null values are ignored)
+                    //if the cl option has an arg, the value of this arg defines the value of the respective
+                    // analysis option
+                    option.value = optionValue
+                }
+                else {
+                    //the cl option has no arg and thus it is a boolean flag, toggling the default value of
+                    // the respective analysis option
+                    option.value = !option.value
                 }
             }
         }

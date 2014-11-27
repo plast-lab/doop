@@ -3,8 +3,13 @@ apply plugin: 'application'
 apply plugin: 'war'
 apply plugin: 'jetty'
 
+buildscript {
+    dependencies {
+        classpath files("$projectDir/build/classes/main")
+    }
+}
+
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-version = "0.9"
 sourceCompatibility = "1.6"
 
 //For the standalone app
@@ -48,6 +53,16 @@ dependencies {
 
     providedRuntime "javax.servlet:servlet-api:2.5"            //Provided by the servlet container
 }
+
+task createProperties(dependsOn: classes) {
+
+    description "Creates the default doop properties file"
+    ext.file = file("$projectDir/doop.properties")
+    doLast {
+        doop.Helper.createDefaultProperties(file)
+    }
+}
+
 
 applicationDistribution.from(file("$projectDir/logic")) {
     into "logic"

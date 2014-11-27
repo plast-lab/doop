@@ -313,7 +313,7 @@ class AnalysisFactory {
 		if (options.INCREMENTAL.value) {
 			logger.debug "The INCREMENTAL option has been enabled"
 		}
-		
+
 		if (options.DYNAMIC.value) {
 			List<String> dynFiles = options.DYNAMIC.value
             dynFiles.each { String dynFile ->
