@@ -70,6 +70,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit')
+            r(longOpt: 'remote', 'Perform actions on the specified remote doop server', args:1, argName:'url')
             l(longOpt: 'level', 'Set the log level: debug, info or error (default: debug)', args:1, argName: 'loglevel')
             //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
             a(longOpt: 'analysis', "The name of the analysis: ${Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(',')}",
