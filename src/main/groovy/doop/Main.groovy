@@ -74,10 +74,18 @@ class Main {
             }
 
             Analysis analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
-            logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
-            logger.debug analysis
 
-            analysis.run()
+            if (cli.r) {
+                String url = cli.r
+                logger.info "Posting ${analysis.name} analysis to remote server: $url"
+                new Client(url).postNewAnalysis(analysis)
+
+            }
+            else {
+                logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
+                logger.debug analysis
+                analysis.run()
+            }
 
         } catch (e) {
             logger.error(e.getMessage(), e)

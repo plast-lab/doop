@@ -528,6 +528,7 @@ class Doop {
 
     /**
      * Overrides the given analysis options with the ones contained in the given properties.
+     * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
      * @param options - the options to be overridden
      * @param properties - the properties to use
      */

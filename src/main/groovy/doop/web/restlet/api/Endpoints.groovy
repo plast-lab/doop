@@ -14,7 +14,7 @@ class Endpoints extends Application {
     Restlet createInboundRoot() {
         Router router = new Router(getContext())
 
-        router.attach "/analyses", Analyses
-        router.attach "/analyses/{id}", Analysis
+        router.attach "/analyses", AnalysesResource
+        router.attach "/analyses/{id}", AnalysisResource
     }
 }
