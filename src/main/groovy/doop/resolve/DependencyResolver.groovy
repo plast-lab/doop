@@ -3,7 +3,7 @@ package doop.resolve
 import doop.Analysis
 
 /**
- * A resolver for analysis' dependencies (jars).
+ * A resolver for the dependencies (jars) of an analysis.
  *
  * Given a string representation of a dependency (file name, url, ivy dependency, etc), it resolves the corresponding
  * local File, performing all the involved steps automatically (e.g. download, copy, etc).
