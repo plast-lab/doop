@@ -488,10 +488,66 @@ class Doop {
         Helper.checkDirectoryOrThrowException(doopOut, "Could not create ouput directory: $doopOut ")
     }
 
+    /**
+     * Creates the default analysis options.
+     * @return Map<String, AnalysisOptions>.
+     */
     static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
         Map<String, AnalysisOption> options = [:]
         ANALYSIS_OPTIONS.each { AnalysisOption option -> options[(option.id)] = option }
         return options
+    }
+
+    /**
+     * Creates the analysis options.
+     * This method checks for a doop.properties file: (a) in the user's home directory or (b) in the Doop home
+     * directory and if such a file is present, its options will override the default ones.
+     * @return Map<String, AnalysisOptions>.
+     */
+    static Map<String, AnalysisOption> createAnalysisOptions() {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+
+        Properties props = new Properties()
+
+        def candidates = [System.getProperty("user.home") + "/doop.properties", "$doopHome/doop.properties"]
+        for (c in candidates) {
+            try {
+                File f = Helper.checkFileOrThrowException(c, "Not a valid file: $c")
+                f.withReader { Reader r -> props.load(r)}
+                overrideAnalysisOptionsFromProperties(options, props)
+                break
+            }
+            catch (e) {
+                // do nothing
+            }
+        }
+
+        return options
+
+    }
+
+    /**
+     * Overrides the given analysis options with the ones contained in the given properties.
+     * @param options - the options to be overridden
+     * @param properties - the properties to use
+     */
+    static void overrideAnalysisOptionsFromProperties(Map<String, AnalysisOption> options, Properties properties) {
+        if (properties.size() > 0) {
+            properties.each { Map.Entry<String, String> entry->
+                AnalysisOption option = options.get(entry.key)
+                if (option && entry.value && entry.value.trim().length() > 0) {
+                    if (option.id == "DYNAMIC") {
+                        option.value = entry.value.split(",").collect{ String s -> s.trim() }
+                    }
+                    else if (option.argName) {
+                        option.value = entry.value
+                    }
+                    else {
+                        option.value = Boolean.parseBoolean(entry.value)
+                    }
+                }
+            }
+        }
     }
 
 }
