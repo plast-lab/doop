@@ -373,7 +373,7 @@ toPredicate,Config:DynamicClass,type,inv"""
     protected void runJPhantom(){
         logger.info "Running jphantom to generate complement jar"
 
-        String jar = jars[0].dependency
+        String jar = jars[0].resolve().toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
