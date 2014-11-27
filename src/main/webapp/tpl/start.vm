@@ -1,138 +1,16 @@
-<div class="well">
-    <h2>Step 1: Create new analysis</h2>
-	
-	<h4>Main Analysis Options</h4>
+<div class="container">
 
-    <form class="form-horizontal" id="analysis-form" role="form" method="post" enctype="multipart/form-data" action="/jdoop/pages/analysis">
+    <div>
+        <h4><span class="text-muted">jdoop</span> <span class="text-muted">|</span> <a href="list.html">Analyses</a></h4>
+    </div>
 
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="name">Analysis</label>
-			<div class="col-sm-10">
-				<select name="name" id="name" class="form-control">
-					#foreach($analysis in $analyses)
-					<option>$analysis</option>
-					#end
-				</select>
-			</div>
-		</div>
-		
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="jars">Jars</label>
-			<div class="col-sm-10">
-				<input type="file" id="jars" name="jars">
-			</div>
-		</div>
+    <div class="page-header">
+        <h3>Analysis <small>$analysis.id</small></h3>
+    </div>
 
-        #foreach($option in $options)
-        <div class="form-group">
-            <label class="col-sm-2 control-label" for="$!option.id">$!option.name</label>			
-            <div class="col-sm-10">
-                #if($option.isFile)
-                    <input type="file" id="$!option.id" name="$!option.id">
-                    <span class="help-block">$!option.description</span>
-                #else
-                    #if($option.argName)
-                    <input type="text" class="form-control input-block-level" id="$!option.id" name="$!option.id">
-                    <span class="help-block">$!option.description</span>
-                    #else
-                    <div class="checkbox">
-                    <input type="checkbox" id="$!option.id" name="$!option.id"> $!option.description
-                    </div>
-                    #end
-                #end
-            </div>
-        </div>
-        #end
-		
-		<h4>
-			<button class="btn btn-xs btn-default" type="button" data-toggle="collapse" data-target="#additionalOptions">
-				<span class="glyphicon glyphicon-plus"></span>
-			</button> 
-			Additional Analysis Options
-		</h4>
-		<div id="additionalOptions" class="collapse">
-			#foreach($option in $advancedOptions)
-			<div class="form-group">
-				<label class="col-sm-4 control-label" for="$!option.id">$!option.name</label>			
-				<div class="col-sm-8">
-					#if($option.argName)
-					<input type="text" class="form-control input-block-level" id="$!option.id" name="$!option.id">
-					<span class="help-block">$!option.description</span>
-					#else
-					<div class="checkbox">
-					<input type="checkbox" id="$!option.id" name="$!option.id"> $!option.description
-					</div>
-					#end
-				</div>
-			</div>
-			#end
-		</div>
+    <div class="well">
 
-        <div class="pull-right">
-		    <button type="submit" class="btn btn-success" data-loading-text="Submitting...">Create Analysis</button>
-        </div>
-        <p>&nbsp;</p>
-    </form>
+        Starting analysis...
+
+    </div>
 </div>
-
-<script>
-    $(function() {
-        $(document).on("submit", "#analysis-form", function () {
-
-            console.log("submitting form");
-
-            var form = $(this);
-            var btn = form.find("button[type=submit].btn-success");
-            btn.button('loading');
-
-            var notyOpts = {
-                layout:'bottom',
-                theme:'defaultTheme',
-                maxVisible:5,
-                dismissQueue:true
-            };
-
-            var showNoty = function(opts) {
-                $.extend(opts, notyOpts);
-                noty(opts);
-            };
-
-            form.ajaxSubmit({
-                dataType : "json",
-                success : function(json) {
-                    showNoty({
-                        type: 'success',
-                        text: "Created analysis " + json.id + ". Please wait...",
-                        timeout:3000
-                    });
-
-                    document.location = "/jdoop/pages/analysis.html?id=" + json.id
-                },
-                error : function(jqXhr, textStatus, errorThrown) {
-
-                    var msg;
-
-                    if (textStatus == "abort") {
-                        msg = "Aborted";
-                    }
-                    else {
-                        msg = textStatus + " - " + errorThrown + ":" + jqXhr.responseText;
-                    }
-
-                    showNoty({
-                        type: 'error',
-                        text: msg,
-                        timeout:9000
-                    });
-
-                    btn.button('reset');
-                },
-                uploadProgress : function(event, position, total, percentComplete) {
-                    btn.text("Submitting... " + percentComplete + "%");
-                }
-            });
-
-            return false;
-        });
-    });
-</script>

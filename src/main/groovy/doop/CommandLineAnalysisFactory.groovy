@@ -75,7 +75,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             h(longOpt: 'help', 'Display help and exit')
             l(longOpt: 'level', 'Set the log level: debug, info or error (default: debug)', args:1, argName: 'loglevel')
             //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
-            a(longOpt: 'analysis', "The name of the analysis: ${Helper.availableAnalyses(Doop.doopLogic).join(',')}",
+            a(longOpt: 'analysis', "The name of the analysis: ${Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(',')}",
               args:1, argName:"name", required:true)
             j(longOpt: 'jar', "The jar files to analyze. Separate multiple jars with a comma", args:Option.UNLIMITED_VALUES, argName: "jar",
               valueSeparator: ",", required:true)

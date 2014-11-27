@@ -2,7 +2,8 @@ package doop
 
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
-import doop.resolve.JarDependency
+import doop.resolve.Dependency
+import doop.resolve.StringDependency
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
@@ -97,17 +98,32 @@ class AnalysisFactory {
     }
 
     /**
-     * Given the list of jars (as Strings), the method validates that the jars exist, using the jar resolution
-     * mechanism. It finally adds the jars as a List<JarDependency> in the analysis.
+     * Given the list of jars (as Strings or Dependency objects), the method validates that the jars exist,
+     * using the jar resolution mechanism. It finally adds the jars as a List<Dependency> in the analysis.
      */
-    protected void checkJars(Analysis analysis, List<String> jars) {
+    protected void checkJars(Analysis analysis, List jars) {
         logger.debug "Verifying analysis input jars: $jars"
         if (!jars) throw new RuntimeException("No jars provided for the analysis")
-        analysis.jars = jars.collect { String jar ->
-            JarDependency jarDep = new JarDependency(jar, analysis)
-            logger.debug "Resolving $jar"
-            jarDep.resolve()
-            return jarDep
+        analysis.jars = jars.collect { Object jar ->
+            if (jar) {
+                if (jar instanceof String) {
+                    StringDependency jarDep = new StringDependency(jar, analysis)
+                    logger.debug "Resolving $jar"
+                    jarDep.resolve()
+                    return jarDep
+                }
+                else if (jar instanceof Dependency) {
+                    logger.debug "Resolving $jar"
+                    jar.resolve()
+                    return jar
+                }
+                else {
+                    throw new RuntimeException("Cannot resolve jar dependency ${jar.getClass()}: $jar")
+                }
+            }
+            else {
+                throw new RuntimeException("Null value in analysis jars")
+            }
         }
     }
 	
@@ -422,7 +438,7 @@ class AnalysisFactory {
             logger.debug "Generating app regex"
 			
 			Set excluded = ["*", "**"] as Set
-			analysis.jars.drop(1).each { JarDependency jar ->
+			analysis.jars.drop(1).each { StringDependency jar ->
 				excluded += Helper.getPackages(jar.resolve())
 			}
 

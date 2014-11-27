@@ -3,7 +3,8 @@ package doop.resolve
 import doop.Analysis
 
 /**
- * A jar dependency that can be resolved from:
+ * A jar dependency that is expressed as a String.
+ * It can be resolved from:
  * <ul>
  *     <li>a local file</li>
  *     <li>a remote URL</li>
@@ -13,7 +14,7 @@ import doop.Analysis
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 22/10/2014
  */
-class JarDependency implements Dependency {
+class StringDependency implements Dependency {
 
     private File localFile
 
@@ -23,7 +24,7 @@ class JarDependency implements Dependency {
                                                                    new URLDependencyResolver(),
                                                                    new IvyDependencyResolver())
 
-    JarDependency(String dependency, Analysis analysis) {
+    StringDependency(String dependency, Analysis analysis) {
         this.dependency = dependency
         this.analysis = analysis
     }
