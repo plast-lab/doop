@@ -106,6 +106,6 @@ $ ./gradlew jettyRun
 
 This starts the embedded jetty web container. To visit the web app open:
 
-http://localhost:8000/jdoop/pages/index.html
+http://localhost:8000/jdoop/web/index.html
 
 in your web browser.
