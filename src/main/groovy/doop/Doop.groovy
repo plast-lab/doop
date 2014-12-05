@@ -76,6 +76,22 @@ class Doop {
             value:false,
 			forPreprocessor:true
         ),
+        //LATEST: NO_MODELING_OF_NUMS_OR_NULL
+        new AnalysisOption<String>(
+            id:"NO_MODELING_OF_NUMS_OR_NULL",
+            value:true, // enabled by default in run script
+            forPreprocessor:true
+        ),
+        //LATEST: INCLUDE_IMPLICITLY_REACHABLE_CODE
+        new AnalysisOption<String>(
+            id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
+            value:true,  // enabled by default in run script
+            webUI: true,
+            cli: true,
+            name:"exclude-implicitly-reachable-code",
+            forPreprocessor:true,
+            isAdvanced: true
+        ),
         new AnalysisOption<Boolean>(
             id:"PADDLE_COMPAT",
             value:false,

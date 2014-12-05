@@ -241,6 +241,10 @@ class AnalysisFactory {
             logger.debug "The REFINED_REFLECTION_OBJECTS option has been enabled"
         }
 
+        if (!options.INCLUDE_IMPLICITLY_REACHABLE_CODE.value) {
+            logger.debug("The INCLUDE_IMPLICITLY_REACHABLE_CODE option has been disabled")
+        }
+
         if (!options.MERGE_STRING_BUFFERS.value) {
             logger.debug "The MERGE_STRING_BUFFERS option has been disabled"
         }

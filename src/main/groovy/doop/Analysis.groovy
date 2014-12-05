@@ -1,4 +1,5 @@
 package doop
+
 import doop.preprocess.Preprocessor
 import doop.resolve.Dependency
 import doop.resolve.ResolvedDependency
@@ -191,6 +192,9 @@ class Analysis implements Runnable {
                 }
 
                 runSoot()
+
+                //LATEST: delete cacheFacts dir
+                FileUtils.deleteQuietly(cacheFacts)
 
                 cacheFacts.mkdirs()
                 Helper.moveDirectoryContents(factsDir, cacheFacts)
@@ -468,9 +472,22 @@ toPredicate,Config:DynamicClass,type,inv"""
                 bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/fact-declarations.logic"
             }
 
+            //LATEST: Load schema addons logic
+            logger.info "Loading schema addons"
+            Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/schema-addons.logic"
+
+            }
+
             logger.info "Loading facts"
             FileUtils.deleteDirectory(factsDir)
             Helper.execCommand("ln -s $cacheFacts $factsDir", commandsEnvironment)
+
+            //LATEST: Use a local facts dir
+            File localFacts = new File("facts")
+            FileUtils.deleteQuietly(localFacts)
+            Helper.execCommand("ln -s $cacheFacts $localFacts", commandsEnvironment)
+
 
             FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
             FileUtils.touch(new File(factsDir, "Properties.facts"))
@@ -487,15 +504,30 @@ toPredicate,Config:DynamicClass,type,inv"""
                 bloxbatch cacheDatabase, "-import $importFile"
             }
 
+            //LATEST: Evaluate the import logic
+            factsTime += Helper.execWithTiming(logger) {
+                bloxbatch "-execute -file ${Doop.doopHome}/logic/import.logic"
+            }
+
             bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"soot-fact-generation time (sec)\", $sootTime).'"
             bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"loading facts time (sec)\", $factsTime).'"
+
+            //LATEST: Load schema addons
+            logger.info "Loading schema addons delta"
+            Helper.execWithTiming(logger) {
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/library/schema-addons-delta.logic"
+            }
+
+            //LATEST: Remove local facts dir
+            FileUtils.deleteQuietly(localFacts)
 
             FileUtils.deleteQuietly(factsDir)
 
             if (options.MAIN_CLASS.value) {
                 String mainClass = options.MAIN_CLASS.value
                 logger.info "Setting main class to $mainClass"
-                bloxbatch cacheDatabase, "-execute '+MainClass(x) <- ClassType(x), Type:Value(x:\"$mainClass\").'"
+                //LATEST: fqn
+                bloxbatch cacheDatabase, "-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:\"$mainClass\").'"
             }
 
             if (options.SET_BASED.value) {
@@ -510,6 +542,8 @@ toPredicate,Config:DynamicClass,type,inv"""
      */
     protected void refine() {
 
+        //LATEST: made changes to reflect the latest refine script
+
         //The files and their contents
         Map<String, GString> files = [
             "refine-site": """option,delimiter,","
@@ -517,8 +551,8 @@ option,hasColumnNames,false
 option,quotedValues,true
 option,escapeQuotedValues,true
 
-fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSourceRef,CallGraphEdgeSourceRef
-toPredicate,SiteToRefine,CallGraphEdgeSourceRef""",
+fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
+toPredicate,SiteToRefine,CallGraphEdgeSource""",
 
             "negative-site": """option,delimiter,","
 option,hasColumnNames,false
@@ -531,8 +565,8 @@ option,hasColumnNames,false
 option,quotedValues,true
 option,escapeQuotedValues,true
 
-fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocationRef,HeapAllocationRef
-toPredicate,ObjectToRefine,HeapAllocationRef""",
+fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
+toPredicate,ObjectToRefine,HeapAllocation""",
 
             "negative-object": """option,delimiter,","
 option,hasColumnNames,false
@@ -627,8 +661,12 @@ toPredicate,NegativeObjectFilter,string"""
         //TODO: deal with JRE versions other than system
 
         if (options.JRE.value == "system") {
+            //LATEST: don't include jars if jre is system
+            /*
             String javaHome = System.getProperty("java.home")
             return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+            */
+            return "system"
         }
         else {
             throw new RuntimeException("Only system JRE is currently supported")
