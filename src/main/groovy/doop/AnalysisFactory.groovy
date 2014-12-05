@@ -93,6 +93,8 @@ class AnalysisFactory {
 
         def idComponents = [name, options.MAIN_CLASS.value] + jars
         String id = idComponents.collect { it.toString() }.join('-')
+
+
         //Generate a sha256 cheksum of the id components
         return Helper.checksum(id, "SHA-256")
     }

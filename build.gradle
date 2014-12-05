@@ -3,14 +3,15 @@ apply plugin: 'application'
 apply plugin: 'war'
 apply plugin: 'jetty'
 
+//applicationDefaultJvmArgs = ["-Xmx2048m"]
+sourceCompatibility = "1.6"
+targetCompatibility = "1.6"
+
 buildscript {
     dependencies {
         classpath files("$projectDir/build/classes/main")
     }
 }
-
-//applicationDefaultJvmArgs = ["-Xmx2048m"]
-sourceCompatibility = "1.6"
 
 //For the standalone app
 mainClassName = 'doop.Main'
@@ -49,13 +50,14 @@ dependencies {
             "org.restlet.jee:org.restlet:2.2.2",               //Restlet web framework
             "org.restlet.jee:org.restlet.ext.fileupload:2.2.2" //Restlet extension for file uploads
 
+    compile files('lib/sootclasses-2.5.0.jar')                 //Soot is a compile time dependency
+
 
     //RESTful doop client - EXPERIMENTAL
     compile "org.codehaus.groovy.modules.http-builder:http-builder:0.7.2",
             "org.apache.httpcomponents:httpmime:4.3.3"
 
-
-    runtime fileTree(dir: 'lib', include:'*.jar')              //All jars in the lib directory
+    runtime files('lib/jphantom-1.1-jar-with-dependencies.jar', 'lib/averroes-no-properties.jar')
 
     runtime "org.restlet.jee:org.restlet.ext.servlet:2.2.2"    //Servlet adapter for Restlet framework
 
