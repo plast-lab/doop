@@ -25,11 +25,11 @@ class ImportGenerator {
     void generate() {
 
         if (type==Type.TEXT) {
-            w.write """option,delimeter,"\t"\n"""
+            w.write """option,delimiter,"\t"\n"""
             w.write "option,hasColumnNames,false\n"
         }
         else {
-            w.write """option,delimeter,","\n"""
+            w.write """option,delimiter,","\n"""
             w.write "option,hasColumnNames,false\n"
             w.write "option,quotedValues,true\n"
             w.write "option,escapeQuotedValues,true\n"
