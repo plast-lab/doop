@@ -420,9 +420,15 @@ toPredicate,Config:DynamicClass,type,inv"""
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
         }
         else {
-            List<Dependency> deps = jars.drop(1)
+            List<String> deps = jars.drop(1).collect{ Dependency r -> ["-l", r.resolve()]}.flatten()
             List<String> links = jreLinkArgs()
-            depArgs = deps.collect{ Dependency r -> ["-l", r.resolve()]}.flatten() + links.collect{ String arg -> ["-l", arg]}.flatten()
+            if (links.isEmpty()) {
+                depArgs = deps + ["-lsystem"]
+            }
+            else {
+                depArgs = deps + links.collect{ String arg -> ["-l", arg]}.flatten()
+            }
+
         }
 
         String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
@@ -443,11 +449,14 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
+        /*
         ClassLoader loader = sootClassLoader()
         sootTime = Helper.execWithTiming(logger) {
             //we invoke the main method reflectively to avoid adding soot as a compile-time dependency
             Helper.execJava(loader, "Main", params)
         }
+        */
+        doop.soot.Main.main(params)
     }
 
 
@@ -632,7 +641,7 @@ toPredicate,NegativeObjectFilter,string"""
      */
     private ClassLoader phantomClassLoader() {
         //TODO: for now, we hard-code the jphantom jar
-        String jphantom = "${Doop.doopHome}/lib/jphantom-1.0-jar-with-dependencies.jar"
+        String jphantom = "${Doop.doopHome}/lib/jphantom-1.1-jar-with-dependencies.jar"
         File f = Helper.checkFileOrThrowException(jphantom, "jphantom jar missing or invalid: $jphantom")
         URL[] classpath = [f.toURI().toURL()]
         return new URLClassLoader(classpath)
@@ -666,7 +675,7 @@ toPredicate,NegativeObjectFilter,string"""
             String javaHome = System.getProperty("java.home")
             return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
             */
-            return "system"
+            return []
         }
         else {
             throw new RuntimeException("Only system JRE is currently supported")
