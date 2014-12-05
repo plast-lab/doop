@@ -66,7 +66,7 @@ class Analysis implements Runnable {
      */
     @Override
     void run() {
-        Helper.execWithTiming (logger) {
+        timing {
 			
 			initAnalysis()
 			
@@ -77,7 +77,7 @@ class Analysis implements Runnable {
 			analyze()
 
             long dbSize = FileUtils.sizeOfDirectory(database) * 1024
-            bloxbatch database, "-execute '+Stats:Runtime(\"100@ disk footprint (KB)\", $size).'"
+            //bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
             //TODO: We don't need to link-result, do we?
 
@@ -195,9 +195,9 @@ class Analysis implements Runnable {
 
                 //LATEST: delete cacheFacts dir
                 FileUtils.deleteQuietly(cacheFacts)
-
                 cacheFacts.mkdirs()
-                Helper.moveDirectoryContents(factsDir, cacheFacts)
+                //Helper.moveDirectoryContents(factsDir, cacheFacts)
+                Helper.copyDirectoryContents(factsDir, cacheFacts)
             }
 
             logger.info "Database initialization"
@@ -207,6 +207,86 @@ class Analysis implements Runnable {
 
         database.mkdirs()
         FileUtils.copyDirectory(cacheDatabase, database)
+    }
+
+    protected void initDatabase() {
+
+        if (options.INCREMENTAL.value) {
+            File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
+            logger.info "Copying precomputed database of library from $libDatabase"
+            timing {
+                Helper.copyDirectoryContents(libDatabase, cacheDatabase)
+            }
+        }
+        else {
+
+            logger.info "Creating database in $cacheDatabase"
+            timing {
+                bloxbatch cacheDatabase, "-create -overwrite -blocks base"
+            }
+
+            logger.info "Loading fact declarations"
+            timing {
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/fact-declarations.logic"
+            }
+
+            //LATEST: Load schema addons logic
+            logger.info "Loading schema addons"
+            timing {
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/schema-addons.logic"
+
+            }
+
+            logger.info "Loading facts"
+            FileUtils.deleteQuietly(new File(cacheDatabase, "facts"))
+            Helper.execCommand("ln -s $cacheFacts $cacheDatabase/facts", commandsEnvironment)
+            //LATEST: Use a local facts dir
+            FileUtils.deleteQuietly(new File("facts"))
+            Helper.execCommand("ln -s $cacheFacts facts", commandsEnvironment)
+
+            FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
+            FileUtils.touch(new File(factsDir, "Properties.facts"))
+
+            File importFile = new File(outDir, "fact-declarations.import")
+            importFile.withWriter { Writer writer ->
+                ImportGenerator.Type type = options.CSV.value ? ImportGenerator.Type.CSV : ImportGenerator.Type.TEXT
+                new ImportGenerator(type, writer).generate()
+            }
+            Helper.checkFileOrThrowException(importFile, "Could not generate import file: $importFile")
+
+            factsTime = timing {
+                bloxbatch cacheDatabase, "-import $importFile"
+            }
+
+            //LATEST: Evaluate the import logic
+            factsTime += timing {
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/import.logic"
+            }
+
+            //bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
+            //bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
+
+            //LATEST: Load schema addons
+            logger.info "Loading schema addons delta"
+            timing {
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/library/schema-addons-delta.logic"
+            }
+
+            //LATEST: Remove local facts dir
+            FileUtils.deleteQuietly(new File("facts"))
+            FileUtils.deleteQuietly(new File(cacheDatabase, "facts"))
+
+            if (options.MAIN_CLASS.value) {
+                String mainClass = options.MAIN_CLASS.value
+                logger.info "Setting main class to $mainClass"
+                //LATEST: fqn
+                //bloxbatch cacheDatabase, """-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:"$mainClass").'"""
+            }
+
+            if (options.SET_BASED.value) {
+                runSetBased()
+            }
+        }
     }
 
     /**
@@ -235,12 +315,12 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         if (!options.INCREMENTAL.value) {
             logger.info "Loading $name declarations"
-            Helper.execWithTiming(logger) {
-                bloxbatch database, "-addBlock -file ${outDir}/${name}-declations.logic"
+            timing {
+                bloxbatch database, "-addBlock -file ${outDir}/${name}-declarations.logic"
 
                 if (options.SANITY.value) {
                     logger.info "Loading sanity rules"
-                    Helper.execWithTiming(logger) {
+                    timing {
                         bloxbatch database, "-addBlock -file ${Doop.doopLogic}/library/sanity.logic"
                     }
                 }
@@ -248,33 +328,33 @@ toPredicate,Config:DynamicClass,type,inv"""
         }
 
         logger.info "Loading $name delta rules"
-        long deltaTiming = Helper.execWithTiming(logger) {
+        long deltaTiming = timing {
             bloxbatch database, "-execute -file ${outDir}/${name}-delta.logic"
         }
-        bloxbatch database, "-execute '+Stats:Runtime(\"$name delta rules time (sec)\", $deltaTiming).'"
+        //bloxbatch database, """-execute '+Stats:Runtime("$name delta rules time (sec)", $deltaTiming).'"""
 
         if (!options.DISABLE_REFLECTION.value) {
             logger.info "Loading reflection delta rules"
-            long time1 = Helper.execWithTiming(logger) {
+            long time1 = timing {
                 bloxbatch database, "-execute -file ${outDir}/reflection-delta.logic"
             }
 
             logger.info "Loading allocations delta rules"
-            long time2 = Helper.execWithTiming(logger) {
+            long time2 = timing {
                 bloxbatch database, "-execute -file ${Doop.doopLogic}/library/reflection/allocations-delta.logic"
             }
 
             long total = time1 + time2
-            bloxbatch database, "-execute '+Stats:Runtime(\"reflection delta rules time (sec)\", $total).'"
+            //bloxbatch database, """-execute '+Stats:Runtime("reflection delta rules time (sec)", $total).'"""
         }
 
         logger.info "Loading client delta rules"
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-execute -file ${outDir}/exception-flow-delta.logic"
         }
 
         logger.info "Loading auxiliary delta rules"
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-execute -file ${outDir}/auxiliary-heap-allocations-delta.logic"
         }
 
@@ -289,10 +369,10 @@ toPredicate,Config:DynamicClass,type,inv"""
         if (!options.INCREMENTAL.value) {
             //TODO: Do we need the benchmark script?
             //TODO: Read the bloxopts
-            long time = Helper.execWithTiming(logger) {
+            long time = timing {
                 bloxbatch database, "-addBlock -file ${outDir}/${name}.logic"
             }
-            bloxbatch database, "-execute '+Stats:Runtime(\"benchmark time(sec)\", $time).'"
+            //bloxbatch database, """-execute '+Stats:Runtime("benchmark time(sec)", $time).'"""
         }
 
         //TODO: Run client extensions
@@ -310,30 +390,32 @@ toPredicate,Config:DynamicClass,type,inv"""
         preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
 
-        long time1 = Helper.execWithTiming(logger) {
-            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
+        long time1 = timing {
+            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic" // >/dev/null"
         }
         long time2 = 0
 
         if (options.STATS.value) {
             preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
-            time2 = Helper.execWithTiming(logger) {
-                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
+            time2 = timing {
+                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic" // >/dev/null"
             }
         }
 
-        long time3 = Helper.execWithTiming(logger) {
-            bloxbatch database, "execute -file ${outDir}/statistics-delta.logic >/dev/null"
+        long time3 = timing {
+            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic" // >/dev/null"
         }
 
         long total = time1 + time2 + time3
-        bloxbatch database, "-execute '+Stats:Runtime(\"statistics time (sec)\", $total).'"
+        //bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
 
         logger.info "Runtime metrics"
-        bloxbatch database, """-query Stats:Runtime | sort -n | sed -r 's/^ +([0-9]+[ab]?@ )?//' | awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
+        //bloxbatch database, """-query Stats:Runtime | sort -n | sed -r 's/^ +([0-9]+[ab]?@ )?//' | awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
+        bloxbatch database, "-query Stats:Runtime"
 
         logger.info "Statistics"
-        bloxbatch database, """-query Stats:Metrics | sort -n | sed -r 's/^ +[0-9]+[ab]?@ //' | awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
+        //bloxbatch database, """-query Stats:Metrics | sort -n | sed -r 's/^ +[0-9]+[ab]?@ //' | awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
+        bloxbatch database, "-query Stats:Metrics"
     }
 
     /**
@@ -344,23 +426,23 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         preprocessor.preprocess(this, "${Doop.doopLogic}/${name}", "refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
 
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
         }
 
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-exportCsv TempSiteToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-exportCsv TempNegativeSiteFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-exportCsv TempObjectToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
-        Helper.execWithTiming(logger) {
+        timing {
             bloxbatch database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
@@ -370,6 +452,73 @@ toPredicate,Config:DynamicClass,type,inv"""
         analyze()
     }
 
+
+    /**
+     * Activates refinement logic.
+     * Mimics the behavior of the bin/refine script.
+     */
+    protected void refine() {
+
+        //LATEST: made changes to reflect the latest refine script
+
+        //The files and their contents
+        Map<String, GString> files = [
+                "refine-site": """option,delimiter,","
+option,hasColumnNames,false
+option,quotedValues,true
+option,escapeQuotedValues,true
+
+fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
+toPredicate,SiteToRefine,CallGraphEdgeSource""",
+
+                "negative-site": """option,delimiter,","
+option,hasColumnNames,false
+
+fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
+toPredicate,NegativeSiteFilter,string""",
+
+                "refine-object": """option,delimiter,","
+option,hasColumnNames,false
+option,quotedValues,true
+option,escapeQuotedValues,true
+
+fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
+toPredicate,ObjectToRefine,HeapAllocation""",
+
+                "negative-object": """option,delimiter,","
+option,hasColumnNames,false
+
+fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
+toPredicate,NegativeObjectFilter,string"""
+        ]
+
+        logger.info "loading $name refinement facts "
+        files.each { Map.Entry<String, GString> entry ->
+            File f = new File(outDir, "${name}-${entry.key}.import")
+            Helper.writeToFile f, entry.value
+            Helper.checkFileOrThrowException(f, "Could not create import file: $f")
+            bloxbatch database, "-import $f"
+        }
+    }
+
+    /**
+     * Activates set-based logic that removes redundant input facts.
+     * Mimics the behavior of the bin/set-based script.
+     */
+    protected void runSetBased() {
+
+        logger.info "Preprocessing/transforming input facts: analysis"
+        timing {
+            bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/transform.logic"
+        }
+
+        2.times { int i ->
+            logger.info "Preprocessing/transforming input facts: transformation (step $i)"
+            timing {
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/transform-delta.logic"
+            }
+        }
+    }
 
     /**
      * Runs jphantom if phantom refs are not allowed
@@ -451,166 +600,16 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         /*
         ClassLoader loader = sootClassLoader()
-        sootTime = Helper.execWithTiming(logger) {
+        sootTime = timing {
             //we invoke the main method reflectively to avoid adding soot as a compile-time dependency
             Helper.execJava(loader, "Main", params)
         }
         */
-        doop.soot.Main.main(params)
-    }
-
-
-    protected void initDatabase() {
-
-        if (options.INCREMENTAL.value) {
-            File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
-            logger.info "Copying precomputed database of library from $libDatabase"
-            Helper.execWithTiming(logger) {
-                Helper.copyDirectoryContents(libDatabase, cacheDatabase)
-            }
-        }
-        else {
-
-            logger.info "Creating database in $cacheDatabase"
-            Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-create -overwrite -blocks base"
-            }
-
-            logger.info "Loading fact declarations"
-            Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/fact-declarations.logic"
-            }
-
-            //LATEST: Load schema addons logic
-            logger.info "Loading schema addons"
-            Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/library/schema-addons.logic"
-
-            }
-
-            logger.info "Loading facts"
-            FileUtils.deleteDirectory(factsDir)
-            Helper.execCommand("ln -s $cacheFacts $factsDir", commandsEnvironment)
-
-            //LATEST: Use a local facts dir
-            File localFacts = new File("facts")
-            FileUtils.deleteQuietly(localFacts)
-            Helper.execCommand("ln -s $cacheFacts $localFacts", commandsEnvironment)
-
-
-            FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
-            FileUtils.touch(new File(factsDir, "Properties.facts"))
-
-
-            File importFile = new File(outDir, "fact-declarations.import")
-            importFile.withWriter { Writer writer ->
-                ImportGenerator.Type type = options.CSV.value ? ImportGenerator.Type.CSV : ImportGenerator.Type.TEXT
-                new ImportGenerator(type, writer).generate()
-            }
-            Helper.checkFileOrThrowException(importFile, "Could not generate import file: $importFile")
-
-            factsTime = Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-import $importFile"
-            }
-
-            //LATEST: Evaluate the import logic
-            factsTime += Helper.execWithTiming(logger) {
-                bloxbatch "-execute -file ${Doop.doopHome}/logic/import.logic"
-            }
-
-            bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"soot-fact-generation time (sec)\", $sootTime).'"
-            bloxbatch cacheDatabase, "-execute '+Stats:Runtime(\"loading facts time (sec)\", $factsTime).'"
-
-            //LATEST: Load schema addons
-            logger.info "Loading schema addons delta"
-            Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/library/schema-addons-delta.logic"
-            }
-
-            //LATEST: Remove local facts dir
-            FileUtils.deleteQuietly(localFacts)
-
-            FileUtils.deleteQuietly(factsDir)
-
-            if (options.MAIN_CLASS.value) {
-                String mainClass = options.MAIN_CLASS.value
-                logger.info "Setting main class to $mainClass"
-                //LATEST: fqn
-                bloxbatch cacheDatabase, "-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:\"$mainClass\").'"
-            }
-
-            if (options.SET_BASED.value) {
-                runSetBased()
-            }
+        sootTime = timing {
+            doop.soot.Main.main(params)
         }
     }
 
-    /**
-     * Activates refinement logic.
-     * Mimics the behavior of the bin/refine script.
-     */
-    protected void refine() {
-
-        //LATEST: made changes to reflect the latest refine script
-
-        //The files and their contents
-        Map<String, GString> files = [
-            "refine-site": """option,delimiter,","
-option,hasColumnNames,false
-option,quotedValues,true
-option,escapeQuotedValues,true
-
-fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
-toPredicate,SiteToRefine,CallGraphEdgeSource""",
-
-            "negative-site": """option,delimiter,","
-option,hasColumnNames,false
-
-fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
-toPredicate,NegativeSiteFilter,string""",
-
-            "refine-object": """option,delimiter,","
-option,hasColumnNames,false
-option,quotedValues,true
-option,escapeQuotedValues,true
-
-fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
-toPredicate,ObjectToRefine,HeapAllocation""",
-
-            "negative-object": """option,delimiter,","
-option,hasColumnNames,false
-
-fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
-toPredicate,NegativeObjectFilter,string"""
-        ]
-
-        logger.info "loading $name refinement facts "
-        files.each { Map.Entry<String, GString> entry ->
-            File f = new File(outDir, "${name}-${entry.key}.import")
-            Helper.writeToFile f, entry.value
-            Helper.checkFileOrThrowException(f, "Could not create import file: $f")
-            bloxbatch database, "-import $f"
-        }
-    }
-
-    /**
-     * Activates set-based logic that removes redundant input facts.
-     * Mimics the behavior of the bin/set-based script.
-     */
-    protected void runSetBased() {
-
-        logger.info "Preprocessing/transforming input facts: analysis"
-        Helper.execWithTiming(logger) {
-            bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/transform.logic"
-        }
-
-        2.times { int i ->
-            logger.info "Preprocessing/transforming input facts: transformation (step $i)"
-            Helper.execWithTiming(logger) {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/transform-delta.logic"
-            }
-        }
-    }
 
 	/**
 	 * Sets all exception options/flags to false. The exception options are determined by their flagType.
@@ -760,5 +759,17 @@ toPredicate,NegativeObjectFilter,string"""
      */
     private void bloxbatch(File database, String params) {
         Helper.execCommand("${options.BLOXBATCH.value} -db $database $params", commandsEnvironment)
+    }
+
+    /**
+     * Helper method for making the code more readable
+     * @param c
+     */
+    private long timing(Closure c) {
+        return Helper.execWithTiming(logger, c)
+    }
+
+    private void pipe(String... commands) {
+        Helper.execCommand("bash -c ${commands.join(' | ')}", commandsEnvironment)
     }
 }

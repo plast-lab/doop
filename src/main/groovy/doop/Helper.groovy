@@ -115,7 +115,7 @@ class Helper {
         Process process = command.execute(envList, null)
         process.waitForProcessOutput(System.out as OutputStream, System.err as OutputStream)
         if (process.exitValue() != 0) {
-            throw new RuntimeException("Command exited with non-zero status\n: $command")
+            throw new RuntimeException("Command exited with non-zero status:\n $command")
         }
     }
 
