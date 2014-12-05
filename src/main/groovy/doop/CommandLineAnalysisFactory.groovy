@@ -67,13 +67,14 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         CliBuilder cli = new CliBuilder(
             usage:  "jdoop [OPTION]...",
         )
+        cli.width = 120
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit')
             r(longOpt: 'remote', 'Perform actions on the specified remote doop server', args:1, argName:'url')
             l(longOpt: 'level', 'Set the log level: debug, info or error (default: debug)', args:1, argName: 'loglevel')
             //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
-            a(longOpt: 'analysis', "The name of the analysis: ${Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(',')}",
+            a(longOpt: 'analysis', "The name of the analysis: ${Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(', ')}",
               args:1, argName:"name", required:true)
             j(longOpt: 'jar', "The jar files to analyze. Separate multiple jars with a comma", args:Option.UNLIMITED_VALUES, argName: "jar",
               valueSeparator: ",", required:true)
