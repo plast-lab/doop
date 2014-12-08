@@ -77,7 +77,7 @@ class Analysis implements Runnable {
 			analyze()
 
             long dbSize = FileUtils.sizeOfDirectory(database) * 1024
-            //bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
+            bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
             //TODO: We don't need to link-result, do we?
 
@@ -263,8 +263,8 @@ class Analysis implements Runnable {
                 bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/import.logic"
             }
 
-            //bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
-            //bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
+            bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
+            bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
 
             //LATEST: Load schema addons
             logger.info "Loading schema addons delta"
@@ -280,7 +280,7 @@ class Analysis implements Runnable {
                 String mainClass = options.MAIN_CLASS.value
                 logger.info "Setting main class to $mainClass"
                 //LATEST: fqn
-                //bloxbatch cacheDatabase, """-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:"$mainClass").'"""
+                bloxbatch cacheDatabase, """-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:"$mainClass").'"""
             }
 
             if (options.SET_BASED.value) {
@@ -331,7 +331,7 @@ toPredicate,Config:DynamicClass,type,inv"""
         long deltaTiming = timing {
             bloxbatch database, "-execute -file ${outDir}/${name}-delta.logic"
         }
-        //bloxbatch database, """-execute '+Stats:Runtime("$name delta rules time (sec)", $deltaTiming).'"""
+        bloxbatch database, """-execute '+Stats:Runtime("$name delta rules time (sec)", $deltaTiming).'"""
 
         if (!options.DISABLE_REFLECTION.value) {
             logger.info "Loading reflection delta rules"
@@ -345,7 +345,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             }
 
             long total = time1 + time2
-            //bloxbatch database, """-execute '+Stats:Runtime("reflection delta rules time (sec)", $total).'"""
+            bloxbatch database, """-execute '+Stats:Runtime("reflection delta rules time (sec)", $total).'"""
         }
 
         logger.info "Loading client delta rules"
@@ -372,7 +372,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             long time = timing {
                 bloxbatch database, "-addBlock -file ${outDir}/${name}.logic"
             }
-            //bloxbatch database, """-execute '+Stats:Runtime("benchmark time(sec)", $time).'"""
+            bloxbatch database, """-execute '+Stats:Runtime("benchmark time(sec)", $time).'"""
         }
 
         //TODO: Run client extensions
@@ -391,31 +391,35 @@ toPredicate,Config:DynamicClass,type,inv"""
         preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
 
         long time1 = timing {
-            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic" // >/dev/null"
+            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
         }
         long time2 = 0
 
         if (options.STATS.value) {
             preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
             time2 = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic" // >/dev/null"
+                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
             }
         }
 
         long time3 = timing {
-            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic" // >/dev/null"
+            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic >/dev/null"
         }
 
         long total = time1 + time2 + time3
-        //bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
+        bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
 
         logger.info "Runtime metrics"
-        //bloxbatch database, """-query Stats:Runtime | sort -n | sed -r 's/^ +([0-9]+[ab]?@ )?//' | awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
-        bloxbatch database, "-query Stats:Runtime"
+        bloxbatchPipe database, "-query Stats:Runtime",
+                                "sort -n",
+                                "sed -r 's/^ +([0-9]+[ab]?@ )?//'",
+                                """awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
 
         logger.info "Statistics"
-        //bloxbatch database, """-query Stats:Metrics | sort -n | sed -r 's/^ +[0-9]+[ab]?@ //' | awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
-        bloxbatch database, "-query Stats:Metrics"
+        bloxbatchPipe database, "-query Stats:Metrics",
+                                "sort -n",
+                                "sed -r 's/^ +[0-9]+[ab]?@ //'",
+                                """awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
     }
 
     /**
@@ -758,7 +762,21 @@ toPredicate,NegativeObjectFilter,string"""
      * Invokes bloxbatch on the given database with the given params. Helper method for making the code more readable.
      */
     private void bloxbatch(File database, String params) {
-        Helper.execCommand("${options.BLOXBATCH.value} -db $database $params", commandsEnvironment)
+        //Helper.execCommand("${options.BLOXBATCH.value} -db $database $params", commandsEnvironment)
+        bloxbatchPipe(database, params)
+    }
+
+    /**
+     * Invokes bloxbatch on the given database with the given params, piping it up with supplied pipeCommands.
+     * Helper method for making the code more readable.
+     */
+    private void bloxbatchPipe(File database, String params, String... pipeCommands) {
+        if (pipeCommands) {
+            Helper.execCommand("${options.BLOXBATCH.value} -db $database $params | ${pipeCommands.join(" |")}", commandsEnvironment)
+        }
+        else {
+            Helper.execCommand("${options.BLOXBATCH.value} -db $database $params", commandsEnvironment)
+        }
     }
 
     /**
@@ -767,9 +785,5 @@ toPredicate,NegativeObjectFilter,string"""
      */
     private long timing(Closure c) {
         return Helper.execWithTiming(logger, c)
-    }
-
-    private void pipe(String... commands) {
-        Helper.execCommand("bash -c ${commands.join(' | ')}", commandsEnvironment)
     }
 }
