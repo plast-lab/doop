@@ -119,12 +119,21 @@ class Helper {
     }
 
     /**
-     * Executes the given command as an external process, setting its environment to the supplied Map
+     * Executes the given command as an external process, setting its environment to the supplied Map.
+     * The method invokes each command through the shell (/bin/sh).
      */
     static void execCommand(String command, Map<String, String> env) {
 		Logger.getRootLogger().debug "Executing $command"
-		List<String> envList = env?.collect { Map.Entry entry -> "${entry.key}=${entry.value}" }
-        Process process = command.execute(envList, null)
+		//List<String> envList = env?.collect { Map.Entry entry -> "${entry.key}=${entry.value}" }
+        //Process process = command.execute(envList, null)
+
+        ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", command)
+        Map<String, String> environment = pb.environment()
+        environment.clear()
+        environment.putAll(env)
+
+        Process process = pb.start()
+
         process.waitForProcessOutput(System.out as OutputStream, System.err as OutputStream)
         if (process.exitValue() != 0) {
             throw new RuntimeException("Command exited with non-zero status:\n $command")
@@ -187,16 +196,22 @@ class Helper {
     }
 	
 	/**
-     * Returns a set of the packages contained in the given jar
+     * Returns a set of the packages contained in the given jar.
+     * Any classes that are not included in packages are also retrieved.
      */
     static Set<String> getPackages(File jar) {
 
         ZipFile zip = new ZipFile(jar)
         Enumeration<? extends ZipEntry> entries = zip.entries()
-        List<String> packages = entries?.findAll { ZipEntry entry ->
+        List<ZipEntry> classes = entries?.findAll { ZipEntry entry ->
             entry.getName().endsWith(".class")
-        }.collect { ZipEntry entry ->
-            FilenameUtils.getPath(entry.getName()).replace('/' as char, '.' as char) + '*'
+        }
+        List<String> packages = classes.collect { ZipEntry entry ->
+            String entryName = entry.getName()
+            if (entryName.indexOf("/") > 0)
+                return FilenameUtils.getPath(entry.getName()).replace('/' as char, '.' as char) + '*'
+            else
+                return FilenameUtils.getBaseName(entryName)
         }
         return (packages as Set)
     }
