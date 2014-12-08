@@ -4,8 +4,8 @@ apply plugin: 'war'
 apply plugin: 'jetty'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-sourceCompatibility = "1.6"
-targetCompatibility = "1.6"
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
 
 buildscript {
     dependencies {

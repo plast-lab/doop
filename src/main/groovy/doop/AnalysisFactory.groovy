@@ -330,7 +330,7 @@ class AnalysisFactory {
 		checkOS(analysis)
 		
 		if (options.MAIN_CLASS.value) {
-			logger.debug "The mainClass is set to ${options.MAIN.value}"
+			logger.debug "The mainClass is set to ${options.MAIN_CLASS.value}"
 		}
 		
 		if (options.INCREMENTAL.value) {
@@ -421,7 +421,7 @@ class AnalysisFactory {
         }
 
         //generate the JRE constant for the preprocessor
-        AnalysisOption<Boolean> jreOption = new AnalysisOption<>(
+        AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
 			id:jreVersion.name(),
 			value:true,
 			forPreprocessor: true
@@ -443,7 +443,7 @@ class AnalysisFactory {
         }
 
         //generate the OS constant for preprocessor
-        AnalysisOption<Boolean> osOption = new AnalysisOption<>(
+        AnalysisOption<Boolean> osOption = new AnalysisOption<Boolean>(
 			id:os.name(),
 			value:true,
 			forPreprocessor: true
