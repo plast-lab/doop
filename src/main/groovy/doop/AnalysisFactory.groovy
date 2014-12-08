@@ -1,12 +1,11 @@
 package doop
-
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
 import doop.resolve.Dependency
+import doop.resolve.ExistingFileDependency
 import doop.resolve.StringDependency
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
 /**
  * A Factory for creating Analysis objects.
  *
@@ -100,8 +99,10 @@ class AnalysisFactory {
     }
 
     /**
-     * Given the list of jars (as Strings or Dependency objects), the method validates that the jars exist,
+     * Given the list of jars, as Strings or Dependency objects, the method validates that the jars exist,
      * using the jar resolution mechanism. It finally adds the jars as a List<Dependency> in the analysis.
+     * The method detects if a String refers to a directory path and, if so, it adds all the *.jar files
+     * included therein.
      */
     protected void checkJars(Analysis analysis, List jars) {
         logger.debug "Verifying analysis input jars: $jars"
@@ -109,10 +110,26 @@ class AnalysisFactory {
         analysis.jars = jars.collect { Object jar ->
             if (jar) {
                 if (jar instanceof String) {
-                    StringDependency jarDep = new StringDependency(jar, analysis)
-                    logger.debug "Resolving $jar"
-                    jarDep.resolve()
-                    return jarDep
+                    try {
+                        File f = Helper.checkDirectoryOrThrowException(jar, null)
+                        logger.debug("Resolving jars in directory $f")
+
+                        def filter = Helper.extensionFilter("jar")
+
+                        def filesInDir = []
+                        f.listFiles(filter).each { File file ->
+                            filesInDir.push new ExistingFileDependency(file)
+                        }
+
+                        logger.debug("Resolved jars in directory $f: $filesInDir")
+                        return filesInDir
+                    }
+                    catch(e) {
+                        StringDependency jarDep = new StringDependency(jar, analysis)
+                        logger.debug "Resolving $jar"
+                        jarDep.resolve()
+                        return jarDep
+                    }
                 }
                 else if (jar instanceof Dependency) {
                     logger.debug "Resolving $jar"
@@ -126,7 +143,7 @@ class AnalysisFactory {
             else {
                 throw new RuntimeException("Null value in analysis jars")
             }
-        }
+        }.flatten()
     }
 	
 	/**
@@ -444,7 +461,7 @@ class AnalysisFactory {
             logger.debug "Generating app regex"
 			
 			Set excluded = ["*", "**"] as Set
-			analysis.jars.drop(1).each { StringDependency jar ->
+			analysis.jars.drop(1).each { Dependency jar ->
 				excluded += Helper.getPackages(jar.resolve())
 			}
 

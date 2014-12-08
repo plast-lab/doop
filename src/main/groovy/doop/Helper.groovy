@@ -45,6 +45,18 @@ class Helper {
         }
     }
 
+
+    static FilenameFilter extensionFilter(String extension) {
+        def filter = [
+            accept: {File f, String name ->
+                String ext = FilenameUtils.getExtension(name)
+                return ext == extension
+            }
+        ] as FilenameFilter
+
+        return filter
+    }
+
     /**
      * Loads the given properties file
      */

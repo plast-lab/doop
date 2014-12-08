@@ -76,7 +76,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
             a(longOpt: 'analysis', "The name of the analysis: ${Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(', ')}",
               args:1, argName:"name", required:true)
-            j(longOpt: 'jar', "The jar files to analyze. Separate multiple jars with a comma", args:Option.UNLIMITED_VALUES, argName: "jar",
+            j(longOpt: 'jar', "The jar files to analyze. Separate multiple jars with a comma. If the argument is a directory, all its *.jar files will be included.", args:Option.UNLIMITED_VALUES, argName: "jar",
               valueSeparator: ",", required:true)
 
             cliOptions.each { AnalysisOption option ->
