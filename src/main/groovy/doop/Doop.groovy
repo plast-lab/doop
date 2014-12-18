@@ -419,6 +419,16 @@ class Doop {
             forPreprocessor: true,
 			isAdvanced:true
         ),
+        new AnalysisOption<String>(
+            id:"DACAPO_BENCHMARK",
+            value:null,
+            forPreprocessor: true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"DACAPO_2009",
+            value:false,
+            forPreprocessor: true
+        ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
             description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system)",

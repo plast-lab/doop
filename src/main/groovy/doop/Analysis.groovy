@@ -28,7 +28,7 @@ class Analysis implements Runnable {
     String name
 
     /**
-     * The output dir of the analysis (results and intermediate files)
+     * The output dir of the analysis
      */
     String outDir
 
@@ -55,7 +55,7 @@ class Analysis implements Runnable {
     String inputFilesChecksum
     String logicFilesChecksum
 	
-	File cacheFacts, cacheDatabase, database, humanDatabase, exportDir, factsDir, averroesDir
+	File cacheFacts, cacheDatabase, database, exportDir, factsDir, averroesDir
 
     long sootTime, factsTime
 
@@ -67,6 +67,8 @@ class Analysis implements Runnable {
     @Override
     void run() {
         timing {
+
+            preprocessor.init()
 			
 			initAnalysis()
 			
@@ -79,10 +81,6 @@ class Analysis implements Runnable {
             long dbSize = FileUtils.sizeOfDirectory(database) * 1024
             bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
-            //TODO: We don't need to link-result, do we?
-
-            getStats()
-
             File f = null
             try {
                 f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
@@ -92,10 +90,70 @@ class Analysis implements Runnable {
             }
 
             if(f) {
-                reanalyze()
-                getStats()
+                reanalyze()                
             }
         }
+    }
+
+    /**
+     * Gets the statistics. Mimics the behavior of the get-stats function of the doop run script.
+     */
+    public void getStats() {
+
+        String baseLibPath = "${Doop.doopLogic}/library"
+
+        preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
+        preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
+
+        long time1 = timing {
+            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
+        }
+        long time2 = 0
+
+        if (options.STATS.value) {
+            preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
+            time2 = timing {
+                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
+            }
+        }
+
+        long time3 = timing {
+            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic >/dev/null"
+        }
+
+        long total = time1 + time2 + time3
+        bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
+
+        logger.info "Runtime metrics"
+        bloxbatchPipe database, "-query Stats:Runtime",
+                                "sort -n",
+                                "sed -r 's/^ +([0-9]+[ab]?@ )?//'",
+                                """awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
+
+        logger.info "Statistics"
+        bloxbatchPipe database, "-query Stats:Metrics",
+                                "sort -n",
+                                "sed -r 's/^ +[0-9]+[ab]?@ //'",
+                                """awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
+    }
+
+    /**
+     * Generates results. Mimics the behavior of the link-result function of the doop run script.
+     */
+    public void linkResult() {
+        String jre = options.JRE.value
+        if (jre != "system") jre = "jre${jre}"
+        String jarName = FilenameUtils.getBaseName(jars[0].resolve().toString())
+        File humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
+        logger.info "Making database available at $humanDatabase"
+        humanDatabase.mkdirs()
+
+        Helper.execCommand("ln -s $database $humanDatabase", commandsEnvironment)
+
+        logger.info "Making database available at last-analysis"
+        File lastAnalysis = new File("${Doop.doopHome}/last-analysis")
+        FileUtils.deleteQuietly(lastAnalysis)
+        Helper.execCommand("ln -s $humanDatabase ${Doop.doopHome}/last-analysis", commandsEnvironment)
     }
 	
 	/**
@@ -149,8 +207,7 @@ class Analysis implements Runnable {
 
 		cacheFacts    = new File(outDir, "cacheFacts")
 		cacheDatabase = new File(outDir, "cacheDatabase")
-		database      = new File(outDir, "database")
-		humanDatabase = new File(outDir, "humanDatabase")
+		database      = new File(outDir, "database")		
         exportDir     = new File(outDir, "export")
         factsDir      = new File(outDir, "facts")
         averroesDir   = new File(outDir, "averroes")
@@ -301,11 +358,14 @@ class Analysis implements Runnable {
             //TODO: Check arity of DYNAMIC file
             List<String> dynFiles = options.DYNAMIC.value
             dynFiles.eachWithIndex { String dynFile, Integer index ->
+                File f = new File(dynFile)
+                FilenameUtils
                 File dynImport = new File(outDir, "dynamic${index}.import")
-                Helper.writeToFile dynImport, """option,delimeter,"\t"
+                Helper.writeToFile dynImport, 
+"""option,delimiter,"\t"
 option,hasColumnNames,false
 
-fromFile,"${dynFile}",a,inv,b,type
+fromFile,"${f.getCanonicalPath()}",a,inv,b,type
 toPredicate,Config:DynamicClass,type,inv"""
 
                 bloxbatch database, "-import $dynImport"
@@ -378,48 +438,6 @@ toPredicate,Config:DynamicClass,type,inv"""
         //TODO: Run client extensions
 
         //TODO: Kill memory logger
-    }
-
-    /**
-     * Gets the statistics. Mimics the behavior of the get-stats function of the doop run script.
-     */
-    protected void getStats() {
-
-        String baseLibPath = "${Doop.doopLogic}/library"
-
-        preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
-        preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
-
-        long time1 = timing {
-            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
-        }
-        long time2 = 0
-
-        if (options.STATS.value) {
-            preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
-            time2 = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
-            }
-        }
-
-        long time3 = timing {
-            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic >/dev/null"
-        }
-
-        long total = time1 + time2 + time3
-        bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
-
-        logger.info "Runtime metrics"
-        bloxbatchPipe database, "-query Stats:Runtime",
-                                "sort -n",
-                                "sed -r 's/^ +([0-9]+[ab]?@ )?//'",
-                                """awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
-
-        logger.info "Statistics"
-        bloxbatchPipe database, "-query Stats:Metrics",
-                                "sort -n",
-                                "sed -r 's/^ +[0-9]+[ab]?@ //'",
-                                """awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
     }
 
     /**
@@ -569,14 +587,14 @@ toPredicate,NegativeObjectFilter,string"""
 
         if (options.AVERROES.value) {
             //change linked arg and injar accordingly
-            jars[0] = Helper.checkFileOrThrowException("$averroesDir/oranizedApplication.jar", "Averroes invocation failed")
+            jars[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
         }
         else {
             List<String> deps = jars.drop(1).collect{ Dependency r -> ["-l", r.resolve()]}.flatten()
             List<String> links = jreLinkArgs()
             if (links.isEmpty()) {
-                depArgs = deps + ["-lsystem"]
+                depArgs = ["-lsystem"] + deps 
             }
             else {
                 depArgs = deps + links.collect{ String arg -> ["-l", arg]}.flatten()
@@ -670,18 +688,29 @@ toPredicate,NegativeObjectFilter,string"""
      */
     private List<String> jreLinkArgs() {
 
-        //TODO: deal with JRE versions other than system
+        String jre = options.JRE.value
+        String path = "${Doop.doopHome}/externals/jre${jre}/lib"
 
-        if (options.JRE.value == "system") {
-            //LATEST: don't include jars if jre is system
-            /*
-            String javaHome = System.getProperty("java.home")
-            return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
-            */
-            return []
-        }
-        else {
-            throw new RuntimeException("Only system JRE is currently supported")
+        switch(jre) {
+            case "1.3":
+                return ["${path}/rt.jar"]
+            case "1.4":
+                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+            case "1.5":
+                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+            case "1.6":
+                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+            case "1.7":
+                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar", "${path}/rhino.jar"]
+            case "system":
+                //LATEST: don't include jars if jre is system
+                /*
+                String javaHome = System.getProperty("java.home")
+                return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+                */
+                return []
+            default:
+                throw new RuntimeException("Invalid JRE version: $jre")
         }
     }
 	

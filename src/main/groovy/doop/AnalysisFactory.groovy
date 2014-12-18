@@ -1,9 +1,12 @@
 package doop
+import java.util.jar.JarFile
+import java.util.jar.Attributes
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
 import doop.resolve.Dependency
 import doop.resolve.ExistingFileDependency
 import doop.resolve.StringDependency
+import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 /**
@@ -55,10 +58,10 @@ class AnalysisFactory {
 			
 		//TODO: The COLOR option is not supported
 			
-		//TODO: Create empty jar
+		//TODO: Create empty jar. Is it needed?
 
-		//TODO: Check if input is given (incremental)
-		//TODO: If not, check-injar (see checkjararg.sh that has dacapo & dacapo-bach hooks)
+		//TODO: Check if input is given (incremental). Is it needed?
+		checkDACAPO(analysis)
 			
 		checkAppRegex(analysis)
 			
@@ -121,8 +124,9 @@ class AnalysisFactory {
                             filesInDir.push new ExistingFileDependency(file)
                         }
 
-                        logger.debug("Resolved jars in directory $f: $filesInDir")
-                        return filesInDir
+                        def files = filesInDir.sort{ it.toString() }
+                        logger.debug("Resolved ${files.size()} jars in directory $f: $files")
+                        return files
                     }
                     catch(e) {
                         StringDependency jarDep = new StringDependency(jar, analysis)
@@ -330,8 +334,17 @@ class AnalysisFactory {
 		checkOS(analysis)
 		
 		if (options.MAIN_CLASS.value) {
-			logger.debug "The mainClass is set to ${options.MAIN_CLASS.value}"
+			logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
 		}
+        else {
+            //Try to read the main class from the manifest contained in the jar
+            JarFile jarFile = new JarFile(analysis.jars[0].resolve())
+            String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
+            if (main) {
+                logger.debug "The main class is automatically set to ${main}"             
+                options.MAIN_CLASS.value = main
+            }
+        }
 		
 		if (options.INCREMENTAL.value) {
 			logger.debug "The INCREMENTAL option has been enabled"
@@ -450,6 +463,27 @@ class AnalysisFactory {
         )
         analysis.options[(osOption.id)] = osOption
     }
+
+    /**
+     * DACAPO hooks.
+    */
+    protected void checkDACAPO(Analysis analysis) {
+        if (analysis.options.DACAPO.value) {
+            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+            logger.info "Running dacapo benchmark: $benchmark"
+            //We don't hard-code the dependencies, we just set the appropriate flags
+            analysis.options.DACAPO_BENCHMARK.value = benchmark
+            return
+        }
+        
+        if (analysis.options.DACAPO_BACH.value) {
+            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+            logger.info "Running dacapo-2009 benchmark: $benchmark"
+            //We don't hard-code the dependencies, we just set the appropriate flags
+            analysis.options.DACAPO_2009.value = true
+            analysis.options.DACAPO_BENCHMARK.value = benchmark
+        }
+    }
 	
 	/**
      * Determines application classes.
@@ -460,14 +494,17 @@ class AnalysisFactory {
         if (!analysis.options.APP_REGEX.value) {
             logger.debug "Generating app regex"
 			
+            //We process only the first jar for determining the application classes
+            /*
 			Set excluded = ["*", "**"] as Set
 			analysis.jars.drop(1).each { Dependency jar ->
 				excluded += Helper.getPackages(jar.resolve())
 			}
 
 			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
-
-			analysis.options.APP_REGEX.value = packages.join(':')
+            */
+            Set<String> packages = Helper.getPackages(analysis.jars[0].resolve())
+			analysis.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
 	

@@ -213,6 +213,9 @@ class Helper {
             else
                 return FilenameUtils.getBaseName(entryName)
         }
+
+        packages = packages.unique()
+
         return (packages as Set)
     }
 	
