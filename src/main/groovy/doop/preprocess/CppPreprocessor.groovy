@@ -30,7 +30,12 @@ class CppPreprocessor implements Preprocessor {
             option.forPreprocessor && option.value
         }
 
-        String macroCli = macros.collect{AnalysisOption option -> "-D${option.id}" }.join(" ")
+        String macroCli = macros.collect{AnalysisOption option -> 
+            if (option.value instanceof Boolean)
+                return "-D${option.id}" 
+            else 
+                return "-D${option.id}='\"${option.value}\"'"
+        }.join(" ")
 
         if (includes) {
             String includeArgs = includes.collect{ "-include $it" }.join(" ")

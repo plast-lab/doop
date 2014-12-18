@@ -40,7 +40,10 @@ class JcppPreprocessor implements Preprocessor {
             //if the value of the option is true, we add its name as a macro
             if (option.value) {
                 logger.debug("Adding macro ${option.id}")
-                preprocessor.addMacro(option.id)
+                if (option.value instanceof Boolean)
+                    preprocessor.addMacro(option.id)
+                else
+                    preprocessor.addMacro(option.id, option.value)
             }
         }
 
