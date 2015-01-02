@@ -337,12 +337,20 @@ class AnalysisFactory {
 			logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
 		}
         else {
-            //Try to read the main class from the manifest contained in the jar
             JarFile jarFile = new JarFile(analysis.jars[0].resolve())
+            //Try to read the main class from the manifest contained in the jar            
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
                 logger.debug "The main class is automatically set to ${main}"             
                 options.MAIN_CLASS.value = main
+            }
+            else {
+                //Check whether the jar contains a class with the same name
+                String jarName = FilenameUtils.getBaseName(jarFile.getName())                
+                if (jarFile.getJarEntry("${jarName}.class")) {
+                    logger.debug "The main class is automatically set to ${jarName}"
+                    options.MAIN_CLASS.value = jarName
+                }
             }
         }
 		
