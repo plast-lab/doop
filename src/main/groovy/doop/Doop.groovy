@@ -76,11 +76,82 @@ class Doop {
             value:false,
 			forPreprocessor:true
         ),
+        
+        /* Start of preprocessor constant flags */
+        new AnalysisOption<Boolean>(
+            id:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
+            value:true, // enabled by default in run script
+            cli:true,
+            webUI:true,
+            name:"distinguish-reflection-string-constants",
+            forPreprocessor: true,
+            isAdvanced:true,
+            flagType:PreprocessorFlag.CONSTANT_FLAG
+        ),
+        new AnalysisOption<Boolean>(
+            id:"DISTINGUISH_ALL_STRING_CONSTANTS",
+            value:false,
+            cli:true,
+            webUI:true,
+            name:"distinguish-all-string-constants",
+            forPreprocessor:true,
+            isAdvanced:true,
+            flagType:PreprocessorFlag.CONSTANT_FLAG
+        ),        
+        new AnalysisOption<Boolean>(
+            id:"DISTINGUISH_NO_STRING_CONSTANTS",
+            value:false,
+            cli:true,
+            webUI:true,
+            name:"distinguish-no-string-constants",
+            forPreprocessor: true,
+            isAdvanced:true,
+            flagType:PreprocessorFlag.CONSTANT_FLAG
+        ),
+        /* End of preprocessor constant flags] */
+
+        /* Start of preprocessor normal flags] */
         //LATEST: NO_MODELING_OF_NUMS_OR_NULL
         new AnalysisOption<String>(
             id:"NO_MODELING_OF_NUMS_OR_NULL",
             value:true, // enabled by default in run script
             forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_STRING_FLOW_ANALYSIS",
+            value:true, //enabled by default in run script
+            cli:true,
+            webUI:true,
+            name:"disable-reflection-string-flow-analysis",
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"ANALYZE_REFLECTION_SUBSTRINGS",
+            value:true, // enabled by default in run script
+            cli:true,
+            webUI:true,
+            name:"disable-reflection-substring-analysis",
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"MERGE_FIELD_AND_METHOD_SUBSTRINGS",
+            value:true, // enabled by default in run script
+            cli:true,
+            webUI:true,
+            name:"disable-merge-member-reflection-constants",
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"MERGE_STRING_BUFFERS",
+            value:true, //enabled by default in run script
+            cli:true,
+            webUI:true,
+            name:"disable-merge-string-buffers",
+            forPreprocessor: true,
+            isAdvanced:true
         ),
         //LATEST: INCLUDE_IMPLICITLY_REACHABLE_CODE
         new AnalysisOption<String>(
@@ -99,58 +170,8 @@ class Doop {
             webUI:true,
             name:"paddle-compat",
             forPreprocessor: true,
-			isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_PRECISE_EXCEPTIONS",
-            value:false,
-            cli:true,
-            webUI:true,
-            name:"disable-precise-exceptions",
-            forPreprocessor:false,
-			isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_IMPRECISE",
-            value:false,
-            cli:true,
-            webUI:true,
-            name:"enable-imprecise-exceptions",
-            forPreprocessor: true,
-			isAdvanced:true,
-			flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_MERGE_EXCEPTIONS",
-            value:false,
-            cli:true,
-            webUI:true,
-            name:"disable-merge-exceptions",
-            forPreprocessor:false,
-			isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_PRECISE",
-            value:true, // enabled by default in run script
-            forPreprocessor:true,
-			flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"SEPARATE_EXCEPTION_OBJECTS",
-            value:false,
-            forPreprocessor:true,
-			flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_EXPERIMENTAL",
-            value:false,
-            cli:true,
-            webUI:true,
-            name:"enable-exceptions-experimental",
-            forPreprocessor:true,
-			isAdvanced:true,
-			flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
+            isAdvanced:true
+        ),        
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_FILTER",
             value:false,
@@ -158,7 +179,7 @@ class Doop {
             webUI:true,
             name:"enable-exceptions-filter",
             forPreprocessor:true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_ORDER",
@@ -167,7 +188,7 @@ class Doop {
             webUI:true,
             name:"enable-exceptions-order",
             forPreprocessor:true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_RANGE",
@@ -176,7 +197,7 @@ class Doop {
             webUI:true,
             name:"enable-exceptions-range",
             forPreprocessor:true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_CS",
@@ -185,7 +206,7 @@ class Doop {
             webUI:true,
             name:"enable-exceptions-cs",
             forPreprocessor:true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"DISABLE_REFLECTION",
@@ -194,7 +215,7 @@ class Doop {
             webUI:true,
             name:"disable-reflection",
             forPreprocessor:true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"CONTEXT_SENSITIVE_REFLECTION",
@@ -203,7 +224,7 @@ class Doop {
             webUI:true,
             name:"context-sensitive-reflection",
             forPreprocessor:true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"CLIENT_EXCEPTION_FLOW",
@@ -212,74 +233,8 @@ class Doop {
             webUI:true,
             name:"enable-exception-flow",
             forPreprocessor:true,
-			isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_ALL_STRING_CONSTANTS",
-            value:false,
-            cli:true,
-            webUI:true,
-            name:"distinguish-all-string-constants",
-            forPreprocessor:true,
-			isAdvanced:true,
-			flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
-            value:true, // enabled by default in run script
-            cli:true,
-            webUI:true,
-            name:"distinguish-reflection-string-constants",
-            forPreprocessor: true,
-			isAdvanced:true,
-			flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_NO_STRING_CONSTANTS",
-            value:false,
-            cli:true,
-            webUI:true,
-            name:"distinguish-no-string-constants",
-            forPreprocessor: true,
-			isAdvanced:true,
-			flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_STRING_FLOW_ANALYSIS",
-            value:true, //enabled by default in run script
-            cli:true,
-            webUI:true,
-            name:"disable-reflection-string-flow-analysis",
-            forPreprocessor: true,
-			isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"ANALYZE_REFLECTION_SUBSTRINGS",
-            value:true, // enabled by default in run script
-            cli:true,
-            webUI:true,
-            name:"disable-reflection-substring-analysis",
-            forPreprocessor: true,
-			isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"MERGE_FIELD_AND_METHOD_SUBSTRINGS",
-            value:true, // enabled by default in run script
-            cli:true,
-            webUI:true,
-            name:"disable-merge-member-reflection-constants",
-            forPreprocessor: true,
-			isAdvanced:true
-        ),
-		new AnalysisOption<Boolean>(
-            id:"MERGE_STRING_BUFFERS",
-            value:true, //enabled by default in run script
-            cli:true,
-            webUI:true,
-            name:"disable-merge-string-buffers",
-            forPreprocessor: true,
-			isAdvanced:true
-        ),
+            isAdvanced:true
+        ),        
         new AnalysisOption<Boolean>(
             id:"USE_BASED_REFLECTION_ANALYSIS",
             value:false,
@@ -287,7 +242,7 @@ class Doop {
             webUI:true,
             name:"enable-use-based-reflection-analysis",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"INVENT_UNKNOWN_REFLECTIVE_OBJECTS",
@@ -296,7 +251,7 @@ class Doop {
             webUI:true,
             name:"enable-invention-of-unknown-reflective-objects",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFINED_REFLECTION_OBJECTS",
@@ -305,7 +260,7 @@ class Doop {
             webUI:true,
             name:"enable-refined-reflection-objects",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"NO_CONTEXT_REPEAT",
@@ -314,7 +269,7 @@ class Doop {
             webUI:true,
             name:"no-context-repeat",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"TRANSFORM_INPUT",
@@ -324,9 +279,66 @@ class Doop {
             webUI:true,
             name:"transform-input",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
+        /* End of preprocessor normal flags] */
+
+        
+        /* Start of preprocessor exception flags] */        
+        new AnalysisOption<Boolean>(
+            id:"EXCEPTIONS_PRECISE",
+            value:true, // enabled by default in run script
+            forPreprocessor:true,
+            flagType:PreprocessorFlag.EXCEPTION_FLAG
+        ),
+        new AnalysisOption<Boolean>(
+            id:"EXCEPTIONS_IMPRECISE",
+            value:false,
+            cli:true,
+            webUI:true,
+            name:"enable-imprecise-exceptions",
+            forPreprocessor: true,
+            isAdvanced:true,
+            flagType:PreprocessorFlag.EXCEPTION_FLAG
+        ),
+        new AnalysisOption<Boolean>(
+            id:"SEPARATE_EXCEPTION_OBJECTS",
+            value:false,
+            forPreprocessor:true,
+            flagType:PreprocessorFlag.EXCEPTION_FLAG
+        ),
+        new AnalysisOption<Boolean>(
+            id:"EXCEPTIONS_EXPERIMENTAL",
+            value:false,
+            cli:true,
+            webUI:true,
+            name:"enable-exceptions-experimental",
+            forPreprocessor:true,
+            isAdvanced:true,
+            flagType:PreprocessorFlag.EXCEPTION_FLAG
+        ),
+        /* End of preprocessor exception flags] */        
+        
+        
         //other options/flags
+        new AnalysisOption<Boolean>(
+            id:"DISABLE_PRECISE_EXCEPTIONS",
+            value:false,
+            cli:true,
+            webUI:true,
+            name:"disable-precise-exceptions",
+            forPreprocessor:false,
+            isAdvanced:true
+        ),        
+        new AnalysisOption<Boolean>(
+            id:"DISABLE_MERGE_EXCEPTIONS",
+            value:false,
+            cli:true,
+            webUI:true,
+            name:"disable-merge-exceptions",
+            forPreprocessor:false,
+            isAdvanced:true
+        ),
         new AnalysisOption<Boolean>(
             id:"SET_BASED",
             value:false,

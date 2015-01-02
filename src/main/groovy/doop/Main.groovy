@@ -27,7 +27,7 @@ class Main {
         Doop.initDoop(doopHome, doopOut)
 
         //initialize logging
-        Helper.initLogging("DEBUG", "${Doop.doopHome}/logs", true)
+        Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
         Log logger = LogFactory.getLog(Main)
 
@@ -56,8 +56,8 @@ class Main {
             */
 
             //change the log level according to the cli arg
-            String logLevel = cli.l
-            if (logLevel == true) {
+            def logLevel = cli.l
+            if (logLevel) {
                 switch (logLevel) {
                     case "debug":
                         Logger.getRootLogger().setLevel(Level.DEBUG)
@@ -69,7 +69,7 @@ class Main {
                         Logger.getRootLogger().setLevel(Level.ERROR)
                         break
                     default:
-                        logger.info "Invalid log level: $logLevel - using default (debug)"
+                        logger.info "Invalid log level: $logLevel - using default (info)"
                 }
             }
 
