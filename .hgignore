@@ -1,0 +1,16 @@
+#jdoop ingore list
+
+#gradle dirs
+^.gradle
+^build/
+
+#jdoop dist/runtime files
+^logs
+^out
+
+#jdoop webapp logs
+^src/main/webapp/logs/
+
+#intellij idea files
+^.idea
+^jdoop.iml
