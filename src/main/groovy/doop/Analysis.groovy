@@ -128,13 +128,13 @@ class Analysis implements Runnable {
         bloxbatchPipe database, "-query Stats:Runtime",
                                 "sort -n",
                                 "sed -r 's/^ +([0-9]+[ab]?@ )?//'",
-                                """awk -F ', ' '{ printf("%-80s %'"'"'.2f\\n", \$1, \$2) }'"""
+                                "awk -F ', ' '{ printf(\"%-80s %'\\''.2f\\n\", \$1, \$2) }'"
 
         logger.info "Statistics"
         bloxbatchPipe database, "-query Stats:Metrics",
                                 "sort -n",
                                 "sed -r 's/^ +[0-9]+[ab]?@ //'",
-                                """awk -F ', ' '{ printf("%-80s %'"'"'d\\n", \$1, \$2) }'"""
+                                "awk -F ', ' '{ printf(\"%-80s %'\\''d\\n\", \$1, \$2) }'"
     }
 
     /**
