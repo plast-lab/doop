@@ -1,17 +1,17 @@
+buildscript {
+    dependencies {
+        classpath files("$projectDir/build/classes/main")
+    }
+}
+
 apply plugin: 'groovy'
 apply plugin: 'application'
 apply plugin: 'war'
 apply plugin: 'jetty'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
-
-buildscript {
-    dependencies {
-        classpath files("$projectDir/build/classes/main")
-    }
-}
+sourceCompatibility = "1.6"
+targetCompatibility = "1.6"
 
 //For the standalone app
 mainClassName = 'doop.Main'
