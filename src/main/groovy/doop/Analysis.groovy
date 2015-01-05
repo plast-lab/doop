@@ -146,6 +146,7 @@ class Analysis implements Runnable {
         String jarName = FilenameUtils.getBaseName(jars[0].resolve().toString())
         File humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
         logger.info "Making database available at $humanDatabase"
+        FileUtils.deleteQuietly(humanDatabase)
         humanDatabase.mkdirs()
 
         Helper.execCommand("ln -s $database $humanDatabase", commandsEnvironment)
