@@ -22,4 +22,9 @@ class ResolvedDependency implements Dependency {
     File resolve() {
         return file
     }
+
+    @Override
+    String toString() {
+        file.toString()
+    }
 }
