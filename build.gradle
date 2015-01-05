@@ -1,0 +1,96 @@
+buildscript {
+    dependencies {
+        classpath files("$projectDir/build/classes/main")
+    }
+}
+
+apply plugin: 'groovy'
+apply plugin: 'application'
+apply plugin: 'war'
+apply plugin: 'jetty'
+
+//applicationDefaultJvmArgs = ["-Xmx2048m"]
+sourceCompatibility = "1.6"
+targetCompatibility = "1.6"
+
+//For the standalone app
+mainClassName = 'doop.Main'
+
+//For embedding the web app in Jetty
+stopKey = 'stop'
+stopPort = 8001
+httpPort = 8000
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.0'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "http://maven.restlet.org/"
+    }
+    maven {
+        url "http://repository.codehaus.org/"
+    }
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:2.3.3",            //Groovy
+            "commons-logging:commons-logging:1.1",             //Logging wrapper
+            "log4j:log4j:1.2.14",                              //Logging implementation
+            "commons-cli:commons-cli:1.2",                     //Command line processor
+            "org.anarres:jcpp:1.4.5",                          //C preprocessor in Java
+            "commons-io:commons-io:2.4",                       //File Utils
+            "org.apache.ivy:ivy:2.3.0",                        //Apache Ivy (for downloading jars from maven repos)
+            "javax.servlet:servlet-api:2.5",                   //Used for the web app
+            "org.apache.velocity:velocity:1.7",                //Template engine
+            "commons-fileupload:commons-fileupload:1.3.1",     //File uploads
+            "org.restlet.jee:org.restlet:2.2.2",               //Restlet web framework
+            "org.restlet.jee:org.restlet.ext.fileupload:2.2.2" //Restlet extension for file uploads
+
+    compile files('lib/sootclasses-2.5.0.jar')                 //Soot is a compile time dependency
+
+
+    //RESTful doop client - EXPERIMENTAL
+    compile "org.codehaus.groovy.modules.http-builder:http-builder:0.7.2",
+            "org.apache.httpcomponents:httpmime:4.3.3"
+
+    runtime files('lib/jphantom-1.1-jar-with-dependencies.jar', 'lib/averroes-no-properties.jar')
+
+    runtime "org.restlet.jee:org.restlet.ext.servlet:2.2.2"    //Servlet adapter for Restlet framework
+
+    providedRuntime "javax.servlet:servlet-api:2.5"            //Provided by the servlet container
+}
+
+task createProperties(dependsOn: classes) {
+
+    description "Creates the default doop properties file"
+    ext.file = file("$projectDir/doop.properties")
+    doLast {
+        doop.Helper.createDefaultProperties(file)
+    }
+}
+
+
+applicationDistribution.from(file("$projectDir/logic")) {
+    into "logic"
+}
+
+run {
+    //We set the DOOP_HOME environment variable (see doop.Main)
+    environment.DOOP_HOME = projectDir
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
+
+war.from(file("$projectDir/logic")) {
+    into 'logic'
+}
+
+jettyRun {
+    //We set the DOOP_HOME system property (see doop.web.Listener)
+    System.setProperty("DOOP_HOME", projectDir.toString())
+}
