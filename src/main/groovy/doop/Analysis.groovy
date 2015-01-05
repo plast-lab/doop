@@ -78,7 +78,7 @@ class Analysis implements Runnable {
 			
 			analyze()
 
-            long dbSize = FileUtils.sizeOfDirectory(database) * 1024
+            long dbSize = FileUtils.sizeOfDirectory(database) / 1024
             bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
             File f = null
