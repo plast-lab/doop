@@ -1,5 +1,8 @@
 package doop.soot;
 
+import doop.util.filter.ClassFilter;
+import doop.util.filter.GlobClassFilter;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +28,7 @@ public class Main {
     private static boolean _ssa = false;
     private static boolean _trap = false;
     private static boolean _allowPhantom = false;
+    private static ClassFilter applicationClassFilter;
     private static String appRegex = "**";
 
     private static int shift(String[] args, int index) {
@@ -38,25 +42,10 @@ public class Main {
 
     private static boolean isApplicationClass(SootClass klass)
     {
-        for (String pat : appRegex.split(File.pathSeparator))
-            if (pat.endsWith(".*")) {
-                String pkg = pat.substring(0, pat.length() - 2);
+        if (applicationClassFilter == null)
+            return true;
 
-                if (klass.getPackageName().equalsIgnoreCase(pkg))
-                    return true;
-            } else if (pat.endsWith(".**")) {
-                String prefix = pat.substring(0, pat.length() - 2);
-
-                if (klass.getName().startsWith(prefix))
-                    return true;
-            } else if (pat.equals("*") && klass.getPackageName().isEmpty()) {
-                return true;
-            } else if (pat.equals("**")) {
-                return true;
-            } else if (klass.getName().equalsIgnoreCase(pat)) {
-                return true;
-            }
-        return false;
+        return applicationClassFilter.matches(klass.getName());
     }
 
     public static void main(String[] args)
@@ -129,10 +118,10 @@ public class Main {
                 {
                     _trap = true;
                 }
-                else if(args[i].equals("-application-regex"))
+                else if(args[i].equals("-application-glob"))
                 {
                     i = shift(args, i);
-                    appRegex = args[i];
+                    applicationClassFilter = new GlobClassFilter(args[i]);
                 }
                 else if(args[i].equals("-allow-phantom"))
                 {
