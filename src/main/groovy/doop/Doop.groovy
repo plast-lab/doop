@@ -476,13 +476,13 @@ class Doop {
         ),
         //jdoop-specific options
         new AnalysisOption<String>(
-            id:"APP_REGEX",
-            description:"A regular expression for the Java package names to be analyzed",
+            id:"APP_GLOB",
+            description:"A glob expression for the Java package names to be analyzed",
             value:null,
             webUI:true,
             cli:true,
-            name:"regex",
-            argName:"regular-expression"
+            name:"glob",
+            argName:"glob-expression"
         ),
         new AnalysisOption<String>(
             id:"USE_JAVA_CPP",

@@ -607,7 +607,7 @@ toPredicate,NegativeObjectFilter,string"""
 
         }
 
-        String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
+        String[] params = ["-full"] + depArgs + ["-application-glob", options.APP_GLOB.value]
 
         if (options.SSA.value) {
             params = params + ["-ssa"]
