@@ -27,7 +27,7 @@ class Main {
         Doop.initDoop(doopHome, doopOut)
 
         //initialize logging
-        Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
+        Helper.initLogging("DEBUG", "${Doop.doopHome}/logs", true)
 
         Log logger = LogFactory.getLog(Main)
 
