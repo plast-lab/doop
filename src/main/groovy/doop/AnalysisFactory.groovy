@@ -63,7 +63,7 @@ class AnalysisFactory {
 		//TODO: Check if input is given (incremental). Is it needed?
 		checkDACAPO(analysis)
 			
-		checkAppRegex(analysis)
+		checkAppGlob(analysis)
 			
 		//We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
 			
@@ -86,7 +86,7 @@ class AnalysisFactory {
     /**
      * Generates the analysis ID, using its name, main class and jars.
      *
-     * NOTE: With the jar dependency feature, the APP_REGEX is not being used (because it depends on the resolution
+     * NOTE: With the jar dependency feature, the APP_GLOB is not being used (because it depends on the resolution
      * of the jars, which depend on the ID).
      * @param analysis
      */
@@ -496,11 +496,11 @@ class AnalysisFactory {
 	/**
      * Determines application classes.
      *
-     * If an app regex is not present, it generates one.
+     * If an app glob is not present, it generates one.
      */
-    protected void checkAppRegex(Analysis analysis) {
-        if (!analysis.options.APP_REGEX.value) {
-            logger.debug "Generating app regex"
+    protected void checkAppGlob(Analysis analysis) {
+        if (!analysis.options.APP_GLOB.value) {
+            logger.debug "Generating app glob"
 			
             //We process only the first jar for determining the application classes
             /*
@@ -512,7 +512,7 @@ class AnalysisFactory {
 			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
             */
             Set<String> packages = Helper.getPackages(analysis.jars[0].resolve())
-			analysis.options.APP_REGEX.value = packages.sort().join(':')
+			analysis.options.APP_GLOB.value = packages.sort().join(':')
         }
     }
 	
