@@ -69,34 +69,31 @@ class Analysis implements Runnable {
      */
     @Override
     void run() {
-        timing {
+		preprocessor.init()
+		
+		initAnalysis()
+		
+		createDatabase()
 
-            preprocessor.init()
-			
-			initAnalysis()
-			
-            createDatabase()
+		//TODO: We don't need the write-meta staff, do we?
+		
+		analyze()
 
-            //TODO: We don't need the write-meta staff, do we?
-			
-			analyze()
+		long dbSize = FileUtils.sizeOfDirectory(database) / 1024
+		bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
-            long dbSize = FileUtils.sizeOfDirectory(database) / 1024
-            bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
+		File f = null
+		try {
+			f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+		}
+		catch(e) {
+			logger.debug e.getMessage()
+		}
 
-            File f = null
-            try {
-                f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-            }
-            catch(e) {
-                logger.debug e.getMessage()
-            }
-
-            if(f) {
-				logger.info "REANALYSE"
-                reanalyze()                
-            }
-        }
+		if(f) {
+			logger.info "REANALYSE"
+			reanalyze()                
+		}
     }
 
     /**
@@ -109,6 +106,7 @@ class Analysis implements Runnable {
         preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
 
+		logger.info "Loading simple statistics declarations"
         long time1 = timing {
             bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
         }
@@ -121,6 +119,7 @@ class Analysis implements Runnable {
             }
         }
 
+		logger.info "Loading statistics delta rules"
         long time3 = timing {
             bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic >/dev/null"
         }
@@ -128,13 +127,13 @@ class Analysis implements Runnable {
         long total = time1 + time2 + time3
         bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
 
-        logger.info "Runtime metrics"
+        logger.info "-- Runtime metrics --"
         bloxbatchPipe database, "-query Stats:Runtime",
                                 "sort -n",
                                 "sed -r 's/^ +([0-9]+[ab]?@ )?//'",
                                 "awk -F ', ' '{ printf(\"%-80s %'\\''.2f\\n\", \$1, \$2) }'"
 
-        logger.info "Statistics"
+        logger.info "-- Statistics --"
         bloxbatchPipe database, "-query Stats:Metrics",
                                 "sort -n",
                                 "sed -r 's/^ +[0-9]+[ab]?@ //'",
@@ -176,7 +175,7 @@ class Analysis implements Runnable {
      */
     protected void initAnalysis() {
 
-        logger.info "Pre-processing the logic files"
+        logger.info "-- Pre-processing the logic files --"
 
         String basePath = "${Doop.doopLogic}/${name}"
         String baseLibPath = "${Doop.doopLogic}/library"
@@ -262,8 +261,6 @@ class Analysis implements Runnable {
                 Helper.copyDirectoryContents(factsDir, cacheFacts)
             }
 
-            logger.info "Database initialization"
-
             initDatabase()
 		}
 
@@ -272,6 +269,8 @@ class Analysis implements Runnable {
     }
 
     protected void initDatabase() {
+
+		logger.info "-- Database initialization --"
 
         if (options.INCREMENTAL.value) {
             File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
@@ -356,7 +355,7 @@ class Analysis implements Runnable {
      */
     protected void analyze() {
 
-        logger.info "Analysis Prologue"
+        logger.info "-- Analysis Prologue --"
 
         if (options.DYNAMIC.value) {
 
@@ -429,7 +428,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             refine()
         }
 
-        logger.info "Analysis Main Phase"
+        logger.info "-- Analysis Main Phase --"
 
         if (!options.INCREMENTAL.value) {
             //TODO: Do we need the benchmark script?
@@ -586,7 +585,7 @@ toPredicate,NegativeObjectFilter,string"""
      */
     protected void runSoot() {
 
-        logger.info "Running soot to generate facts"
+        logger.info "-- Running soot to generate facts --"
 
         List<String> depArgs
 
