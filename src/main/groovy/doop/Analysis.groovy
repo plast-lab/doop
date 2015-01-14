@@ -765,14 +765,26 @@ toPredicate,NegativeObjectFilter,string"""
 	 * Generates a list for the jre libs for averroes 
 	 */
 	private List<String> jreAverroesLibraries() {
-		//TODO: deal with JRE versions other than system
 
-        if (options.JRE.value == "system") {
-            String javaHome = System.getProperty("java.home")
-            return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
-        }
-        else {
-            throw new RuntimeException("Only system JRE is currently supported")
+        String jre = options.JRE.value
+        String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+        //Not using if/else for readability
+        switch(jre) {
+            case "1.3":
+                return []
+            case "1.4":
+                return ["${path}/jce.jar", "${path}/jsse.jar"]
+            case "1.5":
+                return ["${path}/jce.jar", "${path}/jsse.jar"]
+            case "1.6":
+                return ["${path}/jce.jar", "${path}/jsse.jar"]
+            case "1.7":
+                return ["${path}/jce.jar", "${path}/jsse.jar"]
+            case "system":
+                String javaHome = System.getProperty("java.home")
+                return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+            default:
+                throw new RuntimeException("Invalid JRE version: $jre")
         }
 	}	
 	
@@ -780,14 +792,16 @@ toPredicate,NegativeObjectFilter,string"""
 	 * Generates the full path to the rt.jar required by averroes
 	 */
 	private String javaAverroesLibrary() {
-		//TODO: deal with JRE versions other than system
 
-        if (options.JRE.value == "system") {
+        String jre = options.JRE.value
+
+        if (jre == "system") {
             String javaHome = System.getProperty("java.home")
             return "$javaHome/lib/rt.jar"
         }
         else {
-            throw new RuntimeException("Only system JRE is currently supported")
+            String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+            return "$path/rt.jar"
         }
 	}
 
