@@ -85,7 +85,7 @@ class Main {
                 logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
                 logger.debug analysis
                 analysis.run()
-                analysis.getStats()
+                analysis.printStats()
                 analysis.linkResult()
             }
 
