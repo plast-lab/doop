@@ -11,6 +11,10 @@ import org.apache.commons.logging.LogFactory
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  *
+ * In general, the Analysis run() method implements the behavior of the original doop script.
+ * For supporting invocations over the web, the behavior of the get-stats function of the original doop script is
+ * broken into two parts: (a) produce statistics and (b) print statistics.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
  */
@@ -94,38 +98,15 @@ class Analysis implements Runnable {
 			logger.info "REANALYSE"
 			reanalyze()                
 		}
+
+        produceStats()
     }
 
     /**
-     * Gets the statistics. Mimics the behavior of the get-stats function of the doop run script.
+     * Prints the statistics. Mimics the behavior of the second part of the get-stats function of the original doop
+     * script.
      */
-    public void getStats() {
-
-        String baseLibPath = "${Doop.doopLogic}/library"
-
-        preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
-        preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
-
-		logger.info "Loading simple statistics declarations"
-        long time1 = timing {
-            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
-        }
-        long time2 = 0
-
-        if (options.STATS.value) {
-            preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
-            time2 = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
-            }
-        }
-
-		logger.info "Loading statistics delta rules"
-        long time3 = timing {
-            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic >/dev/null"
-        }
-
-        long total = time1 + time2 + time3
-        bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
+    public void printStats() {
 
         logger.info "-- Runtime metrics --"
         bloxbatchPipe database, "-query Stats:Runtime",
@@ -545,6 +526,39 @@ toPredicate,NegativeObjectFilter,string"""
             }
         }
     }
+
+    /**
+     * Produces the statistics. Mimics the behavior of the first part of the get-stats function of the original doop
+     * scrip.
+     */
+    protected void produceStats() {
+        String baseLibPath = "${Doop.doopLogic}/library"
+
+        preprocessor.preprocess(this, baseLibPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
+        preprocessor.preprocess(this, baseLibPath, "statistics-delta.logic", "${outDir}/statistics-delta.logic")
+
+        logger.info "Loading simple statistics declarations"
+        long time1 = timing {
+            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic >/dev/null"
+        }
+        long time2 = 0
+
+        if (options.STATS.value) {
+            preprocessor.preprocess(this, baseLibPath, "statistics.logic", "${outDir}/statistics.logic")
+            time2 = timing {
+                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic >/dev/null"
+            }
+        }
+
+        logger.info "Loading statistics delta rules"
+        long time3 = timing {
+            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic >/dev/null"
+        }
+
+        long total = time1 + time2 + time3
+        bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
+    }
+
 
     /**
      * Runs jphantom if phantom refs are not allowed
