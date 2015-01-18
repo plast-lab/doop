@@ -118,20 +118,28 @@ class Helper {
     }
 
     /**
-     * Executes the given command as an external process, setting its environment to the supplied Map.
+     * Starts the given command as an external process, setting its environment to the supplied Map.
      * The method invokes each command through the shell (/bin/bash).
      */
-    static void execCommand(String command, Map<String, String> env) {
-		Logger.getRootLogger().debug "Executing $command"
-		//List<String> envList = env?.collect { Map.Entry entry -> "${entry.key}=${entry.value}" }
-        //Process process = command.execute(envList, null)
+    static Process startExternalProcess(String command, Map<String, String> env, boolean redirectErrorStream) {
+        Logger.getRootLogger().debug "Executing $command"
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", command)
+        pb.redirectErrorStream(redirectErrorStream)
         Map<String, String> environment = pb.environment()
         environment.clear()
         environment.putAll(env)
 
-        Process process = pb.start()
+        return pb.start()
+    }
+
+    /**
+     * Executes the given command in the given environment, waiting for the process to complete.
+     * The method redirects the command's output and error streams to System.out and System.err respectively.
+     */
+    static void execCommand(String command, Map<String, String> env) {
+
+        Process process = startExternalProcess(command, env, false)
 
         process.waitForProcessOutput(System.out as OutputStream, System.err as OutputStream)
         if (process.exitValue() != 0) {

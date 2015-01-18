@@ -106,7 +106,7 @@ class Analysis implements Runnable {
      * Prints the statistics. Mimics the behavior of the second part of the get-stats function of the original doop
      * script.
      */
-    public void printStats() {
+    void printStats() {
 
         logger.info "-- Runtime metrics --"
         bloxbatchPipe database, "-query Stats:Runtime",
@@ -124,7 +124,7 @@ class Analysis implements Runnable {
     /**
      * Generates results. Mimics the behavior of the link-result function of the doop run script.
      */
-    public void linkResult() {
+    void linkResult() {
         String jre = options.JRE.value
         if (jre != "system") jre = "jre${jre}"
         String jarName = FilenameUtils.getBaseName(jars[0].resolve().toString())
@@ -148,6 +148,34 @@ class Analysis implements Runnable {
         return [id:id, name:name, outDir:outDir].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n")
+    }
+
+    /**
+     * Executes a bloxbatch query. EXPERIMENTAL!
+     */
+    void query(String query, Closure closure) {
+        Process process = Helper.startExternalProcess "${options.BLOXBATCH.value} -db $database -query $query",
+                          commandsEnvironment,
+                          true
+
+        def runnable = [
+            run: {
+                process.in.withReader { Reader r ->
+                    r.eachLine closure
+                }
+            }
+        ] as Runnable
+
+        Thread t = new Thread(runnable)
+        t.start()
+
+        t.join()
+        process.waitFor()
+        if (process.exitValue() != 0) {
+            throw new RuntimeException("Execution of query returned a non-zero status:\n $query")
+        }
+
+        process.closeStreams()
     }
 	
 
