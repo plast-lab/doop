@@ -12,6 +12,16 @@ import org.apache.log4j.Logger
  */
 class Main {
 
+    private static boolean checkArgs(OptionAccessor cli) {
+        boolean noAnalysis = !cli.a, noJar = !cli.j
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            println "Missing required argument(s): " + (noAnalysis ? "a" : "") + (noJar ? (noAnalysis ? ", " : "") + "j" : "")
+
+        return !error
+    }
+
     /**
      * The entry point.
      */
@@ -38,9 +48,12 @@ class Main {
             CliBuilder builder = CommandLineAnalysisFactory.createCliBuilder()
             OptionAccessor cli = builder.parse(args)
 
-            if (!cli) return
+            if (!cli || !args || cli.h) {
+                builder.usage()
+                return
+            }
 
-            if (!args || cli.h) {
+            if(!checkArgs(cli)) {
                 builder.usage()
                 return
             }
