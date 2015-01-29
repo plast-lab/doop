@@ -151,7 +151,7 @@ class Analysis implements Runnable {
     }
 
     /**
-     * Executes a bloxbatch query. EXPERIMENTAL!
+     * Executes a bloxbatch query, providing each line of output to the given closure as a String.
      */
     void query(String query, Closure closure) {
         Process process = Helper.startExternalProcess "${options.BLOXBATCH.value} -db $database -query $query",
