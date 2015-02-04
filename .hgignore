@@ -1,0 +1,21 @@
+#jdoop ingore list
+
+#analysis benchmarks
+^jars
+
+#gradle dirs
+^.gradle
+^build/
+
+#jdoop dist/runtime files
+^logs
+^out
+^results
+^last-analysis
+
+#jdoop webapp logs
+^src/main/webapp/logs/
+
+#intellij idea files
+^.idea
+^jdoop.iml
