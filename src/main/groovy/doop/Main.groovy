@@ -58,15 +58,6 @@ class Main {
                 return
             }
 
-            /*
-            List<String> arguments = cli.arguments()
-            logger.debug "Arguments: $arguments"
-            if (!arguments || arguments.size() < 2) {
-                logger.debug "No arguments"
-                builder.usage()
-                return
-            }
-            */
 
             //change the log level according to the cli arg
             def logLevel = cli.l
@@ -87,20 +78,11 @@ class Main {
             }
 
             Analysis analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
-
-            if (cli.r) {
-                String url = cli.r
-                logger.info "Posting ${analysis.name} analysis to remote server: $url"
-                new Client(url).postNewAnalysis(analysis)
-
-            }
-            else {
-                logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
-                logger.debug analysis
-                analysis.run()
-                analysis.printStats()
-                analysis.linkResult()
-            }
+            logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
+            logger.debug analysis
+            analysis.run()
+            analysis.printStats()
+            analysis.linkResult()
 
         } catch (e) {
             logger.error(e.getMessage(), e)

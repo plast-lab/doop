@@ -62,8 +62,6 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli //all options with cli property
         }
 
-        String usageHeader = "jdoop [OPTION]... ANALYSIS JAR\nAvailable analyses:\n\nAvailable options:\n"
-
         CliBuilder cli = new CliBuilder(
             usage:  "jdoop [OPTION]...",
         )
@@ -71,28 +69,15 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit')
-            r(longOpt: 'remote', 'Perform actions on the specified remote doop server', args:1, argName:'url')
             l(longOpt: 'level', 'Set the log level: debug, info or error (default: debug)', args:1, argName: 'loglevel')
             //p(longOpt: 'properties', 'Load doop properties file', args:1, argName: 'properties file')
             a(longOpt: 'analysis', "The name of the analysis: ${Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(', ')}",
               args:1, argName:"name")
             j(longOpt: 'jar', "The jar files to analyze. Separate multiple jars with a comma. If the argument is a directory, all its *.jar files will be included.", args:Option.UNLIMITED_VALUES, argName: "jar",
               valueSeparator: ",")
-
-            cliOptions.each { AnalysisOption option ->
-                if (option.id == "DYNAMIC") {
-                    //Special handling of DYNAMIC option
-                    d(longOpt: option.name, option.description, args: Option.UNLIMITED_VALUES, argName:option.argName,
-                      valueSeparator:',' as char)
-                }
-                else if (option.argName) {
-                    _(longOpt: option.name, option.description, args:1, argName:option.argName)
-                }
-                else {
-                    _(longOpt: option.name, option.description)
-                }
-            }
         }
+
+        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
         return cli
     }

@@ -31,32 +31,26 @@ repositories {
     maven {
         url "http://maven.restlet.org/"
     }
-    maven {
-        url "http://repository.codehaus.org/"
-    }
 }
 
 dependencies {
-    compile "org.codehaus.groovy:groovy-all:2.3.3",            // Groovy
-            "commons-logging:commons-logging:1.1",             // Logging wrapper
-            "log4j:log4j:1.2.14",                              // Logging implementation
-            "commons-cli:commons-cli:1.2",                     // Command line processor
-            "org.anarres:jcpp:1.4.5",                          // C preprocessor in Java
-            "commons-io:commons-io:2.4",                       // File Utils
-            "org.apache.ivy:ivy:2.3.0",                        // Apache Ivy (for downloading jars from maven repos)
-            "javax.servlet:servlet-api:2.5",                   // Used for the web app
-            "org.apache.velocity:velocity:1.7",                // Template engine
-            "commons-fileupload:commons-fileupload:1.3.1",     // File uploads
-            "org.ow2.asm:asm-debug-all:5.0.3",                 // Java Bytecode library
-            "org.restlet.jee:org.restlet:2.2.2",               // Restlet web framework
-            "org.restlet.jee:org.restlet.ext.fileupload:2.2.2" // Restlet extension for file uploads
+    compile "org.codehaus.groovy:groovy-all:2.3.3",             // Groovy
+            "commons-logging:commons-logging:1.1",              // Logging wrapper
+            "log4j:log4j:1.2.14",                               // Logging implementation
+            "commons-cli:commons-cli:1.2",                      // Command line processor
+            "org.anarres:jcpp:1.4.5",                           // C preprocessor in Java
+            "commons-io:commons-io:2.4",                        // File Utils
+            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
+            "javax.servlet:servlet-api:2.5",                    // Used for the web app
+            "org.apache.velocity:velocity:1.7",                 // Template engine
+            "commons-fileupload:commons-fileupload:1.3.1",      // File uploads
+            "org.ow2.asm:asm-debug-all:5.0.3",                  // Java Bytecode library
+            "org.restlet.jee:org.restlet:2.2.2",                // Restlet web framework
+            "org.restlet.jee:org.restlet.ext.fileupload:2.2.2", // Restlet extension for file uploads
+            "org.apache.httpcomponents:httpclient:4.4",          // Used by the Rest client
+            "org.apache.httpcomponents:httpmime:4.4"            // Used by the Rest client
 
     compile files('lib/sootclasses-2.5.0.jar')                 // Soot is a compile time dependency
-
-
-    //RESTful doop client - EXPERIMENTAL
-    compile "org.codehaus.groovy.modules.http-builder:http-builder:0.7.2",
-            "org.apache.httpcomponents:httpmime:4.3.3"
 
     runtime files('lib/jphantom-1.1-jar-with-dependencies.jar', 'lib/averroes-no-properties.jar')
 
@@ -74,9 +68,29 @@ task createProperties(dependsOn: classes) {
     }
 }
 
+task createClientScripts(type: CreateStartScripts) {
+    description "Create the OS specific scripts for invoking the Rest client"
+    classpath = startScripts.classpath
+    outputDir = startScripts.outputDir
+    mainClassName = "doop.web.client.Main"
+    applicationName = "client"
+}
+
+task runClient(type:JavaExec) {
+    main = createClientScripts.mainClassName
+    classpath = createClientScripts.classpath
+    if (project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
+
 
 applicationDistribution.from(file("$projectDir/logic")) {
     into "logic"
+}
+
+applicationDistribution.from(createClientScripts) {
+    into "bin"
 }
 
 run {

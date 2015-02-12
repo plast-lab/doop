@@ -1,5 +1,5 @@
 package doop
-
+import org.apache.commons.cli.Option
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
@@ -26,7 +26,12 @@ class Helper {
     ] as FileFilter
 
     /**
-     * Initializes Log4j
+     * Initializes Log4j (logging framework).
+     * Log statements are written to log file that is daily rolled.
+     * Optionally, the log statements can be also written to the console (standard output).
+     * @param logLevel - the log level to use
+     * @param logDir - the directory to place the log file
+     * @param console - indicates whether log statements should be also written to the standard output.
      */
     static void initLogging(String logLevel, String logDir, boolean console) {
         File dir = new File(logDir)
@@ -43,6 +48,17 @@ class Helper {
         if (console) {
             root.addAppender(new ConsoleAppender(new PatternLayout("%m%n")))
         }
+    }
+
+    /**
+     * Initializes Log4j (logging framework).
+     * Log statements are written to the the console (standard output).
+     * @param logLevel - the log level to use
+     */
+    static void initConsoleLogging(String logLevel){
+        Logger root = Logger.getRootLogger()
+        root.setLevel(Level.toLevel(logLevel, Level.WARN))
+        root.addAppender(new ConsoleAppender(new PatternLayout("%m%n")))
     }
 
     static FilenameFilter extensionFilter(String extension) {
@@ -326,5 +342,38 @@ class Helper {
         }
 
         w.write "${option.id} = \n\n"
+    }
+
+    /**
+     * Converts a list of analysis options to a list of cli options.
+     */
+    static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
+        return options.collect { AnalysisOption option ->
+            if (option.id == "DYNAMIC") {
+                //Special handling of DYNAMIC option
+                Option o = new Option('d', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                o.setValueSeparator(',' as char)
+                return o
+            }
+            else if (option.argName) {
+                Option o = new Option(null, option.name, true, option.description)
+                o.setArgName(option.argName)
+                return o
+            }
+            else {
+                return new Option(null, option.name, false, option.description)
+            }
+        }
+    }
+
+    /**
+     * Adds the list of analysis options to the cli builder.
+     * @param options - the list of AnalysisOption items to add.
+     * @param cli - the cli builder.
+     */
+    static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
+        convertAnalysisOptionsToCliOptions(options).each { cli << it}
     }
 }
