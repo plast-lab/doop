@@ -1,6 +1,6 @@
 # JDoop Documenation
 
-This document describes the design, implementation and usage of the new Java-based Doop (JDoop - Doop with a Java driver).
+This document[^about] describes the design, implementation and usage of the new Java-based Doop (JDoop - Doop with a Java driver).
 
 ## Contents
 * [Overview](#overview)
@@ -21,36 +21,37 @@ This document describes the design, implementation and usage of the new Java-bas
     * [The classes of the JDoop REST API](#design.rest)
 
 
-<h2 id="overview">Overview</h2>
+## Overview {#overview}
+Doop is a framework for Java pointer analysis implemented in Datalog (using the [Logicblox](http://www.logicblox.com/)
+engine and dialect).
+The JDoop framework operates atop Doop providing:
 
-
-The JDoop framework is implemented in Java and [Groovy](http://www.groovy-lang.org),
-using [Gradle](http://www.gradle.org) as its build system. JDoop operates atop the core Datalog/Logicblox-based Doop
-analysis framework, providing:
-
+* A Java-based API for running points-to analyses for Java programs (JDoop Core API).
 * A standalone application for running the analyses through a command-line interface (JDoop CLI).
 * A web application for:
-    * running the analyses through a web-based user interface (JDOOP WebUI).
-    * providing a restful end-point for running the analyses through a remote web service (JDoop REST API).
+     * running the analyses through a web-based user interface (JDOOP WebUI).
+     * providing a Restful end-point for running the analyses through a remote web service (JDoop REST API).
+* A Resful client for contacting the remote web service (JDoop REST Client).
 
-The above are backed by a single code-base that supports all modes of JDoop operation in a unified manner. In fact,
-the JDoop code-base designates a "bare/core" Java-based API for running the analyses, thus supporting any possible custom
-embedding/usage of the Doop analysis framework (for example, JDoop can be embedded in any Java-based application as
-a set of JAR and logic files).
+JDoop is implemented in Java and [Groovy](http://www.groovy-lang.org),
+using [Gradle](http://www.gradle.org) as its build system to designate a unified code-base for supporting
+all the above modes of JDoop operation (for example, JDoop can be embedded in any Java-based application as
+a set of JAR and logic files, it can be invoked from the command-line, etc.).
 
 
-<h2 id="building">Building JDoop</h2>
+## Building JDoop {#building}
+This section describes the process of building JDoop and its various options.
 
-<h3 id="building.cloning">Clone the JDoop repository</h3>
+### Clone the JDoop repository {#building.cloning}
 Clone the JDoop repo from bitbucket:
 
     hg clone [repo-url]
 
-<h3 id="building.structure">Directory Structure</h3>
-The directory structure of the repository follows the currently established conventions for Java projects. Specifically,
+### Directory Structure {#building.structure}
+The directory structure of the repository follows the established conventions for Java projects. Specifically,
 the repository contains the following directories:
 
-* *gradle*: contains the Gradle wrapper (gradlew) files.
+* *gradle*: contains the Gradle wrapper (gradlew) files [^building.gradlew].
 * *lib*: the custom runtime dependencies (the jars which cannot be automatically downloaded by Gradle, such as soot).
 * *logic*: the logic files (the core Doop analysis framework).
 * *src*: the source files of JDoop (including the Java and Groovy sources, static html/css/javascript files, web
@@ -62,12 +63,12 @@ The *src* directory is structured according to the conventions of Gradle's
 [Application](http://gradle.org/docs/current/userguide/application_plugin.html),
 [War](http://gradle.org/docs/current/userguide/war_plugin.html) and
 [Jetty](http://gradle.org/docs/current/userguide/jetty_plugin.html)
-plugins, containing the following sub-directories:
+plugins, containing the following sub-directories[^building.logic]:
 
-* main/groovy: The JDoop Groovy sources (Core API, CLI, WebUI & REST API).
-* main/java: The JDoop Java sources (soot fact generation).
-* main/resources: The default Log4j properties (and any other Java-based resource files).
-* main/webapp: The web application files used for the the WebUI and the REST API, including the static css/js files
+* *main/groovy*: The JDoop Groovy sources (Core API, CLI, WebUI, REST API, REST Client).
+* *main/java*: The JDoop Java sources (soot fact generation).
+* *main/resources*: The default Log4j properties (and any other Java-based resource files).
+* *main/webapp*: The web application files used for the the WebUI and the REST API, including the static css/js files
 (e.g. of the Bootstrap Web front-end framework which is used for the Web UI), the server-side templates (in tpl)
 and the WEB-INF/web.xml file (the deployment descriptor of the web app).
 
@@ -76,20 +77,9 @@ The use of Gradle allows us to gather all Doop-related source files in a single 
 * the Gradle build scripts (build.gradle and settings.gradle),
 * the Gradle wrapper invocation scripts (gradlew and gradlew.bat),
 * the .hgignore file.
-* this README file.
+* the README file and this documentation.
 
-Notes
-
-* Using the [Gradle wrapper](https://gradle.org/docs/current/userguide/gradle_wrapper.html) is the suggested way to
-run Gradle, allowing us to build, run or deploy the project without installing Gradle manually (the wrapper downloads
-Gradle for us).
-
-* Although we use Gradle's Application plugin, the logic files are placed in the *logic* top-level directory and
-not in the *src/dist* sub-directory (which is the standard Gradle convention for
-placing files to be distributed along with the application). This helps us support running the analyses without
-installing the JDoop app.
-
-<h3 id="building.gradle">Using Gradle to Execute the Build Tasks</h3>
+### Using Gradle to Execute the Build Tasks {#building.gradle}
 After cloning the repo, we can execute the build task of choice by issuing the following:
 
     $ ./gradlew [name-of-task]
@@ -100,26 +90,27 @@ To list the build tasks supported, we can issue:
 
 The main tasks available are the following:
 
-* classes - Assembles the Java and Groovy classes.
-* jar - Assembles a jar archive containing the classes.
-* distTar - Bundles the project as a tar archive. The file is the distribution artifact of the JDoop CLI,
-as it contains JDoop as a self-contained, standalone Java application with libs and automatically-generated OS specific
-scripts. This task should be used for generating the JDoop distro to publish to a web site.
-* distZip - As above, but generates a zip archive.
-* installApp - Installs JDoop CLI in the build/install directory (identical to producing distTar or distZip and unpacking
-the contents to the directory).
-* run - Runs the JDoop CLI directly (without installing it).
-* war - Generates a war archive (the standard Java Web application format) with all the compiled classes, the webapp
+* *classes* - Assembles the Java and Groovy classes.
+* *jar* - Assembles a jar archive containing the classes.
+* *distTar* - Bundles the project as a tar archive. The file is the distribution artifact of the JDoop CLI and the
+REST Client, as it contains JDoop as a self-contained, standalone Java application with libs and automatically-generated
+OS specific scripts. This task should be used for generating the JDoop distro to publish to a web site.
+* *distZip* - As above, but generates a zip archive.
+* *installApp* - Installs JDoop CLI and REST Client in the build/install directory (identical to producing distTar
+or distZip and unpacking the contents to the build/install directory).
+* *run* - Runs the JDoop CLI directly (without installing it).
+* *runClient* - Runs the JDoop REST Client directly (without installing it).
+* *war* - Generates a war archive (the standard Java Web application format) with all the compiled classes, the webapp
 content and the libraries. This file is a self-contained archive that can be deployed to any Java Application Server
 (such as Tomcat, Jetty, JBoss, etc) for running either the JDoop WebUI or the JDoop REST API.
-* jettyRun - Starts the embedded Jetty Server and deploys the project's files as and where they are (starting the WebUI
-and the REST API directly).
-* clean - Deletes the build directory (generated by Gradle for storing the build tasks' output).
-* javadoc - Generates Javadoc API documentation for the Java source code.
-* groovydoc - Generates Groovydoc API documentation for the Groovy source code.
-* createProperties - Custom task for creating the default doop properties file.
+* *jettyRun* - Starts the embedded Jetty Server and deploys the project's files automatically. This task is used for
+starting the WebUI and the REST API directly (without deployment to a web container).
+* *clean* - Deletes the build directory (generated by Gradle for storing the build tasks' output).
+* *javadoc* - Generates Javadoc API documentation for the Java source code.
+* *groovydoc* - Generates Groovydoc API documentation for the Groovy source code.
+* *createProperties* - Creates the default doop properties file.
 
-<h3 id="building.script">The Gradle build script</h3>
+### The Gradle build script {#building.script}
 The Gradle build script (build.gradle) contains the settings and code required to execute the build tasks.
 The script uses Gradle's Groovy-based DSL to:
 
@@ -130,27 +121,29 @@ The script uses Gradle's Groovy-based DSL to:
 * setup the jar repositories,
 * define the project's compile-time and run-time dependencies,
 * define the custom createProperties task,
+* define the custom runClient task,
 * customize the files to be included in the application distribution and the web app archive,
 * configure environment variables and system settings for running the CLI or the WebUI directly.
 
-<h2 id="running">Running JDoop</h2>
+## Running JDoop {#running}
+This section describes the various options supported for running the JDoop variants.
 
-<h3 id="running.cli">The JDoop CLI</h3>
+### Running JDoop from the CLI {#running.cli}
 
 #### Differences from the original Doop run script
 
 #### Installing JDoop vs Running JDoop directly
 
-<h3 id="running.cli">The Web application</h3>
+### The Web application {#running.web}
 
 #### The JDoop Web UI
 
 #### The JDoop REST API
 
 
-<h2 id="design">Design and Implementation</h2>
+## Design and Implementation {#design}
 
-<h3 id="design.goals">Goals</h3>
+### Goals {#design.goals}
 The primary goals of the JDoop design are the following:
 
 1. Offer an embeddable and multi-tenant Java/Groovy API for running the analyses.
@@ -158,7 +151,7 @@ The primary goals of the JDoop design are the following:
 3. Support client/server use cases (Web UI, RESTful API).
 4. Develop a unified code-base that is highly maintainable, flexible and extensible.
 
-<h3 id="design.api">The classes of the Core API</h3>
+### The classes of the Core API {#design.api}
 The core API is contained in the doop Groovy package and contains the following classes.
 
 #### doop.AnalysisFactory
@@ -267,13 +260,13 @@ String options, it is currently necessary to define the argName of the option.
 #### Other classes
 doop.OS, doop.JRE, doop.PreprocessorFlag Enums and doop.preprocess Classes
 
-<h3 id="design.cli">The classes of the JDoop CLI</h3>
+### The classes of the JDoop CLI {#design.cli}
 
 #### doop.Main
 
 #### doop.CommandLineAnalysisFactory
 
-<h3 id="design.web">The classes of the JDoop Web Application</h3>
+### The classes of the JDoop Web Application {#design.web}
 
 #### doop.web.Listener
 
@@ -292,6 +285,19 @@ doop.OS, doop.JRE, doop.PreprocessorFlag Enums and doop.preprocess Classes
 #### doop.web.AnalysisLRUMap
 
 
-<h3 id="design.webui">The classes of the JDoop Web UI</h3>
+### The classes of the JDoop Web UI {#design.webui}
 
-<h3 id="design.rest">The classes of the JDoop REST API</h3>
+### The classes of the JDoop REST API {#design.rest}
+
+[^about]: This document is to be used with [Pandoc](http://johnmacfarlane.net/pandoc/), using an invocation like the
+following:
+
+    pandoc -f markdown -t html -s -o outfile infile
+
+[^building.gradlew]: Using the [Gradle wrapper](https://gradle.org/docs/current/userguide/gradle_wrapper.html) is the
+suggested way to run Gradle, allowing us to build, run or deploy the project without installing Gradle manually (the
+wrapper downloads Gradle for us).
+
+[^building.logic]: Although we use Gradle's Application plugin, the logic files are placed in the *logic* top-level
+directory and not in the *src/dist* sub-directory (which is the standard Gradle convention for placing files to be
+distributed along with the application). This helps us support running the analyses without installing the JDoop app.
