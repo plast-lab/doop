@@ -1,4 +1,4 @@
-package doop
+package doop.core
 
 /**
  * The fact declarations import generator.

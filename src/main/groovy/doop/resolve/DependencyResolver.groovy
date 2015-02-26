@@ -1,6 +1,6 @@
 package doop.resolve
 
-import doop.Analysis
+import doop.core.Analysis
 
 /**
  * A resolver for the dependencies (jars) of an analysis.

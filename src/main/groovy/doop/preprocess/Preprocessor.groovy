@@ -1,6 +1,6 @@
 package doop.preprocess
 
-import doop.Analysis
+import doop.core.Analysis
 
 /**
  * @author: Kostas Saidis (saiko@di.uoa.gr)

@@ -1,4 +1,4 @@
-package doop
+package doop.core
 /**
  * Doop initialization and supported options.
  *

@@ -154,19 +154,19 @@ The primary goals of the JDoop design are the following:
 ### The classes of the Core API {#design.api}
 The core API is contained in the doop Groovy package and contains the following classes.
 
-#### doop.AnalysisFactory
+#### doop.core.AnalysisFactory
 A Factory for creating analyses. The class provides the following public method:
 
     newAnalysis(String name, List<String> jars, Map<String, AnalysisOption> options)
 
-which creates a new `doop.Analysis` object. The method checks and verifies that all provided information (name of
+which creates a new `doop.core.Analysis` object. The method checks and verifies that all provided information (name of
 the analysis, jar files and options) is correct, throwing an exception in case of error. The checks performed are
 based on the doop run script and are implemented using private or protected methods.
 
 This class is extended by `doop.CommandLineAnalysisFactory` and `doop.web.WebFormAnalysisFactory` to support
-creating `doop.Analysis` objects from the CLI and the WebUI/REST API respectively.
+creating `doop.core.Analysis` objects from the CLI and the WebUI/REST API respectively.
 
-#### doop.Analysis
+#### doop.core.Analysis
 An object that holds both:
 
 1. the analysis options and inputs
@@ -198,7 +198,7 @@ of executing an analysis.
 * Provide hooks for reacting to analysis events (event listeners or callbacks)?
 * Explore caching capabilities in the light of a multi-user, multi-tenant execution environment?
 
-#### doop.AnalysisOption
+#### doop.core.AnalysisOption
 A class that models an analysis option. Each option contains the following attributes:
 
 * id -
@@ -216,7 +216,7 @@ A class that models an analysis option. Each option contains the following attri
 The use of this class allows us to significantly simplify and reduce the code required to process and manage the
 analysis options in the various JDoop usage scenarios (CLI, WEB UI, REST API).
 
-#### doop.Doop
+#### doop.core.Doop
 The low-level initialization point of the framework.
 
 This class provides the following public method:
@@ -244,21 +244,21 @@ method, which is used by the above method.
 
 * define the option in the `ANALYSIS_OPTIONS` list (and the CLI and the WebUI will automatically adjust to its usage). For
 String options, it is currently necessary to define the argName of the option.
-* implement the validation/checks required for the new option (if any) in the `doop.AnalysisFactory`,
-* update the implementation of `doop.Analysis` to take into account the new option during the execution of the analysis phases.
+* implement the validation/checks required for the new option (if any) in the `doop.core.AnalysisFactory`,
+* update the implementation of `doop.core.Analysis` to take into account the new option during the execution of the analysis phases.
 
 *Thoughts/Experiments/TODOs*
 
 * Support the provision of an additional properties file from the CLI?
 
-#### doop.Helper
+#### doop.core.Helper
 
-#### doop.ImportGenerator
+#### doop.core.ImportGenerator
 
 #### Analysis inputs - the doop.resolve package
 
 #### Other classes
-doop.OS, doop.JRE, doop.PreprocessorFlag Enums and doop.preprocess Classes
+doop.core.OS, doop.core.JRE, doop.core.PreprocessorFlag Enums and doop.preprocess Classes
 
 ### The classes of the JDoop CLI {#design.cli}
 

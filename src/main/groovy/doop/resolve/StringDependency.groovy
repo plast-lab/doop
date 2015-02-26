@@ -1,6 +1,6 @@
 package doop.resolve
 
-import doop.Analysis
+import doop.core.Analysis
 
 /**
  * A jar dependency that is expressed as a String.

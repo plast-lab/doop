@@ -1,4 +1,4 @@
-package doop
+package doop.core
 /**
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 24/9/2014

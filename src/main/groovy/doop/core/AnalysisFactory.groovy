@@ -1,4 +1,4 @@
-package doop
+package doop.core
 import java.util.jar.JarFile
 import java.util.jar.Attributes
 import doop.preprocess.CppPreprocessor

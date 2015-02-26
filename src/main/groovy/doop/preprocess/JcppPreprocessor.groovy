@@ -1,6 +1,6 @@
 package doop.preprocess
-import doop.Analysis
-import doop.AnalysisOption
+import doop.core.Analysis
+import doop.core.AnalysisOption
 import org.anarres.cpp.*
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory

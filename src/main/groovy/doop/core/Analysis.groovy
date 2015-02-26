@@ -1,4 +1,4 @@
-package doop
+package doop.core
 
 import doop.preprocess.Preprocessor
 import doop.resolve.Dependency
