@@ -1,5 +1,10 @@
 package doop
 
+import doop.core.Analysis
+import doop.core.AnalysisFactory
+import doop.core.AnalysisOption
+import doop.core.Doop
+import doop.core.Helper
 import org.apache.commons.cli.Option
 
 /**

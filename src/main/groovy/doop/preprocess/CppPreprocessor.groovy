@@ -1,8 +1,8 @@
 package doop.preprocess
 
-import doop.Analysis
-import doop.AnalysisOption
-import doop.Helper
+import doop.core.Analysis
+import doop.core.AnalysisOption
+import doop.core.Helper
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 

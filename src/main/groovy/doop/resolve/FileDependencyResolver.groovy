@@ -1,7 +1,7 @@
 package doop.resolve
 
-import doop.Analysis
-import doop.Helper
+import doop.core.Analysis
+import doop.core.Helper
 
 /**
  * A resolver that treats dependencies as local files.
