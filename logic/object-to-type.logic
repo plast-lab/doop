@@ -1,0 +1,44 @@
+/**
+ * @author George Kastrinis
+ */
+
+/**
+ * Specific to analyses that look up a type to use as context,
+ * given an allocation site. Need to supply dummy surrounding
+ * types for the dummy allocation sites in delta.logic
+ */
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<initial-context>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<class-initialization>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<immutable>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<no-context>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<system-thread-group>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<main-thread-group>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<main-thread>>"),
+  ClassTypeValue(?type, "java.lang.String").

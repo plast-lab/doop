@@ -1,0 +1,73 @@
+/**
+ * An exception of a specific type, thrown at an instruction, is
+ * handled by an exception handler.
+ */
+ExceptionHandler:At[?instruction, ?type] = ?handler ->
+  ExceptionHandler(?handler),
+  Type(?type),
+  Instruction(?instruction).
+
+ExceptionHandler:At[?instruction, ?type] = ?handler <-
+  PossibleExceptionHandler(?handler, ?type, ?instruction),
+  not ImpossibleExceptionHandler(?handler, ?type, ?instruction).
+
+/**
+ * An exception type that is caught by an earlier exception handler
+ * (not ?handler).
+ */
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) ->
+  ExceptionHandler(?handler),
+  Type(?type),
+  Instruction(?instruction).
+
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) <-
+  PossibleExceptionHandler(?handler, ?type, ?instruction),
+  ExceptionHandler:Before(?previous, ?handler),
+  PossibleExceptionHandler(?previous, ?type, ?instruction).
+
+/**
+ * All possible handlers of an exception type for an instruction.
+ */
+PossibleExceptionHandler(?handler, ?type, ?instruction) ->
+  ExceptionHandler(?handler),
+  Type(?type),
+  Instruction(?instruction).
+
+PossibleExceptionHandler(?handler, ?type, ?instruction) <-
+  ExceptionHandler:InRange(?handler, ?instruction),
+  ExceptionHandler:Type[?handler] = ?type.
+
+PossibleExceptionHandler(?handler, ?subtype, ?instruction) <-
+  ExceptionHandler:InRange(?handler, ?instruction),
+  ExceptionHandler:Type[?handler] = ?type,
+  Superclass(?subtype, ?type).
+
+/**
+ * Instructions that are in the range of an exception handler.
+ */
+ExceptionHandler:InRange(?handler, ?instruction) ->
+  ExceptionHandler(?handler),
+  Instruction(?instruction).
+
+ExceptionHandler:InRange(?handler, ?instruction) <-
+  Instruction:Method[?instruction] = ?method,
+  Instruction:Index[?instruction] = ?index,
+  ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+  ExceptionHandler:Begin[?handler] = ?begin,
+  ExceptionHandler:End[?handler] = ?end,
+  ?begin <= ?index,
+  ?index < ?end.
+
+/**
+ * Transitive closure of ExceptionHandler:Previous.
+ */
+ExceptionHandler:Before(?before, ?handler) ->
+  ExceptionHandler(?before),
+  ExceptionHandler(?handler).
+
+ExceptionHandler:Before(?previous, ?handler) <-
+  ExceptionHandler:Previous[?handler] = ?previous.
+
+ExceptionHandler:Before(?before, ?handler) <-
+  ExceptionHandler:Before(?middle, ?handler),
+  ExceptionHandler:Previous[?middle] = ?before.
