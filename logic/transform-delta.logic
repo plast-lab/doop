@@ -1,0 +1,372 @@
+// First remove the static info for the useless variable.
+/*
+ * Commented out so that client analyses that want to do post-processing
+ * have variable name info.
+ */
+//-Var(?var) <-
+//  Var@previous(?var), Copies@previous[?var] = _.
+//
+//-Var:Type[?ref] = ?type <-
+//  Var:Type@previous[?ref] = ?type, Copies@previous[?ref] = _.
+//
+//-Var:DeclaringMethod(?ref, ?method) <-
+//  Var:DeclaringMethod@previous(?ref, ?method), Copies@previous[?ref] = _.
+
+
+// Now remove all defs of the useless variable and replaces its
+// uses with the variable it clones. This is a general rewrite.
+
+*FormalParam[?index, ?method] = ?noncopyVar <-
+  FormalParam@previous[?index, ?method] = ?to, Copies@previous[?to] = ?noncopyVar.
+
+*ThisVar[?method] = ?noncopyVar <-
+  ThisVar@previous[?method] = ?var, Copies@previous[?var] = ?noncopyVar.
+
++ReturnVar(?noncopyVar, ?method),
+-ReturnVar(?to, ?method)
+<-
+  ReturnVar@previous(?to, ?method), Copies@previous[?to] = ?noncopyVar.
+
+// Kind of meaningless. Will it ever fire? Prob. not.
+-AssignHeapAllocation(?heap, ?to, ?inmethod)
+<-
+  AssignHeapAllocation@previous(?heap, ?to, ?inmethod), 
+  Copies@previous[?to] = _.
+
+// +AssignHeapAllocation(?heap, ?noncopyVar, ?inmethod),
+// -AssignHeapAllocation(?heap, ?to, ?inmethod)
+// <-
+//   AssignHeapAllocation@previous(?heap, ?to, ?inmethod), 
+//   Copies@previous[?to] = ?noncopyVar.
+
+// Keep the call but update it if it has no return value, or the
+// return value has not been shown to be a useless clone var. Otherwise
+// eliminate it.
+
+*ActualParam[?index, ?invocation] = ?noncopyVar <-
+  ActualParam@previous[?index, ?invocation] = ?param, 
+  !(AssignReturnValue@previous[?invocation] = _),
+  Copies@previous[?param] = ?noncopyVar,
+  !RedundantInvocation@previous(?invocation).
+
+*ActualParam[?index, ?invocation] = ?noncopyVar <-
+  ActualParam@previous[?index, ?invocation] = ?param, 
+  AssignReturnValue@previous[?invocation] = ?ret, 
+  Copies@previous[?param] = ?noncopyVar,
+  !(Copies@previous[?ret] = _),
+  !RedundantInvocation@previous(?invocation).
+
+-ActualParam[?index, ?invocation] = ?param <-
+  ActualParam@previous[?index, ?invocation] = ?param, 
+  AssignReturnValue@previous[?invocation] = ?ret, 
+  (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
+
+-ActualParam[?index, ?invocation] = ?param <-
+  ActualParam@previous[?index, ?invocation] = ?param, 
+  !(AssignReturnValue@previous[?invocation] = _), 
+  RedundantInvocation@previous(?invocation).
+
+-Instruction:Method[?invocation] = ?inmethod,
+-MethodInvocation:Signature(?invocation, ?sig),
+-StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+-AssignReturnValue[?invocation] = ?ret <-
+  StaticMethodInvocation@previous(?invocation, ?sig, ?inmethod),
+  AssignReturnValue@previous[?invocation] = ?ret, 
+  (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
+
+-Instruction:Method[?invocation] = ?inmethod,
+-MethodInvocation:Signature(?invocation, ?sig),
+-StaticMethodInvocation(?invocation, ?sig, ?inmethod)
+<-
+  StaticMethodInvocation@previous(?invocation, ?sig, ?inmethod),
+  !(AssignReturnValue@previous[?invocation] = _), 
+  RedundantInvocation@previous(?invocation).
+
+*VirtualMethodInvocation:Base[?inv] = ?noncopyVar <-
+  VirtualMethodInvocation:Base@previous[?inv] = ?base, 
+  !(AssignReturnValue@previous[?inv] = _),
+  Copies@previous[?base] = ?noncopyVar,
+  !RedundantInvocation@previous(?inv).
+
+*VirtualMethodInvocation:Base[?inv] = ?noncopyVar <-
+  VirtualMethodInvocation:Base@previous[?inv] = ?base, 
+  AssignReturnValue@previous[?inv] = ?ret,
+  Copies@previous[?base] = ?noncopyVar,
+  !(Copies@previous[?ret] = _),
+  !RedundantInvocation@previous(?inv).
+
+-VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+-VirtualMethodInvocation:Base[?invocation] = ?base,
+-Instruction:Method[?invocation] = ?inmethod,
+-MethodInvocation:Signature[?invocation] = ?sig,
+-AssignReturnValue[?invocation] = ?ret 
+<-
+  Instruction:Method@previous[?invocation] = ?inmethod,
+  MethodInvocation:Signature@previous[?invocation] = ?sig,
+  VirtualMethodInvocation:Base@previous[?invocation] = ?base, 
+  AssignReturnValue@previous[?invocation] = ?ret, 
+  (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
+
+-VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+-VirtualMethodInvocation:Base[?invocation] = ?base,
+-Instruction:Method[?invocation] = ?inmethod,
+-MethodInvocation:Signature[?invocation] = ?sig 
+<-
+  Instruction:Method@previous[?invocation] = ?inmethod,
+  MethodInvocation:Signature@previous[?invocation] = ?sig,
+  VirtualMethodInvocation:Base@previous[?invocation] = ?base, 
+  !(AssignReturnValue@previous[?invocation] = _), 
+  RedundantInvocation@previous(?invocation).
+
+*SpecialMethodInvocation:Base[?inv] = ?noncopyVar <-
+  SpecialMethodInvocation:Base@previous[?inv] = ?base, 
+  !(AssignReturnValue@previous[?inv] = _),
+  Copies@previous[?base] = ?noncopyVar,
+  !RedundantInvocation@previous(?inv).
+
+*SpecialMethodInvocation:Base[?inv] = ?noncopyVar <-
+  SpecialMethodInvocation:Base@previous[?inv] = ?base, 
+  AssignReturnValue@previous[?inv] = ?ret,
+  Copies@previous[?base] = ?noncopyVar,
+  !(Copies@previous[?ret] = _),
+  !RedundantInvocation@previous(?inv).
+
+-SpecialMethodInvocation:Base[?invocation] = ?base,
+-Instruction:Method[?invocation] = ?inmethod,
+-MethodInvocation:Signature[?invocation] = ?sig,
+-AssignReturnValue[?invocation] = ?ret 
+<-
+  SpecialMethodInvocation:Base@previous[?invocation] = ?base,
+  Instruction:Method@previous[?invocation] = ?inmethod,
+  MethodInvocation:Signature@previous[?invocation] = ?sig,
+  AssignReturnValue@previous[?invocation] = ?ret, 
+  (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
+
+-SpecialMethodInvocation:Base[?invocation] = ?base,
+-Instruction:Method[?invocation] = ?inmethod,
+-MethodInvocation:Signature[?invocation] = ?sig 
+<-
+  SpecialMethodInvocation:Base@previous[?invocation] = ?base, 
+  Instruction:Method@previous[?invocation] = ?inmethod,
+  MethodInvocation:Signature@previous[?invocation] = ?sig,
+  !(AssignReturnValue@previous[?invocation] = _), 
+  RedundantInvocation@previous(?invocation).
+
+// The copy var is used as the source or target of an assignment.
+-AssignLocal(?from, ?to, ?inmethod)   
+<-
+  AssignLocal@previous(?from, ?to, ?inmethod), 
+  (Copies@previous[?to] = _ ;   
+   RedundantLocalCopy@previous(?to, ?from, ?inmethod)).
+
++AssignLocal(?noncopyVarFrom, ?to, ?inmethod),
+-AssignLocal(?from, ?to, ?inmethod)   
+<-
+  AssignLocal@previous(?from, ?to, ?inmethod), 
+  Copies@previous[?from] = ?noncopyVarFrom,
+  !(Copies@previous[?to] = _).
+
+-AssignCast(?type, ?from, ?to, ?inmethod)   
+<-
+  AssignCast@previous(?type, ?from, ?to, ?inmethod), 
+  Copies@previous[?to] = _.
+
++AssignCast(?type, ?noncopyVarFrom, ?to, ?inmethod),
+-AssignCast(?type, ?from, ?to, ?inmethod)   
+<-
+  AssignCast@previous(?type, ?from, ?to, ?inmethod), 
+  Copies@previous[?from] = ?noncopyVarFrom,
+  !(Copies@previous[?to] = _).
+
+-LoadInstanceField(?base, ?sig, ?to, ?inmethod)
+<-
+  LoadInstanceField@previous(?base, ?sig, ?to, ?inmethod),
+  (Copies@previous[?to] = _ ;   
+   RedundantLoadInstanceField@previous(?to, ?sig, ?base, ?inmethod)).
+
++LoadInstanceField(?noncopyVar, ?sig, ?to, ?inmethod),
+-LoadInstanceField(?base, ?sig, ?to, ?inmethod)
+<-
+  LoadInstanceField@previous(?base, ?sig, ?to, ?inmethod),
+  Copies@previous[?base] = ?noncopyVar,
+  !(Copies@previous[?to] = _).
+
+-LoadStaticField(?sig, ?to, ?inmethod)
+<-
+  LoadStaticField@previous(?sig, ?to, ?inmethod),
+  (Copies@previous[?to] = _;
+   RedundantLoadStaticField@previous(?to, ?sig, ?inmethod)).
+
+-StoreInstanceField(?from, ?base, ?sig, ?inmethod)
+<-
+  StoreInstanceField@previous(?from, ?base, ?sig, ?inmethod),
+  RedundantStoreInstanceField@previous(?from, ?sig, ?base, ?inmethod).
+
+// Three different cases depending on whether the base or from
+// or both variables are being replaced.
++StoreInstanceField(?noncopyVarFrom, ?noncopyVar, ?sig, ?inmethod),
+-StoreInstanceField(?from, ?base, ?sig, ?inmethod)
+<-
+  StoreInstanceField@previous(?from, ?base, ?sig, ?inmethod),
+  Copies@previous[?base] = ?noncopyVar,
+  Copies@previous[?from] = ?noncopyVarFrom,
+  !RedundantStoreInstanceField@previous(?from, ?sig, ?base, ?inmethod).
+
++StoreInstanceField(?from, ?noncopyVar, ?sig, ?inmethod),
+-StoreInstanceField(?from, ?base, ?sig, ?inmethod)
+<-
+  StoreInstanceField@previous(?from, ?base, ?sig, ?inmethod),
+  Copies@previous[?base] = ?noncopyVar,
+  !(Copies@previous[?from] = _),
+  !RedundantStoreInstanceField@previous(?from, ?sig, ?base, ?inmethod).
+
++StoreInstanceField(?noncopyVar, ?base, ?sig, ?inmethod),
+-StoreInstanceField(?from, ?base, ?sig, ?inmethod)
+<-
+  StoreInstanceField@previous(?from, ?base, ?sig, ?inmethod),
+  Copies@previous[?from] = ?noncopyVar,
+  !(Copies@previous[?base] = _),
+  !RedundantStoreInstanceField@previous(?from, ?sig, ?base, ?inmethod).
+
+
+-StoreStaticField(?from, ?sig, ?inmethod)
+<-
+  StoreStaticField@previous(?from, ?sig, ?inmethod),
+  RedundantStoreStaticField@previous(?from, ?sig, ?inmethod).
+
++StoreStaticField(?noncopyVar, ?sig, ?inmethod),
+-StoreStaticField(?from, ?sig, ?inmethod)
+<-
+  StoreStaticField@previous(?from, ?sig, ?inmethod),
+  Copies@previous[?from] = ?noncopyVar,
+  !RedundantStoreStaticField@previous(?from, ?sig, ?inmethod).
+
+
+-LoadArrayIndex(?base, ?to, ?inmethod)
+<-
+  LoadArrayIndex@previous(?base, ?to, ?inmethod),
+  Copies@previous[?to] = _.
+
++LoadArrayIndex(?noncopyVar, ?to, ?inmethod),
+-LoadArrayIndex(?base, ?to, ?inmethod)
+<-
+  LoadArrayIndex@previous(?base, ?to, ?inmethod),
+  Copies@previous[?base] = ?noncopyVar,
+  !(Copies@previous[?to] = _).
+
+
++StoreArrayIndex(?noncopyVarFrom, ?noncopyVar, ?inmethod),
+-StoreArrayIndex(?from, ?base, ?inmethod)
+<-
+  StoreArrayIndex@previous(?from, ?base, ?inmethod),
+  Copies@previous[?base] = ?noncopyVar,
+  Copies@previous[?from] = ?noncopyVarFrom.
+
++StoreArrayIndex(?from, ?noncopyVar, ?inmethod),
+-StoreArrayIndex(?from, ?base, ?inmethod)
+<-
+  StoreArrayIndex@previous(?from, ?base, ?inmethod),
+  Copies@previous[?base] = ?noncopyVar,
+  !(Copies@previous[?from] = _).
+
++StoreArrayIndex(?noncopyVarFrom, ?base, ?inmethod),
+-StoreArrayIndex(?from, ?base, ?inmethod)
+<-
+  StoreArrayIndex@previous(?from, ?base, ?inmethod),
+  Copies@previous[?from] = ?noncopyVarFrom,
+  !(Copies@previous[?base] = _).
+
+
++Throw(?ref, ?noncopyVar),
++Throw:Var[?ref] = ?noncopyVar,
+-Throw(?ref, ?var),
+-Throw:Var[?ref] = ?var
+<-
+  Throw@previous(?ref, ?var),
+  Copies@previous[?var] = ?noncopyVar.
+
+// (REVIEW) No need to pre-process SimpleExceptionHandler: only used 
+// for Paddle compatibility mode.
+
+*ExceptionHandler:FormalParam[?handler] = ?noncopyVar <-
+  ExceptionHandler:FormalParam@previous[?handler] = ?var, Copies@previous[?var] = ?noncopyVar.
+
+// +java:lang:Object:getClass(?to, ?noncopyVar),
+// -java:lang:Object:getClass(?to, ?from)
+// <-
+//   java:lang:Object:getClass@previous(?to, ?from),
+//   Copies@previous[?from] = ?noncopyVar.
+
+-java:lang:Class:newInstance(?invocation, ?to, ?from)
+<-
+  java:lang:Class:newInstance@previous(?invocation, ?to, ?from),
+  Copies@previous[?to] = _.
+
++java:lang:Class:newInstance(?invocation, ?to, ?noncopyVar),
+-java:lang:Class:newInstance(?invocation, ?to, ?from)
+<-
+  java:lang:Class:newInstance@previous(?invocation, ?to, ?from),
+  Copies@previous[?from] = ?noncopyVar,
+  !(Copies@previous[?to] = _).
+
+
+-java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from)
+<-
+  java:lang:reflect:Constructor:newInstance@previous(?invocation, ?to, ?from),
+  Copies@previous[?to] = _.
+
++java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?noncopyVar),
+-java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from)
+<-
+  java:lang:reflect:Constructor:newInstance@previous(?invocation, ?to, ?from),
+  Copies@previous[?from] = ?noncopyVar,
+  !(Copies@previous[?to] = _).
+
+// Add current facts to predicate that memorizes them for post-processing.
++DupCopies(?to, ?from) <- Copies@previous[?to] = ?from.
+
+-DupCopies(?other, ?to),
++DupCopies(?other, ?from)
+<- 
+  Copies@previous[?to] = ?from,
+  DupCopies@previous(?other,?to).
+
++DupSameInvocation(?inv1, ?inv2) <- 
+  $transform:_SameInvocation@previous(?inv1, ?inv2).
+
+// Probably faster to join the other way.
+//+DupCopies[?to] = ?from <- Copies[?to] = ?from.
+
+
+/*
+// Currently folded into code above.
+
+// Remove all redundant data flow edges.
+// Originally this was intended to be executed as a separate transaction,
+// which doesn't work. The moment these edges are removed, the Copies relation
+// changes.
+-AssignLocal(?from, ?to, ?inmethod)   
+<-
+  AssignLocal@previous(?from, ?to, ?inmethod), 
+  RedundantLocalCopy@previous(?to, ?from, ?inmethod).
+
+-LoadInstanceField(?base, ?sig, ?to, ?inmethod)
+<-
+  LoadInstanceField@previous(?base, ?sig, ?to, ?inmethod),
+  RedundantLoadInstanceField@previous(?to, ?sig, ?base, ?inmethod).
+
+-LoadStaticField(?sig, ?to, ?inmethod)
+<-
+  LoadStaticField@previous(?sig, ?to, ?inmethod),
+  RedundantLoadStaticField@previous(?to, ?sig, ?inmethod).
+
+-StoreInstanceField(?from, ?base, ?sig, ?inmethod)
+<-
+  StoreInstanceField@previous(?from, ?base, ?sig, ?inmethod),
+  RedundantStoreInstanceField@previous(?from, ?sig, ?base, ?inmethod).
+
+-StoreStaticField(?from, ?sig, ?inmethod)
+<-
+  StoreStaticField@previous(?from, ?sig, ?inmethod),
+  RedundantStoreStaticField@previous(?from, ?sig, ?inmethod).
+*/
