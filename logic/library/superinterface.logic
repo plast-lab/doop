@@ -1,0 +1,33 @@
+/**
+ * An interface type K is a superinterface of class type C.
+ *
+ * TODO: report, C can actually also be an interface.
+ */
+Superinterface(?k, ?c) -> Type(?k), Type(?c).
+
+/**
+ * JVM Spec:
+ *   An interface type K is a superinterface of class type C if
+ *     - if K is direct superinterface of C
+ */
+Superinterface(?k, ?c) <-
+  DirectSuperinterface(?c, ?k).
+
+/**
+ * JVM Spec:
+ *   An interface type K is a superinterface of class type C if
+ *     - if C has a direct superinterface J that has K as a superinterface
+ *     
+ */
+Superinterface(?k, ?c) <-
+  DirectSuperinterface(?c, ?j),
+  Superinterface(?k, ?j).
+
+/**
+ * JVM Spec:
+ *   An interface type K is a superinterface of class type C if
+ *     - if K is a superinterface of the direct superclass of C
+ */
+Superinterface(?k, ?c) <-
+  DirectSuperclass[?c] = ?super,
+  Superinterface(?k, ?super).
