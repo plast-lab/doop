@@ -37,7 +37,7 @@ class Helper {
         File dir = new File(logDir)
         if (!dir.exists()) dir.mkdir()
 
-        String logFile =  "${logDir}/jdoop.log"
+        String logFile =  "${logDir}/doop.log"
 
         PatternLayout layout = new PatternLayout("%d [%t] %-5p %c - %m%n")
         Logger root = Logger.getRootLogger()

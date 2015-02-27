@@ -489,7 +489,7 @@ class Doop {
             name:"INTERACTIVE",
 			isAdvanced:true
         ),
-        //jdoop-specific options
+        //addtional options
         new AnalysisOption<String>(
             id:"APP_GLOB",
             description:"A glob expression for the Java package names to be analyzed",
