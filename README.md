@@ -1,6 +1,6 @@
 # Readme
 
-This is the readme file for the jdoop project (doop with a Java driver). For more information, please consult the
+This is the readme file for the Doop project. For more information, please consult the
 documentation.md file.
 
 ## Directory Structure
@@ -18,17 +18,17 @@ It also contains the gradle build files (build.gradle and settings.gradle) and t
 ## Dependecies
 
 
-Currently, the only requirement for either building or running jdoop is JDK 6 or higher. Neither Gradle nor Groovy is required to be installed manually.
+Currently, the only requirement for either building or running doop is JDK 6 or higher. Neither Gradle nor Groovy is required to be installed manually.
 
 ## Build Standalone App
 
-Building the standalone app refers to generating the runtime/distribution artifacts of jdoop.
+Building the standalone app refers to generating the runtime/distribution artifacts of doop.
 
 To do so, we issue the following:
 
     $ ./gradlew distZip
 
-This builds the project and creates the jdoop distibution zip in the build/distributions directory.
+This builds the project and creates the doop distibution zip in the build/distributions directory.
 
 We can also issue the following:
 
@@ -36,13 +36,13 @@ We can also issue the following:
 
 to create a tarball instead of a zip in the build/distributions directory.
 
-To generate both (e.g. in order to release a new jdoop version and push it to the web site), we can issue:
+To generate both (e.g. in order to release a new doop version and push it to the web site), we can issue:
 
     $ ./gradlew distZip distTar
 
 ## Install Standalone App
 
-To install jdoop, we need to:
+To install doop, we need to:
 
 * extract the distribution zip or tarball in a directory of our choice.
 * set the DOOP_HOME environment variable to point to the above directory.
@@ -50,52 +50,42 @@ To install jdoop, we need to:
 
 ## Run Standalone App
 
-We can invoke jdoop by issuing:
+We can invoke doop by issuing:
 
-    $ DOOP_HOME>./bin/jdoop [OPTIONS]...
+    $ DOOP_HOME>./bin/doop [OPTIONS]...
 
-The jdoop command line arguments are similar to the arguments of the original doop, with the following difference: the
+The doop command line arguments are similar to the arguments of the original doop, with the following difference: the
 analysis and the jar(s) are treated as options and not as arguments. For example, the doop invocation:
 
     $ >./run context-insensitive ./lib/asm-debug-all-4.1.jar
 
-should be given as follows in jdoop:
+should be given as follows in doop:
 
-    $ DOOP_HOME>./bin/jdoop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
+    $ DOOP_HOME>./bin/doop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
 
-The jdoop application creates two directories in the DOOP_HOME:
+The doop application creates two directories in the DOOP_HOME:
 
 * out: contains the analyses files (processed logic, jars, etc)
 * logs: log files of the analyses, which are automatically recycled every day.
 
 ## Local Install
 
-Instead of generating the zip or tarball, we can instruct Gradle to install the jdoop app directly in our working directory:
+Instead of generating the zip or tarball, we can instruct Gradle to install the doop app directly in our working directory:
 
     $ ./gradlew installApp
 
-This will create a build/install directory, containing all the jdoop runtime files (similar to generating the zip or tarball and extracting its files to the build/install directory).
+This will create a build/install directory, containing all the doop runtime files (similar to generating the zip or tarball and extracting its files to the build/install directory).
 
-Then we can switch to this directory, set the DOOP_HOME environment variable and invoke jdoop from there.
+Then we can switch to this directory, set the DOOP_HOME environment variable and invoke doop from there.
 
 ## Run Directly
 
-This is the most convenient way to invoke jdoop. We issue:
+This is the most convenient way to invoke doop. We issue:
 
-    $ ./gradlew run -Pargs="jdoop-command-line-arguments"
+    $ ./gradlew run -Pargs="doop-command-line-arguments"
 
 For example, the following invocation:
 
     $ ./gradlew run -Pargs="-a context-insensitive -j ./lib/asm-debug-all-4.1.jar"
 
 will run the context-insensitive analysis on the asm-debug-all-4.1 jar.
-
-
-## Run Web UI
-
-The run the web UI, we issue:
-
-    $ ./gradlew jettyRun
-
-This starts the embedded jetty web container. To visit the web app open <http://localhost:8000/jdoop/web/index.html> in
-your web browser.
