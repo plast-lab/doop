@@ -96,7 +96,7 @@ The script uses Gradle's Groovy-based DSL to:
 * setup the jar repositories,
 * define the project's compile-time and run-time dependencies,
 * define the custom createProperties task,
-* customize the files to be included in the application distribution and the web app archive,
+* customize the files to be included in the application distribution,
 * configure environment variables and system settings for running the CLI directly.
 
 ## Running Doop {#running}
@@ -196,8 +196,8 @@ method, which is used by the above method.
 
 **Note**: To add a new analysis option to the framework, we need to:
 
-* define the option in the `ANALYSIS_OPTIONS` list (and the CLI and the WebUI will automatically adjust to its usage). For
-String options, it is currently necessary to define the argName of the option.
+* define the option in the `ANALYSIS_OPTIONS` list. For String options, it is currently necessary to define the
+argName of the option.
 * implement the validation/checks required for the new option (if any) in the `doop.core.AnalysisFactory`,
 * update the implementation of `doop.core.Analysis` to take into account the new option during the execution of the analysis phases.
 
