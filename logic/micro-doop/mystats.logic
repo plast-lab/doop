@@ -1,0 +1,59 @@
+/***************************************************
+ * Variables
+ ***************************************************/
+
+Stats:Simple:InsensVarPointsTo(?heap, ?var) ->
+  HeapAllocation(?heap), Var(?var).
+Stats:Simple:InsensVarPointsTo(?heap, ?var) <-
+  VarPointsTo( ?heap,  ?var).
+
+Stats:Simple:ReachableVar(?var) ->
+  Var(?var).
+Stats:Simple:ReachableVar( ?var ) <-
+  Reachable( ?method ), Var:DeclaringMethod(?var, ?method).
+
+Stats:Simple:InsensReachableVar(?var) -> Var(?var).
+Stats:Simple:InsensReachableVar(?var) <-
+  Stats:Simple:ReachableVar( ?var ).
+
+/***************************************************
+ * Arrays
+ ***************************************************/
+/*
+Stats:Simple:InsensArrayIndexPointsTo(?heap, ?baseheap) ->
+  HeapAllocation(?heap), HeapAllocation(?baseheap).
+Stats:Simple:InsensArrayIndexPointsTo(?heap, ?baseheap) <-
+  ArrayIndexPointsTo(_,?heap,_,?baseheap).
+/
+/***************************************************
+ * Fields
+ ***************************************************/
+
+Stats:Simple:InsensInstanceFieldPointsTo(?heap, ?sig, ?baseheap) ->
+  HeapAllocation(?heap), 
+  FieldSignature(?sig), 
+  HeapAllocation(?baseheap).
+
+Stats:Simple:InsensInstanceFieldPointsTo( ?heapbase, ?fieldsig, ?heap ) <-
+  InstanceFieldPointsTo( ?heapbase, ?fieldsig, ?heap ).
+
+Stats:Simple:InsensStaticFieldPointsTo(?heap, ?sig) ->
+  FieldSignature( ?sig ), 
+  HeapAllocation( ?heap ).
+Stats:Simple:InsensStaticFieldPointsTo(  ?heap, ?sig ) <-
+  StaticFieldPointsTo(    ?heap, ?sig ).
+
+/***************************************************
+ * Call graph edges
+ ***************************************************/
+
+Stats:Simple:InsensCallGraphEdge(?from, ?to) ->
+  CallGraphEdgeSource(?from), MethodSignature(?to).
+Stats:Simple:InsensCallGraphEdge(?from, ?to) <-
+  CallGraphEdge( ?from, ?to ).
+
+/*Stats:Simple:InsensNativeCallGraphEdge(?from, ?to) ->
+*  MethodSignature(?from), MethodSignature(?to).
+*Stats:Simple:InsensNativeCallGraphEdge(?from, ?to) <-
+*  NativeCallGraphEdge(_, ?from, _, ?to).
+*/

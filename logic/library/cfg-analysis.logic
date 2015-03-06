@@ -1,0 +1,293 @@
+OptInstructionFromMethodIndex[?method, ?index] = ?insn ->
+   Instruction(?insn), int[32](?index), MethodSignature(?method).
+
+OptInstructionFromMethodIndex[?method, ?index] = ?insn <-
+   Instruction:Method[?insn] = ?method,
+   Instruction:Index[?insn] = ?index.
+
+Instruction:Next[?i] = ?next ->
+   Instruction(?i), Instruction(?next).
+
+Instruction:Next[?insn] = ?next <-
+   Instruction:Method[?insn] = ?inMethod,
+   Instruction:Index[?insn] = ?i,
+   OptInstructionFromMethodIndex[?inMethod, ?i + 1] = ?next.
+
+Instruction:Prev[?i] = ?prev ->
+   Instruction(?i), Instruction(?prev).
+
+Instruction:Prev[?insn] = ?prev <-
+   Instruction:Method[?insn] = ?inMethod,
+   Instruction:Index[?insn] = ?i,
+   OptInstructionFromMethodIndex[?inMethod, ?i - 1] = ?prev.
+
+JumpTarget(?insn, ?prev) ->
+   Instruction(?insn), Instruction(?prev).
+
+JumpTarget(?insn, ?goto) <-
+   Goto:Target[?goto] = ?targetIndex,
+   OptInstructionFromMethodIndex[Instruction:Method[?goto], ?targetIndex] = ?insn.
+JumpTarget(?insn, ?if) <-
+   If:Target[?if] = ?targetIndex,
+   OptInstructionFromMethodIndex[Instruction:Method[?if], ?targetIndex] = ?insn.   
+JumpTarget(?insn, ?sw) <-
+   (Switch:Target[?sw,_] = ?targetIndex ; Switch:DefaultTarget[?sw] = ?targetIndex),
+   OptInstructionFromMethodIndex[Instruction:Method[?sw], ?targetIndex] = ?insn.   
+
+// Making explicit, so it can be negated.
+IsJumpTarget(?insn) -> Instruction(?insn).
+IsJumpTarget(?insn) <-
+   JumpTarget(?insn, _).
+
+
+ExceptionHandlerFirstInstruction(?insn) ->
+   Instruction(?insn).
+ExceptionHandlerFirstInstruction(?insn) <-
+   ExceptionHandler:Index[?handler] = ?index, 
+   OptInstructionFromMethodIndex[ExceptionHandler:Method[?handler], ?index] = ?insn.
+
+FallThrough(?insn) ->
+   Instruction(?insn).
+FallThrough(?insn) <-
+   If:Insn(?if), Instruction:Next[?if] = ?insn.
+// REVIEW: The next two shouldn't matter much since without a label the
+// fallthrough instruction would be dead code OR the beginning of an
+// exception handler. The latter is handled specially. For the former, we
+// consider such dead code to start a new BB, so that it doesn't accidentally
+// get considered a continuation of the previous BB.
+FallThrough(?insn) <-
+   ReturnInstruction(?ret), Instruction:Next[?ret] = ?insn.
+FallThrough(?insn) <-
+   Throw:Insn(?throw), Instruction:Next[?throw] = ?insn.
+
+
+BasicBlockBegin(?insn) ->
+   Instruction(?insn).
+// First instruction of a method is a basic block beginning
+BasicBlockBegin(?insn) <-
+   OptInstructionFromMethodIndex[_, 1] = ?insn.
+BasicBlockBegin(?insn) <-
+   ExceptionHandlerFirstInstruction(?insn).
+BasicBlockBegin(?insn) <-
+   JumpTarget(?insn, _).
+BasicBlockBegin(?insn) <-
+   FallThrough(?insn).
+
+NextInSameBasicBlock[?insn] = ?next <-
+   Instruction:Next[?insn] = ?next,
+   !BasicBlockBegin(?next).
+
+PrevInSameBasicBlock[?insn] = ?prev <-
+   NextInSameBasicBlock[?prev] = ?insn.
+
+BasicBlockHead[?insn] = ?headInsn ->
+   Instruction(?insn), Instruction(?headInsn).
+BasicBlockHead[?insn] = ?insn <-
+   BasicBlockBegin(?insn).
+BasicBlockHead[?insn] = ?headInsn <-
+   BasicBlockHead[?prev] = ?headInsn,
+   NextInSameBasicBlock[?prev] = ?insn.
+
+BasicBlockTail[?headInsn] = ?tailInsn ->
+   Instruction(?headInsn), Instruction(?tailInsn).
+BasicBlockTail[?headInsn] = ?tailInsn <-
+   BasicBlockHead[?tailInsn] = ?headInsn,
+   !(NextInSameBasicBlock[?tailInsn] = _).
+
+BasicBlockEnd(?insn) -> Instruction(?insn).
+BasicBlockEnd(?insn) <- BasicBlockTail[_] = ?insn.
+
+
+UnconditionalControlTransfer(?insn) ->
+   Instruction(?insn).
+UnconditionalControlTransfer(?insn) <-
+   Goto:Insn(?insn) ;
+   Switch:Insn(?insn) ;
+   ReturnInstruction(?insn) ;
+   Throw:Insn(?insn).
+
+// This is almost but not really a "may" relation for successor
+// instructions. It does not include the targets of throw
+// instructions. Hence the predicate name, meant to remind users that
+// they should always check if the instruction is the beginning of
+// an exception handler.
+MaySuccessorModuloThrow(?next, ?prev) ->
+   Instruction(?next), Instruction(?prev).
+MaySuccessorModuloThrow(?next, ?prev) <-
+   JumpTarget(?next, ?prev).
+MaySuccessorModuloThrow(?next, ?insn) <-
+   Instruction:Next[?insn] = ?next, 
+   !UnconditionalControlTransfer(?insn).
+
+MayPredecessorModuloThrow(?prev, ?next) ->
+   Instruction(?next), Instruction(?prev).
+MayPredecessorModuloThrow(?prev, ?next) <-
+   MaySuccessorModuloThrow(?next, ?prev).
+
+// Same concept for basic blocks. Reduces the cost significantly, since
+// subsequent computation is quadratic.
+MaySuccessorBBModuloThrow(?next, ?prev) ->
+   Instruction(?next), Instruction(?prev).
+MaySuccessorBBModuloThrow(?next, ?prev) <-
+   MaySuccessorModuloThrow(?next, ?prevEnd),
+   BasicBlockEnd(?prevEnd),
+   BasicBlockBegin(?next),
+   BasicBlockHead[?prevEnd] = ?prev.
+// // Unsound over-approximation
+//    !ExceptionHandlerFirstInstruction(?prev).
+
+MayPredecessorBBModuloThrow(?prev, ?next) ->
+   Instruction(?next), Instruction(?prev).
+MayPredecessorBBModuloThrow(?prev, ?next) <-
+   MaySuccessorBBModuloThrow(?next, ?prev).
+
+
+// The Dominates relation is defined on basic blocks,
+// represented by their first instruction (head). Defining
+// a dense quadratic relation, like Dominates, on individual
+// instructions was hugely expensive.
+
+// To get to ?insn, we need to have gone through ?dominator
+Dominates(?dominator, ?insn) ->
+   Instruction(?insn), Instruction(?dominator).
+// All basic blocks with successors dominate themselves.
+Dominates(?insn, ?insn) <-
+   MaySuccessorBBModuloThrow(_, ?insn).
+
+Dominates(?dominator, ?insn) <-
+   DominatesAllPredecessors(?insn, ?dominator).
+
+// Unnecessary but seems to speed up result!!!
+Dominates(?dominator, ?insn) <-
+   Dominates(?dominator, ?intermediate),
+   DominatesAllPredecessors(?insn, ?intermediate).
+
+// A generally useful concept. Includes the case of both being in the
+// same basic block.
+DominatedSuccessorInstruction(?insn, ?prevInsn) ->
+   Instruction(?insn), Instruction(?prevInsn).
+
+DominatedSuccessorInstruction(?insn, ?prevInsn) <-
+   MaySuccessorModuloThrow(?insn, ?prevInsn),
+   BasicBlockHead[?prevInsn] = ?prevInsnHead,
+   BasicBlockHead[?insn] = ?insnHead,
+   (?insnHead = ?prevInsnHead;
+    Dominates(?prevInsnHead, ?insnHead)).
+
+
+// Phi Nodes Definition. If we have SSA input, then any multiple
+// assignments to the same var are because of a Phi node. In fact,
+// these will also be consecutive.
+NextInSamePhiNode[?insn1] = ?insn2 ->
+   Instruction(?insn1), Instruction(?insn2).
+
+NextInSamePhiNode[?insn] = ?nextInsn <-
+   AssignLocal:Insn(?insn), 
+   AssignInstruction:To[?insn] = ?var,
+   Instruction:Next[?insn] = ?nextInsn,
+   AssignLocal:Insn(?nextInsn),
+   AssignInstruction:To[?nextInsn] = ?var.
+
+PhiNodeHead[?insn] = ?headInsn ->
+   Instruction(?insn), Instruction(?headInsn).
+
+PhiNodeHead[?nextInsn] = ?insn,
+PhiNodeHead[?insn] = ?insn <-
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   Instruction:Prev[?insn] = ?prevInsn,
+   !(NextInSamePhiNode[?prevInsn] = ?insn).
+
+PhiNodeHead[?nextInsn] = ?insn,
+PhiNodeHead[?insn] = ?insn <-
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   !(Instruction:Prev[?insn] = _).
+
+PhiNodeHead[?nextInsn] = ?headInsn <-
+   PhiNodeHead[?phiInsn] = ?headInsn,
+   NextInSamePhiNode[?phiInsn] = ?nextInsn.
+
+// Just inverting for efficiency.
+InstructionInPhiNode(?insn, ?headInsn) ->
+   Instruction(?insn), Instruction(?headInsn).
+InstructionInPhiNode(?insn, ?headInsn) <-
+   PhiNodeHead[?insn] = ?headInsn.
+
+
+// There may be multiple return instructions. This is a pain,
+// since they also represent merges of control- and data-flow.
+// We often need to define "forall" behavior over them.
+NextReturn[?insn1] = ?insn2 ->
+   Instruction(?insn1), Instruction(?insn2).
+
+///// auxiliary quick-and-dirty predicates
+OptReturnInsn(?insn, ?method) <-
+   ReturnInstruction(?insn),
+   Instruction:Method[?insn] = ?method.
+
+HigherReturnIndex(?insn, ?indexHigher) <-
+   OptReturnInsn(?insn, ?method),
+   OptReturnInsn(?insnHigher, ?method),
+   Instruction:Index[?insnHigher] = ?indexHigher,
+   Instruction:Index[?insn] < ?indexHigher.
+
+NextReturnIndex[?returnInsn] = ?nextReturnIndex <-
+   agg<<?nextReturnIndex =
+      min(?index)>>(HigherReturnIndex(?returnInsn, ?index)).
+
+NextReturn[?returnInsn] = ?nextReturnInsn <-
+   NextReturnIndex[?returnInsn] = ?nextReturnIndex,
+   Instruction:Method[?returnInsn] = ?meth,
+   OptInstructionFromMethodIndex[?meth, ?nextReturnIndex] = ?nextReturnInsn.
+
+ExistsPreviousReturn(?insn) <-
+   NextReturn[_] = ?insn.
+
+
+
+//// DO NOT READ THE FOLLOWING UNLESS YOU HAVE TO. Assume that
+//// DominatesAllPredecessors does the right thing, unless you have
+//// evidence to the contrary and need to debug it.
+////
+//// <------------------ START
+//// Dirty laundry computations. These are just painful rules for
+//// simulating a "forall" in Datalog.
+
+// Quadratic, but doesn't matter, since it's so local and only
+// defined on basic blocks.
+PredecessorBBsToSameBB(?insn, ?prev1, ?prev2) <-
+   MayPredecessorBBModuloThrow(?prev1, ?insn),
+   MayPredecessorBBModuloThrow(?prev2, ?insn),
+   ?prev1 != ?prev2.
+
+LargerPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) <-
+   PredecessorBBsToSameBB(?insn, ?prevLarge, ?prevSmall),
+   Instruction:Index[?prevLarge] = ?indexLarge,
+   ?indexLarge > Instruction:Index[?prevSmall].
+
+NextPredecessorIndexToSameBB[?insn, ?prev] = ?indexNext <-
+   agg<<?indexNext = min(?index)>>(LargerPredecessorIndexToSameBB(?insn, ?index, ?prev)).
+
+NextPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
+   NextPredecessorIndexToSameBB[?insn, ?pred] = ?indexNext,
+   OptInstructionFromMethodIndex[Instruction:Method[?insn], ?indexNext] = ?nextPred.
+
+ExistsPreviousPredecessorToSameBB(?pred, ?insn) <-
+   NextPredecessorToSameBB[?insn, _] = ?pred.
+
+DominatesUpToPredecessor(?dominator, ?pred, ?insn) <-
+   MayPredecessorBBModuloThrow(?pred, ?insn),
+   Dominates(?dominator, ?pred),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+DominatesUpToPredecessor(?dominator, ?pred, ?insn) <-
+   DominatesUpToPredecessor(?dominator, ?prevPred, ?insn),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred,
+   Dominates(?dominator, ?pred).
+
+DominatesAllPredecessors(?insn, ?dominator) <-
+   DominatesUpToPredecessor(?dominator, ?pred, ?insn),
+   !(NextPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+////
+//// END ------------------>
