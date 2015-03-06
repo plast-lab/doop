@@ -1,0 +1,48 @@
+/**
+ * A class ?a is a direct subclass of class ?c.
+ *
+ * warning: this definition is somewhat counter-intuitive. In fact, it is the superclass predicate.
+ */
+DirectSubclass[?a] = ?c -> Type(?a), Type(?c).
+DirectSubclass[?a] = ?c <-
+  DirectSuperclass[?a] = ?c.
+
+/**
+ * A class ?a is a subclass of class ?c.
+ *
+ * Note: the ordering might be unnatural, so pay attention when you
+ * use this predicate.
+ */
+Subclass(?c, ?a) -> Type(?a), Type(?c).
+
+/**
+ * JVM Spec:
+ * - A class A is a subclass of a class C if A is a direct subclass of C
+ */
+Subclass(?c, ?a) <-
+  DirectSubclass[?a] = ?c.
+
+/**
+ * JVM Spec:
+ * - A class A is a subclass of a class C if there is a direct subclass B of C and class A is a subclass of B
+ */
+Subclass(?c, ?a) <-
+  Subclass(?b, ?a),
+  DirectSubclass[?b] = ?c.
+
+
+/**
+ * A class ?a is a superclass of class ?c.
+ *
+ * Note: this is really just a swapped subclass relation.
+ *
+ * Note: The ordering might be unnatural, so pay attention when you
+ * use this predicate.
+ */
+Superclass(?c, ?a) -> Type(?a), Type(?c).
+
+/**
+ * Class A is said to be a superclass of class C whenever C is a subclass of A.
+ */
+Superclass(?c, ?a) <-
+  Subclass(?a, ?c).
