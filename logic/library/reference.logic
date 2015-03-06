@@ -1,0 +1,49 @@
+/**
+ * Implements the special status of java.lang.ref.Reference.
+ */
+
+/*
+
+  Complete implementation: 
+
+  The garbage collector assigns every reference to
+  Reference.pending. So, basically Reference.pending can point to
+  every reference. The ReferenceHandler takes care of enqueueing the
+  references in a reference queue. This is all pure Java.
+
+*/
+
+StaticFieldPointsTo(?hctx, ?heap, ?pending) <-
+  FieldSignature:Value(?pending:"<java.lang.ref.Reference: java.lang.ref.Reference pending>"),
+  Var:Value(?this:"<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this"),
+  VarPointsTo(?hctx, ?heap, _, ?this).
+
+/*
+
+  Paddle implementation:
+
+  Paddle circumvents the JVM implementation of reference queues. It
+  has special support for the reference queue of finalizers. Other
+  reference queues are not supported.
+
+  Every `this' parameter of the constructor of Finalizer is assigned
+  to a global variable, the finalizer queue. This global finalize
+  queue is assigned to the `this' parameter of runFinalizer.
+
+
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?this) <-
+  ReachableContext(?ctx, ?runFinalizer),
+  FinalizerQueue(?hctx, ?heap),
+  MethodSignature:Value(?runFinalizer:"<java.lang.ref.Finalizer: void runFinalizer()>"),
+  Var:Value(?this:"java.lang.ref.Finalizer.runFinalizer/@this").
+
+FinalizerQueue(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+
+FinalizerQueue(?hctx, ?heap) <-
+   Var:Value(?this:"java.lang.ref.Finalizer.<init>/@this"),
+   VarPointsTo(?hctx, ?heap, _, ?this). // any context
+
+*/
+

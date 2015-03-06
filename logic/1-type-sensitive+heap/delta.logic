@@ -1,0 +1,29 @@
+#include "macros.logic"
+#include "../library/common-delta.logic"
+
+/**
+ * Special calling contexts
+ *
+ * Note: the type is necessary (java.lang.String), but never used. It
+ * could be anything. It also needs to be an existing type, otherwise
+ * the sanity checks will barf.
+ */
+PlusType(?type, "<<initial-context>>").
+PlusType(?type, "<<jvm-startup>>").
+PlusType(?type, "<<class-initialization>>").
+PlusType(?type, "<<immutable>>").
+
+/**
+ * Special objects
+ */
++MySystemThreadGroup(?type, ?alloc),
+  PlusType(?type, "<<jvm-startup>>"),
+  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThreadGroup(?type, ?alloc),
+  PlusType(?type, "<<jvm-startup>>"),
+  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThread(?type, ?alloc),
+  PlusType(?type, "<<jvm-startup>>"),
+  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").
