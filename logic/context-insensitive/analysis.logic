@@ -1,0 +1,63 @@
+/**
+ * Context-insensitive pointer analysis with on-the-fly call graph discovery.
+ *
+ * @author Martin Bravenboer
+ * @author George Kastrinis
+ */
+
+#include "macros.logic"
+#include "../context-sensitive.logic"
+#include "../library.logic"
+
+// This analysis has no context for either method calls or heap
+// objects. This is emulated by creating a single Context object
+// and a single HContext object, which are used everywhere.
+ContextFromRealContext[] = ?ctx -> Context(?ctx).
+lang:skolem(`ContextFromRealContext).
+
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).
+
+UniqueContext[] = ?ctx,
+ContextFromRealContext[] = ?ctx,
+Context(?ctx)
+  <- .
+
+UniqueHContext[] = ?hctx,
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx)
+  <- .
+
+// Create initial objects with their heapcontexts.
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?alloc), UniqueHContext[] = ?hctx.
+
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?alloc), UniqueHContext[] = ?hctx.
+
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?alloc), UniqueHContext[] = ?hctx.
+
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method), UniqueContext[] = ?ctx.
+
+/**
+ * Implicitly reachable methods are invoked by the JVM on startup.
+ */
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method), UniqueContext[] = ?ctx.
+
+/**
+ * If a class needs to be initialized, then its class initializer is
+ * invoked.
+ *
+ * Note that InitializedClass already deals with superclasses that
+ * needs to be initialized as well, so we don't need to invoke class
+ * initializers of the super class here.
+ */
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class), ClassInitializer[?class] = ?clinit, UniqueContext[] = ?ctx.

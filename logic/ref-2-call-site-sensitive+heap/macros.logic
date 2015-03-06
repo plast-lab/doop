@@ -1,0 +1,50 @@
+#include "../library/fact-macros.logic"
+
+// For this analysis, every heap context recorded on allocation
+// corresponds to the most significant element of the calling 
+// context of the allocator method.
+#define RecordMacro(ctx, heap, hctx) \
+  HContext(hctx), \
+  HContextFromRealHContext[InitialInvValue[]] = hctx
+
+#define RecordRefinedMacro(ctx, heap, hctx) \
+  HContext(hctx), \
+  HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
+
+#define RecordImmutableMacro(ctx, heap, immCtx) \
+  HContext(immCtx), \
+  HContextFromRealHContext[ImmutableInvValue[]] = immCtx
+
+
+// This makes the analysis context-insensitive
+#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[InitialInvValue[], InitialInvValue[]] = calleeCtx
+
+// For this analysis the context of a method call corresponds to the
+// invocation site of the method and the most significant element of the
+// calling context for the caller method.
+#define MergeRefinedMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], invocation] = calleeCtx
+
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], invocation] = calleeCtx
+
+// Just keep the same context as the
+// caller. *Not* creating a new one, but pretending to, nonetheless,
+// so the engine doesn't barf.
+#define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[RealContext1FromContext[callerCtx], \
+                         RealContext2FromContext[callerCtx]] = newCtx
+
+#define MergeStartupMacro(hctx, heap, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[StartupInvocation[], StartupInvocation[]] = calleeCtx
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], heap] = newCtx
+
