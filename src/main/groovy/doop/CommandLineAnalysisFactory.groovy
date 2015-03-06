@@ -68,7 +68,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         }
 
         CliBuilder cli = new CliBuilder(
-            usage:  "jdoop [OPTION]...",
+            usage:  "doop [OPTION]...",
         )
         cli.width = 120
 
