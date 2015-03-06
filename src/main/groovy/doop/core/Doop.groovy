@@ -562,7 +562,7 @@ class Doop {
 
         Properties props = new Properties()
 
-        def candidates = [System.getProperty("user.home") + "/doop.properties", "$doopHome/doop.properties"]
+        def candidates = ["$doopHome/doop.properties", System.getProperty("user.home") + "/doop.properties"]
         for (c in candidates) {
             try {
                 File f = Helper.checkFileOrThrowException(c, "Not a valid file: $c")

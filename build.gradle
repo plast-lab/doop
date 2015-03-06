@@ -8,10 +8,10 @@ apply plugin: 'groovy'
 apply plugin: 'application'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-sourceCompatibility = "1.6"
-targetCompatibility = "1.6"
+//sourceCompatibility = "1.6"
+//targetCompatibility = "1.6"
 
-//For the standalone app
+//For the doop app
 mainClassName = 'doop.Main'
 
 
@@ -43,7 +43,7 @@ task createProperties(dependsOn: classes) {
     description "Creates the default doop properties file"
     ext.file = file("$projectDir/doop.properties")
     doLast {
-        doop.Helper.createDefaultProperties(file)
+        doop.core.Helper.createDefaultProperties(file)
     }
 }
 
