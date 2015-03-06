@@ -187,7 +187,7 @@ The class also holds a list of all the available Analysis options (in the `ANALY
 * the `createDefaultAnalysisOptions()` method to obtain a `Map<String, AnalysisOption>` using
 the default values defined in the `ANALYSIS_OPTIONS` list.
 * the `createAnalysisOptions()` method to obtain a `Map<String, AnalysisOption>` using the
-values loaded from a property file (placed either in $HOME/doop.properties or in $DOOP_HOME/doop.properties).
+values loaded from a property file (placed either in `$DOOP_HOME/doop.properties` or in `$HOME/doop.properties`).
 This method creates a new `Map<String, AnalysisOption>` using the default values and then loads the two properties
 files consequently (if present) to override the default values. This way, we can support both "global" options (which
 are applied to all analyses) and "personal" options (which are applied to a specific user's analyses).

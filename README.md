@@ -68,7 +68,7 @@ The options will be also shown if you run Doop without any arguments.
 
 The major command line options of Doop are the following:
 
-#### Analysis name (-a, --analysis)
+#### Analysis (-a, --analysis)
 The name of the analysis to run.
 
 Example:
@@ -101,6 +101,11 @@ Example:
 
 The jar option is mandatory.
 
+#### Packages (--glob)
+The Java packages to analyse.
+
+    $ DOOP_HOME>./bin/doop --glob com.example.package1.*:com.example.package2.*
+
 
 #### Main class (--main)
 The main class to use as the entry point.
@@ -127,17 +132,35 @@ By default, Doop uses the value of the `$LOGICBLOX_HOME` environment variable as
 installation directory. You may use the `--lbhome` option if you want to run the specific analysis via a different
 LogicBlox version.
 
+
+### Using a properties file to specify the default options
+Doop searches for a `doop.properties` file in the following places:
+
+* in the doop's home directory (`$DOOP_HOME/doop.properties`).
+* in the user's home directory (`$HOME/doop.properties`).
+
+This way, Doop supports both:
+
+* global options, which are applied to all analyses (placed in the `$DOOP_HOME/doop.properties` file),
+* personal options, which are applied to a specific user's analyses (placed in the `$HOME/doop.properties` file).
+
+To create the `doop.properties` file with all the supported options, issue the following:
+
+    $ ./gradlew createProperties
+
+
 ### Directories created
 
-The Doop application creates the following directories in the DOOP_HOME:
+Doop creates the following directories in the DOOP_HOME:
 
-* out: contains the analyses files (processed logic, jars, etc).
+* out: contains the analyses files (processed logic, jars, LogicBlox workspace, etc).
 * results: contains symlinks to the analyses files.
 * logs: log files of the analyses, which are automatically recycled every day.
 
 ## Local Install
 
-Instead of generating the zip or tarball, we can instruct Gradle to install the Doop app directly in the cloned directory:
+Instead of generating the zip or tarball, we can instruct Gradle to install the Doop app directly in the development
+directory:
 
     $ ./gradlew installApp
 
