@@ -1,4 +1,4 @@
-#jdoop ingore list
+#doop ingore list
 
 #analysis benchmarks
 ^jars
@@ -7,7 +7,7 @@
 ^.gradle
 ^build/
 
-#jdoop dist/runtime files
+#doop dist/runtime files
 ^logs
 ^out
 ^results
@@ -15,4 +15,4 @@
 
 #intellij idea files
 ^.idea
-^jdoop.iml
+^doop.iml
