@@ -1,0 +1,47 @@
+/*****************************************************************************
+ *
+ * Compute for an instruction which exception handlers handle which
+ * exception types.
+ *
+ * This is an imprecise version, mostly for intended for experiments.
+ *
+ ****************************************************************************/
+
+ExceptionHandler:At(?handler, ?instruction, ?type) ->
+  ExceptionHandler(?handler),
+  Type(?type),
+  Instruction(?instruction).
+
+ExceptionHandler:At(?handler, ?instruction, ?type) <-
+#ifdef EXCEPTIONS_RANGE
+  ExceptionHandler:InRange(?handler, ?instruction),
+#else
+  Instruction:Method[?instruction] = ?method,
+  ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+#endif
+  ExceptionHandler:Type[?handler] = ?type.
+
+ExceptionHandler:At(?handler, ?instruction, ?subtype) <-
+#ifdef EXCEPTIONS_RANGE
+  ExceptionHandler:InRange(?handler, ?instruction),
+#else
+  Instruction:Method[?instruction] = ?method,
+  ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+#endif
+  ExceptionHandler:Type[?handler] = ?type,
+  Superclass(?subtype, ?type).
+
+#ifdef EXCEPTIONS_RANGE
+ExceptionHandler:InRange(?handler, ?instruction) ->
+  ExceptionHandler(?handler),
+  Instruction(?instruction).
+
+ExceptionHandler:InRange(?handler, ?instruction) <-
+  Instruction:Method[?instruction] = ?method,
+  ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+  Instruction:Index[?instruction] = ?index,
+  ExceptionHandler:Begin[?handler] = ?begin,
+  ?begin <= ?index,
+  ExceptionHandler:End[?handler] = ?end,
+  ?index < ?end.
+#endif

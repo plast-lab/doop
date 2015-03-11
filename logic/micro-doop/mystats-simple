@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -e 		# Exit immediately if a command exits with a nonzero exit status
+set -u 		# Treat unset variables as an error
+#set -x 	# Print commands and their arguments as they are executed (debugging)
+
+bloxbatch=$LOGICBLOX_HOME/bin/bloxbatch
+
+database=$1
+analysis=`cat $database/.doop-meta/analysis`
+
+function size()
+{
+	$bloxbatch -db $database -popCount $1 | awk '{ print $2 }'
+}
+
+function print2()
+{
+	printf "%-80s %'d\n" "$1" "$2"
+}
+
+function print3()
+{
+	printf "%-80s %'d (insens) / %'d (sens)\n" "$1" "$2" "$3"
+}
+
+
+print3 "var points-to" $(size Stats:Simple:InsensVarPointsTo) $(size VarPointsTo)
+print3 "array index points-to" $(size ArrayIndexPointsTo) $(size ArrayIndexPointsTo)
+print3 "call graph edges" $(size Stats:Simple:InsensCallGraphEdge) $(size CallGraphEdge)
+# print3 "native call graph edges" $(size Stats:Simple:InsensNativeCallGraphEdge) $(size NativeCallGraphEdge)
+print3 "instance field points-to" $(size Stats:Simple:InsensInstanceFieldPointsTo) $(size InstanceFieldPointsTo)
+print3 "reachable methods" $(size Reachable) $(size Reachable)
+print3 "reachable variables" $(size Stats:Simple:InsensReachableVar) $(size Stats:Simple:ReachableVar)
+print3 "static field points-to" $(size Stats:Simple:InsensStaticFieldPointsTo) $(size StaticFieldPointsTo)
+
+
+# print2 "array type" $(size ArrayType)
+# print2 "direct superclass" $(size DirectSuperclass)
+# print2 "direct superinterface" $(size DirectSuperinterface)
+# print2 "heap allocations" $(size HeapAllocationRef)
+# print2 "method implemented" $(size MethodImplemented)
+# print2 "method lookup" $(size MethodLookup)
+# print2 "superclass" $(size Superclass)
+# print2 "superinterface" $(size Superinterface)
+# print2 "variables" $(size VarRef)

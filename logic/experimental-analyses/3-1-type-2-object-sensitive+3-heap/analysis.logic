@@ -1,0 +1,115 @@
+/**
+ * Experimental
+ *
+ * @author George Kastrinis
+ */
+
+#include "macros.logic"
+#include "../context-sensitive.logic"
+#include "../library.logic"
+#include "../object-to-type.logic"
+
+// In this analysis, the real context and the real heap context
+// are a Type and a pair of HeapAllocations. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+ContextFromRealContext[?type, ?heap1, ?heap2] = ?ctx ->
+  Context(?ctx), Type(?type), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?type -> 
+  Context(?ctx), Type(?type).
+RealContext2FromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+RealContext3FromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+
+RealContext1FromContext[?ctx] = ?type,
+RealContext2FromContext[?ctx] = ?heap1,
+RealContext3FromContext[?ctx] = ?heap2 <- 
+  ContextFromRealContext[?type, ?heap1, ?heap2] = ?ctx.
+
+HContextFromRealHContext[?type, ?heap1, ?heap2] = ?hctx ->
+  HContext(?hctx), Type(?type), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`HContextFromRealHContext).
+RealHContext1FromHContext[?hctx] = ?type -> 
+  HContext(?hctx), Type(?type).
+RealHContext2FromHContext[?hctx] = ?heap -> 
+  HContext(?hctx), HeapAllocation(?heap).
+RealHContext3FromHContext[?hctx] = ?heap -> 
+  HContext(?hctx), HeapAllocation(?heap).
+
+RealHContext1FromHContext[?hctx] = ?type,
+RealHContext2FromHContext[?hctx] = ?heap1,
+RealHContext3FromHContext[?hctx] = ?heap2 <-
+  HContextFromRealHContext[?type, ?heap1, ?heap2] = ?hctx.
+
+// Creating special immutable heap allocation constant
+ImmutableHeapValue[] = ?immHeap <-
+  HeapAllocationValue(?immHeap, "<<immutable>>").
+// and special immutable type constant
+ImmutableTypeValue[] = ?immType <-
+  ClassTypeValue(?immType, "java.lang.String").
+
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?type, ?heap1, ?heap2] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?type, ?heap1, ?heap2, ?alloc).
+
+HContextFromRealHContext[?type, ?heap1, ?heap2] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?type, ?heap1, ?heap2, ?alloc).
+
+HContextFromRealHContext[?type, ?heap1, ?heap2] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?type, ?heap1, ?heap2, ?alloc).
+
+/**
+ * Merge optimization hack
+ */
+
+// For this analysis, we only need two of the parameters that may 
+// influence the new context object.
+MyMergeBasis(?hctx, ?heap) <-
+  MergeBasis(_, _, ?hctx, ?heap).
+
+// We create new context objects sparingly, because of the high cost.
+// We also cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[DeclaringClassAllocation[RealHContext2FromHContext[?hctx]],
+                       RealHContext3FromHContext[?hctx],
+                       ?heap] = ?calleeCtx,
+OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?heap).
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?initType, ?initHeap, ?initHeap] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  ClassTypeValue(?initType, "java.lang.String"),
+  HeapAllocationValue(?initHeap, "<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?startupType, ?startupHeap, ?startupHeap] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  ClassTypeValue(?startupType, "java.lang.String"),
+  HeapAllocationValue(?startupHeap, "<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?clinitType, ?clinitHeap, ?clinitHeap] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  ClassTypeValue(?clinitType, "java.lang.String"),
+  HeapAllocationValue(?clinitHeap, "<<class-initialization>>").
