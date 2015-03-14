@@ -74,6 +74,9 @@ class Analysis implements Runnable {
     @Override
     void run() {
 		preprocessor.init()
+
+        //Dump the analysis in its "meta" file
+        new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
 		
 		initAnalysis()
 		

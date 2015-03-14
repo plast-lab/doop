@@ -295,56 +295,6 @@ class Helper {
     }
 
     /**
-     * Creates the default properties file containing all the supported analysis options, with their default values.
-     */
-    static void createDefaultProperties(File f) {
-
-        //Find all cli options and sort them by name
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
-            option.cli
-        }.sort { AnalysisOption option ->
-            option.name
-        }
-
-        //Put the "main" options first
-        cliOptions = cliOptions.findAll { AnalysisOption option -> !option.isAdvanced } +
-                     cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
-
-        f.withWriter { Writer w ->
-
-            cliOptions.each { AnalysisOption option ->
-                writeAsProperty(option, w)
-            }
-        }
-    }
-
-    /**
-     * Writes the given analysis option to the given writer using the standard Java syntax for properties files.
-     */
-    private static void writeAsProperty(AnalysisOption option, Writer w) {
-        def type
-
-        if (option.isFile) {
-            type = "(file)"
-        }
-        else if (option.argName) {
-            type = "(string)"
-        }
-        else {
-            type = "(boolean)"
-        }
-
-        if (option.description) {
-            w.write "#${option.id} $type - ${option.description} \n"
-        }
-        else {
-            w.write "#${option.id} $type\n"
-        }
-
-        w.write "${option.id} = \n\n"
-    }
-
-    /**
      * Converts a list of analysis options to a list of cli options.
      */
     static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
