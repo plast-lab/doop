@@ -74,6 +74,9 @@ class Analysis implements Runnable {
     @Override
     void run() {
 		preprocessor.init()
+
+        //Dump the analysis in its "meta" file
+        new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
 		
 		initAnalysis()
 		
@@ -723,7 +726,7 @@ toPredicate,NegativeObjectFilter,string"""
                 depArgs = ["-lsystem"] + deps 
             }
             else {
-                depArgs = deps + links.collect{ String arg -> ["-l", arg]}.flatten()
+                depArgs = links.collect{ String arg -> ["-l", arg]}.flatten() + deps
             }
 
         }

@@ -15,15 +15,7 @@ import org.apache.log4j.Logger
  */
 class Main {
 
-    private static boolean checkArgs(OptionAccessor cli) {
-        boolean noAnalysis = !cli.a, noJar = !cli.j
-        boolean error = noAnalysis || noJar
-
-        if (error)
-            println "Missing required argument(s): " + (noAnalysis ? "a" : "") + (noJar ? (noAnalysis ? ", " : "") + "j" : "")
-
-        return !error
-    }
+    private static Log logger = LogFactory.getLog(Main)
 
     /**
      * The entry point.
@@ -42,8 +34,6 @@ class Main {
         //initialize logging
         Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
-        Log logger = LogFactory.getLog(Main)
-
         logger.debug "Command line options: $args"
 
         try {
@@ -56,31 +46,39 @@ class Main {
                 return
             }
 
-            if(!checkArgs(cli)) {
-                builder.usage()
-                return
-            }
+            Analysis analysis
+            if (cli.p) {
+                //create analysis from the properties file
+                String file = cli.p
+                File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
 
+                Properties props = new Properties()
+                f.withReader { Reader r -> props.load(r)}
 
-            //change the log level according to the cli arg
-            def logLevel = cli.l
-            if (logLevel) {
-                switch (logLevel) {
-                    case "debug":
-                        Logger.getRootLogger().setLevel(Level.DEBUG)
-                        break
-                    case "info":
-                        Logger.getRootLogger().setLevel(Level.INFO)
-                        break
-                    case "error":
-                        Logger.getRootLogger().setLevel(Level.ERROR)
-                        break
-                    default:
-                        logger.info "Invalid log level: $logLevel - using default (info)"
+                if (!checkProps(props)) {
+                    return
                 }
+
+                //change the log level according to the property
+                String logLevel = props.getProperty("level")
+                changeLogLevel(logLevel)
+
+                analysis = new CommandLineAnalysisFactory().newAnalysis(props)
+            }
+            else {
+                //create analysis from the cli options
+                if(!checkArgs(cli)) {
+                    builder.usage()
+                    return
+                }
+
+                //change the log level according to the cli arg
+                def logLevel = cli.l
+                changeLogLevel(logLevel)
+
+                analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
 
-            Analysis analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
             logger.debug analysis
             analysis.run()
@@ -90,6 +88,48 @@ class Main {
         } catch (e) {
             logger.error(e.getMessage(), e)
             System.exit(-1)
+        }
+    }
+
+    private static boolean checkProps(Properties props) {
+        boolean noAnalysis = !props.getProperty("analysis")?.trim()
+        boolean noJar = !props.getProperty("jar")?.trim()
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            println "Missing required properties: " + (noAnalysis ? "analysis" : "") +
+                    (noJar ? (noAnalysis ? ", " : "") + "jar" : "")
+
+        return !error
+
+    }
+
+    private static boolean checkArgs(OptionAccessor cli) {
+        boolean noAnalysis = !cli.a, noJar = !cli.j
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            println "Missing required argument(s): " + (noAnalysis ? "a" : "") +
+                    (noJar ? (noAnalysis ? ", " : "") + "j" : "")
+
+        return !error
+    }
+
+    private static void changeLogLevel(def logLevel) {
+        if (logLevel) {
+            switch (logLevel) {
+                case "debug":
+                    Logger.getRootLogger().setLevel(Level.DEBUG)
+                    break
+                case "info":
+                    Logger.getRootLogger().setLevel(Level.INFO)
+                    break
+                case "error":
+                    Logger.getRootLogger().setLevel(Level.ERROR)
+                    break
+                default:
+                    logger.info "Invalid log level: $logLevel - using default (info)"
+            }
         }
     }
 }
