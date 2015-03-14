@@ -11,7 +11,7 @@ class Doop {
         //LogicBlox related options (supporting different LogicBlox instance per analysis)
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
-            description: "set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable)",
+            description: "set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable).",
             value:System.getenv("LOGICBLOX_HOME"),
             webUI:false,
             cli:true,
@@ -34,7 +34,7 @@ class Doop {
         //Main options
         new AnalysisOption<String>(
             id:"MAIN_CLASS",
-            description:'Specify the main class',
+            description:'Specify the main class.',
             value:null,
             webUI: true,
             cli:true,
@@ -43,7 +43,7 @@ class Doop {
         ),
         new AnalysisOption<List<String>>(
             id:"DYNAMIC",
-            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a comma",
+            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a comma.",
             value:[],
             webUI:true,
             cli:true,
@@ -53,7 +53,7 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
-            description:"File with tamiflex data",
+            description:"File with tamiflex data.",
             value:null,
             webUI:true,
             cli:true,
@@ -63,7 +63,7 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"CLIENT_CODE",
-            description:"Additional directory/file of client analysis to include",
+            description:"Additional directory/file of client analysis to include.",
             value:null,
             webUI:true,
             cli:true,
@@ -79,7 +79,7 @@ class Doop {
         /* Flags for must analyses */
         new AnalysisOption<String>(
             id:"MAY_PRE_ANALYSIS",
-            description:"Use a may analysis before running the must analysis",
+            description:"Use a may analysis before running the must analysis.",
             value:null,
             cli:true,
             webUI:true,
@@ -376,7 +376,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"CACHE",
-            description:"The analysis will use the cached input relations, if such exist",
+            description:"The analysis will use the cached input relations, if such exist.",
             value:false,
             cli:true,
             webUI:true,
@@ -384,7 +384,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"STATS",
-            description:"Load additional logic for collecting statistics",
+            description:"Load additional logic for collecting statistics.",
             value:false,
             cli:true,
             webUI:true,
@@ -392,7 +392,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"SANITY",
-            description:"Load additional logic for sanity checks",
+            description:"Load additional logic for sanity checks.",
             value:false,
             cli:true,
             webUI:true,
@@ -414,7 +414,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"ALLOW_PHANTOM",
-            description: 'Allow non-existent referenced jars',
+            description: 'Allow non-existent referenced jars.',
             value:false,
             webUI:true,
             cli:true,
@@ -422,7 +422,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"AVERROES",
-            description: 'Use averroes tool to create a placeholder library',
+            description: 'Use averroes tool to create a placeholder library.',
             value:false,
             webUI:true,
             cli:true,
@@ -458,7 +458,7 @@ class Doop {
         ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
-            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system)",
+            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
             value:"system",
             webUI:true,
             cli:true,
@@ -492,7 +492,7 @@ class Doop {
         //addtional options
         new AnalysisOption<String>(
             id:"APP_REGEX",
-            description:"A regex expression for the Java package names to be analyzed",
+            description:"A regex expression for the Java package names to be analyzed.",
             value:null,
             webUI:true,
             cli:true,
@@ -501,7 +501,7 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"USE_JAVA_CPP",
-            description:"Use a full-java preprocessor for the logic files",
+            description:"Use a full-java preprocessor for the logic files.",
             value:false,
             webUI:true,
             cli:true,
@@ -552,34 +552,6 @@ class Doop {
     }
 
     /**
-     * Creates the analysis options.
-     * This method checks for a doop.properties file: (a) in the user's home directory or (b) in the Doop home
-     * directory and if such a file is present, its options will override the default ones.
-     * @return Map<String, AnalysisOptions>.
-     */
-    static Map<String, AnalysisOption> createAnalysisOptions() {
-        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
-
-        Properties props = new Properties()
-
-        def candidates = ["$doopHome/doop.properties", System.getProperty("user.home") + "/doop.properties"]
-        for (c in candidates) {
-            try {
-                File f = Helper.checkFileOrThrowException(c, "Not a valid file: $c")
-                f.withReader { Reader r -> props.load(r)}
-                overrideAnalysisOptionsFromProperties(options, props)
-                break
-            }
-            catch (e) {
-                // do nothing
-            }
-        }
-
-        return options
-
-    }
-
-    /**
      * Overrides the given analysis options with the ones contained in the given properties.
      * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
      * @param options - the options to be overridden
@@ -588,7 +560,7 @@ class Doop {
     static void overrideAnalysisOptionsFromProperties(Map<String, AnalysisOption> options, Properties properties) {
         if (properties.size() > 0) {
             properties.each { Map.Entry<String, String> entry->
-                AnalysisOption option = options.get(entry.key)
+                AnalysisOption option = options.get(entry.key.toUpperCase())
                 if (option && entry.value && entry.value.trim().length() > 0) {
                     if (option.id == "DYNAMIC") {
                         option.value = entry.value.split(",").collect{ String s -> s.trim() }
@@ -603,5 +575,4 @@ class Doop {
             }
         }
     }
-
 }
