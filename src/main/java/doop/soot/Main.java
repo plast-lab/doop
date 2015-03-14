@@ -21,8 +21,8 @@ public class Main {
 
 
     private static Mode _mode = null;
-    private static List<String> _inputs = new ArrayList<String>();
-    private static List<String> _libraries = new ArrayList<String>();
+    private static List<String> _inputs = new ArrayList<>();
+    private static List<String> _libraries = new ArrayList<>();
     private static String _outputDir = null;
     private static String _main = null;
     private static boolean _ssa = false;
@@ -42,56 +42,44 @@ public class Main {
         return index + 1;
     }
 
-    private static boolean isApplicationClass(SootClass klass)
-    {
+    private static boolean isApplicationClass(SootClass klass) {
         applicationClassFilter = new GlobClassFilter(appRegex);
 
         return applicationClassFilter.matches(klass.getName());
     }
 
-    public static void main(String[] args)
-    {
-        try
-        {
-            if(args.length == 0)
-            {
+    public static void main(String[] args) {
+        try {
+            if(args.length == 0) {
                 System.err.println("usage: soot-fact-generation [options] file...");
                 System.exit(0);
             }
 
-            for(int i = 0; i < args.length; i++)
-            {
-                if(args[i].equals("--full") || args[i].equals("-full"))
-                {
-                    if(  _mode != null)
-                    {
+            for(int i = 0; i < args.length; i++) {
+                if(args[i].equals("--full") || args[i].equals("-full")) {
+                    if( _mode != null) {
                         System.err.println("error: duplicate mode argument");
                         System.exit(1);
                     }
 
                     _mode = Mode.FULL;
                 }
-                else if(args[i].equals("-d"))
-                {
+                else if(args[i].equals("-d")) {
                     i = shift(args, i);
                     _outputDir = args[i];
                 }
-                else if(args[i].equals("-main"))
-                {
+                else if(args[i].equals("-main")) {
                     i = shift(args, i);
                     _main = args[i];
                 }
-                else if(args[i].equals("-ssa"))
-                {
+                else if(args[i].equals("-ssa")) {
                     _ssa = true;
                 }
-                else if(args[i].equals("-l"))
-                {
+                else if(args[i].equals("-l")) {
                     i = shift(args, i);
                     _libraries.add(args[i]);
                 }
-                else if(args[i].equals("-lsystem") || args[i].equals("--lsystem"))
-                {
+                else if(args[i].equals("-lsystem") || args[i].equals("--lsystem")) {
                     String javaHome = System.getProperty("java.home");
                     _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
                     _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
@@ -115,17 +103,14 @@ public class Main {
                         }
                     }
                 }
-                else if(args[i].equals("-trap"))
-                {
+                else if(args[i].equals("-trap")) {
                     _trap = true;
                 }
-                else if(args[i].equals("-application-regex"))
-                {
+                else if(args[i].equals("-application-regex")) {
                     i = shift(args, i);
                     appRegex = args[i];
                 }
-                else if(args[i].equals("-allow-phantom"))
-                {
+                else if(args[i].equals("-allow-phantom")) {
                     _allowPhantom = true;
                 }
                 else if (args[i].equals("-use-original-names")) {
@@ -150,15 +135,12 @@ public class Main {
                     System.err.println("  -h, -help           Print this help message.");
                     System.exit(0);
                 }
-                else
-                {
-                    if(args[i].charAt(0) == '-')
-                    {
+                else {
+                    if(args[i].charAt(0) == '-') {
                         System.err.println("error: unrecognized option: " + args[i]);
                         System.exit(0);
                     }
-                    else
-                    {
+                    else {
                         _inputs.add(args[i]);
                     }
                 }
@@ -171,7 +153,7 @@ public class Main {
             if(_outputDir == null) {
                 _outputDir = System.getProperty("user.dir");
             }
-            /**
+            /*
              * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
              * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
              * a runtime exception when running soot with java 1.8, however it leads to different
@@ -180,33 +162,27 @@ public class Main {
             Scene.v().addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
             run();
         }
-        catch(Exception exc)
-        {
+        catch(Exception exc) {
             exc.printStackTrace();
             System.exit(1);
         }
     }
 
-    private static void run() throws Exception
-    {
+    private static void run() throws Exception {
         NoSearchingClassProvider provider = new NoSearchingClassProvider();
 
-        for(String arg : _inputs)
-        {
-            if(arg.endsWith(".jar") || arg.endsWith(".zip"))
-            {
+        for(String arg : _inputs) {
+            if(arg.endsWith(".jar") || arg.endsWith(".zip")) {
                 System.out.println("Adding archive: " + arg);
                 provider.addArchive(new File(arg));
             }
-            else
-            {
+            else {
                 System.out.println("Adding file: " + arg);
                 provider.addClass(new File(arg));
             }
         }
 
-        for(String lib: _libraries)
-        {
+        for(String lib: _libraries) {
             System.out.println("Adding archive for resolving: " + lib);
 
             File libraryFile = new File(lib);
@@ -221,18 +197,15 @@ public class Main {
 
         soot.SourceLocator.v().setClassProviders(Collections.singletonList((ClassProvider) provider));
         Scene scene = Scene.v();
-        if(_main != null)
-        {
+        if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
         }
 
-        if(_mode == Mode.FULL)
-        {
+        if(_mode == Mode.FULL) {
             soot.options.Options.v().set_full_resolver(true);
         }
 
-        if(_allowPhantom)
-        {
+        if(_allowPhantom) {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
@@ -244,9 +217,8 @@ public class Main {
             soot.options.Options.v().set_keep_line_number(true);
         }
 
-        Collection<SootClass> classes = new ArrayList<SootClass>();
-        for(String className : provider.getClassNames())
-        {
+        Collection<SootClass> classes = new ArrayList<>();
+        for(String className : provider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
 
@@ -254,10 +226,11 @@ public class Main {
         }
 
 
-        /* For simulating the FileSystem class, we need the implementation
-           of the FileSystem, but the classes are not loaded automatically
-           due to the indirection via native code.
-        */
+        /*
+         * For simulating the FileSystem class, we need the implementation
+         * of the FileSystem, but the classes are not loaded automatically
+         * due to the indirection via native code.
+         */
         addCommonDynamicClass(scene, provider, "java.io.UnixFileSystem");
         addCommonDynamicClass(scene, provider, "java.io.WinNTFileSystem");
         addCommonDynamicClass(scene, provider, "java.io.Win32FileSystem");
@@ -272,14 +245,15 @@ public class Main {
         scene.loadNecessaryClasses();
 
 
-        // This part should definitely appear after the call to
-        // `Scene.loadNecessaryClasses()', since the latter may alter
-        // the set of application classes by explicitly specifying
-        // that some classes are library code (ignoring any previous
-        // call to `setApplicationClass()').
+       /*
+        * This part should definitely appear after the call to
+        * `Scene.loadNecessaryClasses()', since the latter may alter
+        * the set of application classes by explicitly specifying
+        * that some classes are library code (ignoring any previous
+        * call to `setApplicationClass()').
+        */
 
-        for(SootClass c : classes)
-        {
+        for(SootClass c : classes) {
             if (isApplicationClass(c))
                 c.setApplicationClass();
         }
@@ -292,25 +266,21 @@ public class Main {
         FactWriter writer = new FactWriter(db);
         FactGenerator generator = new FactGenerator(writer, _ssa);
 
-        for(SootClass c : classes)
-        {
+        for(SootClass c : classes) {
             if (c.isApplicationClass())
                 writer.writeApplicationClass(c);
         }
 
-        if(_mode == Mode.FULL)
-        {
+        if(_mode == Mode.FULL) {
             classes = scene.getClasses();
         }
 
         // Read all stored properties files
-        for (Map.Entry<String,Properties> entry : provider.getProperties().entrySet())
-        {
+        for (Map.Entry<String,Properties> entry : provider.getProperties().entrySet()) {
             String path = entry.getKey();
             Properties properties = entry.getValue();
 
-            for (String propertyName : properties.stringPropertyNames())
-            {
+            for (String propertyName : properties.stringPropertyNames()) {
                 String propertyValue = properties.getProperty(propertyName);
 
                 writer.writeProperty(path, propertyName, propertyValue);
@@ -319,21 +289,16 @@ public class Main {
 
         db.flush();
 
-        for(SootClass c : classes)
-        {
-            // System.out.println(c);
+        for(SootClass c : classes) {
             generator.generate(c);
         }
 
         db.close();
     }
 
-    public static void addCommonDynamicClass(Scene scene, ClassProvider provider, String className)
-    {
-        if(provider.find(className) != null)
-        {
+    public static void addCommonDynamicClass(Scene scene, ClassProvider provider, String className) {
+        if(provider.find(className) != null) {
             scene.addBasicClass(className);
         }
-
     }
 }
