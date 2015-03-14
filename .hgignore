@@ -2,10 +2,11 @@
 
 #analysis benchmarks
 ^jars
+^externals
 
 #gradle dirs
 ^.gradle
-^build/
+^build
 
 #doop dist/runtime files
 ^logs
