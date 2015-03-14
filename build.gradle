@@ -40,10 +40,10 @@ dependencies {
 
 task createProperties(dependsOn: classes) {
 
-    description "Creates the default doop properties file"
-    ext.file = file("$projectDir/doop.properties")
+    description "Creates an empty doop properties file"
+    def file = file("$projectDir/doop.properties")
     doLast {
-        doop.core.Helper.createDefaultProperties(file)
+        doop.CommandLineAnalysisFactory.createEmptyProperties(file)
     }
 }
 
