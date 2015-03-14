@@ -723,7 +723,7 @@ toPredicate,NegativeObjectFilter,string"""
                 depArgs = ["-lsystem"] + deps 
             }
             else {
-                depArgs = deps + links.collect{ String arg -> ["-l", arg]}.flatten()
+                depArgs = links.collect{ String arg -> ["-l", arg]}.flatten() + deps
             }
 
         }
