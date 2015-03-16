@@ -15,14 +15,37 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
 // Must information in a specific context (which may be an
 // all-contexts value).  Only call-site sensitivity for now.
- 
+
+// At instruction ?insn, whenever (if) it is reached under context
+// ?ctx, access path ?ap points to the most recently allocated object
+// at site ?heap. That is, ?heap is concrete but ?ap is the analogue
+// of a summary object. At Store instructions, this can be a weaker
+// predicate than InstanceFieldMustPointTo (strictly weaker for access
+// paths of the form "var.fld"), so it's easier to establish.
+// However, it is harder to establish as carried from one instruction
+// to the next.
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
+   HeapAllocation(?heap), AccessPath(?ap), MustContext(?ctx), 
+   Instruction(?insn).
+
+// Must-Alias relation between access paths, i.e., v(.fi)*
+// expressions.
+MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
+   AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn), MustContext(?ctx).
+
+RootMethodForMustAnalysis(?meth) -> MethodSignature(?meth).
+
+//// ====================================
+
+//// BEGIN Auxiliary relations
+
 // Meaning: variable ?var points to the most recently allocated object
 // at ?heap, provided that the caller of the method of ?var is
 // uniquely determined by ?callCtx (though ?callCtx can have an
 // all-contexts value). Thus, ?heap can be treated as a non-summary
 // object.
-MustPointTo[?callCtx, ?var] = ?heap ->
-   HeapAllocation(?heap), MustContext(?callCtx), Var(?var).
+MustPointTo[?var, ?callCtx, ?insn] = ?heap ->
+   HeapAllocation(?heap), MustContext(?callCtx), Var(?var), Instruction(?insn).
 
 // At (i.e., right after) instruction ?insn, if it is reached and
 // executed under context ?ctx, field ?fld of the most recently
@@ -33,30 +56,14 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
    HeapAllocation(?heap), HeapAllocation(?baseHeap), 
    MustContext(?ctx), Instruction(?insn), FieldSignature(?fld).
 
-// Must-Alias relation between access paths, i.e., v(.fi)*
-// expressions. Key convention: MustAlias *does* keep information for
-// access paths that are merely single variables, whereas
-// AccessPathMustPointTo (below) does not!
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
-   AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn), MustContext(?ctx).
-
-// At instruction ?insn, whenever (if) it is reached under context
-// ?ctx, access path ?ap (assumed to be more than a plain var!) points
-// to the most recently allocated object at site ?heap.  That is,
-// ?heap is concrete but ?ap is the analogue of a summary object. At
-// Store instructions, this can be a weaker predicate than
-// InstanceFieldMustPointTo (strictly weaker for access paths of the
-// form "var.fld"), so it's easier to establish.  However, it
-// is harder to establish as carried from one instruction to the next.
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
-   HeapAllocation(?heap), AccessPath(?ap), MustContext(?ctx), 
-   Instruction(?insn).
-
-RootMethodForMustAnalysis(?meth) -> MethodSignature(?meth).
+// NOTE: MustPointTo and InstanceFieldMustPointTo relations are
+// derived only from the AccessPathMustPointTo relation. We use them for
+// convenience to avoid constructing access paths for the common case,
+// e.g., assignments, field loads/stores.
 
 //// ====================================
 
-//// BEGIN MustPointTo/InstanceFieldMustPointTo code
+//// BEGIN AccessPathMustPointTo code
 
 // Need to identify relevant (i.e., reachable) methods for the must
 // analysis, instead of blindly applying it to all available code.
@@ -73,12 +80,17 @@ ReachableMethodUnderMustContext(?ctx, ?meth)
    DeclaringClassMethod[?meth] = ?class,
    ApplicationClass(?class).
 
+AssignHeapAllocation:HeapInv(?insn, ?heap) <-
+   AssignHeapAllocation:Heap[?insn] = ?heap.
+
 // Root of all Must inferences.
 // REVIEW: This introduces dependency on string-constants.logic
 ReachableMethodUnderMustContext(?ctx, ?inMeth),
-MustPointTo[?ctx, ?var] = ?heap <-
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    SingleAllContext[] = ?ctx,
+   AccessPath:ByVar[?var] = ?ap,
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
+   AssignHeapAllocation:HeapInv(?insn, ?heap),
    RootMethodForMustAnalysis(?inMeth).
 
 // We start from the handling of calling instructions, since this is
@@ -166,7 +178,7 @@ MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
    MethodLookup[?simplename, ?descriptor, ?heaptype] = ?toMethod.
 
- // Virtual method invocations, with context.
+// Virtual method invocations, with context.
 PushMustContext[?invo, ?ctx] = ?calleeCtx, MustContext(?calleeCtx),
 MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
@@ -207,7 +219,148 @@ MustInterprocAssign(?callerCtx, ?base, ?calleeCtx, ?this) <-
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this.
 
-//// END MustPointTo/InstanceFieldMustPointTo code
+// Also propagate heap models when making calls!
+
+// For calls, propagate AccessPathMustPointTo info, if it held for all
+// predecessors. NASTY bug warning: the information holds *before*
+// first instruction, not after. Thankfully we have the concept to
+// express precisely that.
+AllPredecessors:AccessPathMustPointTo[?calleeAp, ?calleeCtx, ?firstInsn] = ?heap <-
+   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+   MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
+   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
+   !IsJumpTarget(?firstInsn),
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?invo] = ?heap,
+   AccessPathRebasedForCall(?calleeAp, ?ap, ?ctx, ?invo).
+
+// Similarly for returns, propagate back.
+AccessPathMustPointTo[?callerAp, ?ctx, ?invo] = ?heap <-
+   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+   MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
+   AllReturn:AccessPathMustPointTo[?ap, ?calleeCtx, ?toMethod] = ?heap,
+   AccessPathRebasedForCall(?ap, ?callerAp, ?ctx, ?invo).
+
+// Final static fields that must point to an object, at the end of a
+// class initializer, cannot change in the future; thus, we can assume
+// that every field load on these fields will fetch this exact object.
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   StaticFieldLoad(?to, ?fld, ?insn),
+   StaticFinalFieldMustPointTo[?fld] = ?heap,
+   AccessPath:ByVar[?to] = ?ap,
+   Instruction:Method[?insn] = ?inmethod,
+   ReachableMethodUnderMustContext(?ctx, ?inmethod).
+
+StaticFinalFieldMustPointTo[?fld] = ?heap <-
+   Modifier:final[] = ?final,
+   FieldModifier(?final, ?fld),
+   SingleAllContext[] = ?ctx,
+   AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap,
+   AccessPath:ByStaticFieldInv[?ap] = ?fld,
+   MethodSignature:SimpleName[?method] = "<clinit>".
+
+// Now handle Move, Store, Load, etc. instructions
+
+// Move, but not Phi nodes, which are also represented as local assignments.
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AssignLocal:Insn(?insn),
+   !(PhiNodeHead[?insn] = _),
+   AssignInstruction:To[?insn] = ?to,
+   AccessPath:ByVar[?to] = ?ap,
+   AssignLocal:From[?insn] = ?from,
+   MustPointTo[?from, ?ctx, ?insn] = ?heap.
+
+// Phi
+AccessPathMustPointTo[?ap, ?ctx, ?lastInsn] = ?heap <-
+   MustPointToUpToPhiInstruction(?heap, ?ctx, ?lastInsn),
+   !(NextInSamePhiNode[?lastInsn] = _),
+   AssignInstruction:To[?lastInsn] = ?var,
+   AccessPath:ByVar[?var] = ?ap.
+
+// casts are like local assignments
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AssignCast:Insn(?insn),
+   AssignInstruction:To[?insn] = ?to,
+   AccessPath:ByVar[?to] = ?ap,
+   AssignCast:From[?insn] = ?from,
+   MustPointTo[?from, ?ctx, ?insn] = ?heap.
+
+// Load-Store
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   FieldLoad(?to, ?base, ?fld, ?insn),
+   MustPointTo[?base, ?ctx, ?insn] = ?baseHeap,
+   AccessPath:ByVar[?to] = ?ap,
+   InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap.
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   FieldStore(?base, ?fld, ?from, ?insn),
+   MustPointTo[?from, ?ctx, ?insn] = ?heap,
+   AccessPath:ByVar[?base] = ?baseAp,
+   AccessPath:ByFieldAccess[?fld, ?baseAp] = ?ap.
+
+// Static Load-Store
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   StaticFieldLoad(?to, ?fld, ?insn),
+   AccessPath:ByStaticField[?fld] = ?fldAp,
+   AccessPath:ByVar[?to] = ?ap,
+   AccessPathMustPointTo[?fldAp, ?ctx, ?insn] = ?heap.
+
+AccessPathMustPointTo[?fldAp, ?ctx, ?insn] = ?heap <-
+   StaticFieldStore(?fld, ?from, ?insn),
+   AccessPath:ByStaticField[?fld] = ?fldAp,
+   MustPointTo[?from, ?ctx, ?insn] = ?heap.
+
+// Frame rules
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   FieldStore(_, ?fld, _, ?insn),
+   !AccessPath:ContainsField(?fld, ?ap).
+
+#ifdef MUST_AFTER_MAY
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   FieldStore(?base, _, _, ?insn),
+   AccessPath:Base[?ap] = ?baseAp,
+   AccessPath:ByVarInv[?baseAp] = ?var,
+   !MayAliasInMethod(?var, ?base).
+#endif
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   StaticFieldStore(?fld, _, ?insn),
+   !AccessPath:ContainsStaticField[?ap] = ?fld.
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   MethodInvocation(?insn), 
+#ifdef MUST_AFTER_MAY
+   !CallMayInvalidateSomeAccessPathField(?ap, ?insn),
+   !CalledMethodMayAllocateHeap(?heap, ?insn).
+#else
+   !(MethodInvocation(?insn)).
+#endif
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   !StoreInstanceField:Insn(?insn),
+   !StoreStaticField:Insn(?insn),
+   !(AssignHeapAllocation:Heap[?insn] = ?heap),
+   !MethodInvocation(?insn).
+
+// Fill MustPointTo and InstanceFieldMustPointTo relations.
+
+MustPointTo[?var, ?ctx, ?insn] = ?heap <-
+   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   AccessPath:ByVarInv[?ap] = ?var.
+
+InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
+   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   AccessPath:Base[?ap] = ?baseAp,
+   AccessPath:LastField[?ap] = ?fld,
+   AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseHeap,
+   ?baseHeap != HeapAllocation:Null[].
+
+//// END AccessPathMustPointTo code
 
 //// ====================================
 
@@ -1041,7 +1194,6 @@ AllReturn:SameRetVar[?method] = ?var <-
    Instruction:Method[?return] = ?method.
 
 // For all Phi node instructions, ap1 and ap2 MustAlias.
-
 MustAliasUpToPhiInstruction(?ap, ?ctx, ?insn) ->
    AccessPath(?ap), Instruction(?insn), MustContext(?ctx).
 
@@ -1099,3 +1251,76 @@ AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
    AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
    OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
    NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all predecessors of instruction, access path expression must point to...
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap ->
+   HeapAllocation(?heap), AccessPath(?ap),
+   MustContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap,
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap <-
+   AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?prevPred] = ?heap,
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?head] = ?heap <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?head,  
+   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap.
+
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
+   OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap,
+   OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?pred] = ?heap. 
+
+AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
+   HeapAllocation(?heap), AccessPath(?ap),
+   MustContext(?ctx), Instruction(?insn).
+
+AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap,
+   !(NextPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?heap.
+
+// for all returns of a method, access path must point to..
+UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap <-
+   ReturnInstruction(?return),
+   !ExistsPreviousReturn(?return),
+   AccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap.
+
+UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap <-
+   UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?prevReturn] = ?heap,
+   NextReturn[?prevReturn] = ?return,
+   AccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap.
+
+AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
+   UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap,
+   !(NextReturn[?return] = _),
+   Instruction:Method[?return] = ?method.
+
+// For all Phi node instructions, var must point to...
+MustPointToUpToPhiInstruction(?heap, ?ctx, ?insn) ->
+   HeapAllocation(?heap), MustContext(?ctx), 
+   Instruction(?insn).
+
+MustPointToUpToPhiInstruction(?heap, ?ctx, ?headInsn) <-
+   PhiNodeHead[_] = ?headInsn,
+   AssignLocal:From[?headInsn] = ?from,
+   AccessPath:ByVar[?from] = ?fromAp,
+   AllPredecessors:AccessPathMustPointTo[?fromAp, ?ctx, ?headInsn] = ?heap.
+
+MustPointToUpToPhiInstruction(?heap, ?ctx, ?nextInsn) <-
+   MustPointToUpToPhiInstruction(?heap, ?ctx, ?insn),
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   AssignLocal:From[?nextInsn] = ?from,
+   PhiNodeHead[?nextInsn] = ?headInsn,
+   AccessPath:ByVar[?from] = ?fromAp,
+   AllPredecessors:AccessPathMustPointTo[?fromAp, ?ctx, ?headInsn] = ?heap.
