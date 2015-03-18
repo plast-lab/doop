@@ -21,6 +21,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                                            ' argument is a directory, all its *.jar files will be included.'
     private static final String PROPS    = 'The path to a properties file containing analysis options. If this ' +
                                            'option is given, all other options are ignored.'
+    private static final String TIMEOUT  = 'The analysis execution timeout in minutes (default: 180 - 3 hours)'
 
     /**
      * Processes the cli args and generates a new analysis.
@@ -104,6 +105,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar", valueSeparator: ",")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
+            t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
         }
 
         Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
@@ -145,6 +147,11 @@ jar =
 #$LOGLEVEL
 #
 level =
+
+#timeout (number)
+#$TIMEOUT
+#
+timeout =
 
 """
 

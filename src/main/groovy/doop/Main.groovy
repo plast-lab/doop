@@ -7,6 +7,9 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
+
+import java.util.concurrent.*
+
 /**
  * The entry point for the standalone doop app.
  *
@@ -46,6 +49,14 @@ class Main {
                 return
             }
 
+            int timeout = 180 //3hours
+            try {
+                timeout = Integer.parseInt(cli.t)
+            }
+            catch(ex) {
+                println "Using the default timeout ($timeout min)."
+            }
+
             Analysis analysis
             if (cli.p) {
                 //create analysis from the properties file
@@ -81,12 +92,31 @@ class Main {
 
             logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
             logger.debug analysis
-            analysis.run()
-            analysis.printStats()
-            analysis.linkResult()
+
+            ExecutorService executor = Executors.newSingleThreadExecutor()
+            Future future = executor.submit(new Runnable() {
+                @Override
+                void run() {
+                    analysis.run()
+                    analysis.printStats()
+                    analysis.linkResult()
+                }
+            })
+
+            try {
+                future.get(timeout, TimeUnit.MINUTES)
+            }
+            catch (TimeoutException te) {
+                logger.error("Timeout has expired ($timeout min).")
+                System.exit(-1)
+            }
+
 
         } catch (e) {
-            logger.error(e.getMessage(), e)
+            if (logger.debugEnabled)
+                logger.error(e.getMessage(), e)
+            else
+                logger.error(e.getMessage())
             System.exit(-1)
         }
     }

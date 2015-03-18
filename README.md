@@ -101,10 +101,10 @@ Example:
 
 The jar option is mandatory.
 
-#### Packages (--glob)
+#### Packages (--regex)
 The Java packages to analyse.
 
-    $ DOOP_HOME>./bin/doop --glob com.example.package1.*:com.example.package2.*
+    $ DOOP_HOME>./bin/doop --regex com.example.package1.*:com.example.package2.*
 
 
 #### Main class (--main)
@@ -133,18 +133,26 @@ installation directory. You may use the `--lbhome` option if you want to run the
 LogicBlox version.
 
 
-### Using a properties file to specify the default options
-Doop searches for a `doop.properties` file in the following places:
+#### Timeout (-t, --timeout)
+Specify the analysis execution timeout in minutes.
 
-* in the doop's home directory (`$DOOP_HOME/doop.properties`).
-* in the user's home directory (`$HOME/doop.properties`).
+Example:
 
-This way, Doop supports both:
+    $ DOOP_HOME>./bin/doop -a context-insensitive -j com.example.some.jar -t 120
 
-* global options, which are applied to all analyses (placed in the `$DOOP_HOME/doop.properties` file),
-* personal options, which are applied to a specific user's analyses (placed in the `$HOME/doop.properties` file).
+The above analysis will run for a maximum of 2 hours (120 minutes).
 
-To create the `doop.properties` file with all the supported options, issue the following:
+#### Using a properties file to specify the analysis options (-p, --properties)
+You can specify the options of the analysis in a properties file and use the `-p` option
+to process this file, as follows:
+
+    $ DOOP_HOME>./bin/doop -p /path/to/file.properties
+
+When the `-p` (or `--properties`) option is given, all other options are ignored.
+Please consult the `doop.properties` file which offers a skeleton of the properties file
+supported by doop.
+
+To create the `doop.properties` file you should issue the following:
 
     $ ./gradlew createProperties
 
@@ -171,7 +179,7 @@ Then we can switch to this directory, set the DOOP_HOME environment variable and
 
 ## Runnning Doop Directly
 
-When developing Doop, the most convenient way to invoke it is by issuing:
+When developing Doop, a convenient way to invoke it directly is by issuing:
 
     $ ./gradlew run -Pargs="doop-command-line-arguments"
 
@@ -180,6 +188,10 @@ For example, the following invocation:
     $ ./gradlew run -Pargs="-a context-insensitive -j ./lib/asm-debug-all-4.1.jar"
 
 will run the context-insensitive analysis on the asm-debug-all-4.1 jar.
+
+The most convenient way is to use the `doop` bash script which runs gradlew for you:
+
+    $ ./doop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
 
 ## License
 MIT license (see `LICENSE`).
