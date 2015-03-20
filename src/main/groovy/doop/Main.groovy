@@ -110,6 +110,7 @@ class Main {
                 logger.error("Timeout has expired ($timeout min).")
                 System.exit(-1)
             }
+			executor.shutdown()
 
 
         } catch (e) {
