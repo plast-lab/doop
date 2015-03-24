@@ -731,7 +731,7 @@ toPredicate,NegativeObjectFilter,string"""
 
         }
 
-        String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
+        String[] params = ["-full", "-keep-line-number"] + depArgs + ["-application-regex", options.APP_REGEX.value]
 
         if (options.SSA.value) {
             params = params + ["-ssa"]
