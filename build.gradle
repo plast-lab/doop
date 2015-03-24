@@ -1,0 +1,62 @@
+buildscript {
+    dependencies {
+        classpath files("$projectDir/build/classes/main")
+    }
+}
+
+apply plugin: 'groovy'
+apply plugin: 'application'
+
+//applicationDefaultJvmArgs = ["-Xmx2048m"]
+//sourceCompatibility = "1.6"
+//targetCompatibility = "1.6"
+
+//For the doop app
+mainClassName = 'doop.Main'
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:2.3.3",             // Groovy
+            "commons-logging:commons-logging:1.1",              // Logging wrapper
+            "log4j:log4j:1.2.14",                               // Logging implementation
+            "commons-cli:commons-cli:1.2",                      // Command line processor
+            "org.anarres:jcpp:1.4.5",                           // C preprocessor in Java
+            "commons-io:commons-io:2.4",                        // File Utils
+            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
+            "org.ow2.asm:asm-debug-all:5.0.3"                   // Java Bytecode library
+
+    compile files('lib/sootclasses-2.5.0.jar')                  // Soot is a compile time dependency
+
+    runtime files('lib/jphantom-1.1-jar-with-dependencies.jar', 'lib/averroes-no-properties.jar')
+}
+
+task createProperties(dependsOn: classes) {
+
+    description "Creates an empty doop properties file"
+    def file = file("$projectDir/doop.properties")
+    doLast {
+        doop.CommandLineAnalysisFactory.createEmptyProperties(file)
+    }
+}
+
+
+applicationDistribution.from(file("$projectDir/logic")) {
+    into "logic"
+}
+
+
+run {
+    //We set the DOOP_HOME environment variable (see doop.Main)
+    environment.DOOP_HOME = projectDir
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
