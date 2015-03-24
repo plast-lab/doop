@@ -554,6 +554,10 @@ SpecialMethodInvocation:Insn(?insn) -> MethodInvocation(?insn).
 StaticMethodInvocation:Insn(?insn)  -> MethodInvocation(?insn).
 
 
+// The line number of a method invocation
+MethodInvocation:LineNumber[?invocation] = ?lineNumber ->
+   MethodInvocation(?invocation), int[64](?lineNumber).
+
 // The signature of the method being called
 MethodInvocation:Signature[?invocation] = ?signature ->
    MethodInvocation(?invocation), MethodSignature(?signature).
