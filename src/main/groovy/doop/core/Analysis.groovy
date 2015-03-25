@@ -1,8 +1,6 @@
 package doop.core
-
+import doop.input.InputResolutionContext
 import doop.preprocess.Preprocessor
-import doop.resolve.Dependency
-import doop.resolve.ResolvedDependency
 import groovy.ui.SystemOutputInterceptor
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -43,9 +41,14 @@ class Analysis implements Runnable {
     Map<String, AnalysisOption> options
 
     /**
-     * The jar files/dependencies of the analysis
+     * The analysis input resolution mechanism
      */
-    List<Dependency> jars
+    InputResolutionContext ctx
+
+    /**
+     * The input jar files/dependencies of the analysis
+     */
+    List<File> jars
 
     /**
      * The environment for running external commands
@@ -130,7 +133,7 @@ class Analysis implements Runnable {
     void linkResult() {
         String jre = options.JRE.value
         if (jre != "system") jre = "jre${jre}"
-        String jarName = FilenameUtils.getBaseName(jars[0].resolve().toString())
+        String jarName = FilenameUtils.getBaseName(jars[0].toString())
 
         /*
         The following code is reported to be problematic.
@@ -177,7 +180,7 @@ class Analysis implements Runnable {
      * @return A string representation of the analysis
      */
     String toString() {
-        return [id:id, name:name, outDir:outDir].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:name, outDir:outDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n")
     }
@@ -677,7 +680,7 @@ toPredicate,NegativeObjectFilter,string"""
     protected void runJPhantom(){
         logger.info "Running jphantom to generate complement jar"
 
-        String jar = jars[0].resolve().toString()
+        String jar = jars[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -690,7 +693,7 @@ toPredicate,NegativeObjectFilter,string"""
 
         //set the jar of the analysis to the complemented one
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        jars[0] = new ResolvedDependency(f)
+        jars[0] = f
     }
 	
 	/**
@@ -720,7 +723,7 @@ toPredicate,NegativeObjectFilter,string"""
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
         }
         else {
-            List<String> deps = jars.drop(1).collect{ Dependency r -> ["-l", r.resolve()]}.flatten()
+            List<String> deps = jars.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten()
             List<String> links = jreLinkArgs()
             if (links.isEmpty()) {
                 depArgs = ["-lsystem"] + deps 
@@ -745,7 +748,7 @@ toPredicate,NegativeObjectFilter,string"""
             params = params + ["-main", options.MAIN_CLASS.value]
         }
 
-        params = params + ["-d", factsDir, jars[0].resolve()]
+        params = params + ["-d", factsDir, jars[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -856,13 +859,13 @@ toPredicate,NegativeObjectFilter,string"""
 		String properties = "$outDir/averroes.properties"
 
 		//Determine the library jars
-		List<String> libraryJars = jars.drop(1).collect { it.resolve().toString() } + jreAverroesLibraries()
+		List<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
 		
 		//Create the averroes properties
 		Properties props = new Properties()
 		props.setProperty("application_includes", options.APP_REGEX.value as String)
 		props.setProperty("main_class", options.MAIN_CLASS as String)
-		props.setProperty("input_jar_files", jars[0].resolve() as String)
+		props.setProperty("input_jar_files", jars[0].toString() as String)
 		props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
