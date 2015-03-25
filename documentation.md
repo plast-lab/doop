@@ -256,12 +256,13 @@ A class that holds various helper methods for logging, executing external proces
 #### doop.core.ImportGenerator
 The fact declarations import generator. Mimics the behavior of the writeImport bash script.
 
-#### Analysis inputs - the `doop.resolve` package
-The `doop.resolve` package contains a simple mechanism for dealing with the various analysis inputs and
+#### Analysis inputs - the `doop.input` package
+The `doop.input` package contains a simple mechanism for dealing with the various analysis inputs and
 dependencies (local jar files, local directories, remote jar URLs and jars held in the Maven Central repository).
-The mechanism is based on the `doop.resolve.Dependency` and `doop.resolve.DependencyResolver` interfaces. The first
-holds a mapping from a String value to a local file and the second offers a mechanism to construct this mapping in
-the context of an Analysis.
+The mechanism is based on the `doop.input.Input`, `doop.input.InputResolver` and `doop.input.InputResolutionContext`
+interfaces. The first holds a mapping from a String value to a set of local files, the second offers a
+mechanism to construct this mapping in an `InputResolutionContext` which ultimately holds the whole set of mappings
+between inputs and files.
 
 
 #### Other classes

@@ -1,6 +1,7 @@
 package doop.core
-import java.util.jar.JarFile
-import java.util.jar.Attributes
+
+import doop.input.DefaultInputResolutionContext
+import doop.input.InputResolutionContext
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
 import doop.resolve.Dependency
@@ -9,6 +10,9 @@ import doop.resolve.StringDependency
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+
+import java.util.jar.Attributes
+import java.util.jar.JarFile
 /**
  * A Factory for creating Analysis objects.
  *
@@ -20,15 +24,16 @@ class AnalysisFactory {
     Log logger = LogFactory.getLog(getClass())
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, jars and options
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * the supplied input resolution mechanism.
      */
-    Analysis newAnalysis(String name, List<String> jars, Map<String, AnalysisOption> options) {
+    Analysis newAnalysis(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         //Verify that the name of the analysis is valid
         checkName(name)
 
         //Generate the id
-        String id = generateID(name, jars, options)
+        String id = generateID(name, context.inputs(), options)
 
         //Create the outDir if required
         String outDir = "${Doop.doopHome}/out/$name/${id}"
@@ -36,42 +41,55 @@ class AnalysisFactory {
         f.mkdirs()
         Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
 
+        context.setDirectory(f)
+
         Analysis analysis = new Analysis(
-            name         : name,
-            id           : id,
-            outDir       : outDir,
-            preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
-            options      : options
+                name         : name,
+                id           : id,
+                outDir       : outDir,
+                preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
+                options      : options,
+                ctx          : context
         )
 
-        //Resolve the jar dependencies
-        checkJars(analysis, jars)
-		
-		//process the options
+        //Resolve the analysis inputs
+        checkInputs(analysis, context)
+
+        //process the options
         processOptions(analysis)
 
         //verify lb options
-		checkLogicBlox(analysis)
+        checkLogicBlox(analysis)
 
         //init the environment used for executing commands
-		initExternalCommandsEnvironment(analysis)
-			
-		//TODO: The COLOR option is not supported
-			
-		//TODO: Create empty jar. Is it needed?
+        initExternalCommandsEnvironment(analysis)
 
-		//TODO: Check if input is given (incremental). Is it needed?
-		checkDACAPO(analysis)
-			
-		checkAppGlob(analysis)
-			
-		//We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
-			
-		//TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
-			
-		//TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
+        //TODO: The COLOR option is not supported
+
+        //TODO: Create empty jar. Is it needed?
+
+        //TODO: Check if input is given (incremental). Is it needed?
+        checkDACAPO(analysis)
+
+        checkAppGlob(analysis)
+
+        //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
+
+        //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
+
+        //TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
 
         return analysis
+    }
+
+    /**
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * the default input resolution mechanism.
+     */
+    Analysis newAnalysis(String name, Map<String, AnalysisOption> options, List<String> jars) {
+        DefaultInputResolutionContext context = new DefaultInputResolutionContext()
+        context.add(jars)
+        return newAnalysis(name, options, context)
     }
 
     /**
@@ -84,23 +102,35 @@ class AnalysisFactory {
     }
 
     /**
-     * Generates the analysis ID, using its name, main class and jars.
+     * Generates the analysis ID, using its name, main class and inputs.
      *
-     * NOTE: With the jar dependency feature, the APP_REGEX is not being used (because it depends on the resolution
-     * of the jars, which depend on the ID).
+     * NOTE: With the input resolution feature, the APP_REGEX is not being used (because it depends on the resolution
+     * of the inputs, which depend on the ID).
      * @param analysis
      */
-    protected String generateID(String name, List<String> jars, Map<String, AnalysisOption> options) {
+    protected String generateID(String name, Collection<String> inputs, Map<String, AnalysisOption> options) {
         logger.debug "Generating analysis ID"
 
-        def idComponents = [name, options.MAIN_CLASS.value] + jars
+        def idComponents = [name, options.MAIN_CLASS.value] + inputs
         String id = idComponents.collect { it.toString() }.join('-')
-
 
         //Generate a sha256 cheksum of the id components
         return Helper.checksum(id, "SHA-256")
     }
 
+    /**
+     * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
+     * using the input resolution mechanism. It finally adds the inputs as a Set<File> in the analysis.
+     */
+    protected void checkInputs(Analysis analysis, InputResolutionContext context) {
+        Collection<String> inputs = context.inputs()
+        logger.debug "Verifying analysis inputs: $inputs"
+        if (!inputs) throw new RuntimeException("No inputs provided for the analysis")
+        context.resolve()
+        analysis.jars = context.getAll()
+    }
+
+    @Deprecated
     /**
      * Given the list of jars, as Strings or Dependency objects, the method validates that the jars exist,
      * using the jar resolution mechanism. It finally adds the jars as a List<Dependency> in the analysis.
@@ -355,7 +385,7 @@ class AnalysisFactory {
 			logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
 		}
         else {
-            JarFile jarFile = new JarFile(analysis.jars[0].resolve())
+            JarFile jarFile = new JarFile(analysis.jars[0])
             //Try to read the main class from the manifest contained in the jar            
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
@@ -495,7 +525,7 @@ class AnalysisFactory {
     */
     protected void checkDACAPO(Analysis analysis) {
         if (analysis.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             //We don't hard-code the dependencies, we just set the appropriate flags
             analysis.options.DACAPO_BENCHMARK.value = benchmark
@@ -503,7 +533,7 @@ class AnalysisFactory {
         }
         
         if (analysis.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].toString())
             logger.info "Running dacapo-2009 benchmark: $benchmark"
             //We don't hard-code the dependencies, we just set the appropriate flags
             analysis.options.DACAPO_2009.value = true
@@ -529,7 +559,7 @@ class AnalysisFactory {
 
 			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
             */
-            Set<String> packages = Helper.getPackages(analysis.jars[0].resolve())
+            Set<String> packages = Helper.getPackages(analysis.jars[0])
 			analysis.options.APP_REGEX.value = packages.sort().join(':')
         }
     }

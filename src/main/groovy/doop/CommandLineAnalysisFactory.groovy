@@ -61,7 +61,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                 }
             }
         }
-        return newAnalysis(name, jars, options)
+        return newAnalysis(name, options, jars)
     }
 
     /**
@@ -79,7 +79,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         Doop.overrideAnalysisOptionsFromProperties(options, props)
 
-        return newAnalysis(name, jars, options)
+        return newAnalysis(name, options, jars)
     }
 
     /**
