@@ -16,7 +16,7 @@ class URLResolver implements InputResolver{
     }
 
     @Override
-    void resolve(String input, DefaultInputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx) {
         URL url
         try {
             url = new URL(input)

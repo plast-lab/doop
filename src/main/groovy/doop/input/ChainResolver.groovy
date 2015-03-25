@@ -22,7 +22,7 @@ class ChainResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, DefaultInputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx) {
         boolean resolved = false
         for(InputResolver resolver : resolvers) {
             try {
