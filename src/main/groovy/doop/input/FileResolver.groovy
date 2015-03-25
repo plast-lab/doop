@@ -15,7 +15,7 @@ class FileResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, DefaultInputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx) {
         File file = Helper.checkFileOrThrowException(input, "Not a valid file input: $input")
         ctx.set(input, file)
     }

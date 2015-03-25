@@ -1,7 +1,5 @@
 package doop.input
 import org.apache.commons.io.FileUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.module.descriptor.DefaultDependencyDescriptor
 import org.apache.ivy.core.module.descriptor.DefaultModuleDescriptor
@@ -11,7 +9,6 @@ import org.apache.ivy.core.report.ResolveReport
 import org.apache.ivy.core.resolve.ResolveOptions
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorWriter
 import org.apache.ivy.util.filter.FilterHelper
-
 /**
  * Resolves the input as an Apache Ivy module descriptor that is downloaded using the default ivy settings.
  *
@@ -23,7 +20,6 @@ class IvyResolver implements InputResolver {
     private static final String[] ARTIFACT_TYPES = ["jar"]
 
     private final Ivy ivy
-    private Log logger = LogFactory.getLog(getClass())
 
     private IvyResolver(Ivy ivy) {
         this.ivy = ivy
@@ -35,7 +31,7 @@ class IvyResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, DefaultInputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx) {
         File ivyfile
         try {
             //Create temp ivy.xml file

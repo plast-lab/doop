@@ -13,7 +13,7 @@ class DirectoryResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, DefaultInputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx) {
         File f = Helper.checkDirectoryOrThrowException(input, "Not a directory input: $input")
 
         def filter = Helper.extensionFilter("jar")

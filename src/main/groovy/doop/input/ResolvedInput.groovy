@@ -1,6 +1,7 @@
 package doop.input
 
 /**
+ * A resolved input.
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 23/3/2015
  */
