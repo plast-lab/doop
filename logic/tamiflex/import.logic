@@ -1,0 +1,36 @@
++Tamiflex:ToDoopClassFormat["Class"] = "java.lang.Class".
+
+
+// Import data from the reflection log generated from tamiflex
+
+lang:physical:storageModel[`_Tamiflex:ReflectionMap] = "DelimitedFile".
+lang:physical:filePath[`_Tamiflex:ReflectionMap] = "tamiflex.facts".
+lang:physical:delimiter[`_Tamiflex:ReflectionMap] = ";".
+lang:physical:hasColumnNames[`_Tamiflex:ReflectionMap] = false.
+
+_Tamiflex:ReflectionMap(?orig, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
+   string(?orig),
+   string(?mapped),
+   string(?inClassStr),
+   string(?inMethodStr),
+   int[64](?lineNumber).
+
+
++Tamiflex:ReflectionMap(?mapped, ?invocation) <-
+   _Tamiflex:ReflectionMap(?orig, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+
+   string:split[?orig, ".", 0] = ?classStr,
+   Tamiflex:ToDoopClassFormat[?classStr] = ?classStrFormatted,
+   Type:fqn(?class:?classStrFormatted), ClassType(?class),
+
+   string:split[?orig, ".", 1] = ?methodStr,
+   MethodSignature:SimpleName[?method] = ?methodStr,
+   DeclaringClassMethod[?method] = ?class,
+
+   Type:fqn(?inClass:?inClassStr), ClassType(?inClass),
+   MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
+   DeclaringClassMethod[?inMethod] = ?inClass,
+
+   MethodInvocation:LineNumber[?invocation] = ?lineNumber,
+   MethodInvocation:Signature[?invocation] = ?method,
+   Instruction:Method[?invocation] = ?inMethod.

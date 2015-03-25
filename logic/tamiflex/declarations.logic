@@ -1,0 +1,6 @@
+Tamiflex:ToDoopClassFormat[?orig] = ?formatted ->
+   string(?orig), string(?formatted).
+
+Tamiflex:ReflectionMap(?mapped, ?invocation) ->
+   string(?mapped),
+   MethodInvocation(?invocation).
