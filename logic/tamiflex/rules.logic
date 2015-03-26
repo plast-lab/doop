@@ -1,0 +1,14 @@
+Tamiflex:ReflectionMap(?mapped, ?invocation) <-
+   Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+
+   Type:fqn(?class:?classStr), ClassType(?class),
+   MethodSignature:SimpleName[?method] = ?methodStr,
+   DeclaringClassMethod[?method] = ?class,
+
+   Type:fqn(?inClass:?inClassStr), ClassType(?inClass),
+   MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
+   DeclaringClassMethod[?inMethod] = ?inClass,
+
+   MethodInvocation:LineNumber[?invocation] = ?lineNumber,
+   MethodInvocation:Signature[?invocation] = ?method,
+   Instruction:Method[?invocation] = ?inMethod.
