@@ -9,6 +9,10 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
    DeclaringClassMethod[?inMethod] = ?inClass,
 
-   MethodInvocation:LineNumber[?invocation] = ?lineNumber,
+   (// There is line information for this invocation
+     ?lineNumber > 0, MethodInvocation:LineNumber[?invocation] = ?lineNumber
+   ;// No line information available
+     ?lineNumber = 0
+   ),
    MethodInvocation:Signature[?invocation] = ?method,
    Instruction:Method[?invocation] = ?inMethod.
