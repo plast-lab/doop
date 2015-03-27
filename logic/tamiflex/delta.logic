@@ -2,6 +2,7 @@
 +Tamiflex:ToDoopFormat["Constructor"] = "java.lang.reflect.Constructor".
 +Tamiflex:ToDoopFormat["Field"] = "java.lang.reflect.Field".
 +Tamiflex:ToDoopFormat["Method"] = "java.lang.reflect.Method".
++Tamiflex:ToDoopFormat["Array"] = "java.lang.reflect.Array".
 
 +Tamiflex:ToDoopFormat["get*"] = "get".
 +Tamiflex:ToDoopFormat["set*"] = "set".
