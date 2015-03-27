@@ -11,7 +11,7 @@
 // Import data from the reflection log generated from tamiflex
 
 lang:physical:storageModel[`_Tamiflex:ReflectionData] = "DelimitedFile".
-lang:physical:filePath[`_Tamiflex:ReflectionData] = "tamiflex.facts".
+lang:physical:filePath[`_Tamiflex:ReflectionData] = "facts/Tamiflex.facts".
 lang:physical:delimiter[`_Tamiflex:ReflectionData] = ";".
 lang:physical:hasColumnNames[`_Tamiflex:ReflectionData] = false.
 
