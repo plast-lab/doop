@@ -9,9 +9,13 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
    DeclaringClassMethod[?inMethod] = ?inClass,
 
-   (// There is line information for this invocation
+   (
+     // There is line information for this invocation. Match exactly with one
+     // invocation.
      ?lineNumber > 0, MethodInvocation:LineNumber[?invocation] = ?lineNumber
-   ;// No line information available
+   ;
+     // No line information available. Overapproximate by matching with any
+     // invocation inside ?inMethod matching ?method.
      ?lineNumber = 0
    ),
    MethodInvocation:Signature[?invocation] = ?method,
