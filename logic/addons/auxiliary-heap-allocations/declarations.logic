@@ -1,0 +1,3 @@
+/* #ifdef CLIENT_EXTENSIONS */
+DummyConstructorObject(?obj) ->
+   HeapAllocation(?obj).

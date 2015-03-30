@@ -1,0 +1,114 @@
+#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
+
+/**
+ * The main thread is never explicitly started, which would make it a
+ * RunningThread. Therefore, we make it a running thread explicitly.
+ */
+RunningThread(?hctx, ?heap) <-
+   MainThread(?hctx, ?heap).
+
+/**
+ * Calls to Thread.start() get redirected to Thread.run
+ *
+ * TODO: generalize to a redirect virtual method invocation. This takes too
+ * much code.
+ *
+ * In JRE 1.3 and JRE 1.4 the Thread.start() method itself is native. In JRE
+ * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
+ * start0.
+ */
+MergeThreadStartMacro(?hctx, ?heap, ?callerCtx, ?calleeCtx),
+NativeCallGraphEdge(?callerCtx, ?start, ?calleeCtx, ?run),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?runThis),
+RunningThread(?hctx, ?heap) 
+<-
+#if defined(JRE13) || defined(JRE14)
+   MethodSignature:Value(?start:"<java.lang.Thread: void start()>"),
+#else
+   MethodSignature:Value(?start:"<java.lang.Thread: void start0()>"),
+#endif
+   ThisVar[?start] = ?startThis,
+   VarPointsTo(?hctx, ?heap, ?callerCtx, ?startThis),
+   SimpleName:Value(?simplename:"run"),
+   MethodDescriptor:Value(?descriptor:"void()"),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?run,
+   ThisVar[?run] = ?runThis.
+
+/**
+ * Thread.currentThread() return running threads
+ *
+ * TODO In a thread sensitive analysis, we can return exactly one thread here,
+ * namely the context thread. It would be great if this rule would support
+ * that.
+ * TODO It seems more elegant to have a return variable for native methods and
+ * assign the running threads to this return variable.
+ */
+VarPointsTo(?hctx, ?heap, ?callerCtx, ?local) <-
+   ReachableCurrentThreadInvocation(?callerCtx, ?local),
+   RunningThread(?hctx, ?heap).
+
+ReachableCurrentThreadInvocation(?callerCtx, ?local) <-
+   ReachableContext(?callerCtx, ?inmethod),
+   MethodSignature:Value(?signature:"<java.lang.Thread: java.lang.Thread currentThread()>"),
+   StaticMethodInvocation(?invocation, ?signature, ?inmethod),
+   AssignReturnValue[?invocation] = ?local.
+
+/**
+ * Initialization of the system thread group
+ *
+ * The JVM creates an initial system thread group and initializes it by
+ * invoking the private ThreadGroup() constructor (openjdk:
+ * create_initial_thread_group).
+ */
+#ifndef PADDLE_COMPAT
+MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+   MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>()>"),
+   ThisVar[?sig] = ?this,
+   SystemThreadGroup(?hctx, ?heap).
+#endif
+
+/**
+ * Initialization of the main thread group
+ *
+ * The JVM creates a main thread group, which is a child of the system thread
+ * group (openjdk: create_initial_thread_group). It is initialized using the
+ * constructor ThreadGroup(ThreadGroup, String), with as the first argument the
+ * system thread group, and as the second argument the string "main".
+ *
+ * TODO: set the "main" argument.
+ */
+#ifndef PADDLE_COMPAT
+MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
+VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
+   MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   ThisVar[?sig] = ?this,
+   FormalParam[0, ?sig] = ?groupParam,
+   MainThreadGroup(?hctx, ?heap),
+   SystemThreadGroup(?groupCtx, ?group).
+#endif
+
+/**
+ * Initialization of the main thread
+ *
+ * The JVM creates a main thread and initializes it using the constructor
+ * Thread(ThreadGroup, String), with as the first argument the main thread
+ * group, and as the second argument the string "main".
+ *
+ * TODO: set the "main" argument.
+ */
+MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
+VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
+   MethodSignature:Value(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   ThisVar[?sig] = ?this,
+   FormalParam[0, ?sig] = ?groupParam,
+   MainThread(?hctx, ?heap),
+   MainThreadGroup(?groupCtx, ?group).
+
+#endif

@@ -1,0 +1,272 @@
+/**
+ * NOTE "?sig" is reserved for this macro
+ */
+#define VirtualMethodMacro(invocation, to, from, sigStr) \
+   MethodSignature:Value(?sig:sigStr), \
+   MethodInvocation:Signature[invocation] = ?sig, \
+   AssignReturnValue[invocation] = to, \
+   VirtualMethodInvocation:Base[invocation] = from
+
+/**
+ * We assume that the array is allocated inside the method, before being returned.
+ * NOTE "?invocationStr" and "?typeStr" are reserved for this macro
+ */
+#define ReflectiveArrayMacro(invocation, type, arrayType, arrayHeapStr, arrayTypeStr) \
+   Instruction:Value@prev(invocation:?invocationStr), \
+   Type:fqn(type:?typeStr), \
+   ArrayType(arrayType), Type:fqn(arrayType:arrayTypeStr), \
+   arrayHeapStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
+
+#define ReflectiveKnownArrayMacro(invocation, arrayType, arrayHeapStr, arrayTypeStr) \
+   Instruction:Value@prev(invocation:?invocationStr), \
+   ArrayType(arrayType), Type:fqn(arrayType:arrayTypeStr), \
+   arrayHeapStr = "<reflective "+ ?invocationStr +"/new "+ arrayTypeStr +">"
+
+
+#include "../../facts/macros.logic"
+#include "java.lang.Class-delta.logic"
+#include "java.lang.reflect.Array-delta.logic"
+#include "java.lang.reflect.Constructor-delta.logic"
+#include "java.lang.reflect.Field-delta.logic"
+#include "java.lang.reflect.Method-delta.logic"
+#include "reified-delta.logic"
+
+
+
+#ifdef USE_BASED_REFLECTION_ANALYSIS
+
++SpecialMissingForNameHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   StaticMethodInvocation@previous(?invocation, ?forName, _),
+   Type:fqn(?type:"java.lang.Class"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing forName values " + ?strInvocation + ">".
+
+// Note how the return type is that of newInstance (Object), although the relation remembers the forName
+// call that produced the Class on which newInstance got called.
++SpecialMissingNewInstanceHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   StaticMethodInvocation@previous(?invocation, ?forName, _),
+   Type:fqn(?type:"java.lang.Object"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing newInstance values " + ?strInvocation + ">".
+
+// Special heap value that propagates through all constructor calls and remembers the original forName 
++SpecialMissingGetConstructorHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   StaticMethodInvocation@previous(?invocation, ?forName, _),
+   Type:fqn(?type:"java.lang.reflect.Constructor"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get[Declared]Constructor[s] values " + ?strInvocation + ">".
+
+// getMethods and getDeclaredMethods are handled the same in terms of detecting
+// where their unknown result flows to. Note how the return type is a single Method
+// and not an array. The array is always there, the special value just gets added to
+// its contents to represent all unknown methods collectively.
++SpecialMissingGetMethodsHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getMethods,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.reflect.Method"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get[Declared]Methods values " + ?strInvocation + ">".
+
++SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getMethods,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.Object"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
+
++SpecialMissingGetMethodHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
+    MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getMethod,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.reflect.Method"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get[Declared]Method values " + ?strInvocation + ">".
+
++SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
+    MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getMethod,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.Object"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
+
+// Special objects for get[Declared]Field[s]. Very similar to methods.
++SpecialMissingGetFieldsHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getFields,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.reflect.Field"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get[Declared]Fields values " + ?strInvocation + ">".
+
++SpecialMissingGetHeapFromGetFields[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getFields,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.Object"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
+
++SpecialMissingGetFieldHeap[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
+    MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getField,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.reflect.Field"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get[Declared]Field values " + ?strInvocation + ">".
+
++SpecialMissingGetHeapFromGetField[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
+    MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
+   MethodInvocation:Signature@previous[?invocation] = ?getField,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.Object"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
+
+#endif // USE_BASED_REFLECTION_ANALYSIS
+
+
+
+#ifdef INVENT_UNKNOWN_REFLECTIVE_OBJECTS
+
+// This is the representative of an unknown reflective object, after it has been cast. 
+// Has a real type. We pre-generate for all types and casts in the universe.
++UnknownReflectiveObject[?type, ?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   AssignCast(?type, _, _, _),
+   ClassType(?type),
+   Type:fqn@previous(?type:?strType),
+   (MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   MethodInvocation:Signature@previous[?invocation] = ?method,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">".
+
+// This is the representative of an unknown reflective object that flows from the reflection
+// operation to a cast.
++MarkerReflectiveObject[?invocation] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   (MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   MethodInvocation:Signature@previous[?invocation] = ?method,
+   VirtualMethodInvocation:Insn@previous(?invocation),
+   Type:fqn(?type:"java.lang.Object"),
+   Instruction:Value@previous(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
+
+#endif // INVENT_UNKNOWN_REFLECTIVE_OBJECTS
+
+
+/**
+ * Heap allocations for reified constructors (java.lang.reflect.Constructor)
+ */
++ReifiedConstructor[?signature] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   SimpleName:Value(?init:"<init>"),
+   MethodSignature:SimpleName[?signature] = ?init,
+   MethodSignature:Value(?signature:?strSignature),
+   ?strHeap = "<reified constructor " + ?strSignature + ">",
+   Type:fqn(?type:"java.lang.reflect.Constructor").
+
+/**
+ * Heap allocations for reified methods (java.lang.reflect.Method).
+ */
++ReifiedMethod[?signature] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   MethodSignature:SimpleName[?signature] = ?simplename,
+   SimpleName:Value(?init:"<init>"),
+   ?simplename != ?init,
+   SimpleName:Value(?clinit:"<clinit>"),
+   ?simplename != ?clinit,
+   MethodSignature:Value(?signature:?strSignature),
+   ?strHeap = "<reified method " + ?strSignature + ">",
+   Type:fqn(?type:"java.lang.reflect.Method").
+
+/**
+ * Heap allocations for reified fields (java.lang.reflect.Field).
+ */
++ReifiedField[?x] = ?heap,
++Instruction:Value(?heap:?strHeap),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?type
+<-
+   FieldSignature:Value(?x:?signature),
+   ?strHeap = "<reified field " + ?signature + ">",
+   Type:fqn(?type:"java.lang.reflect.Field").

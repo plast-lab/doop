@@ -1,0 +1,12 @@
+/**
+ * Implements the special status of java.lang.ref.Reference.
+ */
+
+/**
+ * Paddle implementation:
+ */
+
+/*
+FinalizerQueue(?hctx, ?heap) ->
+   HContext(?hctx), HeapAllocation(?heap).
+*/
