@@ -1,0 +1,9 @@
+#include "native-delta.logic"
+
+PlusHeapAllocation(?alloc, "<<string-constant>>", "java.lang.String").
+PlusHeapAllocation(?alloc, "<<reflection-string-constant>>", "java.lang.String").
+PlusHeapAllocation(?alloc, "<<string-buffer>>", "java.lang.StringBuffer").
+
+#if defined(JRE15) || defined(JRE16) || defined(JRE17)
+PlusHeapAllocation(?alloc, "<<string-builder>>", "java.lang.StringBuilder").
+#endif

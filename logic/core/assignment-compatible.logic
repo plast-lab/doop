@@ -1,0 +1,8 @@
+/**
+ * Assignment compatibility is defined in terms of checkcast. It is only
+ * relevant for reference types, and for reference types the specification of
+ * checkcast and assignment compatible are the same.
+ */
+
+AssignCompatible(?target, ?source) <-
+   CheckCast(?source, ?target).

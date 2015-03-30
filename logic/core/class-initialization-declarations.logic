@@ -1,0 +1,2 @@
+InitializedClass(?classOrInterface) ->
+   Type(?classOrInterface).
