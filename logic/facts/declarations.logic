@@ -31,22 +31,6 @@ Modifier:static[] = ?mod ->
    Modifier(?mod).
 
 
-
-//------------------------------------------------------
-//         Miscellaneous Auxiliary Entities
-//
-// !! These entities should be eliminated at some
-// point. The reason for their existence is that
-// import scripts require non-primitive types on the
-// keys of every predicate being imported. !!
-//------------------------------------------------------
-
-
-ParamIndex(x), ParamIndex:Value(x:y) -> int[32](y).
-SimpleName(x), SimpleName:Value(x:s) -> string(s).
-
-
-
 //------------------------------------------------------
 //               Java Type Hierarchy
 //
@@ -150,7 +134,7 @@ FieldSignature:DeclaringClass[?signature] = ?declaringClass ->
 
 // Simple name of this field
 FieldSignature:SimpleName[?signature] = ?simpleName ->
-   FieldSignature(?signature), SimpleName(?simpleName).
+   FieldSignature(?signature), string(?simpleName).
 
 // Type of this field
 FieldSignature:Type[?signature] = ?type ->
@@ -175,7 +159,7 @@ MethodSignature:Type[?signature] = ?type ->
 
 // Simple name of this method
 MethodSignature:SimpleName[?signature] = ?simplename ->
-   MethodSignature(?signature), SimpleName(?simplename).
+   MethodSignature(?signature), string(?simplename).
 
 // Associated method descriptor
 MethodSignature:Descriptor[?signature] = ?descriptor ->
@@ -189,7 +173,7 @@ MethodModifier(?mod, ?method) ->
 // Parameters
 
 FormalParam[?index, ?method] = ?var ->
-   MethodSignature(?method), ParamIndex(?index), Var(?var).
+   MethodSignature(?method), int[64](?index), Var(?var).
 
 ThisVar[?method] = ?var ->
    MethodSignature(?method), Var(?var).
@@ -565,7 +549,7 @@ AssignReturnValue[?invocation] = ?to ->
 // The actual parameters of the invocation. Note: this does not
 // contain the receiver object (see MethodInvocation:Base predicates).
 ActualParam[?index, ?invocation] = ?var ->
-   MethodInvocation(?invocation), ParamIndex(?index), Var(?var).
+   MethodInvocation(?invocation), int[64](?index), Var(?var).
 
 
 // Virtual Method Invocation
@@ -673,7 +657,6 @@ lang:physical:capacity[`HeapAllocation] = 4194304. /* = instruction */
 lang:physical:capacity[`MethodInvocation] = 4194304. /* = instruction */
 lang:physical:capacity[`StringConstant] = 4194304./* = CallEdgeSourceRef */
 lang:physical:capacity[`ClassConstant] = 4194304./* = CallEdgeSourceRef */
-lang:physical:capacity[`SimpleName] = 131072.
 lang:physical:capacity[`ExceptionHandler] = 131072.
 lang:physical:capacity[`Var] = 2097152. /* 2^21 */
 lang:physical:capacity[`Modifier] = 32.

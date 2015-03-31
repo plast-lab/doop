@@ -2,6 +2,5 @@
  * TODO: this is not efficient
  */
 ClassInitializer[?type] = ?method <-
-   SimpleName:Value(?simplename:"<clinit>"),
    MethodDescriptor:Value(?descriptor:"void()"),
-   MethodImplemented[?simplename, ?descriptor, ?type] = ?method.
+   MethodImplemented["<clinit>", ?descriptor, ?type] = ?method.

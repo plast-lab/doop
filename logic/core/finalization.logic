@@ -35,8 +35,7 @@ FinalizerRegisterInfo(?register, ?formal) <-
    FormalParam[0, ?register] = ?formal.
 
 OverridesFinalize(?class) <-
-   SimpleName:Value(?simplename:"finalize"),
    MethodDescriptor:Value(?descriptor:"void()"),
-   MethodLookup[?simplename, ?descriptor, ?class] = ?method,
+   MethodLookup["finalize", ?descriptor, ?class] = ?method,
    MethodSignature:Value(?finalizeInObject:"<java.lang.Object: void finalize()>"),
    ?finalizeInObject != ?method.

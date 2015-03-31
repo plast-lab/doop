@@ -236,8 +236,7 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   SimpleName:Value(?init:"<init>"),
-   MethodSignature:SimpleName[?signature] = ?init,
+   MethodSignature:SimpleName[?signature] = "<init>",
    MethodSignature:Value(?signature:?strSignature),
    ?strHeap = "<reified constructor " + ?strSignature + ">",
    Type:fqn(?type:"java.lang.reflect.Constructor").
@@ -251,10 +250,7 @@
 +HeapAllocation:Type[?heap] = ?type
 <-
    MethodSignature:SimpleName[?signature] = ?simplename,
-   SimpleName:Value(?init:"<init>"),
-   ?simplename != ?init,
-   SimpleName:Value(?clinit:"<clinit>"),
-   ?simplename != ?clinit,
+   ?simplename != "<init>", ?simplename != "<clinit>",
    MethodSignature:Value(?signature:?strSignature),
    ?strHeap = "<reified method " + ?strSignature + ">",
    Type:fqn(?type:"java.lang.reflect.Method").
