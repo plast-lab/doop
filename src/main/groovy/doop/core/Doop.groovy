@@ -126,7 +126,6 @@ class Doop {
         /* End of preprocessor constant flags] */
 
         /* Start of preprocessor normal flags] */
-        //LATEST: NO_MODELING_OF_NUMS_OR_NULL
         new AnalysisOption<String>(
             id:"NO_MODELING_OF_NUMS_OR_NULL",
             value:true, // enabled by default in run script
@@ -168,7 +167,6 @@ class Doop {
             forPreprocessor: true,
             isAdvanced:true
         ),
-        //LATEST: INCLUDE_IMPLICITLY_REACHABLE_CODE
         new AnalysisOption<String>(
             id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
             value:true,  // enabled by default in run script

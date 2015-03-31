@@ -533,8 +533,6 @@ toPredicate,Config:DynamicClass,type,inv"""
      */
     protected void refine() {
 
-        //LATEST: made changes to reflect the latest refine script
-
         //The files and their contents
         Map<String, GString> files = [
                 "refine-site": """option,delimiter,","
@@ -800,7 +798,6 @@ toPredicate,NegativeObjectFilter,string"""
             case "1.7":
                 return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar", "${path}/rhino.jar"]
             case "system":
-                //LATEST: don't include jars if jre is system
                 /*
                 String javaHome = System.getProperty("java.home")
                 return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]

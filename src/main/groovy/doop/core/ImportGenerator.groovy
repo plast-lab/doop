@@ -35,8 +35,6 @@ class ImportGenerator {
             w.write "option,escapeQuotedValues,true\n"
         }
 
-        //LATEST: updated generation of imports
-
         // entities
         // writeImport "PrimitiveType", 1
         // writeImport "NullType", 1
