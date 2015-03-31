@@ -79,7 +79,7 @@ class AnalysisFactory {
      */
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
-        String analysisPath = "${Doop.doopLogic}/${name}/analysis.logic"
+        String analysisPath = "${Doop.doopLogic}/analyses/${name}/analysis.logic"
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 
