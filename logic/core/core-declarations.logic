@@ -26,11 +26,6 @@
 #endif
 
 
-#ifdef CLIENT_EXCEPTION_FLOW
-#include "addons/exception-flow/declarations.logic"
-#endif
-
-
 /**
  * Joins of input facts, useful for performance reasons
  */

@@ -18,7 +18,7 @@ DeclaringClass:Allocation[?heap] = ?type <-
 DeclaringClass:Allocation[?heap] = ?type <-
   ReflectiveHeapAllocation[?invocation, _] = ?heap,
   Instruction:Method[?invocation] = ?inmethod,
-  DeclaringClassMethod[?inmethod] = ?type,
+  DeclaringClass:Method[?inmethod] = ?type,
   !StringConstant(?heap).
 */
 

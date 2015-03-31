@@ -26,11 +26,6 @@
 #endif
 
 
-#ifdef CLIENT_EXCEPTION_FLOW
-#include "addons/exception-flow/rules.logic"
-#endif
-
-
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename <-
    MethodInvocation:Signature[?invocation] = ?signature,
    VirtualMethodInvocation:Insn(?invocation),

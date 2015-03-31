@@ -36,7 +36,7 @@ Stats:Simple:InsensNativeCallGraphEdge(?from, ?to) <-
  ***************************************************/
 Stats:Simple:ApplicationMethod(?method) <-
 	ApplicationClass(?class),
-	DeclaringClassMethod[?method] = ?class.
+	DeclaringClass:Method[?method] = ?class.
 
 Stats:Simple:InsensReachableApplicationMethod(?method),
 Stats:Simple:ReachableApplicationMethod(?ctx, ?method) <-
