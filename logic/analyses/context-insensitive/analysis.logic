@@ -6,8 +6,8 @@
  */
 
 #include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
+#include "../../core/context-sensitivity.logic"
+#include "../../core/core.logic"
 
 // This analysis has no context for either method calls or heap
 // objects. This is emulated by creating a single Context object

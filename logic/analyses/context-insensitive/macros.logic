@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../facts/macros.logic"
 
 /**
  * Some library modules are generically defined, and need the macro
