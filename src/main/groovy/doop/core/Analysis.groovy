@@ -132,48 +132,19 @@ class Analysis implements Runnable {
         if (jre != "system") jre = "jre${jre}"
         String jarName = FilenameUtils.getBaseName(jars[0].resolve().toString())
 
-        /*
-        The following code is reported to be problematic.
-
-        #####
         File humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
         logger.info "Making database available at $humanDatabase"
-        FileUtils.deleteQuietly(humanDatabase)
         humanDatabase.mkdirs()
-
+        FileUtils.deleteQuietly(humanDatabase)
         Helper.execCommand("ln -s $database $humanDatabase", commandsEnvironment)
 
         logger.info "Making database available at last-analysis"
         File lastAnalysis = new File("${Doop.doopHome}/last-analysis")
         FileUtils.deleteQuietly(lastAnalysis)
-        Helper.execCommand("ln -s $humanDatabase ${Doop.doopHome}/last-analysis", commandsEnvironment)
-        #####
-
-        I (saiko) did not manage to reproduce the issue. I think, though, that the issue has to do with the last line:
-        Helper.execCommand("ln -s $humanDatabase ${Doop.doopHome}/last-analysis", commandsEnvironment)
-        which links the last-analysis with the humanDatabase (link) and not with the directory it links to.
-
-        Perhaps it should be replaced with the following?
-        Helper.execCommand("ln -s $database ${Doop.doopHome}/last-analysis", commandsEnvironment)
-        */
-
-        /*
-        Instead of the above, we reproduce the code of the link-result function (as proposed by kferles).
-         */
-        String humanDatabase = "${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}"
-
-        logger.info "Making database available at $humanDatabase"
-        Helper.execCommand("mkdir -p $humanDatabase", commandsEnvironment)
-        Helper.execCommand("rm -rf $humanDatabase", commandsEnvironment)
-        Helper.execCommand("ln -s $database $humanDatabase", commandsEnvironment)
-
-        logger.info "Making database available at last-analysis"
-        Helper.execCommand("rm -f ${Doop.doopHome}/last-analysis", commandsEnvironment)
-        Helper.execCommand("ln -s \$(readlink ${humanDatabase}) ${Doop.doopHome}/last-analysis", commandsEnvironment)
-
+        Helper.execCommand("ln -s $database $lastAnalysis", commandsEnvironment)
     }
-	
-	/**
+
+    /**
      * @return A string representation of the analysis
      */
     String toString() {
