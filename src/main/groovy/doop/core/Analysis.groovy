@@ -82,8 +82,6 @@ class Analysis implements Runnable {
 		
 		createDatabase()
 
-		//TODO: We don't need the write-meta staff, do we?
-		
 		analyze()
 
 		long dbSize = FileUtils.sizeOfDirectory(database) / 1024
@@ -237,7 +235,7 @@ class Analysis implements Runnable {
                 Helper.moveDirectoryContents(exportDir, cacheFacts)
             }
             else {
-                logger.info "Generating facts in $cacheFacts"
+                logger.info "Generating facts in $factsDir"
 
                 FileUtils.deleteQuietly(factsDir)
                 factsDir.mkdirs()
@@ -294,39 +292,25 @@ class Analysis implements Runnable {
             }
 
             logger.info "Loading facts"
-            FileUtils.deleteQuietly(new File(cacheDatabase, "facts"))
-            Helper.execCommand("ln -s $cacheFacts $cacheDatabase/facts", commandsEnvironment)
             FileUtils.deleteQuietly(new File("facts"))
             Helper.execCommand("ln -s $cacheFacts facts", commandsEnvironment)
 
-            FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
-            FileUtils.touch(new File(factsDir, "Properties.facts"))
-
-            File importFile = new File(outDir, "declarations.import")
-            importFile.withWriter { Writer writer ->
-                ImportGenerator.Type type = options.CSV.value ? ImportGenerator.Type.CSV : ImportGenerator.Type.TEXT
-                new ImportGenerator(type, writer).generate()
-            }
-            Helper.checkFileOrThrowException(importFile, "Could not generate import file: $importFile")
+            FileUtils.touch(new File(cacheFacts, "ApplicationClass.facts"))
+            FileUtils.touch(new File(cacheFacts, "Properties.facts"))
 
             factsTime = timing {
-                bloxbatch cacheDatabase, "-import $importFile"
-            }
-
-            factsTime += timing {
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/entities-import.logic"
                 bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/import.logic"
             }
-
             bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
             bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
+
+            FileUtils.deleteQuietly(new File("facts"))
 
             logger.info "Loading flow insensitivity delta"
             timing {
                 bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/flow-insensitivity-delta.logic"
             }
-
-            FileUtils.deleteQuietly(new File("facts"))
-            FileUtils.deleteQuietly(new File(cacheDatabase, "facts"))
 
             if (options.MAIN_CLASS.value) {
                 String mainClass = options.MAIN_CLASS.value
@@ -712,6 +696,7 @@ toPredicate,NegativeObjectFilter,string"""
         logger.debug "Params of soot: ${params.join(' ')}"
 
         /*
+        TODO: should we remove this?
         ClassLoader loader = sootClassLoader()
         sootTime = timing {
             //we invoke the main method reflectively to avoid adding soot as a compile-time dependency
