@@ -59,6 +59,7 @@ class Doop {
             cli:true,
             name:"tamiflex",
             argName:"FILE",
+            forPreprocessor:true,
             isFile:true
         ),
         new AnalysisOption<String>(
