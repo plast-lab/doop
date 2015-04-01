@@ -191,12 +191,12 @@ class Analysis implements Runnable {
         String dacapoPath = "${Doop.doopLogic}/addons/dacapo"
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            preprocessor.preprocess(this, basePath, "declarations.logic", "${outDir}/${name}-declarations.logic",
-                                    "${dacapoPath}/declarations.logic")
-            preprocessor.preprocess(this, basePath, "analysis.logic",     "${outDir}/${name}.logic",
-                                    "${dacapoPath}/rules.logic")
-            preprocessor.preprocess(this, basePath, "delta.logic",        "${outDir}/${name}-delta.logic",
-                                    "${dacapoPath}/delta.logic")
+            preprocessor.preprocess(this, dacapoPath, "declarations.logic", "${outDir}/${name}-declarations.logic",
+                                    "${basePath}/declarations.logic")
+            preprocessor.preprocess(this, dacapoPath, "rules.logic",        "${outDir}/${name}.logic",
+                                    "${basePath}/analysis.logic")
+            preprocessor.preprocess(this, dacapoPath, "delta.logic",        "${outDir}/${name}-delta.logic",
+                                    "${basePath}/delta.logic")
         }
         else {
             preprocessor.preprocess(this, basePath, "declarations.logic", "${outDir}/${name}-declarations.logic")

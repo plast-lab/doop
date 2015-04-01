@@ -1,5 +1,5 @@
-#include "macros.logic"
 #include "../../core/context-sensitivity-declarations.logic"
+#include "../../core/core-declarations.logic"
 
 // For this analysis, there are no contexts, so this is
 // what the initial system objects should have.
