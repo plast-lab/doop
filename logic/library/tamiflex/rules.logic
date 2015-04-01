@@ -1,5 +1,3 @@
-#include "declarations.logic"
-
 Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
 

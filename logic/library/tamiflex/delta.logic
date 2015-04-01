@@ -1,3 +1,5 @@
+// Convert from the representation used (in some places) in Tamiflex to the one
+// used in Doop
 +Tamiflex:ToDoopFormat["Class"] = "java.lang.Class".
 +Tamiflex:ToDoopFormat["Constructor"] = "java.lang.reflect.Constructor".
 +Tamiflex:ToDoopFormat["Field"] = "java.lang.reflect.Field".
