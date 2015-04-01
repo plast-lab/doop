@@ -454,6 +454,20 @@ class Doop {
             value:false,
             forPreprocessor: true
         ),
+        new AnalysisOption<Boolean>(
+            id:"USE_ORIGINAL_NAMES",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"use-original-names",
+        ),
+        new AnalysisOption<Boolean>(
+            id:"KEEP_LINE_NUMBER",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"keep-line-number",
+        ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
             description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
