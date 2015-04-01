@@ -4,7 +4,7 @@
  * TODO Test for accessibility.
  */
 MethodLookup[?simplename, ?descriptor, ?type] = ?method ->
-   SimpleName(?simplename),
+   string(?simplename),
    MethodDescriptor(?descriptor),
    Type(?type),
    MethodSignature(?method).
@@ -13,7 +13,7 @@ MethodLookup[?simplename, ?descriptor, ?type] = ?method ->
  * Is there a non-abstract method declaration?
  */
 MethodImplemented[?simplename, ?descriptor, ?type] = ?method ->
-   SimpleName(?simplename),
+   string(?simplename),
    MethodDescriptor(?descriptor),
    Type(?type),
    MethodSignature(?method).
