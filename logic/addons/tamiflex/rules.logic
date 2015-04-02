@@ -3,11 +3,11 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
 
    Type:fqn(?class:?classStr), ClassType(?class),
    MethodSignature:SimpleName[?method] = ?methodStr,
-   DeclaringClassMethod[?method] = ?class,
+   DeclaringClass:Method[?method] = ?class,
 
    Type:fqn(?inClass:?inClassStr), ClassType(?inClass),
    MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
-   DeclaringClassMethod[?inMethod] = ?inClass,
+   DeclaringClass:Method[?inMethod] = ?inClass,
 
    (
      // There is line information for this invocation. Match exactly with one

@@ -59,46 +59,46 @@ class Analysis implements Runnable {
 
     String inputFilesChecksum
     String logicFilesChecksum
-	
-	File cacheFacts, cacheDatabase, database, exportDir, factsDir, averroesDir
+    
+    File cacheFacts, cacheDatabase, database, exportDir, factsDir, averroesDir
 
     long sootTime, factsTime
 
     protected Analysis() {}
 
-	String bloxbatchVersion, filter
+    String bloxbatchVersion, filter
 
     /**
      * Runs the analysis.
      */
     @Override
     void run() {
-		preprocessor.init()
+        preprocessor.init()
 
         //Dump the analysis in its "meta" file
         new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
-		
-		initAnalysis()
-		
-		createDatabase()
+        
+        initAnalysis()
+        
+        createDatabase()
 
-		analyze()
+        analyze()
 
-		long dbSize = FileUtils.sizeOfDirectory(database) / 1024
-		bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
+        long dbSize = FileUtils.sizeOfDirectory(database) / 1024
+        bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
-		File f = null
-		try {
-			f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-		}
-		catch(e) {
-			logger.debug e.getMessage()
-		}
+        File f = null
+        try {
+            f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+        }
+        catch(e) {
+            logger.debug e.getMessage()
+        }
 
-		if(f) {
-			logger.info "REANALYSE"
-			reanalyze()                
-		}
+        if(f) {
+            logger.info "REANALYSE"
+            reanalyze()                
+        }
 
         produceStats()
     }
@@ -288,7 +288,6 @@ class Analysis implements Runnable {
             logger.info "Loading flow insensitivity declarations"
             timing {
                 bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/facts/flow-insensitivity-declarations.logic"
-
             }
 
             logger.info "Loading facts"
@@ -305,8 +304,6 @@ class Analysis implements Runnable {
             bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
             bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
 
-            FileUtils.deleteQuietly(new File("facts"))
-
             logger.info "Loading flow insensitivity delta"
             timing {
                 bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/flow-insensitivity-delta.logic"
@@ -317,6 +314,10 @@ class Analysis implements Runnable {
                 logger.info "Setting main class to $mainClass"
                 bloxbatch cacheDatabase, """-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:"$mainClass").'"""
             }
+
+            // Used to be FileUtils.deleteQuietly which erroneous deletes the
+            // directory and not the symbolic link
+            Helper.execCommand("unlink facts", commandsEnvironment)
 
             if (options.SET_BASED.value) {
                 runSetBased()
@@ -630,18 +631,18 @@ toPredicate,NegativeObjectFilter,string"""
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
         jars[0] = new ResolvedDependency(f)
     }
-	
-	/**
-	 * Runs averroes, if specified
-	 */
-	protected void runAverroes() {
+    
+    /**
+     * Runs averroes, if specified
+     */
+    protected void runAverroes() {
         logger.info "Running averroes"
 
         ClassLoader loader = averroesClassLoader()
         Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
 
         //We change linked arg and injar for soot in the runSoot method
-	}
+    }
 
     /**
      * soot fact generation
@@ -709,35 +710,35 @@ toPredicate,NegativeObjectFilter,string"""
     }
 
 
-	/**
-	 * Sets all exception options/flags to false. The exception options are determined by their flagType.
-	 */
-	protected void disableAllExceptionOptions() {
-		logger.debug "Disabling all exception preprocessor flags"
-		options.values().each { AnalysisOption option ->
-			if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
-				option.value = false
-			}
-		}
-	}
-	
-	/**
-	 * Sets all constant options/flags to false. The constant options are determined by their flagType.
-	 */
-	protected void disableAllConstantOptions() {
-		logger.debug "Disabling all constant preprocessor flags"
-		options.values().each { AnalysisOption option ->
-			if (option.forPreprocessor && option.flagType == PreprocessorFlag.CONSTANT_FLAG) {
-				option.value = false
-			}
-		}
-	}
+    /**
+     * Sets all exception options/flags to false. The exception options are determined by their flagType.
+     */
+    protected void disableAllExceptionOptions() {
+        logger.debug "Disabling all exception preprocessor flags"
+        options.values().each { AnalysisOption option ->
+            if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
+                option.value = false
+            }
+        }
+    }
+    
+    /**
+     * Sets all constant options/flags to false. The constant options are determined by their flagType.
+     */
+    protected void disableAllConstantOptions() {
+        logger.debug "Disabling all constant preprocessor flags"
+        options.values().each { AnalysisOption option ->
+            if (option.forPreprocessor && option.flagType == PreprocessorFlag.CONSTANT_FLAG) {
+                option.value = false
+            }
+        }
+    }
 
     protected boolean isMustPointTo() {
         return name.equals("must-point-to")
     }
 
-	/**
+    /**
      * Creates a new class loader for running jphantom
      */
     private ClassLoader phantomClassLoader() {
@@ -792,24 +793,24 @@ toPredicate,NegativeObjectFilter,string"""
                 throw new RuntimeException("Invalid JRE version: $jre")
         }
     }
-	
-	/**
-	 * Creates a new class loader for running averroes
-	 */
-	private ClassLoader averroesClassLoader() {
-		//TODO: for now, we hard-code the averroes jar and properties
-		String jar = "${Doop.doopHome}/lib/averroes-no-properties.jar"
-		String properties = "$outDir/averroes.properties"
+    
+    /**
+     * Creates a new class loader for running averroes
+     */
+    private ClassLoader averroesClassLoader() {
+        //TODO: for now, we hard-code the averroes jar and properties
+        String jar = "${Doop.doopHome}/lib/averroes-no-properties.jar"
+        String properties = "$outDir/averroes.properties"
 
-		//Determine the library jars
-		List<String> libraryJars = jars.drop(1).collect { it.resolve().toString() } + jreAverroesLibraries()
-		
-		//Create the averroes properties
-		Properties props = new Properties()
-		props.setProperty("application_includes", options.APP_REGEX.value as String)
-		props.setProperty("main_class", options.MAIN_CLASS as String)
-		props.setProperty("input_jar_files", jars[0].resolve() as String)
-		props.setProperty("library_jar_files", libraryJars.join(":"))
+        //Determine the library jars
+        List<String> libraryJars = jars.drop(1).collect { it.resolve().toString() } + jreAverroesLibraries()
+        
+        //Create the averroes properties
+        Properties props = new Properties()
+        props.setProperty("application_includes", options.APP_REGEX.value as String)
+        props.setProperty("main_class", options.MAIN_CLASS as String)
+        props.setProperty("input_jar_files", jars[0].resolve() as String)
+        props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
         if (options.DYNAMIC.value) {
@@ -821,25 +822,25 @@ toPredicate,NegativeObjectFilter,string"""
             props.setProperty("dynamic_classes_file", dynFileAll as String)
         }
 
-		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
-		props.setProperty("output_dir", averroesDir as String)
-		props.setProperty("jre", javaAverroesLibrary())
-		
-		new File(properties).newWriter().withWriter { Writer writer ->
-			props.store(writer, null)
-		}
-		
-		File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
-		File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
-		
-		URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
+        props.setProperty("output_dir", averroesDir as String)
+        props.setProperty("jre", javaAverroesLibrary())
+        
+        new File(properties).newWriter().withWriter { Writer writer ->
+            props.store(writer, null)
+        }
+        
+        File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
+        File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
+        
+        URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
         return new URLClassLoader(classpath)
-	}
-	
-	/**
-	 * Generates a list for the jre libs for averroes 
-	 */
-	private List<String> jreAverroesLibraries() {
+    }
+    
+    /**
+     * Generates a list for the jre libs for averroes 
+     */
+    private List<String> jreAverroesLibraries() {
 
         String jre = options.JRE.value
         String path = "${Doop.doopHome}/externals/jre${jre}/lib"
@@ -861,12 +862,12 @@ toPredicate,NegativeObjectFilter,string"""
             default:
                 throw new RuntimeException("Invalid JRE version: $jre")
         }
-	}	
-	
-	/**
-	 * Generates the full path to the rt.jar required by averroes
-	 */
-	private String javaAverroesLibrary() {
+    }   
+    
+    /**
+     * Generates the full path to the rt.jar required by averroes
+     */
+    private String javaAverroesLibrary() {
 
         String jre = options.JRE.value
 
@@ -878,7 +879,7 @@ toPredicate,NegativeObjectFilter,string"""
             String path = "${Doop.doopHome}/externals/jre${jre}/lib"
             return "$path/rt.jar"
         }
-	}
+    }
 
     /**
      * Invokes bloxbatch on the given database with the given params. Helper method for making the code more readable.
@@ -892,26 +893,26 @@ toPredicate,NegativeObjectFilter,string"""
      * Helper method for making the code more readable.
      */
     private void bloxbatchPipe(File database, String params, String... pipeCommands) {
-		/**
-		 * Do only on the first invocation of bloxbatch; cache result
-		 */
-		if (!bloxbatchVersion) {
-			def interceptor = new SystemOutputInterceptor({ bloxbatchVersion = it; false})
-			interceptor.start()
-			Helper.execCommand("${options.BLOXBATCH.value} -version 2>&1 | awk 'BEGIN{flag=0} /BloxBatch/{flag=1} /Version/{if(flag){ printf \$2; flag=0 }}'", commandsEnvironment)
-			interceptor.stop()
+        /**
+         * Do only on the first invocation of bloxbatch; cache result
+         */
+        if (!bloxbatchVersion) {
+            def interceptor = new SystemOutputInterceptor({ bloxbatchVersion = it; false})
+            interceptor.start()
+            Helper.execCommand("${options.BLOXBATCH.value} -version 2>&1 | awk 'BEGIN{flag=0} /BloxBatch/{flag=1} /Version/{if(flag){ printf \$2; flag=0 }}'", commandsEnvironment)
+            interceptor.stop()
 
-			def (major, minor) = bloxbatchVersion.tokenize(".")
-			/**
-			 * We don't want the first 4 lines from stderr. The rest output of stderr might
-			 * have interesting messages though (i.e. errors). Use |& which pipes stderr
-			 * instead of stdout.
-			 * Another way to achieve that, in which we swap stdout and stderr using a third
-			 * file descriptor (3). In the end, 3>&- closes the extraneous file descriptor.
-			 * 3>&1 1>&2 2>&3 3>&- | tail -n +5
-			 */
-			filter = (major.toInteger() == 3 && minor.toInteger() >= 10) ? "|& tail -n +5 " : ""
-		}
+            def (major, minor) = bloxbatchVersion.tokenize(".")
+            /**
+             * We don't want the first 4 lines from stderr. The rest output of stderr might
+             * have interesting messages though (i.e. errors). Use |& which pipes stderr
+             * instead of stdout.
+             * Another way to achieve that, in which we swap stdout and stderr using a third
+             * file descriptor (3). In the end, 3>&- closes the extraneous file descriptor.
+             * 3>&1 1>&2 2>&3 3>&- | tail -n +5
+             */
+            filter = (major.toInteger() == 3 && minor.toInteger() >= 10) ? "|& tail -n +5 " : ""
+        }
 
         if (pipeCommands) {
             Helper.execCommand("${options.BLOXBATCH.value} -db $database $params $filter | ${pipeCommands.join(" |")}", commandsEnvironment)
