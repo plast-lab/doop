@@ -1,5 +1,4 @@
-#include "macros.logic"
-#include "../context-sensitive-declarations.logic"
+#include "../../core/context-sensitivity-declarations.logic"
 
 // For this analysis, contexts are method invocations, so this is
 // what the initial system objects should have.

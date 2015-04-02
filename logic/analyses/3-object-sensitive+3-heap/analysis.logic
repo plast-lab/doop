@@ -1,10 +1,9 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * @author George Kastrinis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
 
 // In this analysis, both the real context and the real heap context 
 // are triplets of HeapAllocations. Keeping mapping 

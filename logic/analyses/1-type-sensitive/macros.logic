@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../facts/macros.logic"
 
 // We need to *pretend* we are creating new contexts, since the
 // product of the macro goes to the head of a rule.
