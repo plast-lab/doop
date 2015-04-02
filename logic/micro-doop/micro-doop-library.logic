@@ -104,7 +104,7 @@ WhatAreWeMissing(?heap) <-
  */
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
    MethodInvocation(?invocation),
-   string(?simplename).
+   SimpleName(?simplename).
 
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename <-
    VirtualMethodInvocation:Insn(?invocation),
