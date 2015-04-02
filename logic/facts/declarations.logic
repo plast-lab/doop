@@ -32,6 +32,17 @@ Modifier:static[] = ?mod ->
 
 
 //------------------------------------------------------
+//                Auxiliary Entities
+// 
+// !! These entities exist only to facilitate indexing.
+// When a primitive appears in a key position of a predicate,
+// the engine will switch to left-to-right ordering. !!
+//------------------------------------------------------
+ParamIndex(x), ParamIndex:Value(x:y) -> int[32](y).
+SimpleName(x), SimpleName:Value(x:s) -> string(s).
+
+
+//------------------------------------------------------
 //               Java Type Hierarchy
 //
 // TODO Improve type hierarchy: ArrayType is a subtype
@@ -134,7 +145,7 @@ FieldSignature:DeclaringClass[?signature] = ?declaringClass ->
 
 // Simple name of this field
 FieldSignature:SimpleName[?signature] = ?simpleName ->
-   FieldSignature(?signature), string(?simpleName).
+   FieldSignature(?signature), SimpleName(?simpleName).
 
 // Type of this field
 FieldSignature:Type[?signature] = ?type ->
@@ -159,7 +170,7 @@ MethodSignature:Type[?signature] = ?type ->
 
 // Simple name of this method
 MethodSignature:SimpleName[?signature] = ?simplename ->
-   MethodSignature(?signature), string(?simplename).
+   MethodSignature(?signature), SimpleName(?simplename).
 
 // Associated method descriptor
 MethodSignature:Descriptor[?signature] = ?descriptor ->
@@ -173,7 +184,7 @@ MethodModifier(?mod, ?method) ->
 // Parameters
 
 FormalParam[?index, ?method] = ?var ->
-   MethodSignature(?method), int[64](?index), Var(?var).
+   MethodSignature(?method), ParamIndex(?index), Var(?var).
 
 ThisVar[?method] = ?var ->
    MethodSignature(?method), Var(?var).
@@ -549,7 +560,7 @@ AssignReturnValue[?invocation] = ?to ->
 // The actual parameters of the invocation. Note: this does not
 // contain the receiver object (see MethodInvocation:Base predicates).
 ActualParam[?index, ?invocation] = ?var ->
-   MethodInvocation(?invocation), int[64](?index), Var(?var).
+   MethodInvocation(?invocation), ParamIndex(?index), Var(?var).
 
 
 // Virtual Method Invocation

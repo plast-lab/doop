@@ -31,7 +31,7 @@
  */
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
    MethodInvocation(?invocation),
-   string(?simplename).
+   SimpleName(?simplename).
 
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
    MethodInvocation(?invocation),
