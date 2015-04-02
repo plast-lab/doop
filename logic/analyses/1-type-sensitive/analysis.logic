@@ -1,12 +1,11 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * Context-sensitive pointer analysis with context of 1 type.
  *
  * @author Yannis Smaragdakis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
 
 // In this analysis, the real context is a Type. 
 // The type is not always a class type, because of arrays currently being

@@ -1,3 +1,6 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * Context-sensitive pointer analysis with context of 2 call site and
  * a context-sensitive heap abstraction of 2 call sites
@@ -5,10 +8,6 @@
  * @author Martin Bravenboer
  * @author George Kastrinis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
 
 // In this analysis, the real context and the real heap context
 // are pairs of MethodInvocations. Keeping mapping 

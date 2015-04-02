@@ -1,17 +1,3 @@
-/**
- * Generic context-sensitive pointer analysis
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
- */
-
-// There should be no need for this. It's a bad sign if there is.
-//lang:compiler:disableError:NEGATION_RECURSION[]=true.
-
-// Ignore verification of calculation in head
-lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
-
 // This is a temporary hack. See near bottom for a proper definition of
 // these predicates. Unfortunately derived predicates don't seem to
 // be supported by the join optimizer currently.
@@ -28,6 +14,21 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
     ((!NegativeSiteFilter("true"), SiteToRefine(invocation)); \
     (NegativeSiteFilter("true"), !SiteToRefine(invocation)))
 
+#include "core.logic"
+
+/**
+ * Generic context-sensitive pointer analysis
+ *
+ * @author Martin Bravenboer
+ * @author Yannis Smaragdakis
+ * @author George Kastrinis
+ */
+
+// There should be no need for this. It's a bad sign if there is.
+//lang:compiler:disableError:NEGATION_RECURSION[]=true.
+
+// Ignore verification of calculation in head
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
 /**
  * Heap allocation

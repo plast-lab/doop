@@ -1,3 +1,5 @@
+#include "core-declarations.logic"
+
 /**
  * Generic declarations for context-sensitive pointer analysis.
  */

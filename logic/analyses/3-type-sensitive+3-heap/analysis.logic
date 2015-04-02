@@ -1,14 +1,12 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * Context-sensitive pointer analysis with context of 3 types and a
  * context-sensitive heap abstraction.
  *
  * @author George Kastrinis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
-#include "../object-to-type.logic"
 
 // In this analysis, the real context and the real heap context
 // is a triplet of Types. Keeping mapping 
