@@ -1,13 +1,12 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * Context-sensitive pointer analysis with context of 2 objects
  * (AND for static calls 1 call-site).
  *
  * @author George Kastrinis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
 
 // In this analysis, the real context is a pair of HeapAllocation AND
 // a MethodInvocation (for static calls) sometimes.

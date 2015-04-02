@@ -1,14 +1,12 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * Context-sensitive pointer analysis with context of 2 types and 1 call-site and a
  * context-sensitive heap abstraction.
  *
  * @author George Kastrinis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
-#include "../object-to-type.logic"
 
 ClassHasInstr(?class, ?instr) <- DeclaringClassMethod[?method] = ?class, Instruction:Method[?instr] = ?method.
 ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
