@@ -1,0 +1,98 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
+/**
+ * Context-sensitive pointer analysis with context of 2 object and a
+ * context-sensitive heap abstraction.
+ *
+ * @author Martin Bravenboer
+ * @author Yannis Smaragdakis
+ */
+
+// In this analysis, both the real context and the real heap context 
+// are pairs of HeapAllocations. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+ContextFromRealContext[?heap1, ?heap2] = ?ctx ->
+  Context(?ctx), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+RealContext2FromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+
+RealContext1FromContext[?ctx] = ?heap1,
+RealContext2FromContext[?ctx] = ?heap2 <-
+  ContextFromRealContext[?heap1, ?heap2] = ?ctx.
+
+HContextFromRealHContext[?heap1, ?heap2] = ?hctx ->
+  HContext(?hctx), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`HContextFromRealHContext).
+
+RealHContext2FromHContext[?hctx] = ?heap -> 
+  HContext(?hctx), HeapAllocation(?heap).
+RealHContext2FromHContext[?hctx] = ?heap2 <-
+  HContextFromRealHContext[_, ?heap2] = ?hctx.
+
+// Creating special immutable heap allocation constant
+ImmutableHeapValue[] = ?immHeap <-
+  HeapAllocationValue(?immHeap, "<<immutable>>").
+
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?heap1, ?heap2] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?heap1, ?heap2, ?alloc).
+
+HContextFromRealHContext[?heap1, ?heap2] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?heap1, ?heap2, ?alloc).
+
+HContextFromRealHContext[?heap1, ?heap2] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?heap1, ?heap2, ?alloc).
+
+/**
+ * Merge optimization hack
+ */
+
+// For this analysis, we only need two of the parameters that may 
+// influence the new context object.
+MyMergeBasis(?hctx, ?heap) <-
+  MergeBasis(_, _, ?hctx, ?heap).
+
+// We create new context objects sparingly, because of the high cost.
+// We also cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealHContext2FromHContext[?hctx],?heap] = ?calleeCtx,
+OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?heap).
+  
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?initheap,?initheap] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?initheap, "<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?startupheap,?startupheap] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?startupheap, "<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?clinitheap,?clinitheap] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?clinitheap, "<<class-initialization>>").

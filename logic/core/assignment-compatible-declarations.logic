@@ -1,0 +1,1 @@
+AssignCompatible(?target, ?source) -> Type(?target), Type(?source).
