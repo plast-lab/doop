@@ -1,3 +1,6 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
 /**
  * Experimental
  *
@@ -5,10 +8,6 @@
  * @author Yannis Smaragdakis
  * @author George Kastrinis
  */
-
-#include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
 
 // In this analysis, the real context is a pair of MethodInvocations
 // and the real heap context a single MethodInvocation. Keeping mapping 

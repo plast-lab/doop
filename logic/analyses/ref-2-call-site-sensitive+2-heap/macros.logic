@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../facts/macros.logic"
 
 /// (YS) This is currently broken and I think I see at least one major thing
 /// that's off. The RecordMacro should use a unique contex (InitialInvValue),
