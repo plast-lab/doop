@@ -127,7 +127,6 @@ class Doop {
         /* End of preprocessor constant flags] */
 
         /* Start of preprocessor normal flags] */
-        //LATEST: NO_MODELING_OF_NUMS_OR_NULL
         new AnalysisOption<String>(
             id:"NO_MODELING_OF_NUMS_OR_NULL",
             value:true, // enabled by default in run script
@@ -169,7 +168,6 @@ class Doop {
             forPreprocessor: true,
             isAdvanced:true
         ),
-        //LATEST: INCLUDE_IMPLICITLY_REACHABLE_CODE
         new AnalysisOption<String>(
             id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
             value:true,  // enabled by default in run script
@@ -456,6 +454,20 @@ class Doop {
             id:"DACAPO_2009",
             value:false,
             forPreprocessor: true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"USE_ORIGINAL_NAMES",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"use-original-names",
+        ),
+        new AnalysisOption<Boolean>(
+            id:"KEEP_LINE_NUMBER",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"keep-line-number",
         ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",

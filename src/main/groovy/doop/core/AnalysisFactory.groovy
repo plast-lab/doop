@@ -56,8 +56,6 @@ class AnalysisFactory {
         //init the environment used for executing commands
 		initExternalCommandsEnvironment(analysis)
 			
-		//TODO: The COLOR option is not supported
-			
 		//TODO: Create empty jar. Is it needed?
 
 		//TODO: Check if input is given (incremental). Is it needed?
@@ -79,7 +77,7 @@ class AnalysisFactory {
      */
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
-        String analysisPath = "${Doop.doopLogic}/${name}/analysis.logic"
+        String analysisPath = "${Doop.doopLogic}/analyses/${name}/analysis.logic"
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 

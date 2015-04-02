@@ -128,12 +128,11 @@ MainMethodDeclaration(?method) ->
 
 MainMethodDeclaration(?method) <-
   MainClass(?type),
-  SimpleName:Value(?simplename:"main"),
   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
   Modifier:Value(?public:"public"),
   Modifier:Value(?static:"static"),
   MethodSignature:Type[?signature] = ?type,
-  MethodSignature:SimpleName[?signature] = ?simplename,
+  MethodSignature:SimpleName[?signature] = "main",
   MethodSignature:Descriptor[?signature] = ?descriptor,
   MethodDeclaration[?signature] = ?method,
   MethodModifier(?public, ?method),
