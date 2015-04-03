@@ -154,7 +154,7 @@ VarPointsTo(?hctx, ?arrayHeap, ?callerCtx, ?to) <-
 //VERSION-A
 ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:PublicMethods(?hctx, ?arrayHeap, ?type),
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   MethodModifier("public", ?signature),
   ReifiedMethod[?signature] = ?heap,
   MethodNameStringConstant:Signature(?signature, _).
@@ -178,7 +178,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:Class:getMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   MethodModifier("public", ?signature),
   ReifiedMethod[?signature] = ?heap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
@@ -189,7 +189,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 // REVIEW: why reuse the hctx? Just for lack of anything better? Also later.
 ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:Methods(?hctx, ?arrayHeap, ?type),
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   ReifiedMethod[?signature] = ?heap,
   MethodNameStringConstant:Signature(?signature, _).
 */
@@ -207,7 +207,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:Class:getDeclaredMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   ReifiedMethod[?signature] = ?heap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
   MethodNameStringConstant:Signature(?signature, ?constant).
@@ -377,7 +377,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 // Simple optimization predicate. It matters.
 OptClassToConstructor(?constructor, ?classHeap) <-
   ReifiedClass[?type] = ?classHeap,
-  MethodSignature:Type[?constructor] = ?type,
+  MethodSignature:DeclaringType[?constructor] = ?type,
   MethodSignature:SimpleName[?constructor] = "<init>".
 
 ReflectiveAssignHeapAllocation(?invocation, ?type, ?ctx, ?to),
@@ -386,7 +386,7 @@ ReflectiveBaseVar[?invocation] = ?to <-
   java:lang:Class:newInstance(?invocation, ?to, ?from),
   VarPointsTo(_, ?class, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?class),
-  MethodSignature:Type[?constructor] = ?type.
+  MethodSignature:DeclaringType[?constructor] = ?type.
 
 
 /*************************************************************

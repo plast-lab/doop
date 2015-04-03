@@ -17,8 +17,7 @@ DeclaringClassMethod[?method] = ?type ->
   MethodSignature(?method).
 
 DeclaringClassMethod[?method] = ?type <-
-  MethodDeclaration[?signature] = ?method,
-  MethodSignature:Type[?signature] = ?type.
+  MethodSignature:DeclaringType[?method] = ?type.
 
 // The Type is almost always a ClassType, except for Object methods
 // dispatched on arrays. The Instruction is almost always a 
@@ -131,7 +130,7 @@ MainMethodDeclaration(?method) <-
   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
   Modifier:Value(?public:"public"),
   Modifier:Value(?static:"static"),
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   MethodSignature:SimpleName[?signature] = "main",
   MethodSignature:Descriptor[?signature] = ?descriptor,
   MethodDeclaration[?signature] = ?method,

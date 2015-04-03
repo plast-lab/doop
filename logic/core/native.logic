@@ -9,7 +9,7 @@ RecordImmutableMacro(?ctx, ?argsArray, ?hctx),
 VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-
    MainClass(?mainClass),
-   MethodSignature:Type[?mainMethod] = ?mainClass,
+   MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
    ReachableContext(?ctx, ?mainMethod),
    MethodSignature:Descriptor[?mainMethod] = "void(java.lang.String[])",
    FormalParam[0, ?mainMethod] = ?args,

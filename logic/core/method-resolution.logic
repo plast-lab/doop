@@ -28,7 +28,7 @@ MethodLookup[?simplename, ?descriptor, ?arraytype] = ?method <-
 MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
    MethodSignature:SimpleName[?signature] = ?simplename,
    MethodSignature:Descriptor[?signature] = ?descriptor,
-   MethodSignature:Type[?signature] = ?type,
+   MethodSignature:DeclaringType[?signature] = ?type,
    MethodDeclaration[?signature] = ?method,
    Modifier:Value(?abstract:"abstract"),
    ! MethodModifier(?abstract, ?method).

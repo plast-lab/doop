@@ -162,11 +162,9 @@ FieldModifier(?modifier, ?field) ->
 
 MethodSignature(x), MethodSignature:Value(x:s) -> string(s).
 
-// !! TODO: change this to declaring class, so that it is compatible with
-// field signatures !!
 // Type that contains the method decl
-MethodSignature:Type[?signature] = ?type ->
-   MethodSignature(?signature), Type(?type).
+MethodSignature:DeclaringType[?signature] = ?declaringType ->
+   MethodSignature(?signature), Type(?declaringType).
 
 // Simple name of this method
 MethodSignature:SimpleName[?signature] = ?simplename ->

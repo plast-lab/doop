@@ -1,6 +1,7 @@
+// TODO: Remove?
 DeclaringClass:Method[?method] = ?type <-
-   MethodDeclaration[?signature] = ?method,
-   MethodSignature:Type[?signature] = ?type.
+   //MethodDeclaration[?signature] = ?method,
+   MethodSignature:DeclaringType[?method] = ?type.
 
 DeclaringClass:Allocation[?heap] = ?type <-
    AssignHeapAllocation(?heap, _, ?inmethod),

@@ -8,7 +8,7 @@
 <-
    MethodSignature(?constructor),
    MethodSignature:SimpleName[?constructor] = "<init>",
-   MethodSignature:Type[?constructor] = ?type,
+   MethodSignature:DeclaringType[?constructor] = ?type,
    Type:fqn(?type:?typeStr),
    MethodSignature:Value(?constructor:?constrStr),
    ThisVar[?constructor] = ?this,
