@@ -410,8 +410,8 @@ _MethodSignature(?ref, ?simplename, ?descriptor, ?type) ->
 +MethodSignature:Value(?x:?ref),
 +MethodSignature:SimpleName[?x] = ?simplename,
 +MethodSignature:Descriptor[?x] = ?descriptor,
-+MethodSignature:Type[?x] = ?type <-
-   _MethodSignature(?ref, ?simplename, ?descriptor, ?type).
++MethodSignature:DeclaringType[?x] = ?declaringType <-
+   _MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType).
 
 
 // StoreInstanceField

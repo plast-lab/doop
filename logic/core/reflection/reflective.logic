@@ -215,7 +215,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   AssignCompatible(?type, ?heaptype), // TODO need nicer check
   MethodSignature:SimpleName[?signature] = ?simplename,
   MethodSignature:Descriptor[?signature] = ?descriptor,
@@ -229,7 +229,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  MethodSignature:Type[?signature] = ?type,
+  MethodSignature:DeclaringType[?signature] = ?type,
   AssignCompatible(?type, ?heaptype), // TODO need nicer check
   MethodSignature:SimpleName[?signature] = ?simplename,
   MethodSignature:Descriptor[?signature] = ?descriptor,

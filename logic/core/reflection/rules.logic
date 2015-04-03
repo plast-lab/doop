@@ -197,7 +197,7 @@ TypeMatchingMethodSignature(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
 TypeMatchingMethodSignature(?type, ?constant) <-
   MethodNameStringConstant:Signature(?signature, ?constant),
-  MethodSignature:Type[?signature] = ?supertype,
+  MethodSignature:DeclaringType[?signature] = ?supertype,
   OptSubtype(?type, ?supertype).
 
 NumberOfTypesMatchingMethodSignature[?constant] = ?n ->
@@ -308,7 +308,7 @@ VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-
 OptMethodSignatureType(?signature, ?classtype) ->
   MethodSignature(?signature), Type(?classtype).
 OptMethodSignatureType(?signature, ?classtype) <-
-  MethodSignature:Type[?signature] = ?classtype.
+  MethodSignature:DeclaringType[?signature] = ?classtype.
 
 // The clincher: if we see the cast of a result that came
 // from an invoke, over a method that came from a getMethods, match

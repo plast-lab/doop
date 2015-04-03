@@ -193,7 +193,7 @@ MethodNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   Instruction:Value(?heap:?string),
-  MethodSignature:Type[?sig] = ?type, 
+  MethodSignature:DeclaringType[?sig] = ?type, 
   (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
      // there is some possibility of accessing methods and fields
      // reflectively, even in system classes. Maybe one needs to 
@@ -237,7 +237,7 @@ MethodNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
   Instruction:Value(?heap:?string),
-  MethodSignature:Type[?sig] = ?type,
+  MethodSignature:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
   (MethodNameSuffix(?sig, ?string);
    MethodNamePrefix(?sig, ?string)).
