@@ -175,7 +175,6 @@ class AnalysisFactory {
 			analysis.disableAllExceptionOptions()
 			options.EXCEPTIONS_IMPRECISE.value = true
 			logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
-			
         }
 
         if (options.DISABLE_MERGE_EXCEPTIONS.value) {
@@ -326,6 +325,11 @@ class AnalysisFactory {
 		if (options.DACAPO_BACH.value) {
 			logger.debug "The DACAPO_BACH option has been enabled"
 		}
+
+        if (options.TAMIFLEX.value) {
+            options.DISABLE_REFLECTION.value = true
+            logger.debug "The TAMIFLEX option has been enabled"
+        }
 
         // Checks for must analyses
 
