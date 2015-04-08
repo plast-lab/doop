@@ -282,12 +282,12 @@ class Analysis implements Runnable {
 
             logger.info "Loading fact declarations"
             timing {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/facts/declarations.logic"
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/facts/declarations.logic"
             }
 
             logger.info "Loading flow insensitivity declarations"
             timing {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopHome}/logic/facts/flow-insensitivity-declarations.logic"
+                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"
             }
 
             logger.info "Loading facts"
@@ -298,26 +298,44 @@ class Analysis implements Runnable {
             FileUtils.touch(new File(cacheFacts, "Properties.facts"))
 
             factsTime = timing {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/entities-import.logic"
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/import.logic"
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/facts/entities-import.logic"
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/facts/import.logic"
             }
             bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
             bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
 
-            logger.info "Loading flow insensitivity delta"
+            logger.info "Loading flow insensitivity delta rules"
             timing {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopHome}/logic/facts/flow-insensitivity-delta.logic"
+                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"
             }
+
+            if (options.TAMIFLEX.value) {
+                File origTamFile  = new File(options.TAMIFLEX.value)
+                File factsTamFile = new File(cacheFacts, "Tamiflex.facts")
+                FileUtils.copyFile(origTamFile, factsTamFile)
+                String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
+
+                bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/declarations.logic -name Tamiflex"
+
+                logger.info "Loading tamiflex facts"
+                long tamiflexTime = timing {
+                    bloxbatch cacheDatabase, "-execute -file ${tamiflexDir}/import.logic"
+                }
+                bloxbatch cacheDatabase, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $tamiflexTime).'"""
+
+                preprocessor.preprocess(this, tamiflexDir, "rules.logic", "${outDir}/tamiflex-rules.logic", 
+                                        "${Doop.doopLogic}/analyses/${name}/macros.logic")
+            }
+
+            // Used to be FileUtils.deleteQuietly which erroneous deletes the
+            // directory and not the symbolic link
+            Helper.execCommand("unlink facts", commandsEnvironment)
 
             if (options.MAIN_CLASS.value) {
                 String mainClass = options.MAIN_CLASS.value
                 logger.info "Setting main class to $mainClass"
                 bloxbatch cacheDatabase, """-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:"$mainClass").'"""
             }
-
-            // Used to be FileUtils.deleteQuietly which erroneous deletes the
-            // directory and not the symbolic link
-            Helper.execCommand("unlink facts", commandsEnvironment)
 
             if (options.SET_BASED.value) {
                 runSetBased()
@@ -349,7 +367,6 @@ toPredicate,Config:DynamicClass,type,inv"""
 
                 bloxbatch database, "-import $dynImport"
             }
-
         }
 
         if (!options.INCREMENTAL.value) {
@@ -392,6 +409,14 @@ toPredicate,Config:DynamicClass,type,inv"""
         }
 
         String addonsPath = "${Doop.doopLogic}/addons"
+
+        if (options.TAMIFLEX.value) {
+            logger.info "Loading tamiflex rules"
+            long tamiflexTime = timing {
+                bloxbatch database, "-addBlock -file ${outDir}/tamiflex-rules.logic"
+            }
+            bloxbatch database, """-execute '+Stats:Runtime("tamiflex rules time (sec)", $tamiflexTime).'"""
+        }
 
         if (options.CLIENT_EXCEPTION_FLOW.value) {
             preprocessor.preprocess(this, addonsPath, "exception-flow/declarations.logic",
@@ -454,7 +479,7 @@ toPredicate,Config:DynamicClass,type,inv"""
                     // TODO: add command line option, so users can provide their own subset of root methods
                     logger.info "Adding block for RootMethodForMustAnalysis (default)"
                     timing {
-                        bloxbatch database, "-addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClassMethod[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'"
+                        bloxbatch database, "-addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClass:Method[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'"
                     }
                 }
 
