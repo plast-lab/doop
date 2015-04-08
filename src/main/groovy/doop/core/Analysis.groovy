@@ -181,28 +181,17 @@ class Analysis implements Runnable {
 
 
     /**
-     * Precprocess the logic files of the analysis. Mimics the behavior of the init-analysis function of the run script.
+     * Precprocess the logic files of the analysis.
      */
     protected void initAnalysis() {
 
         logger.info "-- Pre-processing the logic files --"
 
         String basePath   = "${Doop.doopLogic}/analyses/${name}"
-        String dacapoPath = "${Doop.doopLogic}/addons/dacapo"
 
-        if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            preprocessor.preprocess(this, dacapoPath, "declarations.logic", "${outDir}/${name}-declarations.logic",
-                                    "${basePath}/declarations.logic")
-            preprocessor.preprocess(this, dacapoPath, "rules.logic",        "${outDir}/${name}.logic",
-                                    "${basePath}/analysis.logic")
-            preprocessor.preprocess(this, dacapoPath, "delta.logic",        "${outDir}/${name}-delta.logic",
-                                    "${basePath}/delta.logic")
-        }
-        else {
-            preprocessor.preprocess(this, basePath, "declarations.logic", "${outDir}/${name}-declarations.logic")
-            preprocessor.preprocess(this, basePath, "analysis.logic",     "${outDir}/${name}.logic")
-            preprocessor.preprocess(this, basePath, "delta.logic",        "${outDir}/${name}-delta.logic")
-        }
+        preprocessor.preprocess(this, basePath, "declarations.logic", "${outDir}/${name}-declarations.logic")
+        preprocessor.preprocess(this, basePath, "analysis.logic",     "${outDir}/${name}.logic")
+        preprocessor.preprocess(this, basePath, "delta.logic",        "${outDir}/${name}-delta.logic")
 
         //TODO: We don't need to calculate logic and input sums, do we?
         //TODO: We don't need to annotate db paths, do we?
@@ -215,7 +204,7 @@ class Analysis implements Runnable {
     }
 
     /**
-     * Creates the lb database. Mimics the behavior of the create-database function of the doop run script.
+     * Creates the lb database.
      */
     protected void createDatabase() {
 
@@ -315,16 +304,13 @@ class Analysis implements Runnable {
                 FileUtils.copyFile(origTamFile, factsTamFile)
                 String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
 
-                bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/declarations.logic -name Tamiflex"
+                bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/declarations.logic -name TamiflexDecl"
 
                 logger.info "Loading tamiflex facts"
-                long tamiflexTime = timing {
+                long t = timing {
                     bloxbatch cacheDatabase, "-execute -file ${tamiflexDir}/import.logic"
                 }
-                bloxbatch cacheDatabase, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $tamiflexTime).'"""
-
-                preprocessor.preprocess(this, tamiflexDir, "rules.logic", "${outDir}/tamiflex-rules.logic", 
-                                        "${Doop.doopLogic}/analyses/${name}/macros.logic")
+                bloxbatch cacheDatabase, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
             }
 
             // Used to be FileUtils.deleteQuietly which erroneous deletes the
@@ -344,7 +330,7 @@ class Analysis implements Runnable {
     }
 
     /**
-     * Performs the main part of the analysis. Mimics the behavior of the analyze function of the doop run script.
+     * Performs the main part of the analysis.
      */
     protected void analyze() {
 
@@ -409,13 +395,27 @@ toPredicate,Config:DynamicClass,type,inv"""
         }
 
         String addonsPath = "${Doop.doopLogic}/addons"
+        String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
+
+        if (options.DACAPO.value || options.DACAPO_BACH.value) {
+            preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic",
+                                    macros, "${addonsPath}/dacapo/declarations.logic")
+            preprocessor.preprocess(this, addonsPath, "dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
+
+            logger.info "Loading DaCapo rules"
+            bloxbatch database, "-addBlock -file ${outDir}/dacapo.logic"
+            logger.info "Loading DaCapo delta rules"
+            bloxbatch database, "-execute -file ${outDir}/dacapo-delta.logic"
+        }
 
         if (options.TAMIFLEX.value) {
+            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
+
             logger.info "Loading tamiflex rules"
-            long tamiflexTime = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/tamiflex-rules.logic"
+            long t = timing {
+                bloxbatch database, "-addBlock -file ${outDir}/tamiflex.logic"
             }
-            bloxbatch database, """-execute '+Stats:Runtime("tamiflex rules time (sec)", $tamiflexTime).'"""
+            bloxbatch database, """-execute '+Stats:Runtime("tamiflex rules time (sec)", $t).'"""
         }
 
         if (options.CLIENT_EXCEPTION_FLOW.value) {
@@ -503,7 +503,7 @@ toPredicate,Config:DynamicClass,type,inv"""
     }
 
     /**
-     * Reanalyze. Mimics the behavior of the reanalyze function of the doop run script.
+     * Reanalyze.
      */
     protected void reanalyze() {
         logger.info "Loading ${name} refinement-delta rules"
