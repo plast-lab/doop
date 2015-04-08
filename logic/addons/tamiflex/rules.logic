@@ -3,11 +3,11 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
 
    Type:fqn(?class:?classStr), ClassType(?class),
    MethodSignature:SimpleName[?method] = ?methodStr,
-   DeclaringClass:Method[?method] = ?class,
+   MethodSignature:DeclaringType[?method] = ?class,
 
    Type:fqn(?inClass:?inClassStr), ClassType(?inClass),
    MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
-   DeclaringClass:Method[?inMethod] = ?inClass,
+   MethodSignature:DeclaringType[?inMethod] = ?inClass,
 
    (
      // There is line information for this invocation. Match exactly with one
@@ -20,3 +20,18 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    ),
    MethodInvocation:Signature[?invocation] = ?method,
    Instruction:Method[?invocation] = ?inMethod.
+
+
+RecordImmutableMacro(?ctx, ?classObj, ?hctx),
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return) <-
+   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?classStr, ?invocation),
+
+   ?classObjStr = "<class " + ?classStr + ">",
+   Instruction:Value(?classObj:?classObjStr),
+   HeapAllocation(?classObj),
+   HeapAllocation:Type[?classObj] = "java.lang.Class",
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
