@@ -328,8 +328,8 @@ class AnalysisFactory {
 
         if (options.TAMIFLEX.value) {
             options.DISABLE_REFLECTION.value = true
-            options.REFLECTION_STRING_FLOW_ANALYSIS = false
-            options.ANALYZE_REFLECTION_SUBSTRINGS = false
+            options.REFLECTION_STRING_FLOW_ANALYSIS.value = false
+            options.ANALYZE_REFLECTION_SUBSTRINGS.value = false
             logger.debug "The TAMIFLEX option has been enabled"
         }
 
