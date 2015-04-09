@@ -7,3 +7,6 @@ Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodSt
 
 Tamiflex:ReflectionMap(?mapped, ?invocation) ->
    string(?mapped), MethodInvocation(?invocation).
+
+Tamiflex:NewInstance(?invocation, ?obj) ->
+   MethodInvocation(?invocation), HeapAllocation(?obj).
