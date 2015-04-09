@@ -46,28 +46,28 @@ class AnalysisFactory {
 
         //Resolve the jar dependencies
         checkJars(analysis, jars)
-		
-		//process the options
+        
+        //process the options
         processOptions(analysis)
 
         //verify lb options
-		checkLogicBlox(analysis)
+        checkLogicBlox(analysis)
 
         //init the environment used for executing commands
-		initExternalCommandsEnvironment(analysis)
-			
-		//TODO: Create empty jar. Is it needed?
+        initExternalCommandsEnvironment(analysis)
+            
+        //TODO: Create empty jar. Is it needed?
 
-		//TODO: Check if input is given (incremental). Is it needed?
-		checkDACAPO(analysis)
-			
-		checkAppGlob(analysis)
-			
-		//We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
-			
-		//TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
-			
-		//TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
+        //TODO: Check if input is given (incremental). Is it needed?
+        checkDACAPO(analysis)
+            
+        checkAppGlob(analysis)
+            
+        //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
+            
+        //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
+            
+        //TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
 
         return analysis
     }
@@ -147,47 +147,47 @@ class AnalysisFactory {
             }
         }.flatten()
     }
-	
-	/**
+    
+    /**
      * Processes the options of the analysis.
      */
     protected void processOptions(Analysis analysis) {
-	
-		logger.debug "Processing analysis options"
-		
+    
+        logger.debug "Processing analysis options"
+        
         Map<String, AnalysisOption> options = analysis.options
-		
-		/*
-		 * We mimic the checks of the run script for verifiability of this implementation, 
-		 * even though the majority of checks are not required.
-		 */
+        
+        /*
+         * We mimic the checks of the run script for verifiability of this implementation, 
+         * even though the majority of checks are not required.
+         */
 
         if (options.PADDLE_COMPAT.value) {
-			analysis.disableAllExceptionOptions()
-			logger.debug "The PADDLE_COMPAT option has been enabled"
+            analysis.disableAllExceptionOptions()
+            logger.debug "The PADDLE_COMPAT option has been enabled"
         }
 
         if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
-			analysis.disableAllExceptionOptions()
+            analysis.disableAllExceptionOptions()
         }
 
         if (options.EXCEPTIONS_IMPRECISE.value) {
-			analysis.disableAllExceptionOptions()
-			options.EXCEPTIONS_IMPRECISE.value = true
-			logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
+            analysis.disableAllExceptionOptions()
+            options.EXCEPTIONS_IMPRECISE.value = true
+            logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
         }
 
         if (options.DISABLE_MERGE_EXCEPTIONS.value) {
-			analysis.disableAllExceptionOptions()
+            analysis.disableAllExceptionOptions()
             options.EXCEPTIONS_PRECISE.value = true
             options.SEPARATE_EXCEPTION_OBJECTS.value = true
-			logger.debug "The DISABLE_MERGE_EXCEPTIONS option has been enabled"
+            logger.debug "The DISABLE_MERGE_EXCEPTIONS option has been enabled"
         }
 
         if (options.EXCEPTIONS_EXPERIMENTAL.value) {
-			analysis.disableAllExceptionOptions()
-			options.EXCEPTIONS_EXPERIMENTAL.value = true
-			logger.debug "The EXCEPTIONS_EXPERIMENTAL option has been enabled"
+            analysis.disableAllExceptionOptions()
+            options.EXCEPTIONS_EXPERIMENTAL.value = true
+            logger.debug "The EXCEPTIONS_EXPERIMENTAL option has been enabled"
         }
 
         if (options.EXCEPTIONS_FILTER.value) {
@@ -220,21 +220,21 @@ class AnalysisFactory {
         }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-			analysis.disableAllConstantOptions()
-			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
-			logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
+            analysis.disableAllConstantOptions()
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
+            logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value) {
-			analysis.disableAllConstantOptions()
-			options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
-			logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
+            analysis.disableAllConstantOptions()
+            options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
+            logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
-			analysis.disableAllConstantOptions()
-			options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
-			logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
+            analysis.disableAllConstantOptions()
+            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+            logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
 
         if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
@@ -275,7 +275,7 @@ class AnalysisFactory {
 
         if (options.TRANSFORM_INPUT.value) {
             options.SET_BASED.value = true
-			logger.debug "The TRANSFORM_INPUT option has been enabled"
+            logger.debug "The TRANSFORM_INPUT option has been enabled"
         }
 
         if (options.SSA.value) {
@@ -301,33 +301,35 @@ class AnalysisFactory {
         if (options.SOLO.value) {
             logger.debug "The SOLO option has been enabled"
         }
-		
-		if (options.COLOR.value) {
-			logger.debug "The COLOR option has been enabled"
-		}
-		
-		if (options.INTERACTIVE.value) {
-			logger.debug "The INTERACTIVE option has been enabled"
-		}
-		
-		if (options.AVERROES.value) {
-			logger.debug "The AVERROES option has been enabled"
-		}
-		
-		if (options.ALLOW_PHANTOM.value) {
-			logger.debug "The ALLOW_PHANTOM option has been enabled"
-		}
-		
-		if (options.DACAPO.value) {
-			logger.debug "The DACAPO option has been enabled"
-		}
-		
-		if (options.DACAPO_BACH.value) {
-			logger.debug "The DACAPO_BACH option has been enabled"
-		}
+        
+        if (options.COLOR.value) {
+            logger.debug "The COLOR option has been enabled"
+        }
+        
+        if (options.INTERACTIVE.value) {
+            logger.debug "The INTERACTIVE option has been enabled"
+        }
+        
+        if (options.AVERROES.value) {
+            logger.debug "The AVERROES option has been enabled"
+        }
+        
+        if (options.ALLOW_PHANTOM.value) {
+            logger.debug "The ALLOW_PHANTOM option has been enabled"
+        }
+        
+        if (options.DACAPO.value) {
+            logger.debug "The DACAPO option has been enabled"
+        }
+        
+        if (options.DACAPO_BACH.value) {
+            logger.debug "The DACAPO_BACH option has been enabled"
+        }
 
         if (options.TAMIFLEX.value) {
             options.DISABLE_REFLECTION.value = true
+            options.REFLECTION_STRING_FLOW_ANALYSIS = false
+            options.ANALYZE_REFLECTION_SUBSTRINGS = false
             logger.debug "The TAMIFLEX option has been enabled"
         }
 
@@ -349,13 +351,13 @@ class AnalysisFactory {
             logger.debug "The SSA flag has been enabled by default"
         }
 
-		checkJRE(analysis)
-		
-		checkOS(analysis)
-		
-		if (options.MAIN_CLASS.value) {
-			logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
-		}
+        checkJRE(analysis)
+        
+        checkOS(analysis)
+        
+        if (options.MAIN_CLASS.value) {
+            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+        }
         else {
             JarFile jarFile = new JarFile(analysis.jars[0].resolve())
             //Try to read the main class from the manifest contained in the jar            
@@ -373,34 +375,34 @@ class AnalysisFactory {
                 }
             }
         }
-		
-		if (options.INCREMENTAL.value) {
-			logger.debug "The INCREMENTAL option has been enabled"
-		}
+        
+        if (options.INCREMENTAL.value) {
+            logger.debug "The INCREMENTAL option has been enabled"
+        }
 
-		if (options.DYNAMIC.value) {
-			List<String> dynFiles = options.DYNAMIC.value
+        if (options.DYNAMIC.value) {
+            List<String> dynFiles = options.DYNAMIC.value
             dynFiles.each { String dynFile ->
                 Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
-		}
-		
-		if (options.TAMIFLEX.value) {
-			String tamFile = options.TAMIFLEX.value
-			Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
-			logger.debug "The TAMIFLEX option has been set to ${tamFile}"
-		}
-		
-		if (options.CLIENT_CODE.value) {
-			String clFile = options.CLIENT_CODE.value
-			Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
-			options.CLIENT_EXTENSIONS.value = true
-			logger.debug "The CLIENT_CODE option has been set to ${clFile}"
-		}
+        }
+        
+        if (options.TAMIFLEX.value) {
+            String tamFile = options.TAMIFLEX.value
+            Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+            logger.debug "The TAMIFLEX option has been set to ${tamFile}"
+        }
+        
+        if (options.CLIENT_CODE.value) {
+            String clFile = options.CLIENT_CODE.value
+            Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
+            options.CLIENT_EXTENSIONS.value = true
+            logger.debug "The CLIENT_CODE option has been set to ${clFile}"
+        }
     }
-	
-	/**
+    
+    /**
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
     protected void checkJRE(Analysis analysis) {
@@ -454,8 +456,8 @@ class AnalysisFactory {
             default:
                 throw new RuntimeException("Invalid JRE version: $jreValue")
         }
-		
-		//sanity check
+        
+        //sanity check
         EnumSet<JRE> supportedValues = EnumSet.allOf(JRE)
         if (! (jreVersion in supportedValues)) {
             throw new RuntimeException("Unsupported JRE version: $jreVersion")
@@ -463,17 +465,17 @@ class AnalysisFactory {
 
         //generate the JRE constant for the preprocessor
         AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-			id:jreVersion.name(),
-			value:true,
-			forPreprocessor: true
+            id:jreVersion.name(),
+            value:true,
+            forPreprocessor: true
         )
         analysis.options[(jreOption.id)] = jreOption
-	}
-	
-	/**
-	 * Checks the OS. For now, it is always OS.OS_UNIX (the default).
-	 */
-	protected void checkOS(Analysis analysis) {
+    }
+    
+    /**
+     * Checks the OS. For now, it is always OS.OS_UNIX (the default).
+     */
+    protected void checkOS(Analysis analysis) {
 
         OS os = analysis.options.OS.value as OS
 
@@ -485,9 +487,9 @@ class AnalysisFactory {
 
         //generate the OS constant for preprocessor
         AnalysisOption<Boolean> osOption = new AnalysisOption<Boolean>(
-			id:os.name(),
-			value:true,
-			forPreprocessor: true
+            id:os.name(),
+            value:true,
+            forPreprocessor: true
         )
         analysis.options[(osOption.id)] = osOption
     }
@@ -512,8 +514,8 @@ class AnalysisFactory {
             analysis.options.DACAPO_BENCHMARK.value = benchmark
         }
     }
-	
-	/**
+    
+    /**
      * Determines application classes.
      *
      * If an app regex is not present, it generates one.
@@ -521,28 +523,28 @@ class AnalysisFactory {
     protected void checkAppGlob(Analysis analysis) {
         if (!analysis.options.APP_REGEX.value) {
             logger.debug "Generating app regex"
-			
+            
             //We process only the first jar for determining the application classes
             /*
-			Set excluded = ["*", "**"] as Set
-			analysis.jars.drop(1).each { Dependency jar ->
-				excluded += Helper.getPackages(jar.resolve())
-			}
+            Set excluded = ["*", "**"] as Set
+            analysis.jars.drop(1).each { Dependency jar ->
+                excluded += Helper.getPackages(jar.resolve())
+            }
 
-			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
+            Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
             */
             Set<String> packages = Helper.getPackages(analysis.jars[0].resolve())
-			analysis.options.APP_REGEX.value = packages.sort().join(':')
+            analysis.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
-	
-	/**
+    
+    /**
      * Verifies the correctness of the LogicBlox related options
      */
     protected void checkLogicBlox(Analysis analysis) {
 
-		//TODO: Process bloxopts
-	
+        //TODO: Process bloxopts
+    
         AnalysisOption lbhome = analysis.options.LOGICBLOX_HOME
         String lbHomePath = lbhome.value
 
@@ -555,8 +557,8 @@ class AnalysisFactory {
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         analysis.options.BLOXBATCH.value = bloxbatch
     }
-	
-	/**
+    
+    /**
      * Initializes the external commands environment of the given analysis, by:
      * <ul>
      *     <li>adding the LD_LIBRARY_PATH option to the current environment
@@ -568,11 +570,11 @@ class AnalysisFactory {
 
         logger.debug "Initializing the environment of the external commands"
         
-		Map<String, String> env = [:]
+        Map<String, String> env = [:]
         env.putAll(System.getenv())
-		
+        
         String path = env.PATH
-		AnalysisOption ldLibraryPath = analysis.options.LD_LIBRARY_PATH
+        AnalysisOption ldLibraryPath = analysis.options.LD_LIBRARY_PATH
         if (path) {
             path = "$path${File.pathSeparator}${ldLibraryPath.value}"
         }

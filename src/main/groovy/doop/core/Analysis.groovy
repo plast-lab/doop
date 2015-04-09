@@ -309,6 +309,7 @@ class Analysis implements Runnable {
                 logger.info "Loading tamiflex facts"
                 long t = timing {
                     bloxbatch cacheDatabase, "-execute -file ${tamiflexDir}/import.logic"
+                    bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/post-import.logic"
                 }
                 bloxbatch cacheDatabase, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
             }
@@ -409,10 +410,15 @@ toPredicate,Config:DynamicClass,type,inv"""
         }
 
         if (options.TAMIFLEX.value) {
-            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
+            logger.info "Loading tamiflex delta rules"
+            long t = timing {
+                bloxbatch database, "-execute -file ${addonsPath}/tamiflex/delta.logic"
+            }
+            bloxbatch database, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
 
             logger.info "Loading tamiflex rules"
-            long t = timing {
+            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
+            t = timing {
                 bloxbatch database, "-addBlock -file ${outDir}/tamiflex.logic"
             }
             bloxbatch database, """-execute '+Stats:Runtime("tamiflex rules time (sec)", $t).'"""
