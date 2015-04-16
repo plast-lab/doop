@@ -13,3 +13,6 @@ Tamiflex:Class:NewInstance(?invocation, ?obj) ->
 
 Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj) ->
    MethodInvocation(?invocation), MethodSignature(?constructor), HeapAllocation(?obj).
+
+Tamiflex:Array:NewInstance(?invocation, ?obj) ->
+   MethodInvocation(?invocation), HeapAllocation(?obj).

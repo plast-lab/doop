@@ -15,7 +15,8 @@ VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
 RecordImmutableMacro(?ctx, ?obj, ?hctx),
 VarPointsTo(?hctx, ?obj, ?ctx, ?return)
 <-
-   Tamiflex:Class:NewInstance(?invocation, ?obj),
+   (Tamiflex:Class:NewInstance(?invocation, ?obj) ;
+    Tamiflex:Array:NewInstance(?invocation, ?obj) ),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
