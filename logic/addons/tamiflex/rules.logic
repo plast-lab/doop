@@ -1,5 +1,6 @@
 RecordImmutableMacro(?ctx, ?classObj, ?hctx),
-VarPointsTo(?hctx, ?classObj, ?ctx, ?return) <-
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
+<-
    (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
     MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
    StaticMethodInvocation(?invocation, ?sig, ?inmethod),
@@ -12,9 +13,22 @@ VarPointsTo(?hctx, ?classObj, ?ctx, ?return) <-
    AssignReturnValue[?invocation] = ?return.
 
 RecordImmutableMacro(?ctx, ?obj, ?hctx),
-VarPointsTo(?hctx, ?obj, ?ctx, ?return) <-
-   MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
-   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
-   Tamiflex:NewInstance(?invocation, ?obj),
+VarPointsTo(?hctx, ?obj, ?ctx, ?return)
+<-
+   Tamiflex:Class:NewInstance(?invocation, ?obj),
+   Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
+
+RecordImmutableMacro(?ctx, ?obj, ?hctx),
+VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
+//MergeMacro(?callerCtx, ?invocation, ?hctx, ?obj, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
+VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
+<-
+   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return,
+   ?calleeCtx = ?callerCtx, // TODO: bug fix!
+   ThisVar[?constructor] = ?this.

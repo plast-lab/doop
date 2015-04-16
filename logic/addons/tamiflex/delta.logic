@@ -1,7 +1,7 @@
 +Instruction:Value(?obj:?objStr),
 +HeapAllocation(?obj),
 +HeapAllocation:Type[?obj] = ?objType,
-+Tamiflex:NewInstance(?invocation, ?obj)
++Tamiflex:Class:NewInstance(?invocation, ?obj)
 <-
    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
@@ -9,3 +9,17 @@
    Instruction:Value@previous(?invocation:?invocationStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
    Type:fqn(?objType:?objTypeStr).
+
++Instruction:Value(?obj:?objStr),
++HeapAllocation(?obj),
++HeapAllocation:Type[?obj] = ?objType,
++Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
+   VirtualMethodInvocation@previous(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?constructorStr, ?invocation),
+   Instruction:Value@previous(?invocation:?invocationStr),
+   MethodSignature:Value(?constructor:?constructorStr),
+   MethodSignature:DeclaringType[?constructor] = ?objType,
+   Type:fqn(?objType:?objTypeStr),
+   ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">".
