@@ -66,7 +66,8 @@ class Analysis implements Runnable {
 
     protected Analysis() {}
 
-    String bloxbatchVersion, filter
+    String bloxbatchVersion
+    boolean hasFilter
 
     /**
      * Runs the analysis.
@@ -941,16 +942,22 @@ toPredicate,NegativeObjectFilter,string"""
              * Another way to achieve that, in which we swap stdout and stderr using a third
              * file descriptor (3). In the end, 3>&- closes the extraneous file descriptor.
              * 3>&1 1>&2 2>&3 3>&- | tail -n +5
+             * Because of piping, normally the exit status is that of tail. We want the exit
+             * status of the first (0) command in the pipe sequence (bloxbatch)
+             * ${PIPESTATUS[0]}
              */
-            filter = (major.toInteger() == 3 && minor.toInteger() >= 10) ? "|& tail -n +5 " : ""
+            hasFilter = (major.toInteger() == 3 && minor.toInteger() >= 10)
         }
 
-        if (pipeCommands) {
-            Helper.execCommand("${options.BLOXBATCH.value} -db $database $params $filter | ${pipeCommands.join(" |")}", commandsEnvironment)
-        }
-        else {
-            Helper.execCommand("${options.BLOXBATCH.value} -db $database $params $filter", commandsEnvironment)
-        }
+        String command = "${options.BLOXBATCH.value} -db $database $params"
+        if (hasFilter)
+            command += ' |& tail -n +5'
+        if (pipeCommands)
+            command += " | ${pipeCommands.join(" |")}"
+        if (hasFilter)
+            command += ' && [ ${PIPESTATUS[0]} = 0 ]'
+
+        Helper.execCommand(command, commandsEnvironment)
     }
 
     /**
