@@ -23,3 +23,15 @@
    MethodSignature:DeclaringType[?constructor] = ?objType,
    Type:fqn(?objType:?objTypeStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">".
+
++Instruction:Value(?obj:?objStr),
++HeapAllocation(?obj),
++HeapAllocation:Type[?obj] = ?objType,
++Tamiflex:Array:NewInstance(?invocation, ?obj)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
+   StaticMethodInvocation@previous(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?objTypeStr, ?invocation),
+   Instruction:Value@previous(?invocation:?invocationStr),
+   ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
+   Type:fqn(?objType:?objTypeStr).
