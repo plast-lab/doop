@@ -305,7 +305,7 @@ class Analysis implements Runnable {
                 FileUtils.copyFile(origTamFile, factsTamFile)
                 String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
 
-                bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/declarations.logic -name TamiflexDecl"
+                bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/fact-declarations.logic -name TamiflexFactDecl"
 
                 logger.info "Loading tamiflex facts"
                 long t = timing {
@@ -411,6 +411,8 @@ toPredicate,Config:DynamicClass,type,inv"""
         }
 
         if (options.TAMIFLEX.value) {
+            bloxbatch database, "-addBlock -file ${addonsPath}/tamiflex/declarations.logic -name TamiflexDecl"
+
             logger.info "Loading tamiflex delta rules"
             long t = timing {
                 bloxbatch database, "-execute -file ${addonsPath}/tamiflex/delta.logic"

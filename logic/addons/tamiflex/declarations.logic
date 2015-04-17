@@ -1,12 +1,4 @@
-Tamiflex:ToDoopFormat[?orig] = ?formatted ->
-   string(?orig), string(?formatted).
-
-Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
-   string(?classStr), string(?methodStr), string(?mapped), string(?inClassStr), string(?inMethodStr), int[64](?lineNumber).
-
-
-Tamiflex:ReflectionMap(?mapped, ?invocation) ->
-   string(?mapped), MethodInvocation(?invocation).
+DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
 
 Tamiflex:Class:NewInstance(?invocation, ?obj) ->
    MethodInvocation(?invocation), HeapAllocation(?obj).
@@ -16,3 +8,6 @@ Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj) ->
 
 Tamiflex:Array:NewInstance(?invocation, ?obj) ->
    MethodInvocation(?invocation), HeapAllocation(?obj).
+
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method) ->
+   Context(?callerCtx), MethodInvocation(?invocation), MethodSignature(?method).
