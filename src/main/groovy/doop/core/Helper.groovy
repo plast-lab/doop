@@ -274,6 +274,17 @@ class Helper {
     }
 
     /**
+     * Merge two files as if the first one was #include'd at the top of the second one.
+     */
+    static void mergeFiles(Analysis analysis, String firstPath, String secondPath) {
+            File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
+            String tmpFilePath = tmpFile.getCanonicalPath()
+            Helper.execCommand("cpp -P $secondPath -include $firstPath $tmpFilePath", analysis.commandsEnvironment)
+            FileUtils.copyFile(tmpFile, new File(secondPath))
+            FileUtils.deleteQuietly(tmpFile)
+    }
+
+    /**
      * Writes the given string to the given file.
      */
     static File writeToFile(File f, String s) {
