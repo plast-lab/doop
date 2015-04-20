@@ -35,3 +35,17 @@
    Instruction:Value@previous(?invocation:?invocationStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
    Type:fqn(?objType:?objTypeStr).
+
++LoadArrayIndex(?array, ?value, ?inmethod)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   ActualParam[0, ?invocation] = ?array,
+   AssignReturnValue[?invocation] = ?value.
+
++StoreArrayIndex(?value, ?array, ?inmethod)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>"),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   ActualParam[0, ?invocation] = ?array,
+   ActualParam[2, ?invocation] = ?value.
