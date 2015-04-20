@@ -398,33 +398,42 @@ toPredicate,Config:DynamicClass,type,inv"""
 
         String addonsPath = "${Doop.doopLogic}/addons"
         String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
+        /**
+         * Generic file for incrementaly adding addons logic from various
+         * points. This is necessary in some cases to avoid weird errors from
+         * the engine (DELTA_RECURSION etc.) and in general it helps
+         * performance-wise.
+         */ 
+        FileUtils.touch(new File(outDir, "addons.logic"))
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic",
-                                    macros, "${addonsPath}/dacapo/declarations.logic")
+            preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic", macros)
             preprocessor.preprocess(this, addonsPath, "dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
 
-            logger.info "Loading DaCapo rules"
-            bloxbatch database, "-addBlock -file ${outDir}/dacapo.logic"
-            logger.info "Loading DaCapo delta rules"
+            logger.info "At Declarations: DaCapo"
+            bloxbatch database, "-addBlock -file ${addonsPath}/dacapo/declarations.logic -name DacapoDecl"
+
+            logger.info "At Deltas: DaCapo"
             bloxbatch database, "-execute -file ${outDir}/dacapo-delta.logic"
+
+            logger.info "Adding DaCapo rules to addons logic"
+            Helper.mergeFiles(this, "${outDir}/addons.logic", "${outDir}/dacapo.logic")
         }
 
         if (options.TAMIFLEX.value) {
+            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
+
+            logger.info "At Declarations: Tamiflex"
             bloxbatch database, "-addBlock -file ${addonsPath}/tamiflex/declarations.logic -name TamiflexDecl"
 
-            logger.info "Loading tamiflex delta rules"
+            logger.info "At Deltas: Tamiflex"
             long t = timing {
                 bloxbatch database, "-execute -file ${addonsPath}/tamiflex/delta.logic"
             }
             bloxbatch database, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
 
-            logger.info "Loading tamiflex rules"
-            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
-            t = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/tamiflex.logic"
-            }
-            bloxbatch database, """-execute '+Stats:Runtime("tamiflex rules time (sec)", $t).'"""
+            logger.info "Adding tamiflex rules to addons logic"
+            Helper.mergeFiles(this, "${outDir}/addons.logic", "${outDir}/tamiflex.logic")
         }
 
         if (options.CLIENT_EXCEPTION_FLOW.value) {
@@ -500,6 +509,7 @@ toPredicate,Config:DynamicClass,type,inv"""
                 }
             }
             logger.info "Main analysis"
+            Helper.mergeFiles(this, "${outDir}/addons.logic", "${outDir}/${name}.logic")
             long time = timing {
                 bloxbatch database, "-addBlock -file ${outDir}/${name}.logic"
             }

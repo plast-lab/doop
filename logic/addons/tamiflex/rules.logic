@@ -35,7 +35,6 @@ VarPointsTo(?hctx, ?obj, ?ctx, ?return)
 
 RecordImmutableMacro(?ctx, ?obj, ?hctx),
 VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
-//MergeMacro(?callerCtx, ?invocation, ?hctx, ?obj, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
 <-
@@ -62,7 +61,6 @@ Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
  * But they are handled the same as virtual methods in the context of tamiflex
  * since tamiflex has already resolved the final target method.
  */
-//MergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 <-
@@ -76,7 +74,6 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 /**
  * Static method invocations
  */
-//MergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
 <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
@@ -103,8 +100,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
    ActualParam[1, ?invocation] = ?argsParam,
    FormalParam[_, ?callee] = ?formal,
    VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?argsParam),
-   //ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
-   ?heap = ?baseheap, ?hctx = ?basehctx, // TODO: bug fix!
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
    Var:Type[?formal] = ?type,
    HeapAllocation:Type[?heap] = ?heaptype,
    AssignCompatible(?type, ?heaptype),
