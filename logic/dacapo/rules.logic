@@ -1,0 +1,18 @@
+/**
+ * Extra logic to handle a specific value read from a configuration file for
+ * the DaCapo benchmarks. The value is used afterwards reflectively to create a
+ * new object.
+ */
+RecordImmutableMacro(?ctx, ?classNameHeap, ?hctx),
+VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) <-
+  MethodInvocation:Signature[?inv] =
+#ifdef DACAPO_2009
+  "<org.dacapo.parser.Config: void setClass(java.lang.String)>",
+#else
+  "<dacapo.parser.Config: void setClass(java.lang.String)>",
+#endif
+  VirtualMethodInvocation:Base[?inv] = ?base,
+  Var:DeclaringMethod(?base, ?method),
+  ReachableContext(?ctx, ?method),
+  ActualParam[0, ?inv] = ?to,
+  DacapoHarnessClass(?classNameHeap).

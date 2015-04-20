@@ -1,0 +1,70 @@
+/**
+ * Context-sensitive pointer analysis with context of 1 type.
+ *
+ * @author Yannis Smaragdakis
+ */
+
+#include "macros.logic"
+#include "../context-sensitive.logic"
+#include "../library.logic"
+
+// In this analysis, the real context is a Type. 
+// The type is not always a class type, because of arrays currently being
+// a non-class subtype of Object
+ContextFromRealContext[?type] = ?ctx ->
+  Context(?ctx), Type(?type).
+lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?type -> 
+  Context(?ctx), Type(?type).
+
+RealContextFromContext[?ctx] = ?type <-
+  ContextFromRealContext[?type] = ?ctx.
+
+// This analysis has no context for heap objects.
+// This is emulated by creating a single HContext object,
+// which is used everywhere.
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).
+
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?alloc).
+
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?alloc).
+
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?alloc).
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?type] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  Type:fqn(?type:"<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?type] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  Type:fqn(?type:"<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?type] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  Type:fqn(?type:"<<class-initialization>>").
