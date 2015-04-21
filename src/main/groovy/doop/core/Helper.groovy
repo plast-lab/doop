@@ -274,13 +274,13 @@ class Helper {
     }
 
     /**
-     * Merge two files as if the first one was #include'd at the top of the second one.
+     * Append the contents of the second file at the end of the first one.
      */
-    static void mergeFiles(Analysis analysis, String firstPath, String secondPath) {
+    static void appendAtFirst(Analysis analysis, String firstPath, String secondPath) {
             File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
             String tmpFilePath = tmpFile.getCanonicalPath()
             Helper.execCommand("cpp -P $secondPath -include $firstPath $tmpFilePath", analysis.commandsEnvironment)
-            FileUtils.copyFile(tmpFile, new File(secondPath))
+            FileUtils.copyFile(tmpFile, new File(firstPath))
             FileUtils.deleteQuietly(tmpFile)
     }
 
