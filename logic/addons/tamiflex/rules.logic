@@ -109,7 +109,8 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
 RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?return)
 <-
-   Tamiflex:ReifiedField(_, ?heap, ?invocation),
+   (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.

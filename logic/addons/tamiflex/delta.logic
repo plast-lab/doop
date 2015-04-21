@@ -102,3 +102,16 @@
    FieldSignature:Value(?fld:?fldStr),
    ?heapStr = "<(Tamiflex) " + ?fldStr + ">",
    Type:fqn(?javaField:"java.lang.reflect.Field").
+
++Instruction:Value(?heap:?heapStr),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?javaMethod,
++Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
+<-
+   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>") ;
+    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ),
+   VirtualMethodInvocation@previous(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?methodStr, ?invocation),
+   MethodSignature:Value(?method:?methodStr),
+   ?heapStr = "<(Tamiflex) " + ?methodStr + ">",
+   Type:fqn(?javaMethod:"java.lang.reflect.Method").
