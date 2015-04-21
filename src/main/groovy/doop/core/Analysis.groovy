@@ -417,7 +417,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             bloxbatch database, "-execute -file ${outDir}/dacapo-delta.logic"
 
             logger.info "Adding DaCapo rules to addons logic"
-            Helper.mergeFiles(this, "${outDir}/addons.logic", "${outDir}/dacapo.logic")
+            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/dacapo.logic")
         }
 
         if (options.TAMIFLEX.value) {
@@ -433,7 +433,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             bloxbatch database, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
 
             logger.info "Adding tamiflex rules to addons logic"
-            Helper.mergeFiles(this, "${outDir}/addons.logic", "${outDir}/tamiflex.logic")
+            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/tamiflex.logic")
         }
 
         if (options.CLIENT_EXCEPTION_FLOW.value) {
@@ -509,7 +509,7 @@ toPredicate,Config:DynamicClass,type,inv"""
                 }
             }
             logger.info "Main analysis"
-            Helper.mergeFiles(this, "${outDir}/addons.logic", "${outDir}/${name}.logic")
+            Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
             long time = timing {
                 bloxbatch database, "-addBlock -file ${outDir}/${name}.logic"
             }

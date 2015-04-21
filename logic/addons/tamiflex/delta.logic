@@ -89,3 +89,16 @@
    FieldSignature:Value(?fld:?fldStr),
    FieldModifier("static", ?fld),
    ActualParam[1, ?invocation] = ?from.
+
++Instruction:Value(?heap:?heapStr),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?javaField,
++Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
+<-
+   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>") ;
+    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ),
+   VirtualMethodInvocation@previous(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   FieldSignature:Value(?fld:?fldStr),
+   ?heapStr = "<(Tamiflex) " + ?fldStr + ">",
+   Type:fqn(?javaField:"java.lang.reflect.Field").

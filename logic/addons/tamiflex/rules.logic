@@ -105,3 +105,11 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
    HeapAllocation:Type[?heap] = ?heaptype,
    AssignCompatible(?type, ?heaptype),
    DummyContextForReflective[] = ?calleeCtx.
+
+RecordImmutableMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?return)
+<-
+   Tamiflex:ReifiedField(_, ?heap, ?invocation),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
