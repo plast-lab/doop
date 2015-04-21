@@ -49,3 +49,43 @@
    StaticMethodInvocation(?invocation, ?sig, ?inmethod),
    ActualParam[0, ?invocation] = ?array,
    ActualParam[2, ?invocation] = ?value.
+
++LoadInstanceField(?base, ?fld, ?to, ?inmethod)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   FieldSignature:Value(?fld:?fldStr),
+   ! FieldModifier("static", ?fld),
+   ActualParam[0, ?invocation] = ?base,
+   AssignReturnValue[?invocation] = ?to.
+
+// TODO does this trigger class initialization?
++LoadStaticField(?fld, ?to, ?inmethod)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   FieldSignature:Value(?fld:?fldStr),
+   FieldModifier("static", ?fld),
+   AssignReturnValue[?invocation] = ?to.
+
++StoreInstanceField(?from, ?base, ?fld, ?inmethod)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   FieldSignature:Value(?fld:?fldStr),
+   ! FieldModifier("static", ?fld),
+   ActualParam[0, ?invocation] = ?base,
+   ActualParam[1, ?invocation] = ?from.
+
+// TODO does this trigger class initialization?
++StoreStaticField(?from, ?fld, ?inmethod)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   FieldSignature:Value(?fld:?fldStr),
+   FieldModifier("static", ?fld),
+   ActualParam[1, ?invocation] = ?from.
