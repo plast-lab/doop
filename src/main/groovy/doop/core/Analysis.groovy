@@ -230,7 +230,7 @@ class Analysis implements Runnable {
                 FileUtils.deleteQuietly(factsDir)
                 factsDir.mkdirs()
 
-                if (!options.ALLOW_PHANTOM.value) {
+                if (options.RUN_JPHANTOM.value) {
                     runJPhantom()
                 }
 
@@ -728,7 +728,7 @@ toPredicate,NegativeObjectFilter,string"""
             params = params + ["-ssa"]
         }
 
-        if (options.ALLOW_PHANTOM.value) {
+        if (!options.RUN_JPHANTOM.value) {
             params = params + ["-allow-phantom"]
         }
 
