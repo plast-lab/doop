@@ -302,7 +302,15 @@ class Analysis implements Runnable {
             if (options.TAMIFLEX.value) {
                 File origTamFile  = new File(options.TAMIFLEX.value)
                 File factsTamFile = new File(cacheFacts, "Tamiflex.facts")
-                FileUtils.copyFile(origTamFile, factsTamFile)
+
+                factsTamFile.withWriter { w ->
+                    origTamFile.eachLine { line ->
+                        w << line
+                                .replaceFirst(/;[^;]*;$/, "")
+                                .replaceFirst(/;$/, ";0")
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
+                    }
+                }
                 String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
 
                 bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/fact-declarations.logic -name TamiflexFactDecl"
