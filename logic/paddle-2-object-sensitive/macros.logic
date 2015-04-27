@@ -1,0 +1,47 @@
+#include "../library/fact-macros.logic"
+
+// We need to *pretend* we are creating new contexts, since the
+// product of the macro goes to the head of a rule.
+#define RecordMacro(ctx, heap, hctx) \
+  HContext(hctx), \
+  HContextFromRealHContext[] = hctx
+
+#define RecordImmutableMacro(ctx, heap, immCtx) \
+  HContext(immCtx), \
+  HContextFromRealHContext[] = immCtx
+
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object. Again, this may trigger creation of
+// a new object.
+#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], heap] = calleeCtx
+
+#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
+  MergeBasis(hctx, invocation, callerCtx, heap)
+
+#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  OptimizeMerge[callerCtx, heap] = calleeCtx
+
+// For this analysis, static calls just keep the same context as the
+// caller. *Not* creating a new one, but pretending to, nonetheless,
+// so the engine doesn't barf.
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealContext1FromContext[callerCtx], \
+                         RealContext2FromContext[callerCtx]] = calleeCtx
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], heap] = newCtx
+
+#define MergeStartupMacro(hctx, heap, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[heap, heap] = calleeCtx
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], heap] = newCtx
