@@ -1,0 +1,32 @@
+/**
+ * In Paddle, there is a global variable for all thrown exceptions and
+ * any caught exception variable points to all those exceptions
+ *
+ * Obviously, this is extremely imprecise.
+ *
+ * This imprecision does not seem to matter too much for typical
+ * programs in the context-insensitive and 1-call-site-sensitive
+ * analyses, but is disastrous in the 1-object-sensitive analysis.
+ */
+ThrownException(?hctx, ?heap) -> HContext(?hctx), HeapAllocation(?heap).
+
+/**
+ * Reachable condition is not necessary because the thrown
+ * variable will never point anywhere if the declaring method of the
+ * variable is not reachable.
+ *
+ * Reachable(?method),
+ * Instruction:Method[?ref] = ?method,
+ */
+ThrownException(?hctx, ?heap) <-
+  Throw(_, ?var),
+  VarPointsTo(?hctx, ?heap, _, ?var).
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
+  ReachableContext(?ctx, ?method),
+  ThrownException(?hctx, ?heap),
+  ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+  ExceptionHandler:FormalParam[?handler] = ?param,
+  ExceptionHandler:Type[?handler] = ?type,
+  HeapAllocation:Type[?heap] = ?heaptype,
+  AssignCompatible(?type, ?heaptype).
