@@ -36,17 +36,14 @@ class AnalysisFactory {
         String id = generateID(name, context.inputs(), options)
 
         //Create the outDir if required
-        String outDir = "${Doop.doopHome}/out/$name/${id}"
-        File f = new File(outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+        File outDir = createOuputDirectory(name, id)
 
-        context.setDirectory(f)
+        context.setDirectory(outDir)
 
         Analysis analysis = new Analysis(
                 name         : name,
                 id           : id,
-                outDir       : outDir,
+                outDir       : outDir.toString(),
                 preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
                 options      : options,
                 ctx          : context
@@ -116,6 +113,17 @@ class AnalysisFactory {
 
         //Generate a sha256 cheksum of the id components
         return Helper.checksum(id, "SHA-256")
+    }
+
+    /**
+     * Creates the analysis output dir, if required.
+     */
+    protected File createOuputDirectory(String name, String id) {
+        String outDir = "${Doop.doopHome}/out/$name/${id}"
+        File f = new File(outDir)
+        f.mkdirs()
+        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+        return f
     }
 
     /**
