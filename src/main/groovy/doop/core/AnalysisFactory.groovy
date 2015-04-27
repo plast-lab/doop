@@ -314,8 +314,8 @@ class AnalysisFactory {
             logger.debug "The AVERROES option has been enabled"
         }
         
-        if (options.ALLOW_PHANTOM.value) {
-            logger.debug "The ALLOW_PHANTOM option has been enabled"
+        if (options.RUN_JPHANTOM.value) {
+            logger.debug "The RUN_JPHANTOM option has been enabled"
         }
         
         if (options.DACAPO.value) {

@@ -412,12 +412,12 @@ class Doop {
             name: "solo-run"
         ),
         new AnalysisOption<Boolean>(
-            id:"ALLOW_PHANTOM",
-            description: 'Allow non-existent referenced jars.',
+            id:"RUN_JPHANTOM",
+            description: 'Run jphantom for non-existent referenced jars.',
             value:false,
             webUI:true,
             cli:true,
-            name: "allow-phantom"
+            name: "run-phantom"
         ),
         new AnalysisOption<Boolean>(
             id:"AVERROES",
