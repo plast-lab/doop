@@ -125,12 +125,19 @@ class Helper {
      */
     static File checkDirectoryOrThrowException(String dir, String message) {
         if (!dir) throw new RuntimeException(message)
+        return checkDirectoryOrThrowException(new File(dir), message)
+    }
 
-        File f = new File(dir)
-        if (!f.exists() || !f.isDirectory()) {
+    /**
+     * Checks that the given dir exists or throws the given message
+     */
+    static File checkDirectoryOrThrowException(File dir, String message) {
+        if (!dir) throw new RuntimeException(message)
+
+        if (!dir.exists() || !dir.isDirectory()) {
             throw new RuntimeException(message)
         }
-        return f
+        return dir
     }
 
     /**
