@@ -584,7 +584,7 @@ class AnalysisFactory {
 
         logger.debug "Verifying LogicBlox home: $lbHomePath"
 
-        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
         analysis.options.LD_LIBRARY_PATH.value = lbHomeJavaFile.getAbsolutePath() + "/bin"
         String bloxbatch = lbHomeJavaFile.getAbsolutePath() + "/bin/bloxbatch"
