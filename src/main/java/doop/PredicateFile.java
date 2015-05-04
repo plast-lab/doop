@@ -38,6 +38,7 @@ public enum PredicateFile
     ASSIGN_NUM_CONST("AssignNumConstant", ImportScheme.BY_FILE_PREDICATE),
     ASSIGN_NULL("AssignNull", ImportScheme.BY_FILE_PREDICATE),
     NORMAL_OBJ("NormalObject", ImportScheme.BY_FILE_PREDICATE),
+    EMPTY_ARRAY("EmptyArray", ImportScheme.BY_FILE_PREDICATE),
     CLASS_OBJ("ClassObject", ImportScheme.BY_FILE_PREDICATE),
     STRING_CONST("StringConstant", ImportScheme.BY_FILE_PREDICATE),
     FIELD_SIGNATURE("FieldSignature", ImportScheme.BY_FILE_PREDICATE),
