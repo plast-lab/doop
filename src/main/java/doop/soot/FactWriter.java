@@ -221,6 +221,21 @@ public class FactWriter
                 _db.asEntity(heap),
                 writeType(expr.getType()));
 
+        if(expr instanceof NewArrayExpr)
+        {
+            NewArrayExpr newArray = (NewArrayExpr) expr;
+            Value sizeVal = newArray.getSize();
+
+            if(sizeVal instanceof IntConstant)
+            {
+                IntConstant size = (IntConstant) sizeVal;
+
+                if(size.value == 0)
+                    _db.add(EMPTY_ARRAY,
+                            _db.asEntity(heap));
+            }
+        }
+
         // statement
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
