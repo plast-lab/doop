@@ -60,7 +60,7 @@ class Analysis implements Runnable {
     String inputFilesChecksum
     String logicFilesChecksum
     
-    File cacheFacts, cacheDatabase, database, exportDir, factsDir, averroesDir
+    File cacheFacts, database, exportDir, facts, averroesDir
 
     long sootTime, factsTime
 
@@ -69,47 +69,51 @@ class Analysis implements Runnable {
     String bloxbatchVersion
     boolean hasFilter
 
-    /**
-     * Runs the analysis.
-     */
+    Writer lbScript
+
     @Override
     void run() {
-        preprocessor.init()
+        String scriptPath = "${outDir}/run.lb"
+        lbScript = new PrintWriter(new File(scriptPath))
 
-        //Dump the analysis in its "meta" file
+        //TODO: can these be in the constructor? problem with outDir not having a value yet
         new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
-        
-        initAnalysis()
+        preprocessor.init()
+        //TODO: We don't need to calculate logic and input sums, do we?
+        //TODO: We don't need to annotate db paths, do we?
+        facts         = new File(outDir, "facts")
+        cacheFacts    = new File(outDir, "cacheFacts")
+        database      = new File(outDir, "database")
+        exportDir     = new File(outDir, "export")
+        averroesDir   = new File(outDir, "averroes")
         
         createDatabase()
 
         analyze()
 
-        long dbSize = FileUtils.sizeOfDirectory(database) / 1024
-        bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
-
-        File f = null
         try {
-            f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+            File f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+            logger.info "-- Re-Analyze --"
+            reanalyze()
         }
         catch(e) {
             logger.debug e.getMessage()
         }
 
-        if(f) {
-            logger.info "REANALYSE"
-            reanalyze()                
-        }
-
         produceStats()
+
+        lbScript.close()
+
+        logger.info "Running generated script ($scriptPath)"
+        long t = timing {
+            bloxbatchPipe database, "-script $scriptPath"
+        }
+        bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
+        int dbSize = FileUtils.sizeOfDirectory(database) / 1024
+        bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
-    /**
-     * Prints the statistics. Mimics the behavior of the second part of the get-stats function of the original doop
-     * script.
-     */
     void printStats() {
-
         logger.info "-- Runtime metrics --"
         bloxbatchPipe database, "-query Stats:Runtime",
                                 "sort -n",
@@ -123,9 +127,6 @@ class Analysis implements Runnable {
                                 "awk -F ', ' '{ printf(\"%-80s %'\\''d\\n\", \$1, \$2) }'"
     }
 
-    /**
-     * Generates results. Mimics the behavior of the link-result function of the doop run script.
-     */
     void linkResult() {
         String jre = options.JRE.value
         if (jre != "system") jre = "jre${jre}"
@@ -149,7 +150,7 @@ class Analysis implements Runnable {
     String toString() {
         return [id:id, name:name, outDir:outDir].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
-               options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n")
+               options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
 
     /**
@@ -180,128 +181,37 @@ class Analysis implements Runnable {
         process.closeStreams()
     }
 
-
-    /**
-     * Precprocess the logic files of the analysis.
-     */
-    protected void initAnalysis() {
-
-        logger.info "-- Pre-processing the logic files --"
-
-        String basePath   = "${Doop.doopLogic}/analyses/${name}"
-
-        preprocessor.preprocess(this, basePath, "declarations.logic", "${outDir}/${name}-declarations.logic")
-        preprocessor.preprocess(this, basePath, "analysis.logic",     "${outDir}/${name}.logic")
-        preprocessor.preprocess(this, basePath, "delta.logic",        "${outDir}/${name}-delta.logic")
-
-        //TODO: We don't need to calculate logic and input sums, do we?
-        //TODO: We don't need to annotate db paths, do we?
-        cacheFacts    = new File(outDir, "cacheFacts")
-        cacheDatabase = new File(outDir, "cacheDatabase")
-        database      = new File(outDir, "database")
-        exportDir     = new File(outDir, "export")
-        factsDir      = new File(outDir, "facts")
-        averroesDir   = new File(outDir, "averroes")
-    }
-
-    /**
-     * Creates the lb database.
-     */
     protected void createDatabase() {
 
-        FileUtils.deleteQuietly(database)
-
-        if (cacheDatabase.exists() && options.CACHE.value) {
-            //Skip if cache database already exists
-            logger.info "Using cached database $cacheDatabase"
+        if (cacheFacts.exists() && options.CACHE.value) {
+            logger.info "Using cached facts $cacheFacts"
+        }
+        else if (options.CSV.value) {
+            cacheFacts.mkdirs()
+            Helper.moveDirectoryContents(exportDir, cacheFacts)
         }
         else {
-            //Generate facts
-            if (cacheFacts.exists() && options.CACHE.value) {
-                logger.info "Using cached facts $cacheFacts"
-            }
-            else if (options.CSV.value) {
-                cacheFacts.mkdirs()
-                Helper.moveDirectoryContents(exportDir, cacheFacts)
-            }
-            else {
-                logger.info "Generating facts in $factsDir"
+            logger.info "Generating facts in $facts"
 
-                FileUtils.deleteQuietly(factsDir)
-                factsDir.mkdirs()
+            FileUtils.deleteQuietly(facts)
+            facts.mkdirs()
 
-                if (options.RUN_JPHANTOM.value) {
-                    runJPhantom()
-                }
-
-                if (options.AVERROES.value) {
-                    runAverroes()
-                }
-
-                runSoot()
-
-                FileUtils.deleteQuietly(cacheFacts)
-                cacheFacts.mkdirs()
-                Helper.copyDirectoryContents(factsDir, cacheFacts)
+            if (options.RUN_JPHANTOM.value) {
+                runJPhantom()
             }
 
-            initDatabase()
-        }
-
-        database.mkdirs()
-        FileUtils.copyDirectory(cacheDatabase, database)
-    }
-
-    protected void initDatabase() {
-
-        logger.info "-- Database initialization --"
-
-        if (options.INCREMENTAL.value) {
-            File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
-            logger.info "Copying precomputed database of library from $libDatabase"
-            timing {
-                Helper.copyDirectoryContents(libDatabase, cacheDatabase)
-            }
-        }
-        else {
-
-            logger.info "Creating database in $cacheDatabase"
-            timing {
-                bloxbatch cacheDatabase, "-create -overwrite -blocks base"
+            if (options.AVERROES.value) {
+                runAverroes()
             }
 
-            logger.info "Loading fact declarations"
-            timing {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/facts/declarations.logic"
-            }
+            runSoot()
 
-            logger.info "Loading flow insensitivity declarations"
-            timing {
-                bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"
-            }
-
-            logger.info "Loading facts"
-            FileUtils.deleteQuietly(new File("facts"))
-            Helper.execCommand("ln -s $cacheFacts facts", commandsEnvironment)
-
-            FileUtils.touch(new File(cacheFacts, "ApplicationClass.facts"))
-            FileUtils.touch(new File(cacheFacts, "Properties.facts"))
-
-            factsTime = timing {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/facts/entities-import.logic"
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/facts/import.logic"
-            }
-            bloxbatch cacheDatabase, """-execute '+Stats:Runtime("soot-fact-generation", $sootTime).'"""
-            bloxbatch cacheDatabase, """-execute '+Stats:Runtime("loading facts time (sec)", $factsTime).'"""
-
-            logger.info "Loading flow insensitivity delta rules"
-            timing {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"
-            }
+            FileUtils.touch(new File(facts, "ApplicationClass.facts"))
+            FileUtils.touch(new File(facts, "Properties.facts"))
 
             if (options.TAMIFLEX.value) {
                 File origTamFile  = new File(options.TAMIFLEX.value)
-                File factsTamFile = new File(cacheFacts, "Tamiflex.facts")
+                File factsTamFile = new File(facts, "Tamiflex.facts")
 
                 factsTamFile.withWriter { w ->
                     origTamFile.eachLine { line ->
@@ -311,27 +221,64 @@ class Analysis implements Runnable {
                                 .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
                     }
                 }
+            }
+
+            FileUtils.deleteQuietly(cacheFacts)
+            cacheFacts.mkdirs()
+            Helper.copyDirectoryContents(facts, cacheFacts)
+        }
+
+        initDatabase()
+    }
+
+    protected void initDatabase() {
+
+        lbScript.println('echo "-- Database Initialization --"')
+
+        if (options.INCREMENTAL.value) {
+            File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
+            logger.info "Copying precomputed database of library from $libDatabase"
+            timing {
+                Helper.copyDirectoryContents(libDatabase, database)
+            }
+        }
+        else {
+            lbScript.println("create $database --overwrite --blocks base")
+
+            lbScript.println("startTimer")
+            lbScript.println("transaction")
+            lbScript.println("addBlock -F ${Doop.doopLogic}/facts/declarations.logic -B FactDecls")
+            lbScript.println("addBlock -F ${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic")
+            lbScript.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
+
+            FileUtils.copyFile(new File("${Doop.doopLogic}/facts/entities-import.logic"),
+                               new File("${outDir}/entities-import.logic"))
+            FileUtils.copyFile(new File("${Doop.doopLogic}/facts/import.logic"),
+                               new File("${outDir}/facts-import.logic"))
+            lbScript.println("exec -F entities-import.logic")
+            lbScript.println("exec -F facts-import.logic")
+
+            FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"),
+                               new File("${outDir}/flow-insensitivity-delta.logic"))
+            lbScript.println("exec -F flow-insensitivity-delta.logic")
+
+            if (options.TAMIFLEX.value) {
                 String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
 
-                bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/fact-declarations.logic -name TamiflexFactDecl"
+                lbScript.println("addBlock -F ${tamiflexDir}/fact-declarations.logic -B TamiflexFactDecls")
 
-                logger.info "Loading tamiflex facts"
-                long t = timing {
-                    bloxbatch cacheDatabase, "-execute -file ${tamiflexDir}/import.logic"
-                    bloxbatch cacheDatabase, "-addBlock -file ${tamiflexDir}/post-import.logic"
-                }
-                bloxbatch cacheDatabase, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
+                FileUtils.copyFile(new File("${tamiflexDir}/import.logic"),
+                                   new File("${outDir}/tamiflex-import.logic"))
+                lbScript.println("exec -F tamiflex-import.logic")
+                lbScript.println("addBlock -F ${tamiflexDir}/post-import.logic")
             }
-
-            // Used to be FileUtils.deleteQuietly which erroneous deletes the
-            // directory and not the symbolic link
-            Helper.execCommand("unlink facts", commandsEnvironment)
 
             if (options.MAIN_CLASS.value) {
-                String mainClass = options.MAIN_CLASS.value
-                logger.info "Setting main class to $mainClass"
-                bloxbatch cacheDatabase, """-execute '+MainClass(x) <- ClassType(x), Type:fqn(x:"$mainClass").'"""
+                lbScript.println("""exec '+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").'""")
             }
+
+            lbScript.println("commit")
+            lbScript.println("elapsedTime")
 
             if (options.SET_BASED.value) {
                 runSetBased()
@@ -344,10 +291,13 @@ class Analysis implements Runnable {
      */
     protected void analyze() {
 
-        logger.info "-- Analysis Prologue --"
+        lbScript.println('echo "-- Analysis Prologue --"')
+        lbScript.println("startTimer")
+        lbScript.println("transaction")
+
+        String analysisPath = "${Doop.doopLogic}/analyses/${name}"
 
         if (options.DYNAMIC.value) {
-
             //TODO: Check arity of DYNAMIC file
             List<String> dynFiles = options.DYNAMIC.value
             dynFiles.eachWithIndex { String dynFile, Integer index ->
@@ -361,47 +311,29 @@ option,hasColumnNames,false
 fromFile,"${f.getCanonicalPath()}",a,inv,b,type
 toPredicate,Config:DynamicClass,type,inv"""
 
-                bloxbatch database, "-import $dynImport"
+                lbScript.println("import -f $dynImport")
             }
         }
 
         if (!options.INCREMENTAL.value) {
+            preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${name}-declarations.logic")
+            lbScript.println("addBlock -F ${name}-declarations.logic")
 
-            logger.info "Loading ${name} declarations"
-            timing {
-                bloxbatch database, "-addBlock -file ${outDir}/${name}-declarations.logic"
-
-                if (options.SANITY.value) {
-                    logger.info "Loading sanity rules"
-                    timing {
-                        bloxbatch database, "-addBlock -file ${Doop.doopLogic}/addons/sanity.logic"
-                    }
-                }
+            if (options.SANITY.value) {
+                lbScript.println('echo "-- Loading Sanity Rules --"')
+                lbScript.println("addBlock -F ${Doop.doopLogic}/addons/sanity.logic")
             }
         }
 
-        logger.info "Loading $name delta rules"
-        long deltaTiming = timing {
-            bloxbatch database, "-execute -file ${outDir}/${name}-delta.logic"
-        }
-        bloxbatch database, """-execute '+Stats:Runtime("$name delta rules time (sec)", $deltaTiming).'"""
+        preprocessor.preprocess(this, analysisPath, "delta.logic", "${outDir}/${name}-delta.logic")
+        lbScript.println("exec -F ${name}-delta.logic")
 
         if (!options.DISABLE_REFLECTION.value) {
             String reflectionPath = "${Doop.doopLogic}/core/reflection"
+
             preprocessor.preprocess(this, reflectionPath, "delta.logic", "${outDir}/reflection-delta.logic")
-
-            logger.info "Loading reflection delta rules"
-            long time1 = timing {
-                bloxbatch database, "-execute -file ${outDir}/reflection-delta.logic"
-            }
-
-            logger.info "Loading allocations delta rules"
-            long time2 = timing {
-                bloxbatch database, "-execute -file ${reflectionPath}/allocations-delta.logic"
-            }
-
-            long total = time1 + time2
-            bloxbatch database, """-execute '+Stats:Runtime("reflection delta rules time (sec)", $total).'"""
+            lbScript.println("exec -F reflection-delta.logic")
+            lbScript.println("exec -F ${reflectionPath}/allocations-delta.logic")
         }
 
         String addonsPath = "${Doop.doopLogic}/addons"
@@ -415,32 +347,22 @@ toPredicate,Config:DynamicClass,type,inv"""
         FileUtils.touch(new File(outDir, "addons.logic"))
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic", macros)
+            lbScript.println("addBlock -F ${addonsPath}/dacapo/declarations.logic -B DacapoDecls")
+
             preprocessor.preprocess(this, addonsPath, "dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
-
-            logger.info "At Declarations: DaCapo"
-            bloxbatch database, "-addBlock -file ${addonsPath}/dacapo/declarations.logic -name DacapoDecl"
-
-            logger.info "At Deltas: DaCapo"
-            bloxbatch database, "-execute -file ${outDir}/dacapo-delta.logic"
+            lbScript.println("exec -F dacapo-delta.logic")
 
             logger.info "Adding DaCapo rules to addons logic"
+            preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic", macros)
             Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/dacapo.logic")
         }
 
         if (options.TAMIFLEX.value) {
-            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
-
-            logger.info "At Declarations: Tamiflex"
-            bloxbatch database, "-addBlock -file ${addonsPath}/tamiflex/declarations.logic -name TamiflexDecl"
-
-            logger.info "At Deltas: Tamiflex"
-            long t = timing {
-                bloxbatch database, "-execute -file ${addonsPath}/tamiflex/delta.logic"
-            }
-            bloxbatch database, """-execute '+Stats:Runtime("tamiflex delta rules time (sec)", $t).'"""
+            lbScript.println("addBlock -F ${addonsPath}/tamiflex/declarations.logic -B TamiflexDecls")
+            lbScript.println("exec -F ${addonsPath}/tamiflex/delta.logic")
 
             logger.info "Adding tamiflex rules to addons logic"
+            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
             Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/tamiflex.logic")
         }
 
@@ -448,33 +370,21 @@ toPredicate,Config:DynamicClass,type,inv"""
             preprocessor.preprocess(this, addonsPath, "exception-flow/declarations.logic",
                                     "${outDir}/exception-flow.logic",
                                     "exception-flow/rules.logic")
+            lbScript.println("addBlock -F ${outdir}/exception-flow.logic")
+
             preprocessor.preprocess(this, addonsPath, "exception-flow/delta.logic",
                                     "${outDir}/exception-flow-delta.logic")
-            
-            logger.info "loading client exception-flow declarations & rules"
-            timing {
-                bloxbatch database, "-addblock -file ${outdir}/exception-flow.logic"
-            }
-            logger.info "Loading client exception-flow delta rules"
-            timing {
-                bloxbatch database, "-execute -file ${outDir}/exception-flow-delta.logic"
-            }
+            lbScript.println("exec -F ${outDir}/exception-flow-delta.logic")
         }
 
         if (options.CLIENT_EXTENSIONS.value) {
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/declarations.logic",
                                     "${outDir}/client-extensions.logic")
+            lbScript.println("addBlock -F ${outdir}/client-extensions.logic")
+
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/delta.logic",
                                     "${outDir}/client-extensions-delta.logic")
-
-            logger.info "loading client extensions declarations & rules"
-            timing {
-                bloxbatch database, "-addblock -file ${outdir}/client-extensions.logic"
-            }
-            logger.info "Loading client extensions delta rules"
-            timing {
-                bloxbatch database, "-execute -file ${outDir}/client-extensions-delta.logic"
-            }
+            lbScript.println("exec -F ${outDir}/client-extensions-delta.logic")
         }
 
         //TODO: Log memory statistics
@@ -483,48 +393,42 @@ toPredicate,Config:DynamicClass,type,inv"""
             refine()
         }
 
-        logger.info "-- Analysis Main Phase --"
-
         if (!options.INCREMENTAL.value) {
-            //TODO: Do we need the benchmark script?
             //TODO: Read the bloxopts
             if(isMustPointTo()) {
                 if(options.MAY_PRE_ANALYSIS.value) {
                     String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
                     
                     logger.info "Adding ${mayAnalysis} block"
-                    timing {
-                        bloxbatch database, "-addBlock -file ${outDir}/${mayAnalysis}.logic"
-                    }
+                    lbScript.println("addBlock -F ${mayAnalysis}.logic")
+
                     logger.info "Adding may-related logic for ${name}"
-                    timing {
-                        bloxbatch database, "-addBlock -file ${outDir}/may-pre-analysis.logic"
-                    }
+                    lbScript.println("addBlock -F may-pre-analysis.logic")
 
                     // Default option for RootMethodForMustAnalysis.
                     // TODO: add command line option, so users can provide their own subset of root methods
                     logger.info "Adding block for RootMethodForMustAnalysis (default)"
-                    timing {
-                        bloxbatch database, "-addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClass:Method[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'"
-                    }
+                    lbScript.println("addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClass:Method[?meth] = ?class, A    pplicationClass(?class), Reachable(?meth).'")
                 }
 
                 //TODO: Default Root Methods for 'simple' must-analyses.
-                logger.info "Adding cfg-analysis block"
-                timing {
-                    bloxbatch database, "-addBlock -file ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic"
-                    bloxbatch database, "-addBlock -file ${Doop.doopLogic}/addons/cfg-analysis/rules.logic"
-                }
+                lbScript.println('echo "-- CFG Analysis Block --"')
+                lbScript.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
+                lbScript.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
             }
-            logger.info "Main analysis"
-            Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
-            long time = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/${name}.logic"
-            }
-            bloxbatch database, """-execute '+Stats:Runtime("benchmark time(sec)", $time).'"""
-        }
 
-        //TODO: Run client extensions
+            preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
+            Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
+
+            lbScript.println("commit")
+            lbScript.println("elapsedTime")
+            lbScript.println('echo "-- Main Analysis --"')
+            lbScript.println("startTimer")
+            lbScript.println("transaction")
+            lbScript.println("addBlock -F ${name}.logic")
+            lbScript.println("commit")
+            lbScript.println("elapsedTime")
+        }
 
         //TODO: Kill memory logger
     }
@@ -536,25 +440,25 @@ toPredicate,Config:DynamicClass,type,inv"""
         logger.info "Loading ${name} refinement-delta rules"
 
         preprocessor.preprocess(this, "${Doop.doopLogic}/${name}", "refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
-
+        // TODO: handle exportCsv in script
         timing {
-            bloxbatch database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
+            bloxbatchPipe database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
         }
 
         timing {
-            bloxbatch database, "-exportCsv TempSiteToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+            bloxbatchPipe database, "-exportCsv TempSiteToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
         timing {
-            bloxbatch database, "-exportCsv TempNegativeSiteFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+            bloxbatchPipe database, "-exportCsv TempNegativeSiteFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
         timing {
-            bloxbatch database, "-exportCsv TempObjectToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+            bloxbatchPipe database, "-exportCsv TempObjectToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
         timing {
-            bloxbatch database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
+            bloxbatchPipe database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
         createDatabase()
@@ -563,11 +467,6 @@ toPredicate,Config:DynamicClass,type,inv"""
         analyze()
     }
 
-
-    /**
-     * Activates refinement logic.
-     * Mimics the behavior of the bin/refine script.
-     */
     protected void refine() {
 
         //The files and their contents
@@ -606,67 +505,44 @@ toPredicate,NegativeObjectFilter,string"""
             File f = new File(outDir, "${name}-${entry.key}.import")
             Helper.writeToFile f, entry.value
             Helper.checkFileOrThrowException(f, "Could not create import file: $f")
-            bloxbatch database, "-import $f"
+            lbScript.println("import -f $f")
         }
     }
 
-    /**
-     * Activates set-based logic that removes redundant input facts.
-     * Mimics the behavior of the bin/set-based script.
-     */
     protected void runSetBased() {
-
-        logger.info "Preprocessing/transforming input facts: analysis"
-        timing {
-            bloxbatch cacheDatabase, "-addBlock -file ${Doop.doopLogic}/transform.logic"
-        }
+        lbScript.println('echo "-- Transforming Input Facts --"')
+        lbScript.println("addBlock -F ${Doop.doopLogic}/transform.logic")
 
         2.times { int i ->
-            logger.info "Preprocessing/transforming input facts: transformation (step $i)"
-            timing {
-                bloxbatch cacheDatabase, "-execute -file ${Doop.doopLogic}/transform-delta.logic"
-            }
+            lbScript.println('echo "-- Transformation (step $i) --"')
+            lbScript.println("exec -F ${Doop.doopLogic}/transform-delta.logic")
         }
     }
 
-    /**
-     * Produces the statistics. Mimics the behavior of the first part of the get-stats function of the original doop
-     * scrip.
-     */
     protected void produceStats() {
         String statsPath = "${Doop.doopLogic}/addons/statistics"
 
-        preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
-        preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")
+        lbScript.println('echo "-- Producing Statistics --"')
+        lbScript.println("startTimer")
+        lbScript.println("transaction")
 
-        logger.info "Loading simple statistics declarations"
-        long time1 = timing {
-            bloxbatch database, "-addBlock -file ${outDir}/statistics-simple.logic"
-        }
-        long time2 = 0
+        preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
+        lbScript.println("addBlock -F statistics-simple.logic")
 
         if (options.STATS.value) {
             preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
-            time2 = timing {
-                bloxbatch database, "-addBlock -file ${outDir}/statistics.logic"
-            }
+            lbScript.println("addBlock -F statistics.logic")
         }
 
-        logger.info "Loading statistics delta rules"
-        long time3 = timing {
-            bloxbatch database, "-execute -file ${outDir}/statistics-delta.logic"
-        }
+        preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")
+        lbScript.println("exec -F statistics-delta.logic")
 
-        long total = time1 + time2 + time3
-        bloxbatch database, """-execute '+Stats:Runtime("statistics time (sec)", $total).'"""
+        lbScript.println("commit")
+        lbScript.println("elapsedTime")
     }
 
-
-    /**
-     * Runs jphantom if phantom refs are not allowed
-     */
     protected void runJPhantom(){
-        logger.info "Running jphantom to generate complement jar"
+        logger.info "-- Running jphantom to generate complement jar --"
 
         String jar = jars[0].resolve().toString()
         String jarName = FilenameUtils.getBaseName(jar)
@@ -684,11 +560,8 @@ toPredicate,NegativeObjectFilter,string"""
         jars[0] = new ResolvedDependency(f)
     }
     
-    /**
-     * Runs averroes, if specified
-     */
     protected void runAverroes() {
-        logger.info "Running averroes"
+        logger.info "-- Running averroes --"
 
         ClassLoader loader = averroesClassLoader()
         Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
@@ -696,13 +569,7 @@ toPredicate,NegativeObjectFilter,string"""
         //We change linked arg and injar for soot in the runSoot method
     }
 
-    /**
-     * soot fact generation
-     */
     protected void runSoot() {
-
-        logger.info "-- Running soot to generate facts --"
-
         List<String> depArgs
 
         if (options.AVERROES.value) {
@@ -744,7 +611,7 @@ toPredicate,NegativeObjectFilter,string"""
             params = params + ["-main", options.MAIN_CLASS.value]
         }
 
-        params = params + ["-d", factsDir, jars[0].resolve()]
+        params = params + ["-d", facts, jars[0].resolve()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -934,15 +801,7 @@ toPredicate,NegativeObjectFilter,string"""
     }
 
     /**
-     * Invokes bloxbatch on the given database with the given params. Helper method for making the code more readable.
-     */
-    private void bloxbatch(File database, String params) {
-        bloxbatchPipe(database, params)
-    }
-
-    /**
      * Invokes bloxbatch on the given database with the given params, piping it up with supplied pipeCommands.
-     * Helper method for making the code more readable.
      */
     private void bloxbatchPipe(File database, String params, String... pipeCommands) {
         /**
@@ -969,7 +828,8 @@ toPredicate,NegativeObjectFilter,string"""
             hasFilter = (major.toInteger() == 3 && minor.toInteger() >= 10)
         }
 
-        String command = "${options.BLOXBATCH.value} -db $database $params"
+        // Always move to outDir first before executing command
+        String command = "cd $outDir ; ${options.BLOXBATCH.value} -db $database $params"
         if (hasFilter)
             command += ' |& tail -n +5'
         if (pipeCommands)
@@ -982,10 +842,8 @@ toPredicate,NegativeObjectFilter,string"""
 
     /**
      * Helper method for making the code more readable
-     * @param c
      */
     private long timing(Closure c) {
         return Helper.execWithTiming(logger, c)
     }
-
 }
