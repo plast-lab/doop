@@ -277,11 +277,11 @@ class Helper {
      * Append the contents of the second file at the end of the first one.
      */
     static void appendAtFirst(Analysis analysis, String firstPath, String secondPath) {
-            File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
-            String tmpFilePath = tmpFile.getCanonicalPath()
-            Helper.execCommand("cpp -P $secondPath -include $firstPath $tmpFilePath", analysis.commandsEnvironment)
-            FileUtils.copyFile(tmpFile, new File(firstPath))
-            FileUtils.deleteQuietly(tmpFile)
+        File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
+        String tmpFilePath = tmpFile.getCanonicalPath()
+        Helper.execCommand("cpp -P $secondPath -include $firstPath $tmpFilePath", analysis.commandsEnvironment)
+        FileUtils.copyFile(tmpFile, new File(firstPath))
+        FileUtils.deleteQuietly(tmpFile)
     }
 
     /**
