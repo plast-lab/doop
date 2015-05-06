@@ -54,7 +54,7 @@ class Main {
                 timeout = Integer.parseInt(cli.t)
             }
             catch(ex) {
-                println "Using the default timeout ($timeout min)."
+                println "Using the default timeout ($timeout min)"
             }
 
             Analysis analysis
