@@ -64,7 +64,20 @@ class Analysis implements Runnable {
 
     long sootTime, factsTime
 
-    protected Analysis() {}
+    protected Analysis(Map m) {
+        m.each { k, v -> this."$k" = v }
+
+        preprocessor.init()
+
+        new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
+        //TODO: We don't need to calculate logic and input sums, do we?
+        //TODO: We don't need to annotate db paths, do we?
+        facts         = new File(outDir, "facts")
+        cacheFacts    = new File(outDir, "cacheFacts")
+        database      = new File(outDir, "database")
+        exportDir     = new File(outDir, "export")
+        averroesDir   = new File(outDir, "averroes")
+    }
 
     String bloxbatchVersion
     boolean hasFilter
@@ -76,17 +89,6 @@ class Analysis implements Runnable {
         String scriptPath = "${outDir}/run.lb"
         lbScript = new PrintWriter(new File(scriptPath))
 
-        //TODO: can these be in the constructor? problem with outDir not having a value yet
-        new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
-        preprocessor.init()
-        //TODO: We don't need to calculate logic and input sums, do we?
-        //TODO: We don't need to annotate db paths, do we?
-        facts         = new File(outDir, "facts")
-        cacheFacts    = new File(outDir, "cacheFacts")
-        database      = new File(outDir, "database")
-        exportDir     = new File(outDir, "export")
-        averroesDir   = new File(outDir, "averroes")
-        
         createDatabase()
 
         analyze()
@@ -191,7 +193,7 @@ class Analysis implements Runnable {
             Helper.moveDirectoryContents(exportDir, cacheFacts)
         }
         else {
-            logger.info "Generating facts in $facts"
+            logger.info "-- Fact Generation --"
 
             FileUtils.deleteQuietly(facts)
             facts.mkdirs()
