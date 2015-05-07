@@ -526,8 +526,8 @@ toPredicate,NegativeObjectFilter,string"""
 
         lbScript.println('echo "-- Producing Statistics --"')
         lbScript.println("startTimer")
-        lbScript.println("transaction")
 
+        lbScript.println("transaction")
         preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         lbScript.println("addBlock -F statistics-simple.logic")
 
@@ -535,11 +535,14 @@ toPredicate,NegativeObjectFilter,string"""
             preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
             lbScript.println("addBlock -F statistics.logic")
         }
+        lbScript.println("commit")
 
+        // Need to be in a separate transaction, since IDB and delta rules shouldn't be together
+        lbScript.println("transaction")
         preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")
         lbScript.println("exec -F statistics-delta.logic")
-
         lbScript.println("commit")
+
         lbScript.println("elapsedTime")
     }
 
