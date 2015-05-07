@@ -1,9 +1,13 @@
 # Currently either DaCapo2006 or DaCapoBach
 suite      = DaCapoBach
-commonArgs = --allow-phantom --jre 1.6 -t 90
+commonArgs = --jre 1.6 -t 90
 analyses   = context-insensitive 2-type-sensitive+heap
 outDir     = .
 prefix     = 
+
+.PHONY: run clean fail
+fail:
+	$(error "Must specify a target")
 
 #-----------------------------#
 # DO NOT CHANGE THE FOLLOWING #
@@ -33,6 +37,5 @@ $(foreach analysis, $(analyses),\
 	$(foreach benchmark,$($(suite)_jars),\
 		$(eval $(call benchmarkRun,$(analysis),$(benchmark),$(commonArgs),$(suite)))))
 
-.PHONY: run clean
 clean:
 	rm -rf logs/* out/* results/* last-analysis
