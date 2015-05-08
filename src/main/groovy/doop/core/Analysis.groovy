@@ -335,6 +335,8 @@ toPredicate,Config:DynamicClass,type,inv"""
 
             preprocessor.preprocess(this, reflectionPath, "delta.logic", "${outDir}/reflection-delta.logic")
             lbScript.println("exec -F reflection-delta.logic")
+            lbScript.println("commit")
+            lbScript.println("transaction")
             lbScript.println("exec -F ${reflectionPath}/allocations-delta.logic")
         }
 
