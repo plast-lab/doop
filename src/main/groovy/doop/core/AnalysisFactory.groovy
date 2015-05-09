@@ -36,7 +36,7 @@ class AnalysisFactory {
         //Create the outDir if required
         File outDir = createOuputDirectory(name, id)
 
-        context.setDirectory(outDir)
+        //context.setDirectory(outDir)
 
         Analysis analysis = new Analysis(
                 name         : name,
