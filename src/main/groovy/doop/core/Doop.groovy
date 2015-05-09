@@ -514,6 +514,7 @@ class Doop {
     static String doopHome
     static String doopLogic
     static String doopOut
+    static String doopInputCache
 
     /**
      * Initializes Doop.
@@ -538,7 +539,7 @@ class Doop {
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(doopOut, "Could not create ouput directory: $doopOut ")
+        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut ")
     }
 
     /**

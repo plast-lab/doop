@@ -32,10 +32,10 @@ class IvyResolver implements InputResolver {
 
     @Override
     void resolve(String input, InputResolutionContext ctx) {
-        File ivyfile
         try {
             //Create temp ivy.xml file
-            ivyfile = File.createTempFile('ivy', '.xml', ctx.directory)
+            File ivyfile = File.createTempFile('ivy', '.xml')
+            ivyfile.deleteOnExit()
 
             String[] dep = input.split(":")
 
@@ -66,11 +66,6 @@ class IvyResolver implements InputResolver {
 
         } catch (e) {
             throw new RuntimeException("Not a valid Ivy input: $input", e)
-        }
-        finally {
-            if (ivyfile) {
-                ivyfile.delete()
-            }
         }
     }
 

@@ -89,6 +89,6 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 
     @Override
     String toString() {
-        return "InputResolutionContext: transitive:$transitive, directory:$directory, inputs:$resolvedInputs"
+        return "Inputs: ${inputs()}"
     }
 }

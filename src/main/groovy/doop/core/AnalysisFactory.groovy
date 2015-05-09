@@ -4,15 +4,13 @@ import doop.input.DefaultInputResolutionContext
 import doop.input.InputResolutionContext
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
-import doop.resolve.Dependency
-import doop.resolve.ExistingFileDependency
-import doop.resolve.StringDependency
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
+
 /**
  * A Factory for creating Analysis objects.
  *
@@ -138,57 +136,7 @@ class AnalysisFactory {
         analysis.jars = context.getAll()
     }
 
-    @Deprecated
     /**
-     * Given the list of jars, as Strings or Dependency objects, the method validates that the jars exist,
-     * using the jar resolution mechanism. It finally adds the jars as a List<Dependency> in the analysis.
-     * The method detects if a String refers to a directory path and, if so, it adds all the *.jar files
-     * included therein.
-     */
-    protected void checkJars(Analysis analysis, List jars) {
-        logger.debug "Verifying analysis input jars: $jars"
-        if (!jars) throw new RuntimeException("No jars provided for the analysis")
-        analysis.jars = jars.collect { Object jar ->
-            if (jar) {
-                if (jar instanceof String) {
-                    try {
-                        File f = Helper.checkDirectoryOrThrowException(jar, null)
-                        logger.debug("Resolving jars in directory $f")
-
-                        def filter = Helper.extensionFilter("jar")
-
-                        def filesInDir = []
-                        f.listFiles(filter).each { File file ->
-                            filesInDir.push new ExistingFileDependency(file)
-                        }
-
-                        def files = filesInDir.sort{ it.toString() }
-                        logger.debug("Resolved ${files.size()} jars in directory $f: $files")
-                        return files
-                    }
-                    catch(e) {
-                        StringDependency jarDep = new StringDependency(jar, analysis)
-                        logger.debug "Resolving $jar"
-                        jarDep.resolve()
-                        return jarDep
-                    }
-                }
-                else if (jar instanceof Dependency) {
-                    logger.debug "Resolving $jar"
-                    jar.resolve()
-                    return jar
-                }
-                else {
-                    throw new RuntimeException("Cannot resolve jar dependency ${jar.getClass()}: $jar")
-                }
-            }
-            else {
-                throw new RuntimeException("Null value in analysis jars")
-            }
-        }.flatten()
-    }
-	
-	/**
      * Processes the options of the analysis.
      */
     protected void processOptions(Analysis analysis) {
