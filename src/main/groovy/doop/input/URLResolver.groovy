@@ -26,17 +26,14 @@ class URLResolver implements InputResolver{
         }
 
 
-        String name = FilenameUtils.getName(url.toString())
-        if (!name) throw new RuntimeException("Not a valid URL input: $input")
-
-        File f = new File(ctx.directory, name)
         try {
-            FileUtils.copyURLToFile(url, f)
+            File tmpFile = File.createTempFile(FilenameUtils.getName(input), FilenameUtils.getExtension(input))
+            FileUtils.copyURLToFile(url, tmpFile)
+            tmpFile.deleteOnExit()
+            ctx.set(input, tmpFile)
         }
         catch(e) {
             throw new RuntimeException("Not a valid URL input: $input", e)
         }
-
-        ctx.set(input, f)
     }
 }

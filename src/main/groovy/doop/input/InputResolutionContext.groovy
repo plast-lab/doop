@@ -18,17 +18,6 @@ interface InputResolutionContext {
      */
     void setTransitive(boolean transitive)
 
-
-    /**
-     * Gets the directory for downloading files.
-     */
-    File getDirectory()
-
-    /**
-     * Sets the directory for downloading files.
-     */
-    void setDirectory(File directory)
-
     /**
      * Adds the given input for resolution.
      */
