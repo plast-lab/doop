@@ -836,15 +836,24 @@ import org.apache.commons.logging.LogFactory
 
         switch(jre) {
             case "1.3":
-                return ["${path}/rt.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString()])
             case "1.4":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
             case "1.5":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
             case "1.6":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
             case "1.7":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar", "${path}/rhino.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString(),
+                                          "${path}/rhino.jar".toString()])
             case "system":
                 //LATEST: don't include jars if jre is system
                 /*
