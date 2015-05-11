@@ -31,21 +31,21 @@ import java.util.jar.JarFile
         //Verify that the name of the analysis is valid
         checkName(name)
 
+        /*
+        We don't generate the id and the outDir beforehand anymore
         //Generate the id
         String id = generateID(name, context.inputs(), options)
 
         //Create the outDir if required
         File outDir = createOuputDirectory(name, id)
+        */
 
-        //context.setDirectory(outDir)
-
+        //Create an partially initialized instance and "enrich" it as we go
         Analysis analysis = new Analysis(
-                name         : name,
-                id           : id,
-                outDir       : outDir.toString(),
-                preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
-                options      : options,
-                ctx          : context
+            name         : name,
+            preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
+            options      : options,
+            ctx          : context
         )
 
         //Resolve the analysis inputs
@@ -75,6 +75,16 @@ import java.util.jar.JarFile
 
         //TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
 
+        /*
+        Generate id and outDir as the last analysis initialization actions
+        */
+        //Generate the id
+        analysis.id = generateIDAlt(name, context.inputs(), options)
+
+        //Create the outDir if required
+        File outDir = createOuputDirectory(name, analysis.id)
+        analysis.outDir = outDir.toString()
+
         return analysis
     }
 
@@ -97,6 +107,7 @@ import java.util.jar.JarFile
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 
+    @Deprecated
     /**
      * Generates the analysis ID, using its name, main class and inputs.
      *
@@ -111,6 +122,23 @@ import java.util.jar.JarFile
         String id = idComponents.collect { it.toString() }.join('-')
 
         //Generate a sha256 cheksum of the id components
+        return Helper.checksum(id, "SHA-256")
+    }
+
+    /**
+     * Generates the analysis ID using all of its components (name, inputs and options).
+     */
+    protected String generateIDAlt(String name, Collection<String> inputs, Map<String, AnalysisOption> options) {
+        Collection<String> optionsForId = options.keySet().collect {String option ->
+            if (Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(option))
+                return ''
+            else
+                return options.get(option).toString()
+        }
+        Collection<String> idComponents = [name] + inputs + optionsForId
+        logger.debug("ID components: $idComponents")
+        String id = idComponents.join('-')
+
         return Helper.checksum(id, "SHA-256")
     }
 
