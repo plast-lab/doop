@@ -121,6 +121,16 @@ class Helper {
     }
 
     /**
+     * Checks that the given list of files exist.
+     */
+    static List<String> checkFiles(List<String> files) {
+        files.each { String file ->
+            checkFileOrThrowException(file, "File is invalid: $file")
+        }
+        return files
+    }
+
+    /**
      * Checks that the given dir exists or throws the given message
      */
     static File checkDirectoryOrThrowException(String dir, String message) {
