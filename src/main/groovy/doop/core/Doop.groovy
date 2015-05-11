@@ -510,6 +510,19 @@ class Doop {
         )
     ]
 
+    static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
+        "LOGICBLOX_HOME",
+        "LD_LIBRARY_PATH",
+        "BLOXBATCH",
+        "BLOX_OPTS",
+        "SOLO",
+        "OS",
+        "INCREMENTAL",
+        "COLOR",
+        "INTERACTIVE",
+        "USE_JAVA_CPP"
+    ]
+
     //Not the best pattern, but limits the source code size :)
     static String doopHome
     static String doopLogic
