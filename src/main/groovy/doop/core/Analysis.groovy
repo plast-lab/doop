@@ -1,6 +1,7 @@
 package doop.core
 import doop.input.InputResolutionContext
 import doop.preprocess.Preprocessor
+import groovy.transform.TypeChecked
 import groovy.ui.SystemOutputInterceptor
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -16,7 +17,7 @@ import org.apache.commons.logging.LogFactory
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
  */
-class Analysis implements Runnable {
+@TypeChecked class Analysis implements Runnable {
 
     protected Log logger = LogFactory.getLog(getClass())
 
@@ -80,7 +81,7 @@ class Analysis implements Runnable {
 		preprocessor.init()
 
         //Dump the analysis in its "meta" file
-        new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
+        new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
 		
 		initAnalysis()
 		
@@ -90,7 +91,7 @@ class Analysis implements Runnable {
 		
 		analyze()
 
-		long dbSize = FileUtils.sizeOfDirectory(database) / 1024
+		long dbSize = (FileUtils.sizeOfDirectory(database) / 1024).longValue()
 		bloxbatch database, """-execute '+Stats:Runtime("100@ disk footprint (KB)", $dbSize).'"""
 
 		File f = null
@@ -374,7 +375,7 @@ class Analysis implements Runnable {
             FileUtils.touch(new File(factsDir, "Properties.facts"))
 
             File importFile = new File(outDir, "fact-declarations.import")
-            importFile.withWriter { Writer writer ->
+            importFile.withWriter { BufferedWriter writer ->
                 ImportGenerator.Type type = options.CSV.value ? ImportGenerator.Type.CSV : ImportGenerator.Type.TEXT
                 new ImportGenerator(type, writer).generate()
             }
@@ -425,7 +426,7 @@ class Analysis implements Runnable {
         if (options.DYNAMIC.value) {
 
             //TODO: Check arity of DYNAMIC file
-            List<String> dynFiles = options.DYNAMIC.value
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.eachWithIndex { String dynFile, Integer index ->
                 File f = new File(dynFile)
                 FilenameUtils
@@ -436,7 +437,7 @@ class Analysis implements Runnable {
 
                                               fromFile,"${f.getCanonicalPath()}",a,inv,b,type
                                               toPredicate,Config:DynamicClass,type,inv
-                                              """.stripIndent()
+                                              """.toString().stripIndent()
 
                 bloxbatch database, "-import $dynImport"
             }
@@ -585,7 +586,7 @@ class Analysis implements Runnable {
         //LATEST: made changes to reflect the latest refine script
 
         //The files and their contents
-        Map<String, GString> files = [
+        Map<String, String> files = [
                 "refine-site": """\
                                option,delimiter,","
                                option,hasColumnNames,false
@@ -593,14 +594,14 @@ class Analysis implements Runnable {
                                option,escapeQuotedValues,true
 
                                fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
-                               toPredicate,SiteToRefine,CallGraphEdgeSource""".stripIndent(),
+                               toPredicate,SiteToRefine,CallGraphEdgeSource""".toString().stripIndent(),
 
                 "negative-site": """\
                                  option,delimiter,","
                                  option,hasColumnNames,false
 
                                  fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
-                                 toPredicate,NegativeSiteFilter,string""".stripIndent(),
+                                 toPredicate,NegativeSiteFilter,string""".toString().stripIndent(),
 
                 "refine-object": """\
                                  option,delimiter,","
@@ -609,18 +610,18 @@ class Analysis implements Runnable {
                                  option,escapeQuotedValues,true
 
                                  fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
-                                 toPredicate,ObjectToRefine,HeapAllocation""".stripIndent(),
+                                 toPredicate,ObjectToRefine,HeapAllocation""".toString().stripIndent(),
 
                 "negative-object": """\
                                    option,delimiter,","
                                    option,hasColumnNames,false
 
                                    fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
-                                   toPredicate,NegativeObjectFilter,string""".stripIndent()
+                                   toPredicate,NegativeObjectFilter,string""".toString().stripIndent()
         ]
 
         logger.info "loading $name refinement facts "
-        files.each { Map.Entry<String, GString> entry ->
+        files.each { Map.Entry<String, String> entry ->
             File f = new File(outDir, "${name}-${entry.key}.import")
             Helper.writeToFile f, entry.value
             Helper.checkFileOrThrowException(f, "Could not create import file: $f")
@@ -721,15 +722,15 @@ class Analysis implements Runnable {
 
         logger.info "-- Running soot to generate facts --"
 
-        List<String> depArgs
+        Collection<String> depArgs
 
         if (options.AVERROES.value) {
             //change linked arg and injar accordingly
             jars[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
-            depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
+            depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            List<String> deps = jars.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten()
+            Collection<String> deps = jars.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             List<String> links = jreLinkArgs()
             if (links.isEmpty()) {
                 depArgs = ["-lsystem"] + deps 
@@ -740,7 +741,7 @@ class Analysis implements Runnable {
 
         }
 
-        String[] params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value]
+        Collection<String> params = ["-full"] + depArgs + ["-application-regex", options.APP_REGEX.value.toString()]
 
         if (options.SSA.value) {
             params = params + ["-ssa"]
@@ -751,10 +752,10 @@ class Analysis implements Runnable {
         }
 
         if (options.MAIN_CLASS.value) {
-            params = params + ["-main", options.MAIN_CLASS.value]
+            params = params + ["-main", options.MAIN_CLASS.value.toString()]
         }
 
-        params = params + ["-d", factsDir, jars[0].toString()]
+        params = params + ["-d", factsDir.toString(), jars[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -766,7 +767,7 @@ class Analysis implements Runnable {
         }
         */
         sootTime = timing {
-            doop.soot.Main.main(params)
+            doop.soot.Main.main(params.toArray(new String[params.size()]))
         }
     }
 
@@ -806,8 +807,8 @@ class Analysis implements Runnable {
         //TODO: for now, we hard-code the jphantom jar
         String jphantom = "${Doop.doopHome}/lib/jphantom-1.1-jar-with-dependencies.jar"
         File f = Helper.checkFileOrThrowException(jphantom, "jphantom jar missing or invalid: $jphantom")
-        URL[] classpath = [f.toURI().toURL()]
-        return new URLClassLoader(classpath)
+        List<URL> classpath = [f.toURI().toURL()]
+        return new URLClassLoader(classpath as URL[])
     }
 
     /**
@@ -821,8 +822,8 @@ class Analysis implements Runnable {
         File f1 = Helper.checkFileOrThrowException(sootClasses, "soot classes jar missing or invalid: $sootClasses")
         File f2 = Helper.checkFileOrThrowException(sootFactGeneration, "soot fact generation jar missing or invalid: $sootFactGeneration")
 
-        URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
-        return new URLClassLoader(classpath)
+        List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        return new URLClassLoader(classpath as URL[])
     }
 
     /**
@@ -865,7 +866,7 @@ class Analysis implements Runnable {
 		String properties = "$outDir/averroes.properties"
 
 		//Determine the library jars
-		List<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
+		Collection<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
 		
 		//Create the averroes properties
 		Properties props = new Properties()
@@ -876,12 +877,12 @@ class Analysis implements Runnable {
 
         //Concatenate the dynamic files
         if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
             File dynFileAll = new File(outDir, "all.dyn")
             dynFiles.each {String dynFile ->
                 dynFileAll.append new File(dynFile).text
             }
-            props.setProperty("dynamic_classes_file", dynFileAll as String)
+            props.setProperty("dynamic_classes_file", dynFileAll.toString())
         }
 
 		props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
@@ -895,8 +896,8 @@ class Analysis implements Runnable {
 		File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
 		File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
 		
-		URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
-        return new URLClassLoader(classpath)
+		List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        return new URLClassLoader(classpath as URL[])
 	}
 	
 	/**
@@ -964,7 +965,9 @@ class Analysis implements Runnable {
 			Helper.execCommand("${options.BLOXBATCH.value} -version 2>&1 | awk 'BEGIN{flag=0} /BloxBatch/{flag=1} /Version/{if(flag){ printf \$2; flag=0 }}'", commandsEnvironment)
 			interceptor.stop()
 
-            def (major, minor) = bloxbatchVersion.tokenize(".")
+            List<String> tokens = bloxbatchVersion.tokenize(".")
+            String major = tokens[0]
+            String minor = tokens[1]
             /**
              * We don't want the first 4 lines from stderr. The rest output of stderr might
              * have interesting messages though (i.e. errors). Use |& which pipes stderr

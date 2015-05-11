@@ -4,6 +4,7 @@ import doop.input.DefaultInputResolutionContext
 import doop.input.InputResolutionContext
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
+import groovy.transform.TypeChecked
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -17,7 +18,7 @@ import java.util.jar.JarFile
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 31/8/2014
  */
-class AnalysisFactory {
+@TypeChecked class AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
 
@@ -106,7 +107,7 @@ class AnalysisFactory {
     protected String generateID(String name, Collection<String> inputs, Map<String, AnalysisOption> options) {
         logger.debug "Generating analysis ID"
 
-        def idComponents = [name, options.MAIN_CLASS.value] + inputs
+        def idComponents = [name, options.MAIN_CLASS.value.toString()] + inputs
         String id = idComponents.collect { it.toString() }.join('-')
 
         //Generate a sha256 cheksum of the id components
@@ -322,7 +323,7 @@ class AnalysisFactory {
 
         if(options.MAY_PRE_ANALYSIS.value) {
             if(!analysis.isMustPointTo())
-                throw new RuntimeException("Option: " + option.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
+                throw new RuntimeException("Option: " + options.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
 
             options.MUST_AFTER_MAY.value = true
             logger.debug "The MUST_AFTER_MAY flag has been enabled"
@@ -363,7 +364,7 @@ class AnalysisFactory {
 		}
 
 		if (options.DYNAMIC.value) {
-			List<String> dynFiles = options.DYNAMIC.value
+			List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
                 Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
@@ -371,13 +372,13 @@ class AnalysisFactory {
 		}
 		
 		if (options.TAMIFLEX.value) {
-			String tamFile = options.TAMIFLEX.value
+			String tamFile = options.TAMIFLEX.value.toString()
 			Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
 			logger.debug "The TAMIFLEX option has been set to ${tamFile}"
 		}
 		
 		if (options.CLIENT_CODE.value) {
-			String clFile = options.CLIENT_CODE.value
+			String clFile = options.CLIENT_CODE.value.toString()
 			Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
 			options.CLIENT_EXTENSIONS.value = true
 			logger.debug "The CLIENT_CODE option has been set to ${clFile}"
