@@ -16,10 +16,10 @@
 // Now remove all defs of the useless variable and replaces its
 // uses with the variable it clones. This is a general rewrite.
 
-*FormalParam[?index, ?method] = ?noncopyVar <-
+^FormalParam[?index, ?method] = ?noncopyVar <-
    FormalParam@previous[?index, ?method] = ?to, Copies@previous[?to] = ?noncopyVar.
 
-*ThisVar[?method] = ?noncopyVar <-
+^ThisVar[?method] = ?noncopyVar <-
    ThisVar@previous[?method] = ?var, Copies@previous[?var] = ?noncopyVar.
 
 +ReturnVar(?noncopyVar, ?method),
@@ -43,13 +43,13 @@
 // return value has not been shown to be a useless clone var. Otherwise
 // eliminate it.
 
-*ActualParam[?index, ?invocation] = ?noncopyVar <-
+^ActualParam[?index, ?invocation] = ?noncopyVar <-
    ActualParam@previous[?index, ?invocation] = ?param, 
    !(AssignReturnValue@previous[?invocation] = _),
    Copies@previous[?param] = ?noncopyVar,
    !RedundantInvocation@previous(?invocation).
 
-*ActualParam[?index, ?invocation] = ?noncopyVar <-
+^ActualParam[?index, ?invocation] = ?noncopyVar <-
    ActualParam@previous[?index, ?invocation] = ?param, 
    AssignReturnValue@previous[?invocation] = ?ret, 
    Copies@previous[?param] = ?noncopyVar,
@@ -82,13 +82,13 @@
    !(AssignReturnValue@previous[?invocation] = _), 
    RedundantInvocation@previous(?invocation).
 
-*VirtualMethodInvocation:Base[?inv] = ?noncopyVar <-
+^VirtualMethodInvocation:Base[?inv] = ?noncopyVar <-
    VirtualMethodInvocation:Base@previous[?inv] = ?base, 
    !(AssignReturnValue@previous[?inv] = _),
    Copies@previous[?base] = ?noncopyVar,
    !RedundantInvocation@previous(?inv).
 
-*VirtualMethodInvocation:Base[?inv] = ?noncopyVar <-
+^VirtualMethodInvocation:Base[?inv] = ?noncopyVar <-
    VirtualMethodInvocation:Base@previous[?inv] = ?base, 
    AssignReturnValue@previous[?inv] = ?ret,
    Copies@previous[?base] = ?noncopyVar,
@@ -118,13 +118,13 @@
    !(AssignReturnValue@previous[?invocation] = _), 
    RedundantInvocation@previous(?invocation).
 
-*SpecialMethodInvocation:Base[?inv] = ?noncopyVar <-
+^SpecialMethodInvocation:Base[?inv] = ?noncopyVar <-
    SpecialMethodInvocation:Base@previous[?inv] = ?base, 
    !(AssignReturnValue@previous[?inv] = _),
    Copies@previous[?base] = ?noncopyVar,
    !RedundantInvocation@previous(?inv).
 
-*SpecialMethodInvocation:Base[?inv] = ?noncopyVar <-
+^SpecialMethodInvocation:Base[?inv] = ?noncopyVar <-
    SpecialMethodInvocation:Base@previous[?inv] = ?base, 
    AssignReturnValue@previous[?inv] = ?ret,
    Copies@previous[?base] = ?noncopyVar,
@@ -288,7 +288,7 @@
 // (REVIEW) No need to pre-process SimpleExceptionHandler: only used 
 // for Paddle compatibility mode.
 
-*ExceptionHandler:FormalParam[?handler] = ?noncopyVar <-
+^ExceptionHandler:FormalParam[?handler] = ?noncopyVar <-
    ExceptionHandler:FormalParam@previous[?handler] = ?var, Copies@previous[?var] = ?noncopyVar.
 
 // +java:lang:Object:getClass(?to, ?noncopyVar),
