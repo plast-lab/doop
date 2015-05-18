@@ -516,13 +516,20 @@ toPredicate,NegativeObjectFilter,string"""
     }
 
     protected void runSetBased() {
+        preprocessor.preprocess(this, "${Doop.doopLogic}/addons/transform", "rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
         lbScript.println('echo "-- Transforming Input Facts --"')
-        lbScript.println("addBlock -F ${Doop.doopLogic}/transform.logic")
+        lbScript.println("startTimer")
+        lbScript.println("transaction")
+        lbScript.println("addBlock -F ${outDir}/transform.logic")
+        lbScript.println("commit")
 
         2.times { int i ->
-            lbScript.println('echo "-- Transformation (step $i) --"')
-            lbScript.println("exec -F ${Doop.doopLogic}/transform-delta.logic")
+            lbScript.println("""echo "-- Transformation (step $i) --" """)
+            lbScript.println("transaction")
+            lbScript.println("exec -F ${Doop.doopLogic}/addons/transform/delta.logic")
+            lbScript.println("commit")
         }
+        lbScript.println("elapsedTime")
     }
 
     protected void produceStats() {
