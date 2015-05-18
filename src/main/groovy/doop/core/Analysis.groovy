@@ -60,9 +60,14 @@ class Analysis implements Runnable {
     String inputFilesChecksum
     String logicFilesChecksum
     
-    File cacheFacts, database, exportDir, facts, averroesDir
+    File facts, cacheFacts, database, exportDir, averroesDir
 
     long sootTime, factsTime
+
+    String bloxbatchVersion
+    boolean hasFilter
+
+    Writer lbScript
 
     protected Analysis(Map m) {
         m.each { k, v -> this."$k" = v }
@@ -79,17 +84,14 @@ class Analysis implements Runnable {
         averroesDir   = new File(outDir, "averroes")
     }
 
-    String bloxbatchVersion
-    boolean hasFilter
-
-    Writer lbScript
-
     @Override
     void run() {
         String scriptPath = "${outDir}/run.lb"
         lbScript = new PrintWriter(new File(scriptPath))
 
-        createDatabase()
+        generateFacts()
+
+        initDatabase()
 
         analyze()
 
@@ -106,7 +108,7 @@ class Analysis implements Runnable {
 
         lbScript.close()
 
-        logger.info "Running generated script ($scriptPath)"
+        logger.info "Running generated script $scriptPath"
         long t = timing {
             bloxbatchPipe database, "-script $scriptPath"
         }
@@ -183,7 +185,7 @@ class Analysis implements Runnable {
         process.closeStreams()
     }
 
-    protected void createDatabase() {
+    protected void generateFacts() {
 
         if (cacheFacts.exists() && options.CACHE.value) {
             logger.info "Using cached facts $cacheFacts"
@@ -229,8 +231,6 @@ class Analysis implements Runnable {
             cacheFacts.mkdirs()
             Helper.copyDirectoryContents(facts, cacheFacts)
         }
-
-        initDatabase()
     }
 
     protected void initDatabase() {
@@ -245,6 +245,8 @@ class Analysis implements Runnable {
             }
         }
         else {
+            FileUtils.deleteQuietly(database)
+
             lbScript.println("create $database --overwrite --blocks base")
 
             lbScript.println("startTimer")
