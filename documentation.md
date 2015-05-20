@@ -109,6 +109,7 @@ The main command line options are described in the `README` file:
 
 * -a, --analysis: The name of the analysis.
 * -j, --jar: The jar file(s) to analyse.
+* -id, --identifier: The human-friendly identifier of the analysis (if not specified, Doop will generate one automatically).
 * --regex: The Java package names to analyse.
 * --main: The name of the Java main class.
 * --jre: The version of the JRE to use. The JRE-specific files should be placed in the `$DOOP_HOME/externals`
@@ -169,12 +170,14 @@ The primary goals of the Java/Groovy part of Doop are the following:
 The core API is contained in the doop.core Groovy package and contains the following classes.
 
 #### doop.core.AnalysisFactory
-A Factory for creating analyses. The class provides the following public method:
+A Factory for creating analyses. The class provides the following public methods:
 
-    newAnalysis(String name, List<String> jars, Map<String, AnalysisOption> options)
+    newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars)
+    
+    newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext ctx)
 
-which creates a new `doop.core.Analysis` object. The method checks and verifies that all provided information (name of
-the analysis, jar files and options) is correct, throwing an exception in case of error. The checks performed are
+which create a new `doop.core.Analysis` object. The methods check and verify that all provided information (id and name 
+of the analysis, jar files and options) is correct, throwing an exception in case of error. The checks performed are
 based on the doop run script and are implemented using private or protected methods.
 
 This class is extended by `doop.CommandLineAnalysisFactory` to support creating `doop.core.Analysis` objects from the

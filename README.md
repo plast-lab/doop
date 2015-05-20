@@ -101,8 +101,22 @@ Example:
 
 The jar option is mandatory.
 
+### Analysis id (-id, --identifier)
+The identifier of the analysis. 
+
+If the identifier is not specified, Doop will generate one automatically. Use this option if you prefer 
+to provide a human-friendly identifier to your analysis.
+
+Example:
+
+    $ DOOP_HOME>./bin/doop -id myAnalysis
+
+To see the characters permitted for the identifier run Doop with the `-h` flag.
+
 #### Packages (--regex)
 The Java packages to analyse.
+
+Example:
 
     $ DOOP_HOME>./bin/doop --regex com.example.package1.*:com.example.package2.*
 
