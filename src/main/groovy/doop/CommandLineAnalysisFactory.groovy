@@ -15,13 +15,17 @@ import org.apache.commons.cli.Option
  */
 class CommandLineAnalysisFactory extends AnalysisFactory {
 
-    private static final String LOGLEVEL = 'Set the log level: debug, info or error (default: info).'
-    private static final String ANALYSIS = 'The name of the analysis.'
-    private static final String JAR      = 'The jar files to analyze. Separate multiple jars with a comma. If the ' +
-                                           ' argument is a directory, all its *.jar files will be included.'
-    private static final String PROPS    = 'The path to a properties file containing analysis options. If this ' +
-                                           'option is given, all other options are ignored.'
-    private static final String TIMEOUT  = 'The analysis execution timeout in minutes (default: 180 - 3 hours)'
+    private static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
+    private static final String ANALYSIS         = 'The name of the analysis.'
+    private static final String JAR              = 'The jar files to analyze. Separate multiple jars with a comma. ' +
+                                                   ' If the argument is a directory, all its *.jar files will be ' +
+                                                   ' included.'
+    private static final String PROPS            = 'The path to a properties file containing analysis options. If ' +
+                                                   'this option is given, all other options are ignored.'
+    private static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
+    private static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
+                                                   "automatically). Permitted characters include letters, digits, " +
+                                                   "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
 
     /**
      * Processes the cli args and generates a new analysis.
@@ -36,6 +40,9 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         //Get the jars of the analysis (short option: j)
         List<String> jars = cli.js
+
+        //Get the id of the analysis (short option: id)
+        String id = cli.id
 
         Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
 
@@ -61,7 +68,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                 }
             }
         }
-        return newAnalysis(name, options, jars)
+        return newAnalysis(id, name, options, jars)
     }
 
     /**
@@ -75,11 +82,14 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the jars of the analysis
         List<String> jars = props.getProperty("jar").split(",").collect { String s-> s.trim() }
 
+        //Get the optional id of the analysis
+        String id = props.getProperty("id")
+
         Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
 
         Doop.overrideAnalysisOptionsFromProperties(options, props)
 
-        return newAnalysis(name, options, jars)
+        return newAnalysis(id, name, options, jars)
     }
 
     /**
@@ -103,6 +113,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             h(longOpt: 'help', 'Display help and exit.')
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
+            id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
             j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar", valueSeparator: ",")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
@@ -136,6 +147,12 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                     #$ANALYSIS
                     #
                     analysis =
+
+                    #
+                    #id (string)
+                    #$USER_SUPPLIED_ID
+                    #
+                    id =
 
                     #
                     #jar (file)

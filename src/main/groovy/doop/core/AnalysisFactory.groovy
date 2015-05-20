@@ -21,12 +21,17 @@ import java.util.jar.JarFile
 @TypeChecked class AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
+    static final char[] EXTRA_ID_CHARACTERS = '_-'.toCharArray()
 
     /**
      * Creates a new analysis, verifying the correctness of its name, options and inputs using
      * the supplied input resolution mechanism.
+     * If the supplied id is empty or null, an id will be generated automatically.
+     * Otherwise the id will be validated:
+     * - if it is valid, it will be used to identify the analysis,
+     * - if it is invalid, an exception will be thrown.
      */
-    Analysis newAnalysis(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         //Verify that the name of the analysis is valid
         checkName(name)
@@ -78,8 +83,14 @@ import java.util.jar.JarFile
         /*
         Generate id and outDir as the last analysis initialization actions
         */
-        //Generate the id
-        analysis.id = generateIDAlt(name, context.inputs(), options)
+        if (id) { //non-empty or null
+            //validate and set the user supplied id
+            analysis.id = validateUserSuppliedId(id)
+        }
+        else {
+            //Generate the id
+            analysis.id = generateIDAlt(name, context.inputs(), options)
+        }
 
         //Create the outDir if required
         File outDir = createOuputDirectory(name, analysis.id)
@@ -92,10 +103,10 @@ import java.util.jar.JarFile
      * Creates a new analysis, verifying the correctness of its name, options and inputs using
      * the default input resolution mechanism.
      */
-    Analysis newAnalysis(String name, Map<String, AnalysisOption> options, List<String> jars) {
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
         context.add(jars)
-        return newAnalysis(name, options, context)
+        return newAnalysis(id, name, options, context)
     }
 
     /**
@@ -105,6 +116,19 @@ import java.util.jar.JarFile
         logger.debug "Verifying analysis name: $name"
         String analysisPath = "${Doop.doopLogic}/${name}/analysis.logic"
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
+    }
+
+    protected String validateUserSuppliedId(String id) {
+        String trimmed = id.trim()
+        boolean isValid = trimmed.toCharArray().every { char c->
+            Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
+        }
+
+        if (!isValid) {
+            throw new RuntimeException("Invalid analysis id: $id. The id should contain only letters, digits, " +
+                                       "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
+        }
+        return trimmed
     }
 
     @Deprecated
@@ -145,11 +169,15 @@ import java.util.jar.JarFile
      * Creates the analysis output dir, if required.
      */
     protected File createOuputDirectory(String name, String id) {
-        String outDir = "${Doop.doopHome}/out/$name/${id}"
+        String outDir = constructOutputPath(name, id)
         File f = new File(outDir)
         f.mkdirs()
         Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
         return f
+    }
+
+    protected String constructOutputPath(String name, String id) {
+        return "${Doop.doopHome}/out/$name/${id}"
     }
 
     /**
