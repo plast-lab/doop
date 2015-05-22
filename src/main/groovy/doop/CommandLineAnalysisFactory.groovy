@@ -15,23 +15,19 @@ import org.apache.commons.cli.Option
  */
 class CommandLineAnalysisFactory extends AnalysisFactory {
 
-    private static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
-    private static final String ANALYSIS         = 'The name of the analysis.'
-    private static final String JAR              = 'The jar files to analyze. Separate multiple jars with a comma. ' +
-                                                   ' If the argument is a directory, all its *.jar files will be ' +
-                                                   ' included.'
-    private static final String PROPS            = 'The path to a properties file containing analysis options. If ' +
-                                                   'this option is given, all other options are ignored.'
-    private static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
-    private static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
-                                                   "automatically). Permitted characters include letters, digits, " +
-                                                   "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
+    static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
+    static final String ANALYSIS         = 'The name of the analysis.'
+    static final String JAR              = 'The jar files to analyze. Separate multiple jars with a comma. ' +
+                                           ' If the argument is a directory, all its *.jar files will be included.'
+    static final String PROPS            = 'The path to a properties file containing analysis options. If ' +
+                                           'this option is given, all other options are ignored.'
+    static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
+    static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
+                                           "automatically). Permitted characters include letters, digits, " +
+                                           "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
 
     /**
      * Processes the cli args and generates a new analysis.
-     *
-     * Note: To get the value of a cl option as a List, we need to append an s to its short name
-     * (e.g., the short name of the DYNAMIC option is d, so we invoke ds). Obscure Cli builder feature.
      */
     Analysis newAnalysis(OptionAccessor cli) {
 
@@ -42,31 +38,10 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         List<String> jars = cli.js
 
         //Get the id of the analysis (short option: id)
-        String id = cli.id
+        String id = cli.id ?: null
 
-        Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
-
-        options.findAll { Map.Entry<String, AnalysisOption> entry ->
-            entry.value.cli //get the cli options
-        }.each { Map.Entry<String, AnalysisOption> entry ->
-            AnalysisOption option = entry.value
-            String cliOptionName = option.name
-            def optionValue = cli[(cliOptionName)]
-            if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
-                if (option.id == "DYNAMIC") {
-                    //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
-                    //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
-                    option.value = cli.ds
-                } else if (option.argName) {
-                    //if the cl option has an arg, the value of this arg defines the value of the respective
-                    // analysis option
-                    option.value = optionValue
-                } else {
-                    //the cl option has no arg and thus it is a boolean flag, toggling the default value of
-                    // the respective analysis option
-                    option.value = !option.value
-                }
-            }
+        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionWithCLI(cli) { AnalysisOption option ->
+            option.cli
         }
         return newAnalysis(id, name, options, jars)
     }
@@ -85,10 +60,9 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the optional id of the analysis
         String id = props.getProperty("id")
 
-        Map<String, AnalysisOption> options = Doop.createDefaultAnalysisOptions()
-
-        Doop.overrideAnalysisOptionsFromProperties(options, props)
-
+        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithProperties(props) { AnalysisOption option ->
+            option.cli
+        }
         return newAnalysis(id, name, options, jars)
     }
 
@@ -125,8 +99,8 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     }
 
     /**
-     * Creates the default properties file containing all the supported analysis options with empty values.
-     * The file also contains the analysis name, the jars and the log level.
+     * Creates the default properties file containing all the CLI-supported analysis options with empty values.
+     * The file also contains the analysis id, name and jars as well as the log level and timeout.
      */
     static void createEmptyProperties(File f) {
 

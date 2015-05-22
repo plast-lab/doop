@@ -76,9 +76,10 @@ class Helper {
      * Loads the given properties file
      */
     static Properties loadProperties(String file) {
-        Properties properties = new Properties()
-        properties.load(new BufferedReader(new FileReader(file)))
-        return properties
+        File f = checkFileOrThrowException(file, "Not a valid file: $file")
+        Properties props = new Properties()
+        f.withReader { BufferedReader r -> props.load(r)}
+        return props
     }
 
     /**
@@ -369,5 +370,32 @@ class Helper {
      */
     static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
         convertAnalysisOptionsToCliOptions(options).each { cli << it}
+    }
+
+    /**
+     * Checks that the mandatory options are present in the cli options.
+     * @param cli the cli options accessor
+     */
+    static void checkMandatoryArgs(OptionAccessor cli) {
+        boolean noAnalysis = !cli.a, noJar = !cli.j
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            throw new RuntimeException("Missing required argument(s): " + (noAnalysis ? "a" : "") +
+                                       (noJar ? (noAnalysis ? ", " : "") + "j" : ""))
+    }
+
+    /**
+     * Checks that the mandatory options are present in the properties.
+     * @param props - the properties
+     */
+    static void checkMandatoryProps(Properties props) {
+        boolean noAnalysis = !props.getProperty("analysis")?.trim()
+        boolean noJar = !props.getProperty("jar")?.trim()
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            throw new RuntimeException("Missing required properties: " + (noAnalysis ? "analysis" : "") +
+                                       (noJar ? (noAnalysis ? ", " : "") + "jar" : ""))
     }
 }

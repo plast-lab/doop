@@ -61,31 +61,34 @@ class Main {
             if (cli.p) {
                 //create analysis from the properties file
                 String file = cli.p
-                File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
+                Properties props = Helper.loadProperties(file)
 
-                Properties props = new Properties()
-                f.withReader { Reader r -> props.load(r)}
-
-                if (!checkProps(props)) {
+                try {
+                    Helper.checkMandatoryProps(props)
+                }
+                catch(e) {
+                    println e.getMessage()
                     return
                 }
 
                 //change the log level according to the property
-                String logLevel = props.getProperty("level")
-                changeLogLevel(logLevel)
+                changeLogLevel(props.getProperty("level"))
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(props)
             }
             else {
                 //create analysis from the cli options
-                if(!checkArgs(cli)) {
+                try {
+                    Helper.checkMandatoryArgs(cli)
+                }
+                catch(e) {
+                    println e.getMessage()
                     builder.usage()
                     return
                 }
 
                 //change the log level according to the cli arg
-                def logLevel = cli.l
-                changeLogLevel(logLevel)
+                changeLogLevel(cli.l)
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
@@ -120,30 +123,6 @@ class Main {
                 logger.error(e.getMessage())
             System.exit(-1)
         }
-    }
-
-    private static boolean checkProps(Properties props) {
-        boolean noAnalysis = !props.getProperty("analysis")?.trim()
-        boolean noJar = !props.getProperty("jar")?.trim()
-        boolean error = noAnalysis || noJar
-
-        if (error)
-            println "Missing required properties: " + (noAnalysis ? "analysis" : "") +
-                    (noJar ? (noAnalysis ? ", " : "") + "jar" : "")
-
-        return !error
-
-    }
-
-    private static boolean checkArgs(OptionAccessor cli) {
-        boolean noAnalysis = !cli.a, noJar = !cli.j
-        boolean error = noAnalysis || noJar
-
-        if (error)
-            println "Missing required argument(s): " + (noAnalysis ? "a" : "") +
-                    (noJar ? (noAnalysis ? ", " : "") + "j" : "")
-
-        return !error
     }
 
     private static void changeLogLevel(def logLevel) {

@@ -8,9 +8,9 @@ import org.apache.commons.logging.LogFactory
  * Date: 23/3/2015
  */
 class ChainResolver implements InputResolver {
+
     private final List<InputResolver> resolvers
     protected Log logger = LogFactory.getLog(getClass())
-
 
     ChainResolver(InputResolver... resolvers) {
         this.resolvers = resolvers
@@ -23,19 +23,16 @@ class ChainResolver implements InputResolver {
 
     @Override
     void resolve(String input, InputResolutionContext ctx) {
-        boolean resolved = false
         for(InputResolver resolver : resolvers) {
             try {
+                logger.debug "Resolving input: $input via ${resolver.name()}"
                 resolver.resolve(input, ctx)
-                resolved = true
+                logger.debug "Resolved input $input -> ${ctx.get(input)}"
+                return
             }
             catch(e) {
                 logger.warn e.getMessage()
                 //logger.warn Helper.stackTraceToString(e)
-            }
-            if (resolved) {
-                logger.debug "Resolved input $input -> ${resolver.name()} - ${ctx.get(input)}"
-                return
             }
         }
 
