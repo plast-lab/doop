@@ -1,4 +1,7 @@
 package doop.core
+
+import org.apache.log4j.Logger
+
 /**
  * Doop initialization and supported options.
  *
@@ -561,32 +564,127 @@ class Doop {
      */
     static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
         Map<String, AnalysisOption> options = [:]
-        ANALYSIS_OPTIONS.each { AnalysisOption option -> options[(option.id)] = option }
+        ANALYSIS_OPTIONS.each { AnalysisOption option ->
+            options.put(option.id, AnalysisOption.newInstance(option))
+        }
         return options
     }
 
     /**
-     * Overrides the given analysis options with the ones contained in the given properties.
-     * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
-     * @param options - the options to be overridden
-     * @param properties - the properties to use
+     * Creates the analysis options by overriding the default options with the ones contained in the given properties.
+     * An option is set only if filtered (the supplied filter returns true for the option).
+     * @param props - the properties.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the properties.
      */
-    static void overrideAnalysisOptionsFromProperties(Map<String, AnalysisOption> options, Properties properties) {
-        if (properties.size() > 0) {
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithProperties(Properties properties, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        if (properties && properties.size() > 0) {
             properties.each { Map.Entry<String, String> entry->
                 AnalysisOption option = options.get(entry.key.toUpperCase())
                 if (option && entry.value && entry.value.trim().length() > 0) {
-                    if (option.id == "DYNAMIC") {
-                        option.value = entry.value.split(",").collect{ String s -> s.trim() }
-                    }
-                    else if (option.argName) {
-                        option.value = entry.value
-                    }
-                    else {
-                        option.value = Boolean.parseBoolean(entry.value)
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        setOptionFromProperty(option, entry.value)
                     }
                 }
             }
+        }
+        return options
+    }
+
+    /**
+     * Creates the analysis options by processing the given properties.
+     * An option is created only if filtered (the supplied filter returns true for the option).
+     * @param props - the properties.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the analysis options constructed by the values contained in the properties.
+     */
+    static Map<String, AnalysisOption> createOptionsFromProperties(Properties properties, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = [:]
+        if (properties && properties.size() > 0) {
+            ANALYSIS_OPTIONS.each { AnalysisOption option ->
+                String property = properties.getProperty(option.id.toLowerCase())?.trim()
+                if (property) {
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        AnalysisOption o = AnalysisOption.newInstance(option)
+                        setOptionFromProperty(o, property)
+                        options.put(o.id, o)
+                    }
+                }
+            }
+        }
+        return options
+    }
+
+    static void setOptionFromProperty(AnalysisOption option, String property) {
+        if (option.id == "DYNAMIC") {
+            option.value = property.split(",").collect { String s -> s.trim() }
+        } else if (option.argName) {
+            option.value = property
+        } else {
+            option.value = Boolean.parseBoolean(property)
+        }
+    }
+
+    /**
+     * Creates the analysis options by overriding the default options with the ones contained in the given CLI options.
+     * An option is set only if filtered (the supplied filter returns true for the option).
+     * @param cli - the CLI option accessor.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the CLI option accessor.
+     */
+    static Map<String, AnalysisOption> overrideDefaultOptionWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        options.each { Map.Entry<String, AnalysisOption> entry ->
+            AnalysisOption option = entry.value
+            String optionName = option.name
+            if (optionName) {
+                def optionValue = cli[(optionName)]
+                if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        setOptionFromCLI(option, cli)
+                    }
+                }
+            }
+        }
+        return options
+    }
+
+    static Map<String, AnalysisOption> createOptionsFromCLI(OptionAccessor cli, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = [:]
+        ANALYSIS_OPTIONS.each { AnalysisOption option ->
+            String optionName = option.name
+            if (option.name) {
+                def optionValue = cli.getProperty(optionName)
+                if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        AnalysisOption o = AnalysisOption.newInstance(option)
+                        setOptionFromCLI(o, cli)
+                        options.put(o.id, o)
+                    }
+                }
+            }
+        }
+        return options
+    }
+
+    static void setOptionFromCLI(AnalysisOption option, OptionAccessor cli) {
+        if (option.id == "DYNAMIC") {
+            //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
+            //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
+            option.value = cli.ds
+        } else if (option.argName) {
+            //if the cl option has an arg, the value of this arg defines the value of the respective
+            // analysis option
+            option.value = cli[(option.id)]
+        } else {
+            //the cl option has no arg and thus it is a boolean flag, toggling the default value of
+            // the respective analysis option
+            option.value = !option.value
         }
     }
 }

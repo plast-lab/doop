@@ -1,5 +1,6 @@
 package doop.core
 
+import doop.input.ChainResolver
 import doop.input.DefaultInputResolutionContext
 import doop.input.InputResolutionContext
 import doop.preprocess.CppPreprocessor
@@ -566,10 +567,10 @@ import java.util.jar.JarFile
             /*
 			Set excluded = ["*", "**"] as Set
 			analysis.jars.drop(1).each { Dependency jar ->
-				excluded += Helper.getPackages(jar.resolve())
+				excluded += Helper.getPackages(jar.input())
 			}
 
-			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
+			Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
             Set<String> packages = Helper.getPackages(analysis.jars[0])
 			analysis.options.APP_REGEX.value = packages.sort().join(':')
