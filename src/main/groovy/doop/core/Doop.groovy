@@ -637,11 +637,11 @@ class Doop {
      */
     static Map<String, AnalysisOption> overrideDefaultOptionWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
         Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
-        options.each { Map.Entry<String, AnalysisOption> entry ->
-            AnalysisOption option = entry.value
+        options.values().each { AnalysisOption option ->
             String optionName = option.name
             if (optionName) {
                 def optionValue = cli[(optionName)]
+                Logger.getRootLogger().debug "Processing $optionName = $optionValue"
                 if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
@@ -680,7 +680,7 @@ class Doop {
         } else if (option.argName) {
             //if the cl option has an arg, the value of this arg defines the value of the respective
             // analysis option
-            option.value = cli[(option.id)]
+            option.value = cli[(option.name)]
         } else {
             //the cl option has no arg and thus it is a boolean flag, toggling the default value of
             // the respective analysis option

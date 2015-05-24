@@ -398,4 +398,9 @@ class Helper {
             throw new RuntimeException("Missing required properties: " + (noAnalysis ? "analysis" : "") +
                                        (noJar ? (noAnalysis ? ", " : "") + "jar" : ""))
     }
+
+
+    static boolean isMustPointTo(String name) {
+        return "must-point-to".equals(name)
+    }
 }
