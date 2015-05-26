@@ -523,6 +523,10 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
+#ifdef MERGE_STRING_BUFFERS
+  !Type:fqn(?heaptype:"java.lang.StringBuffer"),
+  !Type:fqn(?heaptype:"java.lang.StringBuilder"),
+#endif
   !ObjectAllocatedMultiply(?heap).
 
 AllocationsPerMethodAndType[?type, ?meth] = ?n <-
