@@ -409,12 +409,6 @@ class Doop {
             isAdvanced: true
         ),
         new AnalysisOption<Boolean>(
-            id:"SOLO",
-            value:false,
-            cli:true,
-            name: "solo-run"
-        ),
-        new AnalysisOption<Boolean>(
             id:"RUN_JPHANTOM",
             description: 'Run jphantom for non-existent referenced jars.',
             value:false,
@@ -494,12 +488,6 @@ class Doop {
 			isAdvanced:true
         ),
 		new AnalysisOption<Boolean>(
-            id:"COLOR",
-            value:false,
-            name:"color",
-			isAdvanced:true
-        ),
-		new AnalysisOption<Boolean>(
             id:"INTERACTIVE",
             value:false,
             name:"INTERACTIVE",
@@ -531,10 +519,8 @@ class Doop {
         "LD_LIBRARY_PATH",
         "BLOXBATCH",
         "BLOX_OPTS",
-        "SOLO",
         "OS",
         "INCREMENTAL",
-        "COLOR",
         "INTERACTIVE",
         "USE_JAVA_CPP"
     ]
