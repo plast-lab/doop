@@ -8,6 +8,25 @@ package doop.core
 class AnalysisOption<T>  {
 
     /**
+     * The copy constructor pattern.
+     */
+    static AnalysisOption<T> newInstance(AnalysisOption<T> option) {
+        return new AnalysisOption<>(
+            id             : option.id,
+            description    : option.description,
+            value          : option.value,
+            forPreprocessor: option.forPreprocessor,
+            flagType       : option.flagType,
+            webUI          : option.webUI,
+            name           : option.name,
+            cli            : option.cli,
+            argName        : option.argName,
+            isAdvanced     : option.isAdvanced,
+            isFile         : option.isFile
+        )
+    }
+
+    /**
      * The id of the option as used internally by the code (e.g. by the preprocessor, the web form, etc)
      */
     String id
