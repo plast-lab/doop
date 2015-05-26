@@ -1,8 +1,7 @@
 package doop.core
-
+import doop.input.InputResolutionContext
 import doop.preprocess.Preprocessor
-import doop.resolve.Dependency
-import doop.resolve.ResolvedDependency
+import groovy.transform.TypeChecked
 import groovy.ui.SystemOutputInterceptor
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -18,7 +17,7 @@ import org.apache.commons.logging.LogFactory
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
  */
-class Analysis implements Runnable {
+@TypeChecked class Analysis implements Runnable {
 
     protected Log logger = LogFactory.getLog(getClass())
 
@@ -43,9 +42,14 @@ class Analysis implements Runnable {
     Map<String, AnalysisOption> options
 
     /**
-     * The jar files/dependencies of the analysis
+     * The analysis input resolution mechanism
      */
-    List<Dependency> jars
+    InputResolutionContext ctx
+
+    /**
+     * The input jar files/dependencies of the analysis
+     */
+    List<File> jars
 
     /**
      * The environment for running external commands
@@ -69,12 +73,12 @@ class Analysis implements Runnable {
 
     Writer lbScript
 
-    protected Analysis(Map m) {
-        m.each { k, v -> this."$k" = v }
+    protected Analysis() {}
 
+    private void Init() {
         preprocessor.init()
 
-        new File(outDir, "meta").withWriter { Writer w -> w.write(this.toString()) }
+        new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
         //TODO: We don't need to calculate logic and input sums, do we?
         //TODO: We don't need to annotate db paths, do we?
         facts         = new File(outDir, "facts")
@@ -86,6 +90,8 @@ class Analysis implements Runnable {
 
     @Override
     void run() {
+        Init()
+
         String scriptPath = "${outDir}/run.lb"
         lbScript = new PrintWriter(new File(scriptPath))
 
@@ -113,7 +119,7 @@ class Analysis implements Runnable {
             bloxbatchPipe database, "-script $scriptPath"
         }
         bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
-        int dbSize = FileUtils.sizeOfDirectory(database) / 1024
+        int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
         bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
@@ -132,27 +138,25 @@ class Analysis implements Runnable {
     }
 
     void linkResult() {
-        String jre = options.JRE.value
+        def jre = options.JRE.value
         if (jre != "system") jre = "jre${jre}"
-        String jarName = FilenameUtils.getBaseName(jars[0].resolve().toString())
+        def jarName = FilenameUtils.getBaseName(jars[0].toString())
 
-        File humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
+        def humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
+		humanDatabase.mkdirs()
         logger.info "Making database available at $humanDatabase"
-        humanDatabase.mkdirs()
-        FileUtils.deleteQuietly(humanDatabase)
-        Helper.execCommand("ln -s $database $humanDatabase", commandsEnvironment)
+        Helper.execCommand("ln -s -f $database $humanDatabase", commandsEnvironment)
 
-        logger.info "Making database available at last-analysis"
-        File lastAnalysis = new File("${Doop.doopHome}/last-analysis")
-        FileUtils.deleteQuietly(lastAnalysis)
-        Helper.execCommand("ln -s $database $lastAnalysis", commandsEnvironment)
+        def lastAnalysis = "${Doop.doopHome}/results/last-analysis"
+        logger.info "Making database available at $lastAnalysis"
+        Helper.execCommand("ln -s -f $database $lastAnalysis", commandsEnvironment)
     }
 
     /**
      * @return A string representation of the analysis
      */
     String toString() {
-        return [id:id, name:name, outDir:outDir].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:name, outDir:outDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -214,7 +218,7 @@ class Analysis implements Runnable {
             FileUtils.touch(new File(facts, "Properties.facts"))
 
             if (options.TAMIFLEX.value) {
-                File origTamFile  = new File(options.TAMIFLEX.value)
+                File origTamFile  = new File(options.TAMIFLEX.value.toString())
                 File factsTamFile = new File(facts, "Tamiflex.facts")
 
                 factsTamFile.withWriter { w ->
@@ -303,17 +307,18 @@ class Analysis implements Runnable {
 
         if (options.DYNAMIC.value) {
             //TODO: Check arity of DYNAMIC file
-            List<String> dynFiles = options.DYNAMIC.value
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.eachWithIndex { String dynFile, Integer index ->
                 File f = new File(dynFile)
                 FilenameUtils
                 File dynImport = new File(outDir, "dynamic${index}.import")
-                Helper.writeToFile dynImport, 
-"""option,delimiter,"\t"
-option,hasColumnNames,false
+                Helper.writeToFile dynImport, """\
+                                              option,delimiter,"\t"
+                                              option,hasColumnNames,false
 
-fromFile,"${f.getCanonicalPath()}",a,inv,b,type
-toPredicate,Config:DynamicClass,type,inv"""
+                                              fromFile,"${f.getCanonicalPath()}",a,inv,b,type
+                                              toPredicate,Config:DynamicClass,type,inv
+                                              """.toString().stripIndent()
 
                 lbScript.println("import -f $dynImport")
             }
@@ -376,7 +381,7 @@ toPredicate,Config:DynamicClass,type,inv"""
             preprocessor.preprocess(this, addonsPath, "exception-flow/declarations.logic",
                                     "${outDir}/exception-flow.logic",
                                     "exception-flow/rules.logic")
-            lbScript.println("addBlock -F ${outdir}/exception-flow.logic")
+            lbScript.println("addBlock -F ${outDir}/exception-flow.logic")
 
             preprocessor.preprocess(this, addonsPath, "exception-flow/delta.logic",
                                     "${outDir}/exception-flow-delta.logic")
@@ -386,7 +391,7 @@ toPredicate,Config:DynamicClass,type,inv"""
         if (options.CLIENT_EXTENSIONS.value) {
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/declarations.logic",
                                     "${outDir}/client-extensions.logic")
-            lbScript.println("addBlock -F ${outdir}/client-extensions.logic")
+            lbScript.println("addBlock -F ${outDir}/client-extensions.logic")
 
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/delta.logic",
                                     "${outDir}/client-extensions-delta.logic")
@@ -467,7 +472,8 @@ toPredicate,Config:DynamicClass,type,inv"""
             bloxbatchPipe database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
         }
 
-        createDatabase()
+        generateFacts()
+        initDatabase()
         //TODO: We don't need to write-meta, do we?
         options.REFINE.value = true
         analyze()
@@ -476,38 +482,42 @@ toPredicate,Config:DynamicClass,type,inv"""
     protected void refine() {
 
         //The files and their contents
-        Map<String, GString> files = [
-                "refine-site": """option,delimiter,","
-option,hasColumnNames,false
-option,quotedValues,true
-option,escapeQuotedValues,true
+        Map<String, String> files = [
+                "refine-site": """\
+                               option,delimiter,","
+                               option,hasColumnNames,false
+                               option,quotedValues,true
+                               option,escapeQuotedValues,true
 
-fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
-toPredicate,SiteToRefine,CallGraphEdgeSource""",
+                               fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
+                               toPredicate,SiteToRefine,CallGraphEdgeSource""".toString().stripIndent(),
 
-                "negative-site": """option,delimiter,","
-option,hasColumnNames,false
+                "negative-site": """\
+                                 option,delimiter,","
+                                 option,hasColumnNames,false
 
-fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
-toPredicate,NegativeSiteFilter,string""",
+                                 fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
+                                 toPredicate,NegativeSiteFilter,string""".toString().stripIndent(),
 
-                "refine-object": """option,delimiter,","
-option,hasColumnNames,false
-option,quotedValues,true
-option,escapeQuotedValues,true
+                "refine-object": """\
+                                 option,delimiter,","
+                                 option,hasColumnNames,false
+                                 option,quotedValues,true
+                                 option,escapeQuotedValues,true
 
-fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
-toPredicate,ObjectToRefine,HeapAllocation""",
+                                 fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
+                                 toPredicate,ObjectToRefine,HeapAllocation""".toString().stripIndent(),
 
-                "negative-object": """option,delimiter,","
-option,hasColumnNames,false
+                "negative-object": """\
+                                   option,delimiter,","
+                                   option,hasColumnNames,false
 
-fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
-toPredicate,NegativeObjectFilter,string"""
+                                   fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
+                                   toPredicate,NegativeObjectFilter,string""".toString().stripIndent()
         ]
 
         logger.info "loading $name refinement facts "
-        files.each { Map.Entry<String, GString> entry ->
+        files.each { Map.Entry<String, String> entry ->
             File f = new File(outDir, "${name}-${entry.key}.import")
             Helper.writeToFile f, entry.value
             Helper.checkFileOrThrowException(f, "Could not create import file: $f")
@@ -560,7 +570,7 @@ toPredicate,NegativeObjectFilter,string"""
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = jars[0].resolve().toString()
+        String jar = jars[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -573,7 +583,7 @@ toPredicate,NegativeObjectFilter,string"""
 
         //set the jar of the analysis to the complemented one
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        jars[0] = new ResolvedDependency(f)
+        jars[0] = f
     }
     
     protected void runAverroes() {
@@ -586,15 +596,15 @@ toPredicate,NegativeObjectFilter,string"""
     }
 
     protected void runSoot() {
-        List<String> depArgs
+        Collection<String> depArgs
 
         if (options.AVERROES.value) {
             //change linked arg and injar accordingly
             jars[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
-            depArgs = ["-l", "$averroesDir/placeholderLibrary.jar"]
+            depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            List<String> deps = jars.drop(1).collect{ Dependency r -> ["-l", r.resolve()]}.flatten()
+            Collection<String> deps = jars.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             List<String> links = jreLinkArgs()
             if (links.isEmpty()) {
                 depArgs = ["-lsystem"] + deps 
@@ -605,7 +615,7 @@ toPredicate,NegativeObjectFilter,string"""
 
         }
 
-        String[] params = ["-full", "-keep-line-number"] + depArgs + ["-application-regex", options.APP_REGEX.value]
+        Collection<String> params = ["-full", "-keep-line-number"] + depArgs + ["-application-regex", options.APP_REGEX.value.toString()]
 
         if (options.SSA.value) {
             params = params + ["-ssa"]
@@ -624,10 +634,10 @@ toPredicate,NegativeObjectFilter,string"""
         }
 
         if (options.MAIN_CLASS.value) {
-            params = params + ["-main", options.MAIN_CLASS.value]
+            params = params + ["-main", options.MAIN_CLASS.value.toString()]
         }
 
-        params = params + ["-d", facts, jars[0].resolve()]
+        params = params + ["-d", facts.toString(), jars[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -640,7 +650,7 @@ toPredicate,NegativeObjectFilter,string"""
         }
         */
         sootTime = timing {
-            doop.soot.Main.main(params)
+            doop.soot.Main.main(params.toArray(new String[params.size()]))
         }
     }
 
@@ -680,8 +690,8 @@ toPredicate,NegativeObjectFilter,string"""
         //TODO: for now, we hard-code the jphantom jar
         String jphantom = "${Doop.doopHome}/lib/jphantom-1.1-jar-with-dependencies.jar"
         File f = Helper.checkFileOrThrowException(jphantom, "jphantom jar missing or invalid: $jphantom")
-        URL[] classpath = [f.toURI().toURL()]
-        return new URLClassLoader(classpath)
+        List<URL> classpath = [f.toURI().toURL()]
+        return new URLClassLoader(classpath as URL[])
     }
 
     /**
@@ -695,8 +705,8 @@ toPredicate,NegativeObjectFilter,string"""
         File f1 = Helper.checkFileOrThrowException(sootClasses, "soot classes jar missing or invalid: $sootClasses")
         File f2 = Helper.checkFileOrThrowException(sootFactGeneration, "soot fact generation jar missing or invalid: $sootFactGeneration")
 
-        URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
-        return new URLClassLoader(classpath)
+    List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+    return new URLClassLoader(classpath as URL[])
     }
 
     /**
@@ -709,16 +719,26 @@ toPredicate,NegativeObjectFilter,string"""
 
         switch(jre) {
             case "1.3":
-                return ["${path}/rt.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString()])
             case "1.4":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
             case "1.5":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
             case "1.6":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
             case "1.7":
-                return ["${path}/rt.jar", "${path}/jce.jar", "${path}/jsse.jar", "${path}/rhino.jar"]
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString(),
+                                          "${path}/rhino.jar".toString()])
             case "system":
+                //LATEST: don't include jars if jre is system
                 /*
                 String javaHome = System.getProperty("java.home")
                 return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
@@ -738,23 +758,23 @@ toPredicate,NegativeObjectFilter,string"""
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        List<String> libraryJars = jars.drop(1).collect { it.resolve().toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
         
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", jars[0].resolve() as String)
+        props.setProperty("input_jar_files", jars[0].toString() as String)
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
         if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
             File dynFileAll = new File(outDir, "all.dyn")
             dynFiles.each {String dynFile ->
                 dynFileAll.append new File(dynFile).text
             }
-            props.setProperty("dynamic_classes_file", dynFileAll as String)
+            props.setProperty("dynamic_classes_file", dynFileAll.toString())
         }
 
         props.setProperty("tamiflex_facts_file", options.TAMIFLEX.value as String)
@@ -768,8 +788,8 @@ toPredicate,NegativeObjectFilter,string"""
         File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
         File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
         
-        URL[] classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
-        return new URLClassLoader(classpath)
+        List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        return new URLClassLoader(classpath as URL[])
     }
     
     /**
@@ -817,7 +837,15 @@ toPredicate,NegativeObjectFilter,string"""
     }
 
     /**
+     * Invokes bloxbatch on the given database with the given params. Helper method for making the code more readable.
+     */
+    private void bloxbatch(File database, String params) {
+        bloxbatchPipe(database, params)
+    }
+
+    /**
      * Invokes bloxbatch on the given database with the given params, piping it up with supplied pipeCommands.
+     * Helper method for making the code more readable.
      */
     private void bloxbatchPipe(File database, String params, String... pipeCommands) {
         /**
@@ -829,7 +857,9 @@ toPredicate,NegativeObjectFilter,string"""
             Helper.execCommand("${options.BLOXBATCH.value} -version 2>&1 | awk 'BEGIN{flag=0} /BloxBatch/{flag=1} /Version/{if(flag){ printf \$2; flag=0 }}'", commandsEnvironment)
             interceptor.stop()
 
-            def (major, minor) = bloxbatchVersion.tokenize(".")
+            def tokens = bloxbatchVersion.tokenize(".")
+            def major = tokens[0]
+            def minor = tokens[1]
             /**
              * We don't want the first 4 lines from stderr. The rest output of stderr might
              * have interesting messages though (i.e. errors). Use |& which pipes stderr
@@ -858,8 +888,10 @@ toPredicate,NegativeObjectFilter,string"""
 
     /**
      * Helper method for making the code more readable
+     * @param c
      */
     private long timing(Closure c) {
         return Helper.execWithTiming(logger, c)
     }
+
 }

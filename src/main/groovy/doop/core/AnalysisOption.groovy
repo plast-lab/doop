@@ -26,11 +26,11 @@ class AnalysisOption<T>  {
      * Indicates whether the option affects the preprocessor
      */
     boolean forPreprocessor = false
-	
-	/**
-	 * The type of the preprocessor flag (ignored when forPreprocessor is false)
-	 */
-	PreprocessorFlag flagType = PreprocessorFlag.NORMAL_FLAG
+    
+    /**
+     * The type of the preprocessor flag (ignored when forPreprocessor is false)
+     */
+    PreprocessorFlag flagType = PreprocessorFlag.NORMAL_FLAG
 
     /**
      * Indicates whether the option can be specified by the user in the web UI
@@ -51,11 +51,11 @@ class AnalysisOption<T>  {
      * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).
      */
     String argName = null
-	
-	/**
-	 * Indicates whether the option is "advanced". Advanced options are treated differently by the UIs.
-	 */
-	boolean isAdvanced = false
+    
+    /**
+     * Indicates whether the option is "advanced". Advanced options are treated differently by the UIs.
+     */
+    boolean isAdvanced = false
 
     /**
      * Indicates whether the options is a file.

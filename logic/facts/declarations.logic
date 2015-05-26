@@ -231,6 +231,7 @@ lang:entity(`StringConstant).
 
 StringConstant(?x) -> HeapAllocation(?x).
 ClassConstant(?x)  -> HeapAllocation(?x).
+EmptyArray(?x) -> HeapAllocation(?x).
 
 // TODO: should we add the following?
 // NormalObject(?x) -> HeapAllocation(?x).

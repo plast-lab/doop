@@ -11,7 +11,7 @@
 #include "../library.logic"
 #include "../object-to-type.logic"
 
-ClassHasInstr(?class, ?instr) <- DeclaringClassMethod[?method] = ?class, Instruction:Method[?instr] = ?method.
+ClassHasInstr(?class, ?instr) <- DeclaringClass:Method[?method] = ?class, Instruction:Method[?instr] = ?method.
 ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
 
 // In this analysis, both the real context and the real heap context 

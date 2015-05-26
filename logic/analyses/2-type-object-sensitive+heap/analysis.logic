@@ -64,7 +64,7 @@ MyMergeBasis(?hctx, ?heap) <-
 // We create new context objects sparingly, because of the high cost.
 // We also cache them, so they can be looked up without a join.
 Context(?calleeCtx),
-ContextFromRealContext[DeclaringClassAllocation[RealHContextFromHContext[?hctx]], ?heap] = ?calleeCtx,
+ContextFromRealContext[DeclaringClass:Allocation[RealHContextFromHContext[?hctx]], ?heap] = ?calleeCtx,
 OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?heap).
 

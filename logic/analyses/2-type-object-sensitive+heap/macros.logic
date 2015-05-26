@@ -18,7 +18,7 @@
 // a new object.
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealHContextFromHContext[hctx]], heap] = calleeCtx
+  ContextFromRealContext[DeclaringClass:Allocation[RealHContextFromHContext[hctx]], heap] = calleeCtx
 
 /*
  * The above gives us an upper bound of the receiver allocator's allocator's dynamic type!
@@ -50,11 +50,11 @@
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealHContextFromHContext[hctx]], heap] = newCtx
+  ContextFromRealContext[DeclaringClass:Allocation[RealHContextFromHContext[hctx]], heap] = newCtx
 
 #define MergeStartupMacro(hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealHContextFromHContext[hctx]], heap] = calleeCtx
+  ContextFromRealContext[DeclaringClass:Allocation[RealHContextFromHContext[hctx]], heap] = calleeCtx
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -67,4 +67,4 @@
 // hctx) is a hint for avoiding this problem.
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealContext2FromContext[callerCtx]], heap] = newCtx
+  ContextFromRealContext[DeclaringClass:Allocation[RealContext2FromContext[callerCtx]], heap] = newCtx

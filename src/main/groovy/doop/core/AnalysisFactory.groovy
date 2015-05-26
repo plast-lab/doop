@@ -1,52 +1,56 @@
 package doop.core
-import java.util.jar.JarFile
-import java.util.jar.Attributes
+
+import doop.input.DefaultInputResolutionContext
+import doop.input.InputResolutionContext
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
-import doop.resolve.Dependency
-import doop.resolve.ExistingFileDependency
-import doop.resolve.StringDependency
+import groovy.transform.TypeChecked
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+
+import java.util.jar.Attributes
+import java.util.jar.JarFile
+
 /**
  * A Factory for creating Analysis objects.
  *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 31/8/2014
  */
-class AnalysisFactory {
+@TypeChecked class AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, jars and options
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * the supplied input resolution mechanism.
      */
-    Analysis newAnalysis(String name, List<String> jars, Map<String, AnalysisOption> options) {
+    Analysis newAnalysis(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         //Verify that the name of the analysis is valid
         checkName(name)
 
+        /*
+        We don't generate the id and the outDir beforehand anymore
         //Generate the id
-        String id = generateID(name, jars, options)
+        String id = generateID(name, context.inputs(), options)
 
         //Create the outDir if required
-        String outDir = "${Doop.doopHome}/out/$name/${id}"
-        File f = new File(outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+        File outDir = createOuputDirectory(name, id)
+        */
 
+        //Create an partially initialized instance and "enrich" it as we go
         Analysis analysis = new Analysis(
             name         : name,
-            id           : id,
-            outDir       : outDir,
             preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
-            options      : options
+            options      : options,
+            ctx          : context
         )
 
-        //Resolve the jar dependencies
-        checkJars(analysis, jars)
-        
+        //Resolve the analysis inputs
+        checkInputs(analysis, context)
+
         //process the options
         processOptions(analysis)
 
@@ -60,16 +64,36 @@ class AnalysisFactory {
 
         //TODO: Check if input is given (incremental). Is it needed?
         checkDACAPO(analysis)
-            
+
         checkAppGlob(analysis)
-            
+
         //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
-            
+
         //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
-            
+
         //TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
 
+        /*
+        Generate id and outDir as the last analysis initialization actions
+        */
+        //Generate the id
+        analysis.id = generateIDAlt(name, context.inputs(), options)
+
+        //Create the outDir if required
+        File outDir = createOuputDirectory(name, analysis.id)
+        analysis.outDir = outDir.toString()
+
         return analysis
+    }
+
+    /**
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * the default input resolution mechanism.
+     */
+    Analysis newAnalysis(String name, Map<String, AnalysisOption> options, List<String> jars) {
+        DefaultInputResolutionContext context = new DefaultInputResolutionContext()
+        context.add(jars)
+        return newAnalysis(name, options, context)
     }
 
     /**
@@ -81,73 +105,63 @@ class AnalysisFactory {
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 
+    @Deprecated
     /**
-     * Generates the analysis ID, using its name, main class and jars.
+     * Generates the analysis ID, using its name, main class and inputs.
      *
-     * NOTE: With the jar dependency feature, the APP_REGEX is not being used (because it depends on the resolution
-     * of the jars, which depend on the ID).
+     * NOTE: With the input resolution feature, the APP_REGEX is not being used (because it depends on the resolution
+     * of the inputs, which depend on the ID).
      * @param analysis
      */
-    protected String generateID(String name, List<String> jars, Map<String, AnalysisOption> options) {
+    protected String generateID(String name, Collection<String> inputs, Map<String, AnalysisOption> options) {
         logger.debug "Generating analysis ID"
 
-        def idComponents = [name, options.MAIN_CLASS.value] + jars
+        def idComponents = [name, options.MAIN_CLASS.value.toString()] + inputs
         String id = idComponents.collect { it.toString() }.join('-')
-
 
         //Generate a sha256 cheksum of the id components
         return Helper.checksum(id, "SHA-256")
     }
 
     /**
-     * Given the list of jars, as Strings or Dependency objects, the method validates that the jars exist,
-     * using the jar resolution mechanism. It finally adds the jars as a List<Dependency> in the analysis.
-     * The method detects if a String refers to a directory path and, if so, it adds all the *.jar files
-     * included therein.
+     * Generates the analysis ID using all of its components (name, inputs and options).
      */
-    protected void checkJars(Analysis analysis, List jars) {
-        logger.debug "Verifying analysis input jars: $jars"
-        if (!jars) throw new RuntimeException("No jars provided for the analysis")
-        analysis.jars = jars.collect { Object jar ->
-            if (jar) {
-                if (jar instanceof String) {
-                    try {
-                        File f = Helper.checkDirectoryOrThrowException(jar, null)
-                        logger.debug("Resolving jars in directory $f")
+    protected String generateIDAlt(String name, Collection<String> inputs, Map<String, AnalysisOption> options) {
+        Collection<String> optionsForId = options.keySet().findAll {
+            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
+        }.collect {String option ->
+            return options.get(option).toString()
+        }
+        Collection<String> idComponents = [name] + inputs + optionsForId
+        logger.debug("ID components: $idComponents")
+        String id = idComponents.join('-')
 
-                        def filter = Helper.extensionFilter("jar")
-
-                        def filesInDir = []
-                        f.listFiles(filter).each { File file ->
-                            filesInDir.push new ExistingFileDependency(file)
-                        }
-
-                        def files = filesInDir.sort{ it.toString() }
-                        logger.debug("Resolved ${files.size()} jars in directory $f: $files")
-                        return files
-                    }
-                    catch(e) {
-                        StringDependency jarDep = new StringDependency(jar, analysis)
-                        logger.debug "Resolving $jar"
-                        jarDep.resolve()
-                        return jarDep
-                    }
-                }
-                else if (jar instanceof Dependency) {
-                    logger.debug "Resolving $jar"
-                    jar.resolve()
-                    return jar
-                }
-                else {
-                    throw new RuntimeException("Cannot resolve jar dependency ${jar.getClass()}: $jar")
-                }
-            }
-            else {
-                throw new RuntimeException("Null value in analysis jars")
-            }
-        }.flatten()
+        return Helper.checksum(id, "SHA-256")
     }
-    
+
+    /**
+     * Creates the analysis output dir, if required.
+     */
+    protected File createOuputDirectory(String name, String id) {
+        String outDir = "${Doop.doopHome}/out/$name/${id}"
+        File f = new File(outDir)
+        f.mkdirs()
+        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+        return f
+    }
+
+    /**
+     * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
+     * using the input resolution mechanism. It finally adds the inputs as a Set<File> in the analysis.
+     */
+    protected void checkInputs(Analysis analysis, InputResolutionContext context) {
+        Collection<String> inputs = context.inputs()
+        logger.debug "Verifying analysis inputs: $inputs"
+        if (!inputs) throw new RuntimeException("No inputs provided for the analysis")
+        context.resolve()
+        analysis.jars = context.getAll()
+    }
+
     /**
      * Processes the options of the analysis.
      */
@@ -340,7 +354,7 @@ class AnalysisFactory {
 
         if(options.MAY_PRE_ANALYSIS.value) {
             if(!analysis.isMustPointTo())
-                throw new RuntimeException("Option: " + option.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
+                throw new RuntimeException("Option: " + options.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
 
             options.MUST_AFTER_MAY.value = true
             logger.debug "The MUST_AFTER_MAY flag has been enabled"
@@ -359,7 +373,7 @@ class AnalysisFactory {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         }
         else {
-            JarFile jarFile = new JarFile(analysis.jars[0].resolve())
+            JarFile jarFile = new JarFile(analysis.jars[0])
             //Try to read the main class from the manifest contained in the jar            
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
@@ -381,7 +395,7 @@ class AnalysisFactory {
         }
 
         if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
                 Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
@@ -389,13 +403,13 @@ class AnalysisFactory {
         }
         
         if (options.TAMIFLEX.value) {
-            String tamFile = options.TAMIFLEX.value
+            String tamFile = options.TAMIFLEX.value.toString()
             Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
             logger.debug "The TAMIFLEX option has been set to ${tamFile}"
         }
         
         if (options.CLIENT_CODE.value) {
-            String clFile = options.CLIENT_CODE.value
+            String clFile = options.CLIENT_CODE.value.toString()
             Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
             options.CLIENT_EXTENSIONS.value = true
             logger.debug "The CLIENT_CODE option has been set to ${clFile}"
@@ -499,7 +513,7 @@ class AnalysisFactory {
     */
     protected void checkDACAPO(Analysis analysis) {
         if (analysis.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             //We don't hard-code the dependencies, we just set the appropriate flags
             analysis.options.DACAPO_BENCHMARK.value = benchmark
@@ -507,7 +521,7 @@ class AnalysisFactory {
         }
         
         if (analysis.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].toString())
             logger.info "Running dacapo-2009 benchmark: $benchmark"
             //We don't hard-code the dependencies, we just set the appropriate flags
             analysis.options.DACAPO_2009.value = true
@@ -533,7 +547,7 @@ class AnalysisFactory {
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
             */
-            Set<String> packages = Helper.getPackages(analysis.jars[0].resolve())
+            Set<String> packages = Helper.getPackages(analysis.jars[0])
             analysis.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
@@ -550,7 +564,7 @@ class AnalysisFactory {
 
         logger.debug "Verifying LogicBlox home: $lbHomePath"
 
-        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
         analysis.options.LD_LIBRARY_PATH.value = lbHomeJavaFile.getAbsolutePath() + "/bin"
         String bloxbatch = lbHomeJavaFile.getAbsolutePath() + "/bin/bloxbatch"

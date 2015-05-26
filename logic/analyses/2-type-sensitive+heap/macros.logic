@@ -20,7 +20,7 @@
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], \
-                         DeclaringClassAllocation[heap]] = calleeCtx
+                         DeclaringClass:Allocation[heap]] = calleeCtx
 
 #define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
   MergeBasis(callerCtx, invocation, hctx, heap)
@@ -41,17 +41,17 @@
 #define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], \
-                         DeclaringClassAllocation[heap]] = newCtx
+                         DeclaringClass:Allocation[heap]] = newCtx
 
 #define MergeStartupMacro(hctx, heap, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], \
-                         DeclaringClassAllocation[heap]] = calleeCtx
+                         DeclaringClass:Allocation[heap]] = calleeCtx
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[RealContext2FromContext[callerCtx], \
-                         DeclaringClassAllocation[heap]] = newCtx
+                         DeclaringClass:Allocation[heap]] = newCtx
 
 
 //// ---- Leftovers from experiment below ----
@@ -63,7 +63,7 @@
 //#define ReflectiveMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
 //  Context(calleeCtx), \
 //  ReflectiveContextFromRealContext[RealHContextFromHContext[hctx], \
-//                         DeclaringClassAllocation[heap]] = calleeCtx
+//                         DeclaringClass:Allocation[heap]] = calleeCtx
 //#define ReflectiveMergeStaticMacro(callerCtx, invocation, calleeCtx) \
 //  Context(calleeCtx), \
 //  ReflectiveContextFromRealContext[RealContext1FromContext[callerCtx], \

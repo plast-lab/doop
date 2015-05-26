@@ -16,7 +16,7 @@
 // a new object.
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[heap]] = calleeCtx
+  ContextFromRealContext[DeclaringClass:Allocation[heap]] = calleeCtx
 
 // For this analysis, static calls just keep the same context as the
 // caller. *Not* creating a new one, but pretending to, nonetheless,
@@ -29,12 +29,12 @@
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[heap]] = newCtx
+  ContextFromRealContext[DeclaringClass:Allocation[heap]] = newCtx
 
 #define MergeStartupMacro(hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[heap]] = calleeCtx
+  ContextFromRealContext[DeclaringClass:Allocation[heap]] = calleeCtx
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[heap]] = newCtx
+  ContextFromRealContext[DeclaringClass:Allocation[heap]] = newCtx

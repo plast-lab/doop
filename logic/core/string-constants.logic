@@ -111,8 +111,8 @@ HeapAllocation:Merge[?heap] = ?constant <-
 // field names, but not class names.
 HeapAllocation:Merge[?heap] = ?constant <-
 //  ReflectionObject(?heap),
-  (MethodNameStringConstantInexact:Signature(_,?heap);
-   FieldNameStringConstantInexact:Signature(_,?heap)),
+  (MethodNameStringConstant(?heap);
+   FieldNameStringConstant(?heap)),
   !ClassNameStringConstant(?heap),
   HeapAllocationValue(?constant, "<<reflection-string-constant>>").
 
@@ -487,6 +487,62 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocationValue(?mergeHeap, "<<string-builder>>").
 #endif
 
+
+/*************************************************************
+ * Special handling for all sorts of arbitrary objects. If the
+ * object has a representative, it is merged into it.
+ *************************************************************/
+
+HeapAllocation:Merge[?heap] = ?mergeHeap <-
+  HeapRepresentative[?heap] = ?mergeHeap.
+
+
+/*************************************************************
+ * Heuristic: merge allocation sites for method that allocates
+ * many objects of same type. Doesn't apply to exceptions.
+ *************************************************************/
+
+AllocationMergeThreshold[] = 50.
+
+ExceptionType(?heaptype) <-
+  Type:fqn(?throw:"java.lang.Throwable"),
+  AssignCompatible(?throw, ?heaptype).
+
+OptAssignHeapAllocation(?inmethod, ?heap) <-
+  AssignHeapAllocation(?heap, _, ?inmethod).
+
+// There are objects, like strings, null, and class objects, that
+// don't have a unique allocation site.
+ObjectAllocatedMultiply(?heap) <-
+  OptAssignHeapAllocation(?inmethod1, ?heap),
+  OptAssignHeapAllocation(?inmethod2, ?heap),
+  ?inmethod1 != ?inmethod2.
+   
+MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
+  AssignHeapAllocation(?heap, _, ?meth),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  !ExceptionType(?heaptype),
+  !StringConstant(?heap),
+  !ObjectAllocatedMultiply(?heap).
+
+AllocationsPerMethodAndType[?type, ?meth] = ?n <-
+  agg<<?n=count()>> MethodAndTypeToHeap(_, ?type, ?meth).
+
+AllocationShouldBeMerged(?heaptype, ?meth) <-
+  AllocationsPerMethodAndType[?heaptype, ?meth] > AllocationMergeThreshold[].
+
+TypeToMergedHeap(?heap, ?heaptype, ?meth) <-
+  AllocationShouldBeMerged(?heaptype, ?meth),
+  MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
+
+MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?heap)>>(TypeToMergedHeap(?heap, ?type, ?meth)).
+  
+HeapRepresentative[?heap] = ?representativeHeap <-
+  MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
+  TypeToMergedHeap(?heap, ?type, ?meth).
+
+
 /*************************************************************
  * Throwable
  *************************************************************/
@@ -500,9 +556,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
 HeapAllocation:ContextInsensitive(?heap) <-
-  HeapAllocation:Type[?heap] = ?heaptype,
-  Type:fqn(?throw:"java.lang.Throwable"),
-  AssignCompatible(?throw, ?heaptype).
+  ExceptionType(HeapAllocation:Type[?heap]).
 #else
 
 // The optimized treatment represents every exception (i.e., throwable)
@@ -519,15 +573,14 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 TypeToHeap(?heap, ?heaptype) <-
   HeapAllocation:Type[?heap] = ?heaptype,
-  Type:fqn(?throw:"java.lang.Throwable"),
-  AssignCompatible(?throw, ?heaptype).
+  ExceptionType(?heaptype).
 
 // Quadratic but so local that it shouldn't matter, ever.
-HeapRepresentative[?heap] = ?representativeHeap <-
+ExceptionHeapRepresentative[?heap] = ?representativeHeap <-
   agg<<?representativeHeap = min(?otherHeap)>>(TypeToHeap(?otherHeap, HeapAllocation:Type[?heap])).
 
-HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  HeapRepresentative[?heap] = ?mergeHeap.
+HeapRepresentative[?heap] = ?representativeHeap <-
+  ExceptionHeapRepresentative[?heap] = ?representativeHeap.
 
 #endif // SEPARATE_EXCEPTION_OBJECTS
 /*

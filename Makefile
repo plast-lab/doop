@@ -1,7 +1,7 @@
 # Currently either DaCapo2006 or DaCapoBach
 suite      = DaCapoBach
 commonArgs = --jre 1.6 -t 90
-analyses   = context-insensitive 2-type-sensitive+heap
+analyses   = context-insensitive 1-call-site-sensitive 1-object-sensitive+heap 2-type-sensitive+heap
 outDir     = .
 prefix     = 
 
@@ -15,7 +15,8 @@ fail:
 DOOP            = ./doop
 
 DaCapo2006_args = --dacapo
-DaCapo2006_jars = antlr bloat chart eclipse fop hsqldb jython luindex lusearch pmd xalan
+DaCapo2006_jars = antlr bloat lusearch pmd xalan
+#DaCapo2006_jars = antlr bloat chart eclipse fop hsqldb jython luindex lusearch pmd xalan
 DaCapo2006_jar  = ../benchmarks/dacapo-2006/$(1).jar
 DaCapo2006_libs = ../benchmarks/dacapo-2006/$(1)-deps.jar
 

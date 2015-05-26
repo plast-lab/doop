@@ -11,7 +11,7 @@
 #include "../library.logic"
 #include "../object-to-type.logic"
 
-ClassHasInstr(?class, ?instr) <- DeclaringClassMethod[?method] = ?class, Instruction:Method[?instr] = ?method.
+ClassHasInstr(?class, ?instr) <- DeclaringClass:Method[?method] = ?class, Instruction:Method[?instr] = ?method.
 ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
 
 // In this analysis, the real context is a pair of Types
@@ -85,7 +85,7 @@ MyMergeBasis(?hctx, ?heap) <-
 // We create new context objects sparingly, because of the high cost.
 // We also cache them, so they can be looked up without a join.
 Context(?calleeCtx),
-ContextFromRealContext[RealHContextFromHContext[?hctx], ClassToInstr[DeclaringClassAllocation[?heap]]] = ?calleeCtx,
+ContextFromRealContext[RealHContextFromHContext[?hctx], ClassToInstr[DeclaringClass:Allocation[?heap]]] = ?calleeCtx,
 OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?heap).
 

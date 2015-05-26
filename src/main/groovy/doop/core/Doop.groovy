@@ -375,7 +375,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"CACHE",
-            description:"The analysis will use the cached input relations, if such exist.",
+            description:"The analysis will use the cached facts, if they exist.",
             value:false,
             cli:true,
             webUI:true,
@@ -417,7 +417,7 @@ class Doop {
             value:false,
             webUI:true,
             cli:true,
-            name: "run-phantom"
+            name: "run-jphantom"
         ),
         new AnalysisOption<Boolean>(
             id:"AVERROES",
@@ -523,10 +523,24 @@ class Doop {
         )
     ]
 
+    static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
+        "LOGICBLOX_HOME",
+        "LD_LIBRARY_PATH",
+        "BLOXBATCH",
+        "BLOX_OPTS",
+        "SOLO",
+        "OS",
+        "INCREMENTAL",
+        "COLOR",
+        "INTERACTIVE",
+        "USE_JAVA_CPP"
+    ]
+
     //Not the best pattern, but limits the source code size :)
     static String doopHome
     static String doopLogic
     static String doopOut
+    static String doopInputCache
 
     /**
      * Initializes Doop.
@@ -551,7 +565,7 @@ class Doop {
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(doopOut, "Could not create ouput directory: $doopOut ")
+        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut ")
     }
 
     /**

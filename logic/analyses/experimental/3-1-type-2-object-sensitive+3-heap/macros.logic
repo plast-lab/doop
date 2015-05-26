@@ -18,7 +18,7 @@
 // a new object.
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealHContext2FromHContext[hctx]], \
+  ContextFromRealContext[DeclaringClass:Allocation[RealHContext2FromHContext[hctx]], \
                          RealHContext3FromHContext[hctx], \
                          heap] = calleeCtx
 /*
@@ -48,13 +48,13 @@
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealHContext2FromHContext[hctx]], \
+  ContextFromRealContext[DeclaringClass:Allocation[RealHContext2FromHContext[hctx]], \
                          RealHContext3FromHContext[hctx], \
                          heap] = newCtx
 
 #define MergeStartupMacro(hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealHContext2FromHContext[hctx]], \
+  ContextFromRealContext[DeclaringClass:Allocation[RealHContext2FromHContext[hctx]], \
                          RealHContext3FromHContext[hctx], \
                          heap] = calleeCtx
 
@@ -69,6 +69,6 @@
 // hctx) is a hint for avoiding this problem.
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[DeclaringClassAllocation[RealContext2FromContext[callerCtx]], \
+  ContextFromRealContext[DeclaringClass:Allocation[RealContext2FromContext[callerCtx]], \
                          RealContext3FromContext[callerCtx], \
                          heap] = newCtx
