@@ -61,7 +61,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                 }
             }
         }
-        return newAnalysis(name, jars, options)
+        return newAnalysis(name, options, jars)
     }
 
     /**
@@ -79,7 +79,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         Doop.overrideAnalysisOptionsFromProperties(options, props)
 
-        return newAnalysis(name, jars, options)
+        return newAnalysis(name, options, jars)
     }
 
     /**
@@ -121,39 +121,41 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         f.withWriter { Writer w ->
 
-            w.write """#
-#This is the skeleton of a doop properties file.
-#Notes:
-#- all file paths, if not absolute, should be given relative to the directory that
-#  doop is invoked from (and not relative to the directory this file is located).
-#- all booleans are processed using the java.lang.Boolean.parseBoolean() conventions.
-#- all empty properties are ignored.
-#
+            w.write """\
+                    #
+                    #This is the skeleton of a doop properties file.
+                    #Notes:
+                    #- all file paths, if not absolute, should be given relative to the directory that
+                    #  doop is invoked from (and not relative to the directory this file is located).
+                    #- all booleans are processed using the java.lang.Boolean.parseBoolean() conventions.
+                    #- all empty properties are ignored.
+                    #
 
-#
-#analysis (string)
-#$ANALYSIS
-#
-analysis =
+                    #
+                    #analysis (string)
+                    #$ANALYSIS
+                    #
+                    analysis =
 
-#
-#jar (file)
-#$JAR
-#
-jar =
+                    #
+                    #jar (file)
+                    #$JAR
+                    #
+                    jar =
 
-#
-#level (string)
-#$LOGLEVEL
-#
-level =
+                    #
+                    #level (string)
+                    #$LOGLEVEL
+                    #
+                    level =
 
-#timeout (number)
-#$TIMEOUT
-#
-timeout =
+                    #
+                    #timeout (number)
+                    #$TIMEOUT
+                    #
+                    timeout =
 
-"""
+                    """.stripIndent()
 
             //Find all cli options and sort them by id
             List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
@@ -164,7 +166,7 @@ timeout =
 
             //Put the "main" options first
             cliOptions = cliOptions.findAll { AnalysisOption option -> !option.isAdvanced } +
-                    cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
+                         cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
 
             cliOptions.each { AnalysisOption option ->
                 writeAsProperty(option, w)

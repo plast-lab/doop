@@ -79,7 +79,7 @@ MyMergeBasis(?hctx, ?heap) <-
 Context(?calleeCtx),
 ContextFromRealContext[RealHContext2FromHContext[?hctx],
                        RealHContext3FromHContext[?hctx],
-                       DeclaringClassAllocation[?heap]] = ?calleeCtx,
+                       DeclaringClass:Allocation[?heap]] = ?calleeCtx,
 OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?heap).
 

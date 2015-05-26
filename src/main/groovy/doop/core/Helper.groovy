@@ -121,16 +121,33 @@ class Helper {
     }
 
     /**
+     * Checks that the given list of files exist.
+     */
+    static List<String> checkFiles(List<String> files) {
+        files.each { String file ->
+            checkFileOrThrowException(file, "File is invalid: $file")
+        }
+        return files
+    }
+
+    /**
      * Checks that the given dir exists or throws the given message
      */
     static File checkDirectoryOrThrowException(String dir, String message) {
         if (!dir) throw new RuntimeException(message)
+        return checkDirectoryOrThrowException(new File(dir), message)
+    }
 
-        File f = new File(dir)
-        if (!f.exists() || !f.isDirectory()) {
+    /**
+     * Checks that the given dir exists or throws the given message
+     */
+    static File checkDirectoryOrThrowException(File dir, String message) {
+        if (!dir) throw new RuntimeException(message)
+
+        if (!dir.exists() || !dir.isDirectory()) {
             throw new RuntimeException(message)
         }
-        return f
+        return dir
     }
 
     /**
@@ -247,16 +264,43 @@ class Helper {
 	 */
 	static String checksum(String s, String algorithm) {
 		MessageDigest digest = MessageDigest.getInstance(algorithm)
-		byte[] bytes = digest.digest(s.getBytes("UTF-8"))
-		BigInteger number = new BigInteger(1, bytes)
-		String checksum = number.toString(16)
-		int len = checksum.length()
-		while (len < 32) {
-			checksum = "0" + checksum
-		}
-		return checksum
+        return toHex(digest.digest(s.getBytes("UTF-8")))
 	}
 
+    /**
+     * Generates a checksum of the input file (in hex) using the supplied algorithm.
+     */
+    static String checksum(File f, String algorithm) {
+        return f.withInputStream { InputStream input ->
+            return checksum(input, algorithm)
+        }
+    }
+
+    /**
+     * Generates a checksum of the input stream (in hex) using the supplied algorithm.
+     */
+    static String checksum(InputStream input, String algorithm) {
+        MessageDigest digest = MessageDigest.getInstance(algorithm)
+        byte[] bytes = new byte[4096]
+        int bytesRead
+        while ((bytesRead = input.read(bytes)) != -1) {
+            digest.update(bytes, 0, bytesRead)
+        }
+        return toHex(digest.digest())
+    }
+
+    /**
+     * Returns the hex string of the input bytes.
+     */
+    private static String toHex(byte[] bytes) {
+        BigInteger number = new BigInteger(1, bytes)
+        String checksum = number.toString(16)
+        int len = checksum.length()
+        while (len < 32) {
+            checksum = "0" + checksum
+        }
+        return checksum
+    }
 
     /**
      *  Moves the contents of the src directory to dest (as in: mv src/* dest).

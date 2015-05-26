@@ -77,7 +77,7 @@ MyMergeBasis(?hctx, ?heap) <-
 // We also cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[RealHContext1FromHContext[?hctx],
-                       DeclaringClassAllocation[RealHContext2FromHContext[?hctx]],
+                       DeclaringClass:Allocation[RealHContext2FromHContext[?hctx]],
                        ?heap] = ?calleeCtx,
 OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?heap).

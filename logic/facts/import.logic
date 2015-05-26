@@ -68,6 +68,17 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
 +AssignInstruction:To[?x] = ?to <-
    _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method).
 
+// EmptyArray
+lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".
+lang:physical:filePath[`_EmptyArray] = "facts/EmptyArray.facts".
+lang:physical:delimiter[`_EmptyArray] = "\t".
+lang:physical:hasColumnNames[`_EmptyArray] = false.
+
+_EmptyArray(?heap) ->
+   string(?heap).
+
++EmptyArray(?heap) <-
+   _EmptyArray(?heap).
 
 // AssignMultiArrayAllocation
 
@@ -263,19 +274,19 @@ _ExitMonitor(?ref, ?index, ?var, ?method) ->
 
 // Method invocation line numbers
 
-lang:physical:storageModel[`_MethodInvocation:LineNumber] = "DelimitedFile".
-lang:physical:filePath[`_MethodInvocation:LineNumber] = "facts/MethodInvocation-LineNumber.facts".
-lang:physical:delimiter[`_MethodInvocation:LineNumber] = "\t".
-lang:physical:hasColumnNames[`_MethodInvocation:LineNumber] = false.
-
-_MethodInvocation:LineNumber(?ref, ?lineNumber) ->
-   string(?ref),
-   int[64](?lineNumber).
-
-+MethodInvocation(?x),
-+Instruction:Value(?x:?instruction),
-+MethodInvocation:LineNumber[?x] = ?lineNumber <-
-   _MethodInvocation:LineNumber(?instruction, ?lineNumber).
+//lang:physical:storageModel[`_MethodInvocation:LineNumber] = "DelimitedFile".
+//lang:physical:filePath[`_MethodInvocation:LineNumber] = "facts/MethodInvocation-LineNumber.facts".
+//lang:physical:delimiter[`_MethodInvocation:LineNumber] = "\t".
+//lang:physical:hasColumnNames[`_MethodInvocation:LineNumber] = false.
+//
+//_MethodInvocation:LineNumber(?ref, ?lineNumber) ->
+//   string(?ref),
+//   int[64](?lineNumber).
+//
+//+MethodInvocation(?x),
+//+Instruction:Value(?x:?instruction),
+//+MethodInvocation:LineNumber[?x] = ?lineNumber <-
+//   _MethodInvocation:LineNumber(?instruction, ?lineNumber).
 
 
 // Static method invocation
