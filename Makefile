@@ -15,8 +15,7 @@ fail:
 DOOP            = ./doop
 
 DaCapo2006_args = --dacapo
-DaCapo2006_jars = antlr bloat lusearch pmd xalan
-#DaCapo2006_jars = antlr bloat chart eclipse fop hsqldb jython luindex lusearch pmd xalan
+DaCapo2006_jars = antlr bloat chart eclipse fop hsqldb jython luindex lusearch pmd xalan
 DaCapo2006_jar  = ../benchmarks/dacapo-2006/$(1).jar
 DaCapo2006_libs = ../benchmarks/dacapo-2006/$(1)-deps.jar
 
@@ -39,4 +38,4 @@ $(foreach analysis, $(analyses),\
 		$(eval $(call benchmarkRun,$(analysis),$(benchmark),$(commonArgs),$(suite)))))
 
 clean:
-	rm -rf logs/* out/* results/* last-analysis
+	rm -rf logs/* out/* results/*
