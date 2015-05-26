@@ -1,4 +1,9 @@
 package doop.input
+
+import org.apache.commons.logging.Log
+import org.apache.commons.logging.LogFactory
+import org.apache.log4j.Logger
+
 /**
  * The default implementation of the input resolution mechanism.
  *
@@ -7,23 +12,32 @@ package doop.input
  */
 class DefaultInputResolutionContext implements InputResolutionContext {
 
-    //the directory to place resolved files
-    File directory
+    protected Log logger = LogFactory.getLog(getClass())
 
-    //Always true, but this may change in the future
-    boolean transitive = true
-
-    //The set of resolved inputs
-    private final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
-
-    //the input resolver
-    private final ChainResolver resolver = new ChainResolver(
+    static final ChainResolver DEFAULT_RESOLVER = new ChainResolver(
         //the order matters
         new FileResolver(),
         new DirectoryResolver(),
         new URLResolver(),
         IvyResolver.newInstance()
     )
+
+    //Always true, but this may change in the future
+    boolean transitive = true
+
+    //The set of resolved inputs
+    protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
+
+    //the input resolver
+    protected final ChainResolver resolver
+
+    DefaultInputResolutionContext() {
+        this(DEFAULT_RESOLVER)
+    }
+
+    DefaultInputResolutionContext(ChainResolver resolver) {
+        this.resolver = resolver
+    }
 
     @Override
     void add(String input) {
@@ -70,8 +84,10 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     List<File> getAll() {
         Set<File> allFiles = new LinkedHashSet<>()
         for (String input: inputs()) {
+            logger.debug "Getting $input"
             ResolvedInput resolvedInput = resolvedInputs.get(input)
             if (resolvedInput) {
+                logger.debug "The $input is resolved -> ${resolvedInput.files()}"
                 allFiles.addAll(resolvedInput.files())
             }
             else {

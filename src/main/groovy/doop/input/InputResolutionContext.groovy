@@ -51,6 +51,7 @@ interface InputResolutionContext {
 
     /**
      * Resolves the inputs to their corresponding files.
+     * If an input is unresolved --it has not file(s)-- an exception is thrown.
      */
     void resolve()
 

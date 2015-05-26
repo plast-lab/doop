@@ -654,33 +654,8 @@ import org.apache.commons.logging.LogFactory
         }
     }
 
-
-    /**
-     * Sets all exception options/flags to false. The exception options are determined by their flagType.
-     */
-    protected void disableAllExceptionOptions() {
-        logger.debug "Disabling all exception preprocessor flags"
-        options.values().each { AnalysisOption option ->
-            if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
-                option.value = false
-            }
-        }
-    }
-    
-    /**
-     * Sets all constant options/flags to false. The constant options are determined by their flagType.
-     */
-    protected void disableAllConstantOptions() {
-        logger.debug "Disabling all constant preprocessor flags"
-        options.values().each { AnalysisOption option ->
-            if (option.forPreprocessor && option.flagType == PreprocessorFlag.CONSTANT_FLAG) {
-                option.value = false
-            }
-        }
-    }
-
     protected boolean isMustPointTo() {
-        return name.equals("must-point-to")
+        return Helper.isMustPointTo(name)
     }
 
     /**
