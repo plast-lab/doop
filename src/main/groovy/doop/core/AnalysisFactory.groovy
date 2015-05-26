@@ -81,8 +81,6 @@ import java.util.jar.JarFile
         //init the environment used for executing commands
         Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
 
-        //TODO: The COLOR option is not supported
-
         //TODO: Create empty jar. Is it needed?
 
         //TODO: Check if input is given (incremental). Is it needed?
@@ -93,8 +91,6 @@ import java.util.jar.JarFile
         //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
 
         //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
-
-        //TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
 
         /*
         Generate id and outDir as the last analysis initialization actions
@@ -348,14 +344,6 @@ import java.util.jar.JarFile
             logger.debug "The MEMLOG option has been enabled"
         }
 
-        if (options.SOLO.value) {
-            logger.debug "The SOLO option has been enabled"
-        }
-        
-        if (options.COLOR.value) {
-            logger.debug "The COLOR option has been enabled"
-        }
-        
         if (options.INTERACTIVE.value) {
             logger.debug "The INTERACTIVE option has been enabled"
         }
