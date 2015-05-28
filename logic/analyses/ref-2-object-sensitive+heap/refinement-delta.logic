@@ -1,0 +1,538 @@
+#include "macros.logic"
+
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerMethodPerVar(?heap, ?var, ?method) ->
+  Var(?var), HeapAllocation(?heap), MethodSignature(?method).
++_HeapsPerMethodPerVar(?heap, ?var, ?method) <-
+  CallGraphEdge(_, _, _, ?method),
+  Var:DeclaringMethod(?var, ?method),
+  _ContextInsensVPT(?heap, ?var).
+
+_NumHeapsForMethod[?method] = ?count ->
+  MethodSignature(?method), int[64](?count).
++_NumHeapsForMethod[?method] = ?count <-
+  agg<<?count = count()>>(_HeapsPerMethodPerVar(_, _, ?method)).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?method),
+  _NumHeapsForMethod[?method] > 10000.
+
+/*
+// Avoid refining method calls that refer to methods containing variables that point
+// to heap objects with a high max number of field-points-to facts. This is what
+// causes explosion for deep-context analyses.
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
++_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
+
+_MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_MaxFieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = max(?v)>>(_FieldPointsToPerAllocSiteAndField[?alloc,_] = ?v).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _MaxFieldPointsToPerAllocSite[?alloc] > 500,
+  Var:DeclaringMethod(?var, ?tomethod).
+*/
+
++TempNegativeSiteFilter("true").
+
+
+// Avoid refining objects with a high total number of field-points-to facts.
+_FieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_FieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, _, _, ?alloc)).
+
+// _ContextInsensFPT(?heap, ?baseheap) -> HeapAllocation(?heap), HeapAllocation(?baseheap).
+// +_ContextInsensFPT(?heap, ?baseheap) <- InstanceFieldPointsTo(_, ?heap, _, _, ?baseheap).
+
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
+// Avoid refining allocation sites pointed to by many other object-field pairs.
+_IncomingFPTPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_IncomingFPTPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, ?alloc, _, _, _)).
+
+// The real metric is the product of the two.
++TempObjectToRefine(?alloc) <-
+  _FieldPointsToPerAllocSite[?alloc] * 
+  (_VarsPerAllocSite[?alloc] + _IncomingFPTPerAllocSite[?alloc]) > 10000.
+
++TempObjectToRefine(?alloc) <-
+  _FieldPointsToPerAllocSite[?alloc] = ?count,
+  ?count > 1000.
++TempNegativeObjectFilter("true").
+
+
+
+///// --------------------- version: (original) tempA -------------------------
+// Avoid refining method calls that refer to methods containing variables with a high
+// VarPointsTo.
+// Seems comparable to tempB (which also doesn't refine objects, only methods):
+// equally fast, sometimes more sometimes less precise.
+/*
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerVar[?var] = ?count -> Var(?var), int[64](?count).
++_HeapsPerVar[?var] = ?count <-
+  agg<<?count = count()>>(_ContextInsensVPT(_, ?var)).
+
++TempSiteToRefine(?invocation) <-
+//  VirtualMethodInvocation:Base[?invocation] = _, // make sure it's a normal invocation
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  _HeapsPerVar[?var] > 100,
+  Var:DeclaringMethod(?var, ?tomethod).
+
++TempNegativeSiteFilter("true").
+*/
+
+// Refine no objects. This is really a 2obj, not a 2objH analysis.
+
+/*
+///// --------------------- version: temp -------------------------
+// Avoid refining method calls that refer to methods containing variables that point
+// to heap objects with a high max number of field-points-to facts. This is what
+// causes explosion for deep-context analyses.
+*/
+/*
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
++_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
+
+_MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_MaxFieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = max(?v)>>(_FieldPointsToPerAllocSiteAndField[?alloc,_] = ?v).
+
++TempSiteToRefine(?invocation) <-
+//  VirtualMethodInvocation:Base[?invocation] = _, // make sure it's a normal invocation
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _MaxFieldPointsToPerAllocSite[?alloc] > 100,
+  Var:DeclaringMethod(?var, ?tomethod).
+
++TempNegativeSiteFilter("true").
+
+// Avoid refining allocation site with large max FieldPointsTo. Refine all the rest.
++TempObjectToRefine(?alloc) <-
+  _MaxFieldPointsToPerAllocSite[?alloc] = ?count,
+  ?count > 100.
+
++TempNegativeObjectFilter("true").
+*/
+
+/*
+///// --------------------- version: tempB -------------------------
+// Avoid refining method calls that refer to methods containing variables that point
+// to heap objects with a high max number of field-points-to facts. This is what
+// causes explosion for deep-context analyses.
+// Seems comparable to tempA (which also doesn't refine objects, only methods):
+// equally fast, sometimes more sometimes less precise.
+*/
+/*
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
++_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
+
+_MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_MaxFieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = max(?v)>>(_FieldPointsToPerAllocSiteAndField[?alloc,_] = ?v).
+
++TempSiteToRefine(?invocation) <-
+//  VirtualMethodInvocation:Base[?invocation] = _, // make sure it's a normal invocation
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _MaxFieldPointsToPerAllocSite[?alloc] > 100,
+  Var:DeclaringMethod(?var, ?tomethod).
+
++TempNegativeSiteFilter("true").
+
+// Refine no objects
+*/
+
+/*
+///// --------------------- version: tempC -------------------------
+// Avoid refining at invocation sites that pass more than N objects as arguments. 
+// More costly but also clearly more precise than tempA or tempB. Does not always
+// scale (notably, jython).
+*/
+/*
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
+  Var(?arg), CallGraphEdgeSource(?invocation), HeapAllocation(?heap).
++_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
+  CallGraphEdge(_, ?invocation, _, _),
+  ActualParam[_, ?invocation] = ?arg,
+  _ContextInsensVPT(?heap, ?arg).
+
+_NumHeapsForInvocationArgs[?invocation] = ?count ->
+  CallGraphEdgeSource(?invocation), int[64](?count).
++_NumHeapsForInvocationArgs[?invocation] = ?count <-
+  agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
+
++TempSiteToRefine(?invocation) <-
+  _NumHeapsForInvocationArgs[?invocation] > 100.
+
++TempNegativeSiteFilter("true").
+
+// Refine no objects
+*/
+
+/*
+///// --------------------- version: tempD -------------------------
+// Just like tempC but with refinement on all objects
+// Much more expensive than tempE, for extremely little (practically no)
+// precision gain.
+*/
+/*
++TempNegativeObjectFilter("true").
+*/
+
+/*
+///// --------------------- version: tempE -------------------------
+// Just like tempC but add refinement to all objects except those with
+// large max field-points-to.
+// Much more scalable than tempD, for very little precision loss.
+*/
+/*
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
++_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
+
+_MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_MaxFieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = max(?v)>>(_FieldPointsToPerAllocSiteAndField[?alloc,_] = ?v).
+
++TempObjectToRefine(?alloc) <-
+  _MaxFieldPointsToPerAllocSite[?alloc] = ?count,
+  ?count > 100.
+
++TempNegativeObjectFilter("true").
+*/
+
+/*
+///// --------------------- version: tempF -------------------------
+// Just like tempE but with the constant equal to 50 instead of 100.
+// Doesn't gain much over tempE in speed, but loses a bit in precision
+// in some benchmarks. tempE probably the better compromise, but not
+// huge difference.
+*/
+
+
+/*
+///// --------------------- version: tempG -------------------------
+// Just like tempC in terms of method refinement, but with different
+// object refinement.
+// Seems much lighter than tempE but less precise, too. Probably good compromise.
+// Avoid refining at invocation sites that pass more than N objects as arguments. 
+*/
+/*
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
++TempObjectToRefine(?alloc) <-
+  _VarsPerAllocSite[?alloc] = ?count,
+  ?count > 100.
+
++TempNegativeObjectFilter("true").
+*/
+
+
+/*
+///// --------------------- version: tempH -------------------------
+// Takes the union of tempB and tempC in terms of method refinement, together with the
+// tempG object refinement. All code listed below for ease of reference.
+*/
+/*
+// Avoid refining at invocation sites that pass more than N objects as arguments. 
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
+  Var(?arg), CallGraphEdgeSource(?invocation), HeapAllocation(?heap).
++_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
+  CallGraphEdge(_, ?invocation, _, _),
+  ActualParam[_, ?invocation] = ?arg,
+  _ContextInsensVPT(?heap, ?arg).
+
+_NumHeapsForInvocationArgs[?invocation] = ?count ->
+  CallGraphEdgeSource(?invocation), int[64](?count).
++_NumHeapsForInvocationArgs[?invocation] = ?count <-
+  agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
+
++TempSiteToRefine(?invocation) <-
+  _NumHeapsForInvocationArgs[?invocation] > 100.
+
+// Avoid refining method calls that refer to methods containing variables that point
+// to heap objects with a high max number of field-points-to facts. This is what
+// causes explosion for deep-context analyses.
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
++_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
+
+_MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_MaxFieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = max(?v)>>(_FieldPointsToPerAllocSiteAndField[?alloc,_] = ?v).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _MaxFieldPointsToPerAllocSite[?alloc] > 200,
+  Var:DeclaringMethod(?var, ?tomethod).
+
++TempNegativeSiteFilter("true").
+
+
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
++TempObjectToRefine(?alloc) <-
+  _VarsPerAllocSite[?alloc] = ?count,
+  ?count > 100.
+
++TempNegativeObjectFilter("true").
+*/
+
+/*
+///// --------------------- version: tempI -------------------------
+// Just like tempB in terms of method refinement, together with the
+// tempG object refinement.
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+*/
+/*
+*/
+
+/*
+///// --------------------- version: tempJ -------------------------
+// Just like the plain temp version, but instead of max FieldPointsTo, take
+// the total. Constants adjusted to 200 instead of 100. I'd say the verdict is
+// a wash. A couple of wins (one huge), a couple of losses (doesn't scale to
+// jython), typically a bit less precision (but that can probably be adjusted
+// by tweaking the constants.
+*/
+/*
+// Avoid refining method calls that refer to methods containing variables that point
+// to heap objects with a high total number of field-points-to facts.
+_FieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_FieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, _, _, ?alloc)).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _FieldPointsToPerAllocSite[?alloc] > 200,
+  Var:DeclaringMethod(?var, ?tomethod).
+
++TempNegativeSiteFilter("true").
+
+
+// Avoid refining allocation site with large total FieldPointsTo. Refine all the rest.
++TempObjectToRefine(?alloc) <-
+  _FieldPointsToPerAllocSite[?alloc] > 200.
+
++TempNegativeObjectFilter("true").
+*/
+
+/*
+///// --------------------- version: tempK -------------------------
+// tempG-like object refinement combined with avoiding refinement of methods
+// that point to such objects.
+// Didn't work well. Almost like no context-sensitivity at all.
+*/
+/*
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
++TempObjectToRefine(?alloc) <-
+  _VarsPerAllocSite[?alloc] = ?count,
+  ?count > 100.
+
++TempNegativeObjectFilter("true").
+
+
+// Avoid refining method calls that refer to methods containing variables that too
+// many other veriables point to.
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _VarsPerAllocSite[?alloc] > 100,
+  Var:DeclaringMethod(?var, ?tomethod).
+
+
++TempNegativeSiteFilter("true").
+*/
+
+/*
+///// --------------------- version: tempL -------------------------
+// Attempts to approximate full 2objH.
+// Just tempG-like object refinement, all method sites refined. 
+// Loses significant precision compared to full 2objH, but at least it scales
+// fairly well (to everything but jython). Clearly better precision than tempI,
+// still not quite competitive with 2typeH in either precision or scalability
+// (but not terribly far off).
+// Promising, as a direction.
+*/
+/*
+*/
+
+/*
+///// --------------------- version: tempM -------------------------
+// Attempts to approximate full 2objH.
+// Just temp (or tempE)-like object refinement, all method sites refined. 
+// Didn't work too well. Much slower than 2typeH. For most benchmarks scales
+// worse than full 2objH, while (of course) also losing precision. Very
+// good for bloat. (REVIEW: why?)
+*/
+/*
+// add refinement to all objects except those with large max field-points-to.
+*/
+
+/*
+///// --------------------- version: tempN -------------------------
+// Attempts to approximate full 2objH. Fairly precise but not as much as tempO.
+// Faster but not really more scalable (best result: 2/3 of tempO time on jython).
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
+  Var(?arg), CallGraphEdgeSource(?invocation), HeapAllocation(?heap).
++_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
+  CallGraphEdge(_, ?invocation, _, _),
+  ActualParam[_, ?invocation] = ?arg,
+  _ContextInsensVPT(?heap, ?arg).
+
+_NumHeapsForInvocationArgs[?invocation] = ?count ->
+  CallGraphEdgeSource(?invocation), int[64](?count).
++_NumHeapsForInvocationArgs[?invocation] = ?count <-
+  agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
+
++TempSiteToRefine(?invocation) <-
+  _NumHeapsForInvocationArgs[?invocation] > 100.
+
++TempNegativeSiteFilter("true").
+
+_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
+  Var(?arg), CallGraphEdgeSource(?invocation), HeapAllocation(?heap).
++_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
+  CallGraphEdge(_, ?invocation, _, _),
+  ActualParam[_, ?invocation] = ?arg,
+  _ContextInsensVPT(?heap, ?arg).
+
+_NumHeapsForInvocationArgs[?invocation] = ?count ->
+  CallGraphEdgeSource(?invocation), int[64](?count).
++_NumHeapsForInvocationArgs[?invocation] = ?count <-
+  agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
+
+// Avoid refining objects with a high total number of field-points-to facts.
+_FieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_FieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, _, _, ?alloc)).
+
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
+// The real metric is the product of the two.
++TempObjectToRefine(?alloc) <-
+  _FieldPointsToPerAllocSite[?alloc] * _VarsPerAllocSite[?alloc] > 2000.
+
++TempNegativeObjectFilter("true").
+*/
+
+
+/*
+///// --------------------- version: tempO -------------------------
+// This works great in conjunction with 2typeH! Little precision lost,
+// but scales to jython and at around 200sec (or lower) for all else.
+// Also most precise among 2objH versions that scale to everything
+// but jython.
+// Avoid refining methods with large cumulative points-to sets. Set
+// the bar fairly high.
+*/
+/*
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerMethodPerVar(?heap, ?var, ?method) ->
+  Var(?var), HeapAllocation(?heap), MethodSignature(?method).
++_HeapsPerMethodPerVar(?heap, ?var, ?method) <-
+  CallGraphEdge(_, _, _, ?method),
+  Var:DeclaringMethod(?var, ?method),
+  _ContextInsensVPT(?heap, ?var).
+
+_NumHeapsForMethod[?method] = ?count ->
+  MethodSignature(?method), int[64](?count).
++_NumHeapsForMethod[?method] = ?count <-
+  agg<<?count = count()>>(_HeapsPerMethodPerVar(_, _, ?method)).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?method),
+  _NumHeapsForMethod[?method] > 10000.
+
++TempNegativeSiteFilter("true").
+
+// Avoid refining objects with a high total number of field-points-to facts.
+_FieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_FieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, _, _, ?alloc)).
+
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
+// The real metric is the product of the two.
++TempObjectToRefine(?alloc) <-
+  _FieldPointsToPerAllocSite[?alloc] * _VarsPerAllocSite[?alloc] > 10000.
+
++TempNegativeObjectFilter("true").
+*/
+
+
+
+//// ========================================================================
+/// EVERYTHING BELOW IS FROM THE TIME THE BASE ANALYSIS WAS 1-Obj AND
+/// THE SiteToRefine PREDICATE WAS BINARY. MOST RULES BELOW WON'T WORK ANY MORE.
+
+//Contains lots of different introspective/refinement heuristics
+
+/*
+// At first tried handling methods with casts specially. No clear win.
++TempSiteToRefine(?heap,?invocation) <-
+  VirtualMethodInvocation:Base[?invocation] = ?base,
+  VarPointsTo(AnyHeapAbstraction(?heap), AnyContext(?base)),  
+  HeapAllocation:Type[?heap] = ?heaptype,
+  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
+  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  AssignCast(_, _, _, ?tomethod).
+*/
+
+/* THIS DIDN'T WORK TOO WELL. E.g., not great precision for antlr 
+// Any object that flows to an array that conflates lots of allocation sites
+// is to be excluded by the refined analysis.
+_ArrayPointsToFacts[?arr] = ?count -> HeapAllocation(?arr), int[64](?count).
++_ArrayPointsToFacts[?arr] = ?count <-
+  agg<<?count = count()>>(ArrayIndexPointsTo(_, _, _, ?arr)).
+
++TempObjectToRefine(?heap) <-
+  ArrayIndexPointsTo(_, ?heap, _, ?arr),
+  _ArrayPointsToFacts[?arr] = ?count,
+  ?count > 500.
++TempNegativeObjectFilter("true").
+*/
