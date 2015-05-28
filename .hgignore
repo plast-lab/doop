@@ -1,0 +1,19 @@
+#doop ingore list
+
+#analysis benchmarks
+^jars
+^externals
+
+#gradle dirs
+^.gradle
+^build
+
+#doop dist/runtime files
+^logs
+^out
+^results
+^last-analysis
+
+#intellij idea files
+^.idea
+^doop-nexgen.iml
