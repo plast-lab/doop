@@ -147,9 +147,9 @@ import org.apache.commons.logging.LogFactory
         logger.info "Making database available at $humanDatabase"
         Helper.execCommand("ln -s -f $database $humanDatabase", commandsEnvironment)
 
-        def lastAnalysis = "${Doop.doopHome}/results/last-analysis"
+        def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
-        Helper.execCommand("ln -s -f $database $lastAnalysis", commandsEnvironment)
+        Helper.execCommand("ln -s -f -n $database $lastAnalysis", commandsEnvironment)
     }
 
     /**
