@@ -259,13 +259,13 @@ public class FactGenerator
                 }
                 else if(stmt instanceof GotoStmt)
                 {
-                    // processed in second run: we might not now the number of
+                    // processed in second run: we might not know the number of
                     // the unit yet.
                     session.calcUnitNumber(stmt);
                 }
                 else if(stmt instanceof IfStmt)
                 {
-                    // processed in second run: we might not now the number of
+                    // processed in second run: we might not know the number of
                     // the unit yet.
                     session.calcUnitNumber(stmt);
                 }
@@ -293,7 +293,6 @@ public class FactGenerator
             }
             else
             {
-
                 // make sure we can jump to statement we do not care about (yet)
                 _writer.writeUnsupported(m, stmt, session);
             }

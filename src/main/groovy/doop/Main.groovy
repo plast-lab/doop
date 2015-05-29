@@ -7,6 +7,9 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
+
+import java.util.concurrent.*
+
 /**
  * The entry point for the standalone doop app.
  *
@@ -15,15 +18,7 @@ import org.apache.log4j.Logger
  */
 class Main {
 
-    private static boolean checkArgs(OptionAccessor cli) {
-        boolean noAnalysis = !cli.a, noJar = !cli.j
-        boolean error = noAnalysis || noJar
-
-        if (error)
-            println "Missing required argument(s): " + (noAnalysis ? "a" : "") + (noJar ? (noAnalysis ? ", " : "") + "j" : "")
-
-        return !error
-    }
+    private static Log logger = LogFactory.getLog(Main)
 
     /**
      * The entry point.
@@ -42,8 +37,6 @@ class Main {
         //initialize logging
         Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
-        Log logger = LogFactory.getLog(Main)
-
         logger.debug "Command line options: $args"
 
         try {
@@ -56,40 +49,97 @@ class Main {
                 return
             }
 
-            if(!checkArgs(cli)) {
-                builder.usage()
-                return
+            int timeout = 180 //3hours
+            try {
+                timeout = Integer.parseInt(cli.t)
+            }
+            catch(ex) {
+                println "Using the default timeout ($timeout min)"
             }
 
+            Analysis analysis
+            if (cli.p) {
+                //create analysis from the properties file
+                String file = cli.p
+                Properties props = Helper.loadProperties(file)
 
-            //change the log level according to the cli arg
-            def logLevel = cli.l
-            if (logLevel) {
-                switch (logLevel) {
-                    case "debug":
-                        Logger.getRootLogger().setLevel(Level.DEBUG)
-                        break
-                    case "info":
-                        Logger.getRootLogger().setLevel(Level.INFO)
-                        break
-                    case "error":
-                        Logger.getRootLogger().setLevel(Level.ERROR)
-                        break
-                    default:
-                        logger.info "Invalid log level: $logLevel - using default (info)"
+                try {
+                    Helper.checkMandatoryProps(props)
                 }
+                catch(e) {
+                    println e.getMessage()
+                    return
+                }
+
+                //change the log level according to the property
+                changeLogLevel(props.getProperty("level"))
+
+                analysis = new CommandLineAnalysisFactory().newAnalysis(props)
+            }
+            else {
+                //create analysis from the cli options
+                try {
+                    Helper.checkMandatoryArgs(cli)
+                }
+                catch(e) {
+                    println e.getMessage()
+                    builder.usage()
+                    return
+                }
+
+                //change the log level according to the cli arg
+                changeLogLevel(cli.l)
+
+                analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
 
-            Analysis analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
             logger.debug analysis
-            analysis.run()
-            analysis.printStats()
-            analysis.linkResult()
+
+            ExecutorService executor = Executors.newSingleThreadExecutor()
+            Future future = executor.submit(new Runnable() {
+                @Override
+                void run() {
+                    analysis.run()
+                    analysis.printStats()
+                    analysis.linkResult()
+                }
+            })
+
+            try {
+                future.get(timeout, TimeUnit.MINUTES)
+            }
+            catch (TimeoutException te) {
+                logger.error("Timeout has expired ($timeout min).")
+                System.exit(-1)
+            }
+            executor.shutdown()
+
 
         } catch (e) {
-            logger.error(e.getMessage(), e)
+            if (logger.debugEnabled)
+                logger.error(e.getMessage(), e)
+            else
+                logger.error(e.getMessage())
             System.exit(-1)
+        }
+    }
+
+    private static void changeLogLevel(def logLevel) {
+        if (logLevel) {
+            switch (logLevel) {
+                case "debug":
+                    Logger.getRootLogger().setLevel(Level.DEBUG)
+                    break
+                case "info":
+                    Logger.getRootLogger().setLevel(Level.INFO)
+                    break
+                case "error":
+                    Logger.getRootLogger().setLevel(Level.ERROR)
+                    break
+                default:
+                    logger.info "Invalid log level: $logLevel - using default (info)"
+            }
         }
     }
 }

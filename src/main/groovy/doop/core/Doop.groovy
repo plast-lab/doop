@@ -1,4 +1,7 @@
 package doop.core
+
+import org.apache.log4j.Logger
+
 /**
  * Doop initialization and supported options.
  *
@@ -11,7 +14,7 @@ class Doop {
         //LogicBlox related options (supporting different LogicBlox instance per analysis)
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
-            description: "set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable)",
+            description: "set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable).",
             value:System.getenv("LOGICBLOX_HOME"),
             webUI:false,
             cli:true,
@@ -34,7 +37,7 @@ class Doop {
         //Main options
         new AnalysisOption<String>(
             id:"MAIN_CLASS",
-            description:'Specify the main class',
+            description:'Specify the main class.',
             value:null,
             webUI: true,
             cli:true,
@@ -43,7 +46,7 @@ class Doop {
         ),
         new AnalysisOption<List<String>>(
             id:"DYNAMIC",
-            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a comma",
+            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a comma.",
             value:[],
             webUI:true,
             cli:true,
@@ -53,17 +56,18 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
-            description:"File with tamiflex data",
+            description:"File with tamiflex data.",
             value:null,
             webUI:true,
             cli:true,
             name:"tamiflex",
             argName:"FILE",
+            forPreprocessor:true,
             isFile:true
         ),
         new AnalysisOption<String>(
             id:"CLIENT_CODE",
-            description:"Additional directory/file of client analysis to include",
+            description:"Additional directory/file of client analysis to include.",
             value:null,
             webUI:true,
             cli:true,
@@ -79,7 +83,7 @@ class Doop {
         /* Flags for must analyses */
         new AnalysisOption<String>(
             id:"MAY_PRE_ANALYSIS",
-            description:"Use a may analysis before running the must analysis",
+            description:"Use a may analysis before running the must analysis.",
             value:null,
             cli:true,
             webUI:true,
@@ -126,7 +130,6 @@ class Doop {
         /* End of preprocessor constant flags] */
 
         /* Start of preprocessor normal flags] */
-        //LATEST: NO_MODELING_OF_NUMS_OR_NULL
         new AnalysisOption<String>(
             id:"NO_MODELING_OF_NUMS_OR_NULL",
             value:true, // enabled by default in run script
@@ -168,7 +171,6 @@ class Doop {
             forPreprocessor: true,
             isAdvanced:true
         ),
-        //LATEST: INCLUDE_IMPLICITLY_REACHABLE_CODE
         new AnalysisOption<String>(
             id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
             value:true,  // enabled by default in run script
@@ -376,7 +378,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"CACHE",
-            description:"The analysis will use the cached input relations, if such exist",
+            description:"The analysis will use the cached facts, if they exist.",
             value:false,
             cli:true,
             webUI:true,
@@ -384,7 +386,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"STATS",
-            description:"Load additional logic for collecting statistics",
+            description:"Load additional logic for collecting statistics.",
             value:false,
             cli:true,
             webUI:true,
@@ -392,7 +394,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"SANITY",
-            description:"Load additional logic for sanity checks",
+            description:"Load additional logic for sanity checks.",
             value:false,
             cli:true,
             webUI:true,
@@ -407,22 +409,16 @@ class Doop {
             isAdvanced: true
         ),
         new AnalysisOption<Boolean>(
-            id:"SOLO",
-            value:false,
-            cli:true,
-            name: "solo-run"
-        ),
-        new AnalysisOption<Boolean>(
-            id:"ALLOW_PHANTOM",
-            description: 'Allow non-existent referenced jars',
+            id:"RUN_JPHANTOM",
+            description: 'Run jphantom for non-existent referenced jars.',
             value:false,
             webUI:true,
             cli:true,
-            name: "allow-phantom"
+            name: "run-jphantom"
         ),
         new AnalysisOption<Boolean>(
             id:"AVERROES",
-            description: 'Use averroes tool to create a placeholder library',
+            description: 'Use averroes tool to create a placeholder library.',
             value:false,
             webUI:true,
             cli:true,
@@ -456,9 +452,23 @@ class Doop {
             value:false,
             forPreprocessor: true
         ),
+        new AnalysisOption<Boolean>(
+            id:"USE_ORIGINAL_NAMES",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"use-original-names",
+        ),
+        new AnalysisOption<Boolean>(
+            id:"KEEP_LINE_NUMBER",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"keep-line-number",
+        ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
-            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system)",
+            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
             value:"system",
             webUI:true,
             cli:true,
@@ -478,30 +488,24 @@ class Doop {
 			isAdvanced:true
         ),
 		new AnalysisOption<Boolean>(
-            id:"COLOR",
-            value:false,
-            name:"color",
-			isAdvanced:true
-        ),
-		new AnalysisOption<Boolean>(
             id:"INTERACTIVE",
             value:false,
             name:"INTERACTIVE",
 			isAdvanced:true
         ),
-        //jdoop-specific options
+        //addtional options
         new AnalysisOption<String>(
-            id:"APP_GLOB",
-            description:"A glob expression for the Java package names to be analyzed",
+            id:"APP_REGEX",
+            description:"A regex expression for the Java package names to be analyzed.",
             value:null,
             webUI:true,
             cli:true,
-            name:"glob",
-            argName:"glob-expression"
+            name:"regex",
+            argName:"regex-expression"
         ),
         new AnalysisOption<String>(
             id:"USE_JAVA_CPP",
-            description:"Use a full-java preprocessor for the logic files",
+            description:"Use a full-java preprocessor for the logic files.",
             value:false,
             webUI:true,
             cli:true,
@@ -510,10 +514,22 @@ class Doop {
         )
     ]
 
+    static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
+        "LOGICBLOX_HOME",
+        "LD_LIBRARY_PATH",
+        "BLOXBATCH",
+        "BLOX_OPTS",
+        "OS",
+        "INCREMENTAL",
+        "INTERACTIVE",
+        "USE_JAVA_CPP"
+    ]
+
     //Not the best pattern, but limits the source code size :)
     static String doopHome
     static String doopLogic
     static String doopOut
+    static String doopInputCache
 
     /**
      * Initializes Doop.
@@ -538,7 +554,7 @@ class Doop {
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(doopOut, "Could not create ouput directory: $doopOut ")
+        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut ")
     }
 
     /**
@@ -547,61 +563,127 @@ class Doop {
      */
     static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
         Map<String, AnalysisOption> options = [:]
-        ANALYSIS_OPTIONS.each { AnalysisOption option -> options[(option.id)] = option }
-        return options
-    }
-
-    /**
-     * Creates the analysis options.
-     * This method checks for a doop.properties file: (a) in the user's home directory or (b) in the Doop home
-     * directory and if such a file is present, its options will override the default ones.
-     * @return Map<String, AnalysisOptions>.
-     */
-    static Map<String, AnalysisOption> createAnalysisOptions() {
-        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
-
-        Properties props = new Properties()
-
-        def candidates = [System.getProperty("user.home") + "/doop.properties", "$doopHome/doop.properties"]
-        for (c in candidates) {
-            try {
-                File f = Helper.checkFileOrThrowException(c, "Not a valid file: $c")
-                f.withReader { Reader r -> props.load(r)}
-                overrideAnalysisOptionsFromProperties(options, props)
-                break
-            }
-            catch (e) {
-                // do nothing
-            }
+        ANALYSIS_OPTIONS.each { AnalysisOption option ->
+            options.put(option.id, AnalysisOption.newInstance(option))
         }
-
         return options
-
     }
 
     /**
-     * Overrides the given analysis options with the ones contained in the given properties.
-     * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
-     * @param options - the options to be overridden
-     * @param properties - the properties to use
+     * Creates the analysis options by overriding the default options with the ones contained in the given properties.
+     * An option is set only if filtered (the supplied filter returns true for the option).
+     * @param props - the properties.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the properties.
      */
-    static void overrideAnalysisOptionsFromProperties(Map<String, AnalysisOption> options, Properties properties) {
-        if (properties.size() > 0) {
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithProperties(Properties properties, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        if (properties && properties.size() > 0) {
             properties.each { Map.Entry<String, String> entry->
-                AnalysisOption option = options.get(entry.key)
+                AnalysisOption option = options.get(entry.key.toUpperCase())
                 if (option && entry.value && entry.value.trim().length() > 0) {
-                    if (option.id == "DYNAMIC") {
-                        option.value = entry.value.split(",").collect{ String s -> s.trim() }
-                    }
-                    else if (option.argName) {
-                        option.value = entry.value
-                    }
-                    else {
-                        option.value = Boolean.parseBoolean(entry.value)
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        setOptionFromProperty(option, entry.value)
                     }
                 }
             }
         }
+        return options
     }
 
+    /**
+     * Creates the analysis options by processing the given properties.
+     * An option is created only if filtered (the supplied filter returns true for the option).
+     * @param props - the properties.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the analysis options constructed by the values contained in the properties.
+     */
+    static Map<String, AnalysisOption> createOptionsFromProperties(Properties properties, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = [:]
+        if (properties && properties.size() > 0) {
+            ANALYSIS_OPTIONS.each { AnalysisOption option ->
+                String property = properties.getProperty(option.id.toLowerCase())?.trim()
+                if (property) {
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        AnalysisOption o = AnalysisOption.newInstance(option)
+                        setOptionFromProperty(o, property)
+                        options.put(o.id, o)
+                    }
+                }
+            }
+        }
+        return options
+    }
+
+    static void setOptionFromProperty(AnalysisOption option, String property) {
+        if (option.id == "DYNAMIC") {
+            option.value = property.split(",").collect { String s -> s.trim() }
+        } else if (option.argName) {
+            option.value = property
+        } else {
+            option.value = Boolean.parseBoolean(property)
+        }
+    }
+
+    /**
+     * Creates the analysis options by overriding the default options with the ones contained in the given CLI options.
+     * An option is set only if filtered (the supplied filter returns true for the option).
+     * @param cli - the CLI option accessor.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the CLI option accessor.
+     */
+    static Map<String, AnalysisOption> overrideDefaultOptionWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        options.values().each { AnalysisOption option ->
+            String optionName = option.name
+            if (optionName) {
+                def optionValue = cli[(optionName)]
+                Logger.getRootLogger().debug "Processing $optionName = $optionValue"
+                if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        setOptionFromCLI(option, cli)
+                    }
+                }
+            }
+        }
+        return options
+    }
+
+    static Map<String, AnalysisOption> createOptionsFromCLI(OptionAccessor cli, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = [:]
+        ANALYSIS_OPTIONS.each { AnalysisOption option ->
+            String optionName = option.name
+            if (option.name) {
+                def optionValue = cli.getProperty(optionName)
+                if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
+                    boolean filtered = filter ? filter.call(option) : true
+                    if (filtered) {
+                        AnalysisOption o = AnalysisOption.newInstance(option)
+                        setOptionFromCLI(o, cli)
+                        options.put(o.id, o)
+                    }
+                }
+            }
+        }
+        return options
+    }
+
+    static void setOptionFromCLI(AnalysisOption option, OptionAccessor cli) {
+        if (option.id == "DYNAMIC") {
+            //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
+            //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
+            option.value = cli.ds
+        } else if (option.argName) {
+            //if the cl option has an arg, the value of this arg defines the value of the respective
+            // analysis option
+            option.value = cli[(option.name)]
+        } else {
+            //the cl option has no arg and thus it is a boolean flag, toggling the default value of
+            // the respective analysis option
+            option.value = !option.value
+        }
+    }
 }
