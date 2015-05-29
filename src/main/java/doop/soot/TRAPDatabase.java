@@ -19,7 +19,7 @@ public class TRAPDatabase implements Database {
     {
         super();
         _directory = directory;
-        _writers = new EnumMap<PredicateFile, Writer>(PredicateFile.class);
+        _writers = new EnumMap<>(PredicateFile.class);
     }
 
     @Override

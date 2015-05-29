@@ -25,7 +25,7 @@ public class CSVDatabase implements Database
     public CSVDatabase(File directory) throws IOException
     {
         this.directory = directory;
-        this.writers = new EnumMap<PredicateFile, Writer>(PredicateFile.class);
+        this.writers = new EnumMap<>(PredicateFile.class);
 
         // Automatically generate fact files for predicates
         // that are imported with file predicates

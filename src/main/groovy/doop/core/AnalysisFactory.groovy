@@ -1,77 +1,136 @@
 package doop.core
-import java.util.jar.JarFile
-import java.util.jar.Attributes
+
+import doop.input.DefaultInputResolutionContext
+import doop.input.InputResolutionContext
 import doop.preprocess.CppPreprocessor
 import doop.preprocess.JcppPreprocessor
-import doop.resolve.Dependency
-import doop.resolve.ExistingFileDependency
-import doop.resolve.StringDependency
+import groovy.transform.TypeChecked
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+
+import java.util.jar.Attributes
+import java.util.jar.JarFile
+
 /**
  * A Factory for creating Analysis objects.
+ *
+ * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (.e.g entailed
+ * in the doop.core.Helper class) but they are protected instance methods to allow descendants to customize
+ * all possible aspects of Analysis creation.
  *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 31/8/2014
  */
-class AnalysisFactory {
+@TypeChecked class AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
+    static final char[] EXTRA_ID_CHARACTERS = '_-'.toCharArray()
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, jars and options
+     * A helper class that acts as an intermediate holder of the analysis variables.
      */
-    Analysis newAnalysis(String name, List<String> jars, Map<String, AnalysisOption> options) {
+    protected static class AnalysisVars {
+        String name
+        Map<String, AnalysisOption> options
+        Set<String> inputs
+        List<File> jars
+
+        @Override
+        String toString() {
+            return [
+                name:name,
+                inputs:inputs.toString(),
+                jars:jars.toString(),
+                options:options.values().toString()
+            ].toString()
+        }
+    }
+
+    /**
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputs using
+     * the supplied input resolution mechanism.
+     * If the supplied id is empty or null, an id will be generated automatically.
+     * Otherwise the id will be validated:
+     * - if it is valid, it will be used to identify the analysis,
+     * - if it is invalid, an exception will be thrown.
+     */
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         //Verify that the name of the analysis is valid
         checkName(name)
 
-        //Generate the id
-        String id = generateID(name, jars, options)
+        //Resolve the analysis inputs
+        List<File> jars = checkInputs(context)
 
-        //Create the outDir if required
-        String outDir = "${Doop.doopHome}/out/$name/${id}"
-        File f = new File(outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
-
-        Analysis analysis = new Analysis(
-            name         : name,
-            id           : id,
-            outDir       : outDir,
-            preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
-            options      : options
+        AnalysisVars vars = new AnalysisVars(
+            name   : name,
+            options: options,
+            inputs : context.inputs(),
+            jars   : jars
         )
 
-        //Resolve the jar dependencies
-        checkJars(analysis, jars)
-		
-		//process the options
-        processOptions(analysis)
+        logger.debug vars
+
+        //process the options
+        processOptions(vars)
 
         //verify lb options
-		checkLogicBlox(analysis)
+        checkLogicBlox(vars)
 
         //init the environment used for executing commands
-		initExternalCommandsEnvironment(analysis)
-			
-		//TODO: The COLOR option is not supported
-			
-		//TODO: Create empty jar. Is it needed?
+        Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
 
-		//TODO: Check if input is given (incremental). Is it needed?
-		checkDACAPO(analysis)
-			
-		checkAppGlob(analysis)
-			
-		//We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
-			
-		//TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
-			
-		//TODO: Check that only one instance of bloxbatch is running if SOLO option is enabled
+        //TODO: Create empty jar. Is it needed?
 
+        //TODO: Check if input is given (incremental). Is it needed?
+        checkDACAPO(vars)
+
+        checkAppGlob(vars)
+
+        //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
+
+        //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
+
+        /*
+        Generate id and outDir as the last analysis initialization actions
+        */
+        String analysisId
+        if (id) { //non-empty or null
+            //validate and set the user supplied id
+            analysisId = validateUserSuppliedId(id)
+        }
+        else {
+            //Generate the id
+            analysisId = generateID(vars)
+        }
+
+        //Create the outDir if required
+        File outDir = createOutputDirectory(vars, analysisId)
+
+        Analysis analysis = new Analysis(
+            id           : analysisId,
+            outDir       : outDir.toString(),
+            name         : name,
+            preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
+            options      : options,
+            ctx          : context,
+            jars         : jars,
+            commandsEnvironment: commandsEnv
+        )
+
+        logger.debug "Created new analysis"
         return analysis
+    }
+
+    /**
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * the default input resolution mechanism.
+     */
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
+        DefaultInputResolutionContext context = new DefaultInputResolutionContext()
+        context.add(jars)
+        return newAnalysis(id, name, options, context)
     }
 
     /**
@@ -79,118 +138,102 @@ class AnalysisFactory {
      */
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
-        String analysisPath = "${Doop.doopLogic}/${name}/analysis.logic"
+        String analysisPath = "${Doop.doopLogic}/analyses/${name}/analysis.logic"
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 
+    protected String validateUserSuppliedId(String id) {
+        String trimmed = id.trim()
+        boolean isValid = trimmed.toCharArray().every { char c->
+            Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
+        }
+
+        if (!isValid) {
+            throw new RuntimeException("Invalid analysis id: $id. The id should contain only letters, digits, " +
+                                       "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
+        }
+        return trimmed
+    }
+
     /**
-     * Generates the analysis ID, using its name, main class and jars.
-     *
-     * NOTE: With the jar dependency feature, the APP_GLOB is not being used (because it depends on the resolution
-     * of the jars, which depend on the ID).
-     * @param analysis
+     * Generates the analysis ID using all of its components (name, inputs and options).
      */
-    protected String generateID(String name, List<String> jars, Map<String, AnalysisOption> options) {
-        logger.debug "Generating analysis ID"
+    protected String generateID(AnalysisVars vars) {
+        Collection<String> optionsForId = vars.options.keySet().findAll {
+            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
+        }.collect {String option ->
+            return vars.options.get(option).toString()
+        }
+        Collection<String> idComponents = [vars.name] + vars.inputs + optionsForId
+        logger.debug("ID components: $idComponents")
+        String id = idComponents.join('-')
 
-        def idComponents = [name, options.MAIN_CLASS.value] + jars
-        String id = idComponents.collect { it.toString() }.join('-')
-
-
-        //Generate a sha256 cheksum of the id components
         return Helper.checksum(id, "SHA-256")
     }
 
     /**
-     * Given the list of jars, as Strings or Dependency objects, the method validates that the jars exist,
-     * using the jar resolution mechanism. It finally adds the jars as a List<Dependency> in the analysis.
-     * The method detects if a String refers to a directory path and, if so, it adds all the *.jar files
-     * included therein.
+     * Creates the analysis output dir, if required.
      */
-    protected void checkJars(Analysis analysis, List jars) {
-        logger.debug "Verifying analysis input jars: $jars"
-        if (!jars) throw new RuntimeException("No jars provided for the analysis")
-        analysis.jars = jars.collect { Object jar ->
-            if (jar) {
-                if (jar instanceof String) {
-                    try {
-                        File f = Helper.checkDirectoryOrThrowException(jar, null)
-                        logger.debug("Resolving jars in directory $f")
-
-                        def filter = Helper.extensionFilter("jar")
-
-                        def filesInDir = []
-                        f.listFiles(filter).each { File file ->
-                            filesInDir.push new ExistingFileDependency(file)
-                        }
-
-                        def files = filesInDir.sort{ it.toString() }
-                        logger.debug("Resolved ${files.size()} jars in directory $f: $files")
-                        return files
-                    }
-                    catch(e) {
-                        StringDependency jarDep = new StringDependency(jar, analysis)
-                        logger.debug "Resolving $jar"
-                        jarDep.resolve()
-                        return jarDep
-                    }
-                }
-                else if (jar instanceof Dependency) {
-                    logger.debug "Resolving $jar"
-                    jar.resolve()
-                    return jar
-                }
-                else {
-                    throw new RuntimeException("Cannot resolve jar dependency ${jar.getClass()}: $jar")
-                }
-            }
-            else {
-                throw new RuntimeException("Null value in analysis jars")
-            }
-        }.flatten()
+    protected File createOutputDirectory(AnalysisVars vars, String id) {
+        String outDir = "${Doop.doopHome}/out/${vars.name}/${id}"
+        File f = new File(outDir)
+        f.mkdirs()
+        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+        return f
     }
-	
-	/**
+
+    /**
+     * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
+     * using the input resolution mechanism. It finally returns the inputs as a List<File>.
+     */
+    protected List<File> checkInputs(InputResolutionContext context) {
+        Collection<String> inputs = context.inputs()
+        logger.debug "Verifying analysis inputs: $inputs"
+        if (!inputs) throw new RuntimeException("No inputs provided for the analysis")
+        context.resolve()
+        return context.getAll()
+    }
+
+    /**
      * Processes the options of the analysis.
      */
-    protected void processOptions(Analysis analysis) {
-	
-		logger.debug "Processing analysis options"
-		
-        Map<String, AnalysisOption> options = analysis.options
-		
-		/*
-		 * We mimic the checks of the run script for verifiability of this implementation, 
-		 * even though the majority of checks are not required.
-		 */
+    protected void processOptions(AnalysisVars vars) {
+    
+        logger.debug "Processing analysis options"
+        
+        Map<String, AnalysisOption> options = vars.options
+        
+        /*
+         * We mimic the checks of the run script for verifiability of this implementation, 
+         * even though the majority of checks are not required.
+         */
 
         if (options.PADDLE_COMPAT.value) {
-			analysis.disableAllExceptionOptions()
-			logger.debug "The PADDLE_COMPAT option has been enabled"
+            disableAllExceptionOptions(options)
+            logger.debug "The PADDLE_COMPAT option has been enabled"
         }
 
         if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
-			analysis.disableAllExceptionOptions()
+            disableAllExceptionOptions(options)
         }
 
         if (options.EXCEPTIONS_IMPRECISE.value) {
-			analysis.disableAllExceptionOptions()
-			options.EXCEPTIONS_IMPRECISE.value = true
-			logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
-			
+            disableAllExceptionOptions(options)
+            options.EXCEPTIONS_IMPRECISE.value = true
+            logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
         }
 
         if (options.DISABLE_MERGE_EXCEPTIONS.value) {
-			analysis.disableAllExceptionOptions()
+            disableAllExceptionOptions(options)
             options.EXCEPTIONS_PRECISE.value = true
             options.SEPARATE_EXCEPTION_OBJECTS.value = true
-			logger.debug "The DISABLE_MERGE_EXCEPTIONS option has been enabled"
+            logger.debug "The DISABLE_MERGE_EXCEPTIONS option has been enabled"
         }
 
         if (options.EXCEPTIONS_EXPERIMENTAL.value) {
-			analysis.disableAllExceptionOptions()
-			options.EXCEPTIONS_EXPERIMENTAL.value = true
-			logger.debug "The EXCEPTIONS_EXPERIMENTAL option has been enabled"
+            disableAllExceptionOptions(options)
+            options.EXCEPTIONS_EXPERIMENTAL.value = true
+            logger.debug "The EXCEPTIONS_EXPERIMENTAL option has been enabled"
         }
 
         if (options.EXCEPTIONS_FILTER.value) {
@@ -223,21 +266,21 @@ class AnalysisFactory {
         }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-			analysis.disableAllConstantOptions()
-			options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
-			logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
+            logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value) {
-			analysis.disableAllConstantOptions()
-			options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
-			logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
+            logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
-			analysis.disableAllConstantOptions()
-			options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
-			logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+            logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
 
         if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
@@ -278,7 +321,7 @@ class AnalysisFactory {
 
         if (options.TRANSFORM_INPUT.value) {
             options.SET_BASED.value = true
-			logger.debug "The TRANSFORM_INPUT option has been enabled"
+            logger.debug "The TRANSFORM_INPUT option has been enabled"
         }
 
         if (options.SSA.value) {
@@ -301,61 +344,60 @@ class AnalysisFactory {
             logger.debug "The MEMLOG option has been enabled"
         }
 
-        if (options.SOLO.value) {
-            logger.debug "The SOLO option has been enabled"
+        if (options.INTERACTIVE.value) {
+            logger.debug "The INTERACTIVE option has been enabled"
         }
-		
-		if (options.COLOR.value) {
-			logger.debug "The COLOR option has been enabled"
-		}
-		
-		if (options.INTERACTIVE.value) {
-			logger.debug "The INTERACTIVE option has been enabled"
-		}
-		
-		if (options.AVERROES.value) {
-			logger.debug "The AVERROES option has been enabled"
-		}
-		
-		if (options.ALLOW_PHANTOM.value) {
-			logger.debug "The ALLOW_PHANTOM option has been enabled"
-		}
-		
-		if (options.DACAPO.value) {
-			logger.debug "The DACAPO option has been enabled"
-		}
-		
-		if (options.DACAPO_BACH.value) {
-			logger.debug "The DACAPO_BACH option has been enabled"
-		}
+        
+        if (options.AVERROES.value) {
+            logger.debug "The AVERROES option has been enabled"
+        }
+        
+        if (options.RUN_JPHANTOM.value) {
+            logger.debug "The RUN_JPHANTOM option has been enabled"
+        }
+        
+        if (options.DACAPO.value) {
+            logger.debug "The DACAPO option has been enabled"
+        }
+        
+        if (options.DACAPO_BACH.value) {
+            logger.debug "The DACAPO_BACH option has been enabled"
+        }
+
+        if (options.TAMIFLEX.value) {
+            options.DISABLE_REFLECTION.value = true
+            options.REFLECTION_STRING_FLOW_ANALYSIS.value = false
+            options.ANALYZE_REFLECTION_SUBSTRINGS.value = false
+            logger.debug "The TAMIFLEX option has been enabled"
+        }
 
         // Checks for must analyses
 
-        if(analysis.isMustPointTo() && !options.MAY_PRE_ANALYSIS.value)
+        if(isMustPointTo(vars.name) && !options.MAY_PRE_ANALYSIS.value)
             throw new UnsupportedOperationException("A ''plain'' must-point-to analysis is not supported yet")
 
         if(options.MAY_PRE_ANALYSIS.value) {
-            if(!analysis.isMustPointTo())
-                throw new RuntimeException("Option: " + option.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
+            if(!isMustPointTo(vars.name))
+                throw new RuntimeException("Option: " + options.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
 
             options.MUST_AFTER_MAY.value = true
             logger.debug "The MUST_AFTER_MAY flag has been enabled"
         }
 
-        if(analysis.isMustPointTo() && !options.SSA.value) {
+        if(isMustPointTo(vars.name) && !options.SSA.value) {
             options.SSA.value = true
-            logger.debug "The SSA flag has been enabled by default"
+            logger.debug "The SSA flag has been enabled (must-point-to)"
         }
 
-		checkJRE(analysis)
-		
-		checkOS(analysis)
-		
-		if (options.MAIN_CLASS.value) {
-			logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
-		}
+        checkJRE(vars)
+        
+        checkOS(vars)
+        
+        if (options.MAIN_CLASS.value) {
+            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+        }
         else {
-            JarFile jarFile = new JarFile(analysis.jars[0].resolve())
+            JarFile jarFile = new JarFile(vars.jars[0])
             //Try to read the main class from the manifest contained in the jar            
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
@@ -371,40 +413,40 @@ class AnalysisFactory {
                 }
             }
         }
-		
-		if (options.INCREMENTAL.value) {
-			logger.debug "The INCREMENTAL option has been enabled"
-		}
+        
+        if (options.INCREMENTAL.value) {
+            logger.debug "The INCREMENTAL option has been enabled"
+        }
 
-		if (options.DYNAMIC.value) {
-			List<String> dynFiles = options.DYNAMIC.value
+        if (options.DYNAMIC.value) {
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
                 Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
-		}
-		
-		if (options.TAMIFLEX.value) {
-			String tamFile = options.TAMIFLEX.value
-			Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
-			logger.debug "The TAMIFLEX option has been set to ${tamFile}"
-		}
-		
-		if (options.CLIENT_CODE.value) {
-			String clFile = options.CLIENT_CODE.value
-			Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
-			options.CLIENT_EXTENSIONS.value = true
-			logger.debug "The CLIENT_CODE option has been set to ${clFile}"
-		}
+        }
+        
+        if (options.TAMIFLEX.value) {
+            String tamFile = options.TAMIFLEX.value.toString()
+            Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+            logger.debug "The TAMIFLEX option has been set to ${tamFile}"
+        }
+        
+        if (options.CLIENT_CODE.value) {
+            String clFile = options.CLIENT_CODE.value.toString()
+            Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
+            options.CLIENT_EXTENSIONS.value = true
+            logger.debug "The CLIENT_CODE option has been set to ${clFile}"
+        }
     }
-	
-	/**
+    
+    /**
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
-    protected void checkJRE(Analysis analysis) {
+    protected void checkJRE(AnalysisVars vars) {
 
         JRE jreVersion
-        String jreValue = analysis.options.JRE.value
+        String jreValue = vars.options.JRE.value
 
         logger.debug "Verifying JRE version: $jreValue"
 
@@ -452,8 +494,8 @@ class AnalysisFactory {
             default:
                 throw new RuntimeException("Invalid JRE version: $jreValue")
         }
-		
-		//sanity check
+        
+        //sanity check
         EnumSet<JRE> supportedValues = EnumSet.allOf(JRE)
         if (! (jreVersion in supportedValues)) {
             throw new RuntimeException("Unsupported JRE version: $jreVersion")
@@ -461,19 +503,19 @@ class AnalysisFactory {
 
         //generate the JRE constant for the preprocessor
         AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-			id:jreVersion.name(),
-			value:true,
-			forPreprocessor: true
+            id:jreVersion.name(),
+            value:true,
+            forPreprocessor: true
         )
-        analysis.options[(jreOption.id)] = jreOption
-	}
-	
-	/**
-	 * Checks the OS. For now, it is always OS.OS_UNIX (the default).
-	 */
-	protected void checkOS(Analysis analysis) {
+        vars.options[(jreOption.id)] = jreOption
+    }
+    
+    /**
+     * Checks the OS. For now, it is always OS.OS_UNIX (the default).
+     */
+    protected void checkOS(AnalysisVars vars) {
 
-        OS os = analysis.options.OS.value as OS
+        OS os = vars.options.OS.value as OS
 
         //sanity check
         EnumSet<OS> supportedValues = EnumSet.allOf(OS)
@@ -483,78 +525,78 @@ class AnalysisFactory {
 
         //generate the OS constant for preprocessor
         AnalysisOption<Boolean> osOption = new AnalysisOption<Boolean>(
-			id:os.name(),
-			value:true,
-			forPreprocessor: true
+            id:os.name(),
+            value:true,
+            forPreprocessor: true
         )
-        analysis.options[(osOption.id)] = osOption
+        vars.options[(osOption.id)] = osOption
     }
 
     /**
      * DACAPO hooks.
     */
-    protected void checkDACAPO(Analysis analysis) {
-        if (analysis.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+    protected void checkDACAPO(AnalysisVars vars) {
+        if (vars.options.DACAPO.value) {
+            String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             //We don't hard-code the dependencies, we just set the appropriate flags
-            analysis.options.DACAPO_BENCHMARK.value = benchmark
+            vars.options.DACAPO_BENCHMARK.value = benchmark
             return
         }
         
-        if (analysis.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(analysis.jars[0].resolve().toString())
+        if (vars.options.DACAPO_BACH.value) {
+            String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
             logger.info "Running dacapo-2009 benchmark: $benchmark"
             //We don't hard-code the dependencies, we just set the appropriate flags
-            analysis.options.DACAPO_2009.value = true
-            analysis.options.DACAPO_BENCHMARK.value = benchmark
+            vars.options.DACAPO_2009.value = true
+            vars.options.DACAPO_BENCHMARK.value = benchmark
         }
     }
-	
-	/**
+    
+    /**
      * Determines application classes.
      *
-     * If an app glob is not present, it generates one.
+     * If an app regex is not present, it generates one.
      */
-    protected void checkAppGlob(Analysis analysis) {
-        if (!analysis.options.APP_GLOB.value) {
-            logger.debug "Generating app glob"
-			
+    protected void checkAppGlob(AnalysisVars vars) {
+        if (!vars.options.APP_REGEX.value) {
+            logger.debug "Generating app regex"
+            
             //We process only the first jar for determining the application classes
             /*
-			Set excluded = ["*", "**"] as Set
-			analysis.jars.drop(1).each { Dependency jar ->
-				excluded += Helper.getPackages(jar.resolve())
-			}
+            Set excluded = ["*", "**"] as Set
+            analysis.jars.drop(1).each { Dependency jar ->
+                excluded += Helper.getPackages(jar.input())
+            }
 
-			Set<String> packages = Helper.getPackages(analysis.jars[0].resolve()) - excluded
+            Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(analysis.jars[0].resolve())
-			analysis.options.APP_GLOB.value = packages.sort().join(':')
+            Set<String> packages = Helper.getPackages(vars.jars[0])
+            vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
-	
-	/**
+    
+    /**
      * Verifies the correctness of the LogicBlox related options
      */
-    protected void checkLogicBlox(Analysis analysis) {
+    protected void checkLogicBlox(AnalysisVars vars) {
 
-		//TODO: Process bloxopts
-	
-        AnalysisOption lbhome = analysis.options.LOGICBLOX_HOME
+        //TODO: Process bloxopts
+    
+        AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
         String lbHomePath = lbhome.value
 
         logger.debug "Verifying LogicBlox home: $lbHomePath"
 
-        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
-        analysis.options.LD_LIBRARY_PATH.value = lbHomeJavaFile.getAbsolutePath() + "/bin"
+        vars.options.LD_LIBRARY_PATH.value = lbHomeJavaFile.getAbsolutePath() + "/bin"
         String bloxbatch = lbHomeJavaFile.getAbsolutePath() + "/bin/bloxbatch"
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
-        analysis.options.BLOXBATCH.value = bloxbatch
+        vars.options.BLOXBATCH.value = bloxbatch
     }
-	
-	/**
+    
+    /**
      * Initializes the external commands environment of the given analysis, by:
      * <ul>
      *     <li>adding the LD_LIBRARY_PATH option to the current environment
@@ -562,15 +604,15 @@ class AnalysisFactory {
      *     <li>adding the value of the LOGICBLOX_HOME option to the current environment
      * </ul>
      */
-    protected Map<String, String> initExternalCommandsEnvironment(Analysis analysis) {
+    protected Map<String, String> initExternalCommandsEnvironment(AnalysisVars vars) {
 
         logger.debug "Initializing the environment of the external commands"
         
-		Map<String, String> env = [:]
+        Map<String, String> env = [:]
         env.putAll(System.getenv())
-		
+        
         String path = env.PATH
-		AnalysisOption ldLibraryPath = analysis.options.LD_LIBRARY_PATH
+        AnalysisOption ldLibraryPath = vars.options.LD_LIBRARY_PATH
         if (path) {
             path = "$path${File.pathSeparator}${ldLibraryPath.value}"
         }
@@ -579,9 +621,38 @@ class AnalysisFactory {
         }
         env.PATH = path
         env.LD_LIBRARY_PATH = ldLibraryPath.value
-        env.LOGICBLOX_HOME = analysis.options.LOGICBLOX_HOME.value
+        env.LOGICBLOX_HOME = vars.options.LOGICBLOX_HOME.value
         env.DOOP_HOME = Doop.doopHome
 
-        analysis.commandsEnvironment = env
+        return env
+    }
+
+    /**
+     * Sets all exception options/flags to false. The exception options are determined by their flagType.
+     */
+    protected void disableAllExceptionOptions(Map<String, AnalysisOption> options) {
+        logger.debug "Disabling all exception preprocessor flags"
+        options.values().each { AnalysisOption option ->
+            if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
+                option.value = false
+            }
+        }
+    }
+
+    /**
+     * Sets all constant options/flags to false. The constant options are determined by their flagType.
+     */
+    protected void disableAllConstantOptions(Map<String, AnalysisOption> options) {
+        logger.debug "Disabling all constant preprocessor flags"
+        options.values().each { AnalysisOption option ->
+            if (option.forPreprocessor && option.flagType == PreprocessorFlag.CONSTANT_FLAG) {
+                option.value = false
+            }
+        }
+    }
+
+
+    protected boolean isMustPointTo(String name) {
+        return Helper.isMustPointTo(name)
     }
 }

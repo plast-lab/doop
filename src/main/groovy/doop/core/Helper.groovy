@@ -37,7 +37,7 @@ class Helper {
         File dir = new File(logDir)
         if (!dir.exists()) dir.mkdir()
 
-        String logFile =  "${logDir}/jdoop.log"
+        String logFile =  "${logDir}/doop.log"
 
         PatternLayout layout = new PatternLayout("%d [%t] %-5p %c - %m%n")
         Logger root = Logger.getRootLogger()
@@ -76,9 +76,10 @@ class Helper {
      * Loads the given properties file
      */
     static Properties loadProperties(String file) {
-        Properties properties = new Properties()
-        properties.load(new BufferedReader(new FileReader(file)))
-        return properties
+        File f = checkFileOrThrowException(file, "Not a valid file: $file")
+        Properties props = new Properties()
+        f.withReader { BufferedReader r -> props.load(r)}
+        return props
     }
 
     /**
@@ -121,16 +122,33 @@ class Helper {
     }
 
     /**
+     * Checks that the given list of files exist.
+     */
+    static List<String> checkFiles(List<String> files) {
+        files.each { String file ->
+            checkFileOrThrowException(file, "File is invalid: $file")
+        }
+        return files
+    }
+
+    /**
      * Checks that the given dir exists or throws the given message
      */
     static File checkDirectoryOrThrowException(String dir, String message) {
         if (!dir) throw new RuntimeException(message)
+        return checkDirectoryOrThrowException(new File(dir), message)
+    }
 
-        File f = new File(dir)
-        if (!f.exists() || !f.isDirectory()) {
+    /**
+     * Checks that the given dir exists or throws the given message
+     */
+    static File checkDirectoryOrThrowException(File dir, String message) {
+        if (!dir) throw new RuntimeException(message)
+
+        if (!dir.exists() || !dir.isDirectory()) {
             throw new RuntimeException(message)
         }
-        return f
+        return dir
     }
 
     /**
@@ -247,16 +265,43 @@ class Helper {
 	 */
 	static String checksum(String s, String algorithm) {
 		MessageDigest digest = MessageDigest.getInstance(algorithm)
-		byte[] bytes = digest.digest(s.getBytes("UTF-8"))
-		BigInteger number = new BigInteger(1, bytes)
-		String checksum = number.toString(16)
-		int len = checksum.length()
-		while (len < 32) {
-			checksum = "0" + checksum
-		}
-		return checksum
+        return toHex(digest.digest(s.getBytes("UTF-8")))
 	}
 
+    /**
+     * Generates a checksum of the input file (in hex) using the supplied algorithm.
+     */
+    static String checksum(File f, String algorithm) {
+        return f.withInputStream { InputStream input ->
+            return checksum(input, algorithm)
+        }
+    }
+
+    /**
+     * Generates a checksum of the input stream (in hex) using the supplied algorithm.
+     */
+    static String checksum(InputStream input, String algorithm) {
+        MessageDigest digest = MessageDigest.getInstance(algorithm)
+        byte[] bytes = new byte[4096]
+        int bytesRead
+        while ((bytesRead = input.read(bytes)) != -1) {
+            digest.update(bytes, 0, bytesRead)
+        }
+        return toHex(digest.digest())
+    }
+
+    /**
+     * Returns the hex string of the input bytes.
+     */
+    private static String toHex(byte[] bytes) {
+        BigInteger number = new BigInteger(1, bytes)
+        String checksum = number.toString(16)
+        int len = checksum.length()
+        while (len < 32) {
+            checksum = "0" + checksum
+        }
+        return checksum
+    }
 
     /**
      *  Moves the contents of the src directory to dest (as in: mv src/* dest).
@@ -271,6 +316,17 @@ class Helper {
      */
     static void copyDirectoryContents(File src, File dest) {
         FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
+    }
+
+    /**
+     * Append the contents of the second file at the end of the first one.
+     */
+    static void appendAtFirst(Analysis analysis, String firstPath, String secondPath) {
+        File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
+        String tmpFilePath = tmpFile.getCanonicalPath()
+        Helper.execCommand("cpp -P $secondPath -include $firstPath $tmpFilePath", analysis.commandsEnvironment)
+        FileUtils.copyFile(tmpFile, new File(firstPath))
+        FileUtils.deleteQuietly(tmpFile)
     }
 
     /**
@@ -292,56 +348,6 @@ class Helper {
             sb.append(elem.toString()).append('\n')
         }
         return sb.toString()
-    }
-
-    /**
-     * Creates the default properties file containing all the supported analysis options, with their default values.
-     */
-    static void createDefaultProperties(File f) {
-
-        //Find all cli options and sort them by name
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
-            option.cli
-        }.sort { AnalysisOption option ->
-            option.name
-        }
-
-        //Put the "main" options first
-        cliOptions = cliOptions.findAll { AnalysisOption option -> !option.isAdvanced } +
-                     cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
-
-        f.withWriter { Writer w ->
-
-            cliOptions.each { AnalysisOption option ->
-                writeAsProperty(option, w)
-            }
-        }
-    }
-
-    /**
-     * Writes the given analysis option to the given writer using the standard Java syntax for properties files.
-     */
-    private static void writeAsProperty(AnalysisOption option, Writer w) {
-        def type
-
-        if (option.isFile) {
-            type = "(file)"
-        }
-        else if (option.argName) {
-            type = "(string)"
-        }
-        else {
-            type = "(boolean)"
-        }
-
-        if (option.description) {
-            w.write "#${option.id} $type - ${option.description} \n"
-        }
-        else {
-            w.write "#${option.id} $type\n"
-        }
-
-        w.write "${option.id} = \n\n"
     }
 
     /**
@@ -375,5 +381,37 @@ class Helper {
      */
     static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
         convertAnalysisOptionsToCliOptions(options).each { cli << it}
+    }
+
+    /**
+     * Checks that the mandatory options are present in the cli options.
+     * @param cli the cli options accessor
+     */
+    static void checkMandatoryArgs(OptionAccessor cli) {
+        boolean noAnalysis = !cli.a, noJar = !cli.j
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            throw new RuntimeException("Missing required argument(s): " + (noAnalysis ? "a" : "") +
+                                       (noJar ? (noAnalysis ? ", " : "") + "j" : ""))
+    }
+
+    /**
+     * Checks that the mandatory options are present in the properties.
+     * @param props - the properties
+     */
+    static void checkMandatoryProps(Properties props) {
+        boolean noAnalysis = !props.getProperty("analysis")?.trim()
+        boolean noJar = !props.getProperty("jar")?.trim()
+        boolean error = noAnalysis || noJar
+
+        if (error)
+            throw new RuntimeException("Missing required properties: " + (noAnalysis ? "analysis" : "") +
+                                       (noJar ? (noAnalysis ? ", " : "") + "jar" : ""))
+    }
+
+
+    static boolean isMustPointTo(String name) {
+        return "must-point-to".equals(name)
     }
 }

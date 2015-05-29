@@ -38,9 +38,9 @@ public class NoSearchingClassProvider implements ClassProvider {
     private Map<String, Properties> _properties;
 
     public NoSearchingClassProvider() {
-        _classes = new HashMap<String, Resource>();
-        _archives = new ArrayList<ZipFile>();
-        _properties = new HashMap<String, Properties>();
+        _classes = new HashMap<>();
+        _archives = new ArrayList<>();
+        _properties = new HashMap<>();
     }
 
     public Set<String> getClassNames() {
@@ -153,8 +153,7 @@ public class NoSearchingClassProvider implements ClassProvider {
      * Adds a library archive to the class provider.
      */
     public void addArchiveForResolving(File f) throws IOException {
-        ZipFile archive = new ZipFile(f);
-        _archives.add(archive);
+        _archives.add(new ZipFile(f));
     }
 
     /**
@@ -180,7 +179,6 @@ public class NoSearchingClassProvider implements ClassProvider {
             return null;
         }
         else {
-            // System.out.println("found: " + className + " at " + stream.toString());
 
             try {
                 InputStream stream = resource.open();

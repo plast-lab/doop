@@ -18,6 +18,7 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
+import soot.tagkit.LineNumberTag;
 
 import static doop.PredicateFile.*;
 
@@ -220,6 +221,21 @@ public class FactWriter
         _db.add(NORMAL_OBJ,
                 _db.asEntity(heap),
                 writeType(expr.getType()));
+
+        if(expr instanceof NewArrayExpr)
+        {
+            NewArrayExpr newArray = (NewArrayExpr) expr;
+            Value sizeVal = newArray.getSize();
+
+            if(sizeVal instanceof IntConstant)
+            {
+                IntConstant size = (IntConstant) sizeVal;
+
+                if(size.value == 0)
+                    _db.add(EMPTY_ARRAY,
+                            _db.asEntity(heap));
+            }
+        }
 
         // statement
         int index = session.calcUnitNumber(stmt);
@@ -985,6 +1001,14 @@ public class FactWriter
     {
         String rep = _rep.invoke(inMethod, expr, session);
         writeActualParams(inMethod, stmt, expr, rep, session);
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        if(tag != null)
+        {
+            _db.add(METHOD_INV_LINENUM,
+                    _db.asEntity(rep),
+                    _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+        }
 
         Column index = _db.asIntColumn(String.valueOf(session.calcUnitNumber(stmt)));
 

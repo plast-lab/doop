@@ -39,10 +39,10 @@ class CppPreprocessor implements Preprocessor {
 
         if (includes) {
             String includeArgs = includes.collect{ "-include $it" }.join(" ")
-            Helper.execCommand("cpp -CC -P $macroCli $basePath/$input $includeArgs $output", analysis.commandsEnvironment)
+            Helper.execCommand("cpp -P $macroCli $basePath/$input $includeArgs $output", analysis.commandsEnvironment)
         }
         else {
-            Helper.execCommand("cpp -CC -P $macroCli $basePath/$input $output", analysis.commandsEnvironment)
+            Helper.execCommand("cpp -P $macroCli $basePath/$input $output", analysis.commandsEnvironment)
         }
     }
 }
