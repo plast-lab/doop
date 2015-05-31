@@ -374,7 +374,7 @@ import java.util.jar.JarFile
         // Checks for must analyses
 
         if(isMustPointTo(vars.name) && !options.MAY_PRE_ANALYSIS.value)
-            throw new UnsupportedOperationException("A ''plain'' must-point-to analysis is not supported yet")
+            throw new UnsupportedOperationException("For a must-point-to analysis, you need to specify a may- pre-analysis")
 
         if(options.MAY_PRE_ANALYSIS.value) {
             if(!isMustPointTo(vars.name))
