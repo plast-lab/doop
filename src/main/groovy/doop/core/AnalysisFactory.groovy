@@ -441,12 +441,13 @@ import java.util.jar.JarFile
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
     protected void checkJRE(AnalysisVars vars) {
-
-        JRE jreVersion
         String jreValue = vars.options.JRE.value
+        if (jreValue == "system")
+            jreValue = System.getProperty("java.specification.version")
 
         logger.debug "Verifying JRE version: $jreValue"
 
+        JRE jreVersion
         switch(jreValue) {
             case "1.3":
                 jreVersion = JRE.JRE13
@@ -463,41 +464,10 @@ import java.util.jar.JarFile
             case "1.7":
                 jreVersion = JRE.JRE17
                 break
-            case "system":
-                String version = System.getProperty("java.class.version")
-                if (version.startsWith("51")) {
-                    jreVersion = JRE.JRE17
-                    break
-                }
-                else if (version.startsWith("50")) {
-                    jreVersion = JRE.JRE16
-                    break
-                }
-                else if (version.startsWith("49")) {
-                    jreVersion = JRE.JRE15
-                    break
-                }
-                else if (version.startsWith("48")) {
-                    jreVersion = JRE.JRE14
-                    break
-                }
-                else if (version.startsWith("47")) {
-                    jreVersion = JRE.JRE13
-                    break
-                }
-                else {
-                    throw new RuntimeException("Unsupported Java major version: $version")
-                }
             default:
                 throw new RuntimeException("Invalid JRE version: $jreValue")
         }
         
-        //sanity check
-        EnumSet<JRE> supportedValues = EnumSet.allOf(JRE)
-        if (! (jreVersion in supportedValues)) {
-            throw new RuntimeException("Unsupported JRE version: $jreVersion")
-        }
-
         //generate the JRE constant for the preprocessor
         AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
             id:jreVersion.name(),
