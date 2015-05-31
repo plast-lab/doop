@@ -503,15 +503,6 @@ class Doop {
             name:"regex",
             argName:"regex-expression"
         ),
-        new AnalysisOption<String>(
-            id:"USE_JAVA_CPP",
-            description:"Use a full-java preprocessor for the logic files.",
-            value:false,
-            webUI:true,
-            cli:true,
-            name:"jcpp",
-            isAdvanced:true
-        )
     ]
 
     static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
@@ -522,7 +513,6 @@ class Doop {
         "OS",
         "INCREMENTAL",
         "INTERACTIVE",
-        "USE_JAVA_CPP",
         "CACHE"
     ]
 
