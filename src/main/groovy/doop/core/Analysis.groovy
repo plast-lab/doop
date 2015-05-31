@@ -60,15 +60,28 @@ import org.apache.commons.logging.LogFactory
 
     CppPreprocessor preprocessor = new CppPreprocessor()
 
+    Executor executor
+
     File facts, cacheFacts, database, exportDir, averroesDir, lbScript
 
     Writer lbScriptWriter
 
     long sootTime
 
+    private static final List<String> IGNORED_WARNINGS = [
+        """\
+        *******************************************************************
+        Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.
+        Please use 'lb' instead of 'bloxbatch'.
+        *******************************************************************
+        """
+    ].collect{ line -> Pattern.quote(line.stripIndent()) }
+
     protected Analysis() {}
 
     private void Init() {
+        executor = new Executor(commandsEnvironment)
+
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
 
         facts         = new File(outDir, "facts")
@@ -106,7 +119,7 @@ import org.apache.commons.logging.LogFactory
 
         logger.info "Running generated script $lbScript"
         long t = timing {
-            Executor.execute("cd $outDir ; ${options.BLOXBATCH.value} -script $lbScript", IGNORED_WARNINGS)
+            executor.execute("cd $outDir ; ${options.BLOXBATCH.value} -script $lbScript", IGNORED_WARNINGS)
         }
         bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
@@ -135,11 +148,11 @@ import org.apache.commons.logging.LogFactory
         def humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
         humanDatabase.mkdirs()
         logger.info "Making database available at $humanDatabase"
-        Helper.execCommand("ln -s -f $database $humanDatabase", commandsEnvironment)
+        executor.execute("ln -s -f $database $humanDatabase")
 
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
-        Helper.execCommand("ln -s -f -n $database $lastAnalysis", commandsEnvironment)
+        executor.execute("ln -s -f -n $database $lastAnalysis")
     }
 
     /**
@@ -149,34 +162,6 @@ import org.apache.commons.logging.LogFactory
         return [id:id, name:name, outDir:outDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
-    }
-
-    /**
-     * Executes a bloxbatch query, providing each line of output to the given closure as a String.
-     */
-    void query(String query, Closure closure) {
-        Process process = Helper.startExternalProcess "${options.BLOXBATCH.value} -db $database -query $query",
-                          commandsEnvironment,
-                          true
-
-        def runnable = [
-            run: {
-                process.in.withReader { Reader r ->
-                    r.eachLine closure
-                }
-            }
-        ] as Runnable
-
-        Thread t = new Thread(runnable)
-        t.start()
-
-        t.join()
-        process.waitFor()
-        if (process.exitValue() != 0) {
-            throw new RuntimeException("Execution of query returned a non-zero status:\n $query")
-        }
-
-        process.closeStreams()
     }
 
     protected void generateFacts() {
@@ -796,15 +781,6 @@ import org.apache.commons.logging.LogFactory
         }
     }
 
-    private static final List<String> IGNORED_WARNINGS = [
-        """\
-        *******************************************************************
-        Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.
-        Please use 'lb' instead of 'bloxbatch'.
-        *******************************************************************
-        """
-    ].collect{ line -> Pattern.quote(line.stripIndent()) }
-
     /**
      * Invokes bloxbatch on the given database with the given params, piping it up with supplied pipeCommands.
      */
@@ -813,13 +789,18 @@ import org.apache.commons.logging.LogFactory
         if (pipeCommands)
             command += " | ${pipeCommands.join(" |")}"
 
-        Executor.execute(command, IGNORED_WARNINGS)
+        executor.execute(command, IGNORED_WARNINGS)
     }
 
-    /**
-     * Helper method for making the code more readable
-     */
     private long timing(Closure c) {
-        return Helper.execWithTiming(logger, c)
+        long now = System.currentTimeMillis()
+        try {
+            c.call()
+        }
+        catch(e) {
+            throw e
+        }
+        //we measure the time only in error-free cases
+        return ((System.currentTimeMillis() - now) / 1000).longValue()
     }
 }
