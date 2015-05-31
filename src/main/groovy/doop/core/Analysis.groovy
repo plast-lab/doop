@@ -703,14 +703,11 @@ import org.apache.commons.logging.LogFactory
                                           "${path}/jsse.jar".toString(),
                                           "${path}/rhino.jar".toString()])
             case "system":
-                //LATEST: don't include jars if jre is system
                 /*
                 String javaHome = System.getProperty("java.home")
                 return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
                 */
                 return []
-            default:
-                throw new RuntimeException("Invalid JRE version: $jre")
         }
     }
     
@@ -779,8 +776,6 @@ import org.apache.commons.logging.LogFactory
             case "system":
                 String javaHome = System.getProperty("java.home")
                 return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
-            default:
-                throw new RuntimeException("Invalid JRE version: $jre")
         }
     }   
     
