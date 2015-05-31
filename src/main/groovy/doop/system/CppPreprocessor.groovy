@@ -28,14 +28,14 @@ class CppPreprocessor {
             option.forPreprocessor && option.value
         }
 
-        String macroCli = macros.collect{AnalysisOption option -> 
+        def macroCli = macros.collect{AnalysisOption option -> 
             if (option.value instanceof Boolean)
                 return "-D${option.id}" 
             else 
                 return "-D${option.id}='\"${option.value}\"'"
         }.join(" ")
 
-        String includeArgs = includes.collect{ "-include $it" }.join(" ")
-        Helper.execCommand("cpp -P $macroCli $basePath/$input $includeArgs $output", analysis.commandsEnvironment)
+        def includeArgs = includes.collect{ "-include $it" }.join(" ")
+        new Executor(analysis.commandsEnvironment).execute("cpp -P $macroCli $basePath/$input $includeArgs $output")
     }
 }

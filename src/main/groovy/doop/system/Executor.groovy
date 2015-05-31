@@ -7,9 +7,20 @@ class Executor
 {
     static final Closure STDOUT_PRINTER = { String line -> println line }
 
-    static void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER)
+    Map<String, String> environment
+
+    Executor(Map<String, String> environment)
     {
-        Process process = new ProcessBuilder("/bin/bash", "-c", commandLine).start()
+        this.environment = environment
+    }
+
+    void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER)
+    {
+        def pb = new ProcessBuilder("/bin/bash", "-c", commandLine)
+        def environment = pb.environment()
+        environment.clear()
+        environment.putAll(this.environment)
+        def process = pb.start()
 
         // Get its standard output and error streams as input streams
         final InputStream is = process.getInputStream()
@@ -24,10 +35,10 @@ class Executor
         }
 
         // Wait for process to terminate
-        int returnCode = process.waitFor();
+        def returnCode = process.waitFor();
 
         // Create an error string that contains everything in the stderr stream
-        String errorMessages = es.getText();
+        def errorMessages = es.getText();
 
         // Prune some redundant warnings
         for (warning in ignoredWarnings) {
