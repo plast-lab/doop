@@ -2,8 +2,6 @@ package doop.core
 
 import doop.input.DefaultInputResolutionContext
 import doop.input.InputResolutionContext
-import doop.preprocess.CppPreprocessor
-import doop.preprocess.JcppPreprocessor
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
@@ -112,7 +110,6 @@ import java.util.jar.JarFile
             id           : analysisId,
             outDir       : outDir.toString(),
             name         : name,
-            preprocessor : (options.USE_JAVA_CPP.value ? new JcppPreprocessor() : new CppPreprocessor()),
             options      : options,
             ctx          : context,
             jars         : jars,

@@ -1,7 +1,7 @@
 package doop.core
 import doop.input.InputResolutionContext
-import doop.preprocess.Preprocessor
-import doop.preprocess.Executor
+import doop.system.CppPreprocessor
+import doop.system.Executor
 import groovy.transform.TypeChecked
 import groovy.ui.SystemOutputInterceptor
 import java.util.regex.Pattern;
@@ -58,14 +58,8 @@ import org.apache.commons.logging.LogFactory
      */
     Map<String, String> commandsEnvironment
 
-    /**
-     * The preprocessor for the logic files of the analysis
-     */
-    Preprocessor preprocessor
+    CppPreprocessor preprocessor = new CppPreprocessor()
 
-    String inputFilesChecksum
-    String logicFilesChecksum
-    
     File facts, cacheFacts, database, exportDir, averroesDir, lbScript
 
     Writer lbScriptWriter
@@ -75,11 +69,8 @@ import org.apache.commons.logging.LogFactory
     protected Analysis() {}
 
     private void Init() {
-        preprocessor.init()
-
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
-        //TODO: We don't need to calculate logic and input sums, do we?
-        //TODO: We don't need to annotate db paths, do we?
+
         facts         = new File(outDir, "facts")
         cacheFacts    = new File(outDir, "cacheFacts")
         database      = new File(outDir, "database")
