@@ -243,6 +243,9 @@ EmptyArray(?x) -> HeapAllocation(?x).
 HeapAllocation:Null[] = ?nullObject ->
    HeapAllocation(?nullObject).
 
+// Bottom object
+HeapAllocation:Bottom[] = ?bottomObject ->
+   HeapAllocation(?bottomObject).
 
 HeapAllocation:Type[?heap] = ?type ->
    HeapAllocation(?heap), Type(?type).

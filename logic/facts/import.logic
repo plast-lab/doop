@@ -793,3 +793,9 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 +Instruction:Value(?nullObject:"<<<null pseudo object>>>"),
 +HeapAllocation:Type[?nullObject] = Type:null[],
 +HeapAllocation:Null[] = ?nullObject.
+
+// Create single bottom object
++HeapAllocation(?bottomObject),
++Instruction:Value(?bottomObject:"<<<bottom pseudo object>>>"),
++HeapAllocation:Type[?bottomObject] = Type:null[],
++HeapAllocation:Bottom[] = ?bottomObject.

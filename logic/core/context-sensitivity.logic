@@ -30,6 +30,40 @@
 // Ignore verification of calculation in head
 lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
+#define SHORTCIRCUIT_LARGE_SETS
+
+#ifdef SHORTCIRCUIT_LARGE_SETS
+lang:compiler:disableError:NEGATION_RECURSION[]=true.
+lang:compiler:disableWarning:NEGATION_RECURSION[]=true.
+lang:compiler:disableError:AGGREGATE_RECURSION[]=true.
+lang:compiler:disableWarning:AGGREGATE_RECURSION[]=true.
+lang:compiler:disableError:DELTA_RECURSION[]=true.
+lang:compiler:disableWarning:DELTA_RECURSION[]=true.
+
+VarPointsToBottom(?ctx, ?var) -> Var(?var), Context(?ctx).
+
+//// Recursion through aggregation currently causes the engine to fail
+//// with a null exception.
+// PointsToSetSize[?ctx, ?var] = ?n -> Var(?var), Context(?ctx), uint[32](?n).
+// PointsToSetSize[?ctx, ?var] = ?n <- agg<<?n = count()>> VarPointsTo(_, _, ?ctx, ?var).
+// 
+// VarPointsToBottom(?ctx, ?var) <-
+//   PointsToSetSize[?ctx, ?var] > 20.
+
+VarPointsToWithoutContext(?heap, ?ctx, ?var) <-
+  VarPointsTo(_, ?heap, ?ctx, ?var).
+  
+// Have to do this manually.
+VarPointsToBottom(?ctx, ?var) <-
+  VarPointsToWithoutContext(?heap1, ?ctx, ?var),
+  VarPointsToWithoutContext(?heap2, ?ctx, ?var),
+  VarPointsToWithoutContext(?heap3, ?ctx, ?var),
+  ?heap1 != ?heap2, ?heap1 != ?heap3,
+  ?heap2 != ?heap3.
+
+#endif
+
+
 /**
  * Heap allocation
  */
@@ -115,8 +149,17 @@ VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
   Assign(?type, ?toCtx, ?to, ?fromCtx, ?from),
   HeapAllocation:Type[?heap] = ?heaptype,
+#ifdef SHORTCIRCUIT_LARGE_SETS
+  !VarPointsToBottom(?toCtx, ?to),
+  !VarPointsToBottom(?fromCtx, ?from),
+#endif  
   AssignCompatible(?type, ?heaptype).
 
+#ifdef SHORTCIRCUIT_LARGE_SETS
+VarPointsToBottom(?toCtx, ?to) <-
+  VarPointsToBottom(?fromCtx, ?from),
+  Assign(_, ?toCtx, ?to, ?fromCtx, ?from).
+#endif
 
 // Null assignments
 RecordImmutableMacro(?ctx, ?heap, ?hctx),
@@ -147,7 +190,17 @@ VarPointsTo(_, ?heap, _, ?to) ->
 // inputs to VarPointsTo
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+#ifdef SHORTCIRCUIT_LARGE_SETS
+  !VarPointsToBottom(?ctx, ?to),
+  !VarPointsToBottom(?ctx, ?from),
+#endif  
   OptAssignLocal(?to, ?from).
+
+#ifdef SHORTCIRCUIT_LARGE_SETS
+VarPointsToBottom(?ctx, ?to) <-
+  VarPointsToBottom(?ctx, ?from),
+  OptAssignLocal(?to, ?from).
+#endif
 
  
 OptAssignLocal(?to, ?from) -> Var(?to), Var(?from).
@@ -177,6 +230,9 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   // reflective field assignments.
   HeapAllocation:Type[?heap] = ?heaptype,
   Var:Type[?to] = ?vartype,
+#ifdef SHORTCIRCUIT_LARGE_SETS
+  !VarPointsToBottom(?ctx, ?to),
+#endif  
   AssignCompatible(?vartype, ?heaptype).
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
@@ -248,6 +304,9 @@ OptStoreInstanceField(?from, ?signature, ?base) <-
  */
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   OptLoadStaticField(?ctx, ?to, ?sig),
+#ifdef SHORTCIRCUIT_LARGE_SETS
+  !VarPointsToBottom(?ctx, ?to),
+#endif  
   StaticFieldPointsTo(?hctx, ?heap, ?sig).
 
 OptLoadStaticField(?ctx, ?to, ?sig) <-
@@ -276,15 +335,18 @@ ReachableStoreStaticFieldFrom(?from) <-
  * Load array index
  */
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-   !EmptyArray(?baseheap),
-   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
-   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
-   // this used to be necessary when this rule also handled the
-   // arguments of Method.invoke() etc:
-   // HeapAllocation:Type[?baseheap] = ?baseheaptype,
-   // Var:Type[?to] = ?type,
-   // ComponentType[?baseheaptype] = ?basecomponenttype,
-   // AssignCompatible(?type, ?basecomponenttype).
+#ifdef SHORTCIRCUIT_LARGE_SETS
+  !VarPointsToBottom(?ctx, ?to),
+#endif  
+  !EmptyArray(?baseheap),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
+  ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
+  // this used to be necessary when this rule also handled the
+  // arguments of Method.invoke() etc:
+  // HeapAllocation:Type[?baseheap] = ?baseheaptype,
+  // Var:Type[?to] = ?type,
+  // ComponentType[?baseheaptype] = ?basecomponenttype,
+  // AssignCompatible(?type, ?basecomponenttype).
 
 /* YANNIS: used to be the much less precise:
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -352,8 +414,18 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
   AssignReturnValue[?invocation] = ?local.
   
 VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+#ifdef SHORTCIRCUIT_LARGE_SETS
+  !VarPointsToBottom(?toCtx, ?to),
+  !VarPointsToBottom(?fromCtx, ?from),
+#endif  
   VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
+
+#ifdef SHORTCIRCUIT_LARGE_SETS
+VarPointsToBottom(?toCtx, ?to) <-
+  VarPointsToBottom(?fromCtx, ?from),
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
+#endif
 
 
 

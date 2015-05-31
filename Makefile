@@ -1,5 +1,5 @@
 # Currently either DaCapo2006 or DaCapoBach
-suite      = DaCapoBach
+suite      = DaCapo2006
 #commonArgs = --jre 1.6 -t 90
 commonArgs = -t 90
 analyses   = context-insensitive 1-call-site-sensitive 1-object-sensitive+heap 2-type-sensitive+heap
