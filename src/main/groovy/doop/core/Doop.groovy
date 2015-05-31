@@ -20,7 +20,7 @@ class Doop {
             cli:true,
             name:"lbhome",
             argName: "path",
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
@@ -75,10 +75,10 @@ class Doop {
             argName:"FILE",
             isFile:true
         ),
-		new AnalysisOption<String>(
+        new AnalysisOption<String>(
             id:"CLIENT_EXTENSIONS",
             value:false,
-			forPreprocessor:true
+            forPreprocessor:true
         ),
         /* Flags for must analyses */
         new AnalysisOption<String>(
@@ -360,7 +360,7 @@ class Doop {
             id:"SET_BASED",
             value:false,
         ),
-		new AnalysisOption<Boolean>(
+        new AnalysisOption<Boolean>(
             id:"CSV",
             value:false,
         ),
@@ -431,7 +431,7 @@ class Doop {
             cli:true,
             name:"dacapo",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"DACAPO_BACH",
@@ -440,7 +440,7 @@ class Doop {
             cli:true,
             name:"dacapo-bach",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<String>(
             id:"DACAPO_BENCHMARK",
@@ -485,13 +485,13 @@ class Doop {
             webUI:true,
             cli:true,
             name:"incremental",
-			isAdvanced:true
+            isAdvanced:true
         ),
-		new AnalysisOption<Boolean>(
+        new AnalysisOption<Boolean>(
             id:"INTERACTIVE",
             value:false,
             name:"INTERACTIVE",
-			isAdvanced:true
+            isAdvanced:true
         ),
         //addtional options
         new AnalysisOption<String>(
@@ -510,7 +510,7 @@ class Doop {
             webUI:true,
             cli:true,
             name:"jcpp",
-			isAdvanced:true
+            isAdvanced:true
         )
     ]
 
@@ -522,10 +522,11 @@ class Doop {
         "OS",
         "INCREMENTAL",
         "INTERACTIVE",
-        "USE_JAVA_CPP"
+        "USE_JAVA_CPP",
+        "CACHE"
     ]
 
-    //Not the best pattern, but limits the source code size :)
+    // Not the best pattern, but limits the source code size :)
     static String doopHome
     static String doopLogic
     static String doopOut

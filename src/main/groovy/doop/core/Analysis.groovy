@@ -70,7 +70,7 @@ import org.apache.commons.logging.LogFactory
 
     Writer lbScriptWriter
 
-    long sootTime, factsTime
+    long sootTime
 
     protected Analysis() {}
 
