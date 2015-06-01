@@ -11,7 +11,7 @@ lang:compiler:disableWarning:NEGATION_RECURSION[]=true.
 lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
 //// =====================================
-// The main concepts:
+//// The main concepts:
 
 // Must information in a specific context (which may be an
 // all-contexts value).  Only call-site sensitivity for now.
@@ -36,7 +36,6 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
 RootMethodForMustAnalysis(?meth) -> MethodSignature(?meth).
 
 //// ====================================
-
 //// BEGIN Auxiliary relations
 
 // Meaning: variable ?var points to the most recently allocated object
@@ -58,12 +57,12 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
 
 // NOTE: MustPointTo and InstanceFieldMustPointTo relations are
 // derived only from the AccessPathMustPointTo relation. We use them for
-// convenience to avoid constructing access paths for the common case,
-// e.g., assignments, field loads/stores.
+// convenience.
+
+//// END Auxiliary Relations
 
 //// ====================================
-
-//// BEGIN AccessPathMustPointTo code
+//// BEGIN Call graph and reachability relations
 
 // Need to identify relevant (i.e., reachable) methods for the must
 // analysis, instead of blindly applying it to all available code.
@@ -79,24 +78,6 @@ ReachableMethodUnderMustContext(?ctx, ?meth)
    //RootMethodForMustAnalysis(?meth).
    MethodSignature:DeclaringType[?meth] = ?class,
    ApplicationClass(?class).
-
-AssignHeapAllocation:HeapInv(?insn, ?heap) <-
-   AssignHeapAllocation:Heap[?insn] = ?heap.
-
-// Root of all Must inferences.
-// REVIEW: This introduces dependency on string-constants.logic
-ReachableMethodUnderMustContext(?ctx, ?inMeth),
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   SingleAllContext[] = ?ctx,
-   AccessPath:ByVar[?var] = ?ap,
-   AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
-   AssignHeapAllocation:HeapInv(?insn, ?heap),
-   RootMethodForMustAnalysis(?inMeth).
-
-// We start from the handling of calling instructions, since this is
-// the base case for this relation! All context-sensitive must-point-to
-// information is initially established from some all-context MustPointTo
-// information at a method call site.
 
 // For all caller contexts, the call at ?invocation will get
 // dispatched to ?toMethod, with the ?calleeCtx uniquely determining
@@ -219,6 +200,88 @@ MustInterprocAssign(?callerCtx, ?base, ?calleeCtx, ?this) <-
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this.
 
+
+// Access paths with local vars as bases. Propagated through arguments
+// of the call.
+
+VarPairMayBeUsedInRebasing(?to, ?from) <-
+   MustInterprocAssign(_, ?to, _, ?from).
+VarPairMayBeUsedInRebasing(?to, ?var) <-
+   MustCallGraphEdge:ToMethod[_, ?invo] = ?toMethod,
+   AssignReturnValue[?invo] = ?to,
+   ReturnVar(?var, ?toMethod).
+
+// Base case: access path is mere var.
+RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
+   AccessPath:ByVarInv[?ap] = ?from,
+   AccessPath:ByVar[?to] = ?newAp,
+   VarPairMayBeUsedInRebasing(?to, ?from).
+
+// Recursive case
+AccessPath(?newAp),
+AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
+AccessPath:Length[?newAp] = ?len,
+RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
+   AccessPath:BaseInv(?ap, ?apBase),
+   RebaseAccessPath[?apBase, ?to, ?from] = ?newApBase,
+   AccessPath:LastField[?ap] = ?fld,
+   AccessPath:Type[?newApBase] = ?type,
+   TypeContainsField(?fld, ?type),
+   AccessPath:Length[?ap] = ?len.
+
+// This is not a function! The same local variable can be two
+// different actual arguments!
+AccessPathRebasedForCall(?newAp, ?ap, ?ctx, ?invo)  <-
+   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+   FormalParam[?index, ?toMethod] = ?formal,
+   ActualParam[?index, ?invo] = ?actual,
+   RebaseAccessPath[?ap, ?formal, ?actual] = ?newAp.
+
+AccessPathRebasedForCall(?newAp, ?ap, ?ctx, ?invo)  <-
+   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+   (VirtualMethodInvocation:Base[?invo] = ?base;
+    SpecialMethodInvocation:Base[?invo] = ?base),
+   ThisVar[?toMethod] = ?this,
+   RebaseAccessPath[?ap, ?this, ?base] = ?newAp.
+
+// handle returns
+
+// Note that we don't know which return statement will be used, so, in
+// order to do a correct access path rebasing, we need to limit our
+// attention to the case that all return statements use the same var.
+AccessPathRebasedForReturn[?ap, ?ctx, ?invo] = ?newAp <-
+   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+   AllReturn:SameRetVar[?toMethod] = ?ret,
+   AssignReturnValue[?invo] = ?to,
+   RebaseAccessPath[?ap, ?to, ?ret] = ?newAp.
+
+AccessPathRebasedForReturn[?ap, ?ctx, ?invo] = ?newAp <-
+   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+   ThisVar[?toMethod] = ?this,
+   (VirtualMethodInvocation:Base[?invo] = ?base;
+    SpecialMethodInvocation:Base[?invo] = ?base),
+   RebaseAccessPath[?ap, ?base, ?this] = ?newAp.
+
+//// END Call graph and reachability relations
+
+
+//// ====================================
+//// BEGIN AccessPathMustPointTo code
+
+AssignHeapAllocation:HeapInv(?insn, ?heap) <-
+   AssignHeapAllocation:Heap[?insn] = ?heap.
+
+// Root of all MustPointTo inferences.
+// REVIEW: This introduces dependency on string-constants.logic
+ReachableMethodUnderMustContext(?ctx, ?inMeth),
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   SingleAllContext[] = ?ctx,
+   AccessPath:ByVar[?var] = ?ap,
+   AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
+   AssignHeapAllocation:HeapInv(?insn, ?heap),
+   RootMethodForMustAnalysis(?inMeth).
+
+
 // Also propagate heap models when making calls!
 
 // For calls, propagate AccessPathMustPointTo info, if it held for all
@@ -258,56 +321,6 @@ StaticFinalFieldMustPointTo[?fld] = ?heap <-
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
    MethodSignature:SimpleName[?method] = "<clinit>".
 
-// Now handle Move, Store, Load, etc. instructions
-
-// Move, but not Phi nodes, which are also represented as local assignments.
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AssignLocal:Insn(?insn),
-   !(PhiNodeHead[?insn] = _),
-   AssignInstruction:To[?insn] = ?to,
-   AccessPath:ByVar[?to] = ?ap,
-   AssignLocal:From[?insn] = ?from,
-   MustPointTo[?from, ?ctx, ?insn] = ?heap.
-
-// Phi
-AccessPathMustPointTo[?ap, ?ctx, ?lastInsn] = ?heap <-
-   MustPointToUpToPhiInstruction(?heap, ?ctx, ?lastInsn),
-   !(NextInSamePhiNode[?lastInsn] = _),
-   AssignInstruction:To[?lastInsn] = ?var,
-   AccessPath:ByVar[?var] = ?ap.
-
-// casts are like local assignments
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AssignCast:Insn(?insn),
-   AssignInstruction:To[?insn] = ?to,
-   AccessPath:ByVar[?to] = ?ap,
-   AssignCast:From[?insn] = ?from,
-   MustPointTo[?from, ?ctx, ?insn] = ?heap.
-
-// Load-Store
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   FieldLoad(?to, ?base, ?fld, ?insn),
-   MustPointTo[?base, ?ctx, ?insn] = ?baseHeap,
-   AccessPath:ByVar[?to] = ?ap,
-   InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap.
-
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   FieldStore(?base, ?fld, ?from, ?insn),
-   MustPointTo[?from, ?ctx, ?insn] = ?heap,
-   AccessPath:ByVar[?base] = ?baseAp,
-   AccessPath:ByFieldAccess[?fld, ?baseAp] = ?ap.
-
-// Static Load-Store
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   StaticFieldLoad(?to, ?fld, ?insn),
-   AccessPath:ByStaticField[?fld] = ?fldAp,
-   AccessPath:ByVar[?to] = ?ap,
-   AccessPathMustPointTo[?fldAp, ?ctx, ?insn] = ?heap.
-
-AccessPathMustPointTo[?fldAp, ?ctx, ?insn] = ?heap <-
-   StaticFieldStore(?fld, ?from, ?insn),
-   AccessPath:ByStaticField[?fld] = ?fldAp,
-   MustPointTo[?from, ?ctx, ?insn] = ?heap.
 
 // Frame rules
 
@@ -347,6 +360,7 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    !(AssignHeapAllocation:Heap[?insn] = ?heap),
    !MethodInvocation(?insn).
 
+
 // Fill MustPointTo and InstanceFieldMustPointTo relations.
 
 MustPointTo[?var, ?ctx, ?insn] = ?heap <-
@@ -360,18 +374,20 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
    AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseHeap,
    ?baseHeap != HeapAllocation:Null[].
 
+// MustAlias relations are a major source of MustPointTo inferences.
+AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
+   MustAlias(?ap2, ?ap1, ?ctx, ?insn),
+   AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
+
+AllPredecessors:AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
+   AllPredecessors:MustAlias(?ap2, ?ap1, ?ctx, ?insn),
+   AllPredecessors:AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
+
 //// END AccessPathMustPointTo code
-
 //// ====================================
 
-// In addition to point-to, we also have concepts that are based on
-// access paths, such as MustAlias and AccessPathMustPointTo. The
-// relations defining them have a similar structure to the above code
-// for MustPointTo relations: base cases, inter-procedural propagation,
-// frame rules.
 
 //// ====================================
-
 //// BEGIN Must-Alias code
 
 // This relation calculates all the alias pairs that can be inferred
@@ -539,50 +555,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?invo) <-
    AccessPath:ContainsStaticField[?ap2] = _,
    AllReturn:MustAlias(?ap1, ?ap2, ?calleeCtx, ?toMethod).
 
-// Access paths with local vars as bases. Propagated through arguments
-// of the call.
-
-VarPairMayBeUsedInRebasing(?to, ?from) <-
-   MustInterprocAssign(_, ?to, _, ?from).
-VarPairMayBeUsedInRebasing(?to, ?var) <-
-   MustCallGraphEdge:ToMethod[_, ?invo] = ?toMethod,
-   AssignReturnValue[?invo] = ?to,
-   ReturnVar(?var, ?toMethod).
-
-// Base case: access path is mere var.
-RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
-   AccessPath:ByVarInv[?ap] = ?from,
-   AccessPath:ByVar[?to] = ?newAp,
-   VarPairMayBeUsedInRebasing(?to, ?from).
-
-// Recursive case
-AccessPath(?newAp),
-AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
-AccessPath:Length[?newAp] = ?len,
-RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
-   AccessPath:BaseInv(?ap, ?apBase),
-   RebaseAccessPath[?apBase, ?to, ?from] = ?newApBase,
-   AccessPath:LastField[?ap] = ?fld,
-   AccessPath:Type[?newApBase] = ?type,
-   TypeContainsField(?fld, ?type),
-   AccessPath:Length[?ap] = ?len.
-
-// This is not a function! The same local variable can be two
-// different actual arguments!
-AccessPathRebasedForCall(?newAp, ?ap, ?ctx, ?invo)  <-
-   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
-   FormalParam[?index, ?toMethod] = ?formal,
-   ActualParam[?index, ?invo] = ?actual,
-   RebaseAccessPath[?ap, ?formal, ?actual] = ?newAp.
-
-AccessPathRebasedForCall(?newAp, ?ap, ?ctx, ?invo)  <-
-   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
-   (VirtualMethodInvocation:Base[?invo] = ?base;
-    SpecialMethodInvocation:Base[?invo] = ?base),
-   ThisVar[?toMethod] = ?this,
-   RebaseAccessPath[?ap, ?this, ?base] = ?newAp.
-
-MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
+AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
    MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
@@ -591,8 +564,8 @@ MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
    AccessPathRebasedForCall(?ap1, ?callAp1, ?ctx, ?invo),
    AccessPathRebasedForCall(?ap2, ?callAp2, ?ctx, ?invo).
 
-MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn),
-MustAlias(?ap2, ?ap1, ?calleeCtx, ?firstInsn) <-
+AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn),
+AllPredecessors:MustAlias(?ap2, ?ap1, ?calleeCtx, ?firstInsn) <-
    MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
@@ -600,24 +573,6 @@ MustAlias(?ap2, ?ap1, ?calleeCtx, ?firstInsn) <-
    AllPredecessors:MustAlias(?callAp1, ?ap2, ?ctx, ?invo),
    AccessPath:ContainsStaticField[?ap2] = _,
    AccessPathRebasedForCall(?ap1, ?callAp1, ?ctx, ?invo).
-
-// handle returns
-
-// Note that we don't know which return statement will be used, so, in
-// order to do a correct access path rebasing, we need to limit our
-// attention to the case that all return statements use the same var.
-AccessPathRebasedForReturn[?ap, ?ctx, ?invo] = ?newAp <-
-   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
-   AllReturn:SameRetVar[?toMethod] = ?ret,
-   AssignReturnValue[?invo] = ?to,
-   RebaseAccessPath[?ap, ?to, ?ret] = ?newAp.
-
-AccessPathRebasedForReturn[?ap, ?ctx, ?invo] = ?newAp <-
-   MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
-   ThisVar[?toMethod] = ?this,
-   (VirtualMethodInvocation:Base[?invo] = ?base;
-    SpecialMethodInvocation:Base[?invo] = ?base),
-   RebaseAccessPath[?ap, ?base, ?this] = ?newAp.
 
 OptMustCallGraphEdgeToMethod(?ctx, ?invo, ?toMethod) <-
    MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod.
@@ -631,7 +586,6 @@ MustAlias(?ap1, ?ap2, ?ctx, ?invo) <-
    AllReturn:SameRetVar[?toMethod] = _,
    AccessPathRebasedForReturn[?calleeAp1, ?ctx, ?invo] = ?ap1,
    AccessPathRebasedForReturn[?calleeAp2, ?ctx, ?invo] = ?ap2.
-
 
 // ... or based on "this"
 MustAlias(?ap1, ?ap2, ?ctx, ?invo) <-
@@ -804,18 +758,13 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 
 //// END Must-Alias code
 
+//// ====================================
 //// BEGIN weakening rules.
 // The all-context fact implies the fact for a reachable MustContext
 
 // Some auxiliaries ...
 OptInstructionMethod(?insn, ?meth) <-
    Instruction:Method[?insn] = ?meth.
-ReachableInstructionUnderContext(?ctx, ?insn) <-
-   ReachableMethodUnderMustContext(?ctx, ?meth),
-   OptInstructionMethod(?insn, ?meth).
-OptReachableVarUnderContext(?ctx, ?var) <-
-   ReachableMethodUnderMustContext(?ctx, ?meth),
-   Var:DeclaringMethod(?var, ?meth).
 
 CandidateMethodForWeakerContext(?ctx, ?strongerCtx, ?meth) <-
    StrongerContext(?ctx, ?strongerCtx),
@@ -1201,15 +1150,14 @@ MustAliasUpToPhiInstruction(?ap, ?ctx, ?headInsn) <-
    PhiNodeHead[_] = ?headInsn,
    AssignLocal:From[?headInsn] = ?from,
    AccessPath:ByVar[?from] = ?apFrom,
-   AllPredecessors:MustAlias(?ap, ?apFrom, ?ctx, ?headInsn).
+   MustAlias(?ap, ?apFrom, ?ctx, ?headInsn).
 
 MustAliasUpToPhiInstruction(?ap, ?ctx, ?nextInsn) <-
    MustAliasUpToPhiInstruction(?ap, ?ctx, ?insn),
-   PhiNodeHead[?insn] = ?headInsn,
    NextInSamePhiNode[?insn] = ?nextInsn,
    AssignLocal:From[?nextInsn] = ?from,
    AccessPath:ByVar[?from] = ?apFrom,
-   AllPredecessors:MustAlias(?ap, ?apFrom, ?ctx, ?headInsn).
+   MustAlias(?ap, ?apFrom, ?ctx, ?nextInsn).
 
 // For all predecessor instructions, aliasing holds between two access
 // paths.
@@ -1290,6 +1238,7 @@ AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    PrevInSameBasicBlock[?insn] = ?prev,
    AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?heap.
 
+//// REVIEW: Unnecessary?
 // for all returns of a method, access path must point to..
 UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap <-
    ReturnInstruction(?return),
@@ -1305,22 +1254,3 @@ AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
    UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap,
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
-
-// For all Phi node instructions, var must point to...
-MustPointToUpToPhiInstruction(?heap, ?ctx, ?insn) ->
-   HeapAllocation(?heap), MustContext(?ctx), 
-   Instruction(?insn).
-
-MustPointToUpToPhiInstruction(?heap, ?ctx, ?headInsn) <-
-   PhiNodeHead[_] = ?headInsn,
-   AssignLocal:From[?headInsn] = ?from,
-   AccessPath:ByVar[?from] = ?fromAp,
-   AllPredecessors:AccessPathMustPointTo[?fromAp, ?ctx, ?headInsn] = ?heap.
-
-MustPointToUpToPhiInstruction(?heap, ?ctx, ?nextInsn) <-
-   MustPointToUpToPhiInstruction(?heap, ?ctx, ?insn),
-   NextInSamePhiNode[?insn] = ?nextInsn,
-   AssignLocal:From[?nextInsn] = ?from,
-   PhiNodeHead[?nextInsn] = ?headInsn,
-   AccessPath:ByVar[?from] = ?fromAp,
-   AllPredecessors:AccessPathMustPointTo[?fromAp, ?ctx, ?headInsn] = ?heap.
