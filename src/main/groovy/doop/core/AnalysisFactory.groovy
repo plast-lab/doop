@@ -337,14 +337,6 @@ import java.util.jar.JarFile
             logger.debug "The SANITY option has been enabled"
         }
 
-        if (options.MEMLOG.value) {
-            logger.debug "The MEMLOG option has been enabled"
-        }
-
-        if (options.INTERACTIVE.value) {
-            logger.debug "The INTERACTIVE option has been enabled"
-        }
-        
         if (options.AVERROES.value) {
             logger.debug "The AVERROES option has been enabled"
         }

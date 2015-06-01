@@ -401,14 +401,6 @@ class Doop {
             name: "sanity"
         ),
         new AnalysisOption<Boolean>(
-            id:"MEMLOG",
-            value:false,
-            cli:true,
-            webUI:true,
-            name: "log-mem-stats",
-            isAdvanced: true
-        ),
-        new AnalysisOption<Boolean>(
             id:"RUN_JPHANTOM",
             description: 'Run jphantom for non-existent referenced jars.',
             value:false,
@@ -480,13 +472,6 @@ class Doop {
             name:"incremental",
             isAdvanced:true
         ),
-        new AnalysisOption<Boolean>(
-            id:"INTERACTIVE",
-            value:false,
-            name:"INTERACTIVE",
-            isAdvanced:true
-        ),
-        //addtional options
         new AnalysisOption<String>(
             id:"APP_REGEX",
             description:"A regex expression for the Java package names to be analyzed.",
@@ -505,7 +490,6 @@ class Doop {
         "BLOX_OPTS",
         "OS",
         "INCREMENTAL",
-        "INTERACTIVE",
         "CACHE"
     ]
 

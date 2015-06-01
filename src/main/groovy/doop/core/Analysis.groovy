@@ -4,7 +4,7 @@ import doop.system.CppPreprocessor
 import doop.system.Executor
 import groovy.transform.TypeChecked
 import groovy.ui.SystemOutputInterceptor
-import java.util.regex.Pattern;
+import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
