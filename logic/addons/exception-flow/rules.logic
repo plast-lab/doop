@@ -37,7 +37,7 @@ NativeMethod(?method) <-
 
 ExceptionHandlerApplication(?handler) <-
    ApplicationClass(?class),
-   DeclaringClassMethod[?method] = ?class,
+   MethodSignature:DeclaringType[?method] = ?class,
    ExceptionHandler:Method[?handler] = ?method.
 
 /*

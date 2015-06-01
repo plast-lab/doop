@@ -42,9 +42,8 @@ MainMethodDeclaration(?method) <-
    MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
    Modifier:Value(?public:"public"),
    Modifier:Value(?static:"static"),
-   MethodSignature:DeclaringType[?signature] = ?type,
-   MethodSignature:SimpleName[?signature] = "main",
-   MethodSignature:Descriptor[?signature] = ?descriptor,
-   MethodDeclaration[?signature] = ?method,
+   MethodSignature:DeclaringType[?method] = ?type,
+   MethodSignature:SimpleName[?method] = "main",
+   MethodSignature:Descriptor[?method] = ?descriptor,
    MethodModifier(?public, ?method),
    MethodModifier(?static, ?method).
