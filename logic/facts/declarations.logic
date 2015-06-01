@@ -188,15 +188,6 @@ ThisVar[?method] = ?var ->
    MethodSignature(?method), Var(?var).
 
 
-//------------------------
-// [Method Declarations]
-//------------------------
-
-// TODO: how does this differ from signature?
-MethodDeclaration[?signature] = ?ref ->
-   MethodSignature(?signature), MethodSignature(?ref).
-
-
 // Method ?method declares to throw exception ?exceptionType.
 // This predicate corresponds to Java's throws clause, or the
 // Exceptions clause in Java bytecode.

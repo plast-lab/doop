@@ -368,8 +368,7 @@ StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod) ->
 
 StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod) <-
   ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, ?signature, ?inmethod),
-  MethodDeclaration[?signature] = ?tomethod.
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
 
 MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
@@ -525,9 +524,8 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?heap,  ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
-  MethodDeclaration[?signature] = ?tomethod,
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
 
@@ -541,9 +539,8 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx), 
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
-  MethodDeclaration[?signature] = ?tomethod,
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */
@@ -556,9 +553,8 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
-  MethodDeclaration[?signature] = ?tomethod,
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
 
@@ -572,9 +568,8 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx), 
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
-  MethodDeclaration[?signature] = ?tomethod,
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */

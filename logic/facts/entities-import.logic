@@ -159,25 +159,6 @@ _FormalParam(?param1, ?param2, ?param3) ->
   _FormalParam(?index, ?param2, ?param3).
 
 
-// MethodDeclaration
-
-lang:physical:storageModel[`_MethodDeclaration] = "DelimitedFile".
-lang:physical:filePath[`_MethodDeclaration] = "facts/MethodDeclaration.facts".
-lang:physical:delimiter[`_MethodDeclaration] = "\t".
-lang:physical:hasColumnNames[`_MethodDeclaration] = false.
-
-_MethodDeclaration(?param1, ?param2) ->
-  string(?param1),
-  string(?param2).
-
-+MethodSignature:Value(?signature:?param1),
-+MethodSignature(?signature),
-+MethodSignature:Value(?ref:?param2),
-+MethodSignature(?ref),
-+MethodDeclaration[?signature] = ?ref <-
-  _MethodDeclaration(?param1, ?param2).
-
-
 // MethodDeclaration:Exception
 
 lang:physical:storageModel[`_MethodDeclaration:Exception] = "DelimitedFile".
