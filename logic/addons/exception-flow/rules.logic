@@ -23,7 +23,7 @@ ExceptionHandler:Handles(?handler, HeapAbstraction(?heap)) <-
 NativeThrowingIOException(?method, ?exceptionType) <-
    Reachable(?method),
    NativeMethod(?method),
-   MethodDeclaration:Exception(?exceptionType, ?method),
+   Method:DeclaresException(?exceptionType, ?method),
    Type:fqn(?io:"java.io.IOException"),
    AssignCompatible(?io, ?exceptionType).
 

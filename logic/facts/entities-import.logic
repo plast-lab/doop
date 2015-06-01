@@ -159,14 +159,14 @@ _FormalParam(?param1, ?param2, ?param3) ->
   _FormalParam(?index, ?param2, ?param3).
 
 
-// MethodDeclaration:Exception
+// Method:DeclaresException
 
-lang:physical:storageModel[`_MethodDeclaration:Exception] = "DelimitedFile".
-lang:physical:filePath[`_MethodDeclaration:Exception] = "facts/MethodDeclaration-Exception.facts".
-lang:physical:delimiter[`_MethodDeclaration:Exception] = "\t".
-lang:physical:hasColumnNames[`_MethodDeclaration:Exception] = false.
+lang:physical:storageModel[`_Method:DeclaresException] = "DelimitedFile".
+lang:physical:filePath[`_Method:DeclaresException] = "facts/Method-DeclaresException.facts".
+lang:physical:delimiter[`_Method:DeclaresException] = "\t".
+lang:physical:hasColumnNames[`_Method:DeclaresException] = false.
 
-_MethodDeclaration:Exception(?param1, ?param2) ->
+_Method:DeclaresException(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
@@ -174,8 +174,8 @@ _MethodDeclaration:Exception(?param1, ?param2) ->
 +Type(?exceptionType),
 +MethodSignature:Value(?method:?param2),
 +MethodSignature(?method),
-+MethodDeclaration:Exception(?exceptionType, ?method) <-
-  _MethodDeclaration:Exception(?param1, ?param2).
++Method:DeclaresException(?exceptionType, ?method) <-
+  _Method:DeclaresException(?param1, ?param2).
 
 
 // MethodModifier
