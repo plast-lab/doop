@@ -604,10 +604,6 @@ import org.apache.commons.logging.LogFactory
             params = params + ["-use-original-names"]
         }
 
-        if (options.KEEP_LINE_NUMBER.value) {
-            params = params + ["-keep-line-number"]
-        }
-
         if (options.MAIN_CLASS.value) {
             params = params + ["-main", options.MAIN_CLASS.value.toString()]
         }
