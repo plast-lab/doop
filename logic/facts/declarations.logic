@@ -192,7 +192,7 @@ ThisVar[?method] = ?var ->
 // This predicate corresponds to Java's throws clause, or the
 // Exceptions clause in Java bytecode.
 
-MethodDeclaration:Exception(?exceptionType, ?method) ->
+Method:DeclaresException(?exceptionType, ?method) ->
    MethodSignature(?method), Type(?exceptionType).
 
 

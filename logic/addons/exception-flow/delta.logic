@@ -5,7 +5,7 @@
 <-
    MethodModifier(?native, ?method),
    Modifier:Value(?native:"native"),
-   MethodDeclaration:Exception(?exceptionType, ?method),
+   Method:DeclaresException(?exceptionType, ?method),
    Type:fqn(?exceptionType:?typeString),
    MethodSignature:Value(?method:?methodString),
    ?s = ?methodString + "/native new " + ?typeString.
