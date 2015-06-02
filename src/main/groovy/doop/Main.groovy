@@ -37,14 +37,46 @@ class Main {
         //initialize logging
         Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
-        logger.debug "Command line options: $args"
-
         try {
 
             CliBuilder builder = CommandLineAnalysisFactory.createCliBuilder()
-            OptionAccessor cli = builder.parse(args)
 
-            if (!cli || !args || cli.h) {
+            if(!args) {
+                builder.usage()
+                return
+            }
+
+            //Check for bloxbath options
+            int len = args.length
+            int index = -1
+            int i = 0
+            while(i<len) {
+                if (args[i] == "--") {
+                    index = i
+                    break
+                }
+                i++
+            }
+
+            def argsToParse
+            String bloxOptions
+
+            if (index == -1) {
+                //no bloxbatch options
+                argsToParse = args
+                bloxOptions = null
+            }
+            else {
+                argsToParse = args[0..index-1]
+                bloxOptions = args[index+1..len-1].join(' ')
+            }
+
+            //logger.info("args: $argsToParse")
+            //logger.info("BLOX Options: $bloxOptions")
+
+            OptionAccessor cli = builder.parse(argsToParse)
+
+            if (!cli || cli.h) {
                 builder.usage()
                 return
             }
@@ -92,6 +124,8 @@ class Main {
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
+
+            analysis.options.BLOX_OPTS.value = bloxOptions
 
             logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
             logger.debug analysis

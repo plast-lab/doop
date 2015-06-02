@@ -315,11 +315,13 @@ class Helper {
                 return o
             }
             else if (option.argName) {
+                //Option accepts a String value
                 Option o = new Option(null, option.name, true, option.description)
                 o.setArgName(option.argName)
                 return o
             }
             else {
+                //Option is a boolean
                 return new Option(null, option.name, false, option.description)
             }
         }

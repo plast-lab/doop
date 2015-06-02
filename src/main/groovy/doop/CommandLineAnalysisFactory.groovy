@@ -79,7 +79,10 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         def list = Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(', ')
 
         CliBuilder cli = new CliBuilder(
-            usage:  "doop [OPTION]...",
+            usage:  "doop [OPTION]... -- [BLOXBATCH OPTION]...",
+            footer: "Common Bloxbatch options:\n" +
+                "-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
+                "-logLevel LEVEL: Log the execution of logic at level LEVEL (for example: all).",
         )
         cli.width = 120
 
