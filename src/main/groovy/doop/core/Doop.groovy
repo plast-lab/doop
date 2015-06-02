@@ -602,7 +602,7 @@ class Doop {
      * @param filter - optional filter to apply before setting the option.
      * @return the default analysis options overridden by the values contained in the CLI option accessor.
      */
-    static Map<String, AnalysisOption> overrideDefaultOptionWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
         Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
         options.values().each { AnalysisOption option ->
             String optionName = option.name
