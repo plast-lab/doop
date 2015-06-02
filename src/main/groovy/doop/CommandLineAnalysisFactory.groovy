@@ -40,7 +40,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the id of the analysis (short option: id)
         String id = cli.id ?: null
 
-        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionWithCLI(cli) { AnalysisOption option ->
+        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
         return newAnalysis(id, name, options, jars)
