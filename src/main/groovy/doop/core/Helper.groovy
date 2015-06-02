@@ -172,11 +172,11 @@ class Helper {
     }
 
     /**
-     * Returns a list of the names of the available analyses in the given doop logic directory
+     * Returns a list of the names of the available analyses in the given doop analyses directory
      */
-    static List<String> namesOfAvailableAnalyses(String doopLogicDir) {
+    static List<String> namesOfAvailableAnalyses(String doopAnalysesDir) {
         List<String> analyses = []
-        new File(Doop.doopLogic).eachDir { File dir ->
+        new File(doopAnalysesDir).eachDir { File dir ->
             if (dir.getName().indexOf("sensitive") != -1 ) {
                 File f = new File(dir, "analysis.logic")
                 if (f.exists() && f.isFile()) {
