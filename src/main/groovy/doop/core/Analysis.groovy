@@ -380,21 +380,23 @@ import org.apache.commons.logging.LogFactory
         }
 
         if (!options.INCREMENTAL.value) {
-            //TODO: Read the bloxopts
+
+            String bloxOpts = options.BLOX_OPTS.value ?: ''
+
             if(isMustPointTo()) {
                 if(options.MAY_PRE_ANALYSIS.value) {
                     String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
                     
                     logger.info "Adding ${mayAnalysis} block"
-                    lbScriptWriter.println("addBlock -F ${mayAnalysis}.logic")
+                    lbScriptWriter.println("addBlock -F ${mayAnalysis}.logic $bloxOpts")
 
                     logger.info "Adding may-related logic for ${name}"
-                    lbScriptWriter.println("addBlock -F may-pre-analysis.logic")
+                    lbScriptWriter.println("addBlock -F may-pre-analysis.logic $bloxOpts")
 
                     // Default option for RootMethodForMustAnalysis.
                     // TODO: add command line option, so users can provide their own subset of root methods
                     logger.info "Adding block for RootMethodForMustAnalysis (default)"
-                    lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClass:Method[?meth] = ?class, A    pplicationClass(?class), Reachable(?meth).'")
+                    lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClass:Method[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
                 }
 
                 //TODO: Default Root Methods for 'simple' must-analyses.
@@ -411,7 +413,7 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println('echo "-- Main Analysis --"')
             lbScriptWriter.println("startTimer")
             lbScriptWriter.println("transaction")
-            lbScriptWriter.println("addBlock -F ${name}.logic")
+            lbScriptWriter.println("addBlock -F ${name}.logic $bloxOpts")
             lbScriptWriter.println("commit")
             lbScriptWriter.println("elapsedTime")
         }

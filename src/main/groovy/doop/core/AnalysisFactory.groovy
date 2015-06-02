@@ -540,7 +540,7 @@ import java.util.jar.JarFile
      */
     protected void checkLogicBlox(AnalysisVars vars) {
 
-        //TODO: Process bloxopts
+        //BLOX_OPTS is set by the main method
     
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
         String lbHomePath = lbhome.value

@@ -608,7 +608,7 @@ class Doop {
             String optionName = option.name
             if (optionName) {
                 def optionValue = cli[(optionName)]
-                Logger.getRootLogger().debug "Processing $optionName = $optionValue"
+                Logger.getRootLogger().debug "Processing $optionName"
                 if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
@@ -640,11 +640,12 @@ class Doop {
     }
 
     static void setOptionFromCLI(AnalysisOption option, OptionAccessor cli) {
+        //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s to its short name
         if (option.id == "DYNAMIC") {
-            //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
-            //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
+            //the short name of the DYNAMIC option is d, so we invoke ds
             option.value = cli.ds
-        } else if (option.argName) {
+        }
+        else if (option.argName) {
             //if the cl option has an arg, the value of this arg defines the value of the respective
             // analysis option
             option.value = cli[(option.name)]
