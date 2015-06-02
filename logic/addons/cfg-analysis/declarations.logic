@@ -1,0 +1,87 @@
+OptInstructionFromMethodIndex[?method, ?index] = ?insn ->
+   Instruction(?insn), int[32](?index), MethodSignature(?method).
+
+Instruction:Next[?i] = ?next ->
+   Instruction(?i), Instruction(?next).
+
+Instruction:Prev[?i] = ?prev ->
+   Instruction(?i), Instruction(?prev).
+
+JumpTarget(?insn, ?prev) ->
+   Instruction(?insn), Instruction(?prev).
+
+// Making explicit, so it can be negated.
+IsJumpTarget(?insn) -> Instruction(?insn).
+
+ExceptionHandlerFirstInstruction(?insn) ->
+   Instruction(?insn).
+
+FallThrough(?insn) ->
+   Instruction(?insn).
+
+BasicBlockBegin(?insn) ->
+   Instruction(?insn).
+
+BasicBlockHead[?insn] = ?headInsn ->
+   Instruction(?insn), Instruction(?headInsn).
+
+BasicBlockTail[?headInsn] = ?tailInsn ->
+   Instruction(?headInsn), Instruction(?tailInsn).
+
+BasicBlockEnd(?insn) -> Instruction(?insn).
+
+UnconditionalControlTransfer(?insn) ->
+   Instruction(?insn).
+
+// This is almost but not really a "may" relation for successor
+// instructions. It does not include the targets of throw
+// instructions. Hence the predicate name, meant to remind users that
+// they should always check if the instruction is the beginning of
+// an exception handler.
+MaySuccessorModuloThrow(?next, ?prev) ->
+   Instruction(?next), Instruction(?prev).
+
+MayPredecessorModuloThrow(?prev, ?next) ->
+   Instruction(?next), Instruction(?prev).
+
+// Same concept for basic blocks. Reduces the cost significantly, since
+// subsequent computation is quadratic.
+MaySuccessorBBModuloThrow(?next, ?prev) ->
+   Instruction(?next), Instruction(?prev).
+
+MayPredecessorBBModuloThrow(?prev, ?next) ->
+   Instruction(?next), Instruction(?prev).
+
+// The Dominates relation is defined on basic blocks,
+// represented by their first instruction (head). Defining
+// a dense quadratic relation, like Dominates, on individual
+// instructions was hugely expensive.
+
+// To get to ?insn, we need to have gone through ?dominator
+Dominates(?dominator, ?insn) ->
+   Instruction(?insn), Instruction(?dominator).
+
+// A generally useful concept. Includes the case of both being in the
+// same basic block.
+DominatedSuccessorInstruction(?insn, ?prevInsn) ->
+   Instruction(?insn), Instruction(?prevInsn).
+
+
+// Phi Nodes Definition. If we have SSA input, then any multiple
+// assignments to the same var are because of a Phi node. In fact,
+// these will also be consecutive.
+NextInSamePhiNode[?insn1] = ?insn2 ->
+   Instruction(?insn1), Instruction(?insn2).
+
+PhiNodeHead[?insn] = ?headInsn ->
+   Instruction(?insn), Instruction(?headInsn).
+
+// Just inverting for efficiency.
+InstructionInPhiNode(?insn, ?headInsn) ->
+   Instruction(?insn), Instruction(?headInsn).
+
+// There may be multiple return instructions. This is a pain,
+// since they also represent merges of control- and data-flow.
+// We often need to define "forall" behavior over them.
+NextReturn[?insn1] = ?insn2 ->
+   Instruction(?insn1), Instruction(?insn2).
