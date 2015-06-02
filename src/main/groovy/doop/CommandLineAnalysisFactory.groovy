@@ -76,7 +76,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli //all options with cli property
         }
 
-        def list = Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(', ')
+        def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             usage:  "doop [OPTION]... -- [BLOXBATCH OPTION]...",
