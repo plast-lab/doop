@@ -324,10 +324,28 @@ StaticFinalFieldMustPointTo[?fld] = ?heap <-
 
 // Frame rules
 
+OptAccessPath:ContainsField(?ap, ?fld) <-
+   AccessPath:ContainsField(?fld, ?ap);
+   AccessPath:ContainsStaticField[?ap] = ?fld.
+
+OptFieldInstruction:Signature(?insn, ?fld) <-
+   FieldInstruction:Signature[?insn] = ?fld.
+
+UpstreamInsnInvalidatesAccessPath(?ap, ?insn) <-
+   OptFieldInstruction:Signature(?insn, ?fld),
+   OptAccessPath:ContainsField(?ap, ?fld).
+
+UpstreamInsnInvalidatesAccessPath(?ap, ?nextInsn) <-
+   MaySuccessorModuloThrow(?nextInsn, ?insn),
+   UpstreamInsnInvalidatesAccessPath(?ap, ?insn).
+
+
+
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   FieldStore(_, ?fld, _, ?insn),
-   !AccessPath:ContainsField(?fld, ?ap).
+   FieldInstruction:Signature[?insn] = ?fld,
+   !AccessPath:ContainsField(?fld, ?ap),
+   !(AccessPath:ContainsStaticField[?ap] = ?fld).
 
 #ifdef MUST_AFTER_MAY
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
@@ -337,11 +355,6 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AccessPath:ByVarInv[?baseAp] = ?var,
    !MayAliasInMethod(?var, ?base).
 #endif
-
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   StaticFieldStore(?fld, _, ?insn),
-   !AccessPath:ContainsStaticField[?ap] = ?fld.
 
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
@@ -667,9 +680,6 @@ MustAlias(?ap2, ?ap1, ?ctx, ?invo) <-
    AccessPathRebasedForReturn[?calleeAp1, ?ctx, ?invo] = ?ap1.
 
 // Frame Rules.
-
-OptAccessPath:ContainsField(?ap, ?fld) <-
-   AccessPath:ContainsField(?fld, ?ap).
 
 OptMethodFromVar(?method, ?var) <-
    Var:DeclaringMethod(?var, ?method).

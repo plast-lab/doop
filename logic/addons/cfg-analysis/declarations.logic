@@ -61,9 +61,14 @@ MayPredecessorBBModuloThrow(?prev, ?next) ->
 Dominates(?dominator, ?insn) ->
    Instruction(?insn), Instruction(?dominator).
 
+// ?insn dominates its predecessor. Must be head of basic block
+// (head of a loop).
+DominatesItsPredecessorInstruction(?prevInsn, ?insn) ->
+   Instruction(?insn), Instruction(?prevInsn).
+
 // A generally useful concept. Includes the case of both being in the
 // same basic block.
-DominatedSuccessorInstruction(?insn, ?prevInsn) ->
+DominatesItsSuccessorInstruction(?insn, ?prevInsn) ->
    Instruction(?insn), Instruction(?prevInsn).
 
 
