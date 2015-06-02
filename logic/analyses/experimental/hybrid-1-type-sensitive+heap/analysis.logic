@@ -1,0 +1,82 @@
+/**
+ * Context-sensitive pointer analysis with context of 1 type and a
+ * context-sensitive heap abstraction.
+ *
+ * @author Martin Bravenboer
+ * @author George Kastrinis
+ */
+
+#include "macros.logic"
+#include "../context-sensitive.logic"
+#include "../library.logic"
+#include "../object-to-type.logic"
+
+ClassHasInstr(?class, ?instr) <- MethodSignature:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.
+ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
+
+// In this analysis, both the real context and the real heap context 
+// are Types. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+// The type is not always a class type, because of arrays currently being
+// a non-class subtype of Object
+
+ContextFromRealContext[?type] = ?ctx ->
+  Context(?ctx), Instruction(?type).
+lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?type -> 
+  Context(?ctx), Instruction(?type).
+
+RealContextFromContext[?ctx] = ?type <-
+  ContextFromRealContext[?type] = ?ctx.
+
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Instruction(?type).
+lang:skolem(`HContextFromRealHContext).
+
+// Creating special immutable type constant
+ImmutableTypeValue[] = ?immType <-
+  Instruction:Value(?immType:"<<immutable>>").
+
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?type, ?alloc).
+
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?type, ?alloc).
+
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?type, ?alloc).
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?realctx] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  Instruction:Value(?realctx:"<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?realctx] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  Instruction:Value(?realctx:"<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?realctx] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  Instruction:Value(?realctx:"<<class-initialization>>").

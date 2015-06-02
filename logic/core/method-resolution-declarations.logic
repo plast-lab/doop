@@ -1,0 +1,19 @@
+/**
+ * Virtual method resolution
+ *
+ * TODO Test for accessibility.
+ */
+MethodLookup[?simplename, ?descriptor, ?type] = ?method ->
+   SimpleName(?simplename),
+   MethodDescriptor(?descriptor),
+   Type(?type),
+   MethodSignature(?method).
+
+/**
+ * Is there a non-abstract method declaration?
+ */
+MethodImplemented[?simplename, ?descriptor, ?type] = ?method ->
+   SimpleName(?simplename),
+   MethodDescriptor(?descriptor),
+   Type(?type),
+   MethodSignature(?method).
