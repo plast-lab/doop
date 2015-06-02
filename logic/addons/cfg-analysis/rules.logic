@@ -98,22 +98,50 @@ MaySuccessorBBModuloThrow(?next, ?prev) <-
 MayPredecessorBBModuloThrow(?prev, ?next) <-
    MaySuccessorBBModuloThrow(?next, ?prev).
 
+// The Dominates relation is defined on basic blocks,
+// represented by their first instruction (head). Defining
+// a dense quadratic relation, like Dominates, on individual
+// instructions was hugely expensive.
 
-// All basic blocks with successors dominate themselves.
-Dominates(?insn, ?insn) <-
-   MaySuccessorBBModuloThrow(_, ?insn).
+// Dominates(?dominator, ?insn): To get to ?insn, we need to have gone
+// through ?dominator
+
+// Either the first instruction... 
+CFGRoot(?insn, ?method) <-
+   OptInstructionFromMethodIndex[?method, 1] = ?insn.
+
+// or... could also be beginning of exception handler
+CFGRoot(?insn, ?method) <-
+   BBHeadInMethod(?insn, ?method),
+   !(MayPredecessorBBModuloThrow(_, ?insn)).
+
+// DoesNotDominate(?dominatorCandidate, ?insn): ?insn (which is a
+// basic block head) is NOT dominated by ?dominatorCandidate
+DoesNotDominate(?dominatorCandidate, ?insn) <-
+   BBHeadInMethod(?dominatorCandidate, ?method),
+   CFGRoot(?insn, ?method),
+   ?dominatorCandidate != ?insn.
+
+DoesNotDominate(?dominatorCandidate, ?insn) <-
+   DoesNotDominate(?dominatorCandidate, ?otherInsn),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   ?insn != ?dominatorCandidate.
 
 Dominates(?dominator, ?insn) <-
-   DominatesAllPredecessors(?insn, ?dominator).
+   SameMethodBBHeads(?dominator, ?insn),
+   !DoesNotDominate(?dominator, ?insn).
 
-// Unnecessary but seems to speed up result!!!
-Dominates(?dominator, ?insn) <-
-   Dominates(?dominator, ?intermediate),
-   DominatesAllPredecessors(?insn, ?intermediate).
 
-// A generally useful concept. Includes the case of both being in the
-// same basic block.
-DominatedSuccessorInstruction(?insn, ?prevInsn) <-
+// ?insn dominates its predecessor. ?insn must be the head of a basic
+// block (head of a loop).
+DominatesItsPredecessorInstruction(?prevInsn, ?insn) <-
+   MaySuccessorModuloThrow(?insn, ?prevInsn),
+   BasicBlockHead[?prevInsn] = ?prevInsnHead,
+   (?insn = ?prevInsnHead;
+    Dominates(?insn, ?prevInsnHead)).      
+
+// Includes the case of both being in the same basic block.
+DominatesItsSuccessorInstruction(?insn, ?prevInsn) <-
    MaySuccessorModuloThrow(?insn, ?prevInsn),
    BasicBlockHead[?prevInsn] = ?prevInsnHead,
    BasicBlockHead[?insn] = ?insnHead,
@@ -171,15 +199,15 @@ NextReturn[?returnInsn] = ?nextReturnInsn <-
 ExistsPreviousReturn(?insn) <-
    NextReturn[_] = ?insn.
 
+BBHeadInMethod(?insn, ?method) <-
+   BasicBlockBegin(?insn),
+   Instruction:Method[?insn] = ?method.
+   
+SameMethodBBHeads(?insn1, ?insn2) <-
+   BBHeadInMethod(?insn1, ?method),
+   BBHeadInMethod(?insn2, ?method).
 
-
-//// DO NOT READ THE FOLLOWING UNLESS YOU HAVE TO. Assume that
-//// DominatesAllPredecessors does the right thing, unless you have
-//// evidence to the contrary and need to debug it.
-////
-//// <------------------ START
-//// Dirty laundry computations. These are just painful rules for
-//// simulating a "forall" in Datalog.
+// Auxiliaries...
 
 // Quadratic, but doesn't matter, since it's so local and only
 // defined on basic blocks.
@@ -202,21 +230,3 @@ NextPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
 
 ExistsPreviousPredecessorToSameBB(?pred, ?insn) <-
    NextPredecessorToSameBB[?insn, _] = ?pred.
-
-DominatesUpToPredecessor(?dominator, ?pred, ?insn) <-
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   Dominates(?dominator, ?pred),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
-
-DominatesUpToPredecessor(?dominator, ?pred, ?insn) <-
-   DominatesUpToPredecessor(?dominator, ?prevPred, ?insn),
-   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred,
-   Dominates(?dominator, ?pred).
-
-DominatesAllPredecessors(?insn, ?dominator) <-
-   DominatesUpToPredecessor(?dominator, ?pred, ?insn),
-   !(NextPredecessorToSameBB[?insn, ?pred] = _),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-////
-//// END ------------------>
