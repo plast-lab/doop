@@ -108,7 +108,6 @@ _Stats:Simple:Constructor:newInstance(?invocation) <-
 
 
 
-// TODO handle 0 results
 _t1[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensVarPointsTo(_, _).
 _t2[] = ?c <- agg<<?c = count()>> VarPointsTo(_, _, _, _).
 _t3[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:InsensVarPointsTo(_, _).
