@@ -78,10 +78,8 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   HeapAllocationValue(?constant, "<<string-constant>>").
-#endif
 
-// TODO: Our preprocessor continues to not implement #elseif correctly
-#ifndef PADDLE_COMPAT
+#else
 ReflectionObject(?heap) -> HeapAllocation(?heap).
 ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 
