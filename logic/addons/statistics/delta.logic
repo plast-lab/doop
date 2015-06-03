@@ -166,7 +166,6 @@ _t46[] = ?c <- agg<<?c = count()>> NativeCallGraphEdge(_, _, _, _).
 //_t47[] = ?c <- agg<<?c = count()>> SiteToRefine(_).
 //_t48[] = ?c <- agg<<?c = count()>> ObjectToRefine(_).
 
-// TODO add legend
 +Stats:Metrics("01a@ var points-to (INS)", _t1[]).
 +Stats:Metrics("01b@ var points-to (SENS)", _t2[]).
 +Stats:Metrics("05a@ app var points-to (INS)", _t3[]).

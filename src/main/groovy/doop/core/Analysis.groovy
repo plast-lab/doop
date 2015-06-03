@@ -399,8 +399,6 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println("exec -F ${outDir}/client-extensions-delta.logic")
         }
 
-        //TODO: Log memory statistics
-
         if (options.REFINE.value) {
             refine()
         }
@@ -443,8 +441,6 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println("commit")
             lbScriptWriter.println("elapsedTime")
         }
-
-        //TODO: Kill memory logger
     }
 
     /**
