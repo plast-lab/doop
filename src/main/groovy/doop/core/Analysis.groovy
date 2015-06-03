@@ -640,14 +640,6 @@ import org.apache.commons.logging.LogFactory
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
-        /*
-        TODO: should we remove this?
-        ClassLoader loader = sootClassLoader()
-        sootTime = timing {
-            //we invoke the main method reflectively to avoid adding soot as a compile-time dependency
-            Helper.execJava(loader, "Main", params)
-        }
-        */
         sootTime = timing {
             doop.soot.Main.main(params.toArray(new String[params.size()]))
         }
