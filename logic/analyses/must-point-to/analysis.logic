@@ -324,23 +324,9 @@ StaticFinalFieldMustPointTo[?fld] = ?heap <-
 
 // Frame rules
 
-OptAccessPath:ContainsField(?ap, ?fld) <-
-   AccessPath:ContainsField(?fld, ?ap);
-   AccessPath:ContainsStaticField[?ap] = ?fld.
-
-OptFieldInstruction:Signature(?insn, ?fld) <-
-   FieldInstruction:Signature[?insn] = ?fld.
-
-UpstreamInsnInvalidatesAccessPath(?ap, ?insn) <-
-   OptFieldInstruction:Signature(?insn, ?fld),
-   OptAccessPath:ContainsField(?ap, ?fld).
-
-UpstreamInsnInvalidatesAccessPath(?ap, ?nextInsn) <-
-   MaySuccessorModuloThrow(?nextInsn, ?insn),
-   UpstreamInsnInvalidatesAccessPath(?ap, ?insn).
-
-
-
+// Original version of frame rules, without "dominated predecessor 
+// does not invalidate" logic. At the end of the file, there is an
+// addition that allows more inferences.
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    FieldInstruction:Signature[?insn] = ?fld,
@@ -358,10 +344,10 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   MethodInvocation(?insn), 
 #ifdef MUST_AFTER_MAY
-   !CallMayInvalidateSomeAccessPathField(?ap, ?insn),
-   !CalledMethodMayAllocateHeap(?heap, ?insn).
+   MethodInvocation(?insn), 
+   !CalledMethodMayAllocateHeap(?heap, ?insn),
+   !CallMayInvalidateSomeAccessPathField(?ap, ?insn).
 #else
    !(MethodInvocation(?insn)).
 #endif
@@ -372,6 +358,7 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    !StoreStaticField:Insn(?insn),
    !(AssignHeapAllocation:Heap[?insn] = ?heap),
    !MethodInvocation(?insn).
+
 
 
 // Fill MustPointTo and InstanceFieldMustPointTo relations.
@@ -1210,6 +1197,7 @@ AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
    OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
    NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
 
+
 // For all predecessors of instruction, access path expression must point to...
 AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap ->
    HeapAllocation(?heap), AccessPath(?ap),
@@ -1248,7 +1236,8 @@ AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    PrevInSameBasicBlock[?insn] = ?prev,
    AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?heap.
 
-//// REVIEW: Unnecessary?
+
+
 // for all returns of a method, access path must point to..
 UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap <-
    ReturnInstruction(?return),
@@ -1264,3 +1253,172 @@ AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
    UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap,
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
+
+
+
+
+//// ====================================
+//// BEGIN Addition to AllPredecessors:AccessPathMustPointTo frame rules
+
+//// ... with "no dominated path invalidates" logic. Makes little
+//// difference currently. The original logic needs to exist anyway,
+//// since AllPredecessors... is a relation that also holds at the
+//// beginning of a function, which is a case not captured by the
+//// logic below. (REVIEW) In the future, calls could be made to
+//// produce AllNonDomPredecessors... facts instead of
+//// AllPredecessors...  at the beginning of a function. But right now
+//// the improvement seems minor, so the old rules are kept intact.
+
+OptAccessPath:ContainsField(?ap, ?fld) <-
+   AccessPath:ContainsField(?fld, ?ap);
+   AccessPath:ContainsStaticField[?ap] = ?fld.
+
+InstructionInvalidatesAccessPath(?ap, ?insn) <-
+   StaticFieldStore(?fld, _, ?insn),
+   OptAccessPath:ContainsField(?ap, ?fld).
+
+#ifdef MUST_AFTER_MAY
+InstructionInvalidatesAccessPath(?ap, ?insn) <-
+   FieldStore(?base, _, _, ?insn),
+   AccessPath:Base[?ap] = ?baseAp,
+   AccessPath:ByVarInv[?baseAp] = ?var,
+   MayAliasInMethod(?var, ?base).
+#else
+InstructionInvalidatesAccessPath(?ap, ?insn) <-
+   FieldStore(_, ?fld, _, ?insn),
+   OptAccessPath:ContainsField(?ap, ?fld).
+#endif
+
+BasicBlockInvalidatesAccessPath(?ap, ?headInsn) <-
+   InstructionInvalidatesAccessPath(?ap, ?insn),
+   BasicBlockHead[?insn] = ?headInsn.
+
+// The path (dominated by ?dominator) that ends at ?insn
+// invalidates access path ?ap.
+DominatedPathInvalidatesAccessPath(?ap, ?insn, ?dominator) <-
+   Dominates(?dominator, ?insn),
+   BasicBlockInvalidatesAccessPath(?ap, ?insn).
+
+DominatedPathInvalidatesAccessPath(?ap, ?insn, ?dominator) <-
+   DominatedPathInvalidatesAccessPath(?ap, ?otherInsn, ?dominator),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   Dominates(?dominator, ?insn).
+
+InvalidatingPredecessor(?ap, ?prevHead, ?dominator) <-
+   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+   BasicBlockHead[?prevInsn] = ?prevHead,
+   DominatedPathInvalidatesAccessPath(?ap, ?prevHead, ?dominator).
+
+ExistsInvalidatingPredecessor(?ap, ?dominator) <-
+   InvalidatingPredecessor(?ap, _, ?dominator).
+
+// Even if the access path is not explicitly invalidated, but
+// the execution path contains calls, we probably want to
+// conservatively consider the AP invalidated.
+BasicBlockContainsCall(?headInsn) <-
+   MethodInvocation(?insn),
+   BasicBlockHead[?insn] = ?headInsn.
+
+// The path (dominated by ?dominator) that ends at ?insn
+// makes a call.
+DominatedPathContainsCall(?insn, ?dominator) <-
+   Dominates(?dominator, ?insn),
+   BasicBlockContainsCall(?insn).
+
+DominatedPathContainsCall(?insn, ?dominator) <-
+   DominatedPathContainsCall(?otherInsn, ?dominator),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   Dominates(?dominator, ?insn).
+
+ExistsCallingPathToPredecessor(?prevHead, ?dominator) <-
+   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+   BasicBlockHead[?prevInsn] = ?prevHead,
+   DominatedPathContainsCall(?prevHead, ?dominator).
+
+ExistsCallingPathToSomePredecessor(?dominator) <-
+   ExistsCallingPathToPredecessor(_, ?dominator).
+
+// New version of frame rules
+////
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   !ExistsInvalidatingPredecessor(?ap, ?insn),
+   !ExistsCallingPathToSomePredecessor(?insn),
+   FieldInstruction:Signature[?insn] = ?fld,
+   !AccessPath:ContainsField(?fld, ?ap),
+   !(AccessPath:ContainsStaticField[?ap] = ?fld).
+
+#ifdef MUST_AFTER_MAY
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   !ExistsInvalidatingPredecessor(?ap, ?insn),
+   !ExistsCallingPathToSomePredecessor(?insn),
+   FieldStore(?base, _, _, ?insn),
+   AccessPath:Base[?ap] = ?baseAp,
+   AccessPath:ByVarInv[?baseAp] = ?var,
+   !MayAliasInMethod(?var, ?base).
+#endif
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   !ExistsInvalidatingPredecessor(?ap, ?insn),
+   !ExistsCallingPathToSomePredecessor(?insn),
+#ifdef MUST_AFTER_MAY
+   MethodInvocation(?insn), 
+   !CalledMethodMayAllocateHeap(?heap, ?insn),
+   !CallMayInvalidateSomeAccessPathField(?ap, ?insn).
+#else
+   !(MethodInvocation(?insn)).
+#endif
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   !ExistsInvalidatingPredecessor(?ap, ?insn),
+   !ExistsCallingPathToSomePredecessor(?insn),
+   !StoreInstanceField:Insn(?insn),
+   !StoreStaticField:Insn(?insn),
+   !(AssignHeapAllocation:Heap[?insn] = ?heap),
+   !MethodInvocation(?insn).
+
+
+//// Auxiiliary relation for the above.
+
+// For all non-dominated predecessors of instruction, access path
+// expression must point to...
+
+AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap ->
+   HeapAllocation(?heap), AccessPath(?ap),
+   MustContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap,
+   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
+
+OptAccessPathMustPointToUpToPreviousNonDomPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap
+<-
+   AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?prevPred] = ?heap,
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
+   OptAccessPathMustPointToUpToPreviousNonDomPredecessor[?insn, ?ap, ?ctx, ?pred] =
+      ?heap,
+   OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?pred] = ?heap.
+
+
+AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
+   HeapAllocation(?heap), AccessPath(?ap),
+   MustContext(?ctx), Instruction(?insn).
+
+AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap,
+   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?heap.
+
+//// END to frame rules addition
