@@ -92,8 +92,6 @@ MaySuccessorBBModuloThrow(?next, ?prev) <-
    BasicBlockEnd(?prevEnd),
    BasicBlockBegin(?next),
    BasicBlockHead[?prevEnd] = ?prev.
-// // Unsound over-approximation
-//    !ExceptionHandlerFirstInstruction(?prev).
 
 MayPredecessorBBModuloThrow(?prev, ?next) <-
    MaySuccessorBBModuloThrow(?next, ?prev).
@@ -105,11 +103,13 @@ MayPredecessorBBModuloThrow(?prev, ?next) <-
 
 // Dominates(?dominator, ?insn): To get to ?insn, we need to have gone
 // through ?dominator
+Dominates(?dominator, ?insn) <-
+   SameMethodBBHeads(?dominator, ?insn),
+   !DoesNotDominate(?dominator, ?insn).
 
 // Either the first instruction... 
 CFGRoot(?insn, ?method) <-
    OptInstructionFromMethodIndex[?method, 1] = ?insn.
-
 // or... could also be beginning of exception handler
 CFGRoot(?insn, ?method) <-
    BBHeadInMethod(?insn, ?method),
@@ -127,18 +127,14 @@ DoesNotDominate(?dominatorCandidate, ?insn) <-
    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
    ?insn != ?dominatorCandidate.
 
-Dominates(?dominator, ?insn) <-
-   SameMethodBBHeads(?dominator, ?insn),
-   !DoesNotDominate(?dominator, ?insn).
-
 
 // ?insn dominates its predecessor. ?insn must be the head of a basic
 // block (head of a loop).
 DominatesItsPredecessorInstruction(?prevInsn, ?insn) <-
-   MaySuccessorModuloThrow(?insn, ?prevInsn),
+   JumpTarget(?insn, ?prevInsn),
    BasicBlockHead[?prevInsn] = ?prevInsnHead,
    (?insn = ?prevInsnHead;
-    Dominates(?insn, ?prevInsnHead)).      
+    Dominates(?insn, ?prevInsnHead)).
 
 // Includes the case of both being in the same basic block.
 DominatesItsSuccessorInstruction(?insn, ?prevInsn) <-
@@ -230,3 +226,32 @@ NextPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
 
 ExistsPreviousPredecessorToSameBB(?pred, ?insn) <-
    NextPredecessorToSameBB[?insn, _] = ?pred.
+
+
+// Same concepts as above, but for non-dominated (shortened to "NonDom")
+// predecessors
+NonDomPredecessorBBsToSameBB(?insn, ?prev1, ?prev2) <-   
+   MayPredecessorBBModuloThrow(?prev1, ?insn),
+   MayPredecessorBBModuloThrow(?prev2, ?insn),
+   BasicBlockTail[?prev1] = ?prevTail1,
+   BasicBlockTail[?prev2] = ?prevTail2,
+   !DominatesItsPredecessorInstruction(?prevTail1, ?insn),
+   !DominatesItsPredecessorInstruction(?prevTail2, ?insn),
+   ?prev1 != ?prev2.
+
+LargerNonDomPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) <-
+   NonDomPredecessorBBsToSameBB(?insn, ?prevLarge, ?prevSmall),
+   Instruction:Index[?prevLarge] = ?indexLarge,
+   ?indexLarge > Instruction:Index[?prevSmall].
+
+NextNonDomPredecessorIndexToSameBB[?insn, ?prev] = ?indexNext <-
+   agg<<?indexNext = min(?index)>>(
+     LargerNonDomPredecessorIndexToSameBB(?insn, ?index, ?prev)).
+
+NextNonDomPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
+   NextNonDomPredecessorIndexToSameBB[?insn, ?pred] = ?indexNext,
+   OptInstructionFromMethodIndex[Instruction:Method[?insn], ?indexNext] = ?nextPred.
+
+ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn) <-
+   NextNonDomPredecessorToSameBB[?insn, _] = ?pred.
+
