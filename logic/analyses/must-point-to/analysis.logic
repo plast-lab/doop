@@ -720,7 +720,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 
 #ifdef MUST_AFTER_MAY
 
-// Frame rules that use a may-points-to analysis.
+// Frame rules that use a may-point-to analysis.
 MustAlias(?ap1, ?ap2, ?ctx, ?insn),
 MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
@@ -1254,7 +1254,8 @@ AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
 
 
 //// ====================================
-//// BEGIN Addition to AllPredecessors:AccessPathMustPointTo frame rules
+//// BEGIN Addition to AllPredecessors:AccessPathMustPointTo frame rules and
+////       to AllPredecessors:MustAlias frame rules
 
 //// ... with "no dominated path invalidates" logic. Makes little
 //// difference currently. The original logic needs to exist anyway,
@@ -1334,50 +1335,21 @@ ExistsCallingPathToPredecessor(?prevHead, ?dominator) <-
 ExistsCallingPathToSomePredecessor(?dominator) <-
    ExistsCallingPathToPredecessor(_, ?dominator).
 
-// New version of frame rules
-////
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   !ExistsInvalidatingPredecessor(?ap, ?insn),
-   !ExistsCallingPathToSomePredecessor(?insn),
-   FieldInstruction:Signature[?insn] = ?fld,
-   !AccessPath:ContainsField(?fld, ?ap),
-   !(AccessPath:ContainsStaticField[?ap] = ?fld).
+// New addition to frame rules for AccessPathMustPointTo
 
-#ifdef MUST_AFTER_MAY
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   !ExistsInvalidatingPredecessor(?ap, ?insn),
-   !ExistsCallingPathToSomePredecessor(?insn),
-   FieldStore(?base, _, _, ?insn),
-   AccessPath:Base[?ap] = ?baseAp,
-   AccessPath:ByVarInv[?baseAp] = ?var,
-   !MayAliasInMethod(?var, ?base).
-#endif
+/// If there is a single dominated predecessor, then the conditions
+/// for carrying forward the information imply that the current
+/// instruction cannot invalidate it either.
 
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    !ExistsInvalidatingPredecessor(?ap, ?insn),
    !ExistsCallingPathToSomePredecessor(?insn),
-#ifdef MUST_AFTER_MAY
-   MethodInvocation(?insn), 
-   !CalledMethodMayAllocateHeap(?heap, ?insn),
-   !CallMayInvalidateSomeAccessPathField(?ap, ?insn).
-#else
-   !(MethodInvocation(?insn)).
-#endif
-
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   !ExistsInvalidatingPredecessor(?ap, ?insn),
-   !ExistsCallingPathToSomePredecessor(?insn),
-   !StoreInstanceField:Insn(?insn),
-   !StoreStaticField:Insn(?insn),
    !(AssignHeapAllocation:Heap[?insn] = ?heap),
-   !MethodInvocation(?insn).
+   DominatesItsPredecessorInstruction(_, ?insn).
 
 
-//// Auxiiliary relation for the above.
+//// Auxiliary relations for the above.
 
 // For all non-dominated predecessors of instruction, access path
 // expression must point to...
@@ -1416,5 +1388,94 @@ AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    PrevInSameBasicBlock[?insn] = ?prev,
    AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?heap.
+
+
+// Addition to AllPredecessors:MustAlias frame rules
+
+
+#ifdef MUST_AFTER_MAY
+BasicBlockContainsInvalidatingCall(?ap, ?headInsn) <-
+   CallMayInvalidateSomeAccessPathField(?ap, ?insn),
+   BasicBlockHead[?insn] = ?headInsn.
+
+// The path (dominated by ?dominator) that ends at ?insn
+// makes an invalidating call.
+DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
+   Dominates(?dominator, ?insn),
+   BasicBlockContainsInvalidatingCall(?ap, ?insn).
+
+DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
+   DominatedPathContainsInvalidatingCall(?ap, ?otherInsn, ?dominator),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   Dominates(?dominator, ?insn).
+
+ExistsInvalidatingCallingPathToPredecessor(?ap, ?prevHead, ?dominator) <-
+   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+   BasicBlockHead[?prevInsn] = ?prevHead,
+   DominatedPathContainsInvalidatingCall(?ap, ?prevHead, ?dominator).
+
+ExistsInvalidatingCallingPathToSomePredecessor(?ap, ?dominator) <-
+   ExistsInvalidatingCallingPathToPredecessor(?ap, _, ?dominator).
+#endif
+
+/// New frame rule addition. Again, quite simple, only one kind of
+/// condition.
+
+// Fails due to recursion through negation
+MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+   AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
+   !ExistsInvalidatingPredecessor(?ap1, ?insn),
+   !ExistsInvalidatingPredecessor(?ap2, ?insn),
+#ifdef MUST_AFTER_MAY
+   !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
+   !ExistsInvalidatingCallingPathToSomePredecessor(?ap2, ?insn),
+#else
+   !ExistsCallingPathToSomePredecessor(?insn),
+#endif
+   DominatesItsPredecessorInstruction(_, ?insn).
+
+
+//// Auxiliary relations for the above.
+
+// For all predecessor instructions, aliasing holds between two access
+// paths.
+OptPrevNonDomPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
+
+AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
+   AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
+   Instruction(?insn).
+   
+AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+   AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred),
+   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   MustAlias(?ap1, ?ap2, ?ctx, ?prev).
+
+//For all predecessor instructions, ap1 and ap2 must alias
+AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) ->
+   AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
+   Instruction(?insn), Instruction(?pred).
+
+AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   MustAlias(?ap1, ?ap2, ?ctx, ?tail),
+   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
+
+OptAccessPathsMustAliasAtNextNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   MustAlias(?ap1, ?ap2, ?ctx, ?tail),
+   OptPrevNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
+   AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
+   OptAccessPathsMustAliasAtNextNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
 
 //// END to frame rules addition
