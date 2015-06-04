@@ -3,6 +3,7 @@ suite      = DaCapo2006
 #commonArgs = --jre 1.6 -t 90
 commonArgs = -t 90
 analyses   = context-insensitive 1-call-site-sensitive 1-object-sensitive+heap 2-type-sensitive+heap
+benchmarks = ../benchmarks
 outDir     = .
 prefix     = 
 
@@ -17,13 +18,13 @@ DOOP            = ./doop
 
 DaCapo2006_args = --dacapo
 DaCapo2006_jars = antlr bloat chart eclipse fop hsqldb jython luindex lusearch pmd xalan
-DaCapo2006_jar  = ../benchmarks/dacapo-2006/$(1).jar
-DaCapo2006_libs = ../benchmarks/dacapo-2006/$(1)-deps.jar
+DaCapo2006_jar  = $(benchmarks)/dacapo-2006/$(1).jar
+DaCapo2006_libs = $(benchmarks)/dacapo-2006/$(1)-deps.jar
 
 DaCapoBach_args = --dacapo-bach
 DaCapoBach_jars = avrora batik eclipse h2 jython luindex lusearch pmd sunflow xalan
-DaCapoBach_jar  = ../benchmarks/dacapo-bach/$(1)/$(1).jar
-DaCapoBach_libs = ../benchmarks/dacapo-bach/$(1)/$(1)-libs
+DaCapoBach_jar  = $(benchmarks)/dacapo-bach/$(1)/$(1).jar
+DaCapoBach_libs = $(benchmarks)/dacapo-bach/$(1)/$(1)-libs
 
 define benchmarkRun
 
@@ -39,4 +40,4 @@ $(foreach analysis, $(analyses),\
 		$(eval $(call benchmarkRun,$(analysis),$(benchmark),$(commonArgs),$(suite)))))
 
 clean:
-	rm -rf logs/* out/* results/*
+	rm -rf logs/* out/* results/* last-analysis

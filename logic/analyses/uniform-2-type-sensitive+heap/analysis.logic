@@ -8,7 +8,7 @@
  * @author George Kastrinis
  */
 
-ClassHasInstr(?class, ?instr) <- DeclaringClass:Method[?method] = ?class, Instruction:Method[?instr] = ?method.
+ClassHasInstr(?class, ?instr) <- MethodSignature:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.
 ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
 
 // In this analysis, the real context is a pair of HeapAllocations and

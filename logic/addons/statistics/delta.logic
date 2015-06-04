@@ -108,7 +108,6 @@ _Stats:Simple:Constructor:newInstance(?invocation) <-
 
 
 
-// TODO handle 0 results
 _t1[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensVarPointsTo(_, _).
 _t2[] = ?c <- agg<<?c = count()>> VarPointsTo(_, _, _, _).
 _t3[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:InsensVarPointsTo(_, _).
@@ -166,35 +165,34 @@ _t46[] = ?c <- agg<<?c = count()>> NativeCallGraphEdge(_, _, _, _).
 //_t47[] = ?c <- agg<<?c = count()>> SiteToRefine(_).
 //_t48[] = ?c <- agg<<?c = count()>> ObjectToRefine(_).
 
-// TODO add legend
-+Stats:Metrics("1a@ var points-to (INS)", _t1[]).
-+Stats:Metrics("1b@ var points-to (SENS)", _t2[]).
-+Stats:Metrics("5a@ app var points-to (INS)", _t3[]).
-+Stats:Metrics("5b@ app var points-to (SENS)", _t4[]).
++Stats:Metrics("01a@ var points-to (INS)", _t1[]).
++Stats:Metrics("01b@ var points-to (SENS)", _t2[]).
++Stats:Metrics("05a@ app var points-to (INS)", _t3[]).
++Stats:Metrics("05b@ app var points-to (SENS)", _t4[]).
 +Stats:Metrics("30a@ var points-to (to reflective heap) (INS)", _t5[]).
 +Stats:Metrics("30b@ var points-to (to reflective heap) (SENS)", _t6[]).
 +Stats:Metrics("10a@ reachable variables (INS)", _t7[]).
 +Stats:Metrics("10b@ reachable variables (SENS)", _t8[]).
 
-+Stats:Metrics("2a@ array index points-to (INS)", _t9[]).
-+Stats:Metrics("2b@ array index points-to (SENS)", _t10[]).
-+Stats:Metrics("6a@ app array index points-to (INS)", _t11[]).
-+Stats:Metrics("6b@ app array index points-to (SENS)", _t12[]).
++Stats:Metrics("02a@ array index points-to (INS)", _t9[]).
++Stats:Metrics("02b@ array index points-to (SENS)", _t10[]).
++Stats:Metrics("06a@ app array index points-to (INS)", _t11[]).
++Stats:Metrics("06b@ app array index points-to (SENS)", _t12[]).
 +Stats:Metrics("31a@ array index points-to (to reflective heap) (INS)", _t13[]).
 +Stats:Metrics("31b@ array index points-to (to reflective heap) (SENS)", _t14[]).
 
-+Stats:Metrics("3a@ instance field points-to (INS)", _t15[]).
-+Stats:Metrics("3b@ instance field points-to (SENS)", _t16[]).
-+Stats:Metrics("4a@ static field points-to (INS)", _t17[]).
-+Stats:Metrics("4b@ static field points-to (SENS)", _t18[]).
-+Stats:Metrics("7a@ app array index points-to (INS)", _t19[]).
-+Stats:Metrics("7b@ app array index points-to (SENS)", _t20[]).
++Stats:Metrics("03a@ instance field points-to (INS)", _t15[]).
++Stats:Metrics("03b@ instance field points-to (SENS)", _t16[]).
++Stats:Metrics("04a@ static field points-to (INS)", _t17[]).
++Stats:Metrics("04b@ static field points-to (SENS)", _t18[]).
++Stats:Metrics("07a@ app array index points-to (INS)", _t19[]).
++Stats:Metrics("07b@ app array index points-to (SENS)", _t20[]).
 +Stats:Metrics("32a@ instance field points-to (to reflective heap) (INS)", _t21[]).
 +Stats:Metrics("32b@ instance field points-to (to reflective heap) (SENS)", _t22[]).
 
-+Stats:Metrics("8a@ call graph edges (INS)", _t23[]).
-+Stats:Metrics("8b@ call graph edges (SENS)", _t24[]).
-+Stats:Metrics("9@ non-reachable app concrete methods", _t25[]).
++Stats:Metrics("08a@ call graph edges (INS)", _t23[]).
++Stats:Metrics("08b@ call graph edges (SENS)", _t24[]).
++Stats:Metrics("09@ non-reachable app concrete methods", _t25[]).
 +Stats:Metrics("11a@ reachable methods (INS)", _t26[]).
 +Stats:Metrics("11a@ reachable methods (SENS)", _t27[]).
 

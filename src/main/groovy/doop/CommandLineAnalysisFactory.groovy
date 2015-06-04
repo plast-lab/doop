@@ -40,7 +40,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the id of the analysis (short option: id)
         String id = cli.id ?: null
 
-        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionWithCLI(cli) { AnalysisOption option ->
+        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
         return newAnalysis(id, name, options, jars)
@@ -76,10 +76,13 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli //all options with cli property
         }
 
-        def list = Helper.namesOfAvailableAnalyses(Doop.doopLogic).join(', ')
+        def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
-            usage:  "doop [OPTION]...",
+            usage:  "doop [OPTION]... -- [BLOXBATCH OPTION]...",
+            footer: "Common Bloxbatch options:\n" +
+                "-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
+                "-logLevel LEVEL: Log the execution of logic at level LEVEL (for example: all).",
         )
         cli.width = 120
 

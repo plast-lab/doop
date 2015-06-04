@@ -1,12 +1,4 @@
 /**
- * Declaring class
- * TODO: declare this as a ClassType
- */
-DeclaringClass:Method[?method] = ?type ->
-   MethodSignature(?method),
-   Type(?type).
-
-/**
  * The Type is almost always a ClassType, except for Object methods dispatched
  * on arrays. The Instruction is almost always a HeapAllocation, except for
  * reflectively allocated objects which have a regular invocation site as their

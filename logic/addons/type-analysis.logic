@@ -76,19 +76,17 @@ _Reachable(?tomethod)
 _CallGraph(?invocation, ?tomethod),
 _Reachable(?tomethod)
 <-
-   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
-   _Reachable(?inmethod),
-   MethodDeclaration[?sig] = ?tomethod.
+   StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
+   _Reachable(?inmethod).
 
 // SPCALL
 _CallGraph(?invocation, ?tomethod),
 _VPTSubset(?base, ?this),
 _Reachable(?tomethod)
 <-
-   MethodDeclaration[?sig] = ?tomethod, 
    Instruction:Method[?invocation] = ?inmethod,
    SpecialMethodInvocation:Base[?invocation] = ?base,
-   MethodInvocation:Signature[?invocation] = ?sig,
+   MethodInvocation:Signature[?invocation] = ?tomethod,
    _Reachable(?inmethod),
    ThisVar[?tomethod] = ?this.
 
@@ -149,7 +147,7 @@ _ApplicationVar(?var) <-
  
 _ApplicationMethod(?method) <-
    ApplicationClass(?class),
-   DeclaringClassMethod[?method] = ?class.
+   MethodSignature:DeclaringType[?method] = ?class.
   
 _OptDeclaringMethod[?v] = ?meth <-
    Var:DeclaringMethod(?v, ?meth).

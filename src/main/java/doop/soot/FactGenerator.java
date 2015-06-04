@@ -140,7 +140,6 @@ public class FactGenerator
             return;
         }
 
-        _writer.writeMethodDeclaration(m);
         _writer.writeMethodSignature(m);
 
         int modifiers = m.getModifiers();
@@ -188,7 +187,7 @@ public class FactGenerator
 
         for(SootClass clazz: m.getExceptions())
         {
-            _writer.writeMethodDeclarationException(m, clazz);
+            _writer.writeMethodDeclaresException(m, clazz);
         }
 
         if(!(m.isAbstract() || m.isNative()))
