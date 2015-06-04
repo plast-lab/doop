@@ -440,7 +440,6 @@ import org.apache.commons.logging.LogFactory
                 
 
                 //TODO: Default Root Methods for 'simple' must-analyses.
-                lbScriptWriter.println('echo "-- CFG Analysis Block --"')
                 lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
                 lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
             }
