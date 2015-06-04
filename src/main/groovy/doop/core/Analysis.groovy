@@ -436,7 +436,7 @@ import org.apache.commons.logging.LogFactory
 
                 // Default option for RootMethodForMustAnalysis.
                 // TODO: add command line option, so users can provide their own subset of root methods
-                lbScript.println("addBlock 'RootMethodForMustAnalysis(?meth) <- DeclaringClass:Method[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
+                lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
                 
 
                 //TODO: Default Root Methods for 'simple' must-analyses.
