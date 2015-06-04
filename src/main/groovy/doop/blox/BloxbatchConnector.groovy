@@ -15,20 +15,20 @@ import org.apache.log4j.Logger
 class BloxbatchConnector implements WorkspaceConnector
 {
     private static final List<String> IGNORED_WARNINGS = [
-        """
+        """\
         *******************************************************************
         Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.
         Please use 'lb' instead of 'bloxbatch'.
         *******************************************************************
         """
-    ].collect{ line -> Pattern.quote(line.stripIndent()) }
+    ]*.stripIndent()
 
 
     /** The path to the workspace */
     private final String workspace
 
     /** The environment for running the external bloxbatch commands */
-    Map<String, String> environment
+    private final Map<String, String> environment
 
 
     /**
@@ -39,6 +39,22 @@ class BloxbatchConnector implements WorkspaceConnector
     public BloxbatchConnector(String workspace)
     {
         this.workspace = workspace
+        this.environment = [:]
+    }
+
+    public BloxbatchConnector(File workspace)
+    {
+        this(workspace.getPath())
+    }
+
+    protected void setEnvironment(Map<String,String> environment)
+    {
+        if (!environment) {
+            throw new IllegalArgumentException()
+        }
+
+        this.environment.clear()
+        this.environment.putAll(environment)
     }
 
 
@@ -50,7 +66,7 @@ class BloxbatchConnector implements WorkspaceConnector
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", commandLine)
         Map<String, String> environment = pb.environment()
         environment.clear()
-        environment.putAll(this.environment)
+        environment.putAll(this.environment.entrySet())
         Process process = pb.start()
 
         // Get its standard output and error streams as
@@ -74,7 +90,7 @@ class BloxbatchConnector implements WorkspaceConnector
         String errorMessages = es.getText();
 
         // Prune some redundant warnings
-        for (warning in IGNORED_WARNINGS) {
+        for (warning in IGNORED_WARNINGS.collect{ w -> Pattern.quote(w) }) {
             errorMessages = errorMessages.replaceAll(warning) { String _ -> "" }
         }
 
@@ -101,7 +117,7 @@ class BloxbatchConnector implements WorkspaceConnector
     @Override
     public void create(boolean shouldOverwrite)
     {
-        String commandLine = "bloxbatch -db $workspace -create "
+        String commandLine = "bloxbatch -db $workspace -create -blocks base "
 
         // Check if any existing database should be overwritten
         if (shouldOverwrite) {
@@ -195,7 +211,7 @@ class BloxbatchConnector implements WorkspaceConnector
     @Override
     public void processPredicate(String predicate, Closure outputLineProcessor)
     {
-        executeCommand("bloxbatch -db $workspace -print '$predicate' ",
+        executeCommand("bloxbatch -db $workspace -query '$predicate' ",
                        outputLineProcessor)
     }
 

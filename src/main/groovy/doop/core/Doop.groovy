@@ -20,7 +20,7 @@ class Doop {
             cli:true,
             name:"lbhome",
             argName: "path",
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
@@ -75,10 +75,10 @@ class Doop {
             argName:"FILE",
             isFile:true
         ),
-		new AnalysisOption<String>(
+        new AnalysisOption<String>(
             id:"CLIENT_EXTENSIONS",
             value:false,
-			forPreprocessor:true
+            forPreprocessor:true
         ),
         /* Flags for must analyses */
         new AnalysisOption<String>(
@@ -360,7 +360,7 @@ class Doop {
             id:"SET_BASED",
             value:false,
         ),
-		new AnalysisOption<Boolean>(
+        new AnalysisOption<Boolean>(
             id:"CSV",
             value:false,
         ),
@@ -401,14 +401,6 @@ class Doop {
             name: "sanity"
         ),
         new AnalysisOption<Boolean>(
-            id:"MEMLOG",
-            value:false,
-            cli:true,
-            webUI:true,
-            name: "log-mem-stats",
-            isAdvanced: true
-        ),
-        new AnalysisOption<Boolean>(
             id:"RUN_JPHANTOM",
             description: 'Run jphantom for non-existent referenced jars.',
             value:false,
@@ -431,7 +423,7 @@ class Doop {
             cli:true,
             name:"dacapo",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"DACAPO_BACH",
@@ -440,7 +432,7 @@ class Doop {
             cli:true,
             name:"dacapo-bach",
             forPreprocessor: true,
-			isAdvanced:true
+            isAdvanced:true
         ),
         new AnalysisOption<String>(
             id:"DACAPO_BENCHMARK",
@@ -458,13 +450,6 @@ class Doop {
             webUI:true,
             cli:true,
             name:"use-original-names",
-        ),
-        new AnalysisOption<Boolean>(
-            id:"KEEP_LINE_NUMBER",
-            value:false,
-            webUI:true,
-            cli:true,
-            name:"keep-line-number",
         ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
@@ -485,15 +470,8 @@ class Doop {
             webUI:true,
             cli:true,
             name:"incremental",
-			isAdvanced:true
+            isAdvanced:true
         ),
-		new AnalysisOption<Boolean>(
-            id:"INTERACTIVE",
-            value:false,
-            name:"INTERACTIVE",
-			isAdvanced:true
-        ),
-        //addtional options
         new AnalysisOption<String>(
             id:"APP_REGEX",
             description:"A regex expression for the Java package names to be analyzed.",
@@ -503,15 +481,6 @@ class Doop {
             name:"regex",
             argName:"regex-expression"
         ),
-        new AnalysisOption<String>(
-            id:"USE_JAVA_CPP",
-            description:"Use a full-java preprocessor for the logic files.",
-            value:false,
-            webUI:true,
-            cli:true,
-            name:"jcpp",
-			isAdvanced:true
-        )
     ]
 
     static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
@@ -521,11 +490,10 @@ class Doop {
         "BLOX_OPTS",
         "OS",
         "INCREMENTAL",
-        "INTERACTIVE",
-        "USE_JAVA_CPP"
+        "CACHE"
     ]
 
-    //Not the best pattern, but limits the source code size :)
+    // Not the best pattern, but limits the source code size :)
     static String doopHome
     static String doopLogic
     static String doopOut
@@ -634,13 +602,13 @@ class Doop {
      * @param filter - optional filter to apply before setting the option.
      * @return the default analysis options overridden by the values contained in the CLI option accessor.
      */
-    static Map<String, AnalysisOption> overrideDefaultOptionWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
         Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
         options.values().each { AnalysisOption option ->
             String optionName = option.name
             if (optionName) {
                 def optionValue = cli[(optionName)]
-                Logger.getRootLogger().debug "Processing $optionName = $optionValue"
+                Logger.getRootLogger().debug "Processing $optionName"
                 if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
@@ -672,11 +640,12 @@ class Doop {
     }
 
     static void setOptionFromCLI(AnalysisOption option, OptionAccessor cli) {
+        //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s to its short name
         if (option.id == "DYNAMIC") {
-            //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s
-            //to its short name (the short name of the DYNAMIC option is d, so we invoke ds)
+            //the short name of the DYNAMIC option is d, so we invoke ds
             option.value = cli.ds
-        } else if (option.argName) {
+        }
+        else if (option.argName) {
             //if the cl option has an arg, the value of this arg defines the value of the respective
             // analysis option
             option.value = cli[(option.name)]

@@ -35,7 +35,7 @@ InitializedClass(?superclass) <-
  */
 InitializedClass(?class) <- 
    MainMethodDeclaration(?method),
-   DeclaringClass:Method[?method] = ?class.
+   MethodSignature:DeclaringType[?method] = ?class.
 
 /**
  * T is a class and an instance of T is created
@@ -55,7 +55,7 @@ InitializedClass(?class) <-
    Instruction:Method[?invocation] = ?inmethod,
    StaticMethodInvocation:Insn(?invocation),
    MethodInvocation:Signature[?invocation] = ?signature,
-   DeclaringClass:Method[?signature] = ?class.
+   MethodSignature:DeclaringType[?signature] = ?class.
 
 /**
  * A static field declared by T is assigned

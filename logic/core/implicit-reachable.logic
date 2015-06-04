@@ -3,14 +3,14 @@
 ImplicitReachable(sig) <-
    MethodSignature:Value(sig:"<java.lang.System: void initializeSystemClass()>").
 
-//ImplicitReachable(sig) <-
-//   MethodSignature:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>").
 
-//ImplicitReachable(sig) <-
-//   MethodSignature:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>").
 
-//ImplicitReachable(sig) <-
-//   MethodSignature:Value(sig:"<java.lang.ThreadGroup: void <init>()>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ThreadGroup: void <init>()>").
 
 ImplicitReachable(sig) <-
    MethodSignature:Value(sig:"<java.lang.Thread: void exit()>").

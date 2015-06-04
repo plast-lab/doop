@@ -1,8 +1,9 @@
-package doop.preprocess
+package doop.system
 
 import doop.core.Analysis
 import doop.core.AnalysisOption
 import doop.core.Helper
+import groovy.transform.TypeChecked;
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
@@ -12,37 +13,29 @@ import org.apache.commons.logging.LogFactory
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 2/9/2014
  */
-class CppPreprocessor implements Preprocessor {
+@TypeChecked
+class CppPreprocessor {
 
     private Log logger = LogFactory.getLog(getClass())
 
-    @Override
-    void init() { }
-
-    @Override
     void preprocess(Analysis analysis, String basePath, String input, String output, String... includes) {
 
         logger.debug("Preprocessing $input -> $output")
 
         //Add the appropriate analysis options to the preprocessor
-        List<AnalysisOption> macros = analysis.options.values().findAll { AnalysisOption option ->
+        Collection<AnalysisOption> macros = analysis.options.values().findAll { AnalysisOption option ->
             //if the value of the option is true, we add it to as a macro
             option.forPreprocessor && option.value
         }
 
-        String macroCli = macros.collect{AnalysisOption option -> 
+        def macroCli = macros.collect{AnalysisOption option -> 
             if (option.value instanceof Boolean)
                 return "-D${option.id}" 
             else 
                 return "-D${option.id}='\"${option.value}\"'"
         }.join(" ")
 
-        if (includes) {
-            String includeArgs = includes.collect{ "-include $it" }.join(" ")
-            Helper.execCommand("cpp -P $macroCli $basePath/$input $includeArgs $output", analysis.commandsEnvironment)
-        }
-        else {
-            Helper.execCommand("cpp -P $macroCli $basePath/$input $output", analysis.commandsEnvironment)
-        }
+        def includeArgs = includes.collect{ "-include $it" }.join(" ")
+        new Executor(analysis.commandsEnvironment).execute("cpp -P $macroCli $basePath/$input $includeArgs $output")
     }
 }

@@ -573,13 +573,6 @@ public class FactWriter
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)));
     }
 
-    public void writeMethodDeclaration(SootMethod m)
-    {
-        _db.add(METHOD_DECL,
-                _db.asEntity(METHOD_SIGNATURE, _rep.signature(m)),
-                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-    }
-
     public void writeMethodSignature(SootMethod m)
     {
         _db.add(METHOD_SIGNATURE,
@@ -873,7 +866,7 @@ public class FactWriter
                 _db.asEntity(_rep.method(m)));
     }
 
-    public void writeMethodDeclarationException(SootMethod m, SootClass exception)
+    public void writeMethodDeclaresException(SootMethod m, SootClass exception)
     {
         _db.add(METHOD_DECL_EXCEPTION,
                 writeType(exception),

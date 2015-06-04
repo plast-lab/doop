@@ -1,14 +1,14 @@
 package doop.core
+import doop.system.Executor
+import java.lang.reflect.Method
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import org.apache.commons.cli.Option
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.log4j.*
-
-import java.lang.reflect.Method
-import java.security.MessageDigest
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 /**
  * Various helper methods.
  *
@@ -83,25 +83,6 @@ class Helper {
     }
 
     /**
-     * Executes the given closure using the supplied logger to report its duration in seconds. It also returns the
-     * duration.
-     */
-    static long execWithTiming(Log logger, Closure closure) {
-        long now = System.currentTimeMillis()
-        try {
-            closure.call()
-        }
-        catch(e) {
-            throw e
-        }
-
-        //we measure the time only in error-free cases
-        long duration = (System.currentTimeMillis() - now) / 1000
-        logger?.info "elapsed time: $duration sec"
-        return duration
-    }
-
-    /**
      * Checks that the given file exists or throws the given message
      */
     static File checkFileOrThrowException(String file, String message) {
@@ -152,36 +133,6 @@ class Helper {
     }
 
     /**
-     * Starts the given command as an external process, setting its environment to the supplied Map.
-     * The method invokes each command through the shell (/bin/bash).
-     */
-    static Process startExternalProcess(String command, Map<String, String> env, boolean redirectErrorStream) {
-        Logger.getRootLogger().debug "Executing $command"
-
-        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", command)
-        pb.redirectErrorStream(redirectErrorStream)
-        Map<String, String> environment = pb.environment()
-        environment.clear()
-        environment.putAll(env)
-
-        return pb.start()
-    }
-
-    /**
-     * Executes the given command in the given environment, waiting for the process to complete.
-     * The method redirects the command's output and error streams to System.out and System.err respectively.
-     */
-    static void execCommand(String command, Map<String, String> env) {
-
-        Process process = startExternalProcess(command, env, false)
-
-        process.waitForProcessOutput(System.out as OutputStream, System.err as OutputStream)
-        if (process.exitValue() != 0) {
-            throw new RuntimeException("Command exited with non-zero status:\n $command")
-        }
-    }
-
-    /**
      * Executes the given Java main class using the supplied class loader.
      */
     static void execJava(ClassLoader cl, String mainClass, String[] params) {
@@ -221,11 +172,11 @@ class Helper {
     }
 
     /**
-     * Returns a list of the names of the available analyses in the given doop logic directory
+     * Returns a list of the names of the available analyses in the given doop analyses directory
      */
-    static List<String> namesOfAvailableAnalyses(String doopLogicDir) {
+    static List<String> namesOfAvailableAnalyses(String doopAnalysesDir) {
         List<String> analyses = []
-        new File(Doop.doopLogic).eachDir { File dir ->
+        new File(doopAnalysesDir).eachDir { File dir ->
             if (dir.getName().indexOf("sensitive") != -1 ) {
                 File f = new File(dir, "analysis.logic")
                 if (f.exists() && f.isFile()) {
@@ -235,8 +186,8 @@ class Helper {
         }
         return analyses
     }
-	
-	/**
+    
+    /**
      * Returns a set of the packages contained in the given jar.
      * Any classes that are not included in packages are also retrieved.
      */
@@ -259,14 +210,14 @@ class Helper {
 
         return (packages as Set)
     }
-	
-	/**
-	 * Generates a checksum of the input string (in hex) using the supplied algorithm (SHA-256, MD5, etc).
-	 */
-	static String checksum(String s, String algorithm) {
-		MessageDigest digest = MessageDigest.getInstance(algorithm)
+    
+    /**
+     * Generates a checksum of the input string (in hex) using the supplied algorithm (SHA-256, MD5, etc).
+     */
+    static String checksum(String s, String algorithm) {
+        MessageDigest digest = MessageDigest.getInstance(algorithm)
         return toHex(digest.digest(s.getBytes("UTF-8")))
-	}
+    }
 
     /**
      * Generates a checksum of the input file (in hex) using the supplied algorithm.
@@ -324,7 +275,7 @@ class Helper {
     static void appendAtFirst(Analysis analysis, String firstPath, String secondPath) {
         File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
         String tmpFilePath = tmpFile.getCanonicalPath()
-        Helper.execCommand("cpp -P $secondPath -include $firstPath $tmpFilePath", analysis.commandsEnvironment)
+        new Executor(analysis.commandsEnvironment).execute("cpp -P $secondPath -include $firstPath $tmpFilePath")
         FileUtils.copyFile(tmpFile, new File(firstPath))
         FileUtils.deleteQuietly(tmpFile)
     }
@@ -364,11 +315,13 @@ class Helper {
                 return o
             }
             else if (option.argName) {
+                //Option accepts a String value
                 Option o = new Option(null, option.name, true, option.description)
                 o.setArgName(option.argName)
                 return o
             }
             else {
+                //Option is a boolean
                 return new Option(null, option.name, false, option.description)
             }
         }
