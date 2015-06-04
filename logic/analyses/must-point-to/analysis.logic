@@ -92,51 +92,47 @@ MustCallGraphEdge:Context[?ctx, ?invocation] = ?calleeCtx ->
 
 // special method invocation without "this" value!
 PushMustContext[?invo, ?ctx] = ?calleeCtx, MustContext(?calleeCtx),
-MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?signature,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    SingleAllContext[] = ?ctx,
    MaxContextDepth[] > 0,
    Instruction:Method[?invo] = ?inMethod,
    RootMethodForMustAnalysis(?inMethod),
    SpecialMethodInvocation:Insn(?invo),
-   MethodInvocation:Signature[?invo] = ?signature,
-   MethodDeclaration[?signature] = ?toMethod.
+   MethodInvocation:Signature[?invo] = ?signature.
 
 // special method invocation without "this" value, with context
 PushMustContext[?invo, ?ctx] = ?calleeCtx, MustContext(?calleeCtx),
-MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?signature,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    SpecialMethodInvocation:Insn(?invo),
    Instruction:Method[?invo] = ?inMethod,
    !RootMethodForMustAnalysis(?inMethod),
    ReachableMethodUnderMustContext(?ctx, ?inMethod),
    MustContextDepth[?ctx] < MaxContextDepth[],
-   MethodInvocation:Signature[?invo] = ?signature,
-   MethodDeclaration[?signature] = ?toMethod.
+   MethodInvocation:Signature[?invo] = ?signature.
 
 // Static method invocations
 PushMustContext[?invo, ?ctx] = ?calleeCtx, MustContext(?calleeCtx),
-MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?signature,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    SingleAllContext[] = ?ctx,
    MaxContextDepth[] > 0,
    StaticMethodInvocation:Insn(?invo),
    Instruction:Method[?invo] = ?inMethod,
    RootMethodForMustAnalysis(?inMethod),
-   MethodInvocation:Signature[?invo] = ?signature,
-   MethodDeclaration[?signature] = ?toMethod.
+   MethodInvocation:Signature[?invo] = ?signature.
 
 // Static method invocation, with context
 PushMustContext[?invo, ?ctx] = ?calleeCtx, MustContext(?calleeCtx),
-MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
+MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?signature,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    StaticMethodInvocation:Insn(?invo),
    Instruction:Method[?invo] = ?inMethod,
    !RootMethodForMustAnalysis(?inMethod),
    ReachableMethodUnderMustContext(?ctx, ?inMethod),
    MustContextDepth[?ctx] < MaxContextDepth[],
-   MethodInvocation:Signature[?invo] = ?signature,
-   MethodDeclaration[?signature] = ?toMethod.
+   MethodInvocation:Signature[?invo] = ?signature.
 
 #ifdef MUST_AFTER_MAY
 // Virtual method invocations. Note that this logic does NOT
