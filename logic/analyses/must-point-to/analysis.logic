@@ -297,7 +297,7 @@ AccessPathMustPointTo[?callerAp, ?ctx, ?invo] = ?heap <-
    MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    AllReturn:AccessPathMustPointTo[?ap, ?calleeCtx, ?toMethod] = ?heap,
-   AccessPathRebasedForCall(?ap, ?callerAp, ?ctx, ?invo).
+   AccessPathRebasedForReturn[?ap, ?ctx, ?invo] = ?callerAp.
 
 // Final static fields that must point to an object, at the end of a
 // class initializer, cannot change in the future; thus, we can assume
