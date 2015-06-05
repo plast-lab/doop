@@ -1,0 +1,138 @@
+#include "../library/assignment-compatible.logic"
+#include "../library/checkcast.logic"
+#include "../library/class-initializers.logic"
+#include "../library/method-resolution.logic"
+#include "../library/string-constants.logic"
+#include "../library/subclass.logic"
+#include "../library/superinterface.logic"
+#include "../library/class-initialization.logic"
+#include "../library/implicit-reachable.logic"
+
+/**
+ * Declaring class
+ */
+// TODO declare this as a ClassType
+DeclaringClassMethod[?method] = ?type ->
+  Type(?type),
+  MethodSignature(?method).
+
+DeclaringClassMethod[?method] = ?type <-
+  MethodSignature:DeclaringType[?method] = ?type.
+
+// The Type is almost always a ClassType, except for Object methods
+// dispatched on arrays. The Instruction is almost always a 
+// HeapAllocation, except for reflectively allocated objects which
+// have a regular invocation site as their id.
+DeclaringClassAllocation[?heap] = ?type ->
+  Type(?type),
+  Instruction(?heap).
+
+DeclaringClassAllocation[?heap] = ?type <-
+  AssignHeapAllocation(?heap, _, ?inmethod),
+  DeclaringClassMethod[?inmethod] = ?type,
+  !StringConstant(?heap),
+  !ClassConstant(?heap).
+
+/*
+DeclaringClassAllocation[?heap] = ?type <-
+  ReflectiveHeapAllocation[_, _] = ?heap,
+  HeapAllocation:Type[?heap] = ?type.
+*/
+
+DeclaringClassAllocation[?heap] = ?type <-
+  ReflectiveHeapAllocation[_, ?type] = ?heap.
+
+DeclaringClassAllocation[?heap] = ?type <-
+  ReifiedConstructor[_] = ?heap,
+  HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClassAllocation[?heap] = ?type <-
+  ReifiedMethod[_] = ?heap,
+  HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClassAllocation[?heap] = ?type <-
+  ReifiedField[_] = ?heap,
+  HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClassAllocation[?heap] = ?type <-
+  ClassConstant(?heap),
+  ClassTypeValue(?type, "java.lang.String").
+
+/* REVIEW: the problem is that currently reflective allocations
+   are not uniquely identified. This would produce way too many
+   facts. So instead we cheat and use the type of the reflective
+   allocation as the type *containing* the reflective allocation.
+   If we are to fix this in the future, it will look like this:
+
+DeclaringClassAllocation[?heap] = ?type <-
+  ReflectiveHeapAllocation[?invocation, _] = ?heap,
+  Instruction:Method[?invocation] = ?inmethod,
+  DeclaringClassMethod[?inmethod] = ?type,
+  !StringConstant(?heap).
+*/
+
+DeclaringClassAllocation[?heap] = ?type <-
+  StringConstant(?heap),
+  ClassTypeValue(?type, "java.lang.String").
+
+// The following are special cases. Not clear where they belong.
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<string-constant>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<string-buffer>>"),
+  ClassTypeValue(?type, "java.lang.String").
+
+#if defined(JRE15) || defined(JRE16)
+DeclaringClassAllocation[?heap] = ?type <-
+  HeapAllocationValue(?heap, "<<string-builder>>"),
+  ClassTypeValue(?type, "java.lang.String").
+#endif
+
+/* Helpful macro for debugging. Should be empty.
+WhatAreWeMissing(?heap) -> HeapAllocation(?heap).
+WhatAreWeMissing(?heap) <- 
+  HeapAllocation(?heap),
+  !exists DeclaringClassAllocation[?heap].
+*/
+
+
+/**
+ * Joins of input facts, useful for performance reasons.
+ */
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
+   MethodInvocation(?invocation),
+   SimpleName(?simplename).
+
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename <-
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodSignature:SimpleName[?signature] = ?simplename.
+
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
+   MethodInvocation(?invocation),
+   MethodDescriptor(?descriptor).
+
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodSignature:Descriptor[?signature] = ?descriptor.
+
+/**
+ * Main methods
+ */
+MainMethodDeclaration(?method) ->
+  MethodSignature(?method).
+
+MainMethodDeclaration(?method) <-
+  MainClass(?type),
+  MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
+  Modifier:Value(?public:"public"),
+  Modifier:Value(?static:"static"),
+  MethodSignature:DeclaringType[?signature] = ?type,
+  MethodSignature:SimpleName[?signature] = "main",
+  MethodSignature:Descriptor[?signature] = ?descriptor,
+  MethodDeclaration[?signature] = ?method,
+  MethodModifier(?public, ?method),
+  MethodModifier(?static, ?method).
