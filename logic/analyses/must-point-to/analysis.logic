@@ -336,16 +336,12 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AccessPath:Base[?ap] = ?baseAp,
    AccessPath:ByVarInv[?baseAp] = ?var,
    !MayAliasInMethod(?var, ?base).
-#endif
 
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-#ifdef MUST_AFTER_MAY
    MethodInvocation(?insn), 
    !CalledMethodMayAllocateHeap(?heap, ?insn),
    !CallMayInvalidateSomeAccessPathField(?ap, ?insn).
-#else
-   !(MethodInvocation(?insn)).
 #endif
 
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
