@@ -1,0 +1,6 @@
+/**
+ * TODO: this is not efficient
+ */
+ClassInitializer[?type] = ?method <-
+   MethodDescriptor:Value(?descriptor:"void()"),
+   MethodImplemented["<clinit>", ?descriptor, ?type] = ?method.
