@@ -118,7 +118,8 @@ import org.apache.commons.logging.LogFactory
             logger.debug e.getMessage()
         }
 
-        produceStats()
+        if (!options.NO_STATS.value)
+            produceStats()
 
         lbScriptWriter.close()
 
@@ -152,17 +153,19 @@ import org.apache.commons.logging.LogFactory
             printf("%-80s %,.2f\n", it[0], it[1] as float)
         }
 
-        lines = [] as List<String>
-        connector.processPredicate("Stats:Metrics") { String line ->
-            lines.add(line)
-        }
+        if (!options.NO_STATS.value) {
+            lines = [] as List<String>
+            connector.processPredicate("Stats:Metrics") { String line ->
+                lines.add(line)
+            }
 
-        // We have to first sort (numerically) by the 1st column and
-        // then erase it
+            // We have to first sort (numerically) by the 1st column and
+            // then erase it
 
-        logger.info "-- Statistics --"
-        lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
-            printf("%-80s %,d\n", it[0], it[1] as int)
+            logger.info "-- Statistics --"
+            lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
+                printf("%-80s %,d\n", it[0], it[1] as int)
+            }
         }
     }
 
@@ -551,7 +554,7 @@ import org.apache.commons.logging.LogFactory
         preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         lbScriptWriter.println("addBlock -F statistics-simple.logic")
 
-        if (options.STATS.value) {
+        if (options.FULL_STATS.value) {
             preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
             lbScriptWriter.println("addBlock -F statistics.logic")
         }

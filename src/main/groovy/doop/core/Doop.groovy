@@ -385,12 +385,20 @@ class Doop {
             name: "cache"
         ),
         new AnalysisOption<Boolean>(
-            id:"STATS",
+            id:"FULL_STATS",
             description:"Load additional logic for collecting statistics.",
             value:false,
             cli:true,
             webUI:true,
             name: "full-stats"
+        ),
+        new AnalysisOption<Boolean>(
+            id:"NO_STATS",
+            description:"Do not load logic for collecting statistics.",
+            value:false,
+            cli:true,
+            webUI:true,
+            name: "no-stats"
         ),
         new AnalysisOption<Boolean>(
             id:"SANITY",
