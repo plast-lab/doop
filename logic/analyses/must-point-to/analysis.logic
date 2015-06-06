@@ -79,7 +79,10 @@ ReachableMethodUnderMustContext(?ctx, ?meth)
    MethodSignature:DeclaringType[?meth] = ?class,
    ApplicationClass(?class).
 
-// For all caller contexts, the call at ?invocation will get
+MustReachable(?meth) -> MethodSignature(?meth).
+MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
+
+// For some caller context, the call at ?invocation will get
 // dispatched to ?toMethod, with the ?calleeCtx uniquely determining
 // ?invocation. In this way, information can be passed to the callee,
 // but only qualified by ?calleeCtx.
