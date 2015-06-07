@@ -1,9 +1,6 @@
-#include "../../core/assignment-compatible.logic"
-#include "../../core/checkcast.logic"
 #include "../../core/class-initialization.logic"
 #include "../../core/method-resolution.logic"
 #include "../../core/subclass.logic"
-#include "../../core/superinterface.logic"
 
 
 MainMethodDeclaration(?method) <-
