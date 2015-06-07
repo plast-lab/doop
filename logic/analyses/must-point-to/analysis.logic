@@ -1211,10 +1211,13 @@ InstructionInvalidatesAccessPath(?ap, ?insn) <-
    OptAccessPath:ContainsField(?ap, ?fld).
 
 #ifdef MUST_AFTER_MAY
+OptFieldStore(?insn, ?base) <-
+   FieldStore(?base, _, _, ?insn).
+   
 InstructionInvalidatesAccessPath(?ap, ?insn) <-
-   FieldStore(?base, _, _, ?insn),
-   AccessPath:Base[?ap] = ?baseAp,
-   AccessPath:ByVarInv[?baseAp] = ?var,
+   OptFieldStore(?insn, ?base),
+   AccessPath:BaseInv(?ap, ?baseAp),
+   AccessPath:ByVar[?var] = ?baseAp,
    MayAliasInMethod(?var, ?base).
 #else
 InstructionInvalidatesAccessPath(?ap, ?insn) <-
