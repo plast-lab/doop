@@ -329,8 +329,12 @@ import java.util.jar.JarFile
             logger.debug "The CACHE option has been enabled"
         }
 
-        if (options.STATS.value) {
-            logger.debug "The STATS option has been enabled"
+        if (options.FULL_STATS.value) {
+            logger.debug "The FULL_STATS option has been enabled"
+        }
+
+        if (options.NO_STATS.value) {
+            logger.debug "The NO_STATS option has been enabled"
         }
 
         if (options.SANITY.value) {
