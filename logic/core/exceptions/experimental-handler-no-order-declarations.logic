@@ -1,0 +1,17 @@
+/*****************************************************************************
+ * Compute for an instruction which exception handlers handle which
+ * exception types.
+ *
+ * This is an imprecise version, mostly for intended for experiments.
+ ****************************************************************************/
+
+ExceptionHandler:At(?handler, ?instruction, ?type) ->
+   ExceptionHandler(?handler),
+   Type(?type),
+   Instruction(?instruction).
+
+#ifdef EXCEPTIONS_RANGE
+ExceptionHandler:InRange(?handler, ?instruction) ->
+   ExceptionHandler(?handler),
+   Instruction(?instruction).
+#endif
