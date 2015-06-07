@@ -740,13 +740,13 @@ PushMustContext[?invo, ?ctx] = ?pushedCtx ->
 lang:skolem(`PushMustContext).
 PopMustContext[?ctx] = ?poppedCtx ->
    MustContext(?poppedCtx), MustContext(?ctx).
-PopAllFromMustContext[?ctx] = ?poppedCtx ->
-   MustContext(?poppedCtx), MustContext(?ctx).
 PopMustContext[?ctx] = ?poppedCtx <-
    PushMustContext[_, ?poppedCtx] = ?ctx.
-PopAllFromMustContext[?ctx] = ?poppedCtx,
-PopMustContext[?ctx] = ?poppedCtx <-
-   PushAllOntoContext[?poppedCtx] = ?ctx.
+// PopAllFromMustContext[?ctx] = ?poppedCtx ->
+//    MustContext(?poppedCtx), MustContext(?ctx).
+// PopAllFromMustContext[?ctx] = ?poppedCtx,
+// PopMustContext[?ctx] = ?poppedCtx <-
+//    PushAllOntoContext[?poppedCtx] = ?ctx.
 
 InvoFromContext[?ctx] = ?invocation ->
    MustContext(?ctx), CallGraphEdgeSource(?invocation).
