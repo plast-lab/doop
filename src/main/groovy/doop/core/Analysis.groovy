@@ -445,7 +445,10 @@ import org.apache.commons.logging.LogFactory
             }
 
             preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
-            Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
+            if(isMustPointTo()) 
+                Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
+            else
+                Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
 
             lbScriptWriter.println("commit")
             lbScriptWriter.println("elapsedTime")
