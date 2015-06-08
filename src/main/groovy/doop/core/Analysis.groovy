@@ -125,7 +125,8 @@ import org.apache.commons.logging.LogFactory
 
         logger.info "Running generated script $lbScript"
         long t = timing {
-            executor.execute("cd $outDir ; ${options.BLOXBATCH.value} -script $lbScript", IGNORED_WARNINGS)
+            def bloxOpts = options.BLOX_OPTS.value ?: ''
+            executor.execute("cd $outDir ; ${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
         }
         bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
@@ -410,17 +411,15 @@ import org.apache.commons.logging.LogFactory
 
         if (!options.INCREMENTAL.value) {
 
-            String bloxOpts = options.BLOX_OPTS.value ?: ''
-
             if(isMustPointTo()) {
                 if(options.MAY_PRE_ANALYSIS.value) {
                     String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
                     
                     logger.info "Adding ${mayAnalysis} block"
-                    lbScriptWriter.println("addBlock -F ${mayAnalysis}.logic $bloxOpts")
+                    lbScriptWriter.println("addBlock -F ${mayAnalysis}.logic")
 
                     logger.info "Adding may-related logic for ${name}"
-                    lbScriptWriter.println("addBlock -F may-pre-analysis.logic $bloxOpts")
+                    lbScriptWriter.println("addBlock -F may-pre-analysis.logic")
 
                     // Default option for RootMethodForMustAnalysis.
                     // TODO: add command line option, so users can provide their own subset of root methods
@@ -442,7 +441,7 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println('echo "-- Main Analysis --"')
             lbScriptWriter.println("startTimer")
             lbScriptWriter.println("transaction")
-            lbScriptWriter.println("addBlock -F ${name}.logic $bloxOpts")
+            lbScriptWriter.println("addBlock -F ${name}.logic")
             lbScriptWriter.println("commit")
             lbScriptWriter.println("elapsedTime")
         }
