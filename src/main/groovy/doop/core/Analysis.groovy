@@ -681,7 +681,7 @@ import org.apache.commons.logging.LogFactory
     private List<String> jreLinkArgs() {
 
         String jre = options.JRE.value
-        String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
 
         switch(jre) {
             case "1.3":
@@ -761,7 +761,7 @@ import org.apache.commons.logging.LogFactory
     private List<String> jreAverroesLibraries() {
 
         String jre = options.JRE.value
-        String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
         //Not using if/else for readability
         switch(jre) {
             case "1.3":
@@ -792,7 +792,7 @@ import org.apache.commons.logging.LogFactory
             return "$javaHome/lib/rt.jar"
         }
         else {
-            String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+            String path = "${options.EXTERNALS.value}/jre${jre}/lib"
             return "$path/rt.jar"
         }
     }
