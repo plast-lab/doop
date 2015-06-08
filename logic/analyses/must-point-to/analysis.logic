@@ -230,6 +230,15 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AssignHeapAllocation:HeapInv(?insn, ?heap),
    MustReachable(?inMeth).
 
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   AssignNull:Insn(?insn),
+   SingleAllContext[] = ?ctx,
+   MustReachable(?inMethod),
+   Instruction:Method[?insn] = ?inMethod,
+   AssignInstruction:To[?insn] = ?to,
+   AccessPath:ByVar[?to] = ?ap,
+   HeapAllocation:Null[] = ?heap.
+
 
 // Also propagate heap models when making calls!
 
