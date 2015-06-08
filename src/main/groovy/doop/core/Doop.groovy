@@ -489,6 +489,15 @@ class Doop {
             name:"regex",
             argName:"regex-expression"
         ),
+        new AnalysisOption<String>(
+            id:"EXTERNALS",
+            description: "The path to doop externals",
+            value:System.getenv("DOOP_EXTERNALS"),
+            webUI: false,
+            cli:true,
+            name:"externals",
+            isAdvanced: true
+        )
     ]
 
     static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
@@ -498,7 +507,8 @@ class Doop {
         "BLOX_OPTS",
         "OS",
         "INCREMENTAL",
-        "CACHE"
+        "CACHE",
+        "EXTERNALS"
     ]
 
     // Not the best pattern, but limits the source code size :)
