@@ -313,17 +313,17 @@ MustPointTo[?var, ?ctx, ?insn] = ?heap <-
    AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    AccessPath:ByVarInv[?ap] = ?var.
 
-InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+InstanceFieldMustPointTo[?fld, ?baseHeap, MeetContexts[?ctx2, ?ctx1], ?insn] = ?heap <-
+   AccessPathMustPointTo[?ap, ?ctx1, ?insn] = ?heap,
    AccessPath:Base[?ap] = ?baseAp,
    AccessPath:LastField[?ap] = ?fld,
-   AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseHeap,
+   AccessPathMustPointTo[?baseAp, ?ctx2, ?insn] = ?baseHeap,
    ?baseHeap != HeapAllocation:Null[].
 
 // MustAlias relations are a major source of MustPointTo inferences.
-AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
-   MustAlias(?ap2, ?ap1, ?ctx, ?insn),
-   AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
+AccessPathMustPointTo[?ap2, MeetContexts[?ctx1, ?ctx2], ?insn] = ?heap <-
+   MustAlias(?ap2, ?ap1, ?ctx1, ?insn),
+   AccessPathMustPointTo[?ap1, ?ctx2, ?insn] = ?heap.
 
 AllPredecessors:AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
    AllPredecessors:MustAlias(?ap2, ?ap1, ?ctx, ?insn),
@@ -767,6 +767,8 @@ MustContextDepth[?ctx] = 0 <-
 MeetContexts[?ctx, ?ctx] = ?ctx <-
    MustContext(?ctx).
 
+//lang:derivationType[`MeetContexts] = "Derived".
+
 MeetContexts[?ctx1, ?ctx2] = ?ctx1,
 MeetContexts[?ctx2, ?ctx1] = ?ctx1 <-
    StrongerContext(?ctx1, ?ctx2).
@@ -775,8 +777,8 @@ StrongerContext(?ctx, ?strongerCtx) <-
    SingleAllContext[] = ?strongerCtx,
    PushMustContext[_, _] = ?ctx.
 
-WeakerContext(?strongerCtx, ?ctx) <-
-   StrongerContext(?ctx, ?strongerCtx).
+// WeakerContext(?strongerCtx, ?ctx) <-
+//    StrongerContext(?ctx, ?strongerCtx).
 
 // TODO: Make MaxDepth configurable.
 MaxContextDepth[] = ?num -> int[32](?num).
