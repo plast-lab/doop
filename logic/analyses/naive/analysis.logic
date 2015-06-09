@@ -20,44 +20,44 @@ Reachable(?method) <-
 Reachable(?clinit) <-
   InitializedClass(?class), ClassInitializer[?class] = ?clinit.
 
-Assign(?from, ?to) <-
+Assign(?to, ?from) <-
   AssignLocal(?from, ?to, _).
 
-Assign(?actual, ?formal) <-
+Assign(?formal, ?actual) <-
   CallGraphEdge(?invocation, ?toMethod),
   FormalParam[?index, ?toMethod] = ?formal,
   ActualParam[?index, ?invocation] = ?actual.
 
-Assign(?return, ?local) <-
+Assign(?local, ?return) <-
   CallGraphEdge(?invocation, ?toMethod),
   ReturnVar(?return, ?toMethod),
   AssignReturnValue[?invocation] = ?local.
 
-VarPointsTo(?heap, ?var) <-
+VarPointsTo(?var, ?heap) <-
   AssignHeapAllocation(?heap, ?var, ?inMethod),
   Reachable(?inMethod).
 
-VarPointsTo(?heap, ?to) <-
-  Assign(?from, ?to),
-  VarPointsTo(?heap, ?from).
+VarPointsTo(?to, ?heap) <-
+  Assign(?to, ?from),
+  VarPointsTo(?from, ?heap).
 
-FieldPointsTo(?heap, ?fld, ?baseheap) <-
+FieldPointsTo(?baseheap, ?fld, ?heap) <-
   StoreInstanceField(?from, ?base, ?fld, _),
-  VarPointsTo(?baseheap, ?base),
-  VarPointsTo(?heap, ?from).
+  VarPointsTo(?base, ?baseheap),
+  VarPointsTo(?from, ?heap).
 
-VarPointsTo(?heap, ?to) <-
+VarPointsTo(?to, ?heap) <-
   LoadInstanceField(?base, ?fld, ?to, _),
-  VarPointsTo(?baseheap, ?base),
-  FieldPointsTo(?heap, ?fld, ?baseheap).
+  VarPointsTo(?base, ?baseheap),
+  FieldPointsTo(?baseheap, ?fld, ?heap).
 
 Reachable(?toMethod),
 CallGraphEdge(?invocation, ?toMethod),
-VarPointsTo(?heap, ?this) <-
+VarPointsTo(?this, ?heap) <-
   Reachable(?inMethod),
   Instruction:Method[?invocation] = ?inMethod,
   VirtualMethodInvocation:Base[?invocation] = ?base,
-  VarPointsTo(?heap, ?base),
+  VarPointsTo(?base, ?heap),
   HeapAllocation:Type[?heap] = ?heaptype,
   VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
   VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
