@@ -386,7 +386,7 @@ import java.util.jar.JarFile
 
         //Check the value of the EXTERNALS option (it should point to the JREs directory)
         String externals = options.EXTERNALS.value
-        Helper.checkDirectoryOrThrowException(externals, "The EXTERNALS directory is invalid")
+        Helper.checkDirectoryOrThrowException(externals as String, "The EXTERNALS directory is invalid: $externals")
         
         checkOS(vars)
         
