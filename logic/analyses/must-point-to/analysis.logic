@@ -1106,8 +1106,6 @@ MustAliasUpToPhiInstruction(?ap, MeetContexts[?ctx1,?ctx2], ?nextInsn) <-
 
 // For all predecessor instructions, aliasing holds between two access
 // paths.
-OptPrevPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
-   NextPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
 
 AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
    AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
@@ -1138,7 +1136,7 @@ OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?predPrev) <-
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
    MustAlias(?ap1, ?ap2, ?ctx, ?tail),
-   OptPrevPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+   PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
 
 AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, MeetContexts[?ctx1, ?ctx2], ?insn, ?pred) <-
    AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx1, ?insn, ?prevPred),
@@ -1384,25 +1382,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 
 //// Auxiliary relations for the above.
 
-// For all predecessor instructions, aliasing holds between two access
-// paths.
-OptPrevNonDomPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
-   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
-
-AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
-   AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
-   Instruction(?insn).
-   
-AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred),
-   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   PrevInSameBasicBlock[?insn] = ?prev,
-   MustAlias(?ap1, ?ap2, ?ctx, ?prev).
-
-//For all predecessor instructions, ap1 and ap2 must alias
+// Up to a certain non-dominated predecessor of instruction, ap1 and ap2 must alias
 AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) ->
    AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
    Instruction(?insn), Instruction(?pred).
@@ -1418,11 +1398,26 @@ OptAccessPathsMustAliasAtNextNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?predPre
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
    MustAlias(?ap1, ?ap2, ?ctx, ?tail),
-   OptPrevNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+   PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
 
 AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, MeetContexts[?ctx1,?ctx2], ?insn, ?pred) <-
    AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx1, ?insn, ?prevPred),
    OptAccessPathsMustAliasAtNextNonDomPredecessor(?ap1, ?ap2, ?ctx2, ?insn, ?prevPred),
    NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all non-dominated predecessor basic blocks, aliasing holds between two access
+// paths.
+AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
+   AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
+   Instruction(?insn).
+   
+AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+   AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred),
+   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   MustAlias(?ap1, ?ap2, ?ctx, ?prev).
 
 //// END to frame rules addition
