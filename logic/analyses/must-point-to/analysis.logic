@@ -1209,6 +1209,11 @@ AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
 
 //// ... with "no dominated path invalidates" logic. 
 
+/// TODO: Consistently replace inferences of AllPredecessors with AllNonDomPredecessors,
+///       where applicable (e.g., at beginning of method after call). Consistently use
+///       the relaxed "no dominated path invalidates" logic where AllPredecessors... info
+///       would otherwise be checked (e.g., at call sites).
+
 OptAccessPath:ContainsField(?ap, ?fld) <-
    AccessPath:ContainsField(?fld, ?ap);
    AccessPath:ContainsStaticField[?ap] = ?fld.
