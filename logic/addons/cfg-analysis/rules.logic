@@ -224,6 +224,9 @@ NextPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
    NextPredecessorIndexToSameBB[?insn, ?pred] = ?indexNext,
    OptInstructionFromMethodIndex[Instruction:Method[?insn], ?indexNext] = ?nextPred.
 
+PreviousPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
+
 ExistsPreviousPredecessorToSameBB(?pred, ?insn) <-
    NextPredecessorToSameBB[?insn, _] = ?pred.
 
@@ -251,6 +254,9 @@ NextNonDomPredecessorIndexToSameBB[?insn, ?prev] = ?indexNext <-
 NextNonDomPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
    NextNonDomPredecessorIndexToSameBB[?insn, ?pred] = ?indexNext,
    OptInstructionFromMethodIndex[Instruction:Method[?insn], ?indexNext] = ?nextPred.
+
+PreviousNonDomPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
 
 ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn) <-
    NextNonDomPredecessorToSameBB[?insn, _] = ?pred.
