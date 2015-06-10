@@ -230,16 +230,6 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AssignHeapAllocation:HeapInv(?insn, ?heap),
    MustReachable(?inMeth).
 
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AssignNull:Insn(?insn),
-   SingleAllContext[] = ?ctx,
-   MustReachable(?inMethod),
-   Instruction:Method[?insn] = ?inMethod,
-   AssignInstruction:To[?insn] = ?to,
-   AccessPath:ByVar[?to] = ?ap,
-   HeapAllocation:Null[] = ?heap.
-
-
 // Also propagate heap models when making calls!
 
 // For calls, propagate AccessPathMustPointTo info, if it held for all
@@ -332,7 +322,12 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, MeetContexts[?ctx2, ?ctx1], ?insn] = ?
 // MustAlias relations are a major source of MustPointTo inferences.
 AccessPathMustPointTo[?ap2, MeetContexts[?ctx1, ?ctx2], ?insn] = ?heap <-
    MustAlias(?ap2, ?ap1, ?ctx1, ?insn),
+   ?ap2 != NullAccessPath[],
    AccessPathMustPointTo[?ap1, ?ctx2, ?insn] = ?heap.
+
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+   MustAlias(NullAccessPath[], ?ap, ?ctx, ?insn),
+   HeapAllocation:Null[] = ?heap.
 
 AllPredecessors:AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
    AllPredecessors:MustAlias(?ap2, ?ap1, ?ctx, ?insn),
@@ -783,9 +778,6 @@ MeetContexts[?ctx2, ?ctx1] = ?ctx1 <-
 StrongerContext(?ctx, ?strongerCtx) <-
    SingleAllContext[] = ?strongerCtx,
    PushMustContext[_, _] = ?ctx.
-
-// WeakerContext(?strongerCtx, ?ctx) <-
-//    StrongerContext(?ctx, ?strongerCtx).
 
 // TODO: Make MaxDepth configurable.
 MaxContextDepth[] = ?num -> int[32](?num).
