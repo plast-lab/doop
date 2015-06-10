@@ -368,7 +368,9 @@ import org.apache.commons.logging.LogFactory
          * the engine (DELTA_RECURSION etc.) and in general it helps
          * performance-wise.
          */ 
-        FileUtils.touch(new File(outDir, "addons.logic"))
+        File addons = new File(outDir, "addons.logic")
+        FileUtils.deleteQuietly(addons)
+        FileUtils.touch(addons)
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             lbScriptWriter.println("addBlock -F ${addonsPath}/dacapo/declarations.logic -B DacapoDecls")
@@ -425,10 +427,15 @@ import org.apache.commons.logging.LogFactory
 
                 if(options.MAY_PRE_ANALYSIS.value) {
                     String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
-					
-                    preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
-                    lbScriptWriter.println("addBlock -F ${coreAnalysisName}.logic")
+					lbScriptWriter.println("commit")
 
+                    preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
+
+                    lbScriptWriter.println("transaction")
+                    lbScriptWriter.println("addBlock -F ${coreAnalysisName}.logic")
+                    lbScriptWriter.println("commit")
+
+                    lbScriptWriter.println("transaction")
                     lbScriptWriter.println("addBlock -F ${mustAnalysisPath}/may-pre-analysis.logic")
 
                     analysisPath = mustAnalysisPath
@@ -438,7 +445,6 @@ import org.apache.commons.logging.LogFactory
                 // TODO: add command line option, so users can provide their own subset of root methods
                 lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
                 
-
                 //TODO: Default Root Methods for 'simple' must-analyses.
                 lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
                 lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
