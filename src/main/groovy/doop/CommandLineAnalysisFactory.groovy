@@ -55,7 +55,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         String name = props.getProperty("analysis")
 
         //Get the jars of the analysis
-        List<String> jars = props.getProperty("jar").split(",").collect { String s-> s.trim() }
+        List<String> jars = props.getProperty("jar").split().collect { String s-> s.trim() }
 
         //Get the optional id of the analysis
         String id = props.getProperty("id")
@@ -79,6 +79,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
+            parser: new org.apache.commons.cli.GnuParser (),
             usage:  "doop [OPTION]... -- [BLOXBATCH OPTION]...",
             footer: "Common Bloxbatch options:\n" +
                 "-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
@@ -91,7 +92,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar", valueSeparator: ",")
+            j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
         }

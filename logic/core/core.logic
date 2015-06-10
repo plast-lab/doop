@@ -1,7 +1,6 @@
 #include "assignment-compatible.logic"
 #include "checkcast.logic"
 #include "class-initialization.logic"
-#include "class-initializers.logic"
 #include "declaring-class.logic"
 #include "finalization.logic"
 #include "implicit-reachable.logic"
