@@ -90,40 +90,37 @@ MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    !(NextInSamePhiNode[?lastInsn] = _),
    AssignInstruction:To[?lastInsn] = ?var.
 
-// static method invocation
+// static or special method invocation
+_OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth) <-
+   (StaticMethodInvocation:Insn(?invo);
+    SpecialMethodInvocation:Insn(?invo)), 
+   MethodInvocation:Signature[?invo] = ?toMeth,
+   Instruction:Method[?invo] = ?inMeth.
+
 //MergeMacroMay(?ctx, ?invo, ?hctx, ?heap, ?calleeCtx),
 PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
 MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
 MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
-   StaticMethodInvocation:Insn(?invo),
-   _OptInstruction:Method(?invo, ?inMeth),
+   _OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth),
    ReachableMethodUnderMayContext(?ctx, ?inMeth),
-   MayContextDepth[?ctx] < MaxMayContextDepth[],
-   MethodInvocation:Signature[?invo] = ?toMeth.
+   MayContextDepth[?ctx] < MaxMayContextDepth[].
 
+// special method invocation "this" variable
 _OptSpecialMethodInvocation:Base(?invo, ?base) <-
    SpecialMethodInvocation:Base[?invo] = ?base.
 
+_OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
+   _OptSpecialMethodInvocation:Base(?invo, ?base),
+   MayPointTo(?hctx, ?heap, ?ctx, ?base).
+
+MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+   _OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo),
+   MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+   MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
+   ThisVar[?toMeth] = ?this.
+
 _OptVirtualMethodInvocation:Base(?invo, ?base) <-
    VirtualMethodInvocation:Base[?invo] = ?base.
-   
-//_OptSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
-//   _OptMethodInvocation:Base(?invo, ?base)
-//   MayPointTo(?hctx, ?heap, ?ctx, ?base).
-
-// special method invocation
-//MergeMacroMay(?ctx, ?invo, ?hctx, ?heap, ?calleeCtx),
-PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
-MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
-MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-   _OptSpecialMethodInvocation:Base(?invo, ?base),
-   MayPointTo(?hctx, ?heap, ?ctx, ?base),   
-//   _OptInstruction:Method(?invo, ?inMeth),
-//   ReachableMethodUnderMayContext(?ctx, ?inMeth),
-   MayContextDepth[?ctx] < MaxMayContextDepth[],
-   MethodInvocation:Signature[?invo] = ?toMeth,
-   ThisVar[?toMeth] = ?this.
 
 _OptPotentialVirtualMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
    _OptVirtualMethodInvocation:Base(?invo, ?base),
@@ -457,7 +454,7 @@ MaxMayContextDepth[] = ?num -> int[32](?num).
 RootMethodForMayAnalysis(?meth) <-
    MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
 
-MaxMayContextDepth[] = 10 <- .
+MaxMayContextDepth[] = 5 <- .
 
 //// END configuration
 
