@@ -126,7 +126,7 @@ import org.apache.commons.logging.LogFactory
         logger.info "Running generated script $lbScript"
         long t = timing {
             def bloxOpts = options.BLOX_OPTS.value ?: ''
-            executor.execute("cd $outDir ; ${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
+            executor.execute(outDir, "${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
         }
         bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()

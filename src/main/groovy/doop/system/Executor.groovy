@@ -1,5 +1,6 @@
 package doop.system
 
+import doop.core.Helper
 import groovy.transform.TypeChecked
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory;
@@ -17,8 +18,16 @@ class Executor {
         this.environment = environment
     }
 
-    void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER) {
+    void execute(String workingDirectory,
+                 String commandLine,
+                 Collection<String> ignoredWarnings = null,
+                 Closure outputLineProcessor = STDOUT_PRINTER) {
+
         def pb = new ProcessBuilder("/bin/bash", "-c", commandLine)
+        if (workingDirectory) {
+            File cwd = Helper.checkDirectoryOrThrowException(workingDirectory, "Working directory is invalid: $workingDirectory")
+            pb.directory(cwd)
+        }
         def environment = pb.environment()
         environment.clear()
         environment.putAll(this.environment)
@@ -72,5 +81,9 @@ class Executor {
         if (returnCode != 0) {
             throw new RuntimeException("Command exited with non-zero status:\n $commandLine")
         }
+    }
+
+    void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER) {
+        execute(null, commandLine, ignoredWarnings, outputLineProcessor)
     }
 }
