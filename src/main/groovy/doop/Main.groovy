@@ -71,9 +71,6 @@ class Main {
                 bloxOptions = args[index+1..len-1].join(' ')
             }
 
-            //logger.info("args: $argsToParse")
-            //logger.info("BLOX Options: $bloxOptions")
-
             OptionAccessor cli = builder.parse(argsToParse)
 
             if (!cli || cli.h) {

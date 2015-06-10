@@ -1,4 +1,11 @@
 /**
+ * TODO: this is not efficient
+ */
+ClassInitializer[?type] = ?method <-
+   MethodDescriptor:Value(?descriptor:"void()"),
+   MethodImplemented["<clinit>", ?descriptor, ?type] = ?method.
+
+/**
  * JVM Specification:
  *
  *    - The execution of any one of the Java virtual machine

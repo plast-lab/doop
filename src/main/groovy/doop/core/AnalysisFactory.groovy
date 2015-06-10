@@ -172,7 +172,7 @@ import java.util.jar.JarFile
      * Creates the analysis output dir, if required.
      */
     protected File createOutputDirectory(AnalysisVars vars, String id) {
-        String outDir = "${Doop.doopHome}/out/${vars.name}/${id}"
+        String outDir = "${Doop.doopOut}/${vars.name}/${id}"
         File f = new File(outDir)
         f.mkdirs()
         Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
@@ -329,8 +329,12 @@ import java.util.jar.JarFile
             logger.debug "The CACHE option has been enabled"
         }
 
-        if (options.STATS.value) {
-            logger.debug "The STATS option has been enabled"
+        if (options.FULL_STATS.value) {
+            logger.debug "The FULL_STATS option has been enabled"
+        }
+
+        if (options.NO_STATS.value) {
+            logger.debug "The NO_STATS option has been enabled"
         }
 
         if (options.SANITY.value) {
@@ -379,6 +383,10 @@ import java.util.jar.JarFile
         }
 
         checkJRE(vars)
+
+        //Check the value of the EXTERNALS option (it should point to the JREs directory)
+        String externals = options.EXTERNALS.value
+        Helper.checkDirectoryOrThrowException(externals as String, "The EXTERNALS directory is invalid: $externals")
         
         checkOS(vars)
         

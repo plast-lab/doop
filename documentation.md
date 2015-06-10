@@ -112,8 +112,9 @@ The main command line options are described in the `README` file:
 * -id, --identifier: The human-friendly identifier of the analysis (if not specified, Doop will generate one automatically).
 * --regex: The Java package names to analyse.
 * --main: The name of the Java main class.
-* --jre: The version of the JRE to use. The JRE-specific files should be placed in the `$DOOP_HOME/externals`
-         directory, as in doop-legacy. However, the *old -jre1.x flags are not supported*.
+* --jre: The version of the JRE to use. The new doop checks for the JRE-specific files in the `$DOOP_EXTERNALS`
+         directory, while an alternate location can be provided through the `--externals` option. 
+         Also note that the old -jre1.x flags are not supported.
 * --lbhome: The LogicBlox directory (defaults to the value of the `$LOGICBLOX_HOME` environment variable).
 * -t, --timeout: The analysis execution timeout in minutes.
 * -p, --properties: Load options from the given properties file. When this option is given, all other options are ignored.

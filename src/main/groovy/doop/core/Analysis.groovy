@@ -118,13 +118,15 @@ import org.apache.commons.logging.LogFactory
             logger.debug e.getMessage()
         }
 
-        produceStats()
+        if (!options.NO_STATS.value)
+            produceStats()
 
         lbScriptWriter.close()
 
         logger.info "Running generated script $lbScript"
         long t = timing {
-            executor.execute("cd $outDir ; ${options.BLOXBATCH.value} -script $lbScript", IGNORED_WARNINGS)
+             def bloxOpts = options.BLOX_OPTS.value ?: ''
+             executor.execute(outDir, "${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
         }
         bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
@@ -152,17 +154,19 @@ import org.apache.commons.logging.LogFactory
             printf("%-80s %,.2f\n", it[0], it[1] as float)
         }
 
-        lines = [] as List<String>
-        connector.processPredicate("Stats:Metrics") { String line ->
-            lines.add(line)
-        }
+        if (!options.NO_STATS.value) {
+            lines = [] as List<String>
+            connector.processPredicate("Stats:Metrics") { String line ->
+                lines.add(line)
+            }
 
-        // We have to first sort (numerically) by the 1st column and
-        // then erase it
+            // We have to first sort (numerically) by the 1st column and
+            // then erase it
 
-        logger.info "-- Statistics --"
-        lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
-            printf("%-80s %,d\n", it[0], it[1] as int)
+            logger.info "-- Statistics --"
+            lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
+                printf("%-80s %,d\n", it[0], it[1] as int)
+            }
         }
     }
 
@@ -419,8 +423,6 @@ import org.apache.commons.logging.LogFactory
 
         if (!options.INCREMENTAL.value) {
 
-            String bloxOpts = options.BLOX_OPTS.value ?: ''
-
             if(isMustPointTo()) {
 
                 String mustAnalysisPath = "${Doop.doopLogic}/analyses/${name}"
@@ -461,7 +463,7 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println('echo "-- Main Analysis --"')
             lbScriptWriter.println("startTimer")
             lbScriptWriter.println("transaction")
-            lbScriptWriter.println("addBlock -F ${name}.logic $bloxOpts")
+            lbScriptWriter.println("addBlock -F ${name}.logic")
             lbScriptWriter.println("commit")
             lbScriptWriter.println("elapsedTime")
         }
@@ -575,7 +577,7 @@ import org.apache.commons.logging.LogFactory
         preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         lbScriptWriter.println("addBlock -F statistics-simple.logic")
 
-        if (options.STATS.value) {
+        if (options.FULL_STATS.value) {
             preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
             lbScriptWriter.println("addBlock -F statistics.logic")
         }
@@ -701,7 +703,7 @@ import org.apache.commons.logging.LogFactory
     private List<String> jreLinkArgs() {
 
         String jre = options.JRE.value
-        String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
 
         switch(jre) {
             case "1.3":
@@ -781,7 +783,7 @@ import org.apache.commons.logging.LogFactory
     private List<String> jreAverroesLibraries() {
 
         String jre = options.JRE.value
-        String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
         //Not using if/else for readability
         switch(jre) {
             case "1.3":
@@ -812,7 +814,7 @@ import org.apache.commons.logging.LogFactory
             return "$javaHome/lib/rt.jar"
         }
         else {
-            String path = "${Doop.doopHome}/externals/jre${jre}/lib"
+            String path = "${options.EXTERNALS.value}/jre${jre}/lib"
             return "$path/rt.jar"
         }
     }
