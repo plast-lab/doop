@@ -172,7 +172,7 @@ import java.util.jar.JarFile
      * Creates the analysis output dir, if required.
      */
     protected File createOutputDirectory(AnalysisVars vars, String id) {
-        String outDir = "${Doop.doopHome}/out/${vars.name}/${id}"
+        String outDir = "${Doop.doopOut}/${vars.name}/${id}"
         File f = new File(outDir)
         f.mkdirs()
         Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
