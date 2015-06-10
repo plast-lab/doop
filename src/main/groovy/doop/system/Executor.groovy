@@ -1,26 +1,44 @@
 package doop.system
 
-import groovy.transform.TypeChecked;
+import groovy.transform.TypeChecked
+import org.apache.commons.logging.Log
+import org.apache.commons.logging.LogFactory;
 
 @TypeChecked
-class Executor
-{
+class Executor {
+
+    protected Log logger = LogFactory.getLog(getClass())
+
     static final Closure STDOUT_PRINTER = { String line -> println line }
 
     Map<String, String> environment
 
-    Executor(Map<String, String> environment)
-    {
+    Executor(Map<String, String> environment) {
         this.environment = environment
     }
 
-    void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER)
-    {
+    void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER) {
         def pb = new ProcessBuilder("/bin/bash", "-c", commandLine)
         def environment = pb.environment()
         environment.clear()
         environment.putAll(this.environment)
         def process = pb.start()
+
+        //Add shutdown hook that permits us to kill the child process when the JVM exits
+        System.addShutdownHook {
+            logger.debug("Running shutdown hook to terminate process: $commandLine")
+            try {
+                //If the process has terminated, this will return a value. If not, it will throw an exception.
+                int exit = process.exitValue()
+                logger.debug("Process has exited with value $exit: $commandLine")
+            }
+            catch(any) {
+                //The process has not terminated, destroy it.
+                logger.debug("Destroying process: $commandLine")
+                process.destroy()
+                logger.debug("Process destroyed: $commandLine")
+            }
+        }
 
         // Get its standard output and error streams as input streams
         final InputStream is = process.getInputStream()
