@@ -40,9 +40,19 @@ To install Doop, we need to:
 
 * extract the distribution zip or tarball in a directory of our choice.
 * set the `$DOOP_HOME` environment variable to point to the above directory.
-* install the LogicBlox engine and set the environment variable `$LOGICBLOX_HOME` or use the `-lbhome` flag
+* install the LogicBlox engine and set the environment variable `$LOGICBLOX_HOME` or use the `--lbhome` option
   upon each Doop invocation. Doop will take care of setting additional environment variables, such as `$PATH` and `$LD_LIBRARY_PATH`.
 * setup JRE 6 or higher. Neither Gradle nor Groovy is required to be installed manually.
+
+## Environment Variables
+
+Doop uses the following environment variables:
+
+* `DOOP_HOME`: the Doop home directory (required).
+* `DOOP_OUT`: the directory of output files (optional, defaults to `$DOOP_HOME/out`).
+* `DOOP_EXTERNALS`: the Doop externals directory (required, can be overridden with the `--externals` option). 
+* `LOGICBLOX_HOME`: the LogicBlox home directory (required, can be overridden with the `--lbhome` option).
+
 
 ## Running Doop
 
