@@ -30,7 +30,7 @@ DaCapoBach_tamiflex = $(benchmarks)/dacapo-bach/$(1)/$(1)-tamiflex.log
 define benchmarkRun
 
 run.$1.$2:
-	$(DOOP) -a $1 -j $(call $(4)_jar,$2) -j $(call $(4)_libs,$2) $(call $(4)_args,$2) $3 2>&1 | tee $(outDir)/$(prefix)$(2)_$(1).trace
+	$(DOOP) -a $1 -j $(call $(4)_jar,$2) $(call $(4)_libs,$2) $(call $(4)_args,$2) $3 2>&1 | tee $(outDir)/$(prefix)$(2)_$(1).trace
 
 run: run.$1.$2
 
