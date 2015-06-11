@@ -1,0 +1,25 @@
+#include "macros.logic"
+#include "../../core/core-delta.logic"
+
+/**
+ * Special calling contexts
+ *
+ * Note: the type is necessary (java.lang.String), but never used. It
+ * could be anything. It also needs to be an existing type, otherwise
+ * the sanity checks will barf.
+ */
+PlusHeapAllocation(?heap, "<<initial-context>>", "java.lang.String").
+PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String").
+PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.String").
+
+/**
+ * Special objects
+ */
++MySystemThreadGroup(?alloc),
+  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThreadGroup(?alloc),
+  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThread(?alloc),
+  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").
