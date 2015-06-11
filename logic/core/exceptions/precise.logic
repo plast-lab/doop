@@ -1,0 +1,109 @@
+/*****************************************************************************
+ * Throw statements
+ *****************************************************************************/
+
+/**
+ * A method throws an exception in a context if there is a throw statement in
+ * the method, and the thrown variable points to an object in this context, but
+ * this object is not immediately caught by an exception handler (ThrowPointsTo
+ * rule).
+ * If the object is a caught, then it is assigned to the formal parameter of
+ * the exeception handler (VarPointsTo rule).
+ */
+
+ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) <-
+   Throw(?ref, ?var),
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !(ExceptionHandler:At[?heaptype, ?ref]=_),
+   Instruction:Method[?ref] = ?method.
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
+   Throw(?ref, ?var),
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ExceptionHandler:At[?heaptype, ?ref] = ?handler,
+   ExceptionHandler:FormalParam[?handler] = ?param.
+
+/*****************************************************************************
+ * Method invocations
+ *****************************************************************************/
+
+/**
+ * A method M1 throws an exception in a context if there is a call graph edge
+ * from an invocation in M1 to some method M2 and the method M2 throws a an
+ * exception for this specific (context-sensitive) call graph edge. Also, the
+ * exception should not be caught immediately by an exception handler in M1
+ * (ThrowPointsTo rule).
+ * If there is such an exception handler, then the exception object is assigned
+ * to the formal parameter of the exception handler (VarPointsTo rule).
+ */
+
+ThrowPointsTo(?hctx, ?heap, ?callerCtx, ?callerMethod) <-
+   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+   ThrowPointsTo(?hctx, ?heap, ?calleeCtx, ?tomethod),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !(ExceptionHandler:At[?heaptype,?invocation]=_),
+   Instruction:Method[?invocation] = ?callerMethod.
+
+VarPointsTo(?hctx, ?heap, ?callerCtx, ?param) <-
+   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+   ThrowPointsTo(?hctx, ?heap, ?calleeCtx, ?tomethod),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ExceptionHandler:At[?heaptype,?invocation] = ?handler,
+   ExceptionHandler:FormalParam[?handler] = ?param.
+
+/**
+ * (REVIEW-Yannis) Note how this logic is superlinear. We keep relations that
+ * link every exception handler to every relevant (i.e., throw or methcall)
+ * instruction under its range, and to every type that the exception handler
+ * can handle, including all subtypes of the declared type.  It is not easy to
+ * change this, nor perhaps too valuable. But it is certainly a spot where
+ * bottom-up evaluation with an explicit representation hurts us.  We have very
+ * large ExceptionHandler:At, PossibleExceptionHandler, etc. relations.
+ * NOTE: currently exception objects are allocated context-insensitively.
+/**
+ * An exception of a specific type, thrown at an instruction, is handled by an
+ * exception handler.
+ */
+ExceptionHandler:At[?type, ?instruction] = ?handler <-
+   PossibleExceptionHandler(?handler, ?type, ?instruction),
+   !ImpossibleExceptionHandler(?handler, ?type, ?instruction).
+
+/**
+ * An exception type that is caught by an earlier exception handler (not
+ * ?handler).
+ */
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) <-
+   PossibleExceptionHandler(?handler, ?type, ?instruction),
+   ExceptionHandler:Before(?previous, ?handler),
+   PossibleExceptionHandler(?previous, ?type, ?instruction).
+
+PossibleExceptionHandler(?handler, ?type, ?instruction) <-
+   ExceptionHandler:InRange(?handler, ?instruction),
+   ExceptionHandler:Type[?handler] = ?type.
+
+PossibleExceptionHandler(?handler, ?subtype, ?instruction) <-
+   ExceptionHandler:InRange(?handler, ?instruction),
+   ExceptionHandler:Type[?handler] = ?type,
+   Superclass(?subtype, ?type).
+
+
+ExceptionHandler:InRange(?handler, ?instruction) <-
+   Instruction:Method[?instruction] = ?method,
+   ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+   Instruction:Index[?instruction] = ?index,
+   ExceptionHandler:Begin[?handler] = ?begin,
+   ?begin <= ?index,
+   ExceptionHandler:End[?handler] = ?end,
+   ?index < ?end.
+
+ExceptionHandler:Before(?previous, ?handler) <-
+   ExceptionHandler:Previous[?handler] = ?previous.
+
+ExceptionHandler:Before(?before, ?handler) <-
+   ExceptionHandler:Before(?middle, ?handler),
+   ExceptionHandler:Previous[?middle] = ?before.
+
+InRangeOfExceptionHandler(?instruction) <-
+   ExceptionHandler:InRange(_, ?instruction).
