@@ -1,2 +1,2 @@
 #!/bin/bash
-eval './gradlew run -Pargs="'$@'"'
+eval './gradlew --info run -Pargs="'$@'"'
