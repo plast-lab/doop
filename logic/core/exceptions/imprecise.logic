@@ -1,0 +1,19 @@
+/**
+ * Reachable condition is not necessary because the thrown variable will never
+ * point anywhere if the declaring method of the variable is not reachable.
+ *
+ * Reachable(?method),
+ * Instruction:Method[?ref] = ?method,
+ */
+ThrownException(?hctx, ?heap) <-
+   Throw(_, ?var),
+   VarPointsTo(?hctx, ?heap, _, ?var).
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
+   ReachableContext(?ctx, ?method),
+   ThrownException(?hctx, ?heap),
+   ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+   ExceptionHandler:FormalParam[?handler] = ?param,
+   ExceptionHandler:Type[?handler] = ?type,
+   HeapAllocation:Type[?heap] = ?heaptype,
+   AssignCompatible(?type, ?heaptype).

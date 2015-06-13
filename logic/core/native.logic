@@ -1,0 +1,18 @@
+/**
+ * Methods invoked through native call graph edges are reachable.
+ */
+#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
+ReachableContext(?calleeCtx, ?method) <-
+   NativeCallGraphEdge(_, _, ?calleeCtx, ?method).
+
+RecordImmutableMacro(?ctx, ?argsArray, ?hctx),
+VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
+ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-
+   MainClass(?mainClass),
+   MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
+   ReachableContext(?ctx, ?mainMethod),
+   MethodSignature:Descriptor[?mainMethod] = "void(java.lang.String[])",
+   FormalParam[0, ?mainMethod] = ?args,
+   MainMethodArgsArray(?argsArray),
+   MainMethodArgHeap(?argHeap).
+#endif
