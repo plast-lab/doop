@@ -136,13 +136,14 @@ DominatesItsPredecessorInstruction(?prevInsn, ?insn) <-
    (?insn = ?prevInsnHead;
     Dominates(?insn, ?prevInsnHead)).
 
-// Includes the case of both being in the same basic block.
-DominatesItsSuccessorInstruction(?insn, ?prevInsn) <-
-   MaySuccessorModuloThrow(?insn, ?prevInsn),
-   BasicBlockHead[?prevInsn] = ?prevInsnHead,
-   BasicBlockHead[?insn] = ?insnHead,
-   (?insnHead = ?prevInsnHead;
-    Dominates(?prevInsnHead, ?insnHead)).
+// KF: Currently this rules is not being used at all.
+// // Includes the case of both being in the same basic block.
+// DominatesItsSuccessorInstruction(?insn, ?prevInsn) <-
+//    MaySuccessorModuloThrow(?insn, ?prevInsn),
+//    BasicBlockHead[?prevInsn] = ?prevInsnHead,
+//    BasicBlockHead[?insn] = ?insnHead,
+//    (?insnHead = ?prevInsnHead;
+//     Dominates(?prevInsnHead, ?insnHead)).
 
 
 NextInSamePhiNode[?insn] = ?nextInsn <-
@@ -260,4 +261,3 @@ PreviousNonDomPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
 
 ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn) <-
    NextNonDomPredecessorToSameBB[?insn, _] = ?pred.
-
