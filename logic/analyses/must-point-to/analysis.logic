@@ -211,6 +211,8 @@ AccessPathRebasedForReturn[?ap, ?invo] = ?newAp <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    FormalParam[?index, ?toMethod] = ?formal,
    ActualParam[?index, ?invo] = ?actual,
+   AccessPath:Length[?ap] > 1,
+   AccessPath:Length[?newAp] > 1,
    RebaseAccessPath[?ap, ?actual, ?formal] = ?newAp.
 
 //// END Call graph and reachability relations
