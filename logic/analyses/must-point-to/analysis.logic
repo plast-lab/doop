@@ -483,6 +483,8 @@ MustAlias(?ap4, ?ap3, ?ctx, ?insn) <-
    AccessPath:Length[?ap1] = ?len,
    ?len < AccessPath:MaxLength[],
    ?ap1 != NullAccessPath[],
+   AccessPath:Type[?ap1] = ?t,
+   TypeContainsField(?fld, ?t),
    AccessPath:ByFieldAccess[?fld, ?ap2] = ?ap3.
 
 
