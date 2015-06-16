@@ -355,7 +355,7 @@ import org.apache.commons.logging.LogFactory
         String addonsPath = "${Doop.doopLogic}/addons"
         String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
         /**
-         * Generic file for incrementaly adding addons logic from various
+         * Generic file for incrementally adding addons logic from various
          * points. This is necessary in some cases to avoid weird errors from
          * the engine (DELTA_RECURSION etc.) and in general it helps
          * performance-wise.
