@@ -271,9 +271,9 @@ public class Main {
                 writer.writeApplicationClass(c);
         }
 
-        if(_mode == Mode.FULL) {
-            classes = scene.getClasses();
-        }
+//        if(_mode == Mode.FULL) {
+//            classes = scene.getClasses();
+//        }
 
         // Read all stored properties files
         for (Map.Entry<String,Properties> entry : provider.getProperties().entrySet()) {

@@ -1,9 +1,12 @@
 package doop;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.IOException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.nio.file.Path;
 
 public enum PredicateFile
 {
@@ -87,7 +90,9 @@ public enum PredicateFile
 
     public Writer getWriter(File directory, String suffix) throws IOException
     {
-        return new FileWriter(new File(directory, name + suffix));
+        File factsFile = new File(directory, name + suffix);
+        FileUtils.touch(factsFile);
+        return new FileWriter(factsFile);
     }
 
     public ImportScheme getImportScheme() {

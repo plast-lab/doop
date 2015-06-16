@@ -1,6 +1,7 @@
 package doop.soot;
 
 import doop.PredicateFile;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,10 @@ public class CSVDatabase implements Database
         {
             if (predicateFile.getImportScheme().equals(BY_FILE_PREDICATE))
                 writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
+            else {
+                File factsFile = new File(directory, predicateFile.toString() + ".facts");
+                FileUtils.touch(factsFile);
+            }
         }
     }
 
