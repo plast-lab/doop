@@ -460,11 +460,11 @@ class Doop {
             name:"use-original-names",
         ),
         new AnalysisOption<Boolean>(
-            id:"NO_LIBRARY_FACT_GENERATION",
+            id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
             value:false,
             webUI:true,
             cli:true,
-            name:"no-library-fact-generation"
+            name:"only-application-classes-fact-gen"
         ),
         new AnalysisOption<String>(
             id:"SOOT",
