@@ -691,7 +691,7 @@ import org.apache.commons.logging.LogFactory
      */
     private ClassLoader sootClassLoader() {
         //TODO: for now, we hard-code the soot jars
-        String sootClasses = "${Doop.doopHome}/lib/sootclasses-2.5.0.jar"
+        String sootClasses = "${Doop.doopHome}/lib/sootclasses-${options.SOOT.value}.jar"
         String sootFactGeneration = "${Doop.doopHome}/lib/soot-fact-generation.jar"
 
         File f1 = Helper.checkFileOrThrowException(sootClasses, "soot classes jar missing or invalid: $sootClasses")
