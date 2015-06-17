@@ -1,12 +1,6 @@
 // Must-Point-To information. One needs to be very careful regarding the
 // meaning of predicates.
 
-// REVIEW, ALERT, WARNING! See "negation" comments below.
-// Safe for now, and useful for optimization purposes (lazily
-// compute access paths, based on existing aliases)
-lang:compiler:disableError:NEGATION_RECURSION[]=true.
-lang:compiler:disableWarning:NEGATION_RECURSION[]=true.
-
 // Ignore verification of calculation in head
 lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
@@ -163,16 +157,13 @@ RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
    VarPairMayBeUsedInRebasing(?to, ?from).
 
 // Recursive case
-AccessPath(?newAp),
-AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
-AccessPath:Length[?newAp] = ?len,
 RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
    AccessPath:BaseInv(?ap, ?apBase),
    RebaseAccessPath[?apBase, ?to, ?from] = ?newApBase,
    AccessPath:LastField[?ap] = ?fld,
+   AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
    AccessPath:Type[?newApBase] = ?type,
-   TypeContainsField(?fld, ?type),
-   AccessPath:Length[?ap] = ?len.
+   TypeContainsField(?fld, ?type).
 
 // This is not a function! The same local variable can be two
 // different actual arguments!
@@ -476,9 +467,6 @@ MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
 
 // INCREDIBLY IMPORTANT RULE! "Key rule 1".
 // Main rule creating new access paths
-AccessPath(?ap4),
-AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap4,
-AccessPath:Length[?ap4] = ?len + 1,
 MustAlias(?ap3, ?ap4, ?ctx, ?insn),
 MustAlias(?ap4, ?ap3, ?ctx, ?insn) <-
    MustAlias(?ap1, ?ap2, ?ctx, ?insn),
@@ -487,8 +475,8 @@ MustAlias(?ap4, ?ap3, ?ctx, ?insn) <-
    ?ap1 != NullAccessPath[],
    AccessPath:Type[?ap1] = ?t,
    TypeContainsField(?fld, ?t),
-   AccessPath:ByFieldAccess[?fld, ?ap2] = ?ap3.
-
+   AccessPath:ByFieldAccess[?fld, ?ap2] = ?ap3,
+   AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap4.
 
 // Some auxiliary relations.
 
@@ -656,7 +644,6 @@ AccessPathFieldRelevantAtInvocation(?ap, ?fld, ?insn) <-
    AccessPathRelevantAtInvocation(?insn, ?ap),
    AccessPath:ContainsField(?fld, ?ap).
 
-// (REVIEW) Recursion through negation
 CallMayInvalidateSomeAccessPathField(?ap, ?insn) <-
    CalledMethodMayStoreToInstanceField(?fld, ?insn),
    AccessPathFieldRelevantAtInvocation(?ap, ?fld, ?insn).
@@ -665,14 +652,12 @@ CallMayInvalidateSomeAccessPathField(?ap, ?insn) <-
    OptCalledMethodMayStoreToStaticField(?insn, ?fld),
    OptAccessPath:ContainsField(?ap, ?fld).
 
-// Fails due to recursion through negation
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    FieldStore(_, ?fld, _, ?insn),
    !AccessPath:ContainsField(?fld, ?ap1),
    !AccessPath:ContainsField(?fld, ?ap2).
 
-// Fails due to recursion through negation
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    StaticFieldStore(?fld, _, ?insn),
@@ -1006,18 +991,6 @@ FieldRefModeLastTokenIndex[?ref] = ?maxIdx <-
 
 //// BEGIN access path creation
 
-/*
-// Examine whether this is cheap enough to compute, so we avoid
-// recursion through negation.
-AccessPath(?ap4),
-AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap4,
-AccessPath:Length[?ap4] = ?len + 1 <-
-   Var:DeclaringMethod(AccessPath:BaseVar[?ap1], ?meth), 
-   Var:DeclaringMethod(AccessPath:BaseVar[?ap2], ?meth), 
-   AccessPath:Length[?ap1] < AccessPath:MaxLength[],
-   AccessPath:ByFieldAccess[?fld, ?ap2] = ?ap3.
-*/
-
 // The rules below create access paths from all variables
 // and all access fields in the program.
 AccessPath(?ap),
@@ -1058,6 +1031,98 @@ AccessPath:Length[?ap] = 1 <-
    Reachable(?meth),
 #endif
    ReferenceType(FieldSignature:Type[?fld]).
+
+// Precomputing all "interesting" access paths for the analysis
+OptAccessPath:BaseVar(?ap, ?v) <-
+   AccessPath:BaseVar[?ap] = ?v.
+
+OptVar:DeclaringMethod(?meth, ?var) <-
+   Var:DeclaringMethod(?var, ?meth).
+
+NonStaticReferenceField(?fld) <-
+   FieldSignature:Type[?fld] = ?type,
+   ReferenceType(?type),
+   !(FieldModifier(Modifier:static[], ?fld)).
+
+CandidateFieldForAp(?fld) <-
+   OptVar:DeclaringMethod(?meth, ?v),
+   AccessPath:BaseVar[?ap] = ?v,
+#ifdef MUST_AFTER_MAY
+   Reachable(?meth),
+#endif
+   AccessPath:ByFieldAccess[?fld, ?ap] = _,
+   AccessPath:Type[?ap] = ?type,
+   TypeContainsField(?fld, ?type),
+   NonStaticReferenceField(?fld).
+
+CandidateApBaseField(?fld, ?ap1) <-
+#ifdef MUST_AFTER_MAY
+   Reachable(?meth),
+#endif
+   Var:DeclaringMethod(?v1, ?meth),
+   OptAccessPath:BaseVar(?ap1, ?v1),
+   AccessPath:Type[?ap1] = ?type,
+   CandidateFieldForAp(?fld),
+   TypeContainsField(?fld, ?type).
+
+AccessPath(?ap3),
+AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap3,
+AccessPath:Length[?ap3] = ?len + 1 <-
+   CandidateApBaseField(?fld, ?ap1),
+   AccessPath:Length[?ap1] = ?len,
+   ?len < AccessPath:MaxLength[].
+
+AccessPath(?ap1),
+AccessPath:ByFieldAccess[?fld, ?ap] = ?ap1,
+AccessPath:Length[?ap1] = ?len + 1 <-
+   AccessPath:ContainsStaticField[?ap] = _,
+   AccessPath:Length[?ap] = ?len,
+   ?len < AccessPath:MaxLength[],
+   AccessPath:Type[?ap] = ?t,
+   TypeContainsField(?fld, ?t),
+   CandidateFieldForAp(?fld).
+
+// TODO: This part uses CallGraphEdge predicate as a hint to
+//       precompute Access Paths. If we want to support a "plain"
+//       must-point-to-analysis, we should do the same by using a class
+//       hierarchy analysis.
+#ifdef MUST_AFTER_MAY
+MayInterPoceduralAssign(?v1, ?v2) ->
+   Var(?v1), Var(?v2).
+
+MayInterPoceduralAssign(?actual, ?formal),
+MayInterPoceduralAssign(?formal, ?actual) <-
+   CallGraphEdge(_, ?invo, _, ?toMethod),
+   FormalParam[?index, ?toMethod] = ?formal,
+   ActualParam[?index, ?invo] = ?actual. 
+
+MayInterPoceduralAssign(?this, ?base),
+MayInterPoceduralAssign(?base, ?this) <-
+   CallGraphEdge(_, ?invo, _, ?toMethod),
+   (VirtualMethodInvocation:Base[?invo] = ?base;
+    SpecialMethodInvocation:Base[?invo] = ?base),
+   ThisVar[?toMethod] = ?this.
+
+MayInterPoceduralAssign(?to, ?retVar) <-
+   CallGraphEdge(_, ?invo, _, ?toMethod),
+   AssignReturnValue[?invo] = ?to,
+   ReturnVar(?retVar, ?toMethod).
+
+InterProcedurallyPropagatedPath(?newAp, ?ap)  <-
+   AccessPath:ByVarInv[?ap] = ?from,
+   AccessPath:ByVar[?to] = ?newAp,
+   MayInterPoceduralAssign(?to, ?from).
+
+AccessPath(?newAp),
+AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
+AccessPath:Length[?newAp] = ?len <-
+   AccessPath:BaseInv(?ap, ?apBase),
+   InterProcedurallyPropagatedPath(?newApBase, ?apBase),
+   AccessPath:LastField[?ap] = ?fld,
+   AccessPath:Type[?newApBase] = ?type,
+   TypeContainsField(?fld, ?type),
+   AccessPath:Length[?ap] = ?len.
+#endif
 
 
 //// END access path creation
@@ -1374,47 +1439,49 @@ AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 // Commenting out temporarily the below logic (see comment in new
 // frame rule).
-// #ifdef MUST_AFTER_MAY
-// BasicBlockContainsInvalidatingCall(?ap, ?headInsn) <-
-//    CallMayInvalidateSomeAccessPathField(?ap, ?insn),
-//    BasicBlockHead[?insn] = ?headInsn.
+#ifdef MUST_AFTER_MAY
+BasicBlockContainsInvalidatingCall(?ap, ?headInsn) <-
+   CallMayInvalidateSomeAccessPathField(?ap, ?insn),
+   BasicBlockHead[?insn] = ?headInsn.
 
-// // The path (dominated by ?dominator) that ends at ?insn
-// // makes an invalidating call.
-// DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
-//    Dominates(?dominator, ?insn),
-//    BasicBlockContainsInvalidatingCall(?ap, ?insn).
+OptDominates(?insn, ?dominator) <-
+   Dominates(?dominator, ?insn).
 
-// DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
-//    DominatedPathContainsInvalidatingCall(?ap, ?otherInsn, ?dominator),
-//    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
-//    Dominates(?dominator, ?insn).
+// The path (dominated by ?dominator) that ends at ?insn
+// makes an invalidating call.
+DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
+   OptDominates(?insn, ?dominator),
+   DominatesItsPredecessorInstruction(?insnTail, ?dominator),
+   BasicBlockHead[?insnTail] = ?insn,
+   BasicBlockContainsInvalidatingCall(?ap, ?insn).
+
+DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
+   DominatedPathContainsInvalidatingCall(?ap, ?otherInsn, ?dominator),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   Dominates(?dominator, ?insn).
 
 // ExistsInvalidatingCallingPathToPredecessor(?ap, ?prevHead, ?dominator) <-
-//    DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+//    //DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
 //    BasicBlockHead[?prevInsn] = ?prevHead,
 //    DominatedPathContainsInvalidatingCall(?ap, ?prevHead, ?dominator).
 
-// ExistsInvalidatingCallingPathToSomePredecessor(?ap, ?dominator) <-
-//    ExistsInvalidatingCallingPathToPredecessor(?ap, _, ?dominator).
-// #endif
+ExistsInvalidatingCallingPathToSomePredecessor(?ap, ?dominator) <-
+   DominatedPathContainsInvalidatingCall(?ap, _, ?dominator).
+#endif
 
 /// New frame rule addition. Again, quite simple, only one kind of
 /// condition.
 
-// Fails due to recursion through negation
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    !ExistsInvalidatingPredecessor(?ap1, ?insn),
    !ExistsInvalidatingPredecessor(?ap2, ?insn),
-// The commented logic seems to be ineffective, hence producing
-// invalid pairs. This must be to recursion through negation rules.
-// #ifdef MUST_AFTER_MAY
-//   !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
-//   !ExistsInvalidatingCallingPathToSomePredecessor(?ap2, ?insn),
-//#else
+#ifdef MUST_AFTER_MAY
+   !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
+   !ExistsInvalidatingCallingPathToSomePredecessor(?ap2, ?insn),
+#else
    !ExistsCallingPathToSomePredecessor(?insn),
-//#endif
+#endif
    DominatesItsPredecessorInstruction(_, ?insn).
 
 MustAlias(?ap2, ?ap1, ?ctx, ?insn),
@@ -1423,11 +1490,11 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    !ExistsInvalidatingPredecessor(?ap1, ?insn),
    ?ap2 = NullAccessPath[],
 // Same as above.
-// #ifdef MUST_AFTER_MAY
-//    !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
-// #else
+#ifdef MUST_AFTER_MAY
+   !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
+#else
    !ExistsCallingPathToSomePredecessor(?insn),
-// #endif
+#endif
    DominatesItsPredecessorInstruction(_, ?insn).
 
 
