@@ -30,7 +30,7 @@ public class Main {
     private static boolean _allowPhantom = false;
     private static boolean _useOriginalNames = false;
     private static boolean _keepLineNumber = false;
-    private static boolean _noLibraryFactGeneration = false;
+    private static boolean _onlyApplicationClassesFactGen = false;
     private static ClassFilter applicationClassFilter;
     private static String appRegex = "**";
 
@@ -117,8 +117,8 @@ public class Main {
                 else if (args[i].equals("-use-original-names")) {
                     _useOriginalNames = true;
                 }
-                else if (args[i].equals("-no-library-fact-generation")) {
-                    _noLibraryFactGeneration = true;
+                else if (args[i].equals("-only-application-classes-fact-gen")) {
+                    _onlyApplicationClassesFactGen = true;
                 }
                 else if (args[i].equals("-keep-line-number")) {
                     _keepLineNumber = true;
@@ -126,18 +126,18 @@ public class Main {
                 else if(args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
                     System.err.println("usage: soot-fact-generation [options] file...");
                     System.err.println("options:");
-                    System.err.println("  -main <class>               Specify the main name of the main class");
-                    System.err.println("  -full                       Generate facts by full transitive resolution");
-                    System.err.println("  -ssa                        Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  -d <directory>              Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                    Find classes in default system classes.");
-                    System.err.println("  -deps <directory>           Add jars in this directory to the class lookup path");
-                    System.err.println("  -trap                       Generate TRAP files rather than CSV files");
-                    System.err.println("  -use-original-names         Use original variable names");
-                    System.err.println("  -no-library-fact-generation No fact generation for library jars");
-                    System.err.println("  -keep-line-number           Keep line number information for statements");
-                    System.err.println("  -h, -help                   Print this help message.");
+                    System.err.println("  -main <class>                         Specify the main name of the main class");
+                    System.err.println("  -full                                 Generate facts by full transitive resolution");
+                    System.err.println("  -ssa                                  Generate SSA facts, enabling flow-sensitive analysis");
+                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+                    System.err.println("  -lsystem                              Find classes in default system classes.");
+                    System.err.println("  -deps <directory>                     Add jars in this directory to the class lookup path");
+                    System.err.println("  -trap                                 Generate TRAP files rather than CSV files");
+                    System.err.println("  -use-original-names                   Use original (source code) local variable names");
+                    System.err.println("  -only-application-classes-fact-gen    Generate facts only for application classes");
+                    System.err.println("  -keep-line-number                     Keep line number information for statements");
+                    System.err.println("  -h, -help                             Print this help message.");
                     System.exit(0);
                 }
                 else {
@@ -276,7 +276,7 @@ public class Main {
                 writer.writeApplicationClass(c);
         }
 
-        if(_mode == Mode.FULL && !_noLibraryFactGeneration) {
+        if(_mode == Mode.FULL && !_onlyApplicationClassesFactGen) {
             classes = scene.getClasses();
         }
 
