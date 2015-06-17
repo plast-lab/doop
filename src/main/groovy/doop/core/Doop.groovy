@@ -459,6 +459,13 @@ class Doop {
             cli:true,
             name:"use-original-names",
         ),
+        new AnalysisOption<Boolean>(
+                id:"NO_LIBRARY_FACT_GENERATION",
+                value:false,
+                webUI:true,
+                cli:true,
+                name:"no-library-fact-generation",
+        ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
             description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",

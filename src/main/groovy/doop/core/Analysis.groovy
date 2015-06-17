@@ -654,6 +654,10 @@ import org.apache.commons.logging.LogFactory
             params = params + ["-use-original-names"]
         }
 
+        if (options.NO_LIBRARY_FACT_GENERATION.value) {
+            params = params + ["-no-library-fact-generation"]
+        }
+
         if (options.MAIN_CLASS.value) {
             params = params + ["-main", options.MAIN_CLASS.value.toString()]
         }
