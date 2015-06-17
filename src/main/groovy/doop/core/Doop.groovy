@@ -460,11 +460,20 @@ class Doop {
             name:"use-original-names",
         ),
         new AnalysisOption<Boolean>(
-                id:"NO_LIBRARY_FACT_GENERATION",
-                value:false,
-                webUI:true,
-                cli:true,
-                name:"no-library-fact-generation",
+            id:"NO_LIBRARY_FACT_GENERATION",
+            value:false,
+            webUI:true,
+            cli:true,
+            name:"no-library-fact-generation"
+        ),
+        new AnalysisOption<String>(
+            id:"SOOT",
+            description: "One 2.5.0, 2.5.0-custom (default: 2.5.0).",
+            value:"2.5.0",
+            webUI: true,
+            cli: true,
+            name: "soot",
+            argName: "SOOT_VERSION"
         ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
