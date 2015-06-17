@@ -1002,8 +1002,7 @@ AccessPath:Length[?ap] = 1 <-
    Reachable(?method),
 #endif
    Var:Type[?var] = ?type,
-   ReferenceType(?type),
-   !NullVar(?var).
+   ReferenceType(?type).
 
 NullVar(?var) <-
    AssignNull:Insn(?insn), 
@@ -1061,6 +1060,7 @@ CandidateApBaseField(?fld, ?ap1) <-
 #endif
    Var:DeclaringMethod(?v1, ?meth),
    OptAccessPath:BaseVar(?ap1, ?v1),
+   !NullVar(?v1),
    AccessPath:Type[?ap1] = ?type,
    CandidateFieldForAp(?fld),
    TypeContainsField(?fld, ?type).
@@ -1111,6 +1111,7 @@ MayInterPoceduralAssign(?to, ?retVar) <-
 InterProcedurallyPropagatedPath(?newAp, ?ap)  <-
    AccessPath:ByVarInv[?ap] = ?from,
    AccessPath:ByVar[?to] = ?newAp,
+   !NullVar(?to),
    MayInterPoceduralAssign(?to, ?from).
 
 AccessPath(?newAp),
