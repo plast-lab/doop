@@ -1646,7 +1646,6 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    !ExistsInvalidatingPredecessor(?ap1, ?insn),
    ?ap2 = NullAccessPath[],
-// Same as above.
 #ifdef MUST_AFTER_MAY
    !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
 #else
