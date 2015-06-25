@@ -549,7 +549,7 @@ PhiNodeSource(?var, ?insn) <-
 //// Inter-procedural propagation of MustAlias information
 // First, calls.
 
-// Access path with static fields as bases
+//Access path with static fields as bases
 AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
    (AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?invo);
     AllPredecessors:MustAlias(?ap1, ?ap2, SingleAllContext[], ?invo)),
@@ -816,7 +816,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 MustContext(?ctx) ->.
 lang:entity(`MustContext).
 lang:physical:storageModel[`MustContext]="ScalableSparse".
-lang:physical:capacity[`MustContext] = 8388608.
+lang:physical:capacity[`MustContext] = 16777216.
 
 EmptyContext[] = ?ctx -> MustContext(?ctx).
 lang:skolem(`EmptyContext).
@@ -1113,15 +1113,20 @@ NonStaticReferenceField(?fld) <-
    ReferenceType(?type),
    !(FieldModifier(Modifier:static[], ?fld)).
 
-CandidateFieldForAp(?fld) <-
+FieldUsedInProgram(?fld, ?meth) <-
+   Instruction:Method[?insn] = ?meth,
+   Reachable(?meth),
+   FieldInstruction:Signature[?insn] = ?fld.
+
+CandidateFieldForAp(?fld, ?meth) <-
    OptVar:DeclaringMethod(?meth, ?v),
    AccessPath:BaseVar[?ap] = ?v,
 #ifdef MUST_AFTER_MAY
    Reachable(?meth),
 #endif
-   AccessPath:ByFieldAccess[?fld, ?ap] = _,
    AccessPath:Type[?ap] = ?type,
    TypeContainsField(?fld, ?type),
+   FieldUsedInProgram(?fld, ?meth),
    NonStaticReferenceField(?fld).
 
 CandidateApBaseField(?fld, ?ap1) <-
@@ -1132,15 +1137,18 @@ CandidateApBaseField(?fld, ?ap1) <-
    OptAccessPath:BaseVar(?ap1, ?v1),
    !NullVar(?v1),
    AccessPath:Type[?ap1] = ?type,
-   CandidateFieldForAp(?fld),
-   TypeContainsField(?fld, ?type).
+   TypeContainsField(?fld, ?type),
+   CandidateFieldForAp(?fld, ?meth).
 
-AccessPath(?ap3),
-AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap3,
-AccessPath:Length[?ap3] = ?len + 1 <-
+AccessPath(?ap2),
+AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2,
+AccessPath:Length[?ap2] = ?len + 1 <-
    CandidateApBaseField(?fld, ?ap1),
    AccessPath:Length[?ap1] = ?len,
    ?len < AccessPath:MaxLength[].
+
+CandidateFieldForStaticAp(?fld) <-
+   CandidateFieldForAp(?fld, _).
 
 AccessPath(?ap1),
 AccessPath:ByFieldAccess[?fld, ?ap] = ?ap1,
@@ -1150,48 +1158,52 @@ AccessPath:Length[?ap1] = ?len + 1 <-
    ?len < AccessPath:MaxLength[],
    AccessPath:Type[?ap] = ?t,
    TypeContainsField(?fld, ?t),
-   CandidateFieldForAp(?fld).
+   CandidateFieldForStaticAp(?fld).
 
 // TODO: This part uses CallGraphEdge predicate as a hint to
 //       precompute Access Paths. If we want to support a "plain"
 //       must-point-to-analysis, we should do the same by using a class
 //       hierarchy analysis.
 #ifdef MUST_AFTER_MAY
-MayInterPoceduralAssign(?v1, ?v2) ->
-   Var(?v1), Var(?v2).
+MayInterPoceduralAssign(?srcMeth, ?v1, ?v2) ->
+   MethodSignature(?srcMeth), Var(?v1), Var(?v2).
 
-MayInterPoceduralAssign(?actual, ?formal),
-MayInterPoceduralAssign(?formal, ?actual) <-
+MayInterPoceduralAssign(?toMethod, ?actual, ?formal),
+MayInterPoceduralAssign(?fromMethod, ?formal, ?actual) <-
    CallGraphEdge(_, ?invo, _, ?toMethod),
+   Instruction:Method[?invo] = ?fromMethod,
    FormalParam[?index, ?toMethod] = ?formal,
    ActualParam[?index, ?invo] = ?actual. 
 
-MayInterPoceduralAssign(?this, ?base),
-MayInterPoceduralAssign(?base, ?this) <-
+MayInterPoceduralAssign(?fromMethod, ?this, ?base),
+MayInterPoceduralAssign(?toMethod, ?base, ?this) <-
    CallGraphEdge(_, ?invo, _, ?toMethod),
+   Instruction:Method[?invo] = ?fromMethod,
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this.
 
-MayInterPoceduralAssign(?to, ?retVar) <-
+MayInterPoceduralAssign(?toMethod, ?to, ?retVar) <-
    CallGraphEdge(_, ?invo, _, ?toMethod),
    AssignReturnValue[?invo] = ?to,
    ReturnVar(?retVar, ?toMethod).
 
-InterProcedurallyPropagatedPath(?newAp, ?ap)  <-
+InterProcedurallyPropagatedPath(?srcMeth, ?newAp, ?ap)  <-
    AccessPath:ByVarInv[?ap] = ?from,
    AccessPath:ByVar[?to] = ?newAp,
    !NullVar(?to),
-   MayInterPoceduralAssign(?to, ?from).
+   MayInterPoceduralAssign(?srcMeth, ?to, ?from).
 
 AccessPath(?newAp),
 AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
 AccessPath:Length[?newAp] = ?len <-
    AccessPath:BaseInv(?ap, ?apBase),
-   InterProcedurallyPropagatedPath(?newApBase, ?apBase),
+   InterProcedurallyPropagatedPath(?srcMeth, ?newApBase, ?apBase),
    AccessPath:LastField[?ap] = ?fld,
    AccessPath:Type[?newApBase] = ?type,
    TypeContainsField(?fld, ?type),
+   (MethodMayStoreToInstanceField(?fld, ?srcMeth);
+    MethodMayLoadFromInstanceField(?fld, ?srcMeth)),
    AccessPath:Length[?ap] = ?len.
 #endif
 
@@ -1599,8 +1611,6 @@ AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 // Addition to AllPredecessors:MustAlias frame rules
 
-// Commenting out temporarily the below logic (see comment in new
-// frame rule).
 #ifdef MUST_AFTER_MAY
 BasicBlockContainsInvalidatingCall(?ap, ?headInsn) <-
    CallMayInvalidateSomeAccessPathField(?ap, ?insn),
