@@ -16,7 +16,7 @@ mainClassName = 'doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.0'
+    gradleVersion = '2.4'
 }
 
 repositories {
@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    compile "org.codehaus.groovy:groovy-all:2.3.3",             // Groovy
+    compile "org.codehaus.groovy:groovy-all:2.3.10",            // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
             "commons-cli:commons-cli:1.2",                      // Command line processor
