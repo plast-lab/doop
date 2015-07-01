@@ -364,6 +364,11 @@ import java.util.jar.JarFile
             logger.debug "The TAMIFLEX option has been enabled"
         }
 
+        // Check for SOOT option (cannot be null)
+        if (!options.SOOT.value) {
+            throw new RuntimeException("The SOOT option is null")
+        }
+
         // Checks for must analyses
 
         if(isMustPointTo(vars.name) && !options.MAY_PRE_ANALYSIS.value)

@@ -35,7 +35,9 @@ dependencies {
 
     compile files('lib/sootclasses-2.5.0.jar')                  // Soot is a compile time dependency
 
-    runtime files('lib/jphantom-1.1-jar-with-dependencies.jar', 'lib/averroes-no-properties.jar')
+    runtime files('lib/jphantom-1.1-jar-with-dependencies.jar',
+                  'lib/averroes-no-properties.jar',
+                  'lib/sootclasses-2.5.0-custom.jar')
 }
 
 task createProperties(dependsOn: classes) {

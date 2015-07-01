@@ -667,7 +667,9 @@ import org.apache.commons.logging.LogFactory
         logger.debug "Params of soot: ${params.join(' ')}"
 
         sootTime = timing {
-            doop.soot.Main.main(params.toArray(new String[params.size()]))
+            //We invoke soot reflectively to be able to specify the soot-classes jar at runtime
+            ClassLoader loader = sootClassLoader()
+            Helper.execJava(loader, "doop.soot.Main", params.toArray(new String[params.size()]))
         }
     }
 
@@ -690,15 +692,10 @@ import org.apache.commons.logging.LogFactory
      * Creates a new class loader for running soot
      */
     private ClassLoader sootClassLoader() {
-        //TODO: for now, we hard-code the soot jars
         String sootClasses = "${Doop.doopHome}/lib/sootclasses-${options.SOOT.value}.jar"
-        String sootFactGeneration = "${Doop.doopHome}/lib/soot-fact-generation.jar"
-
         File f1 = Helper.checkFileOrThrowException(sootClasses, "soot classes jar missing or invalid: $sootClasses")
-        File f2 = Helper.checkFileOrThrowException(sootFactGeneration, "soot fact generation jar missing or invalid: $sootFactGeneration")
-
-    List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
-    return new URLClassLoader(classpath as URL[])
+        List<URL> classpath = [f1.toURI().toURL()]
+        return new URLClassLoader(classpath as URL[], ClassLoader.getSystemClassLoader())
     }
 
     /**
