@@ -17,7 +17,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'
-    static final String JAR              = 'The jar files to analyze. Separate multiple jars with a comma. ' +
+    static final String JAR              = 'The jar files to analyze. Separate multiple jars with a space. ' +
                                            ' If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. If ' +
                                            'this option is given, all other options are ignored.'
