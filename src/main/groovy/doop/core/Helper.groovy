@@ -311,7 +311,6 @@ class Helper {
                 Option o = new Option('d', option.name, true, option.description)
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
-                o.setValueSeparator(',' as char)
                 return o
             }
             else if (option.argName) {

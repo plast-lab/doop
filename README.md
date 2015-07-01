@@ -107,7 +107,7 @@ Example:
                            -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
                            -j ./lib                            [local directory]
                            -j http://www.example.com/some.jar  [remote file]
-                           -j one.jar,other.jar                [multiple files separated with a comma]
+                           -j one.jar other.jar                [multiple files separated with a space]
 
 The jar option is mandatory.
 

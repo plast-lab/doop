@@ -46,7 +46,7 @@ class Doop {
         ),
         new AnalysisOption<List<String>>(
             id:"DYNAMIC",
-            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a comma.",
+            description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
             value:[],
             webUI:true,
             cli:true,
@@ -621,7 +621,7 @@ class Doop {
 
     static void setOptionFromProperty(AnalysisOption option, String property) {
         if (option.id == "DYNAMIC") {
-            option.value = property.split(",").collect { String s -> s.trim() }
+            option.value = property.split().collect { String s -> s.trim() }
         } else if (option.argName) {
             option.value = property
         } else {
