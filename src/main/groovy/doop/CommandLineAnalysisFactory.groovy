@@ -47,9 +47,9 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     }
 
     /**
-     * Processes the properties and generates a new analysis.
+     * Processes the properties and the cli and generates a new analysis.
      */
-    Analysis newAnalysis(Properties props) {
+    Analysis newAnalysis(Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
         String name = props.getProperty("analysis")
@@ -58,11 +58,12 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         List<String> jars = props.getProperty("jar").split().collect { String s-> s.trim() }
 
         //Get the optional id of the analysis
-        String id = props.getProperty("id")
+        String id = props.getProperty("id") ?: cli.id
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithProperties(props) { AnalysisOption option ->
             option.cli
         }
+        Doop.overrideOptionsWithCLI(options, cli) { AnalysisOption option -> option.cli }
         return newAnalysis(id, name, options, jars)
     }
 

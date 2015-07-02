@@ -572,14 +572,16 @@ class Doop {
     }
 
     /**
-     * Creates the analysis options by overriding the default options with the ones contained in the given properties.
+     * Overrides the values of the map (the options values) with the values contained in the properties.
      * An option is set only if filtered (the supplied filter returns true for the option).
-     * @param props - the properties.
-     * @param filter - optional filter to apply before setting the option.
-     * @return the default analysis options overridden by the values contained in the properties.
+     * @param options - the options to override.
+     * @param properties - the properties to use.
+     * @param filter - the filter to apply.
+     * @return the original map of options with its values overridden by the ones contained in the properties.
      */
-    static Map<String, AnalysisOption> overrideDefaultOptionsWithProperties(Properties properties, Closure<Boolean> filter) {
-        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+    static void overrideOptionsWithProperties(Map<String, AnalysisOption> options,
+                                              Properties properties,
+                                              Closure<Boolean> filter) {
         if (properties && properties.size() > 0) {
             properties.each { Map.Entry<String, String> entry->
                 AnalysisOption option = options.get(entry.key.toUpperCase())
@@ -591,6 +593,18 @@ class Doop {
                 }
             }
         }
+    }
+
+    /**
+     * Creates the analysis options by overriding the default options with the ones contained in the given properties.
+     * An option is set only if filtered (the supplied filter returns true for the option).
+     * @param props - the properties.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the properties.
+     */
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithProperties(Properties properties, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        overrideOptionsWithProperties(options, properties, filter)
         return options
     }
 
@@ -630,14 +644,14 @@ class Doop {
     }
 
     /**
-     * Creates the analysis options by overriding the default options with the ones contained in the given CLI options.
+     * Overrides the values of the map (the options values) with the values contained in the CLI options.
      * An option is set only if filtered (the supplied filter returns true for the option).
-     * @param cli - the CLI option accessor.
-     * @param filter - optional filter to apply before setting the option.
-     * @return the default analysis options overridden by the values contained in the CLI option accessor.
+     * @param options - the options to override.
+     * @param properties - the properties to use.
+     * @param filter - the filter to apply.
+     * @return the original map of options with its values overridden by the ones contained in the CLI options.
      */
-    static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
-        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+    static void overrideOptionsWithCLI(Map<String, AnalysisOption> options, OptionAccessor cli, Closure<Boolean> filter) {
         options.values().each { AnalysisOption option ->
             String optionName = option.name
             if (optionName) {
@@ -651,6 +665,18 @@ class Doop {
                 }
             }
         }
+    }
+
+    /**
+     * Creates the analysis options by overriding the default options with the ones contained in the given CLI options.
+     * An option is set only if filtered (the supplied filter returns true for the option).
+     * @param cli - the CLI option accessor.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the CLI option accessor.
+     */
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        overrideDefaultOptionsWithCLI(options, cli, filter)
         return options
     }
 
