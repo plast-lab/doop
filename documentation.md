@@ -117,7 +117,7 @@ The main command line options are described in the `README` file:
          Also note that the old -jre1.x flags are not supported.
 * --lbhome: The LogicBlox directory (defaults to the value of the `$LOGICBLOX_HOME` environment variable).
 * -t, --timeout: The analysis execution timeout in minutes.
-* -p, --properties: Load options from the given properties file. When this option is given, all other options are ignored.
+* -p, --properties: Load options from the given properties file. 
 
 ### Other options {#running.other}
 The new Doop framework supports almost the same set of options with the original doop. To list all the available

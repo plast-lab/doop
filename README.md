@@ -172,8 +172,12 @@ to process this file, as follows:
 
     $ DOOP_HOME>./bin/doop -p /path/to/file.properties
 
-When the `-p` (or `--properties`) option is given, all other options are ignored.
-Please consult the `doop.properties` file which offers a skeleton of the properties file
+You can also override the options from a properties file with options from the command line. For example:
+
+    $ DOOP_HOME>./bin/doop -p /path/to/file.properties --jre 1.6
+
+The only exceptions are (a) the name of the analysis and (b) the jars of the analysis, which should be contained
+in the properties file. Please consult the `doop.properties` file which offers a skeleton of the properties file
 supported by doop.
 
 To create the `doop.properties` file you should issue the following:
