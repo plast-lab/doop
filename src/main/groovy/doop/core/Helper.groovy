@@ -366,4 +366,30 @@ class Helper {
     static boolean isMustPointTo(String name) {
         return "must-point-to".equals(name)
     }
+
+    /**
+     * Parses the user supplied timeout.
+     * @param userTimeout - the user supplied timeout.
+     * @param defaultTimeout - the default timeout to use if userTimeout is invalid.
+     * @return a positive integer.
+     */
+    static int parseTimeout(String userTimeout, int defaultTimeout) {
+        int timeout = defaultTimeout
+        try {
+            timeout = Integer.parseInt(userTimeout)
+        }
+        catch(ex) {
+            println "Using the default timeout ($timeout min)."
+            return defaultTimeout
+        }
+
+        if (timeout <= 0) {
+            println "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
+            return defaultTimeout
+        }
+        else {
+            println "Using a timeout of $timeout min."
+            return timeout
+        }
+    }
 }

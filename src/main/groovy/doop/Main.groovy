@@ -20,6 +20,7 @@ import java.util.concurrent.*
 class Main {
 
     private static Log logger = LogFactory.getLog(Main)
+    private static final int DEFAULT_TIMEOUT = 180 //3 hours
 
     /**
      * The entry point.
@@ -79,14 +80,8 @@ class Main {
                 return
             }
 
-            int timeout = 180 //3hours
-            try {
-                timeout = Integer.parseInt(cli.t)
-            }
-            catch(ex) {
-                println "Using the default timeout ($timeout min)"
-            }
 
+            String userTimeout
             Analysis analysis
             if (cli.p) {
                 //create analysis from the properties file & the cli options
@@ -102,7 +97,10 @@ class Main {
                 }
 
                 //change the log level according to the property or cli arg
-                changeLogLevel(props.getProperty("level") ?: cli.l)
+                changeLogLevel(cli.l ?: props.getProperty("level"))
+
+                //set the timeout according to the property or cli arg
+                userTimeout = cli.t ?: props.getProperty("timeout")
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(props, cli)
             }
@@ -120,6 +118,9 @@ class Main {
                 //change the log level according to the cli arg
                 changeLogLevel(cli.l)
 
+                //set the timeout according to the cli arg
+                userTimeout = cli.t
+
                 analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
 
@@ -127,6 +128,8 @@ class Main {
 
             logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
             logger.debug analysis
+
+            int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
 
             ExecutorService executor = Executors.newSingleThreadExecutor()
             Future future = executor.submit(new Runnable() {
