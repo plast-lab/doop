@@ -19,8 +19,9 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     static final String ANALYSIS         = 'The name of the analysis.'
     static final String JAR              = 'The jar files to analyze. Separate multiple jars with a space. ' +
                                            ' If the argument is a directory, all its *.jar files will be included.'
-    static final String PROPS            = 'The path to a properties file containing analysis options. If ' +
-                                           'this option is given, all other options are ignored.'
+    static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
+                                           'option: (a) can be mixed with any other option (except the analysis name ' +
+                                           'and jars), (b) is processed prior to any others.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
