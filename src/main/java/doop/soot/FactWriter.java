@@ -41,20 +41,6 @@ public class FactWriter
         _rep = new Representation();
     }
 
-    public void writeStandardFacts()
-    {
-        // _db.addEntity(PRIMITIVE_TYPE, "boolean");
-        // _db.addEntity(PRIMITIVE_TYPE, "byte");
-        // _db.addEntity(PRIMITIVE_TYPE, "char");
-        // _db.addEntity(PRIMITIVE_TYPE, "short");
-        // _db.addEntity(PRIMITIVE_TYPE, "int");
-        // _db.addEntity(PRIMITIVE_TYPE, "long");
-        // _db.addEntity(PRIMITIVE_TYPE, "float");
-        // _db.addEntity(PRIMITIVE_TYPE, "double");
-        // _db.addEntity(NULL_TYPE, "null_type");
-    }
-
-
     public void writeProperty(String path, String key, String value)
     {
         // Add heap allocations for string constants
@@ -150,7 +136,7 @@ public class FactWriter
         _db.add(ENTER_MONITOR,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, var)),
+                _db.asEntity(_rep.local(m, var)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -162,7 +148,7 @@ public class FactWriter
         _db.add(EXIT_MONITOR,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, var)),
+                _db.asEntity(_rep.local(m, var)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -174,8 +160,8 @@ public class FactWriter
        _db.add(ASSIGN_LOCAL,
                _db.asEntity(rep),
                _db.asIntColumn(String.valueOf(index)),
-               _db.addEntity(VAR, _rep.local(m, from)),
-               _db.addEntity(VAR, _rep.local(m, to)),
+               _db.asEntity(_rep.local(m, from)),
+               _db.asEntity(_rep.local(m, to)),
                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -187,8 +173,8 @@ public class FactWriter
         _db.add(ASSIGN_LOCAL,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.thisVar(m)),
-                _db.addEntity(VAR, _rep.local(m, to)),
+                _db.asEntity(_rep.thisVar(m)),
+                _db.asEntity(_rep.local(m, to)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -200,8 +186,8 @@ public class FactWriter
         _db.add(ASSIGN_LOCAL,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.param(m, ref.getIndex())),
-                _db.addEntity(VAR, _rep.local(m, to)),
+                _db.asEntity(_rep.param(m, ref.getIndex())),
+                _db.asEntity(_rep.local(m, to)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -211,7 +197,7 @@ public class FactWriter
 
         _db.add(ASSIGN_RETURN_VALUE,
                 _db.asEntity(rep),
-                _db.addEntity(VAR, _rep.local(inMethod, to)));
+                _db.asEntity(_rep.local(inMethod, to)));
     }
 
     public void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session)
@@ -245,7 +231,7 @@ public class FactWriter
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(heap),
-                _db.addEntity(VAR, _rep.local(m, l)),
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
     }
@@ -282,7 +268,7 @@ public class FactWriter
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(heap),
-                _db.addEntity(VAR, assignTo),
+                _db.asEntity(assignTo),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
         
         Type componentType = getComponentType(arrayType);
@@ -295,12 +281,12 @@ public class FactWriter
             _db.add(STORE_ARRAY_INDEX,
                     _db.asEntity(storeInstrRep),
                     _db.asIntColumn(String.valueOf(storeInsnIndex)),
-                    _db.addEntity(VAR, childAssignTo),
-                    _db.addEntity(VAR, assignTo),
+                    _db.asEntity(childAssignTo),
+                    _db.asEntity(assignTo),
                     _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
             _db.add(VAR_TYPE,
-                    _db.addEntity(VAR, childAssignTo),
+                    _db.asEntity(childAssignTo),
                     writeType(componentType));
 
             _db.add(VAR_DECLARING_METHOD,
@@ -350,7 +336,7 @@ public class FactWriter
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(heap),
                 _db.asIntColumn(String.valueOf(dimensions)),
-                _db.addEntity(VAR, assignTo),
+                _db.asEntity(assignTo),
                 _db.asEntity("MethodSignature", _rep.method(m)));
 
     // idea: do generate the heap allocations, but not the assignments
@@ -373,7 +359,7 @@ public class FactWriter
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(heap),
-                _db.addEntity(VAR, _rep.local(m, l)),
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -385,7 +371,7 @@ public class FactWriter
         _db.add(ASSIGN_NULL,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, l)),
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -398,7 +384,7 @@ public class FactWriter
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(_rep.numconstant(m, constant)),
-                _db.addEntity(VAR, _rep.local(m, l)),
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -451,7 +437,7 @@ public class FactWriter
                 _db.asIntColumn(String.valueOf(index)),
                 // REVIEW: the class object is not explicitly written. Is this always ok?
                 _db.asEntity(heap),
-                _db.addEntity(VAR, _rep.local(m, l)),
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -463,8 +449,8 @@ public class FactWriter
         _db.add(ASSIGN_CAST,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, from)),
-                _db.addEntity(VAR, _rep.local(m, to)),
+                _db.asEntity(_rep.local(m, from)),
+                _db.asEntity(_rep.local(m, to)),
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
@@ -477,8 +463,8 @@ public class FactWriter
         _db.add(STORE_INST_FIELD,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, from)),
-                _db.addEntity(VAR, _rep.local(m, base)),
+                _db.asEntity(_rep.local(m, from)),
+                _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
@@ -492,8 +478,8 @@ public class FactWriter
         _db.add(LOAD_INST_FIELD,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, to)),
-                _db.addEntity(VAR, _rep.local(m, base)),
+                _db.asEntity(_rep.local(m, to)),
+                _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
@@ -506,7 +492,7 @@ public class FactWriter
         _db.add(STORE_STATIC_FIELD,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, from)),
+                _db.asEntity(_rep.local(m, from)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
@@ -519,7 +505,7 @@ public class FactWriter
         _db.add(LOAD_STATIC_FIELD,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, to)),
+                _db.asEntity(_rep.local(m, to)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
@@ -533,8 +519,8 @@ public class FactWriter
         _db.add(LOAD_ARRAY_INDEX,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, to)),
-                _db.addEntity(VAR, _rep.local(m, base)),
+                _db.asEntity(_rep.local(m, to)),
+                _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -546,8 +532,8 @@ public class FactWriter
         _db.add(STORE_ARRAY_INDEX,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
-                _db.addEntity(VAR, _rep.local(m, from)),
-                _db.addEntity(VAR, _rep.local(m, base)),
+                _db.asEntity(_rep.local(m, from)),
+                _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -562,14 +548,14 @@ public class FactWriter
         _db.add(FIELD_SIGNATURE,
                 _db.asEntity(_rep.signature(f)),
                 writeType(f.getDeclaringClass()),
-                _db.addEntity(SIMPLE_NAME, _rep.simpleName(f)),
+                _db.asEntity(_rep.simpleName(f)),
                 writeType(f.getType()));
     }
 
     public void writeFieldModifier(SootField f, String modifier)
     {
         _db.add(FIELD_MODIFIER,
-                _db.addEntity(MODIFIER, _rep.modifier(modifier)),
+                _db.asEntity(_rep.modifier(modifier)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)));
     }
 
@@ -585,7 +571,7 @@ public class FactWriter
     public void writeMethodModifier(SootMethod m, String modifier)
     {
         _db.add(METHOD_MODIFIER,
-                _db.addEntity(MODIFIER, _rep.modifier(modifier)),
+                _db.asEntity(_rep.modifier(modifier)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -596,11 +582,8 @@ public class FactWriter
 
         _db.add(RETURN,
                 _db.asEntity(rep),
-                // index
                 _db.asIntColumn(String.valueOf(index)),
-                // var
-                _db.addEntity(VAR, _rep.local(m, l)),
-                // method
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -611,9 +594,7 @@ public class FactWriter
 
         _db.add(RETURN_VOID,
                 _db.asEntity(rep),
-                // index
                 _db.asIntColumn(String.valueOf(index)),
-                // method
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -624,7 +605,7 @@ public class FactWriter
         if(!(m.getReturnType() instanceof VoidType))
         {
             _db.add(NATIVE_RETURN_VAR,
-                    _db.addEntity(VAR, _rep.nativeReturnVar(m)),
+                    _db.asEntity(_rep.nativeReturnVar(m)),
                     _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
             _db.add(VAR_TYPE,
@@ -695,11 +676,8 @@ public class FactWriter
 
         _db.add(TABLE_SWITCH,
                 _db.asEntity(rep),
-                // index
                 _db.asIntColumn(String.valueOf(stmtIndex)),
-                // key
-                _db.addEntity(VAR, _rep.local(inMethod, l)),
-                // method
+                _db.asEntity(_rep.local(inMethod, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(inMethod)));
 
         for(int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++)
@@ -708,9 +686,7 @@ public class FactWriter
 
             _db.add(TABLE_SWITCH_TARGET,
                     _db.asEntity(rep),
-                    // index
                     _db.asIntColumn(String.valueOf(tgIndex)),
-                    // target
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
@@ -736,11 +712,8 @@ public class FactWriter
 
         _db.add(LOOKUP_SWITCH,
                 _db.asEntity(rep),
-                // index
                 _db.asIntColumn(String.valueOf(stmtIndex)),
-                // key
-                _db.addEntity(VAR, _rep.local(inMethod, l)),
-                // method
+                _db.asEntity(_rep.local(inMethod, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(inMethod)));;
 
         for(int i = 0, end = stmt.getTargetCount(); i < end; i++)
@@ -786,11 +759,8 @@ public class FactWriter
 
         _db.add(THROW,
                 _db.asEntity(rep),
-                // index
                 _db.asIntColumn(String.valueOf(index)),
-                // var
-                _db.addEntity(VAR, _rep.local(m, l)),
-                // method
+                _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
@@ -831,7 +801,7 @@ public class FactWriter
         */
         _db.add(SIMPLE_EXCEPTION_HANDLER,
                 _db.asEntity(_rep.type(exc)),
-                _db.addEntity(VAR,_rep.local(m, caught)),
+                _db.asEntity(_rep.local(m, caught)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
         String rep = _rep.handler(m, handler, session);
@@ -855,7 +825,7 @@ public class FactWriter
     {
         _db.add(THIS_VAR,
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)),
-                _db.addEntity(VAR, _rep.thisVar(m)));
+                _db.asEntity(_rep.thisVar(m)));
 
         _db.add(VAR_TYPE,
                 _db.asEntity(_rep.thisVar(m)),
@@ -878,7 +848,7 @@ public class FactWriter
         _db.add(FORMAL_PARAM,
                 _db.asIntColumn(_rep.index(i)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)),
-                _db.addEntity(VAR, _rep.param(m, i)));
+                _db.asEntity(_rep.param(m, i)));
 
         _db.add(VAR_TYPE,
                 _db.asEntity(_rep.param(m, i)),
@@ -892,7 +862,7 @@ public class FactWriter
     public void writeLocal(SootMethod m, Local l)
     {
         _db.add(VAR_TYPE,
-                _db.addEntity(VAR, _rep.local(m, l)),
+                _db.asEntity(_rep.local(m, l)),
                 writeType(l.getType()));
 
         _db.add(VAR_DECLARING_METHOD,
@@ -976,7 +946,7 @@ public class FactWriter
                 _db.add(ACTUAL_PARAMETER,
                         _db.asIntColumn(_rep.index(i)),
                         _db.asEntity(invokeExprRepr),
-                        _db.addEntity(VAR, _rep.local(inMethod, l)));
+                        _db.asEntity(_rep.local(inMethod, l)));
             }
             else
             {
@@ -1018,11 +988,8 @@ public class FactWriter
             _db.add(VIRTUAL_METHOD_INV,
                     _db.asEntity(rep),
                     index,
-                    // signature
                     _db.asEntity(_rep.signature(expr.getMethod())),
-                    // base
-                    _db.addEntity(VAR, _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase())),
-                    // in
+                    _db.asEntity(_rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase())),
                     _db.asEntity(_rep.method(inMethod)));
         }
         else if(expr instanceof SpecialInvokeExpr)
@@ -1030,11 +997,8 @@ public class FactWriter
             _db.add(SPECIAL_METHOD_INV,
                     _db.asEntity(rep),
                     index,
-                    // signature
                     _db.asEntity(_rep.signature(expr.getMethod())),
-                    // base
-                    _db.addEntity(VAR, _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase())),
-                    // in
+                    _db.asEntity(_rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase())),
                     _db.asEntity(_rep.method(inMethod)));
         }
         else
