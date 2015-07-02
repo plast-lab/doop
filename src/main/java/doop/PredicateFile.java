@@ -10,11 +10,9 @@ import java.nio.file.Path;
 
 public enum PredicateFile
 {
-    PRIMITIVE_TYPE("PrimitiveType", ImportScheme.BY_IMPORT_SCRIPT),
     CLASS_TYPE("ClassType", ImportScheme.BY_IMPORT_SCRIPT),
     ARRAY_TYPE("ArrayType", ImportScheme.BY_IMPORT_SCRIPT),
     INTERFACE_TYPE("InterfaceType", ImportScheme.BY_IMPORT_SCRIPT),
-    NULL_TYPE("NullType", ImportScheme.BY_IMPORT_SCRIPT),
     COMPONENT_TYPE("ComponentType", ImportScheme.BY_IMPORT_SCRIPT),
     ACTUAL_PARAMETER("ActualParam", ImportScheme.BY_IMPORT_SCRIPT),
     DIRECT_SUPER_IFACE("DirectSuperinterface", ImportScheme.BY_IMPORT_SCRIPT),
@@ -24,7 +22,6 @@ public enum PredicateFile
     METHOD_DECL_EXCEPTION("Method-DeclaresException", ImportScheme.BY_IMPORT_SCRIPT),
     METHOD_MODIFIER("MethodModifier", ImportScheme.BY_IMPORT_SCRIPT),
     NATIVE_RETURN_VAR("NativeReturnVar", ImportScheme.BY_IMPORT_SCRIPT),
-    VAR("Var", ImportScheme.IMPLICIT),
     VAR_TYPE("Var-Type", ImportScheme.BY_IMPORT_SCRIPT),
     VAR_DECLARING_METHOD("Var-DeclaringMethod", ImportScheme.BY_IMPORT_SCRIPT),
     APP_CLASS("ApplicationClass", ImportScheme.BY_IMPORT_SCRIPT),
@@ -69,9 +66,7 @@ public enum PredicateFile
     LOOKUP_SWITCH_DEFAULT("LookupSwitch-Default", ImportScheme.BY_FILE_PREDICATE),
     RETURN("Return", ImportScheme.BY_FILE_PREDICATE),
     RETURN_VOID("ReturnVoid", ImportScheme.BY_FILE_PREDICATE),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction", ImportScheme.BY_FILE_PREDICATE),
-    SIMPLE_NAME("SimpleName", ImportScheme.IMPLICIT),
-    MODIFIER("Modifier", ImportScheme.IMPLICIT);
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction", ImportScheme.BY_FILE_PREDICATE);
 
     private final String name;
     private final ImportScheme importScheme;

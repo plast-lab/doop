@@ -34,7 +34,6 @@ public class FactGenerator
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
-        _writer.writeStandardFacts();
         _ssa = ssa;
     }
 
