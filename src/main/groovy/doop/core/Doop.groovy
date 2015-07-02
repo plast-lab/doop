@@ -676,7 +676,7 @@ class Doop {
      */
     static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
         Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
-        overrideDefaultOptionsWithCLI(options, cli, filter)
+        overrideOptionsWithCLI(options, cli, filter)
         return options
     }
 
