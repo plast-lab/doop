@@ -77,6 +77,13 @@ class Helper {
      */
     static Properties loadProperties(String file) {
         File f = checkFileOrThrowException(file, "Not a valid file: $file")
+        return loadProperties(f)
+    }
+
+    /**
+     * Loads the given properties file
+     */
+    static Properties loadProperties(File f) {
         Properties props = new Properties()
         f.withReader { BufferedReader r -> props.load(r)}
         return props

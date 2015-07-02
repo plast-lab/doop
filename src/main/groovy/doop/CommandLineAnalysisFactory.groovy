@@ -50,16 +50,21 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     /**
      * Processes the properties and the cli and generates a new analysis.
      */
-    Analysis newAnalysis(Properties props, OptionAccessor cli) {
+    Analysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
         String name = props.getProperty("analysis")
 
         //Get the jars of the analysis
         List<String> jars = props.getProperty("jar").split().collect { String s-> s.trim() }
+        //The jars, if relative, are being resolved via the propsBaseDir
+        jars = jars.collect { String jar ->
+            File f = new File(jar)
+            return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+        }
 
         //Get the optional id of the analysis
-        String id = props.getProperty("id") ?: cli.id
+        String id = cli.id ?: props.getProperty("id")
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithProperties(props) { AnalysisOption option ->
             option.cli
@@ -116,8 +121,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                     #
                     #This is the skeleton of a doop properties file.
                     #Notes:
-                    #- all file paths, if not absolute, should be given relative to the directory that
-                    #  doop is invoked from (and not relative to the directory this file is located).
+                    #- all file paths, if not absolute, should be relative to the directory that contains this file.
                     #- all booleans are processed using the java.lang.Boolean.parseBoolean() conventions.
                     #- all empty properties are ignored.
                     #

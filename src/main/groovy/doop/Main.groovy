@@ -86,7 +86,9 @@ class Main {
             if (cli.p) {
                 //create analysis from the properties file & the cli options
                 String file = cli.p
-                Properties props = Helper.loadProperties(file)
+                File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
+                File propsBaseDir = f.getParentFile()
+                Properties props = Helper.loadProperties(f)
 
                 try {
                     Helper.checkMandatoryProps(props)
@@ -102,7 +104,7 @@ class Main {
                 //set the timeout according to the property or cli arg
                 userTimeout = cli.t ?: props.getProperty("timeout")
 
-                analysis = new CommandLineAnalysisFactory().newAnalysis(props, cli)
+                analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
             }
             else {
                 //create analysis from the cli options
