@@ -1,6 +1,7 @@
 package doop
 
 import doop.core.Analysis
+import doop.core.AnalysisOption
 import doop.core.Doop
 import doop.core.Helper
 import org.apache.commons.logging.Log
@@ -88,7 +89,7 @@ class Main {
 
             Analysis analysis
             if (cli.p) {
-                //create analysis from the properties file
+                //create analysis from the properties file & the cli options
                 String file = cli.p
                 Properties props = Helper.loadProperties(file)
 
@@ -100,10 +101,10 @@ class Main {
                     return
                 }
 
-                //change the log level according to the property
-                changeLogLevel(props.getProperty("level"))
+                //change the log level according to the property or cli arg
+                changeLogLevel(props.getProperty("level") ?: cli.l)
 
-                analysis = new CommandLineAnalysisFactory().newAnalysis(props)
+                analysis = new CommandLineAnalysisFactory().newAnalysis(props, cli)
             }
             else {
                 //create analysis from the cli options
