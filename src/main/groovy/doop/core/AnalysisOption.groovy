@@ -15,6 +15,7 @@ class AnalysisOption<T>  {
             id             : option.id,
             description    : option.description,
             value          : option.value,
+            forIDGeneration: option.forIDGeneration,
             forPreprocessor: option.forPreprocessor,
             flagType       : option.flagType,
             webUI          : option.webUI,
@@ -41,6 +42,11 @@ class AnalysisOption<T>  {
      */
     T value
 
+    /**
+     * Indicates whether the option affects the ID generation
+     */
+    boolean forIDGeneration = false
+    
     /**
      * Indicates whether the option affects the preprocessor
      */

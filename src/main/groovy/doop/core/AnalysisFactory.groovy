@@ -156,10 +156,10 @@ import java.util.jar.JarFile
      * Generates the analysis ID using all of its components (name, inputs and options).
      */
     protected String generateID(AnalysisVars vars) {
-        Collection<String> optionsForId = vars.options.keySet().findAll {
-            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
-        }.collect {String option ->
-            return vars.options.get(option).toString()
+        Collection<String> optionsForId = vars.options.values().findAll {
+            it.forIDGeneration
+        }.collect {
+            AnalysisOption option -> return option.toString()
         }
         Collection<String> idComponents = [vars.name] + vars.inputs + optionsForId
         logger.debug("ID components: $idComponents")
