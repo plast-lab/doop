@@ -1,2 +1,0 @@
-benchmarks = ssh://hg@bitbucket.org/yanniss/doop-benchmarks
-tools = ssh://hg@bitbucket.org/yanniss/doop-tools
