@@ -293,8 +293,8 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println("commit")
             lbScriptWriter.println("elapsedTime")
 
-            if (options.SET_BASED.value) {
-                runSetBased()
+            if (options.TRANSFORM_INPUT.value) {
+                runTransformInput()
             }
         }
     }
@@ -550,7 +550,7 @@ import org.apache.commons.logging.LogFactory
         }
     }
 
-    protected void runSetBased() {
+    protected void runTransformInput() {
         preprocessor.preprocess(this, "${Doop.doopLogic}/addons/transform", "rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
         lbScriptWriter.println('echo "-- Transforming Input Facts --"')
         lbScriptWriter.println("startTimer")
