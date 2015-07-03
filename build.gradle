@@ -37,7 +37,7 @@ dependencies {
 
     runtime files('lib/jphantom-1.1-jar-with-dependencies.jar',
                   'lib/averroes-no-properties.jar',
-                  'lib/sootclasses-2.5.0-custom.jar')
+                  'lib/sootclasses-2.5.0.jar')
 }
 
 task createProperties(dependsOn: classes) {
