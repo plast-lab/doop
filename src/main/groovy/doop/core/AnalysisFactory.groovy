@@ -317,7 +317,6 @@ import java.util.jar.JarFile
         }
 
         if (options.TRANSFORM_INPUT.value) {
-            options.SET_BASED.value = true
             logger.debug "The TRANSFORM_INPUT option has been enabled"
         }
 

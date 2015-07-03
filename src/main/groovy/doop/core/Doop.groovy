@@ -299,7 +299,6 @@ class Doop {
             isAdvanced:true
         ),
         /* End of preprocessor normal flags] */
-
         
         /* Start of preprocessor exception flags] */        
         new AnalysisOption<Boolean>(
@@ -336,7 +335,6 @@ class Doop {
         ),
         /* End of preprocessor exception flags] */        
 
-        
         //other options/flags
         new AnalysisOption<Boolean>(
             id:"DISABLE_PRECISE_EXCEPTIONS",
@@ -355,10 +353,6 @@ class Doop {
             name:"disable-merge-exceptions",
             forPreprocessor:false,
             isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"SET_BASED",
-            value:false,
         ),
         new AnalysisOption<Boolean>(
             id:"CSV",
