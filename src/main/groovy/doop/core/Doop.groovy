@@ -37,12 +37,13 @@ class Doop {
         //Main options
         new AnalysisOption<String>(
             id:"MAIN_CLASS",
+            name: "main",
+            argName: 'mainClass',
             description:'Specify the main class.',
             value:null,
+            forIDGeneration:true,
             webUI: true,
-            cli:true,
-            name: "main",
-            argName: 'mainClass'
+            cli:true
         ),
         new AnalysisOption<List<String>>(
             id:"DYNAMIC",
@@ -56,13 +57,12 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
-            description:"File with tamiflex data.",
+            description:"Use file with tamiflex data for reflection.",
             value:null,
             webUI:true,
             cli:true,
             name:"tamiflex",
             argName:"FILE",
-            forPreprocessor:true,
             isFile:true
         ),
         new AnalysisOption<String>(
@@ -364,11 +364,12 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"SSA",
+            name: "ssa",
             description: 'Use ssa transformation for input.',
             value:false,
+            forIDGeneration:true,
             webUI:true,
-            cli:true,
-            name: "ssa"
+            cli:true
         ),
         new AnalysisOption<Boolean>(
             id:"CACHE",
@@ -404,19 +405,21 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"RUN_JPHANTOM",
+            name: "run-jphantom",
             description: 'Run jphantom for non-existent referenced jars.',
             value:false,
+            forIDGeneration:true,
             webUI:true,
-            cli:true,
-            name: "run-jphantom"
+            cli:true
         ),
         new AnalysisOption<Boolean>(
             id:"AVERROES",
+            name: "averroes",
             description: 'Use averroes tool to create a placeholder library.',
             value:false,
+            forIDGeneration:true,
             webUI:true,
             cli:true,
-            name: "averroes"
         ),
         new AnalysisOption<Boolean>(
             id:"DACAPO",
@@ -448,17 +451,19 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"USE_ORIGINAL_NAMES",
-            value:false,
-            webUI:true,
-            cli:true,
             name:"use-original-names",
+            value:false,
+            forIDGeneration:true,
+            webUI:true,
+            cli:true
         ),
         new AnalysisOption<Boolean>(
             id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
+            name:"only-application-classes-fact-gen",
             value:false,
+            forIDGeneration:true,
             webUI:true,
-            cli:true,
-            name:"only-application-classes-fact-gen"
+            cli:true
         ),
         new AnalysisOption<String>(
             id:"SOOT",
@@ -471,12 +476,13 @@ class Doop {
         ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
+            name:"jre",
+            argName:"VERSION",
             description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
             value:"system",
+            forIDGeneration:true,
             webUI:true,
-            cli:true,
-            name:"jre",
-            argName:"VERSION"
+            cli:true
         ),
         new AnalysisOption<OS>(
             id:"OS",
@@ -492,12 +498,13 @@ class Doop {
         ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
+            name:"regex",
+            argName:"regex-expression",
             description:"A regex expression for the Java package names to be analyzed.",
             value:null,
+            forIDGeneration:true,
             webUI:true,
-            cli:true,
-            name:"regex",
-            argName:"regex-expression"
+            cli:true
         ),
         new AnalysisOption<String>(
             id:"EXTERNALS",
@@ -508,17 +515,6 @@ class Doop {
             name:"externals",
             isAdvanced: true
         )
-    ]
-
-    static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
-        "LOGICBLOX_HOME",
-        "LD_LIBRARY_PATH",
-        "BLOXBATCH",
-        "BLOX_OPTS",
-        "OS",
-        "INCREMENTAL",
-        "CACHE",
-        "EXTERNALS"
     ]
 
     // Not the best pattern, but limits the source code size :)
