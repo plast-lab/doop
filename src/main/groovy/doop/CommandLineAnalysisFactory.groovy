@@ -20,8 +20,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     static final String JAR              = 'The jar files to analyze. Separate multiple jars with a space. ' +
                                            ' If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
-                                           'option: (a) can be mixed with any other option (except the analysis name ' +
-                                           'and jars), (b) is processed prior to any others.'
+                                           'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
@@ -53,14 +52,17 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     Analysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
-        String name = props.getProperty("analysis")
+        String name = cli.a ?: props.getProperty("analysis")
 
-        //Get the jars of the analysis
-        List<String> jars = props.getProperty("jar").split().collect { String s-> s.trim() }
-        //The jars, if relative, are being resolved via the propsBaseDir
-        jars = jars.collect { String jar ->
-            File f = new File(jar)
-            return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+        //Get the jars of the analysis. If there are no jars in the CLI, we get them from the properties.
+        List<String> jars = cli.js
+        if (!jars) {
+            jars = props.getProperty("jar").split().collect { String s -> s.trim() }
+            //The jars, if relative, are being resolved via the propsBaseDir
+            jars = jars.collect { String jar ->
+                File f = new File(jar)
+                return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+            }
         }
 
         //Get the optional id of the analysis

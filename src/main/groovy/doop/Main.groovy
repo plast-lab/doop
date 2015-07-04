@@ -90,6 +90,8 @@ class Main {
                 File propsBaseDir = f.getParentFile()
                 Properties props = Helper.loadProperties(f)
 
+                //There are no mandatory properties since the name and jars can be overridden too.
+                /*
                 try {
                     Helper.checkMandatoryProps(props)
                 }
@@ -97,6 +99,7 @@ class Main {
                     println e.getMessage()
                     return
                 }
+                */
 
                 //change the log level according to the property or cli arg
                 changeLogLevel(cli.l ?: props.getProperty("level"))
