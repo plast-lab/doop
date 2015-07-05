@@ -20,12 +20,6 @@
 #undef PADDLE_COMPAT
 #endif
 
-// It makes no sense to analyze partial strings that may match fields
-// when we don't track the flow of these strings through StringBuilders.
-#ifndef REFLECTION_STRING_FLOW_ANALYSIS
-#undef ANALYZE_REFLECTION_SUBSTRINGS
-#endif
-
 // REVIEW: The current major decision is to only access application-level
 // classes and methods reflectively. This makes sense, but it may be
 // worthwhile to make it flag-controllable later. For now we have way too
@@ -104,7 +98,7 @@ HeapAllocation:Merge[?heap] = ?constant <-
   ! ReflectionObject(?heap), 
   HeapAllocationValue(?constant, "<<string-constant>>").
 
-#ifdef MERGE_FIELD_AND_METHOD_SUBSTRINGS
+#ifdef REFLECTION_MERGE_MEMBER_CONSTANTS
 // There are two reasonable options: merge all, or merge just method and
 // field names, but not class names.
 HeapAllocation:Merge[?heap] = ?constant <-
@@ -135,10 +129,10 @@ FieldNameStringConstant:Signature(?sig, ?constant)
   FieldNameStringConstantInexact:Signature(?sig, _),
   HeapAllocationValue(?constant, "<<reflection-string-constant>>").
 
-#else // #ifndef MERGE_FIELD_AND_METHOD_SUBSTRINGS
+#else
 HeapAllocation:ContextInsensitive(?heap) <-
   ReflectionObject(?heap).
-#endif // MERGE_FIELD_AND_METHOD_SUBSTRINGS
+#endif // REFLECTION_MERGE_MEMBER_CONSTANTS
 #endif // DISTINGUISH_REFLECTION_STRING_CONSTANTS
 
 #ifdef DISTINGUISH_ALL_STRING_CONSTANTS
@@ -217,7 +211,7 @@ FieldNameStringConstantExact:Signature(?sig, ?heap)
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
   FieldSignature:SimpleName[?sig] = ?string.
 
-#ifdef ANALYZE_REFLECTION_SUBSTRINGS
+#ifdef REFLECTION_SUBSTRING_ANALYSIS
 // Creating class/field/method names via string concatenation makes more
 // sense for application classes/fields/methods.
 ClassNameStringConstant(?heap),
@@ -361,20 +355,6 @@ VarAssignedFromStringFactoryVar(?ret, ?base)
   StringFactoryVar(?base),
   AssignReturnValue[?invocation] = ?ret.
 
-/*
-// VERSION C
-// Usual case: string buffer is used locally.
-VarAssignmentThroughFactory(?to, ?from) <-
-  VarAssignedFromStringFactoryVar(?to, ?base),
-  VarAssignedToStringFactoryVar(?from, ?base).
-
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
-  ReflectionSubstringObject(?heap),
-  VarAssignmentThroughFactory(?to, ?from).
-// END VERSION C
-*/
-
 // VERSION A (Version B is below). They are interchangeable.  Ver. A
 // is far too slow with the current runtime when reflection strings
 // are not merged. When they are merged, however, this becomes fast
@@ -445,6 +425,19 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
 // END VERSION B
 */
 
+/*
+// VERSION C
+// Usual case: string buffer is used locally.
+VarAssignmentThroughFactory(?to, ?from) <-
+  VarAssignedFromStringFactoryVar(?to, ?base),
+  VarAssignedToStringFactoryVar(?from, ?base).
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  ReflectionSubstringObject(?heap),
+  VarAssignmentThroughFactory(?to, ?from).
+// END VERSION C
+*/
 
 /*
 //// Slower than the alternative

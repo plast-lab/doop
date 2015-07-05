@@ -146,7 +146,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
 ReachableContext(?calleeCtx, ?callee) <-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-#ifndef CONTEXT_SENSITIVE_REFLECTION
+#ifndef REFLECTION_CONTEXT_SENSITIVITY
 // REVIEW (YS): Does this break Paddle compatibility? The code originally
 // just used as callee context the calling context of the caller.
 DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
@@ -160,7 +160,7 @@ DummyContextForReflective[] = ?dummyCtx <-
 /**
  * Static methods
  */
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 // REVIEW (YS): Could add back the refinement functionality, but given the
 // (currently) marginal value of both context-sensitive reflection and 
 // refinement-based analyses, it just isn't worth the trouble.
@@ -176,7 +176,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
 /**
  * Special methods
  */
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
@@ -207,7 +207,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
  */
 
 
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
@@ -273,7 +273,7 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
 ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var) ->
   Context(?ctx), Var(?var), Type(?type), Instruction(?instruction).
 
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveRecordMacro(?ctx, ?heap, ?hctx),
 InitializedClass(?type),
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
