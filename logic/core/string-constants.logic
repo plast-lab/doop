@@ -11,15 +11,6 @@
  * @author Yannis Smaragdakis
  *************************************************************/
 
-// These are mutually exclusive
-#ifdef DISTINGUISH_REFLECTION_STRING_CONSTANTS
-#undef DISTINGUISH_NO_STRING_CONSTANTS
-#undef PADDLE_COMPAT
-#endif
-#ifdef DISTINGUISH_NO_STRING_CONSTANTS
-#undef PADDLE_COMPAT
-#endif
-
 // REVIEW: The current major decision is to only access application-level
 // classes and methods reflectively. This makes sense, but it may be
 // worthwhile to make it flag-controllable later. For now we have way too

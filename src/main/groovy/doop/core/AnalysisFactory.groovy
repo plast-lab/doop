@@ -261,12 +261,14 @@ import java.util.jar.JarFile
 
         if (options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
+            options.PADDLE_COMPAT.value = false
             options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
             logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
+            options.PADDLE_COMPAT.value = false
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
             logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
@@ -288,7 +290,6 @@ import java.util.jar.JarFile
 
         if (options.DISABLE_REFLECTION.value) {
             logger.debug "The DISABLE_REFLECTION option has been enabled"
-            //NOTE:the flag noreflection is set but we don't need it as a separate option/flag 
         }
 
         if (options.REFLECTION_CONTEXT_SENSITIVITY.value) {
