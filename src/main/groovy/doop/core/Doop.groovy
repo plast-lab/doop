@@ -98,16 +98,6 @@ class Doop {
         
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
-            name:"distinguish-reflection-string-constants",
-            value:true, // enabled by default in run script
-            cli:true,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
             id:"DISTINGUISH_ALL_STRING_CONSTANTS",
             name:"distinguish-all-string-constants",
             value:false,
@@ -134,33 +124,6 @@ class Doop {
             id:"NO_MODELING_OF_NUMS_OR_NULL",
             value:true, // enabled by default in run script
             forPreprocessor:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_STRING_FLOW_ANALYSIS",
-            name:"disable-reflection-string-flow-analysis",
-            value:true, //enabled by default in run script
-            cli:true,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"ANALYZE_REFLECTION_SUBSTRINGS",
-            name:"disable-reflection-substring-analysis",
-            value:true, // enabled by default in run script
-            cli:true,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"MERGE_FIELD_AND_METHOD_SUBSTRINGS",
-            name:"disable-merge-member-reflection-constants",
-            value:true, // enabled by default in run script
-            cli:true,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"MERGE_STRING_BUFFERS",
@@ -226,24 +189,6 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DISABLE_REFLECTION",
-            name:"disable-reflection",
-            value:false,
-            cli:true,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"CONTEXT_SENSITIVE_REFLECTION",
-            name:"context-sensitive-reflection",
-            value:false,
-            cli:true,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
             id:"CLIENT_EXCEPTION_FLOW",
             name:"enable-exception-flow",
             value:false,
@@ -252,9 +197,64 @@ class Doop {
             forPreprocessor:true,
             isAdvanced:true
         ),        
+
         new AnalysisOption<Boolean>(
-            id:"USE_BASED_REFLECTION_ANALYSIS",
-            name:"enable-use-based-reflection-analysis",
+            id:"DISABLE_REFLECTION",
+            name:"disable-reflection",
+            value:false,
+            cli:true,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
+            name:"disable-reflection-distinguish-string-constants",
+            value:true,
+            cli:true,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true,
+            flagType:PreprocessorFlag.CONSTANT_FLAG
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_STRING_FLOW_ANALYSIS",
+            name:"disable-reflection-string-flow-analysis",
+            value:true,
+            cli:true,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_SUBSTRING_ANALYSIS",
+            name:"disable-reflection-substring-analysis",
+            value:true,
+            cli:true,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
+            name:"disable-reflection-merge-member-constants",
+            value:true,
+            cli:true,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_CONTEXT_SENSITIVITY",
+            name:"enable-reflection-context-sensitivity",
+            value:false,
+            cli:true,
+            webUI:true,
+            forPreprocessor:true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_USE_BASED_ANALYSIS",
+            name:"enable-reflection-use-based-analysis",
             value:false,
             cli:true,
             webUI:true,
@@ -262,8 +262,8 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"INVENT_UNKNOWN_REFLECTIVE_OBJECTS",
-            name:"enable-invention-of-unknown-reflective-objects",
+            id:"REFLECTION_INVENT_UNKNOWN_OBJECTS",
+            name:"enable-reflection-invent-unknown-objects",
             value:false,
             cli:true,
             webUI:true,
@@ -271,14 +271,15 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"REFINED_REFLECTION_OBJECTS",
-            name:"enable-refined-reflection-objects",
+            id:"REFLECTION_REFINED_OBJECTS",
+            name:"enable-reflection-refined-objects",
             value:false,
             cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
         ),
+
         new AnalysisOption<Boolean>(
             id:"NO_CONTEXT_REPEAT",
             name:"no-context-repeat",

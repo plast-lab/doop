@@ -86,7 +86,7 @@
 +java:lang:Class:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
   ClassType(?type), Type:fqn(?type:?typeStr),
-#ifdef REFINED_REFLECTION_OBJECTS
+#ifdef REFLECTION_REFINED_OBJECTS
   Instruction:Value@prev(?invocation:?invocationStr),
   ?heapStr = "<reflective Class.newInstance/" + ?invocationStr + ?typeStr + ">".
 #else

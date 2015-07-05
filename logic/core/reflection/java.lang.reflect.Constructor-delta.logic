@@ -3,7 +3,7 @@
 +java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
   ClassType(?type), Type:fqn(?type:?typeStr),
-#ifdef REFINED_REFLECTION_OBJECTS
+#ifdef REFLECTION_REFINED_OBJECTS
   Instruction:Value@prev(?invocation:?invocationStr),
   ?heapStr = "<reflective Constructor.newInstance/" + ?invocationStr + ?typeStr + ">".
 #else

@@ -249,15 +249,6 @@ import java.util.jar.JarFile
             logger.debug "The EXCEPTIONS_CS option has been enabled"
         }
 
-        if (options.DISABLE_REFLECTION.value) {
-            logger.debug "The DISABLE_REFLECTION option has been enabled"
-            //NOTE:the flag noreflection is set but we don't need it as a separate option/flag 
-        }
-
-        if (options.CONTEXT_SENSITIVE_REFLECTION.value) {
-            logger.debug "The CONTEXT_SENSITIVE_REFLECTION option has been enabled"
-        }
-
         if (options.CLIENT_EXCEPTION_FLOW.value) {
             logger.debug "The CLIENT_EXCEPTION_FLOW option has been enabled"
         }
@@ -281,27 +272,39 @@ import java.util.jar.JarFile
         }
 
         if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
+            // It makes no sense to analyze partial strings that may match fields
+            // when we don't track the flow of these strings through StringBuilders.
+            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
             logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been disabled"
         }
 
-        if (!options.ANALYZE_REFLECTION_SUBSTRINGS.value) {
-            logger.debug "The ANALYZE_REFLECTION_SUBSTRINGS option has been disabled"
+        if (!options.REFLECTION_SUBSTRING_ANALYSIS.value) {
+            logger.debug "The REFLECTION_SUBSTRING_ANALYSIS option has been disabled"
         }
 
-        if (!options.MERGE_FIELD_AND_METHOD_SUBSTRINGS.value) { 
-            logger.debug "The MERGE_FIELD_AND_METHOD_SUBSTRINGS option has been disabled"
+        if (!options.REFLECTION_MERGE_MEMBER_CONSTANTS.value) { 
+            logger.debug "The REFLECTION_MERGE_MEMBER_CONSTANTS option has been disabled"
         }
 
-        if (options.USE_BASED_REFLECTION_ANALYSIS.value) { 
-            logger.debug "The USE_BASED_REFLECTION_ANALYSIS option has been enabled"
+        if (options.DISABLE_REFLECTION.value) {
+            logger.debug "The DISABLE_REFLECTION option has been enabled"
+            //NOTE:the flag noreflection is set but we don't need it as a separate option/flag 
         }
 
-        if (options.INVENT_UNKNOWN_REFLECTIVE_OBJECTS.value) {
-            logger.debug "The INVENT_UNKNOWN_REFLECTIVE_OBJECTS option has been enabled"
+        if (options.REFLECTION_CONTEXT_SENSITIVITY.value) {
+            logger.debug "The REFLECTION_CONTEXT_SENSITIVITY option has been enabled"
         }
 
-        if (options.REFINED_REFLECTION_OBJECTS.value) {
-            logger.debug "The REFINED_REFLECTION_OBJECTS option has been enabled"
+        if (options.REFLECTION_USE_BASED_ANALYSIS.value) { 
+            logger.debug "The REFLECTION_USE_BASED_ANALYSIS option has been enabled"
+        }
+
+        if (options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value) {
+            logger.debug "The REFLECTION_INVENT_UNKNOWN_OBJECTS option has been enabled"
+        }
+
+        if (options.REFLECTION_REFINED_OBJECTS.value) {
+            logger.debug "The REFLECTION_REFINED_OBJECTS option has been enabled"
         }
 
         if (!options.INCLUDE_IMPLICITLY_REACHABLE_CODE.value) {
@@ -359,7 +362,7 @@ import java.util.jar.JarFile
         if (options.TAMIFLEX.value) {
             options.DISABLE_REFLECTION.value = true
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = false
-            options.ANALYZE_REFLECTION_SUBSTRINGS.value = false
+            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
             logger.debug "The TAMIFLEX option has been enabled"
         }
 
