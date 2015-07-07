@@ -20,7 +20,7 @@
 #include "exceptions/experimental.logic"
 #endif
 
-#if !defined(DISABLE_REFLECTION) && !defined(PADDLE_COMPAT)
+#if defined(ENABLE_REFLECTION) && !defined(PADDLE_COMPAT)
 #include "reflection/rules.logic" 
 #endif
 

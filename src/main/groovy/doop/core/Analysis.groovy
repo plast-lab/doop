@@ -354,7 +354,7 @@ import org.apache.commons.logging.LogFactory
         lbScriptWriter.println("exec -F ${coreAnalysisName}-delta.logic")
 
 
-        if (!options.DISABLE_REFLECTION.value) {
+        if (options.ENABLE_REFLECTION.value) {
             String reflectionPath = "${Doop.doopLogic}/core/reflection"
 
             preprocessor.preprocess(this, reflectionPath, "delta.logic", "${outDir}/reflection-delta.logic")
