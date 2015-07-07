@@ -259,37 +259,44 @@ import java.util.jar.JarFile
             logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
         }
 
-        if (options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.PADDLE_COMPAT.value = false
-            options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
-            logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
-        }
-
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
-            options.PADDLE_COMPAT.value = false
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+            options.PADDLE_COMPAT.value = false
             logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
 
-        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
+        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.PADDLE_COMPAT.value = false
+            logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been enabled"
+        } else {
+            // Merging of method and field names happens only if we distinguish
+            // reflection strings in the first place.
+            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
+            logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been disabled"
+        }
+
+        if (options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
+            logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been enabled"
+        } else {
             // It makes no sense to analyze partial strings that may match fields
             // when we don't track the flow of these strings through StringBuilders.
             options.REFLECTION_SUBSTRING_ANALYSIS.value = false
             logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been disabled"
         }
 
-        if (!options.REFLECTION_SUBSTRING_ANALYSIS.value) {
-            logger.debug "The REFLECTION_SUBSTRING_ANALYSIS option has been disabled"
+        if (options.REFLECTION_SUBSTRING_ANALYSIS.value) {
+            logger.debug "The REFLECTION_SUBSTRING_ANALYSIS option has been enabled"
         }
 
-        if (!options.REFLECTION_MERGE_MEMBER_CONSTANTS.value) { 
-            logger.debug "The REFLECTION_MERGE_MEMBER_CONSTANTS option has been disabled"
+        if (options.REFLECTION_MERGE_MEMBER_CONSTANTS.value) { 
+            logger.debug "The REFLECTION_MERGE_MEMBER_CONSTANTS option has been enabled"
         }
 
-        if (options.DISABLE_REFLECTION.value) {
-            logger.debug "The DISABLE_REFLECTION option has been enabled"
+        if (options.ENABLE_REFLECTION.value) {
+            logger.debug "The ENABLE_REFLECTION option has been enabled"
         }
 
         if (options.REFLECTION_CONTEXT_SENSITIVITY.value) {
@@ -361,7 +368,7 @@ import java.util.jar.JarFile
         }
 
         if (options.TAMIFLEX.value) {
-            options.DISABLE_REFLECTION.value = true
+            options.ENABLE_REFLECTION.value = false
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = false
             options.REFLECTION_SUBSTRING_ANALYSIS.value = false
             logger.debug "The TAMIFLEX option has been enabled"
@@ -442,6 +449,23 @@ import java.util.jar.JarFile
             Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
             options.CLIENT_EXTENSIONS.value = true
             logger.debug "The CLIENT_CODE option has been set to ${clFile}"
+        }
+
+        if (!options.ENABLE_REFLECTION.value) {
+            if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
+                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
+                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
+                options.REFLECTION_SUBSTRING_ANALYSIS.value ||
+                options.REFLECTION_CONTEXT_SENSITIVITY.value ||
+                options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
+                options.REFLECTION_REFINED_OBJECTS.value) {
+                logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+            } else if (!options.TAMIFLEX.value) {
+                logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
+            } else {
+                logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+            }
         }
     }
     

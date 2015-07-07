@@ -73,7 +73,7 @@ HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   HeapAllocationValue(?constant, "<<string-constant>>").
 #endif
-#ifdef DISTINGUISH_REFLECTION_STRING_CONSTANTS
+#ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 ReflectionObject(?heap) <-
   ClassNameStringConstant(?heap);
   MethodNameStringConstant(?heap);
@@ -124,7 +124,7 @@ FieldNameStringConstant:Signature(?sig, ?constant)
 HeapAllocation:ContextInsensitive(?heap) <-
   ReflectionObject(?heap).
 #endif // REFLECTION_MERGE_MEMBER_CONSTANTS
-#endif // DISTINGUISH_REFLECTION_STRING_CONSTANTS
+#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 #ifdef DISTINGUISH_ALL_STRING_CONSTANTS
 HeapAllocation:ContextInsensitive(?heap) <-

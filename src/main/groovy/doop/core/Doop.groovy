@@ -110,7 +110,7 @@ class Doop {
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_NO_STRING_CONSTANTS",
             name:"distinguish-no-string-constants",
-            value:false,
+            value:true,
             cli:true,
             webUI:true,
             forPreprocessor: true,
@@ -199,17 +199,18 @@ class Doop {
         ),        
 
         new AnalysisOption<Boolean>(
-            id:"DISABLE_REFLECTION",
-            name:"disable-reflection",
+            id:"ENABLE_REFLECTION",
+            name:"enable-reflection",
+            description:"Enable advanced logic for handling Java reflection.",
             value:false,
             cli:true,
             webUI:true,
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_REFLECTION_STRING_CONSTANTS",
-            name:"disable-reflection-distinguish-string-constants",
-            value:true,
+            id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
+            name:"distinguish-reflection-only-string-constants",
+            value:false,
             cli:true,
             webUI:true,
             forPreprocessor: true,
@@ -217,9 +218,18 @@ class Doop {
             flagType:PreprocessorFlag.CONSTANT_FLAG
         ),
         new AnalysisOption<Boolean>(
+            id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
+            name:"enable-reflection-merge-member-constants",
+            value:false,
+            cli:true,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
             id:"REFLECTION_STRING_FLOW_ANALYSIS",
-            name:"disable-reflection-string-flow-analysis",
-            value:true,
+            name:"enable-reflection-string-flow-analysis",
+            value:false,
             cli:true,
             webUI:true,
             forPreprocessor: true,
@@ -227,17 +237,8 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_SUBSTRING_ANALYSIS",
-            name:"disable-reflection-substring-analysis",
-            value:true,
-            cli:true,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
-            name:"disable-reflection-merge-member-constants",
-            value:true,
+            name:"enable-reflection-substring-analysis",
+            value:false,
             cli:true,
             webUI:true,
             forPreprocessor: true,
