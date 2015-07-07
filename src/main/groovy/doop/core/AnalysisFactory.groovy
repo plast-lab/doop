@@ -369,8 +369,6 @@ import java.util.jar.JarFile
 
         if (options.TAMIFLEX.value) {
             options.ENABLE_REFLECTION.value = false
-            options.REFLECTION_STRING_FLOW_ANALYSIS.value = false
-            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
             logger.debug "The TAMIFLEX option has been enabled"
         }
 
