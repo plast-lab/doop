@@ -132,11 +132,10 @@ class Doop {
         new AnalysisOption<String>(
             id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
             name:"exclude-implicitly-reachable-code",
-            value:true,  // enabled by default in run script
+            value:true,
             cli:true,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
+            forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
             id:"PADDLE_COMPAT",
@@ -283,8 +282,7 @@ class Doop {
             value:false,
             cli:true,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
+            forPreprocessor:true
         ),
         /* End of preprocessor normal flags] */
         
@@ -309,6 +307,7 @@ class Doop {
             id:"SEPARATE_EXCEPTION_OBJECTS",
             value:false,
             forPreprocessor:true,
+            isAdvanced:true,
             flagType:PreprocessorFlag.EXCEPTION_FLAG
         ),
         new AnalysisOption<Boolean>(
@@ -407,7 +406,8 @@ class Doop {
             value:false,
             forIDGeneration:true,
             cli:true,
-            webUI:true
+            webUI:true,
+            isAdvanced:true,
         ),
         new AnalysisOption<Boolean>(
             id:"DACAPO",
@@ -492,6 +492,7 @@ class Doop {
             name:"externals",
             description:"The path to doop externals",
             value:System.getenv("DOOP_EXTERNALS"),
+            forIDGeneration:true,
             cli:true,
             webUI:false,
             isAdvanced:true

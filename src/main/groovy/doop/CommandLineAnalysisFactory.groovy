@@ -167,10 +167,6 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                 option.id
             }
 
-            //Put the "main" options first
-            cliOptions = cliOptions.findAll { AnalysisOption option -> !option.isAdvanced } +
-                         cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
-
             cliOptions.each { AnalysisOption option ->
                 writeAsProperty(option, w)
             }
