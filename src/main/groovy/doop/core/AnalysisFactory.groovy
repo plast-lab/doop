@@ -323,10 +323,6 @@ import java.util.jar.JarFile
             logger.debug "The MERGE_STRING_BUFFERS option has been disabled"
         }
 
-        if (options.NO_CONTEXT_REPEAT.value) {
-            logger.debug "The NO_CONTEXT_REPEAT option has been enabled"
-        }
-
         if (options.TRANSFORM_INPUT.value) {
             logger.debug "The TRANSFORM_INPUT option has been enabled"
         }
@@ -536,16 +532,12 @@ import java.util.jar.JarFile
         if (vars.options.DACAPO.value) {
             String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
-            //We don't hard-code the dependencies, we just set the appropriate flags
             vars.options.DACAPO_BENCHMARK.value = benchmark
-            return
         }
         
         if (vars.options.DACAPO_BACH.value) {
             String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
-            logger.info "Running dacapo-2009 benchmark: $benchmark"
-            //We don't hard-code the dependencies, we just set the appropriate flags
-            vars.options.DACAPO_2009.value = true
+            logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
     }
