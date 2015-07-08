@@ -120,11 +120,6 @@ class Doop {
         /* End of preprocessor constant flags] */
 
         /* Start of preprocessor normal flags] */
-        new AnalysisOption<String>(
-            id:"NO_MODELING_OF_NUMS_OR_NULL",
-            value:true, // enabled by default in run script
-            forPreprocessor:true
-        ),
         new AnalysisOption<Boolean>(
             id:"MERGE_STRING_BUFFERS",
             name:"disable-merge-string-buffers",
@@ -282,15 +277,6 @@ class Doop {
         ),
 
         new AnalysisOption<Boolean>(
-            id:"NO_CONTEXT_REPEAT",
-            name:"no-context-repeat",
-            value:false,
-            cli:true,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
             id:"TRANSFORM_INPUT",
             name:"transform-input",
             description:"Transform input by removing redundant instructions.",
@@ -429,8 +415,7 @@ class Doop {
             value:false,
             cli:true,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
+            forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
             id:"DACAPO_BACH",
@@ -438,17 +423,11 @@ class Doop {
             value:false,
             cli:true,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
+            forPreprocessor:true
         ),
         new AnalysisOption<String>(
             id:"DACAPO_BENCHMARK",
             value:null,
-            forPreprocessor:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DACAPO_2009",
-            value:false,
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(

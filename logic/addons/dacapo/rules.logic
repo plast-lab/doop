@@ -6,7 +6,7 @@
 RecordImmutableMacro(?ctx, ?classNameHeap, ?hctx),
 VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) <-
    MethodInvocation:Signature[?inv] =
-#ifdef DACAPO_2009
+#ifdef DACAPO_BACH
    "<org.dacapo.parser.Config: void setClass(java.lang.String)>",
 #else
    "<dacapo.parser.Config: void setClass(java.lang.String)>",
