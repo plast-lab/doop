@@ -70,7 +70,7 @@ class AnalysisOption<T>  {
     /**
      * Indicates whether the option can be specified by the user in the command line interface
      */
-    boolean cli = false
+    boolean cli = true
 
     /**
      * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).

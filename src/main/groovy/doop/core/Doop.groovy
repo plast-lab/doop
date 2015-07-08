@@ -18,21 +18,22 @@ class Doop {
             argName:"PATH",
             description:"set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable).",
             value:System.getenv("LOGICBLOX_HOME"),
-            cli:true,
-            webUI:false,
             isAdvanced:true
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
-            value:null
+            value:null,
+            cli:false
         ),
         new AnalysisOption<String>(
             id:"BLOXBATCH", //the value is set based on LOGICBLOX_HOME
-            value:null
+            value:null,
+            cli:false
         ),
         new AnalysisOption<String>(
             id:"BLOX_OPTS",
-            value:null
+            value:null,
+            cli:false
         ),
         //Main options
         new AnalysisOption<String>(
@@ -42,7 +43,6 @@ class Doop {
             description:"Specify the main class.",
             value:null,
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<List<String>>(
@@ -52,7 +52,6 @@ class Doop {
             isFile:true,
             description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
             value:[],
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<String>(
@@ -62,7 +61,6 @@ class Doop {
             isFile:true,
             description:"Use file with tamiflex data for reflection.",
             value:null,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<String>(
@@ -72,12 +70,12 @@ class Doop {
             isFile:true,
             description:"Additional directory/file of client analysis to include.",
             value:null,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<String>(
             id:"CLIENT_EXTENSIONS",
             value:false,
+            cli:false,
             forPreprocessor:true
         ),
         /* Flags for must analyses */
@@ -87,12 +85,12 @@ class Doop {
             argName:"may-analysis name",
             description:"Use a may analysis before running the must analysis.",
             value:null,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
             id:"MUST_AFTER_MAY",
             value:false,
+            cli:false,
             forPreprocessor:true
         ),
         
@@ -101,7 +99,6 @@ class Doop {
             id:"DISTINGUISH_ALL_STRING_CONSTANTS",
             name:"distinguish-all-string-constants",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true,
@@ -111,7 +108,6 @@ class Doop {
             id:"DISTINGUISH_NO_STRING_CONSTANTS",
             name:"distinguish-no-string-constants",
             value:true,
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true,
@@ -124,7 +120,6 @@ class Doop {
             id:"MERGE_STRING_BUFFERS",
             name:"disable-merge-string-buffers",
             value:true, //enabled by default in run script
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
@@ -133,7 +128,6 @@ class Doop {
             id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
             name:"exclude-implicitly-reachable-code",
             value:true,
-            cli:true,
             webUI:true,
             forPreprocessor:true
         ),
@@ -141,7 +135,6 @@ class Doop {
             id:"PADDLE_COMPAT",
             name:"paddle-compat",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -150,7 +143,6 @@ class Doop {
             id:"EXCEPTIONS_FILTER",
             name:"enable-exceptions-filter",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -159,7 +151,6 @@ class Doop {
             id:"EXCEPTIONS_ORDER",
             name:"enable-exceptions-order",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -168,7 +159,6 @@ class Doop {
             id:"EXCEPTIONS_RANGE",
             name:"enable-exceptions-range",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -177,7 +167,6 @@ class Doop {
             id:"EXCEPTIONS_CS",
             name:"enable-exceptions-cs",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -186,7 +175,6 @@ class Doop {
             id:"CLIENT_EXCEPTION_FLOW",
             name:"enable-exception-flow",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -197,7 +185,6 @@ class Doop {
             name:"enable-reflection",
             description:"Enable advanced logic for handling Java reflection.",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true
         ),
@@ -205,7 +192,6 @@ class Doop {
             id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
             name:"distinguish-reflection-only-string-constants",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true,
@@ -215,7 +201,6 @@ class Doop {
             id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
             name:"enable-reflection-merge-member-constants",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
@@ -224,7 +209,6 @@ class Doop {
             id:"REFLECTION_STRING_FLOW_ANALYSIS",
             name:"enable-reflection-string-flow-analysis",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
@@ -233,7 +217,6 @@ class Doop {
             id:"REFLECTION_SUBSTRING_ANALYSIS",
             name:"enable-reflection-substring-analysis",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
@@ -242,7 +225,6 @@ class Doop {
             id:"REFLECTION_CONTEXT_SENSITIVITY",
             name:"enable-reflection-context-sensitivity",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -251,7 +233,6 @@ class Doop {
             id:"REFLECTION_USE_BASED_ANALYSIS",
             name:"enable-reflection-use-based-analysis",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
@@ -260,7 +241,6 @@ class Doop {
             id:"REFLECTION_INVENT_UNKNOWN_OBJECTS",
             name:"enable-reflection-invent-unknown-objects",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -269,7 +249,6 @@ class Doop {
             id:"REFLECTION_REFINED_OBJECTS",
             name:"enable-reflection-refined-objects",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
@@ -280,7 +259,6 @@ class Doop {
             name:"transform-input",
             description:"Transform input by removing redundant instructions.",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true
         ),
@@ -289,7 +267,8 @@ class Doop {
         /* Start of preprocessor exception flags] */        
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_PRECISE",
-            value:true, // enabled by default in run script
+            value:true,
+            cli:false,
             forPreprocessor:true,
             flagType:PreprocessorFlag.EXCEPTION_FLAG
         ),
@@ -297,7 +276,6 @@ class Doop {
             id:"EXCEPTIONS_IMPRECISE",
             name:"enable-imprecise-exceptions",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true,
@@ -306,6 +284,7 @@ class Doop {
         new AnalysisOption<Boolean>(
             id:"SEPARATE_EXCEPTION_OBJECTS",
             value:false,
+            cli:false,
             forPreprocessor:true,
             isAdvanced:true,
             flagType:PreprocessorFlag.EXCEPTION_FLAG
@@ -314,7 +293,6 @@ class Doop {
             id:"EXCEPTIONS_EXPERIMENTAL",
             name:"enable-exceptions-experimental",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true,
@@ -327,7 +305,6 @@ class Doop {
             id:"DISABLE_PRECISE_EXCEPTIONS",
             name:"disable-precise-exceptions",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:false,
             isAdvanced:true
@@ -336,7 +313,6 @@ class Doop {
             id:"DISABLE_MERGE_EXCEPTIONS",
             name:"disable-merge-exceptions",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:false,
             isAdvanced:true
@@ -344,10 +320,12 @@ class Doop {
         new AnalysisOption<Boolean>(
             id:"CSV",
             value:false,
+            cli:false
         ),
         new AnalysisOption<Boolean>(
             id:"REFINE",
-            value:false
+            value:false,
+            cli:false
         ),
         new AnalysisOption<Boolean>(
             id:"SSA",
@@ -355,7 +333,6 @@ class Doop {
             description:"Use ssa transformation for input.",
             value:false,
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -363,7 +340,6 @@ class Doop {
             name:"cache",
             description:"The analysis will use the cached facts, if they exist.",
             value:false,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -371,7 +347,6 @@ class Doop {
             name:"full-stats",
             description:"Load additional logic for collecting statistics.",
             value:false,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -379,7 +354,6 @@ class Doop {
             name:"no-stats",
             description:"Do not load logic for collecting statistics.",
             value:false,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -387,7 +361,6 @@ class Doop {
             name:"sanity",
             description:"Load additional logic for sanity checks.",
             value:false,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -396,7 +369,6 @@ class Doop {
             description:"Run jphantom for non-existent referenced jars.",
             value:false,
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -405,7 +377,6 @@ class Doop {
             description:"Use averroes tool to create a placeholder library.",
             value:false,
             forIDGeneration:true,
-            cli:true,
             webUI:true,
             isAdvanced:true,
         ),
@@ -413,7 +384,6 @@ class Doop {
             id:"DACAPO",
             name:"dacapo",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true
         ),
@@ -421,13 +391,13 @@ class Doop {
             id:"DACAPO_BACH",
             name:"dacapo-bach",
             value:false,
-            cli:true,
             webUI:true,
             forPreprocessor:true
         ),
         new AnalysisOption<String>(
             id:"DACAPO_BENCHMARK",
             value:null,
+            cli:false,
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
@@ -435,7 +405,6 @@ class Doop {
             name:"use-original-names",
             value:false,
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -443,7 +412,6 @@ class Doop {
             name:"only-application-classes-fact-gen",
             value:false,
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<String>(
@@ -452,7 +420,6 @@ class Doop {
             argName:"SOOT_VERSION",
             description:"One 2.5.0, 2.5.0-custom (default: 2.5.0).",
             value:"2.5.0",
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
@@ -462,18 +429,17 @@ class Doop {
             description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
             value:"system",
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<OS>(
             id:"OS",
-            value:OS.OS_UNIX
+            value:OS.OS_UNIX,
+            cli:false
         ),
         new AnalysisOption<Boolean>(
             id:"INCREMENTAL",
             name:"incremental",
             value:false,
-            cli:true,
             webUI:true,
             isAdvanced:true
         ),
@@ -484,16 +450,14 @@ class Doop {
             description:"A regex expression for the Java package names to be analyzed.",
             value:null,
             forIDGeneration:true,
-            cli:true,
             webUI:true
         ),
         new AnalysisOption<String>(
             id:"EXTERNALS",
             name:"externals",
-            description:"The path to doop externals",
+            description:"The path to doop externals (directory with different jre versions).",
             value:System.getenv("DOOP_EXTERNALS"),
             forIDGeneration:true,
-            cli:true,
             webUI:false,
             isAdvanced:true
         )
