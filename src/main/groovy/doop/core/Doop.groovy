@@ -183,10 +183,17 @@ class Doop {
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION",
             name:"enable-reflection",
-            description:"Enable advanced logic for handling Java reflection.",
+            description:"Enable logic for handling Java reflection.",
             value:false,
             webUI:true,
             forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"ENABLE_REFLECTION_CLASSIC",
+            name:"enable-reflection-classic",
+            description:"Enable (classic subset of) logic for handling Java reflection.",
+            value:false,
+            webUI:true
         ),
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
@@ -372,9 +379,9 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<Boolean>(
-            id:"AVERROES",
-            name:"averroes",
-            description:"Use averroes tool to create a placeholder library.",
+            id:"RUN_AVERROES",
+            name:"run-averroes",
+            description:"Run averroes to create a placeholder library.",
             value:false,
             forIDGeneration:true,
             webUI:true,
@@ -383,6 +390,7 @@ class Doop {
         new AnalysisOption<Boolean>(
             id:"DACAPO",
             name:"dacapo",
+            description:"Load additional logic for DaCapo (2006) benchmarks properties.",
             value:false,
             webUI:true,
             forPreprocessor:true
@@ -390,6 +398,7 @@ class Doop {
         new AnalysisOption<Boolean>(
             id:"DACAPO_BACH",
             name:"dacapo-bach",
+            description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
             value:false,
             webUI:true,
             forPreprocessor:true
