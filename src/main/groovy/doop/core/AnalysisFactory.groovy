@@ -447,8 +447,11 @@ import java.util.jar.JarFile
         if (options.CLIENT_CODE.value) {
             String clFile = options.CLIENT_CODE.value.toString()
             Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
-            options.CLIENT_EXTENSIONS.value = true
             logger.debug "The CLIENT_CODE option has been set to ${clFile}"
+        }
+
+        if (options.AUXILIARY_HEAP.value) {
+            logger.debug "The AUXILIARY_HEAP option has been enabled"
         }
 
         if (!options.ENABLE_REFLECTION.value) {

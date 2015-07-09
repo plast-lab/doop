@@ -73,10 +73,9 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"CLIENT_EXTENSIONS",
+            id:"AUXILIARY_HEAP",
             value:false,
-            cli:false,
-            forPreprocessor:true
+            cli:false
         ),
         /* Flags for must analyses */
         new AnalysisOption<String>(
