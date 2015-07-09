@@ -29,5 +29,12 @@ MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
    MethodSignature:SimpleName[?method] = ?simplename,
    MethodSignature:Descriptor[?method] = ?descriptor,
    MethodSignature:DeclaringType[?method] = ?type,
-   Modifier:Value(?abstract:"abstract"),
-   ! MethodModifier(?abstract, ?method).
+   ! MethodModifier("abstract", ?method).
+
+
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodSignature:SimpleName[?signature] = ?simplename,
+   MethodSignature:Descriptor[?signature] = ?descriptor.

@@ -25,17 +25,6 @@
 #endif
 
 
-VirtualMethodInvocation:SimpleName[?invocation] = ?simplename <-
-   MethodInvocation:Signature[?invocation] = ?signature,
-   VirtualMethodInvocation:Insn(?invocation),
-   MethodSignature:SimpleName[?signature] = ?simplename.
-
-VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
-   VirtualMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
-   MethodSignature:Descriptor[?signature] = ?descriptor.
-
-
 MainMethodDeclaration(?method) <-
    MainClass(?type),
    MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
