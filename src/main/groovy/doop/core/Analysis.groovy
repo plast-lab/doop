@@ -384,15 +384,15 @@ import org.apache.commons.logging.LogFactory
             Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/tamiflex.logic")
         }
 
-        if (options.CLIENT_EXCEPTION_FLOW.value) {
-            preprocessor.preprocess(this, addonsPath, "exception-flow/declarations.logic",
-                                    "${outDir}/exception-flow.logic",
-                                    "exception-flow/rules.logic")
-            lbScriptWriter.println("addBlock -F ${outDir}/exception-flow.logic")
+        if (options.FU_EXCEPTION_FLOW.value) {
+            preprocessor.preprocess(this, addonsPath, "fu-exception-flow/declarations.logic",
+                                    "${outDir}/fu-exception-flow.logic",
+                                    "fu-exception-flow/rules.logic")
+            lbScriptWriter.println("addBlock -F ${outDir}/fu-exception-flow.logic")
 
-            preprocessor.preprocess(this, addonsPath, "exception-flow/delta.logic",
-                                    "${outDir}/exception-flow-delta.logic")
-            lbScriptWriter.println("exec -F ${outDir}/exception-flow-delta.logic")
+            preprocessor.preprocess(this, addonsPath, "fu-exception-flow/delta.logic",
+                                    "${outDir}/fu-exception-flow-delta.logic")
+            lbScriptWriter.println("exec -F ${outDir}/fu-exception-flow-delta.logic")
         }
 
         if (options.CLIENT_EXTENSIONS.value) {
