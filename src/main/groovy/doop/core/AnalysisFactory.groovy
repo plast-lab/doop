@@ -299,6 +299,16 @@ import java.util.jar.JarFile
             logger.debug "The ENABLE_REFLECTION option has been enabled"
         }
 
+        if (options.ENABLE_REFLECTION_CLASSIC.value) {
+            options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.ENABLE_REFLECTION.value = true
+            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = true
+            options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
+            options.REFLECTION_SUBSTRING_ANALYSIS.value = true
+            logger.debug "The ENABLE_REFLECTION_CLASSIC option has been enabled"
+        }
+
         if (options.REFLECTION_CONTEXT_SENSITIVITY.value) {
             logger.debug "The REFLECTION_CONTEXT_SENSITIVITY option has been enabled"
         }
@@ -347,8 +357,8 @@ import java.util.jar.JarFile
             logger.debug "The SANITY option has been enabled"
         }
 
-        if (options.AVERROES.value) {
-            logger.debug "The AVERROES option has been enabled"
+        if (options.RUN_AVERROES.value) {
+            logger.debug "The RUN_AVERROES option has been enabled"
         }
         
         if (options.RUN_JPHANTOM.value) {

@@ -213,7 +213,7 @@ import org.apache.commons.logging.LogFactory
                 runJPhantom()
             }
 
-            if (options.AVERROES.value) {
+            if (options.RUN_AVERROES.value) {
                 runAverroes()
             }
 
@@ -623,7 +623,7 @@ import org.apache.commons.logging.LogFactory
     protected void runSoot() {
         Collection<String> depArgs
 
-        if (options.AVERROES.value) {
+        if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
             jars[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
