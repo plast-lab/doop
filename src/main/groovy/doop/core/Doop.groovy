@@ -64,15 +64,6 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"CLIENT_CODE",
-            name:"client",
-            argName:"FILE",
-            isFile:true,
-            description:"Additional directory/file of client analysis to include.",
-            value:null,
-            webUI:true
-        ),
-        new AnalysisOption<String>(
             id:"AUXILIARY_HEAP",
             value:false,
             cli:false
