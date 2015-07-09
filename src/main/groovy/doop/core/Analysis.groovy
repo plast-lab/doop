@@ -395,7 +395,7 @@ import org.apache.commons.logging.LogFactory
             lbScriptWriter.println("exec -F ${outDir}/fu-exception-flow-delta.logic")
         }
 
-        if (options.CLIENT_EXTENSIONS.value) {
+        if (options.AUXILIARY_HEAP.value) {
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/declarations.logic",
                                     "${outDir}/client-extensions.logic")
             lbScriptWriter.println("addBlock -F ${outDir}/client-extensions.logic")
