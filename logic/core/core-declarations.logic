@@ -26,17 +26,6 @@
 
 
 /**
- * Joins of input facts, useful for performance reasons
- */
-VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
-   MethodInvocation(?invocation),
-   SimpleName(?simplename).
-
-VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
-   MethodInvocation(?invocation),
-   MethodDescriptor(?descriptor).
-
-/**
  * Main method
  */
 MainMethodDeclaration(?method) ->
