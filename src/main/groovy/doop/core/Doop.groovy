@@ -172,11 +172,10 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"CLIENT_EXCEPTION_FLOW",
-            name:"enable-exception-flow",
+            id:"FU_EXCEPTION_FLOW",
+            name:"enable-fu-exception-flow",
             value:false,
             webUI:true,
-            forPreprocessor:true,
             isAdvanced:true
         ),        
 

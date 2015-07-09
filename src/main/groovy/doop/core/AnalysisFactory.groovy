@@ -249,8 +249,8 @@ import java.util.jar.JarFile
             logger.debug "The EXCEPTIONS_CS option has been enabled"
         }
 
-        if (options.CLIENT_EXCEPTION_FLOW.value) {
-            logger.debug "The CLIENT_EXCEPTION_FLOW option has been enabled"
+        if (options.FU_EXCEPTION_FLOW.value) {
+            logger.debug "The FU_EXCEPTION_FLOW option has been enabled"
         }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
