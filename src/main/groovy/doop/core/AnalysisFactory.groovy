@@ -444,12 +444,6 @@ import java.util.jar.JarFile
             logger.debug "The TAMIFLEX option has been set to ${tamFile}"
         }
         
-        if (options.CLIENT_CODE.value) {
-            String clFile = options.CLIENT_CODE.value.toString()
-            Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
-            logger.debug "The CLIENT_CODE option has been set to ${clFile}"
-        }
-
         if (options.AUXILIARY_HEAP.value) {
             logger.debug "The AUXILIARY_HEAP option has been enabled"
         }
