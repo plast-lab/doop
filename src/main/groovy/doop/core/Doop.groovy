@@ -445,13 +445,6 @@ class Doop {
             value:OS.OS_UNIX,
             cli:false
         ),
-        new AnalysisOption<Boolean>(
-            id:"INCREMENTAL",
-            name:"incremental",
-            value:false,
-            webUI:true,
-            isAdvanced:true
-        ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
             name:"regex",

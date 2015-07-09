@@ -244,58 +244,48 @@ import org.apache.commons.logging.LogFactory
 
     protected void initDatabase() {
 
+        FileUtils.deleteQuietly(database)
+
         lbScriptWriter.println('echo "-- Database Initialization --"')
+        lbScriptWriter.println("create $database --overwrite --blocks base")
 
-        if (options.INCREMENTAL.value) {
-            File libDatabase = Helper.checkDirectoryOrThrowException("$outDir/libdb", "Preanalyzed library database is missing!")
-            logger.info "Copying precomputed database of library from $libDatabase"
-            timing {
-                Helper.copyDirectoryContents(libDatabase, database)
-            }
+        lbScriptWriter.println("startTimer")
+        lbScriptWriter.println("transaction")
+        lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/declarations.logic -B FactDecls")
+        lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic")
+        lbScriptWriter.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
+
+        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/entities-import.logic"),
+                           new File("${outDir}/entities-import.logic"))
+        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/import.logic"),
+                           new File("${outDir}/facts-import.logic"))
+        lbScriptWriter.println("exec -F entities-import.logic")
+        lbScriptWriter.println("exec -F facts-import.logic")
+
+        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"),
+                           new File("${outDir}/flow-insensitivity-delta.logic"))
+        lbScriptWriter.println("exec -F flow-insensitivity-delta.logic")
+
+        if (options.TAMIFLEX.value) {
+            String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
+
+            lbScriptWriter.println("addBlock -F ${tamiflexDir}/fact-declarations.logic -B TamiflexFactDecls")
+
+            FileUtils.copyFile(new File("${tamiflexDir}/import.logic"),
+                               new File("${outDir}/tamiflex-import.logic"))
+            lbScriptWriter.println("exec -F tamiflex-import.logic")
+            lbScriptWriter.println("addBlock -F ${tamiflexDir}/post-import.logic")
         }
-        else {
-            FileUtils.deleteQuietly(database)
 
-            lbScriptWriter.println("create $database --overwrite --blocks base")
+        if (options.MAIN_CLASS.value) {
+            lbScriptWriter.println("""exec '+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").'""")
+        }
 
-            lbScriptWriter.println("startTimer")
-            lbScriptWriter.println("transaction")
-            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/declarations.logic -B FactDecls")
-            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic")
-            lbScriptWriter.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
+        lbScriptWriter.println("commit")
+        lbScriptWriter.println("elapsedTime")
 
-            FileUtils.copyFile(new File("${Doop.doopLogic}/facts/entities-import.logic"),
-                               new File("${outDir}/entities-import.logic"))
-            FileUtils.copyFile(new File("${Doop.doopLogic}/facts/import.logic"),
-                               new File("${outDir}/facts-import.logic"))
-            lbScriptWriter.println("exec -F entities-import.logic")
-            lbScriptWriter.println("exec -F facts-import.logic")
-
-            FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"),
-                               new File("${outDir}/flow-insensitivity-delta.logic"))
-            lbScriptWriter.println("exec -F flow-insensitivity-delta.logic")
-
-            if (options.TAMIFLEX.value) {
-                String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
-
-                lbScriptWriter.println("addBlock -F ${tamiflexDir}/fact-declarations.logic -B TamiflexFactDecls")
-
-                FileUtils.copyFile(new File("${tamiflexDir}/import.logic"),
-                                   new File("${outDir}/tamiflex-import.logic"))
-                lbScriptWriter.println("exec -F tamiflex-import.logic")
-                lbScriptWriter.println("addBlock -F ${tamiflexDir}/post-import.logic")
-            }
-
-            if (options.MAIN_CLASS.value) {
-                lbScriptWriter.println("""exec '+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").'""")
-            }
-
-            lbScriptWriter.println("commit")
-            lbScriptWriter.println("elapsedTime")
-
-            if (options.TRANSFORM_INPUT.value) {
-                runTransformInput()
-            }
+        if (options.TRANSFORM_INPUT.value) {
+            runTransformInput()
         }
     }
 
@@ -340,14 +330,12 @@ import org.apache.commons.logging.LogFactory
             }
         }
 
-        if (!options.INCREMENTAL.value) {
-            preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${coreAnalysisName}-declarations.logic")
-            lbScriptWriter.println("addBlock -F ${coreAnalysisName}-declarations.logic")
+        preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${coreAnalysisName}-declarations.logic")
+        lbScriptWriter.println("addBlock -F ${coreAnalysisName}-declarations.logic")
 
-            if (options.SANITY.value) {
-                lbScriptWriter.println('echo "-- Loading Sanity Rules --"')
-                lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/sanity.logic")
-            }
+        if (options.SANITY.value) {
+            lbScriptWriter.println('echo "-- Loading Sanity Rules --"')
+            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/sanity.logic")
         }
 
         preprocessor.preprocess(this, analysisPath, "delta.logic", "${outDir}/${coreAnalysisName}-delta.logic")
@@ -421,52 +409,48 @@ import org.apache.commons.logging.LogFactory
             refine()
         }
 
-        if (!options.INCREMENTAL.value) {
+        if(isMustPointTo()) {
+            String mustAnalysisPath = "${Doop.doopLogic}/analyses/${name}"
 
-            if(isMustPointTo()) {
+            if(options.MAY_PRE_ANALYSIS.value) {
+                String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
+                lbScriptWriter.println("commit")
 
-                String mustAnalysisPath = "${Doop.doopLogic}/analyses/${name}"
+                preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
 
-                if(options.MAY_PRE_ANALYSIS.value) {
-                    String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
-					lbScriptWriter.println("commit")
+                lbScriptWriter.println("transaction")
+                lbScriptWriter.println("addBlock -F ${coreAnalysisName}.logic")
+                lbScriptWriter.println("commit")
 
-                    preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
+                lbScriptWriter.println("transaction")
+                lbScriptWriter.println("addBlock -F ${mustAnalysisPath}/may-pre-analysis.logic")
 
-                    lbScriptWriter.println("transaction")
-                    lbScriptWriter.println("addBlock -F ${coreAnalysisName}.logic")
-                    lbScriptWriter.println("commit")
-
-                    lbScriptWriter.println("transaction")
-                    lbScriptWriter.println("addBlock -F ${mustAnalysisPath}/may-pre-analysis.logic")
-
-                    analysisPath = mustAnalysisPath
-                }
-
-                // Default option for RootMethodForMustAnalysis.
-                // TODO: add command line option, so users can provide their own subset of root methods
-                lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
-                
-                //TODO: Default Root Methods for 'simple' must-analyses.
-                lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
-                lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
+                analysisPath = mustAnalysisPath
             }
 
-            preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
-            if(isMustPointTo()) 
-                Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
-            else
-                Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
-
-            lbScriptWriter.println("commit")
-            lbScriptWriter.println("elapsedTime")
-            lbScriptWriter.println('echo "-- Main Analysis --"')
-            lbScriptWriter.println("startTimer")
-            lbScriptWriter.println("transaction")
-            lbScriptWriter.println("addBlock -F ${name}.logic")
-            lbScriptWriter.println("commit")
-            lbScriptWriter.println("elapsedTime")
+            // Default option for RootMethodForMustAnalysis.
+            // TODO: add command line option, so users can provide their own subset of root methods
+            lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
+            
+            //TODO: Default Root Methods for 'simple' must-analyses.
+            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
+            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
         }
+
+        preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
+        if(isMustPointTo()) 
+            Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
+        else
+            Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
+
+        lbScriptWriter.println("commit")
+        lbScriptWriter.println("elapsedTime")
+        lbScriptWriter.println('echo "-- Main Analysis --"')
+        lbScriptWriter.println("startTimer")
+        lbScriptWriter.println("transaction")
+        lbScriptWriter.println("addBlock -F ${name}.logic")
+        lbScriptWriter.println("commit")
+        lbScriptWriter.println("elapsedTime")
     }
 
     /**

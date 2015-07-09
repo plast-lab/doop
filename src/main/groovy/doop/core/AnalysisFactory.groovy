@@ -430,10 +430,6 @@ import java.util.jar.JarFile
             }
         }
         
-        if (options.INCREMENTAL.value) {
-            logger.debug "The INCREMENTAL option has been enabled"
-        }
-
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
