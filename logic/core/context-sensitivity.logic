@@ -16,6 +16,7 @@
 
 #include "core.logic"
 
+
 /**
  * Generic context-sensitive pointer analysis
  *
@@ -424,9 +425,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -450,9 +449,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx), 
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -476,9 +473,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
@@ -494,9 +489,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx), 
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).

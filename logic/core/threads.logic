@@ -29,9 +29,8 @@ RunningThread(?hctx, ?heap)
 #endif
    ThisVar[?start] = ?startThis,
    VarPointsTo(?hctx, ?heap, ?callerCtx, ?startThis),
-   MethodDescriptor:Value(?descriptor:"void()"),
    HeapAllocation:Type[?heap] = ?heaptype,
-   MethodLookup["run", ?descriptor, ?heaptype] = ?run,
+   MethodLookup["run", "void()", ?heaptype] = ?run,
    ThisVar[?run] = ?runThis.
 
 /**
