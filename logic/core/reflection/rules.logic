@@ -338,9 +338,6 @@ ArrayIndexPointsTo(?hctx, ?methodHeap, ?hctx, ?arrayHeap) <-
 MethodReturnTypeHack(?type, ?method) ->
   MethodSignature(?method), Type(?type).
 MethodReturnTypeHack(?type, ?method) <-
-  MethodSignature:SimpleName[?method] = ?simpleName,
-  MethodSignature:Descriptor[?method] = ?descriptor,
-  MethodLookup[?simpleName, ?descriptor, _] = ?method,
   ReturnVar(?var, ?method),
   Var:Type(?var, ?type).
   
