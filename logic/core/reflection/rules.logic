@@ -324,8 +324,7 @@ OptMethodObjectFromInvoke(?methodHeap, ?return) <-
   OptSpecialInvokeHeapCast(?type, ?getMethodsInvocation),
   OptGetMethodsClass(?classtype, ?getMethodsInvocation),
   OptMethodSignatureType(?signature, ?classtype),
-  // REVIEW: the real test below is if it's either a subtype or a supertype!
-  MethodReturnTypeHack(?type, ?signature),
+  MethodSignature:ReturnType[?signature] = ?type,
   AssignReturnValue[?getMethodsInvocation] = ?return,
   ReifiedMethod[?signature] = ?methodHeap.
 
@@ -334,13 +333,6 @@ ArrayIndexPointsTo(?hctx, ?methodHeap, ?hctx, ?arrayHeap) <-
   OptMethodObjectFromInvoke(?methodHeap, ?return),
   VarPointsTo(?hctx, ?arrayHeap, _, ?return).
 
-// Isn't there an easy way to get this???
-MethodReturnTypeHack(?type, ?method) ->
-  MethodSignature(?method), Type(?type).
-MethodReturnTypeHack(?type, ?method) <-
-  ReturnVar(?var, ?method),
-  Var:Type(?var, ?type).
-  
 
 /**
  * Handling of getMethod/getDeclaredMethod
@@ -400,8 +392,7 @@ VarPointsTo(?hctx, ?methodHeap, ?ctx, ?return) <-
   OptGetMethodClass(?classtype, ?ctx, ?getMethodInvocation),
   OptMethodSignatureType(?signature, ?classtype),
   AssignReturnValue[?getMethodInvocation] = ?return,
-  // REVIEW
-  MethodReturnTypeHack(?type, ?signature),
+  MethodSignature:ReturnType[?signature] = ?type,
   ReifiedMethod[?signature] = ?methodHeap.
 
 
