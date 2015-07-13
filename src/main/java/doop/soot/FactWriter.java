@@ -110,14 +110,9 @@ public class FactWriter
             Type componentType = ((ArrayType) t).getElementType();
             _db.add(COMPONENT_TYPE, c, writeType(componentType));
         }
-        else if(t instanceof PrimType || t instanceof NullType)
+        else if(t instanceof PrimType || t instanceof NullType || t instanceof RefType || t instanceof VoidType)
         {
             // taken care of by the standard facts
-            c = _db.asEntity(result);
-        }
-        else if(t instanceof RefType)
-        {
-            // taken care of by SootClass declaration.
             c = _db.asEntity(result);
         }
         else
@@ -565,7 +560,8 @@ public class FactWriter
                 _db.asEntity(_rep.signature(m)),
                 _db.asEntity(_rep.simpleName(m)),
                 _db.asEntity(_rep.descriptor(m)),
-                writeType(m.getDeclaringClass()));
+                writeType(m.getDeclaringClass()),
+                writeType(m.getReturnType()));
     }
 
     public void writeMethodModifier(SootMethod m, String modifier)
