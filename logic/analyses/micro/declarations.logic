@@ -1,0 +1,57 @@
+#include "../../core/assignment-compatible-declarations.logic"
+#include "../../core/checkcast-declarations.logic"
+#include "../../core/class-initialization-declarations.logic"
+#include "../../core/declaring-class-declarations.logic"
+#include "../../core/implicit-reachable-declarations.logic"
+#include "../../core/method-resolution-declarations.logic"
+#include "../../core/string-constants-declarations.logic"
+#include "../../core/subclass-declarations.logic"
+#include "../../core/superinterface-declarations.logic"
+
+
+MainMethodDeclaration(?method) ->
+   MethodSignature(?method).
+
+/*
+ * Declarations
+ */
+
+ArrayIndexPointsTo(?baseheap, ?heap) ->
+   HeapAllocation(?baseheap),
+   HeapAllocation(?heap).
+
+VarPointsTo(?heap, ?var) ->
+   HeapAllocation(?heap),
+   Var(?var).
+
+InstanceFieldPointsTo(?heap, ?signature, ?baseheap) ->
+   HeapAllocation(?heap),
+   FieldSignature(?signature),
+   HeapAllocation(?baseheap).
+
+StaticFieldPointsTo(?heap, ?signature) ->
+   HeapAllocation(?heap),
+   FieldSignature(?signature).
+
+Assign(?type, ?from, ?to) ->
+   Type(?type),
+   Var(?from),
+   Var(?to).
+
+Reachable(?method) ->
+   MethodSignature( ?method ).
+
+CallGraphEdge(?invocation, ?tomethod) ->
+   MethodInvocation(?invocation),
+   MethodSignature(?tomethod).
+
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
+   HeapAllocation(?heap),
+   Var(?var),
+   MethodSignature(?inmethod).
+
+AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
+   HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
+   HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
