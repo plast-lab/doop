@@ -32,11 +32,9 @@ class Main {
             println "DOOP_HOME environment variable is not set"
             System.exit(-1)
         }
-        String doopOut = System.getenv("DOOP_OUT")
 
-        Doop.initDoop(doopHome, doopOut)
+        Doop.initDoop(doopHome, System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
 
-        //initialize logging
         Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
         try {
