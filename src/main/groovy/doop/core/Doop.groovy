@@ -42,7 +42,7 @@ class Doop {
             argName:"mainClass",
             description:"Specify the main class.",
             value:null,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<List<String>>(
@@ -328,7 +328,7 @@ class Doop {
             name:"ssa",
             description:"Use ssa transformation for input.",
             value:false,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -364,7 +364,7 @@ class Doop {
             name:"run-jphantom",
             description:"Run jphantom for non-existent referenced jars.",
             value:false,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -372,7 +372,7 @@ class Doop {
             name:"run-averroes",
             description:"Run averroes to create a placeholder library.",
             value:false,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true,
             isAdvanced:true,
         ),
@@ -402,14 +402,14 @@ class Doop {
             id:"USE_ORIGINAL_NAMES",
             name:"use-original-names",
             value:false,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
             id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
             name:"only-application-classes-fact-gen",
             value:false,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<String>(
@@ -426,7 +426,7 @@ class Doop {
             argName:"VERSION",
             description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
             value:"system",
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<OS>(
@@ -440,7 +440,7 @@ class Doop {
             argName:"regex-expression",
             description:"A regex expression for the Java package names to be analyzed.",
             value:null,
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<String>(
@@ -448,42 +448,51 @@ class Doop {
             name:"externals",
             description:"The path to doop externals (directory with different jre versions).",
             value:System.getenv("DOOP_EXTERNALS"),
-            forIDGeneration:true,
+            forCacheID:true,
             webUI:false,
             isAdvanced:true
         )
+    ]
+
+    static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [
+        "LOGICBLOX_HOME",
+        "LD_LIBRARY_PATH",
+        "BLOXBATCH",
+        "BLOX_OPTS",
+        "OS",
+        "CACHE",
+        "EXTERNALS"
     ]
 
     // Not the best pattern, but limits the source code size :)
     static String doopHome
     static String doopLogic
     static String doopOut
-    static String doopInputCache
+    static String doopCache
 
     /**
      * Initializes Doop.
-     * @param homePath The doop home directory (sets the doopHome variable, required).
-     * @param outPath  The doop out directory (sets the doopOut variable, optional, defaults to doopHome/out).
+     * @param homePath   The doop home directory (sets the doopHome variable, required).
+     * @param outPath    The doop out directory (sets the doopOut variable, optional, defaults to doopHome/out).
+     * @param cachePath  The doop cache directory (sets the doopCache variable, optional, defaults to doopHome/cache).
      */
-    static void initDoop(String homePath, String outPath) {
+    static void initDoop(String homePath, String outPath, String cachePath) {
 
         //Check doopHome
         doopHome = homePath
         Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome ")
 
         doopLogic = "$doopHome/logic"
-
-        if (outPath) {
-            doopOut = outPath
-        }
-        else {
-            doopOut = "$doopHome/out"
-        }
+        doopOut   = outPath ? outPath : "$doopHome/out"
+        doopCache = cachePath ? cachePath : "$doopHome/cache"
 
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut ")
+        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut")
+        f = new File(doopCache)
+        f.mkdirs()
+        Helper.checkDirectoryOrThrowException(f, "Could not create cache directory: $doopCache")
     }
 
     /**

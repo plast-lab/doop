@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
+import java.security.MessageDigest
 
 /**
  * A Factory for creating Analysis objects.
@@ -90,9 +91,6 @@ import java.util.jar.JarFile
 
         //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
 
-        /*
-        Generate id and outDir as the last analysis initialization actions
-        */
         String analysisId
         if (id) { //non-empty or null
             //validate and set the user supplied id
@@ -102,13 +100,18 @@ import java.util.jar.JarFile
             //Generate the id
             analysisId = generateID(vars)
         }
+        String cacheId = generateCacheID(vars)
 
-        //Create the outDir if required
-        File outDir = createOutputDirectory(vars, analysisId)
+        File outDir = new File("${Doop.doopOut}/${vars.name}/$analysisId")
+        outDir.mkdirs()
+        Helper.checkDirectoryOrThrowException(outDir, "Could not create output subdirectory: $outDir")
+
+        File cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
             id           : analysisId,
             outDir       : outDir.toString(),
+            cacheDir     : cacheDir.toString(),
             name         : name,
             options      : options,
             ctx          : context,
@@ -156,12 +159,12 @@ import java.util.jar.JarFile
      * Generates the analysis ID using all of its components (name, inputs and options).
      */
     protected String generateID(AnalysisVars vars) {
-        Collection<String> optionsForId = vars.options.values().findAll {
-            it.forIDGeneration
+        Collection<String> idComponents = vars.options.keySet().findAll {
+            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
         }.collect {
-            AnalysisOption option -> return option.toString()
+            String option -> return vars.options.get(option).toString()
         }
-        Collection<String> idComponents = [vars.name] + vars.inputs + optionsForId
+        idComponents = [vars.name] + vars.inputs + idComponents
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
@@ -169,14 +172,30 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Creates the analysis output dir, if required.
+     * Generates the cache ID (for input facts) using the needed components.
      */
-    protected File createOutputDirectory(AnalysisVars vars, String id) {
-        String outDir = "${Doop.doopOut}/${vars.name}/${id}"
-        File f = new File(outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
-        return f
+    protected String generateCacheID(AnalysisVars vars) {
+        Collection<String> idComponents = vars.options.values().findAll {
+            it.forCacheID
+        }.collect {
+            AnalysisOption option -> return option.toString()
+        }
+        Collection<String> md5s = vars.inputs.collect { String f ->
+            byte[] dataBytes = new byte[1024]
+            int nread = 0
+            InputStream is = new FileInputStream(f)
+            MessageDigest md = MessageDigest.getInstance("MD5")
+            while((nread = is.read(dataBytes)) != -1)
+                md.update(dataBytes, 0, nread)
+            is.close()
+            String.format("%032X", new BigInteger(1, md.digest()))
+        }
+        idComponents = md5s + idComponents
+
+        logger.debug("ID components: $idComponents")
+        String id = idComponents.join('-')
+
+        return Helper.checksum(id, "SHA-256")
     }
 
     /**

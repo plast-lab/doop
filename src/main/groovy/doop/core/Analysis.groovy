@@ -39,9 +39,14 @@ import org.apache.commons.logging.LogFactory
     String name
 
     /**
-     * The output dir of the analysis
+     * The output dir for the analysis
      */
     String outDir
+
+    /**
+     * The cache dir for the input facts
+     */
+    String cacheDir
 
     /**
      * The options of the analysis
@@ -89,13 +94,13 @@ import org.apache.commons.logging.LogFactory
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
 
-        facts         = new File(outDir, "facts")
-        cacheFacts    = new File(outDir, "cacheFacts")
-        database      = new File(outDir, "database")
-        exportDir     = new File(outDir, "export")
-        averroesDir   = new File(outDir, "averroes")
+        facts          = new File(outDir, "facts")
+        cacheFacts     = new File(cacheDir)
+        database       = new File(outDir, "database")
+        exportDir      = new File(outDir, "export")
+        averroesDir    = new File(outDir, "averroes")
 
-        lbScript      = new File(outDir, "run.lb")
+        lbScript       = new File(outDir, "run.lb")
         lbScriptWriter = new PrintWriter(lbScript)
     }
 
@@ -123,11 +128,13 @@ import org.apache.commons.logging.LogFactory
 
         lbScriptWriter.close()
 
-        logger.info "Running generated script $lbScript"
+        logger.info "Using generated script $lbScript"
+        logger.info "\nAnalysis START"
         long t = timing {
              def bloxOpts = options.BLOX_OPTS.value ?: ''
              executor.execute(outDir, "${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
         }
+        logger.info "Analysis END\n"
         bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
         bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
@@ -196,18 +203,20 @@ import org.apache.commons.logging.LogFactory
 
     protected void generateFacts() {
 
+        FileUtils.deleteQuietly(facts)
+        facts.mkdirs()
+
         if (cacheFacts.exists() && options.CACHE.value) {
             logger.info "Using cached facts $cacheFacts"
+            Helper.copyDirectoryContents(cacheFacts, facts)
         }
         else if (options.CSV.value) {
             cacheFacts.mkdirs()
             Helper.moveDirectoryContents(exportDir, cacheFacts)
+            Helper.copyDirectoryContents(cacheFacts, facts)
         }
         else {
             logger.info "-- Fact Generation --"
-
-            FileUtils.deleteQuietly(facts)
-            facts.mkdirs()
 
             if (options.RUN_JPHANTOM.value) {
                 runJPhantom()

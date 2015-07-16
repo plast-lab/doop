@@ -41,4 +41,4 @@ $(foreach analysis, $(analyses),\
 		$(eval $(call benchmarkRun,$(analysis),$(benchmark),$(commonArgs),$(suite)))))
 
 clean:
-	rm -rf logs/* out/* results/* last-analysis
+	rm -rf cache/* logs/* out/* results/* last-analysis
