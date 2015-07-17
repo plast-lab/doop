@@ -61,7 +61,12 @@ import org.apache.commons.logging.LogFactory
     /**
      * The input jar files/dependencies of the analysis
      */
-    List<File> jars
+    List<File> inputJarFiles
+
+    /**
+     * The jre library jars for soot
+     */
+    List<String> jreJars
 
     /**
      * The environment for running external commands
@@ -180,7 +185,7 @@ import org.apache.commons.logging.LogFactory
     void linkResult() {
         def jre = options.JRE.value
         if (jre != "system") jre = "jre${jre}"
-        def jarName = FilenameUtils.getBaseName(jars[0].toString())
+        def jarName = FilenameUtils.getBaseName(inputJarFiles[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
         humanDatabase.mkdirs()
@@ -588,7 +593,7 @@ import org.apache.commons.logging.LogFactory
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = jars[0].toString()
+        String jar = inputJarFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -601,7 +606,7 @@ import org.apache.commons.logging.LogFactory
 
         //set the jar of the analysis to the complemented one
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        jars[0] = f
+        inputJarFiles[0] = f
     }
     
     protected void runAverroes() {
@@ -618,17 +623,16 @@ import org.apache.commons.logging.LogFactory
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            jars[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputJarFiles[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = jars.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            List<String> links = jreLinkArgs()
-            if (links.isEmpty()) {
+            Collection<String> deps = inputJarFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            if (jreJars.isEmpty()) {
                 depArgs = ["-lsystem"] + deps
             }
             else {
-                depArgs = links.collect{ String arg -> ["-l", arg]}.flatten() + deps
+                depArgs = jreJars.collect{ String arg -> ["-l", arg]}.flatten() + deps
             }
 
         }
@@ -655,7 +659,7 @@ import org.apache.commons.logging.LogFactory
             params = params + ["-main", options.MAIN_CLASS.value.toString()]
         }
 
-        params = params + ["-d", facts.toString(), jars[0].toString()]
+        params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -692,43 +696,6 @@ import org.apache.commons.logging.LogFactory
     }
 
     /**
-     * Generates a list of the jre link arguments for soot
-     */
-    private List<String> jreLinkArgs() {
-
-        String jre = options.JRE.value
-        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
-
-        switch(jre) {
-            case "1.3":
-                return Helper.checkFiles(["${path}/rt.jar".toString()])
-            case "1.4":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
-            case "1.5":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
-            case "1.6":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
-            case "1.7":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString(),
-                                          "${path}/rhino.jar".toString()])
-            case "system":
-                /*
-                String javaHome = System.getProperty("java.home")
-                return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
-                */
-                return []
-        }
-    }
-    
-    /**
      * Creates a new class loader for running averroes
      */
     private ClassLoader averroesClassLoader() {
@@ -737,13 +704,13 @@ import org.apache.commons.logging.LogFactory
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        Collection<String> libraryJars = jars.drop(1).collect { it.toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = inputJarFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
         
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", jars[0].toString() as String)
+        props.setProperty("input_jar_files", inputJarFiles[0].toString())
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files

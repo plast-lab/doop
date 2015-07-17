@@ -129,7 +129,7 @@ class Main {
 
             analysis.options.BLOX_OPTS.value = bloxOptions
 
-            logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
+            logger.info "Starting ${analysis.name} analysis on ${analysis.inputJarFiles[0]} - id: $analysis.id"
             logger.debug analysis
 
             int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
