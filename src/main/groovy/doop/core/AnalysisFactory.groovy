@@ -14,7 +14,7 @@ import java.security.MessageDigest
 /**
  * A Factory for creating Analysis objects.
  *
- * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (.e.g entailed
+ * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (e.g. entailed
  * in the doop.core.Helper class) but they are protected instance methods to allow descendants to customize
  * all possible aspects of Analysis creation.
  *
@@ -32,22 +32,24 @@ import java.security.MessageDigest
     protected static class AnalysisVars {
         String name
         Map<String, AnalysisOption> options
-        Set<String> inputs
-        List<File> jars
+        Set<String> inputJars
+        List<File> inputJarFiles
+        List<String> jreJars
 
         @Override
         String toString() {
             return [
-                name:name,
-                inputs:inputs.toString(),
-                jars:jars.toString(),
-                options:options.values().toString()
+                name     : name,
+                options  : options.values().toString(),
+                inputJars: inputJars.toString(),
+                inputJarFiles: inputJarFiles.toString(),
+                jreJars  : jreJars.toString()
             ].toString()
         }
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its id, name, options and inputs using
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputJars using
      * the supplied input resolution mechanism.
      * If the supplied id is empty or null, an id will be generated automatically.
      * Otherwise the id will be validated:
@@ -59,14 +61,12 @@ import java.security.MessageDigest
         //Verify that the name of the analysis is valid
         checkName(name)
 
-        //Resolve the analysis inputs
-        List<File> jars = checkInputs(context)
-
         AnalysisVars vars = new AnalysisVars(
-            name   : name,
-            options: options,
-            inputs : context.inputs(),
-            jars   : jars
+            name     : name,
+            options  : options,
+            inputJars: context.inputs(),
+            inputJarFiles: checkInputs(context),
+            jreJars  : jreLinkArgs(options)
         )
 
         logger.debug vars
@@ -115,7 +115,8 @@ import java.security.MessageDigest
             name         : name,
             options      : options,
             ctx          : context,
-            jars         : jars,
+            inputJarFiles: vars.inputJarFiles,
+            jreJars      : vars.jreJars,
             commandsEnvironment: commandsEnv
         )
 
@@ -124,7 +125,7 @@ import java.security.MessageDigest
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * Creates a new analysis, verifying the correctness of its name, options and inputJars using
      * the default input resolution mechanism.
      */
     Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
@@ -156,7 +157,7 @@ import java.security.MessageDigest
     }
 
     /**
-     * Generates the analysis ID using all of its components (name, inputs and options).
+     * Generates the analysis ID using all of its components (name, inputJars and options).
      */
     protected String generateID(AnalysisVars vars) {
         Collection<String> idComponents = vars.options.keySet().findAll {
@@ -164,7 +165,7 @@ import java.security.MessageDigest
         }.collect {
             String option -> return vars.options.get(option).toString()
         }
-        idComponents = [vars.name] + vars.inputs + idComponents
+        idComponents = [vars.name] + vars.inputJars + idComponents
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
@@ -180,7 +181,7 @@ import java.security.MessageDigest
         }.collect {
             AnalysisOption option -> return option.toString()
         }
-        Collection<String> md5s = vars.inputs.collect { String f ->
+        Collection<String> md5s = (vars.inputJars + vars.jreJars).collect { String f ->
             byte[] dataBytes = new byte[1024]
             int nread = 0
             InputStream is = new FileInputStream(f)
@@ -198,6 +199,43 @@ import java.security.MessageDigest
         return Helper.checksum(id, "SHA-256")
     }
 
+    /**
+     * Generates a list of the jre link arguments for soot
+     */
+    protected List<String> jreLinkArgs(Map<String, AnalysisOption> options) {
+
+        String jre = options.JRE.value
+        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
+
+        switch(jre) {
+            case "1.3":
+                return Helper.checkFiles(["${path}/rt.jar".toString()])
+            case "1.4":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
+            case "1.5":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
+            case "1.6":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
+            case "1.7":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString(),
+                                          "${path}/rhino.jar".toString()])
+            case "system":
+                /*
+                String javaHome = System.getProperty("java.home")
+                return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+                */
+                return []
+        }
+    }
+    
     /**
      * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
      * using the input resolution mechanism. It finally returns the inputs as a List<File>.
@@ -432,7 +470,7 @@ import java.security.MessageDigest
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         }
         else {
-            JarFile jarFile = new JarFile(vars.jars[0])
+            JarFile jarFile = new JarFile(vars.inputJarFiles[0])
             //Try to read the main class from the manifest contained in the jar            
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
@@ -552,13 +590,13 @@ import java.security.MessageDigest
     */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
         
         if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
             logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
@@ -582,7 +620,7 @@ import java.security.MessageDigest
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.jars[0])
+            Set<String> packages = Helper.getPackages(vars.inputJarFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }

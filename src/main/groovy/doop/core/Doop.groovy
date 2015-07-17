@@ -448,7 +448,6 @@ class Doop {
             name:"externals",
             description:"The path to doop externals (directory with different jre versions).",
             value:System.getenv("DOOP_EXTERNALS"),
-            forCacheID:true,
             webUI:false,
             isAdvanced:true
         )
