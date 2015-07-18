@@ -147,8 +147,7 @@ import org.apache.commons.logging.LogFactory
 
     void printStats() {
         // Create workspace connector
-        WorkspaceConnector connector = new BloxbatchConnector(database)
-        connector.environment = commandsEnvironment
+        WorkspaceConnector connector = new BloxbatchConnector(database, commandsEnvironment)
 
         // We have to store the query results to a list since the
         // closure argument of the connector does not generate an

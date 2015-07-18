@@ -482,8 +482,8 @@ class Doop {
         Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome ")
 
         doopLogic = "$doopHome/logic"
-        doopOut   = outPath ? outPath : "$doopHome/out"
-        doopCache = cachePath ? cachePath : "$doopHome/cache"
+        doopOut   = outPath ?: "$doopHome/out"
+        doopCache = cachePath ?: "$doopHome/cache"
 
         //create all necessary files/folders
         File f = new File(doopOut)
