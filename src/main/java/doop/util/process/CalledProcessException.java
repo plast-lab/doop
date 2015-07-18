@@ -4,7 +4,7 @@ package doop.util.process;
  * Thrown by methods that call another process, which is required to
  * succeed (and thus expected to return a zero exit code).
  */
-class CalledProcessException extends RuntimeException
+public class CalledProcessException extends RuntimeException
 {
     private final String commandLine;
     private final int returnCode;
