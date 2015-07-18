@@ -23,6 +23,9 @@ repositories {
     mavenCentral()
 }
 
+def sootClassesJar = file('lib/sootclasses-2.5.0.jar')
+def jphantomJar = file('lib/jphantom-1.1-jar-with-dependencies.jar')
+
 dependencies {
     compile "org.codehaus.groovy:groovy-all:2.3.10",            // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
@@ -33,11 +36,9 @@ dependencies {
             "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
             "org.ow2.asm:asm-debug-all:5.0.3"                   // Java Bytecode library
 
-    compile files('lib/sootclasses-2.5.0.jar')                  // Soot is a compile time dependency
+    compile files(sootClassesJar)                               // Soot is a compile time dependency
 
-    runtime files('lib/jphantom-1.1-jar-with-dependencies.jar',
-                  'lib/averroes-no-properties.jar',
-                  'lib/sootclasses-2.5.0.jar')
+    runtime files(jphantomJar, 'lib/averroes-no-properties.jar')
 }
 
 task createProperties(dependsOn: classes) {
@@ -46,6 +47,20 @@ task createProperties(dependsOn: classes) {
     def file = file("$projectDir/doop.properties")
     doLast {
         doop.CommandLineAnalysisFactory.createEmptyProperties(file)
+    }
+}
+
+task calculateChecksums(dependsOn: classes) {
+    description "Calculates the checksums of sootclasses & jphantom jars"
+    doLast {
+        String alg = "MD5"
+        File out = file("$projectDir/src/main/resources/checksums.properties")
+        out.withWriter { Writer w ->
+            w.write """\
+                    ${doop.core.Doop.SOOT_CHECKSUM_KEY} = ${doop.core.Helper.checksum(sootClassesJar, alg)}
+                    ${doop.core.Doop.JPHANTOM_CHECKSUM_KEY} = ${doop.core.Helper.checksum(jphantomJar, alg)}
+            """.stripIndent()
+        }
     }
 }
 

@@ -49,7 +49,8 @@ To install Doop, we need to:
 Doop uses the following environment variables:
 
 * `DOOP_HOME`: the Doop home directory (required).
-* `DOOP_OUT`: the directory of output files (optional, defaults to `$DOOP_HOME/out`).
+* `DOOP_OUT`: the directory for output files (optional, defaults to `$DOOP_HOME/out`).
+* `DOOP_CACHE`: the directory for cached facts (optional, defaults to `$DOOP_HOME/cache`).
 * `DOOP_EXTERNALS`: the Doop externals directory (required, can be overridden with the `--externals` option). 
 * `LOGICBLOX_HOME`: the LogicBlox home directory (required, can be overridden with the `--lbhome` option).
 

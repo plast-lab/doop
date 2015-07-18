@@ -191,19 +191,20 @@ import java.security.MessageDigest
         }.collect {
             AnalysisOption option -> return option.toString()
         }
-        Collection<String> md5s = (vars.inputJars + vars.jreJars).collect { String f ->
-            byte[] dataBytes = new byte[1024]
-            int nread = 0
-            InputStream is = new FileInputStream(f)
-            MessageDigest md = MessageDigest.getInstance("MD5")
-            while((nread = is.read(dataBytes)) != -1)
-                md.update(dataBytes, 0, nread)
-            is.close()
-            String.format("%032X", new BigInteger(1, md.digest()))
-        }
-        idComponents = md5s + idComponents
 
-        logger.debug("ID components: $idComponents")
+        Collection<String> md5s = (vars.inputJars + vars.jreJars).collect { String f ->
+            InputStream is = new FileInputStream(f)
+            String checksum = Helper.checksum(is, "MD5")
+            is.close()
+            return checksum
+        }
+
+        Properties p = Helper.loadPropertiesFromClasspath("checksums.properties")
+        List<String> checksums = [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
+
+        idComponents = md5s + checksums + idComponents
+
+        logger.debug("Cache ID components: $idComponents")
         String id = idComponents.join('-')
 
         return Helper.checksum(id, "SHA-256")

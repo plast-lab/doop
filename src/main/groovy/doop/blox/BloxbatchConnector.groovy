@@ -39,7 +39,7 @@ class BloxbatchConnector implements WorkspaceConnector
     public BloxbatchConnector(String workspace, Map<String,String> environment)
     {
         this.workspace = workspace
-        this.environment = environment ?: [:]
+        this.environment = environment ?: new HashMap<String, String>()
     }
 
     public BloxbatchConnector(File workspace, Map<String,String> environment)
