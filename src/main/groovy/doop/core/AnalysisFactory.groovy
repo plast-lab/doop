@@ -102,9 +102,8 @@ import java.security.MessageDigest
         }
         String cacheId = generateCacheID(vars)
 
-        File outDir = new File("${Doop.doopOut}/${vars.name}/$analysisId")
-        outDir.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create output subdirectory: $outDir")
+        //Create the outDir if required
+        File outDir = createOutputDirectory(vars, analysisId)
 
         File cacheDir = new File("${Doop.doopCache}/$cacheId")
 
@@ -154,6 +153,17 @@ import java.security.MessageDigest
                                        "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
         }
         return trimmed
+    }
+
+    /**
+     * Creates the analysis output dir, if required.
+     */
+    protected File createOutputDirectory(AnalysisVars vars, String id) {
+        String outDir = "${Doop.doopOut}/${vars.name}/${id}"
+        File f = new File(outDir)
+        f.mkdirs()
+        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
+        return f
     }
 
     /**
