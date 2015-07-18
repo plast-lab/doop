@@ -71,9 +71,14 @@ applicationDistribution.from(file("$projectDir/logic")) {
 
 
 run {
+    dependsOn classes, calculateChecksums
     //We set the DOOP_HOME environment variable (see doop.Main)
     environment.DOOP_HOME = projectDir
     if(project.hasProperty("args")) {
         args project.property("args").split()
     }
+}
+
+startScripts {
+    dependsOn jar, calculateChecksums
 }
