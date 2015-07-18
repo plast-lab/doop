@@ -90,6 +90,23 @@ class Helper {
     }
 
     /**
+     * Loads a properties file from the classpath
+     * @return the Properties loaded
+     */
+    static Properties loadPropertiesFromClasspath(String path) {
+        Properties p = new Properties()
+        InputStream s
+        try {
+            s = ClassLoader.getSystemResourceAsStream(path)
+            p.load(s)
+        }
+        finally {
+            if (s) s.close()
+        }
+        return p
+    }
+
+    /**
      * Checks that the given file exists or throws the given message
      */
     static File checkFileOrThrowException(String file, String message) {
@@ -357,9 +374,10 @@ class Helper {
 
     /**
      * Checks that the mandatory options are present in the properties.
+     * This method is deprecated (there are no mandatory properties).
      * @param props - the properties
      */
-    static void checkMandatoryProps(Properties props) {
+    @Deprecated static void checkMandatoryProps(Properties props) {
         boolean noAnalysis = !props.getProperty("analysis")?.trim()
         boolean noJar = !props.getProperty("jar")?.trim()
         boolean error = noAnalysis || noJar
