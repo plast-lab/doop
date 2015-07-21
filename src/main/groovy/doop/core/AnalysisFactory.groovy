@@ -192,17 +192,17 @@ import java.security.MessageDigest
             AnalysisOption option -> return option.toString()
         }
 
-        Collection<String> md5s = (vars.inputJars + vars.jreJars).collect { String f ->
+        Collection<String> checksums = (vars.inputJars + vars.jreJars).collect { String f ->
             InputStream is = new FileInputStream(f)
-            String checksum = Helper.checksum(is, "MD5")
+            String checksum = Helper.checksum(is, "SHA-256")
             is.close()
             return checksum
         }
 
         Properties p = Helper.loadPropertiesFromClasspath("checksums.properties")
-        List<String> checksums = [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
+        checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
 
-        idComponents = md5s + checksums + idComponents
+        idComponents = checksums + idComponents
 
         logger.debug("Cache ID components: $idComponents")
         String id = idComponents.join('-')
@@ -327,13 +327,6 @@ import java.security.MessageDigest
             logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
         }
 
-        if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
-            options.PADDLE_COMPAT.value = false
-            logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
-        }
-
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
@@ -344,6 +337,13 @@ import java.security.MessageDigest
             // reflection strings in the first place.
             options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
             logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been disabled"
+        }
+
+        if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+            options.PADDLE_COMPAT.value = false
+            logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
