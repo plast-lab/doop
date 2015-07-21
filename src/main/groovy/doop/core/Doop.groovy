@@ -90,7 +90,7 @@ class Doop {
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_ALL_STRING_CONSTANTS",
-            name:"distinguish-all-string-constants",
+            name:"toggle-distinguish-all-string-constants",
             value:false,
             webUI:true,
             forPreprocessor:true,
@@ -99,7 +99,7 @@ class Doop {
         ),        
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_NO_STRING_CONSTANTS",
-            name:"distinguish-no-string-constants",
+            name:"toggle-distinguish-no-string-constants",
             value:true,
             webUI:true,
             forPreprocessor: true,
@@ -189,7 +189,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
-            name:"distinguish-reflection-only-string-constants",
+            name:"toggle-distinguish-reflection-only-string-constants",
             value:false,
             webUI:true,
             forPreprocessor: true,

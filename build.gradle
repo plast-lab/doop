@@ -53,7 +53,7 @@ task createProperties(dependsOn: classes) {
 task calculateChecksums(dependsOn: classes) {
     description "Calculates the checksums of sootclasses & jphantom jars"
     doLast {
-        String alg = "MD5"
+        String alg = "SHA-256"
         File out = file("$projectDir/src/main/resources/checksums.properties")
         out.withWriter { Writer w ->
             w.write """\
