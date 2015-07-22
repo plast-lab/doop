@@ -98,6 +98,7 @@ class Helper {
         InputStream s
         try {
             s = ClassLoader.getSystemResourceAsStream(path)
+            if (s == null) throw new RuntimeException("$path not found in classpath")
             p.load(s)
         }
         finally {
