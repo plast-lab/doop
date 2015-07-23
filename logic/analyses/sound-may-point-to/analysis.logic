@@ -1,0 +1,745 @@
+// A sound may-point-to analysis ("shall"-point-to?
+// "True-may"-point-to?). Does not conclude anything if it is not
+// certain it over-approximates all possible points-to targets. That
+// is, an empty points-to set means "anything can be pointed to".
+
+// Ignore verification of calculation in head
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
+
+//// =====================================
+//// The main concepts:
+
+// May-point-to information in a specific context (which may be an
+// all-contexts value).
+
+// Whenever (if) it is reached under context ?ctx, variable ?var may point to an object
+// allocated at site ?heap. Since we assume SSA and variables are ensured initialized before use,
+// there is no point in keeping this information per-instruction.
+MayPointTo(?hctx, ?heap, ?ctx, ?var) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   Var(?var), MayContext(?ctx).
+
+InstanceFieldMayPointTo(?hctx, ?heap, ?field, ?hctxBase, ?baseHeap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?field), MayHeapContext(?hctxBase),
+   HeapAllocation(?baseHeap), MayContext(?ctx), Instruction(?insn).
+
+StaticFieldMayPointTo(?hctx, ?heap, ?field, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?field), MayContext(?ctx), Instruction(?insn).
+
+// Need to identify relevant (i.e., reachable) methods for the
+// analysis, instead of blindly applying it to all available code.
+RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
+
+
+//// =====================================
+//// BEGIN MayPointTo code
+
+// Need to identify relevant (i.e., reachable) methods for the
+// analysis, instead of blindly applying it to all available code.
+ReachableMethodUnderMayContext(?ctx, ?meth) ->
+   MayContext(?ctx), MethodSignature(?meth).
+
+ReachableMethodUnderMayContext(?ctx, ?meth) <-
+   RootMethodForMayAnalysis(?meth),
+   SingleAllMayContext[] = ?ctx.
+
+ReachableMethodUnderMayContext(?ctx, ?meth) <-
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?ctx,
+   MayCallGraphEdge:ToMethod(?meth, ?callerCtx, ?invo).
+
+// Root of all inferences. Assigning new heap allocations.
+// REVIEW: This introduces dependency on string-constants.logic
+//RecordMacroMay(?ctx, ?heap, ?hctx),
+MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
+   AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
+   ReachableMethodUnderMayContext(?ctx, ?inMeth).
+
+// null assignments
+_OptInstruction:Method(?insn, ?inMeth) <-
+   Instruction:Method[?insn] = ?inMeth.
+   
+MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
+   AssignNull:Insn(?insn),
+   AssignInstruction:To[?insn] = ?var,
+   HeapAllocation:Null[] = ?heap,
+   _OptInstruction:Method(?insn, ?inMeth),
+   ReachableMethodUnderMayContext(?ctx, ?inMeth).
+
+// Move, but not Phi nodes, which are also represented as local assignments.
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   AssignLocal:Insn(?insn),
+   !(PhiNodeHead[?insn] = _),
+   AssignInstruction:To[?insn] = ?to,
+   AssignLocal:From[?insn] = ?from,
+   MayPointTo(?hctx, ?heap, ?ctx, ?from).
+
+// casts are like local assignments
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   AssignCast:Insn(?insn),
+   AssignInstruction:To[?insn] = ?to,
+   AssignCast:From[?insn] = ?from,
+   MayPointTo(?hctx, ?heap, ?ctx, ?from).
+
+// Phi
+MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
+   MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
+   !(NextInSamePhiNode[?lastInsn] = _),
+   AssignInstruction:To[?lastInsn] = ?var.
+
+// static or special method invocation
+_OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth) <-
+   (StaticMethodInvocation:Insn(?invo);
+    SpecialMethodInvocation:Insn(?invo)), 
+   MethodInvocation:Signature[?invo] = ?toMeth,
+   Instruction:Method[?invo] = ?inMeth.
+
+//MergeMacroMay(?ctx, ?invo, ?hctx, ?heap, ?calleeCtx),
+PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
+MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
+   _OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth),
+   ReachableMethodUnderMayContext(?ctx, ?inMeth),
+   MayContextDepth[?ctx] < MaxMayContextDepth[].
+
+// special method invocation "this" variable
+_OptSpecialMethodInvocation:Base(?invo, ?base) <-
+   SpecialMethodInvocation:Base[?invo] = ?base.
+
+_OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
+   _OptSpecialMethodInvocation:Base(?invo, ?base),
+   MayPointTo(?hctx, ?heap, ?ctx, ?base).
+
+MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+   _OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo),
+   MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+   MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
+   ThisVar[?toMeth] = ?this.
+
+_OptVirtualMethodInvocation:Base(?invo, ?base) <-
+   VirtualMethodInvocation:Base[?invo] = ?base.
+
+_OptPotentialVirtualMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
+   _OptVirtualMethodInvocation:Base(?invo, ?base),
+   MayPointTo(?hctx, ?heap, ?ctx, ?base).
+
+// virtual method invocation
+//MergeMacroMay(?ctx, ?invo, ?hctx, ?heap, ?calleeCtx),
+PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
+MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
+MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+   _OptPotentialVirtualMethodBase(?hctx, ?heap, ?ctx, ?invo),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   VirtualMethodInvocation:SimpleName[?invo] = ?simplename,
+   VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
+   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?toMeth,
+   MayContextDepth[?ctx] < MaxMayContextDepth[],
+   ThisVar[?toMeth] = ?this.
+//   _OptInstruction:Method(?invo, ?inMeth),
+//   ReachableMethodUnderMayContext(?ctx, ?inMeth),
+
+
+// args
+MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   FormalParam[?index, ?toMethod] = ?formal,
+   ActualParam[?index, ?invo] = ?actual,
+   MayPointTo(?hctx, ?heap, ?callerCtx, ?actual).
+
+OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo).
+
+// return vals
+MayPointTo(?hctx, ?heap, ?callerCtx, ?to) <-
+   OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   AllReturn:MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod),
+   AssignReturnValue[?invo] = ?to.
+
+// propagate (instance/static) field must-point-to info
+AllPredecessors:InstanceFieldMayPointTo
+ (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?calleeCtx, ?firstInsn) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
+   AllPredecessors:InstanceFieldMayPointTo
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?callerCtx, ?invo).
+
+AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?firstInsn) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo).
+
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?callerCtx, ?invo) <-
+   OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   AllReturn:InstanceFieldMayPointTo
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?calleeCtx, ?toMethod).
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo) <-
+   OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?toMethod).
+
+
+StoreRelatedVars(?insn, ?from, ?base) <-
+   StoreInstanceField:From[?insn] = ?from,
+   StoreInstanceField:Base[?insn] = ?base.
+
+// store instructions, weak update: info gets added to previous, per frame rule
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   StoreRelatedVars(?insn, ?from, ?base),
+   FieldInstruction:Signature[?insn] = ?fld,
+   MayPointTo(?hctx, ?heap, ?ctx, ?from),
+   MayPointTo(?hctxBase, ?baseHeap, ?ctx, ?base).
+
+// load instructions
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadInstanceField:Base[?insn] = ?base,
+   LoadInstanceField:To[?insn] = ?to,
+   FieldInstruction:Signature[?insn] = ?fld,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   MayPointTo(?hctxBase, ?baseHeap, ?ctx, ?base).
+   
+// static store instructions
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   StoreStaticField:From[?insn] = ?from,
+   FieldInstruction:Signature[?insn] = ?fld,
+   MayPointTo(?hctx, ?heap, ?ctx, ?from).
+
+// static load instructions
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadStaticField:To[?insn] = ?to,
+   FieldInstruction:Signature[?insn] = ?fld,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
+
+// Final static fields that must point to an object, at the end of a
+// class initializer, cannot change in the future; thus, we can make
+// closed-world assumptions about the field.
+StaticFinalFieldMayPointTo(?hctx, ?heap, ?fld) <-
+   AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, SingleAllMayContext[], ?meth),
+   MethodSignature:SimpleName[?meth] = "<clinit>",
+   FieldModifier(Modifier:final[], ?fld).
+
+_OptMethodFromVar[?var] = ?method <-
+   Var:DeclaringMethod(?var, ?method).
+
+_OptFieldInstruction:Signature(?insn, ?fld) <-
+   FieldInstruction:Signature[?insn] = ?fld.
+
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadStaticField:To[?insn] = ?to,
+   _OptFieldInstruction:Signature(?insn, ?fld),
+   StaticFinalFieldMayPointTo(?hctx, ?heap, ?fld),
+   _OptMethodFromVar[?to] = ?inMeth,
+   ReachableMethodUnderMayContext(?ctx, ?inMeth).
+
+//// ====================================
+//// BEGIN frame rules
+
+// TODO: also, for freshly allocated objects, it should be enough to have
+//       instance field points-to information for one path. The object doesn't
+//       exist in others.
+
+// TODO: handle null values (at beginning of construction), final fields, etc.
+
+// TODO: figure out which method calls are non-invalidating. There are
+//       far too many call instructions for the frame rules to work well.
+
+IndifferentInstruction(?insn) <-
+   AssignInstruction(?insn);
+   LoadInstanceField:Insn(?insn);
+   LoadStaticField:Insn(?insn);
+   LoadArrayIndex:Insn(?insn);
+   StoreArrayIndex:Insn(?insn);
+   MonitorInstruction(?insn); // maybe these are not so indifferent
+   UnconditionalControlTransfer(?insn);
+   If:Insn(?insn).
+     // the latter two do not change the heap, so we can consider the information
+	 // propagated further.
+
+InstanceFieldRelevantForMethod(?fld, ?inMeth) <-
+   (InstanceFieldMayPointTo(_, _, ?fld, _, _, _, ?insn);
+    AllPredecessors:InstanceFieldMayPointTo(_, _, ?fld, _, _, _, ?insn)),
+   Instruction:Method[?insn] = ?inMeth.
+
+InstructionDoesNotInvalidateInstanceFieldPointsTo(?fld, ?insn) <-
+   InstanceFieldRelevantForMethod(?fld, ?inMeth),
+   _OptInstruction:Method(?insn, ?inMeth),
+   (StoreStaticField:Insn(?insn);
+	IndifferentInstruction(?insn);
+	(StoreInstanceField:Insn(?insn), FieldInstruction:Signature[?insn] != ?fld)).
+   
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   InstructionDoesNotInvalidateInstanceFieldPointsTo(?fld, ?insn).
+
+StaticFieldRelevantForMethod(?fld, ?inMeth) <-
+   (StaticFieldMayPointTo(_, _, ?fld, _, ?insn);
+	AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, _, ?insn)),
+   Instruction:Method[?insn] = ?inMeth.
+
+InstructionDoesNotInvalidateStaticFieldPointsTo(?fld, ?insn) <-
+   StaticFieldRelevantForMethod(?fld, ?inMeth),
+   _OptInstruction:Method(?insn, ?inMeth),
+   (StoreInstanceField:Insn(?insn);
+	IndifferentInstruction(?insn);
+	(StoreStaticField:Insn(?insn), FieldInstruction:Signature[?insn] != ?fld)).
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+   InstructionDoesNotInvalidateStaticFieldPointsTo(?fld, ?insn).
+
+
+// TODO: currently has no impact. Comment out and re-check when non-invalidating
+//       method calls are added?
+
+// Interesting addition to frame rules:
+// propagate in case of non-invalidating dominated predecessors.
+
+BasicBlockMayInvalidateFieldPointsTo(?fld, ?headInsn) <-
+   BasicBlockHead[?insn] = ?headInsn,
+   FieldInstruction:Signature[?insn] = ?fld.
+
+// The path (dominated by ?dominator) that ends at ?insn
+// may invalidate some field.
+DominatedPathMayInvalidateFieldPointsTo(?fld, ?insn, ?dominator) <-
+   Dominates(?dominator, ?insn),
+   BasicBlockMayInvalidateFieldPointsTo(?fld, ?insn).
+
+DominatedPathMayInvalidateFieldPointsTo(?fld, ?insn, ?dominator) <-
+   DominatedPathMayInvalidateFieldPointsTo(?fld, ?otherInsn, ?dominator),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   Dominates(?dominator, ?insn).
+
+ExistsFieldInvalidatingPathToPredecessor(?fld, ?prevHead, ?dominator) <-
+   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+   BasicBlockHead[?prevInsn] = ?prevHead,
+   DominatedPathMayInvalidateFieldPointsTo(?fld, ?prevHead, ?dominator).
+
+ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?dominator) <-
+   ExistsFieldInvalidatingPathToPredecessor(?fld, _, ?dominator).
+
+BasicBlockMayInvalidateAllFieldsPointsTo(?headInsn) <-
+   BasicBlockHead[?insn] = ?headInsn,
+   !IndifferentInstruction(?insn),
+   !FieldInstruction(?insn).
+
+// The path (dominated by ?dominator) that ends at ?insn
+// may invalidate any field.
+DominatedPathMayInvalidateAllFieldsPointsTo(?insn, ?dominator) <-
+   Dominates(?dominator, ?insn),
+   BasicBlockMayInvalidateAllFieldsPointsTo(?insn).
+
+DominatedPathMayInvalidateAllFieldsPointsTo(?insn, ?dominator) <-
+   DominatedPathMayInvalidateAllFieldsPointsTo(?otherInsn, ?dominator),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   Dominates(?dominator, ?insn).
+
+ExistsAllFieldsInvalidatingPathToPredecessor(?prevHead, ?dominator) <-
+   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+   BasicBlockHead[?prevInsn] = ?prevHead,
+   DominatedPathMayInvalidateAllFieldsPointsTo(?prevHead, ?dominator).
+
+ExistsAllFieldsInvalidatingPathToSomePredecessor(?dominator) <-
+   ExistsAllFieldsInvalidatingPathToPredecessor(_, ?dominator).
+
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllNonDomPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
+   !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
+   DominatesItsPredecessorInstruction(_, ?insn).
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+   !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
+   !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
+   DominatesItsPredecessorInstruction(_, ?insn).
+
+
+//// END frame rules
+
+//// ====================================
+//// BEGIN context management
+
+// Heap contexts
+MayHeapContext(?hctx) ->.
+lang:entity(`MayHeapContext).
+lang:physical:storageModel[`MayHeapContext]="ScalableSparse".
+lang:physical:capacity[`MayHeapContext] = 8388608.
+
+EmptyHeapContext[] = ?hctx -> MayHeapContext(?hctx).
+lang:skolem(`EmptyHeapContext).
+EmptyHeapContext[] = ?hctx, MayHeapContext(?hctx)  <- .
+
+// #define RecordMacroMay(ctx,heap,hctx) \
+//   MayHeapContext(hctx), \
+//   EmptyHeapContext[] = hctx
+
+
+// Calling contexts
+MayContext(?ctx) ->.
+lang:entity(`MayContext).
+lang:physical:storageModel[`MayContext]="ScalableSparse".
+lang:physical:capacity[`MayContext] = 33554432. // 8388608.
+
+EmptyMayContext[] = ?ctx -> MayContext(?ctx).
+lang:skolem(`EmptyMayContext).
+EmptyMayContext[] = ?ctx, MayContext(?ctx)  <- .
+
+PushAllOntoMayContext[?ctx] = ?pushedCtx -> 
+   MayContext(?ctx), MayContext(?pushedCtx).
+lang:skolem(`PushAllOntoMayContext).
+
+SingleAllMayContext[] = ?ctx -> MayContext(?ctx).
+SingleAllMayContext[] = ?ctx,
+PushAllOntoMayContext[?emptyCtx] = ?ctx,
+MayContext(?ctx) <-
+   EmptyMayContext[] = ?emptyCtx.
+
+PushMayContext[?invo, ?ctx] = ?pushedCtx ->
+   MayContext(?pushedCtx), MayContext(?ctx), CallGraphEdgeSource(?invo).
+lang:skolem(`PushMayContext).
+PopMayContext[?ctx] = ?poppedCtx ->
+   MayContext(?poppedCtx), MayContext(?ctx).
+PopAllFromMayContext[?ctx] = ?poppedCtx ->
+   MayContext(?poppedCtx), MayContext(?ctx).
+PopMayContext[?ctx] = ?poppedCtx <-
+   PushMayContext[_, ?poppedCtx] = ?ctx.
+PopAllFromMayContext[?ctx] = ?poppedCtx,
+PopMayContext[?ctx] = ?poppedCtx <-
+   PushAllOntoMayContext[?poppedCtx] = ?ctx.
+
+InvoFromMayContext[?ctx] = ?invocation ->
+   MayContext(?ctx), CallGraphEdgeSource(?invocation).
+InvoFromMayContext[?ctx] = ?invocation <- 
+   PushMayContext[?invocation, _] = ?ctx.
+
+MayContextDepth[?ctx] = ?depth ->
+   MayContext(?ctx), int[32](?depth).
+MayContextDepth[?ctx] = ?depth+1 <-
+   PushMayContext[_, ?poppedCtx] = ?ctx,
+   MayContextDepth[?poppedCtx] = ?depth.
+MayContextDepth[?ctx] = ?depth+1 <-
+   PushAllOntoMayContext[?poppedCtx] = ?ctx,
+   MayContextDepth[?poppedCtx] = ?depth.
+MayContextDepth[?ctx] = 0 <-
+   SingleAllMayContext[] = ?ctx.
+
+StrongerMayContext(?ctx, ?strongerCtx) <-
+   SingleAllMayContext[] = ?strongerCtx,
+   PushMayContext[_, _] = ?ctx.
+
+WeakerMayContext(?strongerCtx, ?ctx) <-
+   StrongerMayContext(?ctx, ?strongerCtx).
+
+WeakerMayContext(?strongerCtx, ?ctx) <-
+StrongerMayContext(?ctx, ?strongerCtx).
+
+// TODO: Make MaxDepth configurable.
+MaxMayContextDepth[] = ?num -> int[32](?num).
+
+//// END context management
+
+
+//// ====================================
+//// BEGIN configuration
+
+RootMethodForMayAnalysis(?meth) <-
+   MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
+
+MaxMayContextDepth[] = 5 <- .
+
+//// END configuration
+
+
+//// ====================================
+//// AUXILIARY. Helper relations, "forall" emulations.
+
+// For all Phi node instructions, the "to" var (implicit in the
+// predicate) may point to...
+MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap), MayContext(?ctx), 
+   Instruction(?insn).
+
+MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) <-
+   PhiNodeHead[_] = ?headInsn,
+   AssignLocal:From[?headInsn] = ?from,
+   MayPointTo(?hctx, ?heap, ?ctx, ?from).
+
+MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?nextInsn),
+MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) <-
+   MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?insn),
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   AssignLocal:From[?nextInsn] = ?from,
+   MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
+
+// for all returns of a method, the return variable has a known upper bound
+// for its points-to, and we take the union of all such bounds
+UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) <-
+   ReturnInstruction(?return),
+   !ExistsPreviousReturn(?return),
+   ReturnNonvoid:Var[?return] = ?var,
+   MayPointTo(?hctx, ?heap, ?ctx, ?var).
+
+UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?return),
+UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) <-
+   UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?prevReturn),
+   NextReturn[?prevReturn] = ?return,
+   ReturnNonvoid:Var[?return] = ?var,
+   MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
+
+AllReturn:MayPointTo(?hctx, ?heap, ?ctx, ?method) <-
+   UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
+   !(NextReturn[?return] = _),
+   Instruction:Method[?return] = ?method.
+
+
+/// InstanceFieldMayPointTo for predecessors
+
+// Up to a certain non-dominated predecessor basic block, there is
+// instance field point-to information. We take the union.
+InstanceFieldMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?fld, ?hctxBase,
+                                             ?baseHeap, ?ctx, ?insn, ?pred) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayHeapContext(?hctxBase),
+   HeapAllocation(?baseHeap), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+InstanceFieldMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?fld, ?hctxBase,
+                                             ?baseHeap, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?tail),
+   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
+
+OptInstanceFieldMayPointToAtNextNonDomPredecessor
+      (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?tail),
+   PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+InstanceFieldMayPointToUpToNonDomPredecessor
+ (?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?pred),
+InstanceFieldMayPointToUpToNonDomPredecessor
+ (?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?pred) <-
+   InstanceFieldMayPointToUpToNonDomPredecessor
+    (?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?prevPred),
+   OptInstanceFieldMayPointToAtNextNonDomPredecessor
+    (?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?prevPred),
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all non-dominated predecessor instructions, there is point-to information.
+// We take the union.
+AllNonDomPredecessors:InstanceFieldMayPointTo(
+      ?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayHeapContext(?hctxBase),
+   HeapAllocation(?baseHeap), MayContext(?ctx), Instruction(?insn).
+   
+AllNonDomPredecessors:InstanceFieldMayPointTo
+ (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   InstanceFieldMayPointToUpToNonDomPredecessor
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?pred),
+   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllNonDomPredecessors:InstanceFieldMayPointTo
+ (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?prev).
+
+
+// Same as above, for all predecessors (not just non-dominated ones)
+
+// Up to a certain predecessor basic block, there is
+// instance field point-to information. We take the union.
+InstanceFieldMayPointToUpToPredecessor(?hctx, ?heap, ?fld, ?hctxBase,
+                                             ?baseHeap, ?ctx, ?insn, ?pred) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayHeapContext(?hctxBase),
+   HeapAllocation(?baseHeap), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+InstanceFieldMayPointToUpToPredecessor(?hctx, ?heap, ?fld, ?hctxBase,
+                                             ?baseHeap, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?tail),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+OptInstanceFieldMayPointToAtNextPredecessor
+      (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?tail),
+   PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+InstanceFieldMayPointToUpToPredecessor
+ (?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?pred),
+InstanceFieldMayPointToUpToPredecessor
+ (?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?pred) <-
+   InstanceFieldMayPointToUpToPredecessor
+    (?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?prevPred),
+   OptInstanceFieldMayPointToAtNextPredecessor
+    (?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?prevPred),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all predecessor instructions, there is point-to information.
+// We take the union.
+AllPredecessors:InstanceFieldMayPointTo(
+      ?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayHeapContext(?hctxBase),
+   HeapAllocation(?baseHeap), MayContext(?ctx), Instruction(?insn).
+   
+AllPredecessors:InstanceFieldMayPointTo
+ (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   InstanceFieldMayPointToUpToPredecessor
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn, ?pred),
+   !(NextPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllPredecessors:InstanceFieldMayPointTo
+ (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?prev).
+
+
+/// StaticFieldMayPointTo for predecessors
+
+// Up to a certain non-dominated predecessor basic block, there is
+// static field point-to information. We take the union.
+StaticFieldMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?fld, ?ctx, ?insn, ?pred) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+StaticFieldMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?fld, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?tail),
+   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
+
+OptStaticFieldMayPointToAtNextNonDomPredecessor(?hctx, ?heap, ?fld, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?tail),
+   PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+StaticFieldMayPointToUpToNonDomPredecessor(?hctx1, ?heap1, ?fld, ?ctx, ?insn, ?pred),
+StaticFieldMayPointToUpToNonDomPredecessor(?hctx2, ?heap2, ?fld, ?ctx, ?insn, ?pred) <-
+   StaticFieldMayPointToUpToNonDomPredecessor
+    (?hctx1, ?heap1, ?fld, ?ctx, ?insn, ?prevPred),
+   OptStaticFieldMayPointToAtNextNonDomPredecessor
+    (?hctx2, ?heap2, ?fld, ?ctx, ?insn, ?prevPred),
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all non-dominated predecessor instructions, there is point-to information.
+// We take the union.
+AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayContext(?ctx), Instruction(?insn).
+   
+AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   StaticFieldMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?fld, ?ctx, ?insn, ?pred),
+   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?prev).
+
+
+// Same as above, for all predecessors (not just non-dominated ones)
+
+// Up to a certain predecessor basic block, there is
+// static field point-to information. We take the union.
+StaticFieldMayPointToUpToPredecessor(?hctx, ?heap, ?fld, ?ctx, ?insn, ?pred) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+StaticFieldMayPointToUpToPredecessor(?hctx, ?heap, ?fld, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?tail),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+OptStaticFieldMayPointToAtNextPredecessor
+      (?hctx, ?heap, ?fld, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?tail),
+   PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+StaticFieldMayPointToUpToPredecessor(?hctx1, ?heap1, ?fld, ?ctx, ?insn, ?pred),
+StaticFieldMayPointToUpToPredecessor(?hctx2, ?heap2, ?fld, ?ctx, ?insn, ?pred) <-
+   StaticFieldMayPointToUpToPredecessor
+    (?hctx1, ?heap1, ?fld, ?ctx, ?insn, ?prevPred),
+   OptStaticFieldMayPointToAtNextPredecessor
+    (?hctx2, ?heap2, ?fld, ?ctx, ?insn, ?prevPred),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all predecessor instructions, there is point-to information.
+// We take the union.
+AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   FieldSignature(?fld), MayContext(?ctx), Instruction(?insn).
+   
+AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   StaticFieldMayPointToUpToPredecessor
+    (?hctx, ?heap, ?fld, ?ctx, ?insn, ?pred),
+   !(NextPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   PrevInSameBasicBlock[?insn] = ?prev,
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?prev).
+
+
+// for all returns of a method, a certain object+field points to known sets.
+// We take their union.
+UpToReturnInstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?return) <-
+   ReturnInstruction(?return),
+   !ExistsPreviousReturn(?return),
+   AllPredecessors:InstanceFieldMayPointTo
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?return).
+
+UpToReturnInstanceFieldMayPointTo(?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?return),
+UpToReturnInstanceFieldMayPointTo(?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?return) <-
+   UpToReturnInstanceFieldMayPointTo(?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?prevReturn),
+   NextReturn[?prevReturn] = ?return,
+   AllPredecessors:InstanceFieldMayPointTo
+    (?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?return).
+
+AllReturn:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?method) <-
+   UpToReturnInstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?return),
+   !(NextReturn[?return] = _),
+   Instruction:Method[?return] = ?method.
+
+
+// for all returns of a method, a certain static field points to known sets.
+// We take their union.
+UpToReturnStaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?return) <-
+   ReturnInstruction(?return),
+   !ExistsPreviousReturn(?return),
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?return).
+
+UpToReturnStaticFieldMayPointTo(?hctx1, ?heap1, ?fld, ?ctx, ?return),
+UpToReturnStaticFieldMayPointTo(?hctx2, ?heap2, ?fld, ?ctx, ?return) <-
+   UpToReturnStaticFieldMayPointTo(?hctx2, ?heap2, ?fld, ?ctx, ?prevReturn),
+   NextReturn[?prevReturn] = ?return,
+   AllPredecessors:StaticFieldMayPointTo(?hctx1, ?heap1, ?fld, ?ctx, ?return).
+
+AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?method) <-
+   UpToReturnStaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?return),
+   !(NextReturn[?return] = _),
+   Instruction:Method[?return] = ?method.
