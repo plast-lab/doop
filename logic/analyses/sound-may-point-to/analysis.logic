@@ -245,19 +245,21 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
 
 // TODO: also, for freshly allocated objects, it should be enough to have
 //       instance field points-to information for one path. The object doesn't
-//       exist in others.
+//       exist in others. This needs escape reasoning? The object may come back
+//       to the same program point through the other path.
 
 // TODO: handle null values (at beginning of construction), final fields, etc.
 
 // TODO: figure out which method calls are non-invalidating. There are
 //       far too many call instructions for the frame rules to work well.
 
+// TODO: handle arrays
+
 IndifferentInstruction(?insn) <-
    AssignInstruction(?insn);
    LoadInstanceField:Insn(?insn);
    LoadStaticField:Insn(?insn);
    LoadArrayIndex:Insn(?insn);
-   StoreArrayIndex:Insn(?insn);
    MonitorInstruction(?insn); // maybe these are not so indifferent
    UnconditionalControlTransfer(?insn);
    If:Insn(?insn).
@@ -273,6 +275,7 @@ InstructionDoesNotInvalidateInstanceFieldPointsTo(?fld, ?insn) <-
    InstanceFieldRelevantForMethod(?fld, ?inMeth),
    _OptInstruction:Method(?insn, ?inMeth),
    (StoreStaticField:Insn(?insn);
+    StoreArrayIndex:Insn(?insn);
 	IndifferentInstruction(?insn);
 	(StoreInstanceField:Insn(?insn), FieldInstruction:Signature[?insn] != ?fld)).
    
@@ -289,6 +292,7 @@ InstructionDoesNotInvalidateStaticFieldPointsTo(?fld, ?insn) <-
    StaticFieldRelevantForMethod(?fld, ?inMeth),
    _OptInstruction:Method(?insn, ?inMeth),
    (StoreInstanceField:Insn(?insn);
+    StoreArrayIndex:Insn(?insn);
 	IndifferentInstruction(?insn);
 	(StoreStaticField:Insn(?insn), FieldInstruction:Signature[?insn] != ?fld)).
 
@@ -297,6 +301,82 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    InstructionDoesNotInvalidateStaticFieldPointsTo(?fld, ?insn).
 
 
+
+
+// Defining methods that are certain to not affect a field's points-to info.
+// We can afford to do this exhaustively for all fields?
+
+FieldRelevantForAnalysis(?fld) <-
+   InstanceFieldMayPointTo(_, _, ?fld, _, _, _, _);
+   StaticFieldMayPointTo(_, _, ?fld, _, _).
+/// equivalent to above, when taken globally
+//   AllPredecessors:InstanceFieldMayPointTo(_, _, ?fld, _, _, _, _);
+//   AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, _, _);
+
+/*
+// An underapproximation
+MethodMustInvalidateField(?fld, ?inMeth) <-
+   FieldRelevantForAnalysis(?fld),
+   FieldInstruction:Signature[?insn] = ?fld,
+   Instruction:Method[?insn] = ?inMeth.
+
+MethodMustInvalidateField(?fld, ?inMeth) <-
+   OptMayCallGraphEdge:ToMethod(_, ?invo, ?toMethod),
+   Instruction:Method[?invo] = ?inMeth,
+   MethodMustInvalidateField(?fld, ?toMethod).
+*/
+
+
+
+
+/*
+MethodDoesNotInvalidateFieldUpToInsn(?fld, ?meth, ?insn) <-
+   FieldRelevantForAnalysis(?fld),
+   ReachableMethodUnderMayContext(_, ?meth),
+   OptInstructionFromMethodIndex[?meth, 1] = ?insn,
+   (IndifferentInstruction(?insn);
+    (FieldInstruction(?insn), FieldInstruction:Signature[?insn] = ?fld);
+    StoreArrayIndex:Insn(?insn);
+    ...
+
+
+    (OptMayCallGraphEdge:ToMethod(_, ?invo, ?toMethod),
+*/ 
+
+
+
+
+
+    
+/*
+NotIndifferentInstruction(?insn) <-
+   Instruction:Method[?insn] = ?meth,
+   !IndifferentInstruction(?insn),
+   ReachableMethodUnderMayContext(_, ?meth).
+
+MethodPotentiallyUnsafeForField(?fld, ?meth) <-
+   NotIndifferentInstruction(?insn)
+
+InstructionUnsafeForField(?insn) <-
+   NotIndifferentInstruction(?insn),
+
+MethodWithJust
+
+
+MethodItselfInvalidatesField(?fld, ?inMeth) <-
+   FieldInstruction:Signature[?insn] = ?fld,
+   Instruction:Method[?insn] = ?inMeth.
+
+SafeMethodCallForField(?fld, ?invo) <-
+
+   OptInstructionFromMethodIndex[?inMethod, ?i + 1] = ?next.
+
+MethodSafeForFieldUpTo
+*/
+
+
+
+/*
 // TODO: currently has no impact. Comment out and re-check when non-invalidating
 //       method calls are added?
 
@@ -361,6 +441,7 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
    !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
    DominatesItsPredecessorInstruction(_, ?insn).
+*/
 
 
 //// END frame rules
