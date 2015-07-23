@@ -1,0 +1,88 @@
+#include "macros.logic"
+#include "../../core/context-sensitivity.logic"
+
+/**
+ * Context-sensitive pointer analysis with context of 1 call site.
+ *
+ * @author Martin Bravenboer
+ * @author George Kastrinis
+ */
+
+// In this analysis, the real context is a MethodInvocation. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+ContextFromRealContext[?invocation] = ?ctx ->
+  Context(?ctx), CallGraphEdgeSource(?invocation).
+lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?invocation ->
+  Context(?ctx), CallGraphEdgeSource(?invocation).
+RealContextFromContext[?ctx] = ?invocation <- 
+  ContextFromRealContext[?invocation] = ?ctx.
+
+// This analysis has no context for heap objects.
+// This is emulated by creating a single HContext object,
+// which is used everywhere.
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).
+
+  
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?alloc).
+
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?alloc).
+
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?alloc).
+
+StartupInvocation[] = ?startupInvocation <-
+#ifdef PADDLE_COMPAT
+  MethodInvocationValue(?startupInvocation, "<<no-context>>").
+#else
+  MethodInvocationValue(?startupInvocation, "<<jvm-startup>>").
+#endif
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?invo] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+#ifdef PADDLE_COMPAT
+  MethodInvocationValue(?invo, "<<no-context>>").
+#else
+  MethodInvocationValue(?invo, "<<initial-context>>").
+#endif
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?invo] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+#ifdef PADDLE_COMPAT
+  MethodInvocationValue(?invo, "<<no-context>>").
+#else
+  MethodInvocationValue(?invo, "<<jvm-startup>>").
+#endif
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?invo] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+#ifdef PADDLE_COMPAT
+  MethodInvocationValue(?invo, "<<no-context>>").
+#else
+  MethodInvocationValue(?invo, "<<class-initialization>>").
+#endif
