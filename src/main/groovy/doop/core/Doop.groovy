@@ -45,7 +45,6 @@ class Doop {
             argName:"mainClass",
             description:"Specify the main class.",
             value:null,
-            forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<List<String>>(
