@@ -654,10 +654,6 @@ import org.apache.commons.logging.LogFactory
             params = params + ["-only-application-classes-fact-gen"]
         }
 
-        if (options.MAIN_CLASS.value) {
-            params = params + ["-main", options.MAIN_CLASS.value.toString()]
-        }
-
         params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
