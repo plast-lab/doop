@@ -157,13 +157,27 @@ RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
    VarPairMayBeUsedInRebasing(?to, ?from).
 
 // Recursive case
+#ifdef CREATE_ACCESS_PATHS_ON_REBASING
+// Creates new access paths. Heuristic. If they are needed by any
+// transitively called method, as tracked by Must-analysis.
+AccessPath(?newAp),
+AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
+AccessPath:Length[?newAp] = ?len,
+RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
+   AccessPath:BaseInv(?ap, ?apBase),
+   AccessPath:LastField[?ap] = ?fld,
+   RebaseAccessPath[?apBase, ?to, ?from] = ?newApBase,
+   TransitivelyRelevantFieldForAp(?fld, AccessPath:ByVar[?to]),
+   AccessPath:Length[?ap] = ?len,
+   AccessPath:Type[?newApBase] = ?type,
+   TypeContainsField(?fld, ?type).
+#else
 RebaseAccessPath[?ap, ?to, ?from] = ?newAp <-
    AccessPath:BaseInv(?ap, ?apBase),
    RebaseAccessPath[?apBase, ?to, ?from] = ?newApBase,
    AccessPath:LastField[?ap] = ?fld,
-   AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
-   AccessPath:Type[?newApBase] = ?type,
-   TypeContainsField(?fld, ?type).
+   AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp.
+#endif
 
 // This is not a function! The same local variable can be two
 // different actual arguments!
@@ -240,6 +254,7 @@ AllPredecessors:AccessPathMustPointTo[?calleeAp, ?calleeCtx, ?firstInsn] = ?heap
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
    !IsJumpTarget(?firstInsn),
+   // REVIEW: replace with StrongerContext(?ctx1, ?ctx2). Need to optimize indexing.
    (AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?invo] = ?heap;
     AllPredecessors:AccessPathMustPointTo[?ap, SingleAllContext[], ?invo] = ?heap),
    AccessPathRebasedForCall(?calleeAp, ?ap, ?invo).
@@ -533,7 +548,7 @@ OptCandidatePathToExpand(?fld, ?ap1, ?ap) <-
    AccessPath:ByFieldAccess[?fld, ?ap] = ?ap1.
 
 // INCREDIBLY IMPORTANT RULE! "Key rule 1".
-// Main rule creating new access paths
+// Aliasing for extended access paths
 MustAlias(?ap3, ?ap4, ?ctx, ?insn),
 MustAlias(?ap4, ?ap3, ?ctx, ?insn) <-
    MustAlias(?ap2, ?ap1, ?ctx, ?insn),
@@ -791,9 +806,6 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 // The all-context fact implies the fact for a reachable MustContext
 
 // Some auxiliaries ...
-OptInstructionMethod(?insn, ?meth) <-
-   Instruction:Method[?insn] = ?meth.
-
 CandidateMethodForWeakerContext(?ctx, ?strongerCtx, ?meth) <-
    StrongerContext(?ctx, ?strongerCtx),
    ReachableMethodUnderMustContext(?strongerCtx, ?meth),
@@ -1078,6 +1090,9 @@ NullVar(?var) <-
    AssignNull:Insn(?insn), 
    AssignInstruction:To[?insn] = ?var.
 
+// Invariant: all computed access paths are type safe: the fields
+// exist in the static type of the prefix. REVIEW: This may (rarely)
+// prevent detection of valid aliasing.
 AccessPath(?ap),
 AccessPath:ByFieldAccess[?fld, ?baseAp] = ?ap,
 AccessPath:Length[?ap] = 2 <-
@@ -1113,99 +1128,104 @@ NonStaticReferenceField(?fld) <-
    ReferenceType(?type),
    !(FieldModifier(Modifier:static[], ?fld)).
 
-FieldUsedInProgram(?fld, ?meth) <-
+NonStaticFieldUsedInProgram(?fld) <-
+#ifdef MUST_AFTER_MAY
    Instruction:Method[?insn] = ?meth,
    Reachable(?meth),
-   FieldInstruction:Signature[?insn] = ?fld.
-
-CandidateFieldForAp(?fld, ?meth) <-
-   OptVar:DeclaringMethod(?meth, ?v),
-   AccessPath:BaseVar[?ap] = ?v,
-#ifdef MUST_AFTER_MAY
-   Reachable(?meth),
 #endif
-   AccessPath:Type[?ap] = ?type,
-   TypeContainsField(?fld, ?type),
-   FieldUsedInProgram(?fld, ?meth),
+   FieldInstruction:Signature[?insn] = ?fld,
    NonStaticReferenceField(?fld).
 
-CandidateApBaseField(?fld, ?ap1) <-
+/*
+//// TOO SLOW!!!
+// What field (used somewhere in the program) can be appended to an
+// existing access path type-safely?
+CandidateApBaseField(?fld, ?ap) <-
+#ifdef MUST_AFTER_MAY
+   Reachable(?meth),
+   OptVar:DeclaringMethod(?meth, ?var),
+#endif
+   OptAccessPath:BaseVar(?ap, ?var),
+   !NullVar(?var),
+   AccessPath:Type[?ap] = ?type,
+   TypeContainsField(?fld, ?type),
+   NonStaticFieldUsedInProgram(?fld).
+
+CandidateApBaseField(?fld, ?ap) <-
+   AccessPath:ContainsStaticField[?ap] = _,
+   AccessPath:Type[?ap] = ?type,
+   TypeContainsField(?fld, ?type),
+   NonStaticFieldUsedInProgram(?fld).
+
+// Maintains the invariant that all APs are type-safe
+AccessPath(?newAp),
+AccessPath:ByFieldAccess[?fld, ?ap] = ?newAp,
+AccessPath:Length[?newAp] = ?len + 1 <-
+   CandidateApBaseField(?fld, ?ap),
+   AccessPath:Length[?ap] = ?len,
+   ?len < AccessPath:MaxLength[].
+*/
+
+
+//// TOO SLOW???
+// Field is used in some access path in this method
+CandidateFieldForApBase(?fld, ?meth) <-
+   OptVar:DeclaringMethod(?meth, ?var),
 #ifdef MUST_AFTER_MAY
    Reachable(?meth),
 #endif
-   Var:DeclaringMethod(?v1, ?meth),
-   OptAccessPath:BaseVar(?ap1, ?v1),
-   !NullVar(?v1),
-   AccessPath:Type[?ap1] = ?type,
-   TypeContainsField(?fld, ?type),
+   AccessPath:BaseVar[?ap] = ?var,
+   AccessPath:ContainsField(?fld, ?ap),
+   // extraneous, but good to prune early?
+   NonStaticReferenceField(?fld). 
+
+OptMustCallGraphEdge:ToMethod(?invo, ?toMethod) <-
+   MustCallGraphEdge:ToMethod[?invo] = ?toMethod.
+
+// Field is used in some access path in this method ...
+CandidateFieldForAp(?fld, ?inMethod) <-
+   CandidateFieldForApBase(?fld, ?inMethod).
+// ... or transitively called via must-analysis tracked invocations
+CandidateFieldForAp(?fld, ?inMethod) <-
+   CandidateFieldForAp(?fld, ?toMethod),
+   OptMustCallGraphEdge:ToMethod(?invo, ?toMethod),
+   Instruction:Method[?invo] = ?inMethod.
+
+StaticFieldUsedInMethod(?staticFld, ?meth) <-
+   FieldInstruction:Signature[?insn] = ?staticFld,
+   Instruction:Method[?insn] = ?meth,
+   FieldModifier(Modifier:static[], ?staticFld).
+
+LocallyRelevantFieldForAp(?fld, ?ap) <-
+   OptAccessPath:BaseVar(?ap, ?var),
+   !NullVar(?var),
+   Var:DeclaringMethod(?var, ?meth),
+   CandidateFieldForApBase(?fld, ?meth). // not transitive!
+LocallyRelevantFieldForAp(?fld, ?ap) <-
+   OptAccessPath:ContainsField(?ap, ?staticBase),
+   StaticFieldUsedInMethod(?staticBase, ?meth),
+   CandidateFieldForApBase(?fld, ?meth). // not transitive!
+
+TransitivelyRelevantFieldForAp(?fld, ?ap) <-
+   OptAccessPath:BaseVar(?ap, ?var),
+   !NullVar(?var),
+   Var:DeclaringMethod(?var, ?meth),
+   CandidateFieldForAp(?fld, ?meth).
+TransitivelyRelevantFieldForAp(?fld, ?ap) <-
+   OptAccessPath:ContainsField(?ap, ?staticBase),
+   StaticFieldUsedInMethod(?staticBase, ?meth),
    CandidateFieldForAp(?fld, ?meth).
 
-AccessPath(?ap2),
-AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2,
-AccessPath:Length[?ap2] = ?len + 1 <-
-   CandidateApBaseField(?fld, ?ap1),
-   AccessPath:Length[?ap1] = ?len,
+AccessPath(?newAp),
+AccessPath:ByFieldAccess[?fld, ?ap] = ?newAp,
+AccessPath:Length[?newAp] = ?len + 1 <-
+   LocallyRelevantFieldForAp(?fld, ?ap),
+   AccessPath:Type[?ap] = ?type,
+   TypeContainsField(?fld, ?type),
+   AccessPath:Length[?ap] = ?len,
    ?len < AccessPath:MaxLength[].
 
-CandidateFieldForStaticAp(?fld) <-
-   CandidateFieldForAp(?fld, _).
-
-AccessPath(?ap1),
-AccessPath:ByFieldAccess[?fld, ?ap] = ?ap1,
-AccessPath:Length[?ap1] = ?len + 1 <-
-   AccessPath:ContainsStaticField[?ap] = _,
-   AccessPath:Length[?ap] = ?len,
-   ?len < AccessPath:MaxLength[],
-   AccessPath:Type[?ap] = ?t,
-   TypeContainsField(?fld, ?t),
-   CandidateFieldForStaticAp(?fld).
-
-// TODO: This part uses CallGraphEdge predicate as a hint to
-//       precompute Access Paths. If we want to support a "plain"
-//       must-point-to-analysis, we should do the same by using a class
-//       hierarchy analysis.
-#ifdef MUST_AFTER_MAY
-MayInterPoceduralAssign(?srcMeth, ?v1, ?v2) ->
-   MethodSignature(?srcMeth), Var(?v1), Var(?v2).
-
-MayInterPoceduralAssign(?toMethod, ?actual, ?formal),
-MayInterPoceduralAssign(?fromMethod, ?formal, ?actual) <-
-   CallGraphEdge(_, ?invo, _, ?toMethod),
-   Instruction:Method[?invo] = ?fromMethod,
-   FormalParam[?index, ?toMethod] = ?formal,
-   ActualParam[?index, ?invo] = ?actual. 
-
-MayInterPoceduralAssign(?fromMethod, ?this, ?base),
-MayInterPoceduralAssign(?toMethod, ?base, ?this) <-
-   CallGraphEdge(_, ?invo, _, ?toMethod),
-   Instruction:Method[?invo] = ?fromMethod,
-   (VirtualMethodInvocation:Base[?invo] = ?base;
-    SpecialMethodInvocation:Base[?invo] = ?base),
-   ThisVar[?toMethod] = ?this.
-
-MayInterPoceduralAssign(?toMethod, ?to, ?retVar) <-
-   CallGraphEdge(_, ?invo, _, ?toMethod),
-   AssignReturnValue[?invo] = ?to,
-   ReturnVar(?retVar, ?toMethod).
-
-InterProcedurallyPropagatedPath(?srcMeth, ?newAp, ?ap)  <-
-   AccessPath:ByVarInv[?ap] = ?from,
-   AccessPath:ByVar[?to] = ?newAp,
-   !NullVar(?to),
-   MayInterPoceduralAssign(?srcMeth, ?to, ?from).
-
-AccessPath(?newAp),
-AccessPath:ByFieldAccess[?fld, ?newApBase] = ?newAp,
-AccessPath:Length[?newAp] = ?len <-
-   AccessPath:BaseInv(?ap, ?apBase),
-   InterProcedurallyPropagatedPath(?srcMeth, ?newApBase, ?apBase),
-   AccessPath:LastField[?ap] = ?fld,
-   AccessPath:Type[?newApBase] = ?type,
-   TypeContainsField(?fld, ?type),
-   (MethodMayStoreToInstanceField(?fld, ?srcMeth);
-    MethodMayLoadFromInstanceField(?fld, ?srcMeth)),
-   AccessPath:Length[?ap] = ?len.
-#endif
+// See also CREATE_ACCESS_PATHS_ON_REBASING earlier. 
 
 
 //// END access path creation
