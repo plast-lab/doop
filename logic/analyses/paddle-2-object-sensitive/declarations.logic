@@ -1,0 +1,9 @@
+#include "../../core/context-sensitivity-declarations.logic"
+
+// For this analysis, there are no heap contexts, so this is
+// what the initial system objects should have.
+MySystemThreadGroup(?heap) -> HeapAllocation(?heap).
+
+MyMainThreadGroup(?heap) -> HeapAllocation(?heap).
+
+MyMainThread(?heap) -> HeapAllocation(?heap).
