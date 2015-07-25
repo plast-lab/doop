@@ -28,8 +28,6 @@ StaticFieldMayPointTo(?hctx, ?heap, ?field, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
    FieldSignature(?field), MayContext(?ctx), Instruction(?insn).
 
-// Need to identify relevant (i.e., reachable) methods for the
-// analysis, instead of blindly applying it to all available code.
 RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
 
 
@@ -142,6 +140,21 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
 //   _OptInstruction:Method(?invo, ?inMeth),
 //   ReachableMethodUnderMayContext(?ctx, ?inMeth),
 
+/*
+// Uses UNSOUND may-point-to, just for comparison during testing.
+PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
+MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
+   VirtualMethodInvocation:Base[?invo] = ?heap,
+   TypeResolvedVar(?heap),
+   VPTTypeForVarModNull(?heaptype, ?heap),
+   VirtualMethodInvocation:SimpleName[?invo] = ?simplename,
+   VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
+   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?toMeth,
+   MayContextDepth[?ctx] < MaxMayContextDepth[],
+   Instruction:Method[?invo] = ?inMeth,
+   ReachableMethodUnderMayContext(?ctx, ?inMeth).
+*/
 
 // args
 MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
