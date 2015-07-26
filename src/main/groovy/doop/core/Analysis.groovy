@@ -211,7 +211,7 @@ import org.apache.commons.logging.LogFactory
         facts.mkdirs()
 
         if (cacheFacts.exists() && options.CACHE.value) {
-            logger.info "Using cached facts $cacheFacts"
+            logger.info "Using cached facts from $cacheFacts"
             Helper.copyDirectoryContents(cacheFacts, facts)
         }
         else if (options.CSV.value) {
@@ -249,10 +249,24 @@ import org.apache.commons.logging.LogFactory
                 }
             }
 
+            logger.info "Caching facts in $cacheFacts"
             FileUtils.deleteQuietly(cacheFacts)
             cacheFacts.mkdirs()
             Helper.copyDirectoryContents(facts, cacheFacts)
+            new File(cacheFacts, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
         }
+    }
+
+    private String cacheMeta() {
+        Collection<String> inputJars = inputJarFiles.collect {
+            File file -> file.toString()
+        }
+        Collection<String> cacheOptions = options.values().findAll {
+            it.forCacheID
+        }.collect {
+            AnalysisOption option -> option.toString()
+        }.sort()
+        return (inputJars + cacheOptions).join("\n")
     }
 
     protected void initDatabase() {
@@ -262,6 +276,7 @@ import org.apache.commons.logging.LogFactory
         lbScriptWriter.println('echo "-- Database Initialization --"')
         lbScriptWriter.println("create $database --overwrite --blocks base")
 
+        lbScriptWriter.println('echo "-- Fact Import --"')
         lbScriptWriter.println("startTimer")
         lbScriptWriter.println("transaction")
         lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/declarations.logic -B FactDecls")
