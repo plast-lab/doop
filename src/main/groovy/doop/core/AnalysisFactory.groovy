@@ -189,14 +189,16 @@ import java.security.MessageDigest
         Collection<String> idComponents = vars.options.values().findAll {
             it.forCacheID
         }.collect {
-            AnalysisOption option -> return option.toString()
+            AnalysisOption option -> option.toString()
         }
 
-        Collection<String> checksums = (vars.inputJars + vars.jreJars).collect { String f ->
-            InputStream is = new FileInputStream(f)
-            String checksum = Helper.checksum(is, "SHA-256")
-            is.close()
-            return checksum
+        File dir = new File("${Doop.doopLogic}/facts")
+        Collection<String> checksums = dir.listFiles().collect {
+            File file -> Helper.checksum(file, "SHA-256")
+        }
+
+        checksums += (vars.inputJars + vars.jreJars).collect {
+            String file -> Helper.checksum(new File(file), "SHA-256")
         }
 
         Properties p = Helper.loadPropertiesFromClasspath("checksums.properties")
