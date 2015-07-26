@@ -273,14 +273,18 @@ import org.apache.commons.logging.LogFactory
 
         FileUtils.deleteQuietly(database)
 
-        lbScriptWriter.println('echo "-- Database Initialization --"')
-        lbScriptWriter.println("create $database --overwrite --blocks base")
+        lbScriptWriter.println("create ${database.getName()} --overwrite --blocks base")
 
-        lbScriptWriter.println('echo "-- Fact Import --"')
+        lbScriptWriter.println('echo "-- Facts --"')
         lbScriptWriter.println("startTimer")
         lbScriptWriter.println("transaction")
-        lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/declarations.logic -B FactDecls")
-        lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic")
+
+        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/declarations.logic"),
+                           new File("${outDir}/fact-declarations.logic"))
+        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"),
+                           new File("${outDir}/flow-insensitivity-declarations.logic"))
+        lbScriptWriter.println("addBlock -F fact-declarations.logic")
+        lbScriptWriter.println("addBlock -F flow-insensitivity-declarations.logic")
         lbScriptWriter.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
 
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/entities-import.logic"),
@@ -322,7 +326,7 @@ import org.apache.commons.logging.LogFactory
      */
     protected void analyze() {
 
-        lbScriptWriter.println('echo "-- Analysis Prologue --"')
+        lbScriptWriter.println('echo "-- Prologue --"')
         lbScriptWriter.println("startTimer")
         lbScriptWriter.println("transaction")
 
@@ -473,7 +477,7 @@ import org.apache.commons.logging.LogFactory
 
         lbScriptWriter.println("commit")
         lbScriptWriter.println("elapsedTime")
-        lbScriptWriter.println('echo "-- Main Analysis --"')
+        lbScriptWriter.println('echo "-- Analysis --"')
         lbScriptWriter.println("startTimer")
         lbScriptWriter.println("transaction")
         lbScriptWriter.println("addBlock -F ${name}.logic")
@@ -564,7 +568,7 @@ import org.apache.commons.logging.LogFactory
 
     protected void runTransformInput() {
         preprocessor.preprocess(this, "${Doop.doopLogic}/addons/transform", "rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
-        lbScriptWriter.println('echo "-- Transforming Input Facts --"')
+        lbScriptWriter.println('echo "-- Transforming Facts --"')
         lbScriptWriter.println("startTimer")
         lbScriptWriter.println("transaction")
         lbScriptWriter.println("addBlock -F ${outDir}/transform.logic")
@@ -582,7 +586,7 @@ import org.apache.commons.logging.LogFactory
     protected void produceStats() {
         String statsPath = "${Doop.doopLogic}/addons/statistics"
 
-        lbScriptWriter.println('echo "-- Producing Statistics --"')
+        lbScriptWriter.println('echo "-- Statistics --"')
         lbScriptWriter.println("startTimer")
 
         lbScriptWriter.println("transaction")
