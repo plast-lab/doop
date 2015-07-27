@@ -6,7 +6,7 @@ benchmarks = ../benchmarks
 outDir     = .
 prefix     = 
 
-.PHONY: run clean fail
+.PHONY: run clean clean-full fail
 fail:
 	$(error "Must specify a target")
 
@@ -41,4 +41,6 @@ $(foreach analysis, $(analyses),\
 		$(eval $(call benchmarkRun,$(analysis),$(benchmark),$(commonArgs),$(suite)))))
 
 clean:
+	rm -rf logs/* out/* results/* last-analysis
+clean-full:
 	rm -rf cache/* logs/* out/* results/* last-analysis
