@@ -60,6 +60,7 @@ class Doop {
             id:"TAMIFLEX",
             name:"tamiflex",
             argName:"FILE",
+            forCacheID:true,
             isFile:true,
             description:"Use file with tamiflex data for reflection.",
             value:null,

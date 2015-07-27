@@ -25,6 +25,7 @@ import java.security.MessageDigest
 
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-'.toCharArray()
+    static final String HASH_ALGO = "SHA-256"
 
     /**
      * A helper class that acts as an intermediate holder of the analysis variables.
@@ -179,7 +180,7 @@ import java.security.MessageDigest
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
-        return Helper.checksum(id, "SHA-256")
+        return Helper.checksum(id, HASH_ALGO)
     }
 
     /**
@@ -192,14 +193,16 @@ import java.security.MessageDigest
             AnalysisOption option -> option.toString()
         }
 
-        File dir = new File("${Doop.doopLogic}/facts")
-        Collection<String> checksums = dir.listFiles().collect {
-            File file -> Helper.checksum(file, "SHA-256")
+        Collection<String> checksums = new File("${Doop.doopLogic}/facts").listFiles().collect {
+            File file -> Helper.checksum(file, HASH_ALGO)
         }
 
         checksums += (vars.inputJars + vars.jreJars).collect {
-            String file -> Helper.checksum(new File(file), "SHA-256")
+            String file -> Helper.checksum(new File(file), HASH_ALGO)
         }
+
+        if(vars.options.TAMIFLEX.value)
+            checksums += [Helper.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
 
         Properties p = Helper.loadPropertiesFromClasspath("checksums.properties")
         checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
@@ -209,7 +212,7 @@ import java.security.MessageDigest
         logger.debug("Cache ID components: $idComponents")
         String id = idComponents.join('-')
 
-        return Helper.checksum(id, "SHA-256")
+        return Helper.checksum(id, HASH_ALGO)
     }
 
     /**
