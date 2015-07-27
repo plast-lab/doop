@@ -24,6 +24,7 @@ public enum PredicateFile
     NATIVE_RETURN_VAR("NativeReturnVar"),
     VAR_TYPE("Var-Type"),
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
+    VAR_POSITION("Var-Position"),
     APP_CLASS("ApplicationClass"),
     THIS_VAR("ThisVar"),
     SIMPLE_EXCEPTION_HANDLER("SimpleExceptionHandler"),

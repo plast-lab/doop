@@ -434,6 +434,11 @@ public class FactWriter
                 _db.asEntity(heap),
                 _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, l)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session)
@@ -448,6 +453,11 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, to)),
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, to)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeStoreInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local from, Session session)
@@ -462,6 +472,15 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, base)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, from)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeLoadInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local to, Session session)
@@ -477,6 +496,16 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, base)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, to)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
     }
 
     public void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session)
@@ -490,6 +519,11 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, from)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, from)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeLoadStaticField(SootMethod m, Stmt stmt, SootField f, Local to, Session session)
@@ -503,6 +537,11 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, to)),
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, to)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Session session)
@@ -517,6 +556,15 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, to)),
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, base)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, to)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Session session)
@@ -530,6 +578,15 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, from)),
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, base)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, from)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
     }
 
     public void writeApplicationClass(SootClass application)
@@ -758,6 +815,12 @@ public class FactWriter
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, l)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
     }
 
     public void writeExceptionHandlerPrevious(SootMethod m, Trap current, Trap previous, Session session)
@@ -855,7 +918,7 @@ public class FactWriter
                 _db.asEntity(_rep.method(m)));
     }
 
-    public void writeLocal(SootMethod m, Local l)
+    public void writeLocal(SootMethod m, Stmt stmt, Local l)
     {
         _db.add(VAR_TYPE,
                 _db.asEntity(_rep.local(m, l)),
@@ -864,6 +927,12 @@ public class FactWriter
         _db.add(VAR_DECLARING_METHOD,
                 _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        _db.add(VAR_POSITION,
+                _db.asEntity(_rep.local(m, l)),
+                _db.asIntColumn(String.valueOf(tag.getLineNumber())));
+
     }
 
     public Local writeStringConstantExpression(SootMethod inMethod, Stmt stmt, StringConstant constant, Session session)
@@ -872,7 +941,7 @@ public class FactWriter
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
         Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
-        writeLocal(inMethod, l);
+        writeLocal(inMethod, stmt, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
     }
@@ -883,7 +952,7 @@ public class FactWriter
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
         Local l = new JimpleLocal(varname, type);
-        writeLocal(inMethod, l);
+        writeLocal(inMethod, stmt, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
     }
@@ -894,7 +963,7 @@ public class FactWriter
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
         Local l = new JimpleLocal(varname, constant.getType());
-        writeLocal(inMethod, l);
+        writeLocal(inMethod, stmt, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
     }
@@ -905,7 +974,7 @@ public class FactWriter
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
         Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
-        writeLocal(inMethod, l);
+        writeLocal(inMethod, stmt, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;
     }
