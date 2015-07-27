@@ -237,9 +237,8 @@ import org.apache.commons.logging.LogFactory
 
             if (options.TAMIFLEX.value) {
                 File origTamFile  = new File(options.TAMIFLEX.value.toString())
-                File factsTamFile = new File(facts, "Tamiflex.facts")
 
-                factsTamFile.withWriter { w ->
+                new File(facts, "Tamiflex.facts").withWriter { w ->
                     origTamFile.eachLine { line ->
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
@@ -301,12 +300,15 @@ import org.apache.commons.logging.LogFactory
         if (options.TAMIFLEX.value) {
             String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
 
-            lbScriptWriter.println("addBlock -F ${tamiflexDir}/fact-declarations.logic -B TamiflexFactDecls")
-
+            FileUtils.copyFile(new File("${tamiflexDir}/fact-declarations.logic"),
+                               new File("${outDir}/tamiflex-fact-declarations.logic"))
             FileUtils.copyFile(new File("${tamiflexDir}/import.logic"),
                                new File("${outDir}/tamiflex-import.logic"))
+            FileUtils.copyFile(new File("${tamiflexDir}/post-import.logic"),
+                               new File("${outDir}/tamiflex-post-import.logic"))
+            lbScriptWriter.println("addBlock -F tamiflex-fact-declarations.logic")
             lbScriptWriter.println("exec -F tamiflex-import.logic")
-            lbScriptWriter.println("addBlock -F ${tamiflexDir}/post-import.logic")
+            lbScriptWriter.println("addBlock -F tamiflex-post-import.logic")
         }
 
         if (options.MAIN_CLASS.value) {
@@ -397,7 +399,9 @@ import org.apache.commons.logging.LogFactory
         FileUtils.touch(addons)
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            lbScriptWriter.println("addBlock -F ${addonsPath}/dacapo/declarations.logic -B DacapoDecls")
+            FileUtils.copyFile(new File("${addonsPath}/dacapo/declarations.logic"),
+                               new File("${outDir}/dacapo-declarations.logic"))
+            lbScriptWriter.println("addBlock -F dacapo-declarations.logic")
 
             preprocessor.preprocess(this, addonsPath, "dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
             lbScriptWriter.println("exec -F dacapo-delta.logic")
@@ -408,8 +412,12 @@ import org.apache.commons.logging.LogFactory
         }
 
         if (options.TAMIFLEX.value) {
-            lbScriptWriter.println("addBlock -F ${addonsPath}/tamiflex/declarations.logic -B TamiflexDecls")
-            lbScriptWriter.println("exec -F ${addonsPath}/tamiflex/delta.logic")
+            FileUtils.copyFile(new File("${addonsPath}/tamiflex/declarations.logic"),
+                               new File("${outDir}/tamiflex-declarations.logic"))
+            FileUtils.copyFile(new File("${addonsPath}/tamiflex/delta.logic"),
+                               new File("${outDir}/tamiflex-delta.logic"))
+            lbScriptWriter.println("addBlock -F tamiflex-declarations.logic")
+            lbScriptWriter.println("exec -F tamiflex-delta.logic")
 
             logger.info "Adding tamiflex rules to addons logic"
             preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
