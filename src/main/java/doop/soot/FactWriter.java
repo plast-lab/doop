@@ -935,6 +935,18 @@ public class FactWriter
 
     }
 
+    public void writeLocal(SootMethod m, Local l)
+    {
+        _db.add(VAR_TYPE,
+                _db.asEntity(_rep.local(m, l)),
+                writeType(l.getType()));
+
+        _db.add(VAR_DECLARING_METHOD,
+                _db.asEntity(_rep.local(m, l)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+    }
+
     public Local writeStringConstantExpression(SootMethod inMethod, Stmt stmt, StringConstant constant, Session session)
     {
         // introduce a new temporary variable

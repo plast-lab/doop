@@ -218,6 +218,7 @@ Var:DeclaringMethod(?ref, ?method) ->
 // The line and column number of the variable
 Var:Position(?ref, ?lineNumber) ->
    Var(?ref), int[64](?lineNumber).
+
 //------------------------------------------------------
 //                Heap Allocations
 //------------------------------------------------------
