@@ -317,7 +317,7 @@ StringFactoryBaseType(?type) <-
   Type:fqn(?type:"java.lang.StringBuilder").
 
 StringFactoryType(?type) <-
-  AssignCompatible(?basetype, ?type),
+  SubtypeOf(?type, ?basetype),
   StringFactoryBaseType(?basetype).
 
 StringFactoryObject(?heap) <-
@@ -488,7 +488,7 @@ AllocationMergeThreshold[] = 50.
 
 ExceptionType(?heaptype) <-
   Type:fqn(?throw:"java.lang.Throwable"),
-  AssignCompatible(?throw, ?heaptype).
+  SubtypeOf(?heaptype, ?throw).
 
 OptAssignHeapAllocation(?inmethod, ?heap) <-
   AssignHeapAllocation(?heap, _, ?inmethod).
@@ -552,10 +552,10 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 //TypeToHeap2(?heap, ?heaptype) <-
 //  HeapAllocation:Type[?heap] = ?heaptype,
-	//  Type:fqn(?throw:"java.lang.Throwable"),
-	//  AssignCompatible(?throw, ?heaptype),
+//  Type:fqn(?throw:"java.lang.Throwable"),
+//  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
-//  AssignCompatible(?handlertype, ?heaptype).
+//  SubtypeOf(?heaptype, ?handlertype).
 
 TypeToHeap(?heap, ?heaptype) <-
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -575,7 +575,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
 SameTypeAndMethod(?heap1, ?heap2) <-
   HeapAllocation:Type[?heap1] = ?heaptype,
   Type:fqn(?throw:"java.lang.Throwable"),
-  AssignCompatible(?throw, ?heaptype),
+  SubtypeOf(?heaptype, ?throw),
   HeapAllocation:Type[?heap2] = ?heaptype,
   AssignHeapAllocation(?heap1,_,?inmethod),
   AssignHeapAllocation(?heap2,_,?inmethod).

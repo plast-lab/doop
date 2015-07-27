@@ -28,20 +28,11 @@
 
 #if defined(REFLECTION_USE_BASED_ANALYSIS) || defined(REFLECTION_INVENT_UNKNOWN_OBJECTS)
 
-//// Auxiliary relations for both kinds of analyses.
-// Currently OptSubtype is just a synonym for CheckCast, but the cost is
-// minuscule and the clear naming benefit is large.
-lang:derivationType[`OptSubtype] = "Derived".
-
-OptSubtype(?type, ?supertype) ->
-  Type(?type), Type(?supertype).
-OptSubtype(?type, ?supertype) <-
-  CheckCast(?type, ?supertype).
-
+// Auxiliary relation for both kinds of analyses.
 NumberOfSubtypes[?type] = ?n ->
   Type(?type), int[64](?n).
 NumberOfSubtypes[?type] = ?count <-
-  agg<<?count = count()>>(OptSubtype(_, ?type)).
+  agg<<?count = count()>>(SubtypeOf(_, ?type)).
 
 #endif
 
@@ -180,7 +171,7 @@ InferredType:MaximumSubtypes[] = 5.
 // of subtypes of the type cast to.
 InferredType:AssignCast(?subtype, ?from) <-
   OptAssignCast(?type, _, ?from),
-  OptSubtype(?subtype, ?type),
+  SubtypeOf(?subtype, ?type),
   ClassType(?subtype),
   NumberOfSubtypes[?type] <= InferredType:MaximumSubtypes[].            
 
@@ -195,10 +186,10 @@ InferredType:AssignCast(?subtype, ?from) <-
 
 TypeMatchingMethodSignature(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
-TypeMatchingMethodSignature(?type, ?constant) <-
+TypeMatchingMethodSignature(?subtype, ?constant) <-
   MethodNameStringConstant:Signature(?signature, ?constant),
-  MethodSignature:DeclaringType[?signature] = ?supertype,
-  OptSubtype(?type, ?supertype).
+  MethodSignature:DeclaringType[?signature] = ?type,
+  SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingMethodSignature[?constant] = ?n ->
   HeapAllocation(?constant), int[64](?n).
@@ -223,10 +214,10 @@ BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
 
 TypeMatchingFieldName(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
-TypeMatchingFieldName(?type, ?constant) <-
+TypeMatchingFieldName(?subtype, ?constant) <-
   FieldNameStringConstant:Signature(?signature, ?constant),
-  FieldSignature:DeclaringClass[?signature] = ?supertype,
-  OptSubtype(?type, ?supertype).
+  FieldSignature:DeclaringClass[?signature] = ?type,
+  SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingFieldName[?constant] = ?n ->
   HeapAllocation(?constant), int[64](?n).
@@ -303,7 +294,7 @@ VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-
 //  VarPointsTo(_, ?heap, ?ctx, ?base),
 //  OptGetMethodsClass(?type, ?getMethodsInvocation),
 //  HeapAllocation:Type[?heap] = ?heapType,
-//  AssignCompatible(?type, ?heapType).
+//  SupertypeOf(?type, ?heapType).
 
 OptMethodSignatureType(?signature, ?classtype) ->
   MethodSignature(?signature), Type(?classtype).
@@ -444,7 +435,7 @@ VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-
 //  VarPointsTo(_, ?heap, ?ctx, ?base),
 //  OptGetFieldsClass(?type, ?getFieldsInvocation),
 //  HeapAllocation:Type[?heap] = ?heapType,
-//  AssignCompatible(?type, ?heapType).
+//  SupertypeOf(?type, ?heapType).
 
 OptFieldSignatureType(?type, ?signature, ?declaringClassType) ->
    FieldSignature(?signature), Type(?declaringClassType), Type(?type).
@@ -592,7 +583,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 //   ClassType(?type).
 // OptFilteredCastSubtype(?subtype, ?type) <-
 //   Opt2AssignCast(_, ?type, _, _),
-//   OptSubtype(?subtype, ?type),
+//   SubtypeOf(?subtype, ?type),
 //   ClassType(?subtype),
 //   NumberOfSubtypes[?type] <= MaximumSubtypesForInvented[].            
   

@@ -38,9 +38,6 @@ IsFieldStoreBase(?base, ?inMethod) <-
    StoreInstanceField:Base[?insn] = ?base,
    Instruction:Method[?insn] = ?inMethod.
 
-AssignCompatibleInv(?t1, ?t2) <-
-   AssignCompatible(?t2, ?t1).
-
 // Fastest way I've found to compute MayAlias
 CompatibleTypes(?t1, ?t2) <-
    Var:DeclaringMethod(?var1, ?inMethod),
@@ -48,8 +45,8 @@ CompatibleTypes(?t1, ?t2) <-
    IsFieldStoreBase(?var2, ?inMethod),
    Var:Type[?var1] = ?t1,
    Var:Type[?var2] = ?t2,
-   AssignCompatibleInv(?t, ?t1),
-   AssignCompatibleInv(?t, ?t2).
+   SubtypeOf(?t, ?t1),
+   SubtypeOf(?t, ?t2).
 
 CompatibleVarsInMethod(?var1, ?var2) <-
    Var:DeclaringMethod(?var1, ?inMethod),

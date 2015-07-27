@@ -103,7 +103,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
    ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
    Var:Type[?formal] = ?type,
    HeapAllocation:Type[?heap] = ?heaptype,
-   AssignCompatible(?type, ?heaptype),
+   SupertypeOf(?type, ?heaptype),
    DummyContextForReflective[] = ?calleeCtx.
 
 RecordImmutableMacro(?ctx, ?heap, ?hctx),

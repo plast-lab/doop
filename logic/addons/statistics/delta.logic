@@ -80,7 +80,7 @@ _Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
    _Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
    Stats:Simple:InsensVarPointsTo(?heap, ?from),
    HeapAllocation:Type[?heap] = ?heaptype,
-   ! AssignCompatible(?type, ?heaptype).
+   ! SupertypeOf(?type, ?heaptype).
 
 _Stats:Simple:Application:Cast(?type, ?from, ?to, ?inmethod) <-
    AssignCast(?type, ?from, ?to, ?inmethod), Stats:Simple:ApplicationMethod(?inmethod).
@@ -93,7 +93,7 @@ _Stats:Simple:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
    _Stats:Simple:Application:ReachableCast(_, ?type, ?to, ?from),
    Stats:Simple:InsensVarPointsTo(?heap, ?from),
    HeapAllocation:Type[?heap] = ?heaptype,
-   ! AssignCompatible(?type, ?heaptype).
+   ! SupertypeOf(?type, ?heaptype).
 
 _Stats:Simple:forName(?invocation) <-
    java:lang:Class:forName(?invocation, ?inmethod), Reachable(?inmethod).

@@ -25,7 +25,7 @@ NativeThrowingIOException(?method, ?exceptionType) <-
    NativeMethod(?method),
    Method:DeclaresException(?exceptionType, ?method),
    Type:fqn(?io:"java.io.IOException"),
-   AssignCompatible(?io, ?exceptionType).
+   SubtypeOf(?exceptionType, ?io).
 
 NativeMethod(?method) <-
    MethodModifier(?native, ?method),

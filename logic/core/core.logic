@@ -1,5 +1,3 @@
-#include "assignment-compatible.logic"
-#include "checkcast.logic"
 #include "class-initialization.logic"
 #include "declaring-class.logic"
 #include "finalization.logic"
@@ -11,6 +9,7 @@
 #include "subclass.logic"
 #include "superinterface.logic"
 #include "threads.logic"
+#include "type-hierarchy.logic"
 
 #if defined(EXCEPTIONS_PRECISE) && !defined(PADDLE_COMPAT)
 #include "exceptions/precise.logic"

@@ -7,8 +7,6 @@
  * @refactoring Anastasios Antoniadis
  */
 #include "../../facts/macros.logic"
-#include "../../core/assignment-compatible.logic"
-#include "../../core/checkcast.logic"
 #include "../../core/class-initialization.logic"
 #include "../../core/declaring-class.logic"
 #include "../../core/implicit-reachable.logic"
@@ -16,6 +14,7 @@
 #include "../../core/string-constants.logic"
 #include "../../core/subclass.logic"
 #include "../../core/superinterface.logic"
+#include "../../core/type-hierarchy.logic"
 
 
 MainMethodDeclaration(?method) <-
@@ -51,7 +50,7 @@ VarPointsTo(?heap, ?to) <-
    VarPointsTo(?heap, ?from),
    Assign(?type, ?from, ?to),
    HeapAllocation:Type[?heap] = ?heaptype,
-   AssignCompatible(?type, ?heaptype).
+   SupertypeOf(?type, ?heaptype). 
 
 /**
  *  Local Assignments 
@@ -99,7 +98,7 @@ ArrayIndexPointsTo(?baseheap, ?heap) <-
    HeapAllocation:Type[?heap] = ?heaptype,
    HeapAllocation:Type[?baseheap] = ?baseheaptype,
    ComponentType[?baseheaptype] = ?componenttype,
-   AssignCompatible(?componenttype, ?heaptype).
+   SupertypeOf(?componenttype, ?heaptype). 
 
 VarPointsTo(?heap, ?to) <-
    Reachable(?inmethod),
@@ -109,7 +108,7 @@ VarPointsTo(?heap, ?to) <-
    Var:Type[?to] = ?type,
    HeapAllocation:Type[?baseheap] = ?baseheaptype,
    ComponentType[?baseheaptype] = ?basecomponenttype,
-   AssignCompatible(?type, ?basecomponenttype).
+   SupertypeOf(?type, ?basecomponenttype). 
 
 /**
  * Load instance fields
