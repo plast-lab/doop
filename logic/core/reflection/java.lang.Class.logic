@@ -297,7 +297,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 //VERSION-A
 ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:PublicFields(?hctx, ?arrayHeap, ?type),
-  AssignCompatible(?superClass, ?type),
+  SupertypeOf(?superClass, ?type),
   FieldSignature:DeclaringClass[?fld] = ?superClass,
   FieldModifier("public", ?fld),
   ReifiedField[?fld] = ?heap,
@@ -322,7 +322,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   ReifiedClass[?type] = ?classHeap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
   FieldNameStringConstant:Signature(?fld, ?constant),
-  AssignCompatible(?superClass, ?type),
+  SupertypeOf(?superClass, ?type),
   FieldSignature:DeclaringClass[?fld] = ?superClass,
   FieldModifier("public", ?fld),
   ReifiedField[?fld] = ?heap.

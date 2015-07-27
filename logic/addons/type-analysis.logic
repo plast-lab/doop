@@ -52,16 +52,13 @@ _VPTSubset(?from, ?to) <-
    _Reachable(?meth2).
 
 
-_OptAssignCompatible(?sub, ?sup) <-
-   AssignCompatible(?sup, ?sub).
-
 // VCALL
 _CallGraph(?invocation, ?tomethod),
 _VPTSubset(?base, ?this),
 _Reachable(?tomethod)
 <-
    Var:Type[?base] = ?declaredType,
-   _OptAssignCompatible(?realtype, ?declaredType),
+   SubtypeOf(?realtype, ?declaredType),
 //   _MayAlias(?base, ?other),
 //   Var:Type[?other] = ?realtype,
    Instruction:Method[?invocation] = ?inmethod,

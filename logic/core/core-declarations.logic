@@ -1,5 +1,3 @@
-#include "assignment-compatible-declarations.logic"
-#include "checkcast-declarations.logic"
 #include "class-initialization-declarations.logic"
 #include "declaring-class-declarations.logic"
 #include "finalization-declarations.logic"
@@ -11,6 +9,7 @@
 #include "subclass-declarations.logic"
 #include "superinterface-declarations.logic"
 #include "threads-declarations.logic"
+#include "type-hierarchy-declarations.logic"
 
 #if defined(EXCEPTIONS_PRECISE) && !defined(PADDLE_COMPAT)
 #include "exceptions/precise-declarations.logic"

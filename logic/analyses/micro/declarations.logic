@@ -1,5 +1,3 @@
-#include "../../core/assignment-compatible-declarations.logic"
-#include "../../core/checkcast-declarations.logic"
 #include "../../core/class-initialization-declarations.logic"
 #include "../../core/declaring-class-declarations.logic"
 #include "../../core/implicit-reachable-declarations.logic"
@@ -7,6 +5,7 @@
 #include "../../core/string-constants-declarations.logic"
 #include "../../core/subclass-declarations.logic"
 #include "../../core/superinterface-declarations.logic"
+#include "../../core/type-hierarchy-declarations.logic"
 
 
 MainMethodDeclaration(?method) ->
