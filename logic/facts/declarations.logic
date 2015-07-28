@@ -215,7 +215,7 @@ Var:Type[?ref] = ?type ->
 Var:DeclaringMethod(?ref, ?method) ->
    Var(?ref), MethodSignature(?method).
 
-// The line and column number of the variable
+// The line number of the variable occurrence (either use or def)
 Var:Position(?ref, ?lineNumber) ->
    Var(?ref), int[64](?lineNumber).
 
