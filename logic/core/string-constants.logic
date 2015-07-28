@@ -312,13 +312,9 @@ FieldNamePrefix(?sig, ?prefix) <-
 
 #ifdef REFLECTION_STRING_FLOW_ANALYSIS
 
-StringFactoryBaseType(?type) <-
+StringFactoryType(?type) <-
   Type:fqn(?type:"java.lang.StringBuffer") ;
   Type:fqn(?type:"java.lang.StringBuilder").
-
-StringFactoryType(?type) <-
-  SubtypeOf(?type, ?basetype),
-  StringFactoryBaseType(?basetype).
 
 StringFactoryObject(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
