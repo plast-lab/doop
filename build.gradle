@@ -6,6 +6,7 @@ buildscript {
 
 apply plugin: 'groovy'
 apply plugin: 'application'
+apply plugin: 'ivy-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 //sourceCompatibility = "1.6"
@@ -81,4 +82,23 @@ run {
 
 startScripts {
     dependsOn jar, calculateChecksums
+}
+
+publishing {
+    repositories {
+        ivy {
+            name "local-ivy-repo"
+            url "../ivy-repo"
+        }
+    }
+
+    publications {
+
+        doop(IvyPublication) {
+            organisation "doop"
+            module "doop"
+            revision "1.0"
+            from components.java
+        }
+    }
 }
