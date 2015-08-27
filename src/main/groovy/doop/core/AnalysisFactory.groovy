@@ -197,12 +197,17 @@ import java.security.MessageDigest
             File file -> Helper.checksum(file, HASH_ALGO)
         }
 
-        checksums += (vars.inputJars + vars.jreJars).collect {
+        checksums += vars.inputJarFiles.collect {
+            File file -> Helper.checksum(file, HASH_ALGO)
+        }
+
+        checksums += vars.jreJars.collect {
             String file -> Helper.checksum(new File(file), HASH_ALGO)
         }
 
-        if(vars.options.TAMIFLEX.value)
+        if(vars.options.TAMIFLEX.value) {
             checksums += [Helper.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
+        }
 
         Properties p = Helper.loadPropertiesFromClasspath("checksums.properties")
         checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
