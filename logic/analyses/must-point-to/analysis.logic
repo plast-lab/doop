@@ -245,16 +245,20 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 // Also propagate heap models when making calls!
 
+MustCallGraphEdge:FirstInstruction[?invo] = ?firstInsn <-
+   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
+   !IsJumpTarget(?firstInsn).
+
 // For calls, propagate AccessPathMustPointTo info, if it held for all
 // predecessors. Bug warning: the information holds *before* first
 // instruction, not after. Thankfully we have the concept to express
 // precisely that: AllPredecessors:AccessPathMustPointTo !
 AllPredecessors:AccessPathMustPointTo[?calleeAp, ?calleeCtx, ?firstInsn] = ?heap <-
-   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+   MustCallGraphEdge:FirstInstruction[?invo] = ?firstInsn,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
-   !IsJumpTarget(?firstInsn),
-   // REVIEW: replace with StrongerContext(?ctx1, ?ctx2). Need to optimize indexing.
+   // HACK: should replace with StrongerContext(?ctx1, ?ctx2), but has been impossible
+   // to make the latter perform well.
    (AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?invo] = ?heap;
     AllPredecessors:AccessPathMustPointTo[?ap, SingleAllContext[], ?invo] = ?heap),
    AccessPathRebasedForCall(?calleeAp, ?ap, ?invo).
@@ -268,6 +272,7 @@ AccessPathMustPointTo[?callerAp, ?ctx, ?invo] = ?heap <-
    OptMustCallGraphEdgeInfo(?ctx, ?invo, ?calleeCtx, ?toMethod),
    (AllReturn:AccessPathMustPointTo[?ap, ?calleeCtx, ?toMethod] = ?heap;
     AllReturn:AccessPathMustPointTo[?ap, SingleAllContext[], ?toMethod] = ?heap),
+   // HACK: again, ideally shouldn't expose all the possible weaker contexts
    AccessPathRebasedForReturn[?ap, ?invo] = ?callerAp.
 
 // Final static fields that must point to an object, at the end of a
@@ -323,40 +328,26 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    !MethodInvocation(?insn).
 
 
-
 // Fill MustPointTo and InstanceFieldMustPointTo relations.
 
 MustPointTo[?var, ?ctx, ?insn] = ?heap <-
    AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    AccessPath:ByVarInv[?ap] = ?var.
 
-AccessPathMustPointToForAllCtx[?ap, ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, SingleAllContext[], ?insn] = ?heap.
-
-AccessPathMustPointToForCtx[?ap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   ?ctx != SingleAllContext[].
-
 InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   AccessPathMustPointTo[?ap, ?ctx1, ?insn] = ?heap,
    AccessPath:Base[?ap] = ?baseAp,
    AccessPath:LastField[?ap] = ?fld,
-   AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseHeap,
-   ?baseHeap != HeapAllocation:Null[].
+   AccessPathMustPointTo[?baseAp, ?ctx2, ?insn] = ?baseHeap, 
+   ?baseHeap != HeapAllocation:Null[],
+   ((?ctx1 = ?ctx2, ?ctx = ?ctx1);
+    (?ctx1 = SingleAllContext[], ?ctx2 = ?ctx);
+	(?ctx2 = SingleAllContext[], ?ctx1 = ?ctx)).
+// HACK: should replace with something like below, but it performs
+// worse despite lots of effort. Even the above is not optimal, but
+// the alternative (three rules, specialized indexing for each) is ugly.
+//   (WeakerContext[?ctx1, ?ctx2] = ?ctx; WeakerContext[?ctx2, ?ctx1] = ?ctx).
 
-InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointToForAllCtx[?ap, ?insn] = ?heap,
-   AccessPath:Base[?ap] = ?baseAp,
-   AccessPath:LastField[?ap] = ?fld,
-   AccessPathMustPointToForCtx[?baseAp, ?ctx, ?insn] = ?baseHeap,
-   ?baseHeap != HeapAllocation:Null[].
-
-InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointToForCtx[?ap, ?ctx, ?insn] = ?heap,
-   AccessPath:Base[?ap] = ?baseAp,
-   AccessPath:LastField[?ap] = ?fld,
-   AccessPathMustPointToForAllCtx[?baseAp, ?insn] = ?baseHeap,
-   ?baseHeap != HeapAllocation:Null[].
 
 MustAliasForAllContexts(?ap1, ?ap2, ?insn) <-
    MustAlias(?ap2, ?ap1, SingleAllContext[], ?insn).
@@ -366,6 +357,7 @@ MustAliasForContext(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAlias(?ap2, ?ap1, ?ctx, ?insn).
 
 // MustAlias relations are a major source of MustPointTo inferences.
+//// Unfortunately the ugly, special-case form of the rules is much faster
 AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
    ?ctx != SingleAllContext[],
    MustAliasForContext(?ap2, ?ap1, ?ctx, ?insn),
@@ -385,6 +377,7 @@ AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    MustAlias(NullAccessPath[], ?ap, ?ctx, ?insn),
    HeapAllocation:Null[] = ?heap.
+
 
 AllPredecessors:MustAliasForAllContexts(?ap1, ?ap2, ?insn) <-
    AllPredecessors:MustAlias(?ap2, ?ap1, SingleAllContext[], ?insn).
@@ -439,6 +432,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAlias(?ap1, ?ap3, ?ctx1, ?insn),
    MustAliasSymmetric(?ap2, ?ap3, ?ctx2, ?insn),
    MeetContexts[?ctx1, ?ctx2] = ?ctx,
+//   (WeakerContext[?ctx1, ?ctx2] = ?ctx; WeakerContext[?ctx2, ?ctx1] = ?ctx),
    ?ap2 != ?ap1.
 
 // The above looks like a fairly traditional symmetric, transitive
@@ -570,10 +564,8 @@ AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
     AllPredecessors:MustAlias(?ap1, ?ap2, SingleAllContext[], ?invo)),
    AccessPath:ContainsStaticField[?ap1] = _,
    AccessPath:ContainsStaticField[?ap2] = _,
-   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
-   MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
-   !IsJumpTarget(?firstInsn).
+   MustCallGraphEdge:FirstInstruction[?invo] = ?firstInsn,
+   MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx.
 
 MustAlias(?ap1, ?ap2, ?ctx, ?invo) <-
    OptMustCallGraphEdgeInfo(?ctx, ?invo, ?calleeCtx, ?toMethod),
@@ -583,10 +575,8 @@ MustAlias(?ap1, ?ap2, ?ctx, ?invo) <-
     AllReturn:MustAlias(?ap1, ?ap2, SingleAllContext[], ?toMethod)).
 
 AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
-   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+   MustCallGraphEdge:FirstInstruction[?invo] = ?firstInsn,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
-   !IsJumpTarget(?firstInsn),
    (AllPredecessors:MustAlias(?callAp1, ?callAp2, ?ctx, ?invo);
     AllPredecessors:MustAlias(?callAp1, ?callAp2, SingleAllContext[], ?invo)),
    AccessPathRebasedForCall(?ap1, ?callAp1, ?invo),
@@ -594,10 +584,8 @@ AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
 
 AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn),
 AllPredecessors:MustAlias(?ap2, ?ap1, ?calleeCtx, ?firstInsn) <-
-   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+   MustCallGraphEdge:FirstInstruction[?invo] = ?firstInsn,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
-   !IsJumpTarget(?firstInsn),
    (AllPredecessors:MustAlias(?callAp1, ?ap2, ?ctx, ?invo);
     AllPredecessors:MustAlias(?callAp1, ?ap2, SingleAllContext[], ?invo)),
    AccessPath:ContainsStaticField[?ap2] = _,
@@ -606,10 +594,9 @@ AllPredecessors:MustAlias(?ap2, ?ap1, ?calleeCtx, ?firstInsn) <-
 AllPredecessors:MustAlias(?fieldAp, NullAccessPath[], ?ctx, ?firstInsn),
 AllPredecessors:MustAlias(NullAccessPath[], ?fieldAp, ?ctx, ?firstInsn) <-
    SingleAllContext[] = ?ctx,
-   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
-   OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
-   !IsJumpTarget(?firstInsn),
    SpecialMethodInvocation:Insn(?invo),
+   MustCallGraphEdge:FirstInstruction[?invo] = ?firstInsn,
+   MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    MethodSignature:SimpleName[?toMethod] = "<init>",
    ThisVar[?toMethod] = ?this,
    AccessPath:ByVar[?this] = ?thisAp,
@@ -828,21 +815,12 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 MustContext(?ctx) ->.
 lang:entity(`MustContext).
 lang:physical:storageModel[`MustContext]="ScalableSparse".
+//lang:physical:capacity[`MustContext] = 33554432.
 lang:physical:capacity[`MustContext] = 16777216.
 
-EmptyContext[] = ?ctx -> MustContext(?ctx).
-lang:skolem(`EmptyContext).
-EmptyContext[] = ?ctx, MustContext(?ctx)  <- .
-
-PushAllOntoContext[?ctx] = ?pushedCtx -> 
-   MustContext(?ctx), MustContext(?pushedCtx).
-lang:skolem(`PushAllOntoContext).
-
 SingleAllContext[] = ?ctx -> MustContext(?ctx).
-SingleAllContext[] = ?ctx,
-PushAllOntoContext[?emptyCtx] = ?ctx,
-MustContext(?ctx) <-
-   EmptyContext[] = ?emptyCtx.
+lang:skolem(`SingleAllContext).
+SingleAllContext[] = ?ctx, MustContext(?ctx) <- .
 
 PushMustContext[?invo, ?ctx] = ?pushedCtx ->
    MustContext(?pushedCtx), MustContext(?ctx), CallGraphEdgeSource(?invo).
@@ -851,11 +829,6 @@ PopMustContext[?ctx] = ?poppedCtx ->
    MustContext(?poppedCtx), MustContext(?ctx).
 PopMustContext[?ctx] = ?poppedCtx <-
    PushMustContext[_, ?poppedCtx] = ?ctx.
-// PopAllFromMustContext[?ctx] = ?poppedCtx ->
-//    MustContext(?poppedCtx), MustContext(?ctx).
-// PopAllFromMustContext[?ctx] = ?poppedCtx,
-// PopMustContext[?ctx] = ?poppedCtx <-
-//    PushAllOntoContext[?poppedCtx] = ?ctx.
 
 InvoFromContext[?ctx] = ?invocation ->
    MustContext(?ctx), CallGraphEdgeSource(?invocation).
@@ -866,9 +839,6 @@ MustContextDepth[?ctx] = ?depth ->
    MustContext(?ctx), int[32](?depth).
 MustContextDepth[?ctx] = ?depth+1 <-
    PushMustContext[_, ?poppedCtx] = ?ctx,
-   MustContextDepth[?poppedCtx] = ?depth.
-MustContextDepth[?ctx] = ?depth+1 <-
-   PushAllOntoContext[?poppedCtx] = ?ctx,
    MustContextDepth[?poppedCtx] = ?depth.
 MustContextDepth[?ctx] = 0 <-
    SingleAllContext[] = ?ctx.
@@ -885,6 +855,10 @@ MeetContexts[?ctx2, ?ctx1] = ?ctx1 <-
 StrongerContext(?ctx, ?strongerCtx) <-
    SingleAllContext[] = ?strongerCtx,
    PushMustContext[_, _] = ?ctx.
+
+// Dual purpose: ensures ?ctx is weaker, and computes the meet
+WeakerContext[?strongerCtx, ?ctx] = ?ctx <-
+   StrongerContext(?ctx, ?strongerCtx).
 
 // TODO: Make MaxDepth configurable.
 MaxContextDepth[] = ?num -> int[32](?num).
