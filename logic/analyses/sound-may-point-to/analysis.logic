@@ -140,6 +140,7 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
 //   _OptInstruction:Method(?invo, ?inMeth),
 //   ReachableMethodUnderMayContext(?ctx, ?inMeth),
 
+
 /*
 // Uses UNSOUND may-point-to, just for comparison during testing.
 PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
@@ -155,6 +156,7 @@ MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    Instruction:Method[?invo] = ?inMeth,
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 */
+
 
 // args
 MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
@@ -229,9 +231,13 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?firstInsn
    FirstInstructionOfMethod[?toMethod] = ?firstInsn,
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo).
 
+
+OptMayCallGraphEdge:Context(?callerCtx, ?invo, ?calleeCtx) <-
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx.
+   
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?callerCtx, ?invo) <-
    OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
-   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   OptMayCallGraphEdge:Context(?callerCtx, ?invo, ?calleeCtx),
    AllReturn:InstanceFieldMayPointTo
     (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?calleeCtx, ?toMethod).
 
@@ -293,18 +299,16 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    FieldInstruction:Signature[?insn] = ?fld,
    StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
 
-/*
+_OptMethodFromVar[?var] = ?method <-
+   Var:DeclaringMethod(?var, ?method).
+
 // Final static fields that must point to an object, at the end of a
 // class initializer, cannot change in the future; thus, we can make
 // closed-world assumptions about the field.
 StaticFinalFieldMayPointTo(?hctx, ?heap, ?fld) <-
    AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, InitialMayContext[], ?meth),
-   //// TODO: InitialMayContext, above, is wrong! Generally, not clear what's correct here.
    MethodSignature:SimpleName[?meth] = "<clinit>",
    FieldModifier(Modifier:final[], ?fld).
-
-_OptMethodFromVar[?var] = ?method <-
-   Var:DeclaringMethod(?var, ?method).
 
 _OptFieldInstruction:Signature(?insn, ?fld) <-
    FieldInstruction:Signature[?insn] = ?fld.
@@ -315,10 +319,29 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    StaticFinalFieldMayPointTo(?hctx, ?heap, ?fld),
    _OptMethodFromVar[?to] = ?inMeth,
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
-*/
 
-   
+//// ====================================
+//// Weakening rules
 
+AllCtxMayPointToInMethod(?hctx, ?heap, ?var, ?method) <-
+   MayPointTo(?hctx, ?heap, InitialMayContext[], ?var),
+   _OptMethodFromVar[?var] = ?method.
+
+MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
+   ReachableMethodUnderMayContext(?ctx, ?method),
+   AllCtxMayPointToInMethod(?hctx, ?heap, ?var, ?method).
+
+AllCtxInstanceFieldMayPointToInMethod
+  (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?insn, ?method) <-
+   InstanceFieldMayPointTo
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, InitialMayContext[], ?insn),
+   Instruction:Method[?insn] = ?method.
+
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   ReachableMethodUnderMayContext(?ctx, ?method),
+   AllCtxInstanceFieldMayPointToInMethod
+    (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?insn, ?method).
+	
 //// ====================================
 //// BEGIN frame rules
 
@@ -345,7 +368,7 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
    
 
-//// Old version of the code.
+//// Old version of the code. Not sure it's needed at all.
 /*
 IndifferentInstruction(?insn) <-
    AssignInstruction(?insn);
@@ -394,76 +417,55 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 */
 
 
+
+/*
 // Defining methods that are certain to not affect a field's points-to info.
 // We can afford to do this exhaustively for all fields?
-
 FieldRelevantForAnalysis(?fld) <-
    InstanceFieldMayPointTo(_, _, ?fld, _, _, _, _);
    StaticFieldMayPointTo(_, _, ?fld, _, _).
-/// equivalent to above, when taken globally
-//   AllPredecessors:InstanceFieldMayPointTo(_, _, ?fld, _, _, _, _);
-//   AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, _, _);
+*/
 
 /*
-// An underapproximation
-MethodMustInvalidateField(?fld, ?inMeth) <-
-   FieldRelevantForAnalysis(?fld),
+//// ====================================
+//// Logic for computing the highly useful concepts of "Method/Call
+//// Does Not Invalidate Field"
+
+MethodDirectlyInvalidatesField(?fld, ?inMeth) <-
    FieldInstruction:Signature[?insn] = ?fld,
    Instruction:Method[?insn] = ?inMeth.
 
-MethodMustInvalidateField(?fld, ?inMeth) <-
-   OptMayCallGraphEdge:ToMethod(_, ?invo, ?toMethod),
-   Instruction:Method[?invo] = ?inMeth,
-   MethodMustInvalidateField(?fld, ?toMethod).
-*/
+OptInvocationInsn(?insn, ?method) <-
+   Instruction:Method[?insn] = ?method,
+   MethodInvocation(?insn).
 
+HigherIndexInvocationInMethod(?invo, ?indexHigher) <-
+   OptInvocationInsn(?invo, ?inMeth),
+   OptInvocationInsn(?higherInvo, ?inMeth),
+   Instruction:Index[?higherInvo] = ?indexHigher,
+   Instruction:Index[?invo] < ?indexHigher.   
+   
+NextInvocationInMethod[?invo] = ?nextInvo <-
+   agg<<?nextInvo = 
+      min(?index)>>(HigherIndexInvocationInMethod(?invo, ?index)).
 
+DefiniteInvocation[?invo] = ?toMethod <-
+   (SpecialMethodInvocation:Insn(?invo);
+    StaticMethodInvocation:Insn(?invo)),
+   MethodInvocation:Signature[?invo] = ?toMethod.
 
+MethodCallsUnknown(?method) <-
+   Instruction:Method[?insn] = ?method,
+   VirtualMethodInvocation:Insn(?insn).
 
-/*
-MethodDoesNotInvalidateFieldUpToInsn(?fld, ?meth, ?insn) <-
-   FieldRelevantForAnalysis(?fld),
-   ReachableMethodUnderMayContext(_, ?meth),
-   OptInstructionFromMethodIndex[?meth, 1] = ?insn,
-   (IndifferentInstruction(?insn);
-    (FieldInstruction(?insn), FieldInstruction:Signature[?insn] = ?fld);
-    StoreArrayIndex:Insn(?insn);
-    ...
-
-
-    (OptMayCallGraphEdge:ToMethod(_, ?invo, ?toMethod),
+MethodHasCalls(?method) <-
+   OptInvocationInsn(_, ?method).
+   
+AllMethodCallsDefinite(?method) <-
+   MethodHasCalls(?method),
+   !MethodCallsUnknown(?method).
 */ 
 
-
-
-
-
-    
-/*
-NotIndifferentInstruction(?insn) <-
-   Instruction:Method[?insn] = ?meth,
-   !IndifferentInstruction(?insn),
-   ReachableMethodUnderMayContext(_, ?meth).
-
-MethodPotentiallyUnsafeForField(?fld, ?meth) <-
-   NotIndifferentInstruction(?insn)
-
-InstructionUnsafeForField(?insn) <-
-   NotIndifferentInstruction(?insn),
-
-MethodWithJust
-
-
-MethodItselfInvalidatesField(?fld, ?inMeth) <-
-   FieldInstruction:Signature[?insn] = ?fld,
-   Instruction:Method[?insn] = ?inMeth.
-
-SafeMethodCallForField(?fld, ?invo) <-
-
-   OptInstructionFromMethodIndex[?inMethod, ?i + 1] = ?next.
-
-MethodSafeForFieldUpTo
-*/
 
 
 
