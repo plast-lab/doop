@@ -47,6 +47,9 @@ ReachableMethodUnderMayContext(?ctx, ?meth) <-
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?ctx,
    MayCallGraphEdge:ToMethod(?meth, ?callerCtx, ?invo).
 
+ReachableMayContext(?ctx) <-
+   ReachableMethodUnderMayContext(?ctx, _).
+   
 // Root of all inferences. Assigning new heap allocations.
 // REVIEW: This introduces dependency on string-constants.logic
 //RecordMacroMay(?ctx, ?heap, ?hctx),
@@ -200,6 +203,7 @@ AllPredecessors:InstanceFieldMayPointTo
    MayPointTo(?hctxBase, ?baseHeap, ?calleeCtx, ?this),
    HeapAllocation:Type[?baseHeap] = ?heapType,
    _OptFieldFromClass(?fld, ?heapType),
+   !FieldModifier(Modifier:static[], ?fld),
    HeapAllocation:Null[] = ?nullHeap.
 
 FirstInstructionOfReachableInitializer(?firstInsn, ?ctx, ?initMethod) <-
@@ -213,6 +217,7 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, ?calleeCtx, ?first
    FirstInstructionOfReachableInitializer(?firstInsn, ?calleeCtx, ?initMethod),
    MethodSignature:DeclaringType[?initMethod] = ?type,
    _OptFieldFromClass(?fld, ?type),
+   FieldModifier(Modifier:static[], ?fld),
    HeapAllocation:Null[] = ?nullHeap.
 
 
@@ -263,11 +268,10 @@ StoreBaseMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
 
 // store instructions, weak update: info gets *added* to previous. Can
 // turn into strong with must info. UNSOUNDNESS warning! Need to have
-// InstanceFieldMayPointTo before the instruction
-InstanceFieldMayPointTo(?hctx1, ?heap1, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-InstanceFieldMayPointTo(?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
-   AllPredecessors:InstanceFieldMayPointTo(?hctx2, ?heap2, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-   StoreFromVarMayPointTo(?hctx1, ?heap1, ?ctx, ?insn),
+// InstanceFieldMayPointTo before the instruction. See also frame rules.
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllPredecessors:InstanceFieldMayPointTo(_, _, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   StoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
    StoreBaseMayPointTo(?hctxBase, ?baseHeap, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld.
 
@@ -286,12 +290,11 @@ StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
    MayPointTo(?hctx, ?heap, ?ctx, ?from),
    _OptStoreStaticField:From(?insn, ?from).
 
-// static store instructions. Again, weak update. 
-StaticFieldMayPointTo(?hctx1, ?heap1, ?fld, ?ctx, ?insn),
-StaticFieldMayPointTo(?hctx2, ?heap2, ?fld, ?ctx, ?insn) <-
-   AllPredecessors:StaticFieldMayPointTo(?hctx2, ?heap2, ?fld, ?ctx, ?insn),
+// static store instructions. Again, weak update. See also frame rules!
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld,
-   StaticStoreFromVarMayPointTo(?hctx1, ?heap1, ?ctx, ?insn).
+   StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn).
 
 // static load instructions
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
@@ -341,7 +344,11 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
    ReachableMethodUnderMayContext(?ctx, ?method),
    AllCtxInstanceFieldMayPointToInMethod
     (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?insn, ?method).
-	
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   ReachableMayContext(?ctx),
+   StaticFieldMayPointTo(?hctx, ?heap, ?fld, InitialMayContext[], ?insn).
+
 //// ====================================
 //// BEGIN frame rules
 
@@ -355,18 +362,29 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
 // TODO: figure out which method calls are non-invalidating. There are
 //       far too many call instructions for the frame rules to work well.
 
-// TODO: handle arrays
-
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
    !MethodInvocation(?insn),
    (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
+// A stunning frame rule for sound-may: if we have an overapproximation of what the
+// store instruction updates, then all past information on the same field can be kept.
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   StoreFromVarMayPointTo(_, _, ?ctx, ?insn),
+   StoreBaseMayPointTo(_, _, ?ctx, ?insn),
+   FieldInstruction:Signature[?insn] = ?fld.
+
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
    !MethodInvocation(?insn),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
-   
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+   FieldInstruction:Signature[?insn] = ?fld,
+   StaticStoreFromVarMayPointTo(_, _, ?ctx, ?insn).
+
 
 //// Old version of the code. Not sure it's needed at all.
 /*
@@ -599,6 +617,21 @@ MaxMayContextDepth[] = ?num -> int[32](?num).
 
 RootMethodForMayAnalysis(?meth) <-
    MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
+
+StaticFieldOfApplicationClass(?fld) <-
+   ApplicationClass(?class),
+   _OptFieldFromClass(?fld, ?class),
+   FieldModifier(Modifier:static[], ?fld).
+
+// At the beginning of "main", all static fields of app classes are
+// assumed to point to null. This is sound (even though <clinit>s will
+// be called whenever)!  It is an overestimate of what's true.
+MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, InitialMayContext[], ?firstInsn) <-
+   MainMethodDeclaration(?mainMeth),
+   FirstInstructionOfMethod[?mainMeth] = ?firstInsn,
+   StaticFieldOfApplicationClass(?fld),
+   HeapAllocation:Null[] = ?nullHeap.
 
 MaxMayContextDepth[] = 5 <- .
 
