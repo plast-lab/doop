@@ -204,6 +204,8 @@ AllPredecessors:InstanceFieldMayPointTo
    HeapAllocation:Type[?baseHeap] = ?heapType,
    _OptFieldFromClass(?fld, ?heapType),
    !FieldModifier(Modifier:static[], ?fld),
+   FieldSignature:Type[?fld] = ?fldType,
+   ReferenceType(?fldType),
    HeapAllocation:Null[] = ?nullHeap.
 
 FirstInstructionOfReachableInitializer(?firstInsn, ?ctx, ?initMethod) <-
@@ -218,6 +220,8 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, ?calleeCtx, ?first
    MethodSignature:DeclaringType[?initMethod] = ?type,
    _OptFieldFromClass(?fld, ?type),
    FieldModifier(Modifier:static[], ?fld),
+   FieldSignature:Type[?fld] = ?fldType,
+   ReferenceType(?fldType),
    HeapAllocation:Null[] = ?nullHeap.
 
 
@@ -290,7 +294,8 @@ StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
    MayPointTo(?hctx, ?heap, ?ctx, ?from),
    _OptStoreStaticField:From(?insn, ?from).
 
-// static store instructions. Again, weak update. See also frame rules!
+// static store instructions. Strong update this time. See also frame
+// rules!
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld,
@@ -380,11 +385,13 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    !MethodInvocation(?insn),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
+//// No need for weak update!
+/*
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld,
    StaticStoreFromVarMayPointTo(_, _, ?ctx, ?insn).
-
+*/
 
 //// Old version of the code. Not sure it's needed at all.
 /*
@@ -618,19 +625,42 @@ MaxMayContextDepth[] = ?num -> int[32](?num).
 RootMethodForMayAnalysis(?meth) <-
    MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
 
-StaticFieldOfApplicationClass(?fld) <-
+// Try to discover hidden "main" heuristically
+AppMainMethod(?mainMeth) <-
+   MethodSignature:SimpleName[?mainMeth] = "main",
+   MethodSignature:DeclaringType[?mainMeth] = ?class,
+   ApplicationClass(?class).
+
+/*
+RootMethodForMayAnalysis(?meth) <-
+   AppMainMethod(?meth).
+
+// Heuristic: if you can reach it in the analysis and it's an app
+// method, start a new search (with zero context depth) from it.
+RootMethodForMayAnalysis(?meth) <-
+   ReachableMethodUnderMayContext(_, ?meth),
+   MethodSignature:DeclaringType[?meth] = ?class,
+   ApplicationClass(?class).
+*/
+
+StaticFieldOfMayReachableClass(?fld) <-
+   ReachableMethodUnderMayContext(_, ?meth),
+   MethodSignature:DeclaringType[?meth] = ?class,
    ApplicationClass(?class),
    _OptFieldFromClass(?fld, ?class),
-   FieldModifier(Modifier:static[], ?fld).
+   FieldModifier(Modifier:static[], ?fld),
+   FieldSignature:Type[?fld] = ?fldType,
+   ReferenceType(?fldType).
 
 // At the beginning of "main", all static fields of app classes are
 // assumed to point to null. This is sound (even though <clinit>s will
 // be called whenever)!  It is an overestimate of what's true.
 MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
 AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, InitialMayContext[], ?firstInsn) <-
-   MainMethodDeclaration(?mainMeth),
+//   MainMethodDeclaration(?mainMeth),
+   AppMainMethod(?mainMeth),
    FirstInstructionOfMethod[?mainMeth] = ?firstInsn,
-   StaticFieldOfApplicationClass(?fld),
+   StaticFieldOfMayReachableClass(?fld),
    HeapAllocation:Null[] = ?nullHeap.
 
 MaxMayContextDepth[] = 5 <- .
