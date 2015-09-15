@@ -28,6 +28,11 @@ StaticFieldMayPointTo(?hctx, ?heap, ?field, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
    FieldSignature(?field), MayContext(?ctx), Instruction(?insn).
 
+ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   MayHeapContext(?hctxArray), HeapAllocation(?arrayHeap),
+   MayContext(?ctx), Instruction(?insn).
+
 RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
 
 
@@ -57,6 +62,13 @@ MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
+
+// arrays, strings
+MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
+   AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
+   ?hctx = EmptyHeapContext[],
+   ReachableMethodUnderMayContext(?ctx, ?inMeth).
+
 
 // null assignments
 _OptInstruction:Method(?insn, ?inMeth) <-
@@ -106,7 +118,7 @@ MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    ReachableMethodUnderMayContext(?ctx, ?inMeth),
    MayContextDepth[?ctx] < MaxMayContextDepth[].
 
-// special method invocation "this" variable
+// special method invocation "this" variable assignment
 _OptSpecialMethodInvocation:Base(?invo, ?base) <-
    SpecialMethodInvocation:Base[?invo] = ?base.
 
@@ -118,7 +130,8 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    _OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo),
    MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
    MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   ThisVar[?toMeth] = ?this.
+   ThisVar[?toMeth] = ?this,
+   MayContextDepth[?ctx] < MaxMayContextDepth[].
 
 _OptVirtualMethodInvocation:Base(?invo, ?base) <-
    VirtualMethodInvocation:Base[?invo] = ?base.
@@ -138,10 +151,8 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    VirtualMethodInvocation:SimpleName[?invo] = ?simplename,
    VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
    MethodLookup[?simplename, ?descriptor, ?heaptype] = ?toMeth,
-   MayContextDepth[?ctx] < MaxMayContextDepth[],
-   ThisVar[?toMeth] = ?this.
-//   _OptInstruction:Method(?invo, ?inMeth),
-//   ReachableMethodUnderMayContext(?ctx, ?inMeth),
+   ThisVar[?toMeth] = ?this,
+   MayContextDepth[?ctx] < MaxMayContextDepth[].
 
 
 /*
@@ -169,15 +180,15 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ActualParam[?index, ?invo] = ?actual,
    MayPointTo(?hctx, ?heap, ?callerCtx, ?actual).
 
-OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod) <-
-   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo).
+ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   AssignReturnValue[?invo] = ?to.
 
 // return vals
 MayPointTo(?hctx, ?heap, ?callerCtx, ?to) <-
-   OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
-   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
-   AllReturn:MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod),
-   AssignReturnValue[?invo] = ?to.
+   ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
+   AllReturn:MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
 
 
 FirstInstructionOfMethod[?meth] = ?firstInsn <-
@@ -208,6 +219,18 @@ AllPredecessors:InstanceFieldMayPointTo
    ReferenceType(?fldType),
    HeapAllocation:Null[] = ?nullHeap.
 
+MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+ArrayIndexMayPointTo(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   AssignHeapAllocation:Heap[?insn] = ?arrayHeap,
+   HeapAllocation:Type[?arrayHeap] = ?type,
+   ArrayType(?type),
+   HeapAllocation:Null[] = ?nullHeap,
+   EmptyHeapContext[] = ?hctxArray,
+   InitialMayContext[] = ?ctx.
+
+/*
+//// This is just a very expensive no-op. clinit methods never get called
+//// directly, so whatever inferences we make never propagate elsewhere.
 FirstInstructionOfReachableInitializer(?firstInsn, ?ctx, ?initMethod) <-
    ReachableMethodUnderMayContext(?ctx, ?initMethod),
    MethodSignature:SimpleName[?initMethod] = "<clinit>",
@@ -223,7 +246,7 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, ?calleeCtx, ?first
    FieldSignature:Type[?fld] = ?fldType,
    ReferenceType(?fldType),
    HeapAllocation:Null[] = ?nullHeap.
-
+*/
 
 // propagate (instance/static) field must-point-to info
 AllPredecessors:InstanceFieldMayPointTo
@@ -234,27 +257,43 @@ AllPredecessors:InstanceFieldMayPointTo
    AllPredecessors:InstanceFieldMayPointTo
     (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?callerCtx, ?invo).
 
+Temp1(?hctx, ?heap, ?fld, ?calleeCtx, ?firstInsn),
 AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?firstInsn) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
    FirstInstructionOfMethod[?toMethod] = ?firstInsn,
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo).
 
+/*
+AllPredecessors:ArrayIndexMayPointTo
+ (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?calleeCtx, ?firstInsn) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   FirstInstructionOfMethod[?toMethod] = ?firstInsn,
+   AllPredecessors:ArrayIndexMayPointTo
+    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?callerCtx, ?invo).
+*/
 
-OptMayCallGraphEdge:Context(?callerCtx, ?invo, ?calleeCtx) <-
+MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx.
-   
+
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?callerCtx, ?invo) <-
-   OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
-   OptMayCallGraphEdge:Context(?callerCtx, ?invo, ?calleeCtx),
+   MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
    AllReturn:InstanceFieldMayPointTo
     (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?calleeCtx, ?toMethod).
 
+Temp2(?hctx, ?heap, ?fld, ?callerCtx, ?invo),
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo) <-
-   OptMayCallGraphEdge:ToMethod(?callerCtx, ?invo, ?toMethod),
-   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
    AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?toMethod).
 
+/*
+ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?callerCtx, ?invo) <-
+   MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
+   AllReturn:ArrayIndexMayPointTo
+    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?calleeCtx, ?toMethod).
+*/
 
 _OptStoreInstanceField:From(?insn, ?from) <-
    StoreInstanceField:From[?insn] = ?from.
@@ -294,14 +333,15 @@ StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
    MayPointTo(?hctx, ?heap, ?ctx, ?from),
    _OptStoreStaticField:From(?insn, ?from).
 
-// static store instructions. Strong update this time. See also frame
-// rules!
+// static store instructions. Strong update this time. No frame rule to
+// carry on the original info.
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld,
    StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn).
 
 // static load instructions
+Temp3(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadStaticField:To[?insn] = ?to,
    FieldInstruction:Signature[?insn] = ?fld,
@@ -328,6 +368,36 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    _OptMethodFromVar[?to] = ?inMeth,
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 
+// TODO: arrays!
+
+_OptStoreArrayIndex:From(?insn, ?from) <-
+   StoreArrayIndex:From[?insn] = ?from.
+
+_OptStoreArrayIndex:Base(?insn, ?var) <-
+   StoreArrayIndex:Base[?insn] = ?var.
+   
+ArrayStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
+   MayPointTo(?hctx, ?heap, ?ctx, ?from),
+   _OptStoreArrayIndex:From(?insn, ?from).
+
+ArrayStoreBaseMayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   MayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?base),
+   _OptStoreArrayIndex:Base(?insn, ?base).
+
+/*
+ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   AllPredecessors:ArrayIndexMayPointTo(_, _, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
+   ArrayStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+   ArrayStoreBaseMayPointTo(?hctxArray, ?heapArray, ?ctx, ?insn).
+*/
+
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadArrayIndex:Base[?insn] = ?base,
+   LoadArrayIndex:To[?insn] = ?to,
+   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
+   MayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?base).
+
+
 //// ====================================
 //// Weakening rules
 
@@ -351,8 +421,19 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
     (?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?insn, ?method).
 
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
-   ReachableMayContext(?ctx),
+   Instruction:Method[?insn] = ?method,
+   ReachableMethodUnderMayContext(?ctx, ?method),
    StaticFieldMayPointTo(?hctx, ?heap, ?fld, InitialMayContext[], ?insn).
+
+AllCtxArrayIndexMayPointToInMethod(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?insn, ?method) <-
+   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, InitialMayContext[], ?insn),
+   Instruction:Method[?insn] = ?method.
+
+/*
+ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, InitialMayContext[], ?insn),
+   AllCtxArrayIndexMayPointToInMethod(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?insn, ?method).
+*/
 
 //// ====================================
 //// BEGIN frame rules
@@ -369,7 +450,7 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-   !MethodInvocation(?insn),
+   (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
    (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
 // A stunning frame rule for sound-may: if we have an overapproximation of what the
@@ -382,76 +463,64 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
 
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-   !MethodInvocation(?insn),
+   (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
-//// No need for weak update!
+// Note the *absence* of a frame rule to keep the old
+// StaticFieldPointsTo information when the same field is
+// updated. This yields strong updated for static fields.
+
 /*
-StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
-   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-   FieldInstruction:Signature[?insn] = ?fld,
-   StaticStoreFromVarMayPointTo(_, _, ?ctx, ?insn).
+// Much like instance fields
+ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
+   (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
+   !StoreArrayIndex:Insn(?insn).
+
+ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
+   ArrayStoreFromVarMayPointTo(_, _, ?ctx, ?insn),
+   ArrayStoreBaseMayPointTo(_, _, ?ctx, ?insn).
 */
 
-//// Old version of the code. Not sure it's needed at all.
+// Some calls to native or otherwise complex methods need to be
+// modeled, i.e., ignored. E.g., fillInStackTrace is a native method
+// called in the constructor of a (ubiquitous) java.lang.Throwable. If
+// not ignored, no image of the heap propagates anywhere.
+// TODO: do a better match (on full sig) than just on SimpleName.
+IgnorableMethodInvocation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "fillInStackTrace"; // Throwable
+   VirtualMethodInvocation:SimpleName[?invo] = "equals";  // Object
+   VirtualMethodInvocation:SimpleName[?invo] = "hashCode";
+   VirtualMethodInvocation:SimpleName[?invo] = "toString";
+   VirtualMethodInvocation:SimpleName[?invo] = "println"; // PrintStream
+   StaticMethodInvocation:SimpleName[?invo] = "parseInt"; // Integer
+   VirtualMethodInvocation:SimpleName[?invo] = "endsWith"; // String
+   VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
+
+
+StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
+   MethodInvocation:Signature[?invocation] = ?signature,
+   StaticMethodInvocation:Insn(?invocation),
+   MethodSignature:SimpleName[?signature] = ?simplename.
+
+
 /*
-IndifferentInstruction(?insn) <-
-   AssignInstruction(?insn);
-   LoadInstanceField:Insn(?insn);
-   LoadStaticField:Insn(?insn);
-   LoadArrayIndex:Insn(?insn);
-   MonitorInstruction(?insn); // maybe these are not so indifferent
-   UnconditionalControlTransfer(?insn);
-   If:Insn(?insn).
-     // the latter two do not change the heap, so we can consider the information
-	 // propagated further.
-
-InstanceFieldRelevantForMethod(?fld, ?inMeth) <-
-   (InstanceFieldMayPointTo(_, _, ?fld, _, _, _, ?insn);
-    AllPredecessors:InstanceFieldMayPointTo(_, _, ?fld, _, _, _, ?insn)),
-   Instruction:Method[?insn] = ?inMeth.
-
-InstructionDoesNotInvalidateInstanceFieldPointsTo(?fld, ?insn) <-
-   InstanceFieldRelevantForMethod(?fld, ?inMeth),
-   _OptInstruction:Method(?insn, ?inMeth),
-   (StoreStaticField:Insn(?insn);
-    StoreArrayIndex:Insn(?insn);
-	IndifferentInstruction(?insn);
-	(StoreInstanceField:Insn(?insn), FieldInstruction:Signature[?insn] != ?fld)).
-   
-InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
-   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-   InstructionDoesNotInvalidateInstanceFieldPointsTo(?fld, ?insn).
-
-StaticFieldRelevantForMethod(?fld, ?inMeth) <-
-   (StaticFieldMayPointTo(_, _, ?fld, _, ?insn);
-	AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, _, ?insn)),
-   Instruction:Method[?insn] = ?inMeth.
-
-InstructionDoesNotInvalidateStaticFieldPointsTo(?fld, ?insn) <-
-   StaticFieldRelevantForMethod(?fld, ?inMeth),
-   _OptInstruction:Method(?insn, ?inMeth),
-   (StoreInstanceField:Insn(?insn);
-    StoreArrayIndex:Insn(?insn);
-	IndifferentInstruction(?insn);
-	(StoreStaticField:Insn(?insn), FieldInstruction:Signature[?insn] != ?fld)).
-
-StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
-   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-   InstructionDoesNotInvalidateStaticFieldPointsTo(?fld, ?insn).
+//// Unsound HACK! Just during testing, for estimating the impact of
+//// better "NonDom" logic.
+AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllNonDomPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn).
+AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
+AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+   AllNonDomPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn).
 */
 
 
 
-/*
-// Defining methods that are certain to not affect a field's points-to info.
-// We can afford to do this exhaustively for all fields?
-FieldRelevantForAnalysis(?fld) <-
-   InstanceFieldMayPointTo(_, _, ?fld, _, _, _, _);
-   StaticFieldMayPointTo(_, _, ?fld, _, _).
-*/
 
 /*
+//// TODO
 //// ====================================
 //// Logic for computing the highly useful concepts of "Method/Call
 //// Does Not Invalidate Field"
@@ -586,7 +655,7 @@ EmptyHeapContext[] = ?hctx, MayHeapContext(?hctx)  <- .
 MayContext(?ctx) ->.
 lang:entity(`MayContext).
 lang:physical:storageModel[`MayContext]="ScalableSparse".
-lang:physical:capacity[`MayContext] = 33554432. // 8388608.
+lang:physical:capacity[`MayContext] = 2147483648.
 
 InitialMayContext[] = ?ctx -> MayContext(?ctx).
 lang:skolem(`InitialMayContext).
@@ -643,6 +712,7 @@ RootMethodForMayAnalysis(?meth) <-
    ApplicationClass(?class).
 */
 
+
 StaticFieldOfMayReachableClass(?fld) <-
    ReachableMethodUnderMayContext(_, ?meth),
    MethodSignature:DeclaringType[?meth] = ?class,
@@ -663,7 +733,8 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, InitialMayContext[
    StaticFieldOfMayReachableClass(?fld),
    HeapAllocation:Null[] = ?nullHeap.
 
-MaxMayContextDepth[] = 5 <- .
+
+MaxMayContextDepth[] = 10 <- .
 
 //// END configuration
 
