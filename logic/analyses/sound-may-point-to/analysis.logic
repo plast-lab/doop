@@ -130,8 +130,7 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    _OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo),
    MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
    MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   ThisVar[?toMeth] = ?this,
-   MayContextDepth[?ctx] < MaxMayContextDepth[].
+   ThisVar[?toMeth] = ?this.
 
 _OptVirtualMethodInvocation:Base(?invo, ?base) <-
    VirtualMethodInvocation:Base[?invo] = ?base.
@@ -154,9 +153,10 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    ThisVar[?toMeth] = ?this,
    MayContextDepth[?ctx] < MaxMayContextDepth[].
 
-
 /*
 // Uses UNSOUND may-point-to, just for comparison during testing.
+//// Has already stopped being useful, since it doesn't bind "this".
+//// It even yields lower numbers than the sound rule.
 PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
 MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
 MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
@@ -170,7 +170,6 @@ MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    Instruction:Method[?invo] = ?inMeth,
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 */
-
 
 // args
 MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
@@ -309,7 +308,7 @@ StoreBaseMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
    _OptStoreInstanceField:Base(?insn, ?base).
 
 // store instructions, weak update: info gets *added* to previous. Can
-// turn into strong with must info. UNSOUNDNESS warning! Need to have
+// turn into strong with must info. Need to have
 // InstanceFieldMayPointTo before the instruction. See also frame rules.
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(_, _, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
@@ -335,7 +334,6 @@ StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
 // static store instructions. Strong update this time. No frame rule to
 // carry on the original info.
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
-   AllPredecessors:StaticFieldMayPointTo(_, _, ?fld, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld,
    StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn).
 
@@ -391,6 +389,7 @@ ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
    ArrayStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
    ArrayStoreBaseMayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?insn).
 
+Temp5(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadArrayIndex:Base[?insn] = ?base,
    LoadArrayIndex:To[?insn] = ?to,
@@ -441,10 +440,7 @@ ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
 //       exist in others. This needs escape reasoning? The object may come back
 //       to the same program point through the other path.
 
-// TODO: handle final fields?
-
-// TODO: figure out which method calls are non-invalidating. There are
-//       far too many call instructions for the frame rules to work well.
+// TODO: handle final fields? Don't see how, without must info.
 
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
@@ -461,7 +457,9 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
 
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-   (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+	IgnorableMethodInvocationForStatic(?insn)),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
 // Note the *absence* of a frame rule to keep the old
@@ -496,14 +494,62 @@ IgnorableMethodInvocation(?invo) <-
    StaticMethodInvocation:SimpleName[?invo] = "floatToRawIntBits"; // Float
    // these are used in the HashMap "put" method!
    StaticMethodInvocation:SimpleName[?invo] = "intBitsToFloat"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
+   // From this point on, it's just a test to see if these natives matter.
+   StaticMethodInvocation:SimpleName[?invo] = "encoding"; // Console
+   StaticMethodInvocation:SimpleName[?invo] = "echo"; 
+   StaticMethodInvocation:SimpleName[?invo] = "istty"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "sync"; // FileDescriptor
+   StaticMethodInvocation:SimpleName[?invo] = "initIDs"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "open"; // FileInputStream
+   VirtualMethodInvocation:SimpleName[?invo] = "read0"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "readBytes"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "skip"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "available"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "close0"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "write"; // FileOutputStream
+   VirtualMethodInvocation:SimpleName[?invo] = "writeBytes"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "availableProcessors"; // Runtime
+   VirtualMethodInvocation:SimpleName[?invo] = "freeMemory"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "totalMemory"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "maxMemory"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "gc"; 
+   StaticMethodInvocation:SimpleName[?invo] = "runFinalization0"; 
+   StaticMethodInvocation:SimpleName[?invo] = "sin"; // StrictMath
+   StaticMethodInvocation:SimpleName[?invo] = "cos"; 
+   StaticMethodInvocation:SimpleName[?invo] = "tan"; 
+   StaticMethodInvocation:SimpleName[?invo] = "log"; 
+   StaticMethodInvocation:SimpleName[?invo] = "pow";
+   StaticMethodInvocation:SimpleName[?invo] = "currentThread"; // Thread
+   StaticMethodInvocation:SimpleName[?invo] = "yield";
+   StaticMethodInvocation:SimpleName[?invo] = "sleep";
+   VirtualMethodInvocation:SimpleName[?invo] = "start0";
+   VirtualMethodInvocation:SimpleName[?invo] = "isInterrupted";
+   VirtualMethodInvocation:SimpleName[?invo] = "isAlive";
+   StaticMethodInvocation:SimpleName[?invo] = "holdsLock";
+   StaticMethodInvocation:SimpleName[?invo] = "getThreads";
+   StaticMethodInvocation:SimpleName[?invo] = "dumpThreads";
+   VirtualMethodInvocation:SimpleName[?invo] = "setPriority";
+   VirtualMethodInvocation:SimpleName[?invo] = "stop0";
+   VirtualMethodInvocation:SimpleName[?invo] = "suspend0";
+   VirtualMethodInvocation:SimpleName[?invo] = "resume0";
+   VirtualMethodInvocation:SimpleName[?invo] = "interrupt0";
+   VirtualMethodInvocation:SimpleName[?invo] = "isAlive";
+   VirtualMethodInvocation:SimpleName[?invo] = "getStackTraceDepth"; // Throwable
+   VirtualMethodInvocation:SimpleName[?invo] = "getStackTraceElement"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "forkAndExec";  // UnixProcess
+   VirtualMethodInvocation:SimpleName[?invo] = "wait"; // Object
+   VirtualMethodInvocation:SimpleName[?invo] = "notify";
+   VirtualMethodInvocation:SimpleName[?invo] = "notifyAll".
 
+IgnorableMethodInvocationForStatic(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "intern"; // String
+   VirtualMethodInvocation:SimpleName[?invo] = "clone"; // Object
+   VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
 
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
    MethodInvocation:Signature[?invocation] = ?signature,
    StaticMethodInvocation:Insn(?invocation),
    MethodSignature:SimpleName[?signature] = ?simplename.
-
 
 /*
 //// Unsound HACK! Just during testing, for estimating the impact of
@@ -515,7 +561,6 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
    AllNonDomPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn).
 */
-
 
 
 
@@ -684,7 +729,6 @@ MayContextDepth[?ctx] = ?depth+1 <-
 MayContextDepth[?ctx] = 0 <-
    InitialMayContext[] = ?ctx.
 
-// TODO: Make MaxDepth configurable.
 MaxMayContextDepth[] = ?num -> int[32](?num).
 
 //// END context management
@@ -692,6 +736,7 @@ MaxMayContextDepth[] = ?num -> int[32](?num).
 
 //// ====================================
 //// BEGIN configuration
+////  Different ways to kick-start the analysis.
 
 RootMethodForMayAnalysis(?meth) <-
    MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
@@ -701,6 +746,24 @@ AppMainMethod(?mainMeth) <-
    MethodSignature:SimpleName[?mainMeth] = "main",
    MethodSignature:DeclaringType[?mainMeth] = ?class,
    ApplicationClass(?class).
+
+// Heuristic: if you can reach it in the analysis and it's a static
+// initializer, start a new search (with zero context depth) from it.
+// There are lots of static final fields in the library that see heavy
+// use.
+ClinitMethodOfClass(?meth, ?class) <-
+   MethodSignature:SimpleName[?meth] = "<clinit>",
+   MethodSignature:DeclaringType[?meth] = ?class.
+   
+RootMethodForMayAnalysis(?clinitMeth) <-
+   ReachableMethodUnderMayContext(_, ?meth),
+   MethodSignature:DeclaringType[?meth] = ?class,
+   ClinitMethodOfClass(?clinitMeth, ?class).
+
+/*
+RootMethodForMayAnalysis(?clinitMeth) <-
+   ReachableMethodUnderMayContext(_, ?meth).
+*/
 
 /*
 RootMethodForMayAnalysis(?meth) <-
@@ -730,13 +793,13 @@ AllPredecessors:ArrayIndexMayPointTo(?hctx, ?argHeap, ?hctx, ?argsArray, ?ctx, ?
    FirstInstructionOfMethod[?mainMethod] = ?firstInsn.
 
 
-// At the beginning of "main", all static fields of app classes are
+// At the beginning of "main", all static fields of classes are
 // assumed to point to null. This is sound (even though <clinit>s will
 // be called whenever)!  It is an overestimate of what's true.
 StaticFieldOfMayReachableClass(?fld) <-
    ReachableMethodUnderMayContext(_, ?meth),
    MethodSignature:DeclaringType[?meth] = ?class,
-   ApplicationClass(?class),
+//   ApplicationClass(?class),
    _OptFieldFromClass(?fld, ?class),
    FieldModifier(Modifier:static[], ?fld),
    FieldSignature:Type[?fld] = ?fldType,
