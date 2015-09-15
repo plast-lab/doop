@@ -323,6 +323,7 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    FieldInstruction:Signature[?insn] = ?fld,
    InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
    MayPointTo(?hctxBase, ?baseHeap, ?ctx, ?base).
+// TODO: how is the above not horrible indexing? Is it so small? Same for array loads.
 
 _OptStoreStaticField:From(?insn, ?from) <-
    StoreStaticField:From[?insn] = ?from.
@@ -472,6 +473,7 @@ ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
    (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
    !StoreArrayIndex:Insn(?insn).
 
+Temp6(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
 ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
    AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
    ArrayStoreFromVarMayPointTo(_, _, ?ctx, ?insn),
@@ -565,6 +567,7 @@ AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx,
 
 
 /*
+//// TODO: Why not base this logic on a type-based escape analysis?
 //// TODO
 //// ====================================
 //// Logic for computing the highly useful concepts of "Method/Call
@@ -702,7 +705,7 @@ EmptyHeapContext[] = ?hctx, MayHeapContext(?hctx)  <- .
 MayContext(?ctx) ->.
 lang:entity(`MayContext).
 lang:physical:storageModel[`MayContext]="ScalableSparse".
-lang:physical:capacity[`MayContext] = 2147483648.
+lang:physical:capacity[`MayContext] = 4294967296.
 
 InitialMayContext[] = ?ctx -> MayContext(?ctx).
 lang:skolem(`InitialMayContext).
@@ -761,7 +764,7 @@ RootMethodForMayAnalysis(?clinitMeth) <-
    ClinitMethodOfClass(?clinitMeth, ?class).
 
 /*
-RootMethodForMayAnalysis(?clinitMeth) <-
+RootMethodForMayAnalysis(?meth) <-
    ReachableMethodUnderMayContext(_, ?meth).
 */
 
