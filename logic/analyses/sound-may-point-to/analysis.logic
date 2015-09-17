@@ -166,9 +166,9 @@ MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    VirtualMethodInvocation:SimpleName[?invo] = ?simplename,
    VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
    MethodLookup[?simplename, ?descriptor, ?heaptype] = ?toMeth,
-   MayContextDepth[?ctx] < MaxMayContextDepth[],
    Instruction:Method[?invo] = ?inMeth,
-   ReachableMethodUnderMayContext(?ctx, ?inMeth).
+   ReachableMethodUnderMayContext(?ctx, ?inMeth),
+   MayContextDepth[?ctx] < MaxMayContextDepth[].
 */
 
 // args
@@ -441,12 +441,14 @@ ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
 //       exist in others. This needs escape reasoning? The object may come back
 //       to the same program point through the other path.
 
-// TODO: handle final fields? Don't see how, without must info.
-
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
    (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
    (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
+
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   FieldModifier(Modifier:final[], ?fld).
 
 // A stunning frame rule for sound-may: if we have an overapproximation of what the
 // store instruction updates, then all past information on the same field can be kept.
@@ -462,6 +464,10 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
     IgnorableMethodInvocation(?insn);
 	IgnorableMethodInvocationForStatic(?insn)),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+   FieldModifier(Modifier:final[], ?fld).
 
 // Note the *absence* of a frame rule to keep the old
 // StaticFieldPointsTo information when the same field is
@@ -714,15 +720,20 @@ InitialMayContext[] = ?ctx, MayContext(?ctx)  <- .
 PushMayContext[?invo, ?ctx] = ?pushedCtx ->
    MayContext(?pushedCtx), MayContext(?ctx), CallGraphEdgeSource(?invo).
 lang:skolem(`PushMayContext).
+
+/*
+//// Currently unused
 PopMayContext[?ctx] = ?poppedCtx ->
    MayContext(?poppedCtx), MayContext(?ctx).
+MayContextContains(?invo, ?ctx) ->
+   MayContext(?ctx), CallGraphEdgeSource(?invo).
+MayContextContains(?invo, ?ctx),
 PopMayContext[?ctx] = ?poppedCtx <-
-   PushMayContext[_, ?poppedCtx] = ?ctx.
-
-InvoFromMayContext[?ctx] = ?invocation ->
-   MayContext(?ctx), CallGraphEdgeSource(?invocation).
-InvoFromMayContext[?ctx] = ?invocation <- 
-   PushMayContext[?invocation, _] = ?ctx.
+   PushMayContext[?invo, ?poppedCtx] = ?ctx.
+MayContextContains(?invo, ?ctx) <-
+   PushMayContext[_, ?poppedCtx] = ?ctx,
+   MayContextContains(?invo, ?poppedCtx).
+*/
 
 MayContextDepth[?ctx] = ?depth ->
    MayContext(?ctx), int[32](?depth).
@@ -740,6 +751,8 @@ MaxMayContextDepth[] = ?num -> int[32](?num).
 //// ====================================
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
+
+MaxMayContextDepth[] = 6 <- .
 
 RootMethodForMayAnalysis(?meth) <-
    MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
@@ -816,8 +829,6 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?nullHeap, ?fld, InitialMayContext[
    StaticFieldOfMayReachableClass(?fld),
    HeapAllocation:Null[] = ?nullHeap.
 
-
-MaxMayContextDepth[] = 10 <- .
 
 //// END configuration
 
