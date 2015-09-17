@@ -28,9 +28,9 @@ StaticFieldMayPointTo(?hctx, ?heap, ?field, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
    FieldSignature(?field), MayContext(?ctx), Instruction(?insn).
 
-ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) ->
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
-   MayHeapContext(?hctxArray), HeapAllocation(?arrayHeap),
+   MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
    MayContext(?ctx), Instruction(?insn).
 
 RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
@@ -218,17 +218,25 @@ AllPredecessors:InstanceFieldMayPointTo
    ReferenceType(?fldType),
    HeapAllocation:Null[] = ?nullHeap.
 
-// initialize arrays to null at allocation
+// initialize arrays and library collections to null at allocation
 Temp4(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
 MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
-ArrayIndexMayPointTo(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+CollectionMayPointTo(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
    AssignHeapAllocation:Heap[?insn] = ?arrayHeap,
    HeapAllocation:Type[?arrayHeap] = ?type,
-   ArrayType(?type),
+   (ArrayType(?type); LibraryCollectionType(?type)),
    Instruction:Method[?insn] = ?inMeth,
    ReachableMethodUnderMayContext(?ctx, ?inMeth),
    HeapAllocation:Null[] = ?nullHeap,
    EmptyHeapContext[] = ?hctxArray.
+
+LibraryCollectionRoot(?type) <-
+   Type(?type),
+   (Type:fqn(?type:"java.util.AbstractCollection");
+    Type:fqn(?type:"java.util.AbstractMap")).   
+LibraryCollectionType(?type) <-
+   Superclass(?type, ?collRoot),
+   LibraryCollectionRoot(?collRoot).
 
 /*
 //// This is just a very expensive no-op. clinit methods never get called
@@ -266,13 +274,13 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?firstInsn
    FirstInstructionOfMethod[?toMethod] = ?firstInsn,
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo).
 
-AllPredecessors:ArrayIndexMayPointTo
- (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?calleeCtx, ?firstInsn) <-
+AllPredecessors:CollectionMayPointTo
+ (?hctx, ?heap, ?hctxColl, ?collHeap, ?calleeCtx, ?firstInsn) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
    FirstInstructionOfMethod[?toMethod] = ?firstInsn,
-   AllPredecessors:ArrayIndexMayPointTo
-    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?callerCtx, ?invo).
+   AllPredecessors:CollectionMayPointTo
+    (?hctx, ?heap, ?hctxColl, ?collHeap, ?callerCtx, ?invo).
 
 MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
@@ -288,10 +296,10 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?callerCtx, ?invo) <-
    MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
    AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?calleeCtx, ?toMethod).
 
-ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?callerCtx, ?invo) <-
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?callerCtx, ?invo) <-
    MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
-   AllReturn:ArrayIndexMayPointTo
-    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?calleeCtx, ?toMethod).
+   AllReturn:CollectionMayPointTo
+    (?hctx, ?heap, ?hctxColl, ?collHeap, ?calleeCtx, ?toMethod).
 
 _OptStoreInstanceField:From(?insn, ?from) <-
    StoreInstanceField:From[?insn] = ?from.
@@ -321,7 +329,7 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadInstanceField:Base[?insn] = ?base,
    LoadInstanceField:To[?insn] = ?to,
    FieldInstruction:Signature[?insn] = ?fld,
-   InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
    MayPointTo(?hctxBase, ?baseHeap, ?ctx, ?base).
 // TODO: how is the above not horrible indexing? Is it so small? Same for array loads.
 
@@ -343,7 +351,7 @@ Temp3(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadStaticField:To[?insn] = ?to,
    FieldInstruction:Signature[?insn] = ?fld,
-   StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
 
 _OptMethodFromVar[?var] = ?method <-
    Var:DeclaringMethod(?var, ?method).
@@ -367,35 +375,65 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 
 
-// array loads and stores
+// collection loads and stores. For arrays and library collections.
 
-_OptStoreArrayIndex:From(?insn, ?from) <-
+LibraryCollectionStoreOperation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "add"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "put".
+LibraryCollectionLoadOperation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "get". // TODO: better match in future
+
+StoreCollection:From(?insn, ?from) <-
    StoreArrayIndex:From[?insn] = ?from.
+StoreCollection:From(?invo, ?from) <-
+   LibraryCollectionStoreOperation(?invo),
+   (ActualParam[1, ?invo] = ?from;
+    ActualParam[2, ?invo] = ?from).
 
-_OptStoreArrayIndex:Base(?insn, ?var) <-
+StoreCollection:Base(?insn, ?var) <-
    StoreArrayIndex:Base[?insn] = ?var.
-   
-ArrayStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
-   MayPointTo(?hctx, ?heap, ?ctx, ?from),
-   _OptStoreArrayIndex:From(?insn, ?from).
+StoreCollection:Base(?invo, ?var) <-
+   LibraryCollectionStoreOperation(?invo),
+   VirtualMethodInvocation:Base[?invo] = ?var.
 
-ArrayStoreBaseMayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   MayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?base),
-   _OptStoreArrayIndex:Base(?insn, ?base).
+CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
+   MayPointTo(?hctx, ?heap, ?ctx, ?from),
+   StoreCollection:From(?insn, ?from).
+
+CollectionStoreBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   MayPointTo(?hctxColl, ?collHeap, ?ctx, ?base),
+   StoreCollection:Base(?insn, ?base).
 
 // Just like instance field: need to know over-estimate to add more. Also
 // frame rule (later) to propagate existing.
-ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   AllPredecessors:ArrayIndexMayPointTo(_, _, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-   ArrayStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
-   ArrayStoreBaseMayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?insn).
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   AllPredecessors:CollectionMayPointTo(_, _, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+   CollectionStoreBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
+
+
+// now loads
+LoadCollection:To[?insn] = ?to <-
+   LoadArrayIndex:To[?insn] = ?to.
+LoadCollection:To[?invo] = ?to <-
+   LibraryCollectionLoadOperation(?invo),
+   AssignReturnValue[?invo] = ?to.
+
+LoadCollection:Base(?insn, ?var) <-
+   LoadArrayIndex:Base[?insn] = ?var.
+LoadCollection:Base(?invo, ?var) <-
+   LibraryCollectionLoadOperation(?invo),
+   VirtualMethodInvocation:Base[?invo] = ?var.
+
+CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   MayPointTo(?hctxColl, ?collHeap, ?ctx, ?base),
+   LoadCollection:Base(?insn, ?base).
 
 Temp5(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
-   LoadArrayIndex:Base[?insn] = ?base,
-   LoadArrayIndex:To[?insn] = ?to,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-   MayPointTo(?hctxArray, ?arrayHeap, ?ctx, ?base).
+   LoadCollection:To[?insn] = ?to,
+   AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
 
 
 //// ====================================
@@ -425,13 +463,13 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    ReachableMethodUnderMayContext(?ctx, ?method),
    StaticFieldMayPointTo(?hctx, ?heap, ?fld, InitialMayContext[], ?insn).
 
-AllCtxArrayIndexMayPointToInMethod(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?insn, ?method) <-
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, InitialMayContext[], ?insn),
+AllCtxCollectionMayPointToInMethod(?hctx, ?heap, ?hctxColl, ?collHeap, ?insn, ?method) <-
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, InitialMayContext[], ?insn),
    Instruction:Method[?insn] = ?method.
 
-ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
    ReachableMethodUnderMayContext(?ctx, ?method),
-   AllCtxArrayIndexMayPointToInMethod(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?insn, ?method).
+   AllCtxCollectionMayPointToInMethod(?hctx, ?heap, ?hctxColl, ?collHeap, ?insn, ?method).
 
 //// ====================================
 //// BEGIN frame rules
@@ -443,9 +481,13 @@ ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
 
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-   (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+	IgnorableForNonCollectionsMethodInvocation(?insn)),
    (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
+// Handling final fields incurs overhead: too much info carried everywhere.
+// REVIEW: Consider not including to balance speed/coverage.
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
    FieldModifier(Modifier:final[], ?fld).
@@ -462,9 +504,11 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
+	IgnorableForNonCollectionsMethodInvocation(?insn);
 	IgnorableMethodInvocationForStatic(?insn)),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
+// REVIEW: final fields (see above)
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
    FieldModifier(Modifier:final[], ?fld).
@@ -474,16 +518,30 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 // updated. This yields strong updated for static fields.
 
 // Much like instance fields
-ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-   (!MethodInvocation(?insn); IgnorableMethodInvocation(?insn)),
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+	LibraryCollectionLoadOperation(?insn)),
    !StoreArrayIndex:Insn(?insn).
 
-Temp6(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-   ArrayStoreFromVarMayPointTo(_, _, ?ctx, ?insn),
-   ArrayStoreBaseMayPointTo(_, _, ?ctx, ?insn).
+Temp6(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   CollectionStoreFromVarMayPointTo(_, _, ?ctx, ?insn),
+   CollectionStoreBaseMayPointTo(_, _, ?ctx, ?insn).
+
+// if it's a non-array operation on collections but the info concerns an array
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   ArrayType(HeapAllocation:Type[?collHeap]),
+   LibraryCollectionStoreOperation(?insn).
+
+// and the converse. TODO: more fine-grained distinction of library collections?
+CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   LibraryCollectionType(HeapAllocation:Type[?collHeap]),
+   StoreArrayIndex:Insn(?insn).
 
 
 // Some calls to native or otherwise complex methods need to be
@@ -554,6 +612,10 @@ IgnorableMethodInvocationForStatic(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "clone"; // Object
    VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
 
+IgnorableForNonCollectionsMethodInvocation(?invo) <-
+   LibraryCollectionStoreOperation(?invo);
+   LibraryCollectionLoadOperation(?invo).
+   
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
    MethodInvocation:Signature[?invocation] = ?signature,
    StaticMethodInvocation:Insn(?invocation),
@@ -566,8 +628,8 @@ AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap
    AllNonDomPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn).
 AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
-AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   AllNonDomPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn).
+AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   AllNonDomPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn).
 */
 
 
@@ -683,7 +745,7 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
    DominatesItsPredecessorInstruction(_, ?insn).
 
-// TODO: update with arrays
+// TODO: update with collections
 */
 
 
@@ -797,7 +859,7 @@ RootMethodForMayAnalysis(?meth) <-
 // For the legit, official main of a standard Java program, provide
 // dummy argument (String[] args).
 MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-AllPredecessors:ArrayIndexMayPointTo(?hctx, ?argHeap, ?hctx, ?argsArray, ?ctx, ?firstInsn) <-
+AllPredecessors:CollectionMayPointTo(?hctx, ?argHeap, ?hctx, ?argsArray, ?ctx, ?firstInsn) <-
    MainClass(?mainClass),
    MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
    ReachableMethodUnderMayContext(?ctx, ?mainMethod),
@@ -1086,113 +1148,113 @@ AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 /// ----------------------------------
 
 
-/// ArrayIndexMayPointTo for predecessors
+/// CollectionMayPointTo for predecessors
 
 // Up to a certain non-dominated predecessor basic block, there is
-// array-index points-to information. We take the union of all such sets.
-ArrayIndexMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?hctxArray,
-                                          ?arrayHeap, ?ctx, ?insn, ?pred) ->
+// collection points-to information. We take the union of all such sets.
+CollectionMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?hctxColl,
+                                          ?collHeap, ?ctx, ?insn, ?pred) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
-   MayHeapContext(?hctxArray), HeapAllocation(?arrayHeap),
+   MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
    MayContext(?ctx), Instruction(?insn), Instruction(?pred).
 
-ArrayIndexMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?hctxArray,
-                                          ?arrayHeap, ?ctx, ?insn, ?pred) <-
+CollectionMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?hctxColl,
+                                          ?collHeap, ?ctx, ?insn, ?pred) <-
    MaySuccessorBBModuloThrow(?insn, ?pred),
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?tail),
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
    !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
 
-OptArrayIndexMayPointToAtNextNonDomPredecessor
-      (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?predPrev) <-
+OptCollectionMayPointToAtNextNonDomPredecessor
+      (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?predPrev) <-
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?tail),
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
    PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
 
-ArrayIndexMayPointToUpToNonDomPredecessor
- (?hctx1, ?heap1, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?pred),
-ArrayIndexMayPointToUpToNonDomPredecessor
- (?hctx2, ?heap2, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?pred) <-
-   ArrayIndexMayPointToUpToNonDomPredecessor
-    (?hctx1, ?heap1, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?prevPred),
-   OptArrayIndexMayPointToAtNextNonDomPredecessor
-    (?hctx2, ?heap2, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?prevPred),
+CollectionMayPointToUpToNonDomPredecessor
+ (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
+CollectionMayPointToUpToNonDomPredecessor
+ (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred) <-
+   CollectionMayPointToUpToNonDomPredecessor
+    (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
+   OptCollectionMayPointToAtNextNonDomPredecessor
+    (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
    NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
 
 // For all non-dominated predecessor instructions, there is point-to information.
 // We take the union.
-AllNonDomPredecessors:ArrayIndexMayPointTo(
-      ?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) ->
+AllNonDomPredecessors:CollectionMayPointTo(
+      ?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
-   MayHeapContext(?hctxArray), HeapAllocation(?arrayHeap),
+   MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
    MayContext(?ctx), Instruction(?insn).
    
-AllNonDomPredecessors:ArrayIndexMayPointTo
- (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   ArrayIndexMayPointToUpToNonDomPredecessor
-    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?pred),
+AllNonDomPredecessors:CollectionMayPointTo
+ (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   CollectionMayPointToUpToNonDomPredecessor
+    (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
    !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
    !ExceptionHandlerFirstInstruction(?insn).
 
-AllNonDomPredecessors:ArrayIndexMayPointTo
- (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+AllNonDomPredecessors:CollectionMayPointTo
+ (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
    PrevInSameBasicBlock[?insn] = ?prev,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?prev).
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?prev).
 
 
 // Same as above, for all predecessors (not just non-dominated ones)
 
 // Up to a certain predecessor basic block, there is
-// array-index points-to information. We take the union.
-ArrayIndexMayPointToUpToPredecessor(?hctx, ?heap, ?hctxArray, ?arrayHeap,
+// collection points-to information. We take the union.
+CollectionMayPointToUpToPredecessor(?hctx, ?heap, ?hctxColl, ?collHeap,
                                     ?ctx, ?insn, ?pred) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
-   MayHeapContext(?hctxArray), HeapAllocation(?arrayHeap),
+   MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
    MayContext(?ctx), Instruction(?insn), Instruction(?pred).
 
-ArrayIndexMayPointToUpToPredecessor(?hctx, ?heap, ?hctxArray, ?arrayHeap,
+CollectionMayPointToUpToPredecessor(?hctx, ?heap, ?hctxColl, ?collHeap,
                                     ?ctx, ?insn, ?pred) <-
    MaySuccessorBBModuloThrow(?insn, ?pred),
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?tail),
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
    !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
 
-OptArrayIndexMayPointToAtNextPredecessor
- (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?predPrev) <-
+OptCollectionMayPointToAtNextPredecessor
+ (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?predPrev) <-
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?tail),
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
    PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
 
-ArrayIndexMayPointToUpToPredecessor
- (?hctx1, ?heap1, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?pred),
-ArrayIndexMayPointToUpToPredecessor
- (?hctx2, ?heap2, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?pred) <-
-   ArrayIndexMayPointToUpToPredecessor
-    (?hctx1, ?heap1, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?prevPred),
-   OptArrayIndexMayPointToAtNextPredecessor
-    (?hctx2, ?heap2, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?prevPred),
+CollectionMayPointToUpToPredecessor
+ (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
+CollectionMayPointToUpToPredecessor
+ (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred) <-
+   CollectionMayPointToUpToPredecessor
+    (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
+   OptCollectionMayPointToAtNextPredecessor
+    (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
    NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
 
 // For all predecessor instructions, there is point-to information.
 // We take the union.
-AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) ->
+AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
-   MayHeapContext(?hctxArray), HeapAllocation(?arrayHeap),
+   MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
    MayContext(?ctx), Instruction(?insn).
    
-AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-   ArrayIndexMayPointToUpToPredecessor
-    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn, ?pred),
+AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   CollectionMayPointToUpToPredecessor
+    (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
    !(NextPredecessorToSameBB[?insn, ?pred] = _),
    !ExceptionHandlerFirstInstruction(?insn).
 
-AllPredecessors:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
+AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
    PrevInSameBasicBlock[?insn] = ?prev,
-   ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?prev).
+   CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?prev).
 
 /// ----------------------------------
 
@@ -1237,22 +1299,22 @@ AllReturn:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?method) <-
    Instruction:Method[?return] = ?method.
 
 
-// for all returns of a method, an array, at *any* index points to known sets.
+// for all returns of a method, a collection points to known sets.
 // We take their union.
-UpToReturnArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?return) <-
+UpToReturnCollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?return) <-
    ReturnInstruction(?return),
    !ExistsPreviousReturn(?return),
-   AllPredecessors:ArrayIndexMayPointTo
-    (?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?return).
+   AllPredecessors:CollectionMayPointTo
+    (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?return).
 
-UpToReturnArrayIndexMayPointTo(?hctx1, ?heap1, ?hctxArray, ?arrayHeap, ?ctx, ?return),
-UpToReturnArrayIndexMayPointTo(?hctx2, ?heap2, ?hctxArray, ?arrayHeap, ?ctx, ?return) <-
-   UpToReturnArrayIndexMayPointTo(?hctx2, ?heap2, ?hctxArray, ?arrayHeap, ?ctx, ?prevReturn),
+UpToReturnCollectionMayPointTo(?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?return),
+UpToReturnCollectionMayPointTo(?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?return) <-
+   UpToReturnCollectionMayPointTo(?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?prevReturn),
    NextReturn[?prevReturn] = ?return,
-   AllPredecessors:ArrayIndexMayPointTo
-    (?hctx1, ?heap1, ?hctxArray, ?arrayHeap, ?ctx, ?return).
+   AllPredecessors:CollectionMayPointTo
+    (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?return).
 
-AllReturn:ArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?method) <-
-   UpToReturnArrayIndexMayPointTo(?hctx, ?heap, ?hctxArray, ?arrayHeap, ?ctx, ?return),
+AllReturn:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?method) <-
+   UpToReturnCollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?return),
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
