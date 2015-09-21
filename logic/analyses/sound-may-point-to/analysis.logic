@@ -35,6 +35,14 @@ CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
 
 RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
 
+// Auxiliary, simple must-point-to analysis, to avoid monotonicity
+// problems with "forall MayPointTo". Currently not base on the whole
+// must-point-to code base, since the latter is not guaranteed sound.
+_MustPointTo:Object[?ctx, ?var] = ?heap ->
+   HeapAllocation(?heap), Var(?var), MayContext(?ctx).
+_MustPointTo:Hctx[?ctx, ?var] = ?hctx ->
+   MayHeapContext(?hctx), Var(?var), MayContext(?ctx).
+
 
 //// =====================================
 //// BEGIN MayPointTo code
@@ -59,11 +67,15 @@ ReachableMayContext(?ctx) <-
 // REVIEW: This introduces dependency on string-constants.logic
 //RecordMacroMay(?ctx, ?heap, ?hctx),
 MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+_MustPointTo:Object[?ctx, ?var] = ?heap,
+_MustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 
 // strings and others
+_MustPointTo:Object[?ctx, ?var] = ?heap,
+_MustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
    ?hctx = EmptyHeapContext[],
@@ -75,6 +87,8 @@ _OptInstruction:Method(?insn, ?inMeth) <-
    Instruction:Method[?insn] = ?inMeth.
    
 MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+_MustPointTo:Object[?ctx, ?var] = ?heap,
+_MustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    AssignNull:Insn(?insn),
    AssignInstruction:To[?insn] = ?var,
@@ -90,16 +104,41 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    AssignLocal:From[?insn] = ?from,
    MayPointTo(?hctx, ?heap, ?ctx, ?from).
 
+_MustPointTo:Object[?ctx, ?to] = ?heap,
+_MustPointTo:Hctx[?ctx, ?to] = ?hctx <-
+   AssignLocal:Insn(?insn),
+   !(PhiNodeHead[?insn] = _),
+   AssignInstruction:To[?insn] = ?to,
+   AssignLocal:From[?insn] = ?from,
+   _MustPointTo:Object[?ctx, ?from] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
 // casts are like local assignments
+//// TODO: filter our badly typed values
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    AssignCast:Insn(?insn),
    AssignInstruction:To[?insn] = ?to,
    AssignCast:From[?insn] = ?from,
    MayPointTo(?hctx, ?heap, ?ctx, ?from).
 
+_MustPointTo:Object[?ctx, ?to] = ?heap,
+_MustPointTo:Hctx[?ctx, ?to] = ?hctx <-
+   AssignCast:Insn(?insn),
+   AssignInstruction:To[?insn] = ?to,
+   AssignCast:From[?insn] = ?from,
+   _MustPointTo:Object[?ctx, ?from] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
 // Phi
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
+   !(NextInSamePhiNode[?lastInsn] = _),
+   AssignInstruction:To[?lastInsn] = ?var.
+
+_MustPointTo:Object[?ctx, ?var] = ?heap,
+_MustPointTo:Hctx[?ctx, ?var] = ?hctx <-
+   _MustPointToUpToPhiInstruction:Object[?ctx, ?lastInsn] = ?heap,
+   _MustPointToUpToPhiInstruction:Hctx[?ctx, ?lastInsn] = ?hctx,
    !(NextInSamePhiNode[?lastInsn] = _),
    AssignInstruction:To[?lastInsn] = ?var.
 
@@ -153,6 +192,21 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    ThisVar[?toMeth] = ?this,
    MayContextDepth[?ctx] < MaxMayContextDepth[].
 
+// propagate "this" for _MustPointTo
+_OptCertainMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
+   (_OptSpecialMethodInvocation:Base(?invo, ?base);
+    _OptVirtualMethodInvocation:Base(?invo, ?base)),
+   _MustPointTo:Object[?ctx, ?base] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?base] = ?hctx.
+
+_MustPointTo:Object[?calleeCtx, ?this] = ?heap,
+_MustPointTo:Hctx[?calleeCtx, ?this] = ?hctx <-
+   _OptCertainMethodBase(?hctx, ?heap, ?ctx, ?invo),
+   MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+   MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
+   ThisVar[?toMeth] = ?this.
+
+
 /*
 // Uses UNSOUND may-point-to, just for comparison during testing.
 //// Has already stopped being useful, since it doesn't bind "this".
@@ -179,6 +233,15 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ActualParam[?index, ?invo] = ?actual,
    MayPointTo(?hctx, ?heap, ?callerCtx, ?actual).
 
+_MustPointTo:Object[?calleeCtx, ?formal] = ?heap,
+_MustPointTo:Hctx[?calleeCtx, ?formal] = ?hctx <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   FormalParam[?index, ?toMethod] = ?formal,
+   ActualParam[?index, ?invo] = ?actual,
+   _MustPointTo:Object[?callerCtx, ?actual] = ?heap,
+   _MustPointTo:Hctx[?callerCtx, ?actual] = ?hctx.
+
 ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
@@ -188,6 +251,12 @@ ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) <-
 MayPointTo(?hctx, ?heap, ?callerCtx, ?to) <-
    ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
    AllReturn:MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
+
+_MustPointTo:Object[?callerCtx, ?to] = ?heap,
+_MustPointTo:Hctx[?callerCtx, ?to] = ?hctx <-
+   ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
+   _AllReturn:MustPointTo:Object[?calleeCtx, ?toMethod] = ?heap,
+   _AllReturn:MustPointTo:Hctx[?calleeCtx, ?toMethod] = ?hctx.
 
 
 FirstInstructionOfMethod[?meth] = ?firstInsn <-
@@ -336,6 +405,16 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
 // TODO: how is the above not horrible indexing? Is it so small? Same for array loads.
 */
 
+// Sound (but conservative) fix.
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadInstanceField:Base[?insn] = ?base,
+   LoadInstanceField:To[?insn] = ?to,
+   FieldInstruction:Signature[?insn] = ?fld,
+   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   _MustPointTo:Object[?ctx, ?base] = ?baseHeap,
+   _MustPointTo:Hctx[?ctx, ?base] = ?hctxBase.
+
+
 _OptStoreStaticField:From(?insn, ?from) <-
    StoreStaticField:From[?insn] = ?from.
 
@@ -428,17 +507,30 @@ LoadCollection:Base(?invo, ?var) <-
    LibraryCollectionLoadOperation(?invo),
    VirtualMethodInvocation:Base[?invo] = ?var.
 
+/*
 CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
    MayPointTo(?hctxColl, ?collHeap, ?ctx, ?base),
    LoadCollection:Base(?insn, ?base).
 
-/*
+/// UNSOUND!!!
 Temp5(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadCollection:To[?insn] = ?to,
    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
    CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
 */
+
+CollectionLoadBaseMustPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
+   _MustPointTo:Object[?ctx, ?base] = ?collHeap,
+   _MustPointTo:Hctx[?ctx, ?base] = ?hctxColl,
+   LoadCollection:Base(?insn, ?base).
+
+// Sound (but conservative) fix.
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadCollection:To[?insn] = ?to,
+   AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
+   CollectionLoadBaseMustPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
+
 
 //// ====================================
 //// Weakening rules
@@ -474,6 +566,16 @@ AllCtxCollectionMayPointToInMethod(?hctx, ?heap, ?hctxColl, ?collHeap, ?insn, ?m
 CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
    ReachableMethodUnderMayContext(?ctx, ?method),
    AllCtxCollectionMayPointToInMethod(?hctx, ?heap, ?hctxColl, ?collHeap, ?insn, ?method).
+
+_AllCtxMustPointToInMethod(?hctx, ?heap, ?var, ?method) <-
+   _MustPointTo:Object[InitialMayContext[], ?var] = ?heap,
+   _MustPointTo:Hctx[InitialMayContext[], ?var] = ?hctx,
+   _OptMethodFromVar[?var] = ?method.
+
+_MustPointTo:Object[?ctx, ?var] = ?heap,
+_MustPointTo:Hctx[?ctx, ?var] = ?hctx <-
+   ReachableMethodUnderMayContext(?ctx, ?method),
+   _AllCtxMustPointToInMethod(?hctx, ?heap, ?var, ?method).
 
 //// ====================================
 //// BEGIN frame rules
@@ -920,6 +1022,30 @@ MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) <-
    AssignLocal:From[?nextInsn] = ?from,
    MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
 
+// Same for the special case of _MustPointTo
+_MustPointToUpToPhiInstruction:Object[?ctx, ?insn] = ?heap ->
+   HeapAllocation(?heap), MayContext(?ctx), Instruction(?insn).
+_MustPointToUpToPhiInstruction:Hctx[?ctx, ?insn] = ?hctx -> 
+   MayHeapContext(?hctx), MayContext(?ctx), Instruction(?insn).
+
+_MustPointToUpToPhiInstruction:Object[?ctx, ?headInsn] = ?heap,
+_MustPointToUpToPhiInstruction:Hctx[?ctx, ?headInsn] = ?hctx  <-
+   PhiNodeHead[_] = ?headInsn,
+   AssignLocal:From[?headInsn] = ?from,
+   _MustPointTo:Object[?ctx, ?from] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
+_MustPointToUpToPhiInstruction:Object[?ctx, ?nextInsn] = ?heap,
+_MustPointToUpToPhiInstruction:Hctx[?ctx, ?nextInsn] = ?hctx <-
+   _MustPointToUpToPhiInstruction:Object[?ctx, ?insn] = ?heap,
+   _MustPointToUpToPhiInstruction:Hctx[?ctx, ?insn] = ?hctx,
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   AssignLocal:From[?nextInsn] = ?from,
+   _MustPointTo:Object[?ctx, ?from] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
+
+
 // for all returns of a method, the return variable has a known upper bound
 // for its points-to, and we take the union of all such bounds
 UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) <-
@@ -937,6 +1063,31 @@ UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) <-
 
 AllReturn:MayPointTo(?hctx, ?heap, ?ctx, ?method) <-
    UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
+   !(NextReturn[?return] = _),
+   Instruction:Method[?return] = ?method.
+
+// Same for the special case of _MustPointTo
+_UpToReturnMustPointTo:Object[?ctx, ?return] = ?heap,
+_UpToReturnMustPointTo:Hctx[?ctx, ?return] = ?hctx <-
+   ReturnInstruction(?return),
+   !ExistsPreviousReturn(?return),
+   ReturnNonvoid:Var[?return] = ?var,
+   _MustPointTo:Object[?ctx, ?var] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?var] = ?hctx.
+
+_UpToReturnMustPointTo:Object[?ctx, ?return] = ?heap,
+_UpToReturnMustPointTo:Hctx[?ctx, ?return] = ?hctx <-
+   _UpToReturnMustPointTo:Object[?ctx, ?prevReturn] = ?heap,
+   _UpToReturnMustPointTo:Hctx[?ctx, ?prevReturn] = ?hctx,
+   NextReturn[?prevReturn] = ?return,
+   ReturnNonvoid:Var[?return] = ?var,
+   _MustPointTo:Object[?ctx, ?var] = ?heap,
+   _MustPointTo:Hctx[?ctx, ?var] = ?hctx.
+
+_AllReturn:MustPointTo:Object[?ctx, ?method] = ?heap,
+_AllReturn:MustPointTo:Hctx[?ctx, ?method] = ?hctx <-
+   _UpToReturnMustPointTo:Object[?ctx, ?return] = ?heap,
+   _UpToReturnMustPointTo:Hctx[?ctx, ?return] = ?hctx,
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
 
