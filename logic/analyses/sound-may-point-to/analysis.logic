@@ -324,7 +324,9 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
    StoreBaseMayPointTo(?hctxBase, ?baseHeap, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld.
 
+/*
 // load instructions
+/// UNSOUND!!! Need to know the upper bounds of *all* objects that ?base points to.
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadInstanceField:Base[?insn] = ?base,
    LoadInstanceField:To[?insn] = ?to,
@@ -332,6 +334,7 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
    MayPointTo(?hctxBase, ?baseHeap, ?ctx, ?base).
 // TODO: how is the above not horrible indexing? Is it so small? Same for array loads.
+*/
 
 _OptStoreStaticField:From(?insn, ?from) <-
    StoreStaticField:From[?insn] = ?from.
@@ -429,12 +432,13 @@ CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
    MayPointTo(?hctxColl, ?collHeap, ?ctx, ?base),
    LoadCollection:Base(?insn, ?base).
 
+/*
 Temp5(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    LoadCollection:To[?insn] = ?to,
    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
    CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
-
+*/
 
 //// ====================================
 //// Weakening rules
