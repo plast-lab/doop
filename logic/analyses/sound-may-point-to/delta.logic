@@ -92,4 +92,4 @@ _t27[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerMPT(_).
 +Stats:SoundMay:Metrics("V@ app reachable virtual calls statically resolved to 1 target by MPT", _t27[]).
 
 _t28[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(_).
-+Stats:SoundMay:Metrics("V@ app reachable virtual calls statically resolved to 1 target by all-context MPT", _t28[]).
++Stats:SoundMay:Metrics("W@ app reachable virtual calls statically resolved to 1 target by all-context MPT", _t28[]).
