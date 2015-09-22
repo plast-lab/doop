@@ -9,11 +9,12 @@ import org.apache.commons.logging.LogFactory
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
+import java.security.MessageDigest
 
 /**
  * A Factory for creating Analysis objects.
  *
- * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (.e.g entailed
+ * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (e.g. entailed
  * in the doop.core.Helper class) but they are protected instance methods to allow descendants to customize
  * all possible aspects of Analysis creation.
  *
@@ -24,6 +25,7 @@ import java.util.jar.JarFile
 
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-'.toCharArray()
+    static final String HASH_ALGO = "SHA-256"
 
     /**
      * A helper class that acts as an intermediate holder of the analysis variables.
@@ -31,22 +33,24 @@ import java.util.jar.JarFile
     protected static class AnalysisVars {
         String name
         Map<String, AnalysisOption> options
-        Set<String> inputs
-        List<File> jars
+        Set<String> inputJars
+        List<File> inputJarFiles
+        List<String> jreJars
 
         @Override
         String toString() {
             return [
-                name:name,
-                inputs:inputs.toString(),
-                jars:jars.toString(),
-                options:options.values().toString()
+                name     : name,
+                options  : options.values().toString(),
+                inputJars: inputJars.toString(),
+                inputJarFiles: inputJarFiles.toString(),
+                jreJars  : jreJars.toString()
             ].toString()
         }
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its id, name, options and inputs using
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputJars using
      * the supplied input resolution mechanism.
      * If the supplied id is empty or null, an id will be generated automatically.
      * Otherwise the id will be validated:
@@ -58,14 +62,12 @@ import java.util.jar.JarFile
         //Verify that the name of the analysis is valid
         checkName(name)
 
-        //Resolve the analysis inputs
-        List<File> jars = checkInputs(context)
-
         AnalysisVars vars = new AnalysisVars(
-            name   : name,
-            options: options,
-            inputs : context.inputs(),
-            jars   : jars
+            name     : name,
+            options  : options,
+            inputJars: context.inputs(),
+            inputJarFiles: checkInputs(context),
+            jreJars  : jreLinkArgs(options)
         )
 
         logger.debug vars
@@ -90,9 +92,6 @@ import java.util.jar.JarFile
 
         //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
 
-        /*
-        Generate id and outDir as the last analysis initialization actions
-        */
         String analysisId
         if (id) { //non-empty or null
             //validate and set the user supplied id
@@ -102,17 +101,22 @@ import java.util.jar.JarFile
             //Generate the id
             analysisId = generateID(vars)
         }
+        String cacheId = generateCacheID(vars)
 
         //Create the outDir if required
         File outDir = createOutputDirectory(vars, analysisId)
 
+        File cacheDir = new File("${Doop.doopCache}/$cacheId")
+
         Analysis analysis = new Analysis(
             id           : analysisId,
             outDir       : outDir.toString(),
+            cacheDir     : cacheDir.toString(),
             name         : name,
             options      : options,
             ctx          : context,
-            jars         : jars,
+            inputJarFiles: vars.inputJarFiles,
+            jreJars      : vars.jreJars,
             commandsEnvironment: commandsEnv
         )
 
@@ -121,7 +125,7 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * Creates a new analysis, verifying the correctness of its name, options and inputJars using
      * the default input resolution mechanism.
      */
     Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
@@ -153,22 +157,6 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Generates the analysis ID using all of its components (name, inputs and options).
-     */
-    protected String generateID(AnalysisVars vars) {
-        Collection<String> optionsForId = vars.options.keySet().findAll {
-            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
-        }.collect {String option ->
-            return vars.options.get(option).toString()
-        }
-        Collection<String> idComponents = [vars.name] + vars.inputs + optionsForId
-        logger.debug("ID components: $idComponents")
-        String id = idComponents.join('-')
-
-        return Helper.checksum(id, "SHA-256")
-    }
-
-    /**
      * Creates the analysis output dir, if required.
      */
     protected File createOutputDirectory(AnalysisVars vars, String id) {
@@ -179,6 +167,97 @@ import java.util.jar.JarFile
         return f
     }
 
+    /**
+     * Generates the analysis ID using all of its components (name, inputJars and options).
+     */
+    protected String generateID(AnalysisVars vars) {
+        Collection<String> idComponents = vars.options.keySet().findAll {
+            !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
+        }.collect {
+            String option -> return vars.options.get(option).toString()
+        }
+        idComponents = [vars.name] + vars.inputJars + idComponents
+        logger.debug("ID components: $idComponents")
+        String id = idComponents.join('-')
+
+        return Helper.checksum(id, HASH_ALGO)
+    }
+
+    /**
+     * Generates the cache ID (for input facts) using the needed components.
+     */
+    protected String generateCacheID(AnalysisVars vars) {
+        Collection<String> idComponents = vars.options.values().findAll {
+            it.forCacheID
+        }.collect {
+            AnalysisOption option -> option.toString()
+        }
+
+        Collection<String> checksums = new File("${Doop.doopLogic}/facts").listFiles().collect {
+            File file -> Helper.checksum(file, HASH_ALGO)
+        }
+
+        checksums += vars.inputJarFiles.collect {
+            File file -> Helper.checksum(file, HASH_ALGO)
+        }
+
+        checksums += vars.jreJars.collect {
+            String file -> Helper.checksum(new File(file), HASH_ALGO)
+        }
+
+        if(vars.options.TAMIFLEX.value) {
+            checksums += [Helper.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
+        }
+
+        File checksumsFile = Helper.checkFileOrThrowException("${Doop.doopHome}/checksums.properties", "Invalid checksums")
+        Properties p = Helper.loadProperties(checksumsFile)
+        checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
+
+        idComponents = checksums + idComponents
+
+        logger.debug("Cache ID components: $idComponents")
+        String id = idComponents.join('-')
+
+        return Helper.checksum(id, HASH_ALGO)
+    }
+
+    /**
+     * Generates a list of the jre link arguments for soot
+     */
+    protected List<String> jreLinkArgs(Map<String, AnalysisOption> options) {
+
+        String jre = options.JRE.value
+        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
+
+        switch(jre) {
+            case "1.3":
+                return Helper.checkFiles(["${path}/rt.jar".toString()])
+            case "1.4":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
+            case "1.5":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
+            case "1.6":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString()])
+            case "1.7":
+                return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                          "${path}/jce.jar".toString(),
+                                          "${path}/jsse.jar".toString(),
+                                          "${path}/rhino.jar".toString()])
+            case "system":
+                /*
+                String javaHome = System.getProperty("java.home")
+                return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+                */
+                return []
+        }
+    }
+    
     /**
      * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
      * using the input resolution mechanism. It finally returns the inputs as a List<File>.
@@ -249,17 +328,8 @@ import java.util.jar.JarFile
             logger.debug "The EXCEPTIONS_CS option has been enabled"
         }
 
-        if (options.DISABLE_REFLECTION.value) {
-            logger.debug "The DISABLE_REFLECTION option has been enabled"
-            //NOTE:the flag noreflection is set but we don't need it as a separate option/flag 
-        }
-
-        if (options.CONTEXT_SENSITIVE_REFLECTION.value) {
-            logger.debug "The CONTEXT_SENSITIVE_REFLECTION option has been enabled"
-        }
-
-        if (options.CLIENT_EXCEPTION_FLOW.value) {
-            logger.debug "The CLIENT_EXCEPTION_FLOW option has been enabled"
+        if (options.FU_EXCEPTION_FLOW.value) {
+            logger.debug "The FU_EXCEPTION_FLOW option has been enabled"
         }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
@@ -268,40 +338,70 @@ import java.util.jar.JarFile
             logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
         }
 
-        if (options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value) {
+        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
-            options.DISTINGUISH_REFLECTION_STRING_CONSTANTS.value = true
-            logger.debug "The DISTINGUISH_REFLECTION_STRING_CONSTANTS option has been enabled"
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.PADDLE_COMPAT.value = false
+            logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been enabled"
+        } else {
+            // Merging of method and field names happens only if we distinguish
+            // reflection strings in the first place.
+            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
+            logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been disabled"
         }
 
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+            options.PADDLE_COMPAT.value = false
             logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
 
-        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
+        if (options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
+            logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been enabled"
+        } else {
+            // It makes no sense to analyze partial strings that may match fields
+            // when we don't track the flow of these strings through StringBuilders.
+            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
             logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been disabled"
         }
 
-        if (!options.ANALYZE_REFLECTION_SUBSTRINGS.value) {
-            logger.debug "The ANALYZE_REFLECTION_SUBSTRINGS option has been disabled"
+        if (options.REFLECTION_SUBSTRING_ANALYSIS.value) {
+            logger.debug "The REFLECTION_SUBSTRING_ANALYSIS option has been enabled"
         }
 
-        if (!options.MERGE_FIELD_AND_METHOD_SUBSTRINGS.value) { 
-            logger.debug "The MERGE_FIELD_AND_METHOD_SUBSTRINGS option has been disabled"
+        if (options.REFLECTION_MERGE_MEMBER_CONSTANTS.value) { 
+            logger.debug "The REFLECTION_MERGE_MEMBER_CONSTANTS option has been enabled"
         }
 
-        if (options.USE_BASED_REFLECTION_ANALYSIS.value) { 
-            logger.debug "The USE_BASED_REFLECTION_ANALYSIS option has been enabled"
+        if (options.ENABLE_REFLECTION.value) {
+            logger.debug "The ENABLE_REFLECTION option has been enabled"
         }
 
-        if (options.INVENT_UNKNOWN_REFLECTIVE_OBJECTS.value) {
-            logger.debug "The INVENT_UNKNOWN_REFLECTIVE_OBJECTS option has been enabled"
+        if (options.ENABLE_REFLECTION_CLASSIC.value) {
+            options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.ENABLE_REFLECTION.value = true
+            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = true
+            options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
+            options.REFLECTION_SUBSTRING_ANALYSIS.value = true
+            logger.debug "The ENABLE_REFLECTION_CLASSIC option has been enabled"
         }
 
-        if (options.REFINED_REFLECTION_OBJECTS.value) {
-            logger.debug "The REFINED_REFLECTION_OBJECTS option has been enabled"
+        if (options.REFLECTION_CONTEXT_SENSITIVITY.value) {
+            logger.debug "The REFLECTION_CONTEXT_SENSITIVITY option has been enabled"
+        }
+
+        if (options.REFLECTION_USE_BASED_ANALYSIS.value) { 
+            logger.debug "The REFLECTION_USE_BASED_ANALYSIS option has been enabled"
+        }
+
+        if (options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value) {
+            logger.debug "The REFLECTION_INVENT_UNKNOWN_OBJECTS option has been enabled"
+        }
+
+        if (options.REFLECTION_REFINED_OBJECTS.value) {
+            logger.debug "The REFLECTION_REFINED_OBJECTS option has been enabled"
         }
 
         if (!options.INCLUDE_IMPLICITLY_REACHABLE_CODE.value) {
@@ -312,12 +412,7 @@ import java.util.jar.JarFile
             logger.debug "The MERGE_STRING_BUFFERS option has been disabled"
         }
 
-        if (options.NO_CONTEXT_REPEAT.value) {
-            logger.debug "The NO_CONTEXT_REPEAT option has been enabled"
-        }
-
         if (options.TRANSFORM_INPUT.value) {
-            options.SET_BASED.value = true
             logger.debug "The TRANSFORM_INPUT option has been enabled"
         }
 
@@ -341,8 +436,8 @@ import java.util.jar.JarFile
             logger.debug "The SANITY option has been enabled"
         }
 
-        if (options.AVERROES.value) {
-            logger.debug "The AVERROES option has been enabled"
+        if (options.RUN_AVERROES.value) {
+            logger.debug "The RUN_AVERROES option has been enabled"
         }
         
         if (options.RUN_JPHANTOM.value) {
@@ -358,10 +453,13 @@ import java.util.jar.JarFile
         }
 
         if (options.TAMIFLEX.value) {
-            options.DISABLE_REFLECTION.value = true
-            options.REFLECTION_STRING_FLOW_ANALYSIS.value = false
-            options.ANALYZE_REFLECTION_SUBSTRINGS.value = false
+            options.ENABLE_REFLECTION.value = false
             logger.debug "The TAMIFLEX option has been enabled"
+        }
+
+        // Check for SOOT option (cannot be null)
+        if (!options.SOOT.value) {
+            throw new RuntimeException("The SOOT option is null")
         }
 
         // Checks for must analyses
@@ -394,7 +492,7 @@ import java.util.jar.JarFile
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         }
         else {
-            JarFile jarFile = new JarFile(vars.jars[0])
+            JarFile jarFile = new JarFile(vars.inputJarFiles[0])
             //Try to read the main class from the manifest contained in the jar            
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
@@ -411,10 +509,6 @@ import java.util.jar.JarFile
             }
         }
         
-        if (options.INCREMENTAL.value) {
-            logger.debug "The INCREMENTAL option has been enabled"
-        }
-
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
@@ -429,11 +523,25 @@ import java.util.jar.JarFile
             logger.debug "The TAMIFLEX option has been set to ${tamFile}"
         }
         
-        if (options.CLIENT_CODE.value) {
-            String clFile = options.CLIENT_CODE.value.toString()
-            Helper.checkFileOrThrowException(clFile, "The CLIENT_CODE option is invalid: ${clFile}")
-            options.CLIENT_EXTENSIONS.value = true
-            logger.debug "The CLIENT_CODE option has been set to ${clFile}"
+        if (options.AUXILIARY_HEAP.value) {
+            logger.debug "The AUXILIARY_HEAP option has been enabled"
+        }
+
+        if (!options.ENABLE_REFLECTION.value) {
+            if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
+                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
+                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
+                options.REFLECTION_SUBSTRING_ANALYSIS.value ||
+                options.REFLECTION_CONTEXT_SENSITIVITY.value ||
+                options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
+                options.REFLECTION_REFINED_OBJECTS.value) {
+                logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+            } else if (!options.TAMIFLEX.value) {
+                logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
+            } else {
+                logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+            }
         }
     }
     
@@ -504,18 +612,14 @@ import java.util.jar.JarFile
     */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
-            //We don't hard-code the dependencies, we just set the appropriate flags
             vars.options.DACAPO_BENCHMARK.value = benchmark
-            return
         }
         
         if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.jars[0].toString())
-            logger.info "Running dacapo-2009 benchmark: $benchmark"
-            //We don't hard-code the dependencies, we just set the appropriate flags
-            vars.options.DACAPO_2009.value = true
+            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
     }
@@ -538,7 +642,7 @@ import java.util.jar.JarFile
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.jars[0])
+            Set<String> packages = Helper.getPackages(vars.inputJarFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }

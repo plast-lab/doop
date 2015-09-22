@@ -1,6 +1,7 @@
 package doop
 
 import doop.core.Analysis
+import doop.core.AnalysisOption
 import doop.core.Doop
 import doop.core.Helper
 import org.apache.commons.logging.Log
@@ -19,6 +20,7 @@ import java.util.concurrent.*
 class Main {
 
     private static Log logger = LogFactory.getLog(Main)
+    private static final int DEFAULT_TIMEOUT = 180 //3 hours
 
     /**
      * The entry point.
@@ -30,11 +32,9 @@ class Main {
             println "DOOP_HOME environment variable is not set"
             System.exit(-1)
         }
-        String doopOut = System.getenv("DOOP_OUT")
 
-        Doop.initDoop(doopHome, doopOut)
+        Doop.initDoop(doopHome, System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
 
-        //initialize logging
         Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
 
         try {
@@ -78,20 +78,18 @@ class Main {
                 return
             }
 
-            int timeout = 180 //3hours
-            try {
-                timeout = Integer.parseInt(cli.t)
-            }
-            catch(ex) {
-                println "Using the default timeout ($timeout min)"
-            }
 
+            String userTimeout
             Analysis analysis
             if (cli.p) {
-                //create analysis from the properties file
+                //create analysis from the properties file & the cli options
                 String file = cli.p
-                Properties props = Helper.loadProperties(file)
+                File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
+                File propsBaseDir = f.getParentFile()
+                Properties props = Helper.loadProperties(f)
 
+                //There are no mandatory properties since the name and jars can be overridden too.
+                /*
                 try {
                     Helper.checkMandatoryProps(props)
                 }
@@ -99,11 +97,15 @@ class Main {
                     println e.getMessage()
                     return
                 }
+                */
 
-                //change the log level according to the property
-                changeLogLevel(props.getProperty("level"))
+                //change the log level according to the property or cli arg
+                changeLogLevel(cli.l ?: props.getProperty("level"))
 
-                analysis = new CommandLineAnalysisFactory().newAnalysis(props)
+                //set the timeout according to the property or cli arg
+                userTimeout = cli.t ?: props.getProperty("timeout")
+
+                analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
             }
             else {
                 //create analysis from the cli options
@@ -119,13 +121,18 @@ class Main {
                 //change the log level according to the cli arg
                 changeLogLevel(cli.l)
 
+                //set the timeout according to the cli arg
+                userTimeout = cli.t
+
                 analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
 
             analysis.options.BLOX_OPTS.value = bloxOptions
 
-            logger.info "Starting ${analysis.name} analysis on ${analysis.jars[0]} - id: $analysis.id"
+            logger.info "Starting ${analysis.name} analysis on ${analysis.inputJarFiles[0]} - id: $analysis.id"
             logger.debug analysis
+
+            int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
 
             ExecutorService executor = Executors.newSingleThreadExecutor()
             Future future = executor.submit(new Runnable() {

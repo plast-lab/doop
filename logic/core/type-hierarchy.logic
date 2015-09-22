@@ -1,19 +1,28 @@
 /**
+ * The following rules check whether type S can be cast to type T. Implicitly,
+ * they expose the type hierarchy.
+ */
+
+
+/**
  * If S is an ordinary (nonarray) class, then
  * - S must be the same class as T
  * - or a subclass of T
  */
-CheckCast(?s, ?s) <-
+SubtypeOf(?s, ?s),
+SupertypeOf(?s, ?s) <-
    ClassType(?s).
 
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    Subclass(?t, ?s).
 
 /**
  * If T is an interface type, then
  * - S must implement interface T
  */
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    ClassType(?s),
    Superinterface(?t, ?s).
 
@@ -21,28 +30,32 @@ CheckCast(?s, ?t) <-
  * If S is an interface type, then
  * - If T is a class type, then T must be Object
  */
-CheckCast(?s, t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    InterfaceType(?s),
-   Type:fqn(t:"java.lang.Object").
+   Type:fqn(?t:"java.lang.Object").
 
 /**
  * If T is an interface type, then
  * - T must be the same interface as S
  * - or a superinterface of S
  */
-CheckCast(?s, ?s) <-
+SubtypeOf(?s, ?s),
+SupertypeOf(?s, ?s) <-
    InterfaceType(?s).
 
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    InterfaceType(?s),
    Superinterface(?t, ?s).
 
 /**
- *  If S is a class representing the array type SC[], that is an array of
+ *  If S is a class representing the array type SC[], that is, an array of
  *  components of type SC, then
  *  - If T is a class type, then T must be Object
  */
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    ArrayType(?s),
    Type:fqn(?t:"java.lang.Object").
 
@@ -51,7 +64,8 @@ CheckCast(?s, ?t) <-
  *  then one of the following must be true
  *  - TC and SC are the same primitive type
  */
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    ArrayType(?s),
    ArrayType(?t),
    ComponentType[?s] = ?sc,
@@ -62,23 +76,26 @@ CheckCast(?s, ?t) <-
  * - TC and SC are reference types (2.4.6), and type SC can be cast to TC by
  * recursive application of these rules
  */
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    ComponentType[?s] = ?sc,
    ComponentType[?t] = ?tc,
    ReferenceType(?sc),
    ReferenceType(?tc),
-   CheckCast(?sc, ?tc).
+   SubtypeOf(?sc, ?tc).
 
 /**
  *  If T is an interface type, T must be one of the interfaces implemented by
  *  arrays (2.15)
  */
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    ArrayType(?s),
    InterfaceType(?t),
    Type:fqn(?t:"java.lang.Cloneable").
 
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    ArrayType(?s),
    InterfaceType(?t),
    Type:fqn(?t:"java.io.Serializable").
@@ -87,7 +104,8 @@ CheckCast(?s, ?t) <-
 /**
  *  Null type acts as a bottom type
  */
-CheckCast(?s, ?t) <-
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
    Type:null[] = ?s,
    ReferenceType(?t),
    ?t != ?s.
@@ -96,9 +114,16 @@ CheckCast(?s, ?t) <-
 /**
  * Subtyping among Primitive Types
  */
-CheckCast(Type:float[], Type:double[]).
-CheckCast(Type:long[], Type:float[]).
-CheckCast(Type:int[], Type:long[]).
-CheckCast(Type:char[], Type:int[]).
-CheckCast(Type:short[], Type:int[]).
-CheckCast(Type:byte[], Type:short[]).
+SubtypeOf(Type:float[], Type:double[]).
+SubtypeOf(Type:long[], Type:float[]).
+SubtypeOf(Type:int[], Type:long[]).
+SubtypeOf(Type:char[], Type:int[]).
+SubtypeOf(Type:short[], Type:int[]).
+SubtypeOf(Type:byte[], Type:short[]).
+
+SupertypeOf(Type:double[], Type:float[]).
+SupertypeOf(Type:float[], Type:long[]).
+SupertypeOf(Type:long[], Type:int[]).
+SupertypeOf(Type:int[], Type:char[]).
+SupertypeOf(Type:int[], Type:short[]).
+SupertypeOf(Type:short[], Type:byte[]).

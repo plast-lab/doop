@@ -1,12 +1,12 @@
 # Currently either DaCapo2006 or DaCapoBach
 suite      = DaCapo2006
-commonArgs = -t 90
+commonArgs = -t 90 --cache
 analyses   = context-insensitive 1-call-site-sensitive 1-object-sensitive+heap 2-type-sensitive+heap
 benchmarks = ../benchmarks
 outDir     = .
 prefix     = 
 
-.PHONY: run clean fail
+.PHONY: run clean clean-full fail
 fail:
 	$(error "Must specify a target")
 
@@ -42,3 +42,5 @@ $(foreach analysis, $(analyses),\
 
 clean:
 	rm -rf logs/* out/* results/* last-analysis
+clean-full:
+	rm -rf cache/* logs/* out/* results/* last-analysis

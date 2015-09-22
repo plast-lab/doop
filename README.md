@@ -49,7 +49,8 @@ To install Doop, we need to:
 Doop uses the following environment variables:
 
 * `DOOP_HOME`: the Doop home directory (required).
-* `DOOP_OUT`: the directory of output files (optional, defaults to `$DOOP_HOME/out`).
+* `DOOP_OUT`: the directory for output files (optional, defaults to `$DOOP_HOME/out`).
+* `DOOP_CACHE`: the directory for cached facts (optional, defaults to `$DOOP_HOME/cache`).
 * `DOOP_EXTERNALS`: the Doop externals directory (required, can be overridden with the `--externals` option). 
 * `LOGICBLOX_HOME`: the LogicBlox home directory (required, can be overridden with the `--lbhome` option).
 
@@ -107,7 +108,7 @@ Example:
                            -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
                            -j ./lib                            [local directory]
                            -j http://www.example.com/some.jar  [remote file]
-                           -j one.jar,other.jar                [multiple files separated with a comma]
+                           -j one.jar other.jar                [multiple files separated with a space]
 
 The jar option is mandatory.
 
@@ -172,7 +173,10 @@ to process this file, as follows:
 
     $ DOOP_HOME>./bin/doop -p /path/to/file.properties
 
-When the `-p` (or `--properties`) option is given, all other options are ignored.
+You can also override the options from a properties file with options from the command line. For example:
+
+    $ DOOP_HOME>./bin/doop -p /path/to/file.properties -a context-insensitive --jre 1.6
+
 Please consult the `doop.properties` file which offers a skeleton of the properties file
 supported by doop.
 

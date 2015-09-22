@@ -17,10 +17,10 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'
-    static final String JAR              = 'The jar files to analyze. Separate multiple jars with a comma. ' +
+    static final String JAR              = 'The jar files to analyze. Separate multiple jars with a space. ' +
                                            ' If the argument is a directory, all its *.jar files will be included.'
-    static final String PROPS            = 'The path to a properties file containing analysis options. If ' +
-                                           'this option is given, all other options are ignored.'
+    static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
+                                           'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
@@ -47,22 +47,31 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     }
 
     /**
-     * Processes the properties and generates a new analysis.
+     * Processes the properties and the cli and generates a new analysis.
      */
-    Analysis newAnalysis(Properties props) {
+    Analysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
-        String name = props.getProperty("analysis")
+        String name = cli.a ?: props.getProperty("analysis")
 
-        //Get the jars of the analysis
-        List<String> jars = props.getProperty("jar").split().collect { String s-> s.trim() }
+        //Get the jars of the analysis. If there are no jars in the CLI, we get them from the properties.
+        List<String> jars = cli.js
+        if (!jars) {
+            jars = props.getProperty("jar").split().collect { String s -> s.trim() }
+            //The jars, if relative, are being resolved via the propsBaseDir
+            jars = jars.collect { String jar ->
+                File f = new File(jar)
+                return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+            }
+        }
 
         //Get the optional id of the analysis
-        String id = props.getProperty("id")
+        String id = cli.id ?: props.getProperty("id")
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithProperties(props) { AnalysisOption option ->
             option.cli
         }
+        Doop.overrideOptionsWithCLI(options, cli) { AnalysisOption option -> option.cli }
         return newAnalysis(id, name, options, jars)
     }
 
@@ -114,8 +123,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                     #
                     #This is the skeleton of a doop properties file.
                     #Notes:
-                    #- all file paths, if not absolute, should be given relative to the directory that
-                    #  doop is invoked from (and not relative to the directory this file is located).
+                    #- all file paths, if not absolute, should be relative to the directory that contains this file.
                     #- all booleans are processed using the java.lang.Boolean.parseBoolean() conventions.
                     #- all empty properties are ignored.
                     #
@@ -158,10 +166,6 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             }.sort{ AnalysisOption option ->
                 option.id
             }
-
-            //Put the "main" options first
-            cliOptions = cliOptions.findAll { AnalysisOption option -> !option.isAdvanced } +
-                         cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
 
             cliOptions.each { AnalysisOption option ->
                 writeAsProperty(option, w)

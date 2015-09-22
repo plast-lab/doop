@@ -1,15 +1,16 @@
 #doop ingore list
 
-#analysis benchmarks
-^jars
-^externals
+#analysis benchmarks/tools
 ^benchmarks
+^externals
+^tools
 
 #gradle dirs
 ^.gradle
 ^build
 
 #doop dist/runtime files
+^cache
 ^logs
 ^out
 ^results

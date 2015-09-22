@@ -166,6 +166,10 @@ MethodSignature(x), MethodSignature:Value(x:s) -> string(s).
 MethodSignature:DeclaringType[?signature] = ?declaringType ->
    MethodSignature(?signature), Type(?declaringType).
 
+// Return type of method
+MethodSignature:ReturnType[?signature] = ?returnType ->
+   MethodSignature(?signature), Type(?returnType).
+
 // Simple name of this method
 MethodSignature:SimpleName[?signature] = ?simplename ->
    MethodSignature(?signature), SimpleName(?simplename).

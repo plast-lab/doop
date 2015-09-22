@@ -16,6 +16,7 @@
 
 #include "core.logic"
 
+
 /**
  * Generic context-sensitive pointer analysis
  *
@@ -115,7 +116,7 @@ VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
   Assign(?type, ?toCtx, ?to, ?fromCtx, ?from),
   HeapAllocation:Type[?heap] = ?heaptype,
-  AssignCompatible(?type, ?heaptype).
+  SupertypeOf(?type, ?heaptype).
 
 
 // Null assignments
@@ -125,7 +126,7 @@ VarPointsTo(?hctx, ?nullobject, ?toCtx, ?to) <-
    Var:Type[?to] = ?type,
    HeapAllocation:Null[] = ?nullobject,
    HeapAllocation:Type[?nullobject] = ?nulltype,
-   AssignCompatible(?type, ?nulltype),
+   SupertypeOf(?type, ?nulltype),
    ReachableContext(?toCtx, ?inmethod).
 
 
@@ -140,7 +141,7 @@ Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
 /*
 // Assertion for sanity checking
 VarPointsTo(_, ?heap, _, ?to) -> 
-  AssignCompatible(Var:Type[?to], HeapAllocation:Type[?heap]).
+  SupertypeOf(Var:Type[?to], HeapAllocation:Type[?heap]).
 */
 
 // No need to check if type compatible: check is done at original
@@ -177,7 +178,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   // reflective field assignments.
   HeapAllocation:Type[?heap] = ?heaptype,
   Var:Type[?to] = ?vartype,
-  AssignCompatible(?vartype, ?heaptype).
+  SupertypeOf(?vartype, ?heaptype).
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
   ReachableLoadInstanceFieldBase(?base),
@@ -225,7 +226,7 @@ InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
   // reflective field assignments.
   HeapAllocation:Type[?heap] = ?heaptype,
   FieldSignature:Type[?signature] = ?fieldtype, 
-  AssignCompatible(?fieldtype, ?heaptype).
+  SupertypeOf(?fieldtype, ?heaptype).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from) <-
   ReachableStoreInstanceFieldBase(?base),
@@ -284,11 +285,11 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
    // HeapAllocation:Type[?baseheap] = ?baseheaptype,
    // Var:Type[?to] = ?type,
    // ComponentType[?baseheaptype] = ?basecomponenttype,
-   // AssignCompatible(?type, ?basecomponenttype).
+   // SupertypeOf(?type, ?basecomponenttype).
 
 /* YANNIS: used to be the much less precise:
   HeapAllocation:Type[?heap] = ?heaptype,
-  AssignCompatible(?type, ?heaptype).
+  SupertypeOf(?type, ?heaptype).
 */
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) <-
@@ -316,7 +317,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
   ComponentType[?baseheaptype] = ?componenttype,
-  AssignCompatible(?componenttype, ?heaptype).
+  SupertypeOf(?componenttype, ?heaptype).
 
 StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) <-
   ReachableStoreArrayIndexBase(?base),
@@ -424,9 +425,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -450,9 +449,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx), 
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -476,9 +473,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
@@ -494,9 +489,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx), 
   HeapAllocation:Type[?heap] = ?heaptype,
-  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).

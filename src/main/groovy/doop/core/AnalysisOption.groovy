@@ -15,6 +15,7 @@ class AnalysisOption<T>  {
             id             : option.id,
             description    : option.description,
             value          : option.value,
+            forCacheID     : option.forCacheID,
             forPreprocessor: option.forPreprocessor,
             flagType       : option.flagType,
             webUI          : option.webUI,
@@ -42,6 +43,11 @@ class AnalysisOption<T>  {
     T value
 
     /**
+     * Indicates whether the option affects the cacheID generation
+     */
+    boolean forCacheID = false
+    
+    /**
      * Indicates whether the option affects the preprocessor
      */
     boolean forPreprocessor = false
@@ -64,7 +70,7 @@ class AnalysisOption<T>  {
     /**
      * Indicates whether the option can be specified by the user in the command line interface
      */
-    boolean cli = false
+    boolean cli = true
 
     /**
      * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).

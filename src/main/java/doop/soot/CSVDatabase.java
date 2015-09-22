@@ -1,6 +1,7 @@
 package doop.soot;
 
 import doop.PredicateFile;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,8 +9,6 @@ import java.io.Writer;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
-
-import static doop.PredicateFile.ImportScheme.BY_FILE_PREDICATE;
 
 public class CSVDatabase implements Database
 {
@@ -27,13 +26,8 @@ public class CSVDatabase implements Database
         this.directory = directory;
         this.writers = new EnumMap<>(PredicateFile.class);
 
-        // Automatically generate fact files for predicates
-        // that are imported with file predicates
         for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
-        {
-            if (predicateFile.getImportScheme().equals(BY_FILE_PREDICATE))
-                writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
-        }
+            writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
     }
 
     @Override
@@ -98,15 +92,7 @@ public class CSVDatabase implements Database
 
     protected Writer getWriter(PredicateFile predicateFile) throws IOException
     {
-        Writer result = writers.get(predicateFile);
-
-        if (result == null)
-        {
-            result = predicateFile.getWriter(directory, ".facts");
-            writers.put(predicateFile, result);
-        }
-
-        return result;
+        return writers.get(predicateFile);
     }
 
 

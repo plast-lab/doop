@@ -77,9 +77,34 @@ class Helper {
      */
     static Properties loadProperties(String file) {
         File f = checkFileOrThrowException(file, "Not a valid file: $file")
+        return loadProperties(f)
+    }
+
+    /**
+     * Loads the given properties file
+     */
+    static Properties loadProperties(File f) {
         Properties props = new Properties()
         f.withReader { BufferedReader r -> props.load(r)}
         return props
+    }
+
+    /**
+     * Loads a properties file from the classpath
+     * @return the Properties loaded
+     */
+    static Properties loadPropertiesFromClasspath(String path) {
+        Properties p = new Properties()
+        InputStream s
+        try {
+            s = ClassLoader.getSystemResourceAsStream(path)
+            if (s == null) throw new RuntimeException("$path not found in classpath")
+            p.load(s)
+        }
+        finally {
+            if (s) s.close()
+        }
+        return p
     }
 
     /**
@@ -311,7 +336,6 @@ class Helper {
                 Option o = new Option('d', option.name, true, option.description)
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
-                o.setValueSeparator(',' as char)
                 return o
             }
             else if (option.argName) {
@@ -351,9 +375,10 @@ class Helper {
 
     /**
      * Checks that the mandatory options are present in the properties.
+     * This method is deprecated (there are no mandatory properties).
      * @param props - the properties
      */
-    static void checkMandatoryProps(Properties props) {
+    @Deprecated static void checkMandatoryProps(Properties props) {
         boolean noAnalysis = !props.getProperty("analysis")?.trim()
         boolean noJar = !props.getProperty("jar")?.trim()
         boolean error = noAnalysis || noJar
@@ -366,5 +391,31 @@ class Helper {
 
     static boolean isMustPointTo(String name) {
         return "must-point-to".equals(name)
+    }
+
+    /**
+     * Parses the user supplied timeout.
+     * @param userTimeout - the user supplied timeout.
+     * @param defaultTimeout - the default timeout to use if userTimeout is invalid.
+     * @return a positive integer.
+     */
+    static int parseTimeout(String userTimeout, int defaultTimeout) {
+        int timeout = defaultTimeout
+        try {
+            timeout = Integer.parseInt(userTimeout)
+        }
+        catch(ex) {
+            println "Using the default timeout ($timeout min)."
+            return defaultTimeout
+        }
+
+        if (timeout <= 0) {
+            println "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
+            return defaultTimeout
+        }
+        else {
+            println "Using a timeout of $timeout min."
+            return timeout
+        }
     }
 }

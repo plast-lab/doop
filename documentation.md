@@ -117,7 +117,7 @@ The main command line options are described in the `README` file:
          Also note that the old -jre1.x flags are not supported.
 * --lbhome: The LogicBlox directory (defaults to the value of the `$LOGICBLOX_HOME` environment variable).
 * -t, --timeout: The analysis execution timeout in minutes.
-* -p, --properties: Load options from the given properties file. When this option is given, all other options are ignored.
+* -p, --properties: Load options from the given properties file. 
 
 ### Other options {#running.other}
 The new Doop framework supports almost the same set of options with the original doop. To list all the available
@@ -260,13 +260,6 @@ The filter accepted by the last four methods is a closure that filters the optio
     
 overrides only the options that have their `cli` boolean flag set to true.
 
-**Note**: To add a new analysis option to the framework, we need to:
-
-* define the option in the `ANALYSIS_OPTIONS` list. For String options, it is currently necessary to define the
-argName of the option.
-* implement the validation/checks required for the new option (if any) in the `doop.core.AnalysisFactory`,
-* update the implementation of `doop.core.Analysis` to take into account the new option during the execution of the analysis phases.
-
 #### doop.core.Helper
 A class that holds various helper methods for logging, executing external processes, working with files, etc.
 
@@ -281,6 +274,14 @@ interfaces. The first holds a mapping from a String value to a set of local file
 mechanism to construct this mapping in an `InputResolutionContext` which ultimately holds the whole set of mappings
 between inputs and files.
 
+#### Adding a new analysis option
+To add a new analysis option to the framework, we need to:
+
+* define the option in the `ANALYSIS_OPTIONS` list. For String options, it is currently necessary to define the
+argName of the option.
+* implement the validation/checks required for the new option (if any) in the `doop.core.AnalysisFactory`,
+* update the implementation of `doop.core.Analysis` to take into account the new option during the execution of the analysis phases.
+
 
 #### Other classes
 The Java/Groovy part of Doop contains some additional helper classes including the `doop.core.OS`, `doop.core.JRE`, 
@@ -293,10 +294,8 @@ The entry point of the Doop framework. The `doop.Main` class collects the comman
 user and starts the execution of the analysis.
 
 #### doop.CommandLineAnalysisFactory
-The class extends `doop.core.AnalysisFactory` to enable the creation of a `doop.core.Analysis` object from:
-
-* the command line arguments.
-* a properties file.
+The class extends `doop.core.AnalysisFactory` to enable the creation of a `doop.core.Analysis` object from the command 
+line arguments and/or a properties file.
 
 [^about]: This document is to be used with [Pandoc](http://johnmacfarlane.net/pandoc/), using an invocation like the
 following:
