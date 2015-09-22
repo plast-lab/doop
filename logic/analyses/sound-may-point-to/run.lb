@@ -6,9 +6,11 @@ addBlock -F logic/analyses/sound-may-point-to/stats.logic
 commit
 elapsedTime
 
+startTimer
 transaction
 exec -F logic/analyses/sound-may-point-to/delta.logic
 commit
+elapsedTime
 
 transaction
 print Stats:SoundMay:Metrics

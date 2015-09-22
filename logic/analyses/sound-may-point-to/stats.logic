@@ -120,13 +120,19 @@ Stats:SoundMay:AppVirtualCallPerVPT(?to, ?invocation) <-
 Stats:SoundMay:AppVirtualCallPerMPT(?to, ?invocation) <-
    Stats:SoundMay:AppReachableVirtualCall(?invocation),
    MayCallGraphEdge:ToMethod(?to, _, ?invocation).
-//   MayCallGraphEdge:ToMethod(?meth, InitialMayContext[], ?invo).
+
+Stats:SoundMay:AppVirtualCallPerAllCtxMPT(?to, ?invocation) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invocation),
+   MayCallGraphEdge:ToMethod(?to, InitialMayContext[], ?invocation).
 
 Stats:SoundMay:AppVirtualTargetsPerVPT[?from] = ?c <-
    agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerVPT(_, ?from)).
 
 Stats:SoundMay:AppVirtualTargetsPerMPT[?from] = ?c <-
    agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerMPT(_, ?from)).
+
+Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?from] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerAllCtxMPT(_, ?from)).
 
 Stats:SoundMay:MonomorphicCallSitePerVPT(?from) <-
    Stats:SoundMay:AppVirtualTargetsPerVPT[?from] = 1.
@@ -135,5 +141,8 @@ Stats:SoundMay:MonomorphicCallSitePerMPT(?from) <-
    Stats:SoundMay:AppVirtualTargetsPerMPT[?from] = 1.
 // If it's equal to zero, that may indicate unsoundness in VPT. I
 // don't think we should count it. Needs thought.
+
+Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(?from) <-
+   Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?from] = 1.
 
 Stats:SoundMay:Metrics(?attr, ?value) -> string(?attr), float[64](?value).
