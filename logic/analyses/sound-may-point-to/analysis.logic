@@ -468,14 +468,21 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
 
 
 // collection loads and stores. For arrays and library collections.
-
+//// TODO: model iterators
+LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
 LibraryCollectionStoreOperation(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "add"; 
    VirtualMethodInvocation:SimpleName[?invo] = "push"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "set"; 
    VirtualMethodInvocation:SimpleName[?invo] = "put".
 LibraryCollectionLoadOperation(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "peek",
    VirtualMethodInvocation:SimpleName[?invo] = "pop",
+   VirtualMethodInvocation:SimpleName[?invo] = "elementAt",
+   VirtualMethodInvocation:SimpleName[?invo] = "firstElement",
+   VirtualMethodInvocation:SimpleName[?invo] = "lastElement",
+   VirtualMethodInvocation:SimpleName[?invo] = "remove",
    VirtualMethodInvocation:SimpleName[?invo] = "get". // TODO: better match in future
 
 StoreCollection:From(?insn, ?from) <-
@@ -668,6 +675,10 @@ CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
 // called in the constructor of a (ubiquitous) java.lang.Throwable. If
 // not ignored, no image of the heap propagates anywhere.
 // TODO: do a better match (on full sig) than just on SimpleName.
+IgnorableMethodInvocation(?invo) -> MethodInvocation(?invo).
+IgnorableMethodInvocationForStatic(?invo) -> MethodInvocation(?invo).
+IgnorableForNonCollectionsMethodInvocation(?invo) -> MethodInvocation(?invo).
+
 IgnorableMethodInvocation(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "fillInStackTrace"; // Throwable
    VirtualMethodInvocation:SimpleName[?invo] = "equals";  // Object
@@ -734,7 +745,8 @@ IgnorableMethodInvocationForStatic(?invo) <-
 IgnorableForNonCollectionsMethodInvocation(?invo) <-
    LibraryCollectionStoreOperation(?invo);
    LibraryCollectionLoadOperation(?invo).
-   
+
+
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
    MethodInvocation:Signature[?invocation] = ?signature,
    StaticMethodInvocation:Insn(?invocation),

@@ -92,13 +92,13 @@ Stats:SoundMay:PotentiallyFailingAppCastPerVPT(?from, ?to) <-
    Stats:SoundMay:AppReachableCast(_, ?type, ?to, ?from),
    Stats:SoundMay:AppVarPointsTo(?heap, ?from),
    HeapAllocation:Type[?heap] = ?heaptype,
-   !AssignCompatible(?type, ?heaptype).
+   !SupertypeOf(?type, ?heaptype).
 
 Stats:SoundMay:PotentiallyFailingAppCastPerMPT(?from, ?to) <-
    Stats:SoundMay:AppReachableCast(_, ?type, ?to, ?from),
    Stats:SoundMay:AppMayPointTo(?heap, ?from),
    HeapAllocation:Type[?heap] = ?heaptype,
-   !AssignCompatible(?type, ?heaptype).
+   !SupertypeOf(?type, ?heaptype).
 
 Stats:SoundMay:PotentiallyFailingAppCastPerMPT(?from, ?to) <-
    Stats:SoundMay:AppReachableCast(_, _, ?to, ?from),
