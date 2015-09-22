@@ -192,13 +192,16 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    ThisVar[?toMeth] = ?this,
    MayContextDepth[?ctx] < MaxMayContextDepth[].
 
-// propagate "this" for _MustPointTo
+// propagate "this" for _MustPointTo, establish must-call-graph, when
+// applicable
 _OptCertainMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
    (_OptSpecialMethodInvocation:Base(?invo, ?base);
     _OptVirtualMethodInvocation:Base(?invo, ?base)),
    _MustPointTo:Object[?ctx, ?base] = ?heap,
    _MustPointTo:Hctx[?ctx, ?base] = ?hctx.
 
+_MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMeth,
+_MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
 _MustPointTo:Object[?calleeCtx, ?this] = ?heap,
 _MustPointTo:Hctx[?calleeCtx, ?this] = ?hctx <-
    _OptCertainMethodBase(?hctx, ?heap, ?ctx, ?invo),
@@ -226,19 +229,19 @@ MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
 */
 
 // args
-MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
+InvocationActualFormalAssignment(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
    FormalParam[?index, ?toMethod] = ?formal,
-   ActualParam[?index, ?invo] = ?actual,
+   ActualParam[?index, ?invo] = ?actual.
+
+MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
+   InvocationActualFormalAssignment(?calleeCtx, ?formal, ?callerCtx, ?actual),
    MayPointTo(?hctx, ?heap, ?callerCtx, ?actual).
 
 _MustPointTo:Object[?calleeCtx, ?formal] = ?heap,
 _MustPointTo:Hctx[?calleeCtx, ?formal] = ?hctx <-
-   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
-   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
-   FormalParam[?index, ?toMethod] = ?formal,
-   ActualParam[?index, ?invo] = ?actual,
+   InvocationActualFormalAssignment(?calleeCtx, ?formal, ?callerCtx, ?actual),
    _MustPointTo:Object[?callerCtx, ?actual] = ?heap,
    _MustPointTo:Hctx[?callerCtx, ?actual] = ?hctx.
 
@@ -252,9 +255,16 @@ MayPointTo(?hctx, ?heap, ?callerCtx, ?to) <-
    ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
    AllReturn:MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
 
+// for must-point-to, we need a resolved call, otherwise multiple values
+// will flow back.
+ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) <-
+   _MustCallGraphEdge:ToMethod[?callerCtx, ?invo] = ?toMethod,
+   _MustCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   AssignReturnValue[?invo] = ?to.
+
 _MustPointTo:Object[?callerCtx, ?to] = ?heap,
 _MustPointTo:Hctx[?callerCtx, ?to] = ?hctx <-
-   ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
+   ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
    _AllReturn:MustPointTo:Object[?calleeCtx, ?toMethod] = ?heap,
    _AllReturn:MustPointTo:Hctx[?calleeCtx, ?toMethod] = ?hctx.
 
@@ -461,8 +471,11 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
 
 LibraryCollectionStoreOperation(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "add"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "push"; 
    VirtualMethodInvocation:SimpleName[?invo] = "put".
 LibraryCollectionLoadOperation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "peek",
+   VirtualMethodInvocation:SimpleName[?invo] = "pop",
    VirtualMethodInvocation:SimpleName[?invo] = "get". // TODO: better match in future
 
 StoreCollection:From(?insn, ?from) <-
@@ -621,7 +634,7 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 
 // Note the *absence* of a frame rule to keep the old
 // StaticFieldPointsTo information when the same field is
-// updated. This yields strong updated for static fields.
+// updated. This yields strong updates for static fields.
 
 // Much like instance fields
 CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-

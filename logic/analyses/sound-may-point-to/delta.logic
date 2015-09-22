@@ -1,0 +1,87 @@
+_t1[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppMayPointTo(_, _).
++Stats:SoundMay:Metrics("1@ Total app may-point-to", _t1[]).
+
+_t2[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppAllCtxMayPointTo(_, _).
++Stats:SoundMay:Metrics("2@ All-context app may-point-to", _t2[]).
+
+_t3[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarPointsTo(_, _).
++Stats:SoundMay:Metrics("3@ Total app var-points-to (insens)", _t3[]).
+
+
+_t5[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithMayPointTo(_).
++Stats:SoundMay:Metrics("5@ #Vars with may-point-to under some context", _t5[]).
+
+_t6[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithAllCtxMayPointTo(_).
++Stats:SoundMay:Metrics("6@ #Vars with all-context may-point-to", _t6[]).
+
+_t7[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithVarPointsTo(_).
++Stats:SoundMay:Metrics("7@ #Vars with var-points-to", _t7[]).
+
+_t8[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothMayAndVPT(_).
++Stats:SoundMay:Metrics("8@ #Vars with both may-point-to (some context) and var-points-to", _t8[]).
+
+_t9[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothAllCtxMayAndVPT(_).
++Stats:SoundMay:Metrics("9@ #Vars with both may-point-to (all-context) and var-points-to", _t9[]).
+
+_t10[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppMayPointToNonNull(_, _).
++Stats:SoundMay:Metrics("A@ Total app may-point-to ignoring null objects", _t10[]).
+
+_t11[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppAllCtxMayPointToNonNull(_, _).
++Stats:SoundMay:Metrics("B@ All-context app may-point-to ignoring null objects", _t11[]).
+
+_t12[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarPointsToNonNull(_, _).
++Stats:SoundMay:Metrics("C@ Total app var-points-to (insens) ignoring null objects", _t12[]).
+
+_t13[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithMayPointToNonNull(_).
++Stats:SoundMay:Metrics("D@ #Vars with non-null may-point-to under some context", _t13[]).
+
+_t14[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithAllCtxMayPointToNonNull(_).
++Stats:SoundMay:Metrics("E@ #Vars with non-null all-context may-point-to", _t14[]).
+
+_t15[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithVarPointsToNonNull(_).
++Stats:SoundMay:Metrics("F@ #Vars with non-null var-points-to", _t15[]).
+
+_t16[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothNonNullMayAndVPT(_).
++Stats:SoundMay:Metrics("G@ #Vars with both non-null may-point-to (some context) and non-null var-points-to", _t16[]).
+
+_t17[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothNonNullAllCtxMayAndVPT(_).
++Stats:SoundMay:Metrics("H@ #Vars with both non-null may-point-to (all-context) and non-null var-points-to", _t17[]).
+
+_t18[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppMayPointToNonNullOnCommonVars(_, _).
++Stats:SoundMay:Metrics("I@ Total non-null MPT over common VPT/MPT non-null vars", _t18[]).
++Stats:SoundMay:Metrics("J@  Average non-null MPT over common VPT/MPT non-null vars", float64:divide[_t18[], _t16[]]).
+
+_t19[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarPointsToNonNullOnCommonVars(_, _).
++Stats:SoundMay:Metrics("K@ Total non-null VPT over common VPT/MPT non-null vars", _t19[]).
++Stats:SoundMay:Metrics("L@  Average non-null VPT over common VPT/MPT non-null vars", float64:divide[_t19[], _t16[]]).
+
+_t20[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppAllCtxMayPointToNonNullOnCommonVars(_, _).
++Stats:SoundMay:Metrics("M@ Total all-context non-null MPT over common VPT/MPT non-null vars", _t20[]).
++Stats:SoundMay:Metrics("N@  Average all-context non-null MPT over common VPT/MPT non-null vars", float64:divide[_t20[], _t17[]]).
+
+_t21[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppAllCtxVarPointsToNonNullOnCommonVars(_, _).
++Stats:SoundMay:Metrics("O@ Total non-null VPT over common VPT/all-context-MPT non-null vars", _t21[]).
++Stats:SoundMay:Metrics("P@  Average non-null VPT over common VPT/all-context-MPT non-null vars", float64:divide[_t21[], _t17[]]).
+
+
+_t22[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppReachableCast(_, _, _, _).
++Stats:SoundMay:Metrics("Q@ (VPT) app reachable casts", _t22[]).
+
+_t23[] = ?c <- agg<<?c = count()>> Stats:SoundMay:PotentiallyFailingAppCastPerVPT(_, _).
+lang:defaultValue[`_t23] = 0. // should be there for all quantities, but these are more likely to be zero
++Stats:SoundMay:Metrics("R@ app reachable casts statically resolved by VPT (empty VPT sets included)", _t22[] - _t23[]).
+
+_t24[] = ?c <- agg<<?c = count()>> Stats:SoundMay:PotentiallyFailingAppCastPerMPT(_, _).
+lang:defaultValue[`_t24] = 0.
++Stats:SoundMay:Metrics("S@ app reachable casts statically resolved by MPT", _t22[] - _t24[]).
+
+
+_t25[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppReachableVirtualCall(_).
++Stats:SoundMay:Metrics("T@ (VPT) app reachable virtual calls", _t25[]).
+
+_t26[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerVPT(_).
++Stats:SoundMay:Metrics("U@ app reachable virtual calls statically resolved to 1 target by VPT", _t26[]).
+
+_t27[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerMPT(_).
++Stats:SoundMay:Metrics("V@ app reachable virtual calls statically resolved to 1 target by MPT", _t27[]).
+

@@ -1,0 +1,16 @@
+open last-analysis
+echo "-- collecting stats --"
+startTimer
+transaction
+addBlock -F logic/analyses/sound-may-point-to/stats.logic 
+commit
+elapsedTime
+
+transaction
+exec -F logic/analyses/sound-may-point-to/delta.logic
+commit
+
+transaction
+print Stats:SoundMay:Metrics
+commit
+
