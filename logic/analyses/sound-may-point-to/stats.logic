@@ -14,6 +14,23 @@ Stats:SoundMay:AppVarWithMayPointTo(?var) <-
 Stats:SoundMay:AppVarWithAllCtxMayPointTo(?var) <-
    Stats:SoundMay:AppAllCtxMayPointTo(_, ?var).
 
+Stats:SoundMay:AppMustPointTo(?heap, ?var) <-
+   $analysis:_MustPointTo:Object[_, ?var] = ?heap,
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppAllCtxMustPointTo[?var] = ?heap <-
+   $analysis:_MustPointTo:Object[InitialMayContext[], ?var] = ?heap,
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppVarWithMustPointTo(?var) <-
+   Stats:SoundMay:AppMustPointTo(_, ?var).
+
+Stats:SoundMay:AppVarWithAllCtxMustPointTo(?var) <-
+   Stats:SoundMay:AppAllCtxMustPointTo[?var] = _.
+
+
 // These are really VarPointsTo stats, but we don't want to rely on
 // what was computed earlier.
 Stats:SoundMay:AppVarPointsTo(?heap, ?var) <-
@@ -24,12 +41,21 @@ Stats:SoundMay:AppVarPointsTo(?heap, ?var) <-
 Stats:SoundMay:AppVarWithVarPointsTo(?var) <-
    Stats:SoundMay:AppVarPointsTo(_, ?var).
 
+
 Stats:SoundMay:AppVarsWithBothMayAndVPT(?var) <-
    Stats:SoundMay:AppVarWithMayPointTo(?var),
    Stats:SoundMay:AppVarWithVarPointsTo(?var).
 
 Stats:SoundMay:AppVarsWithBothAllCtxMayAndVPT(?var) <-
    Stats:SoundMay:AppVarWithAllCtxMayPointTo(?var),
+   Stats:SoundMay:AppVarWithVarPointsTo(?var).
+
+Stats:SoundMay:AppVarsWithBothMustAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithMustPointTo(?var),
+   Stats:SoundMay:AppVarWithVarPointsTo(?var).
+
+Stats:SoundMay:AppVarsWithBothAllCtxMustAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithAllCtxMustPointTo(?var),
    Stats:SoundMay:AppVarWithVarPointsTo(?var).
 
 
@@ -142,7 +168,15 @@ Stats:SoundMay:MonomorphicCallSitePerMPT(?from) <-
 // If it's equal to zero, that may indicate unsoundness in VPT. I
 // don't think we should count it. Needs thought.
 
+Stats:SoundMay:MonomorphicCallSitePerMust(?from) <-
+   Stats:SoundMay:AppReachableVirtualCall(?from),
+   $analysis:_MustCallGraphEdge:ToMethod[_, ?from] = _.
+
 Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(?from) <-
    Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?from] = 1.
+
+Stats:SoundMay:MonomorphicCallSitePerAllCtxMust(?from) <-
+   Stats:SoundMay:AppReachableVirtualCall(?from),
+   $analysis:_MustCallGraphEdge:ToMethod[InitialMayContext[], ?from] = _.
 
 Stats:SoundMay:Metrics(?attr, ?value) -> string(?attr), float[64](?value).
