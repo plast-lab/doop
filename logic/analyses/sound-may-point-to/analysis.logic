@@ -43,6 +43,12 @@ _MustPointTo:Object[?ctx, ?var] = ?heap ->
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx ->
    MayHeapContext(?hctx), Var(?var), MayContext(?ctx).
 
+// Just for baseline comparisons. Should be very cheap to compute.
+IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap ->
+   HeapAllocation(?heap), Var(?var), MayContext(?ctx).
+IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx ->
+   MayHeapContext(?hctx), Var(?var), MayContext(?ctx).
+
 
 //// =====================================
 //// BEGIN MayPointTo code
@@ -67,6 +73,8 @@ ReachableMayContext(?ctx) <-
 // REVIEW: This introduces dependency on string-constants.logic
 //RecordMacroMay(?ctx, ?heap, ?hctx),
 MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx,
 _MustPointTo:Object[?ctx, ?var] = ?heap,
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
@@ -74,6 +82,8 @@ MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 
 // strings and others
+IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx,
 _MustPointTo:Object[?ctx, ?var] = ?heap,
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
@@ -87,6 +97,8 @@ _OptInstruction:Method(?insn, ?inMeth) <-
    Instruction:Method[?insn] = ?inMeth.
    
 MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx,
 _MustPointTo:Object[?ctx, ?var] = ?heap,
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
@@ -113,6 +125,16 @@ _MustPointTo:Hctx[?ctx, ?to] = ?hctx <-
    _MustPointTo:Object[?ctx, ?from] = ?heap,
    _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
 
+// sadly, duplicate of above
+IntraproceduralMustPointTo:Object[?ctx, ?to] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?to] = ?hctx <-
+   AssignLocal:Insn(?insn),
+   !(PhiNodeHead[?insn] = _),
+   AssignInstruction:To[?insn] = ?to,
+   AssignLocal:From[?insn] = ?from,
+   IntraproceduralMustPointTo:Object[?ctx, ?from] = ?heap,
+   IntraproceduralMustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
 // casts are like local assignments
 //// TODO: filter our badly typed values
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
@@ -129,6 +151,15 @@ _MustPointTo:Hctx[?ctx, ?to] = ?hctx <-
    _MustPointTo:Object[?ctx, ?from] = ?heap,
    _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
 
+// sadly, duplicate of above
+IntraproceduralMustPointTo:Object[?ctx, ?to] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?to] = ?hctx <-
+   AssignCast:Insn(?insn),
+   AssignInstruction:To[?insn] = ?to,
+   AssignCast:From[?insn] = ?from,
+   IntraproceduralMustPointTo:Object[?ctx, ?from] = ?heap,
+   IntraproceduralMustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
 // Phi
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
@@ -139,6 +170,14 @@ _MustPointTo:Object[?ctx, ?var] = ?heap,
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx <-
    _MustPointToUpToPhiInstruction:Object[?ctx, ?lastInsn] = ?heap,
    _MustPointToUpToPhiInstruction:Hctx[?ctx, ?lastInsn] = ?hctx,
+   !(NextInSamePhiNode[?lastInsn] = _),
+   AssignInstruction:To[?lastInsn] = ?var.
+
+// sadly, duplicate of above
+IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx <-
+   IntraproceduralMustPointToUpToPhiInstruction:Object[?ctx, ?lastInsn] = ?heap,
+   IntraproceduralMustPointToUpToPhiInstruction:Hctx[?ctx, ?lastInsn] = ?hctx,
    !(NextInSamePhiNode[?lastInsn] = _),
    AssignInstruction:To[?lastInsn] = ?var.
 
@@ -208,6 +247,13 @@ _MustPointTo:Hctx[?calleeCtx, ?this] = ?hctx <-
    MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
    MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    ThisVar[?toMeth] = ?this.
+
+// again, just for baseline stats
+IntraproceduralCertainMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
+   (_OptSpecialMethodInvocation:Base(?invo, ?base);
+    _OptVirtualMethodInvocation:Base(?invo, ?base)),
+   IntraproceduralMustPointTo:Object[?ctx, ?base] = ?heap,
+   IntraproceduralMustPointTo:Hctx[?ctx, ?base] = ?hctx.
 
 
 /*
@@ -596,6 +642,16 @@ _MustPointTo:Object[?ctx, ?var] = ?heap,
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx <-
    ReachableMethodUnderMayContext(?ctx, ?method),
    _AllCtxMustPointToInMethod(?hctx, ?heap, ?var, ?method).
+
+AllCtxIntraproceduralMustPointToInMethod(?hctx, ?heap, ?var, ?method) <-
+   IntraproceduralMustPointTo:Object[InitialMayContext[], ?var] = ?heap,
+   IntraproceduralMustPointTo:Hctx[InitialMayContext[], ?var] = ?hctx,
+   _OptMethodFromVar[?var] = ?method.
+
+IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap,
+IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx <-
+   ReachableMethodUnderMayContext(?ctx, ?method),
+   AllCtxIntraproceduralMustPointToInMethod(?hctx, ?heap, ?var, ?method).
 
 //// ====================================
 //// BEGIN frame rules
@@ -1068,6 +1124,28 @@ _MustPointToUpToPhiInstruction:Hctx[?ctx, ?nextInsn] = ?hctx <-
    AssignLocal:From[?nextInsn] = ?from,
    _MustPointTo:Object[?ctx, ?from] = ?heap,
    _MustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
+// duplicate of above
+IntraproceduralMustPointToUpToPhiInstruction:Object[?ctx, ?insn] = ?heap ->
+   HeapAllocation(?heap), MayContext(?ctx), Instruction(?insn).
+IntraproceduralMustPointToUpToPhiInstruction:Hctx[?ctx, ?insn] = ?hctx -> 
+   MayHeapContext(?hctx), MayContext(?ctx), Instruction(?insn).
+
+IntraproceduralMustPointToUpToPhiInstruction:Object[?ctx, ?headInsn] = ?heap,
+IntraproceduralMustPointToUpToPhiInstruction:Hctx[?ctx, ?headInsn] = ?hctx  <-
+   PhiNodeHead[_] = ?headInsn,
+   AssignLocal:From[?headInsn] = ?from,
+   IntraproceduralMustPointTo:Object[?ctx, ?from] = ?heap,
+   IntraproceduralMustPointTo:Hctx[?ctx, ?from] = ?hctx.
+
+IntraproceduralMustPointToUpToPhiInstruction:Object[?ctx, ?nextInsn] = ?heap,
+IntraproceduralMustPointToUpToPhiInstruction:Hctx[?ctx, ?nextInsn] = ?hctx <-
+   IntraproceduralMustPointToUpToPhiInstruction:Object[?ctx, ?insn] = ?heap,
+   IntraproceduralMustPointToUpToPhiInstruction:Hctx[?ctx, ?insn] = ?hctx,
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   AssignLocal:From[?nextInsn] = ?from,
+   IntraproceduralMustPointTo:Object[?ctx, ?from] = ?heap,
+   IntraproceduralMustPointTo:Hctx[?ctx, ?from] = ?hctx.
 
 
 

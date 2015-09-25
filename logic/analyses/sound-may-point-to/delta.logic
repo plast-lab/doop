@@ -27,13 +27,13 @@ _t8[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothMayAndVPT(_).
 +Stats:SoundMay:Metrics("8@ #Vars with both may-point-to (some context) and var-points-to", _t8[]).
 
 _t8b[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothMustAndVPT(_).
-+Stats:SoundMay:Metrics("8b@ #Vars with both must-point-to (some context) and var-points-to", _t8b[]).
++Stats:SoundMay:Metrics("8b@ #Vars with both intra-procedural must-point-to (some context) and var-points-to", _t8b[]).
 
 _t9[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothAllCtxMayAndVPT(_).
 +Stats:SoundMay:Metrics("9@ #Vars with both may-point-to (all-context) and var-points-to", _t9[]).
 
 _t9b[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarsWithBothAllCtxMustAndVPT(_).
-+Stats:SoundMay:Metrics("9b@ #Vars with both must-point-to (all-context) and var-points-to", _t9b[]).
++Stats:SoundMay:Metrics("9b@ #Vars with both intra-procedural must-point-to (all-context) and var-points-to", _t9b[]).
 
 _t10[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppMayPointToNonNull(_, _).
 +Stats:SoundMay:Metrics("A@ Total app may-point-to ignoring null objects", _t10[]).
@@ -98,10 +98,10 @@ _t27[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerMPT(_).
 +Stats:SoundMay:Metrics("V@ app reachable virtual calls statically resolved to 1 target by MPT", _t27[]).
 
 _t27b[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerMust(_).
-+Stats:SoundMay:Metrics("Vb@ app reachable virtual calls statically resolved to 1 target by Must-Point-To", _t27b[]).
++Stats:SoundMay:Metrics("Vb@ app reachable virtual calls statically resolved to 1 target by intra-procedural Must-Point-To", _t27b[]).
 
 _t28[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(_).
 +Stats:SoundMay:Metrics("W@ app reachable virtual calls statically resolved to 1 target by all-context MPT", _t28[]).
 
 _t28b[] = ?c <- agg<<?c = count()>> Stats:SoundMay:MonomorphicCallSitePerAllCtxMust(_).
-+Stats:SoundMay:Metrics("Wb@ app reachable virtual calls statically resolved to 1 target by all-context Must-Point-To", _t28b[]).
++Stats:SoundMay:Metrics("Wb@ app reachable virtual calls statically resolved to 1 target by all-context intra-procedural Must-Point-To", _t28b[]).

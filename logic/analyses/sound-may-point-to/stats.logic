@@ -15,12 +15,13 @@ Stats:SoundMay:AppVarWithAllCtxMayPointTo(?var) <-
    Stats:SoundMay:AppAllCtxMayPointTo(_, ?var).
 
 Stats:SoundMay:AppMustPointTo(?heap, ?var) <-
-   $analysis:_MustPointTo:Object[_, ?var] = ?heap,
+   IntraproceduralMustPointTo:Object[_, ?var] = ?heap,
    Var:DeclaringMethod(?var, ?method),
    ApplicationClass(MethodSignature:DeclaringType[?method]).
 
+// Meaningless? It's by definition intra-procedural, hence context-insensitive.
 Stats:SoundMay:AppAllCtxMustPointTo[?var] = ?heap <-
-   $analysis:_MustPointTo:Object[InitialMayContext[], ?var] = ?heap,
+   IntraproceduralMustPointTo:Object[InitialMayContext[], ?var] = ?heap,
    Var:DeclaringMethod(?var, ?method),
    ApplicationClass(MethodSignature:DeclaringType[?method]).
 
@@ -151,32 +152,32 @@ Stats:SoundMay:AppVirtualCallPerAllCtxMPT(?to, ?invocation) <-
    Stats:SoundMay:AppReachableVirtualCall(?invocation),
    MayCallGraphEdge:ToMethod(?to, InitialMayContext[], ?invocation).
 
-Stats:SoundMay:AppVirtualTargetsPerVPT[?from] = ?c <-
-   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerVPT(_, ?from)).
+Stats:SoundMay:AppVirtualTargetsPerVPT[?invo] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerVPT(_, ?invo)).
 
-Stats:SoundMay:AppVirtualTargetsPerMPT[?from] = ?c <-
-   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerMPT(_, ?from)).
+Stats:SoundMay:AppVirtualTargetsPerMPT[?invo] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerMPT(_, ?invo)).
 
-Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?from] = ?c <-
-   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerAllCtxMPT(_, ?from)).
+Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?invo] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerAllCtxMPT(_, ?invo)).
 
-Stats:SoundMay:MonomorphicCallSitePerVPT(?from) <-
-   Stats:SoundMay:AppVirtualTargetsPerVPT[?from] = 1.
+Stats:SoundMay:MonomorphicCallSitePerVPT(?invo) <-
+   Stats:SoundMay:AppVirtualTargetsPerVPT[?invo] = 1.
 
-Stats:SoundMay:MonomorphicCallSitePerMPT(?from) <-
-   Stats:SoundMay:AppVirtualTargetsPerMPT[?from] = 1.
+Stats:SoundMay:MonomorphicCallSitePerMPT(?invo) <-
+   Stats:SoundMay:AppVirtualTargetsPerMPT[?invo] = 1.
 // If it's equal to zero, that may indicate unsoundness in VPT. I
 // don't think we should count it. Needs thought.
 
-Stats:SoundMay:MonomorphicCallSitePerMust(?from) <-
-   Stats:SoundMay:AppReachableVirtualCall(?from),
-   $analysis:_MustCallGraphEdge:ToMethod[_, ?from] = _.
+Stats:SoundMay:MonomorphicCallSitePerMust(?invo) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invo),
+   IntraproceduralCertainMethodBase(_, _, _, ?invo).
 
-Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(?from) <-
-   Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?from] = 1.
+Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(?invo) <-
+   Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?invo] = 1.
 
-Stats:SoundMay:MonomorphicCallSitePerAllCtxMust(?from) <-
-   Stats:SoundMay:AppReachableVirtualCall(?from),
-   $analysis:_MustCallGraphEdge:ToMethod[InitialMayContext[], ?from] = _.
+Stats:SoundMay:MonomorphicCallSitePerAllCtxMust(?invo) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invo),
+   IntraproceduralCertainMethodBase(_, _, InitialMayContext[], ?invo).
 
 Stats:SoundMay:Metrics(?attr, ?value) -> string(?attr), float[64](?value).
