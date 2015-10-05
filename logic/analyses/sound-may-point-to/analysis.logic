@@ -809,6 +809,72 @@ StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
    MethodSignature:SimpleName[?signature] = ?simplename.
 
 /*
+//// Commented out for now. Does not make that much difference. 
+//// InstanceFieldMayPointTo inferences rarely get stopped because of
+//// library calls.
+//// ------------------------------
+// Logic for assuming the library does not affect application fields,
+// except via reflection.
+ApplicationField(?fld) <-
+   FieldSignature:DeclaringClass[?fld] = ?class,
+   ApplicationClass(?class).
+
+ApplicationMethod(?meth) <-
+   MethodSignature:DeclaringType[?meth] = ?declaringType,
+   ApplicationClass(?declaringType).
+
+MethodCallsReflection(?meth) <-
+   Instruction:Method[?invo] = ?meth,
+   MethodInvocation:Signature[?invo] = ?sig,
+   string:substring[?sig, 0, _] = "<java.lang.reflect".
+
+_Opt2MethodInvocation:Signature(?invo, ?inMeth, ?toMeth) <-
+   (StaticMethodInvocation:Insn(?invo);
+    SpecialMethodInvocation:Insn(?invo)), 
+   MethodInvocation:Signature[?invo] = ?toMeth,
+   Instruction:Method[?invo] = ?inMeth.
+
+// exact resolution for static/special
+MethodCallsReflection(?inMeth) <-
+   _Opt2MethodInvocation:Signature(_, ?inMeth, ?toMeth), 
+   MethodCallsReflection(?toMeth).
+
+// underapproximation of virtual method resolution, as if static
+_Opt2MethodInvocation:Signature(?invo, ?inMeth, ?toMeth) <-
+   VirtualMethodInvocation:Insn(?invo),
+   MethodInvocation:Signature[?invo] = ?toMeth,
+   Instruction:Method[?invo] = ?inMeth.
+
+// Naive virtual method resolution, based on name. REVIEW: too conservative?
+_OptVirtualMethodInvocation:Simplename(?inMeth, ?simpleName) <-
+   VirtualMethodInvocation:SimpleName[?invo] = ?simpleName,
+   Instruction:Method[?invo] = ?inMeth.
+
+MethodCallsReflection(?inMeth) <-
+   MethodCallsReflection(?toMeth),
+   MethodSignature:SimpleName[?toMeth] = ?toMethSimpleName,
+   _OptVirtualMethodInvocation:Simplename(?inMeth, ?toMethSimpleName).
+
+InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+   AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+   MethodInvocation:Signature[?insn] = ?calledMethod, // underapproximate
+//   string:substring[?calledMethod, 0, string:length[?str]] != ?str, ?str = "<java.lang.reflect",
+   !MethodCallsReflection(?calledMethod),
+   ApplicationField(?fld),
+   !ApplicationMethod(?calledMethod).
+
+StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+   MethodInvocation:Signature[?insn] = ?calledMethod,
+//   string:substring[?calledMethod, 0, string:length[?str]] != ?str, ?str = "<java.lang.reflect",
+   !MethodCallsReflection(?calledMethod),
+   ApplicationField(?fld),
+   !ApplicationMethod(?calledMethod).
+
+// TODO: also extend to collections
+*/
+
+/*
 //// Unsound HACK! Just during testing, for estimating the impact of
 //// better "NonDom" logic.
 AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
