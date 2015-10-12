@@ -615,6 +615,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    _AccessPath:ByStaticField[?fld] = ?ap.
 
 // load instructions
+Temp7(?hctx, ?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
    LoadInstanceField:Base[?insn] = ?base,
@@ -793,8 +794,18 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    PrevInSameBasicBlock[?insn] = ?prev,
    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev).
 
+/*
+/// No longer necessary. Subsumed by relevant predecessors logic.
 Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
+*/
+
+/*
+//// Unsound HACK! Just during testing, for estimating the impact of
+//// better "NonDom" logic.
+Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
+*/
 
 // // TODO: also, for freshly allocated objects, it should be enough to have
 // //       instance field points-to information for one path. The object doesn't
@@ -805,28 +816,25 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 // REVIEW: Consider not including to balance speed/coverage.
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-   _AccessPath:LastField[?ap] = ?fld,
-   _AccessPath:IsVariable(_AccessPath:Base[?ap]),
+   _SingleFieldAccessPath(?fld, ?ap),
    FieldModifier(Modifier:final[], ?fld).
 
 Temp1(?hctx, ?heap, ?ap, ?ctx, ?insn),
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-   _AccessPath:IsVariable(_AccessPath:Base[?ap]),
-   _AccessPath:LastField[?ap] = ?fld,
+   _SingleFieldAccessPath(?fld, ?ap),
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
 	IgnorableForNonCollectionsMethodInvocation(?insn)),
    (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
-// also for length 2.
+// also for length 3. Currently not triggered.
 Temp2(?hctx, ?heap, ?ap, ?ctx, ?insn),
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
    _AccessPath:Base[?ap] = ?apBase,
-   _AccessPath:IsVariable(_AccessPath:Base[?apBase]),
    _AccessPath:LastField[?ap] = ?fld1,
-   _AccessPath:LastField[?apBase] = ?fld2,
+   _SingleFieldAccessPath(?fld2, ?apBase),
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
 	IgnorableForNonCollectionsMethodInvocation(?insn)),
@@ -841,7 +849,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
 	IgnorableForNonCollectionsMethodInvocation(?insn);
-	IgnorableMethodInvocationForStatic(?insn)),
+	IgnorableForStaticsMethodInvocation(?insn)),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
@@ -852,7 +860,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
 	IgnorableForNonCollectionsMethodInvocation(?insn);
-	IgnorableMethodInvocationForStatic(?insn)),
+	IgnorableForStaticsMethodInvocation(?insn)),
    (!StoreStaticField:Insn(?insn);
     (FieldInstruction:Signature[?insn] != ?fld1,
 	 FieldInstruction:Signature[?insn] != ?fld2)).
@@ -890,92 +898,76 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 //    StoreArrayIndex:Insn(?insn).
 
 
-// // Some calls to native or otherwise complex methods need to be
-// // modeled, i.e., ignored. E.g., fillInStackTrace is a native method
-// // called in the constructor of a (ubiquitous) java.lang.Throwable. If
-// // not ignored, no image of the heap propagates anywhere.
-// // TODO: do a better match (on full sig) than just on SimpleName.
-IgnorableMethodInvocation(?invo) -> MethodInvocation(?invo).
-IgnorableMethodInvocationForStatic(?invo) -> MethodInvocation(?invo).
-IgnorableForNonCollectionsMethodInvocation(?invo) -> MethodInvocation(?invo).
+// Before:AccessPathMayPointTo should be established not just when all
+// predecessor basic blocks have APMPT info, but also when some
+// predecessors have no way to have set it (and all others have
+// it). We speak of "Relevant" predecessors.
+BasicBlockAssignsField(?fld, ?headInsn) <-
+   BasicBlockHead[?insn] = ?headInsn,
+   FieldInstruction:Signature[?insn] = ?fld.
 
-IgnorableMethodInvocation(?invo) <-
-   VirtualMethodInvocation:SimpleName[?invo] = "fillInStackTrace"; // Throwable
-   VirtualMethodInvocation:SimpleName[?invo] = "equals";  // Object
-   VirtualMethodInvocation:SimpleName[?invo] = "hashCode";
-   VirtualMethodInvocation:SimpleName[?invo] = "toString";
-   VirtualMethodInvocation:SimpleName[?invo] = "println"; // PrintStream
-   StaticMethodInvocation:SimpleName[?invo] = "parseInt"; // Integer
-   VirtualMethodInvocation:SimpleName[?invo] = "endsWith"; // String
-   StaticMethodInvocation:SimpleName[?invo] = "floatToRawIntBits"; // Float
-   // these are used in the HashMap "put" method!
-   StaticMethodInvocation:SimpleName[?invo] = "intBitsToFloat"; 
-   // From this point on, it's just a test to see if these natives matter.
-   StaticMethodInvocation:SimpleName[?invo] = "encoding"; // Console
-   StaticMethodInvocation:SimpleName[?invo] = "echo"; 
-   StaticMethodInvocation:SimpleName[?invo] = "istty"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "sync"; // FileDescriptor
-   StaticMethodInvocation:SimpleName[?invo] = "initIDs"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "open"; // FileInputStream
-   VirtualMethodInvocation:SimpleName[?invo] = "read0"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "readBytes"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "skip"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "available"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "close0"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "write"; // FileOutputStream
-   VirtualMethodInvocation:SimpleName[?invo] = "writeBytes"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "availableProcessors"; // Runtime
-   VirtualMethodInvocation:SimpleName[?invo] = "freeMemory"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "totalMemory"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "maxMemory"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "gc"; 
-   StaticMethodInvocation:SimpleName[?invo] = "runFinalization0"; 
-   StaticMethodInvocation:SimpleName[?invo] = "sin"; // StrictMath
-   StaticMethodInvocation:SimpleName[?invo] = "cos"; 
-   StaticMethodInvocation:SimpleName[?invo] = "tan"; 
-   StaticMethodInvocation:SimpleName[?invo] = "log"; 
-   StaticMethodInvocation:SimpleName[?invo] = "pow";
-   StaticMethodInvocation:SimpleName[?invo] = "currentThread"; // Thread
-   StaticMethodInvocation:SimpleName[?invo] = "yield";
-   StaticMethodInvocation:SimpleName[?invo] = "sleep";
-   VirtualMethodInvocation:SimpleName[?invo] = "start0";
-   VirtualMethodInvocation:SimpleName[?invo] = "isInterrupted";
-   VirtualMethodInvocation:SimpleName[?invo] = "isAlive";
-   StaticMethodInvocation:SimpleName[?invo] = "holdsLock";
-   StaticMethodInvocation:SimpleName[?invo] = "getThreads";
-   StaticMethodInvocation:SimpleName[?invo] = "dumpThreads";
-   VirtualMethodInvocation:SimpleName[?invo] = "setPriority";
-   VirtualMethodInvocation:SimpleName[?invo] = "stop0";
-   VirtualMethodInvocation:SimpleName[?invo] = "suspend0";
-   VirtualMethodInvocation:SimpleName[?invo] = "resume0";
-   VirtualMethodInvocation:SimpleName[?invo] = "interrupt0";
-   VirtualMethodInvocation:SimpleName[?invo] = "isAlive";
-   VirtualMethodInvocation:SimpleName[?invo] = "getStackTraceDepth"; // Throwable
-   VirtualMethodInvocation:SimpleName[?invo] = "getStackTraceElement"; 
-   VirtualMethodInvocation:SimpleName[?invo] = "forkAndExec";  // UnixProcess
-   VirtualMethodInvocation:SimpleName[?invo] = "wait"; // Object
-   VirtualMethodInvocation:SimpleName[?invo] = "notify";
-   VirtualMethodInvocation:SimpleName[?invo] = "notifyAll".
+BasicBlockCallsMethod(?headInsn) <-
+   BasicBlockHead[?insn] = ?headInsn,
+   MethodInvocation(?insn),
+   !IgnorableMethodInvocation(?insn).
 
-IgnorableMethodInvocationForStatic(?invo) <-
-   VirtualMethodInvocation:SimpleName[?invo] = "intern"; // String
-   VirtualMethodInvocation:SimpleName[?invo] = "clone"; // Object
-   VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
+SomePathBetweenBasicBlocksAssignsField(?prev, ?next, ?fld) <-
+   BasicBlockAssignsField(?fld, ?prev),
+   MaySuccessorBBModuloThrow(?next, ?prev).
 
-// IgnorableForNonCollectionsMethodInvocation(?invo) <-
-//    LibraryCollectionStoreOperation(?invo);
-//    LibraryCollectionLoadOperation(?invo).
+SomePathBetweenBasicBlocksAssignsField(?prev, ?next, ?fld) <-
+   SomePathBetweenBasicBlocksAssignsField(?prev, ?interm, ?fld),
+   MaySuccessorBBModuloThrow(?next, ?interm).
 
+SomePathBetweenBasicBlocksCallsMethod(?prev, ?next) <-
+   BasicBlockCallsMethod(?prev),
+   MaySuccessorBBModuloThrow(?next, ?prev).
 
-StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
-   MethodInvocation:Signature[?invocation] = ?signature,
-   StaticMethodInvocation:Insn(?invocation),
-   MethodSignature:SimpleName[?signature] = ?simplename.
+SomePathBetweenBasicBlocksCallsMethod(?prev, ?next) <-
+   SomePathBetweenBasicBlocksCallsMethod(?prev, ?interm),
+   MaySuccessorBBModuloThrow(?next, ?interm).
 
+BBHeadIsFirstInstruction(?firstInsn) <-
+   BasicBlockBegin(?firstInsn), 
+   FirstInstructionOfMethod[_] = ?firstInsn.
 
+SomePathFromFirstInstructionAssignsField(?blockHead, ?fld) <-
+   BBHeadIsFirstInstruction(?firstInsn),
+   SomePathBetweenBasicBlocksAssignsField(?firstInsn, ?blockHead, ?fld).
 
+SomePathFromFirstInstructionCallsMethod(?blockHead) <-
+   BBHeadIsFirstInstruction(?firstInsn),
+   SomePathBetweenBasicBlocksCallsMethod(?firstInsn, ?blockHead).
 
+AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail).
 
+Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   AllRelevantPredecessors:HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
+
+/*
+BasicBlockInMethod(?blockHead, ?meth) <-
+   BasicBlockBegin(?blockHead),
+   Instruction:Method[?blockHead] = ?meth.
+
+BasicBlocksInSameMethod(?blockHead1, ?blockHead2) <-
+   BasicBlockInMethod(?blockHead1, ?meth),
+   BasicBlockInMethod(?blockHead2, ?meth),
+   ?blockHead1 != ?blockHead2.
+
+// Is there an assignment for the field in *any* path between
+// ?prev and ?next with ?bypassing absent from that path?
+SomeBypassingPathBetweenBasicBlocksAssignsField(?prev, ?next, ?bypassing, ?fld) <-
+   BasicBlockAssignsField(?fld, ?prev),
+   BasicBlocksInSameMethod(?bypassing, ?prev),
+   MaySuccessorBBModuloThrow(?next, ?prev),
+   ?next != ?bypassing.
+...
+*/
 
 /*
 //// Commented out for now. Does not make that much difference. 
@@ -1043,17 +1035,6 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 // TODO: also extend to collections
 */
 
-/*
-//// Unsound HACK! Just during testing, for estimating the impact of
-//// better "NonDom" logic.
-AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
-   AllNonDomPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn).
-AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
-   AllNonDomPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn).
-AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-   AllNonDomPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn).
-*/
-
 
 
 /*
@@ -1100,17 +1081,12 @@ AllMethodCallsDefinite(?method) <-
 
 
 
-
 /*
 // TODO: currently has no impact. Comment out and re-check when non-invalidating
 //       method calls are added?
 
 // Interesting addition to frame rules:
 // propagate in case of non-invalidating dominated predecessors.
-
-BasicBlockMayInvalidateFieldPointsTo(?fld, ?headInsn) <-
-   BasicBlockHead[?insn] = ?headInsn,
-   FieldInstruction:Signature[?insn] = ?fld.
 
 // The path (dominated by ?dominator) that ends at ?insn
 // may invalidate some field.
@@ -1173,7 +1149,93 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 
 //// END frame rules
 
+//// ====================================
 
+//// BEGIN configuration of ignorable method calls
+
+// Some calls to native or otherwise complex methods need to be
+// modeled, i.e., ignored. E.g., fillInStackTrace is a native method
+// called in the constructor of a (ubiquitous) java.lang.Throwable. If
+// not ignored, no image of the heap propagates anywhere.
+// TODO: do a better match (on full sig) than just on SimpleName.
+IgnorableMethodInvocation(?invo) -> MethodInvocation(?invo).
+IgnorableForStaticsMethodInvocation(?invo) -> MethodInvocation(?invo).
+IgnorableForNonCollectionsMethodInvocation(?invo) -> MethodInvocation(?invo).
+
+IgnorableMethodInvocation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "fillInStackTrace"; // Throwable
+   VirtualMethodInvocation:SimpleName[?invo] = "equals";  // Object
+   VirtualMethodInvocation:SimpleName[?invo] = "hashCode";
+   VirtualMethodInvocation:SimpleName[?invo] = "toString";
+   VirtualMethodInvocation:SimpleName[?invo] = "println"; // PrintStream
+   StaticMethodInvocation:SimpleName[?invo] = "parseInt"; // Integer
+   VirtualMethodInvocation:SimpleName[?invo] = "endsWith"; // String
+   StaticMethodInvocation:SimpleName[?invo] = "floatToRawIntBits"; // Float
+   // these are used in the HashMap "put" method!
+   StaticMethodInvocation:SimpleName[?invo] = "intBitsToFloat"; 
+   // From this point on, it's just a test to see if these natives matter.
+   StaticMethodInvocation:SimpleName[?invo] = "encoding"; // Console
+   StaticMethodInvocation:SimpleName[?invo] = "echo"; 
+   StaticMethodInvocation:SimpleName[?invo] = "istty"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "sync"; // FileDescriptor
+   StaticMethodInvocation:SimpleName[?invo] = "initIDs"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "open"; // FileInputStream
+   VirtualMethodInvocation:SimpleName[?invo] = "read0"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "readBytes"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "skip"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "available"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "close0"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "write"; // FileOutputStream
+   VirtualMethodInvocation:SimpleName[?invo] = "writeBytes"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "availableProcessors"; // Runtime
+   VirtualMethodInvocation:SimpleName[?invo] = "freeMemory"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "totalMemory"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "maxMemory"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "gc"; 
+   StaticMethodInvocation:SimpleName[?invo] = "runFinalization0"; 
+   StaticMethodInvocation:SimpleName[?invo] = "sin"; // StrictMath
+   StaticMethodInvocation:SimpleName[?invo] = "cos"; 
+   StaticMethodInvocation:SimpleName[?invo] = "tan"; 
+   StaticMethodInvocation:SimpleName[?invo] = "log"; 
+   StaticMethodInvocation:SimpleName[?invo] = "pow";
+   StaticMethodInvocation:SimpleName[?invo] = "currentThread"; // Thread
+   StaticMethodInvocation:SimpleName[?invo] = "yield";
+   StaticMethodInvocation:SimpleName[?invo] = "sleep";
+   VirtualMethodInvocation:SimpleName[?invo] = "start0";
+   VirtualMethodInvocation:SimpleName[?invo] = "isInterrupted";
+   VirtualMethodInvocation:SimpleName[?invo] = "isAlive";
+   StaticMethodInvocation:SimpleName[?invo] = "holdsLock";
+   StaticMethodInvocation:SimpleName[?invo] = "getThreads";
+   StaticMethodInvocation:SimpleName[?invo] = "dumpThreads";
+   VirtualMethodInvocation:SimpleName[?invo] = "setPriority";
+   VirtualMethodInvocation:SimpleName[?invo] = "stop0";
+   VirtualMethodInvocation:SimpleName[?invo] = "suspend0";
+   VirtualMethodInvocation:SimpleName[?invo] = "resume0";
+   VirtualMethodInvocation:SimpleName[?invo] = "interrupt0";
+   VirtualMethodInvocation:SimpleName[?invo] = "isAlive";
+   VirtualMethodInvocation:SimpleName[?invo] = "getStackTraceDepth"; // Throwable
+   VirtualMethodInvocation:SimpleName[?invo] = "getStackTraceElement"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "forkAndExec";  // UnixProcess
+   VirtualMethodInvocation:SimpleName[?invo] = "wait"; // Object
+   VirtualMethodInvocation:SimpleName[?invo] = "notify";
+   VirtualMethodInvocation:SimpleName[?invo] = "notifyAll".
+
+IgnorableForStaticsMethodInvocation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "intern"; // String
+   VirtualMethodInvocation:SimpleName[?invo] = "clone"; // Object
+   VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
+
+// IgnorableForNonCollectionsMethodInvocation(?invo) <-
+//    LibraryCollectionStoreOperation(?invo);
+//    LibraryCollectionLoadOperation(?invo).
+
+
+StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
+   MethodInvocation:Signature[?invocation] = ?signature,
+   StaticMethodInvocation:Insn(?invocation),
+   MethodSignature:SimpleName[?signature] = ?simplename.
+
+//// END configuration of ignorable method calls
 
 //// ====================================
 
@@ -1256,6 +1318,14 @@ _AccessPath:ContainsStaticField[?ap] = ?fld <-
 _AccessPath:ContainsStaticField[?ap] = ?fld <-
    _AccessPath:Base[?ap] = ?baseAp,
    _AccessPath:ContainsStaticField[?baseAp] = ?fld.
+
+// static or var.instance
+_SingleFieldAccessPath(?fld, ?ap) <-
+   _AccessPath:IsVariable(_AccessPath:Base[?ap]),
+   _AccessPath:LastField[?ap] = ?fld.
+
+_SingleFieldAccessPath(?fld, ?ap) <-
+   _AccessPath:ByStaticField[?fld] = ?ap.
 
 // Access path is more than just a var or a single static field.
 _AccessPath:IsComposite(?ap) ->
@@ -1530,7 +1600,7 @@ RootMethodForMayAnalysis(?meth) <-
 // For the legit, official main of a standard Java program, provide
 // dummy argument (String[] args).
 MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-AllPredecessors:CollectionMayPointTo(?hctx, ?argHeap, ?hctx, ?argsArray, ?ctx, ?firstInsn) <-
+Before:CollectionMayPointTo(?hctx, ?argHeap, ?hctx, ?argsArray, ?ctx, ?firstInsn) <-
    MainClass(?mainClass),
    MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
    ReachableMethodUnderMayContext(?ctx, ?mainMethod),
@@ -1742,92 +1812,40 @@ _AllReturn:SameRetVar[?method] = ?var <-
 
 /// AccessPathMayPointTo for predecessors
 
-// Up to a certain non-dominated predecessor basic block, there is
-// access path point-to information. We take the union.
-AccessPathMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) ->
-   MayHeapContext(?hctx), HeapAllocation(?heap),
-   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
 
-AccessPathMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) <-
+// The interesting concept is that of relevant predecessors for some
+// access path.  E.g., if a predecessor is not reachable from the
+// first instruction of the method via a path that can set the access
+// path, then it's not a relevant predecessor.
+
+OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn) <-
    MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
-   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
-
-OptAccessPathMayPointToAtNextNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?predPrev) <-
    BasicBlockEnd(?tail),
-   BasicBlockHead[?tail] = ?pred,
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
-   PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+   AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail).
 
-AccessPathMayPointToUpToNonDomPredecessor(?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?pred),
-AccessPathMayPointToUpToNonDomPredecessor(?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?pred) <-
-   AccessPathMayPointToUpToNonDomPredecessor
-    (?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?prevPred),
-   OptAccessPathMayPointToAtNextNonDomPredecessor
-    (?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?prevPred),
-   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+// does the first one have *some* access path points-to info, or is irrelevant?
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+   MayPredecessorBBModuloThrow(?pred, ?insn),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+   _SingleFieldAccessPath(?fld, ?ap),
+   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+	(!SomePathFromFirstInstructionAssignsField(?pred, ?fld),
+	 !SomePathFromFirstInstructionCallsMethod(?pred))).
 
-// For all non-dominated predecessor instructions, there is point-to information.
-// We take the union.
-AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
-   MayHeapContext(?hctx), HeapAllocation(?heap),
-   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
+   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred,
+   _SingleFieldAccessPath(?fld, ?ap),
+   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+	(!SomePathFromFirstInstructionAssignsField(?pred, ?fld),
+	 !SomePathFromFirstInstructionCallsMethod(?pred))).
 
-AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
-   AccessPathMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred),
-   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
-   PrevInSameBasicBlock[?insn] = ?prev,
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev).
-
-
-// Same as above, for all predecessors (not just non-dominated ones)
-
-// Up to a certain predecessor basic block, there is
-// access path point-to information. We take the union.
-AccessPathMayPointToUpToPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) ->
-   MayHeapContext(?hctx), HeapAllocation(?heap),
-   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
-
-AccessPathMayPointToUpToPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) <-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockEnd(?tail),
-   BasicBlockHead[?tail] = ?pred,
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
-
-OptAccessPathMayPointToAtNextPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?predPrev) <-
-   BasicBlockEnd(?tail),
-   BasicBlockHead[?tail] = ?pred,
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
-   PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
-
-AccessPathMayPointToUpToPredecessor(?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?pred),
-AccessPathMayPointToUpToPredecessor(?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?pred) <-
-   AccessPathMayPointToUpToPredecessor(?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?prevPred),
-   OptAccessPathMayPointToAtNextPredecessor(?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?prevPred),
-   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
-
-// For all predecessor instructions, there is point-to information.
-// We take the union.
-AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
-   MayHeapContext(?hctx), HeapAllocation(?heap),
-   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
-
-AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
-   AccessPathMayPointToUpToPredecessor
-    (?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred),
+AllRelevantPredecessors:HasAccessPathMayPointTo(?ap, ?ctx, ?insn) <-
+   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
    !(NextPredecessorToSameBB[?insn, ?pred] = _),
    !ExceptionHandlerFirstInstruction(?insn).
-
-AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
-   PrevInSameBasicBlock[?insn] = ?prev,
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev).
-
 
 /// ----------------------------------
 
@@ -2019,3 +2037,86 @@ AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 //    StoreBaseMayPointTo(_, _, ?ctx, ?insn),
 //    FieldInstruction:Signature[?insn] = ?fld.
 
+
+
+//// The following will probably be garbage-collected soon.
+
+/*
+// Up to a certain non-dominated predecessor basic block, there is
+// access path point-to information. We take the union.
+AccessPathMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+AccessPathMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
+   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
+
+OptAccessPathMayPointToAtNextNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
+   PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+AccessPathMayPointToUpToNonDomPredecessor(?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?pred),
+AccessPathMayPointToUpToNonDomPredecessor(?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?pred) <-
+   AccessPathMayPointToUpToNonDomPredecessor
+    (?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?prevPred),
+   OptAccessPathMayPointToAtNextNonDomPredecessor
+    (?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?prevPred),
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all non-dominated predecessor instructions, there is point-to information.
+// We take the union.
+AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
+
+AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred),
+   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+
+// Same as above, for all predecessors (not just non-dominated ones)
+
+// Up to a certain predecessor basic block, there is
+// access path point-to information. We take the union.
+AccessPathMayPointToUpToPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+AccessPathMayPointToUpToPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred) <-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+OptAccessPathMayPointToAtNextPredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn, ?predPrev) <-
+   BasicBlockEnd(?tail),
+   BasicBlockHead[?tail] = ?pred,
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
+   PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
+
+AccessPathMayPointToUpToPredecessor(?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?pred),
+AccessPathMayPointToUpToPredecessor(?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?pred) <-
+   AccessPathMayPointToUpToPredecessor(?hctx1, ?heap1, ?ap, ?ctx, ?insn, ?prevPred),
+   OptAccessPathMayPointToAtNextPredecessor(?hctx2, ?heap2, ?ap, ?ctx, ?insn, ?prevPred),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+// For all predecessor instructions, there is point-to information.
+// We take the union.
+AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
+
+AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointToUpToPredecessor
+    (?hctx, ?heap, ?ap, ?ctx, ?insn, ?pred),
+   !(NextPredecessorToSameBB[?insn, ?pred] = _),
+   !ExceptionHandlerFirstInstruction(?insn).
+*/

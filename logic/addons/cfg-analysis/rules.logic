@@ -1,3 +1,5 @@
+// See the declarations of the predicates for comments on their use and meaning.
+
 OptInstructionFromMethodIndex[?method, ?index] = ?insn <-
    Instruction:Method[?insn] = ?method,
    Instruction:Index[?insn] = ?index.
