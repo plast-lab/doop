@@ -450,14 +450,14 @@ _AccessPathShouldBeRebased(?ap, ?var, ?to) <-
    _AccessPath:BaseVar[?ap] = ?var.
 
 _AccessPathShouldBeRebased(?formalAp, ?formal, ?actual) <-
-   _MustCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
+   _MustCallGraphEdge:ToMethodAndContext(_, ?invo, ?calleeCtx, ?toMethod),
    FormalParam[?index, ?toMethod] = ?formal,
    ActualParam[?index, ?invo] = ?actual,
    AllReturn:AccessPathMayPointTo(_, _, ?formalAp, ?calleeCtx, ?toMethod),
    _AccessPath:BaseVar[?formalAp] = ?formal.
 
 _AccessPathShouldBeRebased(?thisAp, ?this, ?base) <-
-   _MustCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
+   _MustCallGraphEdge:ToMethodAndContext(_, ?invo, ?calleeCtx, ?toMethod),
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this,
@@ -801,13 +801,6 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 // //       exist in others. This needs escape reasoning? The object may come back
 // //       to the same program point through the other path.
 
-// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
-//    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-//    (!MethodInvocation(?insn);
-//     IgnorableMethodInvocation(?insn);
-// 	IgnorableForNonCollectionsMethodInvocation(?insn)),
-//    (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
-
 // Handling final fields incurs overhead: too much info carried everywhere.
 // REVIEW: Consider not including to balance speed/coverage.
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
@@ -816,16 +809,32 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    _AccessPath:IsVariable(_AccessPath:Base[?ap]),
    FieldModifier(Modifier:final[], ?fld).
 
-// // A stunning frame rule for sound-may: if we have an overapproximation of what the
-// // store instruction updates, then all past information on the same field can be kept.
-// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
-//    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-//    StoreFromVarMayPointTo(_, _, ?ctx, ?insn),
-//    StoreBaseMayPointTo(_, _, ?ctx, ?insn),
-//    FieldInstruction:Signature[?insn] = ?fld.
+Temp1(?hctx, ?heap, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   _AccessPath:IsVariable(_AccessPath:Base[?ap]),
+   _AccessPath:LastField[?ap] = ?fld,
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+	IgnorableForNonCollectionsMethodInvocation(?insn)),
+   (!StoreInstanceField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
 
-// TODO: frame rules for access paths on instance fields
+// also for length 2.
+Temp2(?hctx, ?heap, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   _AccessPath:Base[?ap] = ?apBase,
+   _AccessPath:IsVariable(_AccessPath:Base[?apBase]),
+   _AccessPath:LastField[?ap] = ?fld1,
+   _AccessPath:LastField[?apBase] = ?fld2,
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+	IgnorableForNonCollectionsMethodInvocation(?insn)),
+   (!StoreInstanceField:Insn(?insn);
+    (FieldInstruction:Signature[?insn] != ?fld1,
+	 FieldInstruction:Signature[?insn] != ?fld2)).
 
+// similar for static
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
    _AccessPath:ByStaticFieldInv[?ap] = ?fld,
@@ -834,6 +843,19 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 	IgnorableForNonCollectionsMethodInvocation(?insn);
 	IgnorableMethodInvocationForStatic(?insn)),
    (!StoreStaticField:Insn(?insn); FieldInstruction:Signature[?insn] != ?fld).
+
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   _AccessPath:Base[?ap] = ?apBase,
+   _AccessPath:ByStaticFieldInv[?apBase] = ?fld1,
+   _AccessPath:LastField[?ap] = ?fld2,
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+	IgnorableForNonCollectionsMethodInvocation(?insn);
+	IgnorableMethodInvocationForStatic(?insn)),
+   (!StoreStaticField:Insn(?insn);
+    (FieldInstruction:Signature[?insn] != ?fld1,
+	 FieldInstruction:Signature[?insn] != ?fld2)).
 
 // REVIEW: final fields (see above)
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
@@ -1942,7 +1964,8 @@ AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 
 
 
-///// LEGACY
+///// LEGACY: things that I thought were highly interesting in previous versions of
+/////         the code, but don't apply any more.
 // /*
 // ReturnValueOfCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) <-
 //    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
@@ -1986,3 +2009,13 @@ AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 //    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
 //    _MustPointTo:Object[?ctx, ?base] = ?baseHeap,
 //    _MustPointTo:Hctx[?ctx, ?base] = ?hctxBase.
+//
+// // ...
+// // A stunning frame rule for sound-may: if we have an overapproximation of what the
+// // store instruction updates, then all past information on the same field can be kept.
+// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
+//    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+//    StoreFromVarMayPointTo(_, _, ?ctx, ?insn),
+//    StoreBaseMayPointTo(_, _, ?ctx, ?insn),
+//    FieldInstruction:Signature[?insn] = ?fld.
+
