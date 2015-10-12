@@ -27,14 +27,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
    _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
 
-/// Should there be a "collection access path" concept?
-/*
-CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
-   MayHeapContext(?hctx), HeapAllocation(?heap),
-   MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
-   MayContext(?ctx), Instruction(?insn).
-*/
-
 RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
 
 // Auxiliary, simple must-point-to analysis, to avoid monotonicity
@@ -523,25 +515,29 @@ Before:AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?firstInsn) <-
    _AccessPath:ByVar[?this] = ?thisAp,
    HeapAllocation:Null[] = ?nullHeap.
 
-// // initialize arrays and library collections to null at allocation
-// Temp4(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-// MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
-// CollectionMayPointTo(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn) <-
-//    AssignHeapAllocation:Heap[?insn] = ?arrayHeap,
-//    HeapAllocation:Type[?arrayHeap] = ?type,
-//    (ArrayType(?type); LibraryCollectionType(?type)),
-//    Instruction:Method[?insn] = ?inMeth,
-//    ReachableMethodUnderMayContext(?ctx, ?inMeth),
-//    HeapAllocation:Null[] = ?nullHeap,
-//    EmptyHeapContext[] = ?hctxArray.
+// initialize arrays and library collections to null at allocation
+Temp4(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
+MayHeapContext(?hctx), EmptyHeapContext[] = ?hctx,
+_AccessPath(?ap),
+_AccessPath:ByCollectionVar[?to] = ?ap,
+_AccessPath:Length[?ap] = 1,
+AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?insn) <-
+   AssignHeapAllocation:Heap[?insn] = ?arrayHeap,
+   AssignInstruction:To[?insn] = ?to,
+   HeapAllocation:Type[?arrayHeap] = ?type,
+   (ArrayType(?type); LibraryCollectionType(?type)),
+   Instruction:Method[?insn] = ?inMeth,
+   ReachableMethodUnderMayContext(?ctx, ?inMeth),
+   HeapAllocation:Null[] = ?nullHeap,
+   EmptyHeapContext[] = ?hctxArray.
 
-// LibraryCollectionRoot(?type) <-
-//    Type(?type),
-//    (Type:fqn(?type:"java.util.AbstractCollection");
-//     Type:fqn(?type:"java.util.AbstractMap")).   
-// LibraryCollectionType(?type) <-
-//    Superclass(?type, ?collRoot),
-//    LibraryCollectionRoot(?collRoot).
+LibraryCollectionRoot(?type) <-
+   Type(?type),
+   (Type:fqn(?type:"java.util.AbstractCollection");
+    Type:fqn(?type:"java.util.AbstractMap")).   
+LibraryCollectionType(?type) <-
+   Superclass(?type, ?collRoot),
+   LibraryCollectionRoot(?collRoot).
 
 // /*
 // //// This is just a very expensive no-op. clinit methods never get called
@@ -562,23 +558,6 @@ Before:AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?firstInsn) <-
 //    ReferenceType(?fldType),
 //    HeapAllocation:Null[] = ?nullHeap.
 // */
-
-// AllPredecessors:CollectionMayPointTo
-//  (?hctx, ?heap, ?hctxColl, ?collHeap, ?calleeCtx, ?firstInsn) <-
-//    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
-//    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
-//    FirstInstructionOfMethod[?toMethod] = ?firstInsn,
-//    AllPredecessors:CollectionMayPointTo
-//     (?hctx, ?heap, ?hctxColl, ?collHeap, ?callerCtx, ?invo).
-
-// MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod) <-
-//    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
-//    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx.
-
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?callerCtx, ?invo) <-
-//    MayCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
-//    AllReturn:CollectionMayPointTo
-//     (?hctx, ?heap, ?hctxColl, ?collHeap, ?calleeCtx, ?toMethod).
 
 // Minor auxiliaries for store/load instructions
 _OptStoreInstanceField:From(?insn, ?from) <-
@@ -653,89 +632,71 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    ReachableMethodUnderMayContext(?ctx, ?inMeth).
 
 
-// // collection loads and stores. For arrays and library collections.
-// //// TODO: model iterators
-// LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
-// LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
-// LibraryCollectionStoreOperation(?invo) <-
-//    VirtualMethodInvocation:SimpleName[?invo] = "add"; 
-//    VirtualMethodInvocation:SimpleName[?invo] = "push"; 
-//    VirtualMethodInvocation:SimpleName[?invo] = "set"; 
-//    VirtualMethodInvocation:SimpleName[?invo] = "put".
-// LibraryCollectionLoadOperation(?invo) <-
-//    VirtualMethodInvocation:SimpleName[?invo] = "peek",
-//    VirtualMethodInvocation:SimpleName[?invo] = "pop",
-//    VirtualMethodInvocation:SimpleName[?invo] = "elementAt",
-//    VirtualMethodInvocation:SimpleName[?invo] = "firstElement",
-//    VirtualMethodInvocation:SimpleName[?invo] = "lastElement",
-//    VirtualMethodInvocation:SimpleName[?invo] = "remove",
-//    VirtualMethodInvocation:SimpleName[?invo] = "get". // TODO: better match in future
+// collection loads and stores. For arrays and library collections.
+//// TODO: model iterators
+LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionStoreOperation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "add"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "push"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "set"; 
+   VirtualMethodInvocation:SimpleName[?invo] = "put".
+LibraryCollectionLoadOperation(?invo) <-
+   VirtualMethodInvocation:SimpleName[?invo] = "peek",
+   VirtualMethodInvocation:SimpleName[?invo] = "pop",
+   VirtualMethodInvocation:SimpleName[?invo] = "elementAt",
+   VirtualMethodInvocation:SimpleName[?invo] = "firstElement",
+   VirtualMethodInvocation:SimpleName[?invo] = "lastElement",
+   VirtualMethodInvocation:SimpleName[?invo] = "remove",
+   VirtualMethodInvocation:SimpleName[?invo] = "get". // TODO: better match in future
 
-// StoreCollection:From(?insn, ?from) <-
-//    StoreArrayIndex:From[?insn] = ?from.
-// StoreCollection:From(?invo, ?from) <-
-//    LibraryCollectionStoreOperation(?invo),
-//    (ActualParam[1, ?invo] = ?from;
-//     ActualParam[2, ?invo] = ?from).
+StoreCollection:From(?insn, ?from) <-
+   StoreArrayIndex:From[?insn] = ?from.
+StoreCollection:From(?invo, ?from) <-
+   LibraryCollectionStoreOperation(?invo),
+   (ActualParam[1, ?invo] = ?from;
+    ActualParam[2, ?invo] = ?from).
 
-// StoreCollection:Base(?insn, ?var) <-
-//    StoreArrayIndex:Base[?insn] = ?var.
-// StoreCollection:Base(?invo, ?var) <-
-//    LibraryCollectionStoreOperation(?invo),
-//    VirtualMethodInvocation:Base[?invo] = ?var.
+StoreCollection:Base[?insn] = ?var <-
+   StoreArrayIndex:Base[?insn] = ?var.
+StoreCollection:Base[?invo] = ?var <-
+   LibraryCollectionStoreOperation(?invo),
+   VirtualMethodInvocation:Base[?invo] = ?var.
 
-// CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
-//    MayPointTo(?hctx, ?heap, ?ctx, ?from),
-//    StoreCollection:From(?insn, ?from).
+CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
+   MayPointTo(?hctx, ?heap, ?ctx, ?from),
+   StoreCollection:From(?insn, ?from).
 
-// CollectionStoreBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    MayPointTo(?hctxColl, ?collHeap, ?ctx, ?base),
-//    StoreCollection:Base(?insn, ?base).
+TentativeCollectionBaseApMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+   StoreCollection:Base[?insn] = ?base,
+   _AccessPath:ByCollectionVar[?base] = ?ap.
 
-// // Just like instance field: need to know over-estimate to add more. Also
-// // frame rule (later) to propagate existing.
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    AllPredecessors:CollectionMayPointTo(_, _, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
-//    CollectionStoreBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
+// store instructions, weak update of AccessPathMayPointTo info! Need
+// to know over-estimate to add more. Also propagate existing.
+AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) <-
+   TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+   Before:AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
 
+// now loads
+LoadCollection:To[?insn] = ?to <-
+   LoadArrayIndex:To[?insn] = ?to.
+LoadCollection:To[?invo] = ?to <-
+   LibraryCollectionLoadOperation(?invo),
+   AssignReturnValue[?invo] = ?to.
 
-// // now loads
-// LoadCollection:To[?insn] = ?to <-
-//    LoadArrayIndex:To[?insn] = ?to.
-// LoadCollection:To[?invo] = ?to <-
-//    LibraryCollectionLoadOperation(?invo),
-//    AssignReturnValue[?invo] = ?to.
+LoadCollection:Base[?insn] = ?var <-
+   LoadArrayIndex:Base[?insn] = ?var.
+LoadCollection:Base[?invo] = ?var <-
+   LibraryCollectionLoadOperation(?invo),
+   VirtualMethodInvocation:Base[?invo] = ?var.
 
-// LoadCollection:Base(?insn, ?var) <-
-//    LoadArrayIndex:Base[?insn] = ?var.
-// LoadCollection:Base(?invo, ?var) <-
-//    LibraryCollectionLoadOperation(?invo),
-//    VirtualMethodInvocation:Base[?invo] = ?var.
-
-// /*
-// CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    MayPointTo(?hctxColl, ?collHeap, ?ctx, ?base),
-//    LoadCollection:Base(?insn, ?base).
-
-// /// UNSOUND!!!
-// Temp5(?hctx, ?heap, ?ctx, ?to),
-// MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
-//    LoadCollection:To[?insn] = ?to,
-//    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    CollectionLoadBaseMayPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
-// */
-
-// CollectionLoadBaseMustPointTo(?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    _MustPointTo:Object[?ctx, ?base] = ?collHeap,
-//    _MustPointTo:Hctx[?ctx, ?base] = ?hctxColl,
-//    LoadCollection:Base(?insn, ?base).
-
-// // Sound (but conservative) fix.
-// MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
-//    LoadCollection:To[?insn] = ?to,
-//    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    CollectionLoadBaseMustPointTo(?hctxColl, ?collHeap, ?ctx, ?insn).
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   LoadCollection:To[?insn] = ?to,
+   LoadCollection:Base[?insn] = ?base,
+   _AccessPath:ByCollectionVarInv[?ap] = ?base.
 
 
 // //// ====================================
@@ -758,14 +719,6 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    Instruction:Method[?insn] = ?method,
    ReachableMethodUnderMayContext(?ctx, ?method),
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, InitialMayContext[], ?insn).
-
-// AllCtxCollectionMayPointToInMethod(?hctx, ?heap, ?hctxColl, ?collHeap, ?insn, ?method) <-
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, InitialMayContext[], ?insn),
-//    Instruction:Method[?insn] = ?method.
-
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    ReachableMethodUnderMayContext(?ctx, ?method),
-//    AllCtxCollectionMayPointToInMethod(?hctx, ?heap, ?hctxColl, ?collHeap, ?insn, ?method).
 
 _AllCtxMustPointToInMethod(?hctx, ?heap, ?var, ?method) <-
    _MustPointTo:Object[InitialMayContext[], ?var] = ?heap,
@@ -807,10 +760,10 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    AllNonDomPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
 */
 
-// // TODO: also, for freshly allocated objects, it should be enough to have
-// //       instance field points-to information for one path. The object doesn't
-// //       exist in others. This needs escape reasoning? The object may come back
-// //       to the same program point through the other path.
+// TODO: also, for freshly allocated objects, it should be enough to have
+//       instance field points-to information for one path. The object doesn't
+//       exist in others. This needs escape reasoning? The object may come back
+//       to the same program point through the other path.
 
 // Handling final fields incurs overhead: too much info carried everywhere.
 // REVIEW: Consider not including to balance speed/coverage.
@@ -865,37 +818,38 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
     (FieldInstruction:Signature[?insn] != ?fld1,
 	 FieldInstruction:Signature[?insn] != ?fld2)).
 
-// REVIEW: final fields (see above)
+// REVIEW: final static fields (see above)
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
    _AccessPath:ByStaticFieldInv[?ap] = ?fld,
    FieldModifier(Modifier:final[], ?fld).
 
-// // Much like instance fields
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    (!MethodInvocation(?insn);
-//     IgnorableMethodInvocation(?insn);
-// 	LibraryCollectionLoadOperation(?insn)),
-//    !StoreArrayIndex:Insn(?insn).
 
-// Temp6(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    CollectionStoreFromVarMayPointTo(_, _, ?ctx, ?insn),
-//    CollectionStoreBaseMayPointTo(_, _, ?ctx, ?insn).
+// Also propagating the information for collection access paths.
+Temp8(?hctx, ?heap, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   _AccessPath:ByCollectionVarInv[?ap] = _,
+   (!MethodInvocation(?insn);
+    IgnorableMethodInvocation(?insn);
+    LibraryCollectionLoadOperation(?insn)),
+   !StoreArrayIndex:Insn(?insn).
 
-// // if it's a non-array operation on collections but the info concerns an array
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    ArrayType(HeapAllocation:Type[?collHeap]),
-//    LibraryCollectionStoreOperation(?insn).
+// if it's a non-array operation on collections but the info concerns an array
+Temp9(?hctx, ?heap, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   _AccessPath:ByCollectionVarInv[?ap] = ?base,
+   ArrayType(Var:Type[?base]),
+   LibraryCollectionStoreOperation(?insn).
 
-// // and the converse. TODO: more fine-grained distinction of library collections?
-// CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn),
-//    LibraryCollectionType(HeapAllocation:Type[?collHeap]),
-//    StoreArrayIndex:Insn(?insn).
+// and the converse. TODO: more fine-grained distinction of library collections?
+Temp10(?hctx, ?heap, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   _AccessPath:ByCollectionVarInv[?ap] = ?base,
+   LibraryCollectionType(Var:Type[?base]),
+   StoreArrayIndex:Insn(?insn).
 
 
 // Before:AccessPathMayPointTo should be established not just when all
@@ -1225,9 +1179,9 @@ IgnorableForStaticsMethodInvocation(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "clone"; // Object
    VirtualMethodInvocation:SimpleName[?invo] = "append". // StringBuilder
 
-// IgnorableForNonCollectionsMethodInvocation(?invo) <-
-//    LibraryCollectionStoreOperation(?invo);
-//    LibraryCollectionLoadOperation(?invo).
+IgnorableForNonCollectionsMethodInvocation(?invo) <-
+   LibraryCollectionStoreOperation(?invo);
+   LibraryCollectionLoadOperation(?invo).
 
 
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
@@ -1282,6 +1236,21 @@ lang:skolem(`_AccessPath:ByFieldAccess).
 _AccessPath:ByFieldAccessInv[?ap1, ?fld] = ?ap2 <- 
    _AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2.
 
+// Special access path constructor, based on a variable of collection type.
+// Incompatible with all other access path types. The access paths represents
+// all the *contents* of the collection (not the collection that the var
+// points-to, but all the objects that the collection points-to internally).
+_AccessPath:ByCollectionVar[?var] = ?ap ->
+   Var(?var), _AccessPath(?ap).
+lang:skolem(`_AccessPath:ByCollectionVar).
+
+_AccessPath:ByCollectionVarInv[?ap] = ?var ->
+   _AccessPath(?ap), Var(?var).
+
+_AccessPath:ByCollectionVarInv[?ap] = ?var <-
+   _AccessPath:ByCollectionVar[?var] = ?ap.
+
+// Decomposing access paths
 _AccessPath:Base[?ap] = ?base ->
    _AccessPath(?ap), _AccessPath(?base).
 
@@ -1364,6 +1333,9 @@ _AccessPath:BaseVar[?ap] = ?var <-
    _AccessPath:ByVar[?var] = ?ap.
 
 _AccessPath:BaseVar[?ap] = ?var <-
+   _AccessPath:ByCollectionVar[?var] = ?ap.
+
+_AccessPath:BaseVar[?ap] = ?var <-
    _AccessPath:BaseInv(?ap, ?apBase),
    _AccessPath:BaseVar[?apBase] = ?var.
 
@@ -1378,6 +1350,11 @@ _AccessPath:ToString[?ap] = ?str <-
 _AccessPath:ToString[?ap] = ?str <-
    _AccessPath:ByStaticFieldInv[?ap] = ?f,
    _NameFromRefMode[?f] = ?str.
+
+_AccessPath:ToString[?ap] = ?str2 <-
+   _AccessPath:ByCollectionVarInv[?ap] = ?v,
+   _NameFromRefMode[?v] = ?str,
+   ?str2 = "collection on " + ?str.
 
 _AccessPath:ToString[?ap] = ?str <-
    _AccessPath:Base[?ap] = ?base,
@@ -1473,6 +1450,16 @@ RebaseComposite_AccessPath[?ap, ?to, ?from] = ?newAp <-
    _AccessPath:LastField[?ap] = ?fld,
    _AccessPath:Length[?ap] = ?len.
 
+// Special-case the collection access paths
+Temp11(?newAp),
+_AccessPath(?newAp),
+_AccessPath:ByCollectionVar[?to] = ?newAp,
+_AccessPath:Length[?newAp] = 1,
+RebaseComposite_AccessPath[?ap, ?to, ?from] = ?newAp <-
+   _AccessPathShouldBeRebased(?ap, ?from, ?to),
+   _AccessPath:ByCollectionVar[?from] = ?ap.
+
+
 // inverting for efficiency
 _AccessPath:BaseVarInv(?ap, ?var) <-
    _AccessPath:BaseVar[?ap] = ?var.
@@ -1483,6 +1470,11 @@ Composite_AccessPath:SameFields(?ap1, ?ap2) <-
    _AccessPath:LastField[?ap1] = _AccessPath:LastField[?ap2],
    _AccessPath:IsVariable(_AccessPath:Base[?ap1]),
    _AccessPath:IsVariable(_AccessPath:Base[?ap2]).
+
+Composite_AccessPath:SameFields(?ap1, ?ap2) <-
+   _AccessPathsShouldBeCompared(?ap1, ?ap2),
+   _AccessPath:ByCollectionVarInv[?ap1] = _,
+   _AccessPath:ByCollectionVarInv[?ap2] = _.
 
 Composite_AccessPath:SameFields(?ap1, ?ap2) <-
    Composite_AccessPath:SameFields(?baseAp1, ?baseAp2),
@@ -1600,7 +1592,10 @@ RootMethodForMayAnalysis(?meth) <-
 // For the legit, official main of a standard Java program, provide
 // dummy argument (String[] args).
 MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-Before:CollectionMayPointTo(?hctx, ?argHeap, ?hctx, ?argsArray, ?ctx, ?firstInsn) <-
+_AccessPath(?ap),
+_AccessPath:ByCollectionVar[?args] = ?ap,
+_AccessPath:Length[?ap] = 1,
+AccessPathMayPointTo(?hctx, ?argHeap, ?ap, ?ctx, ?firstInsn) <-
    MainClass(?mainClass),
    MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
    ReachableMethodUnderMayContext(?ctx, ?mainMethod),
@@ -1833,6 +1828,18 @@ HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
    (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
 	(!SomePathFromFirstInstructionAssignsField(?pred, ?fld),
 	 !SomePathFromFirstInstructionCallsMethod(?pred))).
+   // the above can be weakened to eliminate collection method calls,
+   // but below (for collections) we need to be careful. We should not
+   // assume we know all operations, so we should be conservative with
+   // method calls.
+   
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+   MayPredecessorBBModuloThrow(?pred, ?insn),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+   _AccessPath:ByCollectionVarInv[?ap] = _, 
+   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+	!SomePathFromFirstInstructionCallsMethod(?pred)).
 
 HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
@@ -1842,145 +1849,19 @@ HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
 	(!SomePathFromFirstInstructionAssignsField(?pred, ?fld),
 	 !SomePathFromFirstInstructionCallsMethod(?pred))).
 
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) <-
+   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred,
+   _AccessPath:ByCollectionVarInv[?ap] = _, 
+   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+	!SomePathFromFirstInstructionCallsMethod(?pred)).
+
 AllRelevantPredecessors:HasAccessPathMayPointTo(?ap, ?ctx, ?insn) <-
    HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
    !(NextPredecessorToSameBB[?insn, ?pred] = _),
    !ExceptionHandlerFirstInstruction(?insn).
 
 /// ----------------------------------
-
-
-// /// CollectionMayPointTo for predecessors
-
-// // Up to a certain non-dominated predecessor basic block, there is
-// // collection points-to information. We take the union of all such sets.
-// CollectionMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?hctxColl,
-//                                           ?collHeap, ?ctx, ?insn, ?pred) ->
-//    MayHeapContext(?hctx), HeapAllocation(?heap),
-//    MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
-//    MayContext(?ctx), Instruction(?insn), Instruction(?pred).
-
-// CollectionMayPointToUpToNonDomPredecessor(?hctx, ?heap, ?hctxColl,
-//                                           ?collHeap, ?ctx, ?insn, ?pred) <-
-//    MaySuccessorBBModuloThrow(?insn, ?pred),
-//    BasicBlockEnd(?tail),
-//    BasicBlockHead[?tail] = ?pred,
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
-//    !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn).
-
-// OptCollectionMayPointToAtNextNonDomPredecessor
-//       (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?predPrev) <-
-//    BasicBlockEnd(?tail),
-//    BasicBlockHead[?tail] = ?pred,
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
-//    PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
-
-// CollectionMayPointToUpToNonDomPredecessor
-//  (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
-// CollectionMayPointToUpToNonDomPredecessor
-//  (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred) <-
-//    CollectionMayPointToUpToNonDomPredecessor
-//     (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
-//    OptCollectionMayPointToAtNextNonDomPredecessor
-//     (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
-//    NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
-
-// // For all non-dominated predecessor instructions, there is point-to information.
-// // We take the union.
-// AllNonDomPredecessors:CollectionMayPointTo(
-//       ?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
-//    MayHeapContext(?hctx), HeapAllocation(?heap),
-//    MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
-//    MayContext(?ctx), Instruction(?insn).
-   
-// AllNonDomPredecessors:CollectionMayPointTo
-//  (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    CollectionMayPointToUpToNonDomPredecessor
-//     (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
-//    !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
-//    !ExceptionHandlerFirstInstruction(?insn).
-
-// AllNonDomPredecessors:CollectionMayPointTo
-//  (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    PrevInSameBasicBlock[?insn] = ?prev,
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?prev).
-
-
-// // Same as above, for all predecessors (not just non-dominated ones)
-
-// // Up to a certain predecessor basic block, there is
-// // collection points-to information. We take the union.
-// CollectionMayPointToUpToPredecessor(?hctx, ?heap, ?hctxColl, ?collHeap,
-//                                     ?ctx, ?insn, ?pred) ->
-//    MayHeapContext(?hctx), HeapAllocation(?heap),
-//    MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
-//    MayContext(?ctx), Instruction(?insn), Instruction(?pred).
-
-// CollectionMayPointToUpToPredecessor(?hctx, ?heap, ?hctxColl, ?collHeap,
-//                                     ?ctx, ?insn, ?pred) <-
-//    MaySuccessorBBModuloThrow(?insn, ?pred),
-//    BasicBlockEnd(?tail),
-//    BasicBlockHead[?tail] = ?pred,
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
-//    !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
-
-// OptCollectionMayPointToAtNextPredecessor
-//  (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?predPrev) <-
-//    BasicBlockEnd(?tail),
-//    BasicBlockHead[?tail] = ?pred,
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?tail),
-//    PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
-
-// CollectionMayPointToUpToPredecessor
-//  (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
-// CollectionMayPointToUpToPredecessor
-//  (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred) <-
-//    CollectionMayPointToUpToPredecessor
-//     (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
-//    OptCollectionMayPointToAtNextPredecessor
-//     (?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?insn, ?prevPred),
-//    NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
-
-// // For all predecessor instructions, there is point-to information.
-// // We take the union.
-// AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) ->
-//    MayHeapContext(?hctx), HeapAllocation(?heap),
-//    MayHeapContext(?hctxColl), HeapAllocation(?collHeap),
-//    MayContext(?ctx), Instruction(?insn).
-   
-// AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    CollectionMayPointToUpToPredecessor
-//     (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn, ?pred),
-//    !(NextPredecessorToSameBB[?insn, ?pred] = _),
-//    !ExceptionHandlerFirstInstruction(?insn).
-
-// AllPredecessors:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?insn) <-
-//    PrevInSameBasicBlock[?insn] = ?prev,
-//    CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?prev).
-
-// /// ----------------------------------
-
-// // for all returns of a method, a collection points to known sets.
-// // We take their union.
-// UpToReturnCollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?return) <-
-//    ReturnInstruction(?return),
-//    !ExistsPreviousReturn(?return),
-//    AllPredecessors:CollectionMayPointTo
-//     (?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?return).
-
-// UpToReturnCollectionMayPointTo(?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?return),
-// UpToReturnCollectionMayPointTo(?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?return) <-
-//    UpToReturnCollectionMayPointTo(?hctx2, ?heap2, ?hctxColl, ?collHeap, ?ctx, ?prevReturn),
-//    NextReturn[?prevReturn] = ?return,
-//    AllPredecessors:CollectionMayPointTo
-//     (?hctx1, ?heap1, ?hctxColl, ?collHeap, ?ctx, ?return).
-
-// AllReturn:CollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?method) <-
-//    UpToReturnCollectionMayPointTo(?hctx, ?heap, ?hctxColl, ?collHeap, ?ctx, ?return),
-//    !(NextReturn[?return] = _),
-//    Instruction:Method[?return] = ?method.
-
-
 
 ///// LEGACY: things that I thought were highly interesting in previous versions of
 /////         the code, but don't apply any more.
@@ -2039,7 +1920,9 @@ AllRelevantPredecessors:HasAccessPathMayPointTo(?ap, ?ctx, ?insn) <-
 
 
 
-//// The following will probably be garbage-collected soon.
+//// The following will probably be garbage-collected soon. Similar
+//// code existed for collections before the major update, but was
+//// eliminated.
 
 /*
 // Up to a certain non-dominated predecessor basic block, there is

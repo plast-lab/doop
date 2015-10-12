@@ -7,12 +7,12 @@ _t2[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppAllCtxMayPointTo(_, _).
 _t3[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarPointsTo(_, _).
 +Stats:SoundMay:Metrics("3@ Total app var-points-to (insens)", _t3[]).
 
-//_t4a[] = ?c <- agg<<?c = count()>> InstanceFieldMayPointTo(_,_,_,_,_,_,_).
+_t4a[] = ?c <- agg<<?c = count()>> Stats:InstanceFieldMayPointTo(_,_,_,_,_).
 _t4b[] = ?c <- agg<<?c = count()>> Stats:StaticFieldMayPointTo(_,_,_,_,_).
-//_t4c[] = ?c <- agg<<?c = count()>> CollectionMayPointTo(_,_,_,_,_,_).
-//+Stats:SoundMay:Metrics("4a@ InstanceFieldMayPointTo", _t4a[]).
+_t4c[] = ?c <- agg<<?c = count()>> Stats:CollectionMayPointTo(_,_,_,_,_).
++Stats:SoundMay:Metrics("4a@ InstanceFieldMayPointTo", _t4a[]).
 +Stats:SoundMay:Metrics("4b@ StaticFieldMayPointTo", _t4b[]).
-//+Stats:SoundMay:Metrics("4c@ CollectionMayPointTo", _t4c[]).
++Stats:SoundMay:Metrics("4c@ CollectionMayPointTo", _t4c[]).
 
 _t5[] = ?c <- agg<<?c = count()>> Stats:SoundMay:AppVarWithMayPointTo(_).
 +Stats:SoundMay:Metrics("5@ #Vars with may-point-to under some context", _t5[]).
