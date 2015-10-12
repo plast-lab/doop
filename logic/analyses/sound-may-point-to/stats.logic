@@ -14,6 +14,10 @@ Stats:SoundMay:AppVarWithMayPointTo(?var) <-
 Stats:SoundMay:AppVarWithAllCtxMayPointTo(?var) <-
    Stats:SoundMay:AppAllCtxMayPointTo(_, ?var).
 
+Stats:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   $analysis:_AccessPath:ByStaticFieldInv[?ap] = ?fld.
+
 Stats:SoundMay:AppMustPointTo(?heap, ?var) <-
    IntraproceduralMustPointTo:Object[_, ?var] = ?heap,
    Var:DeclaringMethod(?var, ?method),
