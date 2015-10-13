@@ -374,14 +374,14 @@ _AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    FormalParam[?index, ?toMethod] = ?formal,
    ActualParam[?index, ?invo] = ?actual,
-   RebaseComposite_AccessPath[?ap, ?formal, ?actual] = ?newAp.
+   RebaseComposite_AccessPath[?ap, ?actual, ?formal] = ?newAp.
 
 _AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this,
-   RebaseComposite_AccessPath[?ap, ?this, ?base] = ?newAp.
+   RebaseComposite_AccessPath[?ap, ?base, ?this] = ?newAp.
 
 Before:AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
@@ -461,7 +461,7 @@ _AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) <-
    _MustCallGraphEdge:ToMethod[?callerCtx, ?invo] = ?toMethod,
    AssignReturnValue[?invo] = ?to,
    AllReturn:SameRetVar[?toMethod] = ?ret,
-   RebaseComposite_AccessPath[?calleeAp, ?to, ?ret] = ?callerAp.
+   RebaseComposite_AccessPath[?calleeAp, ?ret, ?to] = ?callerAp.
 
 _AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) <-
    _MustCallGraphEdge:ToMethod[?callerCtx, ?invo] = ?toMethod,
@@ -474,7 +474,7 @@ _AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) <-
    ThisVar[?toMethod] = ?this,
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
-   RebaseComposite_AccessPath[?calleeAp, ?base, ?this] = ?callerAp.
+   RebaseComposite_AccessPath[?calleeAp, ?this, ?base] = ?callerAp.
 
 AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) <-
    _MustCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
@@ -580,12 +580,24 @@ StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) <-
    MayPointTo(?hctx, ?heap, ?ctx, ?from),
    _OptStoreStaticField:From(?insn, ?from).
 
-// store instructions, strong update of AccessPathMayPointTo info
+// store instructions, strong update of AccessPathMayPointTo info for
+// the same access path
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    StoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
    StoreInstanceField:Base[?insn] = ?base,
    FieldInstruction:Signature[?insn] = ?fld,
    _AccessPath:ByFieldAccess[?fld, _AccessPath:ByVar[?base]] = ?ap.
+
+// weak update of access paths with the same field but different base
+// TODO extend to longer access paths
+AccessPathMayPointTo(?hctx1, ?heap2, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx1, ?heap2, ?ap, ?ctx, ?insn) <-
+   Before:AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+   _SingleFieldAccessPath(?fld, ?ap),
+   StoreFromVarMayPointTo(?hctx2, ?heap2, ?ctx, ?insn),
+   StoreInstanceField:Base[?insn] = ?base,
+   FieldInstruction:Signature[?insn] = ?fld,
+   _AccessPath:BaseVar[?ap] != ?base.
 
 // similar for static stores
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
@@ -1432,21 +1444,20 @@ _AccessPathShouldBeRebased(?prefixAp, ?from, ?to) <-
 
 _AccessPath(?newAp),
 _AccessPath:ByFieldAccess[?fld, ?newPrefixAp] = ?newAp,
-_AccessPath:Length[?newAp] = ?len,
-RebaseComposite_AccessPath[?ap, ?to, ?from] = ?newAp <-
+_AccessPath:Length[?newAp] = 2,
+RebaseComposite_AccessPath[?ap, ?from, ?to] = ?newAp <-
    _AccessPathShouldBeRebased(?ap, ?from, ?to),
    _AccessPath:Base[?ap] = ?baseAp,
    _AccessPath:ByVarInv[?baseAp] = ?from,
    _AccessPath:LastField[?ap] = ?fld,
-   _AccessPath:Length[?ap] = ?len,
    _AccessPath:ByVar[?to] = ?newPrefixAp.
 
 _AccessPath(?newAp),
 _AccessPath:ByFieldAccess[?fld, ?newPrefixAp] = ?newAp,
 _AccessPath:Length[?newAp] = ?len,
-RebaseComposite_AccessPath[?ap, ?to, ?from] = ?newAp <-
+RebaseComposite_AccessPath[?ap, ?from, ?to] = ?newAp <-
    _AccessPathShouldBeRebased(?ap, ?from, ?to),
-   RebaseComposite_AccessPath[_AccessPath:Base[?ap], ?to, ?from] = ?newPrefixAp,
+   RebaseComposite_AccessPath[_AccessPath:Base[?ap], ?from, ?to] = ?newPrefixAp,
    _AccessPath:LastField[?ap] = ?fld,
    _AccessPath:Length[?ap] = ?len.
 
@@ -1455,7 +1466,7 @@ Temp11(?newAp),
 _AccessPath(?newAp),
 _AccessPath:ByCollectionVar[?to] = ?newAp,
 _AccessPath:Length[?newAp] = 1,
-RebaseComposite_AccessPath[?ap, ?to, ?from] = ?newAp <-
+RebaseComposite_AccessPath[?ap, ?from, ?to] = ?newAp <-
    _AccessPathShouldBeRebased(?ap, ?from, ?to),
    _AccessPath:ByCollectionVar[?from] = ?ap.
 
