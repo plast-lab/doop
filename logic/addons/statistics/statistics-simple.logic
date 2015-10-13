@@ -3,45 +3,96 @@
  ***************************************************/
 Stats:Simple:InsensVarPointsTo(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
 
+Stats:Simple:Application:InsensVarPointsTo(?heap, ?var),
+Stats:Simple:Application:VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   Var:DeclaringMethod(?var, ?meth), Stats:Simple:ApplicationMethod(?meth).
+
+Stats:Simple:Reflection:InsensVarPointsTo(?heap, ?var),
+Stats:Simple:Reflection:VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   ReflectiveHeap(?heap).
+
+Stats:Simple:InsensReachableVar(?var),
+Stats:Simple:ReachableVar(?ctx, ?var) <-
+   ReachableContext(?ctx, ?method), Var:DeclaringMethod(?var, ?method).
+
 #ifdef TRANSFORM_INPUT
 // Example of post-processing of set-based transform results for client analyses
 // that need it.
 Stats:Simple:InsensVarPointsTo(?heap, ?var) <-
-  VarPointsTo(_, ?heap, _, ?var2), DupCopies(?var, ?var2).
+   VarPointsTo(_, ?heap, _, ?var2), DupCopies(?var, ?var2).
 #endif
 
 /***************************************************
  * Arrays
  ***************************************************/
 Stats:Simple:InsensArrayIndexPointsTo(?heap, ?baseheap) <-
-  ArrayIndexPointsTo(_, ?heap, _, ?baseheap).
+   ArrayIndexPointsTo(_, ?heap, _, ?baseheap).
+
+Stats:Simple:Application:InsensArrayIndexPointsTo(?heap, ?baseheap),
+Stats:Simple:Application:ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap) <-
+   ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:Simple:ApplicationMethod(?meth).
+
+Stats:Simple:Reflection:InsensArrayIndexPointsTo(?heap, ?baseheap),
+Stats:Simple:Reflection:ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap) <-
+   ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap),
+   ReflectiveHeap(?heap).
 
 /***************************************************
  * Fields
  ***************************************************/
 Stats:Simple:InsensInstanceFieldPointsTo(?heap, ?sig, ?baseheap) <-
-  InstanceFieldPointsTo(_, ?heap, ?sig, _, ?baseheap).
+   InstanceFieldPointsTo(_, ?heap, ?sig, _, ?baseheap).
+
+Stats:Simple:InsensStaticFieldPointsTo(?heap, ?sig) <-
+   StaticFieldPointsTo(_, ?heap, ?sig).
+
+Stats:Simple:Application:InsensInstanceFieldPointsTo(?heap, ?sig, ?baseheap),
+Stats:Simple:Application:InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap) <-
+   InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:Simple:ApplicationMethod(?meth).
+
+Stats:Simple:Reflection:InsensInstanceFieldPointsTo(?heap, ?sig, ?baseheap),
+Stats:Simple:Reflection:InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap) <-
+   InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap),
+   ReflectiveHeap(?heap).
 
 /***************************************************
  * Call graph edges
  ***************************************************/
 Stats:Simple:InsensCallGraphEdge(?from, ?to) <-
-  CallGraphEdge(_, ?from, _, ?to).
+   CallGraphEdge(_, ?from, _, ?to).
 
 Stats:Simple:InsensNativeCallGraphEdge(?from, ?to) <-
-  NativeCallGraphEdge(_, ?from, _, ?to).
+   NativeCallGraphEdge(_, ?from, _, ?to).
+
+Stats:Simple:VirtualCallGraphEdge(?from, ?to) <-
+   Stats:Simple:ReachableVirtualMethodInvocation(?from),
+   Stats:Simple:InsensCallGraphEdge(?from, ?to).
+
 
 /***************************************************
  * Application methods
  ***************************************************/
 Stats:Simple:ApplicationMethod(?method) <-
-	ApplicationClass(?class),
-	MethodSignature:DeclaringType[?method] = ?class.
+	 ApplicationClass(?class),
+	 MethodSignature:DeclaringType[?method] = ?class.
 
 Stats:Simple:InsensReachableApplicationMethod(?method),
 Stats:Simple:ReachableApplicationMethod(?ctx, ?method) <-
-	ReachableContext(?ctx, ?method),
-	Stats:Simple:ApplicationMethod(?method).
+	 ReachableContext(?ctx, ?method),
+	 Stats:Simple:ApplicationMethod(?method).
+
+Stats:Simple:ApplicationConcreteMethod(?method) <-
+   Stats:Simple:ApplicationMethod(?method),
+   ! MethodModifier(?abstract, ?method),
+   Modifier:Value(?abstract:"abstract").
+
+Stats:Simple:NonReachableApplicationConcreteMethod(?method) <-
+   Stats:Simple:ApplicationConcreteMethod(?method),
+   ! Stats:Simple:InsensReachableApplicationMethod(?method).
 
 /***************************************************
  * Virtual method invocations
@@ -55,3 +106,67 @@ Stats:Simple:Application:ReachableVirtualMethodInvocation(?invocation) <-
    Stats:Simple:InsensReachableApplicationMethod(?method),
    VirtualMethodInvocation:Insn(?invocation),
    Instruction:Method[?invocation] = ?method.
+
+Stats:Simple:VirtualTargets[?from] = ?c <-
+   agg<<?c = count()>>(Stats:Simple:VirtualCallGraphEdge(?from, _)).
+
+Stats:Simple:PolymorphicCallSite(?from) <-
+   Stats:Simple:VirtualTargets[?from] = ?size, ?size > 1.
+
+Stats:Simple:NullVirtualMethodInvocation(?invocation) <-
+   Stats:Simple:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   !(Stats:Simple:InsensVarPointsTo(_, ?base)).
+
+Stats:Simple:Application:VirtualMethodInvocation(?invocation) <-
+   Stats:Simple:ApplicationMethod(?method),
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?method.
+
+Stats:Simple:Application:PolymorphicCallSite(?from) <-
+   Stats:Simple:PolymorphicCallSite(?from),
+   Stats:Simple:Application:ReachableVirtualMethodInvocation(?from).
+
+Stats:Simple:Application:NullVirtualMethodInvocation(?invocation) <-
+   Stats:Simple:Application:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   !(Stats:Simple:InsensVarPointsTo(_, ?base)).
+
+/***************************************************
+ * Casts
+ ***************************************************/
+Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Reachable(?inmethod), AssignCast(?type, ?from, ?to, ?inmethod).
+
+Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
+   Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
+   Stats:Simple:InsensVarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !SupertypeOf(?type, ?heaptype).
+
+Stats:Simple:Application:Cast(?type, ?from, ?to, ?inmethod) <-
+   AssignCast(?type, ?from, ?to, ?inmethod), Stats:Simple:ApplicationMethod(?inmethod).
+
+Stats:Simple:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from),
+   Stats:Simple:ApplicationMethod(?inmethod).
+
+Stats:Simple:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
+   Stats:Simple:Application:ReachableCast(_, ?type, ?to, ?from),
+   Stats:Simple:InsensVarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !SupertypeOf(?type, ?heaptype).
+
+/***************************************************
+ * Reflection
+ ***************************************************/
+Stats:Simple:forName(?invocation) <-
+   java:lang:Class:forName(?invocation, ?inmethod), Reachable(?inmethod).
+
+Stats:Simple:Class:newInstance(?invocation) <-
+   java:lang:Class:newInstance(?invocation, _, ?from),
+   Var:DeclaringMethod(?from, ?inmethod), Reachable(?inmethod).
+
+Stats:Simple:Constructor:newInstance(?invocation) <-
+   java:lang:reflect:Constructor:newInstance(?invocation, _, ?from),
+   Var:DeclaringMethod(?from, ?inmethod), Reachable(?inmethod).
