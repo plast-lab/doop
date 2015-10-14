@@ -446,10 +446,18 @@ import java.security.MessageDigest
         
         if (options.DACAPO.value) {
             logger.debug "The DACAPO option has been enabled"
+            if (!options.ENABLE_REFLECTION.value) {
+                options.TAMIFLEX.value = vars.inputJarFiles[0].toString().replace(".jar", "-tamiflex.log")
+                logger.debug "The TAMIFLEX option has been enabled (due to DACAPO)"
+            }
         }
         
         if (options.DACAPO_BACH.value) {
             logger.debug "The DACAPO_BACH option has been enabled"
+            if (!options.ENABLE_REFLECTION.value) {
+                options.TAMIFLEX.value = vars.inputJarFiles[0].toString().replace(".jar", "-tamiflex.log")
+                logger.debug "The TAMIFLEX option has been enabled (due to DACAPO_BACH)"
+            }
         }
 
         if (options.TAMIFLEX.value) {
