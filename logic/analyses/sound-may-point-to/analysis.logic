@@ -27,6 +27,10 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap),
    _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
 
+Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) ->
+   MayHeapContext(?hctx), HeapAllocation(?heap),
+   _AccessPath(?ap), MayContext(?ctx), Instruction(?insn).
+
 RootMethodForMayAnalysis(?meth) -> MethodSignature(?meth).
 
 // Auxiliary, simple must-point-to analysis, to avoid monotonicity
@@ -244,6 +248,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) <-
 
 
 // Phi
+PhiNodeVarWithResolvedMayPointTo(?ctx, ?var),
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
    !(NextInSamePhiNode[?lastInsn] = _),
@@ -265,6 +270,24 @@ IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx <-
    AssignInstruction:To[?lastInsn] = ?var.
 
 // phi node treatment of composite access paths
+
+// This logic turns out to be surprisingly simple and general:
+// If the base var is set (i.e., all paths had points-to for the
+// SSA sub-variables) then take the union of all access-path info
+// for all paths based on sub-variables. If such info has reached
+// the phi node, it means it wasn't invalidated in any of the
+// other paths!
+AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) <-
+   AssignLocal:Insn(?insn),
+   PhiNodeHead[?insn] = _,
+   AssignInstruction:To[?insn] = ?to,
+   PhiNodeVarWithResolvedMayPointTo(?ctx, ?to),
+   AssignLocal:From[?insn] = ?from,
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
+   _AccessPath:BaseVar[?fromAp] = ?from,
+   RebaseComposite_AccessPath[?fromAp, ?from, ?to] = ?toAp.
+
+/*
 AssignInstruction:ToInv(?insn, ?var) <-
    AssignInstruction:To[?insn] = ?var.
 
@@ -289,7 +312,8 @@ _AccessPathsShouldBeCompared(?ap1, ?ap2) <-
 AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?lastInsn) <-
    AccessPathMayPointToUpToPhiInstruction(?hctx, ?heap, ?toAp, ?ctx, ?lastInsn),
    !(NextInSamePhiNode[?lastInsn] = _).
-   
+*/
+
 
 // static or special method invocation
 _OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth) <-
@@ -358,6 +382,13 @@ _MustPointTo:Hctx[?calleeCtx, ?this] = ?hctx <-
    MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    ThisVar[?toMeth] = ?this.
 
+// Let's not forget static calls
+_MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMeth,
+_MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
+   StaticMethodInvocation:Insn(?invo),
+   MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
+   MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx.
+
 // again, just for baseline stats
 IntraproceduralCertainMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
    (_OptSpecialMethodInvocation:Base(?invo, ?base);
@@ -411,7 +442,7 @@ _AccessPathShouldBeRebased(?actualAp, ?actual, ?formal) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    FormalParam[?index, ?toMethod] = ?formal,
    ActualParam[?index, ?invo] = ?actual,
-   AccessPathMayPointTo(_, _, ?actualAp, ?callerCtx, ?invo),
+   Before:AccessPathMayPointTo(_, _, ?actualAp, ?callerCtx, ?invo),
    _AccessPath:BaseVar[?actualAp] = ?actual.
 
 _AccessPathShouldBeRebased(?baseAp, ?base, ?this) <-
@@ -419,7 +450,7 @@ _AccessPathShouldBeRebased(?baseAp, ?base, ?this) <-
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this,
-   AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
+   Before:AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
    _AccessPath:BaseVar[?baseAp] = ?base.
 
 _AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  <-
@@ -442,7 +473,20 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) <-
    _AccessPathRebasedForCall(?calleeAp, ?callerAp, ?callerCtx, ?invo),
    FirstInstructionOfMethod[?toMethod] = ?firstInsn.
 
-// Let's not forget static fields
+// Let's not forget static fields and unchanged access paths
+ChangedBaseAtInvocation(?var, ?invo) <-
+   ActualParam[_, ?invo] = ?var;
+   VirtualMethodInvocation:Base[?invo] = ?var;
+   SpecialMethodInvocation:Base[?invo] = ?var.
+
+Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) <-
+   MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo),
+   _AccessPath:BaseVar[?ap] = ?baseVar,
+   !ChangedBaseAtInvocation(?baseVar, ?invo),
+   FirstInstructionOfMethod[?toMethod] = ?firstInsn.
+
 Before:AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
@@ -533,11 +577,17 @@ AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) <-
    AllReturn:AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?toMethod),
    _AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo).
 
-// Let's not forget static fields
+// Let's not forget static fields and unchanged access paths
 AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo) <-
    _MustCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
    AllReturn:AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?toMethod),
    _AccessPath:ContainsStaticField[?staticAp] = _.
+
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) <-
+   _MustCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
+   AllReturn:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?toMethod),
+   _AccessPath:BaseVar[?ap] = ?baseVar,
+   !ChangedBaseAtInvocation(?baseVar, ?invo).
 
 
 _OptFieldFromClass(?fld, ?class) <-
@@ -1547,9 +1597,14 @@ _AccessPath:BaseVar[?ap] = ?var <-
 _AccessPath:ToString[?ap] = ?str ->
    _AccessPath(?ap), string(?str).
 
-_AccessPath:ToString[?ap] = ?str <-
+// loses lots of information, which may be confusing during debugging.
+_AccessPath:ToString[?ap] = ?str <--
    _AccessPath:ByVarInv[?ap] = ?v,
    _NameFromRefMode[?v] = ?str.
+//   Var:Value(?v,?vs),
+//   OptVar:DeclaringMethod(?m,?v),
+//   MethodSignature:Value(?m:?ms),
+//   ?str = ?vs + ?ms.
 
 _AccessPath:ToString[?ap] = ?str <-
    _AccessPath:ByStaticFieldInv[?ap] = ?f,
@@ -1694,6 +1749,7 @@ Expanded_AccessPath[?fld, ?ap] = ?newAp <-
 _AccessPath:BaseVarInv(?ap, ?var) <-
    _AccessPath:BaseVar[?ap] = ?var.
 
+/*
 // limited to access paths that should be compared
 Composite_AccessPath:SameFields(?ap1, ?ap2) <-
    _AccessPathsShouldBeCompared(?ap1, ?ap2),
@@ -1710,6 +1766,7 @@ Composite_AccessPath:SameFields(?ap1, ?ap2) <-
    Composite_AccessPath:SameFields(?baseAp1, ?baseAp2),
    _AccessPath:ByFieldAccess[?fld, ?baseAp1] = ?ap1,
    _AccessPath:ByFieldAccess[?fld, ?baseAp2] = ?ap2.
+*/
 
 //// END access path auxiliary
 
@@ -1931,6 +1988,7 @@ IntraproceduralMustPointToUpToPhiInstruction:Hctx[?ctx, ?nextInsn] = ?hctx <-
 
 
 // Also for longer access paths
+/*
 AccessPathMayPointToUpToPhiInstruction(?hctx, ?heap, ?fromAp, ?ctx, ?insn) ->
    MayHeapContext(?hctx), HeapAllocation(?heap), _AccessPath(?fromAp),
    MayContext(?ctx), Instruction(?insn).
@@ -1952,7 +2010,7 @@ AccessPathMayPointToUpToPhiInstruction(?hctx2, ?heap2, ?toAp, ?ctx, ?nextInsn) <
    _AccessPath:BaseVarInv(?fromAp, ?from),
    AccessPathMayPointTo(?hctx2, ?heap2, ?fromAp, ?ctx, ?nextInsn),
    Composite_AccessPath:SameFields(?fromAp, ?toAp).
-
+*/
 
 // for all returns of a method, the return variable has a known upper bound
 // for its points-to, and we take the union of all such bounds
