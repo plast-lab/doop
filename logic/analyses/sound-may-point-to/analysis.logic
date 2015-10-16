@@ -1598,7 +1598,7 @@ _AccessPath:ToString[?ap] = ?str ->
    _AccessPath(?ap), string(?str).
 
 // loses lots of information, which may be confusing during debugging.
-_AccessPath:ToString[?ap] = ?str <--
+_AccessPath:ToString[?ap] = ?str <-
    _AccessPath:ByVarInv[?ap] = ?v,
    _NameFromRefMode[?v] = ?str.
 //   Var:Value(?v,?vs),
