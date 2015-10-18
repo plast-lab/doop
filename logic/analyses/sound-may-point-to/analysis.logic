@@ -271,7 +271,9 @@ May:ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) 
 //// ====================================
 //// BEGIN Must-Alias code
 
-///// *MustAlias*
+// // *MustAlias*: places in the code to comment in/out for
+// // performance are marked with this string.
+
 // // _MustAlias is symmetrically and transitively closed. The explicit
 // // representation (and computation of TC) is too wasteful, but
 // // hopefully won't matter since this is an intra-procedural concept.
@@ -295,7 +297,7 @@ May:ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) 
 // _MustAlias(?ap3, ?ap, ?ctx, ?insn) <-
 //    _OptMustAlias(?ctx, ?insn, ?ap2, ?ap1),
 //    _AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap3,
-//    Expanded_AccessPath[?fld, ?ap2] = ?ap.
+//    _ExpandedAccessPath[?fld, ?ap2] = ?ap.
 
 // _OptMustAlias(?ctx, ?insn, ?ap2, ?ap1) <-
 //    _MustAlias(?ap1, ?ap2, ?ctx, ?insn).
@@ -633,17 +635,16 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) <-
     MethodHasUnresolvedInvocation(?toMethod)).
 // The last two lines are a refinement, for optimization. See also below.
 
-/*
 //// Really hasn't proven worthwhile. It's not surprising. The callee has
 //// no name for this access path. The only hope is that it will survive
 //// through virtual calls and will come back to the caller (whereas the
 //// conservative must-pre-analysis won't consider virtual calls it cannot
 //// resolve in its naive way).
 
-// This is quite expensive if not restricted. Used only when we cannot
-// prove the method call will leave the information
-// unaffected. Otherwise, we have a frame rule to propagate the
-// information right over the method call.
+// This is quite expensive if not restricted. Currently used only for
+// non-resolved virtual calls. For resolved ones, we have a frame rule
+// to propagate the information right over the method call in many
+// cases (and we ignore the rest for now).
 ChangedBaseAtInvocation(?var, ?invo) <-
    ActualParam[_, ?invo] = ?var;
    VirtualMethodInvocation:Base[?invo] = ?var;
@@ -651,9 +652,12 @@ ChangedBaseAtInvocation(?var, ?invo) <-
 
 OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap) <-
    MayCallGraphEdge:ToMethod(?toMethod, ?callerCtx, ?invo),
+   !May:MustCallGraphEdge:ToMethod[?callerCtx, ?invo] = ?toMethod,
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo).
 
+/*
+// Old logic. 
 Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) <-
    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
    _AccessPath:BaseVar[?ap] = ?baseVar,
@@ -670,7 +674,7 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) <-
    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
    (MethodMayAssignField(?fld1, ?toMethod);
     MethodMayAssignField(?fld2, ?toMethod);
-	MethodHasUnresolvedInvocation(?toMethod)),
+    MethodHasUnresolvedInvocation(?toMethod)),
    FirstInstructionOfMethod[?toMethod] = ?firstInsn.
 */
 
@@ -844,7 +848,7 @@ AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) <-
    FieldInstruction:Signature[?insn] = ?fld,
    _AccessPath:BaseVar[?ap] != ?base.
 
-///// *MustAlias*
+// // *MustAlias*
 // _MustAlias(?apTo, ?apFrom, ?ctx, ?insn) <-
 //    Instruction:Method[?insn] = ?inMeth,
 //    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
@@ -854,28 +858,13 @@ AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) <-
 //    _AccessPath:ByFieldAccess[?fld, _AccessPath:ByVar[?base]] = ?apTo,
 //    _AccessPath:ByVar[?from] = ?apFrom.   
 
-/*
-// should be unnecessary now. Remove soon.
-_AccessPath(?ap),
-_AccessPath:ByFieldAccess[?fld, ?ap2] = ?ap,
-_AccessPath:Length[?ap] = ?len2 + 1,
-_MustAlias(?ap3, ?ap, ?ctx, ?insn) <-
-   Before:_MustAlias(?ap2, ?ap1, ?ctx, ?insn),
-   StoreInstanceField:Base[?insn] = ?base,
-   FieldInstruction:Signature[?insn] = ?fld,
-   _AccessPath:ByVar[?base] = ?ap1,
-   _AccessPath:Length[?ap2] = ?len2,
-   ?len2 < _AccessPath:MaxLength[],
-   _AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap3.
-*/
-
 // similar for static stores
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    StaticStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
    FieldInstruction:Signature[?insn] = ?fld,
    _AccessPath:ByStaticField[?fld] = ?ap.
 
-///// *MustAlias*
+// // *MustAlias*
 // _MustAlias(?apTo, ?apFrom, ?ctx, ?insn) <-
 //    Instruction:Method[?insn] = ?inMeth,
 //    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
@@ -894,7 +883,7 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    _AccessPath:ByVarInv[_AccessPath:Base[?ap]] = ?base,
    _AccessPath:LastField[?ap] = ?fld.
 
-///// *MustAlias*
+// // *MustAlias*
 // _MustAlias(?apTo, ?apFrom, ?ctx, ?insn) <-
 //    Instruction:Method[?insn] = ?inMeth,
 //    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
@@ -912,7 +901,7 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    FieldInstruction:Signature[?insn] = ?fld,
    _AccessPath:ByStaticFieldInv[?ap] = ?fld.
 
-///// *MustAlias*
+// // *MustAlias*
 // _MustAlias(?apTo, ?apFrom, ?ctx, ?insn) <-
 //    Instruction:Method[?insn] = ?inMeth,
 //    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
@@ -1158,14 +1147,14 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
    _SingleFieldAccessPath(?fld, ?ap),
-   MayCallGraphEdge:ToMethod(?toMethod, ?ctx, ?insn),
+   May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
    !MethodMayAssignField(?fld, ?toMethod),
    !MethodHasUnresolvedInvocation(?toMethod).
 
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-   MayCallGraphEdge:ToMethod(?toMethod, ?ctx, ?insn),
+   May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
    !MethodMayAssignField(?fld1, ?toMethod),
    !MethodMayAssignField(?fld2, ?toMethod),
    !MethodHasUnresolvedInvocation(?toMethod).
@@ -1307,7 +1296,8 @@ SomeBypassingPathBetweenBasicBlocksAssignsField(?prev, ?next, ?bypassing, ?fld) 
 ...
 */
 
-///// *MustAlias*
+
+// // *MustAlias*
 // Before:_MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
 //    PrevInSameBasicBlock[?insn] = ?prev,
 //    _MustAlias(?ap2, ?ap1, ?ctx, ?prev).
@@ -1329,6 +1319,55 @@ SomeBypassingPathBetweenBasicBlocksAssignsField(?prev, ?next, ?bypassing, ?fld) 
 //     IgnorableMethodInvocation(?insn);
 // 	IgnorableForNonCollectionsMethodInvocation(?insn)),
 //    !_StoreInstruction(?insn).
+
+// // Now method calls. Painstaking.
+// _MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
+//    OptBefore:_MustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _SingleFieldAccessPath(?fld, ?ap1),
+//    _AccessPath:IsVariable(?ap2),
+//    May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
+//    !MethodMayAssignField(?fld, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// _MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
+//    OptBefore:_MustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _SingleFieldAccessPath(?fld1, ?ap1),
+//    _SingleFieldAccessPath(?fld2, ?ap2),
+//    May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// _MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
+//    OptBefore:_MustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _AccessPath:IsVariable(?ap2),
+//    May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// _MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
+//    OptBefore:_MustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _SingleFieldAccessPath(?fld3, ?ap2),
+//    May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodMayAssignField(?fld3, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// _MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
+//    OptBefore:_MustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
+//    May:MustCallGraphEdge:ToMethod[?ctx, ?insn] = ?toMethod,
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodMayAssignField(?fld3, ?toMethod),
+//    !MethodMayAssignField(?fld4, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
 
 // // now painstaking case analysis of store instruction cases.
 // _MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
@@ -1365,7 +1404,7 @@ SomeBypassingPathBetweenBasicBlocksAssignsField(?prev, ?next, ?bypassing, ?fld) 
 //    FieldInstruction:Signature[?insn] = ?fld,
 //    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3, ?fld != ?fld4.
 
-//// and still, we only covered up to 3.
+// //// and still, we only covered up to 3.
 
 // TODO extend to longer access paths
 
@@ -1945,13 +1984,13 @@ RebaseComposite_AccessPath[?ap, ?from, ?to] = ?newAp <-
    _AccessPathShouldBeRebased(?ap, ?from, ?to),
    _AccessPath:ByCollectionVar[?from] = ?ap.
 
-///// *MustAlias*
+// // *MustAlias*
 // // Access path expansion factory. Trivial but avoids repeat expensive
 // // access path creation.
 // _AccessPath(?newAp),
 // _AccessPath:ByFieldAccess[?fld, ?ap] = ?newAp,
 // _AccessPath:Length[?newAp] = ?len + 1,
-// Expanded_AccessPath[?fld, ?ap] = ?newAp <-
+// _ExpandedAccessPath[?fld, ?ap] = ?newAp <-
 //    _AccessPathShouldBeExpanded(?fld, ?ap),
 //    _AccessPath:Length[?ap] = ?len.
 
