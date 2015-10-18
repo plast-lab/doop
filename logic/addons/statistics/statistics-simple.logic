@@ -116,6 +116,11 @@ Stats:Simple:PolymorphicCallSite(?from) <-
 Stats:Simple:NullVirtualMethodInvocation(?invocation) <-
    Stats:Simple:ReachableVirtualMethodInvocation(?invocation),
    VirtualMethodInvocation:Base[?invocation] = ?base,
+   Stats:Simple:InsensVarPointsTo(HeapAllocation:Null[], ?base).
+
+Stats:Simple:EmptyVirtualMethodInvocation(?invocation) <-
+   Stats:Simple:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
    !(Stats:Simple:InsensVarPointsTo(_, ?base)).
 
 Stats:Simple:Application:VirtualMethodInvocation(?invocation) <-
@@ -128,6 +133,11 @@ Stats:Simple:Application:PolymorphicCallSite(?from) <-
    Stats:Simple:Application:ReachableVirtualMethodInvocation(?from).
 
 Stats:Simple:Application:NullVirtualMethodInvocation(?invocation) <-
+   Stats:Simple:Application:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   Stats:Simple:InsensVarPointsTo(HeapAllocation:Null[], ?base).
+
+Stats:Simple:Application:EmptyVirtualMethodInvocation(?invocation) <-
    Stats:Simple:Application:ReachableVirtualMethodInvocation(?invocation),
    VirtualMethodInvocation:Base[?invocation] = ?base,
    !(Stats:Simple:InsensVarPointsTo(_, ?base)).
