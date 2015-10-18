@@ -237,18 +237,33 @@ _MustContextDepth[?ctx] = 0 <-
    _InitialMustContext[] = ?ctx.
 
 // context conversions for later use
+_OptMustCallGraphEdge:ToMethod[?invo, ?mustCallerCtx] = ?toMethod <-
+   _MustCallGraphEdge:ToMethod[?mustCallerCtx, ?invo] = ?toMethod.
+
 May:MustCallGraphEdge:ToMethod[?callerCtx, ?invo] = ?toMethod <-
-   _MustCallGraphEdge:ToMethod[?mustCallerCtx, ?invo] = ?toMethod,
+   _OptMustCallGraphEdge:ToMethod[?invo, ?mustCallerCtx] = ?toMethod,
    _ConvertMustToMayContext[?mustCallerCtx] = ?callerCtx.
 
+_OptMustCallGraphEdge:ToMethodAndContext1(?invo, ?mustCalleeCtx, ?toMethod, ?mustCallerCtx) <-
+   _MustCallGraphEdge:ToMethodAndContext(?mustCallerCtx, ?invo, ?mustCalleeCtx, ?toMethod).
+
+_OptMay:MustCallGraphEdge:ToMethodAndContext1(?callerCtx, ?invo, ?toMethod, ?mustCalleeCtx) <-
+   _OptMustCallGraphEdge:ToMethodAndContext1(?invo, ?mustCalleeCtx, ?toMethod, ?mustCallerCtx),
+   _ConvertMustToMayContext[?mustCallerCtx] = ?callerCtx.
+   
 May:MustCallGraphEdge:ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod) <-
-   _MustCallGraphEdge:ToMethodAndContext(?mustCallerCtx, ?invo, ?mustCalleeCtx, ?toMethod),
-   _ConvertMustToMayContext[?mustCallerCtx] = ?callerCtx,
+   _OptMay:MustCallGraphEdge:ToMethodAndContext1(?callerCtx, ?invo, ?toMethod, ?mustCalleeCtx),
    _ConvertMustToMayContext[?mustCalleeCtx] = ?calleeCtx.
 
+_OptReturnValueOfResolvedCallAssignedTo1(?to, ?mustCalleeCtx, ?toMethod, ?mustCallerCtx) <-
+   ReturnValueOfResolvedCallAssignedTo(?mustCallerCtx, ?to, ?mustCalleeCtx, ?toMethod).
+
+_OptMay:ReturnValueOfResolvedCallAssignedTo1(?callerCtx, ?to, ?toMethod, ?mustCalleeCtx) <-
+   _OptReturnValueOfResolvedCallAssignedTo1(?to, ?mustCalleeCtx, ?toMethod, ?mustCallerCtx),
+   _ConvertMustToMayContext[?mustCallerCtx] = ?callerCtx.
+   
 May:ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) <-
-   ReturnValueOfResolvedCallAssignedTo(?mustCallerCtx, ?to, ?mustCalleeCtx, ?toMethod),
-   _ConvertMustToMayContext[?mustCallerCtx] = ?callerCtx,
+   _OptMay:ReturnValueOfResolvedCallAssignedTo1(?callerCtx, ?to, ?toMethod, ?mustCalleeCtx),
    _ConvertMustToMayContext[?mustCalleeCtx] = ?calleeCtx.
 
 //// END Must-Point-To code
@@ -925,6 +940,25 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    _OptMethodFromVar[?to] = ?inMeth,
    MayReachableMethodUnderMayContext(?ctx, ?inMeth).
 
+// Not clear this is currently fully effective. We need to recognize
+// simple must-aliasing so that any access path equivalent to
+// "this.fld" will work.
+FinalFieldMayPointTo(?hctx, ?heap, ?fld) <-
+   AllReturn:AccessPathMayPointTo(?hctx, ?heap, ?ap, InitialMayContext[], ?meth),
+   _AccessPath:Base[?ap] = ?apBase,
+   _AccessPath:ByVarInv[?apBase] = ?this,
+   ThisVar[?meth] = ?this,
+   _AccessPath:LastField[?ap] = ?fld,
+   MethodSignature:SimpleName[?meth] = "<init>",
+   FieldModifier(Modifier:final[], ?fld).
+
+MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
+   LoadInstanceField:To[?insn] = ?to,
+   _OptFieldInstruction:Signature(?insn, ?fld),
+   FinalFieldMayPointTo(?hctx, ?heap, ?fld),
+   _OptMethodFromVar[?to] = ?inMeth,
+   MayReachableMethodUnderMayContext(?ctx, ?inMeth).
+
 // //// ====================================
 // //// BEGIN special handling of collections.
 // ////  Not entirely self-contained. Some logic in frame rules as well.
@@ -1074,6 +1108,20 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 // Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 //   AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
 
+// The logic below should be subsumed by the handling of final fields
+// at the end of the constructor in most cases.
+AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
+   _SingleFieldAccessPath(?fld, ?ap),
+   FieldModifier(Modifier:final[], ?fld),
+   !InstructionInConstructorOfClassOfField(?fld, ?insn).
+
+InstructionInConstructorOfClassOfField(?fld, ?insn) <-
+   _OptInstruction:Method(?insn, ?meth),
+   MethodSignature:SimpleName[?meth] = "<init>",
+   _OptFieldFromClass(?fld, ?cls),
+   MethodSignature:DeclaringType[?meth] = ?cls.
+
 /*
 //// Unsound HACK! Just during testing, for estimating the impact of
 //// better "NonDom" logic.
@@ -1088,15 +1136,6 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 
 OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
-
-// TODO: improve handling of final fields. If at end of constructor value
-//  is always known, we can be sure the field is the same!
-// Handling final fields incurs overhead: too much info carried everywhere.
-// REVIEW: Consider not including to balance speed/coverage.
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
-   OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   _SingleFieldAccessPath(?fld, ?ap),
-   FieldModifier(Modifier:final[], ?fld).
 
 _StoreInstruction(?insn) <-
    StoreStaticField:Insn(?insn);
@@ -2001,12 +2040,14 @@ MaxMayContextDepth[] = ?num -> int[32](?num).
 _ConvertMustToMayContext[?mustCtx] = ?ctx ->
    _MustContext(?mustCtx), MayContext(?ctx).
 
+_OptConvertMustToMayContext[?ctx] = ?mustCtx,
 _ConvertMustToMayContext[?mustCtx] = ?ctx <-
    InitialMayContext[] = ?ctx,
    _InitialMustContext[] = ?mustCtx.
 
+_OptConvertMustToMayContext[?ctx] = ?mustCtx,
 _ConvertMustToMayContext[?mustCtx] = ?ctx <-
-   _ConvertMustToMayContext[?mustBaseCtx] = ?baseCtx,
+   _OptConvertMustToMayContext[?baseCtx] = ?mustBaseCtx,
    PushMayContext[?invo, ?baseCtx] = ?ctx,
    _PushMustContext[?invo, ?mustBaseCtx] = ?mustCtx. 
 //// END context management
