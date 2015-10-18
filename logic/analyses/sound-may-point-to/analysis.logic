@@ -1097,20 +1097,42 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 // Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
 //   AllPredecessors:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
 
-// The logic below should be subsumed by the handling of final fields
-// at the end of the constructor in most cases.
+/// Final fields
+
+// The logic below is often subsumed by the handling of final fields
+// at the end of the constructor. But it is not subsumed in cases the
+// final value is dependent on the calling context.
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
    _SingleFieldAccessPath(?fld, ?ap),
    FieldModifier(Modifier:final[], ?fld),
-   !InstructionInConstructorOfClassOfField(?fld, ?insn).
+   !InstructionUnderConstructorOfClassOfField(?fld, ?insn),
+   !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
 
-InstructionInConstructorOfClassOfField(?fld, ?insn) <-
+// It's not enough to have the instruction not in the constructor, it
+// needs to be after the end of the constructor.
+// Is this huge?  Probably not, by nature of constructors and the
+// Must-callgraph.
+InstructionUnderConstructorOfClassOfField(?fld, ?insn) <-
    _OptInstruction:Method(?insn, ?meth),
-   MethodSignature:SimpleName[?meth] = "<init>",
-   _OptFieldFromClass(?fld, ?cls),
-   MethodSignature:DeclaringType[?meth] = ?cls.
+   MethodReachableFromConstructorOfClassOfField(?fld, ?meth).
 
+ConstructorOfClassOfField(?fld, ?consMeth) <-
+   MethodSignature:SimpleName[?consMeth] = "<init>",
+   _OptFieldFromClass(?fld, ?cls),
+   MethodSignature:DeclaringType[?consMeth] = ?cls.
+
+// Must-reachable, that is.
+MethodReachableFromConstructorOfClassOfField(?fld, ?meth) <-
+   ConstructorOfClassOfField(?fld, ?meth).
+MethodReachableFromConstructorOfClassOfField(?fld, ?meth) <-
+   ConstructorOfClassOfField(?fld, ?consMeth),
+   MethodCanReachOther(?meth, ?consMeth).
+
+ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld) <-
+   ConstructorOfClassOfField(?fld, ?consMeth),
+   MethodHasUnresolvedInvocation(?consMeth).
+   
 /*
 //// Unsound HACK! Just during testing, for estimating the impact of
 //// better "NonDom" logic.
@@ -1492,7 +1514,8 @@ StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
 //// REVIEW: Maybe base such logic on a type-based escape analysis?
 //// ====================================
 //// Logic for computing the highly useful concepts of "Method/Call
-//// Does Not Invalidate Field"
+//// Does Not Invalidate Field", "method can reach other"
+//// (underapprox.), etc.
 
 // note that the "InitialMayContext" is an overapproximation. It's
 // stronger than what we typically need.
@@ -1503,24 +1526,34 @@ MethodHasInvocationSite(?invo, ?method) <-
    MethodInvocation(?invo),
    Instruction:Method[?invo] = ?method.
 
-MethodMayCallOther(?method, ?toMethod) <-
+MethodCanCallOther(?method, ?toMethod) <-
    _MustCallGraphEdge:ToMethod[_, ?invo] = ?toMethod,
    Instruction:Method[?invo] = ?method.
 
+// transitive must-callgraph from pre-analysis
+MethodCanReachOther(?toMethod, ?method) <-
+   MethodCanCallOther(?method, ?toMethod).
+
+MethodCanReachOther(?toMethod, ?method) <-
+   MethodCanCallOther(?method, ?intermMethod),
+   MethodCanReachOther(?toMethod, ?intermMethod).
+
+// transitive unresolved call
 MethodHasUnresolvedInvocation(?method) <-
    MethodHasInvocationSite(?invo, ?method),
    !InvocationSiteFullyResolved(?invo).
 
 MethodHasUnresolvedInvocation(?method) <-
-   MethodMayCallOther(?method, ?toMethod),
+   MethodCanCallOther(?method, ?toMethod),
    MethodHasUnresolvedInvocation(?toMethod).
 
+// transitive may-assign-field based on must-callgraph
 MethodMayAssignField(?fld, ?method) <-
    Instruction:Method[?insn] = ?method,
    FieldInstruction:Signature[?insn] = ?fld.
 
 MethodMayAssignField(?fld, ?method) <-
-   MethodMayCallOther(?method, ?toMethod),
+   MethodCanCallOther(?method, ?toMethod),
    MethodMayAssignField(?fld, ?toMethod).
 
 // Now we can do a lazy check for definite ?fld, ?method pairs
