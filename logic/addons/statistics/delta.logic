@@ -32,11 +32,13 @@ __t27[] = ?c <- agg<<?c = count()>> ReachableContext(_, _).
 __t28[] = ?c <- agg<<?c = count()>> VirtualMethodInvocation:Insn(_).
 __t29[] = ?c <- agg<<?c = count()>> Stats:Simple:ReachableVirtualMethodInvocation(_).
 __t30[] = ?c <- agg<<?c = count()>> Stats:Simple:PolymorphicCallSite(_).
-__t31[] = ?c <- agg<<?c = count()>> Stats:Simple:NullVirtualMethodInvocation(_).
+__t49[] = ?c <- agg<<?c = count()>> Stats:Simple:NullVirtualMethodInvocation(_).
+__t31[] = ?c <- agg<<?c = count()>> Stats:Simple:EmptyVirtualMethodInvocation(_).
 __t32[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:VirtualMethodInvocation(_).
 __t33[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:ReachableVirtualMethodInvocation(_).
 __t34[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:PolymorphicCallSite(_).
-__t35[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:NullVirtualMethodInvocation(_).
+__t50[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:NullVirtualMethodInvocation(_).
+__t35[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:EmptyVirtualMethodInvocation(_).
 
 __t36[] = ?c <- agg<<?c = count()>> AssignCast(_, _, _, _).
 __t37[] = ?c <- agg<<?c = count()>> Stats:Simple:ReachableCast(_, _, _, _).
@@ -103,6 +105,8 @@ _t45[] = ?c <- (__t45[] = ?c) ; (!__t45[] = _, ?c = 0).
 _t46[] = ?c <- (__t46[] = ?c) ; (!__t46[] = _, ?c = 0).
 //_t47[] = ?c <- (__t47[] = ?c) ; (!__t47[] = _, ?c = 0).
 //_t48[] = ?c <- (__t48[] = ?c) ; (!__t48[] = _, ?c = 0).
+_t49[] = ?c <- (__t49[] = ?c) ; (!__t49[] = _, ?c = 0).
+_t50[] = ?c <- (__t50[] = ?c) ; (!__t50[] = _, ?c = 0).
 
 +Stats:Metrics("01a@ var points-to (INS)", _t1[]).
 +Stats:Metrics("01b@ var points-to (SENS)", _t2[]).
@@ -138,11 +142,13 @@ _t46[] = ?c <- (__t46[] = ?c) ; (!__t46[] = _, ?c = 0).
 +Stats:Metrics("12@ virtual call sites (statically)", _t28[]).
 +Stats:Metrics("13@ reachable virtual call sites", _t29[]).
 +Stats:Metrics("14@ polymorphic virtual call sites", _t30[]).
-+Stats:Metrics("15@ null virtual call sites", _t31[]).
++Stats:Metrics("15a@ null virtual call sites", _t49[]).
++Stats:Metrics("15b@ empty virtual call sites", _t31[]).
 +Stats:Metrics("16@ app virtual call sites (statically)", _t32[]).
 +Stats:Metrics("17@ app reachable virtual call sites", _t33[]).
 +Stats:Metrics("18@ app polymorphic virtual call sites", _t34[]).
-+Stats:Metrics("19@ app null virtual call sites", _t35[]).
++Stats:Metrics("19a@ app null virtual call sites", _t50[]).
++Stats:Metrics("19b@ app empty virtual call sites", _t35[]).
 
 +Stats:Metrics("20@ casts (statically)", _t36[]).
 +Stats:Metrics("21@ reachable casts", _t37[]).
