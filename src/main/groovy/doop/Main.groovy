@@ -139,8 +139,7 @@ class Main {
                 @Override
                 void run() {
                     analysis.run()
-                    analysis.printStats()
-                    analysis.linkResult()
+                    new CommandLineAnalysisPostProcessor().process(analysis)
                 }
             })
 
