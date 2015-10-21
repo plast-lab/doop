@@ -1,0 +1,222 @@
+_Stats:Simple:Application:InsensVarPointsTo(?heap, ?var),
+_Stats:Simple:Application:VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   Var:DeclaringMethod(?var, ?meth), Stats:Simple:ApplicationMethod(?meth).
+
+_Stats:Simple:Reflective:InsensVarPointsTo(?heap, ?var),
+_Stats:Simple:Reflective:VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   ReflectiveHeap(?heap).
+
+_Stats:Simple:InsensReachableVar(?var),
+_Stats:Simple:ReachableVar(?ctx, ?var) <-
+   ReachableContext(?ctx, ?method), Var:DeclaringMethod(?var, ?method).
+
+_Stats:Simple:Application:InsensArrayIndexPointsTo(?heap, ?baseheap),
+_Stats:Simple:Application:ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap) <-
+   ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:Simple:ApplicationMethod(?meth).
+
+_Stats:Simple:Reflective:InsensArrayIndexPointsTo(?heap, ?baseheap),
+_Stats:Simple:Reflective:ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap) <-
+   ArrayIndexPointsTo(?hctx, ?heap, ?baseHCtx, ?baseheap),
+   ReflectiveHeap(?heap).
+
+_Stats:Simple:InsensStaticFieldPointsTo(?heap, ?sig) <-
+   StaticFieldPointsTo(_, ?heap, ?sig).
+
+_Stats:Simple:Application:InsensInstanceFieldPointsTo(?heap, ?sig, ?baseheap),
+_Stats:Simple:Application:InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap) <-
+   InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:Simple:ApplicationMethod(?meth).
+
+_Stats:Simple:Reflective:InsensInstanceFieldPointsTo(?heap, ?sig, ?baseheap),
+_Stats:Simple:Reflective:InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap) <-
+   InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?baseheap),
+   ReflectiveHeap(?heap).
+
+_Stats:Simple:ApplicationConcreteMethod(?method) <-
+   Stats:Simple:ApplicationMethod(?method),
+   ! MethodModifier(?abstract, ?method),
+   Modifier:Value(?abstract:"abstract").
+
+_Stats:Simple:NonReachableApplicationConcreteMethod(?method) <-
+   _Stats:Simple:ApplicationConcreteMethod(?method),
+   ! Stats:Simple:InsensReachableApplicationMethod(?method).
+
+_Stats:Simple:VirtualCallGraphEdge(?from, ?to) <-
+   Stats:Simple:ReachableVirtualMethodInvocation(?from),
+   Stats:Simple:InsensCallGraphEdge(?from, ?to).
+
+_Stats:Simple:VirtualTargets[?from] = ?c <-
+   agg<<?c = count()>>(_Stats:Simple:VirtualCallGraphEdge(?from, _)).
+
+_Stats:Simple:PolymorphicCallSite(?from) <-
+   _Stats:Simple:VirtualTargets[?from] = ?size, ?size > 1.
+
+_Stats:Simple:NullVirtualMethodInvocation(?invocation) <-
+   Stats:Simple:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   !(Stats:Simple:InsensVarPointsTo(_, ?base)).
+
+_Stats:Simple:Application:VirtualMethodInvocation(?invocation) <-
+   Stats:Simple:ApplicationMethod(?method),
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?method.
+
+_Stats:Simple:Application:PolymorphicCallSite(?from) <-
+   _Stats:Simple:PolymorphicCallSite(?from),
+   Stats:Simple:Application:ReachableVirtualMethodInvocation(?from).
+
+_Stats:Simple:Application:NullVirtualMethodInvocation(?invocation) <-
+   Stats:Simple:Application:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   !(Stats:Simple:InsensVarPointsTo(_, ?base)).
+
+_Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Reachable(?inmethod), AssignCast(?type, ?from, ?to, ?inmethod).
+
+_Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
+   _Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
+   Stats:Simple:InsensVarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ! AssignCompatible(?type, ?heaptype).
+
+_Stats:Simple:Application:Cast(?type, ?from, ?to, ?inmethod) <-
+   AssignCast(?type, ?from, ?to, ?inmethod), Stats:Simple:ApplicationMethod(?inmethod).
+
+_Stats:Simple:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   _Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from),
+   Stats:Simple:ApplicationMethod(?inmethod).
+
+_Stats:Simple:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
+   _Stats:Simple:Application:ReachableCast(_, ?type, ?to, ?from),
+   Stats:Simple:InsensVarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ! AssignCompatible(?type, ?heaptype).
+
+_Stats:Simple:forName(?invocation) <-
+   java:lang:Class:forName(?invocation, ?inmethod), Reachable(?inmethod).
+
+_Stats:Simple:Class:newInstance(?invocation) <-
+   java:lang:Class:newInstance(?invocation, _, ?from),
+   Var:DeclaringMethod(?from, ?inmethod), Reachable(?inmethod).
+
+_Stats:Simple:Constructor:newInstance(?invocation) <-
+   java:lang:reflect:Constructor:newInstance(?invocation, _, ?from),
+  Var:DeclaringMethod(?from, ?inmethod), Reachable(?inmethod).
+
+
+
+_t1[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensVarPointsTo(_, _).
+_t2[] = ?c <- agg<<?c = count()>> VarPointsTo(_, _, _, _).
+_t3[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:InsensVarPointsTo(_, _).
+_t4[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:VarPointsTo(_, _, _, _).
+_t5[] = ?c <- agg<<?c = count()>> _Stats:Simple:Reflective:InsensVarPointsTo(_, _).
+_t6[] = ?c <- agg<<?c = count()>> _Stats:Simple:Reflective:VarPointsTo(_, _, _, _).
+_t7[] = ?c <- agg<<?c = count()>> _Stats:Simple:InsensReachableVar(_).
+_t8[] = ?c <- agg<<?c = count()>> _Stats:Simple:ReachableVar(_, _).
+
+_t9[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensArrayIndexPointsTo(_, _).
+_t10[] = ?c <- agg<<?c = count()>> ArrayIndexPointsTo(_, _, _, _).
+_t11[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:InsensArrayIndexPointsTo(_, _).
+_t12[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:ArrayIndexPointsTo(_, _, _, _).
+_t13[] = ?c <- agg<<?c = count()>> _Stats:Simple:Reflective:InsensArrayIndexPointsTo(_, _).
+_t14[] = ?c <- agg<<?c = count()>> _Stats:Simple:Reflective:ArrayIndexPointsTo(_, _, _, _).
+
+_t15[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensInstanceFieldPointsTo(_, _, _).
+_t16[] = ?c <- agg<<?c = count()>> InstanceFieldPointsTo(_, _, _, _, _).
+_t17[] = ?c <- agg<<?c = count()>> _Stats:Simple:InsensStaticFieldPointsTo(_, _).
+_t18[] = ?c <- agg<<?c = count()>> StaticFieldPointsTo(_, _, _).
+_t19[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:InsensInstanceFieldPointsTo(_, _, _).
+_t20[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:InstanceFieldPointsTo(_, _, _, _, _).
+_t21[] = ?c <- agg<<?c = count()>> _Stats:Simple:Reflective:InsensInstanceFieldPointsTo(_, _, _).
+_t22[] = ?c <- agg<<?c = count()>> _Stats:Simple:Reflective:InstanceFieldPointsTo(_, _, _, _, _).
+
+_t23[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensCallGraphEdge(_, _).
+_t24[] = ?c <- agg<<?c = count()>> CallGraphEdge(_, _, _, _).
+_t25[] = ?c <- agg<<?c = count()>> _Stats:Simple:NonReachableApplicationConcreteMethod(_).
+_t26[] = ?c <- agg<<?c = count()>> Reachable(_).
+_t27[] = ?c <- agg<<?c = count()>> ReachableContext(_, _).
+
+_t28[] = ?c <- agg<<?c = count()>> VirtualMethodInvocation:Insn(_).
+_t29[] = ?c <- agg<<?c = count()>> Stats:Simple:ReachableVirtualMethodInvocation(_).
+_t30[] = ?c <- agg<<?c = count()>> _Stats:Simple:PolymorphicCallSite(_).
+_t31[] = ?c <- agg<<?c = count()>> _Stats:Simple:NullVirtualMethodInvocation(_).
+_t32[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:VirtualMethodInvocation(_).
+_t33[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:ReachableVirtualMethodInvocation(_).
+_t34[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:PolymorphicCallSite(_).
+_t35[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:NullVirtualMethodInvocation(_).
+
+_t36[] = ?c <- agg<<?c = count()>> AssignCast(_, _, _, _).
+_t37[] = ?c <- agg<<?c = count()>> _Stats:Simple:ReachableCast(_, _, _, _).
+_t38[] = ?c <- agg<<?c = count()>> _Stats:Simple:PotentiallyFailingCast(_, _, _).
+_t39[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:Cast(_, _, _, _).
+_t40[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:ReachableCast(_, _, _, _).
+_t41[] = ?c <- agg<<?c = count()>> _Stats:Simple:Application:PotentiallyFailingCast(_, _, _).
+
+_t42[] = ?c <- agg<<?c = count()>> _Stats:Simple:forName(_).
+_t43[] = ?c <- agg<<?c = count()>> _Stats:Simple:Class:newInstance(_).
+_t44[] = ?c <- agg<<?c = count()>> _Stats:Simple:Constructor:newInstance(_).
+
+_t45[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensNativeCallGraphEdge(_, _).
+_t46[] = ?c <- agg<<?c = count()>> NativeCallGraphEdge(_, _, _, _).
+
+//_t47[] = ?c <- agg<<?c = count()>> SiteToRefine(_).
+//_t48[] = ?c <- agg<<?c = count()>> ObjectToRefine(_).
+
++Stats:Metrics("01a@ var points-to (INS)", _t1[]).
++Stats:Metrics("01b@ var points-to (SENS)", _t2[]).
++Stats:Metrics("05a@ app var points-to (INS)", _t3[]).
++Stats:Metrics("05b@ app var points-to (SENS)", _t4[]).
++Stats:Metrics("30a@ var points-to (to reflective heap) (INS)", _t5[]).
++Stats:Metrics("30b@ var points-to (to reflective heap) (SENS)", _t6[]).
++Stats:Metrics("10a@ reachable variables (INS)", _t7[]).
++Stats:Metrics("10b@ reachable variables (SENS)", _t8[]).
+
++Stats:Metrics("02a@ array index points-to (INS)", _t9[]).
++Stats:Metrics("02b@ array index points-to (SENS)", _t10[]).
++Stats:Metrics("06a@ app array index points-to (INS)", _t11[]).
++Stats:Metrics("06b@ app array index points-to (SENS)", _t12[]).
++Stats:Metrics("31a@ array index points-to (to reflective heap) (INS)", _t13[]).
++Stats:Metrics("31b@ array index points-to (to reflective heap) (SENS)", _t14[]).
+
++Stats:Metrics("03a@ instance field points-to (INS)", _t15[]).
++Stats:Metrics("03b@ instance field points-to (SENS)", _t16[]).
++Stats:Metrics("04a@ static field points-to (INS)", _t17[]).
++Stats:Metrics("04b@ static field points-to (SENS)", _t18[]).
++Stats:Metrics("07a@ app array index points-to (INS)", _t19[]).
++Stats:Metrics("07b@ app array index points-to (SENS)", _t20[]).
++Stats:Metrics("32a@ instance field points-to (to reflective heap) (INS)", _t21[]).
++Stats:Metrics("32b@ instance field points-to (to reflective heap) (SENS)", _t22[]).
+
++Stats:Metrics("08a@ call graph edges (INS)", _t23[]).
++Stats:Metrics("08b@ call graph edges (SENS)", _t24[]).
++Stats:Metrics("09@ non-reachable app concrete methods", _t25[]).
++Stats:Metrics("11a@ reachable methods (INS)", _t26[]).
++Stats:Metrics("11a@ reachable methods (SENS)", _t27[]).
+
++Stats:Metrics("12@ virtual call sites (statically)", _t28[]).
++Stats:Metrics("13@ reachable virtual call sites", _t29[]).
++Stats:Metrics("14@ polymorphic virtual call sites", _t30[]).
++Stats:Metrics("15@ null virtual call sites", _t31[]).
++Stats:Metrics("16@ app virtual call sites (statically)", _t32[]).
++Stats:Metrics("17@ app reachable virtual call sites", _t33[]).
++Stats:Metrics("18@ app polymorphic virtual call sites", _t34[]).
++Stats:Metrics("19@ app null virtual call sites", _t35[]).
+
++Stats:Metrics("20@ casts (statically)", _t36[]).
++Stats:Metrics("21@ reachable casts", _t37[]).
++Stats:Metrics("22@ reachable casts that may fail", _t38[]).
++Stats:Metrics("23@ app casts (statically)", _t39[]).
++Stats:Metrics("24@ app reachable casts", _t40[]).
++Stats:Metrics("25@ app reachable casts that may fail", _t41[]).
+
++Stats:Metrics("35@ reachable 'forName' (INS)", _t42[]).
++Stats:Metrics("36@ reachable 'Class.newInstance' (INS)", _t43[]).
++Stats:Metrics("37@ reachable 'Constructor.newInstance' (INS)", _t44[]).
++Stats:Metrics("38a@ native call graph edges (INS)", _t45[]).
++Stats:Metrics("38b@ native call graph edges (SENS)", _t46[]).
+
+//+Stats:Metrics("40@ call sites that did (not) get refined", _t47[]).
+//+Stats:Metrics("41@ allocation sites that did (not) get refined", _t48[]).
