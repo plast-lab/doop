@@ -70,7 +70,7 @@ should be given as follows in the new Java-based Doop:
     $ DOOP_HOME>./bin/doop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
 
 ### Command line options
-To see the list of available option, issue:
+To see the list of available options, issue:
 
     $ DOOP_HOME>./bin/doop -h
 
