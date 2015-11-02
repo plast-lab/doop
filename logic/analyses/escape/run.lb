@@ -1,0 +1,25 @@
+create database --overwrite --blocks base
+
+startTimer
+transaction
+addBlock -F logic/facts/declarations.logic -B facts-declarations
+addBlock -F logic/facts/flow-insensitivity-declarations.logic
+exec -F logic/facts/entities-import.logic
+exec -F logic/facts/import.logic
+exec -F logic/facts/flow-insensitivity-delta.logic
+commit
+elapsedTime
+
+startTimer
+transaction
+addBlock -F logic/addons/cfg-analysis/declarations.logic -B cfg-declarations
+addBlock -F logic/addons/cfg-analysis/rules.logic -B cfg-rules
+commit
+elapsedTime
+
+startTimer
+transaction
+addBlock -F logic/analyses/escape/declarations.logic -B escape-declarations
+addBlock -F logic/analyses/escape/rules.logic -B escape-rules
+commit
+elapsedTime
