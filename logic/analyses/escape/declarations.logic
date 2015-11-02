@@ -1,0 +1,30 @@
+AccessPath(?ap) -> .
+lang:entity(`AccessPath).
+lang:physical:storageModel[`AccessPath]="ScalableSparse".
+lang:physical:capacity[`AccessPath] = 4294967296.
+
+AccessPath:FromVar[?var] = ?ap ->
+  Var(?var), AccessPath(?ap).
+lang:constructor(`AccessPath:FromVar).
+
+AccessPath:FromInstanceFld[?base, ?fld] = ?ap ->
+  Var(?base), FieldSignature(?fld), AccessPath(?ap).
+lang:constructor(`AccessPath:FromInstanceFld).
+
+AccessPath:FromStaticFld[?fld] = ?ap ->
+  FieldSignature(?fld), AccessPath(?ap).
+lang:constructor(`AccessPath:FromStaticFld).
+
+AccessPath:FromArray[?base] = ?ap ->
+  Var(?base), AccessPath(?ap).
+lang:constructor(`AccessPath:FromArray).
+
+
+AccessPath:ToString[?ap] = ?str ->
+  AccessPath(?ap), string(?str).
+
+Alias(?ap1, ?ap2, ?insn) ->
+  AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn).
+
+Alias:Transitive(?ap1, ?ap2, ?insn) ->
+  AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn).

@@ -234,7 +234,7 @@ import org.apache.commons.logging.LogFactory
         lbScriptWriter.println("transaction")
 
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/declarations.logic"),
-                           new File("${outDir}/fact-declarations.logic"))
+                           new File("${outDir}/facts-declarations.logic"))
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"),
                            new File("${outDir}/flow-insensitivity-declarations.logic"))
         lbScriptWriter.println("addBlock -F fact-declarations.logic")
