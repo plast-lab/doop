@@ -1,7 +1,9 @@
 AccessPath(?ap1),
 AccessPath:FromVar[?to] = ?ap1,
+AccessPath:ToVar[?ap1] = ?to,
 AccessPath(?ap2),
 AccessPath:FromVar[?from] = ?ap2,
+AccessPath:ToVar[?ap2] = ?from,
 _DirectAlias(?ap1, ?ap2, ?insn) <-
   AssignLocal:Insn(?insn),
   AssignInstruction:To[?insn] = ?to,
@@ -9,8 +11,11 @@ _DirectAlias(?ap1, ?ap2, ?insn) <-
 
 AccessPath(?ap1),
 AccessPath:FromInstanceFld[?base, ?fld] = ?ap1,
+AccessPath:ToInstanceFld:Base[?ap1] = ?base,
+AccessPath:ToInstanceFld:Fld[?ap1] = ?fld,
 AccessPath(?ap2),
 AccessPath:FromVar[?from] = ?ap2,
+AccessPath:ToVar[?ap2] = ?from,
 _DirectAlias(?ap1, ?ap2, ?insn) <-
   StoreInstanceField:Insn(?insn),
   StoreInstanceField:Base[?insn] = ?base,
@@ -19,8 +24,10 @@ _DirectAlias(?ap1, ?ap2, ?insn) <-
 
 AccessPath(?ap1),
 AccessPath:FromStaticFld[?fld] = ?ap1,
+AccessPath:ToStaticFld[?ap1] = ?fld,
 AccessPath(?ap2),
 AccessPath:FromVar[?from] = ?ap2,
+AccessPath:ToVar[?ap2] = ?from,
 _DirectAlias(?ap1, ?ap2, ?insn) <-
   StoreStaticField:Insn(?insn),
   FieldInstruction:Signature[?insn] = ?fld,
@@ -28,8 +35,11 @@ _DirectAlias(?ap1, ?ap2, ?insn) <-
 
 AccessPath(?ap1),
 AccessPath:FromVar[?to] = ?ap1,
+AccessPath:ToVar[?ap1] = ?to,
 AccessPath(?ap2),
 AccessPath:FromInstanceFld[?base, ?fld] = ?ap2,
+AccessPath:ToInstanceFld:Base[?ap2] = ?base,
+AccessPath:ToInstanceFld:Fld[?ap2] = ?fld,
 _DirectAlias(?ap1, ?ap2, ?insn) <-
   LoadInstanceField:Insn(?insn),
   LoadInstanceField:To[?insn] = ?to,
@@ -38,8 +48,10 @@ _DirectAlias(?ap1, ?ap2, ?insn) <-
 
 AccessPath(?ap1),
 AccessPath:FromVar[?to] = ?ap1,
+AccessPath:ToVar[?ap1] = ?to,
 AccessPath(?ap2),
 AccessPath:FromStaticFld[?fld] = ?ap2,
+AccessPath:ToStaticFld[?ap2] = ?fld,
 _DirectAlias(?ap1, ?ap2, ?insn) <-
   LoadStaticField:Insn(?insn),
   LoadStaticField:To[?insn] = ?to,
@@ -62,21 +74,21 @@ AccessPath:ToString[?ap] = ?str<-
 
 
 
-_PredecessorOf(?insn2, ?insn1) <-
+_PredecessorOf(?insn1, ?insn2) <-
   _DirectAlias(_, ?ap, ?insn1),
   _DirectAlias(?ap, _, ?insn2),
   BasicBlockHead[?insn1] = BasicBlockHead[?insn2],
   Instruction:Index[?insn1] > Instruction:Index[?insn2].
 
-_PredecessorOf(?insn2, ?insn1) <-
+_PredecessorOf(?insn1, ?insn2) <-
   _DirectAlias(_, ?ap1, ?insn1),
-  AccessPath:FromInstanceFld[?base, _] = ?ap1,
+  AccessPath:ToInstanceFld:Base[?ap1] = ?base,
   _DirectAlias(?ap2, _, ?insn2),
-  AccessPath:FromVar[?base] = ?ap2,
+  AccessPath:ToVar[?ap2] = ?base,
   BasicBlockHead[?insn1] = BasicBlockHead[?insn2],
   Instruction:Index[?insn1] > Instruction:Index[?insn2].
-  
-_ImmediatePredecessorOf[?insn] = ?insn0 <- agg<<?insn0 = max(?insn_i)>>(_PredecessorOf(?insn_i, ?insn)).
+
+_ImmediatePredecessorOf[?insn] = ?insn0 <- agg<<?insn0 = max(?insn_i)>>(_PredecessorOf(?insn, ?insn_i)).
 
 
 Alias(?ap1, ?ap2, ?insn) <-
