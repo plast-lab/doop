@@ -127,3 +127,8 @@ SupertypeOf(Type:long[], Type:int[]).
 SupertypeOf(Type:int[], Type:char[]).
 SupertypeOf(Type:int[], Type:short[]).
 SupertypeOf(Type:short[], Type:byte[]).
+
+/**
+ * Each type is a subtype / supertype of itself
+ */
+SubtypeOf(?t, ?t), SupertypeOf(?t, ?t) <- Type(?t).

@@ -123,10 +123,7 @@ VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
 RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?nullobject, ?toCtx, ?to) <-
    AssignNull(?to, ?inmethod),
-   Var:Type[?to] = ?type,
    HeapAllocation:Null[] = ?nullobject,
-   HeapAllocation:Type[?nullobject] = ?nulltype,
-   SupertypeOf(?type, ?nulltype),
    ReachableContext(?toCtx, ?inmethod).
 
 
@@ -136,12 +133,6 @@ Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
   AssignLocal(?from, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   Var:Type[?to] = ?type.
-*/
-
-/*
-// Assertion for sanity checking
-VarPointsTo(_, ?heap, _, ?to) -> 
-  SupertypeOf(Var:Type[?to], HeapAllocation:Type[?heap]).
 */
 
 // No need to check if type compatible: check is done at original

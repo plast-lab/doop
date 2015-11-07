@@ -7,7 +7,7 @@ import doop.system.CppPreprocessor
 import doop.system.Executor
 
 import groovy.transform.TypeChecked
-import groovy.ui.SystemOutputInterceptor
+
 import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -83,6 +83,8 @@ import org.apache.commons.logging.LogFactory
 
     long sootTime
 
+    WorkspaceConnector connector
+
     private static final List<String> IGNORED_WARNINGS = [
         """\
         *******************************************************************
@@ -94,7 +96,7 @@ import org.apache.commons.logging.LogFactory
 
     protected Analysis() {}
 
-    private void Init() {
+    private void init() {
         executor = new Executor(commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
@@ -107,11 +109,14 @@ import org.apache.commons.logging.LogFactory
 
         lbScript       = new File(outDir, "run.lb")
         lbScriptWriter = new PrintWriter(lbScript)
+
+        // Create workspace connector (needed by the post processor and the server-side analysis execution)
+        connector = new BloxbatchConnector(database, commandsEnvironment)
     }
 
     @Override
     void run() {
-        Init()
+        init()
 
         generateFacts()
 
@@ -145,56 +150,6 @@ import org.apache.commons.logging.LogFactory
         bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
-    void printStats() {
-        // Create workspace connector
-        WorkspaceConnector connector = new BloxbatchConnector(database, commandsEnvironment)
-
-        // We have to store the query results to a list since the
-        // closure argument of the connector does not generate an
-        // iterable stream.
-        // 
-        // TODO: change the connector so that it produces an iterable
-
-        def lines = [] as List<String>
-        connector.processPredicate("Stats:Runtime") { String line ->
-            lines.add(line)
-        }
-
-        logger.info "-- Runtime metrics --"
-        lines.sort()*.split(", ").each {
-            printf("%-80s %,.2f\n", it[0], it[1] as float)
-        }
-
-        if (!options.NO_STATS.value) {
-            lines = [] as List<String>
-            connector.processPredicate("Stats:Metrics") { String line ->
-                lines.add(line)
-            }
-
-            // We have to first sort (numerically) by the 1st column and
-            // then erase it
-
-            logger.info "-- Statistics --"
-            lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
-                printf("%-80s %,d\n", it[0], it[1] as int)
-            }
-        }
-    }
-
-    void linkResult() {
-        def jre = options.JRE.value
-        if (jre != "system") jre = "jre${jre}"
-        def jarName = FilenameUtils.getBaseName(inputJarFiles[0].toString())
-
-        def humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${name}/${jre}/${id}")
-        humanDatabase.mkdirs()
-        logger.info "Making database available at $humanDatabase"
-        executor.execute("ln -s -f $database $humanDatabase")
-
-        def lastAnalysis = "${Doop.doopHome}/last-analysis"
-        logger.info "Making database available at $lastAnalysis"
-        executor.execute("ln -s -f -n $database $lastAnalysis")
-    }
 
     /**
      * @return A string representation of the analysis
