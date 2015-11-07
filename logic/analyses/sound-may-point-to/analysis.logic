@@ -1158,6 +1158,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    (_AccessPath:IsComposite(?ap) ;
     _AccessPath:IsVariable(?ap) ;
 	_AccessPath:ByStaticFieldInv[?ap] = _),
+   !MonitorInstruction(?insn),
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
 	IgnorableForNonCollectionsMethodInvocation(?insn)),
@@ -1216,6 +1217,7 @@ Temp8(?hctx, ?heap, ?ap, ?ctx, ?insn),
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
    OptBefore:AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
    _AccessPath:ByCollectionVarInv[?ap] = _,
+   !MonitorInstruction(?insn),
    (!MethodInvocation(?insn);
     IgnorableMethodInvocation(?insn);
     LibraryCollectionLoadOperation(?insn)),
@@ -2132,6 +2134,7 @@ _ConvertMustToMayContext[?mustCtx] = ?ctx <-
 MaxMayContextDepth[] = 6 <- .
 
 InitialRootMethodForMayAnalysis(?meth) <-
+   Reachable(?meth), // just for benchmarking against unsound VPT analysis
    MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class).
 
 // The real root methods may be more than the initial ones, detected

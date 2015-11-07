@@ -1,14 +1,12 @@
 echo "-- opening DB --"
 open last-analysis
 
-/*
 echo "-- applying may-point-to --"
 startTimer
 transaction
 addBlock -F logic/analyses/sound-may-point-to/analysis.logic 
 commit
 elapsedTime
-*/
 
 echo "-- collecting stats --"
 startTimer
