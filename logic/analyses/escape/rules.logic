@@ -1,100 +1,160 @@
-AccessPath(?ap1),
-AccessPath:FromVar[?to] = ?ap1,
-AccessPath:ToVar[?ap1] = ?to,
-AccessPath(?ap2),
-AccessPath:FromVar[?from] = ?ap2,
-AccessPath:ToVar[?ap2] = ?from,
-_DirectAlias(?ap1, ?ap2, ?insn) <-
-  AssignLocal:Insn(?insn),
-  AssignInstruction:To[?insn] = ?to,
-  AssignLocal:From[?insn] = ?from.
+lang:compiler:error:VARIABLE_SOLITARY[] = true.
+//lang:compiler:error:NEGATION_RECURSION[] = false.
+//lang:compiler:warning:NEGATION_RECURSION[] = false.
 
-AccessPath(?ap1),
-AccessPath:FromInstanceFld[?base, ?fld] = ?ap1,
-AccessPath:ToInstanceFld:Base[?ap1] = ?base,
-AccessPath:ToInstanceFld:Fld[?ap1] = ?fld,
-AccessPath(?ap2),
-AccessPath:FromVar[?from] = ?ap2,
-AccessPath:ToVar[?ap2] = ?from,
-_DirectAlias(?ap1, ?ap2, ?insn) <-
-  StoreInstanceField:Insn(?insn),
-  StoreInstanceField:Base[?insn] = ?base,
-  FieldInstruction:Signature[?insn] = ?fld,
-  StoreInstanceField:From[?insn] = ?from.
-
-AccessPath(?ap1),
-AccessPath:FromStaticFld[?fld] = ?ap1,
-AccessPath:ToStaticFld[?ap1] = ?fld,
-AccessPath(?ap2),
-AccessPath:FromVar[?from] = ?ap2,
-AccessPath:ToVar[?ap2] = ?from,
-_DirectAlias(?ap1, ?ap2, ?insn) <-
-  StoreStaticField:Insn(?insn),
-  FieldInstruction:Signature[?insn] = ?fld,
-  StoreStaticField:From[?insn] = ?from.
-
-AccessPath(?ap1),
-AccessPath:FromVar[?to] = ?ap1,
-AccessPath:ToVar[?ap1] = ?to,
-AccessPath(?ap2),
-AccessPath:FromInstanceFld[?base, ?fld] = ?ap2,
-AccessPath:ToInstanceFld:Base[?ap2] = ?base,
-AccessPath:ToInstanceFld:Fld[?ap2] = ?fld,
-_DirectAlias(?ap1, ?ap2, ?insn) <-
-  LoadInstanceField:Insn(?insn),
-  LoadInstanceField:To[?insn] = ?to,
-  LoadInstanceField:Base[?insn] = ?base,
-  FieldInstruction:Signature[?insn] = ?fld.
-
-AccessPath(?ap1),
-AccessPath:FromVar[?to] = ?ap1,
-AccessPath:ToVar[?ap1] = ?to,
-AccessPath(?ap2),
-AccessPath:FromStaticFld[?fld] = ?ap2,
-AccessPath:ToStaticFld[?ap2] = ?fld,
-_DirectAlias(?ap1, ?ap2, ?insn) <-
-  LoadStaticField:Insn(?insn),
-  LoadStaticField:To[?insn] = ?to,
-  FieldInstruction:Signature[?insn] = ?fld.
-
-
-AccessPath:ToString[?ap] = ?str<-
-  AccessPath:FromVar[?var] = ?ap,
+/////////////////////////////////////////
+AccessPath(?ap),
+AccessPath:ByVar[?var] = ?ap,
+AccessPath:ToVar[?ap] = ?var,
+AccessPath:ToString[?ap] = ?str <-
+  Var(?var),
+  ReferenceType(Var:Type[?var]),
   Var:Value(?var:?str).
 
-AccessPath:ToString[?ap] = ?str<-
-  AccessPath:FromInstanceFld[?base, ?fld] = ?ap,
+AccessPath(?ap),
+AccessPath:ByInstanceFld[?base, ?fld] = ?ap,
+AccessPath:ToInstanceFld:Base[?ap] = ?base,
+AccessPath:ToInstanceFld:Fld[?ap] = ?fld,
+AccessPath:ToString[?ap] = ?str <-
+  (StoreInstanceField(_, ?base, ?fld, _) ;
+   LoadInstanceField(?base, ?fld, _, _)),
+  ReferenceType(FieldSignature:Type[?fld]),
   Var:Value(?base:?baseStr),
   FieldSignature:Value(?fld:?fldStr),
   ?str = ?baseStr + "." + ?fldStr.
+/////////////////////////////////////////
 
-AccessPath:ToString[?ap] = ?str<-
-  AccessPath:FromStaticFld[?fld] = ?ap,
-  FieldSignature:Value(?fld:?str).
+/////////////////////////////////////////
+_Move:Insn(?insn) <-
+  AssignLocal:From[?insn] = _ ;
+  AssignCast:From[?insn] = _.
+_Move(?ap1, ?ap2, ?insn) <-
+  AssignInstruction:To[?insn] = ?to,
+  (AssignLocal:From[?insn] = ?from ;
+   AssignCast:From[?insn] = ?from),
+  AccessPath:ByVar[?to] = ?ap1,
+  AccessPath:ByVar[?from] = ?ap2.
+
+//_LoadInstanceFld(?to, ?base, ?fld, ?insn) <-
+//  LoadInstanceField:To[?insn] = ?to,
+//  LoadInstanceField:Base[?insn] = ?base,
+//  FieldInstruction:Signature[?insn] = ?fld.
+
+_LoadStaticFld:Insn(?insn) <-
+  LoadStaticField:To[?insn] = _.
+_LoadStaticFld(?to, ?fld, ?insn) <-
+  LoadStaticField:To[?insn] = ?to,
+  FieldInstruction:Signature[?insn] = ?fld.
+
+//_StoreInstanceFld(?base, ?fld, ?from, ?insn) <-
+//  StoreInstanceField:Base[?insn] = ?base,
+//  FieldInstruction:Signature[?insn] = ?fld,
+//  StoreInstanceField:From[?insn] = ?from.
+
+_StoreStaticFld:Insn(?insn) <-
+  StoreStaticField:From[?insn] = _.
+_StoreStaticFld(?fld, ?from, ?insn) <-
+  FieldInstruction:Signature[?insn] = ?fld,
+  StoreStaticField:From[?insn] = ?from.
+/////////////////////////////////////////
 
 
+/////////////////////////////////////////
+MayAlias(?ap2, ?ap1, ?insn) <-
+  MayAlias(?ap1, ?ap2, ?insn),
+  ?ap1 != ?ap2.
 
-_PredecessorOf(?insn1, ?insn2) <-
-  _DirectAlias(_, ?ap, ?insn1),
-  _DirectAlias(?ap, _, ?insn2),
-  BasicBlockHead[?insn1] = BasicBlockHead[?insn2],
-  Instruction:Index[?insn1] > Instruction:Index[?insn2].
+MayAlias(?ap1, ?ap3, ?insn) <-
+  MayAlias(?ap1, ?ap2, ?insn),
+  MayAlias(?ap2, ?ap3, ?insn),
+  ?ap1 != ?ap3.
 
-_PredecessorOf(?insn1, ?insn2) <-
-  _DirectAlias(_, ?ap1, ?insn1),
-  AccessPath:ToInstanceFld:Base[?ap1] = ?base,
-  _DirectAlias(?ap2, _, ?insn2),
-  AccessPath:ToVar[?ap2] = ?base,
-  BasicBlockHead[?insn1] = BasicBlockHead[?insn2],
-  Instruction:Index[?insn1] > Instruction:Index[?insn2].
-
-_ImmediatePredecessorOf[?insn] = ?insn0 <- agg<<?insn0 = max(?insn_i)>>(_PredecessorOf(?insn, ?insn_i)).
+MayAlias(?ap1, ?ap2, ?insn) <-
+  MayAlias(?ap1, ?ap2, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  DoesNotEscape(?ap1, ?insn),
+  DoesNotEscape(?ap2, ?insn).
+/////////////////////////////////////////
 
 
-Alias(?ap1, ?ap2, ?insn) <-
-  _DirectAlias(?ap1, ?ap2, ?insn).
+/////////////////////////////////////////
+DoesNotEscape(?ap, ?insn) <-
+  AssignHeapAllocation:Insn(?insn),
+  AssignInstruction:To[?insn] = ?var,
+  AccessPath:ByVar[?var] = ?ap.
 
-Alias(?ap1, ?ap3, ?insn1) <-
-  _DirectAlias(?ap1, ?ap2, ?insn1),
-  _ImmediatePredecessorOf[?insn1] = ?insn2,
-  Alias(?ap2, ?ap3, ?insn2).
+MayAlias(?ap1, ?ap2, ?insn),
+DoesNotEscape(?ap1, ?insn),
+DoesNotEscape(?ap2, ?insn) <-
+  DoesNotEscape(?ap2, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  _Move(?ap1, ?ap2, ?insn).
+
+//MayAlias(?ap1, ?ap2, ?insn),
+//DoesNotEscape(?ap1, ?insn),
+//DoesNotEscape(?ap2, ?insn) <-
+//  _StoreInstanceFld(?base, ?fld, ?from, ?insn),
+//  Instruction:Prev[?insn] = ?insn0,
+//  AccessPath:ByVar[?base] = ?ap0,
+//  AccessPath:ByInstanceFld[?base, ?fld] = ?ap1,
+//  AccessPath:ByVar[?from] = ?ap2,
+//  DoesNotEscape(?ap2, ?insn0),
+//  DoesNotEscape(?ap0, ?insn0).
+
+
+// Frame rules //////////////////////////
+/////////////////////////////////////////
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  AssignHeapAllocation:Insn(?insn).
+
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  _Move:Insn(?insn),
+  !_Move(?ap, _, ?insn),
+  !_Move(_, ?ap, ?insn).
+
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  ReturnVoid:Insn(?insn).
+
+// Escape cases /////////////////////////
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  _StoreStaticFld:Insn(?insn),
+  MayAlias(?apAlt, ?ap, ?insn0),
+  AccessPath:ToVar[?apAlt] = ?varAlt,
+  AccessPath:ToVar[?ap] = ?var,
+  !StoreStaticField:From[?insn] = ?varAlt,
+  !StoreStaticField:From[?insn] = ?var.
+
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  _LoadStaticFld:Insn(?insn),
+  MayAlias(?apAlt, ?ap, ?insn0),
+  AccessPath:ToVar[?apAlt] = ?varAlt,
+  AccessPath:ToVar[?ap] = ?var,
+  !LoadStaticField:To[?insn] = ?varAlt,
+  !LoadStaticField:To[?insn] = ?var.
+
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  ReturnNonvoid:Insn(?insn),
+  MayAlias(?apAlt, ?ap, ?insn0),
+  AccessPath:ToVar[?apAlt] = ?varAlt,
+  AccessPath:ToVar[?ap] = ?var,
+  !ReturnNonvoid:Var[?insn] = ?varAlt,
+  !ReturnNonvoid:Var[?insn] = ?var.
+
+
+//TODO: HANDLE
+DoesNotEscape(?ap, ?insn) <-
+  DoesNotEscape(?ap, ?insn0),
+  Instruction:Next[?insn0] = ?insn,
+  SpecialMethodInvocation:Insn(?insn).
