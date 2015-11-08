@@ -3,38 +3,32 @@ lang:entity(`AccessPath).
 lang:physical:storageModel[`AccessPath]="ScalableSparse".
 lang:physical:capacity[`AccessPath] = 4294967296.
 
-AccessPath:FromVar[?var] = ?ap ->
+AccessPath:ByVar[?var] = ?ap ->
   Var(?var), AccessPath(?ap).
-lang:constructor(`AccessPath:FromVar).
+lang:constructor(`AccessPath:ByVar).
 AccessPath:ToVar[?ap] = ?var ->
   AccessPath(?ap), Var(?var).
 
-AccessPath:FromInstanceFld[?base, ?fld] = ?ap ->
+AccessPath:ByInstanceFld[?base, ?fld] = ?ap ->
   Var(?base), FieldSignature(?fld), AccessPath(?ap).
-lang:constructor(`AccessPath:FromInstanceFld).
+lang:constructor(`AccessPath:ByInstanceFld).
 AccessPath:ToInstanceFld:Base[?ap] = ?base ->
   AccessPath(?ap), Var(?base).
 AccessPath:ToInstanceFld:Fld[?ap] = ?fld ->
   AccessPath(?ap), FieldSignature(?fld).
 
-AccessPath:FromStaticFld[?fld] = ?ap ->
-  FieldSignature(?fld), AccessPath(?ap).
-lang:constructor(`AccessPath:FromStaticFld).
-AccessPath:ToStaticFld[?ap] = ?fld ->
-  AccessPath(?ap), FieldSignature(?fld).
-
-AccessPath:FromArray[?base] = ?ap ->
-  Var(?base), AccessPath(?ap).
-lang:constructor(`AccessPath:FromArray).
-AccessPath:ToArray[?ap] = ?base ->
-  AccessPath(?ap), Var(?base).
-
+//AccessPath:ByStaticFld[?fld] = ?ap ->
+//  FieldSignature(?fld), AccessPath(?ap).
+//lang:constructor(`AccessPath:ByStaticFld).
+//AccessPath:ToStaticFld[?ap] = ?fld ->
+//  AccessPath(?ap), FieldSignature(?fld).
 
 AccessPath:ToString[?ap] = ?str ->
   AccessPath(?ap), string(?str).
 
-Alias(?ap1, ?ap2, ?insn) ->
-  AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn).
 
-Alias:Transitive(?ap1, ?ap2, ?insn) ->
+DoesNotEscape(?ap, ?insn) ->
+  AccessPath(?ap), Instruction(?insn).
+
+MayAlias(?ap1, ?ap2, ?insn) ->
   AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn).
