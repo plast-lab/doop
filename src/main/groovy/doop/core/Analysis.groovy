@@ -94,9 +94,31 @@ import org.apache.commons.logging.LogFactory
         """
     ].collect{ line -> Pattern.quote(line.stripIndent()) }
 
-    protected Analysis() {}
+    /*
+     * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
+     * in order to ensure that internal state is initialized at one point and the init method is no longer required.
+     * This new constructor embodies the old init method and offers a ready-to-use analysis object.
+     */
+    protected Analysis(String id,
+                       String outDir,
+                       String cacheDir,
+                       String name,
+                       Map<String, AnalysisOption> options,
+                       InputResolutionContext ctx,
+                       List<File> inputJarFiles,
+                       List<String> jreJars,
+                       Map<String, String> commandsEnvironment) {
+        this.id = id
+        this.outDir = outDir
+        this.cacheDir = cacheDir
+        this.name = name
+        this.options = options
+        this.ctx = ctx
+        this.inputJarFiles = inputJarFiles
+        this.jreJars = jreJars
+        this.commandsEnvironment = commandsEnvironment
 
-    private void init() {
+        //the old init method
         executor = new Executor(commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
@@ -116,7 +138,7 @@ import org.apache.commons.logging.LogFactory
 
     @Override
     void run() {
-        init()
+        //init()
 
         generateFacts()
 

@@ -9,7 +9,6 @@ import org.apache.commons.logging.LogFactory
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
-import java.security.MessageDigest
 
 /**
  * A Factory for creating Analysis objects.
@@ -109,15 +108,15 @@ import java.security.MessageDigest
         File cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
-            id           : analysisId,
-            outDir       : outDir.toString(),
-            cacheDir     : cacheDir.toString(),
-            name         : name,
-            options      : options,
-            ctx          : context,
-            inputJarFiles: vars.inputJarFiles,
-            jreJars      : vars.jreJars,
-            commandsEnvironment: commandsEnv
+            analysisId,
+            outDir.toString(),
+            cacheDir.toString(),
+            name,
+            options,
+            context,
+            vars.inputJarFiles,
+            vars.jreJars,
+            commandsEnv
         )
 
         logger.debug "Created new analysis"
