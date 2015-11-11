@@ -10,3 +10,6 @@ FACTS_DIR=out/facts
 rm -rf $FACTS_DIR
 java -cp $CLASSPATH doop.soot.Main -full -keep-line-number -use-original-names -only-application-classes-fact-gen -lsystem -application-regex $APPREGEX -allow-phantom -d $FACTS_DIR $JAR
 ln -s $FACTS_DIR facts
+
+DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+bloxbatch -script "$DIR/run.lb"
