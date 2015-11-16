@@ -9,7 +9,6 @@ import org.apache.commons.logging.LogFactory
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
-import java.security.MessageDigest
 
 /**
  * A Factory for creating Analysis objects.
@@ -109,15 +108,15 @@ import java.security.MessageDigest
         File cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
-            id           : analysisId,
-            outDir       : outDir.toString(),
-            cacheDir     : cacheDir.toString(),
-            name         : name,
-            options      : options,
-            ctx          : context,
-            inputJarFiles: vars.inputJarFiles,
-            jreJars      : vars.jreJars,
-            commandsEnvironment: commandsEnv
+            analysisId,
+            outDir.toString(),
+            cacheDir.toString(),
+            name,
+            options,
+            context,
+            vars.inputJarFiles,
+            vars.jreJars,
+            commandsEnv
         )
 
         logger.debug "Created new analysis"
@@ -460,9 +459,13 @@ import java.security.MessageDigest
             logger.debug "The DACAPO_BACH option has been enabled"
             if (!options.ENABLE_REFLECTION.value) {
                 def inputJarName = vars.inputJarFiles[0].toString()
-                def deps = inputJarName.replace(".jar", "-libs")
-                if (!vars.inputJarFiles.contains(deps))
-                    vars.inputJarFiles.add(new File(deps))
+                def depsDir = inputJarName.replace(".jar", "-libs")
+                new File(depsDir).eachFile { File depsFile ->
+                    if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") &&
+                        !vars.inputJarFiles.contains(depsFile)) {
+                        vars.inputJarFiles.add(depsFile)
+                    }
+                }
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
                 logger.debug "The TAMIFLEX option has been enabled (due to DACAPO_BACH)"
             }
