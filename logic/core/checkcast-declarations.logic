@@ -1,0 +1,7 @@
+/**
+ * Type S can be cast to type T.
+ *
+ * TODO: null_type?
+ */
+CheckCast(?source, ?target) ->
+   Type(?source), Type(?target).

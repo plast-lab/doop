@@ -1,0 +1,48 @@
+#include "assignment-compatible.logic"
+#include "checkcast.logic"
+#include "class-initialization.logic"
+#include "declaring-class.logic"
+#include "finalization.logic"
+#include "implicit-reachable.logic"
+#include "method-resolution.logic"
+#include "native.logic"
+#include "reference.logic"
+#include "string-constants.logic"
+#include "subclass.logic"
+#include "superinterface.logic"
+#include "threads.logic"
+
+#if defined(EXCEPTIONS_PRECISE) && !defined(PADDLE_COMPAT)
+#include "exceptions/precise.logic"
+#elif defined(EXCEPTIONS_IMPRECISE)
+#include "exceptions/imprecise.logic"
+#elif defined(EXCEPTIONS_EXPERIMENTAL)
+#include "exceptions/experimental.logic"
+#endif
+
+#if !defined(DISABLE_REFLECTION) && !defined(PADDLE_COMPAT)
+#include "reflection/rules.logic" 
+#endif
+
+
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename <-
+   MethodInvocation:Signature[?invocation] = ?signature,
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodSignature:SimpleName[?signature] = ?simplename.
+
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodSignature:Descriptor[?signature] = ?descriptor.
+
+
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
+   Modifier:Value(?public:"public"),
+   Modifier:Value(?static:"static"),
+   MethodSignature:DeclaringType[?method] = ?type,
+   MethodSignature:SimpleName[?method] = "main",
+   MethodSignature:Descriptor[?method] = ?descriptor,
+   MethodModifier(?public, ?method),
+   MethodModifier(?static, ?method).
