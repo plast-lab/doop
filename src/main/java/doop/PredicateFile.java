@@ -47,6 +47,7 @@ public enum PredicateFile
     STATIC_METHOD_INV("StaticMethodInvocation"),
     ASSIGN_OPER("OperAssign"),
     ASSIGN_OPER_FROM("OperAssignFrom"),
+    IF_VAR("If:Var"),
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
     THROW("Throw"),

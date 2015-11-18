@@ -659,6 +659,22 @@ public class FactWriter
                 _db.asIntColumn(String.valueOf(indexTo)),
                 // method
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+        
+        if (stmt instanceof ConditionExpr) {
+        	ConditionExpr condition = (ConditionExpr) stmt;
+        	if (condition.getOp1() instanceof Local) {
+        		Local op1 = (Local) condition.getOp1();
+        		_db.add(IF_VAR,
+        				_db.asEntity(rep),
+        				_db.asEntity(_rep.local(m, op1)));
+        	}
+        	if (condition.getOp2() instanceof Local) {
+        		Local op2 = (Local) condition.getOp2();
+        		_db.add(IF_VAR,
+        				_db.asEntity(rep),
+        				_db.asEntity(_rep.local(m, op2)));
+        	}
+        }
     }
 
     public void writeTableSwitch(SootMethod inMethod, TableSwitchStmt stmt, Session session)
