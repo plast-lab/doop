@@ -39,10 +39,11 @@ class Main {
 
         try {
 
-            CliBuilder builder = CommandLineAnalysisFactory.createCliBuilder()
+            // The builder for displaying usage should not include non-standard flags
+            CliBuilder usageBuilder = CommandLineAnalysisFactory.createCliBuilder(false)
 
             if(!args) {
-                builder.usage()
+                usageBuilder.usage()
                 return
             }
 
@@ -71,10 +72,16 @@ class Main {
                 bloxOptions = args[index+1..len-1].join(' ')
             }
 
+            // The builder for actually parsing the arguments needs to include non-standard flags
+            CliBuilder builder = CommandLineAnalysisFactory.createCliBuilder(true)
             OptionAccessor cli = builder.parse(argsToParse)
 
             if (!cli || cli.h) {
-                builder.usage()
+                usageBuilder.usage()
+                return
+            }
+            else if (cli.X) {
+                CommandLineAnalysisFactory.createNonStandardCliBuilder().usage()
                 return
             }
 
@@ -114,7 +121,7 @@ class Main {
                 }
                 catch(e) {
                     println e.getMessage()
-                    builder.usage()
+                    usageBuilder.usage()
                     return
                 }
 

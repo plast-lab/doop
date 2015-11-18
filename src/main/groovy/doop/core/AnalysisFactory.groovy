@@ -423,14 +423,6 @@ import java.util.jar.JarFile
             logger.debug "The CACHE option has been enabled"
         }
 
-        if (options.FULL_STATS.value) {
-            logger.debug "The FULL_STATS option has been enabled"
-        }
-
-        if (options.NO_STATS.value) {
-            logger.debug "The NO_STATS option has been enabled"
-        }
-
         if (options.SANITY.value) {
             logger.debug "The SANITY option has been enabled"
         }
@@ -441,6 +433,23 @@ import java.util.jar.JarFile
         
         if (options.RUN_JPHANTOM.value) {
             logger.debug "The RUN_JPHANTOM option has been enabled"
+        }
+
+        if (options.X_ONLY_FACTS.value) {
+            logger.debug "The X_ONLY_FACTS option has been enabled"
+        }
+
+        if (options.X_STATS_FULL.value) {
+            logger.debug "The X_STATS_FULL option has been enabled"
+        }
+
+        if (options.X_STATS_NONE.value) {
+            logger.debug "The X_STATS_NONE option has been enabled"
+        }
+
+        // Check for X_SOOT_VERSION option (cannot be null)
+        if (!options.X_SOOT_VERSION.value) {
+            throw new RuntimeException("The X_SOOT_VERSION option is null")
         }
         
         if (options.DACAPO.value) {
@@ -474,11 +483,6 @@ import java.util.jar.JarFile
         if (options.TAMIFLEX.value) {
             options.ENABLE_REFLECTION.value = false
             logger.debug "The TAMIFLEX option has been enabled"
-        }
-
-        // Check for SOOT option (cannot be null)
-        if (!options.SOOT.value) {
-            throw new RuntimeException("The SOOT option is null")
         }
 
         // Checks for must analyses
