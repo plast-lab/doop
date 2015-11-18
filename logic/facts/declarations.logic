@@ -497,6 +497,9 @@ AssignLocal:From[?insn] = ?from ->
 OperAssign:From(?insn, ?from) ->
    OperAssign:Insn(?insn), Var(?from).
 
+// Variables used in ifs
+If:Var(?insn, ?var) ->
+   If:Insn(?insn), Var(?var).
 
 // Assign multi-array allocation instruction
 
