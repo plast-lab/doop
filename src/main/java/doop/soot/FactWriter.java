@@ -660,8 +660,9 @@ public class FactWriter
                 // method
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
         
-        if (stmt instanceof ConditionExpr) {
-        	ConditionExpr condition = (ConditionExpr) stmt;
+        Value condStmt = ((IfStmt) stmt).getCondition();
+        if (condStmt instanceof ConditionExpr) {
+        	ConditionExpr condition = (ConditionExpr) condStmt;
         	if (condition.getOp1() instanceof Local) {
         		Local op1 = (Local) condition.getOp1();
         		_db.add(IF_VAR,
