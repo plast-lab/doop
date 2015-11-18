@@ -28,10 +28,10 @@ lang:physical:filePath[`_OperAssign] = "facts/OperAssign.facts".
 lang:physical:delimiter[`_OperAssign] = "\t".
 lang:physical:hasColumnNames[`_OperAssign] = false.
 
-_OperAssign(?instruction, ?index, ?from, ?inmethod) ->
+_OperAssign(?instruction, ?index, ?to, ?inmethod) ->
    string(?instruction),
    int[32](?index),
-   string(?from),
+   string(?to),
    string(?inmethod).
 
 +OperAssign:Insn(?x),
@@ -40,7 +40,6 @@ _OperAssign(?instruction, ?index, ?from, ?inmethod) ->
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
    _OperAssign(?instruction, ?index, ?to, ?method).
-
 
 // OperAssignFrom
 
@@ -55,8 +54,24 @@ _OperAssignFrom(?instruction, ?from) ->
 
 +OperAssign:From(?insn, ?from) <-
    OperAssign:Insn(?insn),
-   Instruction:Value(?insn:?instruction),
-   _OperAssignFrom(?instruction, ?from).
+   Instruction:Value(?insn:?insnval),
+   _OperAssignFrom(?insnval, ?from).
+
+// IfVar
+
+lang:physical:storageModel[`_IfVar] = "DelimitedFile".
+lang:physical:filePath[`_IfVar] = "facts/IfVar.facts".
+lang:physical:delimiter[`_IfVar] = "\t".
+lang:physical:hasColumnNames[`_IfVar] = false.
+
+_IfVar(?instruction, ?var) ->
+   string(?instruction),
+   string(?var).
+
++If:Var(?insn, ?var) <-
+   If:Insn(?insn),
+   Instruction:Value(?insn, ?insnval),
+   _IfVar(?insnval, ?var).
 
 // AssignCast
 
