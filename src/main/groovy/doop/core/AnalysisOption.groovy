@@ -23,7 +23,8 @@ class AnalysisOption<T>  {
             cli            : option.cli,
             argName        : option.argName,
             isAdvanced     : option.isAdvanced,
-            isFile         : option.isFile
+            isFile         : option.isFile,
+            nonStandard    : option.nonStandard
         )
     }
 
@@ -86,6 +87,11 @@ class AnalysisOption<T>  {
      * Indicates whether the options is a file.
      */
     boolean isFile = false
+
+    /**
+     * Indicates whether the options is a non-standard flag.
+     */
+    boolean nonStandard = false
 
     @Override
     String toString() {

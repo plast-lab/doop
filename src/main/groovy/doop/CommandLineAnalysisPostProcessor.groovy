@@ -22,6 +22,8 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
 
     protected void printStats(Analysis analysis) {
+        if (analysis.options.X_ONLY_FACTS.value)
+            return
 
         // We have to store the query results to a list since the
         // closure argument of the connector does not generate an
@@ -37,7 +39,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
             printf("%-80s %,.2f\n", it[0], it[1] as float)
         }
 
-        if (!analysis.options.NO_STATS.value) {
+        if (!analysis.options.X_STATS_NONE.value) {
             lines = [] as List<String>
             analysis.connector.processPredicate("Stats:Metrics") { String line ->
                 lines.add(line)
@@ -54,6 +56,13 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
     }
 
     protected void linkResult(Analysis analysis) {
+        if (analysis.options.X_ONLY_FACTS.value) {
+            def facts = new File(analysis.options.X_ONLY_FACTS.value)
+            logger.info "Making facts available at $facts"
+            analysis.executor.execute("ln -s -f ${analysis.facts} $facts")
+            return
+        }
+
         def jre = analysis.options.JRE.value
         if (jre != "system") jre = "jre${jre}"
         def jarName = FilenameUtils.getBaseName(analysis.inputJarFiles[0].toString())

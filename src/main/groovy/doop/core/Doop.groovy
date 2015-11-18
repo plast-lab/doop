@@ -86,7 +86,7 @@ class Doop {
             cli:false,
             forPreprocessor:true
         ),
-        
+
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_ALL_STRING_CONSTANTS",
@@ -96,7 +96,7 @@ class Doop {
             forPreprocessor:true,
             isAdvanced:true,
             flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),        
+        ),
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_NO_STRING_CONSTANTS",
             name:"toggle-distinguish-no-string-constants",
@@ -131,7 +131,7 @@ class Doop {
             webUI:true,
             forPreprocessor:true,
             isAdvanced:true
-        ),        
+        ),
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_FILTER",
             name:"enable-exceptions-filter",
@@ -170,7 +170,7 @@ class Doop {
             value:false,
             webUI:true,
             isAdvanced:true
-        ),        
+        ),
 
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION",
@@ -262,8 +262,8 @@ class Doop {
             forPreprocessor:true
         ),
         /* End of preprocessor normal flags] */
-        
-        /* Start of preprocessor exception flags] */        
+
+        /* Start of preprocessor exception flags] */
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_PRECISE",
             value:true,
@@ -297,7 +297,7 @@ class Doop {
             isAdvanced:true,
             flagType:PreprocessorFlag.EXCEPTION_FLAG
         ),
-        /* End of preprocessor exception flags] */        
+        /* End of preprocessor exception flags] */
 
         //other options/flags
         new AnalysisOption<Boolean>(
@@ -307,7 +307,7 @@ class Doop {
             webUI:true,
             forPreprocessor:false,
             isAdvanced:true
-        ),        
+        ),
         new AnalysisOption<Boolean>(
             id:"DISABLE_MERGE_EXCEPTIONS",
             name:"disable-merge-exceptions",
@@ -338,20 +338,6 @@ class Doop {
             id:"CACHE",
             name:"cache",
             description:"The analysis will use the cached facts, if they exist.",
-            value:false,
-            webUI:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"FULL_STATS",
-            name:"full-stats",
-            description:"Load additional logic for collecting statistics.",
-            value:false,
-            webUI:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"NO_STATS",
-            name:"no-stats",
-            description:"Do not load logic for collecting statistics.",
             value:false,
             webUI:true
         ),
@@ -415,14 +401,6 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<String>(
-            id:"SOOT",
-            name:"soot",
-            argName:"SOOT_VERSION",
-            description:"One 2.5.0, 2.5.0-custom (default: 2.5.0).",
-            value:"2.5.0",
-            webUI:true
-        ),
         new AnalysisOption<String>( //Generates the properly named JRE option at runtime
             id:"JRE",
             name:"jre",
@@ -453,7 +431,42 @@ class Doop {
             value:System.getenv("DOOP_EXTERNALS"),
             webUI:false,
             isAdvanced:true
-        )
+        ),
+
+        /* Start of non-standard flags] */
+        new AnalysisOption<Boolean>(
+            id:"X_STATS_FULL",
+            name:"Xstats:full",
+            description:"Load additional logic for collecting statistics.",
+            value:false,
+            nonStandard:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"X_STATS_NONE",
+            name:"Xstats:none",
+            description:"Do not load logic for collecting statistics.",
+            value:false,
+            nonStandard:true
+        ),
+        new AnalysisOption<String>(
+            id:"X_ONLY_FACTS",
+            name:"Xonly-facts",
+            argName:"FACTS_DIR",
+            isFile:true,
+            description:"Only generate facts and exit.",
+            value:false,
+            nonStandard:true
+        ),
+        new AnalysisOption<String>(
+            id:"X_SOOT_VERSION",
+            name:"Xsoot:version",
+            argName:"VERSION",
+            description:"One of 2.5.0, 2.5.0-custom (default: 2.5.0).",
+            value:"2.5.0",
+            webUI:true,
+            nonStandard:true
+        ),
+        /* End of non-standard flags] */
     ]
 
     static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [

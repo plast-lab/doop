@@ -138,9 +138,9 @@ import org.apache.commons.logging.LogFactory
 
     @Override
     void run() {
-        //init()
-
         generateFacts()
+        if (options.X_ONLY_FACTS.value)
+            return
 
         initDatabase()
 
@@ -155,7 +155,7 @@ import org.apache.commons.logging.LogFactory
             logger.debug e.getMessage()
         }
 
-        if (!options.NO_STATS.value)
+        if (!options.X_STATS_NONE.value)
             produceStats()
 
         lbScriptWriter.close()
@@ -578,7 +578,7 @@ import org.apache.commons.logging.LogFactory
         preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         lbScriptWriter.println("addBlock -F statistics-simple.logic")
 
-        if (options.FULL_STATS.value) {
+        if (options.X_STATS_FULL.value) {
             preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
             lbScriptWriter.println("addBlock -F statistics.logic")
         }
@@ -688,7 +688,7 @@ import org.apache.commons.logging.LogFactory
      * Creates a new class loader for running soot
      */
     private ClassLoader sootClassLoader() {
-        String sootClasses = "${Doop.doopHome}/lib/sootclasses-${options.SOOT.value}.jar"
+        String sootClasses = "${Doop.doopHome}/lib/sootclasses-${options.X_SOOT_VERSION.value}.jar"
         File f1 = Helper.checkFileOrThrowException(sootClasses, "soot classes jar missing or invalid: $sootClasses")
         List<URL> classpath = [f1.toURI().toURL()]
         return new URLClassLoader(classpath as URL[], ClassLoader.getSystemClassLoader())

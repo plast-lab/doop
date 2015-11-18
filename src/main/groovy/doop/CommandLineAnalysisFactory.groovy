@@ -25,6 +25,8 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
                                            "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
+    static final String USAGE            = "doop [OPTION]... -- [BLOXBATCH OPTION]..."
+    static final int    WIDTH            = 120
 
     /**
      * Processes the cli args and generates a new analysis.
@@ -79,22 +81,22 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
      * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
      * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
      */
-    static CliBuilder createCliBuilder() {
+    static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
         List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
-            option.cli //all options with cli property
+            option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
         def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),
-            usage:  "doop [OPTION]... -- [BLOXBATCH OPTION]...",
-            footer: "Common Bloxbatch options:\n" +
+            usage:  USAGE,
+            footer: "\nCommon Bloxbatch options:\n" +
                 "-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
                 "-logLevel LEVEL: Log the execution of logic at level LEVEL (for example: all).",
+            width:  WIDTH,
         )
-        cli.width = 120
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
@@ -104,7 +106,29 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
+            X(longOpt: 'X', 'Display information about non-standard options and exit.')
         }
+
+        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
+
+        return cli
+    }
+
+    /**
+     * Creates the nonStandard args from the respective analysis options (the ones with their nonStandard property set to true).
+     */
+    static CliBuilder createNonStandardCliBuilder() {
+
+        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+            option.nonStandard //all options with nonStandard property
+        }
+
+        CliBuilder cli = new CliBuilder(
+            parser: new org.apache.commons.cli.GnuParser (),
+            usage:  USAGE,
+            footer: "\nThese options are non-standard and subject to change without notice.",
+            width:  WIDTH,
+        )
 
         Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
