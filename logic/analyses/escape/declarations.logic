@@ -1,0 +1,30 @@
+AccessPath(?ap) -> .
+lang:entity(`AccessPath).
+lang:physical:storageModel[`AccessPath]="ScalableSparse".
+lang:physical:capacity[`AccessPath] = 4294967296.
+
+// We only care about access paths that may point to objects that don't escape.
+// Thus, there is no need to model static fields.
+AccessPath:ByVar[?var] = ?ap ->
+  Var(?var), AccessPath(?ap).
+lang:constructor(`AccessPath:ByVar).
+AccessPath:ToVar[?ap] = ?var ->
+  AccessPath(?ap), Var(?var).
+
+AccessPath:ByInstanceFld[?base, ?fld] = ?ap ->
+  Var(?base), FieldSignature(?fld), AccessPath(?ap).
+lang:constructor(`AccessPath:ByInstanceFld).
+AccessPath:ToInstanceFld:Base[?ap] = ?base ->
+  AccessPath(?ap), Var(?base).
+AccessPath:ToInstanceFld:Fld[?ap] = ?fld ->
+  AccessPath(?ap), FieldSignature(?fld).
+
+AccessPath:ToString[?ap] = ?str ->
+  AccessPath(?ap), string(?str).
+
+
+DoesNotEscape(?ap, ?insn) ->
+  AccessPath(?ap), Instruction(?insn).
+
+MayAlias(?ap1, ?ap2, ?insn) ->
+  AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn).

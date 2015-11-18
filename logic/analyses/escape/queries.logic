@@ -1,0 +1,10 @@
+_(?i, ?s) <-
+  DoesNotEscape(?ap, ?insn),
+  Instruction:Index[?insn] = ?i,
+  AccessPath:ToString[?ap] = ?s.
+
+_(?i, ?s1, ?s2) <-
+  MayAlias(?ap1, ?ap2, ?insn),
+  Instruction:Index[?insn] = ?i,
+  AccessPath:ToString[?ap1] = ?s1,
+  AccessPath:ToString[?ap2] = ?s2.
