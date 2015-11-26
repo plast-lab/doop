@@ -91,7 +91,7 @@ MayAlias(?ap1Alt, ?ap2, ?insn) <-
   // NOTE: May not exist in code's text.
   // But we don't care since it won't be read afterwards.
   AccessPath:ByInstanceFld[?baseAlt, ?fld] = ?ap1Alt,
-  ?ap1 != ?ap1Alt.
+  ?ap1 != ?ap1Alt, ?ap2 != ?ap1Alt.
 
 MayAlias(?ap1, ?ap2, ?insn) <-
   _MayAlias:Before(_, ?ap1, ?ap2, ?insn),
@@ -161,6 +161,12 @@ DoesNotEscape(?ap, ?insn) <-
   ReturnVoid:Insn(?insn).
 
 
+Escapes(?ap, ?insn) <-
+  _DoesNotEscape:Before(_, ?ap, ?insn),
+  StoreStaticField:Insn(?insn),
+  StoreStaticField:From[?insn] = ?from,
+  AccessPath:ByVar[?from] = ?ap.
+  
 //DoesNotEscape(?ap, ?insn) <-
 //  _DoesNotEscape:Before(_, ?ap, ?insn),
 //  StoreStaticField:Insn(?insn),
@@ -193,3 +199,15 @@ DoesNotEscape(?ap, ?insn) <-
 DoesNotEscape(?ap, ?insn) <-
   _DoesNotEscape:Before(_, ?ap, ?insn),
   SpecialMethodInvocation:Insn(?insn).
+/////////////////////////////////////////
+
+
+/////////////////////////////////////////
+Escapes(?ap1, ?insn) <-
+  Escapes(?ap2, ?insn),
+  _MayAlias:Before(_, ?ap1, ?ap2, ?insn).
+
+Escapes(?ap1, ?insn) <-
+  Escapes(?ap2, ?insn),
+  AccessPath:ToVar[?ap2] = ?base,
+  AccessPath:ToInstanceFld:Base[?ap1] = ?base.
