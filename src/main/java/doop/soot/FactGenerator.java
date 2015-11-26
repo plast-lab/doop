@@ -1,22 +1,9 @@
 package doop.soot;
 
+import soot.*;
 import soot.jimple.*;
-import soot.Body;
-import soot.Local;
-import soot.Modifier;
-import soot.PrimType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-import soot.Unit;
-import soot.Value;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-import soot.Type;
-import soot.RefLikeType;
-import soot.RefType;
-import soot.ArrayType;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -215,7 +202,9 @@ public class FactGenerator
 
     public void generate(SootMethod m, Body b, Session session)
     {
-        b.validate();
+        //TODO: Identify the problem with the jimple body of this method.
+        if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
+            b.validate();
 
         for(Local l : b.getLocals())
         {
@@ -269,11 +258,15 @@ public class FactGenerator
                 }
                 else if(stmt instanceof EnterMonitorStmt)
                 {
-                    _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle EnterMonitorStmt when op is not a Local?
+                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof ExitMonitorStmt)
                 {
-                    _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle ExitMonitorStmt when op is not a Local?
+                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof TableSwitchStmt)
                 {

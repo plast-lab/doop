@@ -1,23 +1,9 @@
 package doop.soot;
 
-import soot.Local;
-import soot.RefLikeType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-
-import soot.Type;
-import soot.PrimType;
-import soot.RefType;
-import soot.NullType;
-import soot.ArrayType;
-import soot.VoidType;
-
-import soot.Unit;
-import soot.Value;
+import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
+import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.LineNumberTag;
 
 import static doop.PredicateFile.*;
@@ -110,7 +96,7 @@ public class FactWriter
             Type componentType = ((ArrayType) t).getElementType();
             _db.add(COMPONENT_TYPE, c, writeType(componentType));
         }
-        else if(t instanceof PrimType || t instanceof NullType || t instanceof RefType || t instanceof VoidType)
+        else if(t instanceof PrimType || t instanceof NullType || t instanceof RefType || t instanceof VoidType || t instanceof BottomType) //TODO: What is BottomType?
         {
             // taken care of by the standard facts
             c = _db.asEntity(result);
