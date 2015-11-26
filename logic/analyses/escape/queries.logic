@@ -4,7 +4,14 @@ _(?i, ?s) <-
   AccessPath:ToString[?ap] = ?s.
 
 _(?i, ?s1, ?s2) <-
+  Instruction:Method[?insn] = "<Test1: void meth2()>",
+  ReturnVoid:Insn(?insn),
   MayAlias(?ap1, ?ap2, ?insn),
   Instruction:Index[?insn] = ?i,
   AccessPath:ToString[?ap1] = ?s1,
   AccessPath:ToString[?ap2] = ?s2.
+
+_(?i, ?s) <-
+  Escapes(?ap, ?insn),
+  Instruction:Index[?insn] = ?i,
+  AccessPath:ToString[?ap] = ?s.
