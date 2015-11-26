@@ -259,7 +259,7 @@ import org.apache.commons.logging.LogFactory
                            new File("${outDir}/facts-declarations.logic"))
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"),
                            new File("${outDir}/flow-insensitivity-declarations.logic"))
-        lbScriptWriter.println("addBlock -F fact-declarations.logic")
+        lbScriptWriter.println("addBlock -F facts-declarations.logic")
         lbScriptWriter.println("addBlock -F flow-insensitivity-declarations.logic")
         lbScriptWriter.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
 
