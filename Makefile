@@ -1,8 +1,8 @@
 # Currently either DaCapo2006 or DaCapoBach
 suite      = DaCapo2006
-commonArgs = -t 90 --ssa --cache
+commonArgs = --timeout 90 --ssa --cache
 analyses   = context-insensitive 1-object-sensitive+heap 2-type-sensitive+heap
-benchmarks = ../benchmarks
+benchmarks = benchmarks
 outDir     = .
 prefix     = 
 
@@ -39,5 +39,5 @@ $(foreach analysis, $(analyses),\
 
 clean:
 	rm -rf logs/* out/* results/* last-analysis
-clean-full:
-	rm -rf cache/* logs/* out/* results/* last-analysis
+clean-full: clean
+	rm -rf cache/*
