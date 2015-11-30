@@ -1,0 +1,26 @@
+/**
+ * This rule couldn't be part of the delta logic that imports the facts
+ * probably due to some weird issue with the engine.
+ */
+Tamiflex:ReflectionMap(?mapped, ?invocation) <-
+   Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+
+   Type:fqn(?class:?classStr), ClassType(?class),
+   MethodSignature:SimpleName[?method] = ?methodStr,
+   MethodSignature:DeclaringType[?method] = ?class,
+
+   Type:fqn(?inClass:?inClassStr), ClassType(?inClass),
+   MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
+   MethodSignature:DeclaringType[?inMethod] = ?inClass,
+
+   (
+     // There is line information for this invocation. Match exactly with one
+     // invocation.
+     ?lineNumber > 0, MethodInvocation:LineNumber[?invocation] = ?lineNumber
+   ;
+     // No line information available. Overapproximate by matching with any
+     // invocation inside ?inMethod matching ?method.
+     ?lineNumber = 0
+   ),
+   MethodInvocation:Signature[?invocation] = ?method,
+   Instruction:Method[?invocation] = ?inMethod.
