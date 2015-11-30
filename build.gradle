@@ -1,0 +1,91 @@
+apply plugin: 'groovy'
+apply plugin: 'application'
+apply plugin: 'ivy-publish'
+
+//applicationDefaultJvmArgs = ["-Xmx2048m"]
+//sourceCompatibility = "1.6"
+//targetCompatibility = "1.6"
+
+//For the doop app
+mainClassName = 'doop.Main'
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.4'
+}
+
+repositories {
+    mavenCentral()
+}
+
+def sootClassesJar = file('lib/sootclasses-trunk.jar')
+def jphantomJar = file('lib/jphantom-1.1-jar-with-dependencies.jar')
+def dexlibJar = file('lib/dexlib2-2.0.7-dev.jar')
+def utillibJar = file('lib/util-2.0.7-dev.jar')
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:2.3.10",            // Groovy
+            "commons-logging:commons-logging:1.1",              // Logging wrapper
+            "log4j:log4j:1.2.14",                               // Logging implementation
+            "commons-cli:commons-cli:1.2",                      // Command line processor
+            "org.anarres:jcpp:1.4.5",                           // C preprocessor in Java
+            "commons-io:commons-io:2.4",                        // File Utils
+            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
+            "org.ow2.asm:asm-debug-all:5.0.3"                   // Java Bytecode library
+
+    compile files(sootClassesJar)                               // Soot is a compile time dependency
+
+    runtime files(jphantomJar, 'lib/averroes-no-properties.jar', dexlibJar, utillibJar)
+}
+
+task generateFiles(type: JavaExec) {
+    description "Generate the doop.properties & checksums.properties files"
+    group = "Other"
+    main = 'doop.FileGenerator'
+    classpath = sourceSets.main.runtimeClasspath
+    args = [
+        projectDir,
+        sootClassesJar,
+        jphantomJar
+    ]
+}
+
+applicationDistribution.from(file("$projectDir/logic")) {
+    into "logic"
+}
+applicationDistribution.from(projectDir) {
+    include "doop.properties", "checksums.properties", "LICENSE"
+}
+
+
+run {
+    dependsOn generateFiles
+    //We set the DOOP_HOME environment variable (see doop.Main)
+    environment.DOOP_HOME = projectDir
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
+
+startScripts {
+    dependsOn generateFiles
+}
+
+publishing {
+    repositories {
+        ivy {
+            name "local-ivy-repo"
+            url "../ivy-repo"
+        }
+    }
+
+    publications {
+
+        doop(IvyPublication) {
+            organisation "doop"
+            module "doop"
+            revision "1.0"
+            from components.java
+        }
+    }
+}
