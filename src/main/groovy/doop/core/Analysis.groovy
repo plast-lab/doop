@@ -667,6 +667,11 @@ import org.apache.commons.logging.LogFactory
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "doop.soot.Main", params.toArray(new String[params.size()]))
         }
+
+//        lbScriptWriter.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
+
+        println "\n\nsoot-fact-generation time: " + sootTime + " (sec)\n\n"
+
     }
 
     protected boolean isMustPointTo() {
