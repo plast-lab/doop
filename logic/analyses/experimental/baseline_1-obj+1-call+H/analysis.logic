@@ -1,0 +1,113 @@
+/**
+ * Context-sensitive pointer analysis with context of 1 object and a
+ * context-sensitive heap abstraction.
+ *
+ * @author George Kastrinis
+ */
+
+#include "macros.logic"
+#include "../context-sensitive.logic"
+#include "../library.logic"
+
+// In this analysis, both the real context and the real heap context 
+// are HeapAllocations. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+// NOTE: Changed from HeapAllocation to CallGraphEdgeSource
+// in order to use the invocation site for static calls.
+ContextFromRealContext[?heap, ?invocation] = ?ctx ->
+  Context(?ctx), CallGraphEdgeSource(?heap), CallGraphEdgeSource(?invocation).
+lang:skolem(`ContextFromRealContext).
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invocation site for static calls.
+//SpecialContextFromRealContext[?heap, ?invocation] = ?ctx ->
+//  Context(?ctx), CallGraphEdgeSource(?heap), CallGraphEdgeSource(?invocation).
+//lang:skolem(`SpecialContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap ->
+  Context(?ctx), CallGraphEdgeSource(?heap).
+RealContext2FromContext[?ctx] = ?invocation ->
+  Context(?ctx), CallGraphEdgeSource(?invocation).
+
+RealContext1FromContext[?ctx] = ?heap,
+RealContext2FromContext[?ctx] = ?invocation <-
+  ContextFromRealContext[?heap, ?invocation] = ?ctx.
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invocation site for static calls.
+//RealContextFromContext[?ctx] = ?invocation <-
+//  SpecialContextFromRealContext[_, ?invocation] = ?ctx.
+
+HContextFromRealHContext[?invocation] = ?hctx ->
+  HContext(?hctx), CallGraphEdgeSource(?invocation).
+lang:skolem(`HContextFromRealHContext).
+
+RealHContextFromHContext[?hctx] = ?invocation ->
+  HContext(?hctx), CallGraphEdgeSource(?invocation).
+
+RealHContextFromHContext[?hctx] = ?invocation <-
+  HContextFromRealHContext[?invocation] = ?hctx.
+
+// Creating special immutable heap allocation constant
+ImmutableInvValue[] = ?immInv <-
+  MethodInvocationValue(?immInv, "<<immutable2>>").
+  
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?invocation] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?invocation, ?alloc).
+
+HContextFromRealHContext[?invocation] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?invocation, ?alloc).
+
+HContextFromRealHContext[?invocation] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?invocation, ?alloc).
+
+/**
+ * Merge optimization hack
+ */
+
+// For this analysis, we only need two of the parameters that may 
+// influence the new context object.
+//MyMergeBasis(?heap, ?invocation) <-
+//  MergeBasis(_, _, ?heap, ?invocation).
+
+// We create new context objects sparingly, because of the high cost.
+// We also cache them, so they can be looked up without a join.
+//Context(?calleeCtx),
+//ContextFromRealContext[?heap, ?invocation] = ?calleeCtx,
+//OptimizeMerge[?heap, ?invocation] = ?calleeCtx <-
+//  MyMergeBasis(?heap, ?invocation).
+  
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?heap, ?invocation] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?heap, "<<initial-context>>"),
+  MethodInvocationValue(?invocation, "<<initial-context2>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?heap, ?invocation] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  MethodInvocationValue(?invocation, "<<jvm-startup2>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?heap, ?invocation] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?heap, "<<class-initialization>>"),
+  MethodInvocationValue(?invocation, "<<class-initialization2>>").

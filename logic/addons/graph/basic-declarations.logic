@@ -1,0 +1,21 @@
+/**
+ * Creating Skolem predicates for context-sensitive call-graphs
+ *
+ * The code below has to be added to the db permanently, using bloxbatch -addBlock.
+ * The reason is the introduction of the new Node entity.
+ */
+
+Graph:Node(x) -> .
+lang:entity(`Graph:Node).
+lang:physical:storageModel[`Graph:Node]="ScalableSparse".
+lang:physical:capacity[`Graph:Node] = 1048576.
+
+Graph:CreateNode[Context(?ctx, ?method)] = x -> 
+   DeclareContext(?ctx, MethodSignature(?method)), Graph:Node(x).
+
+lang:skolem(`Graph:CreateNode).
+
+Graph:Edge(?fromNode, ?toNode) -> Graph:Node(?fromNode), Graph:Node(?toNode).
+//Graph:Path(?fromNode, ?toNode) -> Graph:Node(?fromNode), Graph:Node(?toNode).
+
+//lang:derivationType[`Graph:Path] = "Derived".
