@@ -6,9 +6,7 @@ import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -23,7 +21,7 @@ public class FactGenerator
 {
     protected FactWriter _writer;
     protected boolean _ssa;
-    private ExecutorService methodGeneratorExecutor = new ThreadPoolExecutor(12, 20, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private ExecutorService methodGeneratorExecutor = Executors.newCachedThreadPool();
 
     public FactGenerator(FactWriter writer, boolean ssa)
     {
