@@ -1,6 +1,7 @@
 package doop.core
 
 import doop.blox.BloxbatchConnector
+import doop.blox.BloxbatchScript
 import doop.blox.WorkspaceConnector
 import doop.input.InputResolutionContext
 import doop.system.CppPreprocessor
@@ -77,9 +78,9 @@ import org.apache.commons.logging.LogFactory
 
     Executor executor
 
-    File facts, cacheFacts, database, exportDir, averroesDir, lbScript
+    File facts, cacheFacts, database, exportDir, averroesDir
 
-    Writer lbScriptWriter
+    BloxbatchScript lbScript
 
     long sootTime
 
@@ -128,8 +129,7 @@ import org.apache.commons.logging.LogFactory
         exportDir      = new File(outDir, "export")
         averroesDir    = new File(outDir, "averroes")
 
-        lbScript       = new File(outDir, "run.lb")
-        lbScriptWriter = new PrintWriter(lbScript)
+        lbScript       = new BloxbatchScript(new File(outDir, "run.lb"))
 
         // Create workspace connector (needed by the post processor and the server-side analysis execution)
         connector = new BloxbatchConnector(database, commandsEnvironment)
@@ -157,18 +157,18 @@ import org.apache.commons.logging.LogFactory
         if (!options.X_STATS_NONE.value)
             produceStats()
 
-        lbScriptWriter.close()
+        lbScript.close()
 
-        logger.info "Using generated script $lbScript"
+        logger.info "Using generated script ${lbScript.getPath()}"
         logger.info "\nAnalysis START"
         long t = timing {
              def bloxOpts = options.BLOX_OPTS.value ?: ''
-             executor.execute(outDir, "${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
+             executor.execute(outDir, "${options.BLOXBATCH.value} -script ${lbScript.getPath()} $bloxOpts", IGNORED_WARNINGS)
         }
         logger.info "Analysis END\n"
-        bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
-        bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
+        bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).
+                                             +Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
 
@@ -242,31 +242,28 @@ import org.apache.commons.logging.LogFactory
     protected void initDatabase() {
 
         FileUtils.deleteQuietly(database)
-
-        lbScriptWriter.println("create ${database.getName()} --overwrite --blocks base")
-
-        lbScriptWriter.println('echo "-- Facts --"')
-        lbScriptWriter.println("startTimer")
-        lbScriptWriter.println("transaction")
-
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/declarations.logic"),
-                           new File("${outDir}/fact-declarations.logic"))
+                           new File("${outDir}/facts-declarations.logic"))
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"),
                            new File("${outDir}/flow-insensitivity-declarations.logic"))
-        lbScriptWriter.println("addBlock -F fact-declarations.logic")
-        lbScriptWriter.println("addBlock -F flow-insensitivity-declarations.logic")
-        lbScriptWriter.println("""exec '+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).'""")
-
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/entities-import.logic"),
                            new File("${outDir}/entities-import.logic"))
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/import.logic"),
                            new File("${outDir}/facts-import.logic"))
-        lbScriptWriter.println("exec -F entities-import.logic")
-        lbScriptWriter.println("exec -F facts-import.logic")
-
         FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"),
                            new File("${outDir}/flow-insensitivity-delta.logic"))
-        lbScriptWriter.println("exec -F flow-insensitivity-delta.logic")
+
+        lbScript
+            .createDB(database.getName())
+            .echo("-- Facts --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("facts-declarations.logic")
+            .addBlockFile("flow-insensitivity-declarations.logic")
+            .execute("""+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
+            .executeFile("entities-import.logic")
+            .executeFile("facts-import.logic")
+            .executeFile("flow-insensitivity-delta.logic")
 
         if (options.TAMIFLEX.value) {
             String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
@@ -277,31 +274,31 @@ import org.apache.commons.logging.LogFactory
                                new File("${outDir}/tamiflex-import.logic"))
             FileUtils.copyFile(new File("${tamiflexDir}/post-import.logic"),
                                new File("${outDir}/tamiflex-post-import.logic"))
-            lbScriptWriter.println("addBlock -F tamiflex-fact-declarations.logic")
-            lbScriptWriter.println("exec -F tamiflex-import.logic")
-            lbScriptWriter.println("addBlock -F tamiflex-post-import.logic")
+            lbScript
+                .addBlockFile("tamiflex-fact-declarations.logic") 
+                .executeFile("tamiflex-import.logic")
+                .addBlockFile("tamiflex-post-import.logic")
         }
 
-        if (options.MAIN_CLASS.value) {
-            lbScriptWriter.println("""exec '+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").'""")
-        }
+        if (options.MAIN_CLASS.value)
+            lbScript.execute("""+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").""")
 
-        lbScriptWriter.println("commit")
-        lbScriptWriter.println("elapsedTime")
+        lbScript
+            .commit()
+            .elapsedTime()
 
-        if (options.TRANSFORM_INPUT.value) {
+        if (options.TRANSFORM_INPUT.value)
             runTransformInput()
-        }
     }
 
     /**
      * Performs the main part of the analysis.
      */
     protected void analyze() {
-
-        lbScriptWriter.println('echo "-- Prologue --"')
-        lbScriptWriter.println("startTimer")
-        lbScriptWriter.println("transaction")
+        lbScript
+            .echo("-- Prologue --")
+            .startTimer()
+            .transaction()
 
         String analysisPath = null;
         String coreAnalysisName = null;
@@ -331,30 +328,32 @@ import org.apache.commons.logging.LogFactory
                                               toPredicate,Config:DynamicClass,type,inv
                                               """.toString().stripIndent()
 
-                lbScriptWriter.println("import -f $dynImport")
+                lbScript.wr("import -f $dynImport")
             }
         }
 
         preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${coreAnalysisName}-declarations.logic")
-        lbScriptWriter.println("addBlock -F ${coreAnalysisName}-declarations.logic")
+        lbScript.addBlockFile("${coreAnalysisName}-declarations.logic")
 
         if (options.SANITY.value) {
-            lbScriptWriter.println('echo "-- Loading Sanity Rules --"')
-            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/sanity.logic")
+            lbScript
+                .echo("-- Loading Sanity Rules --")
+                .addBlockFile("${Doop.doopLogic}/addons/sanity.logic")
         }
 
         preprocessor.preprocess(this, analysisPath, "delta.logic", "${outDir}/${coreAnalysisName}-delta.logic")
-        lbScriptWriter.println("exec -F ${coreAnalysisName}-delta.logic")
+        lbScript.executeFile("${coreAnalysisName}-delta.logic")
 
 
         if (options.ENABLE_REFLECTION.value) {
             String reflectionPath = "${Doop.doopLogic}/core/reflection"
 
             preprocessor.preprocess(this, reflectionPath, "delta.logic", "${outDir}/reflection-delta.logic")
-            lbScriptWriter.println("exec -F reflection-delta.logic")
-            lbScriptWriter.println("commit")
-            lbScriptWriter.println("transaction")
-            lbScriptWriter.println("exec -F ${reflectionPath}/allocations-delta.logic")
+            lbScript
+                .executeFile("reflection-delta.logic")
+                .commit()
+                .transaction()
+                .executeFile("${reflectionPath}/allocations-delta.logic")
         }
 
         String addonsPath = "${Doop.doopLogic}/addons"
@@ -372,10 +371,10 @@ import org.apache.commons.logging.LogFactory
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             FileUtils.copyFile(new File("${addonsPath}/dacapo/declarations.logic"),
                                new File("${outDir}/dacapo-declarations.logic"))
-            lbScriptWriter.println("addBlock -F dacapo-declarations.logic")
-
             preprocessor.preprocess(this, addonsPath, "dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
-            lbScriptWriter.println("exec -F dacapo-delta.logic")
+            lbScript
+                .addBlockFile("dacapo-declarations.logic")
+                .executeFile("dacapo-delta.logic")
 
             logger.info "Adding DaCapo rules to addons logic"
             preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic", macros)
@@ -387,8 +386,9 @@ import org.apache.commons.logging.LogFactory
                                new File("${outDir}/tamiflex-declarations.logic"))
             FileUtils.copyFile(new File("${addonsPath}/tamiflex/delta.logic"),
                                new File("${outDir}/tamiflex-delta.logic"))
-            lbScriptWriter.println("addBlock -F tamiflex-declarations.logic")
-            lbScriptWriter.println("exec -F tamiflex-delta.logic")
+            lbScript
+                .addBlockFile("tamiflex-declarations.logic")
+                .executeFile("tamiflex-delta.logic")
 
             logger.info "Adding tamiflex rules to addons logic"
             preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
@@ -399,53 +399,50 @@ import org.apache.commons.logging.LogFactory
             preprocessor.preprocess(this, addonsPath, "fu-exception-flow/declarations.logic",
                                     "${outDir}/fu-exception-flow.logic",
                                     "fu-exception-flow/rules.logic")
-            lbScriptWriter.println("addBlock -F ${outDir}/fu-exception-flow.logic")
-
             preprocessor.preprocess(this, addonsPath, "fu-exception-flow/delta.logic",
                                     "${outDir}/fu-exception-flow-delta.logic")
-            lbScriptWriter.println("exec -F ${outDir}/fu-exception-flow-delta.logic")
+            lbScript
+                .addBlockFile("${outDir}/fu-exception-flow.logic")
+                .executeFile("${outDir}/fu-exception-flow-delta.logic")
         }
 
         if (options.AUXILIARY_HEAP.value) {
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/declarations.logic",
                                     "${outDir}/client-extensions.logic")
-            lbScriptWriter.println("addBlock -F ${outDir}/client-extensions.logic")
-
             preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/delta.logic",
                                     "${outDir}/client-extensions-delta.logic")
-            lbScriptWriter.println("exec -F ${outDir}/client-extensions-delta.logic")
+            lbScript
+                .addBlockFile("${outDir}/client-extensions.logic")
+                .executeFile("${outDir}/client-extensions-delta.logic")
         }
 
-        if (options.REFINE.value) {
+        if (options.REFINE.value)
             refine()
-        }
 
         if(isMustPointTo()) {
             String mustAnalysisPath = "${Doop.doopLogic}/analyses/${name}"
 
             if(options.MAY_PRE_ANALYSIS.value) {
                 String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
-                lbScriptWriter.println("commit")
-
+                analysisPath = mustAnalysisPath
                 preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
 
-                lbScriptWriter.println("transaction")
-                lbScriptWriter.println("addBlock -F ${coreAnalysisName}.logic")
-                lbScriptWriter.println("commit")
-
-                lbScriptWriter.println("transaction")
-                lbScriptWriter.println("addBlock -F ${mustAnalysisPath}/may-pre-analysis.logic")
-
-                analysisPath = mustAnalysisPath
+                lbScript
+                    .commit()
+                    .transaction()
+                    .addBlockFile("${coreAnalysisName}.logic")
+                    .commit()
+                    .transaction()
+                    .addBlockFile("${mustAnalysisPath}/may-pre-analysis.logic")
             }
 
-            // Default option for RootMethodForMustAnalysis.
-            // TODO: add command line option, so users can provide their own subset of root methods
-            lbScriptWriter.println("addBlock 'RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).'")
-            
-            //TODO: Default Root Methods for 'simple' must-analyses.
-            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
-            lbScriptWriter.println("addBlock -F ${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
+            lbScript
+                // Default option for RootMethodForMustAnalysis.
+                // TODO: add command line option, so users can provide their own subset of root methods
+                .addBlock("RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
+                //TODO: Default Root Methods for 'simple' must-analyses.
+                .addBlockFile("${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
+                .addBlockFile("${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
         }
 
         preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
@@ -454,14 +451,15 @@ import org.apache.commons.logging.LogFactory
         else
             Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
 
-        lbScriptWriter.println("commit")
-        lbScriptWriter.println("elapsedTime")
-        lbScriptWriter.println('echo "-- Analysis --"')
-        lbScriptWriter.println("startTimer")
-        lbScriptWriter.println("transaction")
-        lbScriptWriter.println("addBlock -F ${name}.logic")
-        lbScriptWriter.println("commit")
-        lbScriptWriter.println("elapsedTime")
+        lbScript
+            .commit()
+            .elapsedTime()
+            .echo("-- Analysis --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("${name}.logic")
+            .commit()
+            .elapsedTime()
     }
 
     /**
@@ -541,50 +539,52 @@ import org.apache.commons.logging.LogFactory
             File f = new File(outDir, "${name}-${entry.key}.import")
             Helper.writeToFile f, entry.value
             Helper.checkFileOrThrowException(f, "Could not create import file: $f")
-            lbScriptWriter.println("import -f $f")
+            lbScript.wr("import -f $f")
         }
     }
 
     protected void runTransformInput() {
         preprocessor.preprocess(this, "${Doop.doopLogic}/addons/transform", "rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
-        lbScriptWriter.println('echo "-- Transforming Facts --"')
-        lbScriptWriter.println("startTimer")
-        lbScriptWriter.println("transaction")
-        lbScriptWriter.println("addBlock -F ${outDir}/transform.logic")
-        lbScriptWriter.println("commit")
+        lbScript
+            .echo("-- Transforming Facts --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("${outDir}/transform.logic")
+            .commit()
 
         2.times { int i ->
-            lbScriptWriter.println("""echo "-- Transformation (step $i) --" """)
-            lbScriptWriter.println("transaction")
-            lbScriptWriter.println("exec -F ${Doop.doopLogic}/addons/transform/delta.logic")
-            lbScriptWriter.println("commit")
+            lbScript
+                .echo(""" "-- Transformation (step $i) --" """)
+                .transaction()
+                .executeFile("${Doop.doopLogic}/addons/transform/delta.logic")
+                .commit()
         }
-        lbScriptWriter.println("elapsedTime")
+        lbScript.elapsedTime()
     }
 
     protected void produceStats() {
         String statsPath = "${Doop.doopLogic}/addons/statistics"
-
-        lbScriptWriter.println('echo "-- Statistics --"')
-        lbScriptWriter.println("startTimer")
-
-        lbScriptWriter.println("transaction")
         preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
-        lbScriptWriter.println("addBlock -F statistics-simple.logic")
+        preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")
+
+        lbScript
+            .echo("-- Statistics --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
             preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
-            lbScriptWriter.println("addBlock -F statistics.logic")
+            lbScript.addBlockFile("statistics.logic")
         }
-        lbScriptWriter.println("commit")
 
-        // Need to be in a separate transaction, since IDB and delta rules shouldn't be together
-        lbScriptWriter.println("transaction")
-        preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")
-        lbScriptWriter.println("exec -F statistics-delta.logic")
-        lbScriptWriter.println("commit")
-
-        lbScriptWriter.println("elapsedTime")
+        lbScript
+            .commit()
+            // Need to be in a separate transaction, since IDB and delta rules shouldn't be together
+            .transaction()
+            .executeFile("statistics-delta.logic")
+            .commit()
+            .elapsedTime()
     }
 
     protected void runJPhantom(){
@@ -611,8 +611,6 @@ import org.apache.commons.logging.LogFactory
 
         ClassLoader loader = averroesClassLoader()
         Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
-
-        //We change linked arg and injar for soot in the runSoot method
     }
 
     protected void runSoot() {
