@@ -21,6 +21,9 @@ import org.apache.commons.logging.LogFactory
  * For supporting invocations over the web, the behavior of the get-stats function of the original doop script is
  * broken into two parts: (a) produce statistics and (b) print statistics.
  *
+ * The run() method is the only public method exposed by this class: no other methods should be called directly
+ * by other classes.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
  */
@@ -130,7 +133,6 @@ import org.apache.commons.logging.LogFactory
         averroesDir    = new File(outDir, "averroes")
 
         lbScript       = new File(outDir, "run.lb")
-        lbScriptWriter = new PrintWriter(lbScript)
 
         // Create workspace connector (needed by the post processor and the server-side analysis execution)
         connector = new BloxbatchConnector(database, commandsEnvironment)
@@ -138,6 +140,11 @@ import org.apache.commons.logging.LogFactory
 
     @Override
     void run() {
+        /*
+         Initialize the writer here and not in the constructor, in order to allow an analysis to be re-run.
+         */
+        lbScriptWriter = new PrintWriter(lbScript)
+
         generateFacts()
         if (options.X_ONLY_FACTS.value)
             return
