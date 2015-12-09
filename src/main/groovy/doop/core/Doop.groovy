@@ -17,11 +17,8 @@ class Doop {
         //LogicBlox related options (supporting different LogicBlox instance per analysis)
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
-            name:"lbhome",
-            argName:"PATH",
-            description:"set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable).",
             value:System.getenv("LOGICBLOX_HOME"),
-            isAdvanced:true
+            cli:false 
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME

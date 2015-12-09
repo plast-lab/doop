@@ -678,14 +678,13 @@ import java.util.jar.JarFile
         //BLOX_OPTS is set by the main method
     
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
-        String lbHomePath = lbhome.value
 
-        logger.debug "Verifying LogicBlox home: $lbHomePath"
+        logger.debug "Verifying LogicBlox home: ${lbhome.value}"
 
-        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        File lbHomeDir = Helper.checkDirectoryOrThrowException(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
-        vars.options.LD_LIBRARY_PATH.value = lbHomeJavaFile.getAbsolutePath() + "/bin"
-        String bloxbatch = lbHomeJavaFile.getAbsolutePath() + "/bin/bloxbatch"
+        vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin"
+        String bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         vars.options.BLOXBATCH.value = bloxbatch
     }
