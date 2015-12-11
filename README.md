@@ -1,12 +1,13 @@
 # Doop - Framework for Java Pointer Analysis
 
-The following serve as an introduction to the Doop project. For more information, please consult the `docs/documentation.md` file.
+The following serve as an introduction to the Doop project. For more information, please consult the `docs` directory.
 
 ## Getting Started
 
 At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically *LogiQL*, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. An academic licence for the engine can be requested [here](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
 
 For trouble-free configuration:
+
 * The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine.
 * The `DOOP_HOME` environment variable should point to the top-level directory of Doop.
 * The `LB_PAGER_FORCE_START` environment variable should be set to 1. (You will likely get an engine error about this, which becomes a warning with the flag. To eliminate, also set `LB_MEM_NOWARN` to 1.)
@@ -43,7 +44,6 @@ Mandatory. The name of the analysis to run.
 Example:
 
     $ ./doop -a context-insensitive
-
 
 #### Jar files  (-j, --jar)
 Mandatory. The jar file(s) to analyse.
@@ -104,7 +104,6 @@ The Java packages to treat as application code (not library code), to be exhaust
 Example:
 
     $ ./doop --regex com.example.package1.*:com.example.package2.*
-
 
 #### Properties file (-p, --properties)
 You can specify the options of the analysis in a properties file and use the `-p` option
