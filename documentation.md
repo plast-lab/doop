@@ -1,6 +1,6 @@
 # Doop Documentation
 
-This document[^about] describes the design, implementation and usage of the new Java-based Doop.
+This document[^about] describes the design, implementation, and usage of the Java-based Doop scaffolding.
 
 ## Contents
 * [Overview](#overview)
