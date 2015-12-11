@@ -11,7 +11,7 @@ This document[^about] describes the design, implementation, and usage of the Jav
     * [The Gradle build script](#building.script)
 * [Running Doop](#running)
     * [Main options](#running.main)
-    * [Analyze Dacapo benchmarks](#dacapo)
+    * [Analyze the Dacapo Benchmarks suite](#dacapo)
 * [Design and Implementation](#design)
     * [Goals](#design.goals)
     * [The classes of the Core API](#design.api)
@@ -125,9 +125,9 @@ The main command line options are described in the `README` file:
 * --regex: The Java package names to analyse.
 * -p, --properties: Load options from the given properties file. 
 
-### Analyze Dacapo benchmarks {#dacapo}
+### Analyze the Dacapo Benchmarks suite {#dacapo}
 
-Doop provides special handling of the [DaCapo benchmarks](http://dacapobench.org/). You can check the `README` file for
+Doop provides special handling of the [DaCapo Benchmarks suite](http://dacapobench.org/). You can check the `README` file for
 more information on how to acquire those benchmarks.
 
 For example, in order to analyze a DaCapo 2006 benchmark we could issue the following:
