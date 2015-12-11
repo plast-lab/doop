@@ -245,3 +245,33 @@ $ bloxbatch -db last-analysis -query \
 '_[] = ?n <- agg<<?n = count()>> VarPointsTo(_, _, _, _).'
   4569312
 ```
+
+***
+
+## Doop Tools
+For auxiliary tools, you could clone (or download) the [doop-tools](https://bitbucket.org/yanniss/doop-tools) repository.
+
+### mkjar
+You can use `mkjar` to easily generate a jar file from a single input java file. The script applies the necessary javac flags that keep local variable names in the generated jar file.
+
+Example:
+```
+#!bash
+$ tools/bin/mkjar Example.java 
+added manifest
+adding: Dog.class(in = 292) (out= 210)(deflated 28%)
+adding: Animal.class(in = 434) (out= 280)(deflated 35%)
+adding: Cat.class(in = 505) (out= 296)(deflated 41%)
+adding: Example.class(in = 1055) (out= 653)(deflated 38%)
+```
+
+### bytecode2jimple 
+You can use `bytecode2jimple` to easily generate Jimple (or Shimple--the ssa variant) from a jar file. For more information, invoke bytecode2jimple without arguments.
+
+Example:
+```
+#!bash
+$ tools/bin/bytecode2jimple -lsystem -d jimple-dir Example.jar
+$ ls jimple-dir
+Animal.jimple  Cat.jimple  Dog.jimple  Example.jimple 
+```
