@@ -87,6 +87,8 @@ _MustPointTo:Hctx[?ctx, ?var] = ?hctx <-
 _MustPointTo:Object[?ctx, ?var] = ?heap,
 _MustPointTo:Hctx[?ctx, ?var] = ?hctx <-
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
+   (!(HeapAllocation:Merge[?heap] = _);
+    HeapAllocation:Merge[?heap] = ?heap),
    ?hctx = EmptyHeapContext[],
    _MustReachableMethodUnderMustContext(?ctx, ?inMeth).
 
@@ -350,6 +352,8 @@ IntraproceduralMustPointTo:Object[?ctx, ?var] = ?heap,
 IntraproceduralMustPointTo:Hctx[?ctx, ?var] = ?hctx,
 MayPointTo(?hctx, ?heap, ?ctx, ?var) <-
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
+   (!(HeapAllocation:Merge[?heap] = _);
+    HeapAllocation:Merge[?heap] = ?heap),
    ?hctx = EmptyHeapContext[],
    MayReachableMethodUnderMayContext(?ctx, ?inMeth).
 
@@ -2131,7 +2135,7 @@ _ConvertMustToMayContext[?mustCtx] = ?ctx <-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth[] = 6 <- .
+MaxMayContextDepth[] = 4 <- .
 
 InitialRootMethodForMayAnalysis(?meth) <-
    Reachable(?meth), // just for benchmarking against unsound VPT analysis

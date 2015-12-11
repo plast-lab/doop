@@ -862,7 +862,7 @@ WeakerContext[?strongerCtx, ?ctx] = ?ctx <-
 
 // TODO: Make MaxDepth configurable.
 MaxContextDepth[] = ?num -> int[32](?num).
-MaxContextDepth[] = 5 <- .
+MaxContextDepth[] = 1 <- .  // temporary
 
 //// END context management
 
@@ -983,7 +983,7 @@ AccessPath:Type[?ap] = ?type <-
 AccessPath:MaxLength[] = ?maxLen ->
    int[32](?maxLen).
 
-AccessPath:MaxLength[] = 3 <- .
+AccessPath:MaxLength[] = 2 <- . // temporary
 
 AccessPath:BaseVar[?ap] = ?var ->
    AccessPath(?ap), Var(?var).
