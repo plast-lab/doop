@@ -252,7 +252,7 @@ $ bloxbatch -db last-analysis -query \
 For auxiliary tools, you could clone (or download) the [doop-tools](https://bitbucket.org/yanniss/doop-tools) repository.
 
 ### mkjar
-You can use `mkjar` to easily generate a jar file from a single input java file. The script applies the necessary javac flags that keep local variable names in the generated jar file.
+You can use `mkjar` to easily generate a jar file from a single java file. The generated jar file will contain local variable debugging information (e.g., variable names).
 
 Example:
 ```
