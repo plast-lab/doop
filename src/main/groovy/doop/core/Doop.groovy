@@ -417,10 +417,10 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"EXTERNALS",
-            name:"externals",
-            description:"The path to doop externals (directory with different jre versions).",
-            value:System.getenv("DOOP_EXTERNALS"),
+            id:"JRE_LIB",
+            name:"jre-lib",
+            description:"The path to the JRE lib directory (containing different JRE versions).",
+            value:System.getenv("DOOP_JRE_LIB"),
             webUI:false,
             isAdvanced:true
         ),
@@ -468,7 +468,7 @@ class Doop {
         "BLOX_OPTS",
         "OS",
         "CACHE",
-        "EXTERNALS"
+        "JRE_LIB"
     ]
 
     // Not the best pattern, but limits the source code size :)

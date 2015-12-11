@@ -226,7 +226,7 @@ import java.util.jar.JarFile
     protected List<String> jreLinkArgs(Map<String, AnalysisOption> options) {
 
         String jre = options.JRE.value
-        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
+        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
 
         switch(jre) {
             case "1.3":
@@ -505,9 +505,9 @@ import java.util.jar.JarFile
 
         checkJRE(vars)
 
-        //Check the value of the EXTERNALS option (it should point to the JREs directory)
-        String externals = options.EXTERNALS.value
-        Helper.checkDirectoryOrThrowException(externals as String, "The EXTERNALS directory is invalid: $externals")
+        //Check the value of the JRE_LIB option (it should point to the JREs directory)
+        String externals = options.JRE_LIB.value
+        Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
         
         checkOS(vars)
         
