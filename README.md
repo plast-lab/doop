@@ -1,6 +1,6 @@
 # Doop - Framework for Java Pointer Analysis
 
-The following serve as an introduction to the Doop project. For more information, please consult the `docs` directory.
+The following serve as an introduction to the Doop project. For a detailed tutorial, please consult `docs/doop-101.md`.
 
 ## Getting Started
 
@@ -59,11 +59,14 @@ The value of the Jar file can be specified in the following manners:
 
 Example:
 
-    $ ./doop -j ./lib/asm-debug-all-4.1.jar      [local file]
-             -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
-             -j ./lib                            [local directory]
-             -j http://www.example.com/some.jar  [remote file]
-             -j one.jar other.jar                [multiple files separated with a space]
+```
+#!bash
+$ ./doop -j ./lib/asm-debug-all-4.1.jar      [local file]
+		 -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
+		 -j ./lib                            [local directory]
+		 -j http://www.example.com/some.jar  [remote file]
+		 -j one.jar other.jar                [multiple files separated with a space]
+```
 
 #### JRE version (--jre)
 The JRE version to use for the analysis. If *system* is used as the version, it shouldn't resolve to JRE 8.
