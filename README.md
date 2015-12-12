@@ -4,7 +4,7 @@ The following serve as an introduction to the Doop project. For a detailed tutor
 
 ## Getting Started
 
-At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically *LogiQL*, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. An academic licence for the engine can be requested [here](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
+At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically *LogiQL*, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. You can [request an academic license for the LogicBlox engine](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
 
 For trouble-free configuration:
 
