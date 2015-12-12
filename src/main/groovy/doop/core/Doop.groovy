@@ -17,11 +17,8 @@ class Doop {
         //LogicBlox related options (supporting different LogicBlox instance per analysis)
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
-            name:"lbhome",
-            argName:"PATH",
-            description:"set the path to LogicBlox home (default: the value of the LOGICBLOX_HOME environment variable).",
             value:System.getenv("LOGICBLOX_HOME"),
-            isAdvanced:true
+            cli:false 
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
@@ -317,11 +314,6 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"CSV",
-            value:false,
-            cli:false
-        ),
-        new AnalysisOption<Boolean>(
             id:"REFINE",
             value:false,
             cli:false
@@ -425,10 +417,10 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"EXTERNALS",
-            name:"externals",
-            description:"The path to doop externals (directory with different jre versions).",
-            value:System.getenv("DOOP_EXTERNALS"),
+            id:"JRE_LIB",
+            name:"jre-lib",
+            description:"The path to the JRE lib directory (containing different JRE versions).",
+            value:System.getenv("DOOP_JRE_LIB"),
             webUI:false,
             isAdvanced:true
         ),
@@ -476,7 +468,7 @@ class Doop {
         "BLOX_OPTS",
         "OS",
         "CACHE",
-        "EXTERNALS"
+        "JRE_LIB"
     ]
 
     // Not the best pattern, but limits the source code size :)
@@ -488,14 +480,15 @@ class Doop {
     /**
      * Initializes Doop.
      * @param homePath   The doop home directory (sets the doopHome variable, required).
-     * @param outPath    The doop out directory (sets the doopOut variable, optional, defaults to doopHome/out).
-     * @param cachePath  The doop cache directory (sets the doopCache variable, optional, defaults to doopHome/cache).
+     * @param outPath    The doop out directory (sets the doopOut variable, optional, defaults to 'out' under doopHome).
+     * @param cachePath  The doop cache directory (sets the doopCache variable, optional, defaults to 'cache' under doopHome).
+     * @return           The doop home directory.
      */
     static void initDoop(String homePath, String outPath, String cachePath) {
 
-        //Check doopHome
         doopHome = homePath
-        Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome ")
+        if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
+        Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
         doopLogic = "$doopHome/logic"
         doopOut   = outPath ?: "$doopHome/out"

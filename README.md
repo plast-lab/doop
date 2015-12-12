@@ -1,97 +1,52 @@
 # Doop - Framework for Java Pointer Analysis
 
-This is the readme file for the Doop project. For more information, please consult the
-`documentation.md` file.
+The following serve as an introduction to the Doop project. For a detailed tutorial, please consult `docs/doop-101.md`.
 
-## Directory Structure
+## Getting Started
 
-The project contains the following directories:
+At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically *LogiQL*, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. An academic licence for the engine can be requested [here](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
 
-* *gradle*: contains the gradle wrapper (gradlew) files, which allows us to build, run and deploy the project without installing Gradle manually.
-* *lib*: the custom runtime dependencies of the project.
-* *logic*: the logic files (placed here and not in src/dist to allow running the analyses without installing the app).
-* *src*: the Java/Groovy source files of the project.
+For trouble-free configuration:
 
-It also contains the gradle build files (build.gradle and settings.gradle) and the gradle invocation scripts (gradlew and gradlew.bat).
+* The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine.
+* The `DOOP_HOME` environment variable should point to the top-level directory of Doop.
+* The `LB_PAGER_FORCE_START` environment variable should be set to 1. (You will likely get an engine error about this, which becomes a warning with the flag. To eliminate, also set `LB_MEM_NOWARN` to 1.)
+* The `DOOP_JRE_LIB` environment variable should point to your JRE lib directory (see below--can be overridden with the `--jre-lib` option). JRE 6 or higher.
+* The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `$DOOP_HOME/out`).
+* The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `$DOOP_HOME/cache`).
 
-## Building Doop
 
-Building the Doop project refers to generating its runtime/distribution artifacts.
+## Benchmarks & JRE Lib
 
-To do so, we issue the following:
+For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
 
-    $ ./gradlew distZip
-
-This builds the project and creates the Doop distibution zip in the build/distributions directory.
-
-We can also issue the following:
-
-    $ ./gradlew distTar
-
-to create a tarball instead of a zip in the build/distributions directory.
-
-To generate both, we can issue:
-
-    $ ./gradlew distZip distTar
-
-## Installing Doop
-
-To install Doop, we need to:
-
-* extract the distribution zip or tarball in a directory of our choice.
-* set the `$DOOP_HOME` environment variable to point to the above directory.
-* install the LogicBlox engine and set the environment variable `$LOGICBLOX_HOME` or use the `--lbhome` option
-  upon each Doop invocation. Doop will take care of setting additional environment variables, such as `$PATH` and `$LD_LIBRARY_PATH`.
-* setup JRE 6 or higher. Neither Gradle nor Groovy is required to be installed manually.
-
-## Environment Variables
-
-Doop uses the following environment variables:
-
-* `DOOP_HOME`: the Doop home directory (required).
-* `DOOP_OUT`: the directory for output files (optional, defaults to `$DOOP_HOME/out`).
-* `DOOP_CACHE`: the directory for cached facts (optional, defaults to `$DOOP_HOME/cache`).
-* `DOOP_EXTERNALS`: the Doop externals directory (required, can be overridden with the `--externals` option). 
-* `LOGICBLOX_HOME`: the LogicBlox home directory (required, can be overridden with the `--lbhome` option).
+One important directory in that repository is `JREs`. It can be used for the `DOOP_JRE_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom JRE lib directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`.
 
 
 ## Running Doop
 
-We can invoke Doop by issuing:
+Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
 
-    $ DOOP_HOME>./bin/doop [OPTIONS]...
+    $ ./doop -a context-insensitive -j com.example.some.jar
 
-If you are familiar with the old Doop run scripts, the major difference is that the
-analysis and the jar(s) are treated as options and not as arguments. For example, the old Doop run script invocation:
+### Common command line options
+To see the list of available options (and valid argument values in certain cases), issue:
 
-    $ >./run context-insensitive ./lib/asm-debug-all-4.1.jar
-
-should be given as follows in the new Java-based Doop:
-
-    $ DOOP_HOME>./bin/doop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
-
-### Command line options
-To see the list of available options, issue:
-
-    $ DOOP_HOME>./bin/doop -h
+    $ ./doop -h
 
 The options will be also shown if you run Doop without any arguments.
 
-The major command line options of Doop are the following:
+The major command line options are the following:
 
 #### Analysis (-a, --analysis)
-The name of the analysis to run.
+Mandatory. The name of the analysis to run.
 
 Example:
 
-    $ DOOP_HOME>./bin/doop -a context-insensitive
-
-To see the list of available analyses run Doop with the `-h` flag.
-
-The analysis option is mandatory.
+    $ ./doop -a context-insensitive
 
 #### Jar files  (-j, --jar)
-The jar file(s) to analyse.
+Mandatory. The jar file(s) to analyse.
 
 The jar option accepts multiple values and/or can be repeated multiple times.
 
@@ -104,122 +59,67 @@ The value of the Jar file can be specified in the following manners:
 
 Example:
 
-    $ DOOP_HOME>./bin/doop -j ./lib/asm-debug-all-4.1.jar      [local file]
-                           -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
-                           -j ./lib                            [local directory]
-                           -j http://www.example.com/some.jar  [remote file]
-                           -j one.jar other.jar                [multiple files separated with a space]
-
-The jar option is mandatory.
-
-### Analysis id (-id, --identifier)
-The identifier of the analysis. 
-
-If the identifier is not specified, Doop will generate one automatically. Use this option if you prefer 
-to provide a human-friendly identifier to your analysis.
-
-Example:
-
-    $ DOOP_HOME>./bin/doop -id myAnalysis
-
-To see the characters permitted for the identifier run Doop with the `-h` flag.
-
-#### Packages (--regex)
-The Java packages to analyse.
-
-Example:
-
-    $ DOOP_HOME>./bin/doop --regex com.example.package1.*:com.example.package2.*
-
-
-#### Main class (--main)
-The main class to use as the entry point.
-
-Example:
-
-    $ DOOP_HOME>./bin/doop -a context-insensitive -j com.example.some.jar --main com.example.some.Main
-
+```
+#!bash
+$ ./doop -j ./lib/asm-debug-all-4.1.jar      [local file]
+		 -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
+		 -j ./lib                            [local directory]
+		 -j http://www.example.com/some.jar  [remote file]
+		 -j one.jar other.jar                [multiple files separated with a space]
+```
 
 #### JRE version (--jre)
-The JRE version to use for the analysis.
+The JRE version to use for the analysis. If *system* is used as the version, it shouldn't resolve to JRE 8.
 
 Example:
 
-    $ DOOP_HOME>./bin/doop -a context-insensitive -j com.example.some.jar --main com.example.some.Main --jre 1.4
+    $ ./doop -a context-insensitive -j com.example.some.jar --jre 1.4
 
-To see the list of supported JRE versions run Doop with the `-h` flag.
+#### Main class (--main)
+The main class to use as the entry point. This class must declare a method with signature `public static void main(String [])`. If not specified, Doop will try to infer this information from the manifest file of the provided jar file(s).
 
+Example:
 
-#### LogicBlox home (--lbhome)
-The path of the LogicBlox installation directory.
-
-By default, Doop uses the value of the `$LOGICBLOX_HOME` environment variable as the location of the LogicBlox
-installation directory. You may use the `--lbhome` option if you want to run the specific analysis via a different
-LogicBlox version.
-
+    $ ./doop -a context-insensitive -j com.example.some.jar --main com.example.some.Main
 
 #### Timeout (-t, --timeout)
 Specify the analysis execution timeout in minutes.
 
 Example:
 
-    $ DOOP_HOME>./bin/doop -a context-insensitive -j com.example.some.jar -t 120
+    $ ./doop -a context-insensitive -j com.example.some.jar -t 120
 
 The above analysis will run for a maximum of 2 hours (120 minutes).
 
-#### Using a properties file to specify the analysis options (-p, --properties)
+#### Analysis id (-id, --identifier)
+The identifier of the analysis.
+
+If the identifier is not specified, Doop will generate one automatically. Use this option if you prefer
+to provide a human-friendly identifier to your analysis.
+
+Example:
+
+    $ ./doop -id myAnalysis
+
+#### Packages (--regex)
+The Java packages to treat as application code (not library code), to be exhaustively analyzed.
+
+Example:
+
+    $ ./doop --regex com.example.package1.*:com.example.package2.*
+
+#### Properties file (-p, --properties)
 You can specify the options of the analysis in a properties file and use the `-p` option
 to process this file, as follows:
 
-    $ DOOP_HOME>./bin/doop -p /path/to/file.properties
+    $ ./doop -p /path/to/file.properties
 
 You can also override the options from a properties file with options from the command line. For example:
 
-    $ DOOP_HOME>./bin/doop -p /path/to/file.properties -a context-insensitive --jre 1.6
+    $ ./doop -p /path/to/file.properties -a context-insensitive --jre 1.6
 
-Please consult the `doop.properties` file which offers a skeleton of the properties file
-supported by doop.
+Please consult the `doop.properties` template file for more information.
 
-To create the `doop.properties` file you should issue the following:
-
-    $ ./gradlew createProperties
-
-
-### Directories created
-
-Doop creates the following directories in the DOOP_HOME:
-
-* out: contains the analyses files (processed logic, jars, LogicBlox workspace, etc).
-* results: contains symlinks to the analyses files.
-* logs: log files of the analyses, which are automatically recycled every day.
-
-## Local Install
-
-Instead of generating the zip or tarball, we can instruct Gradle to install the Doop app directly in the development
-directory:
-
-    $ ./gradlew installApp
-
-This will create a build/install directory, containing all the Doop runtime files
-(similar to generating the zip or tarball and extracting its files to the build/install directory).
-
-Then we can switch to this directory, set the DOOP_HOME environment variable and invoke doop from there.
-
-## Runnning Doop Directly
-
-When developing Doop, a convenient way to invoke it directly is by issuing:
-
-    $ ./gradlew run -Pargs="doop-command-line-arguments"
-
-For example, the following invocation:
-
-    $ ./gradlew run -Pargs="-a context-insensitive -j ./lib/asm-debug-all-4.1.jar"
-
-will run the context-insensitive analysis on the asm-debug-all-4.1 jar.
-
-The most convenient way is to use the `doop` bash script which runs gradlew for you:
-
-    $ ./doop -a context-insensitive -j ./lib/asm-debug-all-4.1.jar
 
 ## License
 MIT license (see `LICENSE`).

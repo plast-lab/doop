@@ -1,6 +1,6 @@
-# Doop Documentation
+# Doop Developer Guide
 
-This document[^about] describes the design, implementation and usage of the new Java-based Doop.
+This document[^about] describes the design, implementation, and usage of the Java-based Doop scaffolding.
 
 ## Contents
 * [Overview](#overview)
@@ -11,8 +11,7 @@ This document[^about] describes the design, implementation and usage of the new 
     * [The Gradle build script](#building.script)
 * [Running Doop](#running)
     * [Main options](#running.main)
-    * [Other options](#running.other)
-    * [Major differences from doop-legacy](#running.differences)
+    * [Analyze the Dacapo Benchmarks suite](#dacapo)
 * [Design and Implementation](#design)
     * [Goals](#design.goals)
     * [The classes of the Core API](#design.api)
@@ -41,12 +40,13 @@ Clone the Doop repo from [bitbucket](http://bibucket.org):
 The directory structure of the repository follows the established conventions for Java projects. Specifically,
 the repository contains the following directories:
 
+* *docs*: various documentation files with more in-depth information and elaborate examples.
 * *gradle*: contains the Gradle wrapper (gradlew) files [^building.gradlew].
 * *lib*: the custom runtime dependencies (the jars which cannot be automatically downloaded by Gradle, such as soot).
 * *logic*: the logic files (the datalog Doop analysis framework).
 * *src*: the Java/Groovy source files.
 
-The *src* directory is structured according to the conventions of Gradle's
+The *src* directory is structured according to the Gradle conventions
 [Java](http://gradle.org/docs/current/userguide/java_plugin.html),
 [Groovy](http://gradle.org/docs/current/userguide/groovy_plugin.html) and
 [Application](http://gradle.org/docs/current/userguide/application_plugin.html)
@@ -62,6 +62,13 @@ The repo also contains:
 * the Gradle wrapper invocation scripts (gradlew and gradlew.bat),
 * the .hgignore file.
 * the README file and this documentation.
+
+Doop creates the following directories under DOOP_HOME:
+
+* *build*: compile-time produced files (class files).
+* *out*: runtime produced files (processed logic, LogicBlox workspace, etc).
+* *results*: symlinks to the analyses files.
+* *logs*: log files of the analyses, which are automatically recycled every day.
 
 ### Using Gradle to Execute the Build Tasks {#building.gradle}
 After cloning the repo, we can execute the build task of choice by issuing the following:
@@ -105,57 +112,31 @@ The script uses Gradle's Groovy-based DSL to:
 This section describes the various command line options supported for running Doop.
 
 ### Main options {#running.main}
+To list all the available options run Doop without any parameters (or with the -h flag).
 The main command line options are described in the `README` file:
 
 * -a, --analysis: The name of the analysis.
 * -j, --jar: The jar file(s) to analyse.
+* --jre: The version of the JRE to use. Doop checks for the JRE-specific files in the `$DOOP_JRE_LIB`
+         directory, while an alternate location can be provided through the `--jre-lib` option. 
+* --main: The name of the Java main class.
+* -t, --timeout: The analysis execution timeout in minutes.
 * -id, --identifier: The human-friendly identifier of the analysis (if not specified, Doop will generate one automatically).
 * --regex: The Java package names to analyse.
-* --main: The name of the Java main class.
-* --jre: The version of the JRE to use. The new doop checks for the JRE-specific files in the `$DOOP_EXTERNALS`
-         directory, while an alternate location can be provided through the `--externals` option. 
-         Also note that the old -jre1.x flags are not supported.
-* --lbhome: The LogicBlox directory (defaults to the value of the `$LOGICBLOX_HOME` environment variable).
-* -t, --timeout: The analysis execution timeout in minutes.
 * -p, --properties: Load options from the given properties file. 
 
-### Other options {#running.other}
-The new Doop framework supports almost the same set of options with the original doop. To list all the available
-options run Doop without any parameters (or with the -h flag).
+### Analyze the Dacapo Benchmarks suite {#dacapo}
 
-### Major differences from doop-legacy {#running.differences}
+Doop provides special handling of the [DaCapo Benchmarks suite](http://dacapobench.org/). You can check the `README` file for
+more information on how to acquire those benchmarks.
 
-#### Use options not arguments
-All the parameters of the Doop invocation should be given as options and not as arguments.
-For example, the following doop-legacy incocation:
+For example, in order to analyze a DaCapo 2006 benchmark we could issue the following:
 
-    $ ./run context-insensitive /path/to.jar
+    $ ./doop -a context-insensitive -j benchmarks/dacapo-2006/antlr.jar --dacapo
 
-should be transformed as follows in the new Doop:
+Respectively, for a DaCapo Bach benchmark we could issue the following:
 
-    $ ./bin/doop -a context-insensitive -j /path/to.jar
-
-### Running Dacapo benchmarks
-The doop-legacy run script contained various hard-coded hooks for running the dacapo (and dacapo-bach) benchmarks. 
-The new Doop limits this hard-wired behavior.
-
-For example, consider a `$DOOP_HOME/jars` directory containing the Dacapo files. In doop-legacy,
-we would issue the following:
-
-    $ ./run context-insensitive jars/dacapo/antlr.jar
-
-In the new Doop, we should issue:
-
-    $ ./bin/doop -a context-insensitive -j jars/dacapo/antlr.jar -j jars/dacapo/antlr-deps.jar -d jars/dacapo/antlr.dynamic --allow-phantom --dacapo
-
-Respectively, the following doop-legacy invocation of a dacapo-bach benchmark, 
-where the directory `doop-benchmarks` is located in the parent of `$DOOP_HOME`:
-
-    $ ./run --allow-phantom --dacapo-bach --main Harness context-insensitive ../doop-benchmarks/dacapo-bach/lusearch/lusearch.jar
-
-should be transformed as follows in the new Doop:
-
-    $ ./bin/doop -a context-insensitive -j ../doop-benchmarks/dacapo-bach/lusearch/lusearch.jar -j ../doop-benchmarks/dacapo-bach/.libs.d --allow-phantom --dacapo-bach --main Harness
+    $ ./doop -a context-insensitive -j benchmarks/dacapo-bach/avrora/avrora.jar --dacapo-bach
 
 
 ## Design and Implementation {#design}
@@ -164,8 +145,7 @@ should be transformed as follows in the new Doop:
 The primary goals of the Java/Groovy part of Doop are the following:
 
 1. Offer an embeddable and multi-tenant Java/Groovy API for running the analyses.
-2. Mimic the behavior of the original Doop run bash script as much as possible.
-3. Develop a unified code-base that is highly maintainable, flexible and extensible.
+1. Develop a unified code-base that is highly maintainable, flexible and extensible.
 
 ### The classes of the Core API {#design.api}
 The core API is contained in the doop.core Groovy package and contains the following classes.
@@ -205,7 +185,7 @@ The class also provides the following public methods:
 each line of output to the given closure.
 * `toString()` - returns a representation of the analysis as a String (used for debugging).
 
-All the other methods of the class are either private or protected, as they are used to implement the "internal details"
+All the other methods of the class are either private or protected, as they are used to implement "internal details"
 of executing an analysis.
 
 #### doop.core.AnalysisOption
