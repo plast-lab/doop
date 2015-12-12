@@ -226,7 +226,7 @@ import java.util.jar.JarFile
     protected List<String> jreLinkArgs(Map<String, AnalysisOption> options) {
 
         String jre = options.JRE.value
-        String path = "${options.EXTERNALS.value}/jre${jre}/lib"
+        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
 
         switch(jre) {
             case "1.3":
@@ -505,9 +505,9 @@ import java.util.jar.JarFile
 
         checkJRE(vars)
 
-        //Check the value of the EXTERNALS option (it should point to the JREs directory)
-        String externals = options.EXTERNALS.value
-        Helper.checkDirectoryOrThrowException(externals as String, "The EXTERNALS directory is invalid: $externals")
+        //Check the value of the JRE_LIB option (it should point to the JREs directory)
+        String externals = options.JRE_LIB.value
+        Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
         
         checkOS(vars)
         
@@ -678,14 +678,13 @@ import java.util.jar.JarFile
         //BLOX_OPTS is set by the main method
     
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
-        String lbHomePath = lbhome.value
 
-        logger.debug "Verifying LogicBlox home: $lbHomePath"
+        logger.debug "Verifying LogicBlox home: ${lbhome.value}"
 
-        File lbHomeJavaFile = Helper.checkDirectoryOrThrowException(lbHomePath as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        File lbHomeDir = Helper.checkDirectoryOrThrowException(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
-        vars.options.LD_LIBRARY_PATH.value = lbHomeJavaFile.getAbsolutePath() + "/bin"
-        String bloxbatch = lbHomeJavaFile.getAbsolutePath() + "/bin/bloxbatch"
+        vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin"
+        String bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         vars.options.BLOXBATCH.value = bloxbatch
     }
