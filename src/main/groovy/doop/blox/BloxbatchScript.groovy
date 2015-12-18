@@ -1,5 +1,7 @@
 package doop.blox;
 
+import doop.system.CppPreprocessor
+import doop.system.Executor
 import org.apache.commons.io.FileUtils
 
 class BloxbatchScript {
@@ -59,15 +61,16 @@ class BloxbatchScript {
     }
 
     public BloxbatchScript include(String filePath) {
-        def file    = new File(filePath)
-        def inPath  = file.getParentFile()
-        def outPath = script.getParentFile()
+        def inDir  = (new File(filePath)).getParentFile()
+        def outDir = script.getParentFile()
+		def file   = new File(outDir, "_tmp.logic")
+        new Executor(System.getenv()).execute("cpp -P $filePath $file")
         file.eachLine { line ->
             def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
             if (matcher.matches()) {
                 def inFile  = matcher[0][2]
                 def outFile = inFile.replaceAll(File.separator, "-")
-                FileUtils.copyFile(new File(inPath, inFile), new File(outPath, outFile))
+                FileUtils.copyFile(new File(inDir, inFile), new File(outDir, outFile))
             }
             writer.println(line)
         }
