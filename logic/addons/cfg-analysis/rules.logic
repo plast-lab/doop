@@ -1,0 +1,263 @@
+OptInstructionFromMethodIndex[?method, ?index] = ?insn <-
+   Instruction:Method[?insn] = ?method,
+   Instruction:Index[?insn] = ?index.
+
+Instruction:Next[?insn] = ?next <-
+   Instruction:Method[?insn] = ?inMethod,
+   Instruction:Index[?insn] = ?i,
+   OptInstructionFromMethodIndex[?inMethod, ?i + 1] = ?next.
+
+Instruction:Prev[?insn] = ?prev <-
+   Instruction:Method[?insn] = ?inMethod,
+   Instruction:Index[?insn] = ?i,
+   OptInstructionFromMethodIndex[?inMethod, ?i - 1] = ?prev.
+
+JumpTarget(?insn, ?goto) <-
+   Goto:Target[?goto] = ?targetIndex,
+   OptInstructionFromMethodIndex[Instruction:Method[?goto], ?targetIndex] = ?insn.
+JumpTarget(?insn, ?if) <-
+   If:Target[?if] = ?targetIndex,
+   OptInstructionFromMethodIndex[Instruction:Method[?if], ?targetIndex] = ?insn.   
+JumpTarget(?insn, ?sw) <-
+   (Switch:Target[?sw,_] = ?targetIndex ; Switch:DefaultTarget[?sw] = ?targetIndex),
+   OptInstructionFromMethodIndex[Instruction:Method[?sw], ?targetIndex] = ?insn.   
+
+IsJumpTarget(?insn) <-
+   JumpTarget(?insn, _).
+
+ExceptionHandlerFirstInstruction(?insn) <-
+   ExceptionHandler:Index[?handler] = ?index, 
+   OptInstructionFromMethodIndex[ExceptionHandler:Method[?handler], ?index] = ?insn.
+
+FallThrough(?insn) <-
+   If:Insn(?if), Instruction:Next[?if] = ?insn.
+// REVIEW: The next two shouldn't matter much since without a label the
+// fallthrough instruction would be dead code OR the beginning of an
+// exception handler. The latter is handled specially. For the former, we
+// consider such dead code to start a new BB, so that it doesn't accidentally
+// get considered a continuation of the previous BB.
+FallThrough(?insn) <-
+   ReturnInstruction(?ret), Instruction:Next[?ret] = ?insn.
+FallThrough(?insn) <-
+   Throw:Insn(?throw), Instruction:Next[?throw] = ?insn.
+
+
+// First instruction of a method is a basic block beginning
+BasicBlockBegin(?insn) <-
+   OptInstructionFromMethodIndex[_, 1] = ?insn.
+BasicBlockBegin(?insn) <-
+   ExceptionHandlerFirstInstruction(?insn).
+BasicBlockBegin(?insn) <-
+   JumpTarget(?insn, _).
+BasicBlockBegin(?insn) <-
+   FallThrough(?insn).
+
+NextInSameBasicBlock[?insn] = ?next <-
+   Instruction:Next[?insn] = ?next,
+   !BasicBlockBegin(?next).
+
+PrevInSameBasicBlock[?insn] = ?prev <-
+   NextInSameBasicBlock[?prev] = ?insn.
+
+BasicBlockHead[?insn] = ?insn <-
+   BasicBlockBegin(?insn).
+BasicBlockHead[?insn] = ?headInsn <-
+   BasicBlockHead[?prev] = ?headInsn,
+   NextInSameBasicBlock[?prev] = ?insn.
+
+BasicBlockTail[?headInsn] = ?tailInsn <-
+   BasicBlockHead[?tailInsn] = ?headInsn,
+   !(NextInSameBasicBlock[?tailInsn] = _).
+
+BasicBlockEnd(?insn) <- BasicBlockTail[_] = ?insn.
+
+
+UnconditionalControlTransfer(?insn) <-
+   Goto:Insn(?insn) ;
+   Switch:Insn(?insn) ;
+   ReturnInstruction(?insn) ;
+   Throw:Insn(?insn).
+
+MaySuccessorModuloThrow(?next, ?prev) <-
+   JumpTarget(?next, ?prev).
+MaySuccessorModuloThrow(?next, ?insn) <-
+   Instruction:Next[?insn] = ?next, 
+   !UnconditionalControlTransfer(?insn).
+
+MayPredecessorModuloThrow(?prev, ?next) <-
+   MaySuccessorModuloThrow(?next, ?prev).
+
+MaySuccessorBBModuloThrow(?next, ?prev) <-
+   MaySuccessorModuloThrow(?next, ?prevEnd),
+   BasicBlockEnd(?prevEnd),
+   BasicBlockBegin(?next),
+   BasicBlockHead[?prevEnd] = ?prev.
+
+MayPredecessorBBModuloThrow(?prev, ?next) <-
+   MaySuccessorBBModuloThrow(?next, ?prev).
+
+// The Dominates relation is defined on basic blocks,
+// represented by their first instruction (head). Defining
+// a dense quadratic relation, like Dominates, on individual
+// instructions was hugely expensive.
+
+// Dominates(?dominator, ?insn): To get to ?insn, we need to have gone
+// through ?dominator
+Dominates(?dominator, ?insn) <-
+   SameMethodBBHeads(?dominator, ?insn),
+   !DoesNotDominate(?dominator, ?insn).
+
+// Either the first instruction... 
+CFGRoot(?insn, ?method) <-
+   OptInstructionFromMethodIndex[?method, 1] = ?insn.
+// or... could also be beginning of exception handler
+CFGRoot(?insn, ?method) <-
+   BBHeadInMethod(?insn, ?method),
+   !(MayPredecessorBBModuloThrow(_, ?insn)).
+
+// DoesNotDominate(?dominatorCandidate, ?insn): ?insn (which is a
+// basic block head) is NOT dominated by ?dominatorCandidate
+DoesNotDominate(?dominatorCandidate, ?insn) <-
+   BBHeadInMethod(?dominatorCandidate, ?method),
+   CFGRoot(?insn, ?method),
+   ?dominatorCandidate != ?insn.
+
+DoesNotDominate(?dominatorCandidate, ?insn) <-
+   DoesNotDominate(?dominatorCandidate, ?otherInsn),
+   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+   ?insn != ?dominatorCandidate.
+
+
+// ?insn dominates its predecessor. ?insn must be the head of a basic
+// block (head of a loop).
+DominatesItsPredecessorInstruction(?prevInsn, ?insn) <-
+   JumpTarget(?insn, ?prevInsn),
+   BasicBlockHead[?prevInsn] = ?prevInsnHead,
+   (?insn = ?prevInsnHead;
+    Dominates(?insn, ?prevInsnHead)).
+
+// KF: Currently this rules is not being used at all.
+// // Includes the case of both being in the same basic block.
+// DominatesItsSuccessorInstruction(?insn, ?prevInsn) <-
+//    MaySuccessorModuloThrow(?insn, ?prevInsn),
+//    BasicBlockHead[?prevInsn] = ?prevInsnHead,
+//    BasicBlockHead[?insn] = ?insnHead,
+//    (?insnHead = ?prevInsnHead;
+//     Dominates(?prevInsnHead, ?insnHead)).
+
+
+NextInSamePhiNode[?insn] = ?nextInsn <-
+   AssignLocal:Insn(?insn), 
+   AssignInstruction:To[?insn] = ?var,
+   Instruction:Next[?insn] = ?nextInsn,
+   AssignLocal:Insn(?nextInsn),
+   AssignInstruction:To[?nextInsn] = ?var.
+
+PhiNodeHead[?nextInsn] = ?insn,
+PhiNodeHead[?insn] = ?insn <-
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   Instruction:Prev[?insn] = ?prevInsn,
+   !(NextInSamePhiNode[?prevInsn] = ?insn).
+
+PhiNodeHead[?nextInsn] = ?insn,
+PhiNodeHead[?insn] = ?insn <-
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   !(Instruction:Prev[?insn] = _).
+
+PhiNodeHead[?nextInsn] = ?headInsn <-
+   PhiNodeHead[?phiInsn] = ?headInsn,
+   NextInSamePhiNode[?phiInsn] = ?nextInsn.
+
+// Just inverting for efficiency.
+InstructionInPhiNode(?insn, ?headInsn) <-
+   PhiNodeHead[?insn] = ?headInsn.
+
+
+///// auxiliary quick-and-dirty predicates
+OptReturnInsn(?insn, ?method) <-
+   ReturnInstruction(?insn),
+   Instruction:Method[?insn] = ?method.
+
+HigherReturnIndex(?insn, ?indexHigher) <-
+   OptReturnInsn(?insn, ?method),
+   OptReturnInsn(?insnHigher, ?method),
+   Instruction:Index[?insnHigher] = ?indexHigher,
+   Instruction:Index[?insn] < ?indexHigher.
+
+NextReturnIndex[?returnInsn] = ?nextReturnIndex <-
+   agg<<?nextReturnIndex =
+      min(?index)>>(HigherReturnIndex(?returnInsn, ?index)).
+
+NextReturn[?returnInsn] = ?nextReturnInsn <-
+   NextReturnIndex[?returnInsn] = ?nextReturnIndex,
+   Instruction:Method[?returnInsn] = ?meth,
+   OptInstructionFromMethodIndex[?meth, ?nextReturnIndex] = ?nextReturnInsn.
+
+ExistsPreviousReturn(?insn) <-
+   NextReturn[_] = ?insn.
+
+BBHeadInMethod(?insn, ?method) <-
+   BasicBlockBegin(?insn),
+   Instruction:Method[?insn] = ?method.
+   
+SameMethodBBHeads(?insn1, ?insn2) <-
+   BBHeadInMethod(?insn1, ?method),
+   BBHeadInMethod(?insn2, ?method).
+
+// Auxiliaries...
+
+// Quadratic, but doesn't matter, since it's so local and only
+// defined on basic blocks.
+PredecessorBBsToSameBB(?insn, ?prev1, ?prev2) <-
+   MayPredecessorBBModuloThrow(?prev1, ?insn),
+   MayPredecessorBBModuloThrow(?prev2, ?insn),
+   ?prev1 != ?prev2.
+
+LargerPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) <-
+   PredecessorBBsToSameBB(?insn, ?prevLarge, ?prevSmall),
+   Instruction:Index[?prevLarge] = ?indexLarge,
+   ?indexLarge > Instruction:Index[?prevSmall].
+
+NextPredecessorIndexToSameBB[?insn, ?prev] = ?indexNext <-
+   agg<<?indexNext = min(?index)>>(LargerPredecessorIndexToSameBB(?insn, ?index, ?prev)).
+
+NextPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
+   NextPredecessorIndexToSameBB[?insn, ?pred] = ?indexNext,
+   OptInstructionFromMethodIndex[Instruction:Method[?insn], ?indexNext] = ?nextPred.
+
+PreviousPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
+
+ExistsPreviousPredecessorToSameBB(?pred, ?insn) <-
+   NextPredecessorToSameBB[?insn, _] = ?pred.
+
+
+// Same concepts as above, but for non-dominated (shortened to "NonDom")
+// predecessors
+NonDomPredecessorBBsToSameBB(?insn, ?prev1, ?prev2) <-   
+   MayPredecessorBBModuloThrow(?prev1, ?insn),
+   MayPredecessorBBModuloThrow(?prev2, ?insn),
+   BasicBlockTail[?prev1] = ?prevTail1,
+   BasicBlockTail[?prev2] = ?prevTail2,
+   !DominatesItsPredecessorInstruction(?prevTail1, ?insn),
+   !DominatesItsPredecessorInstruction(?prevTail2, ?insn),
+   ?prev1 != ?prev2.
+
+LargerNonDomPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) <-
+   NonDomPredecessorBBsToSameBB(?insn, ?prevLarge, ?prevSmall),
+   Instruction:Index[?prevLarge] = ?indexLarge,
+   ?indexLarge > Instruction:Index[?prevSmall].
+
+NextNonDomPredecessorIndexToSameBB[?insn, ?prev] = ?indexNext <-
+   agg<<?indexNext = min(?index)>>(
+     LargerNonDomPredecessorIndexToSameBB(?insn, ?index, ?prev)).
+
+NextNonDomPredecessorToSameBB[?insn, ?pred] = ?nextPred <-
+   NextNonDomPredecessorIndexToSameBB[?insn, ?pred] = ?indexNext,
+   OptInstructionFromMethodIndex[Instruction:Method[?insn], ?indexNext] = ?nextPred.
+
+PreviousNonDomPredecessorToSameBB[?insn, ?nextPred] = ?prevPred <-
+   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?nextPred.
+
+ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn) <-
+   NextNonDomPredecessorToSameBB[?insn, _] = ?pred.
