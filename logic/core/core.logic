@@ -1,0 +1,36 @@
+#include "class-initialization.logic"
+#include "declaring-class.logic"
+#include "finalization.logic"
+#include "implicit-reachable.logic"
+#include "method-resolution.logic"
+#include "native.logic"
+#include "reference.logic"
+#include "string-constants.logic"
+#include "subclass.logic"
+#include "superinterface.logic"
+#include "threads.logic"
+#include "type-hierarchy.logic"
+
+#if defined(EXCEPTIONS_PRECISE) && !defined(PADDLE_COMPAT)
+#include "exceptions/precise.logic"
+#elif defined(EXCEPTIONS_IMPRECISE)
+#include "exceptions/imprecise.logic"
+#elif defined(EXCEPTIONS_EXPERIMENTAL)
+#include "exceptions/experimental.logic"
+#endif
+
+#if defined(ENABLE_REFLECTION) && !defined(PADDLE_COMPAT)
+#include "reflection/rules.logic" 
+#endif
+
+
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
+   Modifier:Value(?public:"public"),
+   Modifier:Value(?static:"static"),
+   MethodSignature:DeclaringType[?method] = ?type,
+   MethodSignature:SimpleName[?method] = "main",
+   MethodSignature:Descriptor[?method] = ?descriptor,
+   MethodModifier(?public, ?method),
+   MethodModifier(?static, ?method).

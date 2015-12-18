@@ -1,0 +1,33 @@
+ExceptionHandler:At[?instruction, ?type] = ?handler <-
+   PossibleExceptionHandler(?handler, ?type, ?instruction),
+   not ImpossibleExceptionHandler(?handler, ?type, ?instruction).
+
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) <-
+   PossibleExceptionHandler(?handler, ?type, ?instruction),
+   ExceptionHandler:Before(?previous, ?handler),
+   PossibleExceptionHandler(?previous, ?type, ?instruction).
+
+PossibleExceptionHandler(?handler, ?type, ?instruction) <-
+   ExceptionHandler:InRange(?handler, ?instruction),
+   ExceptionHandler:Type[?handler] = ?type.
+
+PossibleExceptionHandler(?handler, ?subtype, ?instruction) <-
+   ExceptionHandler:InRange(?handler, ?instruction),
+   ExceptionHandler:Type[?handler] = ?type,
+   Superclass(?subtype, ?type).
+
+ExceptionHandler:InRange(?handler, ?instruction) <-
+   Instruction:Method[?instruction] = ?method,
+   Instruction:Index[?instruction] = ?index,
+   ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
+   ExceptionHandler:Begin[?handler] = ?begin,
+   ExceptionHandler:End[?handler] = ?end,
+   ?begin <= ?index,
+   ?index < ?end.
+
+ExceptionHandler:Before(?previous, ?handler) <-
+   ExceptionHandler:Previous[?handler] = ?previous.
+
+ExceptionHandler:Before(?before, ?handler) <-
+   ExceptionHandler:Before(?middle, ?handler),
+   ExceptionHandler:Previous[?middle] = ?before.
