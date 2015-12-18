@@ -1,6 +1,6 @@
 # Doop - Framework for Java Pointer Analysis
 
-The following serve as an introduction to the Doop project. For a detailed tutorial, please consult `docs/doop-101.md`.
+The following serve as an introduction to the Doop project. For a detailed tutorial, please consult [Doop-101](docs/doop-101.md).
 
 ## Getting Started
 
@@ -118,8 +118,8 @@ You can also override the options from a properties file with options from the c
 
     $ ./doop -p /path/to/file.properties -a context-insensitive --jre 1.6
 
-Please consult the `doop.properties` template file for more information.
+Please consult the [doop.properties](doop.properties) template file for more information.
 
 
 ## License
-MIT license (see `LICENSE`).
+MIT license (see [LICENSE](LICENSE)).
