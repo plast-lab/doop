@@ -22,7 +22,7 @@ To familiarize yourself with Datalog evaluation, you may want to try the [LogicB
 
 ## Toy Example
 
-We want to compute the ancestors for a set of people. Our rules (left-arrow notation) along with their type declarations (right-arrow notation) are in `docs/doop-101-examples/ancestors.logic`.
+We want to compute the ancestors for a set of people. Our rules (left-arrow notation) along with their type declarations (right-arrow notation) are in [ancestors.logic](docs/doop-101-examples/ancestors.logic).
 
 ```
 #!java
@@ -36,7 +36,7 @@ Ancestor(x,y) <- Parent(x,y).
 Ancestor(x,y) <- Ancestor(x,z), Ancestor(z,y).
 ```
 
-Our input facts (a.k.a. delta logic) are in `docs/doop-101-examples/facts.logic`. The `+` operator in front of predicates (called **delta** predicates) denotes that we want to add facts to our database (we could also remove or update facts).
+Our input facts (a.k.a. delta logic) are in [facts.logic](docs/doop-101-examples/facts.logic). The `+` operator in front of predicates (called **delta** predicates) denotes that we want to add facts to our database (we could also remove or update facts).
 
 ```
 #!java
@@ -72,7 +72,7 @@ The line `Person(x), Name(x:n) -> string(n).` states that a person will be repre
 
 ## Running an analysis
 
-Now let's focus on more meaningful examples using Doop directly. We will use a running example, found in `docs/doop-101-examples/Example.java`.
+Now let's focus on more meaningful examples using Doop directly. We will use a running example, found in [Example.java](docs/doop-101-examples/Example.java).
 
 We will run a simple naive analysis (`-a naive` option) on the generated jar file (`-j Example.jar` option). This analysis has only a few basic rules but it's a good representative skeleton of actual analyses. Since Doop performs a whole program analysis, the library will be analyzed along with application code. We can also specify the desired JRE version of library code (`--jre 1.7` option).
 
@@ -167,7 +167,7 @@ Var:DeclaringMethod(?var, ?method), MethodSignature:Value(?method:"<Example: voi
 Note here that Doop analyzes Java **bytecode**. Input facts are generated using Soot, which transforms Java bytecode to [Jimple](https://en.wikipedia.org/wiki/Soot_%28software%29#Jimple), a language based on *three address code*. As a result new temporary variables are introduced and also original variable names might be lost (they can be retained through specific flags in javac and Soot).
 
 ### Query 2
-A more advanced query can be found in `docs/doop-101-examples/query2.logic`. Essentially, we compute a transitive closure on the `CallGraphEdge` predicate. The logic used in a query can be as complicated as in any "normal" Datalog program.
+A more advanced query can be found in [query2.logic](docs/doop-101-examples/query2.logic). Essentially, we compute a transitive closure on the `CallGraphEdge` predicate. The logic used in a query can be as complicated as in any "normal" Datalog program.
 
 ```
 #!bash
@@ -229,7 +229,7 @@ _Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
 
 The use of `_` as a predicate parameter denotes that we don't care for a specific value. It represent a parameter that is not bound.
 
-The above query can be found isolated in `docs/doop-101-examples/query3.logic`.
+The above query can be found isolated in [query3.logic](docs/doop-101-examples/query3.logic).
 
 ```
 #!bash
