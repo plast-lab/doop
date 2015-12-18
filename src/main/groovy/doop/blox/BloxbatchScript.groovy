@@ -62,15 +62,15 @@ class BloxbatchScript {
         def file    = new File(filePath)
         def inPath  = file.getParentFile()
         def outPath = script.getParentFile()
-		file.eachLine { line ->
-			def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
-			if (matcher.matches()) {
-				def inFile  = matcher[0][2]
-				def outFile = inFile.replaceAll(File.separator, "-")
-				FileUtils.copyFile(new File(inPath, inFile), new File(outPath, outFile))
-			}
-			writer.println(line)
-		}
+        file.eachLine { line ->
+            def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
+            if (matcher.matches()) {
+                def inFile  = matcher[0][2]
+                def outFile = inFile.replaceAll(File.separator, "-")
+                FileUtils.copyFile(new File(inPath, inFile), new File(outPath, outFile))
+            }
+            writer.println(line)
+        }
         return this
     }
 }
