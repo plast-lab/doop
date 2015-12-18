@@ -203,9 +203,14 @@ public class FactGenerator
     public void generate(SootMethod m, Body b, Session session)
     {
         //TODO: Identify the problem with the jimple body of this method.
-        if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
-            b.validate();
-
+        try {
+            
+            if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
+                b.validate();
+        } catch (Exception ex) {
+            System.out.println(ex.toString());
+        }
+        
         for(Local l : b.getLocals())
         {
             _writer.writeLocal(m, l);
