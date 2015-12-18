@@ -36,7 +36,7 @@ Ancestor(x,y) <- Parent(x,y).
 Ancestor(x,y) <- Ancestor(x,z), Ancestor(z,y).
 ```
 
-Our input facts (a.k.a. delta logic) are in [facts.logic](doop-101-examples/facts.logic). The `+` operator in front of predicates (called **delta** predicates) denotes that we want to add facts to our database (we could also remove or update facts).
+Our input facts (a.k.a. delta logic) are in [ancestors-facts.logic](doop-101-examples/ancestors-facts.logic). The `+` operator in front of predicates (called **delta** predicates) denotes that we want to add facts to our database (we could also remove or update facts).
 
 ```
 #!java
