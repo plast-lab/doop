@@ -22,6 +22,9 @@ import org.apache.commons.logging.LogFactory
  * For supporting invocations over the web, the behavior of the get-stats function of the original doop script is
  * broken into two parts: (a) produce statistics and (b) print statistics.
  *
+ * The run() method is the only public method exposed by this class: no other methods should be called directly
+ * by other classes.
+ *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 9/7/2014
  */
@@ -123,13 +126,12 @@ import org.apache.commons.logging.LogFactory
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
 
-        facts          = new File(outDir, "facts")
-        cacheFacts     = new File(cacheDir)
-        database       = new File(outDir, "database")
-        exportDir      = new File(outDir, "export")
-        averroesDir    = new File(outDir, "averroes")
+        facts       = new File(outDir, "facts")
+        cacheFacts  = new File(cacheDir)
+        database    = new File(outDir, "database")
+        exportDir   = new File(outDir, "export")
+        averroesDir = new File(outDir, "averroes")
 
-        lbScript       = new BloxbatchScript(new File(outDir, "run.lb"))
 
         // Create workspace connector (needed by the post processor and the server-side analysis execution)
         connector = new BloxbatchConnector(database, commandsEnvironment)
@@ -137,6 +139,11 @@ import org.apache.commons.logging.LogFactory
 
     @Override
     void run() {
+        /*
+         Initialize the writer here and not in the constructor, in order to allow an analysis to be re-run.
+         */
+        lbScript    = new BloxbatchScript(new File(outDir, "run.lb"))
+
         generateFacts()
         if (options.X_ONLY_FACTS.value)
             return
@@ -154,8 +161,7 @@ import org.apache.commons.logging.LogFactory
             logger.debug e.getMessage()
         }
 
-        if (!options.X_STATS_NONE.value)
-            produceStats()
+        produceStats()
 
         lbScript.close()
 
@@ -563,6 +569,13 @@ import org.apache.commons.logging.LogFactory
     }
 
     protected void produceStats() {
+        if (options.X_STATS_NONE.value) return;
+
+        if (options.X_STATS_AROUND.value) {
+            lbScript.include(options.X_STATS_AROUND.value as String)
+            return
+        }
+
         String statsPath = "${Doop.doopLogic}/addons/statistics"
         preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
         preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")

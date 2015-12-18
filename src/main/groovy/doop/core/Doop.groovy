@@ -440,6 +440,15 @@ class Doop {
             value:false,
             nonStandard:true
         ),
+        new AnalysisOption<Boolean>(
+            id:"X_STATS_AROUND",
+            name:"Xstats:around",
+            argName:"FILE",
+            isFile:true,
+            description:"Load custom logic for collecting statistics.",
+            value:false,
+            nonStandard:true
+        ),
         new AnalysisOption<String>(
             id:"X_ONLY_FACTS",
             name:"Xonly-facts",
