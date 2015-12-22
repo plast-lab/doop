@@ -8,6 +8,7 @@ import soot.shimple.Shimple;
 /**
  * Created by jimouris on 12/22/15.
  */
+
 public class ClassGenerator implements Runnable {
 
     protected FactWriter _writer;
