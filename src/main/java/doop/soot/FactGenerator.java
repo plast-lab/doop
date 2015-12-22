@@ -65,18 +65,6 @@ public class FactGenerator
         Runnable classGenerator = new ClassGenerator(_writer, _ssa, c);
         methodGeneratorExecutor.execute(classGenerator);
 
-//        for(SootMethod m : c.getMethods())
-//        {
-//            Session session = new Session();
-//
-//            try {
-////                generate(m, session); // try multithread this
-//            } catch (RuntimeException exc) {
-//                System.err.println("Error while processing method: " + m);
-//                throw exc;
-//            }
-//        }
-
     }
 
     public void generate(SootField f)
