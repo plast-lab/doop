@@ -2,6 +2,7 @@ package doop.soot;
 
 import soot.*;
 import soot.jimple.*;
+import soot.jimple.toolkits.thread.mhp.SynchObliviousMhpAnalysis;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
@@ -25,13 +26,14 @@ public class FactGenerator
 {
     protected FactWriter _writer;
     protected boolean _ssa;
+    public long _timeBeforeMethodsLoop;
     private ExecutorService methodGeneratorExecutor = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
         _ssa = ssa;
-
+        _timeBeforeMethodsLoop = 0;
     }
 
     public ExecutorService getMethodGeneratorExecutor() {
@@ -58,10 +60,10 @@ public class FactGenerator
             generate(f);
         }
 
+        _timeBeforeMethodsLoop = System.currentTimeMillis();
         for(SootMethod m : c.getMethods())
         {
             Session session = new Session();
-
             try {
                 Runnable methodGenerator = new MethodGenerator(_writer, _ssa, m, session);
                 methodGeneratorExecutor.execute(methodGenerator);
@@ -71,6 +73,7 @@ public class FactGenerator
                 throw exc;
             }
         }
+
     }
 
     public void generate(SootField f)
