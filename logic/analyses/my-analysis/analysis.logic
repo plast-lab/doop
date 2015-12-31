@@ -1,0 +1,48 @@
+#include "../context-insensitive/analysis.logic"
+#include "../../addons/cfg-analysis/rules.logic"
+
+
+CallGraphMethodEdge(?fromMethod, ?toMethod) <-
+    Instruction:Method(?invokeInsn, ?fromMethod),
+    CallGraphEdge(_, ?invokeInsn, _, ?toMethod).
+
+CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
+    CallGraphMethodEdge(?fromMethod, ?toMethod).
+
+CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
+    CallGraphMethodTransitive(?fromMethod, ?inter),
+    CallGraphMethodEdge(?inter, ?toMethod).
+
+
+
+StaticFieldMethodDataDep(?method, ?dependsOn) <-
+    LoadStaticField(?field, _, ?method),
+    StoreStaticField(_, ?field, ?dependsOn),
+    ?method != ?dependsOn.
+
+InstanceFieldMethodDataDep(?method, ?dependsOn) <-
+    LoadHeapInstanceField(_, ?loadVar, ?field, _, ?heap),
+    Var:DeclaringMethod(?loadVar, ?method),
+    StoreHeapInstanceField(?field, _, ?heap, _, ?storeVar),
+    Var:DeclaringMethod(?storeVar, ?dependsOn),
+    ?method != ?dependsOn.
+
+HeapArrayMethodDataDep(?method, ?dependsOn) <-
+    LoadHeapArrayIndex(_, ?loadVar, _, ?heap),
+    Var:DeclaringMethod(?loadVar, ?method),
+    StoreHeapArrayIndex(_, ?heap, _, ?storeVar),
+    Var:DeclaringMethod(?storeVar, ?dependsOn),
+    ?method != ?dependsOn.
+
+
+MethodHeapDataDep(?method, ?dependsOn) <- StaticFieldMethodDataDep(?method, ?dependsOn).
+
+MethodHeapDataDep(?method, ?dependsOn) <- InstanceFieldMethodDataDep(?method, ?dependsOn).
+
+MethodHeapDataDep(?method, ?dependsOn) <- HeapArrayMethodDataDep(?method, ?dependsOn).
+
+
+
+MethodDependency(?toMethod, ?fromMethod) <- CallGraphMethodTransitive(?fromMethod, ?toMethod).
+
+MethodDependency(?method, ?dependsOn) <- MethodHeapDataDep(?method, ?dependsOn).
