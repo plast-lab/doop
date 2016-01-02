@@ -1,4 +1,4 @@
-package doop;
+package doop.soot;
 
 import org.apache.commons.io.FileUtils;
 

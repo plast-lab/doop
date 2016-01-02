@@ -20,7 +20,7 @@ import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.tagkit.LineNumberTag;
 
-import static doop.PredicateFile.*;
+import static doop.soot.PredicateFile.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a

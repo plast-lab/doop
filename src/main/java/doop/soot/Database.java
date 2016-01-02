@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.Closeable;
 import java.io.Flushable;
 
-import doop.PredicateFile;
-
 public interface Database extends Closeable, Flushable
 {
     public void add(PredicateFile predFile, Column arg, Column... args);
