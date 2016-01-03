@@ -1,4 +1,4 @@
-grammar := LogiQL
+grammar := Datalog
 javaGen := BaseListener.java Lexer.java Listener.java Parser.java
 javaGen := $(javaGen:%=$(grammar)%)
 tokGen  := .tokens Lexer.tokens
@@ -9,11 +9,11 @@ tokGen  := $(tokGen:%=$(grammar)%)
 all: $(javaGen) $(tokGen)
 
 $(javaGen) $(tokGen): $(grammar).g4 
-	java -cp $(CLASSPATH) org.antlr.v4.Tool $<
+	java org.antlr.v4.Tool $<
 	javac $(javaGen)
 
 run:
-	java -cp $(CLASSPATH) org.antlr.v4.gui.TestRig LogiQL program -tree
+	java org.antlr.v4.gui.TestRig LogiQL program -tree
 
 clean:
-	rm -rf *.java *.class *.tokens
+	rm -rf $(javaGen) *.class *.tokens
