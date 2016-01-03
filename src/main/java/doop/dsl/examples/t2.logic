@@ -1,0 +1,2 @@
+foo(x) -> string(x).
+ibar() <- foo(_).
