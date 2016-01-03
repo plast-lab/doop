@@ -1,4 +1,4 @@
-grammar LogiQL;
+grammar Datalog;
 
 program
 	: (declaration | rule_)* ;
