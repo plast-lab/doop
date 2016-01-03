@@ -12,11 +12,7 @@ rule_
 predicate
 	: IDENTIFIER '(' variableList? ')'
 	| functionalHead '=' variable
-	| ( 'int'   '[' ('32' | '64') ']' 
-	  | 'float' '[' ('32' | '64') ']'
-	  | 'boolean'
-	  | 'string'
-	  ) '(' IDENTIFIER ')'
+	| primitiveType
 	;
 
 ruleBody
@@ -31,6 +27,14 @@ ruleBody
 
 functionalHead
 	: IDENTIFIER '[' variableList? ']' ;
+
+primitiveType
+	: ( 'int'   '[' ('32' | '64') ']' 
+	  | 'float' '[' ('32' | '64') ']'
+	  | 'boolean'
+	  | 'string'
+	  ) '(' IDENTIFIER ')'
+	;
 
 comparison
 	: expr COMPARISON_OP__NOT_EQ expr

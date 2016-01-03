@@ -21,6 +21,8 @@ class DSLListener implements DatalogListener {
 	public void exitRuleBody(DatalogParser.RuleBodyContext ctx) {}
 	public void enterFunctionalHead(DatalogParser.FunctionalHeadContext ctx) {}
 	public void exitFunctionalHead(DatalogParser.FunctionalHeadContext ctx) {}
+	public void enterPrimitiveType(DatalogParser.PrimitiveTypeContext ctx) {}
+	public void exitPrimitiveType(DatalogParser.PrimitiveTypeContext ctx) {}
 	public void enterComparison(DatalogParser.ComparisonContext ctx) {}
 	public void exitComparison(DatalogParser.ComparisonContext ctx) {}
 	public void enterExpr(DatalogParser.ExprContext ctx) {}
