@@ -1,0 +1,5 @@
+foo() -> string(x).
+bar(x)->.
+bar(x,y) -> string(x),bar(y).
+barz() -> .
+foobaz(x) -> int[64](x).
