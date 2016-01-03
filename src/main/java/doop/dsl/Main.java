@@ -10,9 +10,9 @@ public class Main {
 	public static void main(String[] args) {
 		try {
 			DatalogParser parser = new DatalogParser(
-										new CommonTokenStream(
-											new DatalogLexer(
-												new ANTLRFileStream(args[0]))));
+					new CommonTokenStream(
+						new DatalogLexer(
+							new ANTLRFileStream(args[0]))));
 
 			DSLListener listener = new DSLListener();
 
