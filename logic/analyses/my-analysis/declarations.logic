@@ -1,40 +1,76 @@
 #include "../context-insensitive/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
 
-/* caller - callee edges */
+/**
+ * Caller - callee edges
+ */
 CallGraphMethodEdge(?fromMethod, ?toMethod) ->
     MethodSignature(?fromMethod),
     MethodSignature(?toMethod).
 
-/* transitive closure of the above */
+/**
+ * Transitive closure of the above
+ */
 CallGraphMethodTransitive(?fromMethod, ?toMethod) ->
     MethodSignature(?fromMethod),
     MethodSignature(?toMethod).
 
 
-/* load-store dependency of a static field */
+/**
+ * Load-store dependency of a static field
+ */
 StaticFieldMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
-/* load-store dependency of an instance field */
+/**
+ * Load-store dependency of an instance field
+ */
 InstanceFieldMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
-/* load-store dependency on an array */
+/**
+ * Load-store dependency on an array
+ */
 HeapArrayMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
 
-/* any one of the above data dependencies */
+/**
+ * Any one of the above data dependencies
+ */
 MethodHeapDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
 
-/* any data or call graph dependency */
+/**
+ * Any data or call graph dependency
+ */
 MethodDependency(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
+
+
+/**
+ * Instruction reads from var
+ */
+InstructionUsesVar(?instruction, ?var) ->
+    Instruction(?instruction),
+    Var(?var).
+
+
+/**
+ * Instruction writes to var
+ */
+InstructionDefinesVar(?instruction, ?var) ->
+    Instruction(?instruction),
+    Var(?var).
+
+
+/**
+ * REQUIRES SSA
+ * Intra-procedural data dependencies
+ */
