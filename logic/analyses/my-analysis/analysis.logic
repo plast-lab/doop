@@ -46,3 +46,32 @@ MethodHeapDataDep(?method, ?dependsOn) <- HeapArrayMethodDataDep(?method, ?depen
 MethodDependency(?toMethod, ?fromMethod) <- CallGraphMethodTransitive(?fromMethod, ?toMethod).
 
 MethodDependency(?method, ?dependsOn) <- MethodHeapDataDep(?method, ?dependsOn).
+
+
+InstructionUsesVar(?instruction, ?var) <-
+    OperAssign:From(?instruction, ?var).
+
+InstructionUsesVar(?instruction, ?var) <-
+    If:Var(?instruction, ?var).
+
+InstructionUsesVar(?instruction, ?var) <-
+    AssignLocal:From[?instruction] = ?var.
+
+InstructionUsesVar(?instruction, ?var) <-
+    VirtualMethodInvocation:Base[?instruction] = ?var.
+
+InstructionUsesVar(?instruction, ?var) <-
+    Switch:Key[?instruction] = ?var.
+
+InstructionUsesVar(?instruction, ?var) <-
+    ActualParam[_, ?instruction] = ?var.
+
+InstructionUsesVar(?instruction, ?var) <-
+    ReturnNonvoid:Var[?instruction] = ?var.
+
+InstructionUsesVar(?instruction, ?var) <-
+    Throw:Var[?instruction] = ?var.
+
+// TODO: should add support for AssignHeapAllocation and AssignReturnValue?
+InstructionDefinesVar(?instruction, ?var) <-
+    AssignInstruction:To[?instruction] = ?var.
