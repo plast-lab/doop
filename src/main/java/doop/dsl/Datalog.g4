@@ -1,17 +1,24 @@
 grammar Datalog;
 
 program
-	: (declaration | rule_)* ;
+	: (declaration | rule_ | directive)* ;
 
 declaration
-	: predicate '->' predicateList? '.' ;
+	: predicate '->' predicateList? '.'
+	| predicateName '(' IDENTIFIER ')' ',' refmode '->' primitiveType '.'
+	;
 
 rule_
-	: predicateList '<-' ruleBody? '.' ;
+	: predicateList ('<-' ruleBody?)? '.' ;
+
+directive
+	: predicateName '(' '`' predicateName ')' '.'
+	| predicateName '[' ('`' predicateName)? ']' '=' (INTEGER | BOOLEAN | STRING) '.'
+	;
 
 predicate
-	: IDENTIFIER '(' variableList? ')'
-	| functionalHead '=' variable
+	: ('+' | '-')? predicateName ('@' LB_STAGE)? '(' parameterList? ')'
+	| ('+' | '-' | '^')? functionalHead '=' parameter
 	| primitiveType
 	;
 
@@ -26,11 +33,16 @@ ruleBody
 
 
 functionalHead
-	: IDENTIFIER '[' variableList? ']' ;
+	: predicateName '[' parameterList? ']' ;
+
+refmode
+	: predicateName '(' IDENTIFIER ':' IDENTIFIER ')' ;
 
 primitiveType
-	: ( 'int'   '[' ('32' | '64') ']' 
-	  | 'float' '[' ('32' | '64') ']'
+	: ( 'int' ('[' ('32' | '64') ']')?
+	  | 'uint' ('[' ('32' | '64') ']')?
+	  | 'float' ('[' ('32' | '64') ']')?
+	  | 'decimal' ('[' ('64' | '128') ']')?
 	  | 'boolean'
 	  | 'string'
 	  ) '(' IDENTIFIER ')'
@@ -42,8 +54,10 @@ comparison
 	;
 
 expr
-	: expr ARITHMETIC_OP expr
+	: expr ('+' | '-' | '*' | '/') expr
 	| INTEGER
+	| REAL
+	| BOOLEAN
 	| STRING
 	| IDENTIFIER
 	| functionalHead
@@ -55,35 +69,63 @@ predicateList
 	| predicateList ',' predicate
 	;
 
-variable
+predicateName
+	: IDENTIFIER
+	| predicateName ':' IDENTIFIER
+	;
+
+parameter
 	: IDENTIFIER
 	| INTEGER
+	| REAL
+	| BOOLEAN
 	| STRING
 	;
 
-variableList
-	: variable
-	| variableList ',' variable
+parameterList
+	: parameter
+	| parameterList ',' parameter
 	;
 
 
 
 // Lexer
 
+LB_STAGE
+	: 'init'
+	| 'initial'
+	| 'prev'
+	| 'previous'
+	;
+
 COMPARISON_OP__NOT_EQ
 	: '<' | '<=' | '>' | '>=' | '!=' ;
 
-ARITHMETIC_OP
-	: '+' | '-' | '*' | '/' ;
+//ARITHMETIC_OP
+//	: '+' | '-' | '*' | '/' ;
 
 INTEGER
 	: [0-9]+ ;
+
+fragment
+EXPONENT
+	: [eE][-+]?INTEGER ;
+
+REAL
+	: INTEGER EXPONENT
+	| INTEGER EXPONENT? [fF]
+	| (INTEGER)? '.' INTEGER EXPONENT? [fF]?
+	;
+
+BOOLEAN
+	: 'true' | 'false' ;
 
 STRING
 	: '"' ~["]* '"' ; 
 
 IDENTIFIER
-	: '?'? [a-zA-Z_][a-zA-Z0-9_:]* ;
+	: [?]?[a-zA-Z_][a-zA-Z_0-9]* ;
+
 
 LINE_COMMENT
 	: '//' ~[\r\n]* -> skip ;

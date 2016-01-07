@@ -35,4 +35,8 @@ test7(?x) <- (foo(?x, ?y), test1(?y)) ; bar(?x).
 //test8:B(?x) <- test4(test5[?x]).
 
 baz(x) -> float[32](x).
-test9(x) <- baz(x), x > 10.5.
+test9(x) <- baz(x), x > 10.5 .
+test9(x) <- baz(x), x > .5.
+test9(x) <- baz(x), x > 10f.
+test9(x) <- baz(x), x > 0.6F.
+test9(x) <- baz(x), x > 10e2.
