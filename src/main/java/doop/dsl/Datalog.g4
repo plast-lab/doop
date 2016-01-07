@@ -62,6 +62,7 @@ primitiveConstant
 
 parameter
 	: IDENTIFIER
+	| functionalHead
 	| primitiveConstant
 	;
 
@@ -72,7 +73,6 @@ expr
 	: expr ('+' | '-' | '*' | '/') expr
 	| '(' expr ')'
 	| parameter
-	| functionalHead
 	;
 
 predicateList
