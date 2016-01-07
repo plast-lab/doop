@@ -1,4 +1,4 @@
-foo(x,y)
-____f:oo(?xy)
-bar[xasd, y] = ?value
-f:oo:bar[] = x
+foo(x,y).
+____f:oo(?xy).
+bar[xasd, y] = ?value.
+f:oo:bar[] = x.
