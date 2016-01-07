@@ -13,12 +13,12 @@ rule_
 
 directive
 	: predicateName '(' '`' predicateName ')' '.'
-	| predicateName '[' ('`' predicateName)? ']' '=' (INTEGER | BOOLEAN | STRING) '.'
+	| predicateName '[' ('`' predicateName)? ']' '=' primitiveConstant '.'
 	;
 
 predicate
-	: ('+' | '-')? predicateName ('@' LB_STAGE)? '(' parameterList? ')'
-	| ('+' | '-' | '^')? functionalHead '=' parameter
+	: (ADD | RM)? predicateName ('@' LB_STAGE)? '(' parameterList? ')'
+	| (ADD | RM | UP)? functionalHead '=' parameter
 	| primitiveType
 	;
 
@@ -32,11 +32,16 @@ ruleBody
 	;
 
 
+refmode
+	: predicateName '(' IDENTIFIER ':' IDENTIFIER ')' ;
+
 functionalHead
 	: predicateName '[' parameterList? ']' ;
 
-refmode
-	: predicateName '(' IDENTIFIER ':' IDENTIFIER ')' ;
+predicateName
+	: IDENTIFIER
+	| predicateName ':' IDENTIFIER
+	;
 
 primitiveType
 	: ( 'int' ('[' ('32' | '64') ']')?
@@ -48,38 +53,31 @@ primitiveType
 	  ) '(' IDENTIFIER ')'
 	;
 
-comparison
-	: expr COMPARISON_OP__NOT_EQ expr
-	| expr '=' expr
+primitiveConstant
+	: INTEGER
+	| FLOAT
+	| BOOLEAN
+	| STRING
 	;
+
+parameter
+	: IDENTIFIER
+	| primitiveConstant
+	;
+
+comparison
+	: expr ('=' | '<' | '<=' | '>' | '>=' | '!=') expr ;
 
 expr
 	: expr ('+' | '-' | '*' | '/') expr
-	| INTEGER
-	| REAL
-	| BOOLEAN
-	| STRING
-	| IDENTIFIER
-	| functionalHead
 	| '(' expr ')'
+	| parameter
+	| functionalHead
 	;
 
 predicateList
 	: predicate
 	| predicateList ',' predicate
-	;
-
-predicateName
-	: IDENTIFIER
-	| predicateName ':' IDENTIFIER
-	;
-
-parameter
-	: IDENTIFIER
-	| INTEGER
-	| REAL
-	| BOOLEAN
-	| STRING
 	;
 
 parameterList
@@ -98,11 +96,12 @@ LB_STAGE
 	| 'previous'
 	;
 
-COMPARISON_OP__NOT_EQ
-	: '<' | '<=' | '>' | '>=' | '!=' ;
-
-//ARITHMETIC_OP
-//	: '+' | '-' | '*' | '/' ;
+ADD
+	: '+' ;
+RM
+	: '-' ;
+UP
+	: '^' ;
 
 INTEGER
 	: [0-9]+ ;
@@ -111,7 +110,7 @@ fragment
 EXPONENT
 	: [eE][-+]?INTEGER ;
 
-REAL
+FLOAT
 	: INTEGER EXPONENT
 	| INTEGER EXPONENT? [fF]
 	| (INTEGER)? '.' INTEGER EXPONENT? [fF]?
