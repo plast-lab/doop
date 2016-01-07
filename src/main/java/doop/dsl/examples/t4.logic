@@ -11,3 +11,6 @@ foo("abc") <- .
 bar("abc").
 
 t(x), tref(x:s) -> string(s).
+t(1).
+t(07).
+t(0xFf).
