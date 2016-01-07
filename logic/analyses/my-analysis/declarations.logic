@@ -71,14 +71,6 @@ InstructionDefinesVar(?instruction, ?var) ->
 
 
 /**
- * Path exists between two instructions in the same method
- */
-IntraProceduralPath(?from, ?to) ->
-    Instruction(?from),
-    Instruction(?to).
-
-
-/**
  * REQUIRES SSA
  * Intra-procedural data dependencies
  */

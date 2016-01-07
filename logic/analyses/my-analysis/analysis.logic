@@ -80,12 +80,6 @@ InstructionDefinesVar(?instruction, ?var) <-
 IntraProceduralPath(?from, ?to) <-
     MaySuccessorModuloThrow(?to, ?from).
 
-// time to buy a faster pc
-/*
-IntraProceduralPath(?from, ?to) <-
-    IntraProceduralPath(?from, ?inter),
-    IntraProceduralPath(?inter, ?to).
-*/
 
 IntraProceduralDataDep(?from, ?to) <-
     InstructionDefinesVar(?from, ?var),
