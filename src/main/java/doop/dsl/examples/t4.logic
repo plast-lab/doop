@@ -3,6 +3,11 @@ bar(x), baz(y) <- foo(x,y).
 bar(x,y) <- foo(x,y), bar(z).
 baz(1) <- .
 foo(x) <- bar(x,y), fun[x] > y+10.
-foo(x) <-foo(x) ; bar(x,y).
+foo(x) <- foo(x) ; bar(x,y).
 bar(x) <- (foo(x), x > 10) ; (foo(x)), !bar(x).
 foo(x) <- bar(x), t = x + 10.
+
+foo("abc") <- .
+bar("abc").
+
+t(x), tref(x:s) -> string(s).

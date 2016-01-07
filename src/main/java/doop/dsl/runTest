@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ "$#" = 0 ] ; then set -- " " ; fi
+
+while (( "$#" )); do
+	out="$(cat $1 | java org.antlr.v4.gui.TestRig Datalog program 2>&1)"
+
+	echo '--------------------'
+	if [ "X$out" = 'X' ] ; then
+		echo $'\e[33m'"$1 "$'\e[0;32mOK\e[0m'
+	else
+		echo "$out"
+		echo $'\e[33m'"$1 "$'\e[0;31mFAIL\e[0m'
+	fi
+
+	shift
+done

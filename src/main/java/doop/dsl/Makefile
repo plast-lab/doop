@@ -5,20 +5,24 @@ tokGen  := .tokens Lexer.tokens
 tokGen  := $(tokGen:%=$(grammar)%)
 javaSrc := Main.java DSLListener.java
 classes := $(javaSrc:%.java=%.class)
+tests   := t1 t2 t3 t4 t5 sample
+tests   := $(tests:%=examples/%.logic)
 
 .PHONY: all run clean
 
-all: $(javaGen) $(tokGen) $(classes)
+all: build
+	
+build: $(javaGen) $(tokGen) $(classes)
 
 $(javaGen) $(tokGen): $(grammar).g4 
 	java org.antlr.v4.Tool $<
 	javac $(javaGen)
 
 $(classes): $(javaSrc)
-	javac $?
+#	javac $?
 
-run:
-	java org.antlr.v4.gui.TestRig LogiQL program -tree
+run: build
+	@runTest $(tests)
 
 clean:
 	rm -rf $(javaGen) *.class *.tokens
