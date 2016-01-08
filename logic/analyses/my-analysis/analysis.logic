@@ -77,8 +77,31 @@ InstructionDefinesVar(?instruction, ?var) <-
     AssignInstruction:To[?instruction] = ?var.
 
 
-IntraProceduralPath(?from, ?to) <-
-    MaySuccessorModuloThrow(?to, ?from).
+PostDominates(?dominator, ?insn) <-
+    SameMethodBBHeads(?dominator, ?insn),
+    !DoesNotPostDominate(?dominator, ?insn).
+
+
+CFGLeaf(?headInsn, ?method) <-
+    Throw(?insn, _),
+    BasicBlockHead[?insn] = ?headInsn,
+    Instruction:Method[?headInsn] = ?method.
+
+CFGLeaf(?headInsn, ?method) <-
+    ReturnInstruction(?insn),
+    BasicBlockHead[?insn] = ?headInsn,
+    Instruction:Method[?headInsn] = ?method.
+
+
+DoesNotPostDominate(?postDomCandidate, ?insn) <-
+    BBHeadInMethod(?postDomCandidate, ?method),
+    CFGLeaf(?insn, ?method),
+    ?postDomCandidate != ?insn.
+
+DoesNotPostDominate(?postDomCandidate, ?insn) <-
+    DoesNotPostDominate(?postDomCandidate, ?otherInsn),
+    MayPredecessorBBModuloThrow(?insn, ?otherInsn),
+    ?insn != ?postDomCandidate.
 
 
 IntraProceduralDataDep(?from, ?to) <-
