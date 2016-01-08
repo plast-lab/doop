@@ -102,3 +102,11 @@ IntraProceduralDataDep(?from, ?to) ->
 IntraProceduralControlDep(?fromBlock, ?to) ->
     Instruction(?fromBlock),
     Instruction(?to).
+
+/**
+ * All kinds of intra-procedural dependence - transitively closed
+ */
+
+IntraProceduralDependency(?from, ?to) ->
+    Instruction(?from),
+    Instruction(?to).
