@@ -70,6 +70,18 @@ InstructionDefinesVar(?instruction, ?var) ->
     Var(?var).
 
 
+PostDominates(?dominator, ?insn) ->
+    Instruction(?dominator),
+    Instruction(?insn).
+
+CFGLeaf(?headInsn, ?method) ->
+    Instruction(?headInsn),
+    MethodSignature(?method).
+
+DoesNotPostDominate(?postDomCandidate, ?insn) ->
+    Instruction(?postDomCandidate),
+    Instruction(?insn).
+
 /**
  * REQUIRES SSA
  * Intra-procedural data dependencies
