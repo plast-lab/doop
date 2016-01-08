@@ -140,9 +140,9 @@ IntraProceduralDependency(?from, ?to) <-
     BasicBlockHead[?from] = ?fromBlockStart.
 
 /**
- * Transitive closure
+ * Transitive closure - becomes unreasonably large
  */
-IntraProceduralDependency(?from, ?to) <-
-    IntraProceduralDependency(?from, ?inter),
-    IntraProceduralDependency(?inter, ?to).
+//IntraProceduralDependency(?from, ?to) <-
+//    IntraProceduralDependency(?from, ?inter),
+//    IntraProceduralDependency(?inter, ?to).
 // TODO: add load/store data deps
