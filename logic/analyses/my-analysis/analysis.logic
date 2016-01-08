@@ -132,12 +132,14 @@ IntraProceduralControlDep(?fromBlock, ?to) <-
     IntraProceduralControlDep(?interm, ?to).
 
 
+/*
 IntraProceduralDependency(?from, ?to) <-
     IntraProceduralDataDep(?from, ?to).
 
 IntraProceduralDependency(?from, ?to) <-
     IntraProceduralControlDep(?fromBlock, ?to),
     BasicBlockHead[?from] = ?fromBlockStart.
+*/
 
 /**
  * Transitive closure - becomes unreasonably large
@@ -145,4 +147,5 @@ IntraProceduralDependency(?from, ?to) <-
 //IntraProceduralDependency(?from, ?to) <-
 //    IntraProceduralDependency(?from, ?inter),
 //    IntraProceduralDependency(?inter, ?to).
-// TODO: add load/store data deps
+
+// TODO: add load/store data deps, check if control dependency on own instruction works
