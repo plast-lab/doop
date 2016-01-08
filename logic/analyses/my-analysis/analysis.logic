@@ -73,6 +73,7 @@ InstructionUsesVar(?instruction, ?var) <-
     Throw:Var[?instruction] = ?var.
 
 // TODO: should add support for AssignHeapAllocation and AssignReturnValue?
+// doesn't seem to cover all cases?
 InstructionDefinesVar(?instruction, ?var) <-
     AssignInstruction:To[?instruction] = ?var.
 
@@ -107,7 +108,6 @@ DoesNotPostDominate(?postDomCandidate, ?insn) <-
 IntraProceduralDataDep(?from, ?to) <-
     InstructionDefinesVar(?from, ?var),
     InstructionUsesVar(?to, ?var).
-    //IntraProceduralPath(?from, ?to).
 
 
 /**
@@ -131,4 +131,18 @@ IntraProceduralControlDep(?fromBlock, ?to) <-
     !PostDominates(?fromBlock, ?toBlockStart),
     IntraProceduralControlDep(?interm, ?to).
 
-// TODO: check control deps, add load/store data deps, add total dependence (transitively closed)
+
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralDataDep(?from, ?to).
+
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralControlDep(?fromBlock, ?to),
+    BasicBlockHead[?from] = ?fromBlockStart.
+
+/**
+ * Transitive closure
+ */
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralDependency(?from, ?inter),
+    IntraProceduralDependency(?inter, ?to).
+// TODO: add load/store data deps
