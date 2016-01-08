@@ -96,7 +96,7 @@ IntraProceduralDataDep(?from, ?to) ->
 
 
 /**
- * Instruction depends on instruction
+ * Basic block depends on instruction
  */
 
 IntraProceduralControlDep(?fromBlock, ?to) ->
