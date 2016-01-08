@@ -9,7 +9,9 @@ declaration
 	;
 
 rule_
-	: predicateList ('<-' ruleBody?)? '.' ;
+	: predicateList ('<-' ruleBody?)? '.'
+	| predicate '<-' aggregation ruleBody '.'
+	;
 
 directive
 	: predicateName '(' '`' predicateName ')' '.'
@@ -31,6 +33,8 @@ ruleBody
 	| '!' ruleBody
 	;
 
+aggregation
+	: 'agg' '<<' IDENTIFIER '=' predicate '>>' ;
 
 refmode
 	: predicateName '(' IDENTIFIER ':' IDENTIFIER ')' ;
