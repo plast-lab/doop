@@ -5,7 +5,7 @@ tokGen  := .tokens Lexer.tokens
 tokGen  := $(tokGen:%=$(grammar)%)
 javaSrc := Main.java DSLListener.java
 classes := $(javaSrc:%.java=%.class)
-tests   := t1 t2 t3 t4 t5 sample
+tests   := t1 t2 t3 t4 t5 t6 sample
 tests   := $(tests:%=examples/%.logic)
 
 .PHONY: all run clean
