@@ -109,4 +109,17 @@ IntraProceduralDataDep(?from, ?to) <-
     InstructionUsesVar(?to, ?var).
     //IntraProceduralPath(?from, ?to).
 
-// TODO: add control deps, add load/store data deps
+
+IntraProceduralControlDep(?fromBlock, ?to) <-
+    BasicBlockBegin(?fromBlock),
+    MaySuccessorModuloThrow(?fromBlock, ?to),
+    BasicBlockHead[?to] = ?toBlockStart,
+    !PostDominates(?fromBlock, ?toBlockStart).    
+    
+IntraProceduralControlDep(?fromBlock, ?to) <-
+    PostDominates(?fromBlock, ?interm),
+    BasicBlockHead[?to] = ?toBlockStart,
+    !PostDominates(?fromBlock, ?toBlockStart),
+    IntraProceduralControlDep(?interm, ?to).
+
+// TODO: check control deps, add load/store data deps, add total dependence (transitively closed)

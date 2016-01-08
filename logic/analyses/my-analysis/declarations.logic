@@ -70,6 +70,9 @@ InstructionDefinesVar(?instruction, ?var) ->
     Var(?var).
 
 
+/**
+ * Pretty much the inverse of the Dominates etc predicates from the cfg-analysis addon
+ */
 PostDominates(?dominator, ?insn) ->
     Instruction(?dominator),
     Instruction(?insn).
@@ -89,4 +92,13 @@ DoesNotPostDominate(?postDomCandidate, ?insn) ->
 
 IntraProceduralDataDep(?from, ?to) ->
     Instruction(?from),
+    Instruction(?to).
+
+
+/**
+ * Instruction depends on instruction
+ */
+
+IntraProceduralControlDep(?fromBlock, ?to) ->
+    Instruction(?fromBlock),
     Instruction(?to).
