@@ -1,12 +1,19 @@
 grammar Datalog;
 
+@header {
+//package doop.dsl;
+} 
+
 program
-	: (declaration | rule_ | directive)* ;
+	: (declaration | constraint | rule_ | directive)* ;
 
 declaration
 	: predicate '->' predicateList? '.'
 	| predicateName '(' IDENTIFIER ')' ',' refmode '->' primitiveType '.'
 	;
+
+constraint
+	: ruleBody '->' ruleBody '.' ;
 
 rule_
 	: predicateList ('<-' ruleBody?)? '.'
@@ -21,6 +28,7 @@ directive
 predicate
 	: (ADD | RM)? predicateName ('@' LB_STAGE)? '(' parameterList? ')'
 	| (ADD | RM | UP)? functionalHead '=' parameter
+	| (ADD | RM)? refmode
 	| primitiveType
 	;
 
@@ -37,17 +45,19 @@ aggregation
 	: 'agg' '<<' IDENTIFIER '=' predicate '>>' ;
 
 refmode
-	: predicateName '(' IDENTIFIER ':' IDENTIFIER ')' ;
+	: predicateName ('@' LB_STAGE)? '(' IDENTIFIER ':' parameter ')' ;
 
 functionalHead
-	: predicateName '[' parameterList? ']' ;
+	: predicateName ('@' LB_STAGE)? '[' parameterList? ']' ;
 
 predicateName
-	: IDENTIFIER
+	: '$'? IDENTIFIER
 	| predicateName ':' IDENTIFIER
 	;
 
 primitiveType
+	: IDENTIFIER CAPACITY? '(' IDENTIFIER ')' ;
+/*
 	: ( 'int' ('[' ('32' | '64') ']')?
 	  | 'uint' ('[' ('32' | '64') ']')?
 	  | 'float' ('[' ('32' | '64') ']')?
@@ -56,6 +66,7 @@ primitiveType
 	  | 'string'
 	  ) '(' IDENTIFIER ')'
 	;
+*/
 
 primitiveConstant
 	: INTEGER
@@ -68,6 +79,7 @@ parameter
 	: IDENTIFIER
 	| functionalHead
 	| primitiveConstant
+	| expr
 	;
 
 comparison
@@ -76,7 +88,9 @@ comparison
 expr
 	: expr ('+' | '-' | '*' | '/') expr
 	| '(' expr ')'
-	| parameter
+	| IDENTIFIER
+	| functionalHead
+	| primitiveConstant
 	;
 
 predicateList
@@ -99,6 +113,9 @@ LB_STAGE
 	| 'prev'
 	| 'previous'
 	;
+
+CAPACITY
+	: '[' ('32' | '64' | '128') ']' ;
 
 ADD
 	: '+' ;

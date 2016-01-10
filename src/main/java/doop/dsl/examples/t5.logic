@@ -4,6 +4,7 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
 t1(x) <- t2@previous(x).
 t2(x) <- t3 @ init(x).
+t2(x) <- t3@init[x] = _.
 +t3() <- t1(x).
 ^t4[] = x <- t5(x).
 
