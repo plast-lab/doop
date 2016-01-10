@@ -33,14 +33,14 @@ tests   += $(facts) $(cfg) $(scc) $(aux) $(tami) $(transf) $(misc) $(analyses)
 
 all: build
 	
-build: $(javaGen) $(tokGen) #$(classes)
+build: $(javaGen) $(tokGen) $(classes)
 
 $(javaGen) $(tokGen): $(grammar).g4 
 	java org.antlr.v4.Tool $<
 	javac $(javaGen)
 
-#$(classes): $(javaSrc)
-#	javac $?
+$(classes): $(javaSrc)
+	javac $?
 
 run: build
 	@runTest $(tests)
