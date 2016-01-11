@@ -26,7 +26,6 @@ public class Main {
     private static String _outputDir = null;
     private static String _main = null;
     private static boolean _ssa = false;
-    private static boolean _trap = false;
     private static boolean _allowPhantom = false;
     private static boolean _useOriginalNames = false;
     private static boolean _keepLineNumber = false;
@@ -104,9 +103,6 @@ public class Main {
                         }
                     }
                 }
-                else if(args[i].equals("-trap")) {
-                    _trap = true;
-                }
                 else if(args[i].equals("-application-regex")) {
                     i = shift(args, i);
                     appRegex = args[i];
@@ -133,7 +129,6 @@ public class Main {
                     System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
                     System.err.println("  -lsystem                              Find classes in default system classes.");
                     System.err.println("  -deps <directory>                     Add jars in this directory to the class lookup path");
-                    System.err.println("  -trap                                 Generate TRAP files rather than CSV files");
                     System.err.println("  -use-original-names                   Use original (source code) local variable names");
                     System.err.println("  -only-application-classes-fact-gen    Generate facts only for application classes");
                     System.err.println("  -keep-line-number                     Keep line number information for statements");
@@ -263,11 +258,7 @@ public class Main {
                 c.setApplicationClass();
         }
 
-        Database db;
-        if(_trap)
-            db = new TRAPDatabase(new File(_outputDir));
-        else
-            db = new CSVDatabase(new File(_outputDir));
+        Database db = new CSVDatabase(new File(_outputDir));
         FactWriter writer = new FactWriter(db);
         FactGenerator generator = new FactGenerator(writer, _ssa);
 
