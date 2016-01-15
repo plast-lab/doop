@@ -288,7 +288,7 @@ public class Main {
 
         db.flush();
 
-        long _timeBeforeClassesLoop = System.currentTimeMillis();
+        long tStart = System.currentTimeMillis();
 
         for(SootClass c : classes) {
             generator.generate(c);
@@ -299,12 +299,8 @@ public class Main {
 
         long tEnd = System.currentTimeMillis();
 
-        double classLoopTime = ((tEnd - _timeBeforeClassesLoop) / 1000.0);
-        double methodLoopTime = ((tEnd - generator._timeBeforeMethodsLoop) / 1000.0);
-
         System.out.println("Finished all method generator threads");
-        System.out.println("\nforall SootClasses time " + classLoopTime + " seconds.");
-        System.out.println("forall SootMethods (generate) time " + methodLoopTime + " seconds.");
+        System.out.println("\nforall SootClasses time " + (tEnd - tStart) / 1000.0 + " seconds.");
 
         db.close();
     }

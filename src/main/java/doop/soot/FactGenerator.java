@@ -26,14 +26,12 @@ public class FactGenerator
 {
     protected FactWriter _writer;
     protected boolean _ssa;
-    public long _timeBeforeMethodsLoop;
     private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
         _ssa = ssa;
-        _timeBeforeMethodsLoop = 0;
     }
 
     public ExecutorService getMethodGeneratorExecutor() {
@@ -59,8 +57,6 @@ public class FactGenerator
         {
             generate(f);
         }
-
-        _timeBeforeMethodsLoop = System.currentTimeMillis();
 
         Runnable classGenerator = new ClassGenerator(_writer, _ssa, c);
         _classGeneratorExecutor.execute(classGenerator);
