@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
+import java.util.ArrayList;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -26,12 +26,16 @@ public class FactGenerator
 {
     protected FactWriter _writer;
     protected boolean _ssa;
-    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(8, 16, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private int classCounter = 0;
+    private ArrayList<SootClass> classesToGenerate; 
+    
 
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
         _ssa = ssa;
+        classesToGenerate = new ArrayList<>();
     }
 
     public ExecutorService getMethodGeneratorExecutor() {
@@ -41,9 +45,16 @@ public class FactGenerator
     public void generate(SootClass c)
     {
 
-
-        Runnable classGenerator = new ClassGenerator(_writer, _ssa, c);
-        _classGeneratorExecutor.execute(classGenerator);
+        if (classCounter < 2) {
+            classesToGenerate.add(c);
+            classCounter++;
+        }
+        else {
+            Runnable classGenerator = new ClassGenerator(_writer, _ssa, classesToGenerate);
+            _classGeneratorExecutor.execute(classGenerator);
+            classCounter = 0;
+            classesToGenerate = new ArrayList<>();
+        }
 
     }
 
