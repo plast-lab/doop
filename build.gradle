@@ -23,6 +23,7 @@ repositories {
 
 def sootClassesJar = file('lib/sootclasses-2.5.0.jar')
 def jphantomJar = file('lib/jphantom-1.1-jar-with-dependencies.jar')
+def antlrJar = file('lib/antlr-4.5.1-complete.jar')
 
 dependencies {
     compile "org.codehaus.groovy:groovy-all:2.3.10",            // Groovy
@@ -35,6 +36,7 @@ dependencies {
             "org.ow2.asm:asm-debug-all:5.0.3"                   // Java Bytecode library
 
     compile files(sootClassesJar)                               // Soot is a compile time dependency
+    compile files(antlrJar)                                     // Antlr is also a compile time dependency
 
     runtime files(jphantomJar, 'lib/averroes-no-properties.jar')
 }
