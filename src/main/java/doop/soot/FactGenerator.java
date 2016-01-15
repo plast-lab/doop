@@ -2,16 +2,13 @@ package doop.soot;
 
 import soot.*;
 import soot.jimple.*;
-import soot.jimple.toolkits.thread.mhp.SynchObliviousMhpAnalysis;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.ArrayList;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -27,34 +24,22 @@ public class FactGenerator
     protected FactWriter _writer;
     protected boolean _ssa;
     private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(8, 16, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-    private int _classCounter = 0;
-    private ArrayList<SootClass> _classesToGenerate;
-    
+
 
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
         _ssa = ssa;
-        _classesToGenerate = new ArrayList<SootClass>();
     }
 
     public ExecutorService getMethodGeneratorExecutor() {
         return _classGeneratorExecutor;
     }
 
-    public void generate(SootClass c)
-    {
+    public void generate(SootClass c) {
 
-        if (_classCounter < 2) {
-            _classesToGenerate.add(c);
-            _classCounter++;
-        }
-        else {
-            Runnable classGenerator = new ClassGenerator(_writer, _ssa, _classesToGenerate);
-            _classGeneratorExecutor.execute(classGenerator);
-            _classCounter = 0;
-            _classesToGenerate = new ArrayList<SootClass>();
-        }
+        Runnable classGenerator = new ClassGenerator(_writer, _ssa, c);
+        _classGeneratorExecutor.execute(classGenerator);
 
     }
 

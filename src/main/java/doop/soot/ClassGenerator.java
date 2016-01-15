@@ -4,7 +4,6 @@ import soot.*;
 import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-import java.util.ArrayList;
 /**
  * Created by jimouris on 12/22/15.
  */
@@ -13,48 +12,46 @@ public class ClassGenerator implements Runnable {
 
     protected FactWriter _writer;
     protected boolean _ssa;
-    ArrayList<SootClass> _classesToGenerate;
+    private SootClass _sootClass;
 
-    public ClassGenerator(FactWriter writer, boolean ssa, ArrayList<SootClass> classesToGenerate)
+    public ClassGenerator(FactWriter writer, boolean ssa, SootClass sootClass)
     {
         this._writer = writer;
         this._ssa = ssa;
-        this._classesToGenerate = classesToGenerate;
+        this._sootClass = sootClass;
     }
 
     @Override
     public void run() {
 
-        for (SootClass _sootClass : this._classesToGenerate) {
-            _writer.writeClassOrInterfaceType(_sootClass);
+        _writer.writeClassOrInterfaceType(_sootClass);
 
-            // the isInterface condition prevents Object as superclass of interface
-            if(_sootClass.hasSuperclass() && !_sootClass.isInterface())
-                {
-                    _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
-                }
+        // the isInterface condition prevents Object as superclass of interface
+        if(_sootClass.hasSuperclass() && !_sootClass.isInterface())
+        {
+            _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
+        }
 
-            for(SootClass i : _sootClass.getInterfaces())
-                {
-                    _writer.writeDirectSuperinterface(_sootClass, i);
-                }
+        for(SootClass i : _sootClass.getInterfaces())
+        {
+            _writer.writeDirectSuperinterface(_sootClass, i);
+        }
 
-            for(SootField f : _sootClass.getFields())
-                {
-                    generate(f);
-                }
+        for(SootField f : _sootClass.getFields())
+        {
+            generate(f);
+        }
 
-            for(SootMethod m : _sootClass.getMethods())
-                {
-                    Session session = new Session();
+        for(SootMethod m : _sootClass.getMethods())
+        {
+            Session session = new Session();
 
-                    try {
-                        generate(m, session); // try multithread this
-                    } catch (RuntimeException exc) {
-                        System.err.println("Error while processing method: " + m);
-                        throw exc;
-                    }
-                }
+            try {
+                generate(m, session); // try multithread this
+            } catch (RuntimeException exc) {
+                System.err.println("Error while processing method: " + m);
+                throw exc;
+            }
         }
     }
 
