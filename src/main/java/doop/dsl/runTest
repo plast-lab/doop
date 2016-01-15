@@ -2,8 +2,11 @@
 
 if [ "$#" = 0 ] ; then set -- " " ; fi
 
+src=$(pwd)
+cd ../../
+
 while (( "$#" )); do
-	out="$(cat $1 | java org.antlr.v4.gui.TestRig Datalog program 2>&1)"
+	out="$(cat $src/$1 | java org.antlr.v4.gui.TestRig doop.dsl.Datalog program 2>&1)"
 
 	echo '--------------------'
 	if [ "X$out" = 'X' ] ; then
