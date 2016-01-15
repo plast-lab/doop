@@ -2,16 +2,16 @@
 #include "../../addons/cfg-analysis/rules.logic"
 
 
-CallGraphMethodEdge(?fromMethod, ?toMethod) <-
+CallGraphMethodEdge(?toMethod, ?fromMethod) <-
     Instruction:Method(?invokeInsn, ?fromMethod),
     CallGraphEdge(_, ?invokeInsn, _, ?toMethod).
 
 CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
-    CallGraphMethodEdge(?fromMethod, ?toMethod).
+    CallGraphMethodEdge(?toMethod, ?fromMethod).
 
 CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
     CallGraphMethodTransitive(?fromMethod, ?inter),
-    CallGraphMethodEdge(?inter, ?toMethod).
+    CallGraphMethodEdge(?toMethod, ?inter).
 
 
 
@@ -132,20 +132,21 @@ IntraProceduralControlDep(?fromBlock, ?to) <-
     IntraProceduralControlDep(?interm, ?to).
 
 
-/*
-IntraProceduralDependency(?from, ?to) <-
+IntraProceduralDependencyBase(?to, ?from) <-
     IntraProceduralDataDep(?from, ?to).
 
-IntraProceduralDependency(?from, ?to) <-
+IntraProceduralDependencyBase(?to, ?from) <-
     IntraProceduralControlDep(?fromBlock, ?to),
-    BasicBlockHead[?from] = ?fromBlockStart.
-*/
+    BasicBlockHead[?from] = ?fromBlock.
 
 /**
- * Transitive closure - becomes unreasonably large
+ * Transitive closure
  */
-//IntraProceduralDependency(?from, ?to) <-
-//    IntraProceduralDependency(?from, ?inter),
-//    IntraProceduralDependency(?inter, ?to).
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralDependencyBase(?to, ?from).
+
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralDependency(?from, ?inter),
+    IntraProceduralDependencyBase(?to, ?inter).
 
 // TODO: add load/store data deps, check if control dependency on own instruction works
