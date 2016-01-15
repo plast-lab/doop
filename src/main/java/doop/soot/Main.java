@@ -290,17 +290,20 @@ public class Main {
 
         long tStart = System.currentTimeMillis();
 
-        int i = 0;
         ArrayList<SootClass> _sootClassArray = new ArrayList<>();
+
+        int i = 0;
         for(SootClass c : classes) {
             i++;
-            if (i < 10) {
+
+            if (i % 2 == 0) {
                 _sootClassArray.add(c);
             } else {
+                _sootClassArray.add(c);
                 generator.generate(_sootClassArray);
-                i = 0;
                 _sootClassArray = new ArrayList<>();
             }
+
         }
 
         generator.getMethodGeneratorExecutor().shutdown();
