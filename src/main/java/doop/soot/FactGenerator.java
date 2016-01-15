@@ -25,21 +25,30 @@ public class FactGenerator
     protected FactWriter _writer;
     protected boolean _ssa;
     private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(8, 16, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private int _classCounter;
+    private ArrayList<SootClass> _sootClassArray;
 
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
         _ssa = ssa;
+        _classCounter = 0;
+        _sootClassArray = new ArrayList<>();
     }
 
     public ExecutorService getMethodGeneratorExecutor() {
         return _classGeneratorExecutor;
     }
 
-    public void generate(ArrayList<SootClass> _sootClassArray) {
+    public void generate(SootClass _sootClass) {
+        _classCounter++;
+        _sootClassArray.add(_sootClass);
 
-        Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
-        _classGeneratorExecutor.execute(classGenerator);
+        if (_classCounter % 2 == 0) {
+            Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
+            _classGeneratorExecutor.execute(classGenerator);
+            _sootClassArray = new ArrayList<>();
+        }
 
     }
 
