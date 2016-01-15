@@ -13,19 +13,19 @@ public class ClassGenerator implements Runnable {
 
     protected FactWriter _writer;
     protected boolean _ssa;
-    ArrayList<SootClass> classesToGenerate;
+    ArrayList<SootClass> _classesToGenerate;
 
     public ClassGenerator(FactWriter writer, boolean ssa, ArrayList<SootClass> classesToGenerate)
     {
         this._writer = writer;
         this._ssa = ssa;
-        this.classesToGenerate = classesToGenerate;
+        this._classesToGenerate = classesToGenerate;
     }
 
     @Override
     public void run() {
 
-        for (SootClass _sootClass : this.classesToGenerate) {
+        for (SootClass _sootClass : this._classesToGenerate) {
             _writer.writeClassOrInterfaceType(_sootClass);
 
             // the isInterface condition prevents Object as superclass of interface
