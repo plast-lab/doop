@@ -40,23 +40,7 @@ public class FactGenerator
 
     public void generate(SootClass c)
     {
-        _writer.writeClassOrInterfaceType(c);
 
-        // the isInterface condition prevents Object as superclass of interface
-        if(c.hasSuperclass() && !c.isInterface())
-        {
-            _writer.writeDirectSuperclass(c, c.getSuperclass());
-        }
-
-        for(SootClass i : c.getInterfaces())
-        {
-            _writer.writeDirectSuperinterface(c, i);
-        }
-
-        for(SootField f : c.getFields())
-        {
-            generate(f);
-        }
 
         Runnable classGenerator = new ClassGenerator(_writer, _ssa, c);
         _classGeneratorExecutor.execute(classGenerator);

@@ -24,6 +24,25 @@ public class ClassGenerator implements Runnable {
 
     @Override
     public void run() {
+
+        _writer.writeClassOrInterfaceType(_sootClass);
+
+        // the isInterface condition prevents Object as superclass of interface
+        if(_sootClass.hasSuperclass() && !_sootClass.isInterface())
+        {
+            _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
+        }
+
+        for(SootClass i : _sootClass.getInterfaces())
+        {
+            _writer.writeDirectSuperinterface(_sootClass, i);
+        }
+
+        for(SootField f : _sootClass.getFields())
+        {
+            generate(f);
+        }
+
         for(SootMethod m : _sootClass.getMethods())
         {
             Session session = new Session();
@@ -36,6 +55,38 @@ public class ClassGenerator implements Runnable {
             }
         }
     }
+
+    public void generate(SootField f)
+    {
+        _writer.writeFieldSignature(f);
+
+        int modifiers = f.getModifiers();
+        if(Modifier.isAbstract(modifiers))
+            _writer.writeFieldModifier(f, "abstract");
+        if(Modifier.isFinal(modifiers))
+            _writer.writeFieldModifier(f, "final");
+        if(Modifier.isNative(modifiers))
+            _writer.writeFieldModifier(f, "native");
+        if(Modifier.isPrivate(modifiers))
+            _writer.writeFieldModifier(f, "private");
+        if(Modifier.isProtected(modifiers))
+            _writer.writeFieldModifier(f, "protected");
+        if(Modifier.isPublic(modifiers))
+            _writer.writeFieldModifier(f, "public");
+        if(Modifier.isStatic(modifiers))
+            _writer.writeFieldModifier(f, "static");
+        if(Modifier.isSynchronized(modifiers))
+            _writer.writeFieldModifier(f, "synchronized");
+        if(Modifier.isTransient(modifiers))
+            _writer.writeFieldModifier(f, "transient");
+        if(Modifier.isVolatile(modifiers))
+            _writer.writeFieldModifier(f, "volatile");
+        // TODO interface?
+        // TODO strictfp?
+        // TODO annotation?
+        // TODO enum?
+    }
+
 
     /* Check if a Type refers to a phantom class */
     private boolean phantomBased(Type t) {
