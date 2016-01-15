@@ -4,9 +4,9 @@
 /**
  * Caller - callee edges
  */
-CallGraphMethodEdge(?fromMethod, ?toMethod) ->
-    MethodSignature(?fromMethod),
-    MethodSignature(?toMethod).
+CallGraphMethodEdge(?toMethod, ?fromMethod) ->
+    MethodSignature(?toMethod),
+    MethodSignature(?fromMethod).
 
 /**
  * Transitive closure of the above
@@ -106,6 +106,9 @@ IntraProceduralControlDep(?fromBlock, ?to) ->
 /**
  * All kinds of intra-procedural dependence - transitively closed
  */
+IntraProceduralDependencyBase(?to, ?from) ->
+    Instruction(?from),
+    Instruction(?to).
 
 IntraProceduralDependency(?from, ?to) ->
     Instruction(?from),
