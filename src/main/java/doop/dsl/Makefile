@@ -1,9 +1,9 @@
 grammar := Datalog
 javaGen := BaseListener.java Lexer.java Listener.java Parser.java
-javaGen := $(javaGen:%=$(grammar)%)
+javaGen := $(abspath $(javaGen:%=$(grammar)%))
 tokGen  := .tokens Lexer.tokens
 tokGen  := $(tokGen:%=$(grammar)%)
-javaSrc := Main.java DSLListener.java
+javaSrc := $(abspath Main.java DSLListener.java)
 classes := $(javaSrc:%.java=%.class)
 tests   := t1 t2 t3 t4 t5 t6 sample
 tests   := $(tests:%=examples/%.logic)
@@ -37,10 +37,10 @@ build: $(javaGen) $(tokGen) $(classes)
 
 $(javaGen) $(tokGen): $(grammar).g4 
 	java org.antlr.v4.Tool $<
-	javac $(javaGen)
+	cd ../../ && javac $(javaGen)
 
 $(classes): $(javaSrc)
-	javac $?
+	cd ../../ && javac $?
 
 run: build
 	@runTest $(tests)
