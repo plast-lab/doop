@@ -5,6 +5,7 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -25,7 +26,6 @@ public class FactGenerator
     protected boolean _ssa;
     private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(8, 16, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
-
     public FactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
@@ -36,9 +36,9 @@ public class FactGenerator
         return _classGeneratorExecutor;
     }
 
-    public void generate(SootClass c) {
+    public void generate(ArrayList<SootClass> _sootClassArray) {
 
-        Runnable classGenerator = new ClassGenerator(_writer, _ssa, c);
+        Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
         _classGeneratorExecutor.execute(classGenerator);
 
     }
