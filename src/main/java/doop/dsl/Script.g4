@@ -1,7 +1,7 @@
-grammar DLScript;
+grammar Script;
 
 @header {
-package doop.dsl;
+//package doop.dsl;
 } 
 
 program
@@ -13,6 +13,7 @@ topLevelPrimitive
 	| carryStage
 	| finalize_
 	| deltaLogic
+	| defineCommand
 	;
 
 
@@ -30,7 +31,7 @@ stagePrimitive
 	;
 
 applyStage
-	: APPLY '{' stagePrimitive+ '}'
+	: APPLY stageBlock
 	| APPLY IDENTIFIER
 	;
 
@@ -42,6 +43,18 @@ finalize_
 
 deltaLogic
 	: DELTA IDENTIFIER ;
+
+defineCommand
+	: COMMAND IDENTIFIER commandBlock ;
+
+commandBlock
+	: '{' commandPrimitive+ '}' ;
+
+commandPrimitive
+	: EXPORT (IDENTIFIER (AS IDENTIFIER)?)?
+	| IMPORT (IDENTIFIER (AS IDENTIFIER)?)?
+	| CMD
+	;
 
 
 // Lexer
@@ -56,6 +69,8 @@ FINALIZE
 	: 'finalize' ;
 DELTA
 	: 'delta' ;
+COMMAND
+	: 'command' ;
 ECHO
 	: 'echo' ;
 LOGIC
@@ -64,10 +79,19 @@ START_TIME
 	: 'startTime' ;
 END_TIME
 	: 'endTime' ;
+EXPORT
+	: 'export' ;
+IMPORT
+	: 'import' ;
+AS
+	: 'as' ;
 
+
+CMD
+	: '`' ~[`]* '`' ;
 
 STRING
-	: '"' ~["]* '"' ; 
+	: '"' ~["]* '"' ;
 
 IDENTIFIER
 	: [a-zA-Z_\-0-9.]+ ;
