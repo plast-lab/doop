@@ -14,7 +14,7 @@ public class Main {
 						new DatalogLexer(
 							new ANTLRFileStream(args[0]))));
 
-			DSLListener listener = new DSLListener();
+			DatalogListenerImpl listener = new DatalogListenerImpl();
 
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program());
 

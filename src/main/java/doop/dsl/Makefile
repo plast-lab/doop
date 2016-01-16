@@ -3,7 +3,7 @@ javaGen := BaseListener.java Lexer.java Listener.java Parser.java
 javaGen := $(abspath $(javaGen:%=$(grammar)%))
 tokGen  := .tokens Lexer.tokens
 tokGen  := $(tokGen:%=$(grammar)%)
-javaSrc := $(abspath Main.java DSLListener.java)
+javaSrc := $(abspath Main.java DatalogListenerImpl.java)
 classes := $(javaSrc:%.java=%.class)
 tests   := t1 t2 t3 t4 t5 t6 sample
 tests   := $(tests:%=examples/%.logic)

@@ -4,7 +4,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-class DSLListener implements DatalogListener {
+class DatalogListenerImpl implements DatalogListener {
 	public void enterProgram(DatalogParser.ProgramContext ctx) {}
 	public void exitProgram(DatalogParser.ProgramContext ctx) {}
 	public void enterDeclaration(DatalogParser.DeclarationContext ctx) {
