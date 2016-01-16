@@ -26,7 +26,7 @@ directive
 	;
 
 predicate
-	: (ADD | RM)? predicateName ('@' LB_STAGE)? '(' parameterList? ')'
+	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? '(' parameterList? ')'
 	| (ADD | RM | UP)? functionalHead '=' parameter
 	| (ADD | RM)? refmode
 	| primitiveType
@@ -45,10 +45,10 @@ aggregation
 	: 'agg' '<<' IDENTIFIER '=' predicate '>>' ;
 
 refmode
-	: predicateName ('@' LB_STAGE)? '(' IDENTIFIER ':' parameter ')' ;
+	: predicateName ('@' AT_SUFFIX)? '(' IDENTIFIER ':' parameter ')' ;
 
 functionalHead
-	: predicateName ('@' LB_STAGE)? '[' parameterList? ']' ;
+	: predicateName ('@' AT_SUFFIX)? '[' parameterList? ']' ;
 
 predicateName
 	: '$'? IDENTIFIER
@@ -107,11 +107,12 @@ parameterList
 
 // Lexer
 
-LB_STAGE
+AT_SUFFIX
 	: 'init'
 	| 'initial'
 	| 'prev'
 	| 'previous'
+	| 'past'
 	;
 
 CAPACITY
