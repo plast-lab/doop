@@ -1,0 +1,18 @@
+stage Foo {
+	logic rules2.logic
+	echo "END"
+}
+
+apply {
+	echo "new stage"
+	startTime
+	logic rules1.logic
+	logic rules_after-B.logic
+	endTime
+}
+
+delta edit.logic
+
+apply Foo
+carry
+apply Foo
