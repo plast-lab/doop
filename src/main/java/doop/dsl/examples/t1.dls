@@ -11,8 +11,28 @@ apply {
 	endTime
 }
 
+command Bar {
+	export ABC
+	export XYZ as P1
+	export
+	export queries.logic
+
+	import ABC2 as P2
+	import KLM
+	import
+
+	`./foo -c 1 -d $out -f $P1 | ./bar -a -o $in`
+}
+
 delta edit.logic
 
 apply Foo
 carry
+
+apply Bar
+carry
+
 apply Foo
+carry
+
+finalize
