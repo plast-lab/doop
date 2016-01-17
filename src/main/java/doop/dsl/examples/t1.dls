@@ -12,11 +12,13 @@ apply {
 }
 
 command Bar {
+	out = ..dir2
 	export ABC
 	export XYZ as P1
 	export
 	export queries.logic
 
+	in = ..dir3
 	import ABC2 as P2
 	import KLM
 	import
