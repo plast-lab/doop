@@ -263,7 +263,7 @@ public class Main {
         else
             db = new CSVDatabase(new File(_outputDir));
         FactWriter writer = new FactWriter(db);
-        FactGenerator generator = new FactGenerator(writer, _ssa);
+        FactGenerator generator = new FactGenerator(writer, _ssa, classes.size());
 
         for(SootClass c : classes) {
             if (c.isApplicationClass())
