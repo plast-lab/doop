@@ -6,10 +6,16 @@ import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
 import java.util.ArrayList;
+<<<<<<< local
+import java.util.concurrent.ExecutorService;
+
+import static java.util.concurrent.Executors.newCachedThreadPool;
+=======
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+>>>>>>> other
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
