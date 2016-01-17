@@ -1,12 +1,13 @@
 #!/bin/bash
 
-if [ "$#" = 0 ] ; then set -- " " ; fi
+test "$#" = 0 && { echo "No arguments!" ; exit 1 ; }
 
 src=$(pwd)
 cd ../../
 
 while (( "$#" )); do
-	out="$(cat $src/$1 | java org.antlr.v4.gui.TestRig doop.dsl.Datalog program 2>&1)"
+	test ${1##*.} = 'logic' && grammar=Datalog || grammar=Script
+	out="$(cat $src/$1 | java org.antlr.v4.gui.TestRig doop.dsl.$grammar program 2>&1)"
 
 	echo '--------------------'
 	if [ "X$out" = 'X' ] ; then
