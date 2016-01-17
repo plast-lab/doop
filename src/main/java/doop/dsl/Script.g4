@@ -9,11 +9,11 @@ program
 
 topLevelPrimitive
 	: defineStage
+	| defineCommand
 	| applyStage
 	| carryStage
 	| finalize_
 	| deltaLogic
-	| defineCommand
 	;
 
 
@@ -27,22 +27,8 @@ stagePrimitive
 	: ECHO STRING
 	| START_TIME
 	| END_TIME
-	| LOGIC IDENTIFIER
+	| LOGIC filepath
 	;
-
-applyStage
-	: APPLY stageBlock
-	| APPLY IDENTIFIER
-	;
-
-carryStage
-	: CARRY ;
-
-finalize_
-	: FINALIZE ;
-
-deltaLogic
-	: DELTA IDENTIFIER ;
 
 defineCommand
 	: COMMAND IDENTIFIER commandBlock ;
@@ -54,7 +40,34 @@ commandPrimitive
 	: EXPORT (IDENTIFIER (AS IDENTIFIER)?)?
 	| IMPORT (IDENTIFIER (AS IDENTIFIER)?)?
 	| CMD
+	| defineVariable
 	;
+
+defineVariable
+	: IDENTIFIER '=' filepath
+	| IDENTIFIER '=' STRING
+	;
+
+applyStage
+	: APPLY stageBlock
+	| APPLY commandBlock
+	| APPLY IDENTIFIER
+	;
+
+carryStage
+	: CARRY ;
+
+finalize_
+	: FINALIZE ;
+
+deltaLogic
+	: DELTA filepath ;
+
+filepath
+	: IDENTIFIER
+	| COMPLEX_FILEPATH
+	;
+
 
 
 // Lexer
@@ -86,15 +99,21 @@ IMPORT
 AS
 	: 'as' ;
 
-
 CMD
 	: '`' ~[`]* '`' ;
 
 STRING
 	: '"' ~["]* '"' ;
 
-IDENTIFIER
+fragment
+IDENTIFIER_BASE
 	: [a-zA-Z_\-0-9.]+ ;
+
+IDENTIFIER
+	: IDENTIFIER_BASE ;
+
+COMPLEX_FILEPATH
+	: IDENTIFIER_BASE ('/' IDENTIFIER_BASE)+ '/'? ;
 
 
 LINE_COMMENT
