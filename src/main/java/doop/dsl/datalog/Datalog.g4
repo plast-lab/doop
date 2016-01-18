@@ -1,7 +1,7 @@
 grammar Datalog;
 
 @header {
-package doop.dsl;
+package doop.dsl.datalog;
 } 
 
 program
