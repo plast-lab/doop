@@ -1,15 +1,8 @@
 package doop.soot;
 
-import soot.ArrayType;
-import soot.Local;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-import soot.Type;
-import soot.Unit;
-import soot.Value;
+import soot.*;
 import soot.jimple.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +39,7 @@ public class Representation
     return "<class " + type(t) + ">";
   }
 
-  public String signature(SootMethod m)
+  public synchronized String signature(SootMethod m)
   {
     String result = _methodSigRepr.get(m);
 
@@ -130,7 +123,7 @@ public class Representation
     return s + "/intermediate/" +  session.nextNumber(s);
   }
 
-  public String handler(SootMethod m, Trap trap, Session session)
+  public synchronized String handler(SootMethod m, Trap trap, Session session)
   {
     String result = _trapRepr.get(trap);
 
@@ -160,7 +153,7 @@ public class Representation
    * If there is only one method with the name of m, then returns a
    * compact name. Otherwise, the signature is returned.
    */
-  public String compactMethod(SootMethod m)
+  public synchronized String compactMethod(SootMethod m)
   {
     String result = _methodRepr.get(m);
 
