@@ -24,7 +24,7 @@ public class FactGenerator
 {
     protected FactWriter _writer;
     protected boolean _ssa;
-    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(16, 32, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(4, 8, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     private int _classCounter;
     private ArrayList<SootClass> _sootClassArray;
     private int _totalClasses;
