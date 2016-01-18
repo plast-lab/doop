@@ -1,4 +1,4 @@
-package doop.dsl;
+package doop.dsl.datalog;
 
 import java.io.IOException;
 import org.antlr.v4.runtime.ANTLRFileStream;
