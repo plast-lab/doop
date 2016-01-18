@@ -140,23 +140,23 @@ class Main {
 
             int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
 
-//            ExecutorService executor = Executors.newSingleThreadExecutor()
-//            Future future = executor.submit(new Runnable() {
-//                @Override
-//                void run() {
-//                    analysis.run()
-//                    new CommandLineAnalysisPostProcessor().process(analysis)
-//                }
-//            })
-//
-//            try {
-//                future.get(timeout, TimeUnit.MINUTES)
-//            }
-//            catch (TimeoutException te) {
-//                logger.error("Timeout has expired ($timeout min).")
-//                System.exit(-1)
-//            }
-//            executor.shutdown()
+            ExecutorService executor = Executors.newSingleThreadExecutor()
+            Future future = executor.submit(new Runnable() {
+                @Override
+                void run() {
+                    analysis.run()
+                    new CommandLineAnalysisPostProcessor().process(analysis)
+                }
+            })
+
+            try {
+                future.get(timeout, TimeUnit.MINUTES)
+            }
+            catch (TimeoutException te) {
+                logger.error("Timeout has expired ($timeout min).")
+                System.exit(-1)
+            }
+            executor.shutdown()
 
 
         } catch (e) {

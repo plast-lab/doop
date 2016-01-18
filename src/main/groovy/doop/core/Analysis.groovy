@@ -144,32 +144,32 @@ import org.apache.commons.logging.LogFactory
 
         initDatabase()
 
-        analyze()
-
-        try {
-            File f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-            logger.info "-- Re-Analyze --"
-            reanalyze()
-        }
-        catch(e) {
-            logger.debug e.getMessage()
-        }
-
-        if (!options.X_STATS_NONE.value)
-            produceStats()
-
-        lbScriptWriter.close()
-
-        logger.info "Using generated script $lbScript"
-        logger.info "\nAnalysis START"
-        long t = timing {
-             def bloxOpts = options.BLOX_OPTS.value ?: ''
-             executor.execute(outDir, "${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
-        }
-        logger.info "Analysis END\n"
-        bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
-        int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
-        bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
+//        analyze()
+//
+//        try {
+//            File f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+//            logger.info "-- Re-Analyze --"
+//            reanalyze()
+//        }
+//        catch(e) {
+//            logger.debug e.getMessage()
+//        }
+//
+//        if (!options.X_STATS_NONE.value)
+//            produceStats()
+//
+//        lbScriptWriter.close()
+//
+//        logger.info "Using generated script $lbScript"
+//        logger.info "\nAnalysis START"
+//        long t = timing {
+//             def bloxOpts = options.BLOX_OPTS.value ?: ''
+//             executor.execute(outDir, "${options.BLOXBATCH.value} -script $lbScript $bloxOpts", IGNORED_WARNINGS)
+//        }
+//        logger.info "Analysis END\n"
+//        bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).'"""
+//        int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
+//        bloxbatchPipe database, """-execute '+Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
 
