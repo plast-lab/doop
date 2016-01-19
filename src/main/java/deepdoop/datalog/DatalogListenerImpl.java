@@ -1,6 +1,6 @@
-package doop.dsl.datalog;
+package deepdoop.datalog;
 
-import static doop.dsl.datalog.DatalogParser.*;
+import static deepdoop.datalog.DatalogParser.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

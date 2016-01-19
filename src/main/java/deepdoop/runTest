@@ -3,11 +3,11 @@
 test "$#" = 0 && { echo "No arguments!" ; exit 1 ; }
 
 src=$(pwd)
-cd ../../
+cd ../
 
 while (( "$#" )); do
 	test ${1##*.} = 'logic' && grammar=datalog.Datalog || grammar=script.Script
-	out="$(cat $src/$1 | java org.antlr.v4.gui.TestRig doop.dsl.$grammar program 2>&1)"
+	out="$(cat $src/$1 | java org.antlr.v4.gui.TestRig deepdoop.$grammar program 2>&1)"
 
 	echo '--------------------'
 	if [ "X$out" = 'X' ] ; then

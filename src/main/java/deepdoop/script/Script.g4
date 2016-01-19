@@ -1,7 +1,7 @@
 grammar Script;
 
 @header {
-package doop.dsl.script;
+package deepdoop.script;
 } 
 
 program

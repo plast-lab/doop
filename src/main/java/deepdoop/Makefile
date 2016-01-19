@@ -2,7 +2,7 @@
 simple  := t1 t2 t3 t4 t5 t6 sample
 simple  := $(simple:%=examples/%.logic)
 
-logicDir:= ../../../../../logic
+logicDir:= ../../../../logic
 facts   := declarations flow-insensitivity-declarations import entities-import flow-insensitivity-delta
 facts   := $(facts:%=$(logicDir)/facts/%.logic)
 cfg     := declarations rules tests
@@ -18,8 +18,8 @@ transf  := $(transf:%=$(logicDir)/addons/transform/%.logic)
 misc    := addons/type-analysis
 misc    := $(misc:%=$(logicDir)/%.logic)
 
-analyses:= $(wildcard ../../../../../out/context-insensitive/antlr/*.logic)
-analyses+= $(wildcard ../../../../../out/context-insensitive/avrora/*.logic)
+analyses:= $(wildcard ../../../../out/context-insensitive/antlr/*.logic)
+analyses+= $(wildcard ../../../../out/context-insensitive/avrora/*.logic)
 
 script  := examples/t1.dls
 
@@ -52,14 +52,14 @@ build_Impl: $(classes_DL)
 
 $(javaGen_DL) $(tokGen_DL): $(grammar_DL).g4
 	java org.antlr.v4.Tool $<
-	cd ../../ && javac $(javaGen_DL)
+	cd ../ && javac $(javaGen_DL)
 
 $(javaGen_Scr) $(tokGen_Scr): $(grammar_Scr).g4
 	java org.antlr.v4.Tool $<
-	cd ../../ && javac $(javaGen_Scr)
+	cd ../ && javac $(javaGen_Scr)
 
 $(classes_DL): $(javaSrc_DL)
-	cd ../../ && javac $?
+	cd ../ && javac $?
 
 run: all
 	@./runTest $(tests)

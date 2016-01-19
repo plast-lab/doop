@@ -1,4 +1,4 @@
-package doop.dsl.datalog;
+package deepdoop.datalog;
 
 import java.util.List;
 
