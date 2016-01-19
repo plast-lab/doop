@@ -33,9 +33,9 @@ tokGen     := .tokens Lexer.tokens
 grammar_DL := datalog/Datalog
 javaGen_DL := $(abspath $(javaGen:%=$(grammar_DL)%.java))
 tokGen_DL  := $(tokGen:%=$(grammar_DL)%)
-javaSrc_DL := Main DatalogListenerImpl
+javaSrc_DL := Main DatalogListenerImpl Entity Predicate RefMode
 javaSrc_DL := $(abspath $(javaSrc_DL:%=$(dir $(grammar_DL))/%.java))
-classes_DL := $(javaSrc:%.java=%.class)
+classes_DL := $(javaSrc_DL:%.java=%.class)
 
 grammar_Scr:= script/Script
 javaGen_Scr:= $(abspath $(javaGen:%=$(grammar_Scr)%.java))
