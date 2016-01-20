@@ -2,7 +2,7 @@ grammar Datalog;
 
 @header {
 package deepdoop.datalog;
-} 
+}
 
 program
 	: (declaration | constraint | rule_ | directive)* ;
