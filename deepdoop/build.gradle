@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'antlr'
 apply plugin: 'application'
 
 sourceCompatibility = "1.8"
@@ -7,29 +8,22 @@ targetCompatibility = "1.8"
 project.group = "plast-lab"
 project.version = 1.0
 
-mainClassName = 'deepdoop.datalog.Main'
+repositories {
+	mavenCentral()
+}
 
 task wrapper(type: Wrapper) {
 	gradleVersion = '2.4'
 }
 
 
-def antlrJar = file('lib/antlr-4.5.1-complete.jar')
-
 dependencies {
-	compile files(antlrJar)
-	runtime files(antlrJar)
+	compile 'org.antlr:antlr4-runtime:4.5.1-1'
+	antlr 'org.antlr:antlr4:4.5.1-1'
 }
 
-task runAntlr (type: JavaExec) {
-	description "Generate Java source files from antlr grammar"
-	group = "Other"
-	classpath = sourceSets.main.compileClasspath
-	main = 'org.antlr.v4.Tool'
-	args = [ "src/main/java/deepdoop/datalog/Datalog.g4" ]
-}
 
-compileJava { dependsOn runAntlr }
+mainClassName = 'deepdoop.datalog.Main'
 
 run {
 	if(project.hasProperty("args")) {
