@@ -116,7 +116,9 @@ class DatalogListenerImpl implements DatalogListener {
 
 	public void enterEveryRule(ParserRuleContext ctx) {}
 	public void exitEveryRule(ParserRuleContext ctx) {}
-	public void visitErrorNode(ErrorNode node) {}
+	public void visitErrorNode(ErrorNode node) {
+		throw new RuntimeException("Parsing error");
+	}
 	public void visitTerminal(TerminalNode node) {}
 
 
