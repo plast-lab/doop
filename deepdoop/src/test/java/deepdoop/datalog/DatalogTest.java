@@ -69,4 +69,74 @@ public class DatalogTest {
 	public void testSample() throws IOException {
 		test("/sample.logic");
 	}
+
+
+	@Test
+	public void testA01() throws IOException {
+		test("/analysis/cfg-tests.logic");
+	}
+	@Test
+	public void testA02() throws IOException {
+		test("/analysis/context-insensitive-declarations.logic");
+	}
+	@Test
+	public void testA03() throws IOException {
+		test("/analysis/context-insensitive-delta.logic");
+	}
+	@Test
+	public void testA04() throws IOException {
+		test("/analysis/context-insensitive.logic");
+	}
+	@Test
+	public void testA05() throws IOException {
+		test("/analysis/entities-import.logic");
+	}
+	@Test
+	public void testA06() throws IOException {
+		test("/analysis/facts-declarations.logic");
+	}
+	@Test
+	public void testA07() throws IOException {
+		test("/analysis/facts-import.logic");
+	}
+	@Test
+	public void testA08() throws IOException {
+		test("/analysis/flow-insensitivity-declarations.logic");
+	}
+	@Test
+	public void testA09() throws IOException {
+		test("/analysis/flow-insensitivity-delta.logic");
+	}
+	@Test
+	public void testA10() throws IOException {
+		test("/analysis/statistics-delta.logic");
+	}
+	@Test
+	public void testA11() throws IOException {
+		test("/analysis/statistics-simple.logic");
+	}
+	@Test
+	public void testA12() throws IOException {
+		test("/analysis/tamiflex-declarations.logic");
+	}
+	@Test
+	public void testA13() throws IOException {
+		test("/analysis/tamiflex-delta.logic");
+	}
+	@Test
+	public void testA14() throws IOException {
+		test("/analysis/tamiflex-fact-declarations.logic");
+	}
+	@Test
+	public void testA15() throws IOException {
+		test("/analysis/tamiflex-import.logic");
+	}
+	@Test
+	public void testA16() throws IOException {
+		test("/analysis/tamiflex.logic");
+	}
+	@Test
+	public void testA17() throws IOException {
+		test("/analysis/tamiflex-post-import.logic");
+	}
 }
