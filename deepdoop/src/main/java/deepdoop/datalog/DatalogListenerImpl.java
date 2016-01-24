@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -34,10 +33,12 @@ class DatalogListenerImpl implements DatalogListener {
 		if (ctx.predicate() != null) {
 			String name = get(_name, ctx.predicate());
 			List<String> types = get(_names, ctx.predicateList());
+
 			if (types != null)
-				_predicates.add(new Predicate(name, types));
+				_predicates.add(new Predicate(name, types, ctx.predicate().functionalHead() != null));
 			else
 				_specialPredicates.add(new Entity(name));
+
 		} else {
 			Entity ent = new Entity(get(_name, ctx.predicateName()));
 
@@ -58,6 +59,7 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterPredicate(PredicateContext ctx) {}
 	public void exitPredicate(PredicateContext ctx) {
 		ParseTree child = ctx.predicateName();
+		if (child == null) child = ctx.functionalHead();
 		if (child == null) child = ctx.primitiveType();
 
 		if (child != null)
@@ -72,7 +74,9 @@ class DatalogListenerImpl implements DatalogListener {
 		_name.put(ctx, get(_name, ctx.predicateName()));
 	}
 	public void enterFunctionalHead(FunctionalHeadContext ctx) {}
-	public void exitFunctionalHead(FunctionalHeadContext ctx) {}
+	public void exitFunctionalHead(FunctionalHeadContext ctx) {
+		_name.put(ctx, get(_name, ctx.predicateName()));
+	}
 	public void enterPredicateName(PredicateNameContext ctx) {}
 	public void exitPredicateName(PredicateNameContext ctx) {
 		PredicateNameContext child = ctx.predicateName();
@@ -122,11 +126,6 @@ class DatalogListenerImpl implements DatalogListener {
 	public void visitTerminal(TerminalNode node) {}
 
 
-	static String join(List<String> list, String delim) {
-		StringJoiner joiner = new StringJoiner(delim);
-		for (String s : list) joiner.add(s);
-		return joiner.toString();
-	}
 	static <T> T get(ParseTreeProperty<T> values, ParseTree node) {
 		T t = values.get(node);
 		values.removeFrom(node);
