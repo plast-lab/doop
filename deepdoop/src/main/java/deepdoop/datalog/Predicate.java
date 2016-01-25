@@ -1,15 +1,19 @@
 package deepdoop.datalog;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
 public class Predicate {
-	String _name;
+	protected String _name;
 	List<String> _types;
+	//List<Rule> _rules;
 
 	public final boolean isFunctional;
 
-
+	public Predicate(String name, boolean isFunctional) {
+		this(name, new ArrayList<>(), isFunctional);
+	}
 	public Predicate(String name, List<String> types) {
 		this(name, types, false);
 	}
@@ -17,6 +21,14 @@ public class Predicate {
 		_name = name;
 		_types = types;
 		this.isFunctional = isFunctional;
+	}
+
+	public String getName() {
+		return _name;
+	}
+
+	public void setTypes(List<String> types) {
+		_types = types;
 	}
 
 	@Override
