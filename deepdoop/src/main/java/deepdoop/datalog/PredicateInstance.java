@@ -5,7 +5,7 @@ import java.util.StringJoiner;
 
 public class PredicateInstance extends Predicate implements IElement {
 	List<Object> _parameters;
-	boolean _onlyHead;
+	Object _lastParameter;
 
 	public PredicateInstance(String name, List<Object> parameters) {
 		this(name, parameters, false);
@@ -13,13 +13,13 @@ public class PredicateInstance extends Predicate implements IElement {
 	public PredicateInstance(String name, List<Object> parameters, boolean isFunctional) {
 		super(name, null, isFunctional);
 		_parameters = parameters;
-		_onlyHead = false;
+		_lastParameter = null;
 
-		int lastIndex = parameters.size()-1;
-		Object lastParam = parameters.get(lastIndex);
-		if (lastParam instanceof Variable && ((Variable) lastParam).isEmpty) {
+		if (isFunctional) {
+			int lastIndex = parameters.size()-1;
+			_lastParameter = parameters.get(lastIndex);
 			parameters.remove(lastIndex);
-			_onlyHead = true;
+			//if (_lastParam instanceof Variable && ((Variable) lastParam).isEmpty) {
 		}
 	}
 
@@ -29,12 +29,10 @@ public class PredicateInstance extends Predicate implements IElement {
 		for (Object p : _parameters) joiner.add(p.toString());
 		String t = joiner.toString();
 		if (isFunctional) {
-			int pos = t.lastIndexOf(", ");
-			if (!_onlyHead)
-				t = new StringBuilder(t).replace(pos, pos+2, "] = ").toString();
+			if (_lastParameter instanceof Variable && ((Variable) _lastParameter).isEmpty)
+				return _name + "[" + t + "]";
 			else
-				t += "]";
-			return _name + "[" + t;
+				return _name + "[" + t + "] = " + _lastParameter;
 		} else
 			return _name + "(" + t + ")";
 	}

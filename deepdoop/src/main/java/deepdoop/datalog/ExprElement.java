@@ -59,6 +59,6 @@ public class ExprElement implements IElement {
 		else if (_var != null) return _var.toString();
 		else if (_funcHead != null) return _funcHead.toString();
 		else if (_constant != null) return _constant;
-		else return "EXPR_FAIL";
+		else throw new RuntimeException("Expression problem");
 	}
 }
