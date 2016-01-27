@@ -35,9 +35,9 @@ predicate
 ruleBody
 	: predicate
 	| comparison
+	| '(' ruleBody ')'
 	| ruleBody ',' ruleBody
 	| ruleBody ';' ruleBody
-	| '(' ruleBody ')'
 	| '!' ruleBody
 	;
 
@@ -70,7 +70,7 @@ primitiveType
 
 primitiveConstant
 	: INTEGER
-	| FLOAT
+	| REAL
 	| BOOLEAN
 	| STRING
 	;
@@ -135,7 +135,7 @@ fragment
 EXPONENT
 	: [eE][-+]?INTEGER ;
 
-FLOAT
+REAL
 	: INTEGER EXPONENT
 	| INTEGER EXPONENT? [fF]
 	| (INTEGER)? '.' INTEGER EXPONENT? [fF]?
@@ -145,7 +145,7 @@ BOOLEAN
 	: 'true' | 'false' ;
 
 STRING
-	: '"' ~["]* '"' ; 
+	: '"' ~["]* '"' ;
 
 IDENTIFIER
 	: [?]?[a-zA-Z_][a-zA-Z_0-9]* ;

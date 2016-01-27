@@ -1,10 +1,12 @@
 package deepdoop.datalog;
 
 import static deepdoop.datalog.DatalogParser.*;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -21,6 +23,8 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<Predicate>> _preds;
 	ParseTreeProperty<Object> _param;
 	ParseTreeProperty<List<Object>> _params;
+	ParseTreeProperty<IElement> _elem;
+	ParseTreeProperty<List<IElement>> _elems;
 	boolean _inDeclaration;
 
 	public DatalogListenerImpl() {
@@ -33,6 +37,8 @@ class DatalogListenerImpl implements DatalogListener {
 		_preds = new ParseTreeProperty<>();
 		_param = new ParseTreeProperty<>();
 		_params = new ParseTreeProperty<>();
+		_elem = new ParseTreeProperty<>();
+		_elems = new ParseTreeProperty<>();
 		_inDeclaration = false;
 	}
 
@@ -70,7 +76,12 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterConstraint(ConstraintContext ctx) {}
 	public void exitConstraint(ConstraintContext ctx) {}
 	public void enterRule_(Rule_Context ctx) {}
-	public void exitRule_(Rule_Context ctx) {}
+	public void exitRule_(Rule_Context ctx) {
+		LogicalElement head = new LogicalElement(true, get(_elems, ctx.predicateList()));
+		IElement body = get(_elem, ctx.ruleBody());
+
+		System.out.println(head + (body != null ? " <- " + body : "") + ".");
+	}
 	public void enterDirective(DirectiveContext ctx) {}
 	public void exitDirective(DirectiveContext ctx) {}
 	public void enterPredicate(PredicateContext ctx) {}
@@ -79,13 +90,14 @@ class DatalogListenerImpl implements DatalogListener {
 		FunctionalHeadContext funcCtx = ctx.functionalHead();
 
 		Predicate pred = null;
+		PredicateInstance inst = null;
 		if (predCtx != null) {
 			String name = get(_name, predCtx);
 			if (_inDeclaration)
 				pred = new Predicate(name, false);
 			else {
 				List<Object> params = get(_params, ctx.parameterList());
-				pred = new PredicateInstance(name, params, false);
+				inst = new PredicateInstance(name, params, false);
 			}
 		} else if (funcCtx != null) {
 			String name = get(_name, funcCtx);
@@ -94,15 +106,36 @@ class DatalogListenerImpl implements DatalogListener {
 			else {
 				List<Object> params = get(_params, funcCtx.parameterList());
 				params.add(get(_param, ctx.parameter()));
-				pred = new PredicateInstance(name, params, true);
+				inst = new PredicateInstance(name, params, true);
 			}
 		} else {
 			throw new RuntimeException("TODO");
 		}
-		_pred.put(ctx, pred);
+
+		if (_inDeclaration)
+			_pred.put(ctx, pred);
+		else
+			_elem.put(ctx, inst);
 	}
 	public void enterRuleBody(RuleBodyContext ctx) {}
-	public void exitRuleBody(RuleBodyContext ctx) {}
+	public void exitRuleBody(RuleBodyContext ctx) {
+		String token = getToken(ctx, 0);
+		if (ctx.predicate() != null) {
+			_elem.put(ctx, get(_elem, ctx.predicate()));
+		} else if (ctx.comparison() != null) {
+			_elem.put(ctx, get(_elem, ctx.comparison()));
+		} else if (token.equals("(")) {
+			_elem.put(ctx, new GroupElement(get(_elem, ctx.ruleBody(0))));
+		} else if (token.equals(",") || token.equals(";")) {
+			List<IElement> list = Arrays.asList(
+				get(_elem, ctx.ruleBody(0)),
+				get(_elem, ctx.ruleBody(1)));
+
+			_elem.put(ctx, new LogicalElement(token.equals(", "), list));
+		} else if (token.equals("!")) {
+			_elem.put(ctx, new NegationElement(get(_elem, ctx.ruleBody(0))));
+		}
+	}
 	public void enterAggregation(AggregationContext ctx) {}
 	public void exitAggregation(AggregationContext ctx) {}
 	public void enterRefmode(RefmodeContext ctx) {}
@@ -159,21 +192,69 @@ class DatalogListenerImpl implements DatalogListener {
 				}
 				p = Integer.parseInt(str, base);
 			}
-			else if (constant.FLOAT() != null) p = Double.parseDouble(constant.FLOAT().getText());
+			else if (constant.REAL() != null) p = Double.parseDouble(constant.REAL().getText());
 			else if (constant.BOOLEAN() != null) p = Boolean.parseBoolean(constant.BOOLEAN().getText());
 			else if (constant.STRING() != null) p = constant.STRING().getText();
 		}
 		_param.put(ctx, p);
 	}
 	public void enterComparison(ComparisonContext ctx) {}
-	public void exitComparison(ComparisonContext ctx) {}
+	public void exitComparison(ComparisonContext ctx) {
+		String token = getToken(ctx, 0);
+		ExprElement left = (ExprElement) get(_elem, ctx.expr(0));
+		ExprElement right = (ExprElement) get(_elem, ctx.expr(1));
+		ComparisonElement.Operator op = null;
+		switch (token) {
+			case "=" : op = ComparisonElement.Operator.EQ ; break;
+			case "<" : op = ComparisonElement.Operator.LT ; break;
+			case "<=": op = ComparisonElement.Operator.LEQ; break;
+			case ">" : op = ComparisonElement.Operator.GT ; break;
+			case ">=": op = ComparisonElement.Operator.GEQ; break;
+			case "!=": op = ComparisonElement.Operator.NEQ; break;
+		}
+
+		_elem.put(ctx, new ComparisonElement(left, op, right));
+	}
 	public void enterExpr(ExprContext ctx) {}
-	public void exitExpr(ExprContext ctx) {}
+	public void exitExpr(ExprContext ctx) {
+		String token = getToken(ctx, 0);
+		if (ctx.IDENTIFIER() != null) {
+			_elem.put(ctx, new ExprElement(ctx.IDENTIFIER().getText()));
+		} else if (token != null) {
+			ExprElement left = (ExprElement) get(_elem, ctx.expr(0));
+			ExprElement right = (ExprElement) get(_elem, ctx.expr(1));
+			ExprElement.Operator op = null;
+			switch (token) {
+				case "+": op = ExprElement.Operator.PLUS ; break;
+				case "-": op = ExprElement.Operator.MINUS; break;
+				case "*": op = ExprElement.Operator.MULT ; break;
+				case "/": op = ExprElement.Operator.DIV  ; break;
+			}
+			_elem.put(ctx, new ExprElement(left, op, right));
+		} else if (ctx.primitiveConstant() != null) {
+			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
+		} else if (ctx.functionalHead() != null) {
+			FunctionalHeadContext functional = ctx.functionalHead();
+			String name = get(_name, functional);
+			List<Object> params = get(_params, functional);
+			params.add(Variable.emptyVariable());
+			_elem.put(ctx, new ExprElement(new PredicateInstance(name, params, true)));
+			// TODO better
+		} else {
+			_elem.put(ctx, new ExprElement("FOOO"));
+		}
+	}
 	public void enterPredicateList(PredicateListContext ctx) {}
 	public void exitPredicateList(PredicateListContext ctx) {
-		Predicate pred = get(_pred, ctx.predicate());
-		List<Predicate> list = get(_preds, ctx.predicateList(), pred);
-		_preds.put(ctx, list);
+		if (_inDeclaration) {
+			Predicate pred = get(_pred, ctx.predicate());
+			List<Predicate> list = get(_preds, ctx.predicateList(), pred);
+			_preds.put(ctx, list);
+		} else {
+			IElement elem = get(_elem, ctx.predicate());
+			List<IElement> list = get(_elems, ctx.predicateList(), elem);
+			_elems.put(ctx, list);
+		}
 	}
 	public void enterParameterList(ParameterListContext ctx) {}
 	public void exitParameterList(ParameterListContext ctx) {
@@ -203,6 +284,12 @@ class DatalogListenerImpl implements DatalogListener {
 			lt = new ArrayList<T>();
 		lt.add(newValue);
 		return lt;
+	}
+	static String getToken(ParserRuleContext ctx, int index) {
+		for (int i = 0; i < ctx.getChildCount(); i++)
+			if (ctx.getChild(i) instanceof TerminalNode && index-- == 0)
+				return ((TerminalNode)ctx.getChild(i)).getText();
+		return null;
 	}
 	static String normalize(String type) {
 		if (type.equals("uint") || type.equals("int") || type.equals("float") || type.equals("decimal"))
