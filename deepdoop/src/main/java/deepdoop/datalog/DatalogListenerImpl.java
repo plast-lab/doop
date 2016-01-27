@@ -142,7 +142,7 @@ class DatalogListenerImpl implements DatalogListener {
 				get(_elem, ctx.ruleBody(0)),
 				get(_elem, ctx.ruleBody(1)));
 
-			_elem.put(ctx, new LogicalElement(token.equals(", "), list));
+			_elem.put(ctx, new LogicalElement(token.equals(","), list));
 		} else if (token.equals("!")) {
 			_elem.put(ctx, new NegationElement(get(_elem, ctx.ruleBody(0))));
 		}
