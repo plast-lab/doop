@@ -25,7 +25,7 @@ public class ExprElement implements IElement {
 	Operator _op;
 	ExprElement _right;
 
-	//ExprElement _expr;
+	ExprElement _expr;
 
 	Variable _var;
 
@@ -38,6 +38,9 @@ public class ExprElement implements IElement {
 		_left = left;
 		_op = op;
 		_right = right;
+	}
+	public ExprElement(ExprElement expr) {
+		_expr = expr;
 	}
 	public ExprElement(Variable var) {
 	   _var = var;
@@ -52,9 +55,10 @@ public class ExprElement implements IElement {
 	@Override
 	public String toString() {
 		if (_op != null) return _left + " " + _op + " " + _right;
+		else if (_expr != null) return "(" + _expr + ")";
 		else if (_var != null) return _var.toString();
 		else if (_funcHead != null) return _funcHead.toString();
 		else if (_constant != null) return _constant;
-		else return "Expr";
+		else return "EXPR_FAIL";
 	}
 }
