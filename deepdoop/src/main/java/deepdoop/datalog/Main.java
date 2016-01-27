@@ -22,6 +22,9 @@ public class Main {
 				System.out.println(p);
 			for (Predicate p : listener._specialPredicates)
 				System.out.println(p);
+			System.out.println("=======");
+			for (Rule r : listener._rules)
+				System.out.println(r);
 
 		} catch (IOException e) {
 			e.printStackTrace();

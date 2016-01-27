@@ -16,6 +16,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 class DatalogListenerImpl implements DatalogListener {
 	Set<Predicate> _predicates;
 	Set<Predicate> _specialPredicates;
+	Set<Rule> _rules;
 
 	ParseTreeProperty<String> _name;
 	ParseTreeProperty<List<String>> _names;
@@ -30,6 +31,7 @@ class DatalogListenerImpl implements DatalogListener {
 	public DatalogListenerImpl() {
 		_predicates = new HashSet<>();
 		_specialPredicates = new HashSet<>();
+		_rules = new HashSet<>();
 
 		_name = new ParseTreeProperty<>();
 		_names = new ParseTreeProperty<>();
@@ -56,7 +58,8 @@ class DatalogListenerImpl implements DatalogListener {
 			List<String> types = new ArrayList<>();
 			List<Predicate> preds = get(_preds, ctx.predicateList());
 			if (preds != null) {
-				for (Predicate p : preds) types.add(p.getName());
+				for (Predicate p : preds)
+					types.add(p.getName());
 				pred.setTypes(types);
 				_predicates.add(pred);
 			} else {
@@ -77,10 +80,13 @@ class DatalogListenerImpl implements DatalogListener {
 	public void exitConstraint(ConstraintContext ctx) {}
 	public void enterRule_(Rule_Context ctx) {}
 	public void exitRule_(Rule_Context ctx) {
-		LogicalElement head = new LogicalElement(true, get(_elems, ctx.predicateList()));
-		IElement body = get(_elem, ctx.ruleBody());
-
-		System.out.println(head + (body != null ? " <- " + body : "") + ".");
+		if (ctx.predicateList() != null) {
+			LogicalElement head = new LogicalElement(true, get(_elems, ctx.predicateList()));
+			IElement body = get(_elem, ctx.ruleBody());
+			_rules.add(new Rule(head, body));
+		} else {
+			throw new RuntimeException("Aggregation");
+		}
 	}
 	public void enterDirective(DirectiveContext ctx) {}
 	public void exitDirective(DirectiveContext ctx) {}
@@ -96,7 +102,9 @@ class DatalogListenerImpl implements DatalogListener {
 			if (_inDeclaration)
 				pred = new Predicate(name, false);
 			else {
-				List<Object> params = get(_params, ctx.parameterList());
+				List<Object> params;
+				if (ctx.parameterList() == null) params = new ArrayList<>();
+				else params = get(_params, ctx.parameterList());
 				inst = new PredicateInstance(name, params, false);
 			}
 		} else if (funcCtx != null) {
@@ -104,12 +112,15 @@ class DatalogListenerImpl implements DatalogListener {
 			if (_inDeclaration)
 				pred = new Predicate(name, true);
 			else {
-				List<Object> params = get(_params, funcCtx.parameterList());
+				List<Object> params = get(_params, funcCtx);
 				params.add(get(_param, ctx.parameter()));
 				inst = new PredicateInstance(name, params, true);
 			}
-		} else {
-			throw new RuntimeException("TODO");
+		} else if (ctx.refmode() != null) {
+			throw new RuntimeException("TODO REF");
+		} else if (ctx.primitiveType() != null) {
+			if (!_inDeclaration) throw new RuntimeException ("Primitive used outside a declaration");
+			pred = new Entity(get(_name, ctx.primitiveType()));
 		}
 
 		if (_inDeclaration)
@@ -145,7 +156,10 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterFunctionalHead(FunctionalHeadContext ctx) {}
 	public void exitFunctionalHead(FunctionalHeadContext ctx) {
 		_name.put(ctx, get(_name, ctx.predicateName()));
-		_params.put(ctx, get(_params, ctx.parameterList()));
+		if (ctx.parameterList() != null)
+			_params.put(ctx, get(_params, ctx.parameterList()));
+		else
+			_params.put(ctx, new ArrayList<>());
 	}
 	public void enterPredicateName(PredicateNameContext ctx) {}
 	public void exitPredicateName(PredicateNameContext ctx) {
@@ -186,7 +200,7 @@ class DatalogListenerImpl implements DatalogListener {
 				if (str.startsWith("0x") || str.startsWith("0X")) {
 					str = str.substring(2);
 					base = 16;
-				} else if (str.startsWith("0")) {
+				} else if (str.startsWith("0") && str.length() > 1) {
 					str = str.substring(1);
 					base = 8;
 				}
