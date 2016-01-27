@@ -220,7 +220,15 @@ class DatalogListenerImpl implements DatalogListener {
 		String token = getToken(ctx, 0);
 		if (ctx.IDENTIFIER() != null) {
 			_elem.put(ctx, new ExprElement(ctx.IDENTIFIER().getText()));
-		} else if (token != null) {
+		} else if (ctx.functionalHead() != null) {
+			FunctionalHeadContext functional = ctx.functionalHead();
+			String name = get(_name, functional);
+			List<Object> params = get(_params, functional);
+			params.add(Variable.emptyVariable());
+			_elem.put(ctx, new ExprElement(new PredicateInstance(name, params, true)));
+		} else if (ctx.primitiveConstant() != null) {
+			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
+		} else if (token != null && !token.equals("(")) {
 			ExprElement left = (ExprElement) get(_elem, ctx.expr(0));
 			ExprElement right = (ExprElement) get(_elem, ctx.expr(1));
 			ExprElement.Operator op = null;
@@ -231,17 +239,8 @@ class DatalogListenerImpl implements DatalogListener {
 				case "/": op = ExprElement.Operator.DIV  ; break;
 			}
 			_elem.put(ctx, new ExprElement(left, op, right));
-		} else if (ctx.primitiveConstant() != null) {
-			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
-		} else if (ctx.functionalHead() != null) {
-			FunctionalHeadContext functional = ctx.functionalHead();
-			String name = get(_name, functional);
-			List<Object> params = get(_params, functional);
-			params.add(Variable.emptyVariable());
-			_elem.put(ctx, new ExprElement(new PredicateInstance(name, params, true)));
-			// TODO better
 		} else {
-			_elem.put(ctx, new ExprElement("FOOO"));
+			_elem.put(ctx, new ExprElement((ExprElement) get(_elem, ctx.expr(0))));
 		}
 	}
 	public void enterPredicateList(PredicateListContext ctx) {}
