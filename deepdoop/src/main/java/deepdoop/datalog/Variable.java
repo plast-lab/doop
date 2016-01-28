@@ -2,8 +2,6 @@ package deepdoop.datalog;
 
 public class Variable {
 
-	static Variable _empty;
-
 	public final String name;
 	public final boolean isEmpty;
 
@@ -14,11 +12,6 @@ public class Variable {
 	public Variable(String name) {
 		this.name = name;
 		this.isEmpty = false;
-	}
-
-	public static Variable emptyVariable() {
-		if (_empty == null) _empty = new Variable();
-		return _empty;
 	}
 
 	@Override
