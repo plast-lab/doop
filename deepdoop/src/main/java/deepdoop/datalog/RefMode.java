@@ -15,4 +15,3 @@ public class RefMode extends Predicate {
 		return _name + "/1 (" + _types.get(1) + " -> " + _entity._name + ")";
 	}
 }
-

@@ -95,39 +95,42 @@ class DatalogListenerImpl implements DatalogListener {
 	public void exitPredicate(PredicateContext ctx) {
 		PredicateNameContext predCtx = ctx.predicateName();
 		FunctionalHeadContext funcCtx = ctx.functionalHead();
+		RefmodeContext refCtx = ctx.refmode();
+		PrimitiveTypeContext primCtx = ctx.primitiveType();
 
-		Predicate pred = null;
-		PredicateInstance inst = null;
-		if (predCtx != null) {
-			String name = get(_name, predCtx);
-			if (_inDeclaration)
-				pred = new Predicate(name, false);
-			else {
+		if (_inDeclaration) {
+			Predicate pred = null;
+			if (predCtx != null) {
+				pred = new Predicate(get(_name, predCtx), null);
+			} else if (funcCtx != null) {
+				pred = new Functional(get(_name, funcCtx), null, null);
+			} else if (refCtx != null) {
+				throw new RuntimeException ("Refmode in declaration has separate handling");
+			} else if (primCtx != null) {
+				pred = new Entity(get(_name, primCtx));
+			}
+			_pred.put(ctx, pred);
+		} else {
+			PredicateInstance inst = null;
+			if (predCtx != null) {
 				List<Object> params;
 				if (ctx.parameterList() == null) params = new ArrayList<>();
 				else params = get(_params, ctx.parameterList());
-				inst = new PredicateInstance(name, params, false);
-			}
-		} else if (funcCtx != null) {
-			String name = get(_name, funcCtx);
-			if (_inDeclaration)
-				pred = new Predicate(name, true);
-			else {
+				inst = new PredicateInstance(get(_name, predCtx), params);
+			} else if (funcCtx != null) {
 				List<Object> params = get(_params, funcCtx);
-				params.add(get(_param, ctx.parameter()));
-				inst = new PredicateInstance(name, params, true);
+				inst = new FunctionalInstance(get(_name, funcCtx), params, get(_param, ctx.parameter()));
+			} else if (refCtx != null) {
+				String name = get(_name, ctx.refmode());
+				//System.out.println(name);
+				List<Object> params = get(_params, ctx.refmode());
+				//for (Object o : params) System.out.println(o);
+				inst = new RefModeInstance(name, params, false);
+			} else if (primCtx != null) {
+				throw new RuntimeException ("Primitive used outside a declaration");
 			}
-		} else if (ctx.refmode() != null) {
-			throw new RuntimeException("TODO REF");
-		} else if (ctx.primitiveType() != null) {
-			if (!_inDeclaration) throw new RuntimeException ("Primitive used outside a declaration");
-			pred = new Entity(get(_name, ctx.primitiveType()));
-		}
-
-		if (_inDeclaration)
-			_pred.put(ctx, pred);
-		else
 			_elem.put(ctx, inst);
+		}
 	}
 	public void enterRuleBody(RuleBodyContext ctx) {}
 	public void exitRuleBody(RuleBodyContext ctx) {
@@ -153,6 +156,10 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterRefmode(RefmodeContext ctx) {}
 	public void exitRefmode(RefmodeContext ctx) {
 		_name.put(ctx, get(_name, ctx.predicateName()));
+		List<Object> list = new ArrayList<>();
+		list.add(new Variable(ctx.IDENTIFIER().getText()));
+		list.add(get(_param, ctx.parameter()));
+		_params.put(ctx, list);
 	}
 	public void enterFunctionalHead(FunctionalHeadContext ctx) {}
 	public void exitFunctionalHead(FunctionalHeadContext ctx) {
@@ -192,8 +199,7 @@ class DatalogListenerImpl implements DatalogListener {
 		else if (functional != null) {
 			String name = get(_name, functional);
 			List<Object> params = get(_params, functional);
-			params.add(Variable.emptyVariable());
-			p = new PredicateInstance(name, params, true);
+			p = new FunctionalHeadInstance(name, params);
 		} else if (constant != null) {
 			if (constant.INTEGER() != null) {
 				String str = constant.INTEGER().getText();
@@ -239,8 +245,7 @@ class DatalogListenerImpl implements DatalogListener {
 			FunctionalHeadContext functional = ctx.functionalHead();
 			String name = get(_name, functional);
 			List<Object> params = get(_params, functional);
-			params.add(Variable.emptyVariable());
-			_elem.put(ctx, new ExprElement(new PredicateInstance(name, params, true)));
+			_elem.put(ctx, new ExprElement(new FunctionalHeadInstance(name, params)));
 		} else if (ctx.primitiveConstant() != null) {
 			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
 		} else if (token != null && !token.equals("(")) {
