@@ -28,7 +28,7 @@ public class LogicalElement implements IElement {
 
 	@Override
 	public String toString() {
-		StringJoiner joiner = new StringJoiner(_isAND ? ",\n" : ";\n");
+		StringJoiner joiner = new StringJoiner(_isAND ? ", " : "; ");
 		for (IElement e : _elements) joiner.add(e.toString());
 		return joiner.toString();
 	}
