@@ -19,9 +19,11 @@ public class PredicateInstance extends Predicate implements IElement {
 			int lastIndex = parameters.size()-1;
 			_lastParameter = parameters.get(lastIndex);
 			parameters.remove(lastIndex);
-			//if (_lastParam instanceof Variable && ((Variable) lastParam).isEmpty) {
 		}
 	}
+
+	@Override
+	public void normalize() {}
 
 	@Override
 	public String toString() {
