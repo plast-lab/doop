@@ -83,6 +83,7 @@ class DatalogListenerImpl implements DatalogListener {
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(true, get(_elems, ctx.predicateList()));
 			IElement body = get(_elem, ctx.ruleBody());
+			body.normalize();
 			_rules.add(new Rule(head, body));
 		} else {
 			throw new RuntimeException("Aggregation");

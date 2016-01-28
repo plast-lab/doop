@@ -53,6 +53,9 @@ public class ExprElement implements IElement {
 	}
 
 	@Override
+	public void normalize() {}
+
+	@Override
 	public String toString() {
 		if (_op != null) return _left + " " + _op + " " + _right;
 		else if (_expr != null) return "(" + _expr + ")";

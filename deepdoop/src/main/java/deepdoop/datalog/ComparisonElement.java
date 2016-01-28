@@ -32,6 +32,9 @@ public class ComparisonElement implements IElement {
 	}
 
 	@Override
+	public void normalize() {}
+
+	@Override
 	public String toString() {
 		return _left + " " + _op + " " + _right;
 	}

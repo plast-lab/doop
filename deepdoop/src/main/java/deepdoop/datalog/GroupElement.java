@@ -8,6 +8,11 @@ public class GroupElement implements IElement {
 	}
 
 	@Override
+	public void normalize() {
+		_element.normalize();
+	}
+
+	@Override
 	public String toString() {
 		return "(" + _element + ")";
 	}

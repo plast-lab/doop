@@ -1,5 +1,6 @@
 package deepdoop.datalog;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -11,6 +12,18 @@ public class LogicalElement implements IElement {
 	public LogicalElement(boolean isAND, List<IElement> elements) {
 		_isAND = isAND;
 		_elements = elements;
+	}
+
+	public void normalize() {
+		List<IElement> list = new ArrayList<>();
+		for (IElement e : _elements) {
+			e.normalize();
+			if (e instanceof LogicalElement && ((LogicalElement)e)._isAND == _isAND)
+				list.addAll(((LogicalElement)e)._elements);
+			else
+				list.add(e);
+		}
+		_elements = list;
 	}
 
 	@Override
