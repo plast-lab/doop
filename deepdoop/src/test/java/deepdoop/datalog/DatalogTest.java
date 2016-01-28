@@ -30,7 +30,7 @@ public class DatalogTest {
 			ParseTree tree = open(filename).program();
 			_walker.walk(_listener, tree);
 		} catch (Exception e) {
-			Assert.fail();
+			Assert.fail(e.getMessage() + " on " + filename);
 		}
 	}
 
