@@ -86,7 +86,10 @@ class DatalogListenerImpl implements DatalogListener {
 			if (body != null) body.normalize();
 			_rules.add(new Rule(head, body));
 		} else {
-			throw new RuntimeException("Aggregation");
+			IElement head = get(_elem, ctx.predicate());
+			AggregationElement aggregation = (AggregationElement) get(_elem, ctx.aggregation());
+			aggregation._body = get(_elem, ctx.ruleBody());
+			_rules.add(new Rule(head, aggregation));
 		}
 	}
 	public void enterDirective(DirectiveContext ctx) {}
@@ -122,9 +125,7 @@ class DatalogListenerImpl implements DatalogListener {
 				inst = new FunctionalInstance(get(_name, funcCtx), params, get(_param, ctx.parameter()));
 			} else if (refCtx != null) {
 				String name = get(_name, ctx.refmode());
-				//System.out.println(name);
 				List<Object> params = get(_params, ctx.refmode());
-				//for (Object o : params) System.out.println(o);
 				inst = new RefModeInstance(name, params, false);
 			} else if (primCtx != null) {
 				throw new RuntimeException ("Primitive used outside a declaration");
@@ -152,7 +153,10 @@ class DatalogListenerImpl implements DatalogListener {
 		}
 	}
 	public void enterAggregation(AggregationContext ctx) {}
-	public void exitAggregation(AggregationContext ctx) {}
+	public void exitAggregation(AggregationContext ctx) {
+		PredicateInstance predicate = (PredicateInstance) get(_elem, ctx.predicate());
+		_elem.put(ctx, new AggregationElement(ctx.IDENTIFIER().getText(), predicate));
+	}
 	public void enterRefmode(RefmodeContext ctx) {}
 	public void exitRefmode(RefmodeContext ctx) {
 		_name.put(ctx, get(_name, ctx.predicateName()));

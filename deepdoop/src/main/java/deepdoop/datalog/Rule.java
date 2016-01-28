@@ -2,10 +2,10 @@ package deepdoop.datalog;
 
 public class Rule {
 
-	LogicalElement _head;
+	IElement _head;
 	IElement _body;
 
-	public Rule(LogicalElement head, IElement body) {
+	public Rule(IElement head, IElement body) {
 		_head = head;
 		_body = body;
 	}

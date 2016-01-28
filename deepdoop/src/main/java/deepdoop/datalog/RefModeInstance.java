@@ -10,9 +10,6 @@ public class RefModeInstance extends PredicateInstance {
 	}
 
 	@Override
-	public void normalize() {}
-
-	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(" : ");
 		for (Object p : _parameters) joiner.add(p.toString());
