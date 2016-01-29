@@ -3,9 +3,9 @@ package deepdoop.datalog;
 import java.util.Arrays;
 import java.util.StringJoiner;
 
-public class RefModeInstance extends PredicateInstance {
+public class RefModeElement extends PredicateElement {
 
-	public RefModeInstance(String name, Object firstParameter, Object secondParameter) {
+	public RefModeElement(String name, Object firstParameter, Object secondParameter) {
 		super(name, Arrays.asList(firstParameter, secondParameter));
 	}
 

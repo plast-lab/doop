@@ -3,9 +3,9 @@ package deepdoop.datalog;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class FunctionalHeadInstance extends FunctionalInstance {
+public class FunctionalHeadElement extends FunctionalElement {
 
-	public FunctionalHeadInstance(String name, List<Object> keyParameters) {
+	public FunctionalHeadElement(String name, List<Object> keyParameters) {
 		super(name, keyParameters, null);
 	}
 

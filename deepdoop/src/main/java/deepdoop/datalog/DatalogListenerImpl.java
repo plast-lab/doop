@@ -114,23 +114,23 @@ class DatalogListenerImpl implements DatalogListener {
 			}
 			_pred.put(ctx, pred);
 		} else {
-			PredicateInstance inst = null;
+			PredicateElement elem = null;
 			if (predCtx != null) {
 				List<Object> params;
 				if (ctx.parameterList() == null) params = new ArrayList<>();
 				else params = get(_params, ctx.parameterList());
-				inst = new PredicateInstance(get(_name, predCtx), params);
+				elem = new PredicateElement(get(_name, predCtx), params);
 			} else if (funcCtx != null) {
 				List<Object> params = get(_params, funcCtx);
-				inst = new FunctionalInstance(get(_name, funcCtx), params, get(_param, ctx.parameter()));
+				elem = new FunctionalElement(get(_name, funcCtx), params, get(_param, ctx.parameter()));
 			} else if (refCtx != null) {
 				String name = get(_name, ctx.refmode());
 				List<Object> params = get(_params, ctx.refmode());
-				inst = new RefModeInstance(name, params, false);
+				elem = new RefModeElement(name, params, false);
 			} else if (primCtx != null) {
 				throw new RuntimeException ("Primitive used outside a declaration");
 			}
-			_elem.put(ctx, inst);
+			_elem.put(ctx, elem);
 		}
 	}
 	public void enterRuleBody(RuleBodyContext ctx) {}
@@ -154,8 +154,8 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 	public void enterAggregation(AggregationContext ctx) {}
 	public void exitAggregation(AggregationContext ctx) {
-		PredicateInstance predicate = (PredicateInstance) get(_elem, ctx.predicate());
-		_elem.put(ctx, new AggregationElement(ctx.IDENTIFIER().getText(), predicate));
+		PredicateElement elem = (PredicateElement) get(_elem, ctx.predicate());
+		_elem.put(ctx, new AggregationElement(ctx.IDENTIFIER().getText(), elem));
 	}
 	public void enterRefmode(RefmodeContext ctx) {}
 	public void exitRefmode(RefmodeContext ctx) {
@@ -203,7 +203,7 @@ class DatalogListenerImpl implements DatalogListener {
 		else if (functional != null) {
 			String name = get(_name, functional);
 			List<Object> params = get(_params, functional);
-			p = new FunctionalHeadInstance(name, params);
+			p = new FunctionalHeadElement(name, params);
 		} else if (constant != null) {
 			if (constant.INTEGER() != null) {
 				String str = constant.INTEGER().getText();
@@ -249,7 +249,7 @@ class DatalogListenerImpl implements DatalogListener {
 			FunctionalHeadContext functional = ctx.functionalHead();
 			String name = get(_name, functional);
 			List<Object> params = get(_params, functional);
-			_elem.put(ctx, new ExprElement(new FunctionalHeadInstance(name, params)));
+			_elem.put(ctx, new ExprElement(new FunctionalHeadElement(name, params)));
 		} else if (ctx.primitiveConstant() != null) {
 			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
 		} else if (token != null && !token.equals("(")) {

@@ -3,15 +3,15 @@ package deepdoop.datalog;
 public class AggregationElement implements IElement {
 
 	String _variable;
-	PredicateInstance _predicate;
+	PredicateElement _predicate;
 	IElement _body;
 
-	public AggregationElement(String variable, PredicateInstance predicate, IElement body) {
+	public AggregationElement(String variable, PredicateElement predicate, IElement body) {
 		_variable = variable;
 		_predicate = predicate;
 		_body = body;
 	}
-	public AggregationElement(String variable, PredicateInstance predicate) {
+	public AggregationElement(String variable, PredicateElement predicate) {
 		this(variable, predicate, null);
 	}
 

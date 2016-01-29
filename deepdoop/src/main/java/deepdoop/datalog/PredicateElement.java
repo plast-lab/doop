@@ -3,11 +3,11 @@ package deepdoop.datalog;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class PredicateInstance implements IElement {
+public class PredicateElement implements IElement {
 	protected String _name;
 	protected List<Object> _parameters;
 
-	public PredicateInstance(String name, List<Object> parameters) {
+	public PredicateElement(String name, List<Object> parameters) {
 		_name = name;
 		_parameters = parameters;
 	}
