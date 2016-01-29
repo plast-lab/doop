@@ -3,10 +3,10 @@ package deepdoop.datalog;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class FunctionalInstance extends PredicateInstance {
+public class FunctionalElement extends PredicateElement {
 	Object _valueParameter;
 
-	public FunctionalInstance(String name, List<Object> keyParameters, Object valueParameter) {
+	public FunctionalElement(String name, List<Object> keyParameters, Object valueParameter) {
 		super(name, keyParameters);
 		_valueParameter = valueParameter;
 	}

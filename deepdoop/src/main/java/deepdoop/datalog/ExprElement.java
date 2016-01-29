@@ -29,7 +29,7 @@ public class ExprElement implements IElement {
 
 	Variable _var;
 
-	PredicateInstance _funcHead;
+	FunctionalHeadElement _funcHead;
 
 	String _constant;
 
@@ -45,7 +45,7 @@ public class ExprElement implements IElement {
 	public ExprElement(Variable var) {
 	   _var = var;
 	}
-	public ExprElement(PredicateInstance funcHead) {
+	public ExprElement(FunctionalHeadElement funcHead) {
 		_funcHead = funcHead;
 	}
 	public ExprElement(String constant) {
