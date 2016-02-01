@@ -18,13 +18,7 @@ public class Main {
 
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program());
 
-			for (Predicate p : listener._predicates)
-				System.out.println(p);
-			for (Predicate p : listener._specialPredicates)
-				System.out.println(p);
-			System.out.println("=======");
-			for (Rule r : listener._rules)
-				System.out.println(r);
+			System.out.println(listener.getProgram());
 
 		} catch (IOException e) {
 			e.printStackTrace();

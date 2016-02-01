@@ -17,6 +17,7 @@ class DatalogListenerImpl implements DatalogListener {
 	Set<Predicate> _predicates;
 	Set<Predicate> _specialPredicates;
 	Set<Rule> _rules;
+	Program _program;
 
 	ParseTreeProperty<String> _name;
 	ParseTreeProperty<List<String>> _names;
@@ -44,8 +45,14 @@ class DatalogListenerImpl implements DatalogListener {
 		_inDeclaration = false;
 	}
 
+	public Program getProgram() {
+		return _program;
+	}
+
 	public void enterProgram(ProgramContext ctx) {}
-	public void exitProgram(ProgramContext ctx) {}
+	public void exitProgram(ProgramContext ctx) {
+		_program = new Program(_predicates, _specialPredicates, _rules);
+	}
 	public void enterDeclaration(DeclarationContext ctx) {
 		_inDeclaration = true;
 	}
@@ -91,6 +98,9 @@ class DatalogListenerImpl implements DatalogListener {
 			aggregation._body = get(_elem, ctx.ruleBody());
 			_rules.add(new Rule(head, aggregation));
 		}
+		org.antlr.v4.runtime.Token first = ctx.getStart();
+		int line = first.getLine();
+		System.out.println(line);
 	}
 	public void enterDirective(DirectiveContext ctx) {}
 	public void exitDirective(DirectiveContext ctx) {}
