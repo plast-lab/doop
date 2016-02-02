@@ -72,11 +72,22 @@ InstructionUsesVar(?instruction, ?var) <-
 InstructionUsesVar(?instruction, ?var) <-
     Throw:Var[?instruction] = ?var.
 
+InstructionUsesVar(?instruction, ?var) <-
+    LoadArrayIndex:Base(?instruction, ?var).
+
+InstructionUsesVar(?instruction, ?var) <-
+    StoreArrayIndex:From(?instruction, ?var).
+
 // TODO: should add support for AssignHeapAllocation and AssignReturnValue?
 // doesn't seem to cover all cases?
 InstructionDefinesVar(?instruction, ?var) <-
     AssignInstruction:To[?instruction] = ?var.
 
+InstructionDefinesVar(?instruction, ?var) <-
+    LoadArrayIndex:To(?instruction, ?var).
+
+InstructionDefinesVar(?instruction, ?var) <-
+    StoreArrayIndex:Base(?instruction, ?var).
 
 PostDominates(?dominator, ?insn) <-
     SameMethodBBHeads(?dominator, ?insn),
@@ -118,8 +129,8 @@ IntraProceduralControlDep(?fromBlock, ?to) <-
     BasicBlockBegin(?fromBlock),
     MaySuccessorModuloThrow(?fromBlock, ?to),
     BasicBlockHead[?to] = ?toBlockStart,
-    !PostDominates(?fromBlock, ?toBlockStart).    
-    
+    !PostDominates(?fromBlock, ?toBlockStart).
+
 /**
  * This block post dominates a block that depends on an instruction
  * which this block doesn't post dominate
@@ -149,4 +160,17 @@ IntraProceduralDependency(?from, ?to) <-
     IntraProceduralDependency(?from, ?inter),
     IntraProceduralDependencyBase(?to, ?inter).
 
-// TODO: add load/store data deps, check if control dependency on own instruction works
+
+InterProceduralDependency(?fromInsn, ?toInsn, ?callsite) <-
+    FormalParam[?paramIndex, ?meth] = ?formalParam,
+    ActualParam[?paramIndex, ?callsite] = ?actParam,
+    MethodInvocation:Signature[?callsite] = ?meth,
+    InstructionDefinesVar(?fromInsn, ?actParam),
+    InstructionUsesVar(?toInsn, ?formalParam).
+
+InterProceduralDependency(?fromInsn, ?toInsn, ?callsite) <-
+    ReturnVar(?from, ?meth),
+    AssignReturnValue[?callsite] = ?to,
+    MethodInvocation:Signature[?callsite] = ?meth,
+    InstructionDefinesVar(?fromInsn, ?from),
+    InstructionUsesVar(?toInsn, ?to).
