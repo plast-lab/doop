@@ -683,7 +683,8 @@ import java.util.jar.JarFile
 
         File lbHomeDir = Helper.checkDirectoryOrThrowException(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
-        vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin"
+        String oldldpath = System.getenv("LD_LIBRARY_PATH")
+        vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin" + ":" + oldldpath
         String bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         vars.options.BLOXBATCH.value = bloxbatch
