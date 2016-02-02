@@ -89,6 +89,16 @@ InstructionDefinesVar(?instruction, ?var) <-
 InstructionDefinesVar(?instruction, ?var) <-
     StoreArrayIndex:Base(?instruction, ?var).
 
+InstructionDefinesVar(?instruction, ?var) <-
+    LoadInstanceField:To[?instruction] =  ?var.
+
+InstructionDefinesVar(?instruction, ?var) <-
+    LoadStaticField:To[?instruction] =  ?var.
+
+InstructionDefinesVar(?instruction, ?var) <-
+    AssignReturnValue[?instruction] = ?var.
+
+
 PostDominates(?dominator, ?insn) <-
     SameMethodBBHeads(?dominator, ?insn),
     !DoesNotPostDominate(?dominator, ?insn).
@@ -168,9 +178,7 @@ InterProceduralDependency(?fromInsn, ?toInsn, ?callsite) <-
     InstructionDefinesVar(?fromInsn, ?actParam),
     InstructionUsesVar(?toInsn, ?formalParam).
 
-InterProceduralDependency(?fromInsn, ?toInsn, ?callsite) <-
-    ReturnVar(?from, ?meth),
-    AssignReturnValue[?callsite] = ?to,
-    MethodInvocation:Signature[?callsite] = ?meth,
-    InstructionDefinesVar(?fromInsn, ?from),
-    InstructionUsesVar(?toInsn, ?to).
+InterProceduralDependency(?fromInsn, ?toInsn, ?toInsn) <-
+    ReturnNonvoid:Insn(?fromInsn),
+    Instruction:Method[?fromInsn] = ?meth,
+    MethodInvocation:Signature[?toInsn] = ?meth.
