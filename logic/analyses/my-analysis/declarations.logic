@@ -113,3 +113,10 @@ IntraProceduralDependencyBase(?to, ?from) ->
 IntraProceduralDependency(?from, ?to) ->
     Instruction(?from),
     Instruction(?to).
+
+
+
+InterProceduralDependency(?from, ?to, ?callsite) ->
+    Instruction(?from),
+    Instruction(?to),
+    MethodInvocation(?callsite).
