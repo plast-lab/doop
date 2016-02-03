@@ -157,8 +157,8 @@ IntraProceduralDependencyBase(?to, ?from) <-
     IntraProceduralDataDep(?from, ?to).
 
 IntraProceduralDependencyBase(?to, ?from) <-
-    IntraProceduralControlDep(?fromBlock, ?to),
-    BasicBlockHead[?from] = ?fromBlock.
+    IntraProceduralControlDep(?toBlock, ?from),
+    BasicBlockHead[?to] = ?toBlock.
 
 /**
  * Transitive closure
@@ -182,3 +182,23 @@ InterProceduralDependency(?fromInsn, ?toInsn, ?toInsn) <-
     ReturnNonvoid:Insn(?fromInsn),
     Instruction:Method[?fromInsn] = ?meth,
     MethodInvocation:Signature[?toInsn] = ?meth.
+
+
+InterestingInstruction(?insn, ?callsite) <-
+    InterestingInstructionInit(?insn, ?callsite).
+
+InterestingInstruction(?insn, ?callsite) <-
+    ?insn != ?callsite,
+    InterestingInstruction(?fromInsn, _),
+    InterProceduralDependency(?fromInsn, ?insn, ?callsite).
+
+
+InterestingInstruction(?insn, ?thisMethInvocations) <-
+    InterestingInstruction(?fromInsn, ?insn),
+    InterProceduralDependency(?fromInsn, ?insn, ?insn),
+    Instruction:Method[?insn] = ?thisMeth,
+    MethodInvocation:Signature[?thisMethInvocations] = ?thisMeth.
+
+InterestingInstruction(?insn, ?callsite) <-
+    InterestingInstruction(?fromInsn, ?callsite),
+    IntraProceduralDependency(?fromInsn, ?insn).

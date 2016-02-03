@@ -1,1 +1,5 @@
 #include "../context-insensitive/delta.logic"
+
+
+// Interesting instructions to start off with and find what they influence
++InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0", "Test.Test.play/Test.Test.readInt/0").
