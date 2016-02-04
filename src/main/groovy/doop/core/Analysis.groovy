@@ -132,7 +132,6 @@ import org.apache.commons.logging.LogFactory
         exportDir   = new File(outDir, "export")
         averroesDir = new File(outDir, "averroes")
 
-
         // Create workspace connector (needed by the post processor and the server-side analysis execution)
         connector = new BloxbatchConnector(database, commandsEnvironment)
     }
@@ -281,7 +280,7 @@ import org.apache.commons.logging.LogFactory
             FileUtils.copyFile(new File("${tamiflexDir}/post-import.logic"),
                                new File("${outDir}/tamiflex-post-import.logic"))
             lbScript
-                .addBlockFile("tamiflex-fact-declarations.logic") 
+                .addBlockFile("tamiflex-fact-declarations.logic")
                 .executeFile("tamiflex-import.logic")
                 .addBlockFile("tamiflex-post-import.logic")
         }
