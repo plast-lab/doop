@@ -1,6 +1,6 @@
 # Doop - Framework for Java Pointer Analysis
 
-The following serve as an introduction to the Doop project. For a detailed tutorial, please consult `docs/doop-101.md`.
+This document contains instructions for invoking the main driver of Doop. For a more detailed tutorial on using the results of Doop analyses, please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf).
 
 ## Getting Started
 
@@ -118,8 +118,8 @@ You can also override the options from a properties file with options from the c
 
     $ ./doop -p /path/to/file.properties -a context-insensitive --jre 1.6
 
-Please consult the `doop.properties` template file for more information.
+Please consult the [doop.properties](doop.properties) template file for more information.
 
 
 ## License
-MIT license (see `LICENSE`).
+MIT license (see [LICENSE](LICENSE)).

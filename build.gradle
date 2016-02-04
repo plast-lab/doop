@@ -6,6 +6,9 @@ apply plugin: 'ivy-publish'
 //sourceCompatibility = "1.6"
 //targetCompatibility = "1.6"
 
+project.group = "plast-lab"
+project.version = 1.0
+
 //For the doop app
 mainClassName = 'doop.Main'
 
@@ -80,9 +83,9 @@ publishing {
     publications {
 
         doop(IvyPublication) {
-            organisation "doop"
+            organisation "$group"
             module "doop"
-            revision "1.0"
+            revision "$version"
             from components.java
         }
     }
