@@ -248,16 +248,15 @@ $ bloxbatch -db last-analysis -query \
 
 ***
 
-## Doop Tools
-For auxiliary tools, you could clone (or download) the [doop-tools](https://bitbucket.org/yanniss/doop-tools) repository.
+## Auxiliary Tools
 
 ### mkjar
-You can use `mkjar` to easily generate a jar file from a single java file. The generated jar file will contain local variable debugging information (e.g., variable names).
+You can use `bin/mkjar` to easily generate a jar file from a single java file. The generated jar file will contain local variable debugging information (e.g., variable names).
 
 Example:
 ```
 #!bash
-$ tools/bin/mkjar Example.java 
+$ ./bin/mkjar Example.java 
 added manifest
 adding: Dog.class(in = 292) (out= 210)(deflated 28%)
 adding: Animal.class(in = 434) (out= 280)(deflated 35%)
@@ -271,7 +270,7 @@ You can use `bytecode2jimple` to easily generate Jimple (or Shimple--the ssa var
 Example:
 ```
 #!bash
-$ tools/bin/bytecode2jimple -lsystem -d jimple-dir Example.jar
+$ ./bytecode2jimple/run -lsystem -d jimple-dir Example.jar
 $ ls jimple-dir
 Animal.jimple  Cat.jimple  Dog.jimple  Example.jimple 
 ```
