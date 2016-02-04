@@ -2,4 +2,5 @@
 
 
 // Interesting instructions to start off with and find what they influence
-+InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0", "Test.Test.play/Test.Test.readInt/0").
+// +InterestingInstructionInit("Test.Test.play/Test.Test.readInt/0", "Test.Test.readInt/java.util.Scanner.nextInt/0").
++InterestingInstructionInit("Test.CallSiteSensitivity.doo/Test.CallSiteSensitivity.go/0", "Test.CallSiteSensitivity.go/assign/instruction2").
