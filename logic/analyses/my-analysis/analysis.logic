@@ -171,34 +171,34 @@ IntraProceduralDependency(?from, ?to) <-
     IntraProceduralDependencyBase(?to, ?inter).
 
 
-InterProceduralDependency(?fromInsn, ?toInsn, ?callsite) <-
+InterProceduralDependency(?callsite, ?toInsn, ?fromInsn) <-
     FormalParam[?paramIndex, ?meth] = ?formalParam,
     ActualParam[?paramIndex, ?callsite] = ?actParam,
     MethodInvocation:Signature[?callsite] = ?meth,
     InstructionDefinesVar(?fromInsn, ?actParam),
     InstructionUsesVar(?toInsn, ?formalParam).
 
-InterProceduralDependency(?fromInsn, ?toInsn, ?toInsn) <-
+InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
     ReturnNonvoid:Insn(?fromInsn),
     Instruction:Method[?fromInsn] = ?meth,
     MethodInvocation:Signature[?toInsn] = ?meth.
 
 
-InterestingInstruction(?insn, ?callsite) <-
-    InterestingInstructionInit(?insn, ?callsite).
+InterestingInstruction(?callsite, ?insn) <-
+    InterestingInstructionInit(?callsite, ?insn).
 
-InterestingInstruction(?insn, ?callsite) <-
+InterestingInstruction(?callsite, ?insn) <-
     ?insn != ?callsite,
-    InterestingInstruction(?fromInsn, _),
-    InterProceduralDependency(?fromInsn, ?insn, ?callsite).
+    InterestingInstruction(_, ?fromInsn),
+    InterProceduralDependency(?callsite, ?insn, ?fromInsn).
 
 
-InterestingInstruction(?insn, ?thisMethInvocations) <-
-    InterestingInstruction(?fromInsn, ?insn),
-    InterProceduralDependency(?fromInsn, ?insn, ?insn),
+InterestingInstruction(?thisMethInvocations, ?insn) <-
+    InterestingInstruction(?insn, ?fromInsn),
+    InterProceduralDependency(?insn, ?insn, ?fromInsn),
     Instruction:Method[?insn] = ?thisMeth,
     MethodInvocation:Signature[?thisMethInvocations] = ?thisMeth.
 
-InterestingInstruction(?insn, ?callsite) <-
-    InterestingInstruction(?fromInsn, ?callsite),
+InterestingInstruction(?callsite, ?insn)  <-
+    InterestingInstruction(?callsite, ?fromInsn),
     IntraProceduralDependency(?fromInsn, ?insn).

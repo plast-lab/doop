@@ -116,19 +116,24 @@ IntraProceduralDependency(?from, ?to) ->
 
 
 
-InterestingInstruction(?insn, ?callsite) ->
+InterestingInstruction(?callsite, ?insn) ->
     Instruction(?insn),
     MethodInvocation(?callsite).
 
-InterestingInstructionInit(?insn, ?callsite) ->
+InterestingInstructionInit(?callsite, ?insn) ->
     Instruction(?insn),
     MethodInvocation(?callsite).
 
-InterProceduralDependency(?from, ?to, ?callsite) ->
+
+/**
+ * Currently invocation params/return value dependencies
+ */
+InterProceduralDependency(?callsite, ?to, ?from) ->
     Instruction(?from),
     Instruction(?to),
     MethodInvocation(?callsite).
 
+/** UNUSED **/
 InterestingDep(?from, ?to, ?callsite) ->
     Instruction(?from),
     Instruction(?to),
