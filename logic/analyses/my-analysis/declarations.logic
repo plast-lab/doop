@@ -115,15 +115,25 @@ IntraProceduralDependency(?from, ?to) ->
     Instruction(?to).
 
 
-
+/**
+ * Instructions found to be data/control dependent on the initial interesting instructions
+ */
 InterestingInstruction(?callsite, ?insn) ->
     Instruction(?insn),
     MethodInvocation(?callsite).
 
+/**
+ * Instructions to perform a forward slice on
+ */
 InterestingInstructionInit(?callsite, ?insn) ->
     Instruction(?insn),
     MethodInvocation(?callsite).
 
+/**
+ * Load instruction that loads interesting data
+ */
+InterestingLoad(?insn) ->
+    Instruction(?insn).
 
 /**
  * Currently invocation params/return value dependencies
@@ -133,8 +143,15 @@ InterProceduralDependency(?callsite, ?to, ?from) ->
     Instruction(?to),
     MethodInvocation(?callsite).
 
-/** UNUSED **/
-InterestingDep(?from, ?to, ?callsite) ->
-    Instruction(?from),
-    Instruction(?to),
-    MethodInvocation(?callsite).
+/**
+ * Method that contains the initial interesting instructions
+ */
+InterestingInitMethod(?initMeth) ->
+    MethodSignature(?initMeth).
+
+/**
+ * Instructions that can possibly be influenced by the initial interesting instruction
+ * Found by following the dependency transitive graph
+ */
+InterestingViaCG(?insn) ->
+    Instruction(?insn).
