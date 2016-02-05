@@ -184,6 +184,14 @@ InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
     MethodInvocation:Signature[?toInsn] = ?meth.
 
 
+InterestingLoad(?insn) <-
+    InterestingInstruction(_, ?interesting),
+    StoreArrayIndex:Base[?interesting] = ?var1,
+    LoadArrayIndex:Base[?insn] = ?var2,
+    VarPointsTo(_, ?heap, _, ?var1),
+    VarPointsTo(_, ?heap, _, ?var2).
+
+
 InterestingInstruction(?callsite, ?insn) <-
     InterestingInstructionInit(?callsite, ?insn).
 
@@ -191,7 +199,6 @@ InterestingInstruction(?callsite, ?insn) <-
     ?insn != ?callsite,
     InterestingInstruction(_, ?fromInsn),
     InterProceduralDependency(?callsite, ?insn, ?fromInsn).
-
 
 InterestingInstruction(?thisMethInvocations, ?insn) <-
     InterestingInstruction(?insn, ?fromInsn),
@@ -202,3 +209,27 @@ InterestingInstruction(?thisMethInvocations, ?insn) <-
 InterestingInstruction(?callsite, ?insn)  <-
     InterestingInstruction(?callsite, ?fromInsn),
     IntraProceduralDependency(?fromInsn, ?insn).
+
+InterestingInstruction(?thisMethInvocations, ?insn) <-
+    InterestingLoad(?insn),
+    Instruction:Method[?insn] = ?thisMeth,
+    MethodInvocation:Signature[?thisMethInvocations] = ?thisMeth.
+
+
+InterestingInitMethod(?initMeth) <-
+    InterestingInstructionInit(_, ?insn),
+    Instruction:Method[?insn] = ?initMeth.
+
+
+InterestingViaCG(?insn) <-
+    InterestingInstructionInit(_, ?insn).
+
+InterestingViaCG(?insn) <-
+    InterestingViaCG(?interesting),
+    IntraProceduralDependency(?interesting, ?insn).
+
+InterestingViaCG(?insn) <-
+    InterestingInitMethod(?initMeth),
+    MethodDependency(?meth, ?initMeth),
+    FormalParam[_, ?meth] = ?formalParam,
+    InstructionUsesVar(?insn, ?formalParam).
