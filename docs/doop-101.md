@@ -78,7 +78,7 @@ We will run a simple naive analysis (`-a naive` option) on the generated jar fil
 
 ```
 #!bash
-$ ./doop -a naive -j docs/doop-101-examples/Example.jar --jre 1.7 --no-stats
+$ ./doop -a naive -j docs/doop-101-examples/Example.jar --jre 1.7 --Xstats:none
 ```
 
 After the analysis has run, we can gather results by issuing queries directly to the database.
