@@ -270,7 +270,8 @@ You can use `bytecode2jimple` to easily generate Jimple (or Shimple--the ssa var
 Example:
 ```
 #!bash
-$ ./bytecode2jimple/run -lsystem -d jimple-dir Example.jar
+$ cd bytecode2jimple
+$ ./run -lsystem -d jimple-dir ../Example.jar
 $ ls jimple-dir
 Animal.jimple  Cat.jimple  Dog.jimple  Example.jimple 
 ```
