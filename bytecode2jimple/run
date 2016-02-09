@@ -1,2 +1,4 @@
 #!/bin/bash
-eval '../gradlew run -Pargs="'$@'"'
+[ "$(dirname $(readlink -f ${BASH_SOURCE[0]}))" != "$(pwd)" ] && \
+	{ echo "Must be invoked from inside script's directory " ; exit 1 ; }
+eval '$DOOP_HOME/gradlew run -Pargs="'$@'"'
