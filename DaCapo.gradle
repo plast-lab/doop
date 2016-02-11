@@ -1,12 +1,10 @@
 ext.commonArgs = ['--timeout', '90', '--ssa', '--cache']
-ext.analyses = ['context-insensitive']
-//ext.analyses = ['context-insensitive', '2-type-sensitive+heap']
+ext.analyses = ['context-insensitive', '2-type-sensitive+heap']
 
 ext.outDir = (project.hasProperty('outDir') ? project.property('outDir') : '.')
 ext.prefix = (project.hasProperty('prefix') ? project.property('prefix') : '')
 
-ext.DaCapo2006 = ['antlr']
-//ext.DaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
+ext.DaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
 task runDaCapo2006 {
     dependsOn << analyses.collect { analysis -> DaCapo2006.collect { BM -> "dacapo2006-$analysis-$BM" } }
 }
