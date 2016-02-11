@@ -6,7 +6,7 @@ apply plugin: 'ivy-publish'
 //sourceCompatibility = "1.6"
 //targetCompatibility = "1.6"
 
-project.group = "plast-lab"
+project.group = 'plast-lab'
 project.version = 1.0
 
 //For the doop app
@@ -25,14 +25,14 @@ def sootClassesJar = file('lib/sootclasses-2.5.0.jar')
 def jphantomJar = file('lib/jphantom-1.1-jar-with-dependencies.jar')
 
 dependencies {
-    compile "org.codehaus.groovy:groovy-all:2.3.10",            // Groovy
-            "commons-logging:commons-logging:1.1",              // Logging wrapper
-            "log4j:log4j:1.2.14",                               // Logging implementation
-            "commons-cli:commons-cli:1.2",                      // Command line processor
-            "org.anarres:jcpp:1.4.5",                           // C preprocessor in Java
-            "commons-io:commons-io:2.4",                        // File Utils
-            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
-            "org.ow2.asm:asm-debug-all:5.0.3"                   // Java Bytecode library
+    compile 'org.codehaus.groovy:groovy-all:2.3.10',            // Groovy
+            'commons-logging:commons-logging:1.1',              // Logging wrapper
+            'log4j:log4j:1.2.14',                               // Logging implementation
+            'commons-cli:commons-cli:1.2',                      // Command line processor
+            'org.anarres:jcpp:1.4.5',                           // C preprocessor in Java
+            'commons-io:commons-io:2.4',                        // File Utils
+            'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
+            'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
 
     compile files(sootClassesJar)                               // Soot is a compile time dependency
 
@@ -40,8 +40,8 @@ dependencies {
 }
 
 task generateFiles(type: JavaExec) {
-    description "Generate the doop.properties & checksums.properties files"
-    group = "Other"
+    description 'Generate the doop.properties & checksums.properties files'
+    group = 'Other'
     main = 'doop.FileGenerator'
     classpath = sourceSets.main.runtimeClasspath
     args = [
@@ -52,10 +52,10 @@ task generateFiles(type: JavaExec) {
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
-    into "logic"
+    into 'logic'
 }
 applicationDistribution.from(projectDir) {
-    include "doop.properties", "checksums.properties", "LICENSE"
+    include 'doop.properties', 'checksums.properties', 'LICENSE'
 }
 
 
@@ -63,8 +63,8 @@ run {
     dependsOn generateFiles
     //We set the DOOP_HOME environment variable (see doop.Main)
     environment.DOOP_HOME = projectDir
-    if(project.hasProperty("args")) {
-        args project.property("args").split()
+    if(project.hasProperty('args')) {
+        args project.property('args').split()
     }
 }
 
@@ -75,8 +75,8 @@ startScripts {
 publishing {
     repositories {
         ivy {
-            name "local-ivy-repo"
-            url "../ivy-repo"
+            name 'local-ivy-repo'
+            url '../ivy-repo'
         }
     }
 
@@ -84,9 +84,70 @@ publishing {
 
         doop(IvyPublication) {
             organisation "$group"
-            module "doop"
+            module 'doop'
             revision "$version"
             from components.java
+        }
+    }
+}
+
+clean.doFirst {
+    file('logs'   ).list().each { f -> delete "logs/${f}" }
+    file('out'    ).list().each { f -> delete "out/${f}" }
+    file('results').list().each { f -> delete "results/${f}" }
+    // TODO: delete doesn't work for symlinks
+    //delete 'last-analysis'
+}
+
+
+/////////////////////////////
+// -- DaCapo Benchmarks -- //
+/////////////////////////////
+
+ext.commonArgs = ['--timeout', '90', '--ssa', '--cache']
+ext.analyses = ['context-insensitive', '2-type-sensitive+heap']
+
+ext.outDir = (project.hasProperty('outDir') ? project.property('outDir') : '.')
+ext.prefix = (project.hasProperty('prefix') ? project.property('prefix') : '')
+
+ext.DaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
+task runDaCapo2006 {
+    dependsOn << analyses.collect { analysis -> DaCapo2006.collect { BM -> "dacapo2006-$analysis-$BM" } }
+}
+analyses.each { analysis ->
+    DaCapo2006.each { BM ->
+        task "dacapo2006-$analysis-$BM" (type: JavaExec) {
+            doFirst {
+                new File(outDir).mkdirs()
+                def fstream = new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace")
+                standardOutput = new org.apache.tools.ant.util.TeeOutputStream(fstream, System.out);
+            }
+            classpath = sourceSets.main.runtimeClasspath
+            main = 'doop.Main'
+
+            def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-2006/${BM}.jar"
+            args = ['-a', analysis, '-j', jarFile, '--dacapo'] + commonArgs
+        }
+    }
+}
+
+ext.DaCapoBach = ['avrora', 'batik', 'eclipse', 'h2', 'jython', 'luindex', 'lusearch', 'pmd', 'sunflow', 'xalan']
+task runDaCapoBach {
+    dependsOn << analyses.collect { analysis -> DaCapoBach.collect { BM -> "dacapoBach-$analysis-$BM" } }
+}
+analyses.each { analysis ->
+    DaCapoBach.each { BM ->
+        task "dacapoBach-$analysis-$BM" (type: JavaExec) {
+            doFirst {
+                new File(outDir).mkdirs()
+                def fstream = new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace")
+                standardOutput = new org.apache.tools.ant.util.TeeOutputStream(fstream, System.out);
+            }
+            classpath = sourceSets.main.runtimeClasspath
+            main = 'doop.Main'
+
+            def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-bach/${BM}/${BM}.jar"
+            args = ['-a', analysis, '-j', jarFile, '--dacapoBach'] + commonArgs
         }
     }
 }
