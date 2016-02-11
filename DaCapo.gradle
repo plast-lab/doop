@@ -1,8 +1,12 @@
-ext.commonArgs = ['--timeout', '90', '--ssa', '--cache']
-ext.analyses = ['context-insensitive', '2-type-sensitive+heap']
+def defaultCommonArgs = ['--timeout', '90', '--ssa', '--cache']
+def defaultAnalyses = ['context-insensitive', '1-object-sensitive', '2-type-sensitive+heap']
+def defaultOutDir = '.'
+def defaultPrefix = ''
 
-ext.outDir = (project.hasProperty('outDir') ? project.property('outDir') : '.')
-ext.prefix = (project.hasProperty('prefix') ? project.property('prefix') : '')
+ext.commonArgs = (project.hasProperty('commonArgs') ? project.property('commonArgs').split() : defaultCommonArgs)
+ext.analyses = (project.hasProperty('analyses') ? project.property('analyses').split() : defaultAnalyses)
+ext.outDir = (project.hasProperty('outDir') ? project.property('outDir') : defaultOutDir)
+ext.prefix = (project.hasProperty('prefix') ? project.property('prefix') : defaultPrefix)
 
 ext.DaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
 task runDaCapo2006 {
