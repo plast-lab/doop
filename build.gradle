@@ -3,6 +3,16 @@ apply plugin: 'application'
 apply plugin: 'ivy-publish'
 apply from  : 'DaCapo.gradle'
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'commons-io:commons-io:2.4'
+    }
+}
+
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 //sourceCompatibility = "1.6"
 //targetCompatibility = "1.6"
@@ -96,6 +106,5 @@ clean.doFirst {
     file('logs'   ).list().each { f -> delete "logs/${f}" }
     file('out'    ).list().each { f -> delete "out/${f}" }
     file('results').list().each { f -> delete "results/${f}" }
-    // TODO: delete doesn't work for symlinks
-    //delete 'last-analysis'
+    org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
 }
