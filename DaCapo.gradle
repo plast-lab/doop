@@ -1,3 +1,5 @@
+import org.apache.tools.ant.util.TeeOutputStream
+
 def defaultCommonArgs = ['--timeout', '90', '--ssa', '--cache']
 def defaultAnalyses = ['context-insensitive', '1-object-sensitive', '2-type-sensitive+heap']
 def defaultOutDir = '.'
@@ -17,8 +19,7 @@ analyses.each { analysis ->
         task "dacapo2006-$analysis-$BM" (type: JavaExec) {
             doFirst {
                 new File(outDir).mkdirs()
-                def fstream = new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace")
-                standardOutput = new org.apache.tools.ant.util.TeeOutputStream(fstream, System.out);
+                standardOutput = new TeeOutputStream(new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace"), System.out);
             }
             classpath = sourceSets.main.runtimeClasspath
             main = 'doop.Main'
@@ -38,8 +39,7 @@ analyses.each { analysis ->
         task "dacapoBach-$analysis-$BM" (type: JavaExec) {
             doFirst {
                 new File(outDir).mkdirs()
-                def fstream = new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace")
-                standardOutput = new org.apache.tools.ant.util.TeeOutputStream(fstream, System.out);
+                standardOutput = new TeeOutputStream(new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace"), System.out);
             }
             classpath = sourceSets.main.runtimeClasspath
             main = 'doop.Main'

@@ -102,9 +102,11 @@ publishing {
     }
 }
 
+import org.apache.commons.io.FileUtils
+
 clean.doFirst {
     file('logs'   ).list().each { f -> delete "logs/${f}" }
     file('out'    ).list().each { f -> delete "out/${f}" }
     file('results').list().each { f -> delete "results/${f}" }
-    org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
+    FileUtils.deleteQuietly(new File('last-analysis'))
 }
