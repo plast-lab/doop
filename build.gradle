@@ -1,6 +1,7 @@
 apply plugin: 'groovy'
 apply plugin: 'application'
 apply plugin: 'ivy-publish'
+apply from  : 'DaCapo.gradle'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 //sourceCompatibility = "1.6"
@@ -14,7 +15,7 @@ mainClassName = 'doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.4'
+    gradleVersion = 2.4
 }
 
 repositories {
@@ -97,57 +98,4 @@ clean.doFirst {
     file('results').list().each { f -> delete "results/${f}" }
     // TODO: delete doesn't work for symlinks
     //delete 'last-analysis'
-}
-
-
-/////////////////////////////
-// -- DaCapo Benchmarks -- //
-/////////////////////////////
-
-ext.commonArgs = ['--timeout', '90', '--ssa', '--cache']
-ext.analyses = ['context-insensitive', '2-type-sensitive+heap']
-
-ext.outDir = (project.hasProperty('outDir') ? project.property('outDir') : '.')
-ext.prefix = (project.hasProperty('prefix') ? project.property('prefix') : '')
-
-ext.DaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
-task runDaCapo2006 {
-    dependsOn << analyses.collect { analysis -> DaCapo2006.collect { BM -> "dacapo2006-$analysis-$BM" } }
-}
-analyses.each { analysis ->
-    DaCapo2006.each { BM ->
-        task "dacapo2006-$analysis-$BM" (type: JavaExec) {
-            doFirst {
-                new File(outDir).mkdirs()
-                def fstream = new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace")
-                standardOutput = new org.apache.tools.ant.util.TeeOutputStream(fstream, System.out);
-            }
-            classpath = sourceSets.main.runtimeClasspath
-            main = 'doop.Main'
-
-            def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-2006/${BM}.jar"
-            args = ['-a', analysis, '-j', jarFile, '--dacapo'] + commonArgs
-        }
-    }
-}
-
-ext.DaCapoBach = ['avrora', 'batik', 'eclipse', 'h2', 'jython', 'luindex', 'lusearch', 'pmd', 'sunflow', 'xalan']
-task runDaCapoBach {
-    dependsOn << analyses.collect { analysis -> DaCapoBach.collect { BM -> "dacapoBach-$analysis-$BM" } }
-}
-analyses.each { analysis ->
-    DaCapoBach.each { BM ->
-        task "dacapoBach-$analysis-$BM" (type: JavaExec) {
-            doFirst {
-                new File(outDir).mkdirs()
-                def fstream = new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace")
-                standardOutput = new org.apache.tools.ant.util.TeeOutputStream(fstream, System.out);
-            }
-            classpath = sourceSets.main.runtimeClasspath
-            main = 'doop.Main'
-
-            def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-bach/${BM}/${BM}.jar"
-            args = ['-a', analysis, '-j', jarFile, '--dacapoBach'] + commonArgs
-        }
-    }
 }
