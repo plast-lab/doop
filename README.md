@@ -1,6 +1,6 @@
 # Doop - Framework for Java Pointer Analysis
 
-This document contains instructions for invoking the main driver of Doop. For a more detailed tutorial on using the results of Doop analyses, please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf).
+This document contains instructions for invoking the main driver of Doop. For an introduction to Datalog, please consult [Datalog-101](docs/datalog-101.md). For a more detailed tutorial on using the results of Doop analyses, please consult [Doop-101](docs/doop-101.md). For an introduction to pointer analysis using Datalog, you can read a [research-level tutorial](http://yanniss.github.io/points-to-tutorial15.pdf).
 
 ## Getting Started
 
