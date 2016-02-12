@@ -20,10 +20,11 @@ Example:
 Path(x, y) <- Edge(x, y).
 ```
 
-To familiarize yourself with Datalog evaluation, you may want to try the
-[LogicBlox REPL
+To familiarize yourself with Datalog, you may want to try writing your own
+examples using the [LogicBlox REPL
 tutorial](https://developer.logicblox.com/content/docs4/tutorial/repl/section/split.html).
-
+An alternative source of tutorials is the official [LogicBlox
+blog page](https://developer.logicblox.com/category/tutorials/basics/).
 
 ## Toy Example
 
@@ -91,13 +92,13 @@ predicate: Path(int[32], int[32])
 ```
 
 ## Entities
-The analogous to user-defined types in Datalog are `Entity` predicates. Those
+The analogous to user-defined types in Datalog are **Entity** predicates. Those
 are unary predicates and internally the engine will use some unique ID for each
 entry of the same Entity predicate. There are two ways to create a new entity
 in Datalog--refmode predicates and constructor predicates.
 
 ### Refmode predicates
-You can think of `refmode` predicates as a mapping from a primitive type to an
+You can think of **refmode** predicates as a mapping from a primitive type to an
 entity. An example of refmode predicates is found in
 [ancestors.logic](doop-101-examples/ancestors.logic) and
 [ancestors-facts.logic](doop-101-examples/ancestors-facts.logic).
@@ -131,14 +132,7 @@ $ bloxbatch -db DB -addBlock -file docs/doop-101-examples/ancestors.logic
 $ bloxbatch -db DB -execute -file docs/doop-101-examples/ancestors-facts.logic
 $ bloxbatch -db DB -print Ancestor
 predicate: Ancestor(Person, Person)
-  label: Ancestor
-  storage model: Sparse
-  derivation type: DerivedAndStored
-  default value: null
-  size: 3
-  type map: false
-  partitioning: master only
-  locking: ByPredicate
+...
 /--- start of Ancestor facts ---\
   [1]john, [0]harry
   [2]dave, [0]harry
@@ -153,7 +147,53 @@ and `n` is the primitive value mapped to this new entity. In the print output,
 ID 1.
 
 ### Constructor predicates
+You can think of **constructor** predicates as a more complex version of
+refmode predicates. A constructor takes a number of **key** arguments, and maps
+each different combination to a unique entity. An example of constructor
+predicates is found in [person.logic](doop-101-examples/person.logic) and
+[person-facts.logic](doop-101-examples/person-facts.logic).
 
+```
+#!java
+```
+// Declarations
+Person(x) -> .
+Person:cons[name, age] = p -> string(name), int[32](age), Person(p).
+
+lang:physical:storageModel[`Person] = "ScalableSparse".
+lang:entity(`Person).
+lang:constructor(`Person:cons).
+```
+#!java
+```
++Person(p), +Person:cons[name, age] = p <-
+  name = "dave", age = 70.
++Person(p), +Person:cons[name, age] = p <-
+  name = "john", age = 50.
++Person(p), +Person:cons[name, age] = p <-
+  name = "harry", age = 25.
+```
+#!bash
+$ bloxbatch -db DB -create -overwrite -block base
+$ bloxbatch -db DB -addBlock -file docs/doop-101-examples/person.logic
+$ bloxbatch -db DB -execute -file docs/doop-101-examples/person-facts.logic
+$ bloxbatch -db DB -print Person
+predicate: Person(uint[32])
+...
+/--- start of Person facts ---\
+  [0]*0
+  [1]*1
+  [2]*2
+\---- end of Person facts ----/
+```
+
+In this example, `Person:cons` is a constructor predicate that constructs a new
+entity for each pair of name and age.  The lines starting with `lang:` are
+directives to the Datalog engine and are necessary when dealing with
+constructors.  You can think of a refmode predicate as a constructor with a
+single key argument.
+
+---
 
 ## Running an analysis
 
