@@ -202,7 +202,8 @@ In this example, `Person:cons` is a constructor predicate that constructs a new
 entity from a name and age pair. You can think of a refmode predicate as a
 constructor with a single key argument. The lines starting with `lang:` are
 directives to the Datalog engine and are necessary when dealing with
-constructors.
+constructors. As a sidenote, you can think of `:` as part of a predicate's
+name, with no significant meaning.
 
 ---
 
