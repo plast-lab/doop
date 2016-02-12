@@ -90,11 +90,12 @@ predicate: Path(int[32], int[32])
   4, 6
 \---- end of Path facts ----/
 ```
+---
 
 ## Entities
 The analogous to user-defined types in Datalog are **Entity** predicates. Those
 are unary predicates and internally the engine will use some unique ID for each
-entry of the same Entity predicate. There are two ways to create a new entity
+entry of the same Entity predicate. There are two ways to create new entities
 in Datalog--refmode predicates and constructor predicates.
 
 ### Refmode predicates
@@ -149,8 +150,8 @@ ID 1.
 ### Constructor predicates
 You can think of **constructor** predicates as a more complex version of
 refmode predicates. A constructor takes a number of **key** arguments, and maps
-each different combination to a unique entity. An example of constructor
-predicates is found in [person.logic](doop-101-examples/person.logic) and
+each combination to an entity. An example of constructor predicates is
+found in [person.logic](doop-101-examples/person.logic) and
 [person-facts.logic](doop-101-examples/person-facts.logic).
 
 ```
@@ -160,9 +161,9 @@ predicates is found in [person.logic](doop-101-examples/person.logic) and
 Person(x) -> .
 Person:cons[name, age] = p -> string(name), int[32](age), Person(p).
 
-lang:physical:storageModel[`Person] = "ScalableSparse".
-lang:entity(`Person).
-lang:constructor(`Person:cons).
+lang:physical:storageModel[\`Person] = "ScalableSparse".
+lang:entity(\`Person).
+lang:constructor(\`Person:cons).
 ```
 #!java
 ```
@@ -188,10 +189,10 @@ predicate: Person(uint[32])
 ```
 
 In this example, `Person:cons` is a constructor predicate that constructs a new
-entity for each pair of name and age.  The lines starting with `lang:` are
+entity from a name and age pair. You can think of a refmode predicate as a
+constructor with a single key argument. The lines starting with `lang:` are
 directives to the Datalog engine and are necessary when dealing with
-constructors.  You can think of a refmode predicate as a constructor with a
-single key argument.
+constructors.
 
 ---
 
