@@ -156,7 +156,6 @@ found in [person.logic](doop-101-examples/person.logic) and
 
 ```
 #!java
-```
 // Declarations
 Person(x) -> .
 Person:cons[name, age] = p -> string(name), int[32](age), Person(p).
@@ -165,14 +164,17 @@ lang:physical:storageModel[\`Person] = "ScalableSparse".
 lang:entity(\`Person).
 lang:constructor(\`Person:cons).
 ```
-#!java
+
 ```
+#!java
 +Person(p), +Person:cons[name, age] = p <-
   name = "dave", age = 70.
 +Person(p), +Person:cons[name, age] = p <-
   name = "john", age = 50.
 +Person(p), +Person:cons[name, age] = p <-
   name = "harry", age = 25.
+```
+
 ```
 #!bash
 $ bloxbatch -db DB -create -overwrite -block base
