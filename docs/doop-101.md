@@ -61,7 +61,7 @@ We invoke actions on our Datalog engine using `bloxbatch`.
 
 ```
 #!bash
-$ bloxbatch -db DB -create -overwrite -block base                          # create our database
+$ bloxbatch -db DB -create -overwrite -blocks base                          # create our database
 $ bloxbatch -db DB -addBlock -file docs/doop-101-examples/path.logic       # load our rules
 $ bloxbatch -db DB -execute -file docs/doop-101-examples/path-facts.logic  # load our facts
 $ bloxbatch -db DB -print Path                                             # print computed results
@@ -128,7 +128,7 @@ Ancestor(x,y) <- Ancestor(x,z), Ancestor(z,y).
 
 ```
 #!bash
-$ bloxbatch -db DB -create -overwrite -block base
+$ bloxbatch -db DB -create -overwrite -blocks base
 $ bloxbatch -db DB -addBlock -file docs/doop-101-examples/ancestors.logic
 $ bloxbatch -db DB -execute -file docs/doop-101-examples/ancestors-facts.logic
 $ bloxbatch -db DB -print Ancestor
@@ -160,9 +160,9 @@ found in [person.logic](doop-101-examples/person.logic) and
 Person(x) -> .
 Person:cons[name, age] = p -> string(name), int[32](age), Person(p).
 
-lang:physical:storageModel[\`Person] = "ScalableSparse".
-lang:entity(\`Person).
-lang:constructor(\`Person:cons).
+lang:physical:storageModel[`Person] = "ScalableSparse".
+lang:entity(`Person).
+lang:constructor(`Person:cons).
 ```
 
 ```
@@ -177,7 +177,7 @@ lang:constructor(\`Person:cons).
 
 ```
 #!bash
-$ bloxbatch -db DB -create -overwrite -block base
+$ bloxbatch -db DB -create -overwrite -blocks base
 $ bloxbatch -db DB -addBlock -file docs/doop-101-examples/person.logic
 $ bloxbatch -db DB -execute -file docs/doop-101-examples/person-facts.logic
 $ bloxbatch -db DB -print Person
@@ -188,6 +188,14 @@ predicate: Person(uint[32])
   [1]*1
   [2]*2
 \---- end of Person facts ----/
+$ bloxbatch -db DB -print Person:cons
+predicate: Person:cons[string, int[32]] = Person
+...
+/--- start of Person:cons facts ---\
+  dave, 70, [2]*2
+  harry, 25, [0]*0
+  john, 50, [1]*1
+\---- end of Person:cons facts ----/
 ```
 
 In this example, `Person:cons` is a constructor predicate that constructs a new
