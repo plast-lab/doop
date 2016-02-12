@@ -61,10 +61,10 @@ We invoke actions on our Datalog engine using `bloxbatch`.
 
 ```
 #!bash
-$ bloxbatch -db DB -create -overwrite -blocks base                         # create our database
+$ bloxbatch -db DB -create -overwrite -blocks base                            # create our database
 $ bloxbatch -db DB -addBlock -file docs/datalog-101-examples/path.logic       # load our rules
 $ bloxbatch -db DB -execute -file docs/datalog-101-examples/path-facts.logic  # load our facts
-$ bloxbatch -db DB -print Path                                             # print computed results
+$ bloxbatch -db DB -print Path                                                # print computed results
 predicate: Path(int[32], int[32])
   label: Path
   storage model: Sparse
