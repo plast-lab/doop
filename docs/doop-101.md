@@ -98,7 +98,7 @@ in Datalog--refmode predicates and constructor predicates.
 
 ### Refmode predicates
 You can think of `refmode` predicates as a mapping from a primitive type to an
-entity. An example for refmode predicates is found in
+entity. An example of refmode predicates is found in
 [ancestors.logic](doop-101-examples/ancestors.logic) and
 [ancestors-facts.logic](doop-101-examples/ancestors-facts.logic).
 
@@ -124,10 +124,6 @@ Ancestor(x,y) <- Ancestor(x,z), Ancestor(z,y).
 +Parent(x,y) <- Name(x:"john"), Name(y:"harry").
 ```
 
-Here `Person` is an entity predicate and `Name` is a refmode predicate. In
-`Name(x:n)`, `x` is bound to the internal ID the engine gave to the new entity,
-and `n` is the primitive value this new entity maps to.
-
 ```
 #!bash
 $ bloxbatch -db DB -create -overwrite -block base
@@ -150,7 +146,11 @@ predicate: Ancestor(Person, Person)
 \---- end of Ancestor facts ----/
 ```
 
-Here, `[1]john` means that the string "john" is used to create a Person with ID 1.
+Here `Person` is an entity predicate and `Name` is a refmode predicate. In
+`Name(x:n)`, `x` is bound to the internal ID the engine gave to the new entity,
+and `n` is the primitive value mapped to this new entity. In the print output,
+`[1]john` means that the string "john" is used to create a Person entity with
+ID 1.
 
 ### Constructor predicates
 
