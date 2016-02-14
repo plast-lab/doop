@@ -204,3 +204,21 @@ constructor with a single key argument. The lines starting with `lang:` are
 directives to the Datalog engine and are necessary when dealing with
 constructors. As a sidenote, you can think of `:` as part of a predicate's
 name, with no significant meaning.
+
+---
+
+## Exercise
+
+Assume a `Next(i, j)` relation on code instructions (instruction `j` is after instruction `i`) and implement:
+
+* `Reachable(i,j)`
+* `ReachableBypassing(i,j,k)`
+* `ReachableFromEntry(i)`, assuming an `EntryInstruction(j)` relation
+* `CanReachReturn(i)`, assuming a `ReturnInstruction(j)` relation
+
+How about:
+
+* `CanReachAllReturns(i)`
+* `AllPredecessorsReachableFromEntry(i)`
+
+A possible implementation is found in [graph.logic](datalog-101-examples/graph.logic).
