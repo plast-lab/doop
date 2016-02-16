@@ -24,7 +24,7 @@ public class FactGenerator
 {
     protected FactWriter _writer;
     protected boolean _ssa;
-    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(16, 32, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(4, 16, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     private int _classCounter;
     private ArrayList<SootClass> _sootClassArray;
     private int _totalClasses;
@@ -46,12 +46,12 @@ public class FactGenerator
         _classCounter++;
         _sootClassArray.add(_sootClass);
 
-        if (_classCounter % 30 == 0) {
+        if (_classCounter % 10 == 0) {
             Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
             _classGeneratorExecutor.execute(classGenerator);
             _sootClassArray = new ArrayList<>();
         }
-        else if (_classCounter % 30 != 0 && _classCounter == _totalClasses - 1) {
+        else if (_classCounter % 10 != 0 && _classCounter == _totalClasses - 1) {
             Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
             _classGeneratorExecutor.execute(classGenerator);
             _sootClassArray = new ArrayList<>();
