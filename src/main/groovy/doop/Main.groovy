@@ -121,8 +121,6 @@ class Main {
                     void run() {
                         logger.info "Starting ${analysis.name} analysis on ${analysis.inputJarFiles[0]} - id: $analysis.id"
                         logger.debug analysis
-
-<<<<<<< local
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()
                         new CommandLineAnalysisPostProcessor().process(analysis)
