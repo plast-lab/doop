@@ -1,6 +1,6 @@
 package doop.soot;
 
-import doop.PredicateFile;
+import doop.soot.PredicateFile;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
