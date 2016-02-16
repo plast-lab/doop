@@ -1,0 +1,12 @@
+#include "../../../core/context-sensitivity-declarations.logic"
+
+// For this analysis, contexts are method invocations, so this is
+// what the initial system objects should have.
+MySystemThreadGroup(?invo, ?alloc) ->
+	MethodInvocation(?invo), HeapAllocation(?alloc).
+
+MyMainThreadGroup(?invo, ?alloc) ->
+	MethodInvocation(?invo), HeapAllocation(?alloc).
+
+MyMainThread(?invo, ?alloc) ->
+	MethodInvocation(?invo), HeapAllocation(?alloc).
