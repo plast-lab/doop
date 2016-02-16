@@ -1,22 +1,15 @@
 package doop.soot;
 
+import soot.*;
 import soot.jimple.*;
-import soot.Body;
-import soot.Local;
-import soot.Modifier;
-import soot.PrimType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-import soot.Unit;
-import soot.Value;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-import soot.Type;
-import soot.RefLikeType;
-import soot.RefType;
-import soot.ArrayType;
+
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -26,47 +19,42 @@ import soot.ArrayType;
  * @author Martin Bravenboer
  * @license MIT
  */
+@SuppressWarnings("Duplicates")
 public class FactGenerator
 {
-    private FactWriter _writer;
-    private boolean _ssa;
+    protected FactWriter _writer;
+    protected boolean _ssa;
+    private ExecutorService _classGeneratorExecutor = new ThreadPoolExecutor(16, 32, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    private int _classCounter;
+    private ArrayList<SootClass> _sootClassArray;
+    private int _totalClasses;
 
-    public FactGenerator(FactWriter writer, boolean ssa)
+    public FactGenerator(FactWriter writer, boolean ssa, int totalClasses)
     {
         _writer = writer;
         _ssa = ssa;
+        _classCounter = 0;
+        _sootClassArray = new ArrayList<>();
+        _totalClasses = totalClasses;
     }
 
-    public void generate(SootClass c)
-    {
-        _writer.writeClassOrInterfaceType(c);
+    public ExecutorService getMethodGeneratorExecutor() {
+        return _classGeneratorExecutor;
+    }
 
-        // the isInterface condition prevents Object as superclass of interface
-        if(c.hasSuperclass() && !c.isInterface())
-        {
-            _writer.writeDirectSuperclass(c, c.getSuperclass());
+    public void generate(SootClass _sootClass) {
+        _classCounter++;
+        _sootClassArray.add(_sootClass);
+
+        if (_classCounter % 30 == 0) {
+            Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
+            _classGeneratorExecutor.execute(classGenerator);
+            _sootClassArray = new ArrayList<>();
         }
-
-        for(SootClass i : c.getInterfaces())
-        {
-            _writer.writeDirectSuperinterface(c, i);
-        }
-
-        for(SootField f : c.getFields())
-        {
-            generate(f);
-        }
-
-        for(SootMethod m : c.getMethods())
-        {
-            Session session = new Session();
-
-            try {
-                generate(m, session);
-            } catch (RuntimeException exc) {
-                System.err.println("Error while processing method: " + m);
-                throw exc;
-            }
+        else if (_classCounter % 30 != 0 && _classCounter == _totalClasses - 1) {
+            Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
+            _classGeneratorExecutor.execute(classGenerator);
+            _sootClassArray = new ArrayList<>();
         }
     }
 
@@ -439,6 +427,7 @@ public class FactGenerator
             else
             {
                 throw new RuntimeException("Cannot handle assignment: " + stmt + " (op: " + op.getClass() + ")");
+
             }
         }
         else if(right instanceof PhiExpr)
@@ -449,6 +438,7 @@ public class FactGenerator
             }
         }
         else if(
+
             right instanceof BinopExpr
             || right instanceof NegExpr
             || right instanceof LengthExpr
