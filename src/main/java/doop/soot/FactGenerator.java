@@ -29,6 +29,7 @@ public class FactGenerator
     private ArrayList<SootClass> _sootClassArray;
     private int _totalClasses;
     private int _cores;
+    private int _classSplit = 3;
 
     public FactGenerator(FactWriter writer, boolean ssa, int totalClasses)
     {
@@ -53,12 +54,12 @@ public class FactGenerator
         _classCounter++;
         _sootClassArray.add(_sootClass);
 
-        if (_classCounter % 3 == 0) {
+        if (_classCounter % _classSplit == 0) {
             Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
             _classGeneratorExecutor.execute(classGenerator);
             _sootClassArray = new ArrayList<>();
         }
-        else if (_classCounter % 3 != 0 && _classCounter == _totalClasses - 1) {
+        else if (_classCounter + _classSplit-1 >= _totalClasses) {
             Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
             _classGeneratorExecutor.execute(classGenerator);
             _sootClassArray = new ArrayList<>();
