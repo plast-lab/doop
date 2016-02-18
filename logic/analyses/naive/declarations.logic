@@ -1,0 +1,7 @@
+#include "../../core/class-initialization-declarations.logic"
+#include "../../core/method-resolution-declarations.logic"
+#include "../../core/subclass-declarations.logic"
+
+
+MainMethodDeclaration(?method) ->
+   MethodSignature(?method).
