@@ -1,23 +1,9 @@
 package doop.soot;
 
-import soot.Local;
-import soot.RefLikeType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-
-import soot.Type;
-import soot.PrimType;
-import soot.RefType;
-import soot.NullType;
-import soot.ArrayType;
-import soot.VoidType;
-
-import soot.Unit;
-import soot.Value;
+import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
+import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.LineNumberTag;
 
 import static doop.soot.PredicateFile.*;
@@ -110,7 +96,7 @@ public class FactWriter
             Type componentType = ((ArrayType) t).getElementType();
             _db.add(COMPONENT_TYPE, c, writeType(componentType));
         }
-        else if(t instanceof PrimType || t instanceof NullType || t instanceof RefType || t instanceof VoidType)
+        else if(t instanceof PrimType || t instanceof NullType || t instanceof RefType || t instanceof VoidType || t instanceof BottomType)
         {
             // taken care of by the standard facts
             c = _db.asEntity(result);
@@ -147,8 +133,8 @@ public class FactWriter
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
-   public void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Local from, Session session)
-   {
+    public void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Local from, Session session)
+    {
        int index = session.calcUnitNumber(stmt);
        String rep = _rep.instruction(m, stmt, session, index);
 
@@ -244,12 +230,12 @@ public class FactWriter
      * NewMultiArray is slightly complicated because an array needs to
      * be allocated separately for every dimension of the array.
      */
-   public void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session)
+    public void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session)
     {
         writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session);
     }
 
-    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) 
+    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session)
     {
         String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
         int index = session.calcUnitNumber(stmt);

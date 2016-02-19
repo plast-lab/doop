@@ -2,18 +2,12 @@ package doop.soot;
 
 import doop.util.filter.ClassFilter;
 import doop.util.filter.GlobClassFilter;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 import soot.ClassProvider;
 import soot.Scene;
 import soot.SootClass;
+
+import java.io.File;
+import java.util.*;
 
 public class Main {
 
@@ -21,8 +15,8 @@ public class Main {
 
 
     private static Mode _mode = null;
-    private static List<String> _inputs = new ArrayList<>();
-    private static List<String> _libraries = new ArrayList<>();
+    private static List<String> _inputs = new ArrayList<String>();
+    private static List<String> _libraries = new ArrayList<String>();
     private static String _outputDir = null;
     private static String _main = null;
     private static boolean _ssa = false;
@@ -217,7 +211,7 @@ public class Main {
             soot.options.Options.v().set_keep_line_number(true);
         }
 
-        Collection<SootClass> classes = new ArrayList<>();
+        Collection<SootClass> classes = new ArrayList<SootClass>();
         for(String className : provider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
@@ -260,7 +254,7 @@ public class Main {
 
         Database db = new CSVDatabase(new File(_outputDir));
         FactWriter writer = new FactWriter(db);
-        FactGenerator generator = new FactGenerator(writer, _ssa);
+        FactGenerator generator = new FactGenerator(writer, _ssa, classes.size());
 
         for(SootClass c : classes) {
             if (c.isApplicationClass())
@@ -285,9 +279,19 @@ public class Main {
 
         db.flush();
 
+        long tStart = System.currentTimeMillis();
+
         for(SootClass c : classes) {
             generator.generate(c);
         }
+
+        generator.getMethodGeneratorExecutor().shutdown();
+        while (!generator.getMethodGeneratorExecutor().isTerminated()) {}
+
+        long tEnd = System.currentTimeMillis();
+
+        System.out.println("Finished all method generator threads");
+        System.out.println("\nforall SootClasses time " + (tEnd - tStart) / 1000.0 + " seconds.");
 
         db.close();
     }

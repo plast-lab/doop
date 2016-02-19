@@ -1,15 +1,14 @@
 package doop
 
 import doop.core.Analysis
-import doop.core.AnalysisOption
 import doop.core.Doop
 import doop.core.Helper
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
 
 import java.util.concurrent.*
+import java.util.logging.Level
+import java.util.logging.Logger
 
 /**
  * The entry point for the standalone doop app.
@@ -122,7 +121,6 @@ class Main {
                     void run() {
                         logger.info "Starting ${analysis.name} analysis on ${analysis.inputJarFiles[0]} - id: $analysis.id"
                         logger.debug analysis
-
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()
                         new CommandLineAnalysisPostProcessor().process(analysis)
@@ -130,8 +128,8 @@ class Main {
                 }).get(timeout, TimeUnit.MINUTES)
             }
             catch (TimeoutException te) {
-                logger.error("Timeout has expired ($timeout min).")
-                System.exit(-1)
+               logger.error("Timeout has expired ($timeout min).")
+               System.exit(-1)
             }
             executor.shutdown()
 
