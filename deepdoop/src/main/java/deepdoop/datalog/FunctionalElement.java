@@ -1,7 +1,6 @@
 package deepdoop.datalog;
 
 import java.util.List;
-import java.util.StringJoiner;
 
 public class FunctionalElement extends PredicateElement {
 	Object _valueParameter;
