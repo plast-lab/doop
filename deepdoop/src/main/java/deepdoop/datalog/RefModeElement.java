@@ -1,7 +1,6 @@
 package deepdoop.datalog;
 
 import java.util.Arrays;
-import java.util.StringJoiner;
 
 public class RefModeElement extends PredicateElement {
 
