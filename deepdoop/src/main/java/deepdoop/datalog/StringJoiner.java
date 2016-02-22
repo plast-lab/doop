@@ -1,7 +1,5 @@
 package deepdoop.datalog;
 
-//import java.lang.StringBuilder;
-
 // Simple simulation of StringJoiner from Java 1.8
 public class StringJoiner {
 	String _delimeter;
