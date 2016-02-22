@@ -279,19 +279,12 @@ public class Main {
 
         db.flush();
 
-        long tStart = System.currentTimeMillis();
-
         for(SootClass c : classes) {
             generator.generate(c);
         }
 
         generator.getMethodGeneratorExecutor().shutdown();
         while (!generator.getMethodGeneratorExecutor().isTerminated()) {}
-
-        long tEnd = System.currentTimeMillis();
-
-        System.out.println("Finished all method generator threads");
-        System.out.println("\nforall SootClasses time " + (tEnd - tStart) / 1000.0 + " seconds.");
 
         db.close();
     }
