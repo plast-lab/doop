@@ -1,4 +1,4 @@
 #!/bin/bash
 DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
-[ "DIR" != "$(pwd)" ] && { echo "Must be invoked from $DIR" ; exit 1 ; }
+[ "$DIR" != "$(pwd)" ] && { echo "Must be invoked from $DIR" ; exit 1 ; }
 eval '$DOOP_HOME/gradlew run -Pargs="'$@'"'
