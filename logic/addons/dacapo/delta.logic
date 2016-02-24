@@ -1,0 +1,19 @@
+/**
+ * DACAPO_BENCHMARK should be defined to represent the current benchmark being
+ * analyzed. E.g. "antlr".
+ */
++DacapoHarnessClass(?heap),
++Instruction:Value(?heap:?heapStr),
++StringConstant(?heap),
++HeapAllocation:Type[?heap] = "java.lang.String" <-
+   ?benchmark = DACAPO_BENCHMARK,
+#ifdef DACAPO_BACH
+   ?heapStr = "org.dacapo.harness." +
+      string:upper[ string:substring[?benchmark, 0, 1] ] +
+      string:substring[?benchmark, 1, string:length[?benchmark] - 1].
+#else
+   ?heapStr = "dacapo."+ ?benchmark +"."+
+      string:upper[ string:substring[?benchmark, 0, 1] ] +
+      string:substring[?benchmark, 1, string:length[?benchmark] - 1] +
+      "Harness".
+#endif
