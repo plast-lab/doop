@@ -5,11 +5,7 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -17,53 +13,56 @@ import java.util.concurrent.TimeUnit;
  * controlling what facts are generated.
  *
  * @author Martin Bravenboer
+ * @author Jim Mouris
  * @license MIT
  */
-@SuppressWarnings("Duplicates")
-public class FactGenerator
-{
+
+public class FactGenerator implements Runnable {
+
     protected FactWriter _writer;
     protected boolean _ssa;
-    private ExecutorService _classGeneratorExecutor;
-    private int _classCounter;
-    private ArrayList<SootClass> _sootClassArray;
-    private int _totalClasses;
-    private int _cores;
-    private int _classSplit = 3;
+    private List<SootClass> _sootClasses;
 
-    public FactGenerator(FactWriter writer, boolean ssa, int totalClasses)
+    public FactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
     {
-        _writer = writer;
-        _ssa = ssa;
-        _classCounter = 0;
-        _sootClassArray = new ArrayList<>();
-        _totalClasses = totalClasses;
-        _cores = Runtime.getRuntime().availableProcessors();
-        if (_cores > 2) {
-            _classGeneratorExecutor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-        } else {
-            _classGeneratorExecutor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-        }
+        this._writer = writer;
+        this._ssa = ssa;
+        this._sootClasses = sootClasses;
     }
 
-    public ExecutorService getMethodGeneratorExecutor() {
-        return _classGeneratorExecutor;
-    }
+    @Override
+    public void run() {
 
-    public void generate(SootClass _sootClass) {
-        _classCounter++;
-        _sootClassArray.add(_sootClass);
+        for (SootClass _sootClass : _sootClasses) {
 
-        if (_classCounter % _classSplit == 0) {
-            Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
-            _classGeneratorExecutor.execute(classGenerator);
-            _sootClassArray = new ArrayList<>();
+            _writer.writeClassOrInterfaceType(_sootClass);
+
+            // the isInterface condition prevents Object as superclass of interface
+            if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
+                _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
+            }
+
+            for (SootClass i : _sootClass.getInterfaces()) {
+                _writer.writeDirectSuperinterface(_sootClass, i);
+            }
+
+            for (SootField f : _sootClass.getFields()) {
+                generate(f);
+            }
+
+            for (SootMethod m : _sootClass.getMethods()) {
+                Session session = new Session();
+
+                try {
+                    generate(m, session); // try multithread this
+                } catch (RuntimeException exc) {
+                    System.err.println("Error while processing method: " + m);
+                    throw exc;
+                }
+            }
+
         }
-        else if (_classCounter + _classSplit-1 >= _totalClasses) {
-            Runnable classGenerator = new ClassGenerator(_writer, _ssa, _sootClassArray);
-            _classGeneratorExecutor.execute(classGenerator);
-            _sootClassArray = new ArrayList<>();
-        }
+
     }
 
     public void generate(SootField f)
@@ -96,6 +95,7 @@ public class FactGenerator
         // TODO annotation?
         // TODO enum?
     }
+
 
     /* Check if a Type refers to a phantom class */
     private boolean phantomBased(Type t) {
@@ -211,7 +211,9 @@ public class FactGenerator
 
     public void generate(SootMethod m, Body b, Session session)
     {
-        b.validate();
+        //TODO: Identify the problem with the jimple body of this method.
+        if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
+            b.validate();
 
         for(Local l : b.getLocals())
         {
@@ -265,11 +267,15 @@ public class FactGenerator
                 }
                 else if(stmt instanceof EnterMonitorStmt)
                 {
-                    _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle EnterMonitorStmt when op is not a Local?
+                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof ExitMonitorStmt)
                 {
-                    _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle ExitMonitorStmt when op is not a Local?
+                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof TableSwitchStmt)
                 {
@@ -351,7 +357,7 @@ public class FactGenerator
 
         if(right instanceof Local)
         {
-             _writer.writeAssignLocal(inMethod, stmt, left, (Local) right, session);
+            _writer.writeAssignLocal(inMethod, stmt, left, (Local) right, session);
         }
         else if(right instanceof InvokeExpr)
         {
@@ -405,7 +411,7 @@ public class FactGenerator
 
             if(index instanceof Local || index instanceof IntConstant)
             {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+                _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
             }
             else
             {
@@ -422,12 +428,11 @@ public class FactGenerator
                 _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
             }
             else if(
-                op instanceof IntConstant
-                || op instanceof LongConstant
-                || op instanceof FloatConstant
-                || op instanceof DoubleConstant
-                || op instanceof NullConstant
-                )
+                    op instanceof IntConstant
+                    || op instanceof LongConstant
+                    || op instanceof FloatConstant
+                    || op instanceof DoubleConstant
+                    || op instanceof NullConstant)
             {
                 // make sure we can jump to statement we do not care about (yet)
                 _writer.writeUnsupported(inMethod, stmt, session);
@@ -435,7 +440,6 @@ public class FactGenerator
             else
             {
                 throw new RuntimeException("Cannot handle assignment: " + stmt + " (op: " + op.getClass() + ")");
-
             }
         }
         else if(right instanceof PhiExpr)
@@ -446,11 +450,10 @@ public class FactGenerator
             }
         }
         else if(
-
-            right instanceof BinopExpr
-            || right instanceof NegExpr
-            || right instanceof LengthExpr
-            || right instanceof InstanceOfExpr)
+                right instanceof BinopExpr
+                || right instanceof NegExpr
+                || right instanceof LengthExpr
+                || right instanceof InstanceOfExpr)
         {
             // make sure we can jump to statement we do not care about (yet)
             _writer.writeUnsupported(inMethod, stmt, session);
@@ -619,5 +622,5 @@ public class FactGenerator
             throw new RuntimeException("Unhandled throw statement: " + stmt);
         }
     }
-
 }
+
