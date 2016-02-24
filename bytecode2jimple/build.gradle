@@ -14,7 +14,10 @@ task wrapper(type: Wrapper) {
 
 
 dependencies {
-	compile files('../lib/sootclasses-2.5.0.jar')
+	compile files('../lib/sootclasses-trunk.jar')
+
+	runtime files('../lib/dexlib2-2.0.7-dev.jar' , '../lib/util-2.0.7-dev.jar')
+	runtime 'com.google.guava:guava:19.0'
 }
 
 
