@@ -120,14 +120,14 @@ IntraProceduralDependency(?from, ?to) ->
  */
 InterestingInstruction(?callsite, ?insn) ->
     Instruction(?insn),
-    MethodInvocation(?callsite).
+    Instruction(?callsite).
 
 /**
  * Instructions to perform a forward slice on
  */
 InterestingInstructionInit(?callsite, ?insn) ->
     Instruction(?insn),
-    MethodInvocation(?callsite).
+    Instruction(?callsite).
 
 /**
  * Load instruction that loads interesting data
@@ -141,7 +141,7 @@ InterestingLoad(?insn) ->
 InterProceduralDependency(?callsite, ?to, ?from) ->
     Instruction(?from),
     Instruction(?to),
-    MethodInvocation(?callsite).
+    Instruction(?callsite).
 
 /**
  * Method that contains the initial interesting instructions

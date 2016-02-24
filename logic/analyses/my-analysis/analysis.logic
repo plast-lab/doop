@@ -99,15 +99,13 @@ InstructionDefinesVar(?instruction, ?var) <-
     AssignReturnValue[?instruction] = ?var.
 
 
-StoreFldFrom(?fld, ?base, ?var) <-
+StoreFldFrom(?insn, ?base, ?fld) <-
     FieldInstruction:Signature[?insn] = ?fld,
-    StoreInstanceField:Base[?insn] = ?base,
-    StoreInstanceField:From[?insn] = ?var.
+    StoreInstanceField:Base[?insn] = ?base.
 
-LoadFldTo(?fld, ?base, ?var) <-
+LoadFldTo(?insn, ?base, ?fld) <-
     FieldInstruction:Signature[?insn] = ?fld,
-    LoadInstanceField:Base[?insn] = ?base,
-    LoadInstanceField:To[?insn] = ?var.
+    LoadInstanceField:Base[?insn] = ?base.
 
 
 PostDominates(?dominator, ?insn) <-
@@ -185,14 +183,14 @@ IntraProceduralDependency(?from, ?to) <-
 InterProceduralDependency(?callsite, ?toInsn, ?fromInsn) <-
     FormalParam[?paramIndex, ?meth] = ?formalParam,
     ActualParam[?paramIndex, ?callsite] = ?actParam,
-    MethodInvocation:Signature[?callsite] = ?meth,
+    CallGraphEdge(_, ?callsite, _, ?meth),
     InstructionDefinesVar(?fromInsn, ?actParam),
     InstructionUsesVar(?toInsn, ?formalParam).
 
 InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
     ReturnNonvoid:Insn(?fromInsn),
     Instruction:Method[?fromInsn] = ?meth,
-    MethodInvocation:Signature[?toInsn] = ?meth.
+    CallGraphEdge(_, ?toInsn, _, ?meth).
 
 
 InterestingLoad(?insn) <-
@@ -215,7 +213,7 @@ InterestingInstruction(?thisMethInvocations, ?insn) <-
     InterestingInstruction(?insn, ?fromInsn),
     InterProceduralDependency(?insn, ?insn, ?fromInsn),
     Instruction:Method[?insn] = ?thisMeth,
-    MethodInvocation:Signature[?thisMethInvocations] = ?thisMeth.
+    CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
 
 InterestingInstruction(?callsite, ?insn)  <-
     InterestingInstruction(?callsite, ?fromInsn),
@@ -224,7 +222,7 @@ InterestingInstruction(?callsite, ?insn)  <-
 InterestingInstruction(?thisMethInvocations, ?insn) <-
     InterestingLoad(?insn),
     Instruction:Method[?insn] = ?thisMeth,
-    MethodInvocation:Signature[?thisMethInvocations] = ?thisMeth.
+    CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
 
 
 InterestingInitMethod(?initMeth) <-
