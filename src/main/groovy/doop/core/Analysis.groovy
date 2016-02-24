@@ -644,22 +644,22 @@ import org.apache.commons.logging.LogFactory
 
         }
 
-        Collection<String> params = ["-full", "-keep-line-number"] + depArgs + ["-application-regex", options.APP_REGEX.value.toString()]
+        Collection<String> params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
 
         if (options.SSA.value) {
-            params = params + ["-ssa"]
+            params = params + ["--ssa"]
         }
 
         if (!options.RUN_JPHANTOM.value) {
-            params = params + ["-allow-phantom"]
+            params = params + ["--allow-phantom"]
         }
 
         if (options.USE_ORIGINAL_NAMES.value) {
-            params = params + ["-use-original-names"]
+            params = params + ["--use-original-names"]
         }
 
         if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-            params = params + ["-only-application-classes-fact-gen"]
+            params = params + ["--only-application-classes-fact-gen"]
         }
 
         params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
