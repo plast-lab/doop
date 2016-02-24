@@ -247,8 +247,7 @@ arguments.
 Example:
 ```
 #!bash
-$ cd bytecode2jimple
-$ ./run -lsystem -d jimple-dir ../Example.jar
+$ ./bin/bytecode2jimple -lsystem -d jimple-dir Example.jar
 $ ls jimple-dir
 Animal.jimple  Cat.jimple  Dog.jimple  Example.jimple
 ```
