@@ -619,6 +619,20 @@ _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method) ->
    _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method).
 
 
+// ArrayInsnIndex 
+
+lang:physical:storageModel[`_ArrayInsnIndex] = "DelimitedFile".
+lang:physical:filePath[`_ArrayInsnIndex] = "facts/ArrayInsnIndex.facts".
+lang:physical:delimiter[`_ArrayInsnIndex] = "\t".
+lang:physical:hasColumnNames[`_ArrayInsnIndex] = false.
+
+_ArrayInsnIndex(?ref, ?index) ->
+   string(?ref),
+   string(?index).
+
++ArrayInsnIndex[?insn] = ?index <-
+   _ArrayInsnIndex(?insn, ?index).
+
 // Goto
 
 lang:physical:storageModel[`_Goto] = "DelimitedFile".

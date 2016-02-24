@@ -407,9 +407,13 @@ public class FactGenerator
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-            if(index instanceof Local || index instanceof IntConstant)
+            if(index instanceof Local)
             {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
+            }
+            else if(index instanceof IntConstant)
+            {
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
             }
             else
             {
@@ -510,7 +514,12 @@ public class FactGenerator
         {
             ArrayRef ref = (ArrayRef) left;
             Local base = (Local) ref.getBase();
-            _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
+            Value index = ref.getIndex();
+
+            if (index instanceof Local)
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
+            else
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)
