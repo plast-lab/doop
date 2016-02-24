@@ -8,8 +8,6 @@
 #gradle dirs
 ^.gradle
 ^build
-^bytecode2jimple/.gradle
-^bytecode2jimple/build
 
 #doop dist/runtime files
 ^cache
