@@ -15,7 +15,7 @@ javac $filenameJava -d $tmpDir -g
 # to analyze anyway?
 #jreDir=$DOOP_JRE_LIB
 #jre="1.7"
-#javac $filenameJava -d $tmpDir -bootclasspath ${jreDir}/jre${jre}/lib/rt.jar -source $jre -target $jre
+#javac $filenameJava -d $tmpDir -g -bootclasspath ${jreDir}/jre${jre}/lib/rt.jar -source $jre -target $jre
 
 jar cvfe $filenameJar $filename -C $tmpDir .
 rm -rf $tmpDir
