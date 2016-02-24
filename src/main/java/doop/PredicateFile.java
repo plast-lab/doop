@@ -59,6 +59,7 @@ public enum PredicateFile
     LOAD_STATIC_FIELD("LoadStaticField"),
     STORE_ARRAY_INDEX("StoreArrayIndex"),
     LOAD_ARRAY_INDEX("LoadArrayIndex"),
+    ARRAY_INSN_INDEX("ArrayInsnIndex"),
     GOTO("Goto"),
     IF("If"),
     TABLE_SWITCH("TableSwitch"),

@@ -99,6 +99,17 @@ InstructionDefinesVar(?instruction, ?var) <-
     AssignReturnValue[?instruction] = ?var.
 
 
+StoreFldFrom(?fld, ?base, ?var) <-
+    FieldInstruction:Signature[?insn] = ?fld,
+    StoreInstanceField:Base[?insn] = ?base,
+    StoreInstanceField:From[?insn] = ?var.
+
+LoadFldTo(?fld, ?base, ?var) <-
+    FieldInstruction:Signature[?insn] = ?fld,
+    LoadInstanceField:Base[?insn] = ?base,
+    LoadInstanceField:To[?insn] = ?var.
+
+
 PostDominates(?dominator, ?insn) <-
     SameMethodBBHeads(?dominator, ?insn),
     !DoesNotPostDominate(?dominator, ?insn).

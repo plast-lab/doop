@@ -445,6 +445,10 @@ LoadArrayIndex:To[?insn] = ?var ->
    LoadArrayIndex:Insn(?insn), Var(?var).
 
 
+ArrayInsnIndex[?insn] = ?index ->
+   Instruction(?insn), Var(?index).
+
+
 StoreArrayIndex:From[?insn] = ?var ->
    StoreArrayIndex:Insn(?insn), Var(?var).
 
