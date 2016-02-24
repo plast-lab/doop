@@ -78,6 +78,9 @@ InstructionUsesVar(?instruction, ?var) <-
 InstructionUsesVar(?instruction, ?var) <-
     StoreArrayIndex:From(?instruction, ?var).
 
+InstructionUsesVar(?instruction, ?var) <-
+    ArrayInsnIndex(?instruction, ?var).
+
 // TODO: should add support for AssignHeapAllocation and AssignReturnValue?
 // doesn't seem to cover all cases?
 InstructionDefinesVar(?instruction, ?var) <-
@@ -192,6 +195,13 @@ InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
     Instruction:Method[?fromInsn] = ?meth,
     CallGraphEdge(_, ?toInsn, _, ?meth).
 
+
+InterestingLoad(?insn) <-
+    InterestingInstruction(_, ?interesting),
+    StoreFldFrom(?interesting, ?var1, ?fld),
+    LoadFldTo(?insn, ?var2, ?fld),
+    VarPointsTo(_, ?heap, _, ?var1),
+    VarPointsTo(_, ?heap, _, ?var2).
 
 InterestingLoad(?insn) <-
     InterestingInstruction(_, ?interesting),
