@@ -62,6 +62,18 @@ task generateFiles(type: JavaExec) {
     ]
 }
 
+task bytecode2jimple(type: JavaExec) {
+    description 'Generate Jimple/Shimple'
+    group = 'Other'
+    main = 'doop.soot.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if (!project.hasProperty('args') || project.property('args').isEmpty()) {
+        args "--bytecode2jimpleHelp"
+    } else {
+        args = ["--bytecode2jimple", "--use-original-names"] + project.property('args').tokenize()
+    }
+}
+
 applicationDistribution.from(file("$projectDir/logic")) {
     into 'logic'
 }
@@ -74,7 +86,7 @@ run {
     dependsOn generateFiles
     //We set the DOOP_HOME environment variable (see doop.Main)
     environment.DOOP_HOME = projectDir
-    if(project.hasProperty('args')) {
+    if (project.hasProperty('args')) {
         args project.property('args').split()
     }
 }

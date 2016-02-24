@@ -100,7 +100,6 @@ public class Main {
                         }
                     }
                 }
-
                 else if (args[i].equals("--application-regex")) {
                     i = shift(args, i);
                     appRegex = args[i];
