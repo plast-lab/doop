@@ -38,9 +38,12 @@ public class Driver {
         for(SootClass c : sootClasses) {
             generate(c);
         }
-        // TODO change busy waiting!
         _executor.shutdown();
-        while (!_executor.isTerminated()) {}
+        try {
+            _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     void generate(SootClass _sootClass) {
