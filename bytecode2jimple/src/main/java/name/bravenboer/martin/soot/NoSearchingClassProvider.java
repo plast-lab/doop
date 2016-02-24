@@ -145,7 +145,7 @@ public class NoSearchingClassProvider implements ClassProvider {
 
       try {
 	InputStream stream = resource.open();
-	return new CoffiClassSource(className, stream);
+	return new CoffiClassSource(className, stream, null, null);
       }
       catch(IOException exc) {
 	throw new RuntimeException(exc);
