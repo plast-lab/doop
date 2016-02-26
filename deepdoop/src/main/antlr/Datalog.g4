@@ -22,12 +22,12 @@ rule_
 
 directive
 	: predicateName '(' '`' predicateName ')' '.'
-	| predicateName '[' ('`' predicateName)? ']' '=' primitiveConstant '.'
+	| predicateName '[' ('`' predicateName)? ']' '=' constant '.'
 	;
 
 predicate
-	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? '(' parameterList? ')'
-	| (ADD | RM | UP)? functionalHead '=' parameter
+	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? '(' exprList? ')'
+	| (ADD | RM | UP)? functionalHead '=' expr
 	| (ADD | RM)? refmode
 	| primitiveType
 	;
@@ -42,13 +42,13 @@ ruleBody
 	;
 
 aggregation
-	: 'agg' '<<' IDENTIFIER '=' predicate '>>' ;
+	: AGG '<<' IDENTIFIER '=' predicate '>>' ;
 
 refmode
-	: predicateName ('@' AT_SUFFIX)? '(' IDENTIFIER ':' parameter ')' ;
+	: predicateName ('@' AT_SUFFIX)? '(' IDENTIFIER ':' expr ')' ;
 
 functionalHead
-	: predicateName ('@' AT_SUFFIX)? '[' parameterList? ']' ;
+	: predicateName ('@' AT_SUFFIX)? '[' exprList? ']' ;
 
 predicateName
 	: '$'? IDENTIFIER
@@ -68,39 +68,32 @@ primitiveType
 	;
 */
 
-primitiveConstant
+constant
 	: INTEGER
 	| REAL
 	| BOOLEAN
 	| STRING
 	;
 
-parameter
+expr
 	: IDENTIFIER
 	| functionalHead
-	| primitiveConstant
-	| expr
+	| constant
+	| expr ('+' | '-' | '*' | '/') expr
+	| '(' expr ')'
 	;
 
 comparison
 	: expr ('=' | '<' | '<=' | '>' | '>=' | '!=') expr ;
-
-expr
-	: expr ('+' | '-' | '*' | '/') expr
-	| '(' expr ')'
-	| IDENTIFIER
-	| functionalHead
-	| primitiveConstant
-	;
 
 predicateList
 	: predicate
 	| predicateList ',' predicate
 	;
 
-parameterList
-	: parameter
-	| parameterList ',' parameter
+exprList
+	: expr
+	| exprList ',' expr
 	;
 
 
@@ -124,6 +117,9 @@ RM
 	: '-' ;
 UP
 	: '^' ;
+
+AGG
+	: 'agg' ;
 
 INTEGER
 	: [0-9]+
