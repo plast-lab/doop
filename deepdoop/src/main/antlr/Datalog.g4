@@ -17,7 +17,7 @@ constraint
 
 rule_
 	: predicateList ('<-' ruleBody?)? '.'
-	| predicate '<-' aggregation ruleBody '.'
+	| predicate '<-' aggregation '.'
 	;
 
 directive
@@ -42,7 +42,7 @@ ruleBody
 	;
 
 aggregation
-	: AGG '<<' IDENTIFIER '=' predicate '>>' ;
+	: AGG '<<' IDENTIFIER '=' predicate '>>' ruleBody ;
 
 refmode
 	: predicateName ('@' AT_SUFFIX)? '(' IDENTIFIER ':' expr ')' ;
