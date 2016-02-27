@@ -4,11 +4,11 @@ import java.util.List;
 
 public class PredicateElement implements IElement {
 	protected String _name;
-	protected List<IExpr> _params;
+	protected List<IExpr> _exprs;
 
-	public PredicateElement(String name, List<IExpr> params) {
+	public PredicateElement(String name, List<IExpr> exprs) {
 		_name = name;
-		_params = params;
+		_exprs = exprs;
 	}
 
 	@Override
@@ -17,7 +17,7 @@ public class PredicateElement implements IElement {
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr p : _params) joiner.add(p.toString());
+		for (IExpr e : _exprs) joiner.add(e.toString());
 		return _name + "(" + joiner + ")";
 	}
 }

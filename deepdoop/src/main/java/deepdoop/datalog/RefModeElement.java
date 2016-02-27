@@ -11,7 +11,7 @@ public class RefModeElement extends PredicateElement {
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(" : ");
-		for (IExpr p : _params) joiner.add(p.toString());
+		for (IExpr e : _exprs) joiner.add(e.toString());
 		return _name + "(" + joiner + ")";
 	}
 }
