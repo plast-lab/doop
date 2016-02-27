@@ -4,14 +4,14 @@ import java.util.Arrays;
 
 public class RefModeElement extends PredicateElement {
 
-	public RefModeElement(String name, Object firstParameter, Object secondParameter) {
-		super(name, Arrays.asList(firstParameter, secondParameter));
+	public RefModeElement(String name, VariableExpr entity, IExpr primitive) {
+		super(name, Arrays.asList(entity, primitive));
 	}
 
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(" : ");
-		for (Object p : _parameters) joiner.add(p.toString());
+		for (IExpr p : _params) joiner.add(p.toString());
 		return _name + "(" + joiner + ")";
 	}
 }
