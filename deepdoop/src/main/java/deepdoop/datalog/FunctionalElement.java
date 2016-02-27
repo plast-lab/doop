@@ -3,17 +3,17 @@ package deepdoop.datalog;
 import java.util.List;
 
 public class FunctionalElement extends PredicateElement {
-	IExpr _valueParam;
+	IExpr _valueExpr;
 
-	public FunctionalElement(String name, List<IExpr> keyParams, IExpr valueParam) {
-		super(name, keyParams);
-		_valueParam = valueParam;
+	public FunctionalElement(String name, List<IExpr> keyExprs, IExpr valueExpr) {
+		super(name, keyExprs);
+		_valueExpr = valueExpr;
 	}
 
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr p : _params) joiner.add(p.toString());
-		return _name + "[" + joiner + "] = " + _valueParam;
+		for (IExpr e : _exprs) joiner.add(e.toString());
+		return _name + "[" + joiner + "] = " + _valueExpr;
 	}
 }

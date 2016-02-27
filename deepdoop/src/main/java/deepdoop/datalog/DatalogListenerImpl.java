@@ -22,8 +22,8 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<String>> _names;
 	ParseTreeProperty<Predicate> _pred;
 	ParseTreeProperty<List<Predicate>> _preds;
-	ParseTreeProperty<IExpr> _param;
-	ParseTreeProperty<List<IExpr>> _params;
+	ParseTreeProperty<IExpr> _expr;
+	ParseTreeProperty<List<IExpr>> _exprs;
 	ParseTreeProperty<IElement> _elem;
 	ParseTreeProperty<List<IElement>> _elems;
 	boolean _inDeclaration;
@@ -37,8 +37,8 @@ class DatalogListenerImpl implements DatalogListener {
 		_names = new ParseTreeProperty<>();
 		_pred = new ParseTreeProperty<>();
 		_preds = new ParseTreeProperty<>();
-		_param = new ParseTreeProperty<>();
-		_params = new ParseTreeProperty<>();
+		_expr = new ParseTreeProperty<>();
+		_exprs = new ParseTreeProperty<>();
 		_elem = new ParseTreeProperty<>();
 		_elems = new ParseTreeProperty<>();
 		_inDeclaration = false;
@@ -125,17 +125,17 @@ class DatalogListenerImpl implements DatalogListener {
 		} else {
 			PredicateElement elem = null;
 			if (predCtx != null) {
-				List<IExpr> params;
-				if (ctx.exprList() == null) params = new ArrayList<>();
-				else params = get(_params, ctx.exprList());
-				elem = new PredicateElement(get(_name, predCtx), params);
+				List<IExpr> exprs;
+				if (ctx.exprList() == null) exprs = new ArrayList<>();
+				else exprs = get(_exprs, ctx.exprList());
+				elem = new PredicateElement(get(_name, predCtx), exprs);
 			} else if (funcCtx != null) {
-				List<IExpr> params = get(_params, funcCtx);
-				elem = new FunctionalElement(get(_name, funcCtx), params, get(_param, ctx.expr()));
+				List<IExpr> exprs = get(_exprs, funcCtx);
+				elem = new FunctionalElement(get(_name, funcCtx), exprs, get(_expr, ctx.expr()));
 			} else if (refCtx != null) {
 				String name = get(_name, ctx.refmode());
-				List<IExpr> params = get(_params, ctx.refmode());
-				elem = new RefModeElement(name, (VariableExpr)params.get(0), params.get(1));
+				List<IExpr> exprs = get(_exprs, ctx.refmode());
+				elem = new RefModeElement(name, (VariableExpr)exprs.get(0), exprs.get(1));
 			} else if (primCtx != null) {
 				throw new RuntimeException ("Primitive used outside a declaration");
 			}
@@ -173,16 +173,16 @@ class DatalogListenerImpl implements DatalogListener {
 		_name.put(ctx, get(_name, ctx.predicateName()));
 		List<IExpr> list = new ArrayList<>();
 		list.add(new VariableExpr(ctx.IDENTIFIER().getText()));
-		list.add(get(_param, ctx.expr()));
-		_params.put(ctx, list);
+		list.add(get(_expr, ctx.expr()));
+		_exprs.put(ctx, list);
 	}
 	public void enterFunctionalHead(FunctionalHeadContext ctx) {}
 	public void exitFunctionalHead(FunctionalHeadContext ctx) {
 		_name.put(ctx, get(_name, ctx.predicateName()));
 		if (ctx.exprList() != null)
-			_params.put(ctx, get(_params, ctx.exprList()));
+			_exprs.put(ctx, get(_exprs, ctx.exprList()));
 		else
-			_params.put(ctx, new ArrayList<IExpr>());
+			_exprs.put(ctx, new ArrayList<IExpr>());
 	}
 	public void enterPredicateName(PredicateNameContext ctx) {}
 	public void exitPredicateName(PredicateNameContext ctx) {
@@ -220,7 +220,7 @@ class DatalogListenerImpl implements DatalogListener {
 		else if (ctx.BOOLEAN() != null) p = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText()));
 		else /*if (ctx.STRING() != null)*/ p = new ConstantExpr(ctx.STRING().getText());
 
-		_param.put(ctx, p);
+		_expr.put(ctx, p);
 	}
 	public void enterExpr(ExprContext ctx) {}
 	public void exitExpr(ExprContext ctx) {
@@ -229,20 +229,20 @@ class DatalogListenerImpl implements DatalogListener {
 			p = new VariableExpr(ctx.IDENTIFIER().getText());
 		else if (ctx.functionalHead() != null) {
 			String name = get(_name, ctx.functionalHead());
-			List<IExpr> params = get(_params, ctx.functionalHead());
-			p = new FunctionalHeadExpr(name, params);
+			List<IExpr> exprs = get(_exprs, ctx.functionalHead());
+			p = new FunctionalHeadExpr(name, exprs);
 		} else /*if (ctx.primitiveConstant() != null) */
-			p = get(_param, ctx.constant());
+			p = get(_expr, ctx.constant());
 
-		_param.put(ctx, p);
+		_expr.put(ctx, p);
 //		String token = getToken(ctx, 0);
 //		if (ctx.IDENTIFIER() != null) {
 //			_elem.put(ctx, new ExprElement(ctx.IDENTIFIER().getText()));
 //		} else if (ctx.functionalHead() != null) {
 //			FunctionalHeadContext functional = ctx.functionalHead();
 //			String name = get(_name, functional);
-//			List<Object> params = get(_params, functional);
-//			_elem.put(ctx, new ExprElement(new FunctionalHeadElement(name, params)));
+//			List<Object> exprs = get(_exprs, functional);
+//			_elem.put(ctx, new ExprElement(new FunctionalHeadElement(name, exprs)));
 //		} else if (ctx.primitiveConstant() != null) {
 //			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
 //		} else if (token != null && !token.equals("(")) {
@@ -291,9 +291,9 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 	public void enterExprList(ExprListContext ctx) {}
 	public void exitExprList(ExprListContext ctx) {
-		IExpr p = get(_param, ctx.expr());
-		List<IExpr> list = get(_params, ctx.exprList(), p);
-		_params.put(ctx, list);
+		IExpr p = get(_expr, ctx.expr());
+		List<IExpr> list = get(_exprs, ctx.exprList(), p);
+		_exprs.put(ctx, list);
 	}
 
 	public void enterEveryRule(ParserRuleContext ctx) {}
