@@ -203,7 +203,7 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 	public void enterConstant(ConstantContext ctx) {}
 	public void exitConstant(ConstantContext ctx) {
-		ConstantExpr p;
+		ConstantExpr e;
 		if (ctx.INTEGER() != null) {
 			String str = ctx.INTEGER().getText();
 			int base = 10;
@@ -214,51 +214,45 @@ class DatalogListenerImpl implements DatalogListener {
 				str = str.substring(1);
 				base = 8;
 			}
-			p = new ConstantExpr(Integer.parseInt(str, base));
+			e = new ConstantExpr(Integer.parseInt(str, base));
 		}
-		else if (ctx.REAL() != null) p = new ConstantExpr(Double.parseDouble(ctx.REAL().getText()));
-		else if (ctx.BOOLEAN() != null) p = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText()));
-		else /*if (ctx.STRING() != null)*/ p = new ConstantExpr(ctx.STRING().getText());
+		else if (ctx.REAL() != null) e = new ConstantExpr(Double.parseDouble(ctx.REAL().getText()));
+		else if (ctx.BOOLEAN() != null) e = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText()));
+		else /*if (ctx.STRING() != null)*/ e = new ConstantExpr(ctx.STRING().getText());
 
-		_expr.put(ctx, p);
+		_expr.put(ctx, e);
 	}
 	public void enterExpr(ExprContext ctx) {}
 	public void exitExpr(ExprContext ctx) {
-		IExpr p;
+		IExpr e;
 		if (ctx.IDENTIFIER() != null)
-			p = new VariableExpr(ctx.IDENTIFIER().getText());
+			e = new VariableExpr(ctx.IDENTIFIER().getText());
 		else if (ctx.functionalHead() != null) {
 			String name = get(_name, ctx.functionalHead());
 			List<IExpr> exprs = get(_exprs, ctx.functionalHead());
-			p = new FunctionalHeadExpr(name, exprs);
-		} else /*if (ctx.primitiveConstant() != null) */
-			p = get(_expr, ctx.constant());
+			e = new FunctionalHeadExpr(name, exprs);
+		}
+		else if (ctx.constant() != null)
+			e = get(_expr, ctx.constant());
+		else {
+			List<ExprContext> exprs = ctx.expr();
+			if (exprs.size() == 2) {
+				IExpr left = get(_expr, exprs.get(0));
+				ComplexExpr.Operator op = null;
+				switch (getToken(ctx, 0)) {
+					case "+": op = ComplexExpr.Operator.PLUS ; break;
+					case "-": op = ComplexExpr.Operator.MINUS; break;
+					case "*": op = ComplexExpr.Operator.MULT ; break;
+					case "/": op = ComplexExpr.Operator.DIV  ; break;
+				}
+				IExpr right = get(_expr, exprs.get(1));
+				e = new ComplexExpr(left, op, right);
+			}
+			else
+				e = new ComplexExpr(get(_expr, exprs.get(0)));
+		}
 
-		_expr.put(ctx, p);
-//		String token = getToken(ctx, 0);
-//		if (ctx.IDENTIFIER() != null) {
-//			_elem.put(ctx, new ExprElement(ctx.IDENTIFIER().getText()));
-//		} else if (ctx.functionalHead() != null) {
-//			FunctionalHeadContext functional = ctx.functionalHead();
-//			String name = get(_name, functional);
-//			List<Object> exprs = get(_exprs, functional);
-//			_elem.put(ctx, new ExprElement(new FunctionalHeadElement(name, exprs)));
-//		} else if (ctx.primitiveConstant() != null) {
-//			_elem.put(ctx, new ExprElement(getToken(ctx.primitiveConstant(), 0)));
-//		} else if (token != null && !token.equals("(")) {
-//			ExprElement left = (ExprElement) get(_elem, ctx.expr(0));
-//			ExprElement right = (ExprElement) get(_elem, ctx.expr(1));
-//			ExprElement.Operator op = null;
-//			switch (token) {
-//				case "+": op = ExprElement.Operator.PLUS ; break;
-//				case "-": op = ExprElement.Operator.MINUS; break;
-//				case "*": op = ExprElement.Operator.MULT ; break;
-//				case "/": op = ExprElement.Operator.DIV  ; break;
-//			}
-//			_elem.put(ctx, new ExprElement(left, op, right));
-//		} else {
-//			_elem.put(ctx, new ExprElement((ExprElement) get(_elem, ctx.expr(0))));
-//		}
+		_expr.put(ctx, e);
 	}
 	public void enterComparison(ComparisonContext ctx) {}
 	public void exitComparison(ComparisonContext ctx) {
