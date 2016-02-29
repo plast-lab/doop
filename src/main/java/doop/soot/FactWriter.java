@@ -454,6 +454,33 @@ public class FactWriter
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
+    
+    public void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session)
+    {
+    	int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
+
+        _db.add(ASSIGN_CAST_NUM_CONST,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(_rep.numconstant(m, constant)),
+                _db.asEntity(_rep.local(m, to)),
+                writeType(t),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+	}
+    
+    public void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session)
+    {
+    	int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
+
+        _db.add(ASSIGN_CAST_NULL,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(_rep.local(m, to)),
+                writeType(t),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+	}
 
     public void writeStoreInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local from, Session session)
     {
