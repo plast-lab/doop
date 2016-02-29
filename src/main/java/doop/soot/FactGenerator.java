@@ -626,8 +626,7 @@ public class FactGenerator
         }
         else if(v instanceof NullConstant)
         {
-            // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeThrowNull(inMethod, stmt, session);
         }
         else
         {

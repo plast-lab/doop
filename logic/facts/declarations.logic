@@ -255,6 +255,7 @@ Instruction:Method[?insn] = ?inmethod ->
 UnsupportedInstruction(?insn) -> Instruction(?insn).
 
 lang:entity(`Throw:Insn).
+lang:entity(`ThrowNull:Insn).
 lang:entity(`If:Insn).
 lang:entity(`Goto:Insn).
 lang:entity(`TableSwitch:Insn).
@@ -289,6 +290,7 @@ lang:entity(`UnsupportedInstruction).
 //------------------------
 
 Throw:Insn(?insn) -> Instruction(?insn).
+ThrowNull:Insn(?insn) -> Throw:Insn(?insn).
 
 Throw:Var[?insn] = ?var ->
    Throw:Insn(?insn), Var(?var).
