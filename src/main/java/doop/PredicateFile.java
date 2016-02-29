@@ -51,6 +51,7 @@ public enum PredicateFile
     IF_VAR("IfVar"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
     THROW("Throw"),
+    THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),
     METHOD_SIGNATURE("MethodSignature"),
     STORE_INST_FIELD("StoreInstanceField"),

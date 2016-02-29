@@ -429,6 +429,25 @@ _Throw(?ref, ?index, ?var, ?method) ->
    _Throw(?ref, ?index, ?var, ?method).
 
 
+// ThrowNull
+
+lang:physical:storageModel[`_ThrowNull] = "DelimitedFile".
+lang:physical:filePath[`_ThrowNull] = "facts/ThrowNull.facts".
+lang:physical:delimiter[`_ThrowNull] = "\t".
+lang:physical:hasColumnNames[`_ThrowNull] = false.
+
+_ThrowNull(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++ThrowNull:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _ThrowNull(?ref, ?index, ?method).
+
+
 // Exception handler
 
 lang:physical:storageModel[`_ExceptionHandler] = "DelimitedFile".

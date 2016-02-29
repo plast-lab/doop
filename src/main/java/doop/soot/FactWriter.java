@@ -790,6 +790,20 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
+    
+    /**
+     * Throw null
+     */
+    public void writeThrowNull(SootMethod m, Stmt stmt, Session session)
+    {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
+
+        _db.add(THROW_NULL,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+    }
 
     public void writeExceptionHandlerPrevious(SootMethod m, Trap current, Trap previous, Session session)
     {
