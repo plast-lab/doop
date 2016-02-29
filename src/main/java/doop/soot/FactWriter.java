@@ -1151,5 +1151,35 @@ public class FactWriter
 				writeType(t),
 				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 	}
+	
+	public void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+		int index = session.calcUnitNumber(stmt);
+		String rep = _rep.instruction(m, stmt, session, index);
+
+		_db.add(ASSIGN_PHANTOM_INVOKE,
+				_db.asEntity(rep),
+				_db.asIntColumn(String.valueOf(index)),
+				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+	}
+	
+	public void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+		int index = session.calcUnitNumber(stmt);
+		String rep = _rep.instruction(m, stmt, session, index);
+
+		_db.add(PHANTOM_INVOKE,
+				_db.asEntity(rep),
+				_db.asIntColumn(String.valueOf(index)),
+				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+	}
+	
+	public void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
+		int index = session.calcUnitNumber(stmt);
+		String rep = _rep.instruction(m, stmt, session, index);
+
+		_db.add(BREAKPOINT_STMT,
+				_db.asEntity(rep),
+				_db.asIntColumn(String.valueOf(index)),
+				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+	}
 
 }

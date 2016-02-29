@@ -291,8 +291,16 @@ public class FactGenerator
             }
             else
             {
-                // make sure we can jump to statement we do not care about (yet)
-                _writer.writeUnsupported(m, stmt, session);
+            	// only reason for assign or invoke statements to be irrelevant
+            	// is the invocation of a method on a phantom class
+            	if(stmt instanceof AssignStmt)
+            		_writer.writeAssignPhantomInvoke(m, stmt, session);
+            	else if (stmt instanceof InvokeStmt)
+            		_writer.writePhantomInvoke(m, stmt, session);
+            	else if (stmt instanceof BreakpointStmt)
+            		_writer.writeBreakpointStmt(m, stmt, session);
+            	else
+            		throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
             }
         }
 

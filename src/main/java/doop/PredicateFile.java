@@ -74,6 +74,9 @@ public enum PredicateFile
     LOOKUP_SWITCH_DEFAULT("LookupSwitch-Default"),
     RETURN("Return"),
     RETURN_VOID("ReturnVoid"),
+    ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
+    PHANTOM_INVOKE("PhantomInvoke"),
+    BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
 
     private final String name;
