@@ -249,6 +249,30 @@ _AssignNull(?instruction, ?index, ?to, ?inmethod) ->
    _AssignNull(?instruction, ?index, ?to, ?method).
 
 
+// AssignInstanceOf
+
+lang:physical:storageModel[`_AssignInstanceOf] = "DelimitedFile".
+lang:physical:filePath[`_AssignInstanceOf] = "facts/AssignInstanceOf.facts".
+lang:physical:delimiter[`_AssignInstanceOf] = "\t".
+lang:physical:hasColumnNames[`_AssignInstanceOf] = false.
+
+_AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?from),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignInstanceOf:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstanceOf:From[?x] = ?from,
++AssignInstanceOf:Type[?x] = ?type,
++AssignInstruction:To[?x] = ?to <-
+   _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
+
 
 // TODO: Heap Allocations are not really instructions; we should
 // change their supertypes and their refmodes from Instruction:Value
