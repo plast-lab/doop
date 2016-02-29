@@ -429,16 +429,13 @@ public class FactGenerator
             {
                 _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
             }
-            else if(
-                op instanceof IntConstant
-                || op instanceof LongConstant
-                || op instanceof FloatConstant
-                || op instanceof DoubleConstant
-                || op instanceof NullConstant
-                )
+            else if(op instanceof NumericConstant)
             {
-                // make sure we can jump to statement we do not care about (yet)
-                _writer.writeUnsupported(inMethod, stmt, session);
+                _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
+            }
+            else if (op instanceof NullConstant)
+            {
+            	_writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }
             else
             {

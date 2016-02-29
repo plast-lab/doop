@@ -98,6 +98,54 @@ _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
    _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
 
 
+// AssignCastNumConstant
+
+lang:physical:storageModel[`_AssignCastNumConstant] = "DelimitedFile".
+lang:physical:filePath[`_AssignCastNumConstant] = "facts/AssignCastNumConstant.facts".
+lang:physical:delimiter[`_AssignCastNumConstant] = "\t".
+lang:physical:hasColumnNames[`_AssignCastNumConstant] = false.
+
+_AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?const),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCastNumConstant:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignCastNumConstant:Value[?x] = ?const,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?method).
+
+
+// AssignCastNull
+
+lang:physical:storageModel[`_AssignCastNull] = "DelimitedFile".
+lang:physical:filePath[`_AssignCastNull] = "facts/AssignCastNull.facts".
+lang:physical:delimiter[`_AssignCastNull] = "\t".
+lang:physical:hasColumnNames[`_AssignCastNull] = false.
+
+_AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCastNull:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCastNull(?instruction, ?index, ?to, ?type, ?method).
+
+
 // AssignHeapAllocation
 
 lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".

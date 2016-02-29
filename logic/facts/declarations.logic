@@ -275,6 +275,8 @@ lang:entity(`AssignLocal:Insn).
 lang:entity(`OperAssign:Insn).
 lang:entity(`AssignNull:Insn).
 lang:entity(`AssignNumConstant:Insn).
+lang:entity(`AssignCastNull:Insn).
+lang:entity(`AssignCastNumConstant:Insn).
 lang:entity(`AssignMultiArrayAllocation:Insn).
 lang:entity(`ReturnNonvoid:Insn).
 lang:entity(`ReturnVoid:Insn).
@@ -469,6 +471,8 @@ OperAssign:Insn(?insn) -> AssignInstruction(?insn).
 AssignLocal:Insn(?insn) ->  AssignInstruction(?insn).
 AssignNull:Insn(?insn)  ->  AssignInstruction(?insn).
 AssignNumConstant:Insn(?insn) -> AssignInstruction(?insn).
+AssignCastNull:Insn(?insn)  ->  AssignCast:Insn(?insn).
+AssignCastNumConstant:Insn(?insn) -> AssignCast:Insn(?insn).
 AssignHeapAllocation:Insn(?insn) -> AssignInstruction(?insn).
 AssignMultiArrayAllocation:Insn(?insn) -> AssignInstruction(?insn).
 
@@ -491,6 +495,12 @@ AssignCast:From[?insn] = ?from ->
 
 AssignCast:Type[?insn] = ?type ->
    AssignCast:Insn(?insn), Type(?type).
+
+
+// Assign numeric constant casting instruction
+
+AssignCastNumConstant:Value[?insn] = ?const ->
+   AssignCastNumConstant:Insn(?insn), NumConstant(?const).
 
 
 // Assign local instruction

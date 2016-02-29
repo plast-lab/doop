@@ -32,6 +32,8 @@ public enum PredicateFile
     PROPERTIES("Properties"),
     ASSIGN_LOCAL("AssignLocal"),
     ASSIGN_CAST("AssignCast"),
+    ASSIGN_CAST_NUM_CONST("AssignCastNumConstant"),
+    ASSIGN_CAST_NULL("AssignCastNull"),
     ASSIGN_HEAP_ALLOC("AssignHeapAllocation"),
     ASSIGN_MULT_ARRY_ALLOC("AssignMultiArrayAllocation"),
     ASSIGN_NUM_CONST("AssignNumConstant"),
