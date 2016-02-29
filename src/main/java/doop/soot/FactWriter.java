@@ -1138,4 +1138,18 @@ public class FactWriter
 		}
 	}
 
+	public void writeAssignInstanceOf(SootMethod m, AssignStmt stmt, Local to, Local from, Type t,
+			Session session) {
+		int index = session.calcUnitNumber(stmt);
+		String rep = _rep.instruction(m, stmt, session, index);
+
+		_db.add(ASSIGN_INSTANCE_OF,
+				_db.asEntity(rep),
+				_db.asIntColumn(String.valueOf(index)),
+				_db.asEntity(_rep.local(m, from)),
+				_db.asEntity(_rep.local(m, to)),
+				writeType(t),
+				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+	}
+
 }

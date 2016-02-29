@@ -272,6 +272,7 @@ lang:entity(`AssignInstruction).
 lang:entity(`AssignCast:Insn).
 lang:entity(`AssignHeapAllocation:Insn).
 lang:entity(`AssignLocal:Insn).
+lang:entity(`AssignInstanceOf:Insn).
 lang:entity(`OperAssign:Insn).
 lang:entity(`AssignNull:Insn).
 lang:entity(`AssignNumConstant:Insn).
@@ -469,6 +470,7 @@ AssignInstruction(?insn) -> Instruction(?insn).
 AssignCast:Insn(?insn)  ->  AssignInstruction(?insn).
 OperAssign:Insn(?insn) -> AssignInstruction(?insn).
 AssignLocal:Insn(?insn) ->  AssignInstruction(?insn).
+AssignInstanceOf:Insn(?insn) ->  AssignInstruction(?insn).
 AssignNull:Insn(?insn)  ->  AssignInstruction(?insn).
 AssignNumConstant:Insn(?insn) -> AssignInstruction(?insn).
 AssignCastNull:Insn(?insn)  ->  AssignCast:Insn(?insn).
@@ -508,12 +510,22 @@ AssignCastNumConstant:Value[?insn] = ?const ->
 AssignLocal:From[?insn] = ?from ->
    AssignLocal:Insn(?insn), Var(?from).
 
+// Assign instanceof expression
+
+AssignInstanceOf:From[?insn] = ?from ->
+   AssignInstanceOf:Insn(?insn), Var(?from).
+
+AssignInstanceOf:Type[?insn] = ?type ->
+   AssignInstanceOf:Insn(?insn), Type(?type).
+
 
 // Assign expression vars
+
 OperAssign:From(?insn, ?from) ->
    OperAssign:Insn(?insn), Var(?from).
 
 // Variables used in ifs
+
 If:Var(?insn, ?var) ->
    If:Insn(?insn), Var(?var).
 

@@ -38,6 +38,7 @@ public enum PredicateFile
     ASSIGN_MULT_ARRY_ALLOC("AssignMultiArrayAllocation"),
     ASSIGN_NUM_CONST("AssignNumConstant"),
     ASSIGN_NULL("AssignNull"),
+    ASSIGN_INSTANCE_OF("AssignInstanceOf"),
     NORMAL_OBJ("NormalObject"),
     EMPTY_ARRAY("EmptyArray"),
     CLASS_OBJ("ClassObject"),

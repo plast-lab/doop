@@ -449,18 +449,21 @@ public class FactGenerator
                 _writer.writeAssignLocal(inMethod, stmt, left, (Local) alternative, session);
             }
         }
-        else if (right instanceof BinopExpr) {
-        	_writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
-        }
-        else if (right instanceof UnopExpr) {
-        	_writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
-        }
-        else if (right instanceof NegExpr
-            || right instanceof LengthExpr
-            || right instanceof InstanceOfExpr)
+        else if (right instanceof BinopExpr)
         {
-            // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
+        }
+        else if (right instanceof UnopExpr)
+        {
+            _writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
+        }
+        else if (right instanceof InstanceOfExpr)
+        {
+        	InstanceOfExpr expr = (InstanceOfExpr) right;
+        	if (expr.getOp() instanceof Local)
+        		_writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
+        	else // TODO check if this is possible (instanceof on something that is not a local var)
+        		_writer.writeUnsupported(inMethod, stmt, session);
         }
         else
         {
