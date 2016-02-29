@@ -903,6 +903,63 @@ _ReturnVoid(?ref, ?index, ?method) ->
    _ReturnVoid(?ref, ?index, ?method).
 
 
+// AssignPhantomInvoke
+
+lang:physical:storageModel[`_AssignPhantomInvoke] = "DelimitedFile".
+lang:physical:filePath[`_AssignPhantomInvoke] = "facts/AssignPhantomInvoke.facts".
+lang:physical:delimiter[`_AssignPhantomInvoke] = "\t".
+lang:physical:hasColumnNames[`_AssignPhantomInvoke] = false.
+
+_AssignPhantomInvoke(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++AssignPhantomInvoke(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _AssignPhantomInvoke(?ref, ?index, ?method).
+
+
+// PhantomInvoke
+
+lang:physical:storageModel[`_PhantomInvoke] = "DelimitedFile".
+lang:physical:filePath[`_PhantomInvoke] = "facts/PhantomInvoke.facts".
+lang:physical:delimiter[`_PhantomInvoke] = "\t".
+lang:physical:hasColumnNames[`_PhantomInvoke] = false.
+
+_PhantomInvoke(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++PhantomInvoke(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _PhantomInvoke(?ref, ?index, ?method).
+
+
+// BreakpointStmt
+
+lang:physical:storageModel[`_BreakpointStmt] = "DelimitedFile".
+lang:physical:filePath[`_BreakpointStmt] = "facts/BreakpointStmt.facts".
+lang:physical:delimiter[`_BreakpointStmt] = "\t".
+lang:physical:hasColumnNames[`_BreakpointStmt] = false.
+
+_BreakpointStmt(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++BreakpointStmt(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _BreakpointStmt(?ref, ?index, ?method).
+
+
 // UnsupportedInstruction
 
 lang:physical:storageModel[`_UnsupportedInstruction] = "DelimitedFile".

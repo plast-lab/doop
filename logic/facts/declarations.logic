@@ -252,6 +252,10 @@ Instruction:Index[?insn] = ?index ->
 Instruction:Method[?insn] = ?inmethod ->
    Instruction(?insn), MethodSignature(?inmethod).
 
+AssignPhantomInvoke(?insn) -> AssignPhantomInvoke(?insn).
+PhantomInvoke(?insn) -> PhantomInvoke(?insn).
+BreakpointStmt(?insn) -> BreakpointStmt(?insn).
+
 UnsupportedInstruction(?insn) -> Instruction(?insn).
 
 lang:entity(`Throw:Insn).
