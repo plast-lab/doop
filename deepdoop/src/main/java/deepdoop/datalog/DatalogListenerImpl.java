@@ -97,9 +97,9 @@ class DatalogListenerImpl implements DatalogListener {
 			aggregation._body = get(_elem, ctx.ruleBody());
 			_rules.add(new Rule(head, aggregation));
 		}
-		org.antlr.v4.runtime.Token first = ctx.getStart();
-		int line = first.getLine();
-		System.out.println(line);
+//		org.antlr.v4.runtime.Token first = ctx.getStart();
+//		int line = first.getLine();
+//		System.out.println(line);
 	}
 	public void enterDirective(DirectiveContext ctx) {}
 	public void exitDirective(DirectiveContext ctx) {}
@@ -257,8 +257,8 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterComparison(ComparisonContext ctx) {}
 	public void exitComparison(ComparisonContext ctx) {
 		String token = getToken(ctx, 0);
-		IExpr left = (IExpr) get(_elem, ctx.expr(0));
-		IExpr right = (IExpr) get(_elem, ctx.expr(1));
+		IExpr left = get(_expr, ctx.expr(0));
+		IExpr right = get(_expr, ctx.expr(1));
 		ComparisonElement.Operator op = null;
 		switch (token) {
 			case "=" : op = ComparisonElement.Operator.EQ ; break;
