@@ -94,7 +94,6 @@ class DatalogListenerImpl implements DatalogListener {
 		} else {
 			IElement head = get(_elem, ctx.predicate());
 			AggregationElement aggregation = (AggregationElement) get(_elem, ctx.aggregation());
-			aggregation._body = get(_elem, ctx.ruleBody());
 			_rules.add(new Rule(head, aggregation));
 		}
 //		org.antlr.v4.runtime.Token first = ctx.getStart();
