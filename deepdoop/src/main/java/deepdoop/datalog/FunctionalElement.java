@@ -3,6 +3,7 @@ package deepdoop.datalog;
 import java.util.List;
 
 public class FunctionalElement extends PredicateElement {
+
 	IExpr _valueExpr;
 
 	public FunctionalElement(String name, List<IExpr> keyExprs, IExpr valueExpr) {
