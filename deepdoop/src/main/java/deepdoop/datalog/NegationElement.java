@@ -3,6 +3,7 @@ package deepdoop.datalog;
 public class NegationElement implements IElement {
 
 	IElement _element;
+
 	public NegationElement(IElement element) {
 		_element = element;
 	}

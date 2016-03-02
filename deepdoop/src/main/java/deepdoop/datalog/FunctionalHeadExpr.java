@@ -3,6 +3,7 @@ package deepdoop.datalog;
 import java.util.List;
 
 public class FunctionalHeadExpr implements IExpr {
+
 	String _name;
 	List<IExpr> _keyExprs;
 

@@ -3,6 +3,7 @@ package deepdoop.datalog;
 import java.util.List;
 
 public class PredicateElement implements IElement {
+
 	protected String _name;
 	protected List<IExpr> _exprs;
 

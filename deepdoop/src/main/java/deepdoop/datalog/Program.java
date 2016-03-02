@@ -3,6 +3,7 @@ package deepdoop.datalog;
 import java.util.Set;
 
 public class Program {
+
 	Set<Predicate> _predicates;
 	Set<Predicate> _specialPredicates;
 	Set<Rule> _rules;
