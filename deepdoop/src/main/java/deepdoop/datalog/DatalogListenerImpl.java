@@ -60,10 +60,9 @@ class DatalogListenerImpl implements DatalogListener {
 
 		Predicate pred = get(_pred, ctx.predicate());
 		if (ctx.refmode() == null) {
-			// TODO not nice
-			List<String> types = new ArrayList<>();
 			List<Predicate> preds = get(_preds, ctx.predicateList());
 			if (preds != null) {
+				List<String> types = new ArrayList<>();
 				for (Predicate p : preds)
 					types.add(p.getName());
 				pred.setTypes(types);
@@ -103,7 +102,6 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterPredicate(PredicateContext ctx) {}
 	public void exitPredicate(PredicateContext ctx) {
 		if (_inDeclaration) {
-			//TODO handle parameters -> for arity
 			Predicate p;
 			if (ctx.predicateName() != null) {
 				String name = get(_name, ctx.predicateName());

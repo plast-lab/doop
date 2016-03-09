@@ -1,6 +1,7 @@
 package deepdoop.datalog;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class RefMode extends Predicate {
 	Entity _entity;
@@ -9,6 +10,9 @@ public class RefMode extends Predicate {
 		super(name, Arrays.asList(entity._name, type));
 		_entity = entity;
 	}
+
+	@Override
+	public void setTypes(List<String> types) {}
 
 	@Override
 	public String toString() {
