@@ -9,7 +9,7 @@ program
 
 declaration
 	: predicate '->' predicateList? '.'
-	| predicateName '(' IDENTIFIER ')' ',' refmode '->' primitiveType '.'
+	| predicateName '(' IDENTIFIER ')' ',' refmode '->' predicate '.'
 	;
 
 constraint
@@ -26,10 +26,9 @@ directive
 	;
 
 predicate
-	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? '(' exprList? ')'
+	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? CAPACITY? '(' exprList? ')'
 	| (ADD | RM | UP)? functionalHead '=' expr
 	| (ADD | RM)? refmode
-	| primitiveType
 	;
 
 ruleBody
@@ -54,19 +53,6 @@ predicateName
 	: '$'? IDENTIFIER
 	| predicateName ':' IDENTIFIER
 	;
-
-primitiveType
-	: IDENTIFIER CAPACITY? '(' IDENTIFIER ')' ;
-/*
-	: ( 'int' ('[' ('32' | '64') ']')?
-	  | 'uint' ('[' ('32' | '64') ']')?
-	  | 'float' ('[' ('32' | '64') ']')?
-	  | 'decimal' ('[' ('64' | '128') ']')?
-	  | 'boolean'
-	  | 'string'
-	  ) '(' IDENTIFIER ')'
-	;
-*/
 
 constant
 	: INTEGER
