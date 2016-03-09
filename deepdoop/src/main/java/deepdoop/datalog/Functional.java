@@ -11,6 +11,12 @@ public class Functional extends Predicate {
 	}
 
 	@Override
+	public void setTypes(List<String> types) {
+		_valueType = types.remove(types.size() - 1);
+		_types = types;
+	}
+
+	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(" x ");
 		for (String s : _types) joiner.add(s);
