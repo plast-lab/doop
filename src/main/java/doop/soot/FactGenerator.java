@@ -439,11 +439,12 @@ public class FactGenerator
             }
             else if(op instanceof NumericConstant)
             {
+                // seems to always get optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
             else if (op instanceof NullConstant)
             {
-            	_writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
+                _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }
             else
             {
