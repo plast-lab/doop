@@ -58,9 +58,9 @@ class DatalogListenerImpl implements DatalogListener {
 	public void exitDeclaration(DeclarationContext ctx) {
 		_inDeclaration = false;
 
-		PredicateContext predCtx = ctx.predicate();
-		if (predCtx != null) {
-			Predicate pred = get(_pred, predCtx);
+		Predicate pred = get(_pred, ctx.predicate());
+		if (ctx.refmode() == null) {
+			// TODO not nice
 			List<String> types = new ArrayList<>();
 			List<Predicate> preds = get(_preds, ctx.predicateList());
 			if (preds != null) {
@@ -68,16 +68,17 @@ class DatalogListenerImpl implements DatalogListener {
 					types.add(p.getName());
 				pred.setTypes(types);
 				_predicates.add(pred);
-			} else {
+			}
+			else {
 				pred = new Entity(pred.getName());
 				_specialPredicates.add(new Entity(pred.getName()));
 			}
-		} else {
+		}
+		else {
 			Entity ent = new Entity(get(_name, ctx.predicateName()));
 			_specialPredicates.add(ent);
-
 			String refName = get(_name, ctx.refmode());
-			String refType = get(_name, ctx.primitiveType());
+			String refType = pred.getName();
 			RefMode ref = new RefMode(refName, refType, ent);
 			_specialPredicates.add(ref);
 		}
@@ -96,49 +97,45 @@ class DatalogListenerImpl implements DatalogListener {
 			AggregationElement aggregation = (AggregationElement) get(_elem, ctx.aggregation());
 			_rules.add(new Rule(head, aggregation));
 		}
-//		org.antlr.v4.runtime.Token first = ctx.getStart();
-//		int line = first.getLine();
-//		System.out.println(line);
 	}
 	public void enterDirective(DirectiveContext ctx) {}
 	public void exitDirective(DirectiveContext ctx) {}
 	public void enterPredicate(PredicateContext ctx) {}
 	public void exitPredicate(PredicateContext ctx) {
-		PredicateNameContext predCtx = ctx.predicateName();
-		FunctionalHeadContext funcCtx = ctx.functionalHead();
-		RefmodeContext refCtx = ctx.refmode();
-		PrimitiveTypeContext primCtx = ctx.primitiveType();
-
 		if (_inDeclaration) {
-			Predicate pred = null;
-			if (predCtx != null) {
-				pred = new Predicate(get(_name, predCtx), null);
-			} else if (funcCtx != null) {
-				pred = new Functional(get(_name, funcCtx), null, null);
-			} else if (refCtx != null) {
-				throw new RuntimeException ("Refmode in declaration has separate handling");
-			} else if (primCtx != null) {
-				pred = new Entity(get(_name, primCtx));
+			//TODO handle parameters -> for arity
+			Predicate p;
+			if (ctx.predicateName() != null) {
+				String name = get(_name, ctx.predicateName());
+				if (isPrimitive(name))
+					p = new Entity(normalizePrimitive(name, ctx.CAPACITY()));
+				else
+					p = new Predicate(name, null);
 			}
-			_pred.put(ctx, pred);
-		} else {
-			PredicateElement elem = null;
-			if (predCtx != null) {
-				List<IExpr> exprs;
-				if (ctx.exprList() == null) exprs = new ArrayList<>();
-				else exprs = get(_exprs, ctx.exprList());
-				elem = new PredicateElement(get(_name, predCtx), exprs);
-			} else if (funcCtx != null) {
-				List<IExpr> exprs = get(_exprs, funcCtx);
-				elem = new FunctionalElement(get(_name, funcCtx), exprs, get(_expr, ctx.expr()));
-			} else if (refCtx != null) {
+			else if (ctx.functionalHead() != null)
+				p = new Functional(get(_name, ctx.functionalHead()), null, null);
+			else /*if (ctx.refmode() != null)*/
+				throw new RuntimeException ("Refmode in declaration has separate handling in grammar");
+			_pred.put(ctx, p);
+		}
+		else {
+			PredicateElement p;
+			if (ctx.predicateName() != null) {
+				String name = normalizePrimitive(get(_name, ctx.predicateName()), ctx.CAPACITY());
+				List<IExpr> exprs = (ctx.exprList() == null ? exprs = new ArrayList<>() : get(_exprs, ctx.exprList()));
+				p = new PredicateElement(name, exprs);
+			}
+			else if (ctx.functionalHead() != null) {
+				String name = get(_name, ctx.functionalHead());
+				List<IExpr> exprs = get(_exprs, ctx.functionalHead());
+				p = new FunctionalElement(name, exprs, get(_expr, ctx.expr()));
+			}
+			else /*if (ctx.refmode() != null)*/ {
 				String name = get(_name, ctx.refmode());
 				List<IExpr> exprs = get(_exprs, ctx.refmode());
-				elem = new RefModeElement(name, (VariableExpr)exprs.get(0), exprs.get(1));
-			} else if (primCtx != null) {
-				throw new RuntimeException ("Primitive used outside a declaration");
+				p = new RefModeElement(name, (VariableExpr)exprs.get(0), exprs.get(1));
 			}
-			_elem.put(ctx, elem);
+			_elem.put(ctx, p);
 		}
 	}
 	public void enterRuleBody(RuleBodyContext ctx) {}
@@ -190,15 +187,6 @@ class DatalogListenerImpl implements DatalogListener {
 		if (child != null)
 			name = get(_name, child) + ":" + name;
 		_name.put(ctx, name);
-	}
-	public void enterPrimitiveType(PrimitiveTypeContext ctx) {}
-	public void exitPrimitiveType(PrimitiveTypeContext ctx) {
-		String base = ctx.IDENTIFIER(0).getText();
-		if (ctx.CAPACITY() != null)
-			base += ctx.CAPACITY().getText();
-		else
-			base = normalize(base);
-		_name.put(ctx, base);
 	}
 	public void enterConstant(ConstantContext ctx) {}
 	public void exitConstant(ConstantContext ctx) {
@@ -317,10 +305,31 @@ class DatalogListenerImpl implements DatalogListener {
 				return ((TerminalNode)ctx.getChild(i)).getText();
 		return null;
 	}
-	static String normalize(String type) {
-		if (type.equals("uint") || type.equals("int") || type.equals("float") || type.equals("decimal"))
-			return type + "[64]";
-		return type;
+	static boolean isPrimitive(String name) {
+		switch (name) {
+			case "uint":
+			case "int":
+			case "float":
+			case "decimal":
+			case "boolean":
+			case "string":
+				return true;
+			default:
+				return false;
+		}
+	}
+	static String normalizePrimitive(String name, TerminalNode capacityNode) {
+		switch (name) {
+			case "uint":
+			case "int":
+			case "float":
+			case "decimal":
+				return name + (capacityNode == null ? "[64]" : capacityNode.getText());
+			case "boolean":
+			case "string":
+			default:
+				return name;
+		}
 	}
 }
 
