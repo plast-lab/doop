@@ -71,7 +71,7 @@ InterestingViaCG(?insn) <-
 /* Any instruction that is intra-procedurally dependent on another interesting instruction */
 InterestingViaCG(?insn) <-
     InterestingViaCG(?interesting),
-    IntraProceduralDependency(?interesting, ?insn).
+    IntraProceduralDependencyOpt(?insn, ?interesting).
 
 /**
  * Call graph dependence - mark all instructions using the params
@@ -86,7 +86,7 @@ InterestingViaCG(?insn) <-
 /* Field store-load inter-procedural data dependency */
 InterestingViaCG(?insn) <-
     InterestingViaCG(?interesting),
-    StoreFldTo(?interesting, ?var1, ?fld),
+    StoreFldTo(?var1, ?fld, ?interesting),
     LoadFldFrom(?insn, ?var2, ?fld),
     VarPointsTo(_, ?heap, _, ?var1),
     VarPointsTo(_, ?heap, _, ?var2).
@@ -103,23 +103,29 @@ InterestingViaCG(?insn) <-
 
 #else
 
+/* Made for optimizing InterestingLoad */
+InterestingStoreHeapFld(?fld, ?heap) <-
+    InterestingInstruction(_, ?interesting),
+    StoreFldTo(?var, ?fld, ?interesting),
+    VarPointsTo(_, ?heap, _, ?var).
 
+/* Made for optimizing InterestingLoad */
+LoadArrayHeapInsn(?insn, ?heap) <-
+    LoadArrayIndex:Base[?insn] = ?var,
+    VarPointsTo(_, ?heap, _, ?var).
 
 /* An instruction that loads a field that an interesting instruction wrote to */
 InterestingLoad(?insn) <-
-    InterestingInstruction(_, ?interesting),
-    StoreFldTo(?interesting, ?var1, ?fld),
+    InterestingStoreHeapFld(?fld, ?heap),
     LoadFldFrom(?insn, ?var2, ?fld),
-    VarPointsTo(_, ?heap, _, ?var1),
     VarPointsTo(_, ?heap, _, ?var2).
 
 /* An instruction that loads data from an array that an interesting instruction wrote to */
 InterestingLoad(?insn) <-
     InterestingInstruction(_, ?interesting),
     StoreArrayIndex:Base[?interesting] = ?var1,
-    LoadArrayIndex:Base[?insn] = ?var2,
-    VarPointsTo(_, ?heap, _, ?var1),
-    VarPointsTo(_, ?heap, _, ?var2).
+    LoadArrayHeapInsn(?insn, ?heap),
+    VarPointsTo(_, ?heap, _, ?var1).
 
 
 /* Data dependency between the formal and actual param */
@@ -144,7 +150,7 @@ InterestingInstruction(?callsite, ?insn) <-
 /* All kinds of intra-procedural dependency */
 InterestingInstruction(?callsite, ?insn)  <-
     InterestingInstruction(?callsite, ?toInsn),
-    IntraProceduralDependency(?toInsn, ?insn).
+    IntraProceduralDependencyOpt(?insn, ?toInsn).
 
 /* Mark interesting loads as interesting instructions */
 InterestingInstruction(?thisMethInvocations, ?insn) <-
@@ -179,7 +185,7 @@ InterestingInstruction(?thisMethInvocations, ?insn) <-
 
 
 /* Insn stores to base.fld */
-StoreFldTo(?insn, ?base, ?fld) <-
+StoreFldTo(?base, ?fld, ?insn) <-
     FieldInstruction:Signature[?insn] = ?fld,
     StoreInstanceField:Base[?insn] = ?base.
 
@@ -287,3 +293,6 @@ IntraProceduralDependency(?to, ?from) <-
 IntraProceduralDependency(?to, ?from) <-
     IntraProceduralDependency(?to, ?inter),
     IntraProceduralDependencyBase(?from, ?inter).
+
+/* Inverted for optimization */
+IntraProceduralDependencyOpt(?from, ?to) <- IntraProceduralDependency(?to, ?from).

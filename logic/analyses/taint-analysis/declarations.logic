@@ -102,6 +102,29 @@ InterestingViaCG(?insn) ->
 
 
 /**
+ * Interesting instruction stores to object field
+ * Provides optimization for InterestingLoad
+ *
+ * ?fld         The field that gets stored to
+ * ?heap        The heap object containing the field
+ */
+InterestingStoreHeapFld(?fld, ?heap) <-
+    InterestingInstruction(_, ?interesting),
+    StoreFldTo(?var, ?fld, ?interesting),
+    VarPointsTo(_, ?heap, _, ?var).
+
+/**
+ * Instruction loads heap
+ * Provides optimization for InterestingLoad
+ *
+ * ?insn        The load instruction
+ * ?heap        The heap object that can be loaded
+ */
+LoadArrayHeapInsn(?insn, ?heap) <-
+    LoadArrayIndex:Base[?insn] = ?var,
+    VarPointsTo(_, ?heap, _, ?var).
+
+/**
  * Load instruction that loads interesting data
  *
  * ?insn        The interesting instruction
@@ -141,14 +164,14 @@ InterestingInstruction(?callsite, ?insn) ->
 /**
  * An instruction storing to an object's field
  *
- * ?insn        The store instruction
  * ?base        The object base
  * ?fld         The field being stored
+ * ?insn        The store instruction
  */
-StoreFldTo(?insn, ?base, ?fld) ->
-    StoreInstanceField:Insn(?insn),
+StoreFldTo(?base, ?fld, ?insn) ->
     Var(?base),
-    FieldSignature(?fld).
+    FieldSignature(?fld),
+    StoreInstanceField:Insn(?insn).
 
 /**
  * An instruction loading from an object's field
@@ -260,6 +283,11 @@ IntraProceduralDependencyBase(?from, ?to) ->
 IntraProceduralDependency(?to, ?from) ->
     Instruction(?to),
     Instruction(?from).
+
+/* Same as above, inverted for optimizing some rules */
+IntraProceduralDependencyOpt(?from, ?to) ->
+    Instruction(?from),
+    Instruction(?to).
 
 
 /**
