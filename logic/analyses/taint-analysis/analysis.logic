@@ -123,18 +123,18 @@ InterestingLoad(?insn) <-
 
 
 /* Data dependency between the formal and actual param */
-InterProceduralDependency(?callsite, ?toInsn, ?fromInsn) <-
+InterProceduralDependency(?callsite, ?fromInsn, ?toInsn) <-
     FormalParam[?paramIndex, ?meth] = ?formalParam,
     ActualParam[?paramIndex, ?callsite] = ?actParam,
     CallGraphEdge(_, ?callsite, _, ?meth),
-    InstructionDefinesVar(?fromInsn, ?actParam),
-    InstructionUsesVar(?toInsn, ?formalParam).
+    InstructionDefinesVar(?toInsn, ?actParam),
+    InstructionUsesVar(?fromInsn, ?formalParam).
 
 /* Data dependency between the return instruction and the caller */
-InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
-    ReturnNonvoid:Insn(?fromInsn),
-    Instruction:Method[?fromInsn] = ?meth,
-    CallGraphEdge(_, ?toInsn, _, ?meth).
+InterProceduralDependency(?fromInsn, ?fromInsn, ?toInsn) <-
+    ReturnNonvoid:Insn(?toInsn),
+    Instruction:Method[?toInsn] = ?meth,
+    CallGraphEdge(_, ?fromInsn, _, ?meth).
 
 
 /* Initial interesting instruction */
@@ -143,8 +143,8 @@ InterestingInstruction(?callsite, ?insn) <-
 
 /* All kinds of intra-procedural dependency */
 InterestingInstruction(?callsite, ?insn)  <-
-    InterestingInstruction(?callsite, ?fromInsn),
-    IntraProceduralDependency(?fromInsn, ?insn).
+    InterestingInstruction(?callsite, ?toInsn),
+    IntraProceduralDependency(?toInsn, ?insn).
 
 /* Mark interesting loads as interesting instructions */
 InterestingInstruction(?thisMethInvocations, ?insn) <-
@@ -160,16 +160,16 @@ InterestingInstruction(?thisMethInvocations, ?insn) <-
  */
 InterestingInstruction(?callsite, ?insn) <-
     ?insn != ?callsite,
-    InterestingInstruction(_, ?fromInsn),
-    InterProceduralDependency(?callsite, ?insn, ?fromInsn).
+    InterestingInstruction(_, ?toInsn),
+    InterProceduralDependency(?callsite, ?insn, ?toInsn).
 
 /**
  * If an instruction is marked interesting and has itself as the calling context,
  * we have reached a return, so we mark the caller interesting for all of its calling contexts
  */
 InterestingInstruction(?thisMethInvocations, ?insn) <-
-    InterestingInstruction(?insn, ?fromInsn),
-    InterProceduralDependency(?insn, ?insn, ?fromInsn),
+    InterestingInstruction(?insn, ?toInsn),
+    InterProceduralDependency(?insn, ?insn, ?toInsn),
     Instruction:Method[?insn] = ?thisMeth,
     CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
 
@@ -248,9 +248,9 @@ PostDominates(?dominator, ?insn) <-
 
 
 /* An intra procedural data dep exists when an instruction uses a var defined by another one */
-IntraProceduralDataDep(?from, ?to) <-
-    InstructionDefinesVar(?from, ?var),
-    InstructionUsesVar(?to, ?var).
+IntraProceduralDataDep(?to, ?from) <-
+    InstructionDefinesVar(?to, ?var),
+    InstructionUsesVar(?from, ?var).
 
 
 /* This block may follow an instruction, but it doesn't post dominate it */
@@ -272,19 +272,18 @@ IntraProceduralControlDep(?fromBlock, ?to) <-
 
 
 /* Intra procedural dependency base - data dependency */
-IntraProceduralDependencyBase(?to, ?from) <-
-    IntraProceduralDataDep(?from, ?to).
+IntraProceduralDependencyBase(?from, ?to) <-
+    IntraProceduralDataDep(?to, ?from).
 
 /* Intra procedural dependency base - control dependency */
-IntraProceduralDependencyBase(?to, ?from) <-
-    IntraProceduralControlDep(?toBlock, ?from),
-    BasicBlockHead[?to] = ?toBlock.
+IntraProceduralDependencyBase(?from, ?to) <-
+    IntraProceduralControlDep(?fromBlock, ?to),
+    BasicBlockHead[?from] = ?fromBlock.
 
-IntraProceduralDependency(?from, ?to) <-
-    IntraProceduralDependencyBase(?to, ?from).
+IntraProceduralDependency(?to, ?from) <-
+    IntraProceduralDependencyBase(?from, ?to).
 
 /* Intra procedural dependency step */
-IntraProceduralDependency(?from, ?to) <-
-    IntraProceduralDependency(?from, ?inter),
-    IntraProceduralDependencyBase(?to, ?inter).
-
+IntraProceduralDependency(?to, ?from) <-
+    IntraProceduralDependency(?to, ?inter),
+    IntraProceduralDependencyBase(?from, ?inter).
