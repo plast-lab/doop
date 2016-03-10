@@ -1,0 +1,240 @@
+#include "../context-insensitive/analysis.logic"
+#include "../../addons/cfg-analysis/rules.logic"
+#include "callgraph_deps.logic"
+
+
+#ifdef CALLGRAPH_DEPS
+
+
+
+
+CallGraphMethodEdge(?toMethod, ?fromMethod) <-
+    Instruction:Method(?invokeInsn, ?fromMethod),
+    CallGraphEdge(_, ?invokeInsn, _, ?toMethod).
+
+CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
+    CallGraphMethodEdge(?toMethod, ?fromMethod).
+
+CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
+    CallGraphMethodTransitive(?fromMethod, ?inter),
+    CallGraphMethodEdge(?toMethod, ?inter).
+
+
+StaticFieldMethodDataDep(?method, ?dependsOn) <-
+    LoadStaticField(?field, _, ?method),
+    StoreStaticField(_, ?field, ?dependsOn),
+    ?method != ?dependsOn.
+
+InstanceFieldMethodDataDep(?method, ?dependsOn) <-
+    LoadHeapInstanceField(_, ?loadVar, ?field, _, ?heap),
+    Var:DeclaringMethod(?loadVar, ?method),
+    StoreHeapInstanceField(?field, _, ?heap, _, ?storeVar),
+    Var:DeclaringMethod(?storeVar, ?dependsOn),
+    ?method != ?dependsOn.
+
+HeapArrayMethodDataDep(?method, ?dependsOn) <-
+    LoadHeapArrayIndex(_, ?loadVar, _, ?heap),
+    Var:DeclaringMethod(?loadVar, ?method),
+    StoreHeapArrayIndex(_, ?heap, _, ?storeVar),
+    Var:DeclaringMethod(?storeVar, ?dependsOn),
+    ?method != ?dependsOn.
+
+
+MethodHeapDataDep(?method, ?dependsOn) <- StaticFieldMethodDataDep(?method, ?dependsOn).
+
+MethodHeapDataDep(?method, ?dependsOn) <- InstanceFieldMethodDataDep(?method, ?dependsOn).
+
+MethodHeapDataDep(?method, ?dependsOn) <- HeapArrayMethodDataDep(?method, ?dependsOn).
+
+
+MethodDependency(?toMethod, ?fromMethod) <- CallGraphMethodTransitive(?fromMethod, ?toMethod).
+
+MethodDependency(?method, ?dependsOn) <- MethodHeapDataDep(?method, ?dependsOn).
+
+
+InterestingViaCG(?insn) <-
+    InterestingInstructionInit(_, ?insn).
+
+InterestingViaCG(?insn) <-
+    InterestingViaCG(?interesting),
+    IntraProceduralDependency(?interesting, ?insn).
+
+InterestingViaCG(?insn) <-
+    InterestingInitMethod(?initMeth),
+    MethodDependency(?meth, ?initMeth),
+    FormalParam[_, ?meth] = ?formalParam,
+    InstructionUsesVar(?insn, ?formalParam).
+
+
+
+
+#else
+
+
+
+
+StoreFldFrom(?insn, ?base, ?fld) <-
+    FieldInstruction:Signature[?insn] = ?fld,
+    StoreInstanceField:Base[?insn] = ?base.
+
+LoadFldTo(?insn, ?base, ?fld) <-
+    FieldInstruction:Signature[?insn] = ?fld,
+    LoadInstanceField:Base[?insn] = ?base.
+
+
+InterestingLoad(?insn) <-
+    InterestingInstruction(_, ?interesting),
+    StoreFldFrom(?interesting, ?var1, ?fld),
+    LoadFldTo(?insn, ?var2, ?fld),
+    VarPointsTo(_, ?heap, _, ?var1),
+    VarPointsTo(_, ?heap, _, ?var2).
+
+InterestingLoad(?insn) <-
+    InterestingInstruction(_, ?interesting),
+    StoreArrayIndex:Base[?interesting] = ?var1,
+    LoadArrayIndex:Base[?insn] = ?var2,
+    VarPointsTo(_, ?heap, _, ?var1),
+    VarPointsTo(_, ?heap, _, ?var2).
+
+
+InterProceduralDependency(?callsite, ?toInsn, ?fromInsn) <-
+    FormalParam[?paramIndex, ?meth] = ?formalParam,
+    ActualParam[?paramIndex, ?callsite] = ?actParam,
+    CallGraphEdge(_, ?callsite, _, ?meth),
+    InstructionDefinesVar(?fromInsn, ?actParam),
+    InstructionUsesVar(?toInsn, ?formalParam).
+
+InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
+    ReturnNonvoid:Insn(?fromInsn),
+    Instruction:Method[?fromInsn] = ?meth,
+    CallGraphEdge(_, ?toInsn, _, ?meth).
+
+
+InterestingInstruction(?callsite, ?insn) <-
+    InterestingInstructionInit(?callsite, ?insn).
+
+InterestingInstruction(?callsite, ?insn) <-
+    ?insn != ?callsite,
+    InterestingInstruction(_, ?fromInsn),
+    InterProceduralDependency(?callsite, ?insn, ?fromInsn).
+
+InterestingInstruction(?thisMethInvocations, ?insn) <-
+    InterestingInstruction(?insn, ?fromInsn),
+    InterProceduralDependency(?insn, ?insn, ?fromInsn),
+    Instruction:Method[?insn] = ?thisMeth,
+    CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
+
+InterestingInstruction(?callsite, ?insn)  <-
+    InterestingInstruction(?callsite, ?fromInsn),
+    IntraProceduralDependency(?fromInsn, ?insn).
+
+InterestingInstruction(?thisMethInvocations, ?insn) <-
+    InterestingLoad(?insn),
+    Instruction:Method[?insn] = ?thisMeth,
+    CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
+
+
+
+
+#endif
+
+
+
+
+InstructionUsesVar(?instruction, ?var) <-
+    OperAssign:From(?instruction, ?var) ;
+    If:Var(?instruction, ?var) ;
+    AssignLocal:From[?instruction] = ?var ;
+    VirtualMethodInvocation:Base[?instruction] = ?var ;
+    Switch:Key[?instruction] = ?var ;
+    ActualParam[_, ?instruction] = ?var ;
+    ReturnNonvoid:Var[?instruction] = ?var ;
+    Throw:Var[?instruction] = ?var ;
+    LoadArrayIndex:Base(?instruction, ?var) ;
+    StoreArrayIndex:From(?instruction, ?var) ;
+    ArrayInsnIndex(?instruction, ?var).
+
+InstructionDefinesVar(?instruction, ?var) <-
+    AssignInstruction:To[?instruction] = ?var ;
+    LoadArrayIndex:To(?instruction, ?var) ;
+    StoreArrayIndex:Base(?instruction, ?var) ;
+    LoadInstanceField:To[?instruction] =  ?var ;
+    LoadStaticField:To[?instruction] =  ?var ;
+    AssignReturnValue[?instruction] = ?var.
+
+
+PostDominates(?dominator, ?insn) <-
+    SameMethodBBHeads(?dominator, ?insn),
+    !DoesNotPostDominate(?dominator, ?insn).
+
+
+CFGLeaf(?headInsn, ?method) <-
+    Throw(?insn, _),
+    BasicBlockHead[?insn] = ?headInsn,
+    Instruction:Method[?headInsn] = ?method.
+
+CFGLeaf(?headInsn, ?method) <-
+    ReturnInstruction(?insn),
+    BasicBlockHead[?insn] = ?headInsn,
+    Instruction:Method[?headInsn] = ?method.
+
+
+DoesNotPostDominate(?postDomCandidate, ?insn) <-
+    BBHeadInMethod(?postDomCandidate, ?method),
+    CFGLeaf(?insn, ?method),
+    ?postDomCandidate != ?insn.
+
+DoesNotPostDominate(?postDomCandidate, ?insn) <-
+    DoesNotPostDominate(?postDomCandidate, ?otherInsn),
+    MayPredecessorBBModuloThrow(?insn, ?otherInsn),
+    ?insn != ?postDomCandidate.
+
+
+IntraProceduralDataDep(?from, ?to) <-
+    InstructionDefinesVar(?from, ?var),
+    InstructionUsesVar(?to, ?var).
+
+
+/**
+ * This block may follow an instruction, but it doesn't post dominate it
+ */
+
+IntraProceduralControlDep(?fromBlock, ?to) <-
+    BasicBlockBegin(?fromBlock),
+    MaySuccessorModuloThrow(?fromBlock, ?to),
+    BasicBlockHead[?to] = ?toBlockStart,
+    !PostDominates(?fromBlock, ?toBlockStart).
+
+/**
+ * This block post dominates a block that depends on an instruction
+ * which this block doesn't post dominate
+ */
+
+IntraProceduralControlDep(?fromBlock, ?to) <-
+    PostDominates(?fromBlock, ?interm),
+    BasicBlockHead[?to] = ?toBlockStart,
+    !PostDominates(?fromBlock, ?toBlockStart),
+    IntraProceduralControlDep(?interm, ?to).
+
+
+IntraProceduralDependencyBase(?to, ?from) <-
+    IntraProceduralDataDep(?from, ?to).
+
+IntraProceduralDependencyBase(?to, ?from) <-
+    IntraProceduralControlDep(?toBlock, ?from),
+    BasicBlockHead[?to] = ?toBlock.
+
+/**
+ * Transitive closure
+ */
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralDependencyBase(?to, ?from).
+
+IntraProceduralDependency(?from, ?to) <-
+    IntraProceduralDependency(?from, ?inter),
+    IntraProceduralDependencyBase(?to, ?inter).
+
+
+InterestingInitMethod(?initMeth) <-
+    InterestingInstructionInit(_, ?insn),
+    Instruction:Method[?insn] = ?initMeth.
