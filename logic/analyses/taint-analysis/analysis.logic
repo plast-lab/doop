@@ -7,24 +7,27 @@
 
 
 
-
+/* A single callgraph edge */
 CallGraphMethodEdge(?toMethod, ?fromMethod) <-
     Instruction:Method(?invokeInsn, ?fromMethod),
     CallGraphEdge(_, ?invokeInsn, _, ?toMethod).
 
+/* Transitive callgraph base */
 CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
     CallGraphMethodEdge(?toMethod, ?fromMethod).
 
+/* Transitive callgraph step */
 CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
     CallGraphMethodTransitive(?fromMethod, ?inter),
     CallGraphMethodEdge(?toMethod, ?inter).
 
-
+/* Data dependency between methods due to a static field store-load */
 StaticFieldMethodDataDep(?method, ?dependsOn) <-
     LoadStaticField(?field, _, ?method),
     StoreStaticField(_, ?field, ?dependsOn),
     ?method != ?dependsOn.
 
+/* Data dependency between methods due to a static field store-load */
 InstanceFieldMethodDataDep(?method, ?dependsOn) <-
     LoadHeapInstanceField(_, ?loadVar, ?field, _, ?heap),
     Var:DeclaringMethod(?loadVar, ?method),
@@ -32,6 +35,7 @@ InstanceFieldMethodDataDep(?method, ?dependsOn) <-
     Var:DeclaringMethod(?storeVar, ?dependsOn),
     ?method != ?dependsOn.
 
+/* Data dependency between methods due to an array store-load */
 HeapArrayMethodDataDep(?method, ?dependsOn) <-
     LoadHeapArrayIndex(_, ?loadVar, _, ?heap),
     Var:DeclaringMethod(?loadVar, ?method),
@@ -40,6 +44,7 @@ HeapArrayMethodDataDep(?method, ?dependsOn) <-
     ?method != ?dependsOn.
 
 
+/* Any of the above data dependencies */
 MethodHeapDataDep(?method, ?dependsOn) <- StaticFieldMethodDataDep(?method, ?dependsOn).
 
 MethodHeapDataDep(?method, ?dependsOn) <- InstanceFieldMethodDataDep(?method, ?dependsOn).
@@ -47,24 +52,50 @@ MethodHeapDataDep(?method, ?dependsOn) <- InstanceFieldMethodDataDep(?method, ?d
 MethodHeapDataDep(?method, ?dependsOn) <- HeapArrayMethodDataDep(?method, ?dependsOn).
 
 
+/* Method depndency either due to the transitive call graph or the above data dependencies */
 MethodDependency(?toMethod, ?fromMethod) <- CallGraphMethodTransitive(?fromMethod, ?toMethod).
 
 MethodDependency(?method, ?dependsOn) <- MethodHeapDataDep(?method, ?dependsOn).
 
-
+/* Initial interesting instruction */
 InterestingViaCG(?insn) <-
     InterestingInstructionInit(_, ?insn).
 
+/* The method containing the initial instruction - used to find methods that can be transitively called */
+InterestingInitMethod(?initMeth) <-
+    InterestingInstructionInit(_, ?insn),
+    Instruction:Method[?insn] = ?initMeth.
+
+/* Any instruction that is intra-procedurally dependent on another interesting instruction */
 InterestingViaCG(?insn) <-
     InterestingViaCG(?interesting),
     IntraProceduralDependency(?interesting, ?insn).
 
+/**
+ * Call graph dependence - mark all instructions using the params
+ * of methods that can be reached through the call graph
+ */
 InterestingViaCG(?insn) <-
     InterestingInitMethod(?initMeth),
     MethodDependency(?meth, ?initMeth),
     FormalParam[_, ?meth] = ?formalParam,
     InstructionUsesVar(?insn, ?formalParam).
 
+/* Field store-load inter-procedural data dependency */
+InterestingViaCG(?insn) <-
+    InterestingViaCG(?interesting),
+    StoreFldFrom(?interesting, ?var1, ?fld),
+    LoadFldTo(?insn, ?var2, ?fld),
+    VarPointsTo(_, ?heap, _, ?var1),
+    VarPointsTo(_, ?heap, _, ?var2).
+
+/* Field store-load inter-procedural data dependency */
+InterestingViaCG(?insn) <-
+    InterestingViaCG(?interesting),
+    StoreArrayIndex:Base[?interesting] = ?var1,
+    LoadArrayIndex:Base[?insn] = ?var2,
+    VarPointsTo(_, ?heap, _, ?var1),
+    VarPointsTo(_, ?heap, _, ?var2).
 
 
 
@@ -72,16 +103,7 @@ InterestingViaCG(?insn) <-
 
 
 
-
-StoreFldFrom(?insn, ?base, ?fld) <-
-    FieldInstruction:Signature[?insn] = ?fld,
-    StoreInstanceField:Base[?insn] = ?base.
-
-LoadFldTo(?insn, ?base, ?fld) <-
-    FieldInstruction:Signature[?insn] = ?fld,
-    LoadInstanceField:Base[?insn] = ?base.
-
-
+/* An instruction that loads a field that an interesting instruction wrote to */
 InterestingLoad(?insn) <-
     InterestingInstruction(_, ?interesting),
     StoreFldFrom(?interesting, ?var1, ?fld),
@@ -89,6 +111,7 @@ InterestingLoad(?insn) <-
     VarPointsTo(_, ?heap, _, ?var1),
     VarPointsTo(_, ?heap, _, ?var2).
 
+/* An instruction that loads data from an array that an interesting instruction wrote to */
 InterestingLoad(?insn) <-
     InterestingInstruction(_, ?interesting),
     StoreArrayIndex:Base[?interesting] = ?var1,
@@ -97,6 +120,7 @@ InterestingLoad(?insn) <-
     VarPointsTo(_, ?heap, _, ?var2).
 
 
+/* Data dependency between the formal and actual param */
 InterProceduralDependency(?callsite, ?toInsn, ?fromInsn) <-
     FormalParam[?paramIndex, ?meth] = ?formalParam,
     ActualParam[?paramIndex, ?callsite] = ?actParam,
@@ -104,12 +128,14 @@ InterProceduralDependency(?callsite, ?toInsn, ?fromInsn) <-
     InstructionDefinesVar(?fromInsn, ?actParam),
     InstructionUsesVar(?toInsn, ?formalParam).
 
+/* Data dependency between the return instruction and the caller */
 InterProceduralDependency(?toInsn, ?toInsn, ?fromInsn) <-
     ReturnNonvoid:Insn(?fromInsn),
     Instruction:Method[?fromInsn] = ?meth,
     CallGraphEdge(_, ?toInsn, _, ?meth).
 
 
+/* Initial interesting instruction */
 InterestingInstruction(?callsite, ?insn) <-
     InterestingInstructionInit(?callsite, ?insn).
 
@@ -135,10 +161,17 @@ InterestingInstruction(?thisMethInvocations, ?insn) <-
 
 
 
-
 #endif
 
 
+
+StoreFldFrom(?insn, ?base, ?fld) <-
+    FieldInstruction:Signature[?insn] = ?fld,
+    StoreInstanceField:Base[?insn] = ?base.
+
+LoadFldTo(?insn, ?base, ?fld) <-
+    FieldInstruction:Signature[?insn] = ?fld,
+    LoadInstanceField:Base[?insn] = ?base.
 
 
 InstructionUsesVar(?instruction, ?var) <-
@@ -234,7 +267,3 @@ IntraProceduralDependency(?from, ?to) <-
     IntraProceduralDependency(?from, ?inter),
     IntraProceduralDependencyBase(?to, ?inter).
 
-
-InterestingInitMethod(?initMeth) <-
-    InterestingInstructionInit(_, ?insn),
-    Instruction:Method[?insn] = ?initMeth.

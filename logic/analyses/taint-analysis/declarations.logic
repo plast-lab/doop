@@ -4,8 +4,7 @@
 
 #ifdef CALLGRAPH_DEPS
 
-
-
+/* Methods for callgraph-based analysis */
 
 /**
  * Caller - callee edges
@@ -63,12 +62,21 @@ MethodDependency(?method, ?dependsOn) ->
 InterestingViaCG(?insn) ->
     Instruction(?insn).
 
+/**
+ * Method that contains the initial interesting instructions
+ *
+ * @initMeth The method signature
+ */
+InterestingInitMethod(?initMeth) ->
+    MethodSignature(?initMeth).
+
 
 
 
 #else
 
 
+/* Methods for instruction-by-instruction analysis */
 
 
 /**
@@ -97,6 +105,17 @@ InterProceduralDependency(?callsite, ?to, ?from) ->
 
 #endif
 
+
+
+StoreFldFrom(?insn, ?base, ?fld) ->
+    StoreInstanceField:Insn(?insn),
+    Var(?base),
+    FieldSignature(?fld).
+
+LoadFldTo(?insn, ?base, ?fld) ->
+    LoadInstanceField:Insn(?insn),
+    Var(?base),
+    FieldSignature(?fld).
 
 
 /**
@@ -165,11 +184,3 @@ IntraProceduralDependencyBase(?to, ?from) ->
 IntraProceduralDependency(?from, ?to) ->
     Instruction(?from),
     Instruction(?to).
-
-/**
- * Method that contains the initial interesting instructions
- *
- * @initMeth The method signature
- */
-InterestingInitMethod(?initMeth) ->
-    MethodSignature(?initMeth).
