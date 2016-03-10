@@ -1,5 +1,11 @@
 #include "../context-insensitive/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
+#include "callgraph_deps.logic"
+
+#ifdef CALLGRAPH_DEPS
+
+
+
 
 /**
  * Caller - callee edges
@@ -14,7 +20,6 @@ CallGraphMethodEdge(?toMethod, ?fromMethod) ->
 CallGraphMethodTransitive(?fromMethod, ?toMethod) ->
     MethodSignature(?fromMethod),
     MethodSignature(?toMethod).
-
 
 /**
  * Load-store dependency of a static field
@@ -37,14 +42,12 @@ HeapArrayMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
-
 /**
  * Any one of the above data dependencies
  */
 MethodHeapDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
-
 
 /**
  * Any data or call graph dependency
@@ -53,6 +56,55 @@ MethodDependency(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
+/**
+ * Instructions that can possibly be influenced by the initial interesting instruction
+ * Found by following the dependency transitive graph
+ */
+InterestingViaCG(?insn) ->
+    Instruction(?insn).
+
+
+
+
+#else
+
+
+
+
+/**
+ * Instructions found to be data/control dependent on the initial interesting instructions
+ */
+InterestingInstruction(?callsite, ?insn) ->
+    Instruction(?insn),
+    Instruction(?callsite).
+
+/**
+ * Load instruction that loads interesting data
+ */
+InterestingLoad(?insn) ->
+    Instruction(?insn).
+
+/**
+ * Currently invocation params/return value dependencies
+ */
+InterProceduralDependency(?callsite, ?to, ?from) ->
+    Instruction(?from),
+    Instruction(?to),
+    Instruction(?callsite).
+
+
+
+
+#endif
+
+
+
+/**
+ * Instructions to perform a forward slice on
+ */
+InterestingInstructionInit(?callsite, ?insn) ->
+    Instruction(?insn),
+    Instruction(?callsite).
 
 /**
  * Instruction reads from var
@@ -114,44 +166,10 @@ IntraProceduralDependency(?from, ?to) ->
     Instruction(?from),
     Instruction(?to).
 
-
-/**
- * Instructions found to be data/control dependent on the initial interesting instructions
- */
-InterestingInstruction(?callsite, ?insn) ->
-    Instruction(?insn),
-    Instruction(?callsite).
-
-/**
- * Instructions to perform a forward slice on
- */
-InterestingInstructionInit(?callsite, ?insn) ->
-    Instruction(?insn),
-    Instruction(?callsite).
-
-/**
- * Load instruction that loads interesting data
- */
-InterestingLoad(?insn) ->
-    Instruction(?insn).
-
-/**
- * Currently invocation params/return value dependencies
- */
-InterProceduralDependency(?callsite, ?to, ?from) ->
-    Instruction(?from),
-    Instruction(?to),
-    Instruction(?callsite).
-
 /**
  * Method that contains the initial interesting instructions
+ *
+ * @initMeth The method signature
  */
 InterestingInitMethod(?initMeth) ->
     MethodSignature(?initMeth).
-
-/**
- * Instructions that can possibly be influenced by the initial interesting instruction
- * Found by following the dependency transitive graph
- */
-InterestingViaCG(?insn) ->
-    Instruction(?insn).
