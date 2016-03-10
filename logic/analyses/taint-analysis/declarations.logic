@@ -110,17 +110,17 @@ InterestingLoad(?insn) ->
     Instruction(?insn).
 
 /**
- * Data flow dependency between instructions in different methods
- * (?to depends on ?from)
+ * Data dependency between instructions in different methods
+ * (?from depends on ?to)
  *
  * ?callsite    The calling context of the destination instruction
- * ?to          Data flow destination instruction
- * ?from        Data flow source instruction
+ * ?from        Data dependency source instruction
+ * ?to          Data dependency destination instruction
  */
-InterProceduralDependency(?callsite, ?to, ?from) ->
+InterProceduralDependency(?callsite, ?from, ?to) ->
+    Instruction(?callsite),
     Instruction(?from),
-    Instruction(?to),
-    Instruction(?callsite).
+    Instruction(?to).
 
 
 /**
@@ -130,8 +130,8 @@ InterProceduralDependency(?callsite, ?to, ?from) ->
  * ?insn        The interesting instruction
  */
 InterestingInstruction(?callsite, ?insn) ->
-    Instruction(?insn),
-    Instruction(?callsite).
+    Instruction(?callsite),
+    Instruction(?insn).
 
 
 
@@ -217,11 +217,11 @@ PostDominates(?dominator, ?insn) ->
 
 
 /**
- * Intra procedural data flow, requires SSA
- * (?to depends on ?from)
+ * Intra procedural data dependency, requires SSA
+ * (?from depends on ?to)
  *
- * ?from        Data flow source instruction
- * ?to          Data flow destination instruction
+ * ?from        Data dependency source instruction
+ * ?to          Data dependency destination instruction
  */
 IntraProceduralDataDep(?from, ?to) ->
     Instruction(?from),
@@ -230,9 +230,9 @@ IntraProceduralDataDep(?from, ?to) ->
 
 /**
  * Basic block depends on instruction
- * (?from depends on ?to)
+ * (all instructions in ?fromBlock basic block depend on ?to)
  *
- * ?from        Dependence source instruction
+ * ?fromBlock   Dependence source basic block's first instruction
  * ?to          Dependence destination instruction
  */
 IntraProceduralControlDep(?fromBlock, ?to) ->
@@ -243,10 +243,10 @@ IntraProceduralControlDep(?fromBlock, ?to) ->
  * Intra procedural dependency base
  * (?from depends on ?to)
  *
- * ?to          Dependence destination instruction
  * ?from        Dependence source instruction
+ * ?to          Dependence destination instruction
  */
-IntraProceduralDependencyBase(?to, ?from) ->
+IntraProceduralDependencyBase(?from, ?to) ->
     Instruction(?from),
     Instruction(?to).
 
@@ -254,12 +254,12 @@ IntraProceduralDependencyBase(?to, ?from) ->
  * Intra procedural dependency - transitively closed
  * (?from depends on ?to)
  *
- * ?from        Dependence source instruction
  * ?to          Dependence destination instruction
+ * ?from        Dependence source instruction
  */
-IntraProceduralDependency(?from, ?to) ->
-    Instruction(?from),
-    Instruction(?to).
+IntraProceduralDependency(?to, ?from) ->
+    Instruction(?to),
+    Instruction(?from).
 
 
 /**
@@ -269,5 +269,5 @@ IntraProceduralDependency(?from, ?to) ->
  * ?callsite    The callsite that will be used as a calling context for the slice
  */
 InterestingInstructionInit(?callsite, ?insn) ->
-    Instruction(?insn),
-    Instruction(?callsite).
+    Instruction(?callsite),
+    Instruction(?insn).
