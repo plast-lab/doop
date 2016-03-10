@@ -8,6 +8,9 @@
 
 /**
  * Caller - callee edges
+ *
+ * ?toMethod    Edge to
+ * ?fromMethod  Edge from
  */
 CallGraphMethodEdge(?toMethod, ?fromMethod) ->
     MethodSignature(?toMethod),
@@ -15,6 +18,9 @@ CallGraphMethodEdge(?toMethod, ?fromMethod) ->
 
 /**
  * Transitive closure of the above
+ *
+ * ?toMethod    Edge to
+ * ?fromMethod  Edge from
  */
 CallGraphMethodTransitive(?fromMethod, ?toMethod) ->
     MethodSignature(?fromMethod),
@@ -22,6 +28,9 @@ CallGraphMethodTransitive(?fromMethod, ?toMethod) ->
 
 /**
  * Load-store dependency of a static field
+ *
+ * ?method      Dependant method
+ * ?dependsOn   Dependence destination
  */
 StaticFieldMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
@@ -29,6 +38,9 @@ StaticFieldMethodDataDep(?method, ?dependsOn) ->
 
 /**
  * Load-store dependency of an instance field
+ *
+ * ?method      Dependant method
+ * ?dependsOn   Dependence destination
  */
 InstanceFieldMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
@@ -36,6 +48,9 @@ InstanceFieldMethodDataDep(?method, ?dependsOn) ->
 
 /**
  * Load-store dependency on an array
+ *
+ * ?method      Dependant method
+ * ?dependsOn   Dependence destination
  */
 HeapArrayMethodDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
@@ -43,6 +58,9 @@ HeapArrayMethodDataDep(?method, ?dependsOn) ->
 
 /**
  * Any one of the above data dependencies
+ *
+ * ?method      Dependant method
+ * ?dependsOn   Dependence destination
  */
 MethodHeapDataDep(?method, ?dependsOn) ->
     MethodSignature(?method),
@@ -50,26 +68,30 @@ MethodHeapDataDep(?method, ?dependsOn) ->
 
 /**
  * Any data or call graph dependency
+ *
+ * ?method      Dependant method
+ * ?dependsOn   Dependence destination
  */
 MethodDependency(?method, ?dependsOn) ->
     MethodSignature(?method),
     MethodSignature(?dependsOn).
 
 /**
- * Instructions that can possibly be influenced by the initial interesting instruction
- * Found by following the dependency transitive graph
- */
-InterestingViaCG(?insn) ->
-    Instruction(?insn).
-
-/**
  * Method that contains the initial interesting instructions
  *
- * @initMeth The method signature
+ * ?initMeth    The initial instruction's method signature
  */
 InterestingInitMethod(?initMeth) ->
     MethodSignature(?initMeth).
 
+/**
+ * Instructions that can possibly be influenced by the initial interesting instruction
+ * Found by following the dependency transitive graph
+ *
+ * ?insn        Instruction that is interesting
+ */
+InterestingViaCG(?insn) ->
+    Instruction(?insn).
 
 
 
@@ -80,20 +102,20 @@ InterestingInitMethod(?initMeth) ->
 
 
 /**
- * Instructions found to be data/control dependent on the initial interesting instructions
- */
-InterestingInstruction(?callsite, ?insn) ->
-    Instruction(?insn),
-    Instruction(?callsite).
-
-/**
  * Load instruction that loads interesting data
+ *
+ * ?insn        The interesting instruction
  */
 InterestingLoad(?insn) ->
     Instruction(?insn).
 
 /**
- * Currently invocation params/return value dependencies
+ * Data flow dependency between instructions in different methods
+ * (?to depends on ?from)
+ *
+ * ?callsite    The calling context of the destination instruction
+ * ?to          Data flow destination instruction
+ * ?from        Data flow source instruction
  */
 InterProceduralDependency(?callsite, ?to, ?from) ->
     Instruction(?from),
@@ -101,32 +123,51 @@ InterProceduralDependency(?callsite, ?to, ?from) ->
     Instruction(?callsite).
 
 
+/**
+ * Instructions found to be data/control dependent on the initial interesting instructions
+ *
+ * ?callsite    The calling context of the interesting instruction
+ * ?insn        The interesting instruction
+ */
+InterestingInstruction(?callsite, ?insn) ->
+    Instruction(?insn),
+    Instruction(?callsite).
+
 
 
 #endif
 
 
-
-StoreFldFrom(?insn, ?base, ?fld) ->
+/**
+ * An instruction storing to an object's field
+ *
+ * ?insn        The store instruction
+ * ?base        The object base
+ * ?fld         The field being stored
+ */
+StoreFldTo(?insn, ?base, ?fld) ->
     StoreInstanceField:Insn(?insn),
     Var(?base),
     FieldSignature(?fld).
 
-LoadFldTo(?insn, ?base, ?fld) ->
+/**
+ * An instruction loading from an object's field
+ *
+ * ?insn        The load instruction
+ * ?base        The object base
+ * ?fld         The field being loaded
+ */
+LoadFldFrom(?insn, ?base, ?fld) ->
     LoadInstanceField:Insn(?insn),
     Var(?base),
     FieldSignature(?fld).
 
 
 /**
- * Instructions to perform a forward slice on
- */
-InterestingInstructionInit(?callsite, ?insn) ->
-    Instruction(?insn),
-    Instruction(?callsite).
-
-/**
  * Instruction reads from var
+ *
+ * ?instruction The instruction using the var
+ * ?var         The var being used
  */
 InstructionUsesVar(?instruction, ?var) ->
     Instruction(?instruction),
@@ -135,6 +176,9 @@ InstructionUsesVar(?instruction, ?var) ->
 
 /**
  * Instruction writes to var
+ *
+ * ?instruction The instruction defining the var
+ * ?var         The var being defined
  */
 InstructionDefinesVar(?instruction, ?var) ->
     Instruction(?instruction),
@@ -142,25 +186,43 @@ InstructionDefinesVar(?instruction, ?var) ->
 
 
 /**
- * Pretty much the inverse of the Dominates etc predicates from the cfg-analysis addon
+ * A basic block that is a leaf in its method's CFG
+ *
+ * ?headInsn    The leaf basic block's first instruction
+ * ?method      The method containing the basic block
  */
-PostDominates(?dominator, ?insn) ->
-    Instruction(?dominator),
-    Instruction(?insn).
-
 CFGLeaf(?headInsn, ?method) ->
     Instruction(?headInsn),
     MethodSignature(?method).
 
+/**
+ * A basic block does not dominate another one
+ *
+ * ?dominator   The non-dominating basic block's first instruction
+ * ?insn        The first instruction of the basic block not being dominated
+ */
 DoesNotPostDominate(?postDomCandidate, ?insn) ->
     Instruction(?postDomCandidate),
     Instruction(?insn).
 
 /**
- * REQUIRES SSA
- * Intra-procedural data dependencies
+ * A basic block dominates another one
+ *
+ * ?dominator   The dominating basic block's first instruction
+ * ?insn        The first instruction of basic block being dominated
  */
+PostDominates(?dominator, ?insn) ->
+    Instruction(?dominator),
+    Instruction(?insn).
 
+
+/**
+ * Intra procedural data flow, requires SSA
+ * (?to depends on ?from)
+ *
+ * ?from        Data flow source instruction
+ * ?to          Data flow destination instruction
+ */
 IntraProceduralDataDep(?from, ?to) ->
     Instruction(?from),
     Instruction(?to).
@@ -168,19 +230,44 @@ IntraProceduralDataDep(?from, ?to) ->
 
 /**
  * Basic block depends on instruction
+ * (?from depends on ?to)
+ *
+ * ?from        Dependence source instruction
+ * ?to          Dependence destination instruction
  */
-
 IntraProceduralControlDep(?fromBlock, ?to) ->
     Instruction(?fromBlock),
     Instruction(?to).
 
 /**
- * All kinds of intra-procedural dependence - transitively closed
+ * Intra procedural dependency base
+ * (?from depends on ?to)
+ *
+ * ?to          Dependence destination instruction
+ * ?from        Dependence source instruction
  */
 IntraProceduralDependencyBase(?to, ?from) ->
     Instruction(?from),
     Instruction(?to).
 
+/**
+ * Intra procedural dependency - transitively closed
+ * (?from depends on ?to)
+ *
+ * ?from        Dependence source instruction
+ * ?to          Dependence destination instruction
+ */
 IntraProceduralDependency(?from, ?to) ->
     Instruction(?from),
     Instruction(?to).
+
+
+/**
+ * Instructions to perform a forward slice on
+ *
+ * ?insn        The instruction that will be considered tha taint source
+ * ?callsite    The callsite that will be used as a calling context for the slice
+ */
+InterestingInstructionInit(?callsite, ?insn) ->
+    Instruction(?insn),
+    Instruction(?callsite).
