@@ -1,8 +1,8 @@
-#include "../context-insensitive/delta.logic"
+#include "../1-call-site-sensitive/delta.logic"
 
 
 // Interesting instructions to start off with and find what they influence
-+InterestingInstructionInit("java.util.LinkedHashMap.containsValue/java.lang.Object.equals/0", "java.lang.Object.equals/return/instruction9").
-+InterestingInstructionInit("Test.Test.play/Test.Test.readInt/0", "Test.Test.readInt/java.util.Scanner.nextInt/0").
++InterestingInstructionInit("java.lang.Object.equals/return/instruction9").
++InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0").
 // +InterestingInstructionInit("Test.CallSiteSensitivity.doo/Test.CallSiteSensitivity.go/0", "Test.CallSiteSensitivity.go/assign/instruction2").
 // +InterestingInstructionInit("", "Test.Test.play/Test.Test.readInt/0").

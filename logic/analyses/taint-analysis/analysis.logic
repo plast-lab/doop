@@ -1,4 +1,4 @@
-#include "../context-insensitive/analysis.logic"
+#include "../1-call-site-sensitive/analysis.logic"
 #include "../../addons/cfg-analysis/rules.logic"
 #include "callgraph_deps.logic"
 
@@ -60,13 +60,13 @@ MethodDependency(?method, ?dependsOn) <- MethodHeapDataDep(?method, ?dependsOn).
 
 /* The method containing the initial instruction - used to find methods that can be transitively called */
 InterestingInitMethod(?initMeth) <-
-    InterestingInstructionInit(_, ?insn),
+    InterestingInstructionInit(?insn),
     Instruction:Method[?insn] = ?initMeth.
 
 
 /* Initial interesting instruction */
 InterestingViaCG(?insn) <-
-    InterestingInstructionInit(_, ?insn).
+    InterestingInstructionInit(?insn).
 
 /* Any instruction that is intra-procedurally dependent on another interesting instruction */
 InterestingViaCG(?insn) <-
@@ -129,56 +129,44 @@ InterestingLoad(?insn) <-
 
 
 /* Data dependency between the formal and actual param */
-InterProceduralDependency(?callsite, ?fromInsn, ?toInsn) <-
+InterProceduralDependency(?ctx, ?fromInsn, ?toInsn) <-
     FormalParam[?paramIndex, ?meth] = ?formalParam,
     ActualParam[?paramIndex, ?callsite] = ?actParam,
-    CallGraphEdge(_, ?callsite, _, ?meth),
+    CallGraphEdge(_, ?callsite, ?ctx, ?meth),
     InstructionDefinesVar(?toInsn, ?actParam),
     InstructionUsesVar(?fromInsn, ?formalParam).
 
 /* Data dependency between the return instruction and the caller */
-InterProceduralDependency(?fromInsn, ?fromInsn, ?toInsn) <-
+InterProceduralDependency(?ctx, ?fromInsn, ?toInsn) <-
     ReturnNonvoid:Insn(?toInsn),
     Instruction:Method[?toInsn] = ?meth,
-    CallGraphEdge(_, ?fromInsn, _, ?meth).
+    CallGraphEdge(?ctx, ?fromInsn, _, ?meth).
 
 
 /* Initial interesting instruction */
-InterestingInstruction(?callsite, ?insn) <-
-    InterestingInstructionInit(?callsite, ?insn).
+InterestingInstruction(?ctx, ?insn) <-
+    Instruction:Method[?insn] = ?meth,
+    CallGraphEdge(_, _, ?ctx, ?meth),
+    InterestingInstructionInit(?insn).
 
 /* All kinds of intra-procedural dependency */
-InterestingInstruction(?callsite, ?insn)  <-
-    InterestingInstruction(?callsite, ?toInsn),
+InterestingInstruction(?ctx, ?insn)  <-
+    InterestingInstruction(?ctx, ?toInsn),
     IntraProceduralDependencyOpt(?insn, ?toInsn).
 
-/* Mark interesting loads as interesting instructions */
-InterestingInstruction(?thisMethInvocations, ?insn) <-
+/* Mark interesting loads as interesting instructions across all contexts */
+InterestingInstruction(?allCtx, ?insn) <-
     InterestingLoad(?insn),
     Instruction:Method[?insn] = ?thisMeth,
-    CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
+    CallGraphEdge(_, _, ?allCtx, ?thisMeth).
 
 /**
- * Mark instructions that ara data dependent inter-procedurally as interesting if they are
- * not equal to their calling instruction
- *
- * Else, use the below rule
+ * If an instruction is inter-procedurally dependent on an interesting instruction
+ * mark that instruction as interesting in its context
  */
-InterestingInstruction(?callsite, ?insn) <-
-    ?insn != ?callsite,
+InterestingInstruction(?ctx, ?insn) <-
     InterestingInstruction(_, ?toInsn),
-    InterProceduralDependency(?callsite, ?insn, ?toInsn).
-
-/**
- * If an instruction is marked interesting and has itself as the calling context,
- * we have reached a return, so we mark the caller interesting for all of its calling contexts
- */
-InterestingInstruction(?thisMethInvocations, ?insn) <-
-    InterestingInstruction(?insn, ?toInsn),
-    InterProceduralDependency(?insn, ?insn, ?toInsn),
-    Instruction:Method[?insn] = ?thisMeth,
-    CallGraphEdge(_, ?thisMethInvocations, _, ?thisMeth).
-
+    InterProceduralDependency(?ctx, ?insn, ?toInsn).
 
 
 #endif

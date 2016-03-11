@@ -1,4 +1,4 @@
-#include "../context-insensitive/declarations.logic"
+#include "../1-call-site-sensitive/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
 #include "callgraph_deps.logic"
 
@@ -136,12 +136,12 @@ InterestingLoad(?insn) ->
  * Data dependency between instructions in different methods
  * (?from depends on ?to)
  *
- * ?callsite    The calling context of the destination instruction
+ * ?ctx         The calling context of the source instruction
  * ?from        Data dependency source instruction
  * ?to          Data dependency destination instruction
  */
-InterProceduralDependency(?callsite, ?from, ?to) ->
-    Instruction(?callsite),
+InterProceduralDependency(?ctx, ?from, ?to) ->
+    Context(?ctx),
     Instruction(?from),
     Instruction(?to).
 
@@ -149,11 +149,11 @@ InterProceduralDependency(?callsite, ?from, ?to) ->
 /**
  * Instructions found to be data/control dependent on the initial interesting instructions
  *
- * ?callsite    The calling context of the interesting instruction
+ * ?ctx         The calling context of the interesting instruction
  * ?insn        The interesting instruction
  */
-InterestingInstruction(?callsite, ?insn) ->
-    Instruction(?callsite),
+InterestingInstruction(?ctx, ?insn) ->
+    Context(?ctx),
     Instruction(?insn).
 
 
@@ -294,8 +294,6 @@ IntraProceduralDependencyOpt(?from, ?to) ->
  * Instructions to perform a forward slice on
  *
  * ?insn        The instruction that will be considered tha taint source
- * ?callsite    The callsite that will be used as a calling context for the slice
  */
-InterestingInstructionInit(?callsite, ?insn) ->
-    Instruction(?callsite),
+InterestingInstructionInit(?insn) ->
     Instruction(?insn).
