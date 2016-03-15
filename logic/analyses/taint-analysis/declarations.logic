@@ -102,48 +102,46 @@ InterestingViaCG(?insn) ->
 
 
 /**
+ * AllCtxInterestingStoreHeapFld(?fld, ?heap)
  * Interesting instruction stores to object field
  * Provides optimization for InterestingLoad
  *
  * ?fld         The field that gets stored to
  * ?heap        The heap object containing the field
  */
-InterestingStoreHeapFld(?fld, ?heap) <-
-    InterestingInstruction(_, ?interesting),
-    StoreFldTo(?var, ?fld, ?interesting),
-    VarPointsTo(_, ?heap, _, ?var).
+
 
 /**
+ * LoadArrayHeapInsn(?ctx, ?insn, ?heap)
  * Instruction loads heap
  * Provides optimization for InterestingLoad
  *
  * ?insn        The load instruction
  * ?heap        The heap object that can be loaded
  */
-LoadArrayHeapInsn(?insn, ?heap) <-
-    LoadArrayIndex:Base[?insn] = ?var,
-    VarPointsTo(_, ?heap, _, ?var).
+
 
 /**
  * Load instruction that loads interesting data
  *
  * ?insn        The interesting instruction
  */
-InterestingLoad(?insn) ->
-    Instruction(?insn).
+InterestingLoad(?ctx, ?insn) ->
+    Instruction(?insn), Context(?ctx).
 
 /**
  * Data dependency between instructions in different methods
- * (?from depends on ?to)
+ * (?next depends on ?prev)
  *
  * ?ctx         The calling context of the source instruction
- * ?from        Data dependency source instruction
- * ?to          Data dependency destination instruction
+ * ?next        Data dependency source instruction
+ * ?prev        Data dependency destination instruction
  */
-InterProceduralDependency(?ctx, ?from, ?to) ->
-    Context(?ctx),
-    Instruction(?from),
-    Instruction(?to).
+CallReturnDependency(?nextCtx, ?next, ?prevCtx, ?prev) ->
+    Context(?nextCtx),
+    Context(?prevCtx),
+    Instruction(?next),
+    Instruction(?prev).
 
 
 /**
@@ -241,53 +239,53 @@ PostDominates(?dominator, ?insn) ->
 
 /**
  * Intra procedural data dependency, requires SSA
- * (?from depends on ?to)
+ * (?next depends on ?prev)
  *
- * ?from        Data dependency source instruction
- * ?to          Data dependency destination instruction
+ * ?next        Data dependency source instruction
+ * ?prev        Data dependency destination instruction
  */
-IntraProceduralDataDep(?from, ?to) ->
-    Instruction(?from),
-    Instruction(?to).
+IntraProceduralDataDep(?next, ?prev) ->
+    Instruction(?next),
+    Instruction(?prev).
 
 
 /**
  * Basic block depends on instruction
- * (all instructions in ?fromBlock basic block depend on ?to)
+ * (all instructions in ?nextBlock basic block depend on ?prev)
  *
- * ?fromBlock   Dependence source basic block's first instruction
- * ?to          Dependence destination instruction
+ * ?nextBlock   Dependence source basic block's first instruction
+ * ?prev        Dependence destination instruction
  */
-IntraProceduralControlDep(?fromBlock, ?to) ->
-    Instruction(?fromBlock),
-    Instruction(?to).
+IntraProceduralControlDep(?nextBlock, ?prev) ->
+    Instruction(?nextBlock),
+    Instruction(?prev).
 
 /**
  * Intra procedural dependency base
- * (?from depends on ?to)
+ * (?next depends on ?prev)
  *
- * ?from        Dependence source instruction
- * ?to          Dependence destination instruction
+ * ?next        Dependence source instruction
+ * ?prev        Dependence destination instruction
  */
-IntraProceduralDependencyBase(?from, ?to) ->
-    Instruction(?from),
-    Instruction(?to).
+IntraProceduralDependencyBase(?next, ?prev) ->
+    Instruction(?next),
+    Instruction(?prev).
 
 /**
  * Intra procedural dependency - transitively closed
- * (?from depends on ?to)
+ * (?next depends on ?prev)
  *
- * ?to          Dependence destination instruction
- * ?from        Dependence source instruction
+ * ?prev        Dependence destination instruction
+ * ?next        Dependence source instruction
  */
-IntraProceduralDependency(?to, ?from) ->
-    Instruction(?to),
-    Instruction(?from).
+IntraProceduralDependency(?prev, ?next) ->
+    Instruction(?prev),
+    Instruction(?next).
 
 /* Same as above, inverted for optimizing some rules */
-IntraProceduralDependencyOpt(?from, ?to) ->
-    Instruction(?from),
-    Instruction(?to).
+IntraProceduralDependencyOpt(?next, ?prev) ->
+    Instruction(?next),
+    Instruction(?prev).
 
 
 /**

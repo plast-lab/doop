@@ -291,16 +291,16 @@ public class FactGenerator
             }
             else
             {
-            	// only reason for assign or invoke statements to be irrelevant
-            	// is the invocation of a method on a phantom class
-            	if(stmt instanceof AssignStmt)
-            		_writer.writeAssignPhantomInvoke(m, stmt, session);
-            	else if (stmt instanceof InvokeStmt)
-            		_writer.writePhantomInvoke(m, stmt, session);
-            	else if (stmt instanceof BreakpointStmt)
-            		_writer.writeBreakpointStmt(m, stmt, session);
-            	else
-            		throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
+                // only reason for assign or invoke statements to be irrelevant
+                // is the invocation of a method on a phantom class
+                if(stmt instanceof AssignStmt)
+                    _writer.writeAssignPhantomInvoke(m, stmt, session);
+                else if (stmt instanceof InvokeStmt)
+                    _writer.writePhantomInvoke(m, stmt, session);
+                else if (stmt instanceof BreakpointStmt)
+                    _writer.writeBreakpointStmt(m, stmt, session);
+                else
+                    throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
             }
         }
 
@@ -468,11 +468,11 @@ public class FactGenerator
         }
         else if (right instanceof InstanceOfExpr)
         {
-        	InstanceOfExpr expr = (InstanceOfExpr) right;
-        	if (expr.getOp() instanceof Local)
-        		_writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
-        	else // TODO check if this is possible (instanceof on something that is not a local var)
-        		_writer.writeUnsupported(inMethod, stmt, session);
+            InstanceOfExpr expr = (InstanceOfExpr) right;
+            if (expr.getOp() instanceof Local)
+                _writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
+            else // TODO check if this is possible (instanceof on something that is not a local var)
+                _writer.writeUnsupported(inMethod, stmt, session);
         }
         else
         {
