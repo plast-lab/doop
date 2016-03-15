@@ -457,7 +457,7 @@ public class FactWriter
     
     public void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session)
     {
-    	int index = session.calcUnitNumber(stmt);
+        int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
         _db.add(ASSIGN_CAST_NUM_CONST,
@@ -467,11 +467,11 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, to)),
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-	}
+    }
     
     public void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session)
     {
-    	int index = session.calcUnitNumber(stmt);
+        int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
         _db.add(ASSIGN_CAST_NULL,
@@ -480,7 +480,7 @@ public class FactWriter
                 _db.asEntity(_rep.local(m, to)),
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-	}
+    }
 
     public void writeStoreInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local from, Session session)
     {
@@ -699,19 +699,19 @@ public class FactWriter
         
         Value condStmt = ((IfStmt) stmt).getCondition();
         if (condStmt instanceof ConditionExpr) {
-        	ConditionExpr condition = (ConditionExpr) condStmt;
-        	if (condition.getOp1() instanceof Local) {
-        		Local op1 = (Local) condition.getOp1();
-        		_db.add(IF_VAR,
-        				_db.asEntity(rep),
-        				_db.asEntity(_rep.local(m, op1)));
-        	}
-        	if (condition.getOp2() instanceof Local) {
-        		Local op2 = (Local) condition.getOp2();
-        		_db.add(IF_VAR,
-        				_db.asEntity(rep),
-        				_db.asEntity(_rep.local(m, op2)));
-        	}
+            ConditionExpr condition = (ConditionExpr) condStmt;
+            if (condition.getOp1() instanceof Local) {
+                Local op1 = (Local) condition.getOp1();
+                _db.add(IF_VAR,
+                        _db.asEntity(rep),
+                        _db.asEntity(_rep.local(m, op1)));
+            }
+            if (condition.getOp2() instanceof Local) {
+                Local op2 = (Local) condition.getOp2();
+                _db.add(IF_VAR,
+                        _db.asEntity(rep),
+                        _db.asEntity(_rep.local(m, op2)));
+            }
         }
     }
 
@@ -1095,91 +1095,91 @@ public class FactWriter
         return v;
     }
 
-	public void writeAssignBinop(SootMethod m, AssignStmt stmt, Local left, BinopExpr right, Session session) {
-		int index = session.calcUnitNumber(stmt);
-		String rep = _rep.instruction(m, stmt, session, index);
+    public void writeAssignBinop(SootMethod m, AssignStmt stmt, Local left, BinopExpr right, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
 
-		_db.add(ASSIGN_OPER,
-				_db.asEntity(rep),
-				_db.asIntColumn(String.valueOf(index)),
-				_db.asEntity(_rep.local(m, left)),
-				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+        _db.add(ASSIGN_OPER,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(_rep.local(m, left)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
-		if (right.getOp1() instanceof Local) {
-			Local op1 = (Local) right.getOp1();
-			_db.add(ASSIGN_OPER_FROM,
-					_db.asEntity(rep),
-					_db.asEntity(_rep.local(m, op1)));
-		}
+        if (right.getOp1() instanceof Local) {
+            Local op1 = (Local) right.getOp1();
+            _db.add(ASSIGN_OPER_FROM,
+                    _db.asEntity(rep),
+                    _db.asEntity(_rep.local(m, op1)));
+        }
 
-		if (right.getOp2() instanceof Local) {
-			Local op2 = (Local) right.getOp2();
-			_db.add(ASSIGN_OPER_FROM,
-					_db.asEntity(rep),
-					_db.asEntity(_rep.local(m, op2)));
-		}
-	}
+        if (right.getOp2() instanceof Local) {
+            Local op2 = (Local) right.getOp2();
+            _db.add(ASSIGN_OPER_FROM,
+                    _db.asEntity(rep),
+                    _db.asEntity(_rep.local(m, op2)));
+        }
+    }
 
-	public void writeAssignUnop(SootMethod m, AssignStmt stmt, Local left, UnopExpr right, Session session) {
-		int index = session.calcUnitNumber(stmt);
-		String rep = _rep.instruction(m, stmt, session, index);
+    public void writeAssignUnop(SootMethod m, AssignStmt stmt, Local left, UnopExpr right, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
 
-		_db.add(ASSIGN_OPER,
-				_db.asEntity(rep),
-				_db.asIntColumn(String.valueOf(index)),
-				_db.asEntity(_rep.local(m, left)),
-				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+        _db.add(ASSIGN_OPER,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(_rep.local(m, left)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
-		if (right.getOp() instanceof Local) {
-			Local op = (Local) right.getOp();
-			_db.add(ASSIGN_OPER_FROM,
-					_db.asEntity(rep),
-					_db.asEntity(_rep.local(m, op)));
-		}
-	}
+        if (right.getOp() instanceof Local) {
+            Local op = (Local) right.getOp();
+            _db.add(ASSIGN_OPER_FROM,
+                    _db.asEntity(rep),
+                    _db.asEntity(_rep.local(m, op)));
+        }
+    }
 
-	public void writeAssignInstanceOf(SootMethod m, AssignStmt stmt, Local to, Local from, Type t,
-			Session session) {
-		int index = session.calcUnitNumber(stmt);
-		String rep = _rep.instruction(m, stmt, session, index);
+    public void writeAssignInstanceOf(SootMethod m, AssignStmt stmt, Local to, Local from, Type t,
+            Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
 
-		_db.add(ASSIGN_INSTANCE_OF,
-				_db.asEntity(rep),
-				_db.asIntColumn(String.valueOf(index)),
-				_db.asEntity(_rep.local(m, from)),
-				_db.asEntity(_rep.local(m, to)),
-				writeType(t),
-				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-	}
-	
-	public void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
-		int index = session.calcUnitNumber(stmt);
-		String rep = _rep.instruction(m, stmt, session, index);
+        _db.add(ASSIGN_INSTANCE_OF,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(_rep.local(m, from)),
+                _db.asEntity(_rep.local(m, to)),
+                writeType(t),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+    }
+    
+    public void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
 
-		_db.add(ASSIGN_PHANTOM_INVOKE,
-				_db.asEntity(rep),
-				_db.asIntColumn(String.valueOf(index)),
-				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-	}
-	
-	public void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
-		int index = session.calcUnitNumber(stmt);
-		String rep = _rep.instruction(m, stmt, session, index);
+        _db.add(ASSIGN_PHANTOM_INVOKE,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+    }
+    
+    public void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
 
-		_db.add(PHANTOM_INVOKE,
-				_db.asEntity(rep),
-				_db.asIntColumn(String.valueOf(index)),
-				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-	}
-	
-	public void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
-		int index = session.calcUnitNumber(stmt);
-		String rep = _rep.instruction(m, stmt, session, index);
+        _db.add(PHANTOM_INVOKE,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+    }
+    
+    public void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String rep = _rep.instruction(m, stmt, session, index);
 
-		_db.add(BREAKPOINT_STMT,
-				_db.asEntity(rep),
-				_db.asIntColumn(String.valueOf(index)),
-				_db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-	}
+        _db.add(BREAKPOINT_STMT,
+                _db.asEntity(rep),
+                _db.asIntColumn(String.valueOf(index)),
+                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+    }
 
 }

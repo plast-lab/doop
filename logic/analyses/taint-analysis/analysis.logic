@@ -104,69 +104,69 @@ InterestingViaCG(?insn) <-
 #else
 
 /* Made for optimizing InterestingLoad */
-InterestingStoreHeapFld(?fld, ?heap) <-
-    InterestingInstruction(_, ?interesting),
+AllCtxInterestingStoreHeapFld(?fld, ?heap) <-
+    InterestingInstruction(?ctx, ?interesting),
     StoreFldTo(?var, ?fld, ?interesting),
-    VarPointsTo(_, ?heap, _, ?var).
+    VarPointsTo(_, ?heap, ?ctx, ?var).
 
 /* Made for optimizing InterestingLoad */
-LoadArrayHeapInsn(?insn, ?heap) <-
+LoadArrayHeapInsn(?ctx, ?insn, ?heap) <-
     LoadArrayIndex:Base[?insn] = ?var,
-    VarPointsTo(_, ?heap, _, ?var).
+    VarPointsTo(_, ?heap, ?ctx, ?var).
 
 /* An instruction that loads a field that an interesting instruction wrote to */
-InterestingLoad(?insn) <-
-    InterestingStoreHeapFld(?fld, ?heap),
+InterestingLoad(?ctx, ?insn) <-
+    AllCtxInterestingStoreHeapFld(?fld, ?heap),
     LoadFldFrom(?insn, ?var2, ?fld),
-    VarPointsTo(_, ?heap, _, ?var2).
+    VarPointsTo(_, ?heap, ?ctx, ?var2).
 
 /* An instruction that loads data from an array that an interesting instruction wrote to */
-InterestingLoad(?insn) <-
-    InterestingInstruction(_, ?interesting),
+InterestingLoad(?loadCtx, ?insn) <-
+    InterestingInstruction(?storeCtx, ?interesting),
     StoreArrayIndex:Base[?interesting] = ?var1,
-    LoadArrayHeapInsn(?insn, ?heap),
-    VarPointsTo(_, ?heap, _, ?var1).
+    LoadArrayHeapInsn(?loadCtx, ?insn, ?heap),
+    VarPointsTo(_, ?heap, ?storeCtx, ?var1).
 
 
 /* Data dependency between the formal and actual param */
-InterProceduralDependency(?ctx, ?fromInsn, ?toInsn) <-
+CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
     FormalParam[?paramIndex, ?meth] = ?formalParam,
     ActualParam[?paramIndex, ?callsite] = ?actParam,
-    CallGraphEdge(_, ?callsite, ?ctx, ?meth),
-    InstructionDefinesVar(?toInsn, ?actParam),
-    InstructionUsesVar(?fromInsn, ?formalParam).
+    CallGraphEdge(?prevCtx, ?callsite, ?nextCtx, ?meth),
+    InstructionDefinesVar(?prevInsn, ?actParam),
+    InstructionUsesVar(?nextInsn, ?formalParam).
 
 /* Data dependency between the return instruction and the caller */
-InterProceduralDependency(?ctx, ?fromInsn, ?toInsn) <-
-    ReturnNonvoid:Insn(?toInsn),
-    Instruction:Method[?toInsn] = ?meth,
-    CallGraphEdge(?ctx, ?fromInsn, _, ?meth).
+CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
+    ReturnNonvoid:Insn(?prevInsn),
+    Instruction:Method[?prevInsn] = ?meth,
+    CallGraphEdge(?nextCtx, ?nextInsn, ?prevCtx, ?meth).
 
 
 /* Initial interesting instruction */
 InterestingInstruction(?ctx, ?insn) <-
     Instruction:Method[?insn] = ?meth,
-    CallGraphEdge(_, _, ?ctx, ?meth),
+    ReachableContext(?ctx, ?meth),
     InterestingInstructionInit(?insn).
 
 /* All kinds of intra-procedural dependency */
 InterestingInstruction(?ctx, ?insn)  <-
-    InterestingInstruction(?ctx, ?toInsn),
-    IntraProceduralDependencyOpt(?insn, ?toInsn).
+    InterestingInstruction(?ctx, ?prevInsn),
+    IntraProceduralDependencyOpt(?insn, ?prevInsn).
 
 /* Mark interesting loads as interesting instructions across all contexts */
-InterestingInstruction(?allCtx, ?insn) <-
-    InterestingLoad(?insn),
-    Instruction:Method[?insn] = ?thisMeth,
-    CallGraphEdge(_, _, ?allCtx, ?thisMeth).
+//InterestingInstruction(?allCtx, ?insn) <-
+//    InterestingLoad(?insn),
+//    Instruction:Method[?insn] = ?thisMeth,
+//    CallGraphEdge(_, _, ?allCtx, ?thisMeth).
 
 /**
  * If an instruction is inter-procedurally dependent on an interesting instruction
  * mark that instruction as interesting in its context
  */
 InterestingInstruction(?ctx, ?insn) <-
-    InterestingInstruction(_, ?toInsn),
-    InterProceduralDependency(?ctx, ?insn, ?toInsn).
+    InterestingInstruction(?prevCtx, ?prevInsn),
+    CallReturnDependency(?ctx, ?insn, ?prevCtx, ?prevInsn).
 
 
 #endif
@@ -227,7 +227,9 @@ DoesNotPostDominate(?postDomCandidate, ?insn) <-
 
 /**
  * If A may come before B and C does not post-dominate B,
- * then C does not post-dominate A either, as after A the execution may go to B
+ * then C does not post-dominate A either, as after A the execution may go to B.
+ * This is a lot more intuitive when one thinks that "DoesNotPostDominate(a,b) =
+ * exists path from b to some exit of the method, such that the path skips a".
  */
 DoesNotPostDominate(?postDomCandidate, ?insn) <-
     DoesNotPostDominate(?postDomCandidate, ?otherInsn),
@@ -235,52 +237,57 @@ DoesNotPostDominate(?postDomCandidate, ?insn) <-
     ?insn != ?postDomCandidate.
 
 
-/* If we can't prove A does not post-dominate B with the other rules, then A post-dominates B */
+/* If we can't prove A does not post-dominate B with the other rules, then A post-dominates B.
+ * The definition is such that we always get reflexivity: PostDominates(x,x).
+ */
 PostDominates(?dominator, ?insn) <-
     SameMethodBBHeads(?dominator, ?insn),
     !DoesNotPostDominate(?dominator, ?insn).
 
 
 /* An intra procedural data dep exists when an instruction uses a var defined by another one */
-IntraProceduralDataDep(?to, ?from) <-
-    InstructionDefinesVar(?to, ?var),
-    InstructionUsesVar(?from, ?var).
+IntraProceduralDataDep(?prev, ?next) <-
+    InstructionDefinesVar(?prev, ?var),
+    InstructionUsesVar(?next, ?var).
 
 
-/* This block may follow an instruction, but it doesn't post dominate it */
-IntraProceduralControlDep(?fromBlock, ?to) <-
-    BasicBlockBegin(?fromBlock),
-    MaySuccessorModuloThrow(?fromBlock, ?to),
-    BasicBlockHead[?to] = ?toBlockStart,
-    !PostDominates(?fromBlock, ?toBlockStart).
+/* This block may follow an instruction, but it doesn't postdominate it. 
+ * Invariant of this relation: ?prev is the
+ * last instruction of a BB, ?nextBlock is the first of a different one.
+ */
+IntraProceduralControlDep(?nextBlock, ?prev) <-
+    BasicBlockBegin(?nextBlock),
+    MaySuccessorModuloThrow(?nextBlock, ?prev),
+    BasicBlockHead[?prev] = ?prevBlockStart,
+    !PostDominates(?nextBlock, ?prevBlockStart).
 
 /**
- * This block post dominates a block that depends on an instruction
- * which this block doesn't post dominate
+ * This block postdominates a block that depends on an instruction
+ * which this block doesn't postdominate
  */
-IntraProceduralControlDep(?fromBlock, ?to) <-
-    PostDominates(?fromBlock, ?interm),
-    BasicBlockHead[?to] = ?toBlockStart,
-    !PostDominates(?fromBlock, ?toBlockStart),
-    IntraProceduralControlDep(?interm, ?to).
+IntraProceduralControlDep(?nextBlock, ?prev) <-
+    PostDominates(?nextBlock, ?interm),
+    BasicBlockHead[?prev] = ?prevBlockStart,
+    !PostDominates(?nextBlock, ?prevBlockStart),
+    IntraProceduralControlDep(?interm, ?prev).
 
 
 /* Intra procedural dependency base - data dependency */
-IntraProceduralDependencyBase(?from, ?to) <-
-    IntraProceduralDataDep(?to, ?from).
+IntraProceduralDependencyBase(?next, ?prev) <-
+    IntraProceduralDataDep(?prev, ?next).
 
 /* Intra procedural dependency base - control dependency */
-IntraProceduralDependencyBase(?from, ?to) <-
-    IntraProceduralControlDep(?fromBlock, ?to),
-    BasicBlockHead[?from] = ?fromBlock.
+IntraProceduralDependencyBase(?next, ?prev) <-
+    IntraProceduralControlDep(?nextBlock, ?prev),
+    BasicBlockHead[?next] = ?nextBlock.
 
-IntraProceduralDependency(?to, ?from) <-
-    IntraProceduralDependencyBase(?from, ?to).
+IntraProceduralDependency(?prev, ?next) <-
+    IntraProceduralDependencyBase(?next, ?prev).
 
 /* Intra procedural dependency step */
-IntraProceduralDependency(?to, ?from) <-
-    IntraProceduralDependency(?to, ?inter),
-    IntraProceduralDependencyBase(?from, ?inter).
+IntraProceduralDependency(?prev, ?next) <-
+    IntraProceduralDependency(?prev, ?inter),
+    IntraProceduralDependencyBase(?next, ?inter).
 
 /* Inverted for optimization */
-IntraProceduralDependencyOpt(?from, ?to) <- IntraProceduralDependency(?to, ?from).
+IntraProceduralDependencyOpt(?next, ?prev) <- IntraProceduralDependency(?prev, ?next).
