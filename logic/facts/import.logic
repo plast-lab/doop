@@ -21,41 +21,79 @@ _AssignLocal(?instruction, ?index, ?from, ?to, ?inmethod) ->
    _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
 
 
-// OperAssign
+// AssignBinop
 
-lang:physical:storageModel[`_OperAssign] = "DelimitedFile".
-lang:physical:filePath[`_OperAssign] = "facts/OperAssign.facts".
-lang:physical:delimiter[`_OperAssign] = "\t".
-lang:physical:hasColumnNames[`_OperAssign] = false.
+lang:physical:storageModel[`_AssignBinop] = "DelimitedFile".
+lang:physical:filePath[`_AssignBinop] = "facts/AssignBinop.facts".
+lang:physical:delimiter[`_AssignBinop] = "\t".
+lang:physical:hasColumnNames[`_AssignBinop] = false.
 
-_OperAssign(?instruction, ?index, ?to, ?inmethod) ->
+_AssignBinop(?instruction, ?index, ?to, ?inmethod) ->
    string(?instruction),
    int[32](?index),
    string(?to),
    string(?inmethod).
 
-+OperAssign:Insn(?x),
++AssignBinop:Insn(?x),
 +Instruction:Value(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
-   _OperAssign(?instruction, ?index, ?to, ?method).
+   _AssignBinop(?instruction, ?index, ?to, ?method).
 
-// OperAssignFrom
 
-lang:physical:storageModel[`_OperAssignFrom] = "DelimitedFile".
-lang:physical:filePath[`_OperAssignFrom] = "facts/OperAssignFrom.facts".
-lang:physical:delimiter[`_OperAssignFrom] = "\t".
-lang:physical:hasColumnNames[`_OperAssignFrom] = false.
+// AssignUnop
 
-_OperAssignFrom(?instruction, ?from) ->
+lang:physical:storageModel[`_AssignUnop] = "DelimitedFile".
+lang:physical:filePath[`_AssignUnop] = "facts/AssignUnop.facts".
+lang:physical:delimiter[`_AssignUnop] = "\t".
+lang:physical:hasColumnNames[`_AssignUnop] = false.
+
+_AssignUnop(?instruction, ?index, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?inmethod).
+
++AssignUnop:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstruction:To[?x] = ?to <-
+   _AssignUnop(?instruction, ?index, ?to, ?method).
+
+
+// AssignOperFrom
+
+lang:physical:storageModel[`_AssignOperFrom] = "DelimitedFile".
+lang:physical:filePath[`_AssignOperFrom] = "facts/AssignOperFrom.facts".
+lang:physical:delimiter[`_AssignOperFrom] = "\t".
+lang:physical:hasColumnNames[`_AssignOperFrom] = false.
+
+_AssignOperFrom(?instruction, ?from) ->
    string(?instruction),
    string(?from).
 
-+OperAssign:From(?insn, ?from) <-
-   OperAssign:Insn(?insn),
++AssignOper:From(?insn, ?from) <-
+   AssignOper:Insn(?insn),
    Instruction:Value(?insn:?insnval),
-   _OperAssignFrom(?insnval, ?from).
+   _AssignOperFrom(?insnval, ?from).
+
+// AssignOperType
+
+lang:physical:storageModel[`_AssignOperType] = "DelimitedFile".
+lang:physical:filePath[`_AssignOperType] = "facts/AssignOperType.facts".
+lang:physical:delimiter[`_AssignOperType] = "\t".
+lang:physical:hasColumnNames[`_AssignOperType] = false.
+
+_AssignOperType(?instruction, ?type) ->
+   string(?instruction),
+   string(?type).
+
++AssignOper:Type(?insn, ?type) <-
+   AssignOper:Insn(?insn),
+   Instruction:Value(?insn:?insnval),
+   _AssignOperType(?insnval, ?type).
 
 // IfVar
 

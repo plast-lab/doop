@@ -13,12 +13,12 @@ CallGraphMethodEdge(?toMethod, ?fromMethod) <-
     CallGraphEdge(_, ?invokeInsn, _, ?toMethod).
 
 /* Transitive callgraph base */
-CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
+CallGraphMethodPath(?fromMethod, ?toMethod) <-
     CallGraphMethodEdge(?toMethod, ?fromMethod).
 
 /* Transitive callgraph step */
-CallGraphMethodTransitive(?fromMethod, ?toMethod) <-
-    CallGraphMethodTransitive(?fromMethod, ?inter),
+CallGraphMethodPath(?fromMethod, ?toMethod) <-
+    CallGraphMethodPath(?fromMethod, ?inter),
     CallGraphMethodEdge(?toMethod, ?inter).
 
 /* Data dependency between methods due to a static field store-load */
@@ -45,17 +45,16 @@ HeapArrayMethodDataDep(?method, ?dependsOn) <-
 
 
 /* Any of the above data dependencies */
-MethodHeapDataDep(?method, ?dependsOn) <- StaticFieldMethodDataDep(?method, ?dependsOn).
-
-MethodHeapDataDep(?method, ?dependsOn) <- InstanceFieldMethodDataDep(?method, ?dependsOn).
-
-MethodHeapDataDep(?method, ?dependsOn) <- HeapArrayMethodDataDep(?method, ?dependsOn).
+MethodHeapDataDep(?method, ?dependsOn) <-
+    StaticFieldMethodDataDep(?method, ?dependsOn) ;
+    InstanceFieldMethodDataDep(?method, ?dependsOn) ;
+    HeapArrayMethodDataDep(?method, ?dependsOn).
 
 
 /* Method depndency either due to the transitive call graph or the above data dependencies */
-MethodDependency(?toMethod, ?fromMethod) <- CallGraphMethodTransitive(?fromMethod, ?toMethod).
-
-MethodDependency(?method, ?dependsOn) <- MethodHeapDataDep(?method, ?dependsOn).
+MethodDependency(?toMethod, ?fromMethod) <-
+    CallGraphMethodPath(?fromMethod, ?toMethod) ;
+    MethodHeapDataDep(?toMethod, ?fromMethod).
 
 
 /* The method containing the initial instruction - used to find methods that can be transitively called */
@@ -184,7 +183,7 @@ LoadFldFrom(?insn, ?base, ?fld) <-
 
 /* Var is in instruction's use set */
 InstructionUsesVar(?instruction, ?var) <-
-    OperAssign:From(?instruction, ?var) ;
+    AssignOper:From(?instruction, ?var) ;
     If:Var(?instruction, ?var) ;
     AssignLocal:From[?instruction] = ?var ;
     VirtualMethodInvocation:Base[?instruction] = ?var ;
@@ -251,7 +250,7 @@ IntraProceduralDataDep(?prev, ?next) <-
     InstructionUsesVar(?next, ?var).
 
 
-/* This block may follow an instruction, but it doesn't postdominate it. 
+/* This block may follow an instruction, but it doesn't postdominate it.
  * Invariant of this relation: ?prev is the
  * last instruction of a BB, ?nextBlock is the first of a different one.
  */

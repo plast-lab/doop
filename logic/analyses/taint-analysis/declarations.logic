@@ -241,6 +241,10 @@ PostDominates(?dominator, ?insn) ->
  * Intra procedural data dependency, requires SSA
  * (?next depends on ?prev)
  *
+ * e.g. i=j;i=k;l=i;
+ *
+ * l=i depends on the i=k instruction
+ *
  * ?next        Data dependency source instruction
  * ?prev        Data dependency destination instruction
  */
@@ -252,6 +256,10 @@ IntraProceduralDataDep(?next, ?prev) ->
 /**
  * Basic block depends on instruction
  * (all instructions in ?nextBlock basic block depend on ?prev)
+ *
+ * e.g. if (prev) {nextBlock}
+ *
+ * nextBlock's execution depends on the "if (prev)" instruction
  *
  * ?nextBlock   Dependence source basic block's first instruction
  * ?prev        Dependence destination instruction
