@@ -277,7 +277,8 @@ lang:entity(`AssignCast:Insn).
 lang:entity(`AssignHeapAllocation:Insn).
 lang:entity(`AssignLocal:Insn).
 lang:entity(`AssignInstanceOf:Insn).
-lang:entity(`OperAssign:Insn).
+lang:entity(`AssignBinop:Insn).
+lang:entity(`AssignUnop:Insn).
 lang:entity(`AssignNull:Insn).
 lang:entity(`AssignNumConstant:Insn).
 lang:entity(`AssignCastNull:Insn).
@@ -475,8 +476,10 @@ StoreArrayIndex:Base[?insn] = ?var ->
 AssignInstruction(?insn) -> Instruction(?insn).
 
 AssignCast:Insn(?insn)  ->  AssignInstruction(?insn).
-OperAssign:Insn(?insn) -> AssignInstruction(?insn).
-AssignLocal:Insn(?insn) ->  AssignInstruction(?insn).
+AssignBinop:Insn(?insn) -> AssignOper:Insn(?insn).
+AssignOper:Insn(?insn) -> AssignInstruction(?insn).
+AssignUnop:Insn(?insn) -> AssignOper:Insn(?insn).
+AssignLocal:Insn(?insn) ->  AssignOper:Insn(?insn).
 AssignInstanceOf:Insn(?insn) ->  AssignInstruction(?insn).
 AssignNull:Insn(?insn)  ->  AssignInstruction(?insn).
 AssignNumConstant:Insn(?insn) -> AssignInstruction(?insn).
@@ -528,8 +531,11 @@ AssignInstanceOf:Type[?insn] = ?type ->
 
 // Assign expression vars
 
-OperAssign:From(?insn, ?from) ->
-   OperAssign:Insn(?insn), Var(?from).
+AssignOper:From(?insn, ?from) ->
+   AssignOper:Insn(?insn), Var(?from).
+
+AssignOper:Type(?insn, ?type) ->
+   AssignOper:Insn(?insn), string(?type).
 
 // Variables used in ifs
 

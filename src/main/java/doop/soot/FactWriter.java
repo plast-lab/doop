@@ -1099,11 +1099,15 @@ public class FactWriter
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add(ASSIGN_OPER,
+        _db.add(ASSIGN_BINOP,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(_rep.local(m, left)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        _db.add(ASSIGN_OPER_TYPE,
+                _db.asEntity(rep),
+                _db.asEntity(right.getSymbol()));
 
         if (right.getOp1() instanceof Local) {
             Local op1 = (Local) right.getOp1();
@@ -1124,11 +1128,21 @@ public class FactWriter
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add(ASSIGN_OPER,
+        _db.add(ASSIGN_UNOP,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(_rep.local(m, left)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
+
+        if (right instanceof LengthExpr) {
+            _db.add(ASSIGN_OPER_TYPE,
+                    _db.asEntity(rep),
+                    _db.asEntity("length"));
+        } else if (right instanceof NegExpr) {
+            _db.add(ASSIGN_OPER_TYPE,
+                    _db.asEntity(rep),
+                    _db.asEntity("!"));
+        }
 
         if (right.getOp() instanceof Local) {
             Local op = (Local) right.getOp();
