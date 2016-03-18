@@ -156,10 +156,8 @@ InterestingInstruction(?ctx, ?insn)  <-
     IntraProceduralDependencyOpt(?insn, ?prevInsn).
 
 /* Mark interesting loads as interesting instructions across all contexts */
-//InterestingInstruction(?allCtx, ?insn) <-
-//    InterestingLoad(?insn),
-//    Instruction:Method[?insn] = ?thisMeth,
-//    CallGraphEdge(_, _, ?allCtx, ?thisMeth).
+InterestingInstruction(?ctx, ?insn) <-
+    InterestingLoad(?ctx, ?insn).
 
 /**
  * If an instruction is inter-procedurally dependent on an interesting instruction
@@ -186,17 +184,21 @@ LoadFldFrom(?insn, ?base, ?fld) <-
 
 /* Var is in instruction's use set */
 InstructionUsesVar(?instruction, ?var) <-
-    AssignOper:From(?instruction, ?var) ;
-    If:Var(?instruction, ?var) ;
     AssignLocal:From[?instruction] = ?var ;
+    AssignOper:From(?instruction, ?var) ;
+    AssignCast:From[?instruction] = ?var ;
+    AssignInstanceOf:From[?instruction] = ?var ;
+    If:Var(?instruction, ?var) ;
     VirtualMethodInvocation:Base[?instruction] = ?var ;
     Switch:Key[?instruction] = ?var ;
     ActualParam[_, ?instruction] = ?var ;
     ReturnNonvoid:Var[?instruction] = ?var ;
     Throw:Var[?instruction] = ?var ;
-    LoadArrayIndex:Base(?instruction, ?var) ;
-    StoreArrayIndex:From(?instruction, ?var) ;
-    ArrayInsnIndex(?instruction, ?var).
+    LoadArrayIndex:Base[?instruction] = ?var ;
+    StoreStaticField:From[?instruction] = ?var ;
+    StoreInstanceField:From[?instruction] = ?var ;
+    StoreArrayIndex:From[?instruction] = ?var ;
+    ArrayInsnIndex[?instruction] = ?var.
 
 /* Var is in instruction's def set */
 InstructionDefinesVar(?instruction, ?var) <-
