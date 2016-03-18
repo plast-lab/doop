@@ -109,6 +109,9 @@ InterestingViaCG(?insn) ->
  * ?fld         The field that gets stored to
  * ?heap        The heap object containing the field
  */
+AllCtxInterestingStoreHeapFld(?fld, ?heap) ->
+    FieldSignature(?fld),
+    HeapAllocation(?heap).
 
 
 /**
@@ -116,26 +119,36 @@ InterestingViaCG(?insn) ->
  * Instruction loads heap
  * Provides optimization for InterestingLoad
  *
+ * ?ctx         The calling context in which the load happens
  * ?insn        The load instruction
  * ?heap        The heap object that can be loaded
  */
-
+LoadArrayHeapInsn(?ctx, ?insn, ?heap) ->
+    Context(?ctx),
+    Instruction(?insn),
+    HeapAllocation(?heap).
 
 /**
  * Load instruction that loads interesting data
  *
+ * ?ctx         The calling context in which the instruction is interesting
  * ?insn        The interesting instruction
  */
 InterestingLoad(?ctx, ?insn) ->
-    Instruction(?insn), Context(?ctx).
+    Instruction(?insn),
+    Context(?ctx).
 
 /**
  * Data dependency between instructions in different methods
+ * Either a dependency caused by passing parameters to a method call,
+ * or by returning a value from a call
+ *
  * (?next depends on ?prev)
  *
- * ?ctx         The calling context of the source instruction
- * ?next        Data dependency source instruction
- * ?prev        Data dependency destination instruction
+ * ?nextCtx     Calling context of the destination instruction
+ * ?next        Destination instruction
+ * ?prevCtx     Calling context of the source instruction
+ * ?prev        Data source instruction
  */
 CallReturnDependency(?nextCtx, ?next, ?prevCtx, ?prev) ->
     Context(?nextCtx),
@@ -245,8 +258,8 @@ PostDominates(?dominator, ?insn) ->
  *
  * l=i depends on the i=k instruction
  *
- * ?next        Data dependency source instruction
- * ?prev        Data dependency destination instruction
+ * ?next        Data destination instruction
+ * ?prev        Data source instruction
  */
 IntraProceduralDataDep(?next, ?prev) ->
     Instruction(?next),
@@ -261,19 +274,21 @@ IntraProceduralDataDep(?next, ?prev) ->
  *
  * nextBlock's execution depends on the "if (prev)" instruction
  *
- * ?nextBlock   Dependence source basic block's first instruction
- * ?prev        Dependence destination instruction
+ * ?nextBlock   The dependant basic block's first instruction
+ * ?prev        The instruction that the basic block depends on
  */
 IntraProceduralControlDep(?nextBlock, ?prev) ->
     Instruction(?nextBlock),
     Instruction(?prev).
 
 /**
- * Intra procedural dependency base
+ * Intra procedural dependency base, for dependencies such as
+ * call parameters and return values
+ *
  * (?next depends on ?prev)
  *
- * ?next        Dependence source instruction
- * ?prev        Dependence destination instruction
+ * ?next        Data destination instruction
+ * ?prev        Data source instruction
  */
 IntraProceduralDependencyBase(?next, ?prev) ->
     Instruction(?next),
@@ -283,8 +298,8 @@ IntraProceduralDependencyBase(?next, ?prev) ->
  * Intra procedural dependency - transitively closed
  * (?next depends on ?prev)
  *
- * ?prev        Dependence destination instruction
- * ?next        Dependence source instruction
+ * ?prev        Data source instruction
+ * ?next        Data destination instruction
  */
 IntraProceduralDependency(?prev, ?next) ->
     Instruction(?prev),
