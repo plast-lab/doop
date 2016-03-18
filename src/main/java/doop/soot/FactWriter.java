@@ -1137,11 +1137,11 @@ public class FactWriter
         if (right instanceof LengthExpr) {
             _db.add(ASSIGN_OPER_TYPE,
                     _db.asEntity(rep),
-                    _db.asEntity("length"));
+                    _db.asEntity(" length "));
         } else if (right instanceof NegExpr) {
             _db.add(ASSIGN_OPER_TYPE,
                     _db.asEntity(rep),
-                    _db.asEntity("!"));
+                    _db.asEntity(" ! "));
         }
 
         if (right.getOp() instanceof Local) {

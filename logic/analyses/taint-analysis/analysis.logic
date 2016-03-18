@@ -102,6 +102,8 @@ InterestingViaCG(?insn) <-
 
 #else
 
+
+
 /* Made for optimizing InterestingLoad */
 AllCtxInterestingStoreHeapFld(?fld, ?heap) <-
     InterestingInstruction(?ctx, ?interesting),
@@ -166,6 +168,7 @@ InterestingInstruction(?ctx, ?insn)  <-
 InterestingInstruction(?ctx, ?insn) <-
     InterestingInstruction(?prevCtx, ?prevInsn),
     CallReturnDependency(?ctx, ?insn, ?prevCtx, ?prevInsn).
+
 
 
 #endif
