@@ -1,8 +1,9 @@
-#include "../1-call-site-sensitive/delta.logic"
+#include "../1-call-site-sensitive+heap/delta.logic"
 
 
 // Interesting instructions to start off with and find what they influence
 +InterestingInstructionInit("java.lang.Object.equals/return/instruction9").
++InterestingInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction102").
 +InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0").
 // +InterestingInstructionInit("Test.CallSiteSensitivity.doo/Test.CallSiteSensitivity.go/0", "Test.CallSiteSensitivity.go/assign/instruction2").
 // +InterestingInstructionInit("", "Test.Test.play/Test.Test.readInt/0").

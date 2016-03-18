@@ -1,4 +1,4 @@
-#include "../1-call-site-sensitive/declarations.logic"
+#include "../1-call-site-sensitive+heap/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
 #include "callgraph_deps.logic"
 
