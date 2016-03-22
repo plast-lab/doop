@@ -32,7 +32,7 @@ repositories {
     mavenCentral()
 }
 
-def sootClassesJar = file('lib/sootclasses-trunk.jar')
+def sootClassesJar = file('lib/soot-trunk.jar')
 def jphantomJar = file('lib/jphantom-1.1-jar-with-dependencies.jar')
 
 dependencies {
