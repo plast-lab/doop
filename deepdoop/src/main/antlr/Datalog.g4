@@ -5,7 +5,7 @@ package deepdoop.datalog;
 }
 
 program
-	: (declaration | constraint | rule_ | directive)* ;
+	: (declaration | constraint | rule_ /*| directive*/)* ;
 
 declaration
 	: predicate '->' predicateList? '.'
@@ -20,15 +20,19 @@ rule_
 	| predicate '<-' aggregation '.'
 	;
 
-directive
-	: predicateName '(' '`' predicateName ')' '.'
-	| predicateName '[' ('`' predicateName)? ']' '=' constant '.'
-	;
+//directive
+//	: predicateName '(' '`' predicateName ')' '.'
+//	| predicateName '[' ('`' predicateName)? ']' '=' constant '.'
+//	;
 
 predicate
-	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? CAPACITY? '(' exprList? ')'
+	//: (ADD | RM)? predicateName ('@' AT_SUFFIX)? CAPACITY? '(' exprList? ')'
+	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? '(' exprList? ')'
 	| (ADD | RM | UP)? functionalHead '=' expr
 	| (ADD | RM)? refmode
+	| predicateName CAPACITY '(' IDENTIFIER ')'
+	| predicateName '(' BACKTICK predicateName ')'
+	| predicateName '[' BACKTICK predicateName ']' '=' constant
 	;
 
 ruleBody
@@ -96,6 +100,9 @@ AT_SUFFIX
 
 CAPACITY
 	: '[' ('32' | '64' | '128') ']' ;
+
+BACKTICK
+	: '`' ;
 
 ADD
 	: '+' ;
