@@ -13,6 +13,9 @@ import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 class DatalogListenerImpl implements DatalogListener {
+
+	enum ClauseType { DECLARATION, CONSTRAINT, RULE, UNDEF }
+
 	Set<Predicate> _predicates;
 	Set<Predicate> _specialPredicates;
 	Set<Rule> _rules;
@@ -26,7 +29,7 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<IExpr>> _exprs;
 	ParseTreeProperty<IElement> _elem;
 	ParseTreeProperty<List<IElement>> _elems;
-	boolean _inDeclaration;
+	ClauseType _currentClause;
 
 	public DatalogListenerImpl() {
 		_predicates = new HashSet<>();
@@ -41,7 +44,7 @@ class DatalogListenerImpl implements DatalogListener {
 		_exprs = new ParseTreeProperty<>();
 		_elem = new ParseTreeProperty<>();
 		_elems = new ParseTreeProperty<>();
-		_inDeclaration = false;
+		_currentClause = ClauseType.UNDEF;
 	}
 
 	public Program getProgram() {
@@ -53,10 +56,10 @@ class DatalogListenerImpl implements DatalogListener {
 		_program = new Program(_predicates, _specialPredicates, _rules);
 	}
 	public void enterDeclaration(DeclarationContext ctx) {
-		_inDeclaration = true;
+		_currentClause = ClauseType.DECLARATION;
 	}
 	public void exitDeclaration(DeclarationContext ctx) {
-		_inDeclaration = false;
+		_currentClause = ClauseType.UNDEF;
 
 		Predicate pred = get(_pred, ctx.predicate());
 		if (ctx.refmode() == null) {
@@ -97,11 +100,34 @@ class DatalogListenerImpl implements DatalogListener {
 			_rules.add(new Rule(head, aggregation));
 		}
 	}
-	public void enterDirective(DirectiveContext ctx) {}
-	public void exitDirective(DirectiveContext ctx) {}
 	public void enterPredicate(PredicateContext ctx) {}
 	public void exitPredicate(PredicateContext ctx) {
-		if (_inDeclaration) {
+		/* "normal" predicates | primitive w/o capacity | directive w/o parameters */
+		if (ctx.predicateName() != null && ctx.CAPACITY() == null && ctx.BACKTICK() == null) {
+		}
+
+		/* primitive types */
+		else if (ctx.predicateName() != null && ctx.CAPACITY() != null) {
+		}
+
+		/* directives */
+		else if (ctx.predicateName() != null && ctx.BACKTICK() != null) {
+		}
+
+		/* functional predicates | directive w/o parameters */
+		else if (ctx.functionalHead() != null) {
+		}
+
+		/* refmode predicates */
+		else if (ctx.refmode() != null) {
+		}
+
+
+
+
+
+
+		if (_currentClause == ClauseType.DECLARATION) {
 			Predicate p;
 			if (ctx.predicateName() != null) {
 				String name = get(_name, ctx.predicateName());
