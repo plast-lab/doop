@@ -35,20 +35,14 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
  * Heap allocation
  */
 
-AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
-  HeapAllocation(?heap), Context(?ctx), Var(?var).
-
-AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
+RecordMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
 #ifdef RecordArrayMacro
   !ArrayType(HeapAllocation:Type[?heap]), 
 #endif
   ObjectShouldNotBeRefined(?heap).
-
-RecordMacro(?ctx, ?heap, ?hctx),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
 
 // There is scarcely any logical explanation, but breaking up the rule
 // as above results in faster execution!
@@ -62,30 +56,18 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
 // This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
 // which greatly benefits) define this macro and handle arrays
 // specially.
-AssignArrayHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
-  HeapAllocation(?heap), Context(?ctx), Var(?var).
-
-AssignArrayHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
+RecordArrayMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ArrayType(HeapAllocation:Type[?heap]),
   ObjectShouldNotBeRefined(?heap).
-
-RecordArrayMacro(?ctx, ?heap, ?hctx),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  AssignArrayHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
 #endif // def RecordArrayMacro
-
-AssignAuxiliaryHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
-  HeapAllocation(?heap), Context(?ctx), Var(?var).
-
-AssignAuxiliaryHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
-  AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod).
 
 RecordMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  AssignAuxiliaryHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
+  AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
 
 #ifdef RecordRefinedMacro
 RecordRefinedMacro(?ctx, ?heap, ?hctx),
@@ -95,16 +77,10 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   ObjectShouldBeRefined(?heap).
 #endif
 
-AssignContextInsensitiveHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
-  HeapAllocation(?heap), Context(?ctx), Var(?var).
-
-AssignContextInsensitiveHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
-  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
-  ReachableContext(?ctx, ?inmethod).
-
 RecordImmutableMacro(?ctx, ?heap, ?immCtx),
 VarPointsTo(?immCtx, ?heap, ?ctx, ?var) <-
-  AssignContextInsensitiveHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
 
 /**
  * Various assignments. Assign is a catch-all relation for
@@ -353,18 +329,10 @@ VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
  * Static method invocations
  */
 
-// Again, breaking up the rule minimizes skolem creation cost!
-StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod) ->
-  Context(?callerCtx), CallGraphEdgeSource(?invocation), 
-  MethodSignature(?tomethod).
-
-StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod) <-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
-
 MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
-  StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod).
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
 
 /**
  * Virtual Method Invocation
