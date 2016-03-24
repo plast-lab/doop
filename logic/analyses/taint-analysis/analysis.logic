@@ -153,11 +153,13 @@ InterestingInstruction(?ctx, ?insn) <-
 /* All kinds of intra-procedural dependency */
 InterestingInstruction(?ctx, ?insn)  <-
     InterestingInstruction(?ctx, ?prevInsn),
-    IntraProceduralDependencyOpt(?insn, ?prevInsn).
+    IntraProceduralDependencyOpt(?insn, ?prevInsn),
+    !SecureInstruction(?insn).
 
 /* Mark interesting loads as interesting instructions across all contexts */
 InterestingInstruction(?ctx, ?insn) <-
-    InterestingLoad(?ctx, ?insn).
+    InterestingLoad(?ctx, ?insn),
+    !SecureInstruction(?insn).
 
 /**
  * If an instruction is inter-procedurally dependent on an interesting instruction
@@ -167,6 +169,13 @@ InterestingInstruction(?ctx, ?insn) <-
     InterestingInstruction(?prevCtx, ?prevInsn),
     CallReturnDependency(?ctx, ?insn, ?prevCtx, ?prevInsn).
 
+
+SecureInstruction(?insn) <- SecureInstructionInit(?insn).
+
+SecureInstruction(?next) <-
+    IntraProceduralControlDep(?nextBlock, ?prev),
+    BasicBlockHead[?next] = ?nextBlock,
+    SecureInstruction(?prev).
 
 
 #endif
