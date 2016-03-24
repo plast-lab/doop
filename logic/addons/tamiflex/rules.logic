@@ -83,11 +83,10 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
 /**
  * Return values of reflective method invocations
  */
-Assign(?type, ?callerCtx, ?local, ?calleeCtx, ?return)
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
 <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
    AssignReturnValue[?invocation] = ?local,
-   Var:Type[?local] = ?type,
    ReturnVar(?return, ?callee),
    DummyContextForReflective[] = ?calleeCtx.
 
