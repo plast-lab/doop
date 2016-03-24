@@ -241,11 +241,10 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 /**
  * Return values of reflective method invocations
  */
-Assign(?type, ?callerCtx, ?local, ?calleeCtx, ?return) <-
-  ReturnVar(?return, ?callee),
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) <-
   ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
   ReflectiveAssignReturnValue[?invocation] = ?local,
-  Var:Type[?local] = ?type.
+  ReturnVar(?return, ?callee).
 
 InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
   ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
