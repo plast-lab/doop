@@ -5,5 +5,7 @@
 +InterestingInstructionInit("java.lang.Object.equals/return/instruction9").
 +InterestingInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction102").
 +InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0").
-// +InterestingInstructionInit("Test.CallSiteSensitivity.doo/Test.CallSiteSensitivity.go/0", "Test.CallSiteSensitivity.go/assign/instruction2").
-// +InterestingInstructionInit("", "Test.Test.play/Test.Test.readInt/0").
+
+// Conditionals whose body should be considered safe and therefore should never be marked as interesting
++SecureInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/if/instruction29").
++SecureInstructionInit("gr.uoa.di.sigmod15.ParserWorker.flush/if/instruction143").

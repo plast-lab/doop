@@ -168,6 +168,25 @@ InterestingInstruction(?ctx, ?insn) ->
     Instruction(?insn).
 
 
+/**
+ * Instructions that are behind a guard and can be considered a secure sink
+ * Therefore, these will never be considered interesting
+ *
+ * ?insn        The secure instruction
+ */
+SecureInstruction(?insn) ->
+    Instruction(?insn).
+
+
+/**
+ * A conditional that begins a secure block
+ * Instruction that are control dependent on this will be marked as secure
+ *
+ * ?insn        The secure instruction
+ */
+SecureInstructionInit(?insn) ->
+    Instruction(?insn).
+
 
 #endif
 
