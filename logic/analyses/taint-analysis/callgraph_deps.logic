@@ -1,6 +1,0 @@
-/**
- * Define to mark every instruction that can be reached
- * via the callgraph as tainted
- */
-
-#undef CALLGRAPH_DEPS
