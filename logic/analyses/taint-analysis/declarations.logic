@@ -1,6 +1,5 @@
 #include "../1-call-site-sensitive+heap/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
-#include "callgraph_deps.logic"
 
 #ifdef CALLGRAPH_DEPS
 
@@ -186,6 +185,15 @@ SecureInstruction(?insn) ->
  */
 SecureInstructionInit(?insn) ->
     Instruction(?insn).
+
+
+/**
+ * A method that InterestingInstruction will never propagate to
+ *
+ * ?meth        The secure method
+ */
+ SecureMethod(?meth) ->
+    MethodSignature(?meth).
 
 
 #endif

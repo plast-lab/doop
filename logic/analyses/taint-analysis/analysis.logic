@@ -1,6 +1,5 @@
 #include "../1-call-site-sensitive+heap/analysis.logic"
 #include "../../addons/cfg-analysis/rules.logic"
-#include "callgraph_deps.logic"
 
 
 #ifdef CALLGRAPH_DEPS
@@ -135,7 +134,8 @@ CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
     ActualParam[?paramIndex, ?callsite] = ?actParam,
     CallGraphEdge(?prevCtx, ?callsite, ?nextCtx, ?meth),
     InstructionDefinesVar(?prevInsn, ?actParam),
-    InstructionUsesVar(?nextInsn, ?formalParam).
+    InstructionUsesVar(?nextInsn, ?formalParam),
+    !SecureMethod(?meth).
 
 /* Data dependency between the return instruction and the caller */
 CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
@@ -159,6 +159,7 @@ InterestingInstruction(?ctx, ?insn)  <-
 /* Mark interesting loads as interesting instructions across all contexts */
 InterestingInstruction(?ctx, ?insn) <-
     InterestingLoad(?ctx, ?insn),
+    !SecureMethod(Instruction:Method[?insn]),
     !SecureInstruction(?insn).
 
 /**
