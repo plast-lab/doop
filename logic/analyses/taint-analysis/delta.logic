@@ -2,10 +2,13 @@
 
 
 // Interesting instructions to start off with and find what they influence
-+InterestingInstructionInit("java.lang.Object.equals/return/instruction9").
-+InterestingInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction102").
+// +InterestingInstructionInit("java.lang.Object.equals/return/instruction9").
++InterestingInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction103").
 +InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0").
 
 // Conditionals whose body should be considered safe and therefore should never be marked as interesting
 +SecureInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/if/instruction29").
 +SecureInstructionInit("gr.uoa.di.sigmod15.ParserWorker.flush/if/instruction143").
++SecureInstructionInit("gr.uoa.di.sigmod15.QueryWrapper.execute/if/instruction4").
++SecureInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction28").
++SecureMethod("<java.io.PrintStream: void write(int)>").
