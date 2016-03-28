@@ -2,106 +2,6 @@
 #include "../../addons/cfg-analysis/rules.logic"
 
 
-#ifdef CALLGRAPH_DEPS
-
-
-
-/* A single callgraph edge */
-CallGraphMethodEdge(?toMethod, ?fromMethod) <-
-    Instruction:Method(?invokeInsn, ?fromMethod),
-    CallGraphEdge(_, ?invokeInsn, _, ?toMethod).
-
-/* Transitive callgraph base */
-CallGraphMethodPath(?fromMethod, ?toMethod) <-
-    CallGraphMethodEdge(?toMethod, ?fromMethod).
-
-/* Transitive callgraph step */
-CallGraphMethodPath(?fromMethod, ?toMethod) <-
-    CallGraphMethodPath(?fromMethod, ?inter),
-    CallGraphMethodEdge(?toMethod, ?inter).
-
-/* Data dependency between methods due to a static field store-load */
-StaticFieldMethodDataDep(?method, ?dependsOn) <-
-    LoadStaticField(?field, _, ?method),
-    StoreStaticField(_, ?field, ?dependsOn),
-    ?method != ?dependsOn.
-
-/* Data dependency between methods due to a static field store-load */
-InstanceFieldMethodDataDep(?method, ?dependsOn) <-
-    LoadHeapInstanceField(_, ?loadVar, ?field, _, ?heap),
-    Var:DeclaringMethod(?loadVar, ?method),
-    StoreHeapInstanceField(?field, _, ?heap, _, ?storeVar),
-    Var:DeclaringMethod(?storeVar, ?dependsOn),
-    ?method != ?dependsOn.
-
-/* Data dependency between methods due to an array store-load */
-HeapArrayMethodDataDep(?method, ?dependsOn) <-
-    LoadHeapArrayIndex(_, ?loadVar, _, ?heap),
-    Var:DeclaringMethod(?loadVar, ?method),
-    StoreHeapArrayIndex(_, ?heap, _, ?storeVar),
-    Var:DeclaringMethod(?storeVar, ?dependsOn),
-    ?method != ?dependsOn.
-
-
-/* Any of the above data dependencies */
-MethodHeapDataDep(?method, ?dependsOn) <-
-    StaticFieldMethodDataDep(?method, ?dependsOn) ;
-    InstanceFieldMethodDataDep(?method, ?dependsOn) ;
-    HeapArrayMethodDataDep(?method, ?dependsOn).
-
-
-/* Method depndency either due to the transitive call graph or the above data dependencies */
-MethodDependency(?toMethod, ?fromMethod) <-
-    CallGraphMethodPath(?fromMethod, ?toMethod) ;
-    MethodHeapDataDep(?toMethod, ?fromMethod).
-
-
-/* The method containing the initial instruction - used to find methods that can be transitively called */
-InterestingInitMethod(?initMeth) <-
-    InterestingInstructionInit(?insn),
-    Instruction:Method[?insn] = ?initMeth.
-
-
-/* Initial interesting instruction */
-InterestingViaCG(?insn) <-
-    InterestingInstructionInit(?insn).
-
-/* Any instruction that is intra-procedurally dependent on another interesting instruction */
-InterestingViaCG(?insn) <-
-    InterestingViaCG(?interesting),
-    IntraProceduralDependencyOpt(?insn, ?interesting).
-
-/**
- * Call graph dependence - mark all instructions using the params
- * of methods that can be reached through the call graph
- */
-InterestingViaCG(?insn) <-
-    InterestingInitMethod(?initMeth),
-    MethodDependency(?meth, ?initMeth),
-    FormalParam[_, ?meth] = ?formalParam,
-    InstructionUsesVar(?insn, ?formalParam).
-
-/* Field store-load inter-procedural data dependency */
-InterestingViaCG(?insn) <-
-    InterestingViaCG(?interesting),
-    StoreFldTo(?var1, ?fld, ?interesting),
-    LoadFldFrom(?insn, ?var2, ?fld),
-    VarPointsTo(_, ?heap, _, ?var1),
-    VarPointsTo(_, ?heap, _, ?var2).
-
-/* Field store-load inter-procedural data dependency */
-InterestingViaCG(?insn) <-
-    InterestingViaCG(?interesting),
-    StoreArrayIndex:Base[?interesting] = ?var1,
-    LoadArrayIndex:Base[?insn] = ?var2,
-    VarPointsTo(_, ?heap, _, ?var1),
-    VarPointsTo(_, ?heap, _, ?var2).
-
-
-
-#else
-
-
 
 /* Made for optimizing InterestingLoad */
 AllCtxInterestingStoreHeapFld(?fld, ?heap) <-
@@ -177,9 +77,6 @@ SecureInstruction(?next) <-
     IntraProceduralControlDep(?nextBlock, ?prev),
     BasicBlockHead[?next] = ?nextBlock,
     SecureInstruction(?prev).
-
-
-#endif
 
 
 /* Insn stores to base.fld */

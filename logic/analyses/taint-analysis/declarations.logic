@@ -1,101 +1,6 @@
 #include "../1-call-site-sensitive+heap/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
 
-#ifdef CALLGRAPH_DEPS
-
-/* Methods for callgraph-based analysis */
-
-/**
- * Caller - callee edges
- *
- * ?toMethod    Edge to
- * ?fromMethod  Edge from
- */
-CallGraphMethodEdge(?toMethod, ?fromMethod) ->
-    MethodSignature(?toMethod),
-    MethodSignature(?fromMethod).
-
-/**
- * Transitive closure of the above
- *
- * ?toMethod    Edge to
- * ?fromMethod  Edge from
- */
-CallGraphMethodTransitive(?fromMethod, ?toMethod) ->
-    MethodSignature(?fromMethod),
-    MethodSignature(?toMethod).
-
-/**
- * Load-store dependency of a static field
- *
- * ?method      Dependant method
- * ?dependsOn   Dependence destination
- */
-StaticFieldMethodDataDep(?method, ?dependsOn) ->
-    MethodSignature(?method),
-    MethodSignature(?dependsOn).
-
-/**
- * Load-store dependency of an instance field
- *
- * ?method      Dependant method
- * ?dependsOn   Dependence destination
- */
-InstanceFieldMethodDataDep(?method, ?dependsOn) ->
-    MethodSignature(?method),
-    MethodSignature(?dependsOn).
-
-/**
- * Load-store dependency on an array
- *
- * ?method      Dependant method
- * ?dependsOn   Dependence destination
- */
-HeapArrayMethodDataDep(?method, ?dependsOn) ->
-    MethodSignature(?method),
-    MethodSignature(?dependsOn).
-
-/**
- * Any one of the above data dependencies
- *
- * ?method      Dependant method
- * ?dependsOn   Dependence destination
- */
-MethodHeapDataDep(?method, ?dependsOn) ->
-    MethodSignature(?method),
-    MethodSignature(?dependsOn).
-
-/**
- * Any data or call graph dependency
- *
- * ?method      Dependant method
- * ?dependsOn   Dependence destination
- */
-MethodDependency(?method, ?dependsOn) ->
-    MethodSignature(?method),
-    MethodSignature(?dependsOn).
-
-/**
- * Method that contains the initial interesting instructions
- *
- * ?initMeth    The initial instruction's method signature
- */
-InterestingInitMethod(?initMeth) ->
-    MethodSignature(?initMeth).
-
-/**
- * Instructions that can possibly be influenced by the initial interesting instruction
- * Found by following the dependency transitive graph
- *
- * ?insn        Instruction that is interesting
- */
-InterestingViaCG(?insn) ->
-    Instruction(?insn).
-
-
-
-#else
-
 
 /* Methods for instruction-by-instruction analysis */
 
@@ -194,9 +99,6 @@ SecureInstructionInit(?insn) ->
  */
  SecureMethod(?meth) ->
     MethodSignature(?meth).
-
-
-#endif
 
 
 /**
