@@ -5,6 +5,7 @@
 // +InterestingInstructionInit("java.lang.Object.equals/return/instruction9").
 +InterestingInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction103").
 +InterestingInstructionInit("Test.Test.readInt/java.util.Scanner.nextInt/0").
++InterestingInstructionInit("Test.CallSiteHeap.comp1/assign/instruction2").
 
 // Conditionals whose body should be considered safe and therefore should never be marked as interesting
 +SecureInstructionInit("gr.uoa.di.sigmod15.IndexColumn.validate/if/instruction29").
