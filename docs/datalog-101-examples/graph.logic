@@ -1,0 +1,22 @@
+Reachable(x,y) <- Next(x,y).
+Reachable(x,y) <- Reachable(z,y), Reachable(x,z).
+
+//ReachableBypassing(i,j,k) -> Instruction(i), Instruction(j), Instruction(k).
+ReachableBypassing(i,j,k) <- Next(i,j), Instruction(k), i != k, j != k.
+ReachableBypassing(i,j,k) <- ReachableBypassing(i,l,k), Next(l,j), k != j. 
+
+ReachableFromEntry(j) <- Reachable(i,j), Entry(i).
+
+CanReachReturn(i) <- Reachable(i,j), ReturnInstruction(j).
+
+// CannotReachReturn(i,j) <- ReturnInstruction(j), Instruction(i), !Reachable(i,j).
+// CannotReachAllReturns(i) <- CannotReachReturn(i, _).
+CannotReachAllReturns(i) <- 
+   ReturnInstruction(j), Instruction(i), !Reachable(i,j).
+CanReachAllReturns(i) <- 
+   Instruction(i), !CannotReachAllReturns(i). 
+
+PredecessorNotReachableFromEntry(i) <- 
+   Next(j,i), !ReachableFromEntry(j).
+AllPredecessorsReachableFromEntry(i) <- 
+   Instruction(i), !PredecessorNotReachableFromEntry(i).
