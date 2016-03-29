@@ -1,0 +1,117 @@
+/**
+ * Using the main method's (unique) context as a dummy context.
+ * No reason to use normal context for reflective calls, since we are using the
+ * results from tamiflex to resolve targets. Thus there is no information to
+ * distinguish things per context.
+ */
+DummyContextForReflective[] = ?dummyCtx
+<-
+   MainMethodDeclaration(?mainMethod),
+   ReachableContext(?dummyCtx, ?mainMethod).
+
+
+RecordImmutableMacro(?ctx, ?classObj, ?hctx),
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
+<-
+   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?classStr, ?invocation),
+   ?classObjStr = "<class " + ?classStr + ">",
+   Instruction:Value(?classObj:?classObjStr),
+   HeapAllocation(?classObj),
+   HeapAllocation:Type[?classObj] = "java.lang.Class",
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+
+RecordImmutableMacro(?ctx, ?obj, ?hctx),
+VarPointsTo(?hctx, ?obj, ?ctx, ?return)
+<-
+   (Tamiflex:Class:NewInstance(?invocation, ?obj) ;
+    Tamiflex:Array:NewInstance(?invocation, ?obj) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+
+RecordImmutableMacro(?ctx, ?obj, ?hctx),
+VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
+VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
+<-
+   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return,
+   ThisVar[?constructor] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+
+
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?methodStr, ?invocation),
+   MethodSignature:Value(?method:?methodStr),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod).
+
+
+/**
+ * Private method invocations are special methods, unless they are static.
+ * But they are handled the same as virtual methods in the context of tamiflex
+ * since tamiflex has already resolved the final target method.
+ */
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ! MethodModifier("static", ?callee),
+   ActualParam[0, ?invocation] = ?base,
+   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+   ThisVar[?callee] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+
+/**
+ * Static method invocations
+ */
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   MethodModifier("static", ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+
+/**
+ * Return values of reflective method invocations
+ */
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   AssignReturnValue[?invocation] = ?local,
+   ReturnVar(?return, ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+
+/**
+ * Handle the array of actual parameters of a reflective method call
+ */
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ActualParam[1, ?invocation] = ?argsParam,
+   FormalParam[_, ?callee] = ?formal,
+   VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?argsParam),
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
+   Var:Type[?formal] = ?type,
+   HeapAllocation:Type[?heap] = ?heaptype,
+   SupertypeOf(?type, ?heaptype),
+   DummyContextForReflective[] = ?calleeCtx.
+
+RecordImmutableMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?return)
+<-
+   (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethodArray(_, ?heap, ?invocation) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
