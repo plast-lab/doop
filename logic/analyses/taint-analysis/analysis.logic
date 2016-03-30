@@ -4,28 +4,28 @@
 
 
 /* Made for optimizing InterestingLoad */
-AllCtxInterestingStoreHeapFld(?fld, ?heap) <-
+AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) <-
     InterestingInstruction(?ctx, ?interesting),
     StoreFldTo(?var, ?fld, ?interesting),
-    VarPointsTo(_, ?heap, ?ctx, ?var).
-
-/* Made for optimizing InterestingLoad */
-LoadArrayHeapInsn(?ctx, ?insn, ?heap) <-
-    LoadArrayIndex:Base[?insn] = ?var,
-    VarPointsTo(_, ?heap, ?ctx, ?var).
+    VarPointsTo(?hctx, ?heap, ?ctx, ?var).
 
 /* An instruction that loads a field that an interesting instruction wrote to */
 InterestingLoad(?ctx, ?insn) <-
-    AllCtxInterestingStoreHeapFld(?fld, ?heap),
+    AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap),
     LoadFldFrom(?insn, ?var2, ?fld),
-    VarPointsTo(_, ?heap, ?ctx, ?var2).
+    VarPointsTo(?hctx, ?heap, ?ctx, ?var2).
+
+/* Made for optimizing InterestingLoad */
+LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) <-
+    LoadArrayIndex:Base[?insn] = ?var,
+    VarPointsTo(?hctx, ?heap, ?ctx, ?var).
 
 /* An instruction that loads data from an array that an interesting instruction wrote to */
 InterestingLoad(?loadCtx, ?insn) <-
     InterestingInstruction(?storeCtx, ?interesting),
     StoreArrayIndex:Base[?interesting] = ?var1,
-    LoadArrayHeapInsn(?loadCtx, ?insn, ?heap),
-    VarPointsTo(_, ?heap, ?storeCtx, ?var1).
+    LoadArrayHeapInsn(?loadCtx, ?insn, ?hcxt, ?heap),
+    VarPointsTo(?hctx, ?heap, ?storeCtx, ?var1).
 
 
 /* Data dependency between the formal and actual param */
@@ -86,13 +86,14 @@ InterestingInstruction(?ctx, ?insn) <-
 SecureInstruction(?insn) <- SecureInstructionInit(?insn).
 
 /**
- * Instructions that are control dependant on secure instructions are also secure
+ * Instructions that are control dependent on secure instructions are also secure
  * so that we can mark entire if blocks as secure
  */
+/*
 SecureInstruction(?next) <-
     IntraProceduralControlDep(?next, ?prev),
     SecureInstruction(?prev).
-
+*/
 
 /* Insn stores to base.fld */
 StoreFldTo(?base, ?fld, ?insn) <-
