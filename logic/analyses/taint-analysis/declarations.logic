@@ -13,8 +13,9 @@
  * ?fld         The field that gets stored to
  * ?heap        The heap object containing the field
  */
-AllCtxInterestingStoreHeapFld(?fld, ?heap) ->
+AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) ->
     FieldSignature(?fld),
+    HContext(?hctx),
     HeapAllocation(?heap).
 
 
@@ -27,9 +28,10 @@ AllCtxInterestingStoreHeapFld(?fld, ?heap) ->
  * ?insn        The load instruction
  * ?heap        The heap object that can be loaded
  */
-LoadArrayHeapInsn(?ctx, ?insn, ?heap) ->
+LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) ->
     Context(?ctx),
     Instruction(?insn),
+    HContext(?hctx),
     HeapAllocation(?heap).
 
 /**
