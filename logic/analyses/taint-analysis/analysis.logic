@@ -70,12 +70,27 @@ InterestingInstruction(?ctx, ?insn) <-
     InterestingInstruction(?prevCtx, ?prevInsn),
     CallReturnDependency(?ctx, ?insn, ?prevCtx, ?prevInsn).
 
+/**
+ * If a method call has a control dependency on an instruction, every instruction
+ * in that method is control dependent on that instruction
+ */
+InterestingInstruction(?ctx, ?insn) <-
+    InterestingInstruction(?prevCtx, ?prevInsnControlDep),
+    IntraProceduralControlDep(?prevInsn, ?prevInsnControlDep),
+    CallGraphEdge(?prevCtx, ?prevInsn, ?ctx, ?meth),
+    Instruction:Method[?insn] = ?meth.
 
+/**
+ * Instructions marked as secure by user
+ */
 SecureInstruction(?insn) <- SecureInstructionInit(?insn).
 
+/**
+ * Instructions that are control dependant on secure instructions are also secure
+ * so that we can mark entire if blocks as secure
+ */
 SecureInstruction(?next) <-
-    IntraProceduralControlDep(?nextBlock, ?prev),
-    BasicBlockHead[?next] = ?nextBlock,
+    IntraProceduralControlDep(?next, ?prev),
     SecureInstruction(?prev).
 
 
@@ -166,7 +181,7 @@ IntraProceduralDataDep(?prev, ?next) <-
  * Invariant of this relation: ?prev is the
  * last instruction of a BB, ?nextBlock is the first of a different one.
  */
-IntraProceduralControlDep(?nextBlock, ?prev) <-
+IntraProceduralBlockControlDep(?nextBlock, ?prev) <-
     BasicBlockBegin(?nextBlock),
     MaySuccessorModuloThrow(?nextBlock, ?prev),
     BasicBlockHead[?prev] = ?prevBlockStart,
@@ -176,22 +191,25 @@ IntraProceduralControlDep(?nextBlock, ?prev) <-
  * This block postdominates a block that depends on an instruction
  * which this block doesn't postdominate
  */
-IntraProceduralControlDep(?nextBlock, ?prev) <-
+IntraProceduralBlockControlDep(?nextBlock, ?prev) <-
     PostDominates(?nextBlock, ?interm),
     BasicBlockHead[?prev] = ?prevBlockStart,
     !PostDominates(?nextBlock, ?prevBlockStart),
-    IntraProceduralControlDep(?interm, ?prev).
+    IntraProceduralBlockControlDep(?interm, ?prev).
 
 
-/* Intra procedural dependency base - data dependency */
-IntraProceduralDependencyBase(?next, ?prev) <-
-    IntraProceduralDataDep(?prev, ?next).
-
-/* Intra procedural dependency base - control dependency */
-IntraProceduralDependencyBase(?next, ?prev) <-
-    IntraProceduralControlDep(?nextBlock, ?prev),
+/* Same as above, but per instruction */
+IntraProceduralControlDep(?next, ?prev) <-
+    IntraProceduralBlockControlDep(?nextBlock, ?prev),
     BasicBlockHead[?next] = ?nextBlock.
 
+
+/* Intra procedural dependency base */
+IntraProceduralDependencyBase(?next, ?prev) <-
+    IntraProceduralDataDep(?prev, ?next) ;
+    IntraProceduralControlDep(?next, ?prev).
+
+/* Intra procedural dependency - base case */
 IntraProceduralDependency(?prev, ?next) <-
     IntraProceduralDependencyBase(?next, ?prev).
 
