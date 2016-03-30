@@ -1,12 +1,16 @@
-#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   MethodSignature:DeclaringType[?method] = ?type,
+   MethodSignature:SimpleName[?method] = "main",
+   MethodSignature:Descriptor[?method] = "void(java.lang.String[])",
+   MethodModifier("public", ?method),
+   MethodModifier("static", ?method).
+
 RecordImmutableMacro(?ctx, ?argsArray, ?hctx),
 VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-
-   MainClass(?mainClass),
-   MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
+   MainMethodDeclaration(?mainMethod),
    ReachableContext(?ctx, ?mainMethod),
-   MethodSignature:Descriptor[?mainMethod] = "void(java.lang.String[])",
    FormalParam[0, ?mainMethod] = ?args,
    MainMethodArgsArray(?argsArray),
    MainMethodArgHeap(?argHeap).
-#endif
