@@ -65,9 +65,6 @@ Stats:Simple:Reflection:InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?baseHCtx, ?ba
 Stats:Simple:InsensCallGraphEdge(?from, ?to) <-
    CallGraphEdge(_, ?from, _, ?to).
 
-Stats:Simple:InsensNativeCallGraphEdge(?from, ?to) <-
-   NativeCallGraphEdge(_, ?from, _, ?to).
-
 Stats:Simple:VirtualCallGraphEdge(?from, ?to) <-
    Stats:Simple:ReachableVirtualMethodInvocation(?from),
    Stats:Simple:InsensCallGraphEdge(?from, ?to).
