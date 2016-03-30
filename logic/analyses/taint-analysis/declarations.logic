@@ -203,11 +203,22 @@ IntraProceduralDataDep(?next, ?prev) ->
  *
  * nextBlock's execution depends on the "if (prev)" instruction
  *
- * ?nextBlock   The dependant basic block's first instruction
+ * ?nextBlock   The dependent basic block's first instruction
  * ?prev        The instruction that the basic block depends on
  */
-IntraProceduralControlDep(?nextBlock, ?prev) ->
+IntraProceduralBlockControlDep(?nextBlock, ?prev) ->
     Instruction(?nextBlock),
+    Instruction(?prev).
+
+/**
+ * Instruction is control dependent on another instruction
+ * Same as above, but for each instruction in the BB
+ *
+ * ?next        The dependent instruction
+ * ?prev        The instruction that the other instruction depends on
+ */
+IntraProceduralControlDep(?next, ?prev) ->
+    Instruction(?next),
     Instruction(?prev).
 
 /**
