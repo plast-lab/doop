@@ -1,18 +1,8 @@
 #include "../../core/class-initialization.logic"
 #include "../../core/method-resolution.logic"
+#include "../../core/native.logic"
 #include "../../core/subclass.logic"
 
-
-MainMethodDeclaration(?method) <-
-   MainClass(?type),
-   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
-   Modifier:Value(?public:"public"),
-   Modifier:Value(?static:"static"),
-   MethodSignature:DeclaringType[?method] = ?type,
-   MethodSignature:SimpleName[?method] = "main",
-   MethodSignature:Descriptor[?method] = ?descriptor,
-   MethodModifier(?public, ?method),
-   MethodModifier(?static, ?method).
 
 Reachable(?method) <-
   MainMethodDeclaration(?method).
