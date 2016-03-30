@@ -1,10 +1,4 @@
-/**
- * Methods invoked through native call graph edges are reachable.
- */
 #ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
-ReachableContext(?calleeCtx, ?method) <-
-   NativeCallGraphEdge(_, _, ?calleeCtx, ?method).
-
 RecordImmutableMacro(?ctx, ?argsArray, ?hctx),
 VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-

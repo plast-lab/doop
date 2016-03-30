@@ -7,6 +7,7 @@
 RunningThread(?hctx, ?heap) <-
    MainThread(?hctx, ?heap).
 
+#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
 /**
  * Calls to Thread.start() get redirected to Thread.run
  *
@@ -18,7 +19,7 @@ RunningThread(?hctx, ?heap) <-
  * start0.
  */
 MergeThreadStartMacro(?hctx, ?heap, ?callerCtx, ?calleeCtx),
-NativeCallGraphEdge(?callerCtx, ?start, ?calleeCtx, ?run),
+ReachableContext(?calleeCtx, ?run),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?runThis),
 RunningThread(?hctx, ?heap) 
 <-
@@ -31,7 +32,9 @@ RunningThread(?hctx, ?heap)
    VarPointsTo(?hctx, ?heap, ?callerCtx, ?startThis),
    HeapAllocation:Type[?heap] = ?heaptype,
    MethodLookup["run", "void()", ?heaptype] = ?run,
-   ThisVar[?run] = ?runThis.
+   ThisVar[?run] = ?runThis,
+   ?callerCtx = ?callerCtx. // Just to ignore "only used once" message (depends on the macro)
+#endif
 
 /**
  * Thread.currentThread() return running threads
