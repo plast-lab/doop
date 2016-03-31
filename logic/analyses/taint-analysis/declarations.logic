@@ -1,4 +1,4 @@
-#include "../1-call-site-sensitive+heap/declarations.logic"
+#include "../2-object-sensitive+heap/declarations.logic"
 #include "../../addons/cfg-analysis/declarations.logic"
 
 
@@ -11,6 +11,7 @@
  * Provides optimization for InterestingLoad
  *
  * ?fld         The field that gets stored to
+ * ?hctx        The heap object context
  * ?heap        The heap object containing the field
  */
 AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) ->
@@ -26,6 +27,7 @@ AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) ->
  *
  * ?ctx         The calling context in which the load happens
  * ?insn        The load instruction
+ * ?hctx        The heap object context
  * ?heap        The heap object that can be loaded
  */
 LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) ->
