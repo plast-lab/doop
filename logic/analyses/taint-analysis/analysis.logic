@@ -1,4 +1,4 @@
-#include "../1-call-site-sensitive+heap/analysis.logic"
+#include "../2-object-sensitive+heap/analysis.logic"
 #include "../../addons/cfg-analysis/rules.logic"
 
 
@@ -24,7 +24,7 @@ LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) <-
 InterestingLoad(?loadCtx, ?insn) <-
     InterestingInstruction(?storeCtx, ?interesting),
     StoreArrayIndex:Base[?interesting] = ?var1,
-    LoadArrayHeapInsn(?loadCtx, ?insn, ?hcxt, ?heap),
+    LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?heap),
     VarPointsTo(?hctx, ?heap, ?storeCtx, ?var1).
 
 
@@ -79,21 +79,6 @@ InterestingInstruction(?ctx, ?insn) <-
     IntraProceduralControlDep(?prevInsn, ?prevInsnControlDep),
     CallGraphEdge(?prevCtx, ?prevInsn, ?ctx, ?meth),
     Instruction:Method[?insn] = ?meth.
-
-/**
- * Instructions marked as secure by user
- */
-SecureInstruction(?insn) <- SecureInstructionInit(?insn).
-
-/**
- * Instructions that are control dependent on secure instructions are also secure
- * so that we can mark entire if blocks as secure
- */
-/*
-SecureInstruction(?next) <-
-    IntraProceduralControlDep(?next, ?prev),
-    SecureInstruction(?prev).
-*/
 
 /* Insn stores to base.fld */
 StoreFldTo(?base, ?fld, ?insn) <-
