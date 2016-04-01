@@ -3,27 +3,27 @@
 
 
 
-/* Made for optimizing InterestingLoad */
-AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) <-
-    InterestingInstruction(?ctx, ?interesting),
-    StoreFldTo(?var, ?fld, ?interesting),
+/* Made for optimizing DependentLoad */
+AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) <-
+    DependentInstruction(?ctx, ?dependent),
+    StoreFldTo(?var, ?fld, ?dependent),
     VarPointsTo(?hctx, ?heap, ?ctx, ?var).
 
-/* An instruction that loads a field that an interesting instruction wrote to */
-InterestingLoad(?ctx, ?insn) <-
-    AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap),
+/* An instruction that loads a field that a dependent instruction wrote to */
+DependentLoad(?ctx, ?insn) <-
+    AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap),
     LoadFldFrom(?insn, ?var2, ?fld),
     VarPointsTo(?hctx, ?heap, ?ctx, ?var2).
 
-/* Made for optimizing InterestingLoad */
+/* Made for optimizing DependentLoad */
 LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) <-
     LoadArrayIndex:Base[?insn] = ?var,
     VarPointsTo(?hctx, ?heap, ?ctx, ?var).
 
-/* An instruction that loads data from an array that an interesting instruction wrote to */
-InterestingLoad(?loadCtx, ?insn) <-
-    InterestingInstruction(?storeCtx, ?interesting),
-    StoreArrayIndex:Base[?interesting] = ?var1,
+/* An instruction that loads data from an array that a dependent instruction wrote to */
+DependentLoad(?loadCtx, ?insn) <-
+    DependentInstruction(?storeCtx, ?dependent),
+    StoreArrayIndex:Base[?dependent] = ?var1,
     LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?heap),
     VarPointsTo(?hctx, ?heap, ?storeCtx, ?var1).
 
@@ -44,38 +44,38 @@ CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
     CallGraphEdge(?nextCtx, ?nextInsn, ?prevCtx, ?meth).
 
 
-/* Initial interesting instruction */
-InterestingInstruction(?ctx, ?insn) <-
+/* Dependency source */
+DependentInstruction(?ctx, ?insn) <-
     Instruction:Method[?insn] = ?meth,
     ReachableContext(?ctx, ?meth),
-    InterestingInstructionInit(?insn).
+    DependencySourceInstruction(?insn).
 
 /* All kinds of intra-procedural dependency */
-InterestingInstruction(?ctx, ?insn)  <-
-    InterestingInstruction(?ctx, ?prevInsn),
+DependentInstruction(?ctx, ?insn)  <-
+    DependentInstruction(?ctx, ?prevInsn),
     IntraProceduralDependencyOpt(?insn, ?prevInsn),
     !SecureInstruction(?insn).
 
-/* Mark interesting loads as interesting instructions across all contexts */
-InterestingInstruction(?ctx, ?insn) <-
-    InterestingLoad(?ctx, ?insn),
+/* Mark dependent loads as dependent instructions across all contexts */
+DependentInstruction(?ctx, ?insn) <-
+    DependentLoad(?ctx, ?insn),
     !SecureMethod(Instruction:Method[?insn]),
     !SecureInstruction(?insn).
 
 /**
- * If an instruction is inter-procedurally dependent on an interesting instruction
- * mark that instruction as interesting in its context
+ * If an instruction is inter-procedurally dependent on a dependent instruction
+ * mark that instruction as dependent in its context
  */
-InterestingInstruction(?ctx, ?insn) <-
-    InterestingInstruction(?prevCtx, ?prevInsn),
+DependentInstruction(?ctx, ?insn) <-
+    DependentInstruction(?prevCtx, ?prevInsn),
     CallReturnDependency(?ctx, ?insn, ?prevCtx, ?prevInsn).
 
 /**
  * If a method call has a control dependency on an instruction, every instruction
  * in that method is control dependent on that instruction
  */
-InterestingInstruction(?ctx, ?insn) <-
-    InterestingInstruction(?prevCtx, ?prevInsnControlDep),
+DependentInstruction(?ctx, ?insn) <-
+    DependentInstruction(?prevCtx, ?prevInsnControlDep),
     IntraProceduralControlDep(?prevInsn, ?prevInsnControlDep),
     CallGraphEdge(?prevCtx, ?prevInsn, ?ctx, ?meth),
     Instruction:Method[?insn] = ?meth.

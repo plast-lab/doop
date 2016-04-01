@@ -6,15 +6,15 @@
 
 
 /**
- * AllCtxInterestingStoreHeapFld(?fld, ?heap)
- * Interesting instruction stores to object field
- * Provides optimization for InterestingLoad
+ * AllCtxDependentStoreHeapFld(?fld, ?heap)
+ * Dependent instruction stores to object field
+ * Provides optimization for DependentLoad
  *
  * ?fld         The field that gets stored to
  * ?hctx        The heap object context
  * ?heap        The heap object containing the field
  */
-AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) ->
+AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) ->
     FieldSignature(?fld),
     HContext(?hctx),
     HeapAllocation(?heap).
@@ -23,7 +23,7 @@ AllCtxInterestingStoreHeapFld(?fld, ?hctx, ?heap) ->
 /**
  * LoadArrayHeapInsn(?ctx, ?insn, ?heap)
  * Instruction loads heap
- * Provides optimization for InterestingLoad
+ * Provides optimization for DependentLoad
  *
  * ?ctx         The calling context in which the load happens
  * ?insn        The load instruction
@@ -37,12 +37,12 @@ LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) ->
     HeapAllocation(?heap).
 
 /**
- * Load instruction that loads interesting data
+ * Load instruction that loads dependent data
  *
- * ?ctx         The calling context in which the instruction is interesting
- * ?insn        The interesting instruction
+ * ?ctx         The calling context in which the instruction is dependent
+ * ?insn        The dependent instruction
  */
-InterestingLoad(?ctx, ?insn) ->
+DependentLoad(?ctx, ?insn) ->
     Instruction(?insn),
     Context(?ctx).
 
@@ -66,19 +66,19 @@ CallReturnDependency(?nextCtx, ?next, ?prevCtx, ?prev) ->
 
 
 /**
- * Instructions found to be data/control dependent on the initial interesting instructions
+ * Instructions found to be data/control dependent on the initial dependent instructions
  *
- * ?ctx         The calling context of the interesting instruction
- * ?insn        The interesting instruction
+ * ?ctx         The calling context of the dependent instruction
+ * ?insn        The dependent instruction
  */
-InterestingInstruction(?ctx, ?insn) ->
+DependentInstruction(?ctx, ?insn) ->
     Context(?ctx),
     Instruction(?insn).
 
 
 /**
- * Instructions that are behind a guard and can be considered a secure sink
- * Therefore, these will never be considered interesting
+ * Instructions that can be considered secure 
+ * Therefore, these will never be considered dependent
  *
  * ?insn        The secure instruction
  */
@@ -87,17 +87,7 @@ SecureInstruction(?insn) ->
 
 
 /**
- * A conditional that begins a secure block
- * Instruction that are control dependent on this will be marked as secure
- *
- * ?insn        The secure instruction
- */
-SecureInstructionInit(?insn) ->
-    Instruction(?insn).
-
-
-/**
- * A method that InterestingInstruction will never propagate to
+ * A method that DependentInstruction will never propagate to
  *
  * ?meth        The secure method
  */
@@ -260,5 +250,5 @@ IntraProceduralDependencyOpt(?next, ?prev) ->
  *
  * ?insn        The instruction that will be considered tha taint source
  */
-InterestingInstructionInit(?insn) ->
+DependencySourceInstruction(?insn) ->
     Instruction(?insn).
