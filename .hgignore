@@ -10,6 +10,7 @@
 ^build
 
 #doop dist/runtime files
+^cache
 ^logs
 ^out
 ^results

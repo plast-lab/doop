@@ -33,7 +33,7 @@
 
 
 
-#ifdef USE_BASED_REFLECTION_ANALYSIS
+#ifdef REFLECTION_USE_BASED_ANALYSIS
 
 +SpecialMissingForNameHeap[?invocation] = ?heap,
 +Instruction:Value(?heap:?strHeap),
@@ -183,11 +183,11 @@
    Instruction:Value@previous(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
 
-#endif // USE_BASED_REFLECTION_ANALYSIS
+#endif // REFLECTION_USE_BASED_ANALYSIS
 
 
 
-#ifdef INVENT_UNKNOWN_REFLECTIVE_OBJECTS
+#ifdef REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 // This is the representative of an unknown reflective object, after it has been cast. 
 // Has a real type. We pre-generate for all types and casts in the universe.
@@ -225,7 +225,7 @@
    Instruction:Value@previous(?invocation:?strInvocation),
    ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
 
-#endif // INVENT_UNKNOWN_REFLECTIVE_OBJECTS
+#endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 
 /**

@@ -1,6 +1,6 @@
 package doop.soot;
 
-import doop.PredicateFile;
+import doop.soot.PredicateFile;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -77,13 +77,16 @@ public class CSVDatabase implements Database
         boolean shouldTruncate = false; // predicateFile.equals(PredicateFile.STRING_CONST);
 
         try {
-            Writer writer = getWriter(predicateFile);
-            addColumn(writer, arg, shouldTruncate);
+            synchronized(predicateFile) {
+                Writer writer = getWriter(predicateFile);
+                addColumn(writer, arg, shouldTruncate);
+                
 
-            for (Column col : args)
-                addColumn(writer.append(SEP), col, shouldTruncate);
+                for (Column col : args)
+                    addColumn(writer.append(SEP), col, shouldTruncate);
 
-            writer.write(EOL);
+                writer.write(EOL);
+            }
         } catch(IOException exc) {
             throw new RuntimeException(exc);
         }

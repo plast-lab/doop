@@ -146,7 +146,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
 ReachableContext(?calleeCtx, ?callee) <-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-#ifndef CONTEXT_SENSITIVE_REFLECTION
+#ifndef REFLECTION_CONTEXT_SENSITIVITY
 // REVIEW (YS): Does this break Paddle compatibility? The code originally
 // just used as callee context the calling context of the caller.
 DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
@@ -160,7 +160,7 @@ DummyContextForReflective[] = ?dummyCtx <-
 /**
  * Static methods
  */
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 // REVIEW (YS): Could add back the refinement functionality, but given the
 // (currently) marginal value of both context-sensitive reflection and 
 // refinement-based analyses, it just isn't worth the trouble.
@@ -176,7 +176,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
 /**
  * Special methods
  */
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
@@ -184,7 +184,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap,  ?callerCtx, ?base),
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   ThisVar[?callee] = ?this,
-  AssignCompatible(Var:Type[?this], HeapAllocation:Type[?heap]).
+  SupertypeOf(Var:Type[?this], HeapAllocation:Type[?heap]).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
@@ -196,7 +196,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 // Check if object is an instance of the class declaring the method. It's a
 // special method. Should they be identical types? Probably not. Can use
 // special reflective calls to call private superclass methods.
-  AssignCompatible(Var:Type[?this], HeapAllocation:Type[?heap]).
+  SupertypeOf(Var:Type[?this], HeapAllocation:Type[?heap]).
 #endif
 
 /**
@@ -207,7 +207,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
  */
 
 
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
@@ -216,7 +216,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
   MethodSignature:DeclaringType[?signature] = ?type,
-  AssignCompatible(?type, ?heaptype), // TODO need nicer check
+  SupertypeOf(?type, ?heaptype), // TODO need nicer check
   MethodSignature:SimpleName[?signature] = ?simplename,
   MethodSignature:Descriptor[?signature] = ?descriptor,
   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
@@ -230,7 +230,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
   MethodSignature:DeclaringType[?signature] = ?type,
-  AssignCompatible(?type, ?heaptype), // TODO need nicer check
+  SupertypeOf(?type, ?heaptype), // TODO need nicer check
   MethodSignature:SimpleName[?signature] = ?simplename,
   MethodSignature:Descriptor[?signature] = ?descriptor,
   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
@@ -273,14 +273,14 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
 ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var) ->
   Context(?ctx), Var(?var), Type(?type), Instruction(?instruction).
 
-#ifdef CONTEXT_SENSITIVE_REFLECTION
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveRecordMacro(?ctx, ?heap, ?hctx),
 InitializedClass(?type),
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
   Var:Type[?var] = ?vartype,
-  AssignCompatible(?vartype, ?type).
+  SubtypeOf(?type, ?vartype).
 #else
 RecordImmutableMacro(?ctx, ?heap, ?hctx),
 InitializedClass(?type),
@@ -288,7 +288,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
   Var:Type[?var] = ?vartype,
-  AssignCompatible(?vartype, ?type).
+  SubtypeOf(?type, ?vartype).
 #endif
 
 
@@ -371,13 +371,13 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
   Var:Type[?to] = ?type,
   HeapAllocation:Type[?heap] = ?heaptype,
-  AssignCompatible(?type, ?heaptype).
+  SupertypeOf(?type, ?heaptype).
 
 /// This is unnecessary. It's already done by ArrayIndexPointsTo.
 //  // Additional type filtering based on array covariance
 //  HeapAllocation:Type[?baseheap] = ?arraytype,
 //  ComponentType[?arraytype] = ?componenttype,
-//  AssignCompatible(?componenttype, ?heaptype).
+//  SupertypeOf(?componenttype, ?heaptype).
 
 
 /*************************************************************
@@ -396,7 +396,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   StaticFieldPointsTo(?hctx, ?heap, ?signature),
   HeapAllocation:Type[?heap] = ?heaptype,
   Var:Type[?to] = ?vartype, 
-  AssignCompatible(?vartype, ?heaptype).
+  SupertypeOf(?vartype, ?heaptype).
 
 /*************************************************************
  *
@@ -414,7 +414,7 @@ StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
   VarPointsTo(?hctx, ?heap, ?ctx, ?from),
   HeapAllocation:Type[?heap] = ?heaptype,
   FieldSignature:Type[?signature] = ?fieldtype, 
-  AssignCompatible(?fieldtype, ?heaptype).
+  SupertypeOf(?fieldtype, ?heaptype).
 
 /*************************************************************
  *
@@ -430,7 +430,7 @@ LoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?baseheap) <-
   ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
   FieldSignature:DeclaringClass[?sig] = ?declaringClass,
-  AssignCompatible(?declaringClass, ?baseheaptype),
+  SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).
 
 /*************************************************************
@@ -447,5 +447,5 @@ StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) <-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
   FieldSignature:DeclaringClass[?sig] = ?declaringClass,
-  AssignCompatible(?declaringClass, ?baseheaptype),
+  SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).

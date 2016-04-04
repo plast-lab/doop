@@ -182,10 +182,10 @@ public class NoSearchingClassProvider implements ClassProvider {
 
             try {
                 InputStream stream = resource.open();
-                return new CoffiClassSource(className, stream);
+                //return new CoffiClassSource(className, stream);
                 //// (YS) We may need the change below for future Soot versions
                 //// (found out by trying a nightly build of Soot).
-                // return new CoffiClassSource(className, stream, null, null);
+                return new CoffiClassSource(className, stream, null, null);
             }
             catch(IOException exc) {
                 throw new RuntimeException(exc);

@@ -1,8 +1,0 @@
-doop:must_point_to, projectname
-doop:schema, library
-
-addons/cfg-analysis/declarations.logic, active
-addons/cfg-analysis/rules.logic, active
-addons/cfg-analysis/tests.logic, active
-analyses/must-point-to/may-pre-analysis.logic, active
-analyses/must-point-to/analysis-preprocessed.logic, active

@@ -1,22 +1,11 @@
 package doop.soot;
 
+import soot.*;
 import soot.jimple.*;
-import soot.Body;
-import soot.Local;
-import soot.Modifier;
-import soot.PrimType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-import soot.Unit;
-import soot.Value;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-import soot.Type;
-import soot.RefLikeType;
-import soot.RefType;
-import soot.ArrayType;
+
+import java.util.List;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -24,50 +13,56 @@ import soot.ArrayType;
  * controlling what facts are generated.
  *
  * @author Martin Bravenboer
+ * @author Jim Mouris
  * @license MIT
  */
-public class FactGenerator
-{
-    private FactWriter _writer;
-    private boolean _ssa;
 
-    public FactGenerator(FactWriter writer, boolean ssa)
+public class FactGenerator implements Runnable {
+
+    protected FactWriter _writer;
+    protected boolean _ssa;
+    private List<SootClass> _sootClasses;
+
+    public FactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
     {
-        _writer = writer;
-        _ssa = ssa;
+        this._writer = writer;
+        this._ssa = ssa;
+        this._sootClasses = sootClasses;
     }
 
-    public void generate(SootClass c)
-    {
-        _writer.writeClassOrInterfaceType(c);
+    @Override
+    public void run() {
 
-        // the isInterface condition prevents Object as superclass of interface
-        if(c.hasSuperclass() && !c.isInterface())
-        {
-            _writer.writeDirectSuperclass(c, c.getSuperclass());
-        }
+        for (SootClass _sootClass : _sootClasses) {
 
-        for(SootClass i : c.getInterfaces())
-        {
-            _writer.writeDirectSuperinterface(c, i);
-        }
+            _writer.writeClassOrInterfaceType(_sootClass);
 
-        for(SootField f : c.getFields())
-        {
-            generate(f);
-        }
-
-        for(SootMethod m : c.getMethods())
-        {
-            Session session = new Session();
-
-            try {
-                generate(m, session);
-            } catch (RuntimeException exc) {
-                System.err.println("Error while processing method: " + m);
-                throw exc;
+            // the isInterface condition prevents Object as superclass of interface
+            if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
+                _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
             }
+
+            for (SootClass i : _sootClass.getInterfaces()) {
+                _writer.writeDirectSuperinterface(_sootClass, i);
+            }
+
+            for (SootField f : _sootClass.getFields()) {
+                generate(f);
+            }
+
+            for (SootMethod m : _sootClass.getMethods()) {
+                Session session = new Session();
+
+                try {
+                    generate(m, session); // try multithread this
+                } catch (RuntimeException exc) {
+                    System.err.println("Error while processing method: " + m);
+                    throw exc;
+                }
+            }
+
         }
+
     }
 
     public void generate(SootField f)
@@ -100,6 +95,7 @@ public class FactGenerator
         // TODO annotation?
         // TODO enum?
     }
+
 
     /* Check if a Type refers to a phantom class */
     private boolean phantomBased(Type t) {
@@ -215,7 +211,9 @@ public class FactGenerator
 
     public void generate(SootMethod m, Body b, Session session)
     {
-        b.validate();
+        //TODO: Identify the problem with the jimple body of this method.
+        if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
+            b.validate();
 
         for(Local l : b.getLocals())
         {
@@ -269,11 +267,15 @@ public class FactGenerator
                 }
                 else if(stmt instanceof EnterMonitorStmt)
                 {
-                    _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle EnterMonitorStmt when op is not a Local?
+                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof ExitMonitorStmt)
                 {
-                    _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle ExitMonitorStmt when op is not a Local?
+                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof TableSwitchStmt)
                 {
@@ -363,7 +365,7 @@ public class FactGenerator
 
         if(right instanceof Local)
         {
-             _writer.writeAssignLocal(inMethod, stmt, left, (Local) right, session);
+            _writer.writeAssignLocal(inMethod, stmt, left, (Local) right, session);
         }
         else if(right instanceof InvokeExpr)
         {
@@ -642,5 +644,5 @@ public class FactGenerator
             throw new RuntimeException("Unhandled throw statement: " + stmt);
         }
     }
-
 }
+

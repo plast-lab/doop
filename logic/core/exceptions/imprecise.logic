@@ -16,4 +16,4 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
    ExceptionHandler:FormalParam[?handler] = ?param,
    ExceptionHandler:Type[?handler] = ?type,
    HeapAllocation:Type[?heap] = ?heaptype,
-   AssignCompatible(?type, ?heaptype).
+   SupertypeOf(?type, ?heaptype).
