@@ -29,15 +29,21 @@
 .decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMeth:MethodSignature) input
 .decl AssignNull_Insn(?insn:Instruction) input
 .decl AssignReturnValue(?callsite:MethodInvocation, ?variableAssignedTo:Var)  input
-.decl FormalParam(?index:Int, ?containingMethod:MethodSignature, ?variable:Var)  input
+.decl FormalParam(?index:number, ?containingMethod:MethodSignature, ?variable:Var)  input
 .decl HeapAllocation_Merge(?heap1:HeapAllocation, ?heap2:HeapAllocation) input
 .decl HeapAllocation_Null(?heap:HeapAllocation) input
 .decl HeapAllocation_Type(?heapAllocation:HeapAllocation, ?heaptype:Type)  input
+.decl Instruction_Index(?insn:Instruction, ?index:number) input
 .decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
+.decl IsJumpTarget(?insn:Instruction) input
+.decl MainClass(?mainClass:Type) input
+.decl MainMethodArgHeap(?argHeap:HeapAllocation) input
+.decl MainMethodArgsArray(?argsArray:HeapAllocation) input
 .decl MethodInvocation_Signature(?invocation:MethodInvocation, ?toMethod:MethodSignature) input
 .decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, 
       ?heaptype:Type, ?tomethod:MethodSignature) input 
 .decl MethodSignature_DeclaringType(?meth:MethodSignature, ?class:Type) input
+.decl MethodSignature_Descriptor(?meth:MethodSignature, ?desc:String) input
 .decl MethodSignature_SimpleName(?meth:MethodSignature, ?name:String) input
 .decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction) input
 .decl NextInSamePhiNode(?insn:Instruction, ?nextInsn:Instruction) input
@@ -56,7 +62,7 @@
 .decl InitialRootMethodForMayAnalysis(?meth:MethodSignature)
 .decl EmptyHeapContext(?hctx:MayHeapContext)
 .decl InitialMayContext(?ctx:MayContext)
-
+.decl FirstInstructionOfMethod(?meth:MethodSignature, ?firstInsn:Instruction)
 
 
 .comp IntraproceduralMust {
@@ -234,90 +240,6 @@
     EmptyHeapContext(?hctx).
 
 }
-
-InitialRootMethodForMayAnalysis(?meth) :-
-  Reachable(?meth), // just for benchmarking against unsound VPT analysis
-  MethodSignature_DeclaringType(?meth, ?class), ApplicationClass(?class).
-
-.init SoundMayPhase1 = SoundMay
-.init IntraprocMustForStats = IntraproceduralMust
-
-IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
-  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
-
-//// ====================================
-//// BEGIN configuration
-////  Different ways to kick-start the analysis.
-
-MaxMayContextDepth(4).
-AccessPath_MaxLength(3).
-
-// The real root methods may be more than the initial ones, detected
-// dynamically, while the analysis proceeds. E.g., the initial ones are a
-// pre-analysis notion that can apply to the MustPointTo pre-analysis,
-// while the real root methods for the may-analysis include the class
-// initializers of reachable classes.
-SoundMayPhase1.RootMethodForMayAnalysis(?meth) :-
-  InitialRootMethodForMayAnalysis(?meth).
-
-.decl AppMainMethod(?mainMeth:MethodSignature)
-.decl ClinitMethodOfClass(?meth:MethodSignature, ?class:Type)
-
-// Try to discover hidden "main" heuristically
-AppMainMethod(?mainMeth) :-
-  MethodSignature_SimpleName(?mainMeth, "main"),
-  MethodSignature_DeclaringType(?mainMeth, ?class),
-  ApplicationClass(?class).
-
-// Heuristic: if you can reach it in the analysis and it's a static
-// initializer, start a new search (with zero context depth) from it.
-// There are lots of static final fields in the library that see heavy
-// use.
-ClinitMethodOfClass(?meth, ?class) :-
-  MethodSignature_SimpleName(?meth, "<clinit>"),
-  MethodSignature_DeclaringType(?meth, ?class).
-   
-SoundMayPhase1.RootMethodForMayAnalysis(?clinitMeth) :-
-  SoundMayPhase1.MayReachableMethodUnderMayContext(_, ?meth),
-  MethodSignature_DeclaringType(?meth, ?class),
-  ClinitMethodOfClass(?clinitMeth, ?class).
-
-// RootMethodForMayAnalysis(?meth) :-
-//    MayReachableMethodUnderMayContext(_, ?meth).
-
-// RootMethodForMayAnalysis(?meth) :-
-//    AppMainMethod(?meth).
-
-// // Heuristic: if you can reach it in the analysis and it's an app
-// // method, start a new search (with zero context depth) from it.
-// RootMethodForMayAnalysis(?meth) :-
-//    MayReachableMethodUnderMayContext(_, ?meth),
-//    MethodSignature_DeclaringType(?meth, ?class),
-//    ApplicationClass(?class).
-
-
-/*
-
-// For the legit, official main of a standard Java program, provide
-// dummy argument (String[] args).
-MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-_AccessPath(?ap),
-_AccessPath_ByCollectionVar(?args, ?ap),
-_AccessPath_Length(?ap, 1),
-AccessPathMayPointTo(?hctx, ?argHeap, ?ap, ?ctx, ?firstInsn) :-
-   MainClass(?mainClass),
-   MethodSignature_DeclaringType(?mainMethod, ?mainClass),
-   MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
-   MethodSignature_Descriptor(?mainMethod, "void(java.lang.String[])"),
-   FormalParam(0, ?mainMethod, ?args),
-   MainMethodArgsArray(?argsArray),
-   MainMethodArgHeap(?argHeap),
-   EmptyHeapContext(?hctx),
-   FirstInstructionOfMethod(?mainMethod, ?firstInsn).
-
-//// END configuration
-
-*/
 
 
 /*
@@ -498,10 +420,6 @@ MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) :-
 //    MayContextDepth(?ctx, ?ctxDepth),
 //    ?ctxDepth < ?maxCtxDepth.
 
-
-FirstInstructionOfMethod(?meth, ?firstInsn) :-
-   OptInstructionFromMethodIndex(?meth, 1, ?firstInsn),
-   !IsJumpTarget(?firstInsn).
 
 // args
 InvocationActualFormalAssignment(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
@@ -2196,6 +2114,95 @@ AccessPath_BaseVar(?ap, ?var) :-
   ?ap = [ ?var, ?fldList ], ?fldList = ?fldList. // suppress
 
 //// END access path definitions
+
+//// ====================================
+//// BEGIN utilities
+////  Different ways to kick-start the analysis.
+
+FirstInstructionOfMethod(?meth, ?firstInsn) :-
+  Instruction_Method(?firstInsn, ?meth),
+  Instruction_Index(?firstInsn, 1),
+  !IsJumpTarget(?firstInsn).
+
+//// END utilities
+
+//// ====================================
+//// BEGIN configuration
+////  Different ways to kick-start the analysis.
+
+MaxMayContextDepth(4).
+AccessPath_MaxLength(3).
+
+// The real root methods may be more than the initial ones, detected
+// dynamically, while the analysis proceeds. E.g., the initial ones are a
+// pre-analysis notion that can apply to the MustPointTo pre-analysis,
+// while the real root methods for the may-analysis include the class
+// initializers of reachable classes.
+SoundMayPhase1.RootMethodForMayAnalysis(?meth) :-
+  InitialRootMethodForMayAnalysis(?meth).
+
+.decl AppMainMethod(?mainMeth:MethodSignature)
+.decl ClinitMethodOfClass(?meth:MethodSignature, ?class:Type)
+
+// Try to discover hidden "main" heuristically
+AppMainMethod(?mainMeth) :-
+  MethodSignature_SimpleName(?mainMeth, "main"),
+  MethodSignature_DeclaringType(?mainMeth, ?class),
+  ApplicationClass(?class).
+
+// Heuristic: if you can reach it in the analysis and it's a static
+// initializer, start a new search (with zero context depth) from it.
+// There are lots of static final fields in the library that see heavy
+// use.
+ClinitMethodOfClass(?meth, ?class) :-
+  MethodSignature_SimpleName(?meth, "<clinit>"),
+  MethodSignature_DeclaringType(?meth, ?class).
+   
+SoundMayPhase1.RootMethodForMayAnalysis(?clinitMeth) :-
+  SoundMayPhase1.MayReachableMethodUnderMayContext(_, ?meth),
+  MethodSignature_DeclaringType(?meth, ?class),
+  ClinitMethodOfClass(?clinitMeth, ?class).
+
+// For the legit, official main of a standard Java program, provide
+// dummy argument (String[] args).
+SoundMayPhase1.MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
+AccessPath_IsCollection([?args, nil]),
+ComputedAccessPath([?args, nil]),
+SoundMayPhase1.AccessPathMayPointTo(?hctx, ?argHeap, [?args, nil], ?ctx, ?firstInsn) :-
+   MainClass(?mainClass),
+   MethodSignature_DeclaringType(?mainMethod, ?mainClass),
+   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
+   MethodSignature_Descriptor(?mainMethod, "void(java.lang.String[])"),
+   FormalParam(0, ?mainMethod, ?args),
+   MainMethodArgsArray(?argsArray),
+   MainMethodArgHeap(?argHeap),
+   EmptyHeapContext(?hctx),
+   FirstInstructionOfMethod(?mainMethod, ?firstInsn).
+
+// RootMethodForMayAnalysis(?meth) :-
+//    MayReachableMethodUnderMayContext(_, ?meth).
+
+// RootMethodForMayAnalysis(?meth) :-
+//    AppMainMethod(?meth).
+
+// // Heuristic: if you can reach it in the analysis and it's an app
+// // method, start a new search (with zero context depth) from it.
+// RootMethodForMayAnalysis(?meth) :-
+//    MayReachableMethodUnderMayContext(_, ?meth),
+//    MethodSignature_DeclaringType(?meth, ?class),
+//    ApplicationClass(?class).
+
+InitialRootMethodForMayAnalysis(?meth) :-
+  Reachable(?meth), // just for benchmarking against unsound VPT analysis
+  MethodSignature_DeclaringType(?meth, ?class), ApplicationClass(?class).
+
+.init SoundMayPhase1 = SoundMay
+.init IntraprocMustForStats = IntraproceduralMust
+
+IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
+  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+//// END configuration
 
 
 
