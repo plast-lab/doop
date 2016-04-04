@@ -15,6 +15,7 @@ class AnalysisOption<T>  {
             id             : option.id,
             description    : option.description,
             value          : option.value,
+            forCacheID     : option.forCacheID,
             forPreprocessor: option.forPreprocessor,
             flagType       : option.flagType,
             webUI          : option.webUI,
@@ -22,7 +23,8 @@ class AnalysisOption<T>  {
             cli            : option.cli,
             argName        : option.argName,
             isAdvanced     : option.isAdvanced,
-            isFile         : option.isFile
+            isFile         : option.isFile,
+            nonStandard    : option.nonStandard
         )
     }
 
@@ -41,6 +43,11 @@ class AnalysisOption<T>  {
      */
     T value
 
+    /**
+     * Indicates whether the option affects the cacheID generation
+     */
+    boolean forCacheID = false
+    
     /**
      * Indicates whether the option affects the preprocessor
      */
@@ -64,7 +71,7 @@ class AnalysisOption<T>  {
     /**
      * Indicates whether the option can be specified by the user in the command line interface
      */
-    boolean cli = false
+    boolean cli = true
 
     /**
      * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).
@@ -80,6 +87,11 @@ class AnalysisOption<T>  {
      * Indicates whether the options is a file.
      */
     boolean isFile = false
+
+    /**
+     * Indicates whether the options is a non-standard flag.
+     */
+    boolean nonStandard = false
 
     @Override
     String toString() {

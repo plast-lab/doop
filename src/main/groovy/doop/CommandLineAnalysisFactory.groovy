@@ -20,12 +20,13 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     static final String JAR              = 'The jar files to analyze. Separate multiple jars with a space. ' +
                                            ' If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
-                                           'option: (a) can be mixed with any other option (except the analysis name ' +
-                                           'and jars), (b) is processed prior to any others.'
+                                           'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
                                            "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
+    static final String USAGE            = "doop [OPTION]... -- [BLOXBATCH OPTION]..."
+    static final int    WIDTH            = 120
 
     /**
      * Processes the cli args and generates a new analysis.
@@ -53,14 +54,17 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
     Analysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
-        String name = props.getProperty("analysis")
+        String name = cli.a ?: props.getProperty("analysis")
 
-        //Get the jars of the analysis
-        List<String> jars = props.getProperty("jar").split().collect { String s-> s.trim() }
-        //The jars, if relative, are being resolved via the propsBaseDir
-        jars = jars.collect { String jar ->
-            File f = new File(jar)
-            return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+        //Get the jars of the analysis. If there are no jars in the CLI, we get them from the properties.
+        List<String> jars = cli.js
+        if (!jars) {
+            jars = props.getProperty("jar").split().collect { String s -> s.trim() }
+            //The jars, if relative, are being resolved via the propsBaseDir
+            jars = jars.collect { String jar ->
+                File f = new File(jar)
+                return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+            }
         }
 
         //Get the optional id of the analysis
@@ -77,22 +81,22 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
      * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
      * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
      */
-    static CliBuilder createCliBuilder() {
+    static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
         List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
-            option.cli //all options with cli property
+            option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
         def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),
-            usage:  "doop [OPTION]... -- [BLOXBATCH OPTION]...",
-            footer: "Common Bloxbatch options:\n" +
+            usage:  USAGE,
+            footer: "\nCommon Bloxbatch options:\n" +
                 "-logicProfile N: Profile the execution of logic, show the top N predicates.\n" +
                 "-logLevel LEVEL: Log the execution of logic at level LEVEL (for example: all).",
+            width:  WIDTH,
         )
-        cli.width = 120
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
@@ -102,7 +106,29 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
+            X(longOpt: 'X', 'Display information about non-standard options and exit.')
         }
+
+        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
+
+        return cli
+    }
+
+    /**
+     * Creates the nonStandard args from the respective analysis options (the ones with their nonStandard property set to true).
+     */
+    static CliBuilder createNonStandardCliBuilder() {
+
+        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+            option.nonStandard //all options with nonStandard property
+        }
+
+        CliBuilder cli = new CliBuilder(
+            parser: new org.apache.commons.cli.GnuParser (),
+            usage:  USAGE,
+            footer: "\nThese options are non-standard and subject to change without notice.",
+            width:  WIDTH,
+        )
 
         Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
@@ -164,10 +190,6 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             }.sort{ AnalysisOption option ->
                 option.id
             }
-
-            //Put the "main" options first
-            cliOptions = cliOptions.findAll { AnalysisOption option -> !option.isAdvanced } +
-                         cliOptions.findAll { AnalysisOption option -> option.isAdvanced }
 
             cliOptions.each { AnalysisOption option ->
                 writeAsProperty(option, w)

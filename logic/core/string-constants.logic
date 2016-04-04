@@ -11,21 +11,6 @@
  * @author Yannis Smaragdakis
  *************************************************************/
 
-// These are mutually exclusive
-#ifdef DISTINGUISH_REFLECTION_STRING_CONSTANTS
-#undef DISTINGUISH_NO_STRING_CONSTANTS
-#undef PADDLE_COMPAT
-#endif
-#ifdef DISTINGUISH_NO_STRING_CONSTANTS
-#undef PADDLE_COMPAT
-#endif
-
-// It makes no sense to analyze partial strings that may match fields
-// when we don't track the flow of these strings through StringBuilders.
-#ifndef REFLECTION_STRING_FLOW_ANALYSIS
-#undef ANALYZE_REFLECTION_SUBSTRINGS
-#endif
-
 // REVIEW: The current major decision is to only access application-level
 // classes and methods reflectively. This makes sense, but it may be
 // worthwhile to make it flag-controllable later. For now we have way too
@@ -88,7 +73,7 @@ HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   HeapAllocationValue(?constant, "<<string-constant>>").
 #endif
-#ifdef DISTINGUISH_REFLECTION_STRING_CONSTANTS
+#ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 ReflectionObject(?heap) <-
   ClassNameStringConstant(?heap);
   MethodNameStringConstant(?heap);
@@ -104,7 +89,7 @@ HeapAllocation:Merge[?heap] = ?constant <-
   ! ReflectionObject(?heap), 
   HeapAllocationValue(?constant, "<<string-constant>>").
 
-#ifdef MERGE_FIELD_AND_METHOD_SUBSTRINGS
+#ifdef REFLECTION_MERGE_MEMBER_CONSTANTS
 // There are two reasonable options: merge all, or merge just method and
 // field names, but not class names.
 HeapAllocation:Merge[?heap] = ?constant <-
@@ -135,11 +120,11 @@ FieldNameStringConstant:Signature(?sig, ?constant)
   FieldNameStringConstantInexact:Signature(?sig, _),
   HeapAllocationValue(?constant, "<<reflection-string-constant>>").
 
-#else // #ifndef MERGE_FIELD_AND_METHOD_SUBSTRINGS
+#else
 HeapAllocation:ContextInsensitive(?heap) <-
   ReflectionObject(?heap).
-#endif // MERGE_FIELD_AND_METHOD_SUBSTRINGS
-#endif // DISTINGUISH_REFLECTION_STRING_CONSTANTS
+#endif // REFLECTION_MERGE_MEMBER_CONSTANTS
+#endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 #ifdef DISTINGUISH_ALL_STRING_CONSTANTS
 HeapAllocation:ContextInsensitive(?heap) <-
@@ -217,7 +202,7 @@ FieldNameStringConstantExact:Signature(?sig, ?heap)
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
   FieldSignature:SimpleName[?sig] = ?string.
 
-#ifdef ANALYZE_REFLECTION_SUBSTRINGS
+#ifdef REFLECTION_SUBSTRING_ANALYSIS
 // Creating class/field/method names via string concatenation makes more
 // sense for application classes/fields/methods.
 ClassNameStringConstant(?heap),
@@ -327,13 +312,9 @@ FieldNamePrefix(?sig, ?prefix) <-
 
 #ifdef REFLECTION_STRING_FLOW_ANALYSIS
 
-StringFactoryBaseType(?type) <-
+StringFactoryType(?type) <-
   Type:fqn(?type:"java.lang.StringBuffer") ;
   Type:fqn(?type:"java.lang.StringBuilder").
-
-StringFactoryType(?type) <-
-  AssignCompatible(?basetype, ?type),
-  StringFactoryBaseType(?basetype).
 
 StringFactoryObject(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -360,20 +341,6 @@ VarAssignedFromStringFactoryVar(?ret, ?base)
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVar(?base),
   AssignReturnValue[?invocation] = ?ret.
-
-/*
-// VERSION C
-// Usual case: string buffer is used locally.
-VarAssignmentThroughFactory(?to, ?from) <-
-  VarAssignedFromStringFactoryVar(?to, ?base),
-  VarAssignedToStringFactoryVar(?from, ?base).
-
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
-  ReflectionSubstringObject(?heap),
-  VarAssignmentThroughFactory(?to, ?from).
-// END VERSION C
-*/
 
 // VERSION A (Version B is below). They are interchangeable.  Ver. A
 // is far too slow with the current runtime when reflection strings
@@ -445,6 +412,19 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
 // END VERSION B
 */
 
+/*
+// VERSION C
+// Usual case: string buffer is used locally.
+VarAssignmentThroughFactory(?to, ?from) <-
+  VarAssignedFromStringFactoryVar(?to, ?base),
+  VarAssignedToStringFactoryVar(?from, ?base).
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  ReflectionSubstringObject(?heap),
+  VarAssignmentThroughFactory(?to, ?from).
+// END VERSION C
+*/
 
 /*
 //// Slower than the alternative
@@ -504,7 +484,7 @@ AllocationMergeThreshold[] = 50.
 
 ExceptionType(?heaptype) <-
   Type:fqn(?throw:"java.lang.Throwable"),
-  AssignCompatible(?throw, ?heaptype).
+  SubtypeOf(?heaptype, ?throw).
 
 OptAssignHeapAllocation(?inmethod, ?heap) <-
   AssignHeapAllocation(?heap, _, ?inmethod).
@@ -568,10 +548,10 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 //TypeToHeap2(?heap, ?heaptype) <-
 //  HeapAllocation:Type[?heap] = ?heaptype,
-	//  Type:fqn(?throw:"java.lang.Throwable"),
-	//  AssignCompatible(?throw, ?heaptype),
+//  Type:fqn(?throw:"java.lang.Throwable"),
+//  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
-//  AssignCompatible(?handlertype, ?heaptype).
+//  SubtypeOf(?heaptype, ?handlertype).
 
 TypeToHeap(?heap, ?heaptype) <-
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -591,7 +571,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
 SameTypeAndMethod(?heap1, ?heap2) <-
   HeapAllocation:Type[?heap1] = ?heaptype,
   Type:fqn(?throw:"java.lang.Throwable"),
-  AssignCompatible(?throw, ?heaptype),
+  SubtypeOf(?heaptype, ?throw),
   HeapAllocation:Type[?heap2] = ?heaptype,
   AssignHeapAllocation(?heap1,_,?inmethod),
   AssignHeapAllocation(?heap2,_,?inmethod).
