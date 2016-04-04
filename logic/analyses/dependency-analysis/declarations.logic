@@ -8,7 +8,7 @@
 /**
  * AllCtxDependentStoreHeapFld(?fld, ?heap)
  * Dependent instruction stores to object field
- * Provides optimization for DependentLoad
+ * Provides optimization for TaintedLoad
  *
  * ?fld         The field that gets stored to
  * ?hctx        The heap object context
@@ -23,7 +23,7 @@ AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) ->
 /**
  * LoadArrayHeapInsn(?ctx, ?insn, ?heap)
  * Instruction loads heap
- * Provides optimization for DependentLoad
+ * Provides optimization for TaintedLoad
  *
  * ?ctx         The calling context in which the load happens
  * ?insn        The load instruction
@@ -42,7 +42,7 @@ LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) ->
  * ?ctx         The calling context in which the instruction is dependent
  * ?insn        The dependent instruction
  */
-DependentLoad(?ctx, ?insn) ->
+TaintedLoad(?ctx, ?insn) ->
     Instruction(?insn),
     Context(?ctx).
 
