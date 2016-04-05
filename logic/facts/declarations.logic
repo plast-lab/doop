@@ -258,7 +258,12 @@ Instruction:Method[?insn] = ?inmethod ->
 
 UnsupportedInstruction(?insn) -> Instruction(?insn).
 
+AssignPhantomInvoke(?insn) -> UnsupportedInstruction(?insn).
+PhantomInvoke(?insn) -> UnsupportedInstruction(?insn).
+BreakpointStmt(?insn) -> UnsupportedInstruction(?insn).
+
 lang:entity(`Throw:Insn).
+lang:entity(`ThrowNull:Insn).
 lang:entity(`If:Insn).
 lang:entity(`Goto:Insn).
 lang:entity(`TableSwitch:Insn).
@@ -275,8 +280,13 @@ lang:entity(`AssignInstruction).
 lang:entity(`AssignCast:Insn).
 lang:entity(`AssignHeapAllocation:Insn).
 lang:entity(`AssignLocal:Insn).
+lang:entity(`AssignInstanceOf:Insn).
+lang:entity(`AssignBinop:Insn).
+lang:entity(`AssignUnop:Insn).
 lang:entity(`AssignNull:Insn).
 lang:entity(`AssignNumConstant:Insn).
+lang:entity(`AssignCastNull:Insn).
+lang:entity(`AssignCastNumConstant:Insn).
 lang:entity(`AssignMultiArrayAllocation:Insn).
 lang:entity(`ReturnNonvoid:Insn).
 lang:entity(`ReturnVoid:Insn).
@@ -286,12 +296,16 @@ lang:entity(`SpecialMethodInvocation:Insn).
 lang:entity(`StaticMethodInvocation:Insn).
 lang:entity(`VirtualMethodInvocation:Insn).
 lang:entity(`UnsupportedInstruction).
+lang:entity(`AssignPhantomInvoke).
+lang:entity(`PhantomInvoke).
+lang:entity(`BreakpointStmt).
 
 //------------------------
 // [Throw Instruction]
 //------------------------
 
 Throw:Insn(?insn) -> Instruction(?insn).
+ThrowNull:Insn(?insn) -> Throw:Insn(?insn).
 
 Throw:Var[?insn] = ?var ->
    Throw:Insn(?insn), Var(?var).
@@ -448,6 +462,10 @@ LoadArrayIndex:To[?insn] = ?var ->
    LoadArrayIndex:Insn(?insn), Var(?var).
 
 
+ArrayInsnIndex[?insn] = ?index ->
+   Instruction(?insn), Var(?index).
+
+
 StoreArrayIndex:From[?insn] = ?var ->
    StoreArrayIndex:Insn(?insn), Var(?var).
 
@@ -462,9 +480,15 @@ StoreArrayIndex:Base[?insn] = ?var ->
 AssignInstruction(?insn) -> Instruction(?insn).
 
 AssignCast:Insn(?insn)  ->  AssignInstruction(?insn).
-AssignLocal:Insn(?insn) ->  AssignInstruction(?insn).
+AssignBinop:Insn(?insn) -> AssignOper:Insn(?insn).
+AssignOper:Insn(?insn) -> AssignInstruction(?insn).
+AssignUnop:Insn(?insn) -> AssignOper:Insn(?insn).
+AssignLocal:Insn(?insn) ->  AssignOper:Insn(?insn).
+AssignInstanceOf:Insn(?insn) ->  AssignInstruction(?insn).
 AssignNull:Insn(?insn)  ->  AssignInstruction(?insn).
 AssignNumConstant:Insn(?insn) -> AssignInstruction(?insn).
+AssignCastNull:Insn(?insn)  ->  AssignCast:Insn(?insn).
+AssignCastNumConstant:Insn(?insn) -> AssignCast:Insn(?insn).
 AssignHeapAllocation:Insn(?insn) -> AssignInstruction(?insn).
 AssignMultiArrayAllocation:Insn(?insn) -> AssignInstruction(?insn).
 
@@ -489,11 +513,38 @@ AssignCast:Type[?insn] = ?type ->
    AssignCast:Insn(?insn), Type(?type).
 
 
+// Assign numeric constant casting instruction
+
+AssignCastNumConstant:Value[?insn] = ?const ->
+   AssignCastNumConstant:Insn(?insn), NumConstant(?const).
+
+
 // Assign local instruction
 
 AssignLocal:From[?insn] = ?from ->
    AssignLocal:Insn(?insn), Var(?from).
 
+// Assign instanceof expression
+
+AssignInstanceOf:From[?insn] = ?from ->
+   AssignInstanceOf:Insn(?insn), Var(?from).
+
+AssignInstanceOf:Type[?insn] = ?type ->
+   AssignInstanceOf:Insn(?insn), Type(?type).
+
+
+// Assign expression vars
+
+AssignOper:From(?insn, ?from) ->
+   AssignOper:Insn(?insn), Var(?from).
+
+AssignOper:Type(?insn, ?type) ->
+   AssignOper:Insn(?insn), string(?type).
+
+// Variables used in ifs
+
+If:Var(?insn, ?var) ->
+   If:Insn(?insn), Var(?var).
 
 // Assign multi-array allocation instruction
 
