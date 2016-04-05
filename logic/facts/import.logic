@@ -21,6 +21,96 @@ _AssignLocal(?instruction, ?index, ?from, ?to, ?inmethod) ->
    _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
 
 
+// AssignBinop
+
+lang:physical:storageModel[`_AssignBinop] = "DelimitedFile".
+lang:physical:filePath[`_AssignBinop] = "facts/AssignBinop.facts".
+lang:physical:delimiter[`_AssignBinop] = "\t".
+lang:physical:hasColumnNames[`_AssignBinop] = false.
+
+_AssignBinop(?instruction, ?index, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?inmethod).
+
++AssignBinop:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstruction:To[?x] = ?to <-
+   _AssignBinop(?instruction, ?index, ?to, ?method).
+
+
+// AssignUnop
+
+lang:physical:storageModel[`_AssignUnop] = "DelimitedFile".
+lang:physical:filePath[`_AssignUnop] = "facts/AssignUnop.facts".
+lang:physical:delimiter[`_AssignUnop] = "\t".
+lang:physical:hasColumnNames[`_AssignUnop] = false.
+
+_AssignUnop(?instruction, ?index, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?inmethod).
+
++AssignUnop:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstruction:To[?x] = ?to <-
+   _AssignUnop(?instruction, ?index, ?to, ?method).
+
+
+// AssignOperFrom
+
+lang:physical:storageModel[`_AssignOperFrom] = "DelimitedFile".
+lang:physical:filePath[`_AssignOperFrom] = "facts/AssignOperFrom.facts".
+lang:physical:delimiter[`_AssignOperFrom] = "\t".
+lang:physical:hasColumnNames[`_AssignOperFrom] = false.
+
+_AssignOperFrom(?instruction, ?from) ->
+   string(?instruction),
+   string(?from).
+
++AssignOper:From(?insn, ?from) <-
+   AssignOper:Insn(?insn),
+   Instruction:Value(?insn:?insnval),
+   _AssignOperFrom(?insnval, ?from).
+
+// AssignOperType
+
+lang:physical:storageModel[`_AssignOperType] = "DelimitedFile".
+lang:physical:filePath[`_AssignOperType] = "facts/AssignOperType.facts".
+lang:physical:delimiter[`_AssignOperType] = "\t".
+lang:physical:hasColumnNames[`_AssignOperType] = false.
+
+_AssignOperType(?instruction, ?type) ->
+   string(?instruction),
+   string(?type).
+
++AssignOper:Type(?insn, ?type) <-
+   AssignOper:Insn(?insn),
+   Instruction:Value(?insn:?insnval),
+   _AssignOperType(?insnval, ?type).
+
+// IfVar
+
+lang:physical:storageModel[`_IfVar] = "DelimitedFile".
+lang:physical:filePath[`_IfVar] = "facts/IfVar.facts".
+lang:physical:delimiter[`_IfVar] = "\t".
+lang:physical:hasColumnNames[`_IfVar] = false.
+
+_IfVar(?instruction, ?var) ->
+   string(?instruction),
+   string(?var).
+
++If:Var(?insn, ?var) <-
+   If:Insn(?insn),
+   Instruction:Value(?insn, ?insnval),
+   _IfVar(?insnval, ?var).
+
 // AssignCast
 
 lang:physical:storageModel[`_AssignCast] = "DelimitedFile".
@@ -44,6 +134,54 @@ _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
 +AssignCast:From[?x] = ?from,
 +AssignInstruction:To[?x] = ?to <-
    _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+
+
+// AssignCastNumConstant
+
+lang:physical:storageModel[`_AssignCastNumConstant] = "DelimitedFile".
+lang:physical:filePath[`_AssignCastNumConstant] = "facts/AssignCastNumConstant.facts".
+lang:physical:delimiter[`_AssignCastNumConstant] = "\t".
+lang:physical:hasColumnNames[`_AssignCastNumConstant] = false.
+
+_AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?const),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCastNumConstant:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignCastNumConstant:Value[?x] = ?const,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?method).
+
+
+// AssignCastNull
+
+lang:physical:storageModel[`_AssignCastNull] = "DelimitedFile".
+lang:physical:filePath[`_AssignCastNull] = "facts/AssignCastNull.facts".
+lang:physical:delimiter[`_AssignCastNull] = "\t".
+lang:physical:hasColumnNames[`_AssignCastNull] = false.
+
+_AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCastNull:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCastNull(?instruction, ?index, ?to, ?type, ?method).
 
 
 // AssignHeapAllocation
@@ -148,6 +286,30 @@ _AssignNull(?instruction, ?index, ?to, ?inmethod) ->
 +AssignInstruction:To[?x] = ?to <-
    _AssignNull(?instruction, ?index, ?to, ?method).
 
+
+// AssignInstanceOf
+
+lang:physical:storageModel[`_AssignInstanceOf] = "DelimitedFile".
+lang:physical:filePath[`_AssignInstanceOf] = "facts/AssignInstanceOf.facts".
+lang:physical:delimiter[`_AssignInstanceOf] = "\t".
+lang:physical:hasColumnNames[`_AssignInstanceOf] = false.
+
+_AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?from),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignInstanceOf:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstanceOf:From[?x] = ?from,
++AssignInstanceOf:Type[?x] = ?type,
++AssignInstruction:To[?x] = ?to <-
+   _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
 
 
 // TODO: Heap Allocations are not really instructions; we should
@@ -377,6 +539,25 @@ _Throw(?ref, ?index, ?var, ?method) ->
    _Throw(?ref, ?index, ?var, ?method).
 
 
+// ThrowNull
+
+lang:physical:storageModel[`_ThrowNull] = "DelimitedFile".
+lang:physical:filePath[`_ThrowNull] = "facts/ThrowNull.facts".
+lang:physical:delimiter[`_ThrowNull] = "\t".
+lang:physical:hasColumnNames[`_ThrowNull] = false.
+
+_ThrowNull(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++ThrowNull:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _ThrowNull(?ref, ?index, ?method).
+
+
 // Exception handler
 
 lang:physical:storageModel[`_ExceptionHandler] = "DelimitedFile".
@@ -569,6 +750,20 @@ _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method) ->
    _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method).
 
 
+// ArrayInsnIndex 
+
+lang:physical:storageModel[`_ArrayInsnIndex] = "DelimitedFile".
+lang:physical:filePath[`_ArrayInsnIndex] = "facts/ArrayInsnIndex.facts".
+lang:physical:delimiter[`_ArrayInsnIndex] = "\t".
+lang:physical:hasColumnNames[`_ArrayInsnIndex] = false.
+
+_ArrayInsnIndex(?ref, ?index) ->
+   string(?ref),
+   string(?index).
+
++ArrayInsnIndex[?insn] = ?index <-
+   _ArrayInsnIndex(?insn, ?index).
+
 // Goto
 
 lang:physical:storageModel[`_Goto] = "DelimitedFile".
@@ -746,6 +941,63 @@ _ReturnVoid(?ref, ?index, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _ReturnVoid(?ref, ?index, ?method).
+
+
+// AssignPhantomInvoke
+
+lang:physical:storageModel[`_AssignPhantomInvoke] = "DelimitedFile".
+lang:physical:filePath[`_AssignPhantomInvoke] = "facts/AssignPhantomInvoke.facts".
+lang:physical:delimiter[`_AssignPhantomInvoke] = "\t".
+lang:physical:hasColumnNames[`_AssignPhantomInvoke] = false.
+
+_AssignPhantomInvoke(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++AssignPhantomInvoke(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _AssignPhantomInvoke(?ref, ?index, ?method).
+
+
+// PhantomInvoke
+
+lang:physical:storageModel[`_PhantomInvoke] = "DelimitedFile".
+lang:physical:filePath[`_PhantomInvoke] = "facts/PhantomInvoke.facts".
+lang:physical:delimiter[`_PhantomInvoke] = "\t".
+lang:physical:hasColumnNames[`_PhantomInvoke] = false.
+
+_PhantomInvoke(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++PhantomInvoke(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _PhantomInvoke(?ref, ?index, ?method).
+
+
+// BreakpointStmt
+
+lang:physical:storageModel[`_BreakpointStmt] = "DelimitedFile".
+lang:physical:filePath[`_BreakpointStmt] = "facts/BreakpointStmt.facts".
+lang:physical:delimiter[`_BreakpointStmt] = "\t".
+lang:physical:hasColumnNames[`_BreakpointStmt] = false.
+
+_BreakpointStmt(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++BreakpointStmt(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _BreakpointStmt(?ref, ?index, ?method).
 
 
 // UnsupportedInstruction

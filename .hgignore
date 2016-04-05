@@ -1,4 +1,4 @@
-#doop ingore list
+#doop ignore list
 
 #analysis benchmarks/tools
 ^benchmarks
@@ -19,3 +19,13 @@
 #intellij idea files
 ^.idea
 ^doop-nexgen.iml
+
+#eclipse files
+.classpath
+.project
+
+#orig files
+.orig
+
+#vim files
+.swp
