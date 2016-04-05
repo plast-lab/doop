@@ -293,8 +293,16 @@ public class FactGenerator implements Runnable {
             }
             else
             {
-                // make sure we can jump to statement we do not care about (yet)
-                _writer.writeUnsupported(m, stmt, session);
+                // only reason for assign or invoke statements to be irrelevant
+                // is the invocation of a method on a phantom class
+                if(stmt instanceof AssignStmt)
+                    _writer.writeAssignPhantomInvoke(m, stmt, session);
+                else if (stmt instanceof InvokeStmt)
+                    _writer.writePhantomInvoke(m, stmt, session);
+                else if (stmt instanceof BreakpointStmt)
+                    _writer.writeBreakpointStmt(m, stmt, session);
+                else
+                    throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
             }
         }
 
@@ -409,9 +417,13 @@ public class FactGenerator implements Runnable {
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-            if(index instanceof Local || index instanceof IntConstant)
+            if(index instanceof Local)
             {
-                _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
+            }
+            else if(index instanceof IntConstant)
+            {
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
             }
             else
             {
@@ -427,15 +439,14 @@ public class FactGenerator implements Runnable {
             {
                 _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
             }
-            else if(
-                    op instanceof IntConstant
-                    || op instanceof LongConstant
-                    || op instanceof FloatConstant
-                    || op instanceof DoubleConstant
-                    || op instanceof NullConstant)
+            else if(op instanceof NumericConstant)
             {
-                // make sure we can jump to statement we do not care about (yet)
-                _writer.writeUnsupported(inMethod, stmt, session);
+                // seems to always get optimized out, do we need this?
+                _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
+            }
+            else if (op instanceof NullConstant)
+            {
+                _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }
             else
             {
@@ -449,14 +460,21 @@ public class FactGenerator implements Runnable {
                 _writer.writeAssignLocal(inMethod, stmt, left, (Local) alternative, session);
             }
         }
-        else if(
-                right instanceof BinopExpr
-                || right instanceof NegExpr
-                || right instanceof LengthExpr
-                || right instanceof InstanceOfExpr)
+        else if (right instanceof BinopExpr)
         {
-            // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
+        }
+        else if (right instanceof UnopExpr)
+        {
+            _writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
+        }
+        else if (right instanceof InstanceOfExpr)
+        {
+            InstanceOfExpr expr = (InstanceOfExpr) right;
+            if (expr.getOp() instanceof Local)
+                _writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
+            else // TODO check if this is possible (instanceof on something that is not a local var)
+                _writer.writeUnsupported(inMethod, stmt, session);
         }
         else
         {
@@ -507,7 +525,12 @@ public class FactGenerator implements Runnable {
         {
             ArrayRef ref = (ArrayRef) left;
             Local base = (Local) ref.getBase();
-            _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
+            Value index = ref.getIndex();
+
+            if (index instanceof Local)
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
+            else
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)
@@ -614,8 +637,7 @@ public class FactGenerator implements Runnable {
         }
         else if(v instanceof NullConstant)
         {
-            // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeThrowNull(inMethod, stmt, session);
         }
         else
         {
