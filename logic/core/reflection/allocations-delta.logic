@@ -1,0 +1,10 @@
+/**
+ * NOTE This delta rule must run *after* all others in reflection. Otherwise
+ * weird errors with delta rules arise.
+ */
++Instruction:Value(?heap:?heapStr),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?heapType,
++ReflectiveHeap(?heap),
++ReflectiveHeapAllocation[?invocation, ?classType] = ?heap <-
+  TempDelta@prev(?invocation, ?classType, ?heapType, ?heapStr).

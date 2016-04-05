@@ -1,0 +1,3 @@
+#!/bin/bash
+[ "$(pwd)" != "$DOOP_HOME" ] && { echo "Must be invoked from $DOOP_HOME" ; exit 1 ; }
+eval '$DOOP_HOME/gradlew bytecode2jimple -Pargs="'$@'"'
