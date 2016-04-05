@@ -25,9 +25,3 @@ checksums.properties
 #eclipse files
 .classpath
 .project
-
-#orig files
-.orig
-
-#vim files
-.swp
