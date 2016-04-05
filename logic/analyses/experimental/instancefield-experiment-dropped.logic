@@ -1,0 +1,48 @@
+/**
+ * GKASTINIS: Logic related to the INSTANCEFIELD_EXPERIMENT. Removed
+ * from main context-sensitive.logic and context-sensitive-declarations.logic to improve readability
+ */
+
+/**
+ * YANNIS: InstanceField logic is responsible for most of the
+ * complexity of running deep-context analyses. I tried to
+ * optimize the rules a bit, but didn't see huge improvement.
+ * Currently all INSTANCEFIELD_EXPERIMENT code is inactive.
+ */
+/*
+#ifdef INSTANCEFIELD_EXPERIMENT
+Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) <-
+  LoadHeapInstanceField(?toCtx, ?to, ?basehctx, ?baseheap, ?signature),
+  StoreHeapInstanceField(?fromCtx, ?from, ?basehctx, ?baseheap, ?signature),
+  Var:Type[?to] = ?type.
+
+LoadHeapInstanceField(?ctx, ?to, ?basehctx, ?baseheap, ?sig) <-
+  ReachableLoadInstanceFieldBase(?base),
+  OptLoadInstanceField(?to, ?sig, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+#else
+*/
+
+
+/*
+#ifdef INSTANCEFIELD_EXPERIMENT
+StoreHeapInstanceField(?ctx, ?from, ?basehctx, ?baseheap, ?signature) <-
+  ReachableStoreInstanceFieldBase(?base),
+  OptStoreInstanceField(?from, ?signature, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+#else
+*/
+
+
+/*
+#ifdef INSTANCEFIELD_EXPERIMENT
+LoadHeapInstanceField(?ctx, ?to, ?basehctx, ?baseheap, ?sig) ->
+#else
+*/
+
+
+/*
+#ifdef INSTANCEFIELD_EXPERIMENT
+StoreHeapInstanceField(?ctx, ?from, ?basehctx, ?baseheap, ?sig) ->
+#else
+*/

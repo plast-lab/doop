@@ -1,0 +1,21 @@
+#!/bin/bash
+
+[[ $# != 1 ]] && echo "Must give exactly one argument (the .java file)..." && exit
+[[ ! $1 =~ ^[a-zA-Z0-9_-]+\.java$ ]] && echo "Argument must be a valid java filename..." && exit
+
+filenameJava=$1
+filename=${filenameJava%.*}
+filenameJar=${filename}.jar
+
+tmpDir=$(mktemp -d)
+
+javac $filenameJava -d $tmpDir -g
+# If we need to use a specific jre version do the following (instead of the
+# previous javac command). But is it needed since we will use a specific jre
+# to analyze anyway?
+#jreDir=$DOOP_JRE_LIB
+#jre="1.7"
+#javac $filenameJava -d $tmpDir -g -bootclasspath ${jreDir}/jre${jre}/lib/rt.jar -source $jre -target $jre
+
+jar cvfe $filenameJar $filename -C $tmpDir .
+rm -rf $tmpDir

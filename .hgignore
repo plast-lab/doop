@@ -1,0 +1,31 @@
+#doop ignore list
+
+#analysis benchmarks/tools
+^benchmarks
+^externals
+^tools
+
+#gradle dirs
+^.gradle
+^build
+
+#doop dist/runtime files
+^cache
+^logs
+^out
+^results
+^last-analysis
+
+#intellij idea files
+^.idea
+^doop-nexgen.iml
+
+#eclipse files
+.classpath
+.project
+
+#orig files
+.orig
+
+#vim files
+.swp
