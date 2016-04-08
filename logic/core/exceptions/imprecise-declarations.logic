@@ -1,0 +1,11 @@
+/**
+ * In Paddle, there is a global variable for all thrown exceptions and any
+ * caught exception variable points to all those exceptions.
+ *
+ * Obviously, this is extremely imprecise.
+ *
+ * This imprecision does not seem to matter too much for typical programs in
+ * the context-insensitive and 1-call-site-sensitive analyses, but is
+ * disastrous in the 1-object-sensitive analysis.
+ */
+ThrownException(?hctx, ?heap) -> HContext(?hctx), HeapAllocation(?heap).
