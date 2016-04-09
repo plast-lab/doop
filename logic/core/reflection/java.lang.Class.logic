@@ -13,8 +13,8 @@
 /**
  * Evaluate Object.getClass
  */
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?classHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Object:getClass(?to, ?from),
   VarPointsTo(_, ?heap, ?ctx, ?from),
   HeapAllocation:Type[?heap] = ?type,
@@ -67,8 +67,8 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
  *   public String getName()
  *************************************************************/
 
-RecordImmutableMacro(?callerCtx, ?classNameHeap, ?hctx),
 VarPointsTo(?hctx, ?classNameHeap, ?callerCtx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getName(?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
   Instruction:Value(?classHeap:?str),
@@ -84,8 +84,8 @@ VarPointsTo(?hctx, ?classNameHeap, ?callerCtx, ?to) <-
  *   public Class<?> getComponentType()
  *************************************************************/
 
-RecordImmutableMacro(?callerCtx, ?componentClassHeap, ?hctx),
 VarPointsTo(?hctx, ?componentClassHeap, ?callerCtx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getComponentType(?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -104,16 +104,16 @@ VarPointsTo(?hctx, ?componentClassHeap, ?callerCtx, ?to) <-
  * TODO should (can?) we handle null (for NullPointerException)?
  *************************************************************/
 
-RecordImmutableMacro(?callerCtx, ?componentClassHeap, ?hctx),
 VarPointsTo(?hctx, ?superClassHeap, ?callerCtx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
   ReifiedClass[?type] = ?classHeap,
   ClassType(?type), DirectSuperclass[?type] = ?superType,
   ReifiedClass[?superType] = ?superClassHeap.
 
-RecordImmutableMacro(?callerCtx, ?componentClassHeap, ?hctx),
 VarPointsTo(?hctx, ?superClassHeap, ?callerCtx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -132,9 +132,9 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceHeap, ?hctx, ?arrayHeap) <-
   DirectSuperinterface(?type, ?superInterface),
   ReifiedClass[?superInterface] = ?superInterfaceHeap.
 
-RecordImmutableMacro(?callerCtx, ?componentClassHeap, ?hctx),
 FillArray:Interfaces(?hctx, ?arrayHeap, ?type),
 VarPointsTo(?hctx, ?arrayHeap, ?callerCtx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -161,9 +161,9 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
 // we assume the returned methods will be filtered by some string
 */
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 FillArray:PublicMethods(?hctx, ?arrayHeap, ?type),
 VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -173,8 +173,8 @@ VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
 // mode. The constant will never flow to ?param.
 // NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
 // TODO Merge common parts
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -194,16 +194,16 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   MethodNameStringConstant:Signature(?signature, _).
 */
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 FillArray:Methods(?hctx, ?arrayHeap, ?type),
 VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
   ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getDeclaredMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -231,9 +231,9 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   ReifiedConstructor[?constructor] = ?heap.
 */
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 FillArray:PublicConstructors(?hctx, ?arrayHeap, ?classHeap),
 VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?class] = ?classHeap,
@@ -241,8 +241,8 @@ VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getConstructor(?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classHeap),
@@ -257,9 +257,9 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   ReifiedConstructor[?constructor] = ?heap.
 */
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 FillArray:Constructors(?hctx, ?arrayHeap, ?classHeap),
 VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?class] = ?classHeap,
@@ -267,8 +267,8 @@ VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getDeclaredConstructor(?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classHeap),
@@ -304,9 +304,9 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FieldNameStringConstant:Signature(?fld, _).
 */
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 FillArray:PublicFields(?hctx, ?arrayHeap, ?type),
 VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -315,8 +315,8 @@ VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
 // NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getField(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -336,16 +336,16 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FieldNameStringConstant:Signature(?fld, _).
 */
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 FillArray:Fields(?hctx, ?arrayHeap, ?type),
 VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
   ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getDeclaredField(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
@@ -397,8 +397,8 @@ ReflectiveBaseVar[?invocation] = ?to <-
  * NOTE  
  * We just create a dummy heap object to represent the ClassLoader returned.
  *************************************************************/
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:getClassLoader(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
@@ -412,8 +412,8 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
  * NOTE  
  * We just create a dummy heap object to represent the URL resource returned.
  *************************************************************/
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
