@@ -281,9 +281,9 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   Var:Type[?var] = ?vartype,
   SubtypeOf(?type, ?vartype).
 #else
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 InitializedClass(?type),
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  ImmutableHContext[] = ?hctx,
   ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
   Var:Type[?var] = ?vartype,
@@ -338,8 +338,8 @@ InitializedClass(?type) <-
 /**
  * TODO This doesn't make any sense without a 'to' variable.
  */
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
+  ImmutableHContext[] = ?hctx,
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   ReifiedClass[?type] = ?heap,
   AssignReturnValue[?invocation] = ?return.
