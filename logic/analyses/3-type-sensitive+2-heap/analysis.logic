@@ -45,7 +45,7 @@ HContext(?hctx),
 HContextFromRealHContext[?immutable, ?immutable] = ?hctx,
 ImmutableHContext[] = ?hctx <-
   // Special immutable constant
-  Type:fqn(?immType:"<<immutable>>").
+  Type:fqn(?immutable:"<<immutable>>").
 
 
 // Create initial objects with their heapcontexts.

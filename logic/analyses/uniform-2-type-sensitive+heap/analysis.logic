@@ -50,7 +50,7 @@ HContext(?hctx),
 HContextFromRealHContext[?immutable] = ?hctx,
 ImmutableHContext[] = ?hctx <-
   // Special immutable heap allocation constant
-  HeapAllocationValue(?immutable, "<<immutable>>").
+  Instruction:Value(?immutable:"<<immutable>>").
 
 
 
