@@ -26,7 +26,7 @@ HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
 lang:skolem(`HContextFromRealHContext).
 
 HContext(?hctx),
-HContextFromRealHContext[?immutable] = ?hctx,
+HContextFromRealHContext[] = ?hctx,
 ImmutableHContext[] = ?hctx <- .
 
   
