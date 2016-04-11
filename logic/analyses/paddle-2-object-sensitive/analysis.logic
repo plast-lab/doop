@@ -27,6 +27,11 @@ RealContext2FromContext[?ctx] = ?heap2 <-
 HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
 lang:skolem(`HContextFromRealHContext).
 
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+ImmutableHContext[] = ?hctx <- .
+
+
 
 // Create initial objects with their heapcontexts.
 HContextFromRealHContext[] = ?hctx,

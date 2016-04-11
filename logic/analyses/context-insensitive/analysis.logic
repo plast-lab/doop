@@ -18,6 +18,9 @@ HContextFromRealHContext[] = ?hctx,
 HContext(?hctx)
   <- .
 
+ImmutableHContext[] = ?hctx <-
+  UniqueHContext[] = ?hctx.
+
 // Create initial objects with their heapcontexts.
 SystemThreadGroup(?hctx, ?alloc) <-
   MySystemThreadGroup(?alloc), UniqueHContext[] = ?hctx.

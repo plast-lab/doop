@@ -6,10 +6,6 @@
   HContext(hctx), \
   HContextFromRealHContext[] = hctx
 
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[] = immCtx
-
 // This analysis treats arrays specially (deeper context).
 #define RecordArrayMacro(ctx, heap, hctx) \
   HContext(hctx), \

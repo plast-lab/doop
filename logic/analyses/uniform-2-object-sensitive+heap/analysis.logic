@@ -44,6 +44,13 @@ ImmutableHeapValue[] = ?immHeap <-
 ImmutableInvValue[] = ?immInv <-
   MethodInvocationValue(?immInv, "<<immutable2>>").
 
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable heap allocation constant
+  HeapAllocationValue(?immutable, "<<immutable>>").
+
+
 
 // Create initial objects with their heapcontexts.
 HContextFromRealHContext[?heap] = ?hctx,
