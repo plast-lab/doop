@@ -5,10 +5,6 @@
   HContextFromRealHContext[RealContext1FromContext[ctx], \
                            RealContext2FromContext[ctx]] = hctx
 
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[ImmutableHeapValue[], ImmutableInvValue[]] = immCtx
-
 
 // There are actually interesting questions/choices about many of these.
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \

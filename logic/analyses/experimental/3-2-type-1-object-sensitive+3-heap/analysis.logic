@@ -43,12 +43,13 @@ RealHContext2FromHContext[?hctx] = ?type2,
 RealHContext3FromHContext[?hctx] = ?heap <-
   HContextFromRealHContext[?type1, ?type2, ?heap] = ?hctx.
 
-// Creating special immutable heap allocation constant
-ImmutableHeapValue[] = ?immHeap <-
-  HeapAllocationValue(?immHeap, "<<immutable>>").
-// and special immutable type constant
-ImmutableTypeValue[] = ?immType <-
-  ClassTypeValue(?immType, "java.lang.String").
+HContext(?hctx),
+HContextFromRealHContext[?immutable1, ?immutable1, ?immutable2] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable constants
+  ClassTypeValue(?immutable1, "java.lang.String"),
+  HeapAllocationValue(?immutable2, "<<immutable>>").
+
 
 
 // Create initial objects with their heapcontexts.

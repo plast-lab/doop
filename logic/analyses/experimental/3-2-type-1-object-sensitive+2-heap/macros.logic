@@ -8,10 +8,6 @@
   HContextFromRealHContext[RealContext2FromContext[ctx], \
                            RealContext3FromContext[ctx]] = hctx
 
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[ImmutableTypeValue[], ImmutableHeapValue[]] = immCtx
-
 
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the declaring classes of the 

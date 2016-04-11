@@ -30,6 +30,10 @@ lang:skolem(`HContextFromRealHContext).
 HContextFromContext[?ctx] = ?hctx -> Context(?ctx), HContext(?hctx).
 lang:skolem(`HContextFromContext).
 
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+ImmutableHContext[] = ?hctx <- .
+
 // Create initial objects with their heapcontexts.
 HContextFromRealHContext[] = ?hctx,
 HContext(?hctx),

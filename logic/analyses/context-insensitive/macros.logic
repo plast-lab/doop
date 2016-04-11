@@ -13,10 +13,6 @@
   HContext(hctx), \
   HContextFromRealHContext[] = hctx
 
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[] = immCtx
-
 
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
