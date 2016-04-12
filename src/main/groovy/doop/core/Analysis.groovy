@@ -317,6 +317,7 @@ import org.apache.commons.logging.LogFactory
             analysisPath = "${Doop.doopLogic}/analyses/${name}"
             coreAnalysisName = name
         }
+        coreAnalysisName = coreAnalysisName.replace(File.separator, "-")
 
         if (options.DYNAMIC.value) {
             //TODO: Check arity of DYNAMIC file
@@ -425,11 +426,11 @@ import org.apache.commons.logging.LogFactory
             refine()
 
         if(isMustPointTo()) {
-            String mustAnalysisPath = "${Doop.doopLogic}/analyses/${name}"
+            String mustAnalysisName = "${Doop.doopLogic}/analyses/${name}"
 
             if(options.MAY_PRE_ANALYSIS.value) {
                 String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
-                analysisPath = mustAnalysisPath
+                analysisPath = mustAnalysisName
                 preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
 
                 lbScript
@@ -438,7 +439,7 @@ import org.apache.commons.logging.LogFactory
                     .addBlockFile("${coreAnalysisName}.logic")
                     .commit()
                     .transaction()
-                    .addBlockFile("${mustAnalysisPath}/may-pre-analysis.logic")
+                    .addBlockFile("${mustAnalysisName}/may-pre-analysis.logic")
             }
 
             lbScript
@@ -450,11 +451,12 @@ import org.apache.commons.logging.LogFactory
                 .addBlockFile("${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
         }
 
-        preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
+        // TODO need to revisit must point to logic
+        preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
         if(isMustPointTo()) 
             Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
         else
-            Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
+            Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
 
         lbScript
             .commit()
@@ -462,7 +464,7 @@ import org.apache.commons.logging.LogFactory
             .echo("-- Analysis --")
             .startTimer()
             .transaction()
-            .addBlockFile("${name}.logic")
+            .addBlockFile("${coreAnalysisName}.logic")
             .commit()
             .elapsedTime()
     }
