@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../../facts/macros.logic"
 
 #define RecordMacro(ctx, heap, hctx) \
   HContext(hctx), \

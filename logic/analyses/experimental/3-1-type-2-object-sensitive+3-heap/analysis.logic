@@ -5,9 +5,7 @@
  */
 
 #include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
-#include "../object-to-type.logic"
+#include "../../../core/context-sensitivity.logic"
 
 // In this analysis, the real context and the real heap context
 // are a Type and a pair of HeapAllocations. Keeping mapping 

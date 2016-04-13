@@ -6,8 +6,7 @@
  */
 
 #include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
+#include "../../../core/context-sensitivity.logic"
 
 // In this analysis, the real context and the real heap context
 // are a HeapAllocation and a MethodInvocation. Keeping mapping 

@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../../facts/macros.logic"
 
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling 
