@@ -765,7 +765,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 MustContext(?ctx) ->.
 lang:entity(`MustContext).
 lang:physical:storageModel[`MustContext]="ScalableSparse".
-lang:physical:capacity[`MustContext] = 8388608.
+lang:physical:capacity[`MustContext] = 33554432.
 
 EmptyContext[] = ?ctx -> MustContext(?ctx).
 lang:skolem(`EmptyContext).
