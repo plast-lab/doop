@@ -1,5 +1,4 @@
-#include "macros.logic"
-#include "../context-sensitive-declarations.logic"
+#include "../../../core/context-sensitivity-declarations.logic"
 
 MySystemThreadGroup(?type, ?heap, ?alloc) ->
   Type(?type), HeapAllocation(?heap), HeapAllocation(?alloc).
