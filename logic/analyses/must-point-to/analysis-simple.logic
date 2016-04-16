@@ -401,12 +401,15 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 
 // Assignments
 
+ReachableInstructionUnderMustContext(?ctx, ?insn) <-
+   ReachableMethodUnderMustContext(?ctx, ?inMethod),
+   OptInstructionMethod(?insn, ?inMethod).
+
 // AssignLocal
 MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
    AssignLocal:Insn(?insn),
    !AssignNull:Insn(?insn),
-   ReachableMethodUnderMustContext(?ctx, ?inMethod),
-   OptInstructionMethod(?insn, ?inMethod),
+   ReachableInstructionUnderMustContext(?ctx, ?insn),
    !(PhiNodeHead[?insn] = _),
    AssignLocal:From[?insn] = ?from,
    AssignInstruction:To[?insn] = ?to,
@@ -438,8 +441,7 @@ MustAliasBase(?ap1, ?ap2, ?ctx, ?lastInsn) <-
 // Casts
 MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
    AssignCast:Insn(?insn),
-   OptInstructionMethod(?insn, ?inMethod),
-   ReachableMethodUnderMustContext(?ctx, ?inMethod),
+   ReachableInstructionUnderMustContext(?ctx, ?insn),
    AssignCast:From[?insn] = ?from,
    AssignInstruction:To[?insn] = ?to,
    AccessPath:ByVar[?from] = ?ap1,
@@ -447,8 +449,7 @@ MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
 
 // Load-Store
 MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
-   OptInstructionMethod(?insn, ?inMethod),
-   ReachableMethodUnderMustContext(?ctx, ?inMethod),
+   ReachableInstructionUnderMustContext(?ctx, ?insn),
    FieldLoad(?to, ?base, ?fld, ?insn),
    AccessPath:ByVar[?to] = ?ap1,
    AccessPath:ByVar[?base] = ?baseAp,
@@ -466,8 +467,7 @@ MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
 */
 
 MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
-   OptInstructionMethod(?insn, ?inMethod),
-   ReachableMethodUnderMustContext(?ctx, ?inMethod),
+   ReachableInstructionUnderMustContext(?ctx, ?insn),
    FieldStore(?base, ?fld, ?from, ?insn),
    AccessPath:ByVar[?from] = ?ap1,
    AccessPath:ByVar[?base] = ?baseAp,
