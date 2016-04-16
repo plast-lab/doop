@@ -100,8 +100,8 @@ MustCallGraphEdge:ToMethod[?invo] = ?signature,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    (SpecialMethodInvocation:Insn(?invo);
     StaticMethodInvocation:Insn(?invo)),
-   OptInstructionMethod(?invo, ?inMethod),
-   ReachableMethodUnderMustContext(?ctx, ?inMethod),
+   Instruction:Method[?invo] = ?inmethod,
+   ReachableMethodUnderMustContext(?ctx, ?inmethod),
    MustContextDepth[?ctx] < MaxContextDepth[],
    MethodInvocation:Signature[?invo] = ?signature.
 
@@ -113,8 +113,8 @@ PushMustContext[?invo, ?ctx] = ?calleeCtx, MustContext(?calleeCtx),
 MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
 MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    VirtualMethodInvocation:Insn(?invo),
-   OptInstructionMethod(?invo, ?inMethod),
-   ReachableMethodUnderMustContext(?ctx, ?inMethod),
+   Instruction:Method[?invo] = ?inmethod,
+   ReachableMethodUnderMustContext(?ctx, ?inmethod),
    MustContextDepth[?ctx] < MaxContextDepth[],
    VirtualMethodInvocation:Base[?invo] = ?base,
    TypeResolvedVar(?base),
