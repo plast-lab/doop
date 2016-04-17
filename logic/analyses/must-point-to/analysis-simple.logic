@@ -1,11 +1,14 @@
 // Must-Point-To information. One needs to be very careful regarding the
 // meaning of predicates.
 
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 // REVIEW, ALERT, WARNING! See "negation" comments below.
 // Safe for now, and useful for optimization purposes (lazily
 // compute access paths, based on existing aliases)
 lang:compiler:disableError:NEGATION_RECURSION[]=true.
 lang:compiler:disableWarning:NEGATION_RECURSION[]=true.
+*/
 
 // Ignore verification of calculation in head
 lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
@@ -227,11 +230,6 @@ AccessPathRebasedForReturn[?ap, ?invo] = ?newAp <-
 
 // Root of all MustPointTo inferences.
 // REVIEW: This introduces dependency on string-constants.logic
-// Note the subtlety of context management here (and in later rules):
-// The points-to relation is true for all contexts, but the method
-// may not be reachable for "AllContext". We generally infer the
-// strongest context we can and are careful to weaken it when
-// comparing with other contexts.
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AccessPath:ByVar[?var] = ?ap,
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
@@ -305,32 +303,13 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    !AccessPath:ContainsField(?fld, ?ap),
    !(AccessPath:ContainsStaticField[?ap] = ?fld).
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-#ifdef MUST_AFTER_MAY
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   FieldStore(?base, _, _, ?insn),
-   AccessPath:Base[?ap] = ?baseAp,
-   AccessPath:ByVarInv[?baseAp] = ?var,
-   !MayAliasInMethod(?var, ?base).
-
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   MethodInvocation(?insn),
-   !CalledMethodMayAllocateHeap(?heap, ?insn),
-   !CallMayInvalidateSomeAccessPathField(?ap, ?insn).
-#endif
-*/
-
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    !StoreInstanceField:Insn(?insn),
    !StoreStaticField:Insn(?insn),
    !(AssignHeapAllocation:Heap[?insn] = ?heap),
    !MethodInvocation(?insn).
-
-
+   
 
 // Fill MustPointTo and InstanceFieldMustPointTo relations.
 
@@ -338,16 +317,7 @@ MustPointTo[?var, ?ctx, ?insn] = ?heap <-
    AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    AccessPath:ByVarInv[?ap] = ?var.
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-InstanceFieldMustPointTo[?fld, ?baseHeap, MeetContexts[?ctx2, ?ctx1], ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, ?ctx1, ?insn] = ?heap,
-   AccessPath:Base[?ap] = ?baseAp,
-   AccessPath:LastField[?ap] = ?fld,
-   AccessPathMustPointTo[?baseAp, ?ctx2, ?insn] = ?baseHeap,
-   ?baseHeap != HeapAllocation:Null[].
-*/
-//// added
+//// CHANGED FOR SIMPLE ANALYSIS!
 InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
    AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    AccessPath:Base[?ap] = ?baseAp,
@@ -356,18 +326,11 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
    ?baseHeap != HeapAllocation:Null[].
 
 // MustAlias relations are a major source of MustPointTo inferences.
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-AccessPathMustPointTo[?ap2, MeetContexts[?ctx1, ?ctx2], ?insn] = ?heap <-
-   MustAlias(?ap2, ?ap1, ?ctx1, ?insn),
-   ?ap2 != NullAccessPath[],
-   AccessPathMustPointTo[?ap1, ?ctx2, ?insn] = ?heap.
-*/
+//// CHANGED FOR SIMPLE ANALYSIS!
 AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
    MustAlias(?ap2, ?ap1, ?ctx, ?insn),
    ?ap2 != NullAccessPath[],
    AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
-
 
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
@@ -405,15 +368,6 @@ MustAliasSymmetric(?ap1, ?ap2, ?ctx, ?insn) <-
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAliasSymmetric(?ap1, ?ap2, ?ctx, ?insn).
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-MustAlias(?ap2, ?ap1, ?ctx, ?insn),
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   MustAlias(?ap1, ?ap3, ?ctx1, ?insn),
-   MustAliasSymmetric(?ap2, ?ap3, ?ctx2, ?insn),
-   MeetContexts[?ctx1, ?ctx2] = ?ctx,
-   ?ap2 != ?ap1.
-*/
 MustAlias(?ap2, ?ap1, ?ctx, ?insn),
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAlias(?ap1, ?ap3, ?ctx, ?insn),
@@ -717,30 +671,14 @@ AccessPathFieldRelevantAtInvocation(?ap, ?fld, ?insn) <-
    AccessPathRelevantAtInvocation(?insn, ?ap),
    AccessPath:ContainsField(?fld, ?ap).
 
-// (REVIEW) Recursion through negation
-CallMayInvalidateSomeAccessPathField(?ap, ?insn) <-
-   CalledMethodMayStoreToInstanceField(?fld, ?insn),
-   AccessPathFieldRelevantAtInvocation(?ap, ?fld, ?insn).
-
-CallMayInvalidateSomeAccessPathField(?ap, ?insn) <-
-   OptCalledMethodMayStoreToStaticField(?insn, ?fld),
-   OptAccessPath:ContainsField(?ap, ?fld).
-
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 // Fails due to recursion through negation
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    FieldStore(_, ?fld, _, ?insn),
    !AccessPath:ContainsField(?fld, ?ap1),
    !AccessPath:ContainsField(?fld, ?ap2).
-
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-// Fails due to recursion through negation
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-   StaticFieldStore(?fld, _, ?insn),
-   !AccessPath:ContainsStaticField[?ap1] = ?fld,
-   !AccessPath:ContainsStaticField[?ap2] = ?fld.
 */
 
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
@@ -758,65 +696,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    !StoreStaticField:Insn(?insn),
    !MethodInvocation(?insn).
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-#ifdef MUST_AFTER_MAY
-
-// Frame rules that use a may-point-to analysis.
-MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-MustAlias(?ap2, ?ap1, ?ctx, ?insn) <-
-   AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-   FieldStore(?base, ?fld, _, ?insn),
-   AccessPath:Base[?ap1] = ?baseAp1,
-   AccessPath:ByVarInv[?baseAp1] = ?var,
-   !AccessPath:ContainsField(?fld, ?ap2),
-   !MayAliasInMethod(?var, ?base).
-
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-   FieldStore(?base, _, _, ?insn),
-   AccessPath:Base[?ap1] = ?baseAp1,
-   AccessPath:ByVarInv[?baseAp1] = ?var1,
-   AccessPath:Base[?ap2] = ?baseAp2,
-   AccessPath:ByVarInv[?baseAp2] = ?var2,
-   !MayAliasInMethod(?var1, ?base),
-   !MayAliasInMethod(?var2, ?base).
-
-// Stop propagating at call instructions that can modify the field of an access path.
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-   MethodInvocation(?insn),
-   !CallMayInvalidateSomeAccessPathField(?ap1, ?insn),
-   !CallMayInvalidateSomeAccessPathField(?ap2, ?insn).
-
-#endif //MUST_AFTER_MAY
-*/
-
 //// END Must-Alias code
-
-/*
-/// We no longer do things via weakening rules! We keep the strongest
-/// context only, and "MeetContexts[ctx1,ctx2]" when needed.
-
-//// ====================================
-//// BEGIN weakening rules.
-// The all-context fact implies the fact for a reachable MustContext
-
-CandidateMethodForWeakerContext(?ctx, ?strongerCtx, ?meth) <-
-   StrongerContext(?ctx, ?strongerCtx),
-   ReachableMethodUnderMustContext(?strongerCtx, ?meth),
-   ReachableMethodUnderMustContext(?ctx, ?meth).
-
-CandidateForWeakerContext(?ctx, ?strongerCtx, ?insn) <-
-   CandidateMethodForWeakerContext(?ctx, ?strongerCtx, ?meth),
-   OptInstructionMethod(?insn, ?meth).
-
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   MustAlias(?ap1, ?ap2, ?strongerCtx, ?insn),
-   CandidateForWeakerContext(?ctx, ?strongerCtx, ?insn).
-
-//// END weakening rules
-*/
 
 // Some auxiliaries ...
 OptInstructionMethod(?insn, ?meth) <-
@@ -1185,7 +1065,6 @@ AllReturn:SameRetVar[?method] = ?var <-
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
 */
-
 //// ADDED FOR SIMPLE ANALYSIS!
 AllReturn:MustAlias(?ap1, ?ap2, ?ctx, ?method) <-
    ReturnInstruction(?return),
@@ -1217,16 +1096,7 @@ MustAliasUpToPhiInstruction(?ap, ?ctx, ?headInsn) <-
    AccessPath:ByVar[?from] = ?apFrom,
    MustAlias(?ap, ?apFrom, ?ctx, ?headInsn).
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-MustAliasUpToPhiInstruction(?ap, MeetContexts[?ctx1,?ctx2], ?nextInsn) <-
-   MustAliasUpToPhiInstruction(?ap, ?ctx1, ?insn),
-   NextInSamePhiNode[?insn] = ?nextInsn,
-   AssignLocal:From[?nextInsn] = ?from,
-   AccessPath:ByVar[?from] = ?apFrom,
-   MustAlias(?ap, ?apFrom, ?ctx2, ?nextInsn).
-*/
-//// Added
+//// CHANGED FOR SIMPLE ANALYSIS!
 MustAliasUpToPhiInstruction(?ap, ?ctx, ?nextInsn) <-
    MustAliasUpToPhiInstruction(?ap, ?ctx, ?insn),
    NextInSamePhiNode[?insn] = ?nextInsn,
@@ -1268,14 +1138,7 @@ OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?predPrev) <-
    MustAlias(?ap1, ?ap2, ?ctx, ?tail),
    PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, MeetContexts[?ctx1, ?ctx2], ?insn, ?pred) <-
-   AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx1, ?insn, ?prevPred),
-   OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx2, ?insn, ?prevPred),
-   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
-*/
-//// Added
+//// CHANGED FOR SIMPLE ANALYSIS!
 AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
    AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
    OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
@@ -1303,13 +1166,7 @@ OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?head] = ?heap <-
    BasicBlockHead[?tail] = ?head,  
    AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap.
 
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-AccessPathMustPointToUpToPredecessor[?ap, MeetContexts[?ctx1,?ctx2], ?insn, ?pred] = ?heap <-
-   OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx1, ?pred] = ?heap,
-   OptAccessPathMustPointToAtBBTail[?ap, ?ctx2, ?pred] = ?heap. 
-*/
-////Added
+//// CHANGED FOR SIMPLE ANALYSIS!
 AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
    OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap,
    OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?pred] = ?heap. 
@@ -1347,7 +1204,6 @@ AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
 */
-
 //// ADDED FOR SIMPLE ANALYSIS!
 AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
    ReturnInstruction(?return),
@@ -1360,239 +1216,3 @@ AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
 OptAccessPath:ContainsField(?ap, ?fld) <-
    AccessPath:ContainsField(?fld, ?ap);
    AccessPath:ContainsStaticField[?ap] = ?fld.
-
-/*
-//// REMOVED FOR SIMPLE ANALYSIS!
-
-
-//// ====================================
-//// BEGIN Addition to AllPredecessors:AccessPathMustPointTo frame rules and
-////       to AllPredecessors:MustAlias frame rules
-
-//// ... with "no dominated path invalidates" logic. 
-
-/// TODO: Consistently replace inferences of AllPredecessors with AllNonDomPredecessors,
-///       where applicable (e.g., at beginning of method after call). Consistently use
-///       the relaxed "no dominated path invalidates" logic where AllPredecessors... info
-///       would otherwise be checked (e.g., at call sites).
-
-InstructionInvalidatesAccessPath(?ap, ?insn) <-
-   StaticFieldStore(?fld, _, ?insn),
-   OptAccessPath:ContainsField(?ap, ?fld).
-
-#ifdef MUST_AFTER_MAY
-OptFieldStore(?insn, ?base) <-
-   FieldStore(?base, _, _, ?insn).
-   
-InstructionInvalidatesAccessPath(?ap, ?insn) <-
-   OptFieldStore(?insn, ?base),
-   AccessPath:BaseInv(?ap, ?baseAp),
-   AccessPath:ByVar[?var] = ?baseAp,
-   MayAliasInMethod(?var, ?base).
-#else
-InstructionInvalidatesAccessPath(?ap, ?insn) <-
-   FieldStore(_, ?fld, _, ?insn),
-   OptAccessPath:ContainsField(?ap, ?fld).
-#endif
-
-BasicBlockInvalidatesAccessPath(?ap, ?headInsn) <-
-   InstructionInvalidatesAccessPath(?ap, ?insn),
-   BasicBlockHead[?insn] = ?headInsn.
-
-// The path (dominated by ?dominator) that ends at ?insn
-// invalidates access path ?ap.
-DominatedPathInvalidatesAccessPath(?ap, ?insn, ?dominator) <-
-   Dominates(?dominator, ?insn),
-   BasicBlockInvalidatesAccessPath(?ap, ?insn).
-
-DominatedPathInvalidatesAccessPath(?ap, ?insn, ?dominator) <-
-   DominatedPathInvalidatesAccessPath(?ap, ?otherInsn, ?dominator),
-   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
-   Dominates(?dominator, ?insn).
-
-InvalidatingPredecessor(?ap, ?prevHead, ?dominator) <-
-   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
-   BasicBlockHead[?prevInsn] = ?prevHead,
-   DominatedPathInvalidatesAccessPath(?ap, ?prevHead, ?dominator).
-
-ExistsInvalidatingPredecessor(?ap, ?dominator) <-
-   InvalidatingPredecessor(?ap, _, ?dominator).
-
-// Even if the access path is not explicitly invalidated, but
-// the execution path contains calls, we probably want to
-// conservatively consider the AP invalidated.
-BasicBlockContainsCall(?headInsn) <-
-   MethodInvocation(?insn),
-   BasicBlockHead[?insn] = ?headInsn.
-
-// The path (dominated by ?dominator) that ends at ?insn
-// makes a call.
-DominatedPathContainsCall(?insn, ?dominator) <-
-   Dominates(?dominator, ?insn),
-   BasicBlockContainsCall(?insn).
-
-DominatedPathContainsCall(?insn, ?dominator) <-
-   DominatedPathContainsCall(?otherInsn, ?dominator),
-   MaySuccessorBBModuloThrow(?insn, ?otherInsn),
-   Dominates(?dominator, ?insn).
-
-ExistsCallingPathToPredecessor(?prevHead, ?dominator) <-
-   DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
-   BasicBlockHead[?prevInsn] = ?prevHead,
-   DominatedPathContainsCall(?prevHead, ?dominator).
-
-ExistsCallingPathToSomePredecessor(?dominator) <-
-   ExistsCallingPathToPredecessor(_, ?dominator).
-
-// New addition to frame rules for AccessPathMustPointTo
-
-/// If there is a single dominated predecessor, then the conditions
-/// for carrying forward the information imply that the current
-/// instruction cannot invalidate it either.
-
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
-   !ExistsInvalidatingPredecessor(?ap, ?insn),
-   !ExistsCallingPathToSomePredecessor(?insn),
-   !(AssignHeapAllocation:Heap[?insn] = ?heap),
-   DominatesItsPredecessorInstruction(_, ?insn).
-
-
-//// Auxiliary relations for the above.
-
-// For all non-dominated predecessors of instruction, access path
-// expression must point to...
-
-AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap ->
-   HeapAllocation(?heap), AccessPath(?ap),
-   MustContext(?ctx), Instruction(?insn), Instruction(?pred).
-
-AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockEnd(?tail),
-   BasicBlockHead[?tail] = ?pred,
-   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap,
-   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn),
-   !DominatesItsPredecessorInstruction(?tail, ?insn).
-
-OptAccessPathMustPointToUpToPreviousNonDomPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap
-<-
-   AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?prevPred] = ?heap,
-   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
-
-AccessPathMustPointToUpToNonDomPredecessor[?ap, MeetContexts[?ctx1,?ctx2], ?insn, ?pred] = ?heap <-
-   OptAccessPathMustPointToUpToPreviousNonDomPredecessor[?insn, ?ap, ?ctx1, ?pred] = ?heap,
-   OptAccessPathMustPointToAtBBTail[?ap, ?ctx2, ?pred] = ?heap.
-
-
-AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
-   HeapAllocation(?heap), AccessPath(?ap),
-   MustContext(?ctx), Instruction(?insn).
-
-AllNonDomPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointToUpToNonDomPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap,
-   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-
-// Addition to AllPredecessors:MustAlias frame rules
-
-// Commenting out temporarily the below logic (see comment in new
-// frame rule).
-// #ifdef MUST_AFTER_MAY
-// BasicBlockContainsInvalidatingCall(?ap, ?headInsn) <-
-//    CallMayInvalidateSomeAccessPathField(?ap, ?insn),
-//    BasicBlockHead[?insn] = ?headInsn.
-
-// // The path (dominated by ?dominator) that ends at ?insn
-// // makes an invalidating call.
-// DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
-//    Dominates(?dominator, ?insn),
-//    BasicBlockContainsInvalidatingCall(?ap, ?insn).
-
-// DominatedPathContainsInvalidatingCall(?ap, ?insn, ?dominator) <-
-//    DominatedPathContainsInvalidatingCall(?ap, ?otherInsn, ?dominator),
-//    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
-//    Dominates(?dominator, ?insn).
-
-// ExistsInvalidatingCallingPathToPredecessor(?ap, ?prevHead, ?dominator) <-
-//    DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
-//    BasicBlockHead[?prevInsn] = ?prevHead,
-//    DominatedPathContainsInvalidatingCall(?ap, ?prevHead, ?dominator).
-
-// ExistsInvalidatingCallingPathToSomePredecessor(?ap, ?dominator) <-
-//    ExistsInvalidatingCallingPathToPredecessor(?ap, _, ?dominator).
-// #endif
-
-/// New frame rule addition. Again, quite simple, only one kind of
-/// condition.
-
-// Fails due to recursion through negation
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-   !ExistsInvalidatingPredecessor(?ap1, ?insn),
-   !ExistsInvalidatingPredecessor(?ap2, ?insn),
-// The commented logic seems to be ineffective, hence producing
-// invalid pairs. This must be to recursion through negation rules.
-// #ifdef MUST_AFTER_MAY
-//   !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
-//   !ExistsInvalidatingCallingPathToSomePredecessor(?ap2, ?insn),
-//#else
-   !ExistsCallingPathToSomePredecessor(?insn),
-//#endif
-   DominatesItsPredecessorInstruction(_, ?insn).
-
-MustAlias(?ap2, ?ap1, ?ctx, ?insn),
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-   !ExistsInvalidatingPredecessor(?ap1, ?insn),
-   ?ap2 = NullAccessPath[],
-// Same as above.
-// #ifdef MUST_AFTER_MAY
-//    !ExistsInvalidatingCallingPathToSomePredecessor(?ap1, ?insn),
-// #else
-   !ExistsCallingPathToSomePredecessor(?insn),
-// #endif
-   DominatesItsPredecessorInstruction(_, ?insn).
-
-
-//// Auxiliary relations for the above.
-
-// Up to a certain non-dominated predecessor of instruction, ap1 and ap2 must alias
-AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) ->
-   AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
-   Instruction(?insn), Instruction(?pred).
-
-AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockEnd(?tail),
-   BasicBlockHead[?tail] = ?pred,
-   MustAlias(?ap1, ?ap2, ?ctx, ?tail),
-   DominatesItsPredecessorInstruction(_, ?insn),
-   !ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn),
-   !DominatesItsPredecessorInstruction(?tail, ?insn).
-
-OptAccessPathsMustAliasAtNextNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?predPrev) <-
-   BasicBlockEnd(?tail),
-   BasicBlockHead[?tail] = ?pred,
-   MustAlias(?ap1, ?ap2, ?ctx, ?tail),
-   PreviousNonDomPredecessorToSameBB[?insn, ?pred] = ?predPrev.
-
-AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, MeetContexts[?ctx1,?ctx2], ?insn, ?pred) <-
-   AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx1, ?insn, ?prevPred),
-   OptAccessPathsMustAliasAtNextNonDomPredecessor(?ap1, ?ap2, ?ctx2, ?insn, ?prevPred),
-   NextNonDomPredecessorToSameBB[?insn, ?prevPred] = ?pred.
-
-// For all non-dominated predecessor basic blocks, aliasing holds between two access
-// paths.
-AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
-   AccessPath(?ap1), AccessPath(?ap2), MustContext(?ctx),
-   Instruction(?insn).
-   
-AllNonDomPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   AccessPathsMustAliasUpToNonDomPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred),
-   !(NextNonDomPredecessorToSameBB[?insn, ?pred] = _),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-//// END to frame rules addition
-*/
