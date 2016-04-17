@@ -334,18 +334,36 @@ MustPointTo[?var, ?ctx, ?insn] = ?heap <-
    AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
    AccessPath:ByVarInv[?ap] = ?var.
 
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 InstanceFieldMustPointTo[?fld, ?baseHeap, MeetContexts[?ctx2, ?ctx1], ?insn] = ?heap <-
    AccessPathMustPointTo[?ap, ?ctx1, ?insn] = ?heap,
    AccessPath:Base[?ap] = ?baseAp,
    AccessPath:LastField[?ap] = ?fld,
    AccessPathMustPointTo[?baseAp, ?ctx2, ?insn] = ?baseHeap,
    ?baseHeap != HeapAllocation:Null[].
+*/
+//// added
+InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
+   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+   AccessPath:Base[?ap] = ?baseAp,
+   AccessPath:LastField[?ap] = ?fld,
+   AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseHeap,
+   ?baseHeap != HeapAllocation:Null[].
 
 // MustAlias relations are a major source of MustPointTo inferences.
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 AccessPathMustPointTo[?ap2, MeetContexts[?ctx1, ?ctx2], ?insn] = ?heap <-
    MustAlias(?ap2, ?ap1, ?ctx1, ?insn),
    ?ap2 != NullAccessPath[],
    AccessPathMustPointTo[?ap1, ?ctx2, ?insn] = ?heap.
+*/
+AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
+   MustAlias(?ap2, ?ap1, ?ctx, ?insn),
+   ?ap2 != NullAccessPath[],
+   AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
+
 
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
@@ -383,11 +401,19 @@ MustAliasSymmetric(?ap1, ?ap2, ?ctx, ?insn) <-
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAliasSymmetric(?ap1, ?ap2, ?ctx, ?insn).
 
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 MustAlias(?ap2, ?ap1, ?ctx, ?insn),
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAlias(?ap1, ?ap3, ?ctx1, ?insn),
    MustAliasSymmetric(?ap2, ?ap3, ?ctx2, ?insn),
    MeetContexts[?ctx1, ?ctx2] = ?ctx,
+   ?ap2 != ?ap1.
+*/
+MustAlias(?ap2, ?ap1, ?ctx, ?insn),
+MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+   MustAlias(?ap1, ?ap3, ?ctx, ?insn),
+   MustAliasSymmetric(?ap2, ?ap3, ?ctx, ?insn),
    ?ap2 != ?ap1.
 
 // The above looks like a fairly traditional symmetric, transitive
@@ -432,8 +458,7 @@ MustAliasBase(?nullAp, ?ap2, ?ctx, ?insn) <-
 // Phi nodes
 MustAliasBase(?ap1, ?ap2, ?ctx, ?lastInsn) <-
    !(NextInSamePhiNode[?lastInsn] = _),
-   Instruction:Method[?lastInsn] = ?inMethod,
-   MustReachable(?inMethod),
+   ReachableInstructionUnderMustContext(?ctx, ?lastInsn),
    MustAliasUpToPhiInstruction(?ap1, ?ctx, ?lastInsn),
    AssignInstruction:To[?lastInsn] = ?to,
    AccessPath:ByVar[?to] = ?ap2.
@@ -859,7 +884,7 @@ StrongerContext(?ctx, ?strongerCtx) <-
 
 // TODO: Make MaxDepth configurable.
 MaxContextDepth[] = ?num -> int[32](?num).
-MaxContextDepth[] = 4 <- .
+MaxContextDepth[] = 1 <- .
 
 //// END context management
 
@@ -1188,12 +1213,22 @@ MustAliasUpToPhiInstruction(?ap, ?ctx, ?headInsn) <-
    AccessPath:ByVar[?from] = ?apFrom,
    MustAlias(?ap, ?apFrom, ?ctx, ?headInsn).
 
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 MustAliasUpToPhiInstruction(?ap, MeetContexts[?ctx1,?ctx2], ?nextInsn) <-
    MustAliasUpToPhiInstruction(?ap, ?ctx1, ?insn),
    NextInSamePhiNode[?insn] = ?nextInsn,
    AssignLocal:From[?nextInsn] = ?from,
    AccessPath:ByVar[?from] = ?apFrom,
    MustAlias(?ap, ?apFrom, ?ctx2, ?nextInsn).
+*/
+//// Added
+MustAliasUpToPhiInstruction(?ap, ?ctx, ?nextInsn) <-
+   MustAliasUpToPhiInstruction(?ap, ?ctx, ?insn),
+   NextInSamePhiNode[?insn] = ?nextInsn,
+   AssignLocal:From[?nextInsn] = ?from,
+   AccessPath:ByVar[?from] = ?apFrom,
+   MustAlias(?ap, ?apFrom, ?ctx, ?nextInsn).
 
 // For all predecessor instructions, aliasing holds between two access
 // paths.
@@ -1229,9 +1264,17 @@ OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?predPrev) <-
    MustAlias(?ap1, ?ap2, ?ctx, ?tail),
    PreviousPredecessorToSameBB[?insn, ?pred] = ?predPrev.
 
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, MeetContexts[?ctx1, ?ctx2], ?insn, ?pred) <-
    AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx1, ?insn, ?prevPred),
    OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx2, ?insn, ?prevPred),
+   NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+*/
+//// Added
+AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
+   AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
+   OptAccessPathsMustAliasAtNextPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?prevPred),
    NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
 
 
@@ -1256,9 +1299,16 @@ OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?head] = ?heap <-
    BasicBlockHead[?tail] = ?head,  
    AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap.
 
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
 AccessPathMustPointToUpToPredecessor[?ap, MeetContexts[?ctx1,?ctx2], ?insn, ?pred] = ?heap <-
    OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx1, ?pred] = ?heap,
    OptAccessPathMustPointToAtBBTail[?ap, ?ctx2, ?pred] = ?heap. 
+*/
+////Added
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
+   OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap,
+   OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?pred] = ?heap. 
 
 AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
    HeapAllocation(?heap), AccessPath(?ap),
