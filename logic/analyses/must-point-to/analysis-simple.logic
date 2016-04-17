@@ -222,8 +222,8 @@ AccessPathRebasedForReturn[?ap, ?invo] = ?newAp <-
 //// ====================================
 //// BEGIN AccessPathMustPointTo code
 
-AssignHeapAllocation:HeapInv(?insn, ?heap) <-
-   AssignHeapAllocation:Heap[?insn] = ?heap.
+// AssignHeapAllocation:HeapInv(?insn, ?heap) <-
+//    AssignHeapAllocation:Heap[?insn] = ?heap.
 
 // Root of all MustPointTo inferences.
 // REVIEW: This introduces dependency on string-constants.logic
@@ -235,15 +235,19 @@ AssignHeapAllocation:HeapInv(?insn, ?heap) <-
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AccessPath:ByVar[?var] = ?ap,
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
-   AssignHeapAllocation:HeapInv(?insn, ?heap),
+   AssignHeapAllocation:VarInv(?insn, ?var),
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
 
+AssignHeapAllocation:VarInv(?insn, ?var) <-
+   AssignHeapAllocation:Insn(?insn),
+   AssignInstruction:To[?insn] = ?var.
+   
 AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
    AccessPath:ByVar[?var] = ?ap,
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
    (!(HeapAllocation:Merge[?heap] = _);
     HeapAllocation:Merge[?heap] = ?heap),
-   AssignHeapAllocation:HeapInv(?insn, ?heap),
+   AssignHeapAllocation:VarInv(?insn, ?var),
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
 
 // Also propagate heap models when making calls!
@@ -1005,7 +1009,7 @@ AccessPath:Type[?ap] = ?type <-
 AccessPath:MaxLength[] = ?maxLen ->
    int[32](?maxLen).
 
-AccessPath:MaxLength[] = 3 <- .
+AccessPath:MaxLength[] = 2 <- .
 
 AccessPath:BaseVar[?ap] = ?var ->
    AccessPath(?ap), Var(?var).
