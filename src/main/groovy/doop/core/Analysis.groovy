@@ -474,12 +474,11 @@ import org.apache.commons.logging.LogFactory
             .startTimer()
             .transaction()
             .addBlockFile("${coreAnalysisName}.logic")
-            .commit().transaction()
+            .commit()
+            .elapsedTime()
 
          if (options.INFORMATION_FLOW.value)
-             lbScript.executeFile("information-flow-delta.logic")
-
-         lbScript.commit().elapsedTime()
+             lbScript.transaction().executeFile("information-flow-delta.logic").commit().elapsedTime()
     }
 
     /**
