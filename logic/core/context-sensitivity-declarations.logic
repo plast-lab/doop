@@ -150,6 +150,8 @@ ObjectToRefine(?heap) ->
 TempObjectToRefine(?heap) -> 
   HeapAllocation(?heap).
 
+TaintedHeapAllocation(?heap) -> HeapAllocation(?heap).
+
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?
 NegativeSiteFilter(?v) -> string(?v).
