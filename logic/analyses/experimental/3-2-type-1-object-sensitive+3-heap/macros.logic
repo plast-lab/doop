@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../../facts/macros.logic"
 
 // For this analysis, every heap context recorded on allocation
 // corresponds to the calling context of the allocator method.
@@ -7,10 +7,6 @@
   HContextFromRealHContext[RealContext1FromContext[ctx], \
                            RealContext2FromContext[ctx], \
                            RealContext3FromContext[ctx]] = hctx
-
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[ImmutableTypeValue[], ImmutableTypeValue[], ImmutableHeapValue[]] = immCtx
 
 
 // For this analysis the context of a method call corresponds to the

@@ -7,9 +7,7 @@
  */
 
 #include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
-#include "../object-to-type.logic"
+#include "../../../core/context-sensitivity.logic"
 
 ClassHasInstr(?class, ?instr) <- MethodSignature:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.
 ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
@@ -52,9 +50,12 @@ RealHContextFromHContext[?hctx] = ?type ->
 RealHContextFromHContext[?hctx] = ?type <-
   HContextFromRealHContext[?type] = ?hctx.
 
-// Creating special immutable type constant
-ImmutableTypeValue[] = ?immType <-
-  Instruction:Value(?immType:"<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable heap allocation constant
+  Instruction:Value(?immutable:"<<immutable>>").
+
 
 
 // Create initial objects with their heapcontexts.

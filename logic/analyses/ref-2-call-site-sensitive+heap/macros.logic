@@ -11,10 +11,6 @@
   HContext(hctx), \
   HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
 
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[ImmutableInvValue[]] = immCtx
-
 
 // This makes the analysis context-insensitive
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \

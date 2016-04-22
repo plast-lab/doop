@@ -38,9 +38,12 @@ RealHContextFromHContext[?hctx] = ?type <-
   HContextFromRealHContext[?type] = ?hctx.
 
 
-// Creating special immutable type constant
-ImmutableTypeValue[] = ?immType <-
-  Type:fqn(?immType:"<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable constant
+  Type:fqn(?immutable:"<<immutable>>").
+
 // and initial type constant
 InitialTypeValue[] = ?initType <-
   Type:fqn(?initType:"<<initial-context>>").

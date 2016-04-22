@@ -41,9 +41,12 @@ RealHContext1FromHContext[?hctx] = ?heap1,
 RealHContext2FromHContext[?hctx] = ?heap2 <-
   HContextFromRealHContext[?heap1, ?heap2] = ?hctx.
 
-// Creating special immutable heap allocation constant
-ImmutableHeapValue[] = ?immHeap <-
-  HeapAllocationValue(?immHeap, "<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable, ?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable heap allocation constant
+  HeapAllocationValue(?immutable, "<<immutable>>").
+
 // and initial heap allocation constant
 InitialHeapValue[] = ?initHeap <-
   HeapAllocationValue(?initHeap, "<<initial-context>>").

@@ -1,8 +1,1 @@
-/**
- * A native call graph edge is an indirect invocation of a method. The edge
- * links the native method *declaration* to the Java method that is indirectly
- * invoked.
- */
-NativeCallGraphEdge(?callerCtx, ?nativeMethod, ?calleeCtx, ?method) ->
-   Context(?callerCtx), MethodSignature(?nativeMethod),
-   Context(?calleeCtx), MethodSignature(?method).
+// Placeholder

@@ -42,8 +42,8 @@ NumberOfSubtypes[?type] = ?count <-
  * These may flow to casts, so we'll get useful info back.
  */
 
-RecordImmutableMacro(?ctx, ?heap, ?immCtx),
-VarPointsTo(?immCtx, ?heap, ?ctx, ?return) <-
+VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
+  ImmutableHContext[] = ?hctx,
   SpecialMissingForNameHeap[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?return,
   Instruction:Method[?invocation] = ?inmethod,
@@ -53,16 +53,16 @@ VarPointsTo(?immCtx, ?heap, ?ctx, ?return) <-
 // Class.newInstance. At every newInstance to which an unknown object
 // created by forName flows, we return a new unknown object 
 // (of type Object and not Class) that remembers the forName site.
-RecordImmutableMacro(?ctx, ?specialheap, ?immCtx),
-VarPointsTo(?immCtx, ?specialheap, ?ctx, ?to) <-
+VarPointsTo(?hctx, ?specialheap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:Class:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
   OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclass), 
   SpecialMissingNewInstanceHeap[?forNameInvocation] = ?specialheap.
 
 // Similar flow of special object through get[Declared]Constructor
-RecordImmutableMacro(?ctx, ?specialConstructor, ?immCtx),
-VarPointsTo(?immCtx, ?specialConstructor, ?ctx, ?to) <-
+VarPointsTo(?hctx, ?specialConstructor, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   (java:lang:Class:getConstructor(?to, ?var);
    java:lang:Class:getDeclaredConstructor(?to, ?var)),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
@@ -72,8 +72,8 @@ VarPointsTo(?immCtx, ?specialConstructor, ?ctx, ?to) <-
 // Pretty similar for get[Declared]Constructors. The array that the
 // return var points to (established by forward logic) is populated
 // with the special Constructor object the call returns.
-RecordImmutableMacro(?ctx, ?specialConstructor, ?immCtx),
 ArrayIndexPointsTo(?immCtx, ?specialConstructor, ?hctx, ?arrayHeap) <-
+  ImmutableHContext[] = ?immCtx,
   OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to),
   VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to),
   SpecialMissingGetConstructorHeap[?forNameInvocation] = ?specialConstructor.
@@ -86,8 +86,8 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) <-
 
 // Even though there was one more step in the special object propagation,
 // in the end Constructor.newInstance is handled similarly to Class.newInstance.
-RecordImmutableMacro(?ctx, ?specialheap, ?immCtx),
-VarPointsTo(?immCtx, ?specialheap, ?ctx, ?to) <-
+VarPointsTo(?hctx, ?specialheap, ?ctx, ?to) <-
+  ImmutableHContext[] = ?hctx,
   java:lang:reflect:Constructor:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
   OptSpecialMissingGetConstructorHeap(?forNameInvocation, ?specialConstructor),
@@ -253,8 +253,8 @@ OptSpecialMissingInvokeHeapFromGetMethods(?invokeInvocation, ?specialheap) <-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Method object the call returns.
-RecordImmutableMacro(?ctx, ?heap, ?immCtx),
 ArrayIndexPointsTo(?immCtx, ?heap, ?hctx, ?arrayHeap) <-
+  ImmutableHContext[] = ?immCtx,
   SpecialMissingGetMethodsHeap[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?return,
   VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?return), 
@@ -282,8 +282,8 @@ OptInvokeOnSpecialMissingGetMethodsHeap(?getMethodsInvocation , ?ctx, ?invocatio
 
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on.
-RecordImmutableMacro(?ctx, ?specialheap, ?immCtx),
-VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-
+VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
+  ImmutableHContext[] = ?hctx,
   OptInvokeOnSpecialMissingGetMethodsHeap(?getMethodsInvocation , ?ctx, ?invocation),
   SpecialMissingInvokeHeapFromGetMethods[?getMethodsInvocation] = ?specialheap,
   AssignReturnValue[?invocation] = ?var.
@@ -335,8 +335,8 @@ OptSpecialMissingGetMethodHeap(?getMethodInvocation, ?specialmethod) <-
 OptSpecialMissingInvokeHeapFromGetMethod(?invokeInvocation, ?specialheap) <-
   SpecialMissingInvokeHeapFromGetMethod[?invokeInvocation] = ?specialheap.
 
-RecordImmutableMacro(?ctx, ?heap, ?immCtx),
-VarPointsTo(?immCtx, ?heap, ?ctx, ?return) <-
+VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
+  ImmutableHContext[] = ?hctx,
   SpecialMissingGetMethodHeap[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?return,
   Instruction:Method[?invocation] = ?inmethod,
@@ -344,8 +344,8 @@ VarPointsTo(?immCtx, ?heap, ?ctx, ?return) <-
 
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on. See similar handling of getMethods.
-RecordImmutableMacro(?ctx, ?specialheap, ?immCtx),
-VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-  
+VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-  
+  ImmutableHContext[] = ?hctx,
   java:lang:reflect:Method:invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodHeap, ?ctx, ?methodVar),
   OptSpecialMissingGetMethodHeap(?getMethodInvocation, ?specialMethodHeap),
@@ -377,8 +377,8 @@ OptGetMethodClass(?type, ?ctx, ?getMethodInvocation) <-
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   OptReifiedClass(?type, ?classHeap).
 
-RecordImmutableMacro(?ctx, ?methodHeap, ?hctx),
 VarPointsTo(?hctx, ?methodHeap, ?ctx, ?return) <-
+  ImmutableHContext[] = ?hctx,
   Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation),
   OptGetMethodClass(?classtype, ?ctx, ?getMethodInvocation),
   OptMethodSignatureType(?signature, ?classtype),
@@ -399,8 +399,8 @@ OptSpecialMissingGetHeapFromGetFields(?getInvocation, ?specialheap) <-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
-RecordImmutableMacro(?ctx, ?heap, ?immCtx),
 ArrayIndexPointsTo(?immCtx, ?heap, ?hctx, ?arrayHeap) <-
+  ImmutableHContext[] = ?immCtx,
   SpecialMissingGetFieldsHeap[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?return,
   VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?return), 
@@ -423,8 +423,8 @@ OptGetOnSpecialMissingGetFieldsHeap(?getFieldsInvocation , ?ctx, ?invocation) <-
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
-RecordImmutableMacro(?ctx, ?specialheap, ?immCtx),
-VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-
+VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
+  ImmutableHContext[] = ?hctx,
   OptGetOnSpecialMissingGetFieldsHeap(?getFieldsInvocation , ?ctx, ?invocation),
   SpecialMissingGetHeapFromGetFields[?getFieldsInvocation] = ?specialheap,
   AssignReturnValue[?invocation] = ?var.
@@ -477,8 +477,8 @@ OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialfield) <-
 OptSpecialMissingGetHeapFromGetField(?getInvocation, ?specialheap) <-
   SpecialMissingGetHeapFromGetField[?getInvocation] = ?specialheap.
 
-RecordImmutableMacro(?ctx, ?heap, ?immCtx),
-VarPointsTo(?immCtx, ?heap, ?ctx, ?return) <-
+VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
+  ImmutableHContext[] = ?hctx,
   SpecialMissingGetFieldHeap[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?return,
   Instruction:Method[?invocation] = ?inmethod,
@@ -486,8 +486,8 @@ VarPointsTo(?immCtx, ?heap, ?ctx, ?return) <-
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on. See similar handling of getFields.
-RecordImmutableMacro(?ctx, ?specialheap, ?immCtx),
-VarPointsTo(?immCtx, ?specialheap, ?ctx, ?var) <-  
+VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-  
+  ImmutableHContext[] = ?hctx,
   java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldHeap, ?ctx, ?fieldVar),
   OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialFieldHeap),
@@ -519,8 +519,8 @@ OptGetFieldClass(?type, ?ctx, ?getFieldInvocation) <-
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   OptReifiedClass(?type, ?classHeap).
 
-RecordImmutableMacro(?ctx, ?fieldHeap, ?hctx),
 VarPointsTo(?hctx, ?fieldHeap, ?ctx, ?return) <-
+  ImmutableHContext[] = ?hctx,
   Opt2SpecialGetHeapCast(?type, ?getFieldInvocation),
   OptGetFieldClass(?classtype, ?ctx, ?getFieldInvocation),
   OptFieldSignatureType(?type, ?signature, ?classtype),
@@ -532,9 +532,9 @@ VarPointsTo(?hctx, ?fieldHeap, ?ctx, ?return) <-
 #ifdef REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 // Propagate the marker object everywhere
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
-   VirtualMethodInvocation:Insn(?invocation),
+  ImmutableHContext[] = ?hctx,
+  VirtualMethodInvocation:Insn(?invocation),
   (MethodInvocation:Signature[?invocation] = "<java.lang.Class: java.lang.Object newInstance()>" ;
    MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>" ;
    MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>" ;

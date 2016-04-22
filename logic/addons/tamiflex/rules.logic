@@ -10,9 +10,9 @@ DummyContextForReflective[] = ?dummyCtx
    ReachableContext(?dummyCtx, ?mainMethod).
 
 
-RecordImmutableMacro(?ctx, ?classObj, ?hctx),
 VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
 <-
+   ImmutableHContext[] = ?hctx,
    (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
     MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
    StaticMethodInvocation(?invocation, ?sig, ?inmethod),
@@ -24,20 +24,20 @@ VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
 
-RecordImmutableMacro(?ctx, ?obj, ?hctx),
 VarPointsTo(?hctx, ?obj, ?ctx, ?return)
 <-
+   ImmutableHContext[] = ?hctx,
    (Tamiflex:Class:NewInstance(?invocation, ?obj) ;
     Tamiflex:Array:NewInstance(?invocation, ?obj) ),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
 
-RecordImmutableMacro(?ctx, ?obj, ?hctx),
 VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
 <-
+   ImmutableHContext[] = ?hctx,
    Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?callerCtx, ?inmethod),
@@ -83,11 +83,10 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
 /**
  * Return values of reflective method invocations
  */
-Assign(?type, ?callerCtx, ?local, ?calleeCtx, ?return)
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
 <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
    AssignReturnValue[?invocation] = ?local,
-   Var:Type[?local] = ?type,
    ReturnVar(?return, ?callee),
    DummyContextForReflective[] = ?calleeCtx.
 
@@ -106,9 +105,9 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
    SupertypeOf(?type, ?heaptype),
    DummyContextForReflective[] = ?calleeCtx.
 
-RecordImmutableMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?return)
 <-
+   ImmutableHContext[] = ?hctx,
    (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
     Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
     Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;

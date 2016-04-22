@@ -22,15 +22,3 @@
 #if defined(ENABLE_REFLECTION) && !defined(PADDLE_COMPAT)
 #include "reflection/rules.logic" 
 #endif
-
-
-MainMethodDeclaration(?method) <-
-   MainClass(?type),
-   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
-   Modifier:Value(?public:"public"),
-   Modifier:Value(?static:"static"),
-   MethodSignature:DeclaringType[?method] = ?type,
-   MethodSignature:SimpleName[?method] = "main",
-   MethodSignature:Descriptor[?method] = ?descriptor,
-   MethodModifier(?public, ?method),
-   MethodModifier(?static, ?method).
