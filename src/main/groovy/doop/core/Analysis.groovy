@@ -385,6 +385,16 @@ import org.apache.commons.logging.LogFactory
             preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic", macros)
             Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/dacapo.logic")
         }
+        if (options.INFORMATION_FLOW.value) {
+            FileUtils.copyFile(new File("${addonsPath}/information-flow/declarations.logic"),
+                               new File("${outDir}/information-flow-declarations.logic"))
+            preprocessor.preprocess(this, addonsPath, "information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            lbScript
+                .addBlockFile("information-flow-declarations.logic")
+            logger.info "Adding Information flow rules to addons logic"
+            preprocessor.preprocess(this, addonsPath, "information-flow/rules.logic", "${outDir}/information-flow.logic", macros)
+            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/information-flow.logic")
+        }
 
         if (options.TAMIFLEX.value) {
             FileUtils.copyFile(new File("${addonsPath}/tamiflex/declarations.logic"),
@@ -463,8 +473,12 @@ import org.apache.commons.logging.LogFactory
             .startTimer()
             .transaction()
             .addBlockFile("${name}.logic")
-            .commit()
-            .elapsedTime()
+            .commit().transaction()
+
+         if (options.INFORMATION_FLOW.value)
+             lbScript.executeFile("information-flow-delta.logic")
+
+         lbScript.commit().elapsedTime()
     }
 
     /**

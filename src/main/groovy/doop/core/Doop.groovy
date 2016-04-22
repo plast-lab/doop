@@ -366,6 +366,14 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
+            id:"INFORMATION_FLOW",
+            name:"information-flow",
+            description:"Load additional logic to perform information flow analysis.",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
             id:"DACAPO_BACH",
             name:"dacapo-bach",
             description:"Load additional logic for DaCapo (Bach) benchmarks properties.",

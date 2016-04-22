@@ -16,7 +16,6 @@
 
 #include "core.logic"
 
-
 /**
  * Generic context-sensitive pointer analysis
  *
@@ -31,6 +30,7 @@
 // Ignore verification of calculation in head
 lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
+
 /**
  * Heap allocation
  */
@@ -42,7 +42,7 @@ AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
 #ifdef RecordArrayMacro
-  !ArrayType(HeapAllocation:Type[?heap]), 
+  !ArrayType(HeapAllocation:Type[?heap]),
 #endif
   ObjectShouldNotBeRefined(?heap).
 
@@ -341,11 +341,10 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
   ReturnVar(?return, ?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   AssignReturnValue[?invocation] = ?local.
-  
+
 VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
-
 
 
 /**
@@ -418,7 +417,8 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
-  SiteShouldNotBeRefined(?invocation).
+  SiteShouldNotBeRefined(?invocation),
+  !TaintedHeapAllocation(?heap).
 
 #else /* there is optimized behavior available */
 
