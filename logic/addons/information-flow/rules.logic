@@ -87,8 +87,7 @@ LeakingSinkVariable(?invocation, ?ctx, ?var) <-
 LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?obj) <-
   VarPointsTo(?hctx, ?obj, ?ctx, ?var),
   TaintedHeapAllocation(?obj),  
-  LeakingSinkVariable(?invocation, ?ctx, ?var),
-  !SanitisedHeapAllocaiton(?obj).
+  LeakingSinkVariable(?invocation, ?ctx, ?var).
 
 /**
  * Special Heap allocation on function call
