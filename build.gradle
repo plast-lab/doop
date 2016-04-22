@@ -70,7 +70,7 @@ task bytecode2jimple(type: JavaExec) {
     if (!project.hasProperty('args') || project.property('args').isEmpty()) {
         args "--bytecode2jimpleHelp"
     } else {
-        args = ["--bytecode2jimple", "--use-original-names"] + project.property('args').tokenize()
+        args = ["--bytecode2jimple"] + project.property('args').tokenize()
     }
 }
 

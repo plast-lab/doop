@@ -1,7 +1,16 @@
+import java.io.*;
+
 public class Example
 {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException{
 		(new Example()).test(args.length);
+                BufferedReader buffer = new BufferedReader(
+                       new InputStreamReader(System.in)
+                );
+                String line=buffer.readLine();
+                String result = args[0] + line;
+
+                System.out.println(result);
 	}
 
 	void test(int l) {
