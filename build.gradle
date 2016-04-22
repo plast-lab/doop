@@ -77,6 +77,7 @@ task bytecode2jimple(type: JavaExec) {
 applicationDistribution.from(file("$projectDir/logic")) {
     into 'logic'
 }
+
 applicationDistribution.from(projectDir) {
     include 'doop.properties', 'checksums.properties', 'LICENSE'
 }
