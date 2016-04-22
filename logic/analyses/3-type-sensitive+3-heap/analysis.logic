@@ -44,9 +44,11 @@ RealHContext2FromHContext[?hctx] = ?type2,
 RealHContext3FromHContext[?hctx] = ?type3 <-
   HContextFromRealHContext[?type1, ?type2, ?type3] = ?hctx.
 
-// Creating special immutable type constant
-ImmutableTypeValue[] = ?immType <-
-  Type:fqn(?immType:"<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable, ?immutable, ?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable constant
+  Type:fqn(?immutable:"<<immutable>>").
 
 
 // Create initial objects with their heapcontexts.

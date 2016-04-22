@@ -25,9 +25,11 @@ HContextFromRealHContext[?heap] = ?hctx ->
   HContext(?hctx), HeapAllocation(?heap).
 lang:skolem(`HContextFromRealHContext).
 
-// Creating special immutable heap allocation constant
-ImmutableHeapValue[] = ?immHeap <-
-  HeapAllocationValue(?immHeap, "<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable heap allocation constant
+  HeapAllocationValue(?immutable, "<<immutable>>").
   
 
 // Create initial objects with their heapcontexts.

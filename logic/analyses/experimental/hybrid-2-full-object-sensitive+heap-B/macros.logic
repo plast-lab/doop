@@ -1,4 +1,4 @@
-#include "../library/fact-macros.logic"
+#include "../../../facts/macros.logic"
 
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling 
@@ -6,10 +6,6 @@
 #define RecordMacro(ctx, heap, hctx) \
   HContext(hctx), \
   HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
-
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[ImmutableHeapValue[]] = immCtx
 
 
 // For this analysis the context of a method call corresponds to the

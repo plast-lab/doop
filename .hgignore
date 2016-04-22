@@ -1,5 +1,7 @@
 #doop ignore list
 
+checksums.properties
+
 #analysis benchmarks/tools
 ^benchmarks
 ^externals
@@ -23,9 +25,3 @@
 #eclipse files
 .classpath
 .project
-
-#orig files
-.orig
-
-#vim files
-.swp

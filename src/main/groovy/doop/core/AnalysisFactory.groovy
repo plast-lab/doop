@@ -232,22 +232,12 @@ import java.util.jar.JarFile
             case "1.3":
                 return Helper.checkFiles(["${path}/rt.jar".toString()])
             case "1.4":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
             case "1.5":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
             case "1.6":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
             case "1.7":
                 return Helper.checkFiles(["${path}/rt.jar".toString(),
                                           "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString(),
-                                          "${path}/rhino.jar".toString()])
+                                          "${path}/jsse.jar".toString()])
             case "system":
                 /*
                 String javaHome = System.getProperty("java.home")

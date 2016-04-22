@@ -6,8 +6,7 @@
  */
 
 #include "macros.logic"
-#include "../context-sensitive.logic"
-#include "../library.logic"
+#include "../../../core/context-sensitivity.logic"
 
 // In this analysis, the real context is a pair of HeapAllocations
 // and the real heap context a single HeapAllocation. Keeping mapping 
@@ -32,9 +31,15 @@ RealHContextFromHContext[?hctx] = ?heap ->
   HContext(?hctx), HeapAllocation(?heap).
 RealHContextFromHContext[?hctx] = ?heap <- HContextFromRealHContext[?heap] = ?hctx.
 
-// Creating special immutable heap allocation constant
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable heap allocation constant
+  HeapAllocationValue(?immutable, "<<immutable>>").
+
 ImmutableHeapValue[] = ?immHeap <-
   HeapAllocationValue(?immHeap, "<<immutable>>").
+
 
 // Create initial objects with their heapcontexts.
 HContextFromRealHContext[?heap] = ?hctx,

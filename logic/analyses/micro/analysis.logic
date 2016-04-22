@@ -11,20 +11,12 @@
 #include "../../core/declaring-class.logic"
 #include "../../core/implicit-reachable.logic"
 #include "../../core/method-resolution.logic"
+#include "../../core/native.logic"
 #include "../../core/string-constants.logic"
 #include "../../core/subclass.logic"
 #include "../../core/superinterface.logic"
 #include "../../core/type-hierarchy.logic"
 
-
-MainMethodDeclaration(?method) <-
-   MainClass(?type),
-   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
-   MethodSignature:DeclaringType[?method] = ?type,
-   MethodSignature:SimpleName[?method] = "main",
-   MethodSignature:Descriptor[?method] = ?descriptor,
-   MethodModifier("public", ?method),
-   MethodModifier("static", ?method).
 
 /**
  * Heap allocation

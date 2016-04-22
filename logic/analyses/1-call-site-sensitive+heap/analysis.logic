@@ -25,9 +25,11 @@ HContextFromRealHContext[?invocation] = ?hctx ->
   HContext(?hctx), CallGraphEdgeSource(?invocation).
 lang:skolem(`HContextFromRealHContext).
 
-// Creating special immutable method invocation constant
-ImmutableInvValue[] = ?immInv <-
-  MethodInvocationValue(?immInv, "<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable constant
+  MethodInvocationValue(?immutable, "<<immutable>>").
 
 
 // Create initial objects with their heapcontexts.

@@ -17,17 +17,9 @@ class URLResolver implements InputResolver{
 
     @Override
     void resolve(String input, InputResolutionContext ctx) {
-        URL url
         try {
-            url = new URL(input)
-        }
-        catch(e) {
-            throw new RuntimeException("Not a valid URL input: $input", e)
-        }
-
-
-        try {
-            File tmpFile = File.createTempFile(FilenameUtils.getName(input), FilenameUtils.getExtension(input))
+            URL url = new URL(input)
+            File tmpFile = File.createTempFile(FilenameUtils.getBaseName(input), FilenameUtils.getExtension(input))
             FileUtils.copyURLToFile(url, tmpFile)
             tmpFile.deleteOnExit()
             ctx.set(input, tmpFile)

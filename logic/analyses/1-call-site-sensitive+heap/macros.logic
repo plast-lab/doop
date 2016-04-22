@@ -8,10 +8,6 @@
   HContext(hctx), \
   HContextFromRealHContext[RealContextFromContext[ctx]] = hctx
 
-#define RecordImmutableMacro(ctx, heap, immCtx) \
-  HContext(immCtx), \
-  HContextFromRealHContext[ImmutableInvValue[]] = immCtx
-
 
 // For this analysis the context of a method call corresponds to the
 // invocation site of the method.

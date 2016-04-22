@@ -51,9 +51,6 @@ __t42[] = ?c <- agg<<?c = count()>> Stats:Simple:forName(_).
 __t43[] = ?c <- agg<<?c = count()>> Stats:Simple:Class:newInstance(_).
 __t44[] = ?c <- agg<<?c = count()>> Stats:Simple:Constructor:newInstance(_).
 
-__t45[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensNativeCallGraphEdge(_, _).
-__t46[] = ?c <- agg<<?c = count()>> NativeCallGraphEdge(_, _, _, _).
-
 //__t47[] = ?c <- agg<<?c = count()>> SiteToRefine(_).
 //__t48[] = ?c <- agg<<?c = count()>> ObjectToRefine(_).
 
@@ -101,8 +98,6 @@ _t41[] = ?c <- (__t41[] = ?c) ; (!__t41[] = _, ?c = 0).
 _t42[] = ?c <- (__t42[] = ?c) ; (!__t42[] = _, ?c = 0).
 _t43[] = ?c <- (__t43[] = ?c) ; (!__t43[] = _, ?c = 0).
 _t44[] = ?c <- (__t44[] = ?c) ; (!__t44[] = _, ?c = 0).
-_t45[] = ?c <- (__t45[] = ?c) ; (!__t45[] = _, ?c = 0).
-_t46[] = ?c <- (__t46[] = ?c) ; (!__t46[] = _, ?c = 0).
 //_t47[] = ?c <- (__t47[] = ?c) ; (!__t47[] = _, ?c = 0).
 //_t48[] = ?c <- (__t48[] = ?c) ; (!__t48[] = _, ?c = 0).
 _t49[] = ?c <- (__t49[] = ?c) ; (!__t49[] = _, ?c = 0).
@@ -160,8 +155,6 @@ _t50[] = ?c <- (__t50[] = ?c) ; (!__t50[] = _, ?c = 0).
 +Stats:Metrics("35@ reachable 'forName' (INS)", _t42[]).
 +Stats:Metrics("36@ reachable 'Class.newInstance' (INS)", _t43[]).
 +Stats:Metrics("37@ reachable 'Constructor.newInstance' (INS)", _t44[]).
-+Stats:Metrics("38a@ native call graph edges (INS)", _t45[]).
-+Stats:Metrics("38b@ native call graph edges (SENS)", _t46[]).
 
 //+Stats:Metrics("40@ call sites that did (not) get refined", _t47[]).
 //+Stats:Metrics("41@ allocation sites that did (not) get refined", _t48[]).

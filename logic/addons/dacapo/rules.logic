@@ -3,8 +3,8 @@
  * the DaCapo benchmarks. The value is used afterwards reflectively to create a
  * new object.
  */
-RecordImmutableMacro(?ctx, ?classNameHeap, ?hctx),
 VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) <-
+   ImmutableHContext[] = ?hctx,
    MethodInvocation:Signature[?inv] =
 #ifdef DACAPO_BACH
    "<org.dacapo.parser.Config: void setClass(java.lang.String)>",

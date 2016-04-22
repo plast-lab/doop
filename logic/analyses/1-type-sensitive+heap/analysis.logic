@@ -28,9 +28,10 @@ HContextFromRealHContext[?type] = ?hctx ->
   HContext(?hctx), Type(?type).
 lang:skolem(`HContextFromRealHContext).
 
-// Creating special immutable type constant
-ImmutableTypeValue[] = ?immType <-
-  Type:fqn(?immType:"<<immutable>>").
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  Type:fqn(?immutable:"<<immutable>>").
 
 
 // Create initial objects with their heapcontexts.

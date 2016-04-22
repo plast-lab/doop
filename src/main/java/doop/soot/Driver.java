@@ -50,7 +50,7 @@ public class Driver {
         _classCounter++;
         _sootClasses.add(_sootClass);
 
-        if ((_classCounter % _classSplit == 0) || (_classCounter + _classSplit-1 >= _totalClasses)) {
+        if ((_classCounter % _classSplit == 0) || (_classCounter + 1 == _totalClasses)) {
             Runnable runnable = _factory.newRunnable(_sootClasses);
             _executor.execute(runnable);
             _sootClasses = new ArrayList<>();
