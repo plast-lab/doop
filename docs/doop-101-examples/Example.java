@@ -8,10 +8,15 @@ public class Example
                        new InputStreamReader(System.in)
                 );
                 String line=buffer.readLine();
+                sanitize(line);
                 String result = args[0] + line;
 
                 System.out.println(result);
 	}
+
+        static void sanitize(Object o) {
+            
+        }
 
 	void test(int l) {
 		Animal a;

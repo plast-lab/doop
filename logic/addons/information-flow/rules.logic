@@ -66,15 +66,17 @@ VarIsTaintedFrom(?ctx, ?ret, ?ctx, ?base) <-
   AssignReturnValue[?invocation] = ?ret.
 
 /**
- * Sanitisation
+ * Sanitization
  */
-//SanitisationMethod(?method) <-
-//  MethodSignature:SimpleName[?method] = "sanitize".
+SanitizationMethod(0, ?method) <-
+  MethodSignature:SimpleName[?method] = "sanitize".
 
-//CallSanitisationMethod(?ctx, ?invocation) <-
-//  Sanitisation(?tomethod),
-//  CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
-
+SanitizedObject(?hctx, ?heap) <-
+  SanitizationMethod(?index, ?tomethod),
+  CallGraphEdge(?ctx, ?invocation, _, ?tomethod),
+  ActualParam[?index, ?invocation] = ?var,
+  VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+  TaintedObject(?hctx, ?heap).
 
 /**
  * Sinks and leaks
@@ -86,7 +88,8 @@ LeakingSinkVariable(?invocation, ?ctx, ?var) <-
 
 LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?obj) <-
   VarPointsTo(?hctx, ?obj, ?ctx, ?var),
-  TaintedHeapAllocation(?obj),  
+  (TaintedObject(?hctx, ?obj),
+  !SanitizedObject(?hctx, ?obj)),
   LeakingSinkVariable(?invocation, ?ctx, ?var).
 
 /**
@@ -98,5 +101,5 @@ TaintedObject(?hctx, ?invocation),
 VarPointsTo(?hctx, ?invocation, ?callerCtx, ?to) <-
   CallTaintingMethod(?callerCtx, ?invocation),
   TaintedHeapAllocation(?invocation),
-//  !SanitizedHeap(?invocation).
   AssignReturnValue[?invocation] = ?to.
+
