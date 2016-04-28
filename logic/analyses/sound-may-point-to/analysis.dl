@@ -219,9 +219,8 @@
 
   // strings and others
   MayPointTo(?hctx, ?heap, ?ctx, ?var) :-
-    RepresentativeHeapAllocation(?heap),
-    !HeapAllocation_Merge(?heap, _),
     AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
+    !HeapAllocation_Merge(?heap, _),
     EmptyHeapContext(?hctx),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth).
   MayPointTo(?hctx, ?heap, ?ctx, ?var) :-
