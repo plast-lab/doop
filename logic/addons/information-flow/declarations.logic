@@ -1,9 +1,5 @@
 TaintSourceMethod(?method) -> MethodSignature(?method).
 
-TaintedInformation(?ctx, ?heap) -> HeapAllocation(?heap), Context(?ctx).
-
-TaintedHeapAllocation(?heap) -> HeapAllocation(?heap).
-
 LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
   MethodInvocation(?tomethod), Var(?var), Context(?ctx).
 
@@ -17,6 +13,3 @@ VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
 VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from) ->
   Context(?toCtx), Var(?to),
   Context(?fromCtx), Var(?from).
-
-TaintedInformationFlowsTo(?hctx, ?heap, ?ctx, ?to) ->
-  HContext(?hctx), HeapAllocation(?heap), Context(?ctx), Var(?to).
