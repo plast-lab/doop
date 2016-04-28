@@ -3,13 +3,18 @@
 AssignCast:Insn AssignContextInsensitiveHeapAllocation \
 AssignHeapAllocation AssignLocal:From AssignLocal:Insn  \
 AssignNormalHeapAllocation AssignInstruction:To AssignNull:Insn \
-AssignReturnValue FormalParam HeapAllocation:Merge HeapAllocation:Null \
+AssignReturnValue FieldInstruction:Signature \
+FieldSignature:DeclaringClass FieldSignature:Type FormalParam HeapAllocation:Merge \
+HeapAllocation:Null \
 HeapAllocation:Type Instruction:Index Instruction:Method IsJumpTarget \
+LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \ 			
 MainClass MainMethodArgHeap  \
 MainMethodArgsArray MethodInvocation:Signature MethodLookup \
 MethodSignature:DeclaringType MethodSignature:Descriptor \
 MethodSignature:SimpleName NextInSamePhiNode PhiNodeHead Reachable \
-ReturnVar SpecialMethodInvocation:Base SubtypeOf ThisVar \
+ReferenceType ReturnVar SpecialMethodInvocation:Base \
+StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \ 			
+SubtypeOf ThisVar \
 Var:DeclaringMethod Var:Type VirtualMethodInvocation:Base \
 VirtualMethodInvocation:Descriptor VirtualMethodInvocation:SimpleName 
 #./export2.sh 1 Reachable
