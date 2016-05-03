@@ -475,22 +475,15 @@ import java.util.jar.JarFile
             logger.debug "The TAMIFLEX option has been enabled"
         }
 
-        // Checks for must analyses
-
-        if(isMustPointTo(vars.name) && !options.MAY_PRE_ANALYSIS.value)
-            throw new UnsupportedOperationException("For a must-point-to analysis, you need to specify a may- pre-analysis")
-
-        if(options.MAY_PRE_ANALYSIS.value) {
-            if(!isMustPointTo(vars.name))
-                throw new RuntimeException("Option: " + options.MAY_PRE_ANALYSIS.name + " is used only for must-analyses")
-
-            options.MUST_AFTER_MAY.value = true
-            logger.debug "The MUST_AFTER_MAY flag has been enabled"
+        if (options.CFG_ANALYSIS.value) {
+            logger.debug "The CFG option has been enabled"
         }
 
-        if(isMustPointTo(vars.name) && !options.SSA.value) {
+        if (options.MUST.value) {
             options.SSA.value = true
-            logger.debug "The SSA flag has been enabled (must-point-to)"
+            options.CFG_ANALYSIS.value = true
+            options.MUST_AFTER_MAY.value = true
+            logger.debug "The MUST option has been enabled"
         }
 
         checkJRE(vars)
@@ -733,10 +726,5 @@ import java.util.jar.JarFile
                 option.value = false
             }
         }
-    }
-
-
-    protected boolean isMustPointTo(String name) {
-        return Helper.isMustPointTo(name)
     }
 }

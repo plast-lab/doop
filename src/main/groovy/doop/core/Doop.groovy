@@ -74,19 +74,10 @@ class Doop {
             description:"Run a control flow graph analysis.",
             webUI:true
         ),
-        /* Flags for must analyses */
         new AnalysisOption<String>(
             id:"MUST",
             name:"must",
             description:"Run the must analysis.",
-            webUI:true
-        ),
-        new AnalysisOption<String>(
-            id:"MAY_PRE_ANALYSIS",
-            name:"may-pre-analysis",
-            argName:"may-analysis name",
-            description:"Use a may analysis before running the must analysis.",
-            value:null,
             webUI:true
         ),
         new AnalysisOption<Boolean>(

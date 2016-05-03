@@ -389,10 +389,6 @@ class Helper {
     }
 
 
-    static boolean isMustPointTo(String name) {
-        return "must-point-to".equals(name)
-    }
-
     /**
      * Parses the user supplied timeout.
      * @param userTimeout - the user supplied timeout.
