@@ -115,7 +115,7 @@ import org.apache.commons.logging.LogFactory
         this.id = id
         this.outDir = outDir
         this.cacheDir = cacheDir
-        this.name = name
+        this.name = name.replace(File.separator, "-")
         this.options = options
         this.ctx = ctx
         this.inputJarFiles = inputJarFiles
@@ -305,19 +305,7 @@ import org.apache.commons.logging.LogFactory
             .startTimer()
             .transaction()
 
-        String analysisPath = null;
-        String coreAnalysisName = null;
-
-        if(isMustPointTo() && options.MAY_PRE_ANALYSIS.value) {
-            String mayAnalysis = options.MAY_PRE_ANALYSIS.value
-            analysisPath = "${Doop.doopLogic}/analyses/${mayAnalysis}"
-            coreAnalysisName = mayAnalysis
-        }
-        else {
-            analysisPath = "${Doop.doopLogic}/analyses/${name}"
-            coreAnalysisName = name
-        }
-        coreAnalysisName = coreAnalysisName.replace(File.separator, "-")
+        def analysisPath = "${Doop.doopLogic}/analyses/${name}"
 
         if (options.DYNAMIC.value) {
             //TODO: Check arity of DYNAMIC file
@@ -338,8 +326,8 @@ import org.apache.commons.logging.LogFactory
             }
         }
 
-        preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${coreAnalysisName}-declarations.logic")
-        lbScript.addBlockFile("${coreAnalysisName}-declarations.logic")
+        preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${name}-declarations.logic")
+        lbScript.addBlockFile("${name}-declarations.logic")
 
         if (options.SANITY.value) {
             lbScript
@@ -347,8 +335,8 @@ import org.apache.commons.logging.LogFactory
                 .addBlockFile("${Doop.doopLogic}/addons/sanity.logic")
         }
 
-        preprocessor.preprocess(this, analysisPath, "delta.logic", "${outDir}/${coreAnalysisName}-delta.logic")
-        lbScript.executeFile("${coreAnalysisName}-delta.logic")
+        preprocessor.preprocess(this, analysisPath, "delta.logic", "${outDir}/${name}-delta.logic")
+        lbScript.executeFile("${name}-delta.logic")
 
 
         if (options.ENABLE_REFLECTION.value) {
@@ -363,7 +351,7 @@ import org.apache.commons.logging.LogFactory
         }
 
         String addonsPath = "${Doop.doopLogic}/addons"
-        String macros = "${Doop.doopLogic}/analyses/${coreAnalysisName}/macros.logic"
+        String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
         /**
          * Generic file for incrementally adding addons logic from various
          * points. This is necessary in some cases to avoid weird errors from
@@ -445,50 +433,42 @@ import org.apache.commons.logging.LogFactory
         if (options.REFINE.value)
             refine()
 
-        if(isMustPointTo()) {
-            String mustAnalysisName = "${Doop.doopLogic}/analyses/${name}"
-
-            if(options.MAY_PRE_ANALYSIS.value) {
-                String mayAnalysis = options.MAY_PRE_ANALYSIS.value;
-                analysisPath = mustAnalysisName
-                preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
-
-                lbScript
-                    .commit()
-                    .transaction()
-                    .addBlockFile("${coreAnalysisName}.logic")
-                    .commit()
-                    .transaction()
-                    .addBlockFile("${mustAnalysisName}/may-pre-analysis.logic")
-            }
-
-            lbScript
-                // Default option for RootMethodForMustAnalysis.
-                // TODO: add command line option, so users can provide their own subset of root methods
-                .addBlock("RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
-                //TODO: Default Root Methods for 'simple' must-analyses.
-                .addBlockFile("${Doop.doopLogic}/addons/cfg-analysis/declarations.logic")
-                .addBlockFile("${Doop.doopLogic}/addons/cfg-analysis/rules.logic")
-        }
-
-        // TODO need to revisit must point to logic
-        preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${coreAnalysisName}.logic")
-        if(isMustPointTo()) 
-            Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
-        else
-            Helper.appendAtFirst(this, "${outDir}/${coreAnalysisName}.logic", "${outDir}/addons.logic")
+        preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
+        Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
 
         lbScript
             .commit()
             .elapsedTime()
+            .echo("-- Main Analysis --")
             .startTimer()
             .transaction()
-            .addBlockFile("${coreAnalysisName}.logic")
+            .addBlockFile("${name}.logic")
             .commit()
             .elapsedTime()
 
-         if (options.INFORMATION_FLOW.value)
-             lbScript.transaction().executeFile("information-flow-delta.logic").commit().elapsedTime()
+        if (options.MUST.value) {
+            FileUtils.copyFile(new File("${Doop.doopLogic}/analyses/must-point-to/may-pre-analysis.logic"),
+                               new File("${outDir}/must-point-to-may-pre-analysis.logic"))
+            preprocessor.preprocess(this, Doop.doopLogic, "analyses/must-point-to/analysis-simple.logic", "${outDir}/must-point-to.logic")
+
+            lbScript
+                .echo("-- Pre Analysis (for Must) --")
+                .startTimer()
+                .transaction()
+                .addBlockFile("must-point-to-may-pre-analysis.logic")
+                .addBlock("RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
+                .commit()
+                .elapsedTime()
+                .echo("-- Must Analysis --")
+                .startTimer()
+                .transaction()
+                .addBlockFile("must-point-to.logic")
+                .commit()
+                .elapsedTime()
+        }
+
+        if (options.INFORMATION_FLOW.value)
+            lbScript.transaction().executeFile("information-flow-delta.logic").commit().elapsedTime()
     }
 
     /**
@@ -695,10 +675,6 @@ import org.apache.commons.logging.LogFactory
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "doop.soot.Main", params.toArray(new String[params.size()]))
         }
-    }
-
-    protected boolean isMustPointTo() {
-        return Helper.isMustPointTo(name)
     }
 
     /**
