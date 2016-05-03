@@ -13,6 +13,7 @@ MainMethodArgsArray MethodInvocation:Signature MethodLookup \
 MethodSignature:DeclaringType MethodSignature:Descriptor \
 MethodSignature:SimpleName NextInSamePhiNode PhiNodeHead Reachable \
 ReferenceType ReturnVar SpecialMethodInvocation:Base \
+SpecialMethodInvocation:Insn StaticMethodInvocation:Insn \
 StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \ 			
 SubtypeOf ThisVar \
 Var:DeclaringMethod Var:Type VirtualMethodInvocation:Base \
