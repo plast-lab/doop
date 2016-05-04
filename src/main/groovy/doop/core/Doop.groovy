@@ -106,9 +106,9 @@ class Doop {
             isAdvanced:true,
             flagType:PreprocessorFlag.CONSTANT_FLAG
         ),
-        /* End of preprocessor constant flags] */
+        /* End of preprocessor constant flags */
 
-        /* Start of preprocessor normal flags] */
+        /* Start of preprocessor normal flags */
         new AnalysisOption<Boolean>(
             id:"MERGE_STRING_BUFFERS",
             name:"disable-merge-string-buffers",
@@ -261,9 +261,9 @@ class Doop {
             webUI:true,
             forPreprocessor:true
         ),
-        /* End of preprocessor normal flags] */
+        /* End of preprocessor normal flags */
 
-        /* Start of preprocessor exception flags] */
+        /* Start of preprocessor exception flags */
         new AnalysisOption<Boolean>(
             id:"EXCEPTIONS_PRECISE",
             value:true,
@@ -297,7 +297,7 @@ class Doop {
             isAdvanced:true,
             flagType:PreprocessorFlag.EXCEPTION_FLAG
         ),
-        /* End of preprocessor exception flags] */
+        /* End of preprocessor exception flags */
 
         //other options/flags
         new AnalysisOption<Boolean>(
@@ -436,7 +436,7 @@ class Doop {
             isAdvanced:true
         ),
 
-        /* Start of non-standard flags] */
+        /* Start of non-standard flags */
         new AnalysisOption<Boolean>(
             id:"X_STATS_FULL",
             name:"Xstats:full",
@@ -478,7 +478,7 @@ class Doop {
             webUI:true,
             nonStandard:true
         ),
-        /* End of non-standard flags] */
+        /* End of non-standard flags */
     ]
 
     static final List<String> OPTIONS_EXCLUDED_FROM_ID_GENERATION = [

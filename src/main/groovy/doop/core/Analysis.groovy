@@ -4,8 +4,8 @@ import doop.blox.BloxbatchConnector
 import doop.blox.BloxbatchScript
 import doop.blox.WorkspaceConnector
 import doop.input.InputResolutionContext
-import doop.system.CppPreprocessor
 import doop.system.Executor
+import static doop.system.CppPreprocessor.*
 
 import groovy.transform.TypeChecked
 
@@ -76,8 +76,6 @@ import org.apache.commons.logging.LogFactory
      * The environment for running external commands
      */
     Map<String, String> commandsEnvironment
-
-    CppPreprocessor preprocessor = new CppPreprocessor()
 
     Executor executor
 
@@ -326,7 +324,7 @@ import org.apache.commons.logging.LogFactory
             }
         }
 
-        preprocessor.preprocess(this, analysisPath, "declarations.logic", "${outDir}/${name}-declarations.logic")
+        preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic")
         lbScript.addBlockFile("${name}-declarations.logic")
 
         if (options.SANITY.value) {
@@ -335,14 +333,14 @@ import org.apache.commons.logging.LogFactory
                 .addBlockFile("${Doop.doopLogic}/addons/sanity.logic")
         }
 
-        preprocessor.preprocess(this, analysisPath, "delta.logic", "${outDir}/${name}-delta.logic")
+        preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic")
         lbScript.executeFile("${name}-delta.logic")
 
 
         if (options.ENABLE_REFLECTION.value) {
             String reflectionPath = "${Doop.doopLogic}/core/reflection"
 
-            preprocessor.preprocess(this, reflectionPath, "delta.logic", "${outDir}/reflection-delta.logic")
+            preprocess(this, "${reflectionPath}/delta.logic", "${outDir}/reflection-delta.logic")
             lbScript
                 .executeFile("reflection-delta.logic")
                 .commit()
@@ -368,31 +366,29 @@ import org.apache.commons.logging.LogFactory
             lbScript.addBlockFile("cfg-analysis-declarations.logic")
 
             logger.info "Adding CFG-analysis rules to addons logic"
-            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${addonsPath}/cfg-analysis/rules.logic")
+            preprocessAtStart(this, "${addonsPath}/cfg-analysis/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             FileUtils.copyFile(new File("${addonsPath}/dacapo/declarations.logic"),
                                new File("${outDir}/dacapo-declarations.logic"))
-            preprocessor.preprocess(this, addonsPath, "dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
+            preprocess(this, "${addonsPath}/dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
             lbScript
                 .addBlockFile("dacapo-declarations.logic")
                 .executeFile("dacapo-delta.logic")
 
             logger.info "Adding DaCapo rules to addons logic"
-            preprocessor.preprocess(this, addonsPath, "dacapo/rules.logic", "${outDir}/dacapo.logic", macros)
-            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/dacapo.logic")
+            preprocessAtStart(this, "${addonsPath}/dacapo/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.INFORMATION_FLOW.value) {
             FileUtils.copyFile(new File("${addonsPath}/information-flow/declarations.logic"),
                                new File("${outDir}/information-flow-declarations.logic"))
-            preprocessor.preprocess(this, addonsPath, "information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            preprocess(this, "${addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
             lbScript
                 .addBlockFile("information-flow-declarations.logic")
             logger.info "Adding Information flow rules to addons logic"
-            preprocessor.preprocess(this, addonsPath, "information-flow/rules.logic", "${outDir}/information-flow.logic", macros)
-            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/information-flow.logic")
+            preprocessAtStart(this, "${addonsPath}/information-flow/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.TAMIFLEX.value) {
@@ -405,26 +401,21 @@ import org.apache.commons.logging.LogFactory
                 .executeFile("tamiflex-delta.logic")
 
             logger.info "Adding tamiflex rules to addons logic"
-            preprocessor.preprocess(this, addonsPath, "tamiflex/rules.logic", "${outDir}/tamiflex.logic", macros)
-            Helper.appendAtFirst(this, "${outDir}/addons.logic", "${outDir}/tamiflex.logic")
+            preprocessAtStart(this, "${addonsPath}/tamiflex/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.FU_EXCEPTION_FLOW.value) {
-            preprocessor.preprocess(this, addonsPath, "fu-exception-flow/declarations.logic",
-                                    "${outDir}/fu-exception-flow.logic",
+            preprocess(this, "${addonsPath}/fu-exception-flow/declarations.logic", "${outDir}/fu-exception-flow.logic",
                                     "fu-exception-flow/rules.logic")
-            preprocessor.preprocess(this, addonsPath, "fu-exception-flow/delta.logic",
-                                    "${outDir}/fu-exception-flow-delta.logic")
+            preprocess(this, "${addonsPath}/fu-exception-flow/delta.logic", "${outDir}/fu-exception-flow-delta.logic")
             lbScript
                 .addBlockFile("${outDir}/fu-exception-flow.logic")
                 .executeFile("${outDir}/fu-exception-flow-delta.logic")
         }
 
         if (options.AUXILIARY_HEAP.value) {
-            preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/declarations.logic",
-                                    "${outDir}/client-extensions.logic")
-            preprocessor.preprocess(this, addonsPath, "auxiliary-heap-allocations/delta.logic",
-                                    "${outDir}/client-extensions-delta.logic")
+            preprocess(this, "${addonsPath}/auxiliary-heap-allocations/declarations.logic", "${outDir}/client-extensions.logic")
+            preprocess(this, "${addonsPath}/auxiliary-heap-allocations/delta.logic", "${outDir}/client-extensions-delta.logic")
             lbScript
                 .addBlockFile("${outDir}/client-extensions.logic")
                 .executeFile("${outDir}/client-extensions-delta.logic")
@@ -433,8 +424,8 @@ import org.apache.commons.logging.LogFactory
         if (options.REFINE.value)
             refine()
 
-        preprocessor.preprocess(this, analysisPath, "analysis.logic", "${outDir}/${name}.logic")
-        Helper.appendAtFirst(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
+        preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
+        preprocessAtStart(this, "${outDir}/addons.logic", "${outDir}/${name}.logic")
 
         lbScript
             .commit()
@@ -449,7 +440,7 @@ import org.apache.commons.logging.LogFactory
         if (options.MUST.value) {
             FileUtils.copyFile(new File("${Doop.doopLogic}/analyses/must-point-to/may-pre-analysis.logic"),
                                new File("${outDir}/must-point-to-may-pre-analysis.logic"))
-            preprocessor.preprocess(this, Doop.doopLogic, "analyses/must-point-to/analysis-simple.logic", "${outDir}/must-point-to.logic")
+            preprocess(this, "${Doop.doopLogic}/analyses/must-point-to/analysis-simple.logic", "${outDir}/must-point-to.logic")
 
             lbScript
                 .echo("-- Pre Analysis (for Must) --")
@@ -477,7 +468,7 @@ import org.apache.commons.logging.LogFactory
     protected void reanalyze() {
         logger.info "Loading ${name} refinement-delta rules"
 
-        preprocessor.preprocess(this, "${Doop.doopLogic}/${name}", "refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
+        preprocess(this, "${Doop.doopLogic}/${name}/refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
         // TODO: handle exportCsv in script
         timing {
             bloxbatchPipe database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
@@ -553,7 +544,7 @@ import org.apache.commons.logging.LogFactory
     }
 
     protected void runTransformInput() {
-        preprocessor.preprocess(this, "${Doop.doopLogic}/addons/transform", "rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
+        preprocess(this, "${Doop.doopLogic}/addons/transform/rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
         lbScript
             .echo("-- Transforming Facts --")
             .startTimer()
@@ -580,8 +571,8 @@ import org.apache.commons.logging.LogFactory
         }
 
         String statsPath = "${Doop.doopLogic}/addons/statistics"
-        preprocessor.preprocess(this, statsPath, "statistics-simple.logic", "${outDir}/statistics-simple.logic")
-        preprocessor.preprocess(this, statsPath, "delta.logic", "${outDir}/statistics-delta.logic")
+        preprocess(this, "${statsPath}/statistics-simple.logic", "${outDir}/statistics-simple.logic")
+        preprocess(this, "${statsPath}/delta.logic", "${outDir}/statistics-delta.logic")
 
         lbScript
             .echo("-- Statistics --")
@@ -590,7 +581,7 @@ import org.apache.commons.logging.LogFactory
             .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
-            preprocessor.preprocess(this, statsPath, "statistics.logic", "${outDir}/statistics.logic")
+            preprocess(this, "${statsPath}/statistics.logic", "${outDir}/statistics.logic")
             lbScript.addBlockFile("statistics.logic")
         }
 

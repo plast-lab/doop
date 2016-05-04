@@ -2,8 +2,8 @@ package doop.system
 
 import doop.core.Analysis
 import doop.core.AnalysisOption
-import doop.core.Helper
 import groovy.transform.TypeChecked;
+import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
@@ -16,9 +16,9 @@ import org.apache.commons.logging.LogFactory
 @TypeChecked
 class CppPreprocessor {
 
-    private Log logger = LogFactory.getLog(getClass())
+    private static Log logger = LogFactory.getLog(CppPreprocessor.class)
 
-    void preprocess(Analysis analysis, String basePath, String input, String output, String... includes) {
+    static void preprocess(Analysis analysis, String input, String output, String... includes) {
 
         logger.debug("Preprocessing $input -> $output")
 
@@ -36,6 +36,16 @@ class CppPreprocessor {
         }.join(" ")
 
         def includeArgs = includes.collect{ "-include $it" }.join(" ")
-        new Executor(analysis.commandsEnvironment).execute("cpp -P $macroCli $basePath/$input $includeArgs $output")
+        new Executor(analysis.commandsEnvironment).execute("cpp -P $macroCli $input $includeArgs $output")
+    }
+
+    /**
+     * Preprocess input file and put contents *in the beginning* of the output file.
+     */
+    static void preprocessAtStart(Analysis analysis, String input, String output) {
+        def tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
+        preprocess(analysis, output, tmpFile.getCanonicalPath(), input)
+        FileUtils.copyFile(tmpFile, new File(output))
+        FileUtils.deleteQuietly(tmpFile)
     }
 }

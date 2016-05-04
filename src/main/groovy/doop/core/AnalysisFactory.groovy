@@ -431,9 +431,9 @@ import java.util.jar.JarFile
             }
         }
 
-        logger.info "---------------"
-        for (def option : options) logger.info option
-        logger.info "---------------"
+        logger.debug "---------------"
+        for (def option : options) logger.debug option
+        logger.debug "---------------"
     }
     
     /**
