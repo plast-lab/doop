@@ -1,6 +1,7 @@
 #doop ignore list
 
 checksums.properties
+doop.properties
 
 #analysis benchmarks/tools
 ^benchmarks
