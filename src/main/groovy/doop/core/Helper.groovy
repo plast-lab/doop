@@ -295,17 +295,6 @@ class Helper {
     }
 
     /**
-     * Append the contents of the second file at the end of the first one.
-     */
-    static void appendAtFirst(Analysis analysis, String firstPath, String secondPath) {
-        File tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
-        String tmpFilePath = tmpFile.getCanonicalPath()
-        new Executor(analysis.commandsEnvironment).execute("cpp -P $secondPath -include $firstPath $tmpFilePath")
-        FileUtils.copyFile(tmpFile, new File(firstPath))
-        FileUtils.deleteQuietly(tmpFile)
-    }
-
-    /**
      * Writes the given string to the given file.
      */
     static File writeToFile(File f, String s) {
