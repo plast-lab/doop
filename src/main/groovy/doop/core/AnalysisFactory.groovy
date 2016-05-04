@@ -275,7 +275,6 @@ import java.util.jar.JarFile
 
         if (options.PADDLE_COMPAT.value) {
             disableAllExceptionOptions(options)
-            logger.debug "The PADDLE_COMPAT option has been enabled"
         }
 
         if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
@@ -285,86 +284,44 @@ import java.util.jar.JarFile
         if (options.EXCEPTIONS_IMPRECISE.value) {
             disableAllExceptionOptions(options)
             options.EXCEPTIONS_IMPRECISE.value = true
-            logger.debug "The EXCEPTIONS_IMPRECISE option has been enabled"
         }
 
         if (options.DISABLE_MERGE_EXCEPTIONS.value) {
             disableAllExceptionOptions(options)
             options.EXCEPTIONS_PRECISE.value = true
             options.SEPARATE_EXCEPTION_OBJECTS.value = true
-            logger.debug "The DISABLE_MERGE_EXCEPTIONS option has been enabled"
         }
 
         if (options.EXCEPTIONS_EXPERIMENTAL.value) {
             disableAllExceptionOptions(options)
             options.EXCEPTIONS_EXPERIMENTAL.value = true
-            logger.debug "The EXCEPTIONS_EXPERIMENTAL option has been enabled"
-        }
-
-        if (options.EXCEPTIONS_FILTER.value) {
-            logger.debug "The EXCEPTIONS_FILTER option has been enabled"
-        }
-
-        if (options.EXCEPTIONS_ORDER.value) {
-            logger.debug "The EXCEPTIONS_ORDER option has been enabled"
-        }
-
-        if (options.EXCEPTIONS_RANGE.value) {
-            logger.debug "The EXCEPTIONS_RANGE option has been enabled"
-        }
-
-        if (options.EXCEPTIONS_CS.value) {
-            logger.debug "The EXCEPTIONS_CS option has been enabled"
-        }
-
-        if (options.FU_EXCEPTION_FLOW.value) {
-            logger.debug "The FU_EXCEPTION_FLOW option has been enabled"
         }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
-            logger.debug "The DISTINGUISH_ALL_STRING_CONSTANTS option has been enabled"
         }
 
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.PADDLE_COMPAT.value = false
-            logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been enabled"
         } else {
             // Merging of method and field names happens only if we distinguish
             // reflection strings in the first place.
             options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
-            logger.debug "The DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS option has been disabled"
         }
 
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
             options.PADDLE_COMPAT.value = false
-            logger.debug "The DISTINGUISH_NO_STRING_CONSTANTS option has been enabled"
         }
 
-        if (options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
-            logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been enabled"
-        } else {
+        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
             // It makes no sense to analyze partial strings that may match fields
             // when we don't track the flow of these strings through StringBuilders.
             options.REFLECTION_SUBSTRING_ANALYSIS.value = false
-            logger.debug "The REFLECTION_STRING_FLOW_ANALYSIS option has been disabled"
-        }
-
-        if (options.REFLECTION_SUBSTRING_ANALYSIS.value) {
-            logger.debug "The REFLECTION_SUBSTRING_ANALYSIS option has been enabled"
-        }
-
-        if (options.REFLECTION_MERGE_MEMBER_CONSTANTS.value) { 
-            logger.debug "The REFLECTION_MERGE_MEMBER_CONSTANTS option has been enabled"
-        }
-
-        if (options.ENABLE_REFLECTION.value) {
-            logger.debug "The ENABLE_REFLECTION option has been enabled"
         }
 
         if (options.ENABLE_REFLECTION_CLASSIC.value) {
@@ -374,67 +331,6 @@ import java.util.jar.JarFile
             options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = true
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
-            logger.debug "The ENABLE_REFLECTION_CLASSIC option has been enabled"
-        }
-
-        if (options.REFLECTION_CONTEXT_SENSITIVITY.value) {
-            logger.debug "The REFLECTION_CONTEXT_SENSITIVITY option has been enabled"
-        }
-
-        if (options.REFLECTION_USE_BASED_ANALYSIS.value) { 
-            logger.debug "The REFLECTION_USE_BASED_ANALYSIS option has been enabled"
-        }
-
-        if (options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value) {
-            logger.debug "The REFLECTION_INVENT_UNKNOWN_OBJECTS option has been enabled"
-        }
-
-        if (options.REFLECTION_REFINED_OBJECTS.value) {
-            logger.debug "The REFLECTION_REFINED_OBJECTS option has been enabled"
-        }
-
-        if (!options.INCLUDE_IMPLICITLY_REACHABLE_CODE.value) {
-            logger.debug("The INCLUDE_IMPLICITLY_REACHABLE_CODE option has been disabled")
-        }
-
-        if (!options.MERGE_STRING_BUFFERS.value) {
-            logger.debug "The MERGE_STRING_BUFFERS option has been disabled"
-        }
-
-        if (options.TRANSFORM_INPUT.value) {
-            logger.debug "The TRANSFORM_INPUT option has been enabled"
-        }
-
-        if (options.SSA.value) {
-            logger.debug "The SSA option has been enabled"
-        }
-
-        if (options.CACHE.value) {
-            logger.debug "The CACHE option has been enabled"
-        }
-
-        if (options.SANITY.value) {
-            logger.debug "The SANITY option has been enabled"
-        }
-
-        if (options.RUN_AVERROES.value) {
-            logger.debug "The RUN_AVERROES option has been enabled"
-        }
-        
-        if (options.RUN_JPHANTOM.value) {
-            logger.debug "The RUN_JPHANTOM option has been enabled"
-        }
-
-        if (options.X_ONLY_FACTS.value) {
-            logger.debug "The X_ONLY_FACTS option has been enabled"
-        }
-
-        if (options.X_STATS_FULL.value) {
-            logger.debug "The X_STATS_FULL option has been enabled"
-        }
-
-        if (options.X_STATS_NONE.value) {
-            logger.debug "The X_STATS_NONE option has been enabled"
         }
 
         // Check for X_SOOT_VERSION option (cannot be null)
@@ -443,19 +339,16 @@ import java.util.jar.JarFile
         }
         
         if (options.DACAPO.value) {
-            logger.debug "The DACAPO option has been enabled"
             if (!options.ENABLE_REFLECTION.value) {
                 def inputJarName = vars.inputJarFiles[0].toString()
                 def deps = inputJarName.replace(".jar", "-deps.jar")
                 if (!vars.inputJarFiles.contains(deps))
                     vars.inputJarFiles.add(new File(deps))
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
-                logger.debug "The TAMIFLEX option has been enabled (due to DACAPO)"
             }
         }
         
         if (options.DACAPO_BACH.value) {
-            logger.debug "The DACAPO_BACH option has been enabled"
             if (!options.ENABLE_REFLECTION.value) {
                 def inputJarName = vars.inputJarFiles[0].toString()
                 def depsDir = inputJarName.replace(".jar", "-libs")
@@ -466,24 +359,17 @@ import java.util.jar.JarFile
                     }
                 }
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
-                logger.debug "The TAMIFLEX option has been enabled (due to DACAPO_BACH)"
             }
         }
 
         if (options.TAMIFLEX.value) {
             options.ENABLE_REFLECTION.value = false
-            logger.debug "The TAMIFLEX option has been enabled"
-        }
-
-        if (options.CFG_ANALYSIS.value) {
-            logger.debug "The CFG option has been enabled"
         }
 
         if (options.MUST.value) {
             options.SSA.value = true
             options.CFG_ANALYSIS.value = true
             options.MUST_AFTER_MAY.value = true
-            logger.debug "The MUST option has been enabled"
         }
 
         checkJRE(vars)
@@ -526,11 +412,6 @@ import java.util.jar.JarFile
         if (options.TAMIFLEX.value) {
             String tamFile = options.TAMIFLEX.value.toString()
             Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
-            logger.debug "The TAMIFLEX option has been set to ${tamFile}"
-        }
-        
-        if (options.AUXILIARY_HEAP.value) {
-            logger.debug "The AUXILIARY_HEAP option has been enabled"
         }
 
         if (!options.ENABLE_REFLECTION.value) {
@@ -549,6 +430,10 @@ import java.util.jar.JarFile
                 logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
             }
         }
+
+        logger.info "---------------"
+        for (def option : options) logger.info option
+        logger.info "---------------"
     }
     
     /**
