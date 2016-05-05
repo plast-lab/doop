@@ -205,6 +205,8 @@
   .decl MayReachableMayContext(?ctx:MayContext)
   .decl RootMethodForMayAnalysis(?meth:MethodSignature) output
   .decl MayCallGraphEdge(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
+  .decl MethodMayAssignField(?fld:FieldSignature, ?toMethod:MethodSignature)
+  .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature)
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -473,7 +475,7 @@
     ?ctxDepth < ?maxCtxDepth.
 
   // special method invocation "this" variable assignment
-  .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:Instruction)
+  .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
   OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo) :-
     SpecialMethodInvocation_Base(?invo, ?base),
     MayPointTo(?hctx, ?heap, ?ctx, ?base).
@@ -483,7 +485,7 @@
     MayCallGraphEdge(?calleeCtx, ?toMeth, ?ctx, ?invo),
     ThisVar(?toMeth, ?this).
 
-  .decl OptPotentialVirtualMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:Instruction)
+  .decl OptPotentialVirtualMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
   OptPotentialVirtualMethodBase(?hctx, ?heap, ?ctx, ?invo) :-
     VirtualMethodInvocation_Base(?invo, ?base),
     MayPointTo(?hctx, ?heap, ?ctx, ?base).
@@ -524,89 +526,87 @@
     Before_AccessPathMayPointTo(_, _, ?actualAp, ?callerCtx, ?invo),
 	?actualAp = [ ?actual, ?flds ], ?flds=?flds.
 
+  AccessPathShouldBeRebased(?baseAp, ?base, ?this) :-
+    MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
+    (VirtualMethodInvocation_Base(?invo, ?base);
+     SpecialMethodInvocation_Base(?invo, ?base)),
+    ThisVar(?toMethod, ?this),
+    Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
+	?baseAp = [ ?base, ?flds ], ?flds = ?flds.
+
+  .decl AccessPathRebasedForCall(?newAp:AccessPath, ?ap:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocation)
+  AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
+    MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
+    FormalParam(?index, ?toMethod, ?formal),
+    ActualParam(?index, ?invo, ?actual),
+    RebaseCompositeAccessPath(?ap, ?actual, ?formal, ?newAp).
+
+  AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
+    MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
+    (VirtualMethodInvocation_Base(?invo, ?base);
+     SpecialMethodInvocation_Base(?invo, ?base)),
+    ThisVar(?toMethod, ?this),
+    RebaseCompositeAccessPath(?ap, ?base, ?this, ?newAp).
+
+  Before_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) :-
+    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo),
+    AccessPathRebasedForCall(?calleeAp, ?callerAp, ?callerCtx, ?invo),
+    FirstInstructionOfMethod(?toMethod, ?firstInsn).
+
+  // Let's not forget static fields and unchanged access paths
+  Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) :-
+    MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
+    MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo),
+    AccessPath_ContainsStaticField(?staticAp, ?fld),
+    FirstInstructionOfMethod(?toMethod, ?firstInsn),
+    (MethodMayAssignField(?fld, ?toMethod);
+     MethodHasUnresolvedInvocation(?toMethod)).
+  // The last two lines are a refinement, for optimization. See also below.
+
+  //// Dealing with unchanged access paths (below) hasn't proven
+  //// worthwhile. It's not surprising. The callee has no name for
+  //// this access path. The only hope is that it will survive through
+  //// virtual calls and will come back to the caller (whereas the
+  //// conservative must-pre-analysis won't consider virtual calls it
+  //// cannot resolve in its naive way).
+
+  // This is quite expensive if not restricted. Currently used only for
+  // non-resolved virtual calls. For resolved ones, we have a frame rule
+  // to propagate the information right over the method call in many
+  // cases (and we ignore the rest for now).
+  // ChangedBaseAtInvocation(?var, ?invo) :-
+  //   ActualParam(_, ?invo, ?var);
+  //   VirtualMethodInvocation_Base(?invo, ?var);
+  //   SpecialMethodInvocation_Base(?invo, ?var).
+
+  // OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap) :-
+  //   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
+  //   !May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
+  //   MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
+  //   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo).
+  
+  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
+  //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
+  //    AccessPath_BaseVar(?ap, ?baseVar),
+  //    !ChangedBaseAtInvocation(?baseVar, ?invo),
+  //    _SingleFieldAccessPath(?fld, ?ap),
+  //    (MethodMayAssignField(?fld, ?toMethod);
+  //     MethodHasUnresolvedInvocation(?toMethod)),
+  //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
+
+  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
+  //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
+  //    AccessPath_BaseVar(?ap, ?baseVar),
+  //    !ChangedBaseAtInvocation(?baseVar, ?invo),
+  //    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
+  //    (MethodMayAssignField(?fld1, ?toMethod);
+  //     MethodMayAssignField(?fld2, ?toMethod);
+  //     MethodHasUnresolvedInvocation(?toMethod)),
+  //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
 /*
-
-AccessPathShouldBeRebased(?baseAp, ?base, ?this) :-
-   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-   (VirtualMethodInvocation_Base(?invo, ?base);
-    SpecialMethodInvocation_Base(?invo, ?base)),
-   ThisVar(?toMethod, ?this),
-   Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
-   AccessPath_BaseVar(?baseAp, ?base).
-
-AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
-   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-   FormalParam(?index, ?toMethod, ?formal),
-   ActualParam(?index, ?invo, ?actual),
-   RebaseCompositeAccessPath(?ap, ?actual, ?formal, ?newAp).
-
-AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
-   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-   (VirtualMethodInvocation_Base(?invo, ?base);
-    SpecialMethodInvocation_Base(?invo, ?base)),
-   ThisVar(?toMethod, ?this),
-   RebaseCompositeAccessPath(?ap, ?base, ?this, ?newAp).
-
-Before_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) :-
-   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-   MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
-   Before_AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo),
-   AccessPathRebasedForCall(?calleeAp, ?callerAp, ?callerCtx, ?invo),
-   FirstInstructionOfMethod(?toMethod, ?firstInsn).
-
-// Let's not forget static fields and unchanged access paths
-Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) :-
-   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-   MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
-   Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo),
-   AccessPath_ContainsStaticField(?staticAp, ?fld),
-   FirstInstructionOfMethod(?toMethod, ?firstInsn),
-   (MethodMayAssignField(?fld, ?toMethod);
-    MethodHasUnresolvedInvocation(?toMethod)).
-// The last two lines are a refinement, for optimization. See also below.
-
-//// Really hasn't proven worthwhile. It's not surprising. The callee has
-//// no name for this access path. The only hope is that it will survive
-//// through virtual calls and will come back to the caller (whereas the
-//// conservative must-pre-analysis won't consider virtual calls it cannot
-//// resolve in its naive way).
-
-// This is quite expensive if not restricted. Currently used only for
-// non-resolved virtual calls. For resolved ones, we have a frame rule
-// to propagate the information right over the method call in many
-// cases (and we ignore the rest for now).
-ChangedBaseAtInvocation(?var, ?invo) :-
-   ActualParam(_, ?invo, ?var);
-   VirtualMethodInvocation_Base(?invo, ?var);
-   SpecialMethodInvocation_Base(?invo, ?var).
-
-OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap) :-
-   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-   !May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
-   MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
-   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo).
-
-
-// // Old logic. 
-// Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
-//    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
-//    AccessPath_BaseVar(?ap, ?baseVar),
-//    !ChangedBaseAtInvocation(?baseVar, ?invo),
-//    _SingleFieldAccessPath(?fld, ?ap),
-//    (MethodMayAssignField(?fld, ?toMethod);
-//     MethodHasUnresolvedInvocation(?toMethod)),
-//    FirstInstructionOfMethod(?toMethod, ?firstInsn).
-
-// Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
-//    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
-//    AccessPath_BaseVar(?ap, ?baseVar),
-//    !ChangedBaseAtInvocation(?baseVar, ?invo),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-//    (MethodMayAssignField(?fld1, ?toMethod);
-//     MethodMayAssignField(?fld2, ?toMethod);
-//     MethodHasUnresolvedInvocation(?toMethod)),
-//    FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
 
 // return values

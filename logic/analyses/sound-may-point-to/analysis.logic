@@ -645,6 +645,7 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) <-
 //// conservative must-pre-analysis won't consider virtual calls it cannot
 //// resolve in its naive way).
 
+/*
 // This is quite expensive if not restricted. Currently used only for
 // non-resolved virtual calls. For resolved ones, we have a frame rule
 // to propagate the information right over the method call in many
@@ -660,7 +661,6 @@ OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?to
    MayCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo).
 
-/*
 // Old logic. 
 Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) <-
    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
