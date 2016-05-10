@@ -5,10 +5,12 @@ import java.util.List;
 public class FunctionalHeadExpr implements IExpr {
 
 	String _name;
+	String _stage;
 	List<IExpr> _keyExprs;
 
-	public FunctionalHeadExpr(String name, List<IExpr> keyExprs) {
+	public FunctionalHeadExpr(String name, String stage, List<IExpr> keyExprs) {
 		_name = name;
+		_stage = stage;
 		_keyExprs = keyExprs;
 	}
 

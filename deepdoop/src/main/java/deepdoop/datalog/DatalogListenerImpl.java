@@ -1,6 +1,7 @@
 package deepdoop.datalog;
 
 import static deepdoop.datalog.DatalogParser.*;
+import deepdoop.datalog.LogicalElement.LogicType;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -16,34 +17,34 @@ class DatalogListenerImpl implements DatalogListener {
 
 	enum ClauseType { DECLARATION, CONSTRAINT, RULE, UNDEF }
 
-	Set<Predicate> _predicates;
-	Set<Predicate> _specialPredicates;
-	Set<Rule> _rules;
-	Program _program;
+	Set<Predicate>                     _predicates;
+	Set<Predicate>                     _types;
+	Set<Rule>                          _rules;
+	Program                            _program;
 
-	ParseTreeProperty<String> _name;
-	ParseTreeProperty<List<String>> _names;
-	ParseTreeProperty<Predicate> _pred;
+	ParseTreeProperty<String>          _name;
+	ParseTreeProperty<List<String>>    _names;
+	ParseTreeProperty<Predicate>       _pred;
 	ParseTreeProperty<List<Predicate>> _preds;
-	ParseTreeProperty<IExpr> _expr;
-	ParseTreeProperty<List<IExpr>> _exprs;
-	ParseTreeProperty<IElement> _elem;
-	ParseTreeProperty<List<IElement>> _elems;
-	ClauseType _currentClause;
+	ParseTreeProperty<IExpr>           _expr;
+	ParseTreeProperty<List<IExpr>>     _exprs;
+	ParseTreeProperty<IElement>        _elem;
+	ParseTreeProperty<List<IElement>>  _elems;
+	ClauseType                         _currentClause;
 
 	public DatalogListenerImpl() {
-		_predicates = new HashSet<>();
-		_specialPredicates = new HashSet<>();
-		_rules = new HashSet<>();
+		_predicates    = new HashSet<>();
+		_types         = new HashSet<>();
+		_rules         = new HashSet<>();
 
-		_name = new ParseTreeProperty<>();
-		_names = new ParseTreeProperty<>();
-		_pred = new ParseTreeProperty<>();
-		_preds = new ParseTreeProperty<>();
-		_expr = new ParseTreeProperty<>();
-		_exprs = new ParseTreeProperty<>();
-		_elem = new ParseTreeProperty<>();
-		_elems = new ParseTreeProperty<>();
+		_name          = new ParseTreeProperty<>();
+		_names         = new ParseTreeProperty<>();
+		_pred          = new ParseTreeProperty<>();
+		_preds         = new ParseTreeProperty<>();
+		_expr          = new ParseTreeProperty<>();
+		_exprs         = new ParseTreeProperty<>();
+		_elem          = new ParseTreeProperty<>();
+		_elems         = new ParseTreeProperty<>();
 		_currentClause = ClauseType.UNDEF;
 	}
 
@@ -51,9 +52,8 @@ class DatalogListenerImpl implements DatalogListener {
 		return _program;
 	}
 
-	public void enterProgram(ProgramContext ctx) {}
 	public void exitProgram(ProgramContext ctx) {
-		_program = new Program(_predicates, _specialPredicates, _rules);
+		_program = new Program(_predicates, _types, _rules);
 	}
 	public void enterDeclaration(DeclarationContext ctx) {
 		_currentClause = ClauseType.DECLARATION;
@@ -61,8 +61,8 @@ class DatalogListenerImpl implements DatalogListener {
 	public void exitDeclaration(DeclarationContext ctx) {
 		_currentClause = ClauseType.UNDEF;
 
-		Predicate pred = get(_pred, ctx.predicate());
 		if (ctx.refmode() == null) {
+			Predicate pred = get(_pred, ctx.predicate());
 			List<Predicate> preds = get(_preds, ctx.predicateList());
 			if (preds != null) {
 				List<String> types = new ArrayList<>();
@@ -72,25 +72,20 @@ class DatalogListenerImpl implements DatalogListener {
 				_predicates.add(pred);
 			}
 			else {
-				pred = new Entity(pred.getName());
-				_specialPredicates.add(new Entity(pred.getName()));
+				_types.add(new Entity(pred.getName()));
 			}
 		}
 		else {
 			Entity ent = new Entity(get(_name, ctx.predicateName()));
-			_specialPredicates.add(ent);
-			String refName = get(_name, ctx.refmode());
-			String refType = pred.getName();
-			RefMode ref = new RefMode(refName, refType, ent);
-			_specialPredicates.add(ref);
+			Primitive primitive = (Primitive) get(_pred, ctx.predicate());
+			_types.add(ent);
+			_types.add(primitive);
+			_types.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
 		}
 	}
-	public void enterConstraint(ConstraintContext ctx) {}
-	public void exitConstraint(ConstraintContext ctx) {}
-	public void enterRule_(Rule_Context ctx) {}
 	public void exitRule_(Rule_Context ctx) {
 		if (ctx.predicateList() != null) {
-			LogicalElement head = new LogicalElement(true, get(_elems, ctx.predicateList()));
+			LogicalElement head = new LogicalElement(LogicType.AND, get(_elems, ctx.predicateList()));
 			IElement body = get(_elem, ctx.ruleBody());
 			if (body != null) body.normalize();
 			_rules.add(new Rule(head, body));
@@ -100,69 +95,51 @@ class DatalogListenerImpl implements DatalogListener {
 			_rules.add(new Rule(head, aggregation));
 		}
 	}
-	public void enterPredicate(PredicateContext ctx) {}
 	public void exitPredicate(PredicateContext ctx) {
-		/* "normal" predicates | primitive w/o capacity | directive w/o parameters */
-		if (ctx.predicateName() != null && ctx.CAPACITY() == null && ctx.BACKTICK() == null) {
-		}
-
-		/* primitive types */
-		else if (ctx.predicateName() != null && ctx.CAPACITY() != null) {
-		}
-
-		/* directives */
-		else if (ctx.predicateName() != null && ctx.BACKTICK() != null) {
-		}
-
-		/* functional predicates | directive w/o parameters */
-		else if (ctx.functionalHead() != null) {
-		}
-
-		/* refmode predicates */
-		else if (ctx.refmode() != null) {
-		}
-
-
-
-
-
-
 		if (_currentClause == ClauseType.DECLARATION) {
-			Predicate p;
-			if (ctx.predicateName() != null) {
-				String name = get(_name, ctx.predicateName());
-				if (isPrimitive(name))
-					p = new Entity(normalizePrimitive(name, ctx.CAPACITY()));
-				else
-					p = new Predicate(name, null);
+			assert ctx.AT_STAGE() == null;
+
+			if (ctx.predicateName(0) != null) {
+				String name = get(_name, ctx.predicateName(0));
+				String capacity = ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText();
+				if (hasToken(ctx, "(")) {
+					if (isPrimitive(name))
+						_pred.put(ctx, new Primitive(name, capacity));
+					else
+						_pred.put(ctx, new Predicate(name, capacity));
+				}
+				else if (hasToken(ctx, "[")) {
+					_pred.put(ctx, new Functional(name, capacity));
+				}
 			}
-			else if (ctx.functionalHead() != null)
-				p = new Functional(get(_name, ctx.functionalHead()), null, null);
-			else /*if (ctx.refmode() != null)*/
-				throw new RuntimeException ("Refmode in declaration has separate handling in grammar");
-			_pred.put(ctx, p);
+			// NOTE: Refmode declarations have separate handling in grammar
+			//else if (ctx.refmode() != null) {}
+
 		}
 		else {
-			PredicateElement p;
-			if (ctx.predicateName() != null) {
-				String name = normalizePrimitive(get(_name, ctx.predicateName()), ctx.CAPACITY());
+			assert ctx.CAPACITY() == null;
+			//assert ctx.BACKTICK() == null;
+
+			if (ctx.predicateName(0) != null) {
+				String name = get(_name, ctx.predicateName(0));
+				String stage = ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText();
 				List<IExpr> exprs = (ctx.exprList() == null ? exprs = new ArrayList<>() : get(_exprs, ctx.exprList()));
-				p = new PredicateElement(name, exprs);
+				if (hasToken(ctx, "(")) {
+					_elem.put(ctx, new PredicateElement(name, stage, exprs));
+				}
+				else if (hasToken(ctx, "[")) {
+					_elem.put(ctx, new FunctionalElement(name, stage, exprs, get(_expr, ctx.expr())));
+				}
 			}
-			else if (ctx.functionalHead() != null) {
-				String name = get(_name, ctx.functionalHead());
-				List<IExpr> exprs = get(_exprs, ctx.functionalHead());
-				p = new FunctionalElement(name, exprs, get(_expr, ctx.expr()));
-			}
-			else /*if (ctx.refmode() != null)*/ {
+			else if (ctx.refmode() != null) {
 				String name = get(_name, ctx.refmode());
+				String stage = ctx.refmode().AT_STAGE() == null ? null : ctx.refmode().AT_STAGE().getText();
 				List<IExpr> exprs = get(_exprs, ctx.refmode());
-				p = new RefModeElement(name, (VariableExpr)exprs.get(0), exprs.get(1));
+				_elem.put(ctx, new RefModeElement(name, stage, (VariableExpr)exprs.get(0), exprs.get(1)));
 			}
-			_elem.put(ctx, p);
+
 		}
 	}
-	public void enterRuleBody(RuleBodyContext ctx) {}
 	public void exitRuleBody(RuleBodyContext ctx) {
 		String token = getToken(ctx, 0);
 		if (ctx.predicate() != null) {
@@ -175,20 +152,17 @@ class DatalogListenerImpl implements DatalogListener {
 			List<IElement> list = Arrays.asList(
 				get(_elem, ctx.ruleBody(0)),
 				get(_elem, ctx.ruleBody(1)));
-
-			_elem.put(ctx, new LogicalElement(token.equals(","), list));
+			_elem.put(ctx, new LogicalElement(token.equals(",") ? LogicType.AND : LogicType.OR, list));
 		} else if (token.equals("!")) {
 			_elem.put(ctx, new NegationElement(get(_elem, ctx.ruleBody(0))));
 		}
 	}
-	public void enterAggregation(AggregationContext ctx) {}
 	public void exitAggregation(AggregationContext ctx) {
 		VariableExpr variable = new VariableExpr(ctx.IDENTIFIER().getText());
 		PredicateElement predicate = (PredicateElement) get(_elem, ctx.predicate());
 		IElement body = get(_elem, ctx.ruleBody());
 		_elem.put(ctx, new AggregationElement(variable, predicate, body));
 	}
-	public void enterRefmode(RefmodeContext ctx) {}
 	public void exitRefmode(RefmodeContext ctx) {
 		_name.put(ctx, get(_name, ctx.predicateName()));
 		List<IExpr> list = new ArrayList<>();
@@ -196,15 +170,6 @@ class DatalogListenerImpl implements DatalogListener {
 		list.add(get(_expr, ctx.expr()));
 		_exprs.put(ctx, list);
 	}
-	public void enterFunctionalHead(FunctionalHeadContext ctx) {}
-	public void exitFunctionalHead(FunctionalHeadContext ctx) {
-		_name.put(ctx, get(_name, ctx.predicateName()));
-		if (ctx.exprList() != null)
-			_exprs.put(ctx, get(_exprs, ctx.exprList()));
-		else
-			_exprs.put(ctx, new ArrayList<IExpr>());
-	}
-	public void enterPredicateName(PredicateNameContext ctx) {}
 	public void exitPredicateName(PredicateNameContext ctx) {
 		PredicateNameContext child = ctx.predicateName();
 		String name = ctx.IDENTIFIER().getText();
@@ -212,7 +177,6 @@ class DatalogListenerImpl implements DatalogListener {
 			name = get(_name, child) + ":" + name;
 		_name.put(ctx, name);
 	}
-	public void enterConstant(ConstantContext ctx) {}
 	public void exitConstant(ConstantContext ctx) {
 		ConstantExpr e;
 		if (ctx.INTEGER() != null) {
@@ -229,19 +193,19 @@ class DatalogListenerImpl implements DatalogListener {
 		}
 		else if (ctx.REAL() != null) e = new ConstantExpr(Double.parseDouble(ctx.REAL().getText()));
 		else if (ctx.BOOLEAN() != null) e = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText()));
-		else /*if (ctx.STRING() != null)*/ e = new ConstantExpr(ctx.STRING().getText());
+		else if (ctx.STRING() != null) e = new ConstantExpr(ctx.STRING().getText());
 
 		_expr.put(ctx, e);
 	}
-	public void enterExpr(ExprContext ctx) {}
 	public void exitExpr(ExprContext ctx) {
 		IExpr e;
 		if (ctx.IDENTIFIER() != null)
 			e = new VariableExpr(ctx.IDENTIFIER().getText());
-		else if (ctx.functionalHead() != null) {
-			String name = get(_name, ctx.functionalHead());
-			List<IExpr> exprs = get(_exprs, ctx.functionalHead());
-			e = new FunctionalHeadExpr(name, exprs);
+		else if (ctx.predicateName() != null) {
+			String name = get(_name, ctx.predicateName());
+			String stage = ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText();
+			List<IExpr> exprs = (ctx.exprList() == null ? exprs = new ArrayList<>() : get(_exprs, ctx.exprList()));
+			e = new FunctionalHeadExpr(name, stage, exprs);
 		}
 		else if (ctx.constant() != null)
 			e = get(_expr, ctx.constant());
@@ -265,7 +229,6 @@ class DatalogListenerImpl implements DatalogListener {
 
 		_expr.put(ctx, e);
 	}
-	public void enterComparison(ComparisonContext ctx) {}
 	public void exitComparison(ComparisonContext ctx) {
 		String token = getToken(ctx, 0);
 		IExpr left = get(_expr, ctx.expr(0));
@@ -282,9 +245,8 @@ class DatalogListenerImpl implements DatalogListener {
 
 		_elem.put(ctx, new ComparisonElement(left, op, right));
 	}
-	public void enterPredicateList(PredicateListContext ctx) {}
 	public void exitPredicateList(PredicateListContext ctx) {
-		if (_inDeclaration) {
+		if (_currentClause == ClauseType.DECLARATION) {
 			Predicate pred = get(_pred, ctx.predicate());
 			List<Predicate> list = get(_preds, ctx.predicateList(), pred);
 			_preds.put(ctx, list);
@@ -294,20 +256,47 @@ class DatalogListenerImpl implements DatalogListener {
 			_elems.put(ctx, list);
 		}
 	}
-	public void enterExprList(ExprListContext ctx) {}
 	public void exitExprList(ExprListContext ctx) {
 		IExpr p = get(_expr, ctx.expr());
 		List<IExpr> list = get(_exprs, ctx.exprList(), p);
 		_exprs.put(ctx, list);
 	}
 
-	public void enterEveryRule(ParserRuleContext ctx) {}
-	public void exitEveryRule(ParserRuleContext ctx) {}
 	public void visitErrorNode(ErrorNode node) {
 		throw new RuntimeException("Parsing error");
 	}
-	public void visitTerminal(TerminalNode node) {}
+	// Not used (for now) inherited methods - START
+	public void enterProgram(ProgramContext ctx) {}
+	public void enterStaging(DatalogParser.StagingContext ctx) {}
+	public void exitStaging(DatalogParser.StagingContext ctx) {}
+	public void enterComp(DatalogParser.CompContext ctx) {}
+	public void exitComp(DatalogParser.CompContext ctx) {}
+	public void enterInit_(DatalogParser.Init_Context ctx) {}
+	public void exitInit_(DatalogParser.Init_Context ctx) {}
+	public void enterPropagate(DatalogParser.PropagateContext ctx) {}
+	public void exitPropagate(DatalogParser.PropagateContext ctx) {}
+	public void enterPredicateNameList(DatalogParser.PredicateNameListContext ctx) {}
+	public void exitPredicateNameList(DatalogParser.PredicateNameListContext ctx) {}
+	public void enterDatalog(DatalogParser.DatalogContext ctx) {}
+	public void exitDatalog(DatalogParser.DatalogContext ctx) {}
+	public void enterConstraint(ConstraintContext ctx) {}
+	public void exitConstraint(ConstraintContext ctx) {}
+	public void enterRule_(Rule_Context ctx) {}
+	public void enterPredicate(PredicateContext ctx) {}
+	public void enterRuleBody(RuleBodyContext ctx) {}
+	public void enterAggregation(AggregationContext ctx) {}
+	public void enterRefmode(RefmodeContext ctx) {}
+	public void enterPredicateName(PredicateNameContext ctx) {}
+	public void enterConstant(ConstantContext ctx) {}
+	public void enterExpr(ExprContext ctx) {}
+	public void enterComparison(ComparisonContext ctx) {}
+	public void enterPredicateList(PredicateListContext ctx) {}
+	public void enterExprList(ExprListContext ctx) {}
 
+	public void enterEveryRule(ParserRuleContext ctx) {}
+	public void exitEveryRule(ParserRuleContext ctx) {}
+	public void visitTerminal(TerminalNode node) {}
+	// Not used (for now) inherited methods - END
 
 	static <T> T get(ParseTreeProperty<T> values, ParseTree node) {
 		T t = values.get(node);
@@ -329,6 +318,13 @@ class DatalogListenerImpl implements DatalogListener {
 				return ((TerminalNode)ctx.getChild(i)).getText();
 		return null;
 	}
+	static boolean hasToken(ParserRuleContext ctx, String token) {
+		for (int i = 0; i < ctx.getChildCount(); i++)
+			if (ctx.getChild(i) instanceof TerminalNode &&
+				((TerminalNode)ctx.getChild(i)).getText().equals(token))
+				return true;
+		return false;
+	}
 	static boolean isPrimitive(String name) {
 		switch (name) {
 			case "uint":
@@ -342,18 +338,4 @@ class DatalogListenerImpl implements DatalogListener {
 				return false;
 		}
 	}
-	static String normalizePrimitive(String name, TerminalNode capacityNode) {
-		switch (name) {
-			case "uint":
-			case "int":
-			case "float":
-			case "decimal":
-				return name + (capacityNode == null ? "[64]" : capacityNode.getText());
-			case "boolean":
-			case "string":
-			default:
-				return name;
-		}
-	}
 }
-

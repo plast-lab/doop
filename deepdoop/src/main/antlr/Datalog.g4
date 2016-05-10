@@ -5,7 +5,29 @@ package deepdoop.datalog;
 }
 
 program
-	: (declaration | constraint | rule_ /*| directive*/)* ;
+	: (staging | datalog)* ;
+
+
+staging
+	: comp | init_ | propagate ;
+
+comp
+	: COMP IDENTIFIER '{' datalog '}' ;
+
+init_
+	: INIT IDENTIFIER '=' IDENTIFIER ;
+
+propagate
+	: PROPAGATE IDENTIFIER '.' '{' (ALL | predicateNameList) '}' TO (IDENTIFIER | GLOBAL) ;
+
+predicateNameList
+	: predicateName
+	| predicateNameList ',' predicateName
+	;
+
+
+datalog
+	: declaration | constraint | rule_ ;
 
 declaration
 	: predicate '->' predicateList? '.'
@@ -20,20 +42,17 @@ rule_
 	| predicate '<-' aggregation '.'
 	;
 
-//directive
-//	: predicateName '(' '`' predicateName ')' '.'
-//	| predicateName '[' ('`' predicateName)? ']' '=' constant '.'
-//	;
 
 predicate
-	//: (ADD | RM)? predicateName ('@' AT_SUFFIX)? CAPACITY? '(' exprList? ')'
-	: (ADD | RM)? predicateName ('@' AT_SUFFIX)? '(' exprList? ')'
-	| (ADD | RM | UP)? functionalHead '=' expr
-	| (ADD | RM)? refmode
-	| predicateName CAPACITY '(' IDENTIFIER ')'
-	| predicateName '(' BACKTICK predicateName ')'
-	| predicateName '[' BACKTICK predicateName ']' '=' constant
+	: predicateName (CAPACITY | AT_STAGE)? '(' (exprList | BACKTICK predicateName)? ')'
+	| predicateName (CAPACITY | AT_STAGE)? '[' (exprList | BACKTICK predicateName)? ']' '=' expr
+	| refmode
+//	| predicateName '(' BACKTICK predicateName ')'
+//	| predicateName '[' BACKTICK predicateName ']' '=' constant
 	;
+
+refmode
+	: predicateName AT_STAGE? '(' IDENTIFIER ':' expr ')' ;
 
 ruleBody
 	: predicate
@@ -46,12 +65,6 @@ ruleBody
 
 aggregation
 	: AGG '<<' IDENTIFIER '=' predicate '>>' ruleBody ;
-
-refmode
-	: predicateName ('@' AT_SUFFIX)? '(' IDENTIFIER ':' expr ')' ;
-
-functionalHead
-	: predicateName ('@' AT_SUFFIX)? '[' exprList? ']' ;
 
 predicateName
 	: '$'? IDENTIFIER
@@ -67,7 +80,7 @@ constant
 
 expr
 	: IDENTIFIER
-	| functionalHead
+	| predicateName AT_STAGE? '[' exprList? ']'
 	| constant
 	| expr ('+' | '-' | '*' | '/') expr
 	| '(' expr ')'
@@ -90,29 +103,41 @@ exprList
 
 // Lexer
 
-AT_SUFFIX
-	: 'init'
-	| 'initial'
-	| 'prev'
-	| 'previous'
-	| 'past'
-	;
+AGG
+	: 'agg' ;
 
-CAPACITY
-	: '[' ('32' | '64' | '128') ']' ;
+ALL
+	: '*' ;
+
+AT_STAGE
+	: '@init'
+	| '@initial'
+	| '@prev'
+	| '@previous'
+	| '@past'
+	;
 
 BACKTICK
 	: '`' ;
 
-ADD
-	: '+' ;
-RM
-	: '-' ;
-UP
-	: '^' ;
+CAPACITY
+	: '[' ('32' | '64' | '128') ']' ;
 
-AGG
-	: 'agg' ;
+COMP
+	: '.comp' ;
+
+INIT
+	: '.init' ;
+
+GLOBAL
+	: '.global' ;
+
+PROPAGATE
+	: '.propagate' ;
+
+TO
+	: 'to' ;
+
 
 INTEGER
 	: [0-9]+

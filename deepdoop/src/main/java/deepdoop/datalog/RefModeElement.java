@@ -4,8 +4,8 @@ import java.util.Arrays;
 
 public class RefModeElement extends PredicateElement {
 
-	public RefModeElement(String name, VariableExpr entity, IExpr primitive) {
-		super(name, Arrays.asList(entity, primitive));
+	public RefModeElement(String name, String stage, VariableExpr entity, IExpr primitive) {
+		super(name, stage, Arrays.asList(entity, primitive));
 	}
 
 	@Override

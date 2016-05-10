@@ -5,10 +5,12 @@ import java.util.List;
 
 public class RefMode extends Predicate {
 	Entity _entity;
+	Primitive _primitive;
 
-	public RefMode(String name, String type, Entity entity) {
-		super(name, Arrays.asList(entity._name, type));
+	public RefMode(String name, Entity entity, Primitive primitive) {
+		super(name, null, Arrays.asList(entity._name, primitive._name));
 		_entity = entity;
+		_primitive = primitive;
 	}
 
 	@Override
