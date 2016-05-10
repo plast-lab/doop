@@ -5,19 +5,22 @@ import java.util.List;
 
 public class LogicalElement implements IElement {
 
-	boolean _isAND;
+	enum LogicType { AND, OR }
+
+	LogicType _logicType;
 	List<IElement> _elements;
 
-	public LogicalElement(boolean isAND, List<IElement> elements) {
-		_isAND = isAND;
+	public LogicalElement(LogicType logicType, List<IElement> elements) {
+		_logicType = logicType;
 		_elements = elements;
 	}
 
 	public void normalize() {
 		List<IElement> list = new ArrayList<>();
 		for (IElement e : _elements) {
+			System.out.println(e);
 			e.normalize();
-			if (e instanceof LogicalElement && ((LogicalElement)e)._isAND == _isAND)
+			if (e instanceof LogicalElement && ((LogicalElement)e)._logicType == _logicType)
 				list.addAll(((LogicalElement)e)._elements);
 			else
 				list.add(e);
@@ -27,7 +30,7 @@ public class LogicalElement implements IElement {
 
 	@Override
 	public String toString() {
-		StringJoiner joiner = new StringJoiner(_isAND ? ", " : "; ");
+		StringJoiner joiner = new StringJoiner(_logicType == LogicType.AND ? ", " : "; ");
 		for (IElement e : _elements) joiner.add(e.toString());
 		return joiner.toString();
 	}

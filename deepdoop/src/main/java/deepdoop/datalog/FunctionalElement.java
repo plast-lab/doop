@@ -6,8 +6,8 @@ public class FunctionalElement extends PredicateElement {
 
 	IExpr _valueExpr;
 
-	public FunctionalElement(String name, List<IExpr> keyExprs, IExpr valueExpr) {
-		super(name, keyExprs);
+	public FunctionalElement(String name, String stage, List<IExpr> keyExprs, IExpr valueExpr) {
+		super(name, stage, keyExprs);
 		_valueExpr = valueExpr;
 	}
 
