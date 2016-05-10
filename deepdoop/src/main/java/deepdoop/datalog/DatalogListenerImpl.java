@@ -15,8 +15,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 class DatalogListenerImpl implements DatalogListener {
 
-	enum ClauseType { DECLARATION, CONSTRAINT, RULE, UNDEF }
-
 	Set<Predicate>                     _predicates;
 	Set<Predicate>                     _types;
 	Set<Rule>                          _rules;
@@ -30,22 +28,21 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<IExpr>>     _exprs;
 	ParseTreeProperty<IElement>        _elem;
 	ParseTreeProperty<List<IElement>>  _elems;
-	ClauseType                         _currentClause;
+	boolean                            _inDecl;
 
 	public DatalogListenerImpl() {
-		_predicates    = new HashSet<>();
-		_types         = new HashSet<>();
-		_rules         = new HashSet<>();
+		_predicates = new HashSet<>();
+		_types      = new HashSet<>();
+		_rules      = new HashSet<>();
 
-		_name          = new ParseTreeProperty<>();
-		_names         = new ParseTreeProperty<>();
-		_pred          = new ParseTreeProperty<>();
-		_preds         = new ParseTreeProperty<>();
-		_expr          = new ParseTreeProperty<>();
-		_exprs         = new ParseTreeProperty<>();
-		_elem          = new ParseTreeProperty<>();
-		_elems         = new ParseTreeProperty<>();
-		_currentClause = ClauseType.UNDEF;
+		_name       = new ParseTreeProperty<>();
+		_names      = new ParseTreeProperty<>();
+		_pred       = new ParseTreeProperty<>();
+		_preds      = new ParseTreeProperty<>();
+		_expr       = new ParseTreeProperty<>();
+		_exprs      = new ParseTreeProperty<>();
+		_elem       = new ParseTreeProperty<>();
+		_elems      = new ParseTreeProperty<>();
 	}
 
 	public Program getProgram() {
@@ -56,10 +53,10 @@ class DatalogListenerImpl implements DatalogListener {
 		_program = new Program(_predicates, _types, _rules);
 	}
 	public void enterDeclaration(DeclarationContext ctx) {
-		_currentClause = ClauseType.DECLARATION;
+		_inDecl = true;
 	}
 	public void exitDeclaration(DeclarationContext ctx) {
-		_currentClause = ClauseType.UNDEF;
+		_inDecl = false;
 
 		if (ctx.refmode() == null) {
 			Predicate pred = get(_pred, ctx.predicate());
@@ -96,7 +93,7 @@ class DatalogListenerImpl implements DatalogListener {
 		}
 	}
 	public void exitPredicate(PredicateContext ctx) {
-		if (_currentClause == ClauseType.DECLARATION) {
+		if (_inDecl) {
 			assert ctx.AT_STAGE() == null;
 
 			if (ctx.predicateName(0) != null) {
@@ -178,7 +175,6 @@ class DatalogListenerImpl implements DatalogListener {
 		_name.put(ctx, name);
 	}
 	public void exitConstant(ConstantContext ctx) {
-		ConstantExpr e;
 		if (ctx.INTEGER() != null) {
 			String str = ctx.INTEGER().getText();
 			int base = 10;
@@ -189,13 +185,11 @@ class DatalogListenerImpl implements DatalogListener {
 				str = str.substring(1);
 				base = 8;
 			}
-			e = new ConstantExpr(Integer.parseInt(str, base));
+			_expr.put(ctx, new ConstantExpr(Integer.parseInt(str, base)));
 		}
-		else if (ctx.REAL() != null) e = new ConstantExpr(Double.parseDouble(ctx.REAL().getText()));
-		else if (ctx.BOOLEAN() != null) e = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText()));
-		else if (ctx.STRING() != null) e = new ConstantExpr(ctx.STRING().getText());
-
-		_expr.put(ctx, e);
+		else if (ctx.REAL() != null)    _expr.put(ctx, new ConstantExpr(Double.parseDouble(ctx.REAL().getText())));
+		else if (ctx.BOOLEAN() != null) _expr.put(ctx, new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText())));
+		else if (ctx.STRING() != null)  _expr.put(ctx, new ConstantExpr(ctx.STRING().getText()));
 	}
 	public void exitExpr(ExprContext ctx) {
 		IExpr e;
@@ -246,7 +240,7 @@ class DatalogListenerImpl implements DatalogListener {
 		_elem.put(ctx, new ComparisonElement(left, op, right));
 	}
 	public void exitPredicateList(PredicateListContext ctx) {
-		if (_currentClause == ClauseType.DECLARATION) {
+		if (_inDecl) {
 			Predicate pred = get(_pred, ctx.predicate());
 			List<Predicate> list = get(_preds, ctx.predicateList(), pred);
 			_preds.put(ctx, list);
