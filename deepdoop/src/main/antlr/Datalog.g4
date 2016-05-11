@@ -5,11 +5,8 @@ package deepdoop.datalog;
 }
 
 program
-	: (staging | datalog)* ;
+	: (comp | init_ | propagate | datalog)* ;
 
-
-staging
-	: comp | init_ | propagate ;
 
 comp
 	: COMP IDENTIFIER '{' datalog '}' ;
