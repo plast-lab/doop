@@ -20,6 +20,7 @@ class DatalogListenerImpl implements DatalogListener {
 
 	Program                            _program;
 	Map<String, Scope>                 _scopes;
+	Map<String, String>                _superComp;
 	Map<String, String>                _inits;
 	Map<String, Propagation>           _propFrom;
 	Map<String, Propagation>           _propTo;
@@ -33,23 +34,24 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<IElement>        _elem;
 	ParseTreeProperty<List<IElement>>  _elems;
 
-	boolean                               _inDecl;
-	String                                _currScope;
+	boolean                            _inDecl;
+	String                             _currScope;
 	static final String GLOBAL_SCOPE = ".global";
 
 	public DatalogListenerImpl() {
-		_scopes   = new HashMap<>();
-		_inits    = new HashMap<>();
-		_propFrom = new HashMap<>();
-		_propTo   = new HashMap<>();
-		_name     = new ParseTreeProperty<>();
-		_names    = new ParseTreeProperty<>();
-		_pred     = new ParseTreeProperty<>();
-		_preds    = new ParseTreeProperty<>();
-		_expr     = new ParseTreeProperty<>();
-		_exprs    = new ParseTreeProperty<>();
-		_elem     = new ParseTreeProperty<>();
-		_elems    = new ParseTreeProperty<>();
+		_scopes    = new HashMap<>();
+		_superComp = new HashMap<>();
+		_inits     = new HashMap<>();
+		_propFrom  = new HashMap<>();
+		_propTo    = new HashMap<>();
+		_name      = new ParseTreeProperty<>();
+		_names     = new ParseTreeProperty<>();
+		_pred      = new ParseTreeProperty<>();
+		_preds     = new ParseTreeProperty<>();
+		_expr      = new ParseTreeProperty<>();
+		_exprs     = new ParseTreeProperty<>();
+		_elem      = new ParseTreeProperty<>();
+		_elems     = new ParseTreeProperty<>();
 	}
 
 	public Program getProgram() {
@@ -74,8 +76,10 @@ class DatalogListenerImpl implements DatalogListener {
 		_program = new Program(preds, types, rules);
 	}
 	public void enterComp(CompContext ctx) {
-		_currScope = ctx.IDENTIFIER().getText();
+		_currScope = ctx.IDENTIFIER(0).getText();
 		_scopes.put(_currScope, new Scope());
+		if (ctx.IDENTIFIER(1) != null)
+			_superComp.put(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
 	}
 	public void exitComp(CompContext ctx) {
 		_currScope = GLOBAL_SCOPE;
