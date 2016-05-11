@@ -5,12 +5,12 @@ import java.util.List;
 public class Functional extends Predicate {
 	String _valueType;
 
-	public Functional(String name, String capacity, List<String> keyTypes, String valueType) {
-		super(name, capacity, keyTypes);
+	public Functional(String name, List<String> keyTypes, String valueType) {
+		super(name, keyTypes);
 		_valueType = valueType;
 	}
-	public Functional(String name, String capacity) {
-		super(name, capacity);
+	public Functional(String name) {
+		super(name);
 	}
 
 	@Override
@@ -23,6 +23,6 @@ public class Functional extends Predicate {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(" x ");
 		for (String s : _types) joiner.add(s);
-		return _name + "[" + _capacity + "]/" + _types.size() + " (" + joiner + " -> " + _valueType + ")";
+		return _name + "/" + _types.size() + " (" + joiner + " -> " + _valueType + ")";
 	}
 }

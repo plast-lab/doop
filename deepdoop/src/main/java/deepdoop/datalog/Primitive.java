@@ -5,8 +5,16 @@ import java.util.List;
 
 public class Primitive extends Predicate {
 
+	int _capacity;
+
 	public Primitive(String name, String capacity) {
-		super(name, normalize(name, capacity), Arrays.asList(name));
+		super(name, Arrays.asList(name));
+		_capacity = normalize(name, capacity);
+	}
+
+	@Override
+	public String getName() {
+		return _name + (_capacity != 0 ? "[" + _capacity + "]" : "");
 	}
 
 	@Override
@@ -14,18 +22,19 @@ public class Primitive extends Predicate {
 
 	@Override
 	public String toString() {
-		return _name + "[" + _capacity + "]/1";
+		return _name + (_capacity != 0 ? "[" + _capacity + "]" : "") + "/1";
 	}
 
-	static String normalize(String name, String capacity) {
+	static int normalize(String name, String capacity) {
 		switch (name) {
 			case "uint":
 			case "int":
 			case "float":
 			case "decimal":
-				return capacity == null ? "[64]" : capacity;
+				// capacity as a string is wrapped in square brackets
+				return capacity == null ? 64 : Integer.parseInt(capacity.substring(1).substring(0, capacity.length()-2));
 			default:
-				return null;
+				return 0;
 		}
 	}
 }

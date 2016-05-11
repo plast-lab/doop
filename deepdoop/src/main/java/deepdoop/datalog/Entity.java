@@ -6,7 +6,7 @@ import java.util.List;
 public class Entity extends Predicate {
 
 	public Entity(String name) {
-		super(name, null, Arrays.asList(name));
+		super(name, Arrays.asList(name));
 	}
 
 	@Override
