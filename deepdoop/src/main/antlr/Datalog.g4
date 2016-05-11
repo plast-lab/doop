@@ -9,7 +9,7 @@ program
 
 
 comp
-	: COMP IDENTIFIER '{' datalog '}' ;
+	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog '}' ;
 
 init_
 	: INIT IDENTIFIER '=' IDENTIFIER ;
