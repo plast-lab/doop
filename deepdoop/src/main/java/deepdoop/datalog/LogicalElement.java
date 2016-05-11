@@ -18,7 +18,6 @@ public class LogicalElement implements IElement {
 	public void normalize() {
 		List<IElement> list = new ArrayList<>();
 		for (IElement e : _elements) {
-			System.out.println(e);
 			e.normalize();
 			if (e instanceof LogicalElement && ((LogicalElement)e)._logicType == _logicType)
 				list.addAll(((LogicalElement)e)._elements);

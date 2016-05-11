@@ -142,15 +142,15 @@ class DatalogListenerImpl implements DatalogListener {
 
 			if (ctx.predicateName(0) != null) {
 				String name = get(_name, ctx.predicateName(0));
-				String capacity = ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText();
 				if (hasToken(ctx, "(")) {
+					String capacity = ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText();
 					if (isPrimitive(name))
 						_pred.put(ctx, new Primitive(name, capacity));
 					else
-						_pred.put(ctx, new Predicate(name, capacity));
+						_pred.put(ctx, new Predicate(name));
 				}
 				else if (hasToken(ctx, "[")) {
-					_pred.put(ctx, new Functional(name, capacity));
+					_pred.put(ctx, new Functional(name));
 				}
 			}
 			// NOTE: Refmode declarations have separate handling in grammar

@@ -42,7 +42,7 @@ rule_
 
 predicate
 	: predicateName (CAPACITY | AT_STAGE)? '(' (exprList | BACKTICK predicateName)? ')'
-	| predicateName (CAPACITY | AT_STAGE)? '[' (exprList | BACKTICK predicateName)? ']' '=' expr
+	| predicateName             AT_STAGE?  '[' (exprList | BACKTICK predicateName)? ']' '=' expr
 	| refmode
 //	| predicateName '(' BACKTICK predicateName ')'
 //	| predicateName '[' BACKTICK predicateName ']' '=' constant

@@ -8,7 +8,7 @@ public class RefMode extends Predicate {
 	Primitive _primitive;
 
 	public RefMode(String name, Entity entity, Primitive primitive) {
-		super(name, null, Arrays.asList(entity._name, primitive._name));
+		super(name, Arrays.asList(entity._name, primitive._name));
 		_entity = entity;
 		_primitive = primitive;
 	}
