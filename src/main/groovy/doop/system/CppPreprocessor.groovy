@@ -42,9 +42,9 @@ class CppPreprocessor {
     /**
      * Preprocess input file and put contents *in the beginning* of the output file.
      */
-    static void preprocessAtStart(Analysis analysis, String input, String output) {
+    static void preprocessAtStart(Analysis analysis, String input, String output, String... includes) {
         def tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
-        preprocess(analysis, output, tmpFile.getCanonicalPath(), input)
+        preprocess(analysis, output, tmpFile.getCanonicalPath(), (includes + [input]) as String[])
         FileUtils.copyFile(tmpFile, new File(output))
         FileUtils.deleteQuietly(tmpFile)
     }
