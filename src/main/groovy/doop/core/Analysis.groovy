@@ -425,7 +425,7 @@ import org.apache.commons.logging.LogFactory
             refine()
 
         preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
-        preprocessAtStart(this, "${outDir}/addons.logic", "${outDir}/${name}.logic")
+        preprocessAtStart(this, "${outDir}/addons.logic", "${outDir}/${name}.logic", macros)
 
         lbScript
             .commit()
