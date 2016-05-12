@@ -1,0 +1,30 @@
+
+P(x) -> string(x).
+Q(x, y) -> string(x), int(y).
+
+Q(x, y) <- P(x), y = 10.
+Q("hello", 0).
+
+.comp Base {
+  P1(x) <- P(x).
+}
+
+.comp Foo : Base {
+  Z(y) <- Q(_, y).
+  W(x) <- Z@past(x).
+}
+
+
+.init S1 = Base
+.init S2 = Foo
+.init S3 = Foo
+.init S4 = Foo
+
+.propagate S2 . { * } to S3
+.propagate S3 . { W, Q } to S4
+.propagate S4 . { * } to .global
+
+
+Pred(x) <- W(x).
+
+S2:Z@past(x) <- S1:P1(x).
