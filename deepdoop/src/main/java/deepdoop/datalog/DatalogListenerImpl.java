@@ -18,13 +18,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 class DatalogListenerImpl implements DatalogListener {
 
-	Program                            _program;
-	Map<String, Scope>                 _scopes;
-	Map<String, String>                _superComp;
-	Map<String, String>                _inits;
-	Map<String, Propagation>           _propFrom;
-	Map<String, Propagation>           _propTo;
-
 	ParseTreeProperty<String>          _name;
 	ParseTreeProperty<List<String>>    _names;
 	ParseTreeProperty<Predicate>       _pred;
@@ -35,65 +28,46 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<IElement>>  _elems;
 
 	boolean                            _inDecl;
-	String                             _currScope;
-	static final String GLOBAL_SCOPE = ".global";
+	Component                          _globalComp;
+	Component                          _currComp;
+	Program                            _program;
 
 	public DatalogListenerImpl() {
-		_scopes    = new HashMap<>();
-		_superComp = new HashMap<>();
-		_inits     = new HashMap<>();
-		_propFrom  = new HashMap<>();
-		_propTo    = new HashMap<>();
-		_name      = new ParseTreeProperty<>();
-		_names     = new ParseTreeProperty<>();
-		_pred      = new ParseTreeProperty<>();
-		_preds     = new ParseTreeProperty<>();
-		_expr      = new ParseTreeProperty<>();
-		_exprs     = new ParseTreeProperty<>();
-		_elem      = new ParseTreeProperty<>();
-		_elems     = new ParseTreeProperty<>();
+		_name       = new ParseTreeProperty<>();
+		_names      = new ParseTreeProperty<>();
+		_pred       = new ParseTreeProperty<>();
+		_preds      = new ParseTreeProperty<>();
+		_expr       = new ParseTreeProperty<>();
+		_exprs      = new ParseTreeProperty<>();
+		_elem       = new ParseTreeProperty<>();
+		_elems      = new ParseTreeProperty<>();
+		_globalComp = new Component(Component.GLOBAL_COMP, null);
+		_currComp   = _globalComp;
+		_program    = new Program();
 	}
 
 	public Program getProgram() {
 		return _program;
 	}
 
-	public void enterProgram(ProgramContext ctx) {
-		_currScope = GLOBAL_SCOPE;
-		_scopes.put(_currScope, new Scope());
-	}
 	public void exitProgram(ProgramContext ctx) {
-		Set<Predicate> preds = new HashSet<>();
-		Set<Predicate> types = new HashSet<>();
-		Set<Rule>      rules = new HashSet<>();
-		for (Entry<String, Scope> entry : _scopes.entrySet()) {
-			if (entry.getKey().equals(GLOBAL_SCOPE)) {
-				preds.addAll(entry.getValue().preds);
-				types.addAll(entry.getValue().types);
-				rules.addAll(entry.getValue().rules);
-			}
-		}
-		_program = new Program(preds, types, rules);
+		_program.comp(_globalComp);
 	}
 	public void enterComp(CompContext ctx) {
-		_currScope = ctx.IDENTIFIER(0).getText();
-		_scopes.put(_currScope, new Scope());
-		if (ctx.IDENTIFIER(1) != null)
-			_superComp.put(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
+		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
-		_currScope = GLOBAL_SCOPE;
+		_program.comp(_currComp);
+		_currComp = _globalComp;
 	}
 	public void exitInit_(Init_Context ctx) {
-		_inits.put(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
+		_program.init(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPropagate(PropagateContext ctx) {
-		Set<String> preds = (ctx.ALL() != null ?
-				new HashSet<String>() :
-				new HashSet<String>(get(_names, ctx.predicateNameList())));
-		Propagation prop = new Propagation(ctx.IDENTIFIER(0).getText(), preds, ctx.IDENTIFIER(1).getText());
-		_propFrom.put(prop.fromComp, prop);
-		_propTo.put(prop.toComp, prop);
+		_program.propagate(
+				ctx.IDENTIFIER(0).getText(),
+				ctx.ALL() != null ? new HashSet<String>() : new HashSet<String>(get(_names, ctx.predicateNameList())),
+				ctx.GLOBAL() != null ? Component.GLOBAL_COMP : ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPredicateNameList(PredicateNameListContext ctx) {
 		String predName = get(_name, ctx.predicateName());
@@ -114,18 +88,18 @@ class DatalogListenerImpl implements DatalogListener {
 				for (Predicate p : preds)
 					types.add(p.getName());
 				pred.setTypes(types);
-				_scopes.get(_currScope).preds.add(pred);
+				_currComp.preds.add(pred);
 			}
 			else {
-				_scopes.get(_currScope).types.add(new Entity(pred.getName()));
+				_currComp.types.add(new Entity(pred.getName()));
 			}
 		}
 		else {
 			Entity ent = new Entity(get(_name, ctx.predicateName()));
 			Primitive primitive = (Primitive) get(_pred, ctx.predicate());
-			_scopes.get(_currScope).types.add(ent);
-			_scopes.get(_currScope).types.add(primitive);
-			_scopes.get(_currScope).types.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
+			_currComp.types.add(ent);
+			_currComp.types.add(primitive);
+			_currComp.types.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
 		}
 	}
 	public void exitRule_(Rule_Context ctx) {
@@ -133,11 +107,11 @@ class DatalogListenerImpl implements DatalogListener {
 			LogicalElement head = new LogicalElement(LogicType.AND, get(_elems, ctx.predicateList()));
 			IElement body = get(_elem, ctx.ruleBody());
 			if (body != null) body.normalize();
-			_scopes.get(_currScope).rules.add(new Rule(head, body));
+			_currComp.rules.add(new Rule(head, body));
 		} else {
 			IElement head = get(_elem, ctx.predicate());
 			AggregationElement aggregation = (AggregationElement) get(_elem, ctx.aggregation());
-			_scopes.get(_currScope).rules.add(new Rule(head, aggregation));
+			_currComp.rules.add(new Rule(head, aggregation));
 		}
 	}
 	public void exitPredicate(PredicateContext ctx) {
@@ -308,6 +282,7 @@ class DatalogListenerImpl implements DatalogListener {
 		throw new RuntimeException("Parsing error");
 	}
 	// Not used (for now) inherited methods - START
+	public void enterProgram(ProgramContext ctx) {}
 	public void enterInit_(Init_Context ctx) {}
 	public void enterPropagate(PropagateContext ctx) {}
 	public void enterPredicateNameList(PredicateNameListContext ctx) {}
@@ -371,47 +346,5 @@ class DatalogListenerImpl implements DatalogListener {
 			default:
 				return false;
 		}
-	}
-}
-
-
-class Scope {
-
-	Set<Predicate> preds;
-	Set<Predicate> types;
-	Set<Rule>      rules;
-
-	Scope() {
-		preds = new HashSet<>();
-		types = new HashSet<>();
-		rules = new HashSet<>();
-	}
-}
-
-class Propagation {
-
-	String      fromComp;
-	Set<String> preds;
-	String      toComp;
-
-	Propagation(String fromComp, Set<String> preds, String toComp) {
-		this.fromComp = fromComp;
-		this.preds = preds;
-		this.toComp = toComp;
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof Propagation))
-			return false;
-		Propagation p = (Propagation) o;
-		return
-			fromComp.equals(p.fromComp) &&
-			preds.equals(p.preds) &&
-			toComp.equals(p.toComp);
-	}
-	@Override
-	public int hashCode() {
-		return (int) fromComp.hashCode() * preds.hashCode() * toComp.hashCode();
 	}
 }

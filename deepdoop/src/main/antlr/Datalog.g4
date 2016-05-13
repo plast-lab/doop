@@ -9,7 +9,7 @@ program
 
 
 comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog '}' ;
+	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ;
 
 init_
 	: INIT IDENTIFIER '=' IDENTIFIER ;
@@ -44,6 +44,7 @@ predicate
 	: predicateName (CAPACITY | AT_STAGE)? '(' (exprList | BACKTICK predicateName)? ')'
 	| predicateName             AT_STAGE?  '[' (exprList | BACKTICK predicateName)? ']' '=' expr
 	| refmode
+// TODO handle those in Listener
 //	| predicateName '(' BACKTICK predicateName ')'
 //	| predicateName '[' BACKTICK predicateName ']' '=' constant
 	;
