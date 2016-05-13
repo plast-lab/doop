@@ -18,7 +18,7 @@ public class Main {
 
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program());
 
-			System.out.println(listener.getProgram());
+			System.out.println(listener.getProgram().flatten());
 
 		} catch (IOException e) {
 			e.printStackTrace();
