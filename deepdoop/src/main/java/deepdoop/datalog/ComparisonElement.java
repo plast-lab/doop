@@ -18,18 +18,23 @@ public class ComparisonElement implements IElement {
 		}
 	}
 
-	IExpr _left;
+	IExpr    _left;
 	Operator _op;
-	IExpr _right;
+	IExpr    _right;
 
 	public ComparisonElement(IExpr left, Operator op, IExpr right) {
-		_left = left;
-		_op = op;
+		_left  = left;
+		_op    = op;
 		_right = right;
 	}
 
 	@Override
-	public void normalize() {}
+	public void flatten() {}
+
+	@Override
+	public IElement init(String id) {
+		return new ComparisonElement(_left.init(id), _op, _right.init(id));
+	}
 
 	@Override
 	public String toString() {

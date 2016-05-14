@@ -1,6 +1,5 @@
 package deepdoop.datalog;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class Primitive extends Predicate {
@@ -8,8 +7,14 @@ public class Primitive extends Predicate {
 	int _capacity;
 
 	public Primitive(String name, String capacity) {
-		super(name, Arrays.asList(name));
+		super(name);
 		_capacity = normalize(name, capacity);
+	}
+
+	// There is no notion of initializing a primitive type
+	@Override
+	public Predicate init(String id) {
+		return this;
 	}
 
 	@Override
@@ -18,7 +23,7 @@ public class Primitive extends Predicate {
 	}
 
 	@Override
-	public void setTypes(List<String> types) {}
+	public void setTypes(List<Predicate> types) {}
 
 	@Override
 	public String toString() {

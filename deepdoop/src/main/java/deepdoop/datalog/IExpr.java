@@ -1,3 +1,5 @@
 package deepdoop.datalog;
 
-interface IExpr {}
+interface IExpr {
+	IExpr init(String id);
+}

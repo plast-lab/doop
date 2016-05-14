@@ -2,6 +2,7 @@ package deepdoop.datalog;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class Program {
@@ -33,18 +34,26 @@ public class Program {
 	}
 
 	public Component flatten() {
-		return null;
+		Component flat = new Component(Component.GLOBAL_COMP, null);
+		Component global = _comps.get(Component.GLOBAL_COMP);
+		flat.preds.addAll(global.preds);
+		flat.types.addAll(global.types);
+		flat.rules.addAll(global.rules);
+
+		for (Entry<String, String> entry : _inits.entrySet()) {
+			String id = entry.getKey();
+			String comp = entry.getValue();
+			Component c = _comps.get(comp).init(id, _comps);
+			flat.preds.addAll(c.preds);
+			flat.types.addAll(c.types);
+			flat.rules.addAll(c.rules);
+		}
+		return flat;
 	}
 
 	@Override
 	public String toString() {
-		return null;
-		//StringBuilder builder = new StringBuilder();
-		//for (Predicate p : _predicates) builder.append(p + "\n");
-		//for (Predicate p : _types) builder.append(p + "\n");
-		//builder.append("\n");
-		//for (Rule r : _rules) builder.append(r + "\n");
-		//return builder.toString();
+		return flatten().toString();
 	}
 }
 

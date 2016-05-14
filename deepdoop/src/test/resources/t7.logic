@@ -7,9 +7,11 @@ Q("hello", 0).
 
 .comp Base {
   P1(x) <- P(x).
+  P1(x) -> string(x).
 }
 
 .comp Foo : Base {
+  Z(y) -> int(y).
   Z(y) <- Q(_, y).
   W(x) <- Z@past(x).
 }

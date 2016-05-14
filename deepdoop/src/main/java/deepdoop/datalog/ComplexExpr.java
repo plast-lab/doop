@@ -17,24 +17,30 @@ public class ComplexExpr implements IExpr {
 		}
 	}
 
-	IExpr _left;
+	IExpr    _left;
 	Operator _op;
-	IExpr _right;
+	IExpr    _right;
 
-	IExpr _expr;
+	IExpr    _expr;
 
 	public ComplexExpr(IExpr left, Operator op, IExpr right) {
-		_left = left;
-		_op = op;
+		_left  = left;
+		_op    = op;
 		_right = right;
 	}
 	public ComplexExpr(IExpr expr) {
-		_expr = expr;
+		_expr  = expr;
+	}
+
+	@Override
+	public IExpr init(String id) {
+		if (_op != null) return new ComplexExpr(_left.init(id), _op, _right.init(id));
+		else             return new ComplexExpr(_expr.init(id));
 	}
 
 	@Override
 	public String toString() {
 		if (_op != null) return _left + " " + _op + " " + _right;
-		else /*if (_expr != null)*/ return "(" + _expr + ")";
+		else             return "(" + _expr + ")";
 	}
 }

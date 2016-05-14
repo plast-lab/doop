@@ -9,6 +9,11 @@ public class VariableExpr implements IExpr {
 	}
 
 	@Override
+	public IExpr init(String id) {
+		return this;
+	}
+
+	@Override
 	public String toString() {
 		return name;
 	}
