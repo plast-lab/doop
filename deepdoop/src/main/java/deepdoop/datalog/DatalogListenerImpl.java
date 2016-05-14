@@ -4,12 +4,8 @@ import static deepdoop.datalog.DatalogParser.*;
 import deepdoop.datalog.LogicalElement.LogicType;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -82,11 +78,8 @@ class DatalogListenerImpl implements DatalogListener {
 
 		if (ctx.refmode() == null) {
 			Predicate pred = get(_pred, ctx.predicate());
-			List<Predicate> preds = get(_preds, ctx.predicateList());
-			if (preds != null) {
-				List<String> types = new ArrayList<>();
-				for (Predicate p : preds)
-					types.add(p.getName());
+			List<Predicate> types = get(_preds, ctx.predicateList());
+			if (types != null) {
 				pred.setTypes(types);
 				_currComp.preds.add(pred);
 			}
@@ -106,7 +99,7 @@ class DatalogListenerImpl implements DatalogListener {
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(LogicType.AND, get(_elems, ctx.predicateList()));
 			IElement body = get(_elem, ctx.ruleBody());
-			if (body != null) body.normalize();
+			if (body != null) body.flatten();
 			_currComp.rules.add(new Rule(head, body));
 		} else {
 			IElement head = get(_elem, ctx.predicate());

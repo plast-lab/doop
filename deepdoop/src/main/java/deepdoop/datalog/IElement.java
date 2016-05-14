@@ -1,5 +1,6 @@
 package deepdoop.datalog;
 
 public interface IElement {
-	public void normalize();
+	public void flatten();
+	public IElement init(String id);
 }

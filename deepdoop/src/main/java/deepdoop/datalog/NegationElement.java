@@ -9,8 +9,13 @@ public class NegationElement implements IElement {
 	}
 
 	@Override
-	public void normalize() {
-		_element.normalize();
+	public void flatten() {
+		_element.flatten();
+	}
+
+	@Override
+	public IElement init(String id) {
+		return new NegationElement(_element.init(id));
 	}
 
 	@Override

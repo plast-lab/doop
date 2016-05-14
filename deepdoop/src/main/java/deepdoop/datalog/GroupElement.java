@@ -9,8 +9,13 @@ public class GroupElement implements IElement {
 	}
 
 	@Override
-	public void normalize() {
-		_element.normalize();
+	public void flatten() {
+		_element.flatten();
+	}
+
+	@Override
+	public IElement init(String id) {
+		return new GroupElement(_element.init(id));
 	}
 
 	@Override

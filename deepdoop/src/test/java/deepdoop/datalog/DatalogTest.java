@@ -14,8 +14,8 @@ import java.io.InputStream;
 
 public class DatalogTest {
 
-	DatalogListener _listener;
-	ParseTreeWalker _walker;
+	DatalogListenerImpl _listener;
+	ParseTreeWalker     _walker;
 
 	DatalogParser open(String filename) throws IOException {
 		return new DatalogParser(
@@ -39,7 +39,7 @@ public class DatalogTest {
 	@Before
 	public void setup() throws IOException {
 		_listener = new DatalogListenerImpl();
-		_walker = new ParseTreeWalker();
+		_walker   = new ParseTreeWalker();
 	}
 
 	@Test

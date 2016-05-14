@@ -1,16 +1,20 @@
 package deepdoop.datalog;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class Entity extends Predicate {
 
 	public Entity(String name) {
-		super(name, Arrays.asList(name));
+		super(name);
 	}
 
 	@Override
-	public void setTypes(List<String> types) {}
+	public Predicate init(String id) {
+		return new Entity(id + ":" + _name);
+	}
+
+	@Override
+	public void setTypes(List<Predicate> types) {}
 
 	@Override
 	public String toString() {
