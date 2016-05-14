@@ -2,6 +2,7 @@ package deepdoop.datalog;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class PredicateElement implements IElement {
 
@@ -14,9 +15,6 @@ public class PredicateElement implements IElement {
 		_stage = stage;
 		_exprs = exprs;
 	}
-
-	@Override
-	public void flatten() {}
 
 	@Override
 	public IElement init(String id) {

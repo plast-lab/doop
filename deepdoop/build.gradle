@@ -2,8 +2,8 @@ apply plugin: 'java'
 apply plugin: 'antlr'
 apply plugin: 'application'
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 project.group = "plast-lab"
 project.version = 1.0

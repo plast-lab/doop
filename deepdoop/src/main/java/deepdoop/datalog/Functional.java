@@ -1,6 +1,7 @@
 package deepdoop.datalog;
 
 import java.util.List;
+import java.util.StringJoiner;
 
 public class Functional extends Predicate {
 	Predicate _valueType;
