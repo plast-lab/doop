@@ -22,7 +22,7 @@ class Component {
 		this.rules     = rules;
 	}
 	public Component(String name, String superComp) {
-		this(name, superComp, new HashSet<Predicate>(), new HashSet<Predicate>(), new HashSet<Rule>());
+		this(name, superComp, new HashSet<>(), new HashSet<>(), new HashSet<>());
 	}
 
 	public Component init(String id,  Map<String, Component> allComps) {

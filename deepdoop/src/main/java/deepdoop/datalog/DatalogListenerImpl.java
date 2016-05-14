@@ -62,7 +62,7 @@ class DatalogListenerImpl implements DatalogListener {
 	public void exitPropagate(PropagateContext ctx) {
 		_program.propagate(
 				ctx.IDENTIFIER(0).getText(),
-				ctx.ALL() != null ? new HashSet<String>() : new HashSet<String>(get(_names, ctx.predicateNameList())),
+				ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())),
 				ctx.GLOBAL() != null ? Component.GLOBAL_COMP : ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPredicateNameList(PredicateNameListContext ctx) {
