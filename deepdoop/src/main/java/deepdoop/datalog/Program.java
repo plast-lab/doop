@@ -9,14 +9,12 @@ public class Program {
 
 	Map<String, Component>   _comps;
 	Map<String, String>      _inits;
-	Map<String, Propagation> _propFrom;
-	Map<String, Propagation> _propTo;
+	Map<String, Propagation> _props;
 
 	public Program() {
-		_comps     = new HashMap<>();
-		_inits     = new HashMap<>();
-		_propFrom  = new HashMap<>();
-		_propTo    = new HashMap<>();
+		_comps = new HashMap<>();
+		_inits = new HashMap<>();
+		_props = new HashMap<>();
 	}
 
 	public void comp(Component comp) {
@@ -28,26 +26,30 @@ public class Program {
 	}
 
 	public void propagate(String fromId, Set<String> preds, String toId) {
-		Propagation prop = new Propagation(fromId, preds, toId);
-		_propFrom.put(fromId, prop);
-		_propTo.put(toId, prop);
+		_props.put(fromId, new Propagation(fromId, preds, toId));
 	}
 
 	public Component flatten() {
 		Component flat = new Component(Component.GLOBAL_COMP, null);
-		Component global = _comps.get(Component.GLOBAL_COMP);
-		flat.preds.addAll(global.preds);
-		flat.types.addAll(global.types);
-		flat.rules.addAll(global.rules);
-
 		for (Entry<String, String> entry : _inits.entrySet()) {
 			String id = entry.getKey();
 			String comp = entry.getValue();
 			Component c = _comps.get(comp).init(id, _comps);
-			flat.preds.addAll(c.preds);
+			flat.atoms.addAll(c.atoms);
 			flat.types.addAll(c.types);
 			flat.rules.addAll(c.rules);
 		}
+
+		//for (Propagation prop : _props.values()) {
+		//	Component fromComp = _comps.get(prop._fromId);
+		//	Component toComp   = _comps.get(prop._toId);
+		//}
+
+		Component global = _comps.get(Component.GLOBAL_COMP);
+		flat.atoms.addAll(global.atoms);
+		flat.types.addAll(global.types);
+		flat.rules.addAll(global.rules);
+
 		return flat;
 	}
 

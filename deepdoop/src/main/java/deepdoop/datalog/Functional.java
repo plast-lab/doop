@@ -1,34 +1,50 @@
 package deepdoop.datalog;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class Functional extends Predicate {
-	Predicate _valueType;
+public class Functional implements IAtom {
 
-	public Functional(String name, List<Predicate> keyTypes, Predicate valueType) {
-		super(name, keyTypes);
+	String      _name;
+	List<IAtom> _keyTypes;
+	IAtom       _valueType;
+
+	public Functional(String name, List<IAtom> keyTypes, IAtom valueType) {
+		_name      = name;
+		_keyTypes  = keyTypes;
 		_valueType = valueType;
 	}
 	public Functional(String name) {
-		super(name);
+		this(name, null, null);
+	}
+
+	public void setTypes(List<IAtom> keyTypes, IAtom valueType) {
+		_keyTypes  = keyTypes;
+		_valueType = valueType;
 	}
 
 	@Override
-	public Predicate init(String id) {
-		return new Functional(id + ":" + _name, _types, _valueType);
+	public Functional init(String id) {
+		List<IAtom> newKeyTypes = new ArrayList<>();
+		for (IAtom t : _keyTypes) newKeyTypes.add(t.init(id));
+		return new Functional(id + ":" + _name, newKeyTypes, _valueType.init(id));
 	}
 
 	@Override
-	public void setTypes(List<Predicate> types) {
-		_valueType = types.remove(types.size() - 1);
-		_types = types;
+	public String name() {
+		return _name;
+	}
+
+	@Override
+	public int arity() {
+		return _keyTypes.size() + 1;
 	}
 
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(" x ");
-		for (Predicate t : _types) joiner.add(t.getName());
-		return _name + "/" + _types.size() + " (" + joiner + " -> " + _valueType.getName() + ")";
+		for (IAtom t : _keyTypes) joiner.add(t.name());
+		return _name + "/" + arity() + " (" + joiner + " -> " + _valueType.name() + ")";
 	}
 }

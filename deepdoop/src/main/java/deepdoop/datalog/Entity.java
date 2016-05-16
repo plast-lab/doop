@@ -1,20 +1,27 @@
 package deepdoop.datalog;
 
-import java.util.List;
+public class Entity implements IAtom {
 
-public class Entity extends Predicate {
+	String _name;
 
 	public Entity(String name) {
-		super(name);
+		_name = name;
 	}
 
 	@Override
-	public Predicate init(String id) {
+	public Entity init(String id) {
 		return new Entity(id + ":" + _name);
 	}
 
 	@Override
-	public void setTypes(List<Predicate> types) {}
+	public String name() {
+		return _name;
+	}
+
+	@Override
+	public int arity() {
+		return 1;
+	}
 
 	@Override
 	public String toString() {

@@ -1,27 +1,34 @@
 package deepdoop.datalog;
 
-import java.util.List;
+public class RefMode implements IAtom {
 
-public class RefMode extends Predicate {
+	String    _name;
 	Entity    _entity;
 	Primitive _primitive;
 
 	public RefMode(String name, Entity entity, Primitive primitive) {
-		super(name);
+		_name      = name;
 		_entity    = entity;
 		_primitive = primitive;
 	}
 
 	@Override
-	public Predicate init(String id) {
-		return new RefMode(id + ":" + _name, (Entity)_entity.init(id), (Primitive)_primitive);
+	public RefMode init(String id) {
+		return new RefMode(id + ":" + _name, _entity.init(id), _primitive);
 	}
 
 	@Override
-	public void setTypes(List<Predicate> types) {}
+	public String name() {
+		return _name;
+	}
+
+	@Override
+	public int arity() {
+		return 2;
+	}
 
 	@Override
 	public String toString() {
-		return _name + "/1 (" + _primitive.getName() + " -> " + _entity.getName() + ")";
+		return _name + "/1 (" + _primitive.name() + " -> " + _entity.name() + ")";
 	}
 }

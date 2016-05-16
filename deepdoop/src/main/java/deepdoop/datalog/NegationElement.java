@@ -9,13 +9,13 @@ public class NegationElement implements IElement {
 	}
 
 	@Override
-	public void flatten() {
-		_element.flatten();
+	public NegationElement init(String id) {
+		return new NegationElement(_element.init(id));
 	}
 
 	@Override
-	public IElement init(String id) {
-		return new NegationElement(_element.init(id));
+	public void flatten() {
+		_element.flatten();
 	}
 
 	@Override

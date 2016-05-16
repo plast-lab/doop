@@ -16,8 +16,8 @@ class DatalogListenerImpl implements DatalogListener {
 
 	ParseTreeProperty<String>          _name;
 	ParseTreeProperty<List<String>>    _names;
-	ParseTreeProperty<Predicate>       _pred;
-	ParseTreeProperty<List<Predicate>> _preds;
+	ParseTreeProperty<IAtom>           _atom;
+	ParseTreeProperty<List<IAtom>>     _atoms;
 	ParseTreeProperty<IExpr>           _expr;
 	ParseTreeProperty<List<IExpr>>     _exprs;
 	ParseTreeProperty<IElement>        _elem;
@@ -31,8 +31,8 @@ class DatalogListenerImpl implements DatalogListener {
 	public DatalogListenerImpl() {
 		_name       = new ParseTreeProperty<>();
 		_names      = new ParseTreeProperty<>();
-		_pred       = new ParseTreeProperty<>();
-		_preds      = new ParseTreeProperty<>();
+		_atom       = new ParseTreeProperty<>();
+		_atoms      = new ParseTreeProperty<>();
 		_expr       = new ParseTreeProperty<>();
 		_exprs      = new ParseTreeProperty<>();
 		_elem       = new ParseTreeProperty<>();
@@ -77,19 +77,19 @@ class DatalogListenerImpl implements DatalogListener {
 		_inDecl = false;
 
 		if (ctx.refmode() == null) {
-			Predicate pred = get(_pred, ctx.predicate());
-			List<Predicate> types = get(_preds, ctx.predicateList());
+			Predicate pred = (Predicate) get(_atom, ctx.predicate());
+			List<IAtom> types = get(_atoms, ctx.predicateList());
 			if (types != null) {
 				pred.setTypes(types);
-				_currComp.preds.add(pred);
+				_currComp.atoms.add(pred);
 			}
 			else {
-				_currComp.types.add(new Entity(pred.getName()));
+				_currComp.types.add(new Entity(pred.name()));
 			}
 		}
 		else {
 			Entity ent = new Entity(get(_name, ctx.predicateName()));
-			Primitive primitive = (Primitive) get(_pred, ctx.predicate());
+			Primitive primitive = (Primitive) get(_atom, ctx.predicate());
 			_currComp.types.add(ent);
 			_currComp.types.add(primitive);
 			_currComp.types.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
@@ -116,12 +116,12 @@ class DatalogListenerImpl implements DatalogListener {
 				if (hasToken(ctx, "(")) {
 					String capacity = ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText();
 					if (isPrimitive(name))
-						_pred.put(ctx, new Primitive(name, capacity));
+						_atom.put(ctx, new Primitive(name, capacity));
 					else
-						_pred.put(ctx, new Predicate(name));
+						_atom.put(ctx, new Predicate(name));
 				}
 				else if (hasToken(ctx, "[")) {
-					_pred.put(ctx, new Functional(name));
+					_atom.put(ctx, new Functional(name));
 				}
 			}
 			// NOTE: Refmode declarations have separate handling in grammar
@@ -256,9 +256,9 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 	public void exitPredicateList(PredicateListContext ctx) {
 		if (_inDecl) {
-			Predicate pred = get(_pred, ctx.predicate());
-			List<Predicate> list = get(_preds, ctx.predicateList(), pred);
-			_preds.put(ctx, list);
+			IAtom atom = get(_atom, ctx.predicate());
+			List<IAtom> list = get(_atoms, ctx.predicateList(), atom);
+			_atoms.put(ctx, list);
 		} else {
 			IElement elem = get(_elem, ctx.predicate());
 			List<IElement> list = get(_elems, ctx.predicateList(), elem);

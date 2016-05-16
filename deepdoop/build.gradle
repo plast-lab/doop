@@ -31,3 +31,7 @@ run {
 		args project.property("args").split()
 	}
 }
+
+compileJava {
+	options.compilerArgs << '-Xlint:unchecked'
+}
