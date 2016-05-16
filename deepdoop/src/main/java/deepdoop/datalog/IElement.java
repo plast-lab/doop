@@ -1,6 +1,5 @@
 package deepdoop.datalog;
 
-interface IElement {
+interface IElement extends IInitializable<IElement> {
 	default void flatten() {}
-	IElement init(String id);
 }

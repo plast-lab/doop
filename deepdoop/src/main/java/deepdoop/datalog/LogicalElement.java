@@ -17,6 +17,13 @@ public class LogicalElement implements IElement {
 	}
 
 	@Override
+	public LogicalElement init(String id) {
+		List<IElement> newElements = new ArrayList<>();
+		for (IElement e : _elements) newElements.add(e.init(id));
+		return new LogicalElement(_logicType, newElements);
+	}
+
+	@Override
 	public void flatten() {
 		List<IElement> list = new ArrayList<>();
 		for (IElement e : _elements) {
@@ -27,15 +34,6 @@ public class LogicalElement implements IElement {
 				list.add(e);
 		}
 		_elements = list;
-	}
-
-	@Override
-	public IElement init(String id) {
-		List<IElement> newElements = new ArrayList<>();
-		for (IElement e : _elements) {
-			newElements.add(e.init(id));
-		}
-		return new LogicalElement(_logicType, newElements);
 	}
 
 	@Override

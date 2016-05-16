@@ -13,8 +13,13 @@ public class AggregationElement implements IElement {
 	}
 
 	@Override
-	public IElement init(String id) {
-		return new AggregationElement(_variable, (PredicateElement)_predicate.init(id), _body.init(id));
+	public AggregationElement init(String id) {
+		return new AggregationElement(_variable, _predicate.init(id), _body.init(id));
+	}
+
+	@Override
+	public void flatten() {
+		_body.flatten();
 	}
 
 	@Override

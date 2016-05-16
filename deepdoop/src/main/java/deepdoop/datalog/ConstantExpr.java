@@ -25,7 +25,7 @@ public class ConstantExpr implements IExpr {
 	}
 
 	@Override
-	public IExpr init(String id) {
+	public ConstantExpr init(String id) {
 		return this;
 	}
 

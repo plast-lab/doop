@@ -6,9 +6,9 @@ import java.util.StringJoiner;
 
 public class PredicateElement implements IElement {
 
-	protected String      _name;
-	protected String      _stage;
-	protected List<IExpr> _exprs;
+	String      _name;
+	String      _stage;
+	List<IExpr> _exprs;
 
 	public PredicateElement(String name, String stage, List<IExpr> exprs) {
 		_name  = name;
@@ -17,10 +17,18 @@ public class PredicateElement implements IElement {
 	}
 
 	@Override
-	public IElement init(String id) {
+	public PredicateElement init(String id) {
 		List<IExpr> newExprs = new ArrayList<>();
 		for (IExpr e : _exprs) newExprs.add(e.init(id));
 		return new PredicateElement(id + ":" + _name, _stage, newExprs);
+	}
+
+	public String name() {
+		return _name;
+	}
+
+	public int arity() {
+		return _exprs.size();
 	}
 
 	@Override

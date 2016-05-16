@@ -1,5 +1,6 @@
 package deepdoop.datalog;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -10,53 +11,57 @@ class Component {
 
 	public final String         name;
 	public final String         superComp;
-	public final Set<Predicate> preds;
-	public final Set<Predicate> types;
+	public final Set<IAtom> atoms;
+	public final Set<IAtom> types;
 	public final Set<Rule>      rules;
 
-	public Component(String name, String superComp, Set<Predicate> preds, Set<Predicate> types, Set<Rule> rules) {
+	public Component(String name, String superComp, Set<IAtom> atoms, Set<IAtom> types, Set<Rule> rules) {
 		this.name      = name;
 		this.superComp = superComp;
-		this.preds     = preds;
+		this.atoms     = atoms;
 		this.types     = types;
 		this.rules     = rules;
+
+		//infos = new HashMap<>();
+		//for (IAtom a : atoms) {
+		//}
 	}
 	public Component(String name, String superComp) {
 		this(name, superComp, new HashSet<>(), new HashSet<>(), new HashSet<>());
 	}
 
 	public Component init(String id,  Map<String, Component> allComps) {
-		Set<Predicate> allPreds = new HashSet<>(preds);
-		Set<Predicate> allTypes = new HashSet<>(types);
-		Set<Rule>      allRules = new HashSet<>(rules);
+		Set<IAtom> allAtoms = new HashSet<>(atoms);
+		Set<IAtom> allTypes = new HashSet<>(types);
+		Set<Rule>  allRules = new HashSet<>(rules);
 		Component currComp = this;
 		while (currComp.superComp != null) {
 			currComp = allComps.get(currComp.superComp);
-			allPreds.addAll(currComp.preds);
+			allAtoms.addAll(currComp.atoms);
 			allTypes.addAll(currComp.types);
 			allRules.addAll(currComp.rules);
 		}
 
-		Set<Predicate> newPreds = new HashSet<>();
-		Set<Predicate> newTypes = new HashSet<>();
-		Set<Rule>      newRules = new HashSet<>();
-		for (Predicate p : allPreds) {
-			newPreds.add(p.init(id));
+		Set<IAtom> newAtoms = new HashSet<>();
+		Set<IAtom> newTypes = new HashSet<>();
+		Set<Rule>  newRules = new HashSet<>();
+		for (IAtom a : allAtoms) {
+			newAtoms.add(a.init(id));
 		}
-		for (Predicate p : allTypes) {
-			newTypes.add(p.init(id));
+		for (IAtom a : allTypes) {
+			newTypes.add(a.init(id));
 		}
 		for (Rule r : allRules) {
 			newRules.add(r.init(id));
 		}
-		return new Component(id, null, newPreds, newTypes, newRules);
+		return new Component(id, null, newAtoms, newTypes, newRules);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		for (Predicate p : preds) builder.append(p + "\n");
-		for (Predicate p : types) builder.append(p + "\n");
+		for (IAtom a : atoms) builder.append(a + "\n");
+		for (IAtom a : types) builder.append(a + "\n");
 		builder.append("\n");
 		for (Rule r : rules) builder.append(r + "\n");
 		return builder.toString();

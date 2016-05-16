@@ -29,7 +29,7 @@ public class ComparisonElement implements IElement {
 	}
 
 	@Override
-	public IElement init(String id) {
+	public ComparisonElement init(String id) {
 		return new ComparisonElement(_left.init(id), _op, _right.init(id));
 	}
 
