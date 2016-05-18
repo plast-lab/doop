@@ -1,6 +1,10 @@
 package deepdoop.datalog;
 
 interface IAtom extends IInitializable<IAtom> {
+
+	enum Type { PREDICATE, FUNCTIONAL, REFMODE }
+
 	String name();
-	int arity();
+	Type   type();
+	int    arity();
 }

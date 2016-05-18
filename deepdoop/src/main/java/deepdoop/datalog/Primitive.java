@@ -21,13 +21,13 @@ public class Primitive implements IAtom {
 	}
 
 	@Override
-	public int arity() {
-		return 1;
+	public IAtom.Type type() {
+		return IAtom.Type.PREDICATE;
 	}
 
 	@Override
-	public String toString() {
-		return _name;
+	public int arity() {
+		return 1;
 	}
 
 

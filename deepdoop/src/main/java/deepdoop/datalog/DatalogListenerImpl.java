@@ -37,7 +37,7 @@ class DatalogListenerImpl implements DatalogListener {
 		_exprs      = new ParseTreeProperty<>();
 		_elem       = new ParseTreeProperty<>();
 		_elems      = new ParseTreeProperty<>();
-		_globalComp = new Component(Component.GLOBAL_COMP, null);
+		_globalComp = new Component();
 		_currComp   = _globalComp;
 		_program    = new Program();
 	}
@@ -47,7 +47,7 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 
 	public void exitProgram(ProgramContext ctx) {
-		_program.comp(_globalComp);
+		_program.global(_globalComp);
 	}
 	public void enterComp(CompContext ctx) {
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
@@ -63,7 +63,7 @@ class DatalogListenerImpl implements DatalogListener {
 		_program.propagate(
 				ctx.IDENTIFIER(0).getText(),
 				ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())),
-				ctx.GLOBAL() != null ? Component.GLOBAL_COMP : ctx.IDENTIFIER(1).getText());
+				ctx.GLOBAL() != null ? null : ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPredicateNameList(PredicateNameListContext ctx) {
 		String predName = get(_name, ctx.predicateName());
@@ -77,22 +77,29 @@ class DatalogListenerImpl implements DatalogListener {
 		_inDecl = false;
 
 		if (ctx.refmode() == null) {
-			Predicate pred = (Predicate) get(_atom, ctx.predicate());
+			IAtom pred = get(_atom, ctx.predicate());
 			List<IAtom> types = get(_atoms, ctx.predicateList());
 			if (types != null) {
-				pred.setTypes(types);
+				if (pred instanceof Predicate) {
+					((Predicate)pred).setTypes(types);
+				}
+				else if (pred instanceof Functional) {
+					IAtom value = types.remove(types.size()-1);
+					((Functional)pred).setTypes(types, value);
+				}
+				else
+					throw new RuntimeException("Weird");
 				_currComp.atoms.add(pred);
 			}
 			else {
-				_currComp.types.add(new Entity(pred.name()));
+				_currComp.atoms.add(new Entity(pred.name()));
 			}
 		}
 		else {
 			Entity ent = new Entity(get(_name, ctx.predicateName()));
 			Primitive primitive = (Primitive) get(_atom, ctx.predicate());
-			_currComp.types.add(ent);
-			_currComp.types.add(primitive);
-			_currComp.types.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
+			_currComp.atoms.add(ent);
+			_currComp.atoms.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
 		}
 	}
 	public void exitRule_(Rule_Context ctx) {
@@ -130,7 +137,6 @@ class DatalogListenerImpl implements DatalogListener {
 		}
 		else {
 			assert ctx.CAPACITY() == null;
-			//assert ctx.BACKTICK() == null;
 
 			if (ctx.predicateName(0) != null) {
 				String name = get(_name, ctx.predicateName(0));

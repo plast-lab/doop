@@ -1,20 +1,27 @@
 package deepdoop.datalog;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 public class Program {
 
-	Map<String, Component>   _comps;
-	Map<String, String>      _inits;
-	Map<String, Propagation> _props;
+	Component              _global;
+	Map<String, Component> _comps;
+	Map<String, String>    _inits;
+	Set<Propagation>       _props;
 
 	public Program() {
 		_comps = new HashMap<>();
 		_inits = new HashMap<>();
-		_props = new HashMap<>();
+		_props = new HashSet<>();
+	}
+
+	public void global(Component global) {
+		_global = global;
 	}
 
 	public void comp(Component comp) {
@@ -26,36 +33,65 @@ public class Program {
 	}
 
 	public void propagate(String fromId, Set<String> preds, String toId) {
-		_props.put(fromId, new Propagation(fromId, preds, toId));
+		_props.add(new Propagation(fromId, preds, toId));
 	}
 
 	public Component flatten() {
-		Component flat = new Component(Component.GLOBAL_COMP, null);
+		Component complete = new Component();
+		complete.atoms.addAll(_global.atoms);
+		complete.rules.addAll(_global.rules);
+
+		// Flatten all components and discard non-initialized ones
+		Map<String, Component> flattened = new HashMap<>();
 		for (Entry<String, String> entry : _inits.entrySet()) {
-			String id = entry.getKey();
-			String comp = entry.getValue();
-			Component c = _comps.get(comp).init(id, _comps);
-			flat.atoms.addAll(c.atoms);
-			flat.types.addAll(c.types);
-			flat.rules.addAll(c.rules);
+			Component flatC = _comps.get(entry.getValue()).flatten(_comps);
+			flattened.put(flatC.name, flatC);
+
+			Component initC = flatC.init(entry.getKey());
+			complete.atoms.addAll(initC.atoms);
+			complete.rules.addAll(initC.rules);
+		}
+		_comps = flattened;
+
+		for (Propagation prop : _props) {
+			Component fromFlatC = _comps.get( _inits.get(prop._fromId) );
+			Map<String, IAtom> atoms = fromFlatC.getAtoms();
+
+			// Propagate all predicates
+			if (prop._preds.isEmpty()) {
+				prop._preds.addAll(atoms.keySet());
+			}
+
+			for (String pred : prop._preds) {
+				IAtom atom = atoms.get(pred);
+				List<IExpr> vars = Names.newVars(atom.arity());
+				complete.rules.add(new Rule(
+							generate(atom, vars, prop._toId, "@past"),
+							generate(atom, vars, prop._fromId, null)));
+			}
 		}
 
-		//for (Propagation prop : _props.values()) {
-		//	Component fromComp = _comps.get(prop._fromId);
-		//	Component toComp   = _comps.get(prop._toId);
-		//}
-
-		Component global = _comps.get(Component.GLOBAL_COMP);
-		flat.atoms.addAll(global.atoms);
-		flat.types.addAll(global.types);
-		flat.rules.addAll(global.rules);
-
-		return flat;
+		return complete;
 	}
 
 	@Override
 	public String toString() {
 		return flatten().toString();
+	}
+
+
+	static IElement generate(IAtom atom, List<IExpr> vars, String id, String stage) {
+		String name = Names.nameId(atom.name(), id);
+		switch (atom.type()) {
+			case PREDICATE :
+				return new PredicateElement(name, stage, vars);
+			case FUNCTIONAL:
+				VariableExpr value = (VariableExpr) vars.remove(vars.size()-1);
+				return new FunctionalElement(name, stage, vars, value);
+			case REFMODE   :
+				return new RefModeElement(name, stage, (VariableExpr) vars.get(0), vars.get(1));
+		}
+		return null;
 	}
 }
 
@@ -70,20 +106,5 @@ class Propagation {
 		_fromId = fromId;
 		_preds  = preds;
 		_toId   = toId;
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof Propagation))
-			return false;
-		Propagation p = (Propagation) o;
-		return
-			_fromId.equals(p._fromId) &&
-			_preds.equals(p._preds) &&
-			_toId.equals(p._toId);
-	}
-	@Override
-	public int hashCode() {
-		return (int) _fromId.hashCode() * _preds.hashCode() * _toId.hashCode();
 	}
 }

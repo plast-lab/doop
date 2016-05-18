@@ -20,7 +20,7 @@ public class FunctionalHeadExpr implements IExpr {
 	public IExpr init(String id) {
 		List<IExpr> newKeyExprs = new ArrayList<>();
 		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(id));
-		return new FunctionalHeadExpr(id + ":" + _name, _stage, newKeyExprs);
+		return new FunctionalHeadExpr(Names.nameId(_name, id), _stage, newKeyExprs);
 	}
 
 	@Override
