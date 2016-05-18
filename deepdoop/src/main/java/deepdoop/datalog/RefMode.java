@@ -1,5 +1,7 @@
 package deepdoop.datalog;
 
+import java.util.List;
+
 public class RefMode implements IAtom {
 
 	String    _name;
@@ -14,12 +16,17 @@ public class RefMode implements IAtom {
 
 	@Override
 	public RefMode init(String id) {
-		return new RefMode(id + ":" + _name, _entity.init(id), _primitive);
+		return new RefMode(Names.nameId(_name, id), _entity.init(id), _primitive);
 	}
 
 	@Override
 	public String name() {
 		return _name;
+	}
+
+	@Override
+	public IAtom.Type type() {
+		return IAtom.Type.REFMODE;
 	}
 
 	@Override
@@ -29,6 +36,11 @@ public class RefMode implements IAtom {
 
 	@Override
 	public String toString() {
-		return _name + "/1 (" + _primitive.name() + " -> " + _entity.name() + ")";
+		//return _name + "/1 (" + _primitive.name() + " -> " + _entity.name() + ")";
+		List<IExpr> vars = Names.newVars(2);
+		return
+			_entity.name() + "(" + vars.get(0) + "), " +
+			_name + "(" + vars.get(0) + ":" + vars.get(1) + ") -> " +
+			_primitive.name() + "(" + vars.get(1) + ").";
 	}
 }

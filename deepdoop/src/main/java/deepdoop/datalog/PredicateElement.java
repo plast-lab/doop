@@ -1,7 +1,9 @@
 package deepdoop.datalog;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
 public class PredicateElement implements IElement {
@@ -20,7 +22,12 @@ public class PredicateElement implements IElement {
 	public PredicateElement init(String id) {
 		List<IExpr> newExprs = new ArrayList<>();
 		for (IExpr e : _exprs) newExprs.add(e.init(id));
-		return new PredicateElement(id + ":" + _name, _stage, newExprs);
+		return new PredicateElement(Names.nameId(_name, id), _stage, newExprs);
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return Collections.singletonMap(_name, new BareAtom(_name, IAtom.Type.PREDICATE, arity()));
 	}
 
 	public String name() {
@@ -35,9 +42,6 @@ public class PredicateElement implements IElement {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : _exprs) joiner.add(e.toString());
-		String stageSuffix = "";
-		if (_stage != null && _stage.equals("@past")) stageSuffix = ":past";
-		else if (_stage != null) stageSuffix = _stage;
-		return _name + stageSuffix + "(" + joiner + ")";
+		return Names.nameStage(_name, _stage) + "(" + joiner + ")";
 	}
 }

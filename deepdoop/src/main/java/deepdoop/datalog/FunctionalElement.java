@@ -1,7 +1,10 @@
 package deepdoop.datalog;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
 public class FunctionalElement implements IElement {
@@ -22,7 +25,12 @@ public class FunctionalElement implements IElement {
 	public FunctionalElement init(String id) {
 		List<IExpr> newKeyExprs = new ArrayList<>();
 		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(id));
-		return new FunctionalElement(id + ":" + _name, _stage, newKeyExprs, _valueExpr.init(id));
+		return new FunctionalElement(Names.nameId(_name, id), _stage, newKeyExprs, _valueExpr.init(id));
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return Collections.singletonMap(_name, new BareAtom(_name, IAtom.Type.FUNCTIONAL, arity()));
 	}
 
 	public String name() {
@@ -37,9 +45,6 @@ public class FunctionalElement implements IElement {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : _keyExprs) joiner.add(e.toString());
-		String stageSuffix = "";
-		if (_stage != null && _stage.equals("@past")) stageSuffix = ":past";
-		else if (_stage != null) stageSuffix = _stage;
-		return _name + stageSuffix + "[" + joiner + "] = " + _valueExpr;
+		return Names.nameStage(_name, _stage) + "[" + joiner + "] = " + _valueExpr;
 	}
 }

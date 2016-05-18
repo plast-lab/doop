@@ -1,5 +1,7 @@
 package deepdoop.datalog;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.StringJoiner;
 
 public class RefModeElement implements IElement {
@@ -18,7 +20,12 @@ public class RefModeElement implements IElement {
 
 	@Override
 	public RefModeElement init(String id) {
-		return new RefModeElement(id + ":" + _name, _stage, _var, _primitiveExpr);
+		return new RefModeElement(Names.nameId(_name, id), _stage, _var, _primitiveExpr);
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return Collections.singletonMap(_name, new BareAtom(_name, IAtom.Type.REFMODE, arity()));
 	}
 
 	public String name() {

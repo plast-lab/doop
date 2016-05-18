@@ -1,4 +1,7 @@
 foo(x,y).
 ____f:oo(?xy).
 bar[xasd, y] = ?value.
+f:oo:bar[] = x -> string(x).
 f:oo:bar[] = x.
+// TODO fix this!
+f:oo:bar2[y] = x -> string(x), int[64](y).
