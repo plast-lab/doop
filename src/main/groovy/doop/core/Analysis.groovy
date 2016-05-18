@@ -8,6 +8,7 @@ import doop.system.Executor
 import static doop.system.CppPreprocessor.*
 
 import groovy.transform.TypeChecked
+import java.lang.reflect.Method
 
 import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
@@ -662,7 +663,13 @@ import org.apache.commons.logging.LogFactory
         logger.debug "Params of soot: ${params.join(' ')}"
 
         sootTime = timing {
-            //We invoke soot reflectively to be able to specify the soot-classes jar at runtime
+            //We invoke soot reflectively using a separate class-loader to be able 
+            //to support multiple soot invocations in the same JVM @ server-side.
+            //TODO: Investigate whether this approach may lead to memory leaks,
+            //not only for soot but for all other Java-based tools, like jphantom
+            //or averroes. 
+            //In such a case, we should invoke all Java-based tools using a 
+            //separate process.
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "doop.soot.Main", params.toArray(new String[params.size()]))
         }
@@ -683,10 +690,13 @@ import org.apache.commons.logging.LogFactory
      * Creates a new class loader for running soot
      */
     private ClassLoader sootClassLoader() {
-        String sootClasses = "${Doop.doopHome}/lib/sootclasses-${options.X_SOOT_VERSION.value}.jar"
-        File f1 = Helper.checkFileOrThrowException(sootClasses, "soot classes jar missing or invalid: $sootClasses")
-        List<URL> classpath = [f1.toURI().toURL()]
-        return new URLClassLoader(classpath as URL[], ClassLoader.getSystemClassLoader())
+        //The options.X_SOOT_VERSION.value is not used, as the 
+        //sootclasses-trunk.jar is a compile-time dependency.
+        //E.g. in doop.soot.NoSearchingClassProvider, lines 184-188, we use a 
+        //constructor that is not present in soot version 2.5.0.
+        URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
+        URL[] classpath = loader.getURLs()
+        return new URLClassLoader(classpath, null as ClassLoader)
     }
 
     /**
