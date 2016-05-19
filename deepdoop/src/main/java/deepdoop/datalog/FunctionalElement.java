@@ -13,11 +13,17 @@ public class FunctionalElement implements IElement {
 	String      _stage;
 	List<IExpr> _keyExprs;
 	IExpr       _valueExpr;
+	String      _backtick;
 
 	public FunctionalElement(String name, String stage, List<IExpr> keyExprs, IExpr valueExpr) {
 		_name      = name;
 		_stage     = stage;
 		_keyExprs  = keyExprs;
+		_valueExpr = valueExpr;
+	}
+	public FunctionalElement(String name, String backtick, IExpr valueExpr) {
+		_name      = name;
+		_backtick  = backtick;
 		_valueExpr = valueExpr;
 	}
 
@@ -43,8 +49,12 @@ public class FunctionalElement implements IElement {
 
 	@Override
 	public String toString() {
-		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr e : _keyExprs) joiner.add(e.toString());
-		return Names.nameStage(_name, _stage) + "[" + joiner + "] = " + _valueExpr;
+		if (_backtick == null) {
+			StringJoiner joiner = new StringJoiner(", ");
+			for (IExpr e : _keyExprs) joiner.add(e.toString());
+			return Names.nameStage(_name, _stage) + "[" + joiner + "] = " + _valueExpr;
+		}
+		else
+			return _name + "[`" + _backtick + "] = " + _valueExpr;
 	}
 }
