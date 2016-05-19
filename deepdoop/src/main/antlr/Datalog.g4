@@ -29,7 +29,6 @@ datalog
 declaration
 	: predicate '->' predicateList? '.'
 	| predicateName '(' IDENTIFIER ')' ',' refmode '->' predicate '.'
-	: ruleBody '->' ruleBody '.' ;
 	;
 
 // TODO this is not working properly; must merge with declaration
