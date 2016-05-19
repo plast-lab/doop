@@ -117,6 +117,7 @@ class DatalogListenerImpl implements DatalogListener {
 	public void exitPredicate(PredicateContext ctx) {
 		if (_inDecl) {
 			assert ctx.AT_STAGE() == null;
+			assert ctx.BACKTICK() == null;
 
 			if (ctx.predicateName(0) != null) {
 				String name = get(_name, ctx.predicateName(0));
@@ -133,20 +134,25 @@ class DatalogListenerImpl implements DatalogListener {
 			}
 			// NOTE: Refmode declarations have separate handling in grammar
 			//else if (ctx.refmode() != null) {}
-
 		}
 		else {
 			assert ctx.CAPACITY() == null;
 
 			if (ctx.predicateName(0) != null) {
 				String name = get(_name, ctx.predicateName(0));
-				String stage = ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText();
-				List<IExpr> exprs = (ctx.exprList() == null ? exprs = new ArrayList<>() : get(_exprs, ctx.exprList()));
-				if (hasToken(ctx, "(")) {
-					_elem.put(ctx, new PredicateElement(name, stage, exprs));
+				if (ctx.BACKTICK() == null) {
+					String stage = ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText();
+					List<IExpr> exprs = (ctx.exprList() == null ? exprs = new ArrayList<>() : get(_exprs, ctx.exprList()));
+					if (hasToken(ctx, "("))
+						_elem.put(ctx, new PredicateElement(name, stage, exprs));
+					else if (hasToken(ctx, "["))
+						_elem.put(ctx, new FunctionalElement(name, stage, exprs, get(_expr, ctx.expr())));
 				}
-				else if (hasToken(ctx, "[")) {
-					_elem.put(ctx, new FunctionalElement(name, stage, exprs, get(_expr, ctx.expr())));
+				else {
+					if (hasToken(ctx, "("))
+						_elem.put(ctx, new PredicateElement(name, get(_name, ctx.predicateName(1))));
+					else if (hasToken(ctx, "["))
+						_elem.put(ctx, new FunctionalElement(name, get(_name, ctx.predicateName(1)), get(_expr, ctx.expr())));
 				}
 			}
 			else if (ctx.refmode() != null) {
@@ -155,7 +161,6 @@ class DatalogListenerImpl implements DatalogListener {
 				List<IExpr> exprs = get(_exprs, ctx.refmode());
 				_elem.put(ctx, new RefModeElement(name, stage, (VariableExpr)exprs.get(0), exprs.get(1)));
 			}
-
 		}
 	}
 	public void exitRuleBody(RuleBodyContext ctx) {

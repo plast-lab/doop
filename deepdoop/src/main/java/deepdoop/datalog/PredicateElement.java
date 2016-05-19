@@ -11,11 +11,16 @@ public class PredicateElement implements IElement {
 	String      _name;
 	String      _stage;
 	List<IExpr> _exprs;
+	String      _backtick;
 
 	public PredicateElement(String name, String stage, List<IExpr> exprs) {
-		_name  = name;
-		_stage = stage;
-		_exprs = exprs;
+		_name     = name;
+		_stage    = stage;
+		_exprs    = exprs;
+	}
+	public PredicateElement(String name, String backtick) {
+		_name     = name;
+		_backtick = backtick;
 	}
 
 	@Override
@@ -40,8 +45,12 @@ public class PredicateElement implements IElement {
 
 	@Override
 	public String toString() {
-		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr e : _exprs) joiner.add(e.toString());
-		return Names.nameStage(_name, _stage) + "(" + joiner + ")";
+		if (_backtick == null) {
+			StringJoiner joiner = new StringJoiner(", ");
+			for (IExpr e : _exprs) joiner.add(e.toString());
+			return Names.nameStage(_name, _stage) + "(" + joiner + ")";
+		}
+		else
+			return _name + "(`" + _backtick + ")";
 	}
 }
