@@ -102,6 +102,9 @@ class DatalogListenerImpl implements DatalogListener {
 			_currComp.atoms.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
 		}
 	}
+	public void exitConstraint(ConstraintContext ctx) {
+		// TODO fix
+	}
 	public void exitRule_(Rule_Context ctx) {
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(LogicType.AND, get(_elems, ctx.predicateList()));
@@ -293,7 +296,6 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterDatalog(DatalogContext ctx) {}
 	public void exitDatalog(DatalogContext ctx) {}
 	public void enterConstraint(ConstraintContext ctx) {}
-	public void exitConstraint(ConstraintContext ctx) {}
 	public void enterRule_(Rule_Context ctx) {}
 	public void enterPredicate(PredicateContext ctx) {}
 	public void enterRuleBody(RuleBodyContext ctx) {}
