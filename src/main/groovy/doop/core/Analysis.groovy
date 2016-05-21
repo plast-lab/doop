@@ -690,10 +690,6 @@ import org.apache.commons.logging.LogFactory
      * Creates a new class loader for running soot
      */
     private ClassLoader sootClassLoader() {
-        //The options.X_SOOT_VERSION.value is not used, as the 
-        //sootclasses-trunk.jar is a compile-time dependency.
-        //E.g. in doop.soot.NoSearchingClassProvider, lines 184-188, we use a 
-        //constructor that is not present in soot version 2.5.0.
         URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
         URL[] classpath = loader.getURLs()
         return new URLClassLoader(classpath, null as ClassLoader)

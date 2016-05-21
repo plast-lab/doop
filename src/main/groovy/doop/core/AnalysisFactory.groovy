@@ -332,11 +332,6 @@ import java.util.jar.JarFile
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
         }
-
-        // Check for X_SOOT_VERSION option (cannot be null)
-        if (!options.X_SOOT_VERSION.value) {
-            throw new RuntimeException("The X_SOOT_VERSION option is null")
-        }
         
         if (options.DACAPO.value) {
             if (!options.ENABLE_REFLECTION.value) {
