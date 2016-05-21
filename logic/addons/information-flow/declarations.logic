@@ -1,0 +1,15 @@
+TaintSourceMethod(?method) -> MethodSignature(?method).
+
+LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
+  MethodInvocation(?tomethod), Var(?var), Context(?ctx).
+
+LeakingTaintedInformation(?ctx, ?tomethod, ?hctx, ?obj)->
+  Context(?ctx), MethodInvocation(?tomethod),
+  HContext(?hctx), HeapAllocation(?obj).
+
+VarDef(?var, ?inst) -> Instruction(?inst), Var(?var).
+VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
+
+VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from) ->
+  Context(?toCtx), Var(?to),
+  Context(?fromCtx), Var(?from).

@@ -1,0 +1,13 @@
+#include "../../../core/context-sensitivity-declarations.logic"
+
+MySystemThreadGroup(?type1, ?type2, ?heap, ?alloc) ->
+  Type(?type1), Type(?type2), HeapAllocation(?heap),
+  HeapAllocation(?alloc).
+
+MyMainThreadGroup(?type1, ?type2, ?heap, ?alloc) ->
+  Type(?type1), Type(?type2), HeapAllocation(?heap),
+  HeapAllocation(?alloc).
+
+MyMainThread(?type1, ?type2, ?heap, ?alloc) ->
+  Type(?type1), Type(?type2), HeapAllocation(?heap),
+  HeapAllocation(?alloc).
