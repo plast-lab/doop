@@ -161,9 +161,12 @@ class Helper {
      * Executes the given Java main class using the supplied class loader.
      */
     static void execJava(ClassLoader cl, String mainClass, String[] params) {
-        runWithClassLoader(cl) {
-            invokeMainMethod(mainClass, params)
-        }
+        //This is a better way to invoke the main method using a different
+        //classloader (the runWithClassLoader/invokeMainMethod methods are 
+        //problematic and should be removed).
+        Class theClass = Class.forName(mainClass, true, cl)
+        Method mainMethod = theClass.getMethod("main", [String[].class] as Class[])
+        mainMethod.invoke(null, [params] as Object[])
     }
 
 
