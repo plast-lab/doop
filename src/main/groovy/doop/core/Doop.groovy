@@ -468,16 +468,7 @@ class Doop {
             description:"Only generate facts and exit.",
             value:false,
             nonStandard:true
-        ),
-        new AnalysisOption<String>(
-            id:"X_SOOT_VERSION",
-            name:"Xsoot:version",
-            argName:"VERSION",
-            description:"One of 2.5.0, 2.5.0-custom (default: 2.5.0).",
-            value:"2.5.0",
-            webUI:true,
-            nonStandard:true
-        ),
+        )
         /* End of non-standard flags */
     ]
 
