@@ -11,11 +11,6 @@ public class Primitive implements IAtom {
 	}
 
 	@Override
-	public Primitive init(String id) {
-		return this;
-	}
-
-	@Override
 	public String name() {
 		return _name;
 	}
@@ -28,6 +23,11 @@ public class Primitive implements IAtom {
 	@Override
 	public int arity() {
 		return 1;
+	}
+
+	@Override
+	public Primitive init(String id) {
+		return this;
 	}
 
 

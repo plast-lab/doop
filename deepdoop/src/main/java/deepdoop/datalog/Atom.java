@@ -2,13 +2,13 @@ package deepdoop.datalog;
 
 import deepdoop.datalog.IAtom.Type;
 
-public class BareAtom implements IAtom {
+public class Atom implements IAtom {
 
 	String _name;
 	Type   _type;
 	int    _arity;
 
-	public BareAtom(String name, Type type, int arity) {
+	public Atom(String name, Type type, int arity) {
 		_name  = name;
 		_type  = type;
 		_arity = arity;
@@ -20,5 +20,5 @@ public class BareAtom implements IAtom {
 	@Override
 	public int    arity() { return _arity; }
 	@Override
-	public BareAtom init(String id) { return this; }
+	public Atom init(String id) { return this; }
 }
