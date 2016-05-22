@@ -1,22 +1,43 @@
 package deepdoop.datalog;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
 
 public class RefMode implements IAtom {
 
-	String    _name;
-	Entity    _entity;
-	Primitive _primitive;
+	String       _name;
+	VariableExpr _entityVar;
+	IExpr        _valueExpr;
+	// Declaration
+	Predicate    _entity;
+	Primitive    _primitive;
+	// Instance
+	String      _stage;
+	boolean     _inDecl;
 
-	public RefMode(String name, Entity entity, Primitive primitive) {
+
+	public RefMode(String name, VariableExpr entityVar, IExpr valueExpr, Predicate entity, Primitive primitive) {
 		_name      = name;
+		_entityVar = entityVar;
+		_valueExpr = valueExpr;
 		_entity    = entity;
 		_primitive = primitive;
+		_inDecl    = true;
+	}
+	public RefMode(String name, String stage, VariableExpr entityVar, IExpr valueExpr) {
+		_name      = name;
+		_stage     = stage;
+		_entityVar = entityVar;
+		_valueExpr = valueExpr;
+		_inDecl    = false;
 	}
 
+
 	@Override
-	public RefMode init(String id) {
-		return new RefMode(Names.nameId(_name, id), _entity.init(id), _primitive);
+	public Map<String, IAtom> getAtoms() {
+		return Collections.singletonMap(_name, new Atom(name(), type(), arity()));
 	}
 
 	@Override
@@ -35,12 +56,23 @@ public class RefMode implements IAtom {
 	}
 
 	@Override
+	public RefMode init(String id) {
+		if (_inDecl)
+			return new RefMode(Names.nameId(_name, id), _entityVar, _valueExpr, _entity.init(id), _primitive);
+		else
+			return new RefMode(Names.nameId(_name, id), _stage, _entityVar, _valueExpr);
+	}
+
+	@Override
 	public String toString() {
-		//return _name + "/1 (" + _primitive.name() + " -> " + _entity.name() + ")";
-		List<IExpr> vars = Names.newVars(2);
-		return
-			_entity.name() + "(" + vars.get(0) + "), " +
-			_name + "(" + vars.get(0) + ":" + vars.get(1) + ") -> " +
-			_primitive.name() + "(" + vars.get(1) + ").";
+		if (_inDecl) {
+			return
+				_entity.name() + "(" + _entityVar + "), " +
+				_name + "(" + _entityVar + ":" + _valueExpr + ") -> " +
+				_primitive.name() + "(" + _valueExpr + ").";
+		}
+		else {
+			return _name + "(" + _entityVar + ":" + _valueExpr + ")";
+		}
 	}
 }

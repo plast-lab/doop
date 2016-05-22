@@ -84,12 +84,12 @@ public class Program {
 		String name = Names.nameId(atom.name(), id);
 		switch (atom.type()) {
 			case PREDICATE :
-				return new PredicateElement(name, stage, vars);
+				return new Predicate(name, stage, vars);
 			case FUNCTIONAL:
 				VariableExpr value = (VariableExpr) vars.remove(vars.size()-1);
-				return new FunctionalElement(name, stage, vars, value);
+				return new Functional(name, stage, vars, value);
 			case REFMODE   :
-				return new RefModeElement(name, stage, (VariableExpr) vars.get(0), vars.get(1));
+				return new RefMode(name, stage, (VariableExpr) vars.get(0), vars.get(1));
 		}
 		return null;
 	}

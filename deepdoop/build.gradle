@@ -27,6 +27,7 @@ dependencies {
 mainClassName = 'deepdoop.datalog.Main'
 
 run {
+	enableAssertions = true
 	if(project.hasProperty("args")) {
 		args project.property("args").split()
 	}

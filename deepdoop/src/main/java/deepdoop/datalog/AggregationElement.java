@@ -2,11 +2,11 @@ package deepdoop.datalog;
 
 public class AggregationElement implements IElement {
 
-	VariableExpr     _variable;
-	PredicateElement _predicate;
-	IElement         _body;
+	VariableExpr _variable;
+	Predicate    _predicate;
+	IElement     _body;
 
-	public AggregationElement(VariableExpr variable, PredicateElement predicate, IElement body) {
+	public AggregationElement(VariableExpr variable, Predicate predicate, IElement body) {
 		_variable  = variable;
 		_predicate = predicate;
 		_body      = body;

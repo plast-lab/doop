@@ -16,12 +16,10 @@ class DatalogListenerImpl implements DatalogListener {
 
 	ParseTreeProperty<String>          _name;
 	ParseTreeProperty<List<String>>    _names;
-	ParseTreeProperty<IAtom>           _atom;
-	ParseTreeProperty<List<IAtom>>     _atoms;
-	ParseTreeProperty<IExpr>           _expr;
-	ParseTreeProperty<List<IExpr>>     _exprs;
 	ParseTreeProperty<IElement>        _elem;
 	ParseTreeProperty<List<IElement>>  _elems;
+	ParseTreeProperty<IExpr>           _expr;
+	ParseTreeProperty<List<IExpr>>     _exprs;
 
 	boolean                            _inDecl;
 	Component                          _globalComp;
@@ -31,12 +29,10 @@ class DatalogListenerImpl implements DatalogListener {
 	public DatalogListenerImpl() {
 		_name       = new ParseTreeProperty<>();
 		_names      = new ParseTreeProperty<>();
-		_atom       = new ParseTreeProperty<>();
-		_atoms      = new ParseTreeProperty<>();
-		_expr       = new ParseTreeProperty<>();
-		_exprs      = new ParseTreeProperty<>();
 		_elem       = new ParseTreeProperty<>();
 		_elems      = new ParseTreeProperty<>();
+		_expr       = new ParseTreeProperty<>();
+		_exprs      = new ParseTreeProperty<>();
 		_globalComp = new Component();
 		_currComp   = _globalComp;
 		_program    = new Program();
@@ -77,29 +73,28 @@ class DatalogListenerImpl implements DatalogListener {
 		_inDecl = false;
 
 		if (ctx.refmode() == null) {
-			IAtom pred = get(_atom, ctx.predicate());
-			List<IAtom> types = get(_atoms, ctx.predicateList());
-			if (types != null) {
-				if (pred instanceof Predicate) {
-					((Predicate)pred).setTypes(types);
-				}
-				else if (pred instanceof Functional) {
-					IAtom value = types.remove(types.size()-1);
-					((Functional)pred).setTypes(types, value);
-				}
-				else
-					throw new RuntimeException("Weird");
-				_currComp.atoms.add(pred);
+			IAtom atom = (IAtom) get(_elem, ctx.predicate());
+			List<IElement> elems = get(_elems, ctx.predicateList());
+			List<IAtom> types = null;
+			if (elems != null) {
+				types = new ArrayList<>();
+				for (IElement e : elems) types.add((IAtom) e);
 			}
-			else {
-				_currComp.atoms.add(new Entity(pred.name()));
+			if (atom instanceof Predicate && types != null) {
+				((Predicate)atom).setTypes(types);
 			}
+			else if (atom instanceof Functional) {
+				IAtom valueType = types.remove(types.size()-1);
+				((Functional)atom).setTypes(types, valueType);
+			}
+			_currComp.atoms.add(atom);
 		}
 		else {
-			Entity ent = new Entity(get(_name, ctx.predicateName()));
-			Primitive primitive = (Primitive) get(_atom, ctx.predicate());
-			_currComp.atoms.add(ent);
-			_currComp.atoms.add(new RefMode(get(_name, ctx.refmode()), ent, primitive));
+			List<IExpr> exprs = get(_exprs, ctx.refmode());
+			Predicate entity = new Predicate(get(_name, ctx.predicateName()), Arrays.asList(exprs.get(0)));
+			Primitive primitive = (Primitive) get(_elem, ctx.predicate());
+			_currComp.atoms.add(entity);
+			_currComp.atoms.add(new RefMode(get(_name, ctx.refmode()), (VariableExpr)exprs.get(0), exprs.get(1), entity, primitive));
 		}
 	}
 	public void exitConstraint(ConstraintContext ctx) {
@@ -118,52 +113,49 @@ class DatalogListenerImpl implements DatalogListener {
 		}
 	}
 	public void exitPredicate(PredicateContext ctx) {
-		if (_inDecl) {
-			assert ctx.AT_STAGE() == null;
-			assert ctx.BACKTICK() == null;
+		assert (_inDecl && ctx.AT_STAGE() == null && ctx.BACKTICK() == null) || (!_inDecl && ctx.CAPACITY() == null);
 
-			if (ctx.predicateName(0) != null) {
-				String name = get(_name, ctx.predicateName(0));
-				if (hasToken(ctx, "(")) {
-					String capacity = ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText();
-					if (isPrimitive(name))
-						_atom.put(ctx, new Primitive(name, capacity));
-					else
-						_atom.put(ctx, new Predicate(name));
-				}
-				else if (hasToken(ctx, "[")) {
-					_atom.put(ctx, new Functional(name));
-				}
-			}
-			// NOTE: Refmode declarations have separate handling in grammar
-			//else if (ctx.refmode() != null) {}
+		String      name     = get(_name, ctx.predicateName(0));
+		List<IExpr> exprs    = (ctx.exprList() == null ? new ArrayList<>() : get(_exprs, ctx.exprList()));
+		IExpr       expr     = get(_expr, ctx.expr());
+		String      capacity = (ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText());
+		String      stage    = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText());
+		String      backtick = (ctx.BACKTICK() == null ? null : get(_name, ctx.predicateName(1)));
+
+		boolean     isRefMode    = (ctx.predicateName(0) == null);
+		boolean     isFunctional = hasToken(ctx, "[");
+		boolean     isPrimitive  = (!isRefMode && (capacity != null || isPrimitive(name)));
+		boolean     isPredicate  = (!isRefMode && !isFunctional && !isPrimitive);
+		boolean     isDirective  = (backtick != null);
+		if      ( _inDecl && isPrimitive) {
+			_elem.put(ctx, new Primitive(name, capacity));
 		}
-		else {
-			assert ctx.CAPACITY() == null;
-
-			if (ctx.predicateName(0) != null) {
-				String name = get(_name, ctx.predicateName(0));
-				if (ctx.BACKTICK() == null) {
-					String stage = ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText();
-					List<IExpr> exprs = (ctx.exprList() == null ? exprs = new ArrayList<>() : get(_exprs, ctx.exprList()));
-					if (hasToken(ctx, "("))
-						_elem.put(ctx, new PredicateElement(name, stage, exprs));
-					else if (hasToken(ctx, "["))
-						_elem.put(ctx, new FunctionalElement(name, stage, exprs, get(_expr, ctx.expr())));
-				}
-				else {
-					if (hasToken(ctx, "("))
-						_elem.put(ctx, new PredicateElement(name, get(_name, ctx.predicateName(1))));
-					else if (hasToken(ctx, "["))
-						_elem.put(ctx, new FunctionalElement(name, get(_name, ctx.predicateName(1)), get(_expr, ctx.expr())));
-				}
-			}
-			else if (ctx.refmode() != null) {
-				String name = get(_name, ctx.refmode());
-				String stage = ctx.refmode().AT_STAGE() == null ? null : ctx.refmode().AT_STAGE().getText();
-				List<IExpr> exprs = get(_exprs, ctx.refmode());
-				_elem.put(ctx, new RefModeElement(name, stage, (VariableExpr)exprs.get(0), exprs.get(1)));
-			}
+		else if ( _inDecl && isPredicate) {
+			_elem.put(ctx, new Predicate(name, exprs));
+		}
+		else if ( _inDecl && isFunctional) {
+			_elem.put(ctx, new Functional(name, exprs, expr));
+		}
+		else if ( _inDecl && isRefMode) {
+			// NOTE: Refmode declarations have separate handling in grammar
+		}
+		else if (!_inDecl && isPredicate && !isDirective) {
+			_elem.put(ctx, new Predicate(name, stage, exprs));
+		}
+		else if (!_inDecl && isPredicate && isDirective) {
+			_elem.put(ctx, new Predicate(name, backtick));
+		}
+		else if (!_inDecl && isFunctional && !isDirective) {
+			_elem.put(ctx, new Functional(name, stage, exprs, expr));
+		}
+		else if (!_inDecl && isFunctional && isDirective) {
+			_elem.put(ctx, new Functional(name, backtick, expr));
+		}
+		else if (!_inDecl && isRefMode) {
+			name  = get(_name, ctx.refmode());
+			stage = (ctx.refmode().AT_STAGE() == null ? null : ctx.refmode().AT_STAGE().getText());
+			exprs = get(_exprs, ctx.refmode());
+			_elem.put(ctx, new RefMode(name, stage, (VariableExpr)exprs.get(0), exprs.get(1)));
 		}
 	}
 	public void exitRuleBody(RuleBodyContext ctx) {
@@ -185,7 +177,7 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 	public void exitAggregation(AggregationContext ctx) {
 		VariableExpr variable = new VariableExpr(ctx.IDENTIFIER().getText());
-		PredicateElement predicate = (PredicateElement) get(_elem, ctx.predicate());
+		Predicate predicate = (Predicate) get(_elem, ctx.predicate());
 		IElement body = get(_elem, ctx.ruleBody());
 		_elem.put(ctx, new AggregationElement(variable, predicate, body));
 	}
@@ -269,15 +261,9 @@ class DatalogListenerImpl implements DatalogListener {
 		_elem.put(ctx, new ComparisonElement(left, op, right));
 	}
 	public void exitPredicateList(PredicateListContext ctx) {
-		if (_inDecl) {
-			IAtom atom = get(_atom, ctx.predicate());
-			List<IAtom> list = get(_atoms, ctx.predicateList(), atom);
-			_atoms.put(ctx, list);
-		} else {
-			IElement elem = get(_elem, ctx.predicate());
-			List<IElement> list = get(_elems, ctx.predicateList(), elem);
-			_elems.put(ctx, list);
-		}
+		IElement elem = get(_elem, ctx.predicate());
+		List<IElement> list = get(_elems, ctx.predicateList(), elem);
+		_elems.put(ctx, list);
 	}
 	public void exitExprList(ExprListContext ctx) {
 		IExpr p = get(_expr, ctx.expr());
