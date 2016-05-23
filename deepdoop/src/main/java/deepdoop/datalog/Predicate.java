@@ -16,7 +16,6 @@ public class Predicate implements IAtom {
 	List<IAtom> _types;
 	// Instance
 	String      _stage;
-	String      _backtick;
 	boolean     _inDecl;
 
 
@@ -38,12 +37,6 @@ public class Predicate implements IAtom {
 		_arity    = exprs.size();
 		_exprs    = exprs;
 		_stage    = stage;
-		_inDecl   = false;
-	}
-	public Predicate(String name, String backtick) {
-		_name     = name;
-		_arity    = 1;
-		_backtick = backtick;
 		_inDecl   = false;
 	}
 
@@ -89,14 +82,10 @@ public class Predicate implements IAtom {
 			for (IAtom t : _types) newTypes.add(t.init(id));
 			return new Predicate(Names.nameId(_name, id), _exprs, newTypes);
 		}
-		else if (_backtick == null) {
+		else {
 			List<IExpr> newExprs = new ArrayList<>();
 			for (IExpr e : _exprs) newExprs.add(e.init(id));
 			return new Predicate(Names.nameId(_name, id), _stage, newExprs);
-		}
-		// TODO directives need revisiting
-		else {
-			return this;
 		}
 	}
 
@@ -115,13 +104,10 @@ public class Predicate implements IAtom {
 			}
 			return _name + "(" + joiner1 + ") -> " + joiner2 + ".";
 		}
-		else if (_backtick == null) {
+		else {
 			StringJoiner joiner = new StringJoiner(", ");
 			for (IExpr e : _exprs) joiner.add(e.toString());
 			return Names.nameStage(_name, _stage) + "(" + joiner + ")";
-		}
-		else {
-			return _name + "(`" + _backtick + ")";
 		}
 	}
 }

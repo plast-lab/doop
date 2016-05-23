@@ -42,8 +42,10 @@ rule_
 
 
 predicate
-	: predicateName (CAPACITY | AT_STAGE)? '(' (exprList | BACKTICK predicateName)? ')'
-	| predicateName             AT_STAGE?  '[' (exprList | BACKTICK predicateName)? ']' '=' expr
+	: predicateName (CAPACITY | AT_STAGE)? '(' exprList ')'
+	| predicateName             AT_STAGE?  '[' exprList? ']' '=' expr
+	| DIRECTIVE_PREFIX predicateName '(' (BACKTICK predicateName)? ')'
+	| DIRECTIVE_PREFIX predicateName '[' (BACKTICK predicateName)? ']' '=' expr
 	| refmode
 	;
 
@@ -121,6 +123,9 @@ CAPACITY
 
 COMP
 	: '.comp' ;
+
+DIRECTIVE_PREFIX
+	: 'lang:' ;
 
 INIT
 	: '.init' ;

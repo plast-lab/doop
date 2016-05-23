@@ -18,7 +18,6 @@ public class Functional implements IAtom {
 	IAtom       _valueType;
 	// Instance
 	String      _stage;
-	String      _backtick;
 	boolean     _inDecl;
 
 
@@ -41,13 +40,6 @@ public class Functional implements IAtom {
 		_keyExprs  = keyExprs;
 		_valueExpr = valueExpr;
 		_stage     = stage;
-		_inDecl    = false;
-	}
-	public Functional(String name, String backtick, IExpr valueExpr) {
-		_name      = name;
-		_arity     = 2;
-		_backtick  = backtick;
-		_valueExpr = valueExpr;
 		_inDecl    = false;
 	}
 
@@ -95,14 +87,11 @@ public class Functional implements IAtom {
 			for (IAtom t : _keyTypes) newKeyTypes.add(t.init(id));
 			return new Functional(Names.nameId(_name, id), _keyExprs, _valueExpr, newKeyTypes, _valueType.init(id));
 		}
-		else if (_backtick == null) {
+		else {
 			List<IExpr> newKeyExprs = new ArrayList<>();
 			for (IExpr e : _keyExprs) newKeyExprs.add(e.init(id));
 			return new Functional(Names.nameId(_name, id), _stage, newKeyExprs, _valueExpr.init(id));
 		}
-		// TODO directives need revisiting
-		else
-			return this;
 	}
 
 	@Override
@@ -119,13 +108,10 @@ public class Functional implements IAtom {
 			joiner2.add(_valueType.name() + "(" + _valueExpr + ")");
 			return _name + "[" + joiner1 + "] = " + _valueExpr + " -> " + joiner2 + ".";
 		}
-		else if (_backtick == null) {
+		else {
 			StringJoiner joiner = new StringJoiner(", ");
 			for (IExpr e : _keyExprs) joiner.add(e.toString());
 			return Names.nameStage(_name, _stage) + "[" + joiner + "] = " + _valueExpr;
-		}
-		else {
-			return _name + "[`" + _backtick + "] = " + _valueExpr;
 		}
 	}
 }
