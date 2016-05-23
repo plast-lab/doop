@@ -10,10 +10,10 @@ public class LogicalElement implements IElement {
 
 	enum LogicType { AND, OR }
 
-	LogicType      _logicType;
-	List<IElement> _elements;
+	LogicType                _logicType;
+	List<? extends IElement> _elements;
 
-	public LogicalElement(LogicType logicType, List<IElement> elements) {
+	public LogicalElement(LogicType logicType, List<? extends IElement> elements) {
 		_logicType = logicType;
 		_elements  = elements;
 	}

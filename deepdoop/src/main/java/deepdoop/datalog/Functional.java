@@ -80,6 +80,15 @@ public class Functional implements IAtom {
 	}
 
 	@Override
+	public List<VariableExpr> getVars() {
+		List<VariableExpr> list = new ArrayList<>();
+		for (IExpr e : _keyExprs)
+			list.add((e instanceof VariableExpr ? (VariableExpr) e : null));
+		list.add((_valueExpr instanceof VariableExpr ? (VariableExpr) _valueExpr : null));
+		return list;
+	}
+
+	@Override
 	public Functional init(String id) {
 		if (_inDecl) {
 			List<IAtom> newKeyTypes = new ArrayList<>();

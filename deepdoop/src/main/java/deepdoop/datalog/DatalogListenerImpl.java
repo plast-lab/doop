@@ -18,6 +18,7 @@ class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<String>>    _names;
 	ParseTreeProperty<IElement>        _elem;
 	ParseTreeProperty<List<IElement>>  _elems;
+	ParseTreeProperty<List<IAtom>>     _atoms;
 	ParseTreeProperty<IExpr>           _expr;
 	ParseTreeProperty<List<IExpr>>     _exprs;
 
@@ -31,6 +32,7 @@ class DatalogListenerImpl implements DatalogListener {
 		_names      = new ParseTreeProperty<>();
 		_elem       = new ParseTreeProperty<>();
 		_elems      = new ParseTreeProperty<>();
+		_atoms      = new ParseTreeProperty<>();
 		_expr       = new ParseTreeProperty<>();
 		_exprs      = new ParseTreeProperty<>();
 		_globalComp = new Component();
@@ -74,18 +76,25 @@ class DatalogListenerImpl implements DatalogListener {
 
 		if (ctx.refmode() == null) {
 			IAtom atom = (IAtom) get(_elem, ctx.predicate());
-			List<IElement> elems = get(_elems, ctx.predicateList());
-			List<IAtom> types = null;
-			if (elems != null) {
-				types = new ArrayList<>();
-				for (IElement e : elems) types.add((IAtom) e);
-			}
-			if (atom instanceof Predicate && types != null) {
-				((Predicate)atom).setTypes(types);
-			}
-			else if (atom instanceof Functional) {
-				IAtom valueType = types.remove(types.size()-1);
-				((Functional)atom).setTypes(types, valueType);
+			List<IAtom> types = get(_atoms, ctx.predicateList());
+			if (types != null) {
+				List<VariableExpr> varsInHead = atom.getVars();
+				IAtom[] ordered = new IAtom[types.size()];
+				for (IAtom type : types) {
+					List<VariableExpr> vars = type.getVars();
+					assert vars.size() == 1;
+					VariableExpr var = vars.get(0);
+					ordered[varsInHead.indexOf(var)] = type;
+				}
+				types = new ArrayList<>(Arrays.asList(ordered));
+
+				if (atom instanceof Predicate) {
+					((Predicate)atom).setTypes(types);
+				}
+				else if (atom instanceof Functional) {
+					IAtom valueType = types.remove(types.size()-1);
+					((Functional)atom).setTypes(types, valueType);
+				}
 			}
 			_currComp.atoms.add(atom);
 		}
@@ -102,7 +111,7 @@ class DatalogListenerImpl implements DatalogListener {
 	}
 	public void exitRule_(Rule_Context ctx) {
 		if (ctx.predicateList() != null) {
-			LogicalElement head = new LogicalElement(LogicType.AND, get(_elems, ctx.predicateList()));
+			LogicalElement head = new LogicalElement(LogicType.AND, get(_atoms, ctx.predicateList()));
 			IElement body = get(_elem, ctx.ruleBody());
 			if (body != null) body.flatten();
 			_currComp.rules.add(new Rule(head, body));
@@ -128,7 +137,7 @@ class DatalogListenerImpl implements DatalogListener {
 		boolean     isPredicate  = (!isRefMode && !isFunctional && !isPrimitive);
 		boolean     isDirective  = (backtick != null);
 		if      ( _inDecl && isPrimitive) {
-			_elem.put(ctx, new Primitive(name, capacity));
+			_elem.put(ctx, new Primitive(name, capacity, (VariableExpr) exprs.get(0)));
 		}
 		else if ( _inDecl && isPredicate) {
 			_elem.put(ctx, new Predicate(name, exprs));
@@ -261,9 +270,9 @@ class DatalogListenerImpl implements DatalogListener {
 		_elem.put(ctx, new ComparisonElement(left, op, right));
 	}
 	public void exitPredicateList(PredicateListContext ctx) {
-		IElement elem = get(_elem, ctx.predicate());
-		List<IElement> list = get(_elems, ctx.predicateList(), elem);
-		_elems.put(ctx, list);
+		IAtom atom = (IAtom) get(_elem, ctx.predicate());
+		List<IAtom> list = get(_atoms, ctx.predicateList(), atom);
+		_atoms.put(ctx, list);
 	}
 	public void exitExprList(ExprListContext ctx) {
 		IExpr p = get(_expr, ctx.expr());

@@ -74,6 +74,14 @@ public class Predicate implements IAtom {
 	}
 
 	@Override
+	public List<VariableExpr> getVars() {
+		List<VariableExpr> list = new ArrayList<>();
+		for (IExpr e : _exprs)
+			list.add((e instanceof VariableExpr ? (VariableExpr) e : null));
+		return list;
+	}
+
+	@Override
 	public Predicate init(String id) {
 		if (_inDecl) {
 			// expressions in a declaration are only variables; no need for init
