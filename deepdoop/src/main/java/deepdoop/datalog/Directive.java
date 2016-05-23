@@ -1,6 +1,8 @@
 package deepdoop.datalog;
 
 import deepdoop.datalog.IAtom.Type;
+import java.util.Collections;
+import java.util.Map;
 
 public class Directive implements IAtom {
 
@@ -29,6 +31,11 @@ public class Directive implements IAtom {
 		_type      = Type.FUNCTIONAL;
 		_backtick  = backtick;
 		_valueExpr = valueExpr;
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return Collections.singletonMap(_name, this);
 	}
 
 	@Override
