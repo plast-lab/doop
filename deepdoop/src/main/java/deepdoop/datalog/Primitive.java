@@ -1,13 +1,18 @@
 package deepdoop.datalog;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class Primitive implements IAtom {
 
-	String _name;
-	int    _capacity;
+	String       _name;
+	int          _capacity;
+	VariableExpr _var;
 
-	public Primitive(String name, String capacity) {
+	public Primitive(String name, String capacity, VariableExpr var) {
 		_capacity = normalize(name, capacity);
 		_name     = name + (_capacity != 0 ? "[" + _capacity + "]" : "");
+		_var      = var;
 	}
 
 	@Override
@@ -23,6 +28,11 @@ public class Primitive implements IAtom {
 	@Override
 	public int arity() {
 		return 1;
+	}
+
+	@Override
+	public List<VariableExpr> getVars() {
+		return Arrays.asList(_var);
 	}
 
 	@Override
