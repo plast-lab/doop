@@ -37,7 +37,7 @@ public class RefMode implements IAtom {
 
 	@Override
 	public Map<String, IAtom> getAtoms() {
-		return Collections.singletonMap(_name, new Atom(name(), type(), arity()));
+		return Collections.singletonMap(_name, this);
 	}
 
 	@Override

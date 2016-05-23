@@ -21,6 +21,11 @@ public class Rule implements IInitializable<Rule> {
 		return _head.getAtoms();
 	}
 
+	public boolean isDirective() {
+		Map<String, IAtom> atoms = _head.getAtoms();
+		return _body == null && atoms.size() == 1 && atoms.values().iterator().next() instanceof Directive;
+	}
+
 	@Override
 	public String toString() {
 		return _head + (_body != null ? " <- " + _body : "") + ".";
