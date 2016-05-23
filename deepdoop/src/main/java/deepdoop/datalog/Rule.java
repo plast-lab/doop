@@ -1,15 +1,21 @@
 package deepdoop.datalog;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Rule implements IInitializable<Rule> {
 
-	IElement _head;
-	IElement _body;
+	LogicalElement _head;
+	IElement       _body;
+	public final boolean isDirective;
 
-	public Rule(IElement head, IElement body) {
+	public Rule(LogicalElement head, IElement body) {
 		_head = head;
 		_body = body;
+
+		List<? extends IElement> elements = _head.getElements();
+		isDirective = (_body == null && elements.size() == 1 && elements.get(0) instanceof Directive);
 	}
 
 	@Override
@@ -18,12 +24,12 @@ public class Rule implements IInitializable<Rule> {
 	}
 
 	public Map<String, IAtom> getAtoms() {
-		return _head.getAtoms();
-	}
-
-	public boolean isDirective() {
-		Map<String, IAtom> atoms = _head.getAtoms();
-		return _body == null && atoms.size() == 1 && atoms.values().iterator().next() instanceof Directive;
+		Map<String, IAtom> map = new HashMap<>();
+		for (IElement e : _head.getElements()) {
+			IAtom a = (IAtom) e;
+			map.put(a.name(), a);
+		}
+		return map;
 	}
 
 	@Override

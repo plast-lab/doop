@@ -1,10 +1,7 @@
 package deepdoop.datalog;
 
-import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 public class Predicate implements IAtom {
@@ -44,11 +41,6 @@ public class Predicate implements IAtom {
 	public void setTypes(List<IAtom> types) {
 		assert _arity == types.size();
 		_types = types;
-	}
-
-	@Override
-	public Map<String, IAtom> getAtoms() {
-		return Collections.singletonMap(_name, this);
 	}
 
 	@Override

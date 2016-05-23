@@ -1,10 +1,7 @@
 package deepdoop.datalog;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 public class Functional implements IAtom {
@@ -49,11 +46,6 @@ public class Functional implements IAtom {
 		assert _arity == keyTypes.size() + 1;
 		_keyTypes  = keyTypes;
 		_valueType = valueType;
-	}
-
-	@Override
-	public Map<String, IAtom> getAtoms() {
-		return Collections.singletonMap(_name, this);
 	}
 
 	@Override

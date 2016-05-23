@@ -1,8 +1,5 @@
 package deepdoop.datalog;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 public class RefMode implements IAtom {
@@ -34,11 +31,6 @@ public class RefMode implements IAtom {
 		_inDecl    = false;
 	}
 
-
-	@Override
-	public Map<String, IAtom> getAtoms() {
-		return Collections.singletonMap(_name, this);
-	}
 
 	@Override
 	public String name() {
