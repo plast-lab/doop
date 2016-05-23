@@ -1,5 +1,6 @@
 package deepdoop.datalog;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,14 @@ public class LogicalElement implements IElement {
 	public LogicalElement(LogicType logicType, List<? extends IElement> elements) {
 		_logicType = logicType;
 		_elements  = elements;
+	}
+	public LogicalElement(IElement element) {
+		_logicType = LogicType.AND;
+		_elements  = Arrays.asList(element);
+	}
+
+	public List<? extends IElement> getElements() {
+		return _elements;
 	}
 
 	@Override
@@ -36,16 +45,6 @@ public class LogicalElement implements IElement {
 				list.add(e);
 		}
 		_elements = list;
-	}
-
-	@Override
-	public Map<String, IAtom> getAtoms() {
-		Map<String, IAtom> map = new HashMap<>();
-		for (IElement elem : _elements) {
-			Map<String, IAtom> otherMap = elem.getAtoms();
-			if (otherMap != null) map.putAll(otherMap);
-		}
-		return map;
 	}
 
 	@Override

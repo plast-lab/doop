@@ -116,7 +116,7 @@ class DatalogListenerImpl implements DatalogListener {
 			if (body != null) body.flatten();
 			_currComp.rules.add(new Rule(head, body));
 		} else {
-			IElement head = get(_elem, ctx.predicate());
+			LogicalElement head = new LogicalElement(get(_elem, ctx.predicate()));
 			AggregationElement aggregation = (AggregationElement) get(_elem, ctx.aggregation());
 			_currComp.rules.add(new Rule(head, aggregation));
 		}

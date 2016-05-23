@@ -66,7 +66,7 @@ public class Program {
 				IAtom atom = atoms.get(pred);
 				List<IExpr> vars = Names.newVars(atom.arity());
 				complete.rules.add(new Rule(
-							generate(atom, vars, prop._toId, "@past"),
+							new LogicalElement(generate(atom, vars, prop._toId, "@past")),
 							generate(atom, vars, prop._fromId, null)));
 			}
 		}
@@ -93,18 +93,17 @@ public class Program {
 		}
 		return null;
 	}
-}
 
+	static class Propagation {
 
-class Propagation {
+		String      _fromId;
+		Set<String> _preds;
+		String      _toId;
 
-	String      _fromId;
-	Set<String> _preds;
-	String      _toId;
-
-	Propagation(String fromId, Set<String> preds, String toId) {
-		_fromId = fromId;
-		_preds  = preds;
-		_toId   = toId;
+		Propagation(String fromId, Set<String> preds, String toId) {
+			_fromId = fromId;
+			_preds  = preds;
+			_toId   = toId;
+		}
 	}
 }
