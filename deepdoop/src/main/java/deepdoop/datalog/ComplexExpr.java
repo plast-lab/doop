@@ -33,9 +33,9 @@ public class ComplexExpr implements IExpr {
 	}
 
 	@Override
-	public IExpr init(String id) {
-		if (_op != null) return new ComplexExpr(_left.init(id), _op, _right.init(id));
-		else             return new ComplexExpr(_expr.init(id));
+	public IExpr init(Initializer ini) {
+		if (_op != null) return new ComplexExpr(_left.init(ini), _op, _right.init(ini));
+		else             return new ComplexExpr(_expr.init(ini));
 	}
 
 	@Override

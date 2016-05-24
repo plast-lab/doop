@@ -13,8 +13,8 @@ public class Constraint implements IInitializable<Constraint> {
 	}
 
 	@Override
-	public Constraint init(String id) {
-		return new Constraint(_head.init(id), _body.init(id));
+	public Constraint init(Initializer ini) {
+		return new Constraint(_head.init(ini), _body.init(ini));
 	}
 
 	@Override
