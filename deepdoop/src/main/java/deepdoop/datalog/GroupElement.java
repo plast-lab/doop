@@ -9,8 +9,8 @@ public class GroupElement implements IElement {
 	}
 
 	@Override
-	public GroupElement init(String id) {
-		return new GroupElement(_element.init(id));
+	public GroupElement init(Initializer ini) {
+		return new GroupElement(_element.init(ini));
 	}
 
 	@Override

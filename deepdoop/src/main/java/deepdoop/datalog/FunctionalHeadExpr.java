@@ -17,10 +17,10 @@ public class FunctionalHeadExpr implements IExpr {
 	}
 
 	@Override
-	public IExpr init(String id) {
+	public IExpr init(Initializer ini) {
 		List<IExpr> newKeyExprs = new ArrayList<>();
-		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(id));
-		return new FunctionalHeadExpr(Names.nameId(_name, id), _stage, newKeyExprs);
+		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(ini));
+		return new FunctionalHeadExpr(ini.name(_name, _stage), ini.stage(_stage), newKeyExprs);
 	}
 
 	@Override

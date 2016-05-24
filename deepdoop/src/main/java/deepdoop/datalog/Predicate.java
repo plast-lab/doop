@@ -67,18 +67,16 @@ public class Predicate implements IAtom {
 	}
 
 	@Override
-	public Predicate init(String id) {
+	public Predicate init(Initializer ini) {
+		List<IExpr> newExprs = new ArrayList<>();
+		for (IExpr e : _exprs) newExprs.add(e.init(ini));
 		if (_inDecl) {
-			// expressions in a declaration are only variables; no need for init
 			List<IAtom> newTypes = new ArrayList<>();
-			for (IAtom t : _types) newTypes.add(t.init(id));
-			return new Predicate(Names.nameId(_name, id), _exprs, newTypes);
+			for (IAtom t : _types) newTypes.add(t.init(ini));
+			return new Predicate(ini.name(_name), newExprs, newTypes);
 		}
-		else {
-			List<IExpr> newExprs = new ArrayList<>();
-			for (IExpr e : _exprs) newExprs.add(e.init(id));
-			return new Predicate(Names.nameId(_name, id), _stage, newExprs);
-		}
+		else
+			return new Predicate(ini.name(_name, _stage), ini.stage(_stage), newExprs);
 	}
 
 	@Override
@@ -99,7 +97,7 @@ public class Predicate implements IAtom {
 		else {
 			StringJoiner joiner = new StringJoiner(", ");
 			for (IExpr e : _exprs) joiner.add(e.toString());
-			return Names.nameStage(_name, _stage) + "(" + joiner + ")";
+			return _name + "(" + joiner + ")";
 		}
 	}
 }

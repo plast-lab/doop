@@ -29,8 +29,8 @@ public class ComparisonElement implements IElement {
 	}
 
 	@Override
-	public ComparisonElement init(String id) {
-		return new ComparisonElement(_left.init(id), _op, _right.init(id));
+	public ComparisonElement init(Initializer ini) {
+		return new ComparisonElement(_left.init(ini), _op, _right.init(ini));
 	}
 
 	@Override

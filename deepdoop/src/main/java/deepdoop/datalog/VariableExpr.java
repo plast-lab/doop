@@ -9,7 +9,7 @@ public class VariableExpr implements IExpr {
 	}
 
 	@Override
-	public VariableExpr init(String id) {
+	public VariableExpr init(Initializer ini) {
 		return this;
 	}
 

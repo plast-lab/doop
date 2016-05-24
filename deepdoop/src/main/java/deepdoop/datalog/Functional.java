@@ -73,17 +73,16 @@ public class Functional implements IAtom {
 	}
 
 	@Override
-	public Functional init(String id) {
+	public Functional init(Initializer ini) {
+		List<IExpr> newKeyExprs = new ArrayList<>();
+		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(ini));
 		if (_inDecl) {
 			List<IAtom> newKeyTypes = new ArrayList<>();
-			for (IAtom t : _keyTypes) newKeyTypes.add(t.init(id));
-			return new Functional(Names.nameId(_name, id), _keyExprs, _valueExpr, newKeyTypes, _valueType.init(id));
+			for (IAtom t : _keyTypes) newKeyTypes.add(t.init(ini));
+			return new Functional(ini.name(_name), newKeyExprs, _valueExpr.init(ini), newKeyTypes, _valueType.init(ini));
 		}
-		else {
-			List<IExpr> newKeyExprs = new ArrayList<>();
-			for (IExpr e : _keyExprs) newKeyExprs.add(e.init(id));
-			return new Functional(Names.nameId(_name, id), _stage, newKeyExprs, _valueExpr.init(id));
-		}
+		else
+			return new Functional(ini.name(_name, _stage), ini.stage(_stage), newKeyExprs, _valueExpr.init(ini));
 	}
 
 	@Override
@@ -103,7 +102,7 @@ public class Functional implements IAtom {
 		else {
 			StringJoiner joiner = new StringJoiner(", ");
 			for (IExpr e : _keyExprs) joiner.add(e.toString());
-			return Names.nameStage(_name, _stage) + "[" + joiner + "] = " + _valueExpr;
+			return _name + "[" + joiner + "] = " + _valueExpr;
 		}
 	}
 }

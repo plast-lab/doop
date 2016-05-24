@@ -9,8 +9,8 @@ public class NegationElement implements IElement {
 	}
 
 	@Override
-	public NegationElement init(String id) {
-		return new NegationElement(_element.init(id));
+	public NegationElement init(Initializer ini) {
+		return new NegationElement(_element.init(ini));
 	}
 
 	@Override

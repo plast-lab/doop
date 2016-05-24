@@ -19,8 +19,8 @@ public class Rule implements IInitializable<Rule> {
 	}
 
 	@Override
-	public Rule init(String id) {
-		return new Rule(_head.init(id), (_body != null ? _body.init(id) : null));
+	public Rule init(Initializer ini) {
+		return new Rule(_head.init(ini), (_body != null ? _body.init(ini) : null));
 	}
 
 	public Map<String, IAtom> getAtoms() {

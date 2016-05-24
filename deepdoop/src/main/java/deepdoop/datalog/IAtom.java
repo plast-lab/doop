@@ -11,5 +11,5 @@ interface IAtom extends IElement {
 	int                arity();
 	default List<VariableExpr> getVars() { return null; }
 
-	IAtom              init(String id);
+	IAtom              init(Initializer ini);
 }

@@ -24,6 +24,7 @@ public class RefMode implements IAtom {
 		_inDecl    = true;
 	}
 	public RefMode(String name, String stage, VariableExpr entityVar, IExpr valueExpr) {
+		assert !"@past".equals(stage);
 		_name      = name;
 		_stage     = stage;
 		_entityVar = entityVar;
@@ -48,11 +49,11 @@ public class RefMode implements IAtom {
 	}
 
 	@Override
-	public RefMode init(String id) {
+	public RefMode init(Initializer ini) {
 		if (_inDecl)
-			return new RefMode(Names.nameId(_name, id), _entityVar, _valueExpr, _entity.init(id), _primitive);
+			return new RefMode(ini.name(_name), _entityVar, _valueExpr.init(ini), _entity.init(ini), _primitive);
 		else
-			return new RefMode(Names.nameId(_name, id), _stage, _entityVar, _valueExpr);
+			return new RefMode(ini.name(_name), ini.stage(_stage), _entityVar, _valueExpr.init(ini));
 	}
 
 	@Override

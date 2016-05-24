@@ -135,7 +135,7 @@ class DatalogListenerImpl implements DatalogListener {
 		boolean     isFunctional = hasToken(ctx, "[");
 		boolean     isPrimitive  = (!isRefMode && (capacity != null || isPrimitive(name)));
 		boolean     isPredicate  = (!isRefMode && !isFunctional && !isPrimitive);
-		boolean     isDirective  = (ctx.DIRECTIVE_PREFIX() != null);
+		boolean     isDirective  = (!isRefMode && (name.startsWith("lang:") || ctx.BACKTICK() != null));
 		if      ( _inDecl && isPrimitive) {
 			_elem.put(ctx, new Primitive(name, capacity, (VariableExpr) exprs.get(0)));
 		}
@@ -152,13 +152,13 @@ class DatalogListenerImpl implements DatalogListener {
 			_elem.put(ctx, new Predicate(name, stage, exprs));
 		}
 		else if (!_inDecl && isPredicate && isDirective) {
-			_elem.put(ctx, new Directive(ctx.DIRECTIVE_PREFIX().getText() + name, backtick));
+			_elem.put(ctx, new Directive(name, backtick));
 		}
 		else if (!_inDecl && isFunctional && !isDirective) {
 			_elem.put(ctx, new Functional(name, stage, exprs, expr));
 		}
 		else if (!_inDecl && isFunctional && isDirective) {
-			_elem.put(ctx, new Directive(ctx.DIRECTIVE_PREFIX().getText() + name, backtick, expr));
+			_elem.put(ctx, new Directive(name, backtick, (ConstantExpr)expr));
 		}
 		else if (!_inDecl && isRefMode) {
 			name  = get(_name, ctx.refmode());

@@ -28,9 +28,9 @@ public class LogicalElement implements IElement {
 	}
 
 	@Override
-	public LogicalElement init(String id) {
+	public LogicalElement init(Initializer ini) {
 		List<IElement> newElements = new ArrayList<>();
-		for (IElement e : _elements) newElements.add(e.init(id));
+		for (IElement e : _elements) newElements.add(e.init(ini));
 		return new LogicalElement(_logicType, newElements);
 	}
 

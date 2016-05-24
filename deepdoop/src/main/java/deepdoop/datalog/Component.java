@@ -12,6 +12,7 @@ class Component implements IInitializable<Component> {
 	public final Set<IAtom> atoms;
 	public final Set<Rule>  rules;
 
+
 	public Component(String name, String superComp, Set<IAtom> atoms, Set<Rule> rules) {
 		this.name      = name;
 		this.superComp = superComp;
@@ -28,6 +29,20 @@ class Component implements IInitializable<Component> {
 		this(null, null, new HashSet<>(), new HashSet<>());
 	}
 
+
+	@Override
+	public Component init(Initializer ini) {
+		Set<IAtom> newAtoms = new HashSet<>();
+		Set<Rule>  newRules = new HashSet<>();
+		for (IAtom a : atoms) {
+			newAtoms.add(a.init(ini));
+		}
+		for (Rule r : rules) {
+			newRules.add(r.init(ini));
+		}
+		return new Component(ini.id(), null, newAtoms, newRules);
+	}
+
 	public Component flatten(Map<String, Component> allComps) {
 		Set<IAtom> allAtoms = new HashSet<>(atoms);
 		Set<Rule>  allRules = new HashSet<>(rules);
@@ -38,19 +53,6 @@ class Component implements IInitializable<Component> {
 			allRules.addAll(currComp.rules);
 		}
 		return new Component(name, null, allAtoms, allRules);
-	}
-
-	@Override
-	public Component init(String id) {
-		Set<IAtom> newAtoms = new HashSet<>();
-		Set<Rule>  newRules = new HashSet<>();
-		for (IAtom a : atoms) {
-			newAtoms.add(a.init(id));
-		}
-		for (Rule r : rules) {
-			newRules.add(r.init(id));
-		}
-		return new Component(id, null, newAtoms, newRules);
 	}
 
 	public Map<String, IAtom> getAtoms() {
