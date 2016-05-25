@@ -288,6 +288,8 @@ class DatalogListenerImpl implements DatalogListener {
 	public void enterInit_(Init_Context ctx) {}
 	public void enterPropagate(PropagateContext ctx) {}
 	public void enterPredicateNameList(PredicateNameListContext ctx) {}
+	public void enterCmd(CmdContext ctx) {}
+	public void exitCmd(CmdContext ctx) {}
 	public void enterDatalog(DatalogContext ctx) {}
 	public void exitDatalog(DatalogContext ctx) {}
 	public void enterConstraint(ConstraintContext ctx) {}
