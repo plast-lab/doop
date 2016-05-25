@@ -1,0 +1,18 @@
+
+P(x) -> string(x).
+Q(x, y) -> string(x), int(y).
+
+Q(x, y) <- P(x), y = 10.
+
+.comp Foo {
+  lang:derivationType[`P1] = "Derived".
+  P1(x) <- P(x).
+  P1(x) -> string(x).
+  Z(y) -> int(y).
+  Z(y) <- Q(_, y).
+  P(x) <- Z@past(x).
+}
+
+.init S1 = Foo
+
+.propagate S1 . { * } to .global
