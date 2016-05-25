@@ -5,7 +5,7 @@ package deepdoop.datalog;
 }
 
 program
-	: (comp | init_ | propagate | datalog)* ;
+	: (comp | init_ | propagate | cmd | datalog)* ;
 
 
 comp
@@ -21,6 +21,9 @@ predicateNameList
 	: predicateName
 	| predicateNameList ',' predicateName
 	;
+
+cmd
+	: CMD IDENTIFIER '{' datalog* '}' ;
 
 
 datalog
@@ -120,6 +123,9 @@ BACKTICK
 CAPACITY
 	: '[' ('32' | '64' | '128') ']' ;
 
+CMD
+	: '.cmd' ;
+
 COMP
 	: '.comp' ;
 
@@ -134,7 +140,6 @@ PROPAGATE
 
 TO
 	: 'to' ;
-
 
 INTEGER
 	: [0-9]+

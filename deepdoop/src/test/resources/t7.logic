@@ -17,7 +17,6 @@ Q("hello", 0).
   W(x) <- Z@past(x).
 }
 
-
 .init S1 = Base
 .init S2 = Foo
 .init S3 = Foo
