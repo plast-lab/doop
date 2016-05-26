@@ -75,11 +75,10 @@ public class Program {
 				IElement head;
 				IElement body;
 				if (prop._toId == null) {
-					// TODO
-					//if (globalAtoms.contains(atom.name())) {
-					//	System.err.println("Reintroducing " + atom.name() + " to global space");
-					//	System.exit(1);
-					//}
+					if (globalAtoms.contains(atom.name())) {
+						System.err.println("ERROR: Reintroducing predicate '" + atom.name() + "' to global space");
+						System.exit(1);
+					}
 					head = generate(atom, vars, null, new Initializer(prop._toId, globalAtoms));
 				}
 				else {
