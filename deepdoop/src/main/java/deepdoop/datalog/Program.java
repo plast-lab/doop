@@ -38,27 +38,26 @@ public class Program {
 	}
 
 	public Component flatten() {
-		Component complete = new Component();
-		complete.atoms.addAll(_global.atoms);
-		complete.rules.addAll(_global.rules);
+		Component complete = new Component(null, _global);
 
-		Set<String> globalAtoms = _global.getAtoms().keySet();
+		Set<String> globalAtoms = _global.getDeclaringAtoms().keySet();
 
 		// Flatten all components and discard non-initialized ones
 		Map<String, Component> flattened = new HashMap<>();
 		for (Entry<String, String> entry : _inits.entrySet()) {
-			Component flatC = _comps.get(entry.getValue()).flatten(_comps);
-			flattened.put(flatC.name, flatC);
+			String compName = entry.getValue();
+			if (flattened.get(compName) != null) continue;
 
-			Component initC = flatC.init(new Initializer(entry.getKey(), globalAtoms));
-			complete.atoms.addAll(initC.atoms);
-			complete.rules.addAll(initC.rules);
+			if (_comps.get(compName) == null) System.out.println(compName);
+			Component flatC = _comps.get(compName).flatten(_comps);
+			flattened.put(compName, flatC);
+			complete.addAll(flatC.init(new Initializer(entry.getKey(), globalAtoms)));
 		}
 		_comps = flattened;
 
 		for (Propagation prop : _props) {
 			Component fromFlatC = _comps.get( _inits.get(prop._fromId) );
-			Map<String, IAtom> atoms = fromFlatC.getAtoms();
+			Map<String, IAtom> atoms = fromFlatC.getDeclaringAtoms();
 
 			// Propagate all predicates
 			if (prop._preds.isEmpty()) {
@@ -69,6 +68,7 @@ public class Program {
 				IAtom atom = atoms.get(pred);
 				if (atom instanceof Directive) continue;
 
+				if (atom == null) System.out.println(pred);
 				List<IExpr> vars = new ArrayList<>(atom.arity());
 				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
 
@@ -76,8 +76,7 @@ public class Program {
 				IElement body;
 				if (prop._toId == null) {
 					if (globalAtoms.contains(atom.name())) {
-						System.err.println("ERROR: Reintroducing predicate '" + atom.name() + "' to global space");
-						System.exit(1);
+						throw new RuntimeException("ERROR: Reintroducing predicate '" + atom.name() + "' to global space");
 					}
 					head = generate(atom, vars, null, new Initializer(prop._toId, globalAtoms));
 				}
@@ -85,7 +84,7 @@ public class Program {
 					head = generate(atom, vars, "@past", new Initializer(prop._toId, globalAtoms));
 				}
 				body = generate(atom, vars, null, new Initializer(prop._fromId, globalAtoms));
-				complete.rules.add(new Rule(new LogicalElement(head), body));
+				complete.addRule(new Rule(new LogicalElement(head), body));
 			}
 		}
 

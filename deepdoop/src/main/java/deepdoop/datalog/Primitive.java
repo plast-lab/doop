@@ -9,13 +9,11 @@ public class Primitive implements IAtom {
 	int          _capacity;
 	VariableExpr _var;
 
-
 	public Primitive(String name, String capacity, VariableExpr var) {
 		_capacity = normalize(name, capacity);
 		_name     = name + (_capacity != 0 ? "[" + _capacity + "]" : "");
 		_var      = var;
 	}
-
 
 	@Override
 	public String name() {
@@ -23,9 +21,7 @@ public class Primitive implements IAtom {
 	}
 
 	@Override
-	public IAtom.Type type() {
-		return IAtom.Type.PREDICATE;
-	}
+	public String stage() { return null; }
 
 	@Override
 	public int arity() {
@@ -33,13 +29,23 @@ public class Primitive implements IAtom {
 	}
 
 	@Override
-	public List<VariableExpr> getVars() {
+	public List<IExpr> getExprs() {
+		return Arrays.asList(_var);
+	}
+
+	@Override
+	public List<VariableExpr> getExprsAsVars() {
 		return Arrays.asList(_var);
 	}
 
 	@Override
 	public Primitive init(Initializer ini) {
 		return this;
+	}
+
+	@Override
+	public String toString() {
+		return _name + "(" + _var + ")";
 	}
 
 

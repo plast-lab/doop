@@ -2,10 +2,12 @@ package deepdoop.datalog;
 
 public class VariableExpr implements IExpr {
 
-	public final String name;
+	public final String  name;
+	public final boolean isDontCare;
 
 	public VariableExpr(String name) {
 		this.name = name;
+		this.isDontCare = "_".equals(name);
 	}
 
 	@Override

@@ -34,7 +34,6 @@ declaration
 	| predicateName '(' IDENTIFIER ')' ',' refmode '->' predicate '.'
 	;
 
-// TODO this is not working properly; must merge with declaration
 constraint
 	: ruleBody '->' ruleBody '.' ;
 
@@ -67,7 +66,6 @@ aggregation
 
 predicateName
 	: '$'? IDENTIFIER
-	| 
 	| predicateName ':' IDENTIFIER
 	;
 

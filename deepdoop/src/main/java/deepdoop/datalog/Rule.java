@@ -18,18 +18,16 @@ public class Rule implements IInitializable<Rule> {
 		isDirective = (_body == null && elements.size() == 1 && elements.get(0) instanceof Directive);
 	}
 
+	public Map<String, IAtom> getDeclaringAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		for (IElement e : _head.getElements())
+			map.put(((IAtom)e).name(), (IAtom)e);
+		return map;
+	}
+
 	@Override
 	public Rule init(Initializer ini) {
 		return new Rule(_head.init(ini), (_body != null ? _body.init(ini) : null));
-	}
-
-	public Map<String, IAtom> getAtoms() {
-		Map<String, IAtom> map = new HashMap<>();
-		for (IElement e : _head.getElements()) {
-			IAtom a = (IAtom) e;
-			map.put(a.name(), a);
-		}
-		return map;
 	}
 
 	@Override

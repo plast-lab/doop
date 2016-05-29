@@ -77,48 +77,34 @@ class DatalogListenerImpl implements DatalogListener {
 		if (ctx.refmode() == null) {
 			IAtom atom = (IAtom) get(_elem, ctx.predicate());
 			List<IAtom> types = get(_atoms, ctx.predicateList());
-			if (types != null) {
-				List<VariableExpr> varsInHead = atom.getVars();
-				IAtom[] ordered = new IAtom[types.size()];
-				for (IAtom type : types) {
-					List<VariableExpr> vars = type.getVars();
-					assert vars.size() == 1;
-					VariableExpr var = vars.get(0);
-					ordered[varsInHead.indexOf(var)] = type;
-				}
-				types = new ArrayList<>(Arrays.asList(ordered));
+			if (types == null) types = new ArrayList<>();
 
-				if (atom instanceof Predicate) {
-					((Predicate)atom).setTypes(types);
-				}
-				else if (atom instanceof Functional) {
-					IAtom valueType = types.remove(types.size()-1);
-					((Functional)atom).setTypes(types, valueType);
-				}
-			}
-			_currComp.atoms.add(atom);
+			if (isConstraint(atom, types))
+				_currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)));
+			else
+				_currComp.addDecl(new Declaration(atom, types));
 		}
 		else {
-			List<IExpr> exprs = get(_exprs, ctx.refmode());
-			Predicate entity = new Predicate(get(_name, ctx.predicateName()), Arrays.asList(exprs.get(0)));
+			RefMode refmode = (RefMode) get(_elem, ctx.refmode());
+			List<IExpr> exprs = Arrays.asList(refmode.getExprs().get(0));
+			Predicate entity = new Predicate(get(_name, ctx.predicateName()), exprs);
 			Primitive primitive = (Primitive) get(_elem, ctx.predicate());
-			_currComp.atoms.add(entity);
-			_currComp.atoms.add(new RefMode(get(_name, ctx.refmode()), (VariableExpr)exprs.get(0), exprs.get(1), entity, primitive));
+			_currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive));
 		}
 	}
 	public void exitConstraint(ConstraintContext ctx) {
-		// TODO fix
+		_currComp.addCons(new Constraint(get(_elem, ctx.ruleBody(0)), get(_elem, ctx.ruleBody(1))));
 	}
 	public void exitRule_(Rule_Context ctx) {
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(LogicType.AND, get(_atoms, ctx.predicateList()));
 			IElement body = get(_elem, ctx.ruleBody());
 			if (body != null) body.flatten();
-			_currComp.rules.add(new Rule(head, body));
+			_currComp.addRule(new Rule(head, body));
 		} else {
 			LogicalElement head = new LogicalElement(get(_elem, ctx.predicate()));
 			AggregationElement aggregation = (AggregationElement) get(_elem, ctx.aggregation());
-			_currComp.rules.add(new Rule(head, aggregation));
+			_currComp.addRule(new Rule(head, aggregation));
 		}
 	}
 	public void exitPredicate(PredicateContext ctx) {
@@ -136,35 +122,24 @@ class DatalogListenerImpl implements DatalogListener {
 		boolean     isPrimitive  = (!isRefMode && (capacity != null || isPrimitive(name)));
 		boolean     isPredicate  = (!isRefMode && !isFunctional && !isPrimitive);
 		boolean     isDirective  = (!isRefMode && (name.startsWith("lang:") || ctx.BACKTICK() != null));
-		if      ( _inDecl && isPrimitive) {
+
+		if (isPrimitive) {
 			_elem.put(ctx, new Primitive(name, capacity, (VariableExpr) exprs.get(0)));
 		}
-		else if ( _inDecl && isPredicate) {
-			_elem.put(ctx, new Predicate(name, exprs));
-		}
-		else if ( _inDecl && isFunctional) {
-			_elem.put(ctx, new Functional(name, exprs, expr));
-		}
-		else if ( _inDecl && isRefMode) {
-			// NOTE: Refmode declarations have separate handling in grammar
-		}
-		else if (!_inDecl && isPredicate && !isDirective) {
+		else if (isPredicate && !isDirective) {
 			_elem.put(ctx, new Predicate(name, stage, exprs));
 		}
-		else if (!_inDecl && isPredicate && isDirective) {
+		else if (isPredicate && isDirective) {
 			_elem.put(ctx, new Directive(name, backtick));
 		}
-		else if (!_inDecl && isFunctional && !isDirective) {
+		else if (isFunctional && !isDirective) {
 			_elem.put(ctx, new Functional(name, stage, exprs, expr));
 		}
-		else if (!_inDecl && isFunctional && isDirective) {
+		else if (isFunctional && isDirective) {
 			_elem.put(ctx, new Directive(name, backtick, (ConstantExpr)expr));
 		}
-		else if (!_inDecl && isRefMode) {
-			name  = get(_name, ctx.refmode());
-			stage = (ctx.refmode().AT_STAGE() == null ? null : ctx.refmode().AT_STAGE().getText());
-			exprs = get(_exprs, ctx.refmode());
-			_elem.put(ctx, new RefMode(name, stage, (VariableExpr)exprs.get(0), exprs.get(1)));
+		else if (isRefMode) {
+			_elem.put(ctx, get(_elem, ctx.refmode()));
 		}
 	}
 	public void exitRuleBody(RuleBodyContext ctx) {
@@ -191,11 +166,9 @@ class DatalogListenerImpl implements DatalogListener {
 		_elem.put(ctx, new AggregationElement(variable, predicate, body));
 	}
 	public void exitRefmode(RefmodeContext ctx) {
-		_name.put(ctx, get(_name, ctx.predicateName()));
-		List<IExpr> list = new ArrayList<>();
-		list.add(new VariableExpr(ctx.IDENTIFIER().getText()));
-		list.add(get(_expr, ctx.expr()));
-		_exprs.put(ctx, list);
+		String name  = get(_name, ctx.predicateName());
+		String stage = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText());
+		_elem.put(ctx, new RefMode(name, stage, new VariableExpr(ctx.IDENTIFIER().getText()), get(_expr, ctx.expr())));
 	}
 	public void exitPredicateName(PredicateNameContext ctx) {
 		PredicateNameContext child = ctx.predicateName();
@@ -349,5 +322,22 @@ class DatalogListenerImpl implements DatalogListener {
 			default:
 				return false;
 		}
+	}
+	static boolean isConstraint(IAtom atom, List<IAtom> types) {
+		for (VariableExpr v : atom.getExprsAsVars())
+			if (v.isDontCare)
+				return true;
+
+		// Entities declaration
+		if (types.isEmpty()) return false;
+
+		int bodyCount = 0;
+		for (IAtom t : types) {
+			List<VariableExpr> vars = t.getExprsAsVars();
+			if (vars.size() != 1 || vars.get(0).isDontCare)
+				return true;
+			bodyCount += vars.size();
+		}
+		return (atom.arity() != bodyCount);
 	}
 }

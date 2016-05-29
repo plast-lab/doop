@@ -1,7 +1,5 @@
 package deepdoop.datalog;
 
-import java.util.Map;
-
 public class Constraint implements IInitializable<Constraint> {
 
 	IElement _head;
@@ -19,6 +17,6 @@ public class Constraint implements IInitializable<Constraint> {
 
 	@Override
 	public String toString() {
-		return _head + (_body != null ? " -> " + _body : "") + ".";
+		return _head + " -> " + _body + ".";
 	}
 }

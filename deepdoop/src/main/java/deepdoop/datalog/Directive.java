@@ -1,36 +1,35 @@
 package deepdoop.datalog;
 
+import java.util.List;
+
 public class Directive implements IAtom {
 
 	String       _name;
-	int          _arity;
-	Type         _type;
 	String       _backtick;
 	ConstantExpr _constant;
+	int          _arity;
+	boolean      _isPredicate;
 
-
-	Directive(String name, int arity, IAtom.Type type, String backtick, ConstantExpr constant) {
-		_name     = name;
-		_arity    = arity;
-		_type     = type;
-		_backtick = backtick;
-		_constant = constant;
+	Directive(String name, String backtick, ConstantExpr constant, int arity, boolean isPredicate) {
+		_name        = name;
+		_backtick    = backtick;
+		_constant    = constant;
+		_arity       = arity;
+		_isPredicate = isPredicate;
 	}
-
 	public Directive(String name, String backtick) {
-		_name     = name;
-		_arity    = 1;
-		_type     = Type.PREDICATE;
-		_backtick = backtick;
+		_name        = name;
+		_backtick    = backtick;
+		_arity       = 1;
+		_isPredicate = true;
 	}
 	public Directive(String name, String backtick, ConstantExpr constant) {
-		_name     = name;
-		_arity    = (backtick == null ? 1 : 2);
-		_type     = Type.FUNCTIONAL;
-		_backtick = backtick;
-		_constant = constant;
+		_name        = name;
+		_backtick    = backtick;
+		_constant    = constant;
+		_arity       = (backtick == null ? 1 : 2);
+		_isPredicate = false;
 	}
-
 
 	@Override
 	public String name() {
@@ -38,9 +37,7 @@ public class Directive implements IAtom {
 	}
 
 	@Override
-	public IAtom.Type type() {
-		return _type;
-	}
+	public String stage() { return null; }
 
 	@Override
 	public int arity() {
@@ -48,14 +45,20 @@ public class Directive implements IAtom {
 	}
 
 	@Override
+	public List<IExpr> getExprs() { return null; }
+
+	@Override
+	public List<VariableExpr> getExprsAsVars() { return null; }
+
+	@Override
 	public Directive init(Initializer ini) {
-		return _backtick == null ? this : new Directive(_name, _arity, _type, ini.name(_backtick), _constant);
+		return _backtick == null ? this : new Directive(_name, ini.name(_backtick), _constant, _arity, _isPredicate);
 	}
 
 	@Override
 	public String toString() {
 		String middle = (_backtick != null ? "`" + _backtick : "");
-		if (_type == Type.PREDICATE)
+		if (_isPredicate)
 			return _name + "(" + middle + ")";
 		else
 			return _name + "[" + middle + "] = " + _constant;
