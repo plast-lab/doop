@@ -3,13 +3,10 @@ package deepdoop.datalog;
 import java.util.List;
 
 interface IAtom extends IElement {
-
-	enum Type { PREDICATE, FUNCTIONAL, REFMODE }
-
 	String             name();
-	Type               type();
+	String             stage();
 	int                arity();
-	default List<VariableExpr> getVars() { return null; }
-
+	List<IExpr>        getExprs();
+	List<VariableExpr> getExprsAsVars();
 	IAtom              init(Initializer ini);
 }

@@ -67,6 +67,18 @@ public class DatalogTest {
 		test("/t6.logic");
 	}
 	@Test
+	public void testT7() throws IOException {
+		test("/t7.logic");
+	}
+	@Test
+	public void testT8() throws IOException {
+		test("/t8.logic");
+	}
+	@Test
+	public void testT9_MustFail() throws IOException {
+		test("/t9.logic");
+	}
+	@Test
 	public void testSample() throws IOException {
 		test("/sample.logic");
 	}
