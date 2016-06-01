@@ -1,7 +1,9 @@
 package deepdoop.datalog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
 public class Functional implements IAtom {
@@ -49,16 +51,25 @@ public class Functional implements IAtom {
 	}
 
 	@Override
+	public Map<String, IAtom> getAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		map.put(_name, this);
+		for (IExpr e : _keyExprs) map.putAll(e.getAtoms());
+		if (_valueExpr != null) map.putAll(_valueExpr.getAtoms());
+		return map;
+	}
+
+	@Override
 	public Functional init(Initializer ini) {
 		List<IExpr> newKeyExprs = new ArrayList<>();
 		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(ini));
-		return new Functional(ini.name(_name, _stage), ini.stage(_stage), newKeyExprs, _valueExpr.init(ini));
+		return new Functional(ini.name(_name, _stage), ini.stage(_stage), newKeyExprs, (_valueExpr != null ? _valueExpr.init(ini) : null));
 	}
 
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : _keyExprs) joiner.add(e.toString());
-		return _name + (_stage == null ? "" : "@"+_stage) + "[" + joiner + "] = " + _valueExpr;
+		return _name + (_stage == null ? "" : "@"+_stage) + "[" + joiner + "]" + (_valueExpr != null ? " = " + _valueExpr : "");
 	}
 }

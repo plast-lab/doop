@@ -48,6 +48,13 @@ public class LogicalElement implements IElement {
 	}
 
 	@Override
+	public Map<String, IAtom> getAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		for (IElement e : _elements) map.putAll(e.getAtoms());
+		return map;
+	}
+
+	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(_logicType == LogicType.AND ? ", " : "; ");
 		for (IElement e : _elements) joiner.add(e.toString());

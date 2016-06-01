@@ -10,26 +10,30 @@ import java.util.Set;
 
 public class Program {
 
-	Component              _global;
-	Map<String, Component> _comps;
+	Map<String, Component> _templateComps;
 	Map<String, String>    _inits;
+	Component              _globalComp;
 	Set<Propagation>       _props;
 
 	public Program() {
-		_comps = new HashMap<>();
-		_inits = new HashMap<>();
-		_props = new HashSet<>();
+		_templateComps = new HashMap<>();
+		_inits         = new HashMap<>();
+		_props         = new HashSet<>();
 	}
 
-	public void global(Component global) {
-		_global = global;
+	public void global(Component globalComp) {
+		assert _globalComp == null;
+		_globalComp = globalComp;
 	}
 
 	public void comp(Component comp) {
-		_comps.put(comp.name, comp);
+		_templateComps.put(comp.name, comp);
 	}
 
 	public void init(String id, String comp) {
+		if (_inits.get(id) != null)
+			throw new DeepDoopException("ERROR: Id `" + id + "` already used to initialize a component");
+
 		_inits.put(id, comp);
 	}
 
@@ -38,55 +42,63 @@ public class Program {
 	}
 
 	public Component flatten() {
-		Component complete = new Component(null, _global);
-
-		Set<String> globalAtoms = _global.getDeclaringAtoms().keySet();
-
-		// Flatten all components and discard non-initialized ones
-		Map<String, Component> flattened = new HashMap<>();
-		for (Entry<String, String> entry : _inits.entrySet()) {
-			String compName = entry.getValue();
-			if (flattened.get(compName) != null) continue;
-
-			if (_comps.get(compName) == null) System.out.println(compName);
-			Component flatC = _comps.get(compName).flatten(_comps);
-			flattened.put(compName, flatC);
-			complete.addAll(flatC.init(new Initializer(entry.getKey(), globalAtoms)));
+		// Flatten template components
+		Map<String, Component> flatComps = new HashMap<>();
+		for (Entry<String, Component> entry : _templateComps.entrySet()) {
+			String compName = entry.getKey();
+			Component c     = entry.getValue();
+			Component flatC = c.flatten(_templateComps);
+			flatComps.put(compName, flatC);
 		}
-		_comps = flattened;
+		_templateComps = flatComps;
 
+
+		Component complete = new Component(_globalComp);
+		Map<String, IAtom> globalAtoms = _globalComp.getDeclaringAtoms();
+
+		// Initialize components
+		for (Entry<String, String> entry : _inits.entrySet()) {
+			String initName = entry.getKey();
+			String compName = entry.getValue();
+			Component comp  = _templateComps.get(compName);
+			complete.addAll(comp.init(new Initializer(initName, globalAtoms.keySet())));
+		}
+
+		// Compute dependency graph for initialized components (and global
+		// predicates)
+		
+
+		// Handle propagations
 		for (Propagation prop : _props) {
-			Component fromFlatC = _comps.get( _inits.get(prop._fromId) );
-			Map<String, IAtom> atoms = fromFlatC.getDeclaringAtoms();
+			String fromTemplate = _inits.get(prop.fromId);
+			String toTemplate   = _inits.get(prop.toId);
+			Component fromComp  = _templateComps.get(fromTemplate);
+			Component toComp    = _templateComps.get(toTemplate);
+			Map<String, IAtom> atoms  = fromComp.getDeclaringAtoms();
 
-			// Propagate all predicates
-			if (prop._preds.isEmpty()) {
-				prop._preds.addAll(atoms.keySet());
+			// Propagate all predicates (*)
+			if (prop.preds.isEmpty()) {
+				prop.preds.addAll(atoms.keySet());
 			}
 
-			for (String pred : prop._preds) {
-				IAtom atom = atoms.get(pred);
+			for (String predName : prop.preds) {
+				IAtom atom = atoms.get(predName);
 				if (atom instanceof Directive) continue;
 
-				if (atom == null) System.out.println(pred);
 				List<IExpr> vars = new ArrayList<>(atom.arity());
 				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
 
 				IElement head;
-				IElement body;
-				if (prop._toId == null) {
-					if (globalAtoms.contains(atom.name())) {
-						throw new RuntimeException("ERROR: Reintroducing predicate '" + atom.name() + "' to global space");
-					}
-					head = generate(atom, vars, null, new Initializer(prop._toId, globalAtoms));
-				}
-				else {
-					head = generate(atom, vars, "@past", new Initializer(prop._toId, globalAtoms));
-				}
-				body = generate(atom, vars, null, new Initializer(prop._fromId, globalAtoms));
+				// Propagation to global scope
+				if (prop.toId == null && globalAtoms.containsKey(atom.name()))
+					throw new DeepDoopException("Reintroducing predicate '" + atom.name() + "' to global space");
+				else
+					head = generate(atom, vars, (prop.toId == null ? null : "@past"), new Initializer(prop.toId, globalAtoms.keySet()));
+				IElement body = generate(atom, vars, null, new Initializer(prop.fromId, globalAtoms.keySet()));
 				complete.addRule(new Rule(new LogicalElement(head), body));
 			}
 		}
+		complete.TEST();
 
 		return complete;
 	}
@@ -110,18 +122,5 @@ public class Program {
 			return ((Directive)atom).init(ini);
 		else
 			return null;
-	}
-
-	static class Propagation {
-
-		String      _fromId;
-		Set<String> _preds;
-		String      _toId;
-
-		Propagation(String fromId, Set<String> preds, String toId) {
-			_fromId = fromId;
-			_preds  = preds;
-			_toId   = toId;
-		}
 	}
 }
