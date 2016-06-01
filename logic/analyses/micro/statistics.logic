@@ -1,0 +1,123 @@
+/***************************************************
+ * Variables
+ ***************************************************/
+Stats:Application:VarPointsTo(?heap, ?var) <-
+   VarPointsTo(?heap, ?var),
+   Var:DeclaringMethod(?var, ?meth), Stats:ApplicationMethod(?meth).
+
+Stats:ReachableVar(?var) <-
+   Reachable(?method), Var:DeclaringMethod(?var, ?method).
+
+/***************************************************
+ * Arrays
+ ***************************************************/
+Stats:Application:ArrayIndexPointsTo(?heap, ?baseheap) <-
+   ArrayIndexPointsTo(?heap, ?baseheap),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:ApplicationMethod(?meth).
+
+/***************************************************
+ * Fields
+ ***************************************************/
+Stats:Application:InstanceFieldPointsTo(?heap, ?sig, ?baseheap) <-
+   InstanceFieldPointsTo(?heap, ?sig, ?baseheap),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:ApplicationMethod(?meth).
+
+/***************************************************
+ * Call graph edges
+ ***************************************************/
+Stats:VirtualCallGraphEdge(?from, ?to) <-
+   Stats:ReachableVirtualMethodInvocation(?from),
+   CallGraphEdge(?from, ?to).
+
+/***************************************************
+ * Application methods
+ ***************************************************/
+Stats:ApplicationMethod(?method) <-
+	 ApplicationClass(?class),
+	 MethodSignature:DeclaringType[?method] = ?class.
+
+Stats:ReachableApplicationMethod(?method) <-
+	 Reachable(?method),
+	 Stats:ApplicationMethod(?method).
+
+Stats:ApplicationConcreteMethod(?method) <-
+   Stats:ApplicationMethod(?method),
+   ! MethodModifier(?abstract, ?method),
+   Modifier:Value(?abstract:"abstract").
+
+Stats:NonReachableApplicationConcreteMethod(?method) <-
+   Stats:ApplicationConcreteMethod(?method),
+   ! Stats:ReachableApplicationMethod(?method).
+
+/***************************************************
+ * Virtual method invocations
+ ***************************************************/
+Stats:ReachableVirtualMethodInvocation(?invocation) <-
+   Reachable(?method),
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?method.
+
+Stats:Application:ReachableVirtualMethodInvocation(?invocation) <-
+   Stats:ReachableApplicationMethod(?method),
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?method.
+
+Stats:VirtualTargets[?from] = ?c <-
+   agg<<?c = count()>>(Stats:VirtualCallGraphEdge(?from, _)).
+
+Stats:PolymorphicCallSite(?from) <-
+   Stats:VirtualTargets[?from] = ?size, ?size > 1.
+
+Stats:NullVirtualMethodInvocation(?invocation) <-
+   Stats:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   VarPointsTo(HeapAllocation:Null[], ?base).
+
+Stats:EmptyVirtualMethodInvocation(?invocation) <-
+   Stats:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   !(VarPointsTo(_, ?base)).
+
+Stats:Application:VirtualMethodInvocation(?invocation) <-
+   Stats:ApplicationMethod(?method),
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?method.
+
+Stats:Application:PolymorphicCallSite(?from) <-
+   Stats:PolymorphicCallSite(?from),
+   Stats:Application:ReachableVirtualMethodInvocation(?from).
+
+Stats:Application:NullVirtualMethodInvocation(?invocation) <-
+   Stats:Application:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   VarPointsTo(HeapAllocation:Null[], ?base).
+
+Stats:Application:EmptyVirtualMethodInvocation(?invocation) <-
+   Stats:Application:ReachableVirtualMethodInvocation(?invocation),
+   VirtualMethodInvocation:Base[?invocation] = ?base,
+   !(VarPointsTo(_, ?base)).
+
+/***************************************************
+ * Casts
+ ***************************************************/
+Stats:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Reachable(?inmethod), AssignCast(?type, ?from, ?to, ?inmethod).
+
+Stats:PotentiallyFailingCast(?type, ?from, ?to) <-
+   Stats:ReachableCast(_, ?type, ?to, ?from),
+   VarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !SupertypeOf(?type, ?heaptype).
+
+Stats:Application:Cast(?type, ?from, ?to, ?inmethod) <-
+   AssignCast(?type, ?from, ?to, ?inmethod), Stats:ApplicationMethod(?inmethod).
+
+Stats:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Stats:ReachableCast(?inmethod, ?type, ?to, ?from),
+   Stats:ApplicationMethod(?inmethod).
+
+Stats:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
+   Stats:Application:ReachableCast(_, ?type, ?to, ?from),
+   VarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !SupertypeOf(?type, ?heaptype).
