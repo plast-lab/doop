@@ -1,32 +1,31 @@
 package deepdoop.datalog;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
+import java.util.Map;
 
 public class FunctionalHeadExpr implements IExpr {
 
-	String      _name;
-	String      _stage;
-	List<IExpr> _keyExprs;
+	Functional _functional;
 
+	FunctionalHeadExpr(Functional functional) {
+		_functional = functional;
+	}
 	public FunctionalHeadExpr(String name, String stage, List<IExpr> keyExprs) {
-		_name     = name;
-		_stage    = stage;
-		_keyExprs = keyExprs;
+		_functional = new Functional(name, stage, keyExprs, null);
 	}
 
 	@Override
-	public IExpr init(Initializer ini) {
-		List<IExpr> newKeyExprs = new ArrayList<>();
-		for (IExpr e : _keyExprs) newKeyExprs.add(e.init(ini));
-		return new FunctionalHeadExpr(ini.name(_name, _stage), ini.stage(_stage), newKeyExprs);
+	public FunctionalHeadExpr init(Initializer ini) {
+		return new FunctionalHeadExpr(_functional.init(ini));
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return _functional.getAtoms();
 	}
 
 	@Override
 	public String toString() {
-		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr e : _keyExprs) joiner.add(e.toString());
-		return _name + "[" + joiner + "]";
+		return _functional.toString();
 	}
 }

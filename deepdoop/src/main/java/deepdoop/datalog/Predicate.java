@@ -1,7 +1,9 @@
 package deepdoop.datalog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
 public class Predicate implements IAtom {
@@ -44,6 +46,14 @@ public class Predicate implements IAtom {
 		List<VariableExpr> list = new ArrayList<>();
 		for (IExpr e : _exprs) list.add((e instanceof VariableExpr ? (VariableExpr) e : null));
 		return list;
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		map.put(_name, this);
+		for (IExpr e : _exprs) map.putAll(e.getAtoms());
+		return map;
 	}
 
 	@Override

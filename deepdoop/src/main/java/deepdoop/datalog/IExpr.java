@@ -1,3 +1,3 @@
 package deepdoop.datalog;
 
-interface IExpr extends IInitializable<IExpr> {}
+interface IExpr extends IInitializable<IExpr>, IAtomContainer {}

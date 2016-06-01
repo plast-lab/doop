@@ -1,7 +1,9 @@
 package deepdoop.datalog;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringJoiner;
 
 public class RefMode implements IAtom {
@@ -42,6 +44,14 @@ public class RefMode implements IAtom {
 	@Override
 	public List<VariableExpr> getExprsAsVars() {
 		return Arrays.asList(_entityVar, (VariableExpr)_valueExpr);
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		map.put(_name, this);
+		map.putAll(_valueExpr.getAtoms());
+		return map;
 	}
 
 	@Override

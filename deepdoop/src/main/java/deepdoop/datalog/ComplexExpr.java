@@ -1,29 +1,18 @@
 package deepdoop.datalog;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ComplexExpr implements IExpr {
 
-	public enum Operator {
-		PLUS("+"), MINUS("-"), MULT("*"), DIV("/");
+	// Binary operation
+	IExpr       _left;
+	BinOperator _op;
+	IExpr      _right;
+	// Grouping (parentheses)
+	IExpr      _expr;
 
-		private String _op;
-
-		Operator(String op) {
-			_op = op;
-		}
-
-		@Override
-		public String toString() {
-			return _op;
-		}
-	}
-
-	IExpr    _left;
-	Operator _op;
-	IExpr    _right;
-
-	IExpr    _expr;
-
-	public ComplexExpr(IExpr left, Operator op, IExpr right) {
+	public ComplexExpr(IExpr left, BinOperator op, IExpr right) {
 		_left  = left;
 		_op    = op;
 		_right = right;
@@ -33,9 +22,21 @@ public class ComplexExpr implements IExpr {
 	}
 
 	@Override
-	public IExpr init(Initializer ini) {
+	public ComplexExpr init(Initializer ini) {
 		if (_op != null) return new ComplexExpr(_left.init(ini), _op, _right.init(ini));
 		else             return new ComplexExpr(_expr.init(ini));
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		if (_op != null) {
+			map.putAll(_left.getAtoms());
+			map.putAll(_right.getAtoms());
+		}
+		else
+			map.putAll(_expr.getAtoms());
+		return map;
 	}
 
 	@Override

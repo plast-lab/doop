@@ -1,5 +1,5 @@
 package deepdoop.datalog;
 
-interface IElement extends IInitializable<IElement> {
+interface IElement extends IInitializable<IElement>, IAtomContainer {
 	default void flatten() {}
 }

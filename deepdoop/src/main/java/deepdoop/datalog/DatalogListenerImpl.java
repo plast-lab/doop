@@ -210,12 +210,12 @@ class DatalogListenerImpl implements DatalogListener {
 			List<ExprContext> exprs = ctx.expr();
 			if (exprs.size() == 2) {
 				IExpr left = get(_expr, exprs.get(0));
-				ComplexExpr.Operator op = null;
+				BinOperator op = null;
 				switch (getToken(ctx, 0)) {
-					case "+": op = ComplexExpr.Operator.PLUS ; break;
-					case "-": op = ComplexExpr.Operator.MINUS; break;
-					case "*": op = ComplexExpr.Operator.MULT ; break;
-					case "/": op = ComplexExpr.Operator.DIV  ; break;
+					case "+": op = BinOperator.PLUS ; break;
+					case "-": op = BinOperator.MINUS; break;
+					case "*": op = BinOperator.MULT ; break;
+					case "/": op = BinOperator.DIV  ; break;
 				}
 				IExpr right = get(_expr, exprs.get(1));
 				e = new ComplexExpr(left, op, right);
@@ -230,14 +230,14 @@ class DatalogListenerImpl implements DatalogListener {
 		String token = getToken(ctx, 0);
 		IExpr left = get(_expr, ctx.expr(0));
 		IExpr right = get(_expr, ctx.expr(1));
-		ComparisonElement.Operator op = null;
+		BinOperator op = null;
 		switch (token) {
-			case "=" : op = ComparisonElement.Operator.EQ ; break;
-			case "<" : op = ComparisonElement.Operator.LT ; break;
-			case "<=": op = ComparisonElement.Operator.LEQ; break;
-			case ">" : op = ComparisonElement.Operator.GT ; break;
-			case ">=": op = ComparisonElement.Operator.GEQ; break;
-			case "!=": op = ComparisonElement.Operator.NEQ; break;
+			case "=" : op = BinOperator.EQ ; break;
+			case "<" : op = BinOperator.LT ; break;
+			case "<=": op = BinOperator.LEQ; break;
+			case ">" : op = BinOperator.GT ; break;
+			case ">=": op = BinOperator.GEQ; break;
+			case "!=": op = BinOperator.NEQ; break;
 		}
 
 		_elem.put(ctx, new ComparisonElement(left, op, right));

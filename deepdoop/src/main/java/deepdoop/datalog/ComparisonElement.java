@@ -1,40 +1,30 @@
 package deepdoop.datalog;
 
+import java.util.Map;
+
 public class ComparisonElement implements IElement {
 
-	public enum Operator {
-		EQ("="), LT("<"), LEQ("<="),
-		GT(">"), GEQ(">="), NEQ("!=");
+	ComplexExpr _expr;
 
-		private String _op;
-
-		Operator(String op) {
-			_op = op;
-		}
-
-		@Override
-		public String toString() {
-			return _op;
-		}
+	ComparisonElement(ComplexExpr expr) {
+		_expr = expr;
 	}
-
-	IExpr    _left;
-	Operator _op;
-	IExpr    _right;
-
-	public ComparisonElement(IExpr left, Operator op, IExpr right) {
-		_left  = left;
-		_op    = op;
-		_right = right;
+	public ComparisonElement(IExpr left, BinOperator op, IExpr right) {
+		_expr = new ComplexExpr(left, op, right);
 	}
 
 	@Override
 	public ComparisonElement init(Initializer ini) {
-		return new ComparisonElement(_left.init(ini), _op, _right.init(ini));
+		return new ComparisonElement(_expr.init(ini));
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return _expr.getAtoms();
 	}
 
 	@Override
 	public String toString() {
-		return _left + " " + _op + " " + _right;
+		return _expr.toString();
 	}
 }

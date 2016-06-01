@@ -1,6 +1,9 @@
 package deepdoop.datalog;
 
-public class Constraint implements IInitializable<Constraint> {
+import java.util.HashMap;
+import java.util.Map;
+
+public class Constraint implements IInitializable<Constraint>, IAtomContainer {
 
 	IElement _head;
 	IElement _body;
@@ -8,6 +11,14 @@ public class Constraint implements IInitializable<Constraint> {
 	public Constraint(IElement head, IElement body) {
 		_head = head;
 		_body = body;
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		Map<String, IAtom> map = new HashMap<>();
+		map.putAll(_head.getAtoms());
+		map.putAll(_body.getAtoms());
+		return map;
 	}
 
 	@Override

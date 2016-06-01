@@ -1,5 +1,7 @@
 package deepdoop.datalog;
 
+import java.util.Map;
+
 public class AggregationElement implements IElement {
 
 	VariableExpr _variable;
@@ -20,6 +22,11 @@ public class AggregationElement implements IElement {
 	@Override
 	public void flatten() {
 		_body.flatten();
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return _body.getAtoms();
 	}
 
 	@Override

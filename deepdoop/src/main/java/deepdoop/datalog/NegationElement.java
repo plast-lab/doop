@@ -1,5 +1,7 @@
 package deepdoop.datalog;
 
+import java.util.Map;
+
 public class NegationElement implements IElement {
 
 	IElement _element;
@@ -16,6 +18,11 @@ public class NegationElement implements IElement {
 	@Override
 	public void flatten() {
 		_element.flatten();
+	}
+
+	@Override
+	public Map<String, IAtom> getAtoms() {
+		return _element.getAtoms();
 	}
 
 	@Override
