@@ -47,7 +47,7 @@ dependencies {
 
     compile files(sootClassesJar)                               // Soot is a compile time dependency
 
-    runtime files(jphantomJar, 'lib/averroes-no-properties.jar')
+    runtime files(jphantomJar, 'lib/averroes-no-properties.jar', 'lib/dexlib2-2.0.7-dev.jar' , 'lib/util-2.0.7-dev.jar')
 }
 
 task generateFiles(type: JavaExec) {
