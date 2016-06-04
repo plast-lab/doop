@@ -3,22 +3,22 @@ package doop
 import doop.core.Analysis
 import doop.core.Doop
 import doop.core.Helper
+import groovy.transform.CompileStatic
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
 import java.util.concurrent.*
-import java.util.logging.Level
-import java.util.logging.Logger
 
 /**
  * The entry point for the standalone doop app.
  *
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  */
-class Main {
+@CompileStatic class Main {
 
-    private static Log logger = LogFactory.getLog(Main)
-    private static final int DEFAULT_TIMEOUT = 90 // 1.30 hours
+    private static final Log logger = LogFactory.getLog(Main)
+    private static final int DEFAULT_TIMEOUT = 180 // 3 hours
 
     static void main(String[] args) {
 
@@ -60,20 +60,20 @@ class Main {
 
             OptionAccessor cli = builder.parse(argsToParse)
 
-            if (!cli || cli.h) {
+            if (!cli || cli['h']) {
                 usageBuilder.usage()
                 return
             }
-            else if (cli.X) {
+            else if (cli['X']) {
                 nonStandardUsageBuilder.usage()
                 return
             }
 
             String userTimeout
             Analysis analysis
-            if (cli.p) {
+            if (cli['p']) {
                 //create analysis from the properties file & the cli options
-                String file = cli.p
+                String file = cli['p'] as String
                 File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
                 File propsBaseDir = f.getParentFile()
                 Properties props = Helper.loadProperties(f)
@@ -89,9 +89,9 @@ class Main {
                 }
                 */
 
-                changeLogLevel(cli.l ?: props.getProperty("level"))
+                changeLogLevel(cli['l'] ?: props.getProperty("level"))
 
-                userTimeout = cli.t ?: props.getProperty("timeout")
+                userTimeout = cli['t'] ?: props.getProperty("timeout")
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
             }
@@ -106,9 +106,9 @@ class Main {
                     return
                 }
 
-                changeLogLevel(cli.l)
+                changeLogLevel(cli['l'])
 
-                userTimeout = cli.t
+                userTimeout = cli['t']
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
