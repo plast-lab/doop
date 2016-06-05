@@ -15,7 +15,7 @@ init_
 	: INIT IDENTIFIER '=' IDENTIFIER ;
 
 propagate
-	: PROPAGATE IDENTIFIER '.' '{' (ALL | predicateNameList) '}' TO (IDENTIFIER | GLOBAL) ;
+	: PROPAGATE IDENTIFIER '{' (ALL | predicateNameList) '}' TO (IDENTIFIER | GLOBAL) ;
 
 predicateNameList
 	: predicateName

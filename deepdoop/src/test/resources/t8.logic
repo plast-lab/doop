@@ -22,5 +22,5 @@ Q(x, y) <- P(x), y = 10.
 .init S1 = Foo
 //.init S2 = Bar
 
-//.propagate S1 . { * } to S2
-//.propagate S2 . { * } to .global
+//.propagate S1 { * } to S2
+//.propagate S2 { * } to .global
