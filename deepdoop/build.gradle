@@ -24,7 +24,7 @@ dependencies {
 }
 
 
-mainClassName = 'deepdoop.datalog.Main'
+mainClassName = 'deepdoop.Main'
 
 run {
 	enableAssertions = true

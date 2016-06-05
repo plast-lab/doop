@@ -12,7 +12,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-class DatalogListenerImpl implements DatalogListener {
+public class DatalogListenerImpl implements DatalogListener {
 
 	ParseTreeProperty<String>          _name;
 	ParseTreeProperty<List<String>>    _names;

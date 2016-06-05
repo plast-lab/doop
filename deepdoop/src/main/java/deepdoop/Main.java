@@ -1,5 +1,8 @@
-package deepdoop.datalog;
+package deepdoop;
 
+import deepdoop.datalog.DatalogLexer;
+import deepdoop.datalog.DatalogListenerImpl;
+import deepdoop.datalog.DatalogParser;
 import java.io.IOException;
 import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.CommonTokenStream;
