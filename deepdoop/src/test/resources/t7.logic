@@ -27,11 +27,11 @@ Q("hello", 0).
 .init S3 = Foo
 .init S4 = Foo
 
-.propagate S0 . { * } to S2
-.propagate S1 . { * } to .global
-.propagate S2 . { * } to S3
-.propagate S3 . { W, P1 } to S4
-.propagate S4 . { * } to .global
+.propagate S0 { * } to S2
+.propagate S1 { * } to .global
+.propagate S2 { * } to S3
+.propagate S3 { W, P1 } to S4
+.propagate S4 { * } to .global
 
 
 Pred(x) <- W(x).
