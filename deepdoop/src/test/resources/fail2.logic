@@ -1,0 +1,15 @@
+
+P(x) -> string(x).
+Q(x, y) -> string(x), int(y).
+
+Q(x, y) <- P(x), y = 10.
+
+.comp Foo {
+	P1(x) <- P(x).
+	Z(y) <- Q(_, y).
+	P(x) <- Q(x, _), !Q(_, x).
+}
+
+.init S1 = Foo
+
+.propagate S1 . { P } to .global

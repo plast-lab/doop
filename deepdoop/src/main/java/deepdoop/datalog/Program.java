@@ -57,16 +57,15 @@ public class Program {
 		Map<String, IAtom> globalAtoms = _globalComp.getDeclaringAtoms();
 
 		// Initialize components
+		Map<String, Component> initComps = new HashMap<>();
 		for (Entry<String, String> entry : _inits.entrySet()) {
 			String initName = entry.getKey();
 			String compName = entry.getValue();
-			Component comp  = _templateComps.get(compName);
-			complete.addAll(comp.init(new Initializer(initName, globalAtoms.keySet())));
+			Component c     = _templateComps.get(compName);
+			Component initC = c.init(new Initializer(initName, globalAtoms.keySet()));
+			initComps.put(initName, initC);
+			complete.addAll(initC);
 		}
-
-		// Compute dependency graph for initialized components (and global
-		// predicates)
-		
 
 		// Handle propagations
 		for (Propagation prop : _props) {
@@ -98,7 +97,40 @@ public class Program {
 				complete.addRule(new Rule(new LogicalElement(head), body));
 			}
 		}
-		complete.TEST();
+
+
+		// Check that all used predicates have a declaration/definition
+		Map<String, Set<String>> reversePropsMap = new HashMap<>();
+		for (Propagation prop : _props) {
+			Set<String> fromSet = reversePropsMap.get(prop.toId);
+			if (fromSet == null) fromSet = new HashSet<>();
+			fromSet.add(prop.fromId);
+			reversePropsMap.put(prop.toId, fromSet);
+		}
+
+		Set<String> allDeclAtoms = new HashSet<>(_globalComp.getDeclaringAtoms().keySet());
+		Set<String> allInAtoms = new HashSet<>();
+		for (Component c : initComps.values()) {
+			allDeclAtoms.addAll(c.getDeclaringAtoms().keySet());
+			allInAtoms.addAll(c.getInputAtoms().keySet());
+		}
+		for (String inputPred : allInAtoms) {
+			Set<String> potentialDeclPreds = Initializer.revert(inputPred, initComps.keySet(), reversePropsMap);
+			boolean declFound = false;
+			for (String potentialDeclPred : potentialDeclPreds)
+				if (allDeclAtoms.contains(potentialDeclPred)) {
+					declFound = true;
+					break;
+				}
+			if (!declFound)
+				throw new DeepDoopException("Predicate `" + inputPred + "` used but not declared");
+		}
+
+
+		// Compute dependency graph for initialized components (and global
+		// predicates)
+		DependencyGraph g = new DependencyGraph(_props, initComps, _globalComp);
+
 
 		return complete;
 	}
