@@ -1,0 +1,12 @@
+
+P(x) -> string(x).
+P("hello").
+
+.comp Foo {
+	P1(x) <- P0(x).
+	Z(x) <- P1(x).
+}
+
+.init S1 = Foo
+
+.propagate S1 . { * } to .global
