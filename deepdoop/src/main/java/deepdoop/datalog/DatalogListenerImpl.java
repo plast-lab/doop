@@ -68,6 +68,13 @@ public class DatalogListenerImpl implements DatalogListener {
 		List<String> list = get(_names, ctx.predicateNameList(), predName);
 		_names.put(ctx, list);
 	}
+	public void enterCmd(CmdContext ctx) {
+		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
+	}
+	public void exitCmd(CmdContext ctx) {
+		_program.comp(_currComp);
+		_currComp = _globalComp;
+	}
 	public void enterDeclaration(DeclarationContext ctx) {
 		_inDecl = true;
 	}
@@ -261,8 +268,6 @@ public class DatalogListenerImpl implements DatalogListener {
 	public void enterInit_(Init_Context ctx) {}
 	public void enterPropagate(PropagateContext ctx) {}
 	public void enterPredicateNameList(PredicateNameListContext ctx) {}
-	public void enterCmd(CmdContext ctx) {}
-	public void exitCmd(CmdContext ctx) {}
 	public void enterDatalog(DatalogContext ctx) {}
 	public void exitDatalog(DatalogContext ctx) {}
 	public void enterConstraint(ConstraintContext ctx) {}

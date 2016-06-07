@@ -61,6 +61,6 @@ public class RefMode implements IAtom {
 
 	@Override
 	public String toString() {
-		return _name + (_stage == null ? "" : "@"+_stage) + "(" + _entityVar + ":" + _valueExpr + ")";
+		return _name + (_stage == null ? "" : _stage) + "(" + _entityVar + ":" + _valueExpr + ")";
 	}
 }

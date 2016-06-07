@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class Component implements IInitializable<Component>, IAtomContainer {
+public class Component implements IInitializable<Component>, IAtomContainer {
 
 	public final String name;
 	public final String superComp;
@@ -37,7 +37,7 @@ class Component implements IInitializable<Component>, IAtomContainer {
 		this(null, null, new HashSet<>(), new HashSet<>(), new HashSet<>());
 	}
 
-	public void TEST() {
+	void TEST() {
 		System.out.println(name);
 		System.out.println("Atoms: " + getAtoms().keySet().toString());
 		System.out.println("DeclAtoms: " + getDeclaringAtoms().keySet().toString());

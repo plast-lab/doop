@@ -70,6 +70,6 @@ public class Functional implements IAtom {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : _keyExprs) joiner.add(e.toString());
-		return _name + (_stage == null ? "" : "@"+_stage) + "[" + joiner + "]" + (_valueExpr != null ? " = " + _valueExpr : "");
+		return _name + (_stage == null ? "" : _stage) + "[" + joiner + "]" + (_valueExpr != null ? " = " + _valueExpr : "");
 	}
 }

@@ -75,6 +75,11 @@ public class DatalogTest {
 		test("/t8.logic");
 	}
 	@Test
+	public void testSample() throws IOException {
+		test("/sample.logic");
+	}
+
+	@Test
 	public void test_Fail1() throws IOException {
 		test("/fail1.logic");
 	}
@@ -91,8 +96,16 @@ public class DatalogTest {
 		test("/fail4.logic");
 	}
 	@Test
-	public void testSample() throws IOException {
-		test("/sample.logic");
+	public void test_Fail5() throws IOException {
+		test("/fail5.logic");
+	}
+	@Test
+	public void test_Fail6() throws IOException {
+		test("/fail6.logic");
+	}
+	@Test
+	public void test_Fail7() throws IOException {
+		test("/fail7.logic");
 	}
 
 
