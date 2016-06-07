@@ -750,19 +750,19 @@ import org.apache.commons.logging.LogFactory
             case "1.3":
                 return []
             case "1.4":
-                return ["${path}/jce.jar", "${path}/jsse.jar"]
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.5":
-                return ["${path}/jce.jar", "${path}/jsse.jar"]
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.6":
-                return ["${path}/jce.jar", "${path}/jsse.jar"]
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.7":
-                return ["${path}/jce.jar", "${path}/jsse.jar"]
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "system":
                 String javaHome = System.getProperty("java.home")
-                return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
+                return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
         }
-    }   
-    
+    }
+
     /**
      * Generates the full path to the rt.jar required by averroes
      */
