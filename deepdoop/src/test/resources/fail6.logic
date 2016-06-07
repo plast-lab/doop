@@ -1,15 +1,7 @@
 P(x) -> string(x).
-Q(x, y) -> string(x), int(y).
-
-Q(x, y) <- P(x), y = 10.
 
 .comp Foo {
 	P1(x) <- P(x).
-	P1(x) -> string(x).
-}
-
-.comp Baz {
-	Final(x, y) <- A@past(x,_), B@past(y).
 }
 
 .cmd Bar {
@@ -20,12 +12,11 @@ Q(x, y) <- P(x), y = 10.
 	lang:cmd:import(`B).
 	A(x, y) -> string(x), string(y).
 	B(x) -> int(x).
+	A(x, y) -> x != y.
 }
 
 .init S1 = Foo
 .init S2 = Bar
-.init S3 = Baz
 
 .propagate S1 { * } to S2
-.propagate S2 { * } to S3
-.propagate S3 { * } to .global
+.propagate S2 { * } .global

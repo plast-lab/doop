@@ -67,6 +67,6 @@ public class Predicate implements IAtom {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : _exprs) joiner.add(e.toString());
-		return _name + (_stage == null ? "" : "@"+_stage) + "(" + joiner + ")";
+		return _name + (_stage == null ? "" : _stage) + "(" + joiner + ")";
 	}
 }

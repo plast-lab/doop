@@ -32,7 +32,7 @@ public class Program {
 
 	public void init(String id, String comp) {
 		if (_inits.get(id) != null)
-			throw new DeepDoopException("ERROR: Id `" + id + "` already used to initialize a component");
+			throw new DeepDoopException("Id `" + id + "` already used to initialize a component");
 
 		_inits.put(id, comp);
 	}

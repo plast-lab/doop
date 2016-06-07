@@ -42,6 +42,10 @@ public class Rule implements IInitializable<Rule>, IAtomContainer {
 		return atoms;
 	}
 
+	public Directive getDirective() {
+		return (isDirective ? (Directive) _head.getElements().get(0) : null);
+	}
+
 	@Override
 	public Rule init(Initializer ini) {
 		return new Rule(_head.init(ini), (_body != null ? _body.init(ini) : null));
