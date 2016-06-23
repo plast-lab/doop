@@ -17,7 +17,7 @@ buildscript {
 //sourceCompatibility = "1.6"
 //targetCompatibility = "1.6"
 
-project.group = 'plast-lab'
+project.group = 'org.clyze'
 project.version = 1.0
 
 //For the doop app
@@ -25,7 +25,7 @@ mainClassName = 'doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = 2.4
+    gradleVersion = '2.14'
 }
 
 repositories {
@@ -36,7 +36,7 @@ def sootClassesJar = file('lib/sootclasses-trunk.jar')
 def jphantomJar = file('lib/jphantom-1.1-jar-with-dependencies.jar')
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.3.10',            // Groovy
+    compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
             'commons-logging:commons-logging:1.1',              // Logging wrapper
             'log4j:log4j:1.2.14',                               // Logging implementation
             'commons-cli:commons-cli:1.2',                      // Command line processor
