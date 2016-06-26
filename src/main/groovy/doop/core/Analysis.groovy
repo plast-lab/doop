@@ -607,7 +607,7 @@ import org.apache.commons.logging.LogFactory
 
         //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
         ClassLoader loader = phantomClassLoader()
-        Helper.execJava(loader, "jphantom.Driver", params)
+        Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
@@ -679,17 +679,17 @@ import org.apache.commons.logging.LogFactory
      * Creates a new class loader for running jphantom
      */
     private ClassLoader phantomClassLoader() {
-        //TODO: for now, we hard-code the jphantom jar
-        String jphantom = "${Doop.doopHome}/lib/jphantom-1.1-jar-with-dependencies.jar"
-        File f = Helper.checkFileOrThrowException(jphantom, "jphantom jar missing or invalid: $jphantom")
-        List<URL> classpath = [f.toURI().toURL()]
-        return new URLClassLoader(classpath as URL[])
+        return currentClasspathLoader()
     }
 
     /**
      * Creates a new class loader for running soot
      */
     private ClassLoader sootClassLoader() {
+        return currentClasspathLoader()
+    }
+
+    private ClassLoader currentClasspathLoader() {
         URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
         URL[] classpath = loader.getURLs()
         return new URLClassLoader(classpath, null as ClassLoader)

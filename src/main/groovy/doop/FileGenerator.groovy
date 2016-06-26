@@ -15,7 +15,7 @@ class FileGenerator {
      * jphantom jar.
      */
     static void main(String[] args) {
-        if (args && args.length == 3) {
+        if (args && args.length == 2) {
             try {
                 File dir = Helper.checkDirectoryOrThrowException(args[0], "Invalid directory: ${args[0]}")
                 File properties = new File(dir, "doop.properties")
@@ -23,13 +23,11 @@ class FileGenerator {
 
                 File checksums = new File(dir, "checksums.properties")
                 File sootClassesJar = Helper.checkFileOrThrowException(args[1], "Invalid soot classes jar: ${args[1]}")
-                File jphantomJar = Helper.checkFileOrThrowException(args[2], "Invalid jphantom jar: ${args[2]}")
                 String alg = "SHA-256"
                 checksums.withWriter { w ->
                     w.write """\
                             #This file is generated automatically. Do not modify.
                             ${doop.core.Doop.SOOT_CHECKSUM_KEY} = ${doop.core.Helper.checksum(sootClassesJar, alg)}
-                            ${doop.core.Doop.JPHANTOM_CHECKSUM_KEY} = ${doop.core.Helper.checksum(jphantomJar, alg)}
                             """.stripIndent()
                 }
             } catch (e) {
