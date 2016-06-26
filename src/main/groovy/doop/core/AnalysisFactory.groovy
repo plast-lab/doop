@@ -210,7 +210,7 @@ import java.util.jar.JarFile
 
         File checksumsFile = Helper.checkFileOrThrowException("${Doop.doopHome}/checksums.properties", "Invalid checksums")
         Properties p = Helper.loadProperties(checksumsFile)
-        checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY), p.getProperty(Doop.JPHANTOM_CHECKSUM_KEY)]
+        checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY)]
 
         idComponents = checksums + idComponents
 

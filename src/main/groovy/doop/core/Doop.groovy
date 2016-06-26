@@ -11,7 +11,6 @@ import org.apache.log4j.Logger
 class Doop {
 
     static final String SOOT_CHECKSUM_KEY = "soot"
-    static final String JPHANTOM_CHECKSUM_KEY = "jphantom"
 
     static final List<AnalysisOption> ANALYSIS_OPTIONS = [
         //LogicBlox related options (supporting different LogicBlox instance per analysis)
