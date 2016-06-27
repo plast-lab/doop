@@ -23,7 +23,7 @@ import java.util.jar.JarFile
 @TypeChecked class AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
-    static final char[] EXTRA_ID_CHARACTERS = '_-'.toCharArray()
+    static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
 
     /**
