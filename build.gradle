@@ -21,7 +21,7 @@ project.group = 'org.clyze'
 project.version = 1.0
 
 //For the doop app
-mainClassName = 'doop.Main'
+mainClassName = 'org.clyze.doop.Main'
 
 
 task wrapper(type: Wrapper) {
@@ -53,7 +53,7 @@ dependencies {
 task generateFiles(type: JavaExec) {
     description 'Generate the doop.properties & checksums.properties files'
     group = 'Other'
-    main = 'doop.FileGenerator'
+    main = 'org.clyze.doop.FileGenerator'
     classpath = sourceSets.main.runtimeClasspath
     args = [
         projectDir,
@@ -64,7 +64,7 @@ task generateFiles(type: JavaExec) {
 task bytecode2jimple(type: JavaExec) {
     description 'Generate Jimple/Shimple'
     group = 'Other'
-    main = 'doop.soot.Main'
+    main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') || project.property('args').isEmpty()) {
         args "--bytecode2jimpleHelp"
@@ -84,7 +84,7 @@ applicationDistribution.from(projectDir) {
 
 run {
     dependsOn generateFiles
-    //We set the DOOP_HOME environment variable (see doop.Main)
+    //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
         args project.property('args').split()
