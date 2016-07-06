@@ -148,23 +148,23 @@ The primary goals of the Java/Groovy part of Doop are the following:
 1. Develop a unified code-base that is highly maintainable, flexible and extensible.
 
 ### The classes of the Core API {#design.api}
-The core API is contained in the doop.core Groovy package and contains the following classes.
+The core API is contained in the org.clyze.doop.core Groovy package and contains the following classes.
 
-#### doop.core.AnalysisFactory
+#### AnalysisFactory
 A Factory for creating analyses. The class provides the following public methods:
 
     newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars)
     
     newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext ctx)
 
-which create a new `doop.core.Analysis` object. The methods check and verify that all provided information (id and name 
+which create a new `Analysis` object. The methods check and verify that all provided information (id and name
 of the analysis, jar files and options) is correct, throwing an exception in case of error. The checks performed are
 based on the doop run script and are implemented using private or protected methods.
 
-This class is extended by `doop.CommandLineAnalysisFactory` to support creating `doop.core.Analysis` objects from the
+This class is extended by `CommandLineAnalysisFactory` to support creating `Analysis` objects from the
 CLI.
 
-#### doop.core.Analysis
+#### Analysis
 An object that holds both:
 
 1. the analysis options and inputs
@@ -188,7 +188,7 @@ each line of output to the given closure.
 All the other methods of the class are either private or protected, as they are used to implement "internal details"
 of executing an analysis.
 
-#### doop.core.AnalysisOption
+#### AnalysisOption
 A class that models an analysis option. Each option contains the following attributes:
 
 * *id*: The identifier of the option (as used internally by the code, the preprocessors, etc.).
@@ -197,7 +197,7 @@ A class that models an analysis option. Each option contains the following attri
 * *value*: The value of the option.
 * *forPreprocessor*: Boolean flag indicating that the option is used by the preprocessor.
 * *flagType*: Enum value indicating the type of the preprocessor option: `NORMAL_FLAG`, `EXCEPTION_FLAG`, or `CONSTANT_FLAG`. 
-              See the `doop.core.PreprocessorFlag` class. This value is ignored when the `forPreprocessor` option is false.
+              See the `PreprocessorFlag` class. This value is ignored when the `forPreprocessor` option is false.
 * *cli*: Boolean flag indicating whether the option should be included in the CLI.
 * *webUI* - Boolean flag indicating whether the option should be included in the Web UI.
 * *argName* - The description of the option's value which will be displayed to the end-user. All String options should
@@ -208,7 +208,7 @@ A class that models an analysis option. Each option contains the following attri
 The use of this class allows us to significantly simplify and reduce the code required to process and manage the
 analysis options in the various Doop usage scenarios.
 
-#### doop.core.Doop
+#### Doop
 The low-level initialization point of the Java/Groovy part of the framework.
 
 This class provides the following public method:
@@ -222,7 +222,7 @@ which sets the two main paths for each Doop deployment:
 
 The class also holds a list of all the available Analysis options (in the `ANALYSIS_OPTIONS` final field).
 
-Finally, the `doop.core.Doop` class provides the following helper methods for initializing the analysis options:
+Finally, the `Doop` class provides the following helper methods for initializing the analysis options:
 
 * `createDefaultAnalysisOptions()`: obtains a `Map<String, AnalysisOption>` using
 the default values defined in the `ANALYSIS_OPTIONS` list.
@@ -240,16 +240,16 @@ The filter accepted by the last four methods is a closure that filters the optio
     
 overrides only the options that have their `cli` boolean flag set to true.
 
-#### doop.core.Helper
+#### Helper
 A class that holds various helper methods for logging, executing external processes, working with files, etc.
 
-#### doop.core.ImportGenerator
+#### org.clyze.doop.core.ImportGenerator
 The fact declarations import generator. Mimics the behavior of the writeImport bash script.
 
-#### Analysis inputs - the `doop.input` package
-The `doop.input` package contains a simple mechanism for dealing with the various analysis inputs and
+#### Analysis inputs - the `org.clyze.doop.input` package
+The `org.clyze.doop.input` package contains a simple mechanism for dealing with the various analysis inputs and
 dependencies (local jar files, local directories, remote jar URLs and jars held in the Maven Central repository).
-The mechanism is based on the `doop.input.Input`, `doop.input.InputResolver` and `doop.input.InputResolutionContext`
+The mechanism is based on the `Input`, `InputResolver` and `InputResolutionContext`
 interfaces. The first holds a mapping from a String value to a set of local files, the second offers a
 mechanism to construct this mapping in an `InputResolutionContext` which ultimately holds the whole set of mappings
 between inputs and files.
@@ -259,22 +259,22 @@ To add a new analysis option to the framework, we need to:
 
 * define the option in the `ANALYSIS_OPTIONS` list. For String options, it is currently necessary to define the
 argName of the option.
-* implement the validation/checks required for the new option (if any) in the `doop.core.AnalysisFactory`,
-* update the implementation of `doop.core.Analysis` to take into account the new option during the execution of the analysis phases.
+* implement the validation/checks required for the new option (if any) in the `AnalysisFactory`,
+* update the implementation of `Analysis` to take into account the new option during the execution of the analysis phases.
 
 
 #### Other classes
-The Java/Groovy part of Doop contains some additional helper classes including the `doop.core.OS`, `doop.core.JRE`, 
-`doop.core.PreprocessorFlag` Enums and the `doop.preprocess.*` package which offers a Java-only C preprocessor.
+The Java/Groovy part of Doop contains some additional helper classes including the `OS`, `JRE`,
+`PreprocessorFlag` Enums and the `org.clyze.doop.preprocess.*` package which offers a Java-only C preprocessor.
 
 ### The classes of the Doop CLI {#design.cli}
 
-#### doop.Main
-The entry point of the Doop framework. The `doop.Main` class collects the command-line options supplied by the
+#### Main
+The entry point of the Doop framework. The `Main` class collects the command-line options supplied by the
 user and starts the execution of the analysis.
 
-#### doop.CommandLineAnalysisFactory
-The class extends `doop.core.AnalysisFactory` to enable the creation of a `doop.core.Analysis` object from the command 
+#### CommandLineAnalysisFactory
+The class extends `AnalysisFactory` to enable the creation of a `Analysis` object from the command
 line arguments and/or a properties file.
 
 [^about]: This document is to be used with [Pandoc](http://johnmacfarlane.net/pandoc/), using an invocation like the

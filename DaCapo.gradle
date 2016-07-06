@@ -22,7 +22,7 @@ analyses.each { analysis ->
                 standardOutput = new TeeOutputStream(new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace"), System.out);
             }
             classpath = sourceSets.main.runtimeClasspath
-            main = 'doop.Main'
+            main = 'org.clyze.doop.Main'
 
             def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-2006/${BM}.jar"
             args = ['-a', analysis, '-j', jarFile, '--dacapo'] + commonArgs
@@ -42,7 +42,7 @@ analyses.each { analysis ->
                 standardOutput = new TeeOutputStream(new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace"), System.out);
             }
             classpath = sourceSets.main.runtimeClasspath
-            main = 'doop.Main'
+            main = 'org.clyze.doop.Main'
 
             def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-bach/${BM}/${BM}.jar"
             args = ['-a', analysis, '-j', jarFile, '--dacapoBach'] + commonArgs
