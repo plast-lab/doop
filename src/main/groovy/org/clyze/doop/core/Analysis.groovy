@@ -72,6 +72,7 @@ import org.apache.commons.logging.LogFactory
      * The jre library jars for soot
      */
     List<String> jreJars
+    List<String> androidJars
 
     /**
      * The environment for running external commands
@@ -640,7 +641,13 @@ import org.apache.commons.logging.LogFactory
 
         }
 
+
+
         Collection<String> params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+
+        if (options.ANDROID.value) {
+            params = params + ["--android"]
+        }
 
         if (options.SSA.value) {
             params = params + ["--ssa"]

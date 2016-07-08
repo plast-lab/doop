@@ -367,31 +367,32 @@ import java.util.jar.JarFile
             options.MUST_AFTER_MAY.value = true
         }
 
-        checkJRE(vars)
-
-        //Check the value of the JRE_LIB option (it should point to the JREs directory)
-        String externals = options.JRE_LIB.value
-        Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
+        if (!options.ANDROID.value) {
+            checkJRE(vars)
+            //Check the value of the JRE_LIB option (it should point to the JREs directory)
+            String externals = options.JRE_LIB.value
+            Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
+        }
         
         checkOS(vars)
-        
-        if (options.MAIN_CLASS.value) {
-            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
-        }
-        else {
-            JarFile jarFile = new JarFile(vars.inputJarFiles[0])
-            //Try to read the main class from the manifest contained in the jar            
-            String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
-            if (main) {
-                logger.debug "The main class is automatically set to ${main}"             
-                options.MAIN_CLASS.value = main
-            }
-            else {
-                //Check whether the jar contains a class with the same name
-                String jarName = FilenameUtils.getBaseName(jarFile.getName())                
-                if (jarFile.getJarEntry("${jarName}.class")) {
-                    logger.debug "The main class is automatically set to ${jarName}"
-                    options.MAIN_CLASS.value = jarName
+
+        if (!options.ANDROID.value) {
+            if (options.MAIN_CLASS.value) {
+                logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+            } else {
+                JarFile jarFile = new JarFile(vars.inputJarFiles[0])
+                //Try to read the main class from the manifest contained in the jar
+                String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
+                if (main) {
+                    logger.debug "The main class is automatically set to ${main}"
+                    options.MAIN_CLASS.value = main
+                } else {
+                    //Check whether the jar contains a class with the same name
+                    String jarName = FilenameUtils.getBaseName(jarFile.getName())
+                    if (jarFile.getJarEntry("${jarName}.class")) {
+                        logger.debug "The main class is automatically set to ${jarName}"
+                        options.MAIN_CLASS.value = jarName
+                    }
                 }
             }
         }
@@ -440,6 +441,7 @@ import java.util.jar.JarFile
             jreValue = System.getProperty("java.specification.version")
 
         logger.debug "Verifying JRE version: $jreValue"
+
 
         JRE jreVersion
         switch(jreValue) {

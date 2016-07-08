@@ -18,6 +18,7 @@ public class Main {
     private static String _outputDir = null;
     private static String _main = null;
     private static boolean _ssa = false;
+    private static boolean _android = false;
     private static boolean _allowPhantom = false;
     private static boolean _useOriginalNames = false;
     private static boolean _keepLineNumber = false;
@@ -70,15 +71,23 @@ public class Main {
                 else if (args[i].equals("--ssa")) {
                     _ssa = true;
                 }
+                else if (args[i].equals("--android")) {
+                    _allowPhantom = true;
+                    _android = true;
+                    String home = System.getProperty("home");
+                    _libraries.add(File.separator + "home" + File.separator + "anantoni" + File.separator + "android-sdk" + File.separator + "platforms" + File.separator + "android-24" + File.separator  + "android.jar");
+//                    _libraries.add(home + File.separator + "lib" + File.separator + "jce.jar");
+//                    _libraries.add(home + File.separator + "lib" + File.separator + "jsse.jar");
+                }
                 else if (args[i].equals("-l")) {
                     i = shift(args, i);
                     _libraries.add(args[i]);
                 }
                 else if (args[i].equals("-lsystem")) {
                     String javaHome = System.getProperty("java.home");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+//                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+//                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+//                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
                 }
                 else if (args[i].equals("--deps")) {
                     i = shift(args, i);
@@ -114,7 +123,6 @@ public class Main {
                 else if (args[i].equals("--keep-line-number")) {
                     _keepLineNumber = true;
                 }
-
                 else if (args[i].equals("--bytecode2jimple")) {
                     _bytecode2jimple = true;
                 }
@@ -198,7 +206,7 @@ public class Main {
         NoSearchingClassProvider provider = new NoSearchingClassProvider();
 
         for(String arg : _inputs) {
-            if(arg.endsWith(".jar") || arg.endsWith(".zip")) {
+            if(arg.endsWith(".jar") || arg.endsWith(".zip") || arg.endsWith(".apk")) {
                 System.out.println("Adding archive: " + arg);
                 provider.addArchive(new File(arg));
             }
@@ -208,19 +216,17 @@ public class Main {
             }
         }
 
-        for(String lib: _libraries) {
+        for (String lib : _libraries) {
             System.out.println("Adding archive for resolving: " + lib);
 
             File libraryFile = new File(lib);
 
             if (!libraryFile.exists()) {
                 System.err.println("Library file does not exist: " + libraryFile);
-            }
-            else {
+            } else {
                 provider.addArchiveForResolving(libraryFile);
             }
         }
-
         soot.SourceLocator.v().setClassProviders(Collections.singletonList((ClassProvider) provider));
         Scene scene = Scene.v();
         if(_main != null) {
@@ -234,6 +240,18 @@ public class Main {
         if(_allowPhantom) {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
+
+        if (_android) {
+            soot.options.Options.v().set_src_prec(5);  //set src precedence to apk
+//            soot.options.Options.v().set_ignore_resolution_errors(true);
+            soot.options.Options.v().set_allow_phantom_refs(true);
+
+            soot.options.Options.v().set_android_jars("/home/anantoni/android-sdk/platforms");
+            List<String>_process_dir = new ArrayList<>();
+            _process_dir.add("/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk");
+            soot.options.Options.v().set_process_dir(_process_dir);
+        }
+
 
         if (_useOriginalNames) {
             soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
@@ -257,16 +275,16 @@ public class Main {
          * of the FileSystem, but the classes are not loaded automatically
          * due to the indirection via native code.
          */
-        addCommonDynamicClass(scene, provider, "java.io.UnixFileSystem");
-        addCommonDynamicClass(scene, provider, "java.io.WinNTFileSystem");
-        addCommonDynamicClass(scene, provider, "java.io.Win32FileSystem");
+//        addCommonDynamicClass(scene, provider, "java.io.UnixFileSystem");
+//        addCommonDynamicClass(scene, provider, "java.io.WinNTFileSystem");
+//        addCommonDynamicClass(scene, provider, "java.io.Win32FileSystem");
 
         /* java.net.URL loads handlers dynamically */
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.file.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.ftp.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.http.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.https.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.jar.Handler");
+//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.file.Handler");
+//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.ftp.Handler");
+//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.http.Handler");
+//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.https.Handler");
+//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.jar.Handler");
 
         scene.loadNecessaryClasses();
 

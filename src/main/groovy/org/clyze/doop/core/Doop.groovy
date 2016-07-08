@@ -434,6 +434,24 @@ class Doop {
             webUI:false,
             isAdvanced:true
         ),
+        new AnalysisOption<String>(
+                id:"ANDROID",
+                name:"android",
+                description:"",
+                value: null,
+                webUI: false,
+                forCacheID: true,
+                cli: true
+        ),
+        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
+                id:"ANDROID_JARS",
+                name:"anroid-jars",
+                argName:"ANDROID-VERSION",
+                description:"One of  system (default: 24).",
+                value:"24",
+                forCacheID:true,
+                webUI:true
+        ),
 
         /* Start of non-standard flags */
         new AnalysisOption<Boolean>(
@@ -468,6 +486,7 @@ class Doop {
             value:false,
             nonStandard:true
         )
+
         /* End of non-standard flags */
     ]
 

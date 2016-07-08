@@ -121,13 +121,13 @@ class NoSearchingClassProvider implements ClassProvider {
      * Adds an application archive to the class provider.
      */
     List<String> addArchive(File f) throws IOException {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         ZipFile archive = new ZipFile(f);
         Enumeration<? extends ZipEntry> entries = archive.entries();
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            if(entry.getName().endsWith(".class")) {
+            if(entry.getName().endsWith(".class") || entry.getName().endsWith(".dex")) {
                 String className = addClass(archive, entry);
                 result.add(className);
             }
@@ -154,7 +154,7 @@ class NoSearchingClassProvider implements ClassProvider {
         Resource resource = _classes.get(className);
 
         if(resource == null) {
-            String fileName = className.replace('.', '/') + ".class";
+            String fileName = className.replace('.', '/') + ".dex";
 
             for(ZipFile archive : _archives) {
                 ZipEntry entry = archive.getEntry(fileName);
