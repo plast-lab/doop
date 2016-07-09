@@ -1,24 +1,28 @@
-apply plugin: 'groovy'
-apply plugin: 'application'
-apply plugin: 'ivy-publish'
-apply from  : 'DaCapo.gradle'
-
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
+        //For details and latest version: http://plugins.gradle.org/plugin/com.jfrog.artifactory
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
     }
 }
+
+apply plugin: 'groovy'
+apply plugin: 'application'
+apply from  : 'DaCapo.gradle'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 //sourceCompatibility = "1.6"
 //targetCompatibility = "1.6"
 
-project.group = 'org.clyze'
-project.version = 1.0
+group = 'org.clyze'
+version = '1.0-SNAPSHOT'
 
 //For the doop app
 mainClassName = 'org.clyze.doop.Main'
@@ -96,23 +100,29 @@ startScripts {
 }
 
 publishing {
-    repositories {
-        ivy {
-            name 'local-ivy-repo'
-            url '../ivy-repo'
-        }
-    }
-
     publications {
-
-        doop(IvyPublication) {
-            organisation "$group"
-            module 'doop'
-            revision "$version"
+        mavenJava(MavenPublication) {
             from components.java
         }
     }
 }
+
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"
+    publish {
+        repository {
+            repoKey = 'libs-snapshot-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+
+        }
+        defaults {
+            publications 'mavenJava'
+        }
+    }
+}
+
 
 import org.apache.commons.io.FileUtils
 
