@@ -33,6 +33,8 @@
 .decl BasicBlockBegin(?insn:Instruction) input
 .decl BasicBlockEnd(?tail:Instruction) input
 .decl BasicBlockHead(?tail:Instruction, ?head:Instruction) input
+.decl ExceptionHandlerFirstInstruction(?insn:Instruction) input
+.decl ExistsPreviousPredecessorToSameBB(?pred:Instruction, ?insn:Instruction) input
 .decl ExistsPreviousReturn(?returnInsn:Instruction) input
 .decl FieldInstruction_Signature(?insn:Instruction, ?fld:FieldSignature) input
 .decl FieldModifier(?mod:Modifier, ?fld:FieldSignature) input
@@ -51,6 +53,7 @@
 .decl MainClass(?mainClass:Type) input
 .decl MainMethodArgHeap(?argHeap:HeapAllocation) input
 .decl MainMethodArgsArray(?argsArray:HeapAllocation) input
+.decl MayPredecessorBBModuloThrow(?pred:Instruction, ?insn:Instruction) input
 .decl MaySuccessorBBModuloThrow(?insn:Instruction, ?insn2:Instruction) input
 .decl MethodInvocation(?invocation:MethodInvocation) input
 .decl MethodInvocation_Signature(?invocation:MethodInvocation, ?toMethod:MethodSignature) input
@@ -59,8 +62,10 @@
 .decl MethodSignature_Descriptor(?meth:MethodSignature, ?desc:String) input
 .decl MethodSignature_SimpleName(?meth:MethodSignature, ?name:String) input
 .decl Modifier_final(?mod:Modifier) input
+.decl Modifier_static(?mod:Modifier) input
 .decl MonitorInstruction(?insn:Instruction) input
 .decl NextInSamePhiNode(?insn:Instruction, ?nextInsn:Instruction) input
+.decl NextPredecessorToSameBB(?insn:Instruction, ?prevPred:Instruction, ?pred:Instruction) input
 .decl NextReturn(?returnInsn:Instruction, ?nextRetInsn:Instruction) input
 .decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction) input
 .decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction) input
@@ -578,46 +583,23 @@
      MethodHasUnresolvedInvocation(?toMethod)).
   // The last two lines are a refinement, for optimization. See also below.
 
-  //// Dealing with unchanged access paths (below) hasn't proven
-  //// worthwhile. It's not surprising. The callee has no name for
-  //// this access path. The only hope is that it will survive through
-  //// virtual calls and will come back to the caller (whereas the
-  //// conservative must-pre-analysis won't consider virtual calls it
-  //// cannot resolve in its naive way).
+  ///// POINT1--unchanged access paths code goes here
 
-  // This is quite expensive if not restricted. Currently used only for
-  // non-resolved virtual calls. For resolved ones, we have a frame rule
-  // to propagate the information right over the method call in many
-  // cases (and we ignore the rest for now).
-  // ChangedBaseAtInvocation(?var, ?invo) :-
-  //   ActualParam(_, ?invo, ?var);
-  //   VirtualMethodInvocation_Base(?invo, ?var);
-  //   SpecialMethodInvocation_Base(?invo, ?var).
+  // Handle constructors and initialization to null.
+  //RecordMacroMay(?ctx, ?heap, ?hctx),
+  Before_AccessPathMayPointTo(?hctx, ?nullHeap, [?this, [nil, ?fld]], ?ctx, ?firstInsn) :-
+    ThisVarOfConstructor(?ctorMethod, ?this),
+    FirstInstructionOfMethod(?ctorMethod, ?firstInsn),
+    MayReachableMethodUnderMayContext(?ctx, ?ctorMethod),
+    MethodSignature_DeclaringType(?ctorMethod, ?heapType),
+	Modifier_static(?staticMod),
+    FieldSignature_DeclaringClass(?fld, ?heapType),
+    !FieldModifier(?staticMod, ?fld),
+    FieldSignature_Type(?fld, ?fldType),
+    ReferenceType(?fldType),
+    HeapAllocation_Null(?nullHeap),
+    EmptyHeapContext(?hctx).
 
-  // OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap) :-
-  //   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
-  //   !May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
-  //   MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
-  //   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo).
-  
-  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
-  //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
-  //    AccessPath_BaseVar(?ap, ?baseVar),
-  //    !ChangedBaseAtInvocation(?baseVar, ?invo),
-  //    SingleFieldAccessPath(?fld, ?ap),
-  //    (MethodMayAssignField(?fld, ?toMethod);
-  //     MethodHasUnresolvedInvocation(?toMethod)),
-  //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
-
-  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
-  //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
-  //    AccessPath_BaseVar(?ap, ?baseVar),
-  //    !ChangedBaseAtInvocation(?baseVar, ?invo),
-  //    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-  //    (MethodMayAssignField(?fld1, ?toMethod);
-  //     MethodMayAssignField(?fld2, ?toMethod);
-  //     MethodHasUnresolvedInvocation(?toMethod)),
-  //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
   .decl ReturnValueOfResolvedCallAssignedTo(?callerCtx:MayContext, ?to:Var, ?calleeCtx:MayContext, ?toMethod:MethodSignature)
   ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) :-
@@ -627,7 +609,7 @@
 /*
 
 
-// return values
+// handling returns
 
 /// Soundness warning: we can't just take the heap image of one called
 /// method and propagate it back to the caller: when the call-site has
@@ -710,31 +692,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
    AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?toMethod),
    AccessPath_BaseVar(?ap, ?baseVar),
    !Var_DeclaringMethod(?baseVar, ?toMethod).
-
-_OptFieldFromClass(?fld, ?class) :-
-   FieldSignature_DeclaringClass(?fld, ?class).
-
-_OptThisVarOfConstructor(?method, ?this) :-
-   MethodSignature_SimpleName(?method, "<init>"),
-   ThisVar(?method, ?this).
-
-// Handle constructors and initialization to null.
-//RecordMacroMay(?ctx, ?heap, ?hctx),
-AccessPath(?ap),
-AccessPath_ByFieldAccess(?fld, ?thisAp, ?ap),
-AccessPath_Length(?ap, 2),
-Before_AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?firstInsn) :-
-   _OptThisVarOfConstructor(?ctorMethod, ?this),
-   FirstInstructionOfMethod(?ctorMethod, ?firstInsn),
-   MayReachableMethodUnderMayContext(?ctx, ?ctorMethod),
-   MethodSignature_DeclaringType(?ctorMethod, ?heapType), 
-   _OptFieldFromClass(?fld, ?heapType),
-   !FieldModifier(Modifier_static[], ?fld),
-   FieldSignature_Type(?fld, ?fldType),
-   ReferenceType(?fldType),
-   AccessPath_ByVar(?this, ?thisAp),
-   HeapAllocation_Null(?nullHeap),
-   EmptyHeapContext(?hctx).
 
 */
 
@@ -839,99 +796,100 @@ Before_AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?firstInsn) :-
      MustAlias(_, ?ap, _, ?insn)),
     Instruction_Method(?insn, ?meth).
 
-/*
-///// Enter at POINT1--AccessPathNotSetByPredecessor 
-AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
-   BasicBlockBegin(?pred),
-   Instruction_Method(?pred, ?meth),
-   AccessPathRelevantToMethod(?ap, ?meth),
-   SingleFieldAccessPath(?fld, ?ap),
-   !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
-   !SomePathFromFirstInstructionCallsMethod(?pred).
+  .decl AccessPathNotSetByPredecessorBB(?ap:AccessPath, ?pred:Instruction)
+  AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
+    BasicBlockBegin(?pred),
+    Instruction_Method(?pred, ?meth),
+    AccessPathRelevantToMethod(?ap, ?meth),
+    SingleFieldAccessPath(?fld, ?ap),
+    !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
+    !SomePathFromFirstInstructionCallsMethod(?pred).
 
-// TODO: currently only defined for single-field access paths and
-//       collection access paths.
+  // TODO: currently only defined for single-field access paths and
+  //       collection access paths.
 
-// does the first one have *some* access path points-to info, or is irrelevant?
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
+  // does the first one have *some* access path points-to info, or is irrelevant?
+  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
 
-_OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   AccessPathNotSetByPredecessorBB(?ap, ?pred).
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
 
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   OptAccessPathMayPointToAtSomePredecessor(_, _, ?ctx, ?insn, ?ap),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   _OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap).
-   // the above can be weakened to eliminate collection method calls,
-   // but below (for collections) we need to be careful. We should not
-   // assume we know all operations, so we should be conservative with
-   // method calls.
-   
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   OptAccessPathMayPointToAtSomePredecessor(_, _, ?ctx, ?insn, ?ap),
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   AccessPath_ByCollectionVarInv(?ap, _), 
-   !SomePathFromFirstInstructionCallsMethod(?pred).
+  .decl OptAccessPathNotSetByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath)
+  OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
+    MaySuccessorBBModuloThrow(?insn, ?pred),
+    AccessPathNotSetByPredecessorBB(?ap, ?pred).
 
-// TODO: optimizing indexing for all uses of AccessPathNotSetByPredecessorBB
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
-   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
-    AccessPathNotSetByPredecessorBB(?ap, ?pred)).
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap).
+    // the above can be weakened to eliminate collection method calls,
+    // but below (for collections) we need to be careful. We should not
+    // assume we know all operations, so we should be conservative with
+    // method calls.
 
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
-   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-   AccessPath_ByCollectionVarInv(?ap, _), 
-   !SomePathFromFirstInstructionCallsMethod(?pred).
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    AccessPath_IsCollection(?ap),
+    !SomePathFromFirstInstructionCallsMethod(?pred).
 
-AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
-   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
-   !(NextPredecessorToSameBB(?insn, ?pred, _)),
-   !ExceptionHandlerFirstInstruction(?insn).
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+    (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+     AccessPathNotSetByPredecessorBB(?ap, ?pred)).
 
-// Similar for MustAlias
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+    AccessPath_IsCollection(?ap),
+    !SomePathFromFirstInstructionCallsMethod(?pred).
 
-OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockHead(?tail, ?pred),
-   BasicBlockEnd(?tail),
-   MustAlias(?ap1, ?ap2, ?ctx, ?tail).
+  .decl AllRelevantPredecessors_HasAccessPathMayPointTo(?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
 
-// TODO: currently only defined for single-field access paths
+  AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
+    !NextPredecessorToSameBB(?insn, ?pred, _),
+    !ExceptionHandlerFirstInstruction(?insn).
 
-// does the first one have *some* access path points-to info, or is irrelevant?
-MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-   MustAliasAtSomePredecessor(?ap1, ?ap2, ?ctx, ?insn),
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
-//    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
-//	 AccessPathNotSetByPredecessorBB(?ap2, ?pred))).
-   
-MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-   MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
-   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-   (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
-//    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
-//	 AccessPathNotSetByPredecessorBB(?ap2, ?pred)).
+  // // *MustAlias*
+  // // Similar for MustAlias
+  // 
+  // OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MaySuccessorBBModuloThrow(?insn, ?pred),
+  //    BasicBlockHead(?tail, ?pred),
+  //    BasicBlockEnd(?tail),
+  //    MustAlias(?ap1, ?ap2, ?ctx, ?tail).
+  // 
+  // // TODO: currently only defined for single-field access paths
+  // 
+  // // does the first one have *some* access path points-to info, or is irrelevant?
+  // MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MustAliasAtSomePredecessor(?ap1, ?ap2, ?ctx, ?insn),
+  //    MayPredecessorBBModuloThrow(?pred, ?insn),
+  //    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+  //    (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
+  // //    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
+  // //	 AccessPathNotSetByPredecessorBB(?ap2, ?pred))).
+  //    
+  // MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
+  //    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+  //    (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
+  // //    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
+  // //	 AccessPathNotSetByPredecessorBB(?ap2, ?pred)).
+  // 
+  // AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
+  //    !(NextPredecessorToSameBB(?insn, ?pred, _)),
+  //    !ExceptionHandlerFirstInstruction(?insn).
 
-AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-   MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
-   !(NextPredecessorToSameBB(?insn, ?pred, _)),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-/// ----------------------------------
-*/
-
-  ///// POINT1--AccessPathNotSetByPredecessor can go here
+  /// ----------------------------------
 
   //// END AUXILIARY. Helper relations, "forall" emulations.
 
@@ -966,7 +924,7 @@ AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
   // //// ====================================
 
   // //// ====================================
-  // //// BEGIN frame rules
+  // //// BEGIN frame rules, control-flow join rules
 
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     PrevInSameBasicBlock(?insn, ?prev),
@@ -985,6 +943,22 @@ AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
      IgnorableMethodInvocation(?insn);
      IgnorableForNonCollectionsMethodInvocation(?insn)),
      !StoreInstruction(?insn).
+
+  //// Establishing Before_AccessPathMayPointTo at beginning of basic block.
+
+  .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  
+  AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    MaySuccessorBBModuloThrow(?insn, ?pred),
+    BasicBlockEnd(?tail),
+    BasicBlockHead(?tail, ?pred),
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail).
+
+  Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
+
+  //// POINT3: MustAlias, insert here
 
 }  // END .comp SoundMay
 
@@ -1014,7 +988,7 @@ InstructionUnderConstructorOfClassOfField(?fld, ?insn) :-
 
 ConstructorOfClassOfField(?fld, ?consMeth) :-
    MethodSignature_SimpleName(?consMeth, "<init>"),
-   _OptFieldFromClass(?fld, ?cls),
+   FieldSignature_DeclaringClass(?fld, ?cls),
    MethodSignature_DeclaringType(?consMeth, ?cls).
 
 // Must-reachable, that is.
@@ -1116,76 +1090,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
    LibraryCollectionType(Var_Type[?base]),
    StoreArrayIndex_Insn(?insn).
 
-
-//// Establishing Before_AccessPathMayPointTo at beginning of basic block.
-
-// Before_AccessPathMayPointTo should be established not just when all
-// predecessor basic blocks have APMPT info, but also when some
-// predecessors have no way to have set it (and all others have
-// it). We speak of "Relevant" predecessors.
-BasicBlockAssignsField(?fld, ?headInsn) :-
-   BasicBlockHead(?insn, ?headInsn),
-   FieldInstruction_Signature(?insn, ?fld).
-
-BasicBlockCallsMethod(?headInsn) :-
-   BasicBlockHead(?insn, ?headInsn),
-   MethodInvocation(?insn),
-   !IgnorableMethodInvocation(?insn).
-
-SomePathBetweenBasicBlocksAssignsField(?prev, ?next, ?fld) :-
-   BasicBlockAssignsField(?fld, ?prev),
-   MaySuccessorBBModuloThrow(?next, ?prev).
-
-SomePathBetweenBasicBlocksAssignsField(?prev, ?next, ?fld) :-
-   SomePathBetweenBasicBlocksAssignsField(?prev, ?interm, ?fld),
-   MaySuccessorBBModuloThrow(?next, ?interm).
-
-SomePathBetweenBasicBlocksCallsMethod(?prev, ?next) :-
-   BasicBlockCallsMethod(?prev),
-   MaySuccessorBBModuloThrow(?next, ?prev).
-
-SomePathBetweenBasicBlocksCallsMethod(?prev, ?next) :-
-   SomePathBetweenBasicBlocksCallsMethod(?prev, ?interm),
-   MaySuccessorBBModuloThrow(?next, ?interm).
-
-BBHeadIsFirstInstruction(?firstInsn) :-
-   BasicBlockBegin(?firstInsn), 
-   FirstInstructionOfMethod(_, ?firstInsn).
-
-SomePathFromFirstInstructionAssignsField(?blockHead, ?fld) :-
-   BBHeadIsFirstInstruction(?firstInsn),
-   SomePathBetweenBasicBlocksAssignsField(?firstInsn, ?blockHead, ?fld).
-
-SomePathFromFirstInstructionCallsMethod(?blockHead) :-
-   BBHeadIsFirstInstruction(?firstInsn),
-   SomePathBetweenBasicBlocksCallsMethod(?firstInsn, ?blockHead).
-
-AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockEnd(?tail),
-   BasicBlockHead(?tail, ?pred),
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail).
-
-OptAccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ctx, ?insn, ?ap) :-
-   AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn).
-
-Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
-   AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
-
-//// POINT3: MustAlias, insert here
-
-/// Now getting the "Before:" info at basic block boundaries
-
-MustAliasAtSomePredecessor(?ap2, ?ap1, ?ctx, ?insn) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockEnd(?tail),
-   BasicBlockHead(?tail, ?pred),
-   MustAlias(?ap2, ?ap1, ?ctx, ?tail).
-
-BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-   AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn).
-
 //// POINT4 insert here
 
 //// REVIEW: Maybe base such logic on a type-based escape analysis?
@@ -1242,7 +1146,7 @@ MethodMayAssignField(?fld, ?method) :-
 
 //// POINT5: DominatedPathMayInvalidateFieldPointsTo, enter here
 
-// //// END frame rules
+// //// END frame rules, control-flow join rules
 
 //// END core MayPointTo code
 //// ====================================
@@ -1630,6 +1534,62 @@ StoreInstruction(?insn) :-
   StoreStaticField_From(?insn, _);
   StoreInstanceField_From(?insn, _).
 
+.decl ThisVarOfConstructor(?method:MethodSignature, ?this:Var)
+ThisVarOfConstructor(?method, ?this) :-
+   MethodSignature_SimpleName(?method, "<init>"),
+   ThisVar(?method, ?this).
+
+//// Utilities for establishing Before_AccessPathMayPointTo at beginning of basic block.
+
+.decl BasicBlockAssignsField(?fld:FieldSignature, ?headInsn:Instruction)
+.decl BasicBlockCallsMethod(?headInsn:Instruction)
+.decl SomePathBetweenBasicBlocksAssignsField(?prev:Instruction, ?next:Instruction, ?fld:FieldSignature)
+.decl SomePathBetweenBasicBlocksCallsMethod(?prev:Instruction, ?next:Instruction)
+.decl BBHeadIsFirstInstruction(?firstInsn:Instruction)
+.decl SomePathFromFirstInstructionAssignsField(?blockHead:Instruction, ?fld:FieldSignature)
+.decl SomePathFromFirstInstructionCallsMethod(?blockHead:Instruction)
+
+// Before_AccessPathMayPointTo should be established not just when all
+// predecessor basic blocks have APMPT info, but also when some
+// predecessors have no way to have set it (and all others have
+// it). We speak of "Relevant" predecessors.
+BasicBlockAssignsField(?fld, ?headInsn) :-
+  BasicBlockHead(?insn, ?headInsn),
+  FieldInstruction_Signature(?insn, ?fld).
+
+BasicBlockCallsMethod(?headInsn) :-
+  BasicBlockHead(?insn, ?headInsn),
+  MethodInvocation(?insn),
+  !IgnorableMethodInvocation(?insn).
+
+SomePathBetweenBasicBlocksAssignsField(?prev, ?next, ?fld) :-
+  BasicBlockAssignsField(?fld, ?prev),
+  MaySuccessorBBModuloThrow(?next, ?prev).
+
+SomePathBetweenBasicBlocksAssignsField(?prev, ?next, ?fld) :-
+  SomePathBetweenBasicBlocksAssignsField(?prev, ?interm, ?fld),
+  MaySuccessorBBModuloThrow(?next, ?interm).
+
+SomePathBetweenBasicBlocksCallsMethod(?prev, ?next) :-
+  BasicBlockCallsMethod(?prev),
+  MaySuccessorBBModuloThrow(?next, ?prev).
+
+SomePathBetweenBasicBlocksCallsMethod(?prev, ?next) :-
+  SomePathBetweenBasicBlocksCallsMethod(?prev, ?interm),
+  MaySuccessorBBModuloThrow(?next, ?interm).
+
+BBHeadIsFirstInstruction(?firstInsn) :-
+  BasicBlockBegin(?firstInsn), 
+  FirstInstructionOfMethod(_, ?firstInsn).
+
+SomePathFromFirstInstructionAssignsField(?blockHead, ?fld) :-
+  BBHeadIsFirstInstruction(?firstInsn),
+  SomePathBetweenBasicBlocksAssignsField(?firstInsn, ?blockHead, ?fld).
+
+SomePathFromFirstInstructionCallsMethod(?blockHead) :-
+  BBHeadIsFirstInstruction(?firstInsn),
+  SomePathBetweenBasicBlocksCallsMethod(?firstInsn, ?blockHead).
+
 //// END utilities
 
 
@@ -1790,6 +1750,50 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
 // //// ====================================
 */
 
+/*
+  ///// POINT1--unchanged access paths code
+  
+  //// Dealing with unchanged access paths (below) hasn't proven
+  //// worthwhile. It's not surprising. The callee has no name for
+  //// this access path. The only hope is that it will survive through
+  //// virtual calls and will come back to the caller (whereas the
+  //// conservative must-pre-analysis won't consider virtual calls it
+  //// cannot resolve in its naive way).
+
+  // This is quite expensive if not restricted. Currently used only for
+  // non-resolved virtual calls. For resolved ones, we have a frame rule
+  // to propagate the information right over the method call in many
+  // cases (and we ignore the rest for now).
+  // ChangedBaseAtInvocation(?var, ?invo) :-
+  //   ActualParam(_, ?invo, ?var);
+  //   VirtualMethodInvocation_Base(?invo, ?var);
+  //   SpecialMethodInvocation_Base(?invo, ?var).
+
+  // OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap) :-
+  //   MayCallGraphEdge_ToMethod(?toMethod, ?callerCtx, ?invo),
+  //   !May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
+  //   MayCallGraphEdge_Context(?callerCtx, ?invo, ?calleeCtx),
+  //   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo).
+  
+  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
+  //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
+  //    AccessPath_BaseVar(?ap, ?baseVar),
+  //    !ChangedBaseAtInvocation(?baseVar, ?invo),
+  //    SingleFieldAccessPath(?fld, ?ap),
+  //    (MethodMayAssignField(?fld, ?toMethod);
+  //     MethodHasUnresolvedInvocation(?toMethod)),
+  //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
+
+  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) :-
+  //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
+  //    AccessPath_BaseVar(?ap, ?baseVar),
+  //    !ChangedBaseAtInvocation(?baseVar, ?invo),
+  //    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
+  //    (MethodMayAssignField(?fld1, ?toMethod);
+  //     MethodMayAssignField(?fld2, ?toMethod);
+  //     MethodHasUnresolvedInvocation(?toMethod)),
+  //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
+*/
 
 
 /*
@@ -1996,6 +2000,20 @@ StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
 // //// and still, we only covered up to 3.
 
 // TODO extend to longer access paths
+
+
+/// Now getting the "Before:" info at basic block boundaries
+
+// // *MustAlias*
+//  MustAliasAtSomePredecessor(?ap2, ?ap1, ?ctx, ?insn) :-
+//    MaySuccessorBBModuloThrow(?insn, ?pred),
+//    BasicBlockEnd(?tail),
+//    BasicBlockHead(?tail, ?pred),
+//    MustAlias(?ap2, ?ap1, ?ctx, ?tail).
+//
+//  BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn).
+
 */
 
 
