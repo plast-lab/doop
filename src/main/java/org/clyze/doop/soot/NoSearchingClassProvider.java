@@ -154,7 +154,7 @@ class NoSearchingClassProvider implements ClassProvider {
         Resource resource = _classes.get(className);
 
         if(resource == null) {
-            String fileName = className.replace('.', '/') + ".dex";
+            String fileName = className.replace('.', '/') + ".class";
 
             for(ZipFile archive : _archives) {
                 ZipEntry entry = archive.getEntry(fileName);

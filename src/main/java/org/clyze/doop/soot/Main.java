@@ -2,9 +2,7 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
-import soot.ClassProvider;
-import soot.Scene;
-import soot.SootClass;
+import soot.*;
 
 import java.io.File;
 import java.util.*;
@@ -45,174 +43,174 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        try {
-            if (args.length == 0) {
-                System.err.println("usage: [options] file...");
-                System.exit(0);
-            }
-
-            for (int i = 0; i < args.length; i++) {
-                if (args[i].equals("--full")) {
-                    if( _mode != null) {
-                        System.err.println("error: duplicate mode argument");
-                        System.exit(1);
-                    }
-
-                    _mode = Mode.FULL;
-                }
-                else if (args[i].equals("-d")) {
-                    i = shift(args, i);
-                    _outputDir = args[i];
-                }
-                else if (args[i].equals("--main")) {
-                    i = shift(args, i);
-                    _main = args[i];
-                }
-                else if (args[i].equals("--ssa")) {
-                    _ssa = true;
-                }
-                else if (args[i].equals("--android")) {
-                    _allowPhantom = true;
-                    _android = true;
-                    String home = System.getProperty("home");
-                    _libraries.add(File.separator + "home" + File.separator + "anantoni" + File.separator + "android-sdk" + File.separator + "platforms" + File.separator + "android-24" + File.separator  + "android.jar");
+        soot.Main.v().run(args);
+//        try {
+//            if (args.length == 0) {
+//                System.err.println("usage: [options] file...");
+//                System.exit(0);
+//            }
+//
+//            for (int i = 0; i < args.length; i++) {
+//                if (args[i].equals("--full")) {
+//                    if( _mode != null) {
+//                        System.err.println("error: duplicate mode argument");
+//                        System.exit(1);
+//                    }
+//
+//                    _mode = Mode.FULL;
+//                }
+//                else if (args[i].equals("-d")) {
+//                    i = shift(args, i);
+//                    _outputDir = args[i];
+//                }
+//                else if (args[i].equals("--main")) {
+//                    i = shift(args, i);
+//                    _main = args[i];
+//                }
+//                else if (args[i].equals("--ssa")) {
+//                    _ssa = true;
+//                }
+//                else if (args[i].equals("--android")) {
+//                    _allowPhantom = true;
+//                    _android = true;
+//                    String home = System.getProperty("home");
+//                    _libraries.add(File.separator + "home" + File.separator + "anantoni" + File.separator + "android-sdk" + File.separator + "platforms" + File.separator + "android-24" + File.separator  + "android.jar");
 //                    _libraries.add(home + File.separator + "lib" + File.separator + "jce.jar");
 //                    _libraries.add(home + File.separator + "lib" + File.separator + "jsse.jar");
-                }
-                else if (args[i].equals("-l")) {
-                    i = shift(args, i);
-                    _libraries.add(args[i]);
-                }
-                else if (args[i].equals("-lsystem")) {
-                    String javaHome = System.getProperty("java.home");
+//                }
+//                else if (args[i].equals("-l")) {
+//                    i = shift(args, i);
+//                    _libraries.add(args[i]);
+//                }
+//                else if (args[i].equals("-lsystem")) {
+//                    String javaHome = System.getProperty("java.home");
 //                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
 //                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
 //                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
-                }
-                else if (args[i].equals("--deps")) {
-                    i = shift(args, i);
-                    String folderName = args[i];
-                    File f = new File(folderName);
-                    if (!f.exists()) {
-                        System.err.println("Dependency folder " + folderName + " does not exist");
-                        System.exit(0);
-                    }
-                    else if (!f.isDirectory()) {
-                        System.err.println("Dependency folder " + folderName + " is not a directory");
-                        System.exit(0);
-                    }
-                    for (File file : f.listFiles()) {
-                        if (file.isFile() && file.getName().endsWith(".jar")) {
-                            _libraries.add(file.getCanonicalPath());
-                        }
-                    }
-                }
-                else if (args[i].equals("--application-regex")) {
-                    i = shift(args, i);
-                    appRegex = args[i];
-                }
-                else if (args[i].equals("--allow-phantom")) {
-                    _allowPhantom = true;
-                }
-                else if (args[i].equals("--use-original-names")) {
-                    _useOriginalNames = true;
-                }
-                else if (args[i].equals("--only-application-classes-fact-gen")) {
-                    _onlyApplicationClassesFactGen = true;
-                }
-                else if (args[i].equals("--keep-line-number")) {
-                    _keepLineNumber = true;
-                }
-                else if (args[i].equals("--bytecode2jimple")) {
-                    _bytecode2jimple = true;
-                }
-                else if (args[i].equals("--stdout")) {
-                    _toStdout = true;
-                }
-                else if (args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
-                    System.err.println("usage: [options] file");
-                    System.err.println("options:");
-                    System.err.println("  --main <class>                        Specify the main name of the main class");
-                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  --full                                Generate facts by full transitive resolution");
-                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                              Find classes in default system classes.");
-                    System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                    System.err.println("  --use-original-names                  Use original (source code) local variable names");
-                    System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
-                    System.err.println("  --keep-line-number                    Keep line number information for statements");
-
-                    System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
-                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-
-                    System.err.println("  -h, -help                             Print this help message.");
-                    System.exit(0);
-                }
-                else if (args[i].equals("--bytecode2jimpleHelp")) {
-                    System.err.println("usage: [options] file");
-                    System.err.println("options:");
-                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  --full                                Generate facts by full transitive resolution");
-                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                              Find classes in default system classes.");
-                    System.exit(0);
-                }
-                else {
-                    if (args[i].charAt(0) == '-') {
-                        System.err.println("error: unrecognized option: " + args[i]);
-                        System.exit(0);
-                    }
-                    else {
-                        _inputs.add(args[i]);
-                    }
-                }
-            }
-
-            if(_mode == null) {
-                _mode = Mode.INPUTS;
-            }
-
-            if (_toStdout && !_bytecode2jimple) {
-                System.err.println("error: --stdout must be used with --bytecode2jimple");
-                System.exit(1);
-            }
-            if (_toStdout && _outputDir != null) {
-                System.err.println("error: --stdout and -d options are not compatible");
-                System.exit(2);
-            }
-            else if (!_toStdout && _outputDir == null) {
-                _outputDir = System.getProperty("user.dir");
-            }
-
-            /*
-             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
-             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
-             * a runtime exception when running soot with java 1.8, however it leads to different
-             * input fact generation thus leading to different analysis results
-             */
-            Scene.v().addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
-            run();
-        }
-        catch(Exception exc) {
-            exc.printStackTrace();
-            System.exit(1);
-        }
+//                }
+//                else if (args[i].equals("--deps")) {
+//                    i = shift(args, i);
+//                    String folderName = args[i];
+//                    File f = new File(folderName);
+//                    if (!f.exists()) {
+//                        System.err.println("Dependency folder " + folderName + " does not exist");
+//                        System.exit(0);
+//                    }
+//                    else if (!f.isDirectory()) {
+//                        System.err.println("Dependency folder " + folderName + " is not a directory");
+//                        System.exit(0);
+//                    }
+//                    for (File file : f.listFiles()) {
+//                        if (file.isFile() && file.getName().endsWith(".jar")) {
+//                            _libraries.add(file.getCanonicalPath());
+//                        }
+//                    }
+//                }
+//                else if (args[i].equals("--application-regex")) {
+//                    i = shift(args, i);
+//                    appRegex = args[i];
+//                }
+//                else if (args[i].equals("--allow-phantom")) {
+//                    _allowPhantom = true;
+//                }
+//                else if (args[i].equals("--use-original-names")) {
+//                    _useOriginalNames = true;
+//                }
+//                else if (args[i].equals("--only-application-classes-fact-gen")) {
+//                    _onlyApplicationClassesFactGen = true;
+//                }
+//                else if (args[i].equals("--keep-line-number")) {
+//                    _keepLineNumber = true;
+//                }
+//                else if (args[i].equals("--bytecode2jimple")) {
+//                    _bytecode2jimple = true;
+//                }
+//                else if (args[i].equals("--stdout")) {
+//                    _toStdout = true;
+//                }
+//                else if (args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
+//                    System.err.println("usage: [options] file");
+//                    System.err.println("options:");
+//                    System.err.println("  --main <class>                        Specify the main name of the main class");
+//                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+//                    System.err.println("  --full                                Generate facts by full transitive resolution");
+//                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+//                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+//                    System.err.println("  -lsystem                              Find classes in default system classes.");
+//                    System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
+//                    System.err.println("  --use-original-names                  Use original (source code) local variable names");
+//                    System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
+//                    System.err.println("  --keep-line-number                    Keep line number information for statements");
+//
+//                    System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
+//                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+//
+//                    System.err.println("  -h, -help                             Print this help message.");
+//                    System.exit(0);
+//                }
+//                else if (args[i].equals("--bytecode2jimpleHelp")) {
+//                    System.err.println("usage: [options] file");
+//                    System.err.println("options:");
+//                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+//                    System.err.println("  --full                                Generate facts by full transitive resolution");
+//                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+//                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+//                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+//                    System.err.println("  -lsystem                              Find classes in default system classes.");
+//                    System.exit(0);
+//                }
+//                else {
+//                    if (args[i].charAt(0) == '-') {
+//                        System.err.println("error: unrecognized option: " + args[i]);
+//                        System.exit(0);
+//                    }
+//                    else {
+//                        _inputs.add(args[i]);
+//                    }
+//                }
+//            }
+//
+//            if(_mode == null) {
+//                _mode = Mode.INPUTS;
+//            }
+//
+//            if (_toStdout && !_bytecode2jimple) {
+//                System.err.println("error: --stdout must be used with --bytecode2jimple");
+//                System.exit(1);
+//            }
+//            if (_toStdout && _outputDir != null) {
+//                System.err.println("error: --stdout and -d options are not compatible");
+//                System.exit(2);
+//            }
+//            else if (!_toStdout && _outputDir == null) {
+//                _outputDir = System.getProperty("user.dir");
+//            }
+//
+//            /*
+//             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
+//             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
+//             * a runtime exception when running soot with java 1.8, however it leads to different
+//             * input fact generation thus leading to different analysis results
+//             */
+//            Scene.v().addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
+//            run();
+//        }
+//        catch(Exception exc) {
+//            exc.printStackTrace();
+//            System.exit(1);
+//        }
     }
 
     private static void run() throws Exception {
-        NoSearchingClassProvider provider = new NoSearchingClassProvider();
-
+        NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         for(String arg : _inputs) {
-            if(arg.endsWith(".jar") || arg.endsWith(".zip") || arg.endsWith(".apk")) {
+            if(arg.endsWith(".jar") || arg.endsWith(".zip")) {
                 System.out.println("Adding archive: " + arg);
-                provider.addArchive(new File(arg));
+                classProvider.addArchive(new File(arg));
             }
             else {
                 System.out.println("Adding file: " + arg);
-                provider.addClass(new File(arg));
+                classProvider.addClass(new File(arg));
             }
         }
 
@@ -224,10 +222,10 @@ public class Main {
             if (!libraryFile.exists()) {
                 System.err.println("Library file does not exist: " + libraryFile);
             } else {
-                provider.addArchiveForResolving(libraryFile);
+                classProvider.addArchiveForResolving(libraryFile);
             }
         }
-        soot.SourceLocator.v().setClassProviders(Collections.singletonList((ClassProvider) provider));
+        soot.SourceLocator.v().setClassProviders(Collections.singletonList((ClassProvider) classProvider));
         Scene scene = Scene.v();
         if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
@@ -241,18 +239,6 @@ public class Main {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
-        if (_android) {
-            soot.options.Options.v().set_src_prec(5);  //set src precedence to apk
-//            soot.options.Options.v().set_ignore_resolution_errors(true);
-            soot.options.Options.v().set_allow_phantom_refs(true);
-
-            soot.options.Options.v().set_android_jars("/home/anantoni/android-sdk/platforms");
-            List<String>_process_dir = new ArrayList<>();
-            _process_dir.add("/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk");
-            soot.options.Options.v().set_process_dir(_process_dir);
-        }
-
-
         if (_useOriginalNames) {
             soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         }
@@ -262,34 +248,31 @@ public class Main {
         }
 
         List<SootClass> classes = new ArrayList<>();
-        for(String className : provider.getClassNames()) {
+        for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
 
             classes.add(c);
         }
+            /*
+            * For simulating the FileSystem class, we need the implementation
+            * of the FileSystem, but the classes are not loaded automatically
+            * due to the indirection via native code.
+            */
+        addCommonDynamicClass(scene, classProvider, "java.io.UnixFileSystem");
+        addCommonDynamicClass(scene, classProvider, "java.io.WinNTFileSystem");
+        addCommonDynamicClass(scene, classProvider, "java.io.Win32FileSystem");
 
-
-        /*
-         * For simulating the FileSystem class, we need the implementation
-         * of the FileSystem, but the classes are not loaded automatically
-         * due to the indirection via native code.
-         */
-//        addCommonDynamicClass(scene, provider, "java.io.UnixFileSystem");
-//        addCommonDynamicClass(scene, provider, "java.io.WinNTFileSystem");
-//        addCommonDynamicClass(scene, provider, "java.io.Win32FileSystem");
-
-        /* java.net.URL loads handlers dynamically */
-//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.file.Handler");
-//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.ftp.Handler");
-//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.http.Handler");
-//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.https.Handler");
-//        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.jar.Handler");
+            /* java.net.URL loads handlers dynamically */
+        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.file.Handler");
+        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.ftp.Handler");
+        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.http.Handler");
+        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.https.Handler");
+        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
 
         scene.loadNecessaryClasses();
 
-
-       /*
+        /*
         * This part should definitely appear after the call to
         * `Scene.loadNecessaryClasses()', since the latter may alter
         * the set of application classes by explicitly specifying
@@ -324,7 +307,7 @@ public class Main {
             }
 
             // Read all stored properties files
-            for (Map.Entry<String,Properties> entry : provider.getProperties().entrySet()) {
+            for (Map.Entry<String,Properties> entry : classProvider.getProperties().entrySet()) {
                 String path = entry.getKey();
                 Properties properties = entry.getValue();
 
