@@ -636,37 +636,37 @@ import org.apache.commons.logging.LogFactory
                 depArgs = ["-lsystem"] + deps
             }
             else {
-                depArgs = jreJars.collect{ String arg -> ["-l", arg]}.flatten() + deps
+                depArgs = jreJars.collect{ String arg -> ["-l", arg]}.flatten() +  deps
             }
 
         }
 
+        Collection<String> params = null;
+        if (!options.ANDROID.value) {
+            params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
 
+            if (options.SSA.value) {
+                params = params + ["--ssa"]
+            }
 
-        Collection<String> params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+            if (!options.RUN_JPHANTOM.value) {
+                params = params + ["--allow-phantom"]
+            }
 
-        if (options.ANDROID.value) {
-            params = params + ["--android"]
+            if (options.USE_ORIGINAL_NAMES.value) {
+                params = params + ["--use-original-names"]
+            }
+
+            if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
+                params = params + ["--only-application-classes-fact-gen"]
+            }
+
+            params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
+
         }
-
-        if (options.SSA.value) {
-            params = params + ["--ssa"]
+        else {
+            params = ["-allow-phantom-refs", "-android-jars", "/home/anantoni/android-sdk/platforms/", "-src-prec", "apk", "-f", "jimple", "-process-dir", "/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk"]
         }
-
-        if (!options.RUN_JPHANTOM.value) {
-            params = params + ["--allow-phantom"]
-        }
-
-        if (options.USE_ORIGINAL_NAMES.value) {
-            params = params + ["--use-original-names"]
-        }
-
-        if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-            params = params + ["--only-application-classes-fact-gen"]
-        }
-
-        params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
-
         logger.debug "Params of soot: ${params.join(' ')}"
 
         sootTime = timing {
