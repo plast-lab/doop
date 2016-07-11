@@ -19,6 +19,7 @@
 // INPUTS
 .decl ActualParam(?index:number, ?callsite:MethodInvocation, ?actualVariable:Var)  input
 .decl ApplicationClass(?class:Type) input
+.decl ArrayType(?type:Type) input
 .decl AssignCast_From(?insn:Instruction, ?from:Var) input
 .decl AssignCast_Insn(?insn:Instruction) input
 .decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMeth:MethodSignature) input
@@ -51,15 +52,18 @@
 .decl MainMethodArgHeap(?argHeap:HeapAllocation) input
 .decl MainMethodArgsArray(?argsArray:HeapAllocation) input
 .decl MaySuccessorBBModuloThrow(?insn:Instruction, ?insn2:Instruction) input
+.decl MethodInvocation(?invocation:MethodInvocation) input
 .decl MethodInvocation_Signature(?invocation:MethodInvocation, ?toMethod:MethodSignature) input
 .decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, ?heaptype:Type, ?tomethod:MethodSignature) input 
 .decl MethodSignature_DeclaringType(?meth:MethodSignature, ?class:Type) input
 .decl MethodSignature_Descriptor(?meth:MethodSignature, ?desc:String) input
 .decl MethodSignature_SimpleName(?meth:MethodSignature, ?name:String) input
 .decl Modifier_final(?mod:Modifier) input
+.decl MonitorInstruction(?insn:Instruction) input
 .decl NextInSamePhiNode(?insn:Instruction, ?nextInsn:Instruction) input
 .decl NextReturn(?returnInsn:Instruction, ?nextRetInsn:Instruction) input
 .decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction) input
+.decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction) input
 .decl Reachable(?inMethod:MethodSignature) input
 .decl ReferenceType(?type:Type) input
 .decl ReturnInstruction(?returnInsn:Instruction) input
@@ -215,6 +219,10 @@
   .decl MayCallGraphEdge(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
   .decl MethodMayAssignField(?fld:FieldSignature, ?toMethod:MethodSignature)
   .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature)
+
+  .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
+  .decl MethodMayAssignField_Prev(?fld:FieldSignature, ?toMethod:MethodSignature)
+  .decl MethodHasUnresolvedInvocation_Prev(?toMethod:MethodSignature)
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -596,7 +604,7 @@
   //    OptPotentialAccessPathMayPointToPropagation(?hctx, ?heap, ?invo, ?calleeCtx, ?toMethod, ?ap),
   //    AccessPath_BaseVar(?ap, ?baseVar),
   //    !ChangedBaseAtInvocation(?baseVar, ?invo),
-  //    _SingleFieldAccessPath(?fld, ?ap),
+  //    SingleFieldAccessPath(?fld, ?ap),
   //    (MethodMayAssignField(?fld, ?toMethod);
   //     MethodHasUnresolvedInvocation(?toMethod)),
   //    FirstInstructionOfMethod(?toMethod, ?firstInsn).
@@ -613,202 +621,8 @@
 
   .decl ReturnValueOfResolvedCallAssignedTo(?callerCtx:MayContext, ?to:Var, ?calleeCtx:MayContext, ?toMethod:MethodSignature)
   ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) :-
-     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
-     AssignReturnValue(?invo, ?to).
-
-  //// ====================================
-  //// AUXILIARY. Helper relations, "forall" emulations.
-
-  // For all Phi node instructions, the "to" var (implicit in the
-  // predicate) may point to...
-  .decl MayPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?lastInsn:Instruction)
-
-  MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
-    PhiNodeHead(_, ?headInsn),
-    AssignLocal_From(?headInsn, ?from),
-    MayPointTo(?hctx, ?heap, ?ctx, ?from).
-
-  MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?nextInsn),
-  MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) :-
-    MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?insn),
-    NextInSamePhiNode(?insn, ?nextInsn),
-    AssignLocal_From(?nextInsn, ?from),
-    MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
-
-  // for all returns of a method, the return variable has a known upper bound
-  // for its points-to, and we take the union of all such bounds
-  .decl UpToReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?return:Instruction)
-  UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) :-
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
-    ReturnNonvoid_Var(?return, ?var),
-    MayPointTo(?hctx, ?heap, ?ctx, ?var).
-
-  UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?return),
-  UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) :-
-    UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?prevReturn),
-    NextReturn(?prevReturn, ?return),
-    ReturnNonvoid_Var(?return, ?var),
-    MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
-
-  .decl AllReturn_MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?method:MethodSignature)
-  AllReturn_MayPointTo(?hctx, ?heap, ?ctx, ?method) :-
-    UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
-    Instruction_Method(?return, ?method).
-
-  // same for composite access paths
-  .decl UpToReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?ret:Instruction)
-  UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return) :-
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return).
-
-  UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?return),
-  UpToReturnAccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return) :-
-    UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?prevReturn),
-    NextReturn(?prevReturn, ?return),
-    Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return).
-
-  .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:MethodSignature)
-  AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
-    UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
-    Instruction_Method(?return, ?method).
-
-  // all returns of a method have the same return var
-  .decl UpToReturnSameRetVar(?return:Instruction, ?var:Var)
-  UpToReturnSameRetVar(?return, ?var) :-
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
-    ReturnNonvoid_Var(?return, ?var).
-
-  UpToReturnSameRetVar(?return, ?var) :-
-    UpToReturnSameRetVar(?prevReturn, ?var),
-    NextReturn(?prevReturn, ?return),
-    ReturnNonvoid_Var(?return, ?var).
-
-  .decl AllReturn_SameRetVar(?method:MethodSignature, ?var:Var)
-  AllReturn_SameRetVar(?method, ?var) :-
-    UpToReturnSameRetVar(?return, ?var),
-    !(NextReturn(?return, _)),
-    Instruction_Method(?return, ?method).
-
-/*
-
-
-/// ----------------------------------
-
-/// AccessPathMayPointTo for predecessors
-
-// The interesting concept is that of relevant predecessors for some
-// access path.  E.g., if a predecessor is not reachable from the
-// first instruction of the method via a path that can set the access
-// path, then it's not a relevant predecessor.
-
-OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockHead(?tail, ?pred),
-   BasicBlockEnd(?tail),
-   AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail).
-
-AccessPathRelevantToMethod(?ap, ?meth) :-
-   (AccessPathMayPointTo(_, _, ?ap, _, ?insn);
-    MustAlias(_, ?ap, _, ?insn)),
-   Instruction_Method(?insn, ?meth).
-
-AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
-   BasicBlockBegin(?pred),
-   Instruction_Method(?pred, ?meth),
-   AccessPathRelevantToMethod(?ap, ?meth),
-   _SingleFieldAccessPath(?fld, ?ap),
-   !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
-   !SomePathFromFirstInstructionCallsMethod(?pred).
-
-// TODO: currently only defined for single-field access paths and
-//       collection access paths.
-
-// does the first one have *some* access path points-to info, or is irrelevant?
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
-
-_OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   AccessPathNotSetByPredecessorBB(?ap, ?pred).
-
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   OptAccessPathMayPointToAtSomePredecessor(_, _, ?ctx, ?insn, ?ap),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   _OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap).
-   // the above can be weakened to eliminate collection method calls,
-   // but below (for collections) we need to be careful. We should not
-   // assume we know all operations, so we should be conservative with
-   // method calls.
-   
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   OptAccessPathMayPointToAtSomePredecessor(_, _, ?ctx, ?insn, ?ap),
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   AccessPath_ByCollectionVarInv(?ap, _), 
-   !SomePathFromFirstInstructionCallsMethod(?pred).
-
-// TODO: optimizing indexing for all uses of AccessPathNotSetByPredecessorBB
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
-   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
-    AccessPathNotSetByPredecessorBB(?ap, ?pred)).
-
-HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
-   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-   AccessPath_ByCollectionVarInv(?ap, _), 
-   !SomePathFromFirstInstructionCallsMethod(?pred).
-
-AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
-   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
-   !(NextPredecessorToSameBB(?insn, ?pred, _)),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-// Similar for MustAlias
-
-OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-   MaySuccessorBBModuloThrow(?insn, ?pred),
-   BasicBlockHead(?tail, ?pred),
-   BasicBlockEnd(?tail),
-   MustAlias(?ap1, ?ap2, ?ctx, ?tail).
-
-// TODO: currently only defined for single-field access paths
-
-// does the first one have *some* access path points-to info, or is irrelevant?
-MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-   MustAliasAtSomePredecessor(?ap1, ?ap2, ?ctx, ?insn),
-   MayPredecessorBBModuloThrow(?pred, ?insn),
-   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-   (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
-//    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
-//	 AccessPathNotSetByPredecessorBB(?ap2, ?pred))).
-   
-MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-   MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
-   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-   (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
-//    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
-//	 AccessPathNotSetByPredecessorBB(?ap2, ?pred)).
-
-AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-   MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
-   !(NextPredecessorToSameBB(?insn, ?pred, _)),
-   !ExceptionHandlerFirstInstruction(?insn).
-
-*/
-
-//// END AUXILIARY. Helper relations, "forall" emulations.
-/// ----------------------------------
-
+    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    AssignReturnValue(?invo, ?to).
 
 /*
 
@@ -923,162 +737,271 @@ Before_AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?firstInsn) :-
    EmptyHeapContext(?hctx).
 
 */
+
+  //// ====================================
+  //// AUXILIARY. Helper relations, "forall" emulations.
+
+  // For all Phi node instructions, the "to" var (implicit in the
+  // predicate) may point to...
+  .decl MayPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?lastInsn:Instruction)
+
+  MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
+    PhiNodeHead(_, ?headInsn),
+    AssignLocal_From(?headInsn, ?from),
+    MayPointTo(?hctx, ?heap, ?ctx, ?from).
+
+  MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?nextInsn),
+  MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) :-
+    MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?insn),
+    NextInSamePhiNode(?insn, ?nextInsn),
+    AssignLocal_From(?nextInsn, ?from),
+    MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
+
+  // for all returns of a method, the return variable has a known upper bound
+  // for its points-to, and we take the union of all such bounds
+  .decl UpToReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?return:Instruction)
+  UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) :-
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return),
+    ReturnNonvoid_Var(?return, ?var),
+    MayPointTo(?hctx, ?heap, ?ctx, ?var).
+
+  UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?return),
+  UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) :-
+    UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?prevReturn),
+    NextReturn(?prevReturn, ?return),
+    ReturnNonvoid_Var(?return, ?var),
+    MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
+
+  .decl AllReturn_MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?method:MethodSignature)
+  AllReturn_MayPointTo(?hctx, ?heap, ?ctx, ?method) :-
+    UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  // same for composite access paths
+  .decl UpToReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?ret:Instruction)
+  UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return) :-
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return).
+
+  UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?return),
+  UpToReturnAccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return) :-
+    UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?prevReturn),
+    NextReturn(?prevReturn, ?return),
+    Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return).
+
+  .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:MethodSignature)
+  AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
+    UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  // all returns of a method have the same return var
+  .decl UpToReturnSameRetVar(?return:Instruction, ?var:Var)
+  UpToReturnSameRetVar(?return, ?var) :-
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return),
+    ReturnNonvoid_Var(?return, ?var).
+
+  UpToReturnSameRetVar(?return, ?var) :-
+    UpToReturnSameRetVar(?prevReturn, ?var),
+    NextReturn(?prevReturn, ?return),
+    ReturnNonvoid_Var(?return, ?var).
+
+  .decl AllReturn_SameRetVar(?method:MethodSignature, ?var:Var)
+  AllReturn_SameRetVar(?method, ?var) :-
+    UpToReturnSameRetVar(?return, ?var),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  /// ----------------------------------
+
+  /// AccessPathMayPointTo for predecessors
+
+  // The interesting concept is that of relevant predecessors for some
+  // access path.  E.g., if a predecessor is not reachable from the
+  // first instruction of the method via a path that can set the access
+  // path, then it's not a relevant predecessor.
+
+  // does the predecessor BB ?pred of ?insn have (at its end) point-to info for ?ap ?
+  .decl OptHasAccessPathPointToAtPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    MaySuccessorBBModuloThrow(?insn, ?pred),
+    BasicBlockHead(?tail, ?pred),
+    BasicBlockEnd(?tail),
+    AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail).
+
+  .decl AccessPathRelevantToMethod(?ap:AccessPath, ?meth:MethodSignature) 
+  AccessPathRelevantToMethod(?ap, ?meth) :-
+    (AccessPathMayPointTo(_, _, ?ap, _, ?insn);
+     MustAlias(_, ?ap, _, ?insn)),
+    Instruction_Method(?insn, ?meth).
+
+/*
+///// Enter at POINT1--AccessPathNotSetByPredecessor 
+AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
+   BasicBlockBegin(?pred),
+   Instruction_Method(?pred, ?meth),
+   AccessPathRelevantToMethod(?ap, ?meth),
+   SingleFieldAccessPath(?fld, ?ap),
+   !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
+   !SomePathFromFirstInstructionCallsMethod(?pred).
+
+// TODO: currently only defined for single-field access paths and
+//       collection access paths.
+
+// does the first one have *some* access path points-to info, or is irrelevant?
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+   AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+   MayPredecessorBBModuloThrow(?pred, ?insn),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+   OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
+
+_OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   AccessPathNotSetByPredecessorBB(?ap, ?pred).
+
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+   OptAccessPathMayPointToAtSomePredecessor(_, _, ?ctx, ?insn, ?ap),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+   _OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap).
+   // the above can be weakened to eliminate collection method calls,
+   // but below (for collections) we need to be careful. We should not
+   // assume we know all operations, so we should be conservative with
+   // method calls.
+   
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+   OptAccessPathMayPointToAtSomePredecessor(_, _, ?ctx, ?insn, ?ap),
+   MayPredecessorBBModuloThrow(?pred, ?insn),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+   AccessPath_ByCollectionVarInv(?ap, _), 
+   !SomePathFromFirstInstructionCallsMethod(?pred).
+
+// TODO: optimizing indexing for all uses of AccessPathNotSetByPredecessorBB
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+   (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+    AccessPathNotSetByPredecessorBB(?ap, ?pred)).
+
+HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+   HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+   AccessPath_ByCollectionVarInv(?ap, _), 
+   !SomePathFromFirstInstructionCallsMethod(?pred).
+
+AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
+   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
+   !(NextPredecessorToSameBB(?insn, ?pred, _)),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+// Similar for MustAlias
+
+OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+   MaySuccessorBBModuloThrow(?insn, ?pred),
+   BasicBlockHead(?tail, ?pred),
+   BasicBlockEnd(?tail),
+   MustAlias(?ap1, ?ap2, ?ctx, ?tail).
+
+// TODO: currently only defined for single-field access paths
+
+// does the first one have *some* access path points-to info, or is irrelevant?
+MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+   MustAliasAtSomePredecessor(?ap1, ?ap2, ?ctx, ?insn),
+   MayPredecessorBBModuloThrow(?pred, ?insn),
+   !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+   (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
+//    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
+//	 AccessPathNotSetByPredecessorBB(?ap2, ?pred))).
+   
+MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+   MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
+   NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+   (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
+//    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
+//	 AccessPathNotSetByPredecessorBB(?ap2, ?pred)).
+
+AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+   MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
+   !(NextPredecessorToSameBB(?insn, ?pred, _)),
+   !ExceptionHandlerFirstInstruction(?insn).
+
+/// ----------------------------------
+*/
+
+  ///// POINT1--AccessPathNotSetByPredecessor can go here
+
+  //// END AUXILIARY. Helper relations, "forall" emulations.
+
   // //// ====================================
   // //// Weakening rules
   
   MayPointTo(?hctx, ?heap, ?ctx, ?var) :-
-     MayReachableMethodUnderMayContext(?ctx, ?method),
-     InitialMayContext(?initCtx),
-     MayPointTo(?hctx, ?heap, ?initCtx, ?var),
-     Var_DeclaringMethod(?var, ?method).
+    MayReachableMethodUnderMayContext(?ctx, ?method),
+    InitialMayContext(?initCtx),
+    MayPointTo(?hctx, ?heap, ?initCtx, ?var),
+    Var_DeclaringMethod(?var, ?method).
   
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-     Instruction_Method(?insn, ?method),
-     MayReachableMethodUnderMayContext(?ctx, ?method),
-     InitialMayContext(?initCtx),
-     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn).
+    Instruction_Method(?insn, ?method),
+    MayReachableMethodUnderMayContext(?ctx, ?method),
+    InitialMayContext(?initCtx),
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn).
   
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-     Instruction_Method(?insn, ?method),
-     MayReachableMethodUnderMayContext(?ctx, ?method),
-     InitialMayContext(?initCtx),
-     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn).
+    Instruction_Method(?insn, ?method),
+    MayReachableMethodUnderMayContext(?ctx, ?method),
+    InitialMayContext(?initCtx),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn).
   
   MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-     Instruction_Method(?insn, ?method),
-     MayReachableMethodUnderMayContext(?ctx, ?method),
-     InitialMayContext(?initCtx),
-     MustAlias(?ap1, ?ap2, ?initCtx, ?insn).
+    Instruction_Method(?insn, ?method),
+    MayReachableMethodUnderMayContext(?ctx, ?method),
+    InitialMayContext(?initCtx),
+    MustAlias(?ap1, ?ap2, ?initCtx, ?insn).
   
   // //// END weakening rules
   // //// ====================================
 
+  // //// ====================================
+  // //// BEGIN frame rules
 
-}
+  Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    PrevInSameBasicBlock(?insn, ?prev),
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev).
+
+  //// Should be unnecessary.
+  // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+  //   AllPredecessors_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
+
+  // First, uniform treatment of easy case for any length non-collection AP
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    !AccessPath_IsCollection(?ap),
+    !MonitorInstruction(?insn),
+    (!MethodInvocation(?insn);
+     IgnorableMethodInvocation(?insn);
+     IgnorableForNonCollectionsMethodInvocation(?insn)),
+     !StoreInstruction(?insn).
+
+}  // END .comp SoundMay
 
 
 /*
-// //// ====================================
-// //// BEGIN special handling of collections.
-// ////  Not entirely self-contained. Some logic in frame rules as well.
-
-// collection loads and stores. For arrays and library collections.
-// initialize arrays and library collections to null at allocation
-Temp4(?hctx, ?nullHeap, ?hctxArray, ?arrayHeap, ?ctx, ?insn),
-//RecordMacroMay(?ctx, ?heap, ?hctx),
-AccessPath(?ap),
-AccessPath_ByCollectionVar(?to, ?ap),
-AccessPath_Length(?ap, 1),
-AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?insn) :-
-   AssignHeapAllocation_Heap(?insn, ?arrayHeap),
-   AssignInstruction_To(?insn, ?to),
-   HeapAllocation_Type(?arrayHeap, ?type),
-   (ArrayType(?type); LibraryCollectionType(?type)),
-   Instruction_Method(?insn, ?inMeth),
-   MayReachableMethodUnderMayContext(?ctx, ?inMeth),
-   HeapAllocation_Null(?nullHeap),
-   EmptyHeapContext(?hctxArray),
-   EmptyHeapContext(?hctx).
-
-LibraryCollectionRoot(?type) :-
-   Type(?type),
-   (Type_fqn(?type:"java.util.AbstractCollection");
-    Type_fqn(?type:"java.util.AbstractMap")).   
-LibraryCollectionType(?type) :-
-   Superclass(?type, ?collRoot),
-   LibraryCollectionRoot(?collRoot).
-
-//// TODO: model iterators
-LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
-LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
-LibraryCollectionStoreOperation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "add"); 
-   VirtualMethodInvocation_SimpleName(?invo, "push"); 
-   VirtualMethodInvocation_SimpleName(?invo, "set"); 
-   VirtualMethodInvocation_SimpleName(?invo, "put").
-LibraryCollectionLoadOperation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "peek"),
-   VirtualMethodInvocation_SimpleName(?invo, "pop"),
-   VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
-   VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
-   VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
-   VirtualMethodInvocation_SimpleName(?invo, "remove"),
-   VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
-
-StoreCollection_From(?insn, ?from) :-
-   StoreArrayIndex_From(?insn, ?from).
-StoreCollection_From(?invo, ?from) :-
-   LibraryCollectionStoreOperation(?invo),
-   (ActualParam(1, ?invo, ?from);
-    ActualParam(2, ?invo, ?from)).
-
-StoreCollection_Base(?insn, ?var) :-
-   StoreArrayIndex_Base(?insn, ?var).
-StoreCollection_Base(?invo, ?var) :-
-   LibraryCollectionStoreOperation(?invo),
-   VirtualMethodInvocation_Base(?invo, ?var).
-
-CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) :-
-   MayPointTo(?hctx, ?heap, ?ctx, ?from),
-   StoreCollection_From(?insn, ?from).
-
-TentativeCollectionBaseApMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
-   StoreCollection_Base(?insn, ?base),
-   AccessPath_ByCollectionVar(?base, ?ap).
-
-// store instructions, weak update of AccessPathMayPointTo info! Need
-// to know over-estimate to add more. Also propagate existing.
-AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
-   TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
-   Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
-
-// now loads
-LoadCollection_To(?insn, ?to) :-
-   LoadArrayIndex_To(?insn, ?to).
-LoadCollection_To(?invo, ?to) :-
-   LibraryCollectionLoadOperation(?invo),
-   AssignReturnValue(?invo, ?to).
-
-LoadCollection_Base(?insn, ?var) :-
-   LoadArrayIndex_Base(?insn, ?var).
-LoadCollection_Base(?invo, ?var) :-
-   LibraryCollectionLoadOperation(?invo),
-   VirtualMethodInvocation_Base(?invo, ?var).
-
-MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-   LoadCollection_To(?insn, ?to),
-   LoadCollection_Base(?insn, ?base),
-   AccessPath_ByCollectionVarInv(?ap, ?base).
-
-// //// END handling of collections
-// //// ====================================
-
-
-// //// ====================================
-// //// BEGIN frame rules
-
-Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   PrevInSameBasicBlock(?insn, ?prev),
-   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev).
-
-//// Should be unnecessary.
-// Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-//   AllPredecessors_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
-
 /// Final fields
 
 // The logic below is often subsumed by the handling of final fields
 // at the end of the constructor. But it is not subsumed in cases the
 // final value is dependent on the calling context.
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   _SingleFieldAccessPath(?fld, ?ap),
-   FieldModifier(Modifier_final[], ?fld),
-   !InstructionUnderConstructorOfClassOfField(?fld, ?insn),
-   !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
+  Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+  SingleFieldAccessPath(?fld, ?ap),
+  FieldModifier(Modifier_final[], ?fld),
+  !InstructionUnderConstructorOfClassOfField(?fld, ?insn),
+  !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
+
 
 // It's not enough to have the instruction not in the constructor, it
 // needs to be after the end of the constructor.
@@ -1087,6 +1010,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
 InstructionUnderConstructorOfClassOfField(?fld, ?insn) :-
    Instruction_Method(?insn, ?meth),
    MethodReachableFromConstructorOfClassOfField(?fld, ?meth).
+
 
 ConstructorOfClassOfField(?fld, ?consMeth) :-
    MethodSignature_SimpleName(?consMeth, "<init>"),
@@ -1116,28 +1040,13 @@ ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld) :-
 //       exist in others. This needs escape reasoning? The object may come back
 //       to the same program point through the other path.
 
-_StoreInstruction(?insn) :-
-   StoreStaticField_Insn(?insn);
-   StoreInstanceField_Insn(?insn).
-
-// First, uniform treatment of easy case for any length non-collection AP
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   (AccessPath_IsComposite(?ap) ;
-    AccessPath_IsVariable(?ap) ;
-	AccessPath_ByStaticFieldInv(?ap, _)),
-   !MonitorInstruction(?insn),
-   (!MethodInvocation(?insn);
-    IgnorableMethodInvocation(?insn);
-	IgnorableForNonCollectionsMethodInvocation(?insn)),
-   !_StoreInstruction(?insn).
 
 // Now method calls. We use an overapproximation of the method's
 // effects, rather than passing all the access paths in.  Interesting
 // rules!
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
    OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   _SingleFieldAccessPath(?fld, ?ap),
+   SingleFieldAccessPath(?fld, ?ap),
    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
    !MethodMayAssignField(?fld, ?toMethod),
    !MethodHasUnresolvedInvocation(?toMethod).
@@ -1154,7 +1063,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
 Temp1(?hctx, ?heap, ?ap, ?ctx, ?insn),
 AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
    OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   _SingleFieldAccessPath(?fld, ?ap),
+   SingleFieldAccessPath(?fld, ?ap),
    FieldInstruction_Signature[?insn] != ?fld.
 
 // also for length 3.
@@ -1264,141 +1173,7 @@ Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
    AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
    AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
 
-
-// /// Beginnings of even more powerful logic. Some predecessors (loop back
-// /// edge sources) may be
-// /// dominated by others, so they appear to invalidate the information,
-// /// whereas they are just propagating.
-// BasicBlockInMethod(?blockHead, ?meth) :-
-//    BasicBlockBegin(?blockHead),
-//    Instruction_Method(?blockHead, ?meth).
-
-// BasicBlocksInSameMethod(?blockHead1, ?blockHead2) :-
-//    BasicBlockInMethod(?blockHead1, ?meth),
-//    BasicBlockInMethod(?blockHead2, ?meth),
-//    ?blockHead1 != ?blockHead2.
-
-// // Is there an assignment for the field in *any* path between
-// // ?prev and ?next with ?bypassing absent from that path?
-// SomeBypassingPathBetweenBasicBlocksAssignsField(?prev, ?next, ?bypassing, ?fld) :-
-//    BasicBlockAssignsField(?fld, ?prev),
-//    BasicBlocksInSameMethod(?bypassing, ?prev),
-//    MaySuccessorBBModuloThrow(?next, ?prev),
-//    ?next != ?bypassing.
-// ...
-
-
-
-// // *MustAlias*
-// BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    PrevInSameBasicBlock(?insn, ?prev),
-//    MustAlias(?ap2, ?ap1, ?ctx, ?prev).
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    AccessPath_IsVariable(?ap1),
-//    AccessPath_IsVariable(?ap2).
-
-// OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1) :-
-//    BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn).
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    (AccessPath_IsComposite(?ap1) ;
-//     AccessPath_IsVariable(?ap1) ;
-// 	AccessPath_ByStaticFieldInv(?ap1, _)),
-//    (!MethodInvocation(?insn);
-//     IgnorableMethodInvocation(?insn);
-// 	IgnorableForNonCollectionsMethodInvocation(?insn)),
-//    !_StoreInstruction(?insn).
-
-// // Now method calls. Painstaking.
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _SingleFieldAccessPath(?fld, ?ap1),
-//    AccessPath_IsVariable(?ap2),
-//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-//    !MethodMayAssignField(?fld, ?toMethod),
-//    !MethodHasUnresolvedInvocation(?toMethod).
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _SingleFieldAccessPath(?fld1, ?ap1),
-//    _SingleFieldAccessPath(?fld2, ?ap2),
-//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-//    !MethodMayAssignField(?fld1, ?toMethod),
-//    !MethodMayAssignField(?fld2, ?toMethod),
-//    !MethodHasUnresolvedInvocation(?toMethod).
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    AccessPath_IsVariable(?ap2),
-//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-//    !MethodMayAssignField(?fld1, ?toMethod),
-//    !MethodMayAssignField(?fld2, ?toMethod),
-//    !MethodHasUnresolvedInvocation(?toMethod).
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    _SingleFieldAccessPath(?fld3, ?ap2),
-//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-//    !MethodMayAssignField(?fld1, ?toMethod),
-//    !MethodMayAssignField(?fld2, ?toMethod),
-//    !MethodMayAssignField(?fld3, ?toMethod),
-//    !MethodHasUnresolvedInvocation(?toMethod).
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
-//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-//    !MethodMayAssignField(?fld1, ?toMethod),
-//    !MethodMayAssignField(?fld2, ?toMethod),
-//    !MethodMayAssignField(?fld3, ?toMethod),
-//    !MethodMayAssignField(?fld4, ?toMethod),
-//    !MethodHasUnresolvedInvocation(?toMethod).
-
-
-// // now painstaking case analysis of store instruction cases.
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _SingleFieldAccessPath(?fld, ?ap1),
-//    AccessPath_IsVariable(?ap2),
-//    FieldInstruction_Signature[?insn] != ?fld.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _SingleFieldAccessPath(?fld1, ?ap1),
-//    _SingleFieldAccessPath(?fld2, ?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    AccessPath_IsVariable(?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    _SingleFieldAccessPath(?fld3, ?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3, ?fld != ?fld4.
-
-// //// and still, we only covered up to 3.
-
-// TODO extend to longer access paths
+//// POINT3: MustAlias, insert here
 
 /// Now getting the "Before:" info at basic block boundaries
 
@@ -1411,75 +1186,7 @@ MustAliasAtSomePredecessor(?ap2, ?ap1, ?ctx, ?insn) :-
 BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
    AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn).
 
-
-
-
-
-// //// Commented out for now. Does not make that much difference. 
-// //// InstanceFieldMayPointTo inferences rarely get stopped because of
-// //// library calls.
-// //// ------------------------------
-// // Logic for assuming the library does not affect application fields,
-// // except via reflection.
-// ApplicationField(?fld) :-
-//    FieldSignature_DeclaringClass(?fld, ?class),
-//    ApplicationClass(?class).
-
-// ApplicationMethod(?meth) :-
-//    MethodSignature_DeclaringType(?meth, ?declaringType),
-//    ApplicationClass(?declaringType).
-
-// MethodCallsReflection(?meth) :-
-//    Instruction_Method(?invo, ?meth),
-//    MethodInvocation_Signature(?invo, ?sig),
-//    string_substring(?sig, 0, _, "<java.lang.reflect").
-
-// _Opt2MethodInvocation_Signature(?invo, ?inMeth, ?toMeth) :-
-//    (StaticMethodInvocation_Insn(?invo);
-//     SpecialMethodInvocation_Insn(?invo)), 
-//    MethodInvocation_Signature(?invo, ?toMeth),
-//    Instruction_Method(?invo, ?inMeth).
-
-// // exact resolution for static/special
-// MethodCallsReflection(?inMeth) :-
-//    _Opt2MethodInvocation_Signature(_, ?inMeth, ?toMeth), 
-//    MethodCallsReflection(?toMeth).
-
-// // underapproximation of virtual method resolution, as if static
-// _Opt2MethodInvocation_Signature(?invo, ?inMeth, ?toMeth) :-
-//    VirtualMethodInvocation_Insn(?invo),
-//    MethodInvocation_Signature(?invo, ?toMeth),
-//    Instruction_Method(?invo, ?inMeth).
-
-// // Naive virtual method resolution, based on name. REVIEW: too conservative?
-// _OptVirtualMethodInvocation_Simplename(?inMeth, ?simpleName) :-
-//    VirtualMethodInvocation_SimpleName(?invo, ?simpleName),
-//    Instruction_Method(?invo, ?inMeth).
-
-// MethodCallsReflection(?inMeth) :-
-//    MethodCallsReflection(?toMeth),
-//    MethodSignature_SimpleName(?toMeth, ?toMethSimpleName),
-//    _OptVirtualMethodInvocation_Simplename(?inMeth, ?toMethSimpleName).
-
-// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) :-
-//    AllPredecessors_InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-//    MethodInvocation_Signature(?insn, ?calledMethod), // underapproximate
-// //   string_substring[?calledMethod, 0, string_length[?str]] != ?str, ?str = "<java.lang.reflect",
-//    !MethodCallsReflection(?calledMethod),
-//    ApplicationField(?fld),
-//    !ApplicationMethod(?calledMethod).
-
-// StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) :-
-//    AllPredecessors_StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-//    MethodInvocation_Signature(?insn, ?calledMethod),
-// //   string_substring[?calledMethod, 0, string_length[?str]] != ?str, ?str = "<java.lang.reflect",
-//    !MethodCallsReflection(?calledMethod),
-//    ApplicationField(?fld),
-//    !ApplicationMethod(?calledMethod).
-
-// // TODO: also extend to collections
-
-
+//// POINT4 insert here
 
 //// REVIEW: Maybe base such logic on a type-based escape analysis?
 //// ====================================
@@ -1533,165 +1240,16 @@ MethodMayAssignField(?fld, ?method) :-
 // !MethodMayAssignField(?fld, ?method),
 // !MethodHasUnresolvedInvocation(?method).
 
-
-
-// // TODO: currently has no impact. Comment out and re-check when non-invalidating
-// //       method calls are added?
-
-// // Interesting addition to frame rules:
-// // propagate in case of non-invalidating dominated predecessors.
-
-// // The path (dominated by ?dominator) that ends at ?insn
-// // may invalidate some field.
-// DominatedPathMayInvalidateFieldPointsTo(?fld, ?insn, ?dominator) :-
-//    Dominates(?dominator, ?insn),
-//    BasicBlockMayInvalidateFieldPointsTo(?fld, ?insn).
-
-// DominatedPathMayInvalidateFieldPointsTo(?fld, ?insn, ?dominator) :-
-//    DominatedPathMayInvalidateFieldPointsTo(?fld, ?otherInsn, ?dominator),
-//    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
-//    Dominates(?dominator, ?insn).
-
-// ExistsFieldInvalidatingPathToPredecessor(?fld, ?prevHead, ?dominator) :-
-//    DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
-//    BasicBlockHead(?prevInsn, ?prevHead),
-//    DominatedPathMayInvalidateFieldPointsTo(?fld, ?prevHead, ?dominator).
-
-// ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?dominator) :-
-//    ExistsFieldInvalidatingPathToPredecessor(?fld, _, ?dominator).
-
-// BasicBlockMayInvalidateAllFieldsPointsTo(?headInsn) :-
-//    BasicBlockHead(?insn, ?headInsn),
-//    !IndifferentInstruction(?insn),
-//    !FieldInstruction(?insn).
-
-// // The path (dominated by ?dominator) that ends at ?insn
-// // may invalidate any field.
-// DominatedPathMayInvalidateAllFieldsPointsTo(?insn, ?dominator) :-
-//    Dominates(?dominator, ?insn),
-//    BasicBlockMayInvalidateAllFieldsPointsTo(?insn).
-
-// DominatedPathMayInvalidateAllFieldsPointsTo(?insn, ?dominator) :-
-//    DominatedPathMayInvalidateAllFieldsPointsTo(?otherInsn, ?dominator),
-//    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
-//    Dominates(?dominator, ?insn).
-
-// ExistsAllFieldsInvalidatingPathToPredecessor(?prevHead, ?dominator) :-
-//    DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
-//    BasicBlockHead(?prevInsn, ?prevHead),
-//    DominatedPathMayInvalidateAllFieldsPointsTo(?prevHead, ?dominator).
-
-// ExistsAllFieldsInvalidatingPathToSomePredecessor(?dominator) :-
-//    ExistsAllFieldsInvalidatingPathToPredecessor(_, ?dominator).
-
-// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) :-
-//    AllNonDomPredecessors_InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-//    !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
-//    !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
-//    DominatesItsPredecessorInstruction(_, ?insn).
-
-// StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) :-
-//    AllNonDomPredecessors_StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-//    !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
-//    !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
-//    DominatesItsPredecessorInstruction(_, ?insn).
-
-// // TODO: update with collections
-
+//// POINT5: DominatedPathMayInvalidateFieldPointsTo, enter here
 
 // //// END frame rules
 
 //// END core MayPointTo code
 //// ====================================
-
-//// ====================================
-//// BEGIN configuration of ignorable method calls
-
-// Some calls to native or otherwise complex methods need to be
-// modeled, i.e., ignored. E.g., fillInStackTrace is a native method
-// called in the constructor of a (ubiquitous) java.lang.Throwable. If
-// not ignored, no image of the heap propagates anywhere.
-// TODO: do a better match (on full sig) than just on SimpleName.
-IgnorableMethodInvocation(?invo) -> MethodInvocation(?invo).
-IgnorableForStaticsMethodInvocation(?invo) -> MethodInvocation(?invo).
-IgnorableForNonCollectionsMethodInvocation(?invo) -> MethodInvocation(?invo).
-
-IgnorableMethodInvocation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "fillInStackTrace"); // Throwable
-   VirtualMethodInvocation_SimpleName(?invo, "equals");  // Object
-   VirtualMethodInvocation_SimpleName(?invo, "hashCode");
-   VirtualMethodInvocation_SimpleName(?invo, "toString");
-   VirtualMethodInvocation_SimpleName(?invo, "println"); // PrintStream
-   StaticMethodInvocation_SimpleName(?invo, "parseInt"); // Integer
-   VirtualMethodInvocation_SimpleName(?invo, "endsWith"); // String
-   StaticMethodInvocation_SimpleName(?invo, "floatToRawIntBits"); // Float
-   // these are used in the HashMap "put" method!
-   StaticMethodInvocation_SimpleName(?invo, "intBitsToFloat"); 
-   // From this point on, it's just a test to see if these natives matter.
-   StaticMethodInvocation_SimpleName(?invo, "encoding"); // Console
-   StaticMethodInvocation_SimpleName(?invo, "echo"); 
-   StaticMethodInvocation_SimpleName(?invo, "istty"); 
-   VirtualMethodInvocation_SimpleName(?invo, "sync"); // FileDescriptor
-   StaticMethodInvocation_SimpleName(?invo, "initIDs"); 
-   VirtualMethodInvocation_SimpleName(?invo, "open"); // FileInputStream
-   VirtualMethodInvocation_SimpleName(?invo, "read0"); 
-   VirtualMethodInvocation_SimpleName(?invo, "readBytes"); 
-   VirtualMethodInvocation_SimpleName(?invo, "skip"); 
-   VirtualMethodInvocation_SimpleName(?invo, "available"); 
-   VirtualMethodInvocation_SimpleName(?invo, "close0"); 
-   VirtualMethodInvocation_SimpleName(?invo, "write"); // FileOutputStream
-   VirtualMethodInvocation_SimpleName(?invo, "writeBytes"); 
-   VirtualMethodInvocation_SimpleName(?invo, "availableProcessors"); // Runtime
-   VirtualMethodInvocation_SimpleName(?invo, "freeMemory"); 
-   VirtualMethodInvocation_SimpleName(?invo, "totalMemory"); 
-   VirtualMethodInvocation_SimpleName(?invo, "maxMemory"); 
-   VirtualMethodInvocation_SimpleName(?invo, "gc"); 
-   StaticMethodInvocation_SimpleName(?invo, "runFinalization0"); 
-   StaticMethodInvocation_SimpleName(?invo, "sin"); // StrictMath
-   StaticMethodInvocation_SimpleName(?invo, "cos"); 
-   StaticMethodInvocation_SimpleName(?invo, "tan"); 
-   StaticMethodInvocation_SimpleName(?invo, "log"); 
-   StaticMethodInvocation_SimpleName(?invo, "pow");
-   StaticMethodInvocation_SimpleName(?invo, "currentThread"); // Thread
-   StaticMethodInvocation_SimpleName(?invo, "yield");
-   StaticMethodInvocation_SimpleName(?invo, "sleep");
-   VirtualMethodInvocation_SimpleName(?invo, "start0");
-   VirtualMethodInvocation_SimpleName(?invo, "isInterrupted");
-   VirtualMethodInvocation_SimpleName(?invo, "isAlive");
-   StaticMethodInvocation_SimpleName(?invo, "holdsLock");
-   StaticMethodInvocation_SimpleName(?invo, "getThreads");
-   StaticMethodInvocation_SimpleName(?invo, "dumpThreads");
-   VirtualMethodInvocation_SimpleName(?invo, "setPriority");
-   VirtualMethodInvocation_SimpleName(?invo, "stop0");
-   VirtualMethodInvocation_SimpleName(?invo, "suspend0");
-   VirtualMethodInvocation_SimpleName(?invo, "resume0");
-   VirtualMethodInvocation_SimpleName(?invo, "interrupt0");
-   VirtualMethodInvocation_SimpleName(?invo, "isAlive");
-   VirtualMethodInvocation_SimpleName(?invo, "getStackTraceDepth"); // Throwable
-   VirtualMethodInvocation_SimpleName(?invo, "getStackTraceElement"); 
-   VirtualMethodInvocation_SimpleName(?invo, "forkAndExec");  // UnixProcess
-   VirtualMethodInvocation_SimpleName(?invo, "wait"); // Object
-   VirtualMethodInvocation_SimpleName(?invo, "notify");
-   VirtualMethodInvocation_SimpleName(?invo, "notifyAll").
-
-IgnorableForStaticsMethodInvocation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "intern"); // String
-   VirtualMethodInvocation_SimpleName(?invo, "clone"); // Object
-   VirtualMethodInvocation_SimpleName(?invo, "append"). // StringBuilder
-
-IgnorableForNonCollectionsMethodInvocation(?invo) :-
-   LibraryCollectionStoreOperation(?invo);
-   LibraryCollectionLoadOperation(?invo).
-
-
-StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
-   MethodInvocation_Signature(?invocation, ?signature),
-   StaticMethodInvocation_Insn(?invocation),
-   MethodSignature_SimpleName(?signature, ?simplename).
-
-//// END configuration of ignorable method calls
-
 */
+
+//// POINT2---IgnorableMethodInvocation to go here
+
 
 //// ====================================
 
@@ -1764,11 +1322,12 @@ RebaseCompositeAccessPath(?ap, ?from, ?to, ?newAp) :-
    ?newAp = [?to, ?rest],
    ?ap = [?from, ?rest].
 
-// Special-case the collection access paths
-AccessPath_IsCollection(?newAp) :-
-   AccessPath_IsCollection(?ap),
-   RebaseCompositeAccessPath(?ap, _, _, ?newAp).
-
+// REVIEW obviously incomplete, needs library collections as well
+AccessPath_IsCollection(?ap) :-
+   ?ap = [?base, nil],
+   Var_Type(?base, ?type),
+   ArrayType(?type).
+   
 
 // // *MustAlias*
 // // Access path expansion factory. Trivial but avoids repeat expensive
@@ -1893,18 +1452,17 @@ SoundMayPhase1.RootMethodForMayAnalysis(?clinitMeth) :-
 // For the legit, official main of a standard Java program, provide
 // dummy argument (String[] args).
 SoundMayPhase1.MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-AccessPath_IsCollection([?args, nil]),
 ComputedAccessPath([?args, nil]),
 SoundMayPhase1.AccessPathMayPointTo(?hctx, ?argHeap, [?args, nil], ?ctx, ?firstInsn) :-
-   MainClass(?mainClass),
-   MethodSignature_DeclaringType(?mainMethod, ?mainClass),
-   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
-   MethodSignature_Descriptor(?mainMethod, "void(java.lang.String[])"),
-   FormalParam(0, ?mainMethod, ?args),
-   MainMethodArgsArray(?argsArray),
-   MainMethodArgHeap(?argHeap),
-   EmptyHeapContext(?hctx),
-   FirstInstructionOfMethod(?mainMethod, ?firstInsn).
+  MainClass(?mainClass),
+  MethodSignature_DeclaringType(?mainMethod, ?mainClass),
+  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
+  MethodSignature_Descriptor(?mainMethod, "void(java.lang.String[])"),
+  FormalParam(0, ?mainMethod, ?args),
+  MainMethodArgsArray(?argsArray),
+  MainMethodArgHeap(?argHeap),
+  EmptyHeapContext(?hctx),
+  FirstInstructionOfMethod(?mainMethod, ?firstInsn).
 
 // RootMethodForMayAnalysis(?meth) :-
 //    MayReachableMethodUnderMayContext(_, ?meth).
@@ -1963,19 +1521,19 @@ MayContextDepth([?invo,?poppedCtx], ?depth+1) :-
 // Access Paths are expressions of the form: v(.fi)* or fi.(.fi)*, for static first field
 .type AccessPath = [ ?base:AccessPathBase, ?flds:AccessPathSuffix ]
 
-// The next two need to be explicitly marked at creation point!
+// The next one needs to be explicitly marked at creation point!
 
 // Any access path relevant to the analysis should be marked:
 .decl ComputedAccessPath(?ap:AccessPath) output
+
+// These are computed uniformly:
+.decl AccessPath_IsSimple(?ap:AccessPath)
+.decl AccessPath_IsComposite(?ap:AccessPath)
 // Is access path a special one, based on a variable of collection type?
 // Incompatible with all other access path types. The access paths represents
 // all the *contents* of the collection (not the collection that the var
 // points-to, but all the objects that the collection points-to internally).
 .decl AccessPath_IsCollection(?ap:AccessPath)
-
-// These are computed uniformly:
-.decl AccessPath_IsSimple(?ap:AccessPath)
-.decl AccessPath_IsComposite(?ap:AccessPath)
 .decl AccessPath_ContainsField(?fld:FieldSignature, ?ap:AccessPath)
 .decl FieldListContains(?fld:FieldSignature, ?fldList:AccessPathSuffix)
 // Access path has static field as base
@@ -1994,7 +1552,8 @@ AccessPath_IsSimple(?ap) :-
 
 AccessPath_IsComposite(?ap) :-
   ComputedAccessPath(?ap),
-  !AccessPath_IsSimple(?ap).
+  ?ap = [ ?base, [ ?rest, ?fld] ],
+  ?base = ?base, ?fld = ?fld, ?rest = ?rest.
 
 FieldListContains(?fld, ?fldList) :-
   ComputedAccessPath(?ap),
@@ -2057,15 +1616,21 @@ AccessPath_BaseVar(?ap, ?var) :-
 
 //// ====================================
 //// BEGIN utilities
-////  Different ways to kick-start the analysis.
 
 FirstInstructionOfMethod(?meth, ?firstInsn) :-
   Instruction_Method(?firstInsn, ?meth),
   Instruction_Index(?firstInsn, 1),
   !IsJumpTarget(?firstInsn).
 
-//// END utilities
+.decl IgnorableMethodInvocation(?insn:Instruction)
+.decl IgnorableForNonCollectionsMethodInvocation(?insn:Instruction)
 
+.decl StoreInstruction(?insn:Instruction)
+StoreInstruction(?insn) :-
+  StoreStaticField_From(?insn, _);
+  StoreInstanceField_From(?insn, _).
+
+//// END utilities
 
 
 
@@ -2124,6 +1689,448 @@ _FieldRefModeLastTokenIndex(?ref, ?maxIdx) :-
    agg<<?maxIdx = max(?idx)>>
    FieldSignature_Value(_:?ref),
    string_split[?ref, "/", ?idx] = _.
+*/
+
+/*
+// //// ====================================
+// //// BEGIN special handling of collections.
+// ////  Not entirely self-contained. Some logic in frame rules as well.
+
+// collection loads and stores. For arrays and library collections.
+// initialize arrays and library collections to null at allocation
+//RecordMacroMay(?ctx, ?heap, ?hctx),
+AccessPath(?ap),
+AccessPath_ByCollectionVar(?to, ?ap),
+AccessPath_Length(?ap, 1),
+AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?insn) :-
+   AssignHeapAllocation_Heap(?insn, ?arrayHeap),
+   AssignInstruction_To(?insn, ?to),
+   HeapAllocation_Type(?arrayHeap, ?type),
+   (ArrayType(?type); LibraryCollectionType(?type)),
+   Instruction_Method(?insn, ?inMeth),
+   MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+   HeapAllocation_Null(?nullHeap),
+   EmptyHeapContext(?hctxArray),
+   EmptyHeapContext(?hctx).
+
+LibraryCollectionRoot(?type) :-
+   Type(?type),
+   (Type_fqn(?type:"java.util.AbstractCollection");
+    Type_fqn(?type:"java.util.AbstractMap")).   
+LibraryCollectionType(?type) :-
+   Superclass(?type, ?collRoot),
+   LibraryCollectionRoot(?collRoot).
+
+//// TODO: model iterators
+LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionStoreOperation(?invo) :-
+   VirtualMethodInvocation_SimpleName(?invo, "add"); 
+   VirtualMethodInvocation_SimpleName(?invo, "push"); 
+   VirtualMethodInvocation_SimpleName(?invo, "set"); 
+   VirtualMethodInvocation_SimpleName(?invo, "put").
+LibraryCollectionLoadOperation(?invo) :-
+   VirtualMethodInvocation_SimpleName(?invo, "peek"),
+   VirtualMethodInvocation_SimpleName(?invo, "pop"),
+   VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
+   VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
+   VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
+   VirtualMethodInvocation_SimpleName(?invo, "remove"),
+   VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
+
+StoreCollection_From(?insn, ?from) :-
+   StoreArrayIndex_From(?insn, ?from).
+StoreCollection_From(?invo, ?from) :-
+   LibraryCollectionStoreOperation(?invo),
+   (ActualParam(1, ?invo, ?from);
+    ActualParam(2, ?invo, ?from)).
+
+StoreCollection_Base(?insn, ?var) :-
+   StoreArrayIndex_Base(?insn, ?var).
+StoreCollection_Base(?invo, ?var) :-
+   LibraryCollectionStoreOperation(?invo),
+   VirtualMethodInvocation_Base(?invo, ?var).
+
+CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) :-
+   MayPointTo(?hctx, ?heap, ?ctx, ?from),
+   StoreCollection_From(?insn, ?from).
+
+TentativeCollectionBaseApMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+   StoreCollection_Base(?insn, ?base),
+   AccessPath_ByCollectionVar(?base, ?ap).
+
+// store instructions, weak update of AccessPathMayPointTo info! Need
+// to know over-estimate to add more. Also propagate existing.
+AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
+   TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+   Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
+
+// now loads
+LoadCollection_To(?insn, ?to) :-
+   LoadArrayIndex_To(?insn, ?to).
+LoadCollection_To(?invo, ?to) :-
+   LibraryCollectionLoadOperation(?invo),
+   AssignReturnValue(?invo, ?to).
+
+LoadCollection_Base(?insn, ?var) :-
+   LoadArrayIndex_Base(?insn, ?var).
+LoadCollection_Base(?invo, ?var) :-
+   LibraryCollectionLoadOperation(?invo),
+   VirtualMethodInvocation_Base(?invo, ?var).
+
+MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
+   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   LoadCollection_To(?insn, ?to),
+   LoadCollection_Base(?insn, ?base),
+   AccessPath_ByCollectionVarInv(?ap, ?base).
+
+// //// END handling of collections
+// //// ====================================
+*/
+
+
+
+/*
+//// Enter at POINT2---IgnorableMethodInvocation 
+//// ====================================
+//// BEGIN configuration of ignorable method calls
+
+// Some calls to native or otherwise complex methods need to be
+// modeled, i.e., ignored. E.g., fillInStackTrace is a native method
+// called in the constructor of a (ubiquitous) java.lang.Throwable. If
+// not ignored, no image of the heap propagates anywhere.
+// TODO: do a better match (on full sig) than just on SimpleName.
+IgnorableMethodInvocation(?invo) -> MethodInvocation(?invo).
+IgnorableForStaticsMethodInvocation(?invo) -> MethodInvocation(?invo).
+IgnorableForNonCollectionsMethodInvocation(?invo) -> MethodInvocation(?invo).
+
+IgnorableMethodInvocation(?invo) :-
+   VirtualMethodInvocation_SimpleName(?invo, "fillInStackTrace"); // Throwable
+   VirtualMethodInvocation_SimpleName(?invo, "equals");  // Object
+   VirtualMethodInvocation_SimpleName(?invo, "hashCode");
+   VirtualMethodInvocation_SimpleName(?invo, "toString");
+   VirtualMethodInvocation_SimpleName(?invo, "println"); // PrintStream
+   StaticMethodInvocation_SimpleName(?invo, "parseInt"); // Integer
+   VirtualMethodInvocation_SimpleName(?invo, "endsWith"); // String
+   StaticMethodInvocation_SimpleName(?invo, "floatToRawIntBits"); // Float
+   // these are used in the HashMap "put" method!
+   StaticMethodInvocation_SimpleName(?invo, "intBitsToFloat"); 
+   // From this point on, it's just a test to see if these natives matter.
+   StaticMethodInvocation_SimpleName(?invo, "encoding"); // Console
+   StaticMethodInvocation_SimpleName(?invo, "echo"); 
+   StaticMethodInvocation_SimpleName(?invo, "istty"); 
+   VirtualMethodInvocation_SimpleName(?invo, "sync"); // FileDescriptor
+   StaticMethodInvocation_SimpleName(?invo, "initIDs"); 
+   VirtualMethodInvocation_SimpleName(?invo, "open"); // FileInputStream
+   VirtualMethodInvocation_SimpleName(?invo, "read0"); 
+   VirtualMethodInvocation_SimpleName(?invo, "readBytes"); 
+   VirtualMethodInvocation_SimpleName(?invo, "skip"); 
+   VirtualMethodInvocation_SimpleName(?invo, "available"); 
+   VirtualMethodInvocation_SimpleName(?invo, "close0"); 
+   VirtualMethodInvocation_SimpleName(?invo, "write"); // FileOutputStream
+   VirtualMethodInvocation_SimpleName(?invo, "writeBytes"); 
+   VirtualMethodInvocation_SimpleName(?invo, "availableProcessors"); // Runtime
+   VirtualMethodInvocation_SimpleName(?invo, "freeMemory"); 
+   VirtualMethodInvocation_SimpleName(?invo, "totalMemory"); 
+   VirtualMethodInvocation_SimpleName(?invo, "maxMemory"); 
+   VirtualMethodInvocation_SimpleName(?invo, "gc"); 
+   StaticMethodInvocation_SimpleName(?invo, "runFinalization0"); 
+   StaticMethodInvocation_SimpleName(?invo, "sin"); // StrictMath
+   StaticMethodInvocation_SimpleName(?invo, "cos"); 
+   StaticMethodInvocation_SimpleName(?invo, "tan"); 
+   StaticMethodInvocation_SimpleName(?invo, "log"); 
+   StaticMethodInvocation_SimpleName(?invo, "pow");
+   StaticMethodInvocation_SimpleName(?invo, "currentThread"); // Thread
+   StaticMethodInvocation_SimpleName(?invo, "yield");
+   StaticMethodInvocation_SimpleName(?invo, "sleep");
+   VirtualMethodInvocation_SimpleName(?invo, "start0");
+   VirtualMethodInvocation_SimpleName(?invo, "isInterrupted");
+   VirtualMethodInvocation_SimpleName(?invo, "isAlive");
+   StaticMethodInvocation_SimpleName(?invo, "holdsLock");
+   StaticMethodInvocation_SimpleName(?invo, "getThreads");
+   StaticMethodInvocation_SimpleName(?invo, "dumpThreads");
+   VirtualMethodInvocation_SimpleName(?invo, "setPriority");
+   VirtualMethodInvocation_SimpleName(?invo, "stop0");
+   VirtualMethodInvocation_SimpleName(?invo, "suspend0");
+   VirtualMethodInvocation_SimpleName(?invo, "resume0");
+   VirtualMethodInvocation_SimpleName(?invo, "interrupt0");
+   VirtualMethodInvocation_SimpleName(?invo, "isAlive");
+   VirtualMethodInvocation_SimpleName(?invo, "getStackTraceDepth"); // Throwable
+   VirtualMethodInvocation_SimpleName(?invo, "getStackTraceElement"); 
+   VirtualMethodInvocation_SimpleName(?invo, "forkAndExec");  // UnixProcess
+   VirtualMethodInvocation_SimpleName(?invo, "wait"); // Object
+   VirtualMethodInvocation_SimpleName(?invo, "notify");
+   VirtualMethodInvocation_SimpleName(?invo, "notifyAll").
+
+IgnorableForStaticsMethodInvocation(?invo) :-
+   VirtualMethodInvocation_SimpleName(?invo, "intern"); // String
+   VirtualMethodInvocation_SimpleName(?invo, "clone"); // Object
+   VirtualMethodInvocation_SimpleName(?invo, "append"). // StringBuilder
+
+IgnorableForNonCollectionsMethodInvocation(?invo) :-
+   LibraryCollectionStoreOperation(?invo);
+   LibraryCollectionLoadOperation(?invo).
+
+
+StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
+   MethodInvocation_Signature(?invocation, ?signature),
+   StaticMethodInvocation_Insn(?invocation),
+   MethodSignature_SimpleName(?signature, ?simplename).
+
+//// END configuration of ignorable method calls
+
+*/
+
+
+/*
+//// POINT3: MustAlias
+// // *MustAlias*
+// BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    PrevInSameBasicBlock(?insn, ?prev),
+//    MustAlias(?ap2, ?ap1, ?ctx, ?prev).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    AccessPath_IsVariable(?ap1),
+//    AccessPath_IsVariable(?ap2).
+
+// OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1) :-
+//    BeforeMustAlias(?ap2, ?ap1, ?ctx, ?insn).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    (AccessPath_IsComposite(?ap1) ;
+//     AccessPath_IsVariable(?ap1) ;
+// 	AccessPath_ByStaticFieldInv(?ap1, _)),
+//    (!MethodInvocation(?insn);
+//     IgnorableMethodInvocation(?insn);
+// 	IgnorableForNonCollectionsMethodInvocation(?insn)),
+//    !_StoreInstruction(?insn).
+
+// // Now method calls. Painstaking.
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld1, ?ap1),
+//    SingleFieldAccessPath(?fld2, ?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    SingleFieldAccessPath(?fld3, ?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodMayAssignField(?fld3, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodMayAssignField(?fld3, ?toMethod),
+//    !MethodMayAssignField(?fld4, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+
+// // now painstaking case analysis of store instruction cases.
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    FieldInstruction_Signature[?insn] != ?fld.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld1, ?ap1),
+//    SingleFieldAccessPath(?fld2, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    SingleFieldAccessPath(?fld3, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3, ?fld != ?fld4.
+
+// //// and still, we only covered up to 3.
+
+// TODO extend to longer access paths
+*/
+
+
+/*
+//// POINT4 code
+// //// Commented out for now. Does not make that much difference. 
+// //// InstanceFieldMayPointTo inferences rarely get stopped because of
+// //// library calls.
+// //// ------------------------------
+// // Logic for assuming the library does not affect application fields,
+// // except via reflection.
+// ApplicationField(?fld) :-
+//    FieldSignature_DeclaringClass(?fld, ?class),
+//    ApplicationClass(?class).
+
+// ApplicationMethod(?meth) :-
+//    MethodSignature_DeclaringType(?meth, ?declaringType),
+//    ApplicationClass(?declaringType).
+
+// MethodCallsReflection(?meth) :-
+//    Instruction_Method(?invo, ?meth),
+//    MethodInvocation_Signature(?invo, ?sig),
+//    string_substring(?sig, 0, _, "<java.lang.reflect").
+
+// _Opt2MethodInvocation_Signature(?invo, ?inMeth, ?toMeth) :-
+//    (StaticMethodInvocation_Insn(?invo);
+//     SpecialMethodInvocation_Insn(?invo)), 
+//    MethodInvocation_Signature(?invo, ?toMeth),
+//    Instruction_Method(?invo, ?inMeth).
+
+// // exact resolution for static/special
+// MethodCallsReflection(?inMeth) :-
+//    _Opt2MethodInvocation_Signature(_, ?inMeth, ?toMeth), 
+//    MethodCallsReflection(?toMeth).
+
+// // underapproximation of virtual method resolution, as if static
+// _Opt2MethodInvocation_Signature(?invo, ?inMeth, ?toMeth) :-
+//    VirtualMethodInvocation_Insn(?invo),
+//    MethodInvocation_Signature(?invo, ?toMeth),
+//    Instruction_Method(?invo, ?inMeth).
+
+// // Naive virtual method resolution, based on name. REVIEW: too conservative?
+// _OptVirtualMethodInvocation_Simplename(?inMeth, ?simpleName) :-
+//    VirtualMethodInvocation_SimpleName(?invo, ?simpleName),
+//    Instruction_Method(?invo, ?inMeth).
+
+// MethodCallsReflection(?inMeth) :-
+//    MethodCallsReflection(?toMeth),
+//    MethodSignature_SimpleName(?toMeth, ?toMethSimpleName),
+//    _OptVirtualMethodInvocation_Simplename(?inMeth, ?toMethSimpleName).
+
+// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) :-
+//    AllPredecessors_InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+//    MethodInvocation_Signature(?insn, ?calledMethod), // underapproximate
+// //   string_substring[?calledMethod, 0, string_length[?str]] != ?str, ?str = "<java.lang.reflect",
+//    !MethodCallsReflection(?calledMethod),
+//    ApplicationField(?fld),
+//    !ApplicationMethod(?calledMethod).
+
+// StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) :-
+//    AllPredecessors_StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+//    MethodInvocation_Signature(?insn, ?calledMethod),
+// //   string_substring[?calledMethod, 0, string_length[?str]] != ?str, ?str = "<java.lang.reflect",
+//    !MethodCallsReflection(?calledMethod),
+//    ApplicationField(?fld),
+//    !ApplicationMethod(?calledMethod).
+
+// // TODO: also extend to collections
+*/
+
+
+/*
+//// POINT5: DominatedPathMayInvalidateFieldPointsTo
+// // TODO: currently has no impact. Comment out and re-check when non-invalidating
+// //       method calls are added?
+
+// // Interesting addition to frame rules:
+// // propagate in case of non-invalidating dominated predecessors.
+
+// // The path (dominated by ?dominator) that ends at ?insn
+// // may invalidate some field.
+// DominatedPathMayInvalidateFieldPointsTo(?fld, ?insn, ?dominator) :-
+//    Dominates(?dominator, ?insn),
+//    BasicBlockMayInvalidateFieldPointsTo(?fld, ?insn).
+
+// DominatedPathMayInvalidateFieldPointsTo(?fld, ?insn, ?dominator) :-
+//    DominatedPathMayInvalidateFieldPointsTo(?fld, ?otherInsn, ?dominator),
+//    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+//    Dominates(?dominator, ?insn).
+
+// ExistsFieldInvalidatingPathToPredecessor(?fld, ?prevHead, ?dominator) :-
+//    DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+//    BasicBlockHead(?prevInsn, ?prevHead),
+//    DominatedPathMayInvalidateFieldPointsTo(?fld, ?prevHead, ?dominator).
+
+// ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?dominator) :-
+//    ExistsFieldInvalidatingPathToPredecessor(?fld, _, ?dominator).
+
+// BasicBlockMayInvalidateAllFieldsPointsTo(?headInsn) :-
+//    BasicBlockHead(?insn, ?headInsn),
+//    !IndifferentInstruction(?insn),
+//    !FieldInstruction(?insn).
+
+// // The path (dominated by ?dominator) that ends at ?insn
+// // may invalidate any field.
+// DominatedPathMayInvalidateAllFieldsPointsTo(?insn, ?dominator) :-
+//    Dominates(?dominator, ?insn),
+//    BasicBlockMayInvalidateAllFieldsPointsTo(?insn).
+
+// DominatedPathMayInvalidateAllFieldsPointsTo(?insn, ?dominator) :-
+//    DominatedPathMayInvalidateAllFieldsPointsTo(?otherInsn, ?dominator),
+//    MaySuccessorBBModuloThrow(?insn, ?otherInsn),
+//    Dominates(?dominator, ?insn).
+
+// ExistsAllFieldsInvalidatingPathToPredecessor(?prevHead, ?dominator) :-
+//    DominatesItsPredecessorInstruction(?prevInsn, ?dominator),
+//    BasicBlockHead(?prevInsn, ?prevHead),
+//    DominatedPathMayInvalidateAllFieldsPointsTo(?prevHead, ?dominator).
+
+// ExistsAllFieldsInvalidatingPathToSomePredecessor(?dominator) :-
+//    ExistsAllFieldsInvalidatingPathToPredecessor(_, ?dominator).
+
+// InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) :-
+//    AllNonDomPredecessors_InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
+//    !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
+//    !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
+//    DominatesItsPredecessorInstruction(_, ?insn).
+
+// StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) :-
+//    AllNonDomPredecessors_StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
+//    !ExistsFieldInvalidatingPathToSomePredecessor(?fld, ?insn),
+//    !ExistsAllFieldsInvalidatingPathToSomePredecessor(?insn),
+//    DominatesItsPredecessorInstruction(_, ?insn).
+
+// // TODO: update with collections
 */
 
 

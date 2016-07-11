@@ -1,5 +1,5 @@
 #!/bin/bash
-./export.sh ActualParam ApplicationClass AssignCast:From \
+./export.sh ActualParam ApplicationClass ArrayType AssignCast:From \
 AssignCast:Insn AssignContextInsensitiveHeapAllocation \
 AssignHeapAllocation AssignLocal:From AssignLocal:Insn  \
 AssignNormalHeapAllocation AssignInstruction:To AssignNull:Insn \
@@ -12,10 +12,10 @@ HeapAllocation:Type Instruction:Index Instruction:Method IsJumpTarget \
 LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \ 			
 MainClass MainMethodArgHeap  \
 MainMethodArgsArray MaySuccessorBBModuloThrow \
-MethodInvocation:Signature MethodLookup \
+MethodInvocation MethodInvocation:Signature MethodLookup \
 MethodSignature:DeclaringType MethodSignature:Descriptor \
-MethodSignature:SimpleName Modifier:final \
-NextInSamePhiNode NextReturn PhiNodeHead Reachable \
+MethodSignature:SimpleName Modifier:final MonitorInstruction \
+NextInSamePhiNode NextReturn PhiNodeHead PrevInSameBasicBlock Reachable \
 ReferenceType ReturnInstruction ReturnNonvoid:Var ReturnVar SpecialMethodInvocation:Base \
 SpecialMethodInvocation:Insn StaticMethodInvocation:Insn \
 StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \ 			
