@@ -1,0 +1,219 @@
+package deepdoop.actions;
+
+import deepdoop.datalog.*;
+import deepdoop.datalog.clause.*;
+import deepdoop.datalog.component.*;
+import deepdoop.datalog.element.*;
+import deepdoop.datalog.element.atom.*;
+import deepdoop.datalog.expr.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class AtomCollectorVisitor implements IVisitor {
+
+	Map<IVisitable, Map<String, IAtom>> _declAtoms;
+	Map<IVisitable, Map<String, IAtom>> _usedAtoms;
+	Map<IVisitable, Map<String, IAtom>> _allAtoms;
+
+	public AtomCollectorVisitor() {
+		_declAtoms = new HashMap<>();
+		_usedAtoms = new HashMap<>();
+		_allAtoms  = new HashMap<>();
+	}
+
+	public Map<String, IAtom> getDeclaringAtoms(IVisitable n) {
+		Map<String, IAtom> m = _declAtoms.get(n);
+		return (m != null ? m : Collections.emptyMap());
+	}
+	public Map<String, IAtom> getUsedAtoms(IVisitable n) {
+		Map<String, IAtom> m = _usedAtoms.get(n);
+		return (m != null ? m : Collections.emptyMap());
+	}
+	public Map<String, IAtom> getAtoms(IVisitable n) {
+		Map<String, IAtom> allMap = _allAtoms.get(n);
+		if (allMap != null) return allMap;
+
+		Map<String, IAtom> declMap = getDeclaringAtoms(n);
+		Map<String, IAtom> usedMap = getUsedAtoms(n);
+		if (declMap.isEmpty() && usedMap.isEmpty()) return Collections.emptyMap();
+
+		allMap = new HashMap<>(declMap);
+		allMap.putAll(usedMap);
+		_allAtoms.put(n, allMap);
+		return allMap;
+	}
+
+
+	// TODO think about all cases that dont have one!!!
+	@Override
+	public Program exit(Program n, Map<IVisitable, IVisitable> m) {
+		return n;
+	}
+
+	@Override
+	public Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = new HashMap<>();
+		usedMap.putAll(getUsedAtoms(n.head));
+		usedMap.putAll(getUsedAtoms(n.body));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> declMap = Collections.singletonMap(n.atom.name(), n.atom);
+		_declAtoms.put(n, declMap);
+		Map<String, IAtom> usedMap = new HashMap<>();
+		for (IAtom t : n.types) usedMap.putAll(getUsedAtoms(t));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> declMap = new HashMap<>();
+		declMap.put(n.atom.name(), n.atom);
+		declMap.put(n.types.get(0).name(), n.types.get(0));
+		_declAtoms.put(n, declMap);
+		return n;
+	}
+	@Override
+	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> declMap  = new HashMap<>();
+		declMap.putAll(getDeclaringAtoms(n.head));
+		_declAtoms.put(n, declMap);
+		Map<String, IAtom> usedMap = new HashMap<>();
+		usedMap.putAll(getUsedAtoms(n.head));
+		usedMap.putAll(getUsedAtoms(n.body));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+
+	@Override
+	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
+//	@Override
+//	public Map<String, IAtom> getAtoms() {
+//		Map<String, IAtom> map = new HashMap<>();
+//		for (String pred : _exports) map.put(pred, null);
+//		for (Declaration d : _declarations) map.putAll(d.getAtoms());
+//		return map;
+//	}
+//
+//	@Override
+//	public Map<String, IAtom> getDeclaringAtoms() {
+//		Map<String, IAtom> map = new HashMap<>();
+//		for (Declaration d : _declarations) map.putAll(d.getDeclaringAtoms());
+//		return map;
+//	}
+		return n;
+	}
+	@Override
+	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
+//
+//	@Override
+//	public Map<String, IAtom> getAtoms() {
+//		Map<String, IAtom> map = new HashMap<>();
+//		for (Declaration d : _declarations) map.putAll(d.getAtoms());
+//		for (Constraint c : _constraints)   map.putAll(c.getAtoms());
+//		for (Rule r : _rules)               map.putAll(r.getAtoms());
+//		return map;
+//	}
+//
+//	@Override
+//	public Map<String, IAtom> getDeclaringAtoms() {
+//		Map<String, IAtom> map = new HashMap<>();
+//		for (Declaration d : _declarations) map.putAll(d.getDeclaringAtoms());
+//		for (Rule r : _rules)               map.putAll(r.getDeclaringAtoms());
+//		return map;
+//	}
+//
+//	@Override
+//	public Map<String, IAtom> getUsedAtoms() {
+//		Map<String, IAtom> atoms = getAtoms();
+//		Map<String, IAtom> declaringAtoms = getDeclaringAtoms();
+//		atoms.keySet().removeAll(declaringAtoms.keySet());
+//		return atoms;
+//	}
+
+		return n;
+	}
+
+	@Override
+	public AggregationElement exit(AggregationElement n, Map<IVisitable, IVisitable> m) {
+		_usedAtoms.put(n, getUsedAtoms(n.body));
+		return n;
+	}
+	@Override
+	public ComparisonElement exit(ComparisonElement n, Map<IVisitable, IVisitable> m) {
+		_usedAtoms.put(n, getUsedAtoms(n.expr));
+		return n;
+	}
+	@Override
+	public GroupElement exit(GroupElement n, Map<IVisitable, IVisitable> m) {
+		_usedAtoms.put(n, getUsedAtoms(n.element));
+		return n;
+	}
+	@Override
+	public LogicalElement exit(LogicalElement n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = new HashMap<>();
+		for (IElement e : n.elements) usedMap.putAll(getUsedAtoms(e));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public NegationElement exit(NegationElement n, Map<IVisitable, IVisitable> m) {
+		_usedAtoms.put(n, getUsedAtoms(n.element));
+		return n;
+	}
+
+	@Override
+	public Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
+		// TODO handle backtick!
+		return n;
+	}
+	@Override
+	public Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = new HashMap<>();
+		usedMap.put(n.name(), n);
+		for (IExpr e : n.keyExprs) usedMap.putAll(getUsedAtoms(e));
+		if (n.valueExpr != null) usedMap.putAll(getUsedAtoms(n.valueExpr));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = new HashMap<>();
+		usedMap.put(n.name(), n);
+		for (IExpr e : n.exprs) usedMap.putAll(getUsedAtoms(e));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = new HashMap<>();
+		usedMap.put(n.name(), n);
+		usedMap.putAll(getUsedAtoms(n.valueExpr));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+
+	@Override
+	public BinaryExpr exit(BinaryExpr n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = new HashMap<>();
+		usedMap.putAll(getUsedAtoms(n.left));
+		usedMap.putAll(getUsedAtoms(n.right));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public FunctionalHeadExpr exit(FunctionalHeadExpr n, Map<IVisitable, IVisitable> m) {
+		_usedAtoms.put(n, getUsedAtoms(n.functional));
+		return n;
+	}
+	@Override
+	public GroupExpr exit(GroupExpr n, Map<IVisitable, IVisitable> m) {
+		_usedAtoms.put(n, getUsedAtoms(n.expr));
+		return n;
+	}
+}
