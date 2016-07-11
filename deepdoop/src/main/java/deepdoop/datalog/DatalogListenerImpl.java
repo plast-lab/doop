@@ -1,11 +1,18 @@
 package deepdoop.datalog;
 
 import static deepdoop.datalog.DatalogParser.*;
-import deepdoop.datalog.LogicalElement.LogicType;
+import deepdoop.actions.FlatteningVisitor;
+import deepdoop.datalog.clause.*;
+import deepdoop.datalog.component.*;
+import deepdoop.datalog.element.*;
+import deepdoop.datalog.element.LogicalElement.LogicType;
+import deepdoop.datalog.element.atom.*;
+import deepdoop.datalog.expr.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -45,20 +52,20 @@ public class DatalogListenerImpl implements DatalogListener {
 	}
 
 	public void exitProgram(ProgramContext ctx) {
-		_program.global(_globalComp);
+		_program.setGlobalComp(_globalComp);
 	}
 	public void enterComp(CompContext ctx) {
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
-		_program.comp(_currComp);
+		_program.addComp(_currComp);
 		_currComp = _globalComp;
 	}
 	public void exitInit_(Init_Context ctx) {
-		_program.init(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
+		_program.addInit(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPropagate(PropagateContext ctx) {
-		_program.propagate(
+		_program.addPropagate(
 				ctx.IDENTIFIER(0).getText(),
 				ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())),
 				ctx.GLOBAL() != null ? null : ctx.IDENTIFIER(1).getText());
@@ -72,7 +79,7 @@ public class DatalogListenerImpl implements DatalogListener {
 		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
 	}
 	public void exitCmd(CmdContext ctx) {
-		_program.comp(_currComp);
+		_program.addComp(_currComp);
 		_currComp = _globalComp;
 	}
 	public void enterDeclaration(DeclarationContext ctx) {
@@ -82,10 +89,10 @@ public class DatalogListenerImpl implements DatalogListener {
 		_inDecl = false;
 
 		if (ctx.refmode() == null) {
-			IAtom atom = (IAtom) get(_elem, ctx.predicate());
-			List<IAtom> types = get(_atoms, ctx.predicateList());
-			if (types == null) types = new ArrayList<>();
+			List<IAtom> typesList = get(_atoms, ctx.predicateList());
+			Set<IAtom> types = (typesList == null ? new HashSet<>() : new HashSet<>(typesList));
 
+			IAtom atom = (IAtom) get(_elem, ctx.predicate());
 			if (isConstraint(atom, types))
 				_currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)));
 			else
@@ -93,7 +100,7 @@ public class DatalogListenerImpl implements DatalogListener {
 		}
 		else {
 			RefMode refmode = (RefMode) get(_elem, ctx.refmode());
-			List<IExpr> exprs = Arrays.asList(refmode.getExprs().get(0));
+			List<IExpr> exprs = Arrays.asList(refmode.entityVar);
 			Predicate entity = new Predicate(get(_name, ctx.predicateName()), exprs);
 			Primitive primitive = (Primitive) get(_elem, ctx.predicate());
 			_currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive));
@@ -104,9 +111,10 @@ public class DatalogListenerImpl implements DatalogListener {
 	}
 	public void exitRule_(Rule_Context ctx) {
 		if (ctx.predicateList() != null) {
-			LogicalElement head = new LogicalElement(LogicType.AND, get(_atoms, ctx.predicateList()));
+			LogicalElement head = new LogicalElement(LogicType.AND, new HashSet<>(get(_atoms, ctx.predicateList())));
 			IElement body = get(_elem, ctx.ruleBody());
-			if (body != null) body.flatten();
+			if (body != null)
+				body = (IElement) body.accept(new FlatteningVisitor());
 			_currComp.addRule(new Rule(head, body));
 		} else {
 			LogicalElement head = new LogicalElement(get(_elem, ctx.predicate()));
@@ -225,10 +233,10 @@ public class DatalogListenerImpl implements DatalogListener {
 					case "/": op = BinOperator.DIV  ; break;
 				}
 				IExpr right = get(_expr, exprs.get(1));
-				e = new ComplexExpr(left, op, right);
+				e = new BinaryExpr(left, op, right);
 			}
 			else
-				e = new ComplexExpr(get(_expr, exprs.get(0)));
+				e = new GroupExpr(get(_expr, exprs.get(0)));
 		}
 
 		_expr.put(ctx, e);
@@ -263,6 +271,7 @@ public class DatalogListenerImpl implements DatalogListener {
 	public void visitErrorNode(ErrorNode node) {
 		throw new RuntimeException("Parsing error");
 	}
+	// TODO inherit from BaseListener so there is no need to define those
 	// Not used (for now) inherited methods - START
 	public void enterProgram(ProgramContext ctx) {}
 	public void enterInit_(Init_Context ctx) {}
@@ -328,8 +337,8 @@ public class DatalogListenerImpl implements DatalogListener {
 				return false;
 		}
 	}
-	static boolean isConstraint(IAtom atom, List<IAtom> types) {
-		for (VariableExpr v : atom.getExprsAsVars())
+	static boolean isConstraint(IAtom atom, Set<IAtom> types) {
+		for (VariableExpr v : atom.getVars())
 			if (v.isDontCare)
 				return true;
 
@@ -338,7 +347,7 @@ public class DatalogListenerImpl implements DatalogListener {
 
 		int bodyCount = 0;
 		for (IAtom t : types) {
-			List<VariableExpr> vars = t.getExprsAsVars();
+			List<VariableExpr> vars = t.getVars();
 			if (vars.size() != 1 || vars.get(0).isDontCare)
 				return true;
 			bodyCount += vars.size();
