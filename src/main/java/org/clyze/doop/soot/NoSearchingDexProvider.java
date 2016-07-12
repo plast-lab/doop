@@ -17,7 +17,7 @@ import java.util.zip.ZipFile;
 /**
  * Created by anantoni on 12/7/2016.
  */
-public class NoSearchingDexProvider {
+public class NoSearchingDexProvider implements ClassProvider {
     private Map<String, NoSearchingDexProvider.Resource> _classes;
     private List<ZipFile> _archives;
     private Map<String, Properties> _properties;
@@ -140,41 +140,9 @@ public class NoSearchingDexProvider {
         _archives.add(new ZipFile(f));
     }
 
-    /**
-     * Finds the class for the given className. This method is invoked
-     * by the Soot SourceLocator.
-     */
-    public ClassSource find(String className) {
-        NoSearchingDexProvider.Resource resource = _classes.get(className);
-
-        if(resource == null) {
-            String fileName = className.replace('.', '/') + ".class";
-
-            for(ZipFile archive : _archives) {
-                ZipEntry entry = archive.getEntry(fileName);
-                if(entry != null) {
-                    resource = new NoSearchingDexProvider.ZipEntryResource(archive, entry);
-                    break;
-                }
-            }
-        }
-
-        if(resource == null) {
-            return null;
-        }
-        else {
-
-            try {
-                InputStream stream = resource.open();
-                //return new CoffiClassSource(className, stream);
-                //// (YS) We may need the change below for future Soot versions
-                //// (found out by trying a nightly build of Soot).
-                return new CoffiClassSource(className, stream, null, null);
-            }
-            catch(IOException exc) {
-                throw new RuntimeException(exc);
-            }
-        }
+    @Override
+    public ClassSource find(String s) {
+        return null;
     }
 
     /**
