@@ -210,6 +210,17 @@
   // wishes, as long as it's soundly underapproximate (i.e., a true Must relation).
   .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
 
+  //// =====================================
+  //// BEGIN final relations for stats
+
+  .decl AppAllCtxMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var) output
+  AppAllCtxMayPointTo(?hctx, ?heap, ?var) :-
+    MayReachableMethodUnderMayContext(?ctx, ?meth),
+	InitialMayContext(?ctx),
+    MethodSignature_DeclaringType(?meth, ?class), ApplicationClass(?class),
+    MayPointTo(?hctx, ?heap, ?ctx, ?var).
+
+  //// END final stats
 
   //// =====================================
   //// BEGIN core MayPointTo code
@@ -220,8 +231,8 @@
   .decl MayReachableMayContext(?ctx:MayContext)
   .decl RootMethodForMayAnalysis(?meth:MethodSignature) output
   .decl MayCallGraphEdge(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
-  .decl MethodMayAssignField(?fld:FieldSignature, ?toMethod:MethodSignature)
-  .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature)
+  .decl MethodMayAssignField(?fld:FieldSignature, ?toMethod:MethodSignature) output
+  .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature) output
 
   .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
   .decl MethodMayAssignField_Prev(?fld:FieldSignature, ?toMethod:MethodSignature)
@@ -932,16 +943,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
   //   AllPredecessors_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
 
-  // First, uniform treatment of easy case for any length non-collection AP
-  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-    !AccessPath_IsCollection(?ap),
-    !MonitorInstruction(?insn),
-    (!MethodInvocation(?insn);
-     IgnorableMethodInvocation(?insn);
-     IgnorableForNonCollectionsMethodInvocation(?insn)),
-     !StoreInstruction(?insn).
-
   //// Establishing Before_AccessPathMayPointTo at beginning of basic block.
 
   .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
@@ -952,203 +953,223 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     BasicBlockHead(?tail, ?pred),
     MaySuccessorBBModuloThrow(?insn, ?pred).
 
+  // The linchpin: putting together all CFG predecessor info
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
     AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
     .plan 1: (2,1)
   //// POINT3: MustAlias, insert here
 
+  //// Infer info after instruction from info before it
+  // First, uniform treatment of easy case for any length non-collection AP
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    !AccessPath_IsCollection(?ap),
+    !MonitorInstruction(?insn),
+    (!MethodInvocation(?insn);
+     IgnorableMethodInvocation(?insn);
+     IgnorableForNonCollectionsMethodInvocation(?insn)),
+     !StoreInstruction(?insn).
+
+  // Now for store instructions. Also handles static field
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    SingleFieldAccessPath(?fld, ?ap),
+    FieldInstruction_Signature(?insn, ?fld).
+
+  // also for length 3.
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
+    FieldInstruction_Signature(?insn, ?fld),
+    ?fld != ?fld1,
+    ?fld != ?fld2.
+
+  // TODO extend to longer access paths, refactor to clean up
+
+  // additions for static
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    AccessPath_ContainsStaticField(?ap, _),
+	AccessPath_Length(?ap, 1),
+    IgnorableForStaticsMethodInvocation(?insn).
+
+  .decl AccessPath_IsFinalStaticField(?ap:AccessPath)
+  AccessPath_IsFinalStaticField(?ap) :-
+    AccessPath_ContainsStaticField(?ap, ?fld),
+	AccessPath_Length(?ap, 1),
+    FieldModifier(?mod, ?fld),
+    Modifier_final(?mod).
+
+  // REVIEW: final static fields (see below)
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    AccessPath_IsFinalStaticField(?ap),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
+    .plan 1: (2,1)
+
+  // // *Collections*
+  // // Also propagating the information for collection access paths.
+  // AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+  //   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+  //   AccessPath_ByCollectionVarInv(?ap, _),
+  //   !MonitorInstruction(?insn),
+  //   (!MethodInvocation(?insn);
+  //    IgnorableMethodInvocation(?insn);
+  //    LibraryCollectionLoadOperation(?insn)),
+  //   !StoreArrayIndex_Insn(?insn).
+  // 
+  // // if it's a non-array operation on collections but the info concerns an array
+  // AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+  //    OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
+  //    AccessPath_ByCollectionVarInv(?ap, ?base),
+  //    ArrayType(Var_Type[?base]),
+  //    LibraryCollectionStoreOperation(?insn).
+  // 
+  // // and the converse. TODO: more fine-grained distinction of library collections?
+  // AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+  //    OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
+  //    AccessPath_ByCollectionVarInv(?ap, ?base),
+  //    LibraryCollectionType(Var_Type[?base]),
+  //    StoreArrayIndex_Insn(?insn).
+
+  /// Final fields
+
+  // The logic below is often subsumed by the handling of final fields
+  // at the end of the constructor. But it is not subsumed in cases the
+  // final value is dependent on the calling context.
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    SingleFieldAccessPath(?fld, ?ap),
+    FieldModifier(?mod, ?fld),
+	Modifier_final(?mod),
+    !InstructionUnderConstructorOfClassOfField(?fld, ?insn),
+    !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
+
+  // TODO: also, for freshly allocated objects, it should be enough to have
+  //       instance field points-to information for one path. The object doesn't
+  //       exist in others. This needs escape reasoning? The object may come back
+  //       to the same program point through the other path.
+
+  // Now method calls. We use an overapproximation of the method's
+  // effects, rather than passing all the access paths in.  Interesting
+  // rules!
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    SingleFieldAccessPath(?fld, ?ap),
+    MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
+    !MethodMayAssignField(?fld, ?toMethod),
+    !MethodHasUnresolvedInvocation(?toMethod).
+
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
+    MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
+    !MethodMayAssignField(?fld1, ?toMethod),
+    !MethodMayAssignField(?fld2, ?toMethod),
+    !MethodHasUnresolvedInvocation(?toMethod).
+
+  //// POINT4 insert here
+
+
+  // //// END frame rules, control-flow join rules
+  // //// ====================================
+
+  // //// ====================================
+  // //// BEGIN escape-like logic
+  // //// for computing the highly useful concepts of "Method/Call Does
+  // //// Not Invalidate Field", "method can reach other" (underapprox.),
+  // //// etc.  REVIEW: Maybe base such logic on a type-based escape
+  // //// analysis?
+
+  // note that the "InitialMayContext" is an overapproximation. It's
+  // stronger than what we typically need.
+  .decl InvocationSiteFullyResolved(?invo:Instruction)
+  InvocationSiteFullyResolved(?invo) :-
+	InitialMayContext(?initCtx),
+    MayCallGraphEdge_Prev(_, _, ?initCtx, ?invo).
+
+  .decl MethodHasInvocationSite(?invo:Instruction, ?method:MethodSignature)
+  MethodHasInvocationSite(?invo, ?method) :-
+    MethodInvocation(?invo),
+    Instruction_Method(?invo, ?method).
+
+  .decl MethodCanCallOther(?method:MethodSignature, ?toMethod:MethodSignature)
+  MethodCanCallOther(?method, ?toMethod) :-
+    MayCallGraphEdge_Prev(_, ?toMethod, _, ?invo),
+    Instruction_Method(?invo, ?method).
+
+  // transitive must-callgraph from pre-analysis
+  .decl MethodCanReachOther(?method:MethodSignature, ?toMethod:MethodSignature)
+  MethodCanReachOther(?toMethod, ?method) :-
+    MethodCanCallOther(?method, ?toMethod).
+
+  MethodCanReachOther(?toMethod, ?method) :-
+    MethodCanReachOther(?toMethod, ?intermMethod),
+    MethodCanCallOther(?method, ?intermMethod).
+
+  // transitive unresolved call
+  MethodHasUnresolvedInvocation(?method) :-
+    MethodHasInvocationSite(?invo, ?method),
+    !InvocationSiteFullyResolved(?invo).
+
+  MethodHasUnresolvedInvocation(?method) :-
+    MethodHasUnresolvedInvocation(?toMethod),
+    MethodCanCallOther(?method, ?toMethod).
+
+  // transitive may-assign-field based on must-callgraph
+  MethodMayAssignField(?fld, ?method) :-
+    Instruction_Method(?insn, ?method),
+    FieldInstruction_Signature(?insn, ?fld).
+
+  MethodMayAssignField(?fld, ?method) :-
+    MethodMayAssignField(?fld, ?toMethod),
+    MethodCanCallOther(?method, ?toMethod).
+
+  // Now we can do a lazy check for definite ?fld, ?method pairs
+  // to see whether a method is certain to *not* destroy a field
+  // value by saying:
+  // !MethodMayAssignField(?fld, ?method),
+  // !MethodHasUnresolvedInvocation(?method).
+
+  //// POINT5: DominatedPathMayInvalidateFieldPointsTo, enter here
+
+  // Some auxiliary predicates on the above, used for constructor analysis
+  .decl ConstructorOfClassOfField(?fld:FieldSignature, ?consMeth:MethodSignature)
+  ConstructorOfClassOfField(?fld, ?consMeth) :-
+    MethodSignature_SimpleName(?consMeth, "<init>"),
+    FieldSignature_DeclaringClass(?fld, ?cls),
+    MethodSignature_DeclaringType(?consMeth, ?cls).
+
+  .decl MethodReachableFromConstructorOfClassOfField(?fld:FieldSignature, ?consMeth:MethodSignature)
+  MethodReachableFromConstructorOfClassOfField(?fld, ?meth) :-
+    ConstructorOfClassOfField(?fld, ?meth).
+  MethodReachableFromConstructorOfClassOfField(?fld, ?meth) :-
+    ConstructorOfClassOfField(?fld, ?consMeth),
+    MethodCanReachOther(?meth, ?consMeth).
+
+  .decl ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld:FieldSignature)
+  ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld) :-
+    ConstructorOfClassOfField(?fld, ?consMeth),
+    MethodHasUnresolvedInvocation(?consMeth).
+
+  // It's not enough to have the instruction not in the constructor, it
+  // needs to be after the end of the constructor.
+  // Is this huge?  Probably not, by nature of constructors and the
+  // Must-callgraph.
+  .decl InstructionUnderConstructorOfClassOfField(?fld:FieldSignature, ?insn:Instruction)
+  InstructionUnderConstructorOfClassOfField(?fld, ?insn) :-
+    MethodReachableFromConstructorOfClassOfField(?fld, ?meth),
+    Instruction_Method(?insn, ?meth).
+
+  // //// END escape-like logic
+  // //// ====================================
+
+
+  //// END core MayPointTo code
+  //// ====================================
+
 }  // END .comp SoundMay
 
-
-/*
-/// Final fields
-
-// The logic below is often subsumed by the handling of final fields
-// at the end of the constructor. But it is not subsumed in cases the
-// final value is dependent on the calling context.
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-  Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-  SingleFieldAccessPath(?fld, ?ap),
-  FieldModifier(Modifier_final[], ?fld),
-  !InstructionUnderConstructorOfClassOfField(?fld, ?insn),
-  !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
-
-
-// It's not enough to have the instruction not in the constructor, it
-// needs to be after the end of the constructor.
-// Is this huge?  Probably not, by nature of constructors and the
-// Must-callgraph.
-InstructionUnderConstructorOfClassOfField(?fld, ?insn) :-
-   Instruction_Method(?insn, ?meth),
-   MethodReachableFromConstructorOfClassOfField(?fld, ?meth).
-
-
-ConstructorOfClassOfField(?fld, ?consMeth) :-
-   MethodSignature_SimpleName(?consMeth, "<init>"),
-   FieldSignature_DeclaringClass(?fld, ?cls),
-   MethodSignature_DeclaringType(?consMeth, ?cls).
-
-// Must-reachable, that is.
-MethodReachableFromConstructorOfClassOfField(?fld, ?meth) :-
-   ConstructorOfClassOfField(?fld, ?meth).
-MethodReachableFromConstructorOfClassOfField(?fld, ?meth) :-
-   ConstructorOfClassOfField(?fld, ?consMeth),
-   MethodCanReachOther(?meth, ?consMeth).
-
-ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld) :-
-   ConstructorOfClassOfField(?fld, ?consMeth),
-   MethodHasUnresolvedInvocation(?consMeth).
-   
-
-// //// Unsound HACK! Just during testing, for estimating the impact of
-// //// better "NonDom" logic.
-// Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-//    AllNonDomPredecessors_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
-
-
-// TODO: also, for freshly allocated objects, it should be enough to have
-//       instance field points-to information for one path. The object doesn't
-//       exist in others. This needs escape reasoning? The object may come back
-//       to the same program point through the other path.
-
-
-// Now method calls. We use an overapproximation of the method's
-// effects, rather than passing all the access paths in.  Interesting
-// rules!
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   SingleFieldAccessPath(?fld, ?ap),
-   May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-   !MethodMayAssignField(?fld, ?toMethod),
-   !MethodHasUnresolvedInvocation(?toMethod).
-
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-   May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
-   !MethodMayAssignField(?fld1, ?toMethod),
-   !MethodMayAssignField(?fld2, ?toMethod),
-   !MethodHasUnresolvedInvocation(?toMethod).
-
-// Now for store instructions. Also handles static field
-Temp1(?hctx, ?heap, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   SingleFieldAccessPath(?fld, ?ap),
-   FieldInstruction_Signature[?insn] != ?fld.
-
-// also for length 3.
-Temp2(?hctx, ?heap, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   _DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-   FieldInstruction_Signature(?insn, ?fld),
-   ?fld != ?fld1,
-   ?fld != ?fld2.
-
-// TODO extend to longer access paths, refactor to clean up
-
-// additions for static
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   AccessPath_ByStaticFieldInv(?ap, _),
-   IgnorableForStaticsMethodInvocation(?insn).
-
-// REVIEW: final static fields (see above)
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   AccessPath_ByStaticFieldInv(?ap, ?fld),
-   FieldModifier(Modifier_final[], ?fld).
-
-// Also propagating the information for collection access paths.
-Temp8(?hctx, ?heap, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   AccessPath_ByCollectionVarInv(?ap, _),
-   !MonitorInstruction(?insn),
-   (!MethodInvocation(?insn);
-    IgnorableMethodInvocation(?insn);
-    LibraryCollectionLoadOperation(?insn)),
-   !StoreArrayIndex_Insn(?insn).
-
-// if it's a non-array operation on collections but the info concerns an array
-Temp9(?hctx, ?heap, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   AccessPath_ByCollectionVarInv(?ap, ?base),
-   ArrayType(Var_Type[?base]),
-   LibraryCollectionStoreOperation(?insn).
-
-// and the converse. TODO: more fine-grained distinction of library collections?
-Temp10(?hctx, ?heap, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-   AccessPath_ByCollectionVarInv(?ap, ?base),
-   LibraryCollectionType(Var_Type[?base]),
-   StoreArrayIndex_Insn(?insn).
-
-//// POINT4 insert here
-
-//// REVIEW: Maybe base such logic on a type-based escape analysis?
-//// ====================================
-//// Logic for computing the highly useful concepts of "Method/Call
-//// Does Not Invalidate Field", "method can reach other"
-//// (underapprox.), etc.
-
-// note that the "InitialMayContext" is an overapproximation. It's
-// stronger than what we typically need.
-InvocationSiteFullyResolved(?invo) :-
-   _InitialMustContext(?initCtx),
-   _MustCallGraphEdge_ToMethod(?initCtx, ?invo, _).
-
-MethodHasInvocationSite(?invo, ?method) :-
-   MethodInvocation(?invo),
-   Instruction_Method(?invo, ?method).
-
-MethodCanCallOther(?method, ?toMethod) :-
-   _MustCallGraphEdge_ToMethod(_, ?invo, ?toMethod),
-   Instruction_Method(?invo, ?method).
-
-// transitive must-callgraph from pre-analysis
-MethodCanReachOther(?toMethod, ?method) :-
-   MethodCanCallOther(?method, ?toMethod).
-
-MethodCanReachOther(?toMethod, ?method) :-
-   MethodCanCallOther(?method, ?intermMethod),
-   MethodCanReachOther(?toMethod, ?intermMethod).
-
-// transitive unresolved call
-MethodHasUnresolvedInvocation(?method) :-
-   MethodHasInvocationSite(?invo, ?method),
-   !InvocationSiteFullyResolved(?invo).
-
-MethodHasUnresolvedInvocation(?method) :-
-   MethodCanCallOther(?method, ?toMethod),
-   MethodHasUnresolvedInvocation(?toMethod).
-
-// transitive may-assign-field based on must-callgraph
-MethodMayAssignField(?fld, ?method) :-
-   Instruction_Method(?insn, ?method),
-   FieldInstruction_Signature(?insn, ?fld).
-
-MethodMayAssignField(?fld, ?method) :-
-   MethodCanCallOther(?method, ?toMethod),
-   MethodMayAssignField(?fld, ?toMethod).
-
-// Now we can do a lazy check for definite ?fld, ?method pairs
-// to see whether a method is certain to *not* destroy a field
-// value by saying:
-// !MethodMayAssignField(?fld, ?method),
-// !MethodHasUnresolvedInvocation(?method).
-
-//// POINT5: DominatedPathMayInvalidateFieldPointsTo, enter here
-
-// //// END frame rules, control-flow join rules
-
-//// END core MayPointTo code
-//// ====================================
-*/
 
 //// POINT2---IgnorableMethodInvocation to go here
 
@@ -1502,7 +1523,7 @@ DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
 DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
   ComputedAccessPath(?ap),
   ?ap = [ ?var, [ [ nil, ?fld1 ], ?fld2 ] ], ?var = ?var, // suppress
-  !AccessPath_ContainsStaticField(?ap, _).
+  Var_Type(?var, _). // to be sure it's a var
 
 AccessPath_ContainsStaticField(?ap, ?fld) :-
   ComputedAccessPath(?ap),
@@ -1526,6 +1547,7 @@ FirstInstructionOfMethod(?meth, ?firstInsn) :-
 
 .decl IgnorableMethodInvocation(?insn:Instruction)
 .decl IgnorableForNonCollectionsMethodInvocation(?insn:Instruction)
+.decl IgnorableForStaticsMethodInvocation(?insn:Instruction)
 
 .decl StoreInstruction(?insn:Instruction)
 StoreInstruction(?insn) :-
