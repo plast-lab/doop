@@ -718,10 +718,10 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // for its points-to, and we take the union of all such bounds
   .decl UpToReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?return:Instruction)
   UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) :-
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
+    MayPointTo(?hctx, ?heap, ?ctx, ?var),
     ReturnNonvoid_Var(?return, ?var),
-    MayPointTo(?hctx, ?heap, ?ctx, ?var).
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return).
 
   UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?return),
   UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) :-
@@ -785,10 +785,10 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // does the predecessor BB ?pred of ?insn have (at its end) point-to info for ?ap ?
   .decl OptHasAccessPathPointToAtPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
   OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    MaySuccessorBBModuloThrow(?insn, ?pred),
-    BasicBlockHead(?tail, ?pred),
+    AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail),
     BasicBlockEnd(?tail),
-    AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail).
+    BasicBlockHead(?tail, ?pred),
+    MaySuccessorBBModuloThrow(?insn, ?pred).
 
   .decl AccessPathRelevantToMethod(?ap:AccessPath, ?meth:MethodSignature) 
   AccessPathRelevantToMethod(?ap, ?meth) :-
@@ -798,10 +798,10 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 
   .decl AccessPathNotSetByPredecessorBB(?ap:AccessPath, ?pred:Instruction)
   AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
-    BasicBlockBegin(?pred),
-    Instruction_Method(?pred, ?meth),
     AccessPathRelevantToMethod(?ap, ?meth),
     SingleFieldAccessPath(?fld, ?ap),
+    Instruction_Method(?pred, ?meth),
+    BasicBlockBegin(?pred),
     !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
     !SomePathFromFirstInstructionCallsMethod(?pred).
 
@@ -850,11 +850,14 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     AccessPath_IsCollection(?ap),
     !SomePathFromFirstInstructionCallsMethod(?pred).
 
-  .decl AllRelevantPredecessors_HasAccessPathMayPointTo(?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl ExistsNextPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)
+   ExistsNextPredecessorToSameBB(?pred, ?insn) :-
+    NextPredecessorToSameBB(?insn, ?pred, _).
 
+  .decl AllRelevantPredecessors_HasAccessPathMayPointTo(?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
   AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
     HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
-    !NextPredecessorToSameBB(?insn, ?pred, _),
+	!ExistsNextPredecessorToSameBB(?pred, ?insn),
     !ExceptionHandlerFirstInstruction(?insn).
 
   // // *MustAlias*
@@ -899,26 +902,27 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   MayPointTo(?hctx, ?heap, ?ctx, ?var) :-
     MayReachableMethodUnderMayContext(?ctx, ?method),
     InitialMayContext(?initCtx),
-    MayPointTo(?hctx, ?heap, ?initCtx, ?var),
-    Var_DeclaringMethod(?var, ?method).
+    Var_DeclaringMethod(?var, ?method),
+    MayPointTo(?hctx, ?heap, ?initCtx, ?var).
+	// plan?
   
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
     Instruction_Method(?insn, ?method),
     MayReachableMethodUnderMayContext(?ctx, ?method),
-    InitialMayContext(?initCtx),
-    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn).
+    InitialMayContext(?initCtx).
   
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
     Instruction_Method(?insn, ?method),
     MayReachableMethodUnderMayContext(?ctx, ?method),
-    InitialMayContext(?initCtx),
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn).
+    InitialMayContext(?initCtx).
   
   MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap1, ?ap2, ?initCtx, ?insn),
     Instruction_Method(?insn, ?method),
     MayReachableMethodUnderMayContext(?ctx, ?method),
-    InitialMayContext(?initCtx),
-    MustAlias(?ap1, ?ap2, ?initCtx, ?insn).
+    InitialMayContext(?initCtx).
   
   // //// END weakening rules
   // //// ====================================
@@ -949,15 +953,15 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
   
   AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-    MaySuccessorBBModuloThrow(?insn, ?pred),
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
     BasicBlockEnd(?tail),
     BasicBlockHead(?tail, ?pred),
-    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail).
+    MaySuccessorBBModuloThrow(?insn, ?pred).
 
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
     AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
-
+    .plan 1: (2,1)
   //// POINT3: MustAlias, insert here
 
 }  // END .comp SoundMay
