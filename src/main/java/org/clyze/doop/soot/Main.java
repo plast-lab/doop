@@ -78,7 +78,7 @@ public class Main {
                     soot.options.Options.v().set_allow_phantom_refs(true);
                     soot.options.Options.v().set_ignore_resolution_errors(true);
                     soot.options.Options.v().set_whole_program(true);
-                    process_dir.add("/home/anantoni/AndroidStudioProjects/HelloWorldApp/app/build/outputs/apk/app-release-unsigned.apk");
+                    process_dir.add("/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk");
                     soot.options.Options.v().set_process_dir(process_dir);
                     _mode = Mode.FULL;
                     _libraries.add(File.separator + "home" + File.separator + "anantoni" + File.separator + "Android" + File.separator + "Sdk" + File.separator + "platforms" + File.separator + "android-24" + File.separator  + "android.jar");
@@ -210,7 +210,7 @@ public class Main {
         NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         NoSearchingDexProvider dexProvider = new NoSearchingDexProvider();
         _inputs = new ArrayList<>();
-        _inputs.add("/home/anantoni/AndroidStudioProjects/HelloWorldApp/app/build/outputs/apk/app-release-unsigned.apk");
+        _inputs.add("/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk");
         if (!_android) {
             for (String arg : _inputs) {
                 if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
@@ -236,9 +236,6 @@ public class Main {
         for (String lib : _libraries) {
             System.out.println("Adding archive for resolving: " + lib);
 
-
-
-
             File libraryFile = new File(lib);
 
             if (!libraryFile.exists()) {
@@ -252,7 +249,7 @@ public class Main {
         }
         List<ClassProvider> providersList = new ArrayList<>();
         providersList.add(classProvider);
-//        providersList.add(new DexClassProvider());
+        providersList.add(dexProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 //        soot.SourceLocator.v().setClassProviders(Collections.singletonList(new DexClassProvider()));
         Scene scene = Scene.v();
@@ -277,13 +274,12 @@ public class Main {
         }
 
         List<SootClass> classes = new ArrayList<>();
-//        for (String className : dexProvider.getClassNames()) {
-//
-//            scene.loadClass(className, SootClass.SIGNATURES);
-//            SootClass c = scene.loadClass(className, SootClass.BODIES);
-//
-//            classes.add(c);
-//        }
+        for (String className : dexProvider.getClassNames()) {
+            scene.loadClass(className, SootClass.SIGNATURES);
+            SootClass c = scene.loadClass(className, SootClass.BODIES);
+
+            classes.add(c);
+        }
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
