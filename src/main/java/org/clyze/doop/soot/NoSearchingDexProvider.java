@@ -1,9 +1,13 @@
 package org.clyze.doop.soot;
 
+import org.apache.commons.io.IOUtils;
+import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.dexbacked.DexBackedDexFile;
+import org.jf.dexlib2.iface.ClassDef;
 import soot.ClassProvider;
 import soot.ClassSource;
 import soot.CoffiClassSource;
-import soot.coffi.ClassFile;
+import soot.dexpler.Util;
 
 import java.io.*;
 import java.util.*;
@@ -11,23 +15,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * This class provider allows the specification of specific .class
- * files for finding classes. Instead of a search path, the specific
- * class files are added to the provider. In this way, it does not
- * matter at all where your classes are: the provider will never
- * return a class it accidentally found on the search path.
- *
- * This provider does allow archives, which are considered in the
- * order in which they've been added to the provider. It does,
- * however, warn if the same class file is added twice.
+ * Created by anantoni on 12/7/2016.
  */
-class NoSearchingClassProvider implements ClassProvider {
-
-    private Map<String, Resource> _classes;
+public class NoSearchingDexProvider {
+    private Map<String, NoSearchingDexProvider.Resource> _classes;
     private List<ZipFile> _archives;
     private Map<String, Properties> _properties;
 
-    NoSearchingClassProvider() {
+    NoSearchingDexProvider() {
         _classes = new HashMap<>();
         _archives = new ArrayList<>();
         _properties = new HashMap<>();
@@ -45,59 +40,59 @@ class NoSearchingClassProvider implements ClassProvider {
      * Adds a class file. Returns the class name of the class that was
      * added.
      */
-    String addClass(File f) throws IOException {
-        return addClass(f.getPath(), new FileResource(f));
+    List<String> addClasses(File f) throws IOException {
+        return addClasses(f.getPath(), new NoSearchingDexProvider.FileResource(f));
     }
 
     /**
-     * Adds a class file in a zip/jar archive. Returns the class name of
+     * Adds a class file in an apk archive. Returns the class name of
      * the class that was added.
      */
-    private String addClass(ZipFile archive, ZipEntry entry) throws IOException {
-        return addClass(entry.getName(), new ZipEntryResource(archive, entry));
+    private List<String> addClasses(ZipFile archive, ZipEntry entry) throws IOException {
+        return addClasses(entry.getName(), new NoSearchingDexProvider.ZipEntryResource(archive, entry));
     }
 
-    /** Adds a properties file in a zip/jar archive. */
+    /** Adds a properties file in an apk archive. */
     private void addProperties(ZipFile archive, ZipEntry entry) throws IOException
     {
-        addProperties(entry.getName(), new ZipEntryResource(archive, entry));
+        addProperties(entry.getName(), new NoSearchingDexProvider.ZipEntryResource(archive, entry));
     }
 
     /**
      * Adds a class file from a resource.
      */
-    private String addClass(String path, Resource resource) throws IOException {
-        ClassFile c = new ClassFile(path);
+    private List<String> addClasses(String path, NoSearchingDexProvider.Resource resource) throws IOException {
+        InputStream fis = resource.open();
+        File tempFile = File.createTempFile("temp", ".tmp");
+        tempFile.deleteOnExit();
+        FileOutputStream fos = new FileOutputStream(tempFile);
+        IOUtils.copy(fis, fos);
+        fos.close();
+        fis.close();
 
-        InputStream stream = null;
-        try {
-            stream = resource.open();
-            c.loadClassFile(stream);
-        }
-        finally {
-            if(stream != null) {
-                stream.close();
+        DexBackedDexFile d = DexFileFactory.loadDexFile(tempFile, 1, false);
+        List<String> result = new ArrayList<>();
+
+        for (ClassDef c : d.getClasses()) {
+            String className = Util.dottedClassName(c.getType());
+            result.add(className);
+            if(_classes.containsKey(className)) {
+                throw new RuntimeException(
+                        "class " + className + " has already been added to this class provider");
+            }
+            else {
+                _classes.put(className, resource);
             }
         }
 
-        String className = c.toString().replace('/', '.');
-
-        if(_classes.containsKey(className)) {
-            throw new RuntimeException(
-                "class " + className + " has already been added to this class provider");
-        }
-        else {
-            _classes.put(className, resource);
-        }
-
-        return className;
+        return result;
     }
 
     /**
      * Adds a properties file from a resource.
      */
-    private void addProperties(String path, Resource resource)
-        throws IOException
+    private void addProperties(String path, NoSearchingDexProvider.Resource resource)
+            throws IOException
     {
         Properties properties = new Properties();
         InputStream stream = resource.open();
@@ -127,15 +122,14 @@ class NoSearchingClassProvider implements ClassProvider {
         Enumeration<? extends ZipEntry> entries = archive.entries();
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            if(entry.getName().endsWith(".class")) {
-                String className = addClass(archive, entry);
-                result.add(className);
+            if(entry.getName().endsWith(".dex")) {
+                List<String> classNames = addClasses(archive, entry);
+                result.addAll(classNames);
             }
 
             if(entry.getName().endsWith(".properties"))
                 addProperties(archive, entry);
         }
-
         return result;
     }
 
@@ -151,7 +145,7 @@ class NoSearchingClassProvider implements ClassProvider {
      * by the Soot SourceLocator.
      */
     public ClassSource find(String className) {
-        Resource resource = _classes.get(className);
+        NoSearchingDexProvider.Resource resource = _classes.get(className);
 
         if(resource == null) {
             String fileName = className.replace('.', '/') + ".class";
@@ -159,7 +153,7 @@ class NoSearchingClassProvider implements ClassProvider {
             for(ZipFile archive : _archives) {
                 ZipEntry entry = archive.getEntry(fileName);
                 if(entry != null) {
-                    resource = new ZipEntryResource(archive, entry);
+                    resource = new NoSearchingDexProvider.ZipEntryResource(archive, entry);
                     break;
                 }
             }
@@ -190,13 +184,13 @@ class NoSearchingClassProvider implements ClassProvider {
      * Similar to FoundFile in SourceLocator, which is not accessible.
      */
     public static interface Resource {
-        public InputStream open() throws IOException;
+        InputStream open() throws IOException;
     }
 
     /**
      * File.
      */
-    private static class FileResource implements Resource {
+    private static class FileResource implements NoSearchingDexProvider.Resource {
         private File _file;
 
         FileResource(File file) {
@@ -212,7 +206,7 @@ class NoSearchingClassProvider implements ClassProvider {
     /**
      * Zip file.
      */
-    private static class ZipEntryResource implements Resource {
+    private static class ZipEntryResource implements NoSearchingDexProvider.Resource {
         private ZipFile _archive;
         private ZipEntry _entry;
 
@@ -231,7 +225,7 @@ class NoSearchingClassProvider implements ClassProvider {
          * outside the soot package.
          */
         private static InputStream doJDKBugWorkaround(InputStream is, long size)
-            throws IOException
+                throws IOException
         {
             int sz = (int) size;
             byte[] buf = new byte[sz];

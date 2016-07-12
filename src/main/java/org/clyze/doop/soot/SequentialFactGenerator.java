@@ -1,11 +1,24 @@
 package org.clyze.doop.soot;
 
-import soot.*;
 import soot.jimple.*;
+import soot.Body;
+import soot.Local;
+import soot.Modifier;
+import soot.PrimType;
+import soot.SootClass;
+import soot.SootField;
+import soot.SootMethod;
+import soot.Trap;
+import soot.Unit;
+import soot.Value;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
+import soot.Type;
+import soot.RefLikeType;
+import soot.RefType;
+import soot.ArrayType;
 
-import java.util.List;
+import java.util.Iterator;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -13,59 +26,52 @@ import java.util.List;
  * controlling what facts are generated.
  *
  * @author Martin Bravenboer
- * @author Jim Mouris
  * @license MIT
  */
-
-class FactGenerator implements Runnable {
-
+public class SequentialFactGenerator
+{
     private FactWriter _writer;
     private boolean _ssa;
-    private List<SootClass> _sootClasses;
 
-    FactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
+    public SequentialFactGenerator(FactWriter writer, boolean ssa)
     {
-        this._writer = writer;
-        this._ssa = ssa;
-        this._sootClasses = sootClasses;
+        _writer = writer;
+        _ssa = ssa;
     }
 
-    @Override
-    public void run() {
+    public void generate(SootClass c)
+    {
+        _writer.writeClassOrInterfaceType(c);
 
-        for (SootClass _sootClass : _sootClasses) {
-
-            _writer.writeClassOrInterfaceType(_sootClass);
-
-            // the isInterface condition prevents Object as superclass of interface
-            if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
-                _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
-            }
-
-            for (SootClass i : _sootClass.getInterfaces()) {
-                _writer.writeDirectSuperinterface(_sootClass, i);
-            }
-
-            for (SootField f : _sootClass.getFields()) {
-                generate(f);
-            }
-
-            for (SootMethod m : _sootClass.getMethods()) {
-                Session session = new Session();
-
-                try {
-                    generate(m, session); // try multithread this
-                } catch (RuntimeException exc) {
-                    System.err.println("Error while processing method: " + m);
-                    throw exc;
-                }
-            }
-
+        // the isInterface condition prevents Object as superclass of interface
+        if(c.hasSuperclass() && !c.isInterface())
+        {
+            _writer.writeDirectSuperclass(c, c.getSuperclass());
         }
 
+        for(SootClass i : c.getInterfaces())
+        {
+            _writer.writeDirectSuperinterface(c, i);
+        }
+
+        for(SootField f : c.getFields())
+        {
+            generate(f);
+        }
+
+        for(SootMethod m : c.getMethods())
+        {
+            Session session = new Session();
+            try {
+                generate(m, session);
+            } catch (RuntimeException exc) {
+                System.err.println("Error while processing method: " + m);
+                throw exc;
+            }
+        }
     }
 
-    private void generate(SootField f)
+    public void generate(SootField f)
     {
         _writer.writeFieldSignature(f);
 
@@ -95,7 +101,6 @@ class FactGenerator implements Runnable {
         // TODO annotation?
         // TODO enum?
     }
-
 
     /* Check if a Type refers to a phantom class */
     private boolean phantomBased(Type t) {
@@ -128,7 +133,7 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    private void generate(SootMethod m, Session session)
+    public void generate(SootMethod m, Session session)
     {
         if (phantomBased(m)) {
             //m.setPhantom(true);
@@ -209,11 +214,9 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generate(SootMethod m, Body b, Session session)
+    public void generate(SootMethod m, Body b, Session session)
     {
-        //TODO: Identify the problem with the jimple body of this method.
-        if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
-            b.validate();
+        b.validate();
 
         for(Local l : b.getLocals())
         {
@@ -267,15 +270,11 @@ class FactGenerator implements Runnable {
                 }
                 else if(stmt instanceof EnterMonitorStmt)
                 {
-                    //TODO: how to handle EnterMonitorStmt when op is not a Local?
-                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
-                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
+                    _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof ExitMonitorStmt)
                 {
-                    //TODO: how to handle ExitMonitorStmt when op is not a Local?
-                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
-                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
+                    _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof TableSwitchStmt)
                 {
@@ -293,16 +292,8 @@ class FactGenerator implements Runnable {
             }
             else
             {
-                // only reason for assign or invoke statements to be irrelevant
-                // is the invocation of a method on a phantom class
-                if(stmt instanceof AssignStmt)
-                    _writer.writeAssignPhantomInvoke(m, stmt, session);
-                else if (stmt instanceof InvokeStmt)
-                    _writer.writePhantomInvoke(m, stmt, session);
-                else if (stmt instanceof BreakpointStmt)
-                    _writer.writeBreakpointStmt(m, stmt, session);
-                else
-                    throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
+                // make sure we can jump to statement we do not care about (yet)
+                _writer.writeUnsupported(m, stmt, session);
             }
         }
 
@@ -358,7 +349,7 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, Session session)
+    public void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Local left = (Local) stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -417,18 +408,15 @@ class FactGenerator implements Runnable {
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-//            if(index instanceof Local)
-//            {
-//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
-//            }
-//            else if(index instanceof IntConstant)
-//            {
-//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
-//            }
-//            else
-//            {
-//                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
-//            }
+
+            if(index instanceof Local || index instanceof IntConstant)
+            {
+                _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+            }
+            else
+            {
+                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
+            }
         }
         else if(right instanceof CastExpr)
         {
@@ -439,14 +427,16 @@ class FactGenerator implements Runnable {
             {
                 _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
             }
-            else if(op instanceof NumericConstant)
+            else if(
+                    op instanceof IntConstant
+                            || op instanceof LongConstant
+                            || op instanceof FloatConstant
+                            || op instanceof DoubleConstant
+                            || op instanceof NullConstant
+                    )
             {
-                // seems to always get optimized out, do we need this?
-                _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
-            }
-            else if (op instanceof NullConstant)
-            {
-                _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
+                // make sure we can jump to statement we do not care about (yet)
+                _writer.writeUnsupported(inMethod, stmt, session);
             }
             else
             {
@@ -460,21 +450,14 @@ class FactGenerator implements Runnable {
                 _writer.writeAssignLocal(inMethod, stmt, left, (Local) alternative, session);
             }
         }
-        else if (right instanceof BinopExpr)
+        else if(
+                right instanceof BinopExpr
+                        || right instanceof NegExpr
+                        || right instanceof LengthExpr
+                        || right instanceof InstanceOfExpr)
         {
-            _writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
-        }
-        else if (right instanceof UnopExpr)
-        {
-            _writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
-        }
-        else if (right instanceof InstanceOfExpr)
-        {
-            InstanceOfExpr expr = (InstanceOfExpr) right;
-            if (expr.getOp() instanceof Local)
-                _writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
-            else // TODO check if this is possible (instanceof on something that is not a local var)
-                _writer.writeUnsupported(inMethod, stmt, session);
+            // make sure we can jump to statement we do not care about (yet)
+            _writer.writeUnsupported(inMethod, stmt, session);
         }
         else
         {
@@ -482,7 +465,7 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generateLeftNonLocal(SootMethod inMethod, AssignStmt stmt, Session session)
+    public void generateLeftNonLocal(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -525,12 +508,7 @@ class FactGenerator implements Runnable {
         {
             ArrayRef ref = (ArrayRef) left;
             Local base = (Local) ref.getBase();
-            Value index = ref.getIndex();
-
-//            if (index instanceof Local)
-//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
-//            else
-//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
+            _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)
@@ -558,7 +536,7 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generate(SootMethod inMethod, IdentityStmt stmt, Session session)
+    public void generate(SootMethod inMethod, IdentityStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -591,7 +569,7 @@ class FactGenerator implements Runnable {
     /**
      * Return statement
      */
-    private void generate(SootMethod inMethod, ReturnStmt stmt, Session session)
+    public void generate(SootMethod inMethod, ReturnStmt stmt, Session session)
     {
         Value v = stmt.getOp();
 
@@ -627,7 +605,7 @@ class FactGenerator implements Runnable {
         }
     }
 
-    private void generate(SootMethod inMethod, ThrowStmt stmt, Session session)
+    public void generate(SootMethod inMethod, ThrowStmt stmt, Session session)
     {
         Value v = stmt.getOp();
 
@@ -637,12 +615,13 @@ class FactGenerator implements Runnable {
         }
         else if(v instanceof NullConstant)
         {
-            _writer.writeThrowNull(inMethod, stmt, session);
+            // make sure we can jump to statement we do not care about (yet)
+            _writer.writeUnsupported(inMethod, stmt, session);
         }
         else
         {
             throw new RuntimeException("Unhandled throw statement: " + stmt);
         }
     }
-}
 
+}

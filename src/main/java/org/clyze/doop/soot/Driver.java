@@ -46,6 +46,12 @@ class Driver {
         }
     }
 
+    static void doInSequentialOrder(List<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+        SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
+        for(SootClass c : sootClasses) {
+            sequentialFactGenerator.generate(c);
+        }
+    }
     void generate(SootClass _sootClass) {
         _classCounter++;
         _sootClasses.add(_sootClass);
