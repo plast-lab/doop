@@ -665,7 +665,7 @@ import org.apache.commons.logging.LogFactory
 
         }
         else {
-            params = ["-allow-phantom-refs", "-android-jars", "/home/anantoni/android-sdk/platforms/", "-src-prec", "apk", "-f", "jimple", "-process-dir", "/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk"]
+            params = ["--full", "--android", "--keep-line-number", "-d", facts.toString(), inputJarFiles[0].toString()]
         }
         logger.debug "Params of soot: ${params.join(' ')}"
 

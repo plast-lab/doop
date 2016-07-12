@@ -127,7 +127,7 @@ class NoSearchingClassProvider implements ClassProvider {
         Enumeration<? extends ZipEntry> entries = archive.entries();
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            if(entry.getName().endsWith(".class") || entry.getName().endsWith(".dex")) {
+            if(entry.getName().endsWith(".class")) {
                 String className = addClass(archive, entry);
                 result.add(className);
             }
