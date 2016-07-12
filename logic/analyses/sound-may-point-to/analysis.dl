@@ -143,17 +143,15 @@
     EmptyHeapContext(?hctx).
 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignLocal_Insn(?insn),
-    !PhiNodeHead(?insn, _),
-    AssignInstruction_To(?insn, ?to),
+    IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?from),
     AssignLocal_From(?insn, ?from),
-    IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?from).
+    !PhiNodeHead(?insn, _),
+    AssignInstruction_To(?insn, ?to).
 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignCast_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
     AssignCast_From(?insn, ?from),
-    IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?from).
+    IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignInstruction_To(?insn, ?to).
 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?var) :-
     IntraproceduralMustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
@@ -269,28 +267,25 @@
   ComputedAccessPath([?to, nil]),
   MustAlias([?from, nil], [?to, nil], ?ctx, ?insn),
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignLocal_Insn(?insn),
-    !PhiNodeHead(?insn, _),
-    AssignInstruction_To(?insn, ?to),
     AssignLocal_From(?insn, ?from),
-    MayPointTo(?hctx, ?heap, ?ctx, ?from).
+    MayPointTo(?hctx, ?heap, ?ctx, ?from),
+    !PhiNodeHead(?insn, _),
+    AssignInstruction_To(?insn, ?to).
 
   // Place an order to the access path factory for the creation of
   // access paths resulting from the Move instruction. Also for Phi nodes.
   AccessPathShouldBeRebased(?ap, ?from, ?to) :-
-    AssignLocal_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
     AssignLocal_From(?insn, ?from),
     AccessPathMayPointTo(_, _, ?ap, _, ?insn),
-    AccessPath_BaseVar(?ap, ?from).
+    AccessPath_BaseVar(?ap, ?from),
+    AssignInstruction_To(?insn, ?to).
 
   MustAlias(?fromAp, ?toAp, ?ctx, ?insn),
   AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) :-
-    AssignLocal_Insn(?insn),
-    !(PhiNodeHead(?insn, _)),
-    AssignInstruction_To(?insn, ?to),
     AssignLocal_From(?insn, ?from),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
+    !PhiNodeHead(?insn, _),
+    AssignInstruction_To(?insn, ?to),
     AccessPath_BaseVar(?fromAp, ?from),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
    
@@ -298,17 +293,15 @@
   //// TODO: filter our badly typed values
   MustAlias([?from, nil], [?to, nil], ?ctx, ?insn),
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignCast_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
     AssignCast_From(?insn, ?from),
-    MayPointTo(?hctx, ?heap, ?ctx, ?from).
+    MayPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignInstruction_To(?insn, ?to).
 
   AccessPathShouldBeRebased(?ap, ?from, ?to) :-
-    AssignCast_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
     AssignCast_From(?insn, ?from),
     AccessPathMayPointTo(_, _, ?ap, _, ?insn),
-    AccessPath_BaseVar(?ap, ?from).
+    AccessPath_BaseVar(?ap, ?from),
+    AssignInstruction_To(?insn, ?to).
 
   MustAlias(?fromAp, ?toAp, ?ctx, ?insn),
   AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) :-
@@ -472,11 +465,11 @@
 	Modifier_final(?mod).
 
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    LoadInstanceField_To(?insn, ?to),
-    FieldInstruction_Signature(?insn, ?fld),
     FinalFieldMayPointTo(?hctx, ?heap, ?fld),
-    Var_DeclaringMethod(?to, ?inMeth),
-    MayReachableMethodUnderMayContext(?ctx, ?inMeth).
+    FieldInstruction_Signature(?insn, ?fld),
+	Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    LoadInstanceField_To(?insn, ?to).
 
 
   // static or special method invocation
@@ -588,9 +581,9 @@
   // Handle constructors and initialization to null.
   //RecordMacroMay(?ctx, ?heap, ?hctx),
   Before_AccessPathMayPointTo(?hctx, ?nullHeap, [?this, [nil, ?fld]], ?ctx, ?firstInsn) :-
+    MayReachableMethodUnderMayContext(?ctx, ?ctorMethod),
     ThisVarOfConstructor(?ctorMethod, ?this),
     FirstInstructionOfMethod(?ctorMethod, ?firstInsn),
-    MayReachableMethodUnderMayContext(?ctx, ?ctorMethod),
     MethodSignature_DeclaringType(?ctorMethod, ?heapType),
 	Modifier_static(?staticMod),
     FieldSignature_DeclaringClass(?fld, ?heapType),
@@ -713,6 +706,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     NextInSamePhiNode(?insn, ?nextInsn),
     AssignLocal_From(?nextInsn, ?from),
     MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
+	//.plan ?
 
   // for all returns of a method, the return variable has a known upper bound
   // for its points-to, and we take the union of all such bounds
@@ -898,13 +892,13 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 
   // //// ====================================
   // //// Weakening rules
-  
+
   MayPointTo(?hctx, ?heap, ?ctx, ?var) :-
     MayReachableMethodUnderMayContext(?ctx, ?method),
     InitialMayContext(?initCtx),
     Var_DeclaringMethod(?var, ?method),
     MayPointTo(?hctx, ?heap, ?initCtx, ?var).
-	// plan?
+	// .plan?
   
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
@@ -931,8 +925,8 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // //// BEGIN frame rules, control-flow join rules
 
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-    PrevInSameBasicBlock(?insn, ?prev),
-    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev).
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?prev),
+    PrevInSameBasicBlock(?insn, ?prev).
 
   //// Should be unnecessary.
   // Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
