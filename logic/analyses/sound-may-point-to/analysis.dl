@@ -5,7 +5,7 @@
 
 .type Type
 .type Var 
-.type MethodInvocation
+.type MethodInvocationInsn
 .type MethodSignature
 .type HeapAllocation
 .type FieldSignature
@@ -14,10 +14,10 @@
 .type String
 .type Modifier
 
-.type Instruction = MethodInvocation
+.type Instruction = MethodInvocationInsn
 
 // INPUTS
-.decl ActualParam(?index:number, ?callsite:MethodInvocation, ?actualVariable:Var)  input
+.decl ActualParam(?index:number, ?callsite:MethodInvocationInsn, ?actualVariable:Var)  input
 .decl ApplicationClass(?class:Type) input
 .decl ArrayType(?type:Type) input
 .decl AssignCast_From(?insn:Instruction, ?from:Var) input
@@ -29,7 +29,7 @@
 .decl AssignLocal_Insn(?insn:Instruction) input
 .decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMeth:MethodSignature) input
 .decl AssignNull_Insn(?insn:Instruction) input
-.decl AssignReturnValue(?callsite:MethodInvocation, ?variableAssignedTo:Var) input
+.decl AssignReturnValue(?callsite:MethodInvocationInsn, ?variableAssignedTo:Var) input
 .decl BasicBlockBegin(?insn:Instruction) input
 .decl BasicBlockEnd(?tail:Instruction) input
 .decl BasicBlockHead(?tail:Instruction, ?head:Instruction) input
@@ -55,8 +55,8 @@
 .decl MainMethodArgsArray(?argsArray:HeapAllocation) input
 .decl MayPredecessorBBModuloThrow(?pred:Instruction, ?insn:Instruction) input
 .decl MaySuccessorBBModuloThrow(?insn:Instruction, ?insn2:Instruction) input
-.decl MethodInvocation(?invocation:MethodInvocation) input
-.decl MethodInvocation_Signature(?invocation:MethodInvocation, ?toMethod:MethodSignature) input
+.decl MethodInvocation(?invocation:MethodInvocationInsn) input
+.decl MethodInvocation_Signature(?invocation:MethodInvocationInsn, ?toMethod:MethodSignature) input
 .decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, ?heaptype:Type, ?tomethod:MethodSignature) input 
 .decl MethodSignature_DeclaringType(?meth:MethodSignature, ?class:Type) input
 .decl MethodSignature_Descriptor(?meth:MethodSignature, ?desc:String) input
@@ -74,9 +74,9 @@
 .decl ReturnInstruction(?returnInsn:Instruction) input
 .decl ReturnNonvoid_Var(?returnInsn:Instruction, ?return:Var) input
 .decl ReturnVar(?return:Var, ?toMethod:MethodSignature)  input 
-.decl SpecialMethodInvocation_Base(?invocation:MethodInvocation, ?base:Var) input
-.decl SpecialMethodInvocation_Insn(?invocation:MethodInvocation) input
-.decl StaticMethodInvocation_Insn(?invocation:MethodInvocation) input
+.decl SpecialMethodInvocation_Base(?invocation:MethodInvocationInsn, ?base:Var) input
+.decl SpecialMethodInvocation_Insn(?invocation:MethodInvocationInsn) input
+.decl StaticMethodInvocation_Insn(?invocation:MethodInvocationInsn) input
 .decl StoreInstanceField_Base(?insn:Instruction, ?base:Var) input
 .decl StoreInstanceField_From(?insn:Instruction, ?from:Var) input
 .decl StoreStaticField_From(?insn:Instruction, ?from:Var) input
@@ -84,9 +84,9 @@
 .decl ThisVar(?method:MethodSignature, ?thisVariable:Var)  input
 .decl Var_DeclaringMethod(?var:Var, ?inMeth:MethodSignature) input
 .decl Var_Type(?var:Var, ?type:Type) input
-.decl VirtualMethodInvocation_Base(?callsite:MethodInvocation, ?instanceVariable:Var)  input
-.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor) input
-.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName) input
+.decl VirtualMethodInvocation_Base(?callsite:MethodInvocationInsn, ?instanceVariable:Var)  input
+.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocationInsn, ?descriptor:MethodDescriptor) input
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocationInsn, ?simplename:SimpleName) input
 
 // COMPUTED
 .decl InitialRootMethodForMayAnalysis(?meth:MethodSignature)
@@ -111,7 +111,7 @@
   .decl IntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation,
                                    ?ctx:MayContext, ?var:Var) output
   .decl IntraproceduralCertainMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation,
-                                         ?ctx:MayContext, ?invo:MethodInvocation) output
+                                         ?ctx:MayContext, ?invo:MethodInvocationInsn) output
 										 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?var) :-
     AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
@@ -230,11 +230,11 @@
   .decl MayReachableMethodUnderMayContext(?ctx:MayContext, ?meth:MethodSignature)
   .decl MayReachableMayContext(?ctx:MayContext)
   .decl RootMethodForMayAnalysis(?meth:MethodSignature) output
-  .decl MayCallGraphEdge(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
+  .decl MayCallGraphEdge(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) output
   .decl MethodMayAssignField(?fld:FieldSignature, ?toMethod:MethodSignature) output
   .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature) output
 
-  .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocation) output
+  .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) output
   .decl MethodMayAssignField_Prev(?fld:FieldSignature, ?toMethod:MethodSignature)
   .decl MethodHasUnresolvedInvocation_Prev(?toMethod:MethodSignature)
 
@@ -498,7 +498,7 @@
     ?ctxDepth < ?maxCtxDepth.
 
   // special method invocation "this" variable assignment
-  .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
+  .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocationInsn)
   OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo) :-
     SpecialMethodInvocation_Base(?invo, ?base),
     MayPointTo(?hctx, ?heap, ?ctx, ?base).
@@ -508,7 +508,7 @@
     MayCallGraphEdge(?calleeCtx, ?toMeth, ?ctx, ?invo),
     ThisVar(?toMeth, ?this).
 
-  .decl OptPotentialVirtualMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
+  .decl OptPotentialVirtualMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocationInsn)
   OptPotentialVirtualMethodBase(?hctx, ?heap, ?ctx, ?invo) :-
     VirtualMethodInvocation_Base(?invo, ?base),
     MayPointTo(?hctx, ?heap, ?ctx, ?base).
@@ -557,7 +557,7 @@
     Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
 	?baseAp = [ ?base, ?flds ], ?flds = ?flds.
 
-  .decl AccessPathRebasedForCall(?newAp:AccessPath, ?ap:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocation)
+  .decl AccessPathRebasedForCall(?newAp:AccessPath, ?ap:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
   AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
     MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
     FormalParam(?index, ?toMethod, ?formal),
@@ -610,8 +610,45 @@
     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AssignReturnValue(?invo, ?to).
 
-/*
+  .decl MethodReturnVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?meth:MethodSignature) output
+  MethodReturnVarMayPointTo(?hctx, ?heap, ?ctx, ?meth) :-
+    ReturnNonvoid_Var(?return, ?var),
+    MayPointTo(?hctx, ?heap, ?ctx, ?var),
+  	Instruction_Method(?return, ?meth).
 
+  .decl SomeCallSiteReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
+  SomeCallSiteReturnMayPointTo(?hctx, ?heap, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, ?callerCtx, ?invo),
+    MethodReturnVarMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+
+
+/*
+  .decl CalleeFromSameCallsite(?calleeCtx1:MayContext, ?meth1:MethodSignature, ?calleeCtx2:MayContext, ?meth2:MethodSignature)
+  CalleeFromSameCallsite(?calleeCtx1, ?meth1, ?calleeCtx2, ?meth2) :-
+    MayCallGraphEdge_Prev(?calleeCtx1, ?meth1, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx2, ?meth2, ?callerCtx, ?invo),
+	ord(?meth1) < ord(?meth2).
+	.plan 1: (2,1)
+
+  .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature)
+  FirstCalleeFromCallsite(?calleeCtx, ?meth) :- 
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
+	!CalleeFromSameCallsite(_, _, ?calleeCtx, ?meth).
+
+  .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
+  NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxOther, ?methOther),
+	ord(?methOther) < ord(?methNext).
+	.plan 1: (2,1)
+
+  .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
+  NextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
+	!NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext).
+*/
+
+/*
 
 // handling returns
 
@@ -698,208 +735,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
    !Var_DeclaringMethod(?baseVar, ?toMethod).
 
 */
-
-  //// ====================================
-  //// AUXILIARY. Helper relations, "forall" emulations.
-
-  // For all Phi node instructions, the "to" var (implicit in the
-  // predicate) may point to...
-  .decl MayPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?lastInsn:Instruction)
-
-  MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
-    PhiNodeHead(_, ?headInsn),
-    AssignLocal_From(?headInsn, ?from),
-    MayPointTo(?hctx, ?heap, ?ctx, ?from).
-
-  MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?nextInsn),
-  MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) :-
-    MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?insn),
-    NextInSamePhiNode(?insn, ?nextInsn),
-    AssignLocal_From(?nextInsn, ?from),
-    MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
-	//.plan ?
-
-  // for all returns of a method, the return variable has a known upper bound
-  // for its points-to, and we take the union of all such bounds
-  .decl UpToReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?return:Instruction)
-  UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) :-
-    MayPointTo(?hctx, ?heap, ?ctx, ?var),
-    ReturnNonvoid_Var(?return, ?var),
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return).
-
-  UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?return),
-  UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) :-
-    UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?prevReturn),
-    NextReturn(?prevReturn, ?return),
-    ReturnNonvoid_Var(?return, ?var),
-    MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
-
-  .decl AllReturn_MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?method:MethodSignature)
-  AllReturn_MayPointTo(?hctx, ?heap, ?ctx, ?method) :-
-    UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
-    Instruction_Method(?return, ?method).
-
-  // same for composite access paths
-  .decl UpToReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?ret:Instruction)
-  UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return) :-
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return).
-
-  UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?return),
-  UpToReturnAccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return) :-
-    UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?prevReturn),
-    NextReturn(?prevReturn, ?return),
-    Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return).
-
-  .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:MethodSignature)
-  AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
-    UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
-    Instruction_Method(?return, ?method).
-
-  // all returns of a method have the same return var
-  .decl UpToReturnSameRetVar(?return:Instruction, ?var:Var)
-  UpToReturnSameRetVar(?return, ?var) :-
-    ReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
-    ReturnNonvoid_Var(?return, ?var).
-
-  UpToReturnSameRetVar(?return, ?var) :-
-    UpToReturnSameRetVar(?prevReturn, ?var),
-    NextReturn(?prevReturn, ?return),
-    ReturnNonvoid_Var(?return, ?var).
-
-  .decl AllReturn_SameRetVar(?method:MethodSignature, ?var:Var)
-  AllReturn_SameRetVar(?method, ?var) :-
-    UpToReturnSameRetVar(?return, ?var),
-    !(NextReturn(?return, _)),
-    Instruction_Method(?return, ?method).
-
-  /// ----------------------------------
-
-  /// AccessPathMayPointTo for predecessors
-
-  // The interesting concept is that of relevant predecessors for some
-  // access path.  E.g., if a predecessor is not reachable from the
-  // first instruction of the method via a path that can set the access
-  // path, then it's not a relevant predecessor.
-
-  // does the predecessor BB ?pred of ?insn have (at its end) point-to info for ?ap ?
-  .decl OptHasAccessPathPointToAtPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
-  OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail),
-    BasicBlockEnd(?tail),
-    BasicBlockHead(?tail, ?pred),
-    MaySuccessorBBModuloThrow(?insn, ?pred).
-
-  .decl AccessPathRelevantToMethod(?ap:AccessPath, ?meth:MethodSignature) 
-  AccessPathRelevantToMethod(?ap, ?meth) :-
-    (AccessPathMayPointTo(_, _, ?ap, _, ?insn);
-     MustAlias(_, ?ap, _, ?insn)),
-    Instruction_Method(?insn, ?meth).
-
-  .decl AccessPathNotSetByPredecessorBB(?ap:AccessPath, ?pred:Instruction)
-  AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
-    AccessPathRelevantToMethod(?ap, ?meth),
-    SingleFieldAccessPath(?fld, ?ap),
-    Instruction_Method(?pred, ?meth),
-    BasicBlockBegin(?pred),
-    !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
-    !SomePathFromFirstInstructionCallsMethod(?pred).
-
-  // TODO: currently only defined for single-field access paths and
-  //       collection access paths.
-
-  // does the first one have *some* access path points-to info, or is irrelevant?
-  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
-
-  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
-    MayPredecessorBBModuloThrow(?pred, ?insn),
-    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-    OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
-
-  .decl OptAccessPathNotSetByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath)
-  OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
-    MaySuccessorBBModuloThrow(?insn, ?pred),
-    AccessPathNotSetByPredecessorBB(?ap, ?pred).
-
-  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
-    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-    OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap).
-    // the above can be weakened to eliminate collection method calls,
-    // but below (for collections) we need to be careful. We should not
-    // assume we know all operations, so we should be conservative with
-    // method calls.
-
-  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
-    MayPredecessorBBModuloThrow(?pred, ?insn),
-    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-    AccessPath_IsCollection(?ap),
-    !SomePathFromFirstInstructionCallsMethod(?pred).
-
-  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
-    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-    (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
-     AccessPathNotSetByPredecessorBB(?ap, ?pred)).
-
-  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
-    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-    AccessPath_IsCollection(?ap),
-    !SomePathFromFirstInstructionCallsMethod(?pred).
-
-  .decl ExistsNextPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)
-   ExistsNextPredecessorToSameBB(?pred, ?insn) :-
-    NextPredecessorToSameBB(?insn, ?pred, _).
-
-  .decl AllRelevantPredecessors_HasAccessPathMayPointTo(?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
-  AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
-    HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
-	!ExistsNextPredecessorToSameBB(?pred, ?insn),
-    !ExceptionHandlerFirstInstruction(?insn).
-
-  // // *MustAlias*
-  // // Similar for MustAlias
-  // 
-  // OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-  //    MaySuccessorBBModuloThrow(?insn, ?pred),
-  //    BasicBlockHead(?tail, ?pred),
-  //    BasicBlockEnd(?tail),
-  //    MustAlias(?ap1, ?ap2, ?ctx, ?tail).
-  // 
-  // // TODO: currently only defined for single-field access paths
-  // 
-  // // does the first one have *some* access path points-to info, or is irrelevant?
-  // MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-  //    MustAliasAtSomePredecessor(?ap1, ?ap2, ?ctx, ?insn),
-  //    MayPredecessorBBModuloThrow(?pred, ?insn),
-  //    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-  //    (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
-  // //    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
-  // //	 AccessPathNotSetByPredecessorBB(?ap2, ?pred))).
-  //    
-  // MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
-  //    MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
-  //    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-  //    (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
-  // //    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
-  // //	 AccessPathNotSetByPredecessorBB(?ap2, ?pred)).
-  // 
-  // AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-  //    MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
-  //    !(NextPredecessorToSameBB(?insn, ?pred, _)),
-  //    !ExceptionHandlerFirstInstruction(?insn).
-
-  /// ----------------------------------
-
-  //// END AUXILIARY. Helper relations, "forall" emulations.
 
   // //// ====================================
   // //// Weakening rules
@@ -1164,6 +999,207 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // //// END escape-like logic
   // //// ====================================
 
+  // //// ====================================
+  // //// AUXILIARY. Helper relations, "forall" emulations.
+
+  // For all Phi node instructions, the "to" var (implicit in the
+  // predicate) may point to...
+  .decl MayPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?lastInsn:Instruction)
+
+  MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
+    PhiNodeHead(_, ?headInsn),
+    AssignLocal_From(?headInsn, ?from),
+    MayPointTo(?hctx, ?heap, ?ctx, ?from).
+
+  MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?nextInsn),
+  MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) :-
+    MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?insn),
+    NextInSamePhiNode(?insn, ?nextInsn),
+    AssignLocal_From(?nextInsn, ?from),
+    MayPointTo(?hctx2, ?heap2, ?ctx, ?from).
+	//.plan ?
+
+  // for all returns of a method, the return variable has a known upper bound
+  // for its points-to, and we take the union of all such bounds
+  .decl UpToReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?return:Instruction)
+  UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return) :-
+    MayPointTo(?hctx, ?heap, ?ctx, ?var),
+    ReturnNonvoid_Var(?return, ?var),
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return).
+
+  UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?return),
+  UpToReturnMayPointTo(?hctx2, ?heap2, ?ctx, ?return) :-
+    UpToReturnMayPointTo(?hctx1, ?heap1, ?ctx, ?prevReturn),
+    NextReturn(?prevReturn, ?return),
+    ReturnNonvoid_Var(?return, ?var),
+    MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
+
+  .decl AllReturn_MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?method:MethodSignature)
+  AllReturn_MayPointTo(?hctx, ?heap, ?ctx, ?method) :-
+    UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  // same for composite access paths
+  .decl UpToReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?ret:Instruction)
+  UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return) :-
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return).
+
+  UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?return),
+  UpToReturnAccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return) :-
+    UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?prevReturn),
+    NextReturn(?prevReturn, ?return),
+    Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return).
+
+  .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:MethodSignature)
+  AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
+    UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  // all returns of a method have the same return var
+  .decl UpToReturnSameRetVar(?return:Instruction, ?var:Var)
+  UpToReturnSameRetVar(?return, ?var) :-
+    ReturnInstruction(?return),
+    !ExistsPreviousReturn(?return),
+    ReturnNonvoid_Var(?return, ?var).
+
+  UpToReturnSameRetVar(?return, ?var) :-
+    UpToReturnSameRetVar(?prevReturn, ?var),
+    NextReturn(?prevReturn, ?return),
+    ReturnNonvoid_Var(?return, ?var).
+
+  .decl AllReturn_SameRetVar(?method:MethodSignature, ?var:Var)
+  AllReturn_SameRetVar(?method, ?var) :-
+    UpToReturnSameRetVar(?return, ?var),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+
+  /// AccessPathMayPointTo for predecessors
+
+  // The interesting concept is that of relevant predecessors for some
+  // access path.  E.g., if a predecessor is not reachable from the
+  // first instruction of the method via a path that can set the access
+  // path, then it's not a relevant predecessor.
+
+  // does the predecessor BB ?pred of ?insn have (at its end) point-to info for ?ap ?
+  .decl OptHasAccessPathPointToAtPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointTo(_, _, ?ap, ?ctx, ?tail),
+    BasicBlockEnd(?tail),
+    BasicBlockHead(?tail, ?pred),
+    MaySuccessorBBModuloThrow(?insn, ?pred).
+
+  .decl AccessPathRelevantToMethod(?ap:AccessPath, ?meth:MethodSignature) 
+  AccessPathRelevantToMethod(?ap, ?meth) :-
+    (AccessPathMayPointTo(_, _, ?ap, _, ?insn);
+     MustAlias(_, ?ap, _, ?insn)),
+    Instruction_Method(?insn, ?meth).
+
+  .decl AccessPathNotSetByPredecessorBB(?ap:AccessPath, ?pred:Instruction)
+  AccessPathNotSetByPredecessorBB(?ap, ?pred) :-
+    AccessPathRelevantToMethod(?ap, ?meth),
+    SingleFieldAccessPath(?fld, ?ap),
+    Instruction_Method(?pred, ?meth),
+    BasicBlockBegin(?pred),
+    !SomePathFromFirstInstructionAssignsField(?pred, ?fld),
+    !SomePathFromFirstInstructionCallsMethod(?pred).
+
+  // TODO: currently only defined for single-field access paths and
+  //       collection access paths.
+
+  // does the first one have *some* access path points-to info, or is irrelevant?
+  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
+
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
+
+  .decl OptAccessPathNotSetByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath)
+  OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
+    MaySuccessorBBModuloThrow(?insn, ?pred),
+    AccessPathNotSetByPredecessorBB(?ap, ?pred).
+
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap).
+    // the above can be weakened to eliminate collection method calls,
+    // but below (for collections) we need to be careful. We should not
+    // assume we know all operations, so we should be conservative with
+    // method calls.
+
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    MayPredecessorBBModuloThrow(?pred, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    AccessPath_IsCollection(?ap),
+    !SomePathFromFirstInstructionCallsMethod(?pred).
+
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+    (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
+     AccessPathNotSetByPredecessorBB(?ap, ?pred)).
+
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
+    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+    AccessPath_IsCollection(?ap),
+    !SomePathFromFirstInstructionCallsMethod(?pred).
+
+  .decl ExistsNextPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)
+   ExistsNextPredecessorToSameBB(?pred, ?insn) :-
+    NextPredecessorToSameBB(?insn, ?pred, _).
+
+  .decl AllRelevantPredecessors_HasAccessPathMayPointTo(?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn),
+	!ExistsNextPredecessorToSameBB(?pred, ?insn),
+    !ExceptionHandlerFirstInstruction(?insn).
+
+  // // *MustAlias*
+  // // Similar for MustAlias
+  // 
+  // OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MaySuccessorBBModuloThrow(?insn, ?pred),
+  //    BasicBlockHead(?tail, ?pred),
+  //    BasicBlockEnd(?tail),
+  //    MustAlias(?ap1, ?ap2, ?ctx, ?tail).
+  // 
+  // // TODO: currently only defined for single-field access paths
+  // 
+  // // does the first one have *some* access path points-to info, or is irrelevant?
+  // MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MustAliasAtSomePredecessor(?ap1, ?ap2, ?ctx, ?insn),
+  //    MayPredecessorBBModuloThrow(?pred, ?insn),
+  //    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+  //    (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
+  // //    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
+  // //	 AccessPathNotSetByPredecessorBB(?ap2, ?pred))).
+  //    
+  // MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
+  //    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+  //    (OptMustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn)).//;
+  // //    (AccessPathNotSetByPredecessorBB(?ap1, ?pred),
+  // //	 AccessPathNotSetByPredecessorBB(?ap2, ?pred)).
+  // 
+  // AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+  //    MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
+  //    !(NextPredecessorToSameBB(?insn, ?pred, _)),
+  //    !ExceptionHandlerFirstInstruction(?insn).
+
+  /// ----------------------------------
+
+  // //// END AUXILIARY. Helper relations, "forall" emulations.
+
 
   //// END core MayPointTo code
   //// ====================================
@@ -1413,7 +1449,7 @@ IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
 //// ====================================
 //// BEGIN context management
 
-.type MayContext = [ ?invo:MethodInvocation, ?rest:MayContext ] 
+.type MayContext = [ ?invo:MethodInvocationInsn, ?rest:MayContext ] 
 .type MayHeapContext
 
 EmptyHeapContext("emptyHeapContext").
