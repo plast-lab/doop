@@ -235,8 +235,8 @@
   .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature) output
 
   .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) output
-  .decl MethodMayAssignField_Prev(?fld:FieldSignature, ?toMethod:MethodSignature)
-  .decl MethodHasUnresolvedInvocation_Prev(?toMethod:MethodSignature)
+  .decl MethodMayAssignField_Prev(?fld:FieldSignature, ?toMethod:MethodSignature) output
+  .decl MethodHasUnresolvedInvocation_Prev(?toMethod:MethodSignature) output
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -274,8 +274,6 @@
     EmptyHeapContext(?hctx).
 
   // Move, but not Phi nodes, which are also represented as local assignments.
-  ComputedAccessPath([?from, nil]),
-  ComputedAccessPath([?to, nil]),
   MustAlias([?from, nil], [?to, nil], ?ctx, ?insn),
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
     AssignLocal_From(?insn, ?from),
@@ -604,10 +602,17 @@
     HeapAllocation_Null(?nullHeap),
     EmptyHeapContext(?hctx).
 
+ 
+  // handling returns
+
+  /// Soundness warning: we can't just take the heap image of one called
+  /// method and propagate it back to the caller: when the call-site has
+  /// multiple targets, one of them could be computing Top (i.e., empty).
+  /// Need to use previous run call-graph, due to "forall" over it.
 
   .decl ReturnValueOfResolvedCallAssignedTo(?callerCtx:MayContext, ?to:Var, ?calleeCtx:MayContext, ?toMethod:MethodSignature)
   ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AssignReturnValue(?invo, ?to).
 
   .decl MethodReturnVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?meth:MethodSignature) output
@@ -616,102 +621,64 @@
     MayPointTo(?hctx, ?heap, ?ctx, ?var),
   	Instruction_Method(?return, ?meth).
 
-  .decl SomeCallSiteReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
-  SomeCallSiteReturnMayPointTo(?hctx, ?heap, ?callerCtx, ?invo) :-
+  .decl SomeCallsiteReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
+  SomeCallsiteReturnMayPointTo(?hctx, ?heap, ?callerCtx, ?invo) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, ?callerCtx, ?invo),
     MethodReturnVarMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
 
+  MayPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
+    ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
+    AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
+
+  // return access paths
+
+  // First order that the rebased ones (and a few more) be created.
+  // Note that we don't know which return statement will be used, so, in
+  // order to do a correct access path rebasing, we conservatively limit our
+  // attention to the case that all return statements use the same var.
+  AccessPathShouldBeRebased(?ap, ?var, ?to) :-
+    ReturnValueOfResolvedCallAssignedTo(_, ?to, ?calleeCtx, ?toMethod),
+    AllReturn_AccessPathMayPointTo(_, _, ?ap, ?calleeCtx, ?toMethod),
+    AllReturn_SameRetVar(?toMethod, ?var),
+    AccessPath_BaseVar(?ap, ?var).
+
+  AccessPathShouldBeRebased(?formalAp, ?formal, ?actual) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
+    FormalParam(?index, ?toMethod, ?formal),
+    ActualParam(?index, ?invo, ?actual),
+    AllReturn_AccessPathMayPointTo(_, _, ?formalAp, ?calleeCtx, ?toMethod),
+    AccessPath_BaseVar(?formalAp, ?formal).
+
+  AccessPathShouldBeRebased(?thisAp, ?this, ?base) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
+     (VirtualMethodInvocation_Base(?invo, ?base);
+      SpecialMethodInvocation_Base(?invo, ?base)),
+    ThisVar(?toMethod, ?this),
+    AllReturn_AccessPathMayPointTo(_, _, ?thisAp, ?calleeCtx, ?toMethod),
+    AccessPath_BaseVar(?thisAp, ?this).
+
+  // Now collect the rebasing transformations
+  .decl AccessPathRebasedForReturn(?callerAp:AccessPath, ?calleeAp:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) 
+  AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(_, ?toMethod, ?callerCtx, ?invo),
+    AssignReturnValue(?invo, ?to),
+    AllReturn_SameRetVar(?toMethod, ?ret),
+    RebaseCompositeAccessPath(?calleeAp, ?ret, ?to, ?callerAp).
+
+  AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(_, ?toMethod, ?callerCtx, ?invo),
+    FormalParam(?index, ?toMethod, ?formal),
+    ActualParam(?index, ?invo, ?actual),
+    RebaseCompositeAccessPath(?calleeAp, ?formal, ?actual, ?callerAp).
+
+  AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(_, ?toMethod, ?callerCtx, ?invo),
+    ThisVar(?toMethod, ?this),
+    (VirtualMethodInvocation_Base(?invo, ?base);
+     SpecialMethodInvocation_Base(?invo, ?base)),
+    RebaseCompositeAccessPath(?calleeAp, ?this, ?base, ?callerAp).
 
 /*
-  .decl CalleeFromSameCallsite(?calleeCtx1:MayContext, ?meth1:MethodSignature, ?calleeCtx2:MayContext, ?meth2:MethodSignature)
-  CalleeFromSameCallsite(?calleeCtx1, ?meth1, ?calleeCtx2, ?meth2) :-
-    MayCallGraphEdge_Prev(?calleeCtx1, ?meth1, ?callerCtx, ?invo),
-    MayCallGraphEdge_Prev(?calleeCtx2, ?meth2, ?callerCtx, ?invo),
-	ord(?meth1) < ord(?meth2).
-	.plan 1: (2,1)
-
-  .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature)
-  FirstCalleeFromCallsite(?calleeCtx, ?meth) :- 
-    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	!CalleeFromSameCallsite(_, _, ?calleeCtx, ?meth).
-
-  .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
-  NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
-    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
-    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxOther, ?methOther),
-	ord(?methOther) < ord(?methNext).
-	.plan 1: (2,1)
-
-  .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
-  NextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
-    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
-	!NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext).
-*/
-
-/*
-
-// handling returns
-
-/// Soundness warning: we can't just take the heap image of one called
-/// method and propagate it back to the caller: when the call-site has
-/// multiple targets, one of them could be computing Top (i.e., empty).
-
-// For must information, it is necessary that the call be a resolved
-// one. For may information, it is just an implementation shortcut
-// (under-approximation), since it's not easy to say "for all the
-// targets, there is sound points-to information", due to recursion
-// through negation/aggregation.
-
-MayPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
-   May_ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
-   AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
-
-// return access paths
-
-// First order that the rebased ones be created.
-// Note that we don't know which return statement will be used, so, in
-// order to do a correct access path rebasing, we need to limit our
-// attention to the case that all return statements use the same var.
-AccessPathShouldBeRebased(?ap, ?var, ?to) :-
-   May_ReturnValueOfResolvedCallAssignedTo(_, ?to, ?calleeCtx, ?toMethod),
-   AllReturn_AccessPathMayPointTo(_, _, ?ap, ?calleeCtx, ?toMethod),
-   AllReturn_SameRetVar(?toMethod, ?var),
-   AccessPath_BaseVar(?ap, ?var).
-
-AccessPathShouldBeRebased(?formalAp, ?formal, ?actual) :-
-   May_MustCallGraphEdge_ToMethodAndContext(_, ?invo, ?calleeCtx, ?toMethod),
-   FormalParam(?index, ?toMethod, ?formal),
-   ActualParam(?index, ?invo, ?actual),
-   AllReturn_AccessPathMayPointTo(_, _, ?formalAp, ?calleeCtx, ?toMethod),
-   AccessPath_BaseVar(?formalAp, ?formal).
-
-AccessPathShouldBeRebased(?thisAp, ?this, ?base) :-
-   May_MustCallGraphEdge_ToMethodAndContext(_, ?invo, ?calleeCtx, ?toMethod),
-   (VirtualMethodInvocation_Base(?invo, ?base);
-    SpecialMethodInvocation_Base(?invo, ?base)),
-   ThisVar(?toMethod, ?this),
-   AllReturn_AccessPathMayPointTo(_, _, ?thisAp, ?calleeCtx, ?toMethod),
-   AccessPath_BaseVar(?thisAp, ?this).
-
-// Now collect the rebasing transformations
-AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
-   May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
-   AssignReturnValue(?invo, ?to),
-   AllReturn_SameRetVar(?toMethod, ?ret),
-   RebaseCompositeAccessPath(?calleeAp, ?ret, ?to, ?callerAp).
-
-AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
-   May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
-   FormalParam(?index, ?toMethod, ?formal),
-   ActualParam(?index, ?invo, ?actual),
-   RebaseCompositeAccessPath(?calleeAp, ?formal, ?actual, ?callerAp).
-
-AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
-   May_MustCallGraphEdge_ToMethod(?callerCtx, ?invo, ?toMethod),
-   ThisVar(?toMethod, ?this),
-   (VirtualMethodInvocation_Base(?invo, ?base);
-    SpecialMethodInvocation_Base(?invo, ?base)),
-   RebaseCompositeAccessPath(?calleeAp, ?this, ?base, ?callerAp).
 
 AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) :-
    May_MustCallGraphEdge_ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
@@ -722,8 +689,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) :-
 AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo) :-
    May_MustCallGraphEdge_ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
    AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?toMethod),
-   AccessPath_ContainsStaticField(?staticAp, _).
-   
+   AccessPath_ContainsStaticField(?staticAp, _).   
 
 // This is quite expensive in principle, but is mostly restricted to the
 // access paths that we haven't decided are safe to ignore (propagated
@@ -780,7 +746,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 
   //// Establishing Before_AccessPathMayPointTo at beginning of basic block.
 
-  .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
   
   AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
@@ -892,16 +858,16 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     SingleFieldAccessPath(?fld, ?ap),
     MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField(?fld, ?toMethod),
-    !MethodHasUnresolvedInvocation(?toMethod).
+    !MethodMayAssignField_Prev(?fld, ?toMethod),
+    !MethodHasUnresolvedInvocation_Prev(?toMethod).
 
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
     MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField(?fld1, ?toMethod),
-    !MethodMayAssignField(?fld2, ?toMethod),
-    !MethodHasUnresolvedInvocation(?toMethod).
+    !MethodMayAssignField_Prev(?fld1, ?toMethod),
+    !MethodMayAssignField_Prev(?fld2, ?toMethod),
+    !MethodHasUnresolvedInvocation_Prev(?toMethod).
 
   //// POINT4 insert here
 
@@ -1000,6 +966,54 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // //// ====================================
 
   // //// ====================================
+  // //// BEGIN configuration
+
+  // The real root methods may be more than the initial ones, detected
+  // dynamically, while the analysis proceeds. E.g., the initial ones are a
+  // pre-analysis notion that can apply to the MustPointTo pre-analysis,
+  // while the real root methods for the may-analysis include the class
+  // initializers of reachable classes.
+  RootMethodForMayAnalysis(?meth) :-
+    InitialRootMethodForMayAnalysis(?meth).
+
+  RootMethodForMayAnalysis(?clinitMeth) :-
+    MayReachableMethodUnderMayContext(_, ?meth),
+    MethodSignature_DeclaringType(?meth, ?class),
+    ClinitMethodOfClass(?clinitMeth, ?class).
+
+  // For the legit, official main of a standard Java program, provide
+  // dummy argument (String[] args).
+  MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
+  ComputedAccessPath([?args, nil]),
+  AccessPathMayPointTo(?hctx, ?argHeap, [?args, nil], ?ctx, ?firstInsn) :-
+    MainClass(?mainClass),
+    MethodSignature_DeclaringType(?mainMethod, ?mainClass),
+    MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
+    MethodSignature_Descriptor(?mainMethod, "void(java.lang.String[])"),
+    FormalParam(0, ?mainMethod, ?args),
+    MainMethodArgsArray(?argsArray),
+    MainMethodArgHeap(?argHeap),
+    EmptyHeapContext(?hctx),
+    FirstInstructionOfMethod(?mainMethod, ?firstInsn).
+
+  // RootMethodForMayAnalysis(?meth) :-
+  //    MayReachableMethodUnderMayContext(_, ?meth).
+
+  // RootMethodForMayAnalysis(?meth) :-
+  //    AppMainMethod(?meth).
+
+  // // Heuristic: if you can reach it in the analysis and it's an app
+  // // method, start a new search (with zero context depth) from it.
+  // RootMethodForMayAnalysis(?meth) :-
+  //    MayReachableMethodUnderMayContext(_, ?meth),
+  //    MethodSignature_DeclaringType(?meth, ?class),
+  //    ApplicationClass(?class).
+
+
+  // //// END configuration
+  // //// ====================================
+
+  // //// ====================================
   // //// AUXILIARY. Helper relations, "forall" emulations.
 
   // For all Phi node instructions, the "to" var (implicit in the
@@ -1078,6 +1092,46 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     !(NextReturn(?return, _)),
     Instruction_Method(?return, ?method).
 
+  // all returns of a callee is not enough. We also need "all callee" reasoning
+  .decl CalleeFromSameCallsite(?calleeCtx1:MayContext, ?meth1:MethodSignature, ?calleeCtx2:MayContext, ?meth2:MethodSignature)
+  CalleeFromSameCallsite(?calleeCtx1, ?meth1, ?calleeCtx2, ?meth2) :-
+    MayCallGraphEdge_Prev(?calleeCtx1, ?meth1, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx2, ?meth2, ?callerCtx, ?invo),
+	ord(?meth1) < ord(?meth2).
+	.plan 1: (2,1)
+
+  .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature)
+  FirstCalleeFromCallsite(?calleeCtx, ?meth) :- 
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
+	!CalleeFromSameCallsite(_, _, ?calleeCtx, ?meth).
+
+  .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
+  NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxOther, ?methOther),
+	ord(?methOther) < ord(?methNext).
+	.plan 1: (2,1)
+
+  .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
+  NextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
+    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
+	!NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext).
+
+  .decl UpToCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:MethodSignature)
+  UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, ?callerCtx, ?invo),
+	FirstCalleeFromCallsite(?calleeCtx, ?meth),
+	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+
+  UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+    UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?prevCalleeCtx, ?prevMeth),
+    NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
+	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+
+  .decl AllCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:MethodSignature)
+  AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+    UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
+    !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
 
   /// AccessPathMayPointTo for predecessors
 
@@ -1113,7 +1167,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   //       collection access paths.
 
   // does the first one have *some* access path points-to info, or is irrelevant?
-  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
+  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
@@ -1121,7 +1175,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
     OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
 
-  .decl OptAccessPathNotSetByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath)
+  .decl OptAccessPathNotSetByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath) output
   OptAccessPathNotSetByInsnPredecessorBB(?pred, ?insn, ?ap) :-
     MaySuccessorBBModuloThrow(?insn, ?pred),
     AccessPathNotSetByPredecessorBB(?ap, ?pred).
@@ -1137,21 +1191,27 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    AccessPath_IsCollection(?ap),
     MayPredecessorBBModuloThrow(?pred, ?insn),
     !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-    AccessPath_IsCollection(?ap),
     !SomePathFromFirstInstructionCallsMethod(?pred).
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
     NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
-    (OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn);
-     AccessPathNotSetByPredecessorBB(?ap, ?pred)).
-
+    OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
+    .plan 1: (3,2,1)
+	
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
     NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+    AccessPathNotSetByPredecessorBB(?ap, ?pred).
+    .plan 1: (3,2,1)
+
+  HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
+    HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
     AccessPath_IsCollection(?ap),
+    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
     !SomePathFromFirstInstructionCallsMethod(?pred).
 
   .decl ExistsNextPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)
@@ -1374,67 +1434,10 @@ AccessPath_IsCollection(?ap) :-
 
 .init SoundMayPhase1 = SoundMay
 .init IntraprocMustForStats = IntraproceduralMust
+.init SoundMayPhase2 = SoundMay
 
 MaxMayContextDepth(4).
 AccessPath_MaxLength(3).
-
-// The real root methods may be more than the initial ones, detected
-// dynamically, while the analysis proceeds. E.g., the initial ones are a
-// pre-analysis notion that can apply to the MustPointTo pre-analysis,
-// while the real root methods for the may-analysis include the class
-// initializers of reachable classes.
-SoundMayPhase1.RootMethodForMayAnalysis(?meth) :-
-  InitialRootMethodForMayAnalysis(?meth).
-
-.decl AppMainMethod(?mainMeth:MethodSignature)
-.decl ClinitMethodOfClass(?meth:MethodSignature, ?class:Type)
-
-// Try to discover hidden "main" heuristically
-AppMainMethod(?mainMeth) :-
-  MethodSignature_SimpleName(?mainMeth, "main"),
-  MethodSignature_DeclaringType(?mainMeth, ?class),
-  ApplicationClass(?class).
-
-// Heuristic: if you can reach it in the analysis and it's a static
-// initializer, start a new search (with zero context depth) from it.
-// There are lots of static final fields in the library that see heavy
-// use.
-ClinitMethodOfClass(?meth, ?class) :-
-  MethodSignature_SimpleName(?meth, "<clinit>"),
-  MethodSignature_DeclaringType(?meth, ?class).
-   
-SoundMayPhase1.RootMethodForMayAnalysis(?clinitMeth) :-
-  SoundMayPhase1.MayReachableMethodUnderMayContext(_, ?meth),
-  MethodSignature_DeclaringType(?meth, ?class),
-  ClinitMethodOfClass(?clinitMeth, ?class).
-
-// For the legit, official main of a standard Java program, provide
-// dummy argument (String[] args).
-SoundMayPhase1.MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-ComputedAccessPath([?args, nil]),
-SoundMayPhase1.AccessPathMayPointTo(?hctx, ?argHeap, [?args, nil], ?ctx, ?firstInsn) :-
-  MainClass(?mainClass),
-  MethodSignature_DeclaringType(?mainMethod, ?mainClass),
-  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
-  MethodSignature_Descriptor(?mainMethod, "void(java.lang.String[])"),
-  FormalParam(0, ?mainMethod, ?args),
-  MainMethodArgsArray(?argsArray),
-  MainMethodArgHeap(?argHeap),
-  EmptyHeapContext(?hctx),
-  FirstInstructionOfMethod(?mainMethod, ?firstInsn).
-
-// RootMethodForMayAnalysis(?meth) :-
-//    MayReachableMethodUnderMayContext(_, ?meth).
-
-// RootMethodForMayAnalysis(?meth) :-
-//    AppMainMethod(?meth).
-
-// // Heuristic: if you can reach it in the analysis and it's an app
-// // method, start a new search (with zero context depth) from it.
-// RootMethodForMayAnalysis(?meth) :-
-//    MayReachableMethodUnderMayContext(_, ?meth),
-//    MethodSignature_DeclaringType(?meth, ?class),
-//    ApplicationClass(?class).
 
 InitialRootMethodForMayAnalysis(?meth) :-
   Reachable(?meth), // just for benchmarking against unsound VPT analysis
@@ -1443,6 +1446,14 @@ InitialRootMethodForMayAnalysis(?meth) :-
 IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase1.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+SoundMayPhase2.MethodMayAssignField_Prev(?fld, ?toMethod) :-
+  SoundMayPhase1.MethodMayAssignField(?fld, ?toMethod).
+
+SoundMayPhase2.MethodHasUnresolvedInvocation_Prev(?toMethod) :-
+  SoundMayPhase1.MethodHasUnresolvedInvocation(?toMethod).
 //// END configuration
 
 
@@ -1575,6 +1586,24 @@ AccessPath_BaseVar(?ap, ?var) :-
 
 //// ====================================
 //// BEGIN utilities
+
+.decl AppMainMethod(?mainMeth:MethodSignature)
+.decl ClinitMethodOfClass(?meth:MethodSignature, ?class:Type)
+
+// Try to discover hidden "main" heuristically
+AppMainMethod(?mainMeth) :-
+  MethodSignature_SimpleName(?mainMeth, "main"),
+  MethodSignature_DeclaringType(?mainMeth, ?class),
+  ApplicationClass(?class).
+
+// Heuristic: if you can reach it in the analysis and it's a static
+// initializer, start a new search (with zero context depth) from it.
+// There are lots of static final fields in the library that see heavy
+// use.
+ClinitMethodOfClass(?meth, ?class) :-
+  MethodSignature_SimpleName(?meth, "<clinit>"),
+  MethodSignature_DeclaringType(?meth, ?class).
+   
 
 FirstInstructionOfMethod(?meth, ?firstInsn) :-
   Instruction_Method(?firstInsn, ?meth),
