@@ -677,29 +677,25 @@
      SpecialMethodInvocation_Base(?invo, ?base)),
     RebaseCompositeAccessPath(?calleeAp, ?this, ?base, ?callerAp).
 
-/*
+  AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?toMethod),
+    AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo).
 
-AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) :-
-   May_MustCallGraphEdge_ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
-   AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?toMethod),
-   AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo).
+  // Let's not forget static fields and unchanged access paths
+  AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?toMethod),
+    AccessPath_ContainsStaticField(?staticAp, _).   
 
-// Let's not forget static fields and unchanged access paths
-AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo) :-
-   May_MustCallGraphEdge_ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
-   AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?toMethod),
-   AccessPath_ContainsStaticField(?staticAp, _).   
-
-// This is quite expensive in principle, but is mostly restricted to the
-// access paths that we haven't decided are safe to ignore (propagated
-// by frame rule) based on the must pre-analysis.
-AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
-   May_MustCallGraphEdge_ToMethodAndContext(?callerCtx, ?invo, ?calleeCtx, ?toMethod),
-   AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?toMethod),
-   AccessPath_BaseVar(?ap, ?baseVar),
-   !Var_DeclaringMethod(?baseVar, ?toMethod).
-
-*/
+  // This is quite expensive in principle, but is mostly restricted to the
+  // access paths that we haven't decided are safe to ignore (propagated
+  // by frame rule) based on the pre-analysis.
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?toMethod),
+    AccessPath_BaseVar(?ap, ?baseVar),
+    !Var_DeclaringMethod(?baseVar, ?toMethod).
 
   // //// ====================================
   // //// Weakening rules
@@ -1106,7 +1102,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   .decl NotNextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:MethodSignature, ?calleeCtxNext:MayContext, ?methNext:MethodSignature)
   NotNextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
     CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
-    CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxOther, ?methOther),
+    CalleeFromSameCallsite(?calleeCtx, ?meth, _, ?methOther),
 	ord(?methOther) < ord(?methNext).
 	.plan 1: (2,1)
 
@@ -1117,7 +1113,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 
   .decl UpToCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:MethodSignature)
   UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
-    MayCallGraphEdge_Prev(?calleeCtx, ?meth, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
 	FirstCalleeFromCallsite(?calleeCtx, ?meth),
 	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
 
@@ -1130,6 +1126,24 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
     UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
     !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
+
+  // same (all callee) reasoning for access paths
+  .decl UpToCallee_ReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeAp:AccessPath, ?calleeCtx:MayContext, ?meth:MethodSignature)
+  UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
+	FirstCalleeFromCallsite(?calleeCtx, ?meth),
+	AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth).
+
+  UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
+    UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?prevCalleeCtx, ?prevMeth),
+    NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
+	AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth).
+
+  .decl AllCallee_ReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeAp:AccessPath, ?calleeCtx:MayContext, ?meth:MethodSignature)
+  AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
+    UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth),
+    !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
+
 
   /// AccessPathMayPointTo for predecessors
 
@@ -1548,6 +1562,9 @@ AccessPath_MaxLength(3).
 .init SoundMayPhase1 = SoundMay
 .init SoundMayPhase2 = SoundMay
 .init SoundMayPhase3 = SoundMay
+.init SoundMayPhase4 = SoundMay
+.init SoundMayPhase5 = SoundMay
+.init SoundMayPhase6 = SoundMay
 .init IntraprocMustForStats = IntraproceduralMust
 
 
@@ -1563,6 +1580,15 @@ SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 
 //// END configuration
 
