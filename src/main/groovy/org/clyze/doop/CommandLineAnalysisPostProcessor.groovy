@@ -65,7 +65,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
         def jre = analysis.options.JRE.value
         if (jre != "system") jre = "jre${jre}"
-        def jarName = FilenameUtils.getBaseName(analysis.inputJarFiles[0].toString())
+        def jarName = FilenameUtils.getBaseName(analysis.inputs[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${analysis.name}/${jre}/${analysis.id}")
         humanDatabase.mkdirs()

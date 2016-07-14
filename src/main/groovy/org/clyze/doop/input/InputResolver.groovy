@@ -1,7 +1,7 @@
 package org.clyze.doop.input
 
 /**
- * A resolver for inputs.
+ * A resolver for inputFiles.
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 23/3/2015
  */

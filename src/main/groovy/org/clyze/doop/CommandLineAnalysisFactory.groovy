@@ -17,7 +17,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'
-    static final String JAR              = 'The jar files to analyze. Separate multiple jars with a space. ' +
+    static final String INPUTS           = 'The jar files to analyze. Separate multiple jars with a space. ' +
                                            ' If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
@@ -103,7 +103,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            j(longOpt: 'jar', JAR, args:Option.UNLIMITED_VALUES, argName: "jar")
+            j(longOpt: 'jar', INPUTS, args:Option.UNLIMITED_VALUES, argName: "jar")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
@@ -166,7 +166,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
                     #
                     #jar (file)
-                    #$JAR
+                    #$INPUTS
                     #
                     jar =
 

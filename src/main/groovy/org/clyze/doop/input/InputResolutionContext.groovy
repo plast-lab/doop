@@ -2,7 +2,7 @@ package org.clyze.doop.input
 
 /**
  * The input resolution mechanism.
- * Resolves inputs (given as strings) to a set of files.
+ * Resolves inputFiles (given as strings) to a set of files.
  * @author: Kostas Saidis (saiko@di.uoa.gr)
  * Date: 24/3/2015
  */
@@ -24,7 +24,7 @@ interface InputResolutionContext {
     void add(String input)
 
     /**
-     * Adds the given list of inputs for resolution.
+     * Adds the given list of inputFiles for resolution.
      */
     void add(List<String> inputs)
 
@@ -50,20 +50,20 @@ interface InputResolutionContext {
     Set<File> get(String input)
 
     /**
-     * Resolves the inputs to their corresponding files.
+     * Resolves the inputFiles to their corresponding files.
      * If an input is unresolved --it has not file(s)-- an exception is thrown.
      */
     void resolve()
 
     /**
-     * Gets the set of files that correspond to the inputs of this context.
+     * Gets the set of files that correspond to the inputFiles of this context.
      * The set is returned as a list for convenience.
      * If an input is found to be unresolved --it has not file(s)-- an exception is thrown.
      */
     List<File> getAll()
 
     /**
-     * Returns the inputs of this context.
+     * Returns the inputFiles of this context.
      */
     Set<String> inputs()
 }
