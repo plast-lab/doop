@@ -236,8 +236,6 @@
   .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature) output
 
   .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) output
-  .decl MethodMayAssignField_Prev(?fld:FieldSignature, ?toMethod:MethodSignature) output
-  .decl MethodHasUnresolvedInvocation_Prev(?toMethod:MethodSignature) output
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -859,16 +857,16 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     SingleFieldAccessPath(?fld, ?ap),
     MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField_Prev(?fld, ?toMethod),
-    !MethodHasUnresolvedInvocation_Prev(?toMethod).
+    !MethodMayAssignField(?fld, ?toMethod),
+    !MethodHasUnresolvedInvocation(?toMethod).
 
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
     MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField_Prev(?fld1, ?toMethod),
-    !MethodMayAssignField_Prev(?fld2, ?toMethod),
-    !MethodHasUnresolvedInvocation_Prev(?toMethod).
+    !MethodMayAssignField(?fld1, ?toMethod),
+    !MethodMayAssignField(?fld2, ?toMethod),
+    !MethodHasUnresolvedInvocation(?toMethod).
 
   //// POINT4 insert here
 
@@ -1563,20 +1561,9 @@ IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
 SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase1.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 
-SoundMayPhase2.MethodMayAssignField_Prev(?fld, ?toMethod) :-
-  SoundMayPhase1.MethodMayAssignField(?fld, ?toMethod).
-
-SoundMayPhase2.MethodHasUnresolvedInvocation_Prev(?toMethod) :-
-  SoundMayPhase1.MethodHasUnresolvedInvocation(?toMethod).
-
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 
-SoundMayPhase3.MethodMayAssignField_Prev(?fld, ?toMethod) :-
-  SoundMayPhase2.MethodMayAssignField(?fld, ?toMethod).
-
-SoundMayPhase3.MethodHasUnresolvedInvocation_Prev(?toMethod) :-
-  SoundMayPhase2.MethodHasUnresolvedInvocation(?toMethod).
 //// END configuration
 
 
