@@ -1263,121 +1263,240 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 
   //// END core MayPointTo code
   //// ====================================
+  
+  //// ====================================  
+  //// BEGIN access path definitions, creation and other auxiliary
+  
+  // The next one needs to be explicitly marked at creation point!
+  
+  // Any access path relevant to the analysis should be marked. This
+  // lazy creation is what makes access path concepts be
+  // analysis-phase-specific, as opposed to having a single global
+  // definition
+  .decl ComputedAccessPath(?ap:AccessPath) output
+  
+  // These are computed uniformly:
+  .decl AccessPath_IsSimple(?ap:AccessPath)
+  .decl AccessPath_IsComposite(?ap:AccessPath)
+  // Is access path a special one, based on a variable of collection type?
+  // Incompatible with all other access path types. The access paths represents
+  // all the *contents* of the collection (not the collection that the var
+  // points-to, but all the objects that the collection points-to internally).
+  .decl AccessPath_IsCollection(?ap:AccessPath)
+  .decl AccessPath_ContainsField(?fld:FieldSignature, ?ap:AccessPath)
+  .decl FieldListContains(?fld:FieldSignature, ?fldList:AccessPathSuffix)
+  // Access path has static field as base
+  .decl AccessPath_ContainsStaticField(?ap:AccessPath, ?fld:FieldSignature)
+  .decl AccessPath_Length(?ap:AccessPath, ?len:number)
+  .decl FieldList_Length(?fldList:AccessPathSuffix, ?len:number)
+  // static or var.instance
+  .decl SingleFieldAccessPath(?fld:FieldSignature, ?ap:AccessPath)
+  .decl DoubleFieldAccessPath(?fld1:FieldSignature, ?fld2:FieldSignature, ?ap:AccessPath)
+  .decl AccessPath_MaxLength(?maxLen:number)
+  .decl AccessPath_BaseVar(?ap:AccessPath, ?var:Var) output
+  
+  
+  AccessPath_IsSimple(?ap) :-
+  ComputedAccessPath(?ap),
+  ?ap = [ ?base, nil ], ?base = ?base. // suppress warning
+  
+  AccessPath_IsComposite(?ap) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, [ ?rest, ?fld] ],
+    ?base = ?base, ?fld = ?fld, ?rest = ?rest.
+  
+  FieldListContains(?fld, ?fldList) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
+    ?fldList = [ ?rest, ?fld ], ?rest = ?rest. // suppress warning
+  
+  FieldListContains(?fld, ?fldList) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
+    ?fldList = [ ?rest, ?fld ], ?rest = ?rest, // suppress warning
+    FieldListContains(?fld, ?rest).
+  
+  AccessPath_ContainsField(?fld, ?ap) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, ?flds ], ?base = ?base, // suppress warning
+    FieldListContains(?fld, ?flds).
+  
+  FieldList_Length(nil, 0).
+  FieldList_Length(?fldList, ?len+1) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
+    ?fldList = [ ?rest, ?fld ], ?fld = ?fld, // suppress warning
+    FieldList_Length(?rest, ?len).
+  
+  AccessPath_Length(?ap, ?len+1) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
+    FieldList_Length(?fldList, ?len).
+  
+    SingleFieldAccessPath(?fld, ?ap) :-
+    AccessPath_ContainsStaticField(?ap, ?fld),
+    AccessPath_Length(?ap, 1).
+  
+  SingleFieldAccessPath(?fld, ?ap) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, [ nil, ?fld ] ], ?base = ?base, // suppress
+    Var_Type(?base, _). // to be sure it's a var
+  
+  DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?fld1, [ nil, ?fld2 ] ], 
+    AccessPath_ContainsStaticField(?ap, ?fld1).
+  
+  DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?var, [ [ nil, ?fld1 ], ?fld2 ] ], ?var = ?var, // suppress
+    Var_Type(?var, _). // to be sure it's a var
+  
+  AccessPath_ContainsStaticField(?ap, ?fld) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?fld, ?fldList ], ?fldList = ?fldList, // suppress
+    FieldSignature_DeclaringClass(?fld, _). // to be sure it's a field
+    
+  AccessPath_BaseVar(?ap, ?var) :-
+    ComputedAccessPath(?ap),
+    ?ap = [ ?var, ?fldList ], ?fldList = ?fldList, // suppress
+    Var_Type(?var, _). // to be sure it's a var
+  
+  //// REVIEW/TODO: current policy of access-path creation is roughly:
+  ////  -create APs for all local vars, anywhere
+  ////  -create APs for all var.fld load/store expressions in the program text
+  ////  -create APs by rebasing all APs that may point somewhere at assignments
+  ////  -create APs by rebasing APs that may point somewhere at calls/returns
+    ////  -create extended AP if base was aliased to one that has extension (key rule)
+  //// 
+  //// This policy is fine for AccessPathMayPointTo, but may miss useful
+  //// MustAlias relations. E.g., the "APs that may point somewhere"
+  //// condition is severe. Still, MustAlias is ok to be an
+  //// underapproximation, and the cost of creating all access paths is
+  //// a significant factor.
+  ////
+  //// Note that right now we are choosing the opposite trade-off from
+  //// the full-fledged must-alias analysis. We create access paths
+  //// sparingly, based on IDB inferences, at the expense of
+  //// complicating their comparison (e.g., we cannot say
+  //// !ContainsField).
+  
+  // The rules below create access paths from all variables
+  // and all access fields in the program.
+  ComputedAccessPath([?var, nil]) :-
+     Var_Type(?var, ?type),
+     ReferenceType(?type).
+  
+  // Invariant: all computed access paths are type safe: the fields
+  // exist in the static type of the prefix. REVIEW: This may (rarely)
+  // prevent detection of valid aliasing.
+  ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
+     LoadInstanceField_Base(?insn, ?base),
+     FieldInstruction_Signature(?insn, ?fld),
+     FieldSignature_Type(?fld, ?type),
+     ReferenceType(?type).
+  ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
+     StoreInstanceField_Base(?insn, ?base),
+     FieldInstruction_Signature(?insn, ?fld),
+     FieldSignature_Type(?fld, ?type),
+     ReferenceType(?type).
+  
+  ComputedAccessPath([?fld, nil ]) :-
+     LoadStaticField_To(?insn, _),
+     FieldInstruction_Signature(?insn, ?fld),
+     FieldSignature_Type(?fld, ?type),
+     ReferenceType(?type).
+  ComputedAccessPath([?fld, nil ]) :-
+     StoreStaticField_From(?insn, _),
+     FieldInstruction_Signature(?insn, ?fld),
+     FieldSignature_Type(?fld, ?type),
+     ReferenceType(?type).
+  
+  // implies it's computed
+  .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var) output
+  .decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath) output
+  
+  
+  
+  // If some access path is to be rebased, its non-var prefixes are as well.
+  AccessPathShouldBeRebased(?newAp , ?from, ?to) :-
+     AccessPathShouldBeRebased(?ap, ?from, ?to),
+     ?ap = [ ?from, [ [ ?rest, ?nextFld ], ?lastFld ] ], ?lastFld = ?lastFld, // suppress warning
+     ?newAp = [ ?from, [ ?rest, ?nextFld ] ].
+  
+  ComputedAccessPath(?newAp),
+  RebaseCompositeAccessPath(?ap, ?from, ?to, ?newAp) :-
+     AccessPathShouldBeRebased(?ap, ?from, ?to),
+     ?newAp = [?to, ?rest],
+     ?ap = [?from, ?rest].
+  
+  // REVIEW obviously incomplete, needs library collections as well
+  AccessPath_IsCollection(?ap) :-
+     ?ap = [?base, nil],
+     Var_Type(?base, ?type),
+     ArrayType(?type).
+     
+    
+  // // *MustAlias*
+  // // Access path expansion factory. Trivial but avoids repeat expensive
+  // // access path creation.
+  // AccessPath(?newAp),
+  // AccessPath_ByFieldAccess(?fld, ?ap, ?newAp),
+  // AccessPath_Length(?newAp, ?len) + 1,
+  // _ExpandedAccessPath(?fld, ?ap, ?newAp) :-
+  //    AccessPathShouldBeExpanded(?fld, ?ap),
+  //    AccessPath_Length(?ap, ?len).
+  
+  
+  // // limited to access paths that should be compared
+  // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
+  //    AccessPathsShouldBeCompared(?ap1, ?ap2),
+  //    AccessPath_LastField(?ap1, AccessPath_LastField)[?ap2],
+  //    AccessPath_IsVariable(AccessPath_Base[?ap1]),
+  //    AccessPath_IsVariable(AccessPath_Base[?ap2]).
+  
+  // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
+  //    AccessPathsShouldBeCompared(?ap1, ?ap2),
+  //    AccessPath_ByCollectionVarInv(?ap1, _),
+  //    AccessPath_ByCollectionVarInv(?ap2, _).
+  
+  // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
+  //    CompositeAccessPath_SameFields(?baseAp1, ?baseAp2),
+  //    AccessPath_ByFieldAccess(?fld, ?baseAp1, ?ap1),
+  //    AccessPath_ByFieldAccess(?fld, ?baseAp2, ?ap2).
+  
+  //// END access path definitions, auxiliary
+  //// ====================================  
+  //// BEGIN context management
+
+  // Again, component-specific only because of "computed" concept
+    
+  EmptyHeapContext("emptyHeapContext").
+  InitialMayContext(nil).
+  
+  .decl MayContextDepth(?ctx:MayContext, ?depth:number)
+  .decl ComputedContext(?ctx:MayContext)
+  
+  MayContextDepth(?ctx, 0) :-
+    InitialMayContext(?ctx).
+  
+  MayContextDepth([?invo,?poppedCtx], ?depth+1) :-
+    ComputedContext(?ctx),
+    ?ctx = [?invo,?poppedCtx],
+    MayContextDepth(?poppedCtx, ?depth).
+  
+  .decl MaxMayContextDepth(?num:number)
+  
+  MaxMayContextDepth(4).
+  AccessPath_MaxLength(3).
+
+  //// END context management
+  //// ====================================  
 
 }  // END .comp SoundMay
 
 
 //// POINT2---IgnorableMethodInvocation to go here
-
-
-//// ====================================
-
-//// BEGIN access path creation and other auxiliary
-
-//// REVIEW/TODO: current policy of access-path creation is roughly:
-////  -create APs for all local vars, anywhere
-////  -create APs for all var.fld load/store expressions in the program text
-////  -create APs by rebasing all APs that may point somewhere at assignments
-////  -create APs by rebasing APs that may point somewhere at calls/returns
-////  -create extended AP if base was aliased to one that has extension (key rule)
-//// 
-//// This policy is fine for AccessPathMayPointTo, but may miss useful
-//// MustAlias relations. E.g., the "APs that may point somewhere"
-//// condition is severe. Still, MustAlias is ok to be an
-//// underapproximation, and the cost of creating all access paths is
-//// a significant factor.
-////
-//// Note that right now we are choosing the opposite trade-off from
-//// the full-fledged must-alias analysis. We create access paths
-//// sparingly, based on IDB inferences, at the expense of
-//// complicating their comparison (e.g., we cannot say
-//// !ContainsField).
-
-// The rules below create access paths from all variables
-// and all access fields in the program.
-ComputedAccessPath([?var, nil]) :-
-   Var_Type(?var, ?type),
-   ReferenceType(?type).
-
-// Invariant: all computed access paths are type safe: the fields
-// exist in the static type of the prefix. REVIEW: This may (rarely)
-// prevent detection of valid aliasing.
-ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
-   LoadInstanceField_Base(?insn, ?base),
-   FieldInstruction_Signature(?insn, ?fld),
-   FieldSignature_Type(?fld, ?type),
-   ReferenceType(?type).
-ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
-   StoreInstanceField_Base(?insn, ?base),
-   FieldInstruction_Signature(?insn, ?fld),
-   FieldSignature_Type(?fld, ?type),
-   ReferenceType(?type).
-
-ComputedAccessPath([?fld, nil ]) :-
-   LoadStaticField_To(?insn, _),
-   FieldInstruction_Signature(?insn, ?fld),
-   FieldSignature_Type(?fld, ?type),
-   ReferenceType(?type).
-ComputedAccessPath([?fld, nil ]) :-
-   StoreStaticField_From(?insn, _),
-   FieldInstruction_Signature(?insn, ?fld),
-   FieldSignature_Type(?fld, ?type),
-   ReferenceType(?type).
-
-// implies it's computed
-.decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var) output
-.decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath) output
-
-
-// If some access path is to be rebased, its non-var prefixes are as well.
-AccessPathShouldBeRebased(?newAp , ?from, ?to) :-
-   AccessPathShouldBeRebased(?ap, ?from, ?to),
-   ?ap = [ ?from, [ [ ?rest, ?nextFld ], ?lastFld ] ], ?lastFld = ?lastFld, // suppress warning
-   ?newAp = [ ?from, [ ?rest, ?nextFld ] ].
-
-ComputedAccessPath(?newAp),
-RebaseCompositeAccessPath(?ap, ?from, ?to, ?newAp) :-
-   AccessPathShouldBeRebased(?ap, ?from, ?to),
-   ?newAp = [?to, ?rest],
-   ?ap = [?from, ?rest].
-
-// REVIEW obviously incomplete, needs library collections as well
-AccessPath_IsCollection(?ap) :-
-   ?ap = [?base, nil],
-   Var_Type(?base, ?type),
-   ArrayType(?type).
-   
-
-// // *MustAlias*
-// // Access path expansion factory. Trivial but avoids repeat expensive
-// // access path creation.
-// AccessPath(?newAp),
-// AccessPath_ByFieldAccess(?fld, ?ap, ?newAp),
-// AccessPath_Length(?newAp, ?len) + 1,
-// _ExpandedAccessPath(?fld, ?ap, ?newAp) :-
-//    AccessPathShouldBeExpanded(?fld, ?ap),
-//    AccessPath_Length(?ap, ?len).
-
-
-// // limited to access paths that should be compared
-// CompositeAccessPath_SameFields(?ap1, ?ap2) :-
-//    AccessPathsShouldBeCompared(?ap1, ?ap2),
-//    AccessPath_LastField(?ap1, AccessPath_LastField)[?ap2],
-//    AccessPath_IsVariable(AccessPath_Base[?ap1]),
-//    AccessPath_IsVariable(AccessPath_Base[?ap2]).
-
-// CompositeAccessPath_SameFields(?ap1, ?ap2) :-
-//    AccessPathsShouldBeCompared(?ap1, ?ap2),
-//    AccessPath_ByCollectionVarInv(?ap1, _),
-//    AccessPath_ByCollectionVarInv(?ap2, _).
-
-// CompositeAccessPath_SameFields(?ap1, ?ap2) :-
-//    CompositeAccessPath_SameFields(?baseAp1, ?baseAp2),
-//    AccessPath_ByFieldAccess(?fld, ?baseAp1, ?ap1),
-//    AccessPath_ByFieldAccess(?fld, ?baseAp2, ?ap2).
-
-
-//// END access path auxiliary
 
 
 //// ====================================
@@ -1433,11 +1552,10 @@ AccessPath_IsCollection(?ap) :-
 ////  Different ways to kick-start the analysis.
 
 .init SoundMayPhase1 = SoundMay
-.init IntraprocMustForStats = IntraproceduralMust
 .init SoundMayPhase2 = SoundMay
+.init SoundMayPhase3 = SoundMay
+.init IntraprocMustForStats = IntraproceduralMust
 
-MaxMayContextDepth(4).
-AccessPath_MaxLength(3).
 
 InitialRootMethodForMayAnalysis(?meth) :-
   Reachable(?meth), // just for benchmarking against unsound VPT analysis
@@ -1454,36 +1572,24 @@ SoundMayPhase2.MethodMayAssignField_Prev(?fld, ?toMethod) :-
 
 SoundMayPhase2.MethodHasUnresolvedInvocation_Prev(?toMethod) :-
   SoundMayPhase1.MethodHasUnresolvedInvocation(?toMethod).
+
+SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+SoundMayPhase3.MethodMayAssignField_Prev(?fld, ?toMethod) :-
+  SoundMayPhase2.MethodMayAssignField(?fld, ?toMethod).
+
+SoundMayPhase3.MethodHasUnresolvedInvocation_Prev(?toMethod) :-
+  SoundMayPhase2.MethodHasUnresolvedInvocation(?toMethod).
 //// END configuration
 
 
 //// ====================================
-//// BEGIN context management
+//// BEGIN type definitions
 
 .type MayContext = [ ?invo:MethodInvocationInsn, ?rest:MayContext ] 
 .type MayHeapContext
 
-EmptyHeapContext("emptyHeapContext").
-InitialMayContext(nil).
-
-.decl MayContextDepth(?ctx:MayContext, ?depth:number)
-.decl ComputedContext(?ctx:MayContext)
-
-MayContextDepth(?ctx, 0) :-
-  InitialMayContext(?ctx).
-
-MayContextDepth([?invo,?poppedCtx], ?depth+1) :-
-  ComputedContext(?ctx),
-  ?ctx = [?invo,?poppedCtx],
-  MayContextDepth(?poppedCtx, ?depth).
-
-.decl MaxMayContextDepth(?num:number)
-
-//// END context management
-
-//// ====================================
-
-//// BEGIN access path definitions
 
 .type AccessPathBase = Var | FieldSignature   // the latter for static fields
 .type AccessPathSuffix = [ ?base:AccessPathSuffix, ?fld:FieldSignature ] 
@@ -1491,98 +1597,9 @@ MayContextDepth([?invo,?poppedCtx], ?depth+1) :-
 // Access Paths are expressions of the form: v(.fi)* or fi.(.fi)*, for static first field
 .type AccessPath = [ ?base:AccessPathBase, ?flds:AccessPathSuffix ]
 
-// The next one needs to be explicitly marked at creation point!
+//// END type definitions
+//// ====================================
 
-// Any access path relevant to the analysis should be marked:
-.decl ComputedAccessPath(?ap:AccessPath) output
-
-// These are computed uniformly:
-.decl AccessPath_IsSimple(?ap:AccessPath)
-.decl AccessPath_IsComposite(?ap:AccessPath)
-// Is access path a special one, based on a variable of collection type?
-// Incompatible with all other access path types. The access paths represents
-// all the *contents* of the collection (not the collection that the var
-// points-to, but all the objects that the collection points-to internally).
-.decl AccessPath_IsCollection(?ap:AccessPath)
-.decl AccessPath_ContainsField(?fld:FieldSignature, ?ap:AccessPath)
-.decl FieldListContains(?fld:FieldSignature, ?fldList:AccessPathSuffix)
-// Access path has static field as base
-.decl AccessPath_ContainsStaticField(?ap:AccessPath, ?fld:FieldSignature)
-.decl AccessPath_Length(?ap:AccessPath, ?len:number)
-.decl FieldList_Length(?fldList:AccessPathSuffix, ?len:number)
-// static or var.instance
-.decl SingleFieldAccessPath(?fld:FieldSignature, ?ap:AccessPath)
-.decl DoubleFieldAccessPath(?fld1:FieldSignature, ?fld2:FieldSignature, ?ap:AccessPath)
-.decl AccessPath_MaxLength(?maxLen:number)
-.decl AccessPath_BaseVar(?ap:AccessPath, ?var:Var) output
-
-AccessPath_IsSimple(?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, nil ], ?base = ?base. // suppress warning
-
-AccessPath_IsComposite(?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, [ ?rest, ?fld] ],
-  ?base = ?base, ?fld = ?fld, ?rest = ?rest.
-
-FieldListContains(?fld, ?fldList) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-  ?fldList = [ ?rest, ?fld ], ?rest = ?rest. // suppress warning
-
-FieldListContains(?fld, ?fldList) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-  ?fldList = [ ?rest, ?fld ], ?rest = ?rest, // suppress warning
-  FieldListContains(?fld, ?rest).
-
-AccessPath_ContainsField(?fld, ?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, ?flds ], ?base = ?base, // suppress warning
-  FieldListContains(?fld, ?flds).
-
-FieldList_Length(nil, 0).
-FieldList_Length(?fldList, ?len+1) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-  ?fldList = [ ?rest, ?fld ], ?fld = ?fld, // suppress warning
-  FieldList_Length(?rest, ?len).
-
-AccessPath_Length(?ap, ?len+1) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-  FieldList_Length(?fldList, ?len).
-
-SingleFieldAccessPath(?fld, ?ap) :-
-  AccessPath_ContainsStaticField(?ap, ?fld),
-  AccessPath_Length(?ap, 1).
-
-SingleFieldAccessPath(?fld, ?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, [ nil, ?fld ] ], ?base = ?base, // suppress
-  Var_Type(?base, _). // to be sure it's a var
-
-DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?fld1, [ nil, ?fld2 ] ], 
-  AccessPath_ContainsStaticField(?ap, ?fld1).
-
-DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?var, [ [ nil, ?fld1 ], ?fld2 ] ], ?var = ?var, // suppress
-  Var_Type(?var, _). // to be sure it's a var
-
-AccessPath_ContainsStaticField(?ap, ?fld) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?fld, ?fldList ], ?fldList = ?fldList, // suppress
-  FieldSignature_DeclaringClass(?fld, _). // to be sure it's a field
-  
-AccessPath_BaseVar(?ap, ?var) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?var, ?fldList ], ?fldList = ?fldList, // suppress
-  Var_Type(?var, _). // to be sure it's a var
-
-//// END access path definitions
 
 //// ====================================
 //// BEGIN utilities
