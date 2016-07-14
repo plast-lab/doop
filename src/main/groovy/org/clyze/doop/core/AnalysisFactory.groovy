@@ -32,24 +32,24 @@ import java.util.jar.JarFile
     protected static class AnalysisVars {
         String name
         Map<String, AnalysisOption> options
-        Set<String> inputJars
-        List<File> inputJarFiles
-        List<String> jreJars
+        Set<String> inputs
+        List<File> inputFiles
+        List<String> platformLibs
 
         @Override
         String toString() {
             return [
-                name     : name,
-                options  : options.values().toString(),
-                inputJars: inputJars.toString(),
-                inputJarFiles: inputJarFiles.toString(),
-                jreJars  : jreJars.toString()
+                    name     :      name,
+                    options  :      options.values().toString(),
+                    inputs:         inputs.toString(),
+                    inputFiles:     inputFiles.toString(),
+                    platformLibs:   platformLibs.toString()
             ].toString()
         }
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its id, name, options and inputJars using
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputs using
      * the supplied input resolution mechanism.
      * If the supplied id is empty or null, an id will be generated automatically.
      * Otherwise the id will be validated:
@@ -62,11 +62,11 @@ import java.util.jar.JarFile
         checkName(name)
 
         AnalysisVars vars = new AnalysisVars(
-            name     : name,
-            options  : options,
-            inputJars: context.inputs(),
-            inputJarFiles: checkInputs(context),
-            jreJars  : jreLinkArgs(options)
+                name     : name,
+                options  : options,
+                inputs: context.inputs(),
+                inputFiles: checkInputs(context),
+                platformLibs: platformLinkArgs(options)
         )
 
         logger.debug vars
@@ -108,15 +108,15 @@ import java.util.jar.JarFile
         File cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
-            analysisId,
-            outDir.toString(),
-            cacheDir.toString(),
-            name,
-            options,
-            context,
-            vars.inputJarFiles,
-            vars.jreJars,
-            commandsEnv
+                analysisId,
+                outDir.toString(),
+                cacheDir.toString(),
+                name,
+                options,
+                context,
+                vars.inputFiles,
+                vars.platformLibs,
+                commandsEnv
         )
 
         logger.debug "Created new analysis"
@@ -124,7 +124,7 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, options and inputJars using
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
      * the default input resolution mechanism.
      */
     Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
@@ -150,7 +150,7 @@ import java.util.jar.JarFile
 
         if (!isValid) {
             throw new RuntimeException("Invalid analysis id: $id. The id should contain only letters, digits, " +
-                                       "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
+                    "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
         }
         return trimmed
     }
@@ -167,7 +167,7 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Generates the analysis ID using all of its components (name, inputJars and options).
+     * Generates the analysis ID using all of its components (name, inputs and options).
      */
     protected String generateID(AnalysisVars vars) {
         Collection<String> idComponents = vars.options.keySet().findAll {
@@ -175,7 +175,7 @@ import java.util.jar.JarFile
         }.collect {
             String option -> return vars.options.get(option).toString()
         }
-        idComponents = [vars.name] + vars.inputJars + idComponents
+        idComponents = [vars.name] + vars.inputs + idComponents
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
@@ -196,11 +196,11 @@ import java.util.jar.JarFile
             File file -> Helper.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.inputJarFiles.collect {
+        checksums += vars.inputFiles.collect {
             File file -> Helper.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.jreJars.collect {
+        checksums += vars.platformLibs.collect {
             String file -> Helper.checksum(new File(file), HASH_ALGO)
         }
 
@@ -221,40 +221,53 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Generates a list of the jre link arguments for soot
+     * Generates a list of the platform library link arguments for soot
      */
-    protected List<String> jreLinkArgs(Map<String, AnalysisOption> options) {
+    protected List<String> platformLinkArgs(Map<String, AnalysisOption> options) {
+        System.out.println("PLATFORM option: " + options.PLATFORM.value)
 
-        String jre = options.JRE.value
-        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
+        def platformOfChoice = options.PLATFORM.value.toString().tokenize("_")
+        assert platformOfChoice.size() == 2
+        def (platform, version) = [platformOfChoice[0], platformOfChoice[1].toInteger()]
+        assert platform == "android" || platform == "java"
+        assert version instanceof Integer
+        println "PLATFORM: " + platform + " VERSION: " + version
 
-        switch(jre) {
-            case "1.3":
-                return Helper.checkFiles(["${path}/rt.jar".toString()])
-            case "1.4":
-            case "1.5":
-            case "1.6":
-            case "1.7":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
-            case "system":
-                /*
+
+        switch(platform) {
+            case "java":
+                String path = "${options.PLATFORM_LIBS.value}/jre1.${version}/lib"
+                switch(version) {
+                    case "1.3":
+                        return Helper.checkFiles(["${path}/rt.jar".toString()])
+                    case "1.4":
+                    case "1.5":
+                    case "1.6":
+                    case "1.7":
+                        return Helper.checkFiles(["${path}/rt.jar".toString(),
+                                                  "${path}/jce.jar".toString(),
+                                                  "${path}/jsse.jar".toString()])
+                    case "system":
+                        /*
                 String javaHome = System.getProperty("java.home")
                 return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
                 */
-                return []
+                        return []
+                }
+            case "android":
+                String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
+                return Helper.checkFiles(["${path}/android.jar".toString()])
         }
     }
-    
+
     /**
-     * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
-     * using the input resolution mechanism. It finally returns the inputs as a List<File>.
+     * Given the list of analysis inputFiles, as Strings, the method validates that the inputFiles exist,
+     * using the input resolution mechanism. It finally returns the inputFiles as a List<File>.
      */
     protected List<File> checkInputs(InputResolutionContext context) {
         Collection<String> inputs = context.inputs()
-        logger.debug "Verifying analysis inputs: $inputs"
-        if (!inputs) throw new RuntimeException("No inputs provided for the analysis")
+        logger.debug "Verifying analysis inputFiles: $inputs"
+        if (!inputs) throw new RuntimeException("No inputFiles provided for the analysis")
         context.resolve()
         return context.getAll()
     }
@@ -263,13 +276,13 @@ import java.util.jar.JarFile
      * Processes the options of the analysis.
      */
     protected void processOptions(AnalysisVars vars) {
-    
+
         logger.debug "Processing analysis options"
-        
+
         Map<String, AnalysisOption> options = vars.options
-        
+
         /*
-         * We mimic the checks of the run script for verifiability of this implementation, 
+         * We mimic the checks of the run script for verifiability of this implementation,
          * even though the majority of checks are not required.
          */
 
@@ -277,7 +290,7 @@ import java.util.jar.JarFile
             disableAllExceptionOptions(options)
         }
 
-        if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
+        if (options.DISABLE_PRECISE_EXCEPTIONS.value) {
             disableAllExceptionOptions(options)
         }
 
@@ -332,25 +345,25 @@ import java.util.jar.JarFile
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
         }
-        
+
         if (options.DACAPO.value) {
             if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputJarFiles[0].toString()
+                def inputJarName = vars.inputFiles[0].toString()
                 def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!vars.inputJarFiles.contains(deps))
-                    vars.inputJarFiles.add(new File(deps))
+                if (!vars.inputFiles.contains(deps))
+                    vars.inputFiles.add(new File(deps))
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
             }
         }
-        
+
         if (options.DACAPO_BACH.value) {
             if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputJarFiles[0].toString()
+                def inputJarName = vars.inputFiles[0].toString()
                 def depsDir = inputJarName.replace(".jar", "-libs")
                 new File(depsDir).eachFile { File depsFile ->
                     if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") &&
-                        !vars.inputJarFiles.contains(depsFile)) {
-                        vars.inputJarFiles.add(depsFile)
+                            !vars.inputFiles.contains(depsFile)) {
+                        vars.inputFiles.add(depsFile)
                     }
                 }
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
@@ -367,36 +380,32 @@ import java.util.jar.JarFile
             options.MUST_AFTER_MAY.value = true
         }
 
-        if (!options.ANDROID.value) {
-            checkJRE(vars)
-            //Check the value of the JRE_LIB option (it should point to the JREs directory)
-            String externals = options.JRE_LIB.value
-            Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
-        }
-        
+        checkPlatformLibs(vars)
+        //Check the value of the JRE_LIB option (it should point to the platform libs directory)
+        String externals = options.PLATFORM_LIBS.value
+        Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
+
         checkOS(vars)
 
-        if (!options.ANDROID.value) {
-            if (options.MAIN_CLASS.value) {
-                logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+        if (options.MAIN_CLASS.value) {
+            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+        } else {
+            JarFile jarFile = new JarFile(vars.inputFiles[0])
+            //Try to read the main class from the manifest contained in the jar
+            String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
+            if (main) {
+                logger.debug "The main class is automatically set to ${main}"
+                options.MAIN_CLASS.value = main
             } else {
-                JarFile jarFile = new JarFile(vars.inputJarFiles[0])
-                //Try to read the main class from the manifest contained in the jar
-                String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
-                if (main) {
-                    logger.debug "The main class is automatically set to ${main}"
-                    options.MAIN_CLASS.value = main
-                } else {
-                    //Check whether the jar contains a class with the same name
-                    String jarName = FilenameUtils.getBaseName(jarFile.getName())
-                    if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically set to ${jarName}"
-                        options.MAIN_CLASS.value = jarName
-                    }
+                //Check whether the jar contains a class with the same name
+                String jarName = FilenameUtils.getBaseName(jarFile.getName())
+                if (jarFile.getJarEntry("${jarName}.class")) {
+                    logger.debug "The main class is automatically set to ${jarName}"
+                    options.MAIN_CLASS.value = jarName
                 }
             }
         }
-        
+
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
@@ -404,7 +413,7 @@ import java.util.jar.JarFile
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
         }
-        
+
         if (options.TAMIFLEX.value) {
             String tamFile = options.TAMIFLEX.value.toString()
             Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
@@ -412,13 +421,13 @@ import java.util.jar.JarFile
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
-                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
-                options.REFLECTION_SUBSTRING_ANALYSIS.value ||
-                options.REFLECTION_CONTEXT_SENSITIVITY.value ||
-                options.REFLECTION_USE_BASED_ANALYSIS.value ||
-                options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
-                options.REFLECTION_REFINED_OBJECTS.value) {
+                    options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
+                    options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
+                    options.REFLECTION_SUBSTRING_ANALYSIS.value ||
+                    options.REFLECTION_CONTEXT_SENSITIVITY.value ||
+                    options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                    options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
+                    options.REFLECTION_REFINED_OBJECTS.value) {
                 logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
             } else if (!options.TAMIFLEX.value) {
                 logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
@@ -431,48 +440,71 @@ import java.util.jar.JarFile
         for (def option : options) logger.debug option
         logger.debug "---------------"
     }
-    
+
     /**
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
-    protected void checkJRE(AnalysisVars vars) {
-        String jreValue = vars.options.JRE.value
-        if (jreValue == "system")
-            jreValue = System.getProperty("java.specification.version")
+    protected void checkPlatformLibs(AnalysisVars vars) {
+        def platformLibsValue = vars.options.PLATFORM.value.toString().tokenize("_")
+        assert platformLibsValue.size() == 2
+        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+        assert platform == "android" || platform == "java"
+        println "PLATFORM: " + platform + " VERSION: " + version
+//        if (platformLibsValue == "system")
+//            platformLibsValue = System.getProperty("java.specification.version")
 
-        logger.debug "Verifying JRE version: $jreValue"
+        logger.debug "Verifying platform version: $platformLibsValue"
 
 
         JRE jreVersion
-        switch(jreValue) {
-            case "1.3":
-                jreVersion = JRE.JRE13
+        ANDROID androidVersion
+        switch(platform) {
+            case "java":
+                switch (version) {
+                    case "3":
+                        jreVersion = JRE.JRE13
+                        break
+                    case "4":
+                        jreVersion = JRE.JRE14
+                        break
+                    case "5":
+                        jreVersion = JRE.JRE15
+                        break
+                    case "6":
+                        jreVersion = JRE.JRE16
+                        break
+                    case "7":
+                        jreVersion = JRE.JRE17
+                        break
+                    default:
+                        throw new RuntimeException("Invalid JRE version: $version")
+                }
+                //generate the JRE constant for the preprocessor
+                AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
+                        id:jreVersion.name(),
+                        value:true,
+                        forPreprocessor: true
+                )
+                vars.options[(jreOption.id)] = jreOption
                 break
-            case "1.4":
-                jreVersion = JRE.JRE14
+            case "android":
+                switch (version) {
+                    case "24":
+                        androidVersion = ANDROID.ANDROID24
+                        break
+                    default:
+                        throw new RuntimeException("Invalid Android version: $version")
+                }
+                AnalysisOption<Boolean> androidOption = new AnalysisOption<Boolean>(
+                        id:androidVersion.name(),
+                        value:true,
+                        forPreprocessor: true
+                )
+                vars.options[(androidOption.id)] = androidOption
                 break
-            case "1.5":
-                jreVersion = JRE.JRE15
-                break
-            case "1.6":
-                jreVersion = JRE.JRE16
-                break
-            case "1.7":
-                jreVersion = JRE.JRE17
-                break
-            default:
-                throw new RuntimeException("Invalid JRE version: $jreValue")
         }
-        
-        //generate the JRE constant for the preprocessor
-        AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-            id:jreVersion.name(),
-            value:true,
-            forPreprocessor: true
-        )
-        vars.options[(jreOption.id)] = jreOption
     }
-    
+
     /**
      * Checks the OS. For now, it is always OS.OS_UNIX (the default).
      */
@@ -488,30 +520,30 @@ import java.util.jar.JarFile
 
         //generate the OS constant for preprocessor
         AnalysisOption<Boolean> osOption = new AnalysisOption<Boolean>(
-            id:os.name(),
-            value:true,
-            forPreprocessor: true
+                id:os.name(),
+                value:true,
+                forPreprocessor: true
         )
         vars.options[(osOption.id)] = osOption
     }
 
     /**
      * DACAPO hooks.
-    */
+     */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
-        
+
         if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
             logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
     }
-    
+
     /**
      * Determines application classes.
      *
@@ -520,7 +552,7 @@ import java.util.jar.JarFile
     protected void checkAppGlob(AnalysisVars vars) {
         if (!vars.options.APP_REGEX.value) {
             logger.debug "Generating app regex"
-            
+
             //We process only the first jar for determining the application classes
             /*
             Set excluded = ["*", "**"] as Set
@@ -530,18 +562,18 @@ import java.util.jar.JarFile
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputJarFiles[0])
+            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
-    
+
     /**
      * Verifies the correctness of the LogicBlox related options
      */
     protected void checkLogicBlox(AnalysisVars vars) {
 
         //BLOX_OPTS is set by the main method
-    
+
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
 
         logger.debug "Verifying LogicBlox home: ${lbhome.value}"
@@ -554,7 +586,7 @@ import java.util.jar.JarFile
         Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         vars.options.BLOXBATCH.value = bloxbatch
     }
-    
+
     /**
      * Initializes the external commands environment of the given analysis, by:
      * <ul>
@@ -566,10 +598,10 @@ import java.util.jar.JarFile
     protected Map<String, String> initExternalCommandsEnvironment(AnalysisVars vars) {
 
         logger.debug "Initializing the environment of the external commands"
-        
+
         Map<String, String> env = [:]
         env.putAll(System.getenv())
-        
+
         String path = env.PATH
         AnalysisOption ldLibraryPath = vars.options.LD_LIBRARY_PATH
         if (path) {

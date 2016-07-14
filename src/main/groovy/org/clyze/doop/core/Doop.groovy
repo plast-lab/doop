@@ -403,15 +403,6 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
-            id:"JRE",
-            name:"jre",
-            argName:"VERSION",
-            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
-            value:"system",
-            forCacheID:true,
-            webUI:true
-        ),
         new AnalysisOption<OS>(
             id:"OS",
             value:OS.OS_UNIX,
@@ -427,30 +418,22 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"JRE_LIB",
-            name:"jre-lib",
-            description:"The path to the JRE lib directory (containing different JRE versions).",
-            value:System.getenv("DOOP_JRE_LIB"),
-            webUI:false,
+            id:"PLATFORM_LIBS",
+            name:"platform-libs",
+            description:"The path to the platform libs directory.",
+            value:System.getenv("PLATFORM_LIBS"),
+//            webUI:false,
             isAdvanced:true
         ),
         new AnalysisOption<String>(
-                id:"ANDROID",
-                name:"android",
-                description:"",
-                value: null,
-                webUI: false,
-                forCacheID: true,
-                cli: true
-        ),
-        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
-                id:"ANDROID_JARS",
-                name:"anroid-jars",
-                argName:"ANDROID-VERSION",
-                description:"One of  system (default: 24).",
-                value:"24",
-                forCacheID:true,
-                webUI:true
+                id:"PLATFORM",
+                name:"platform",
+                argName: "platform",
+                description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
+                value: "java_7",
+                webUI: true,
+                forCacheID: true
+//                cli: true
         ),
 
         /* Start of non-standard flags */
