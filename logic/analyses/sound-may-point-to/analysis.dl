@@ -92,8 +92,9 @@
 .decl InitialRootMethodForMayAnalysis(?meth:MethodSignature)
 .decl EmptyHeapContext(?hctx:MayHeapContext)
 .decl InitialMayContext(?ctx:MayContext)
+.decl MaxMayContextDepth(?num:number)
+.decl AccessPath_MaxLength(?maxLen:number)
 .decl FirstInstructionOfMethod(?meth:MethodSignature, ?firstInsn:Instruction)
-
 
 .comp IntraproceduralMust {
   // Just for baseline comparisons. Should be very cheap to compute.
@@ -1009,7 +1010,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   //    MethodSignature_DeclaringType(?meth, ?class),
   //    ApplicationClass(?class).
 
-
   // //// END configuration
   // //// ====================================
 
@@ -1292,7 +1292,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // static or var.instance
   .decl SingleFieldAccessPath(?fld:FieldSignature, ?ap:AccessPath)
   .decl DoubleFieldAccessPath(?fld1:FieldSignature, ?fld2:FieldSignature, ?ap:AccessPath)
-  .decl AccessPath_MaxLength(?maxLen:number)
   .decl AccessPath_BaseVar(?ap:AccessPath, ?var:Var) output
   
   
@@ -1415,9 +1414,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
   // implies it's computed
   .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var) output
   .decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath) output
-  
-  
-  
+    
   // If some access path is to be rebased, its non-var prefixes are as well.
   AccessPathShouldBeRebased(?newAp , ?from, ?to) :-
      AccessPathShouldBeRebased(?ap, ?from, ?to),
@@ -1485,11 +1482,6 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
     ?ctx = [?invo,?poppedCtx],
     MayContextDepth(?poppedCtx, ?depth).
   
-  .decl MaxMayContextDepth(?num:number)
-  
-  MaxMayContextDepth(4).
-  AccessPath_MaxLength(3).
-
   //// END context management
   //// ====================================  
 
@@ -1550,6 +1542,10 @@ AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
 //// ====================================
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
+
+MaxMayContextDepth(4).
+
+AccessPath_MaxLength(3).
 
 .init SoundMayPhase1 = SoundMay
 .init SoundMayPhase2 = SoundMay
