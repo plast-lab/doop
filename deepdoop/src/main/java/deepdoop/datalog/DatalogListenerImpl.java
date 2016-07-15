@@ -30,7 +30,6 @@ public class DatalogListenerImpl implements DatalogListener {
 	ParseTreeProperty<List<IExpr>>     _exprs;
 
 	boolean                            _inDecl;
-	Component                          _globalComp;
 	Component                          _currComp;
 	Program                            _program;
 
@@ -42,24 +41,20 @@ public class DatalogListenerImpl implements DatalogListener {
 		_atoms      = new ParseTreeProperty<>();
 		_expr       = new ParseTreeProperty<>();
 		_exprs      = new ParseTreeProperty<>();
-		_globalComp = new Component();
-		_currComp   = _globalComp;
 		_program    = new Program();
+		_currComp   = _program.globalComp;
 	}
 
 	public Program getProgram() {
 		return _program;
 	}
 
-	public void exitProgram(ProgramContext ctx) {
-		_program.setGlobalComp(_globalComp);
-	}
 	public void enterComp(CompContext ctx) {
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
 		_program.addComp(_currComp);
-		_currComp = _globalComp;
+		_currComp = _program.globalComp;
 	}
 	public void exitInit_(Init_Context ctx) {
 		_program.addInit(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
@@ -80,7 +75,7 @@ public class DatalogListenerImpl implements DatalogListener {
 	}
 	public void exitCmd(CmdContext ctx) {
 		_program.addComp(_currComp);
-		_currComp = _globalComp;
+		_currComp = _program.globalComp;
 	}
 	public void enterDeclaration(DeclarationContext ctx) {
 		_inDecl = true;
@@ -274,6 +269,7 @@ public class DatalogListenerImpl implements DatalogListener {
 	// TODO inherit from BaseListener so there is no need to define those
 	// Not used (for now) inherited methods - START
 	public void enterProgram(ProgramContext ctx) {}
+	public void exitProgram(ProgramContext ctx) {}
 	public void enterInit_(Init_Context ctx) {}
 	public void enterPropagate(PropagateContext ctx) {}
 	public void enterPredicateNameList(PredicateNameListContext ctx) {}

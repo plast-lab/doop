@@ -8,6 +8,7 @@ import deepdoop.datalog.element.*;
 import deepdoop.datalog.element.atom.*;
 import deepdoop.datalog.expr.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +29,18 @@ public class FlatteningVisitor implements IVisitor {
 
 	@Override
 	public Program exit(Program n, Map<IVisitable, IVisitable> m) {
+		// TODO move a lot to InitVisitor or code generator visitor
 		AtomCollectorVisitor acVisitor = new AtomCollectorVisitor();
 		n.globalComp.accept(acVisitor);
 		Set<String> globalAtomNames = acVisitor.getDeclaringAtoms(n.globalComp).keySet();
 
 		// Flatten components
-		Program flatP = new Program();
+		Program flatP = new Program(n.globalComp, null, n.inits, n.props);
 		for (Component c : n.comps.values()) flatP.addComp((Component) m.get(c));
 
 		// Initialize components
-		Program initP = new Program();
-		for (Entry<String, String> entry : n.inits.entrySet()) {
+		Program initP = new Program(flatP.globalComp, null, flatP.inits, flatP.props);
+		for (Entry<String, String> entry : flatP.inits.entrySet()) {
 			String initName = entry.getKey();
 			String compName = entry.getValue();
 			Component c     = flatP.comps.get(compName);
@@ -46,16 +48,42 @@ public class FlatteningVisitor implements IVisitor {
 			initP.addComp((Component) c.accept(initVisitor));
 		}
 
-		Program finalP = new Program();
-		finalP.setGlobalComp(new Component(n.globalComp));
+		// Check that all used predicates have a declaration/definition
+		Map<String, Set<String>> reversePropagations = new HashMap<>();
+		for (Propagation prop : initP.props) {
+			Set<String> fromSet = reversePropagations.get(prop.toId);
+			if (fromSet == null) fromSet = new HashSet<>();
+			fromSet.add(prop.fromId);
+			reversePropagations.put(prop.toId, fromSet);
+		}
+		initP.accept(acVisitor);
+		Set<String> allDeclAtoms = new HashSet<>(globalAtomNames);
+		Set<String> allUsedAtoms = new HashSet<>();
+		for (Component c : initP.comps.values()) {
+			allDeclAtoms.addAll(acVisitor.getDeclaringAtoms(c).keySet());
+			allUsedAtoms.addAll(acVisitor.getUsedAtoms(c).keySet());
+		}
+		for (String usedPred : allUsedAtoms) {
+			Set<String> potentialDeclPreds = InitVisitor.revert(usedPred, initP.comps.keySet(), reversePropagations);
+			boolean declFound = false;
+			for (String potentialDeclPred : potentialDeclPreds) {
+				if (allDeclAtoms.contains(potentialDeclPred)) {
+					declFound = true;
+					break;
+				}
+			}
+			if (!declFound)
+				throw new DeepDoopException("Predicate `" + usedPred + "` used but not declared");
+		}
+
+		// Final result
+		Program finalP = new Program(new Component(n.globalComp), null, null, null);
 		for (Component c : initP.comps.values()) finalP.globalComp.addAll(c);
 
 		// Handle propagations
-		for (Propagation prop : n.props) {
-			String fromCompName = n.inits.get(prop.fromId);
-			String toCompName   = n.inits.get(prop.toId);
-			Component fromComp  = initP.comps.get(fromCompName);
-			Component toComp    = initP.comps.get(toCompName);
+		for (Propagation prop : initP.props) {
+			String fromCompName = initP.inits.get(prop.fromId);
+			Component fromComp  = flatP.comps.get(fromCompName);
 
 			acVisitor = new AtomCollectorVisitor();
 			fromComp.accept(acVisitor);
@@ -82,6 +110,9 @@ public class FlatteningVisitor implements IVisitor {
 				finalP.globalComp.addRule(new Rule(new LogicalElement(head), body));
 			}
 		}
+
+		// Compute dependency graph for initialized components (and global predicates)
+		DependencyGraph g = new DependencyGraph(initP);
 
 		return finalP;
 	}

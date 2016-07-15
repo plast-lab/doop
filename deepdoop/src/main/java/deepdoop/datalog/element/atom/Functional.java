@@ -29,7 +29,7 @@ public class Functional implements IAtom {
 		v.enter(this);
 		Map<IVisitable, IVisitable> m = new HashMap<>();
 		for (IExpr e : keyExprs) m.put(e, e.accept(v));
-		m.put(valueExpr, valueExpr.accept(v));
+		if (valueExpr != null) m.put(valueExpr, valueExpr.accept(v));
 		return v.exit(this, m);
 	}
 

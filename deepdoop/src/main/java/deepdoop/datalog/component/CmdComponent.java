@@ -5,7 +5,9 @@ import deepdoop.actions.IVisitor;
 import deepdoop.datalog.DeepDoopException;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.element.atom.Directive;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class CmdComponent extends Component {
@@ -23,7 +25,7 @@ public class CmdComponent extends Component {
 		this.exports      = exports;
 	}
 	public CmdComponent(String name) {
-		this(name, null, null, null, new HashSet<>(), new HashSet<>());
+		this(name, new HashSet<>(), null, null, new HashSet<>(), new HashSet<>());
 	}
 
 	public String eval() { return eval; }
@@ -65,7 +67,10 @@ public class CmdComponent extends Component {
 
 	@Override
 	public IVisitable accept(IVisitor v) {
-		throw new RuntimeException("Handle this");
+		v.enter(this);
+		Map<IVisitable, IVisitable> m = new HashMap<>();
+		for (Declaration d : declarations) m.put(d, d.accept(v));
+		return v.exit(this, m);
 	}
 
 	@Override

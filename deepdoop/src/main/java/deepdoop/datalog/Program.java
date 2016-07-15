@@ -16,16 +16,16 @@ public class Program implements IVisitable {
 	public final Map<String, String>    inits;
 	public final Set<Propagation>       props;
 
+	public Program(Component globalComp, Map<String, Component> comps, Map<String, String> inits, Set<Propagation> props) {
+		this.globalComp = globalComp != null ? globalComp : new Component();
+		this.comps      = comps != null ? comps : new HashMap<>();
+		this.inits      = inits != null ? inits : new HashMap<>();
+		this.props      = props != null ? props : new HashSet<>();
+	}
 	public Program() {
-		comps = new HashMap<>();
-		inits = new HashMap<>();
-		props = new HashSet<>();
+		this(null, null, null, null);
 	}
 
-	public void setGlobalComp(Component globalComp) {
-		assert this.globalComp == null;
-		this.globalComp = globalComp;
-	}
 	public void addComp(Component comp) {
 		comps.put(comp.name, comp);
 	}
@@ -55,41 +55,4 @@ public class Program implements IVisitable {
 		for (Component c : comps.values()) joiner.add(c.toString());
 		return joiner.toString();
 	}
-
-//	public Component flatten() {
-//		// Check that all used predicates have a declaration/definition
-//		Map<String, Set<String>> reversePropsMap = new HashMap<>();
-//		for (Propagation prop : props) {
-//			Set<String> fromSet = reversePropsMap.get(prop.toId);
-//			if (fromSet == null) fromSet = new HashSet<>();
-//			fromSet.add(prop.fromId);
-//			reversePropsMap.put(prop.toId, fromSet);
-//		}
-//
-//		Set<String> allDeclAtoms = new HashSet<>(globalComp.getDeclaringAtoms().keySet());
-//		Set<String> allInAtoms = new HashSet<>();
-//		for (Component c : initComps.values()) {
-//			allDeclAtoms.addAll(c.getDeclaringAtoms().keySet());
-//			allInAtoms.addAll(c.getInputAtoms().keySet());
-//		}
-//		for (String inputPred : allInAtoms) {
-//			Set<String> potentialDeclPreds = Initializer.revert(inputPred, initComps.keySet(), reversePropsMap);
-//			boolean declFound = false;
-//			for (String potentialDeclPred : potentialDeclPreds)
-//				if (allDeclAtoms.contains(potentialDeclPred)) {
-//					declFound = true;
-//					break;
-//				}
-//			if (!declFound)
-//				throw new DeepDoopException("Predicate `" + inputPred + "` used but not declared");
-//		}
-//
-//
-//		// Compute dependency graph for initialized components (and global
-//		// predicates)
-//		DependencyGraph g = new DependencyGraph(props, initComps, globalComp);
-//
-//
-//		return complete;
-//	}
 }

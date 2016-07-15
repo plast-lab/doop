@@ -47,9 +47,9 @@ public class AtomCollectorVisitor implements IVisitor {
 	}
 
 
-	// TODO think about all cases that dont have one!!!
 	@Override
 	public Program exit(Program n, Map<IVisitable, IVisitable> m) {
+		// TODO
 		return n;
 	}
 
@@ -80,9 +80,11 @@ public class AtomCollectorVisitor implements IVisitor {
 	}
 	@Override
 	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> declMap  = new HashMap<>();
-		declMap.putAll(getDeclaringAtoms(n.head));
+		// Atoms used in the head, are declared in the rule
+		Map<String, IAtom> declMap = new HashMap<>();
+		declMap.putAll(getUsedAtoms(n.head));
 		_declAtoms.put(n, declMap);
+
 		Map<String, IAtom> usedMap = new HashMap<>();
 		usedMap.putAll(getUsedAtoms(n.head));
 		usedMap.putAll(getUsedAtoms(n.body));
@@ -92,6 +94,9 @@ public class AtomCollectorVisitor implements IVisitor {
 
 	@Override
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> declMap = new HashMap<>();
+		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
+		_declAtoms.put(n, declMap);
 //	@Override
 //	public Map<String, IAtom> getAtoms() {
 //		Map<String, IAtom> map = new HashMap<>();
@@ -99,43 +104,20 @@ public class AtomCollectorVisitor implements IVisitor {
 //		for (Declaration d : _declarations) map.putAll(d.getAtoms());
 //		return map;
 //	}
-//
-//	@Override
-//	public Map<String, IAtom> getDeclaringAtoms() {
-//		Map<String, IAtom> map = new HashMap<>();
-//		for (Declaration d : _declarations) map.putAll(d.getDeclaringAtoms());
-//		return map;
-//	}
 		return n;
 	}
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
-//
-//	@Override
-//	public Map<String, IAtom> getAtoms() {
-//		Map<String, IAtom> map = new HashMap<>();
-//		for (Declaration d : _declarations) map.putAll(d.getAtoms());
-//		for (Constraint c : _constraints)   map.putAll(c.getAtoms());
-//		for (Rule r : _rules)               map.putAll(r.getAtoms());
-//		return map;
-//	}
-//
-//	@Override
-//	public Map<String, IAtom> getDeclaringAtoms() {
-//		Map<String, IAtom> map = new HashMap<>();
-//		for (Declaration d : _declarations) map.putAll(d.getDeclaringAtoms());
-//		for (Rule r : _rules)               map.putAll(r.getDeclaringAtoms());
-//		return map;
-//	}
-//
-//	@Override
-//	public Map<String, IAtom> getUsedAtoms() {
-//		Map<String, IAtom> atoms = getAtoms();
-//		Map<String, IAtom> declaringAtoms = getDeclaringAtoms();
-//		atoms.keySet().removeAll(declaringAtoms.keySet());
-//		return atoms;
-//	}
+		Map<String, IAtom> declMap = new HashMap<>();
+		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
+		for (Rule r : n.rules)               declMap.putAll(getDeclaringAtoms(r));
+		_declAtoms.put(n, declMap);
 
+		Map<String, IAtom> usedMap = new HashMap<>();
+		for (Declaration d : n.declarations) usedMap.putAll(getUsedAtoms(d));
+		for (Constraint c : n.constraints)   usedMap.putAll(getUsedAtoms(c));
+		for (Rule r : n.rules)               usedMap.putAll(getUsedAtoms(r));
+		_usedAtoms.put(n, usedMap);
 		return n;
 	}
 

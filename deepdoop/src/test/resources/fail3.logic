@@ -1,4 +1,3 @@
-
 P(x) -> string(x).
 P("hello").
 
@@ -9,4 +8,4 @@ P("hello").
 
 .init S1 = Foo
 
-.propagate S1 . { * } to .global
+.propagate S1 { * } to .global
