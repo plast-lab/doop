@@ -17,13 +17,13 @@ import java.util.List;
  * @license MIT
  */
 
-class FactGenerator implements Runnable {
+class RunnableFactGenerator implements Runnable {
 
     private FactWriter _writer;
     private boolean _ssa;
     private List<SootClass> _sootClasses;
 
-    FactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
+    RunnableFactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
     {
         this._writer = writer;
         this._ssa = ssa;

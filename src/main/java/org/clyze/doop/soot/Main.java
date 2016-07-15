@@ -69,19 +69,16 @@ public class Main {
                 else if (args[i].equals("--ssa")) {
                     _ssa = true;
                 }
-                else if (args[i].equals("--android")) {
+                else if (args[i].equals("--android-jars")) {
+                    i = shift(args, i);
                     _allowPhantom = true;
                     _android = true;
+                    String _androidJars = args[i];
                     soot.options.Options.v().set_src_prec(5);
-                    soot.options.Options.v().set_android_jars("/home/anantoni/Android/Sdk/platforms/");
-                    List<String> process_dir = new ArrayList<>();
-                    soot.options.Options.v().set_allow_phantom_refs(true);
+                    soot.options.Options.v().set_android_jars(_androidJars);
                     soot.options.Options.v().set_ignore_resolution_errors(true);
                     soot.options.Options.v().set_whole_program(true);
-                    process_dir.add("/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk");
-                    soot.options.Options.v().set_process_dir(process_dir);
-                    _mode = Mode.FULL;
-                    _libraries.add(File.separator + "home" + File.separator + "anantoni" + File.separator + "Android" + File.separator + "Sdk" + File.separator + "platforms" + File.separator + "android-24" + File.separator  + "android.jar");
+                    soot.options.Options.v().set_process_dir(_inputs);
                 }
                 else if (args[i].equals("-l")) {
                     i = shift(args, i);
@@ -89,9 +86,9 @@ public class Main {
                 }
                 else if (args[i].equals("-lsystem")) {
                     String javaHome = System.getProperty("java.home");
-//                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-//                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-//                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
                 }
                 else if (args[i].equals("--deps")) {
                     i = shift(args, i);
@@ -210,7 +207,6 @@ public class Main {
         NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         NoSearchingDexProvider dexProvider = new NoSearchingDexProvider();
         _inputs = new ArrayList<>();
-        _inputs.add("/home/anantoni/AndroidStudioProjects/HelloWorld/app/build/outputs/apk/app-release-unsigned.apk");
         if (!_android) {
             for (String arg : _inputs) {
                 if (arg.endsWith(".jar") || arg.endsWith(".zip")) {

@@ -6,6 +6,7 @@ import org.clyze.doop.blox.BloxbatchScript
 import org.clyze.doop.blox.WorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
 
+import static java.io.File.*
 import static org.clyze.doop.system.CppPreprocessor.*
 
 import groovy.transform.TypeChecked
@@ -114,7 +115,7 @@ import org.apache.commons.logging.LogFactory
         this.id = id
         this.outDir = outDir
         this.cacheDir = cacheDir
-        this.name = name.replace(File.separator, "-")
+        this.name = name.replace(separator, "-")
         this.options = options
         this.ctx = ctx
         this.inputs = inputs
@@ -626,6 +627,7 @@ import org.apache.commons.logging.LogFactory
 
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
+
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
             inputs[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
@@ -638,12 +640,16 @@ import org.apache.commons.logging.LogFactory
 
         Collection<String> params = null;
 
-
-        if (platform == "java")
-            params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-        else
-            params = ["--full", "--keep-line-number"] + depArgs
-
+        switch(platform) {
+            case "java":
+                params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", options.PLATFORM_LIBS.value.toString() + separator + "Android" + separator + "Sdk" + separator + "platforms"]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
 
         if (options.SSA.value) {
             params = params + ["--ssa"]

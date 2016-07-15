@@ -270,11 +270,15 @@ public class SequentialFactGenerator
                 }
                 else if(stmt instanceof EnterMonitorStmt)
                 {
-                    _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle EnterMonitorStmt when op is not a Local?
+                    if (((EnterMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeEnterMonitor(m, stmt, (Local) ((EnterMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof ExitMonitorStmt)
                 {
-                    _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
+                    //TODO: how to handle ExitMonitorStmt when op is not a Local?
+                    if (((ExitMonitorStmt) stmt).getOp() instanceof Local)
+                        _writer.writeExitMonitor(m, stmt, (Local) ((ExitMonitorStmt) stmt).getOp(), session);
                 }
                 else if(stmt instanceof TableSwitchStmt)
                 {

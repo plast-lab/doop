@@ -36,8 +36,8 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the name of the analysis (short option: a)
         String name = cli.a
 
-        //Get the jars of the analysis (short option: j)
-        List<String> jars = cli.js
+        //Get the inputs of the analysis (short option: j)
+        List<String> inputs = cli.js
 
         //Get the id of the analysis (short option: id)
         String id = cli.id ?: null
@@ -45,7 +45,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(id, name, options, jars)
+        return newAnalysis(id, name, options, inputs)
     }
 
     /**
@@ -56,14 +56,14 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the name of the analysis
         String name = cli.a ?: props.getProperty("analysis")
 
-        //Get the jars of the analysis. If there are no jars in the CLI, we get them from the properties.
-        List<String> jars = cli.js
-        if (!jars) {
-            jars = props.getProperty("jar").split().collect { String s -> s.trim() }
-            //The jars, if relative, are being resolved via the propsBaseDir
-            jars = jars.collect { String jar ->
-                File f = new File(jar)
-                return f.isAbsolute() ? jar : new File(propsBaseDir, jar).getCanonicalFile().getAbsolutePath()
+        //Get the inputs of the analysis. If there are no inputs in the CLI, we get them from the properties.
+        List<String> inputs = cli.js
+        if (!inputs) {
+            inputs = props.getProperty("jar").split().collect { String s -> s.trim() }
+            //The inputs, if relative, are being resolved via the propsBaseDir
+            inputs = inputs.collect { String input ->
+                File f = new File(input)
+                return f.isAbsolute() ? input : new File(propsBaseDir, input).getCanonicalFile().getAbsolutePath()
             }
         }
 
@@ -74,7 +74,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli
         }
         Doop.overrideOptionsWithCLI(options, cli) { AnalysisOption option -> option.cli }
-        return newAnalysis(id, name, options, jars)
+        return newAnalysis(id, name, options, inputs)
     }
 
     /**
@@ -103,7 +103,8 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            j(longOpt: 'jar', INPUTS, args:Option.UNLIMITED_VALUES, argName: "jar")
+            j(longOpt: 'inputs', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputs")
+            i(longOpt: 'inputs', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputs")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
