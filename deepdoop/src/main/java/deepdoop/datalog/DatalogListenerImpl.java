@@ -19,7 +19,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-public class DatalogListenerImpl implements DatalogListener {
+public class DatalogListenerImpl extends DatalogBaseListener {
 
 	ParseTreeProperty<String>          _name;
 	ParseTreeProperty<List<String>>    _names;
@@ -266,32 +266,6 @@ public class DatalogListenerImpl implements DatalogListener {
 	public void visitErrorNode(ErrorNode node) {
 		throw new RuntimeException("Parsing error");
 	}
-	// TODO inherit from BaseListener so there is no need to define those
-	// Not used (for now) inherited methods - START
-	public void enterProgram(ProgramContext ctx) {}
-	public void exitProgram(ProgramContext ctx) {}
-	public void enterInit_(Init_Context ctx) {}
-	public void enterPropagate(PropagateContext ctx) {}
-	public void enterPredicateNameList(PredicateNameListContext ctx) {}
-	public void enterDatalog(DatalogContext ctx) {}
-	public void exitDatalog(DatalogContext ctx) {}
-	public void enterConstraint(ConstraintContext ctx) {}
-	public void enterRule_(Rule_Context ctx) {}
-	public void enterPredicate(PredicateContext ctx) {}
-	public void enterRuleBody(RuleBodyContext ctx) {}
-	public void enterAggregation(AggregationContext ctx) {}
-	public void enterRefmode(RefmodeContext ctx) {}
-	public void enterPredicateName(PredicateNameContext ctx) {}
-	public void enterConstant(ConstantContext ctx) {}
-	public void enterExpr(ExprContext ctx) {}
-	public void enterComparison(ComparisonContext ctx) {}
-	public void enterPredicateList(PredicateListContext ctx) {}
-	public void enterExprList(ExprListContext ctx) {}
-
-	public void enterEveryRule(ParserRuleContext ctx) {}
-	public void exitEveryRule(ParserRuleContext ctx) {}
-	public void visitTerminal(TerminalNode node) {}
-	// Not used (for now) inherited methods - END
 
 	static <T> T get(ParseTreeProperty<T> values, ParseTree node) {
 		T t = values.get(node);
