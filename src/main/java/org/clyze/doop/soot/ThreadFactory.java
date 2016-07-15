@@ -38,7 +38,7 @@ public class ThreadFactory {
 
     Runnable newRunnable(List<SootClass> sootClasses) {
         if (_makeClassGenerator)
-            return new FactGenerator(_factWriter, _ssa, sootClasses);
+            return new RunnableFactGenerator(_factWriter, _ssa, sootClasses);
         else
             return new FactPrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
     }

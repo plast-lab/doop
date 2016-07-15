@@ -127,9 +127,9 @@ import java.util.jar.JarFile
      * Creates a new analysis, verifying the correctness of its name, options and inputs using
      * the default input resolution mechanism.
      */
-    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputs) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
-        context.add(jars)
+        context.add(inputs)
         return newAnalysis(id, name, options, context)
     }
 
@@ -224,26 +224,22 @@ import java.util.jar.JarFile
      * Generates a list of the platform library link arguments for soot
      */
     protected List<String> platformLinkArgs(Map<String, AnalysisOption> options) {
-        System.out.println("PLATFORM option: " + options.PLATFORM.value)
-
         def platformOfChoice = options.PLATFORM.value.toString().tokenize("_")
         assert platformOfChoice.size() == 2
         def (platform, version) = [platformOfChoice[0], platformOfChoice[1].toInteger()]
         assert platform == "android" || platform == "java"
         assert version instanceof Integer
-        println "PLATFORM: " + platform + " VERSION: " + version
-
 
         switch(platform) {
             case "java":
-                String path = "${options.PLATFORM_LIBS.value}/jre1.${version}/lib"
+                String path = "${options.PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
                 switch(version) {
-                    case "1.3":
+                    case "3":
                         return Helper.checkFiles(["${path}/rt.jar".toString()])
-                    case "1.4":
-                    case "1.5":
-                    case "1.6":
-                    case "1.7":
+                    case "4":
+                    case "5":
+                    case "6":
+                    case "7":
                         return Helper.checkFiles(["${path}/rt.jar".toString(),
                                                   "${path}/jce.jar".toString(),
                                                   "${path}/jsse.jar".toString()])
@@ -254,9 +250,13 @@ import java.util.jar.JarFile
                 */
                         return []
                 }
+                break
             case "android":
                 String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
                 return Helper.checkFiles(["${path}/android.jar".toString()])
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
         }
     }
 
@@ -383,7 +383,7 @@ import java.util.jar.JarFile
         checkPlatformLibs(vars)
         //Check the value of the JRE_LIB option (it should point to the platform libs directory)
         String externals = options.PLATFORM_LIBS.value
-        Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
+        Helper.checkDirectoryOrThrowException(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
 
         checkOS(vars)
 
@@ -449,12 +449,7 @@ import java.util.jar.JarFile
         assert platformLibsValue.size() == 2
         def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
         assert platform == "android" || platform == "java"
-        println "PLATFORM: " + platform + " VERSION: " + version
-//        if (platformLibsValue == "system")
-//            platformLibsValue = System.getProperty("java.specification.version")
-
         logger.debug "Verifying platform version: $platformLibsValue"
-
 
         JRE jreVersion
         ANDROID androidVersion
@@ -491,6 +486,30 @@ import java.util.jar.JarFile
                 switch (version) {
                     case "24":
                         androidVersion = ANDROID.ANDROID24
+                        break
+                    case "23":
+                        androidVersion = ANDROID.ANDROID23
+                        break
+                    case "22":
+                        androidVersion = ANDROID.ANDROID22
+                        break
+                    case "21":
+                        androidVersion = ANDROID.ANDROID21
+                        break
+                    case "20":
+                        androidVersion = ANDROID.ANDROID20
+                        break
+                    case "19":
+                        androidVersion = ANDROID.ANDROID19
+                        break
+                    case "18":
+                        androidVersion = ANDROID.ANDROID18
+                        break
+                    case "17":
+                        androidVersion = ANDROID.ANDROID17
+                        break
+                    case "16":
+                        androidVersion = ANDROID.ANDROID16
                         break
                     default:
                         throw new RuntimeException("Invalid Android version: $version")
