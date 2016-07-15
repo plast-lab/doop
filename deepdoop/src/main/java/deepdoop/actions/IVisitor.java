@@ -50,6 +50,8 @@ public interface IVisitor {
 	default Primitive exit(Primitive n, Map<IVisitable, IVisitable> m)                   { return n; }
 	default void enter(RefMode n)                                                        {}
 	default RefMode exit(RefMode n, Map<IVisitable, IVisitable> m)                       { return n; }
+	default void enter(StubAtom n)                                                       {}
+	default StubAtom exit(StubAtom n, Map<IVisitable, IVisitable> m)                     { return n; }
 
 	default void enter(BinaryExpr n)                                                     {}
 	default BinaryExpr exit(BinaryExpr n, Map<IVisitable, IVisitable> m)                 { return n; }

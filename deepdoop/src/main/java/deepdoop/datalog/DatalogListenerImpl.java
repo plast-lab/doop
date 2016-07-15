@@ -125,7 +125,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		IExpr       expr     = get(_expr, ctx.expr());
 		String      capacity = (ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText());
 		String      stage    = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText());
-		String      backtick = (ctx.BACKTICK() == null ? null : get(_name, ctx.predicateName(1)));
+		StubAtom    backtick = (ctx.BACKTICK() == null ? null : new StubAtom(get(_name, ctx.predicateName(1))));
 
 		boolean     isRefMode    = (ctx.predicateName(0) == null);
 		boolean     isFunctional = hasToken(ctx, "[");

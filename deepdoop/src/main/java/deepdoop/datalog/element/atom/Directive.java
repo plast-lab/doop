@@ -5,20 +5,20 @@ import deepdoop.actions.IVisitor;
 import deepdoop.datalog.expr.ConstantExpr;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Directive implements IAtom {
 
 	public final String       name;
-	public final String       backtick;
+	public final StubAtom     backtick;
 	public final ConstantExpr constant;
 	public final boolean      isPredicate;
 
 	int                       _arity;
 
-	public Directive(String name, String backtick) {
+	public Directive(String name, StubAtom backtick) {
 		assert backtick != null;
 		this.name         = name;
 		this.backtick     = backtick;
@@ -26,7 +26,7 @@ public class Directive implements IAtom {
 		this.isPredicate  = true;
 		this._arity       = 1;
 	}
-	public Directive(String name, String backtick, ConstantExpr constant) {
+	public Directive(String name, StubAtom backtick, ConstantExpr constant) {
 		this.name         = name;
 		this.backtick     = backtick;
 		this.constant     = constant;
@@ -37,13 +37,10 @@ public class Directive implements IAtom {
 	@Override
 	public IVisitable accept(IVisitor v) {
 		v.enter(this);
-		// TODO must revisit Directives (e.g. backticks)
-		if (constant != null) {
-			Map<IVisitable, IVisitable> m =
-				Collections.singletonMap(constant, constant.accept(v));
-			return v.exit(this, m);
-		}
-		return v.exit(this, null);
+		Map<IVisitable, IVisitable> m = new HashMap<>();
+		if (backtick != null) m.put(backtick, backtick.accept(v));
+		if (constant != null) m.put(constant, constant.accept(v));
+		return v.exit(this, m);
 	}
 
 	@Override
@@ -61,7 +58,7 @@ public class Directive implements IAtom {
 
 	@Override
 	public String toString() {
-		String middle = (backtick != null ? "`" + backtick : "");
+		String middle = (backtick != null ? "`" + backtick.name : "");
 		if (isPredicate)
 			return name + "(" + middle + ")";
 		else

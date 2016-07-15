@@ -61,10 +61,10 @@ public class InitVisitor implements IVisitor {
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
 		Set<Declaration> newDeclarations = new HashSet<>();
 		for (Declaration d : n.declarations) newDeclarations.add((Declaration) m.get(d));
-		Set<String> newImports = new HashSet<>();
-		for (String pred : n.imports) newImports.add(name(pred));
-		Set<String> newExports = new HashSet<>();
-		for (String pred : n.exports) newExports.add(name(pred));
+		Set<StubAtom> newImports = new HashSet<>();
+		for (StubAtom p : n.imports) newImports.add((StubAtom) m.get(p));
+		Set<StubAtom> newExports = new HashSet<>();
+		for (StubAtom p : n.exports) newExports.add((StubAtom) m.get(p));
 		return new CmdComponent(_id, newDeclarations, n.eval, n.dir, newImports, newExports);
 	}
 	@Override
@@ -101,12 +101,10 @@ public class InitVisitor implements IVisitor {
 
 	@Override
 	public Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
-		if (n.backtick == null)
-			return n;
-		else if (n.isPredicate)
-			return new Directive(n.name, name(n.backtick));
+		if (n.isPredicate)
+			return new Directive(n.name, (StubAtom) m.get(n.backtick));
 		else
-			return new Directive(n.name, name(n.backtick), n.constant);
+			return new Directive(n.name, (StubAtom) m.get(n.backtick), (ConstantExpr) m.get(n.constant));
 	}
 	@Override
 	public Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
@@ -127,6 +125,10 @@ public class InitVisitor implements IVisitor {
 	@Override
 	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) {
 		return new RefMode(name(n.name), stage(n.stage), (VariableExpr) m.get(n.entityVar), (IExpr) m.get(n.valueExpr));
+	}
+	@Override
+	public StubAtom exit(StubAtom n, Map<IVisitable, IVisitable> m) {
+		return new StubAtom(name(n.name));
 	}
 
 
