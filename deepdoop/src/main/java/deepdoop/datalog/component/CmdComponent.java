@@ -5,6 +5,7 @@ import deepdoop.actions.IVisitor;
 import deepdoop.datalog.DeepDoopException;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.element.atom.Directive;
+import deepdoop.datalog.element.atom.StubAtom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -12,12 +13,12 @@ import java.util.Set;
 
 public class CmdComponent extends Component {
 
-	public String             eval;
-	public String             dir;
-	public final Set<String>  exports;
-	public final Set<String>  imports;
+	public String              eval;
+	public String              dir;
+	public final Set<StubAtom> exports;
+	public final Set<StubAtom> imports;
 
-	public CmdComponent(String name, Set<Declaration> declarations, String eval, String dir, Set<String> imports, Set<String> exports) {
+	public CmdComponent(String name, Set<Declaration> declarations, String eval, String dir, Set<StubAtom> imports, Set<StubAtom> exports) {
 		super(name, null, declarations, new HashSet<>(), new HashSet<>());
 		this.eval         = eval;
 		this.dir          = dir;
@@ -53,9 +54,9 @@ public class CmdComponent extends Component {
 					   if (eval != null) throw new DeepDoopException("EVAL property is already specified in command block `" + this.name + "`");
 					   eval = (String) d.constant.value; break;
 			case "lang:cmd:export":
-					   exports.add(d.backtick + ":past"); break;
+					   exports.add(new StubAtom(d.backtick.name + ":past")); break;
 			case "lang:cmd:import":
-					   imports.add(d.backtick); break;
+					   imports.add(new StubAtom(d.backtick.name)); break;
 			default               :
 					   throw new DeepDoopException("Invalid directive in command block `" + name + "`");
 		}
@@ -69,6 +70,8 @@ public class CmdComponent extends Component {
 	public IVisitable accept(IVisitor v) {
 		v.enter(this);
 		Map<IVisitable, IVisitable> m = new HashMap<>();
+		for (StubAtom p : exports)         m.put(p, p.accept(v));
+		for (StubAtom p : imports)         m.put(p, p.accept(v));
 		for (Declaration d : declarations) m.put(d, d.accept(v));
 		return v.exit(this, m);
 	}
@@ -76,8 +79,8 @@ public class CmdComponent extends Component {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		for (String p : exports)           builder.append(p + "\n");
-		for (String p : imports)           builder.append(p + "\n");
+		for (StubAtom p : exports)         builder.append(p + "\n");
+		for (StubAtom p : imports)         builder.append(p + "\n");
 		for (Declaration d : declarations) builder.append(d + "\n");
 		return builder.toString();
 	}
