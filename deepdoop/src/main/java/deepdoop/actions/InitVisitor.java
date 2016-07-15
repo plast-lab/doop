@@ -152,26 +152,28 @@ public class InitVisitor implements IVisitor {
 	}
 
 
-	// S1:P0 -> P0
-	// S3:P1:past -> S1:P1, S2:P1 when S1 and S2 propagate P1 to S3
-	// A list is needed for cases like the second one
-	public static Set<String> revert(String name, Set<String> initIds, Map<String, Set<String>> reversePropsMap) {
+	// P0 -> P0
+	// S1:P1 -> S1:P1
+	// S3:P2:past -> S1:P2, S2:P2 when S1 and S2 propagate to S3
+	public static Set<String> revert(String name, Set<String> initIds, Map<String, Set<String>> reversePropagations) {
+		if (!name.endsWith(":past")) return Collections.singleton(name);
+
 		int i = name.indexOf(':');
 		if (i == -1) return Collections.singleton(name);
 
 		String id = name.substring(0, i);
-		String newName = name.substring(i+1, name.length());
+		String subName = name.substring(i+1, name.length());
 
-		if (newName.endsWith(":past") && reversePropsMap.get(id) != null) {
-			newName = newName.substring(0, newName.lastIndexOf(":past"));
-			Set<String> fromSet = reversePropsMap.get(id);
+		if (reversePropagations.get(id) != null) {
+			subName = subName.substring(0, subName.lastIndexOf(":past"));
+			Set<String> fromSet = reversePropagations.get(id);
 			Set<String> result = new HashSet<>();
 			for (String fromId : fromSet) {
-				result.add(fromId + ":" + newName);
+				result.add(fromId + ":" + subName);
 			}
 			return result;
 		}
 		else
-			return Collections.singleton(newName);
+			return Collections.singleton(subName);
 	}
 }

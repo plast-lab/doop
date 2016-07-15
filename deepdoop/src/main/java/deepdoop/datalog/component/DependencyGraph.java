@@ -1,6 +1,7 @@
 package deepdoop.datalog.component;
 
 import deepdoop.actions.AtomCollectorVisitor;
+import deepdoop.datalog.Program;
 import deepdoop.datalog.DeepDoopException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,11 +13,11 @@ public class DependencyGraph {
 
 	Map<String, Node> _nodes;
 
-	public DependencyGraph(Set<Propagation> props, Map<String, Component> initComps, Component globalComp) {
+	public DependencyGraph(Program p) {
 		_nodes = new HashMap<>();
 
 		AtomCollectorVisitor acVisitor = new AtomCollectorVisitor();
-		for (Propagation prop : props) {
+		for (Propagation prop : p.props) {
 			Node fromNode = getNode(prop.fromId, false);
 
 			if (prop.toId != null)
@@ -27,7 +28,7 @@ public class DependencyGraph {
 					fromNode.addEdgeTo(getNode(predName, true));
 
 			// Dependencies *from* global space
-			Component fromComp = initComps.get(prop.fromId);
+			Component fromComp = p.comps.get(prop.fromId);
 			fromComp.accept(acVisitor);
 			for (String globalAtom : acVisitor.getUsedAtoms(fromComp).keySet())
 				getNode(globalAtom, true).addEdgeTo(fromNode);

@@ -36,4 +36,4 @@ Q("hello", 0).
 
 Pred(x) <- W(x).
 
-S2:Z@past(x) <- S1:P1(x).
+//S2:Z@past(x) <- S1:P1(x).

@@ -37,9 +37,13 @@ public class Directive implements IAtom {
 	@Override
 	public IVisitable accept(IVisitor v) {
 		v.enter(this);
-		Map<IVisitable, IVisitable> m =
-			Collections.singletonMap(constant, constant.accept(v));
-		return v.exit(this, m);
+		// TODO must revisit Directives (e.g. backticks)
+		if (constant != null) {
+			Map<IVisitable, IVisitable> m =
+				Collections.singletonMap(constant, constant.accept(v));
+			return v.exit(this, m);
+		}
+		return v.exit(this, null);
 	}
 
 	@Override

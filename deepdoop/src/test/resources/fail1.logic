@@ -17,7 +17,7 @@ P("hello").
 .init S2 = Bar
 .init S3 = Baz
 
-.propagate S1 . { * } to S2
-.propagate S2 . { * } to S3
-.propagate S3 . { * } to S1
-.propagate S3 . { P3 } to .global
+.propagate S1 { * } to S2
+.propagate S2 { * } to S3
+.propagate S3 { * } to S1
+.propagate S3 { P3 } to .global

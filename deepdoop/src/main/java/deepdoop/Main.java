@@ -4,6 +4,7 @@ import deepdoop.actions.FlatteningVisitor;
 import deepdoop.datalog.DatalogLexer;
 import deepdoop.datalog.DatalogListenerImpl;
 import deepdoop.datalog.DatalogParser;
+import deepdoop.datalog.Program;
 import java.io.IOException;
 import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -22,7 +23,8 @@ public class Main {
 
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program());
 
-			System.out.println(listener.getProgram().accept(new FlatteningVisitor()));
+			Program p = listener.getProgram();
+			System.out.println(p.accept(new FlatteningVisitor(p.comps)));
 
 		} catch (IOException e) {
 			e.printStackTrace();
