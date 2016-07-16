@@ -1443,8 +1443,8 @@
   AccessPath_IsCollection(?ap) :-
      ?ap = [?base, nil],
      Var_Type(?base, ?type),
-     ArrayType(?type).
-     
+     (ArrayType(?type);
+      LibraryCollectionType(?type)).
     
   // // *MustAlias*
   // // Access path expansion factory. Trivial but avoids repeat expensive
@@ -1497,11 +1497,107 @@
   //// END context management
   //// ====================================  
 
+// //// ====================================
+// //// BEGIN special handling of collections.
+// ////  Not entirely self-contained. Some logic in frame rules as well.
+
+// collection loads and stores. For arrays and library collections.
+// initialize arrays and library collections to null at allocation
+//RecordMacroMay(?ctx, ?heap, ?hctx),
+AccessPathMayPointTo(?hctx, ?nullHeap, [?to, nil], ?ctx, ?insn) :-
+   AssignHeapAllocation(?arrayHeap, ?to, ?inMeth),
+   MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+   HeapAllocation_Type(?arrayHeap, ?type),
+   (ArrayType(?type); LibraryCollectionType(?type)),
+   AssignInstruction_To(?insn, ?to),
+   HeapAllocation_Null(?nullHeap),
+   EmptyHeapContext(?hctxArray),
+   EmptyHeapContext(?hctx).
+
+
+.decl LibraryCollectionRoot(?type:Type)
+.decl LibraryCollectionType(?type:Type)
+LibraryCollectionRoot(?type) :-
+   ?type = "java.util.AbstractCollection";
+   ?type = "java.util.AbstractMap".
+LibraryCollectionType(?type) :-
+   SubtypeOf(?type, ?collRoot),
+   LibraryCollectionRoot(?collRoot).
 }  // END .comp SoundMay
 
 
-//// POINT2---IgnorableMethodInvocation to go here
+/*
 
+//// TODO: model iterators
+LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
+LibraryCollectionStoreOperation(?invo) :-
+   VirtualMethodInvocation_SimpleName(?invo, "add"); 
+   VirtualMethodInvocation_SimpleName(?invo, "push"); 
+   VirtualMethodInvocation_SimpleName(?invo, "set"); 
+   VirtualMethodInvocation_SimpleName(?invo, "put").
+LibraryCollectionLoadOperation(?invo) :-
+   VirtualMethodInvocation_SimpleName(?invo, "peek"),
+   VirtualMethodInvocation_SimpleName(?invo, "pop"),
+   VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
+   VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
+   VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
+   VirtualMethodInvocation_SimpleName(?invo, "remove"),
+   VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
+
+StoreCollection_From(?insn, ?from) :-
+   StoreArrayIndex_From(?insn, ?from).
+StoreCollection_From(?invo, ?from) :-
+   LibraryCollectionStoreOperation(?invo),
+   (ActualParam(1, ?invo, ?from);
+    ActualParam(2, ?invo, ?from)).
+
+StoreCollection_Base(?insn, ?var) :-
+   StoreArrayIndex_Base(?insn, ?var).
+StoreCollection_Base(?invo, ?var) :-
+   LibraryCollectionStoreOperation(?invo),
+   VirtualMethodInvocation_Base(?invo, ?var).
+
+CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) :-
+   MayPointTo(?hctx, ?heap, ?ctx, ?from),
+   StoreCollection_From(?insn, ?from).
+
+TentativeCollectionBaseApMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+   StoreCollection_Base(?insn, ?base),
+   AccessPath_ByCollectionVar(?base, ?ap).
+
+// store instructions, weak update of AccessPathMayPointTo info! Need
+// to know over-estimate to add more. Also propagate existing.
+AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
+   TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+   Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
+
+// now loads
+LoadCollection_To(?insn, ?to) :-
+   LoadArrayIndex_To(?insn, ?to).
+LoadCollection_To(?invo, ?to) :-
+   LibraryCollectionLoadOperation(?invo),
+   AssignReturnValue(?invo, ?to).
+
+LoadCollection_Base(?insn, ?var) :-
+   LoadArrayIndex_Base(?insn, ?var).
+LoadCollection_Base(?invo, ?var) :-
+   LibraryCollectionLoadOperation(?invo),
+   VirtualMethodInvocation_Base(?invo, ?var).
+
+MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
+   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   LoadCollection_To(?insn, ?to),
+   LoadCollection_Base(?insn, ?base),
+   AccessPath_ByCollectionVarInv(?ap, ?base).
+
+// //// END handling of collections
+// //// ====================================
+*/
+
+//// POINT2---IgnorableMethodInvocation to go here
 
 //// ====================================
 //// BEGIN Must-Alias code
@@ -1555,7 +1651,7 @@
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth(4).
+MaxMayContextDepth(5).
 
 AccessPath_MaxLength(3).
 
@@ -1636,9 +1732,9 @@ FirstInstructionOfMethod(?meth, ?firstInsn) :-
   Instruction_Index(?firstInsn, 1),
   !IsJumpTarget(?firstInsn).
 
-.decl IgnorableMethodInvocation(?insn:Instruction)
-.decl IgnorableForNonCollectionsMethodInvocation(?insn:Instruction)
-.decl IgnorableForStaticsMethodInvocation(?insn:Instruction)
+.decl IgnorableMethodInvocation(?invo:MethodInvocationInsn)
+.decl IgnorableForNonCollectionsMethodInvocation(?invo:MethodInvocationInsn)
+.decl IgnorableForStaticsMethodInvocation(?invo:MethodInvocationInsn)
 
 .decl StoreInstruction(?insn:Instruction)
 StoreInstruction(?insn) :-
@@ -1762,104 +1858,6 @@ _FieldRefModeLastTokenIndex(?ref, ?maxIdx) :-
    string_split[?ref, "/", ?idx] = _.
 */
 
-/*
-// //// ====================================
-// //// BEGIN special handling of collections.
-// ////  Not entirely self-contained. Some logic in frame rules as well.
-
-// collection loads and stores. For arrays and library collections.
-// initialize arrays and library collections to null at allocation
-//RecordMacroMay(?ctx, ?heap, ?hctx),
-AccessPath(?ap),
-AccessPath_ByCollectionVar(?to, ?ap),
-AccessPath_Length(?ap, 1),
-AccessPathMayPointTo(?hctx, ?nullHeap, ?ap, ?ctx, ?insn) :-
-   AssignHeapAllocation_Heap(?insn, ?arrayHeap),
-   AssignInstruction_To(?insn, ?to),
-   HeapAllocation_Type(?arrayHeap, ?type),
-   (ArrayType(?type); LibraryCollectionType(?type)),
-   Instruction_Method(?insn, ?inMeth),
-   MayReachableMethodUnderMayContext(?ctx, ?inMeth),
-   HeapAllocation_Null(?nullHeap),
-   EmptyHeapContext(?hctxArray),
-   EmptyHeapContext(?hctx).
-
-LibraryCollectionRoot(?type) :-
-   Type(?type),
-   (Type_fqn(?type:"java.util.AbstractCollection");
-    Type_fqn(?type:"java.util.AbstractMap")).   
-LibraryCollectionType(?type) :-
-   Superclass(?type, ?collRoot),
-   LibraryCollectionRoot(?collRoot).
-
-//// TODO: model iterators
-LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
-LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
-LibraryCollectionStoreOperation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "add"); 
-   VirtualMethodInvocation_SimpleName(?invo, "push"); 
-   VirtualMethodInvocation_SimpleName(?invo, "set"); 
-   VirtualMethodInvocation_SimpleName(?invo, "put").
-LibraryCollectionLoadOperation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "peek"),
-   VirtualMethodInvocation_SimpleName(?invo, "pop"),
-   VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
-   VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
-   VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
-   VirtualMethodInvocation_SimpleName(?invo, "remove"),
-   VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
-
-StoreCollection_From(?insn, ?from) :-
-   StoreArrayIndex_From(?insn, ?from).
-StoreCollection_From(?invo, ?from) :-
-   LibraryCollectionStoreOperation(?invo),
-   (ActualParam(1, ?invo, ?from);
-    ActualParam(2, ?invo, ?from)).
-
-StoreCollection_Base(?insn, ?var) :-
-   StoreArrayIndex_Base(?insn, ?var).
-StoreCollection_Base(?invo, ?var) :-
-   LibraryCollectionStoreOperation(?invo),
-   VirtualMethodInvocation_Base(?invo, ?var).
-
-CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) :-
-   MayPointTo(?hctx, ?heap, ?ctx, ?from),
-   StoreCollection_From(?insn, ?from).
-
-TentativeCollectionBaseApMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
-   StoreCollection_Base(?insn, ?base),
-   AccessPath_ByCollectionVar(?base, ?ap).
-
-// store instructions, weak update of AccessPathMayPointTo info! Need
-// to know over-estimate to add more. Also propagate existing.
-AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
-   TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
-   Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
-
-// now loads
-LoadCollection_To(?insn, ?to) :-
-   LoadArrayIndex_To(?insn, ?to).
-LoadCollection_To(?invo, ?to) :-
-   LibraryCollectionLoadOperation(?invo),
-   AssignReturnValue(?invo, ?to).
-
-LoadCollection_Base(?insn, ?var) :-
-   LoadArrayIndex_Base(?insn, ?var).
-LoadCollection_Base(?invo, ?var) :-
-   LibraryCollectionLoadOperation(?invo),
-   VirtualMethodInvocation_Base(?invo, ?var).
-
-MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-   LoadCollection_To(?insn, ?to),
-   LoadCollection_Base(?insn, ?base),
-   AccessPath_ByCollectionVarInv(?ap, ?base).
-
-// //// END handling of collections
-// //// ====================================
-*/
 
 /*
   ///// POINT1--unchanged access paths code
@@ -1907,7 +1905,6 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
 */
 
 
-/*
 //// Enter at POINT2---IgnorableMethodInvocation 
 //// ====================================
 //// BEGIN configuration of ignorable method calls
@@ -1917,9 +1914,6 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
 // called in the constructor of a (ubiquitous) java.lang.Throwable. If
 // not ignored, no image of the heap propagates anywhere.
 // TODO: do a better match (on full sig) than just on SimpleName.
-IgnorableMethodInvocation(?invo) -> MethodInvocation(?invo).
-IgnorableForStaticsMethodInvocation(?invo) -> MethodInvocation(?invo).
-IgnorableForNonCollectionsMethodInvocation(?invo) -> MethodInvocation(?invo).
 
 IgnorableMethodInvocation(?invo) :-
    VirtualMethodInvocation_SimpleName(?invo, "fillInStackTrace"); // Throwable
@@ -1984,11 +1978,12 @@ IgnorableForStaticsMethodInvocation(?invo) :-
    VirtualMethodInvocation_SimpleName(?invo, "clone"); // Object
    VirtualMethodInvocation_SimpleName(?invo, "append"). // StringBuilder
 
-IgnorableForNonCollectionsMethodInvocation(?invo) :-
-   LibraryCollectionStoreOperation(?invo);
-   LibraryCollectionLoadOperation(?invo).
+// // *Collections*
+// IgnorableForNonCollectionsMethodInvocation(?invo) :-
+//   LibraryCollectionStoreOperation(?invo);
+//   LibraryCollectionLoadOperation(?invo).
 
-
+.decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocationInsn, ?simplename:String)
 StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
    MethodInvocation_Signature(?invocation, ?signature),
    StaticMethodInvocation_Insn(?invocation),
@@ -1996,7 +1991,6 @@ StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
 
 //// END configuration of ignorable method calls
 
-*/
 
 
 /*
