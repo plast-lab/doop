@@ -1,6 +1,6 @@
 package deepdoop;
 
-import deepdoop.actions.FlatteningVisitor;
+import deepdoop.actions.*;
 import deepdoop.datalog.DatalogLexer;
 import deepdoop.datalog.DatalogListenerImpl;
 import deepdoop.datalog.DatalogParser;
@@ -24,7 +24,13 @@ public class Main {
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program());
 
 			Program p = listener.getProgram();
-			System.out.println(p.accept(new FlatteningVisitor(p.comps)));
+
+			PostOrderVisitor<IVisitable> v;
+			v = new PostOrderVisitor<>(new FlatteningActor(p.comps));
+			Program flatP = (Program) p.accept(v);
+			v = new InitVisitingActor();
+			Program initP = (Program) flatP.accept(v);
+			System.out.println(initP);
 
 		} catch (IOException e) {
 			e.printStackTrace();

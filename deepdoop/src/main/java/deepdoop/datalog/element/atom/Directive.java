@@ -1,13 +1,10 @@
 package deepdoop.datalog.element.atom;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.expr.ConstantExpr;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Directive implements IAtom {
 
@@ -35,15 +32,6 @@ public class Directive implements IAtom {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		if (backtick != null) m.put(backtick, backtick.accept(v));
-		if (constant != null) m.put(constant, constant.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String name() { return name; }
 	@Override
 	public String stage() { return null; }
@@ -63,5 +51,11 @@ public class Directive implements IAtom {
 			return name + "(" + middle + ")";
 		else
 			return name + "[" + middle + "] = " + constant;
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

@@ -12,13 +12,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class AtomCollectorVisitor implements IVisitor {
+public class AtomCollectingActor implements IActor<IVisitable> {
 
 	Map<IVisitable, Map<String, IAtom>> _declAtoms;
 	Map<IVisitable, Map<String, IAtom>> _usedAtoms;
 	Map<IVisitable, Map<String, IAtom>> _allAtoms;
 
-	public AtomCollectorVisitor() {
+	public AtomCollectingActor() {
 		_declAtoms = new HashMap<>();
 		_usedAtoms = new HashMap<>();
 		_allAtoms  = new HashMap<>();
@@ -49,7 +49,16 @@ public class AtomCollectorVisitor implements IVisitor {
 
 	@Override
 	public Program exit(Program n, Map<IVisitable, IVisitable> m) {
-		// TODO
+		Map<String, IAtom> declMap = new HashMap<>();
+		Map<String, IAtom> usedMap = new HashMap<>();
+		declMap.putAll(getDeclaringAtoms(n.globalComp));
+		usedMap.putAll(getUsedAtoms(n.globalComp));
+		for (Component c : n.comps.values()) {
+			declMap.putAll(getDeclaringAtoms(c));
+			usedMap.putAll(getUsedAtoms(c));
+		}
+		_declAtoms.put(n, declMap);
+		_usedAtoms.put(n, usedMap);
 		return n;
 	}
 

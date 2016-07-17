@@ -1,11 +1,8 @@
 package deepdoop.datalog.expr;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.element.atom.Functional;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class FunctionalHeadExpr implements IExpr {
 
@@ -20,15 +17,13 @@ public class FunctionalHeadExpr implements IExpr {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m =
-			Collections.singletonMap(functional, functional.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		return functional.toString();
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

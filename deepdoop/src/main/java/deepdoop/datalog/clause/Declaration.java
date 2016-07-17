@@ -6,9 +6,7 @@ import deepdoop.datalog.element.atom.IAtom;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 
@@ -35,18 +33,15 @@ public class Declaration implements IVisitable {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		m.put(atom, atom.accept(v));
-		for (IAtom t : types) m.put(t, t.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IAtom t : types) joiner.add(t.toString());
 		return atom + " -> " + joiner + ".";
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

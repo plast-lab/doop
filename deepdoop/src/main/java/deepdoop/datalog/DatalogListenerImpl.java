@@ -1,7 +1,6 @@
 package deepdoop.datalog;
 
 import static deepdoop.datalog.DatalogParser.*;
-import deepdoop.actions.FlatteningVisitor;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
@@ -108,8 +107,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(LogicType.AND, new HashSet<>(get(_atoms, ctx.predicateList())));
 			IElement body = get(_elem, ctx.ruleBody());
-			if (body != null)
-				body = (IElement) body.accept(new FlatteningVisitor());
 			_currComp.addRule(new Rule(head, body));
 		} else {
 			LogicalElement head = new LogicalElement(get(_elem, ctx.predicate()));

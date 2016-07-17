@@ -1,12 +1,9 @@
 package deepdoop.datalog.element;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.BinOperator;
 import deepdoop.datalog.expr.BinaryExpr;
 import deepdoop.datalog.expr.IExpr;
-import java.util.Collections;
-import java.util.Map;
 
 public class ComparisonElement implements IElement {
 
@@ -20,15 +17,13 @@ public class ComparisonElement implements IElement {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m =
-			Collections.singletonMap(expr, expr.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		return expr.toString();
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

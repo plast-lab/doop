@@ -1,10 +1,7 @@
 package deepdoop.datalog.expr;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.BinOperator;
-import java.util.HashMap;
-import java.util.Map;
 
 public class BinaryExpr implements IExpr {
 
@@ -19,16 +16,13 @@ public class BinaryExpr implements IExpr {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		m.put(left, left.accept(v));
-		m.put(right, right.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		return left + " " + op + " " + right;
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

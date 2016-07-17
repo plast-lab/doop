@@ -3,9 +3,7 @@ package deepdoop.datalog.component;
 import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.clause.*;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class Component implements IVisitable {
@@ -56,16 +54,6 @@ public class Component implements IVisitable {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		for (Declaration d : declarations) m.put(d, d.accept(v));
-		for (Constraint c : constraints)   m.put(c, c.accept(v));
-		for (Rule r : rules)               m.put(r, r.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		for (Declaration d : declarations) builder.append(d + "\n");
@@ -74,11 +62,9 @@ public class Component implements IVisitable {
 		return builder.toString();
 	}
 
-	//void TEST() {
-	//	System.out.println(name);
-	//	System.out.println("Atoms: " + getAtoms().keySet().toString());
-	//	System.out.println("DeclAtoms: " + getDeclaringAtoms().keySet().toString());
-	//	System.out.println("InputAtoms: " + getInputAtoms().keySet().toString());
-	//	System.out.println("\n");
-	//}
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
+	}
 }

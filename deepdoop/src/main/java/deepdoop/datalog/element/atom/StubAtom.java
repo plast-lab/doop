@@ -1,6 +1,5 @@
 package deepdoop.datalog.element.atom;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.expr.VariableExpr;
 import java.lang.UnsupportedOperationException;
@@ -17,12 +16,6 @@ public class StubAtom implements IAtom {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		return v.exit(this, null);
-	}
-
-	@Override
 	public String name() { return name; }
 	@Override
 	public String stage() { return null; }
@@ -35,7 +28,12 @@ public class StubAtom implements IAtom {
 
 	@Override
 	public String toString() {
-		//return name;
 		return "STUB: " + name;
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

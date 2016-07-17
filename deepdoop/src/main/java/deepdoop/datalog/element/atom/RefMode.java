@@ -1,13 +1,10 @@
 package deepdoop.datalog.element.atom;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.expr.IExpr;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RefMode implements IAtom {
 
@@ -22,15 +19,6 @@ public class RefMode implements IAtom {
 		this.stage     = stage;
 		this.entityVar = entityVar;
 		this.valueExpr = valueExpr;
-	}
-
-	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		m.put(entityVar, entityVar.accept(v));
-		m.put(valueExpr, valueExpr.accept(v));
-		return v.exit(this, m);
 	}
 
 	@Override
@@ -51,5 +39,11 @@ public class RefMode implements IAtom {
 	@Override
 	public String toString() {
 		return name + (stage == null ? "" : stage) + "(" + entityVar + ":" + valueExpr + ")";
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

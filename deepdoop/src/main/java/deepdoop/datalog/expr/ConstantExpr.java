@@ -1,6 +1,5 @@
 package deepdoop.datalog.expr;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 
 public class ConstantExpr implements IExpr {
@@ -28,13 +27,13 @@ public class ConstantExpr implements IExpr {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		return v.exit(this, null);
-	}
-
-	@Override
 	public String toString() {
 		return value.toString();
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

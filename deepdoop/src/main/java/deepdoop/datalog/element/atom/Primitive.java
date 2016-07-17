@@ -1,11 +1,9 @@
 package deepdoop.datalog.element.atom;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class Primitive implements IAtom {
 
@@ -17,14 +15,6 @@ public class Primitive implements IAtom {
 		this.capacity = normalize(name, cap);
 		this.name     = name + (this.capacity != 0 ? "[" + this.capacity + "]" : "");
 		this.var = var;
-	}
-
-	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m =
-			Collections.singletonMap(var, var.accept(v));
-		return v.exit(this, m);
 	}
 
 	@Override
@@ -43,6 +33,12 @@ public class Primitive implements IAtom {
 	@Override
 	public String toString() {
 		return name + "(" + var + ")";
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 
 
