@@ -1,6 +1,5 @@
 package deepdoop.datalog.expr;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 
 public class VariableExpr implements IExpr {
@@ -11,12 +10,6 @@ public class VariableExpr implements IExpr {
 	public VariableExpr(String name) {
 		this.name       = name;
 		this.isDontCare = "_".equals(name);
-	}
-
-	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		return v.exit(this, null);
 	}
 
 	@Override
@@ -32,5 +25,11 @@ public class VariableExpr implements IExpr {
 	@Override
 	public int hashCode() {
 		return name.hashCode();
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

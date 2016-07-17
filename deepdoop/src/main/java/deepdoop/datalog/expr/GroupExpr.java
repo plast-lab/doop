@@ -1,9 +1,6 @@
 package deepdoop.datalog.expr;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
-import java.util.Collections;
-import java.util.Map;
 
 public class GroupExpr implements IExpr {
 
@@ -14,15 +11,13 @@ public class GroupExpr implements IExpr {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m =
-			Collections.singletonMap(expr, expr.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		return "(" + expr + ")";
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

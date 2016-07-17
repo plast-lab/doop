@@ -1,5 +1,6 @@
 package deepdoop.actions;
 
+import deepdoop.datalog.Program;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
@@ -10,20 +11,27 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-public class InitVisitor implements IVisitor {
+public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable> {
 
 	String      _id;
-	Set<String> _globalAtoms;
+	Set<String> _globalAtomNames;
 
-	public InitVisitor(String id, Set<String> globalAtoms) {
-		_id          = id;
-		_globalAtoms = globalAtoms;
+	public InitVisitingActor(String id, Set<String> globalAtomNames) {
+		// TODO ugly
+		super(null);
+		_actor           = this;
+		_id              = id;
+		_globalAtomNames = globalAtomNames;
+	}
+	public InitVisitingActor() {
+		this(null, null);
 	}
 
 	String name(String name, String stage) {
-		if (_globalAtoms.contains(name) || _id == null) {
+		if (_globalAtomNames.contains(name) || _id == null) {
 			assert !"@past".equals(stage);
 			return name;
 		}
@@ -35,6 +43,26 @@ public class InitVisitor implements IVisitor {
 	}
 	String stage(String stage) {
 		return ("@past".equals(stage) ? null : stage);
+	}
+
+
+	@Override
+	public IVisitable visit(Program n) {
+		AtomCollectingActor acActor = new AtomCollectingActor();
+		PostOrderVisitor<IVisitable> visitor = new PostOrderVisitor<>(acActor);
+		n.globalComp.accept(visitor);
+		_globalAtomNames = acActor.getDeclaringAtoms(n.globalComp).keySet();
+
+		// TODO n.inits -> null and update n.props
+		Program initP = new Program(n.globalComp, null, n.inits, n.props);
+		for (Entry<String, String> entry : n.inits.entrySet()) {
+			String initName = entry.getKey();
+			String compName = entry.getValue();
+			Component c     = n.comps.get(compName);
+			_id             = initName;
+			initP.addComp((Component) c.accept(this));
+		}
+		return initP;
 	}
 
 

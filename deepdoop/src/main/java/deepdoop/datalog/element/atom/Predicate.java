@@ -1,13 +1,10 @@
 package deepdoop.datalog.element.atom;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.expr.IExpr;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
 
 public class Predicate implements IAtom {
@@ -23,14 +20,6 @@ public class Predicate implements IAtom {
 	}
 	public Predicate(String name, List<IExpr> exprs) {
 		this(name, null, exprs);
-	}
-
-	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		for (IExpr e : exprs) m.put(e, e.accept(v));
-		return v.exit(this, m);
 	}
 
 	@Override
@@ -55,5 +44,11 @@ public class Predicate implements IAtom {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : exprs) joiner.add(e.toString());
 		return name + (stage == null ? "" : stage) + "(" + joiner + ")";
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

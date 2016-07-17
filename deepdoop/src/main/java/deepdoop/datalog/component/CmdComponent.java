@@ -1,14 +1,11 @@
 package deepdoop.datalog.component;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.DeepDoopException;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.element.atom.Directive;
 import deepdoop.datalog.element.atom.StubAtom;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class CmdComponent extends Component {
@@ -67,21 +64,17 @@ public class CmdComponent extends Component {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		for (StubAtom p : exports)         m.put(p, p.accept(v));
-		for (StubAtom p : imports)         m.put(p, p.accept(v));
-		for (Declaration d : declarations) m.put(d, d.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		for (StubAtom p : exports)         builder.append(p + "\n");
 		for (StubAtom p : imports)         builder.append(p + "\n");
 		for (Declaration d : declarations) builder.append(d + "\n");
 		return builder.toString();
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }

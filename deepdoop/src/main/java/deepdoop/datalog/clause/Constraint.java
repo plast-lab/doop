@@ -3,8 +3,6 @@ package deepdoop.datalog.clause;
 import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.element.IElement;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Constraint implements IVisitable {
 
@@ -17,16 +15,13 @@ public class Constraint implements IVisitable {
 	}
 
 	@Override
-	public IVisitable accept(IVisitor v) {
-		v.enter(this);
-		Map<IVisitable, IVisitable> m = new HashMap<>();
-		m.put(head, head.accept(v));
-		m.put(body, body.accept(v));
-		return v.exit(this, m);
-	}
-
-	@Override
 	public String toString() {
 		return head + " -> " + body + ".";
+	}
+
+
+	@Override
+	public <T> T accept(IVisitor<T> v) {
+		return v.visit(this);
 	}
 }
