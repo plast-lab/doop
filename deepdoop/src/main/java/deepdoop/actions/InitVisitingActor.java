@@ -16,27 +16,42 @@ import java.util.Set;
 
 public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable> {
 
+	String      _oldId;
 	String      _id;
 	Set<String> _globalAtomNames;
 
-	public InitVisitingActor(String id, Set<String> globalAtomNames) {
-		// TODO ugly
-		super(null);
-		_actor           = this;
+	public InitVisitingActor(String oldId, String id, Set<String> globalAtomNames) {
+		super(null);             // TODO FIX ugly?
+		_actor           = this; // TODO FIX ugly?
+		_oldId           = oldId;
 		_id              = id;
 		_globalAtomNames = globalAtomNames;
 	}
 	public InitVisitingActor() {
-		this(null, null);
+		this(null, null, null);
 	}
 
 	String name(String name, String stage) {
-		if (_globalAtomNames.contains(name) || _id == null) {
+		// *In* global space
+		if (_globalAtomNames.contains(name)) {
 			assert !"@past".equals(stage);
 			return name;
 		}
-		else
+		// Propagate *to* global space
+		else if (_id == null) {
+			assert _oldId != null;
+			assert name.startsWith(_oldId + ":");
+			return name.replaceFirst(_oldId + ":", "");
+		}
+		// Propagate between components
+		else {
+			if (_oldId != null) {
+				assert _oldId != null;
+				assert name.startsWith(_oldId + ":");
+				name = name.replaceFirst(_oldId + ":", "");
+			}
 			return _id + ":" + name + ("@past".equals(stage) ? ":past" : "");
+		}
 	}
 	String name(String name) {
 		return name(name, null);
@@ -50,17 +65,32 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	public IVisitable visit(Program n) {
 		AtomCollectingActor acActor = new AtomCollectingActor();
 		PostOrderVisitor<IVisitable> visitor = new PostOrderVisitor<>(acActor);
-		n.globalComp.accept(visitor);
+		n.accept(visitor);
 		_globalAtomNames = acActor.getDeclaringAtoms(n.globalComp).keySet();
 
-		// TODO n.inits -> null and update n.props
-		Program initP = new Program(n.globalComp, null, n.inits, n.props);
+		Program initP = new Program(n.globalComp, null, null, null);
 		for (Entry<String, String> entry : n.inits.entrySet()) {
 			String initName = entry.getKey();
 			String compName = entry.getValue();
 			Component c     = n.comps.get(compName);
 			_id             = initName;
 			initP.addComp((Component) c.accept(this));
+		}
+
+		initP.accept(visitor);
+		for (Propagation prop : n.props) {
+			_id             = prop.fromId;
+			Set<String> newPreds = new HashSet<>();
+
+			// Propagate all predicates (*)
+			if (prop.preds.isEmpty()) {
+				Component fromComp = initP.comps.get(prop.fromId);
+				newPreds.addAll(acActor.getDeclaringAtoms(fromComp).keySet());
+			}
+			else
+				for (String pred : prop.preds) newPreds.add(name(pred));
+
+			initP.addPropagate(prop.fromId, newPreds, prop.toId);
 		}
 		return initP;
 	}

@@ -36,6 +36,7 @@ public class Functional implements IAtom {
 	}
 	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
+		assert arity() == vars.size();
 		VariableExpr valueVar = (VariableExpr) vars.remove(vars.size()-1);
 		return new Functional(name, stage, new ArrayList<>(vars), valueVar);
 	}
