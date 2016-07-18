@@ -217,7 +217,7 @@
   // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
   // Kept purely intra-procedurally! Can be as underapproximate as one
   // wishes, as long as it's soundly underapproximate (i.e., a true Must relation).
-  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
+  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
 
   //// =====================================
   //// BEGIN final relations for stats
@@ -374,6 +374,15 @@
     StoreInstanceField_Base(?insn, ?base),
     FieldInstruction_Signature(?insn, ?fld),
 	?ap = [?base, [nil, ?fld]].
+
+  // store instructions, strong update of AccessPathMayPointTo info for
+  // an access path with a must-aliased base.
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    StoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+    StoreInstanceField_Base(?insn, ?base),
+    FieldInstruction_Signature(?insn, ?fld),
+	MustAlias([?base, nil], [?base2, nil], ?ctx, ?insn),
+	?ap = [?base2, [nil, ?fld]].
 
   // weak update of access paths with the same field but different base
   // TODO extend to longer access paths
@@ -924,7 +933,7 @@
     MethodHasUnresolvedInvocation(?toMethod),
     MethodCanCallOther(?method, ?toMethod).
 
-  // transitive may-assign-field based on must-callgraph
+  // transitive may-assign-field based on sound-callgraph
   MethodMayAssignField(?fld, ?method) :-
     Instruction_Method(?insn, ?method),
     FieldInstruction_Signature(?insn, ?fld).
@@ -1355,7 +1364,7 @@
     ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
     FieldList_Length(?fldList, ?len).
   
-    SingleFieldAccessPath(?fld, ?ap) :-
+  SingleFieldAccessPath(?fld, ?ap) :-
     AccessPath_ContainsStaticField(?ap, ?fld),
     AccessPath_Length(?ap, 1).
   
@@ -1552,7 +1561,27 @@
     LoadCollection_To(?insn, ?to). 
   // //// END handling of collections
   // //// ====================================
-  
+
+  //// Some trivial must-alias handling to see the possible
+  //// impact. Remove eagerly. The same rules are later, commented
+  //// out.
+  // MustAlias is symmetrically and transitively closed. The explicit
+  // representation (and computation of TC) is too wasteful, but
+  // hopefully won't matter since this is an intra-procedural concept.
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap2, ?ap1, ?ctx, ?insn).
+
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap1, ?ap3, ?ctx, ?insn),
+    MustAlias(?ap2, ?ap3, ?ctx, ?insn).
+
+  // Catch-all access path inference from MustAlias
+  AccessPathMayPointTo(?hctx, ?heap, ?ap1, ?ctx, ?insn) :-
+    MustAlias(?ap1, ?ap2, ?ctx, ?insn),
+    AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn),
+    (AccessPath_IsComposite(?ap1);
+     AccessPath_ContainsStaticField(?ap1, _)).
+
 }  // END .comp SoundMay
   
   
@@ -1632,12 +1661,11 @@ LoadCollection_Base(?invo, ?var) :-
 //    MustAlias(?ap2, ?ap3, ?ctx, ?insn).
 
 // // Catch-all access path inference from MustAlias
-// Temp12(?hctx, ?heap, ?ap1, ?ctx, ?insn),
 // AccessPathMayPointTo(?hctx, ?heap, ?ap1, ?ctx, ?insn) :-
-//    AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn),
-//    MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-//    (AccessPath_IsComposite(?ap1);
-//     AccessPath_ContainsStaticField(?ap1, _)).
+//   MustAlias(?ap1, ?ap2, ?ctx, ?insn),
+//   AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn),
+//   (AccessPath_IsComposite(?ap1);
+//    AccessPath_ContainsStaticField(?ap1, _)).
 
 // // Key rule. Extend access paths, if aliased one has extension,
 // // establish aliasing.
@@ -1673,34 +1701,44 @@ AccessPath_MaxLength(3).
 
 .init SoundMayPhase1 = SoundMay
 .init SoundMayPhase2 = SoundMay
-.init SoundMayPhase3 = SoundMay
-.init SoundMayPhase4 = SoundMay
-.init SoundMayPhase5 = SoundMay
-.init SoundMayPhase6 = SoundMay
-.init IntraprocMustForStats = IntraproceduralMust
+SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase1.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 
+.init SoundMayPhase3 = SoundMay
+SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init SoundMayPhase4 = SoundMay
+SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init SoundMayPhase5 = SoundMay
+SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init SoundMayPhase6 = SoundMay
+SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init SoundMayPhase7 = SoundMay
+SoundMayPhase7.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase6.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init SoundMayPhase8 = SoundMay
+SoundMayPhase8.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase7.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init SoundMayPhase9 = SoundMay
+SoundMayPhase9.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase8.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+
+.init IntraprocMustForStats = IntraproceduralMust
+IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
+  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 InitialRootMethodForMayAnalysis(?meth) :-
   Reachable(?meth), // just for benchmarking against unsound VPT analysis
   MethodSignature_DeclaringType(?meth, ?class), ApplicationClass(?class).
-
-IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
-  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
-
-SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
-  SoundMayPhase1.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
-
-SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
-  SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
-
-SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
-  SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
-
-SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
-  SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
-
-SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
-  SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 
 //// END configuration
 
