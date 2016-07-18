@@ -28,7 +28,10 @@ public class Primitive implements IAtom {
 		return Collections.singletonList(var);
 	}
 	@Override
-	public IAtom instantiate(String stage, List<VariableExpr> vars) { return this; }
+	public IAtom instantiate(String stage, List<VariableExpr> vars) {
+		assert arity() == vars.size();
+		return this;
+	}
 
 	@Override
 	public String toString() {

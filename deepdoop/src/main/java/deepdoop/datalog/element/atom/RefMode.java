@@ -33,6 +33,7 @@ public class RefMode implements IAtom {
 	}
 	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
+		assert arity() == vars.size();
 		return new RefMode(name, stage, vars.get(0), vars.get(1));
 	}
 

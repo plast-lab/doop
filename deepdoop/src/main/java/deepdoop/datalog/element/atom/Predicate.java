@@ -36,6 +36,7 @@ public class Predicate implements IAtom {
 	}
 	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
+		assert arity() == vars.size();
 		return new Predicate(name, stage, new ArrayList<>(vars));
 	}
 

@@ -33,7 +33,6 @@ public class DependencyGraph {
 
 			// Dependencies *from* global space
 			Component fromComp = p.comps.get(prop.fromId);
-			//fromComp.accept(visitor);
 			for (String globalAtom : acActor.getUsedAtoms(fromComp).keySet())
 				getNode(globalAtom, true).addEdgeTo(fromNode);
 		}

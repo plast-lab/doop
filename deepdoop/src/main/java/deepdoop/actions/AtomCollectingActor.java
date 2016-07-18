@@ -95,7 +95,6 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 		_declAtoms.put(n, declMap);
 
 		Map<String, IAtom> usedMap = new HashMap<>();
-		usedMap.putAll(getUsedAtoms(n.head));
 		usedMap.putAll(getUsedAtoms(n.body));
 		_usedAtoms.put(n, usedMap);
 		return n;

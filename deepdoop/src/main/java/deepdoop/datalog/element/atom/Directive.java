@@ -42,7 +42,10 @@ public class Directive implements IAtom {
 		return (_arity == 1 ? Arrays.asList((VariableExpr[])null) : Arrays.asList(null, null));
 	}
 	@Override
-	public IAtom instantiate(String stage, List<VariableExpr> vars) { return this; }
+	public IAtom instantiate(String stage, List<VariableExpr> vars) {
+		assert arity() == vars.size();
+		return this;
+	}
 
 	@Override
 	public String toString() {

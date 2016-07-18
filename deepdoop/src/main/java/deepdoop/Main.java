@@ -28,9 +28,14 @@ public class Main {
 			PostOrderVisitor<IVisitable> v;
 			v = new PostOrderVisitor<>(new FlatteningActor(p.comps));
 			Program flatP = (Program) p.accept(v);
+
 			v = new InitVisitingActor();
 			Program initP = (Program) flatP.accept(v);
-			System.out.println(initP);
+
+			v = new PostOrderVisitor<>(new LBCodeGenActor());
+			Program finalP = (Program) initP.accept(v);
+
+			System.out.println(finalP);
 
 		} catch (IOException e) {
 			e.printStackTrace();
