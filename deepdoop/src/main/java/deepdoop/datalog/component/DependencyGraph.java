@@ -9,7 +9,6 @@ import deepdoop.datalog.element.atom.IAtom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class DependencyGraph {
