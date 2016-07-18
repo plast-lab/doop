@@ -694,6 +694,7 @@ Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?firstInsn) <-
 // targets, there is sound points-to information", due to recursion
 // through negation/aggregation.
 
+Temp14(?hctx, ?heap, ?callerCtx, ?to),
 MayPointTo(?hctx, ?heap, ?callerCtx, ?to) <-
    May:ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
    AllReturn:MayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
@@ -1041,6 +1042,7 @@ LoadCollection:Base[?invo] = ?var <-
    LibraryCollectionLoadOperation(?invo),
    VirtualMethodInvocation:Base[?invo] = ?var.
 
+Temp13(?heap, ?ctx, ?to),
 MayPointTo(?hctx, ?heap, ?ctx, ?to) <-
    Before:AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
    LoadCollection:To[?insn] = ?to,

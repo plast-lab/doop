@@ -47,6 +47,8 @@
 .decl Instruction_Index(?insn:Instruction, ?index:number) input
 .decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
 .decl IsJumpTarget(?insn:Instruction) input
+.decl LoadArrayIndex_Base(?insn:Instruction, ?base:Var) input
+.decl LoadArrayIndex_To(?insn:Instruction, ?to:Var) input
 .decl LoadInstanceField_Base(?insn:Instruction, ?base:Var) input
 .decl LoadInstanceField_To(?insn:Instruction, ?to:Var) input
 .decl LoadStaticField_To(?insn:Instruction, ?to:Var) input
@@ -77,6 +79,8 @@
 .decl SpecialMethodInvocation_Base(?invocation:MethodInvocationInsn, ?base:Var) input
 .decl SpecialMethodInvocation_Insn(?invocation:MethodInvocationInsn) input
 .decl StaticMethodInvocation_Insn(?invocation:MethodInvocationInsn) input
+.decl StoreArrayIndex_Base(?insn:Instruction, ?base:Var) input
+.decl StoreArrayIndex_From(?insn:Instruction, ?from:Var) input
 .decl StoreInstanceField_Base(?insn:Instruction, ?base:Var) input
 .decl StoreInstanceField_From(?insn:Instruction, ?from:Var) input
 .decl StoreStaticField_From(?insn:Instruction, ?from:Var) input
@@ -109,10 +113,9 @@
                                                      ?ctx:MayContext, ?insn:Instruction)
 
   // output relations
-  .decl IntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation,
-                                   ?ctx:MayContext, ?var:Var) output
-  .decl IntraproceduralCertainMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation,
-                                         ?ctx:MayContext, ?invo:MethodInvocationInsn) output
+  .decl IntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?var:Var) output
+  .decl IntraproceduralCertainMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocationInsn) output
+  .decl AppAllCtxIntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var) output
 										 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?var) :-
     AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
@@ -183,6 +186,11 @@
    NextInSamePhiNode(?insn, ?nextInsn),
    AssignLocal_From(?nextInsn, ?from),
    IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?from).
+
+  // for final stats
+  AppAllCtxIntraproceduralMustPointTo(?hctx, ?heap, ?var) :-
+    AllCtxIntraproceduralMustPointToInMethod(?hctx, ?heap, ?var, ?method),
+    MethodSignature_DeclaringType(?method, ?class), ApplicationClass(?class).
 }
 
 
@@ -803,30 +811,34 @@
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
     .plan 1: (2,1)
 
-  // // *Collections*
-  // // Also propagating the information for collection access paths.
-  // AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-  //   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-  //   AccessPath_ByCollectionVarInv(?ap, _),
-  //   !MonitorInstruction(?insn),
-  //   (!MethodInvocation(?insn);
-  //    IgnorableMethodInvocation(?insn);
-  //    LibraryCollectionLoadOperation(?insn)),
-  //   !StoreArrayIndex_Insn(?insn).
-  // 
-  // // if it's a non-array operation on collections but the info concerns an array
-  // AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-  //    OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-  //    AccessPath_ByCollectionVarInv(?ap, ?base),
-  //    ArrayType(Var_Type[?base]),
-  //    LibraryCollectionStoreOperation(?insn).
-  // 
-  // // and the converse. TODO: more fine-grained distinction of library collections?
-  // AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-  //    OptBefore_AccessPathMayPointTo(?hctx, ?heap, ?ctx, ?insn, ?ap),
-  //    AccessPath_ByCollectionVarInv(?ap, ?base),
-  //    LibraryCollectionType(Var_Type[?base]),
-  //    StoreArrayIndex_Insn(?insn).
+  // *Collections*
+  // Also propagating the information for collection access paths.
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    AccessPath_IsCollection(?ap),
+    !MonitorInstruction(?insn),
+    (!MethodInvocation(?insn);
+     IgnorableMethodInvocation(?insn);
+     LibraryCollectionLoadOperation(?insn)),
+    !StoreArrayIndex_Base(?insn,_).
+  
+  // if it's a non-array operation on collections but the info concerns an array
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    AccessPath_IsCollection(?ap),
+	?ap = [?base, [nil, "dummyCollection"]],
+    Var_Type(?base, ?type),
+    ArrayType(?type),
+    LibraryCollectionStoreOperation(?insn).
+  
+  // and the converse. TODO: more fine-grained distinction of library collections?
+  AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    AccessPath_IsCollection(?ap),
+	?ap = [?base, [nil, "dummyCollection"]],
+    Var_Type(?base, ?type),
+    LibraryCollectionType(?type),
+    StoreArrayIndex_Base(?insn,_).
 
   /// Final fields
 
@@ -979,8 +991,8 @@
   // For the legit, official main of a standard Java program, provide
   // dummy argument (String[] args).
   MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-  ComputedAccessPath([?args, nil]),
-  AccessPathMayPointTo(?hctx, ?argHeap, [?args, nil], ?ctx, ?firstInsn) :-
+  ComputedAccessPath([?args, [nil, "dummyCollection"]]),
+  AccessPathMayPointTo(?hctx, ?argHeap, [?args, [nil, "dummyCollection"]], ?ctx, ?firstInsn) :-
     MainClass(?mainClass),
     MethodSignature_DeclaringType(?mainMethod, ?mainClass),
     MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
@@ -1227,7 +1239,7 @@
     !SomePathFromFirstInstructionCallsMethod(?pred).
 
   .decl ExistsNextPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)
-   ExistsNextPredecessorToSameBB(?pred, ?insn) :-
+    ExistsNextPredecessorToSameBB(?pred, ?insn) :-
     NextPredecessorToSameBB(?insn, ?pred, _).
 
   .decl AllRelevantPredecessors_HasAccessPathMayPointTo(?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
@@ -1271,7 +1283,6 @@
   /// ----------------------------------
 
   // //// END AUXILIARY. Helper relations, "forall" emulations.
-
 
   //// END core MayPointTo code
   //// ====================================
@@ -1395,33 +1406,33 @@
   // The rules below create access paths from all variables
   // and all access fields in the program.
   ComputedAccessPath([?var, nil]) :-
-     Var_Type(?var, ?type),
-     ReferenceType(?type).
+    Var_Type(?var, ?type),
+    ReferenceType(?type).
   
   // Invariant: all computed access paths are type safe: the fields
   // exist in the static type of the prefix. REVIEW: This may (rarely)
   // prevent detection of valid aliasing.
   ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
-     LoadInstanceField_Base(?insn, ?base),
-     FieldInstruction_Signature(?insn, ?fld),
-     FieldSignature_Type(?fld, ?type),
-     ReferenceType(?type).
+    LoadInstanceField_Base(?insn, ?base),
+    FieldInstruction_Signature(?insn, ?fld),
+    FieldSignature_Type(?fld, ?type),
+    ReferenceType(?type).
   ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
-     StoreInstanceField_Base(?insn, ?base),
-     FieldInstruction_Signature(?insn, ?fld),
-     FieldSignature_Type(?fld, ?type),
-     ReferenceType(?type).
+    StoreInstanceField_Base(?insn, ?base),
+    FieldInstruction_Signature(?insn, ?fld),
+    FieldSignature_Type(?fld, ?type),
+    ReferenceType(?type).
   
   ComputedAccessPath([?fld, nil ]) :-
-     LoadStaticField_To(?insn, _),
-     FieldInstruction_Signature(?insn, ?fld),
-     FieldSignature_Type(?fld, ?type),
-     ReferenceType(?type).
+    LoadStaticField_To(?insn, _),
+    FieldInstruction_Signature(?insn, ?fld),
+    FieldSignature_Type(?fld, ?type),
+    ReferenceType(?type).
   ComputedAccessPath([?fld, nil ]) :-
-     StoreStaticField_From(?insn, _),
-     FieldInstruction_Signature(?insn, ?fld),
-     FieldSignature_Type(?fld, ?type),
-     ReferenceType(?type).
+    StoreStaticField_From(?insn, _),
+    FieldInstruction_Signature(?insn, ?fld),
+    FieldSignature_Type(?fld, ?type),
+    ReferenceType(?type).
   
   // implies it's computed
   .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var) output
@@ -1429,22 +1440,21 @@
     
   // If some access path is to be rebased, its non-var prefixes are as well.
   AccessPathShouldBeRebased(?newAp , ?from, ?to) :-
-     AccessPathShouldBeRebased(?ap, ?from, ?to),
-     ?ap = [ ?from, [ [ ?rest, ?nextFld ], ?lastFld ] ], ?lastFld = ?lastFld, // suppress warning
-     ?newAp = [ ?from, [ ?rest, ?nextFld ] ].
+    AccessPathShouldBeRebased(?ap, ?from, ?to),
+    ?ap = [ ?from, [ [ ?rest, ?nextFld ], ?lastFld ] ], ?lastFld = ?lastFld, // suppress warning
+    ?newAp = [ ?from, [ ?rest, ?nextFld ] ].
   
   ComputedAccessPath(?newAp),
   RebaseCompositeAccessPath(?ap, ?from, ?to, ?newAp) :-
-     AccessPathShouldBeRebased(?ap, ?from, ?to),
-     ?newAp = [?to, ?rest],
-     ?ap = [?from, ?rest].
+    AccessPathShouldBeRebased(?ap, ?from, ?to),
+    ?newAp = [?to, ?rest],
+    ?ap = [?from, ?rest].
   
-  // REVIEW obviously incomplete, needs library collections as well
   AccessPath_IsCollection(?ap) :-
-     ?ap = [?base, nil],
-     Var_Type(?base, ?type),
-     (ArrayType(?type);
-      LibraryCollectionType(?type)).
+    ?ap = [?base,  [nil, "dummyCollection"]],
+    Var_Type(?base, ?type),
+    (ArrayType(?type);
+     LibraryCollectionType(?type)).
     
   // // *MustAlias*
   // // Access path expansion factory. Trivial but avoids repeat expensive
@@ -1472,7 +1482,7 @@
   // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
   //    CompositeAccessPath_SameFields(?baseAp1, ?baseAp2),
   //    AccessPath_ByFieldAccess(?fld, ?baseAp1, ?ap1),
-  //    AccessPath_ByFieldAccess(?fld, ?baseAp2, ?ap2).
+  //    AccessPath_ByColleFieldAccess(?fld, ?baseAp2, ?ap2).
   
   //// END access path definitions, auxiliary
   //// ====================================  
@@ -1497,105 +1507,111 @@
   //// END context management
   //// ====================================  
 
-// //// ====================================
-// //// BEGIN special handling of collections.
-// ////  Not entirely self-contained. Some logic in frame rules as well.
-
-// collection loads and stores. For arrays and library collections.
-// initialize arrays and library collections to null at allocation
-//RecordMacroMay(?ctx, ?heap, ?hctx),
-AccessPathMayPointTo(?hctx, ?nullHeap, [?to, nil], ?ctx, ?insn) :-
-   AssignHeapAllocation(?arrayHeap, ?to, ?inMeth),
-   MayReachableMethodUnderMayContext(?ctx, ?inMeth),
-   HeapAllocation_Type(?arrayHeap, ?type),
-   (ArrayType(?type); LibraryCollectionType(?type)),
-   AssignInstruction_To(?insn, ?to),
-   HeapAllocation_Null(?nullHeap),
-   EmptyHeapContext(?hctxArray),
-   EmptyHeapContext(?hctx).
-
-
-.decl LibraryCollectionRoot(?type:Type)
-.decl LibraryCollectionType(?type:Type)
-LibraryCollectionRoot(?type) :-
-   ?type = "java.util.AbstractCollection";
-   ?type = "java.util.AbstractMap".
-LibraryCollectionType(?type) :-
-   SubtypeOf(?type, ?collRoot),
-   LibraryCollectionRoot(?collRoot).
+  // //// ====================================
+  // //// BEGIN special handling of collections.
+  // ////  Not entirely self-contained. Some logic in frame rules as well.
+  
+  // collection loads and stores. For arrays and library collections.
+  // initialize arrays and library collections to null at allocation
+  //RecordMacroMay(?ctx, ?heap, ?hctx),
+  AccessPathMayPointTo(?hctx, ?nullHeap, [?to, [nil, "dummyCollection"]], ?ctx, ?insn) :-
+    AssignHeapAllocation(?arrayHeap, ?to, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    HeapAllocation_Type(?arrayHeap, ?type),
+    (ArrayType(?type); LibraryCollectionType(?type)),
+    AssignInstruction_To(?insn, ?to),
+    HeapAllocation_Null(?nullHeap),
+    EmptyHeapContext(?hctxArray),
+    EmptyHeapContext(?hctx).
+  
+  .decl CollectionStoreFromVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?insn:Instruction)
+  CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) :-
+    MayPointTo(?hctx, ?heap, ?ctx, ?from),
+    StoreCollection_From(?insn, ?from).
+  
+  .decl TentativeCollectionBaseApMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  TentativeCollectionBaseApMayPointTo(?hctx, ?heap, [?base, [nil, "dummyCollection"]], ?ctx, ?insn) :-
+    CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
+    StoreCollection_Base(?insn, ?base).
+  
+  // store instructions, weak update of AccessPathMayPointTo info! Need
+  // to know over-estimate to add more. Also propagate existing.
+  AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+  AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
+    TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
+    Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
+  
+  // now loads
+  .decl TempMayPointTo(?heap:HeapAllocation, ?ctx:MayContext, ?to:Var) output
+  TempMayPointTo(?heap, ?ctx, ?to),
+  MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    AccessPath_IsCollection(?ap),
+    ?ap = [?base, [nil, "dummyCollection"]],
+    LoadCollection_Base(?insn, ?base),
+    LoadCollection_To(?insn, ?to). 
+  // //// END handling of collections
+  // //// ====================================
+  
 }  // END .comp SoundMay
-
-
-/*
+  
+  
+.decl LibraryCollectionRoot(?type:Type)
+.decl LibraryCollectionType(?type:Type) output 
+LibraryCollectionRoot(?type) :-
+  ?type = "java.util.AbstractCollection";
+  ?type = "java.util.AbstractMap".
+LibraryCollectionType(?type) :-
+  SubtypeOf(?type, ?collRoot),
+  LibraryCollectionRoot(?collRoot).
 
 //// TODO: model iterators
-LibraryCollectionStoreOperation(?invo) -> MethodInvocation(?invo).
-LibraryCollectionLoadOperation(?invo) -> MethodInvocation(?invo).
+.decl LibraryCollectionStoreOperation(?invo:MethodInvocationInsn)
+.decl LibraryCollectionLoadOperation(?invo:MethodInvocationInsn)
 LibraryCollectionStoreOperation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "add"); 
-   VirtualMethodInvocation_SimpleName(?invo, "push"); 
-   VirtualMethodInvocation_SimpleName(?invo, "set"); 
-   VirtualMethodInvocation_SimpleName(?invo, "put").
+  VirtualMethodInvocation_SimpleName(?invo, "add"); 
+  VirtualMethodInvocation_SimpleName(?invo, "push"); 
+  VirtualMethodInvocation_SimpleName(?invo, "set"); 
+  VirtualMethodInvocation_SimpleName(?invo, "put").
 LibraryCollectionLoadOperation(?invo) :-
-   VirtualMethodInvocation_SimpleName(?invo, "peek"),
-   VirtualMethodInvocation_SimpleName(?invo, "pop"),
-   VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
-   VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
-   VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
-   VirtualMethodInvocation_SimpleName(?invo, "remove"),
-   VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
+  VirtualMethodInvocation_SimpleName(?invo, "peek"),
+  VirtualMethodInvocation_SimpleName(?invo, "pop"),
+  VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
+  VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
+  VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
+  VirtualMethodInvocation_SimpleName(?invo, "remove"),
+  VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
 
+.decl StoreCollection_From(?insn:Instruction, ?from:Var)
 StoreCollection_From(?insn, ?from) :-
-   StoreArrayIndex_From(?insn, ?from).
+  StoreArrayIndex_From(?insn, ?from).
 StoreCollection_From(?invo, ?from) :-
-   LibraryCollectionStoreOperation(?invo),
-   (ActualParam(1, ?invo, ?from);
-    ActualParam(2, ?invo, ?from)).
+  LibraryCollectionStoreOperation(?invo),
+  (ActualParam(1, ?invo, ?from);
+   ActualParam(2, ?invo, ?from)).
 
+.decl StoreCollection_Base(?insn:Instruction, ?from:Var)
 StoreCollection_Base(?insn, ?var) :-
-   StoreArrayIndex_Base(?insn, ?var).
+  StoreArrayIndex_Base(?insn, ?var).
 StoreCollection_Base(?invo, ?var) :-
-   LibraryCollectionStoreOperation(?invo),
-   VirtualMethodInvocation_Base(?invo, ?var).
-
-CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn) :-
-   MayPointTo(?hctx, ?heap, ?ctx, ?from),
-   StoreCollection_From(?insn, ?from).
-
-TentativeCollectionBaseApMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
-   CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
-   StoreCollection_Base(?insn, ?base),
-   AccessPath_ByCollectionVar(?base, ?ap).
-
-// store instructions, weak update of AccessPathMayPointTo info! Need
-// to know over-estimate to add more. Also propagate existing.
-AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
-AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
-   TentativeCollectionBaseApMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
-   Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
+  LibraryCollectionStoreOperation(?invo),
+  VirtualMethodInvocation_Base(?invo, ?var).
 
 // now loads
+.decl LoadCollection_Base(?insn:Instruction, ?to:Var)
+.decl LoadCollection_To(?insn:Instruction, ?to:Var)
 LoadCollection_To(?insn, ?to) :-
-   LoadArrayIndex_To(?insn, ?to).
+  LoadArrayIndex_To(?insn, ?to).
 LoadCollection_To(?invo, ?to) :-
-   LibraryCollectionLoadOperation(?invo),
-   AssignReturnValue(?invo, ?to).
+  LibraryCollectionLoadOperation(?invo),
+  AssignReturnValue(?invo, ?to).
 
 LoadCollection_Base(?insn, ?var) :-
-   LoadArrayIndex_Base(?insn, ?var).
+  LoadArrayIndex_Base(?insn, ?var).
 LoadCollection_Base(?invo, ?var) :-
-   LibraryCollectionLoadOperation(?invo),
-   VirtualMethodInvocation_Base(?invo, ?var).
+  LibraryCollectionLoadOperation(?invo),
+  VirtualMethodInvocation_Base(?invo, ?var).
 
-MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-   LoadCollection_To(?insn, ?to),
-   LoadCollection_Base(?insn, ?base),
-   AccessPath_ByCollectionVarInv(?ap, ?base).
-
-// //// END handling of collections
-// //// ====================================
-*/
 
 //// POINT2---IgnorableMethodInvocation to go here
 
@@ -1651,7 +1667,7 @@ MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth(5).
+MaxMayContextDepth(4).
 
 AccessPath_MaxLength(3).
 
@@ -1978,10 +1994,10 @@ IgnorableForStaticsMethodInvocation(?invo) :-
    VirtualMethodInvocation_SimpleName(?invo, "clone"); // Object
    VirtualMethodInvocation_SimpleName(?invo, "append"). // StringBuilder
 
-// // *Collections*
-// IgnorableForNonCollectionsMethodInvocation(?invo) :-
-//   LibraryCollectionStoreOperation(?invo);
-//   LibraryCollectionLoadOperation(?invo).
+// *Collections*
+IgnorableForNonCollectionsMethodInvocation(?invo) :-
+  LibraryCollectionStoreOperation(?invo);
+  LibraryCollectionLoadOperation(?invo).
 
 .decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocationInsn, ?simplename:String)
 StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
