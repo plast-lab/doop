@@ -84,6 +84,7 @@ class NoSearchingDexProvider implements ClassProvider {
                 _classes.put(className, resource);
             }
         }
+        System.out.println("_classes_size: " + _classes.size());
         tempFile.delete();
 
         return result;
@@ -121,36 +122,19 @@ class NoSearchingDexProvider implements ClassProvider {
         System.out.println("find called from dex provider for class: " + className);
         NoSearchingDexProvider.Resource resource = _classes.get(className);
 
-        if(resource == null) {
-            String fileName = className + ".dex";
+        try {
+            InputStream fis = resource.open();
+            File tempFile = File.createTempFile("temp", ".tmp");
+            tempFile.deleteOnExit();
+            FileOutputStream fos = new FileOutputStream(tempFile);
+            IOUtils.copy(fis, fos);
+            fis.close();
+            fos.close();
+            return new DexClassSource(className, tempFile);
 
-            for(ZipFile archive : _archives) {
-                ZipEntry entry = archive.getEntry(fileName);
-                if(entry != null) {
-                    resource = new NoSearchingDexProvider.ZipEntryResource(archive, entry);
-                    break;
-                }
-            }
         }
-
-        if(resource == null) {
-            return null;
-        }
-        else {
-
-            try {
-                InputStream fis = resource.open();
-                File tempFile = File.createTempFile("temp", ".tmp");
-                tempFile.deleteOnExit();
-                FileOutputStream fos = new FileOutputStream(tempFile);
-                IOUtils.copy(fis, fos);
-                fis.close();
-                fos.close();
-                return new DexClassSource(className, tempFile);
-            }
-            catch(IOException exc) {
-                throw new RuntimeException(exc);
-            }
+        catch(IOException exc) {
+            throw new RuntimeException(exc);
         }
     }
 
@@ -166,7 +150,7 @@ class NoSearchingDexProvider implements ClassProvider {
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
 
-            if(entry.getName().endsWith("dex")) {
+            if(entry.getName().endsWith(".dex")) {
                 List<String> classNames = addClasses(archive, entry);
                 result.addAll(classNames);
             }
