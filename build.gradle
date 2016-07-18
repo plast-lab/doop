@@ -6,8 +6,7 @@ buildscript {
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
-        //For details and latest version: http://plugins.gradle.org/plugin/com.jfrog.artifactory
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
