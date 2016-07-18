@@ -17,7 +17,7 @@ import java.util.zip.ZipFile;
 /**
  * Created by anantoni on 12/7/2016.
  */
-public class NoSearchingDexProvider implements ClassProvider {
+class NoSearchingDexProvider implements ClassProvider {
     private Map<String, NoSearchingDexProvider.Resource> _classes;
     private List<ZipFile> _archives;
     private Map<String, Properties> _properties;
@@ -73,6 +73,7 @@ public class NoSearchingDexProvider implements ClassProvider {
         DexBackedDexFile d = DexFileFactory.loadDexFile(tempFile, 1, false);
         List<String> result = new ArrayList<>();
 
+        System.out.println("ADDING " + d.getClasses().size() + " CLASSES ********************************************************************************************************************************************");
         for (ClassDef c : d.getClasses()) {
             String className = Util.dottedClassName(c.getType());
             result.add(className);
@@ -120,9 +121,12 @@ public class NoSearchingDexProvider implements ClassProvider {
 
         ZipFile archive = new ZipFile(f);
         Enumeration<? extends ZipEntry> entries = archive.entries();
+
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            if(entry.getName().endsWith(".dex")) {
+            System.out.println("entry: " + entry.getName());
+
+            if(entry.getName().endsWith("dex")) {
                 List<String> classNames = addClasses(archive, entry);
                 result.addAll(classNames);
             }

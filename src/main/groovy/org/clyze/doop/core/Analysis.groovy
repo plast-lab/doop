@@ -287,7 +287,7 @@ import org.apache.commons.logging.LogFactory
 
         if (options.MAIN_CLASS.value)
             lbScript.execute("""+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").""")
-
+//        lbScript.execute("""+ImplicitReachable(x) <- AndroidEntryPoint(x).""")
         lbScript
                 .commit()
                 .elapsedTime()

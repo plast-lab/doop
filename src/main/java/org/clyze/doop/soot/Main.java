@@ -2,17 +2,24 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
-import soot.*;
+import soot.ClassProvider;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
+import soot.jimple.infoflow.entryPointCreators.AndroidEntryPointCreator;
+import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
 
     public static enum Mode {INPUTS, FULL;}
     private static Mode _mode = null;
-    private static List<String> _inputs = new ArrayList<String>();
-    private static List<String> _libraries = new ArrayList<String>();
+    private static List<String> _inputs = new ArrayList<>();
+    private static List<String> _libraries = new ArrayList<>();
     private static String _outputDir = null;
     private static String _main = null;
     private static boolean _ssa = false;
@@ -79,6 +86,9 @@ public class Main {
                     soot.options.Options.v().set_ignore_resolution_errors(true);
                     soot.options.Options.v().set_whole_program(true);
                     soot.options.Options.v().set_process_dir(_inputs);
+                    soot.options.Options.v().set_allow_phantom_refs(true);
+                    soot.options.Options.v().set_no_bodies_for_excluded(true);
+
                 }
                 else if (args[i].equals("-l")) {
                     i = shift(args, i);
@@ -206,7 +216,9 @@ public class Main {
     private static void run() throws Exception {
         NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         NoSearchingDexProvider dexProvider = new NoSearchingDexProvider();
-        _inputs = new ArrayList<>();
+        List<String> androidClasses = null;
+
+
         if (!_android) {
             for (String arg : _inputs) {
                 if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
@@ -221,8 +233,8 @@ public class Main {
         else {
             for (String arg : _inputs) {
                 if (arg.endsWith(".apk")) {
-                    System.out.println("Adding apk archive: " + arg);
-                    dexProvider.addArchive(new File(arg));
+                    System.out.println("Adding apk file: " + arg);
+                    androidClasses = dexProvider.addArchive(new File(arg));
                 } else {
                     System.out.println("Adding file: " + arg);
                 }
@@ -238,9 +250,9 @@ public class Main {
                 System.err.println("Library file does not exist: " + libraryFile);
             } else {
                 if (lib.contains("android.jar"))
-                classProvider.addArchive(libraryFile);
+                    classProvider.addArchive(libraryFile);
                 else
-                classProvider.addArchiveForResolving(libraryFile);
+                    classProvider.addArchiveForResolving(libraryFile);
             }
         }
         List<ClassProvider> providersList = new ArrayList<>();
@@ -270,11 +282,13 @@ public class Main {
         }
 
         List<SootClass> classes = new ArrayList<>();
-        for (String className : dexProvider.getClassNames()) {
-            scene.loadClass(className, SootClass.SIGNATURES);
-            SootClass c = scene.loadClass(className, SootClass.BODIES);
+        if (_android) {
+            for (String className : dexProvider.getClassNames()) {
+                scene.loadClass(className, SootClass.SIGNATURES);
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
 
-            classes.add(c);
+                classes.add(c);
+            }
         }
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
@@ -282,23 +296,44 @@ public class Main {
 
             classes.add(c);
         }
+
+        if (!_android) {
             /*
             * For simulating the FileSystem class, we need the implementation
             * of the FileSystem, but the classes are not loaded automatically
             * due to the indirection via native code.
             */
-        addCommonDynamicClass(scene, classProvider, "java.io.UnixFileSystem");
-        addCommonDynamicClass(scene, classProvider, "java.io.WinNTFileSystem");
-        addCommonDynamicClass(scene, classProvider, "java.io.Win32FileSystem");
+            addCommonDynamicClass(scene, classProvider, "java.io.UnixFileSystem");
+            addCommonDynamicClass(scene, classProvider, "java.io.WinNTFileSystem");
+            addCommonDynamicClass(scene, classProvider, "java.io.Win32FileSystem");
 
             /* java.net.URL loads handlers dynamically */
-        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.file.Handler");
-        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.ftp.Handler");
-        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.http.Handler");
-        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.https.Handler");
-        addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.file.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.ftp.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.http.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.https.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
+        }
+
+        // load all entryPoint classes with their bodies
+//        if (_android) {
+//            assert androidClasses != null;
+//            for (String className : androidClasses)
+//                scene.addBasicClass(className, SootClass.BODIES);
+//            System.out.println("Basic class loading done.");
+//        }
 
         scene.loadNecessaryClasses();
+
+//        if (_android) {
+//            assert androidClasses != null;
+//            for (String className : androidClasses) {
+//                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+//                if (c != null) {
+//                    c.setApplicationClass();
+//                }
+//            }
+//        }
 
         /*
         * This part should definitely appear after the call to
@@ -329,6 +364,15 @@ public class Main {
 //            ThreadFactory factory = new ThreadFactory(writer, _ssa);
 //            Driver driver = new Driver(factory, _ssa, classes.size());
 
+            IEntryPointCreator entryPointCreator;
+            SootMethod dummyMain = null;
+            System.out.println("ANDROID CLASSES: " + androidClasses.size());
+            if (_android) {
+                entryPointCreator = new AndroidEntryPointCreator(androidClasses);
+                dummyMain = entryPointCreator.createDummyMain();
+//                Scene.v().setEntryPoints(Collections.singletonList(dummyMain));
+            }
+
             for(SootClass c : classes) {
                 if (c.isApplicationClass())
                     writer.writeApplicationClass(c);
@@ -348,7 +392,10 @@ public class Main {
 
             db.flush();
 
-            Driver.doInSequentialOrder(classes, writer, _ssa);
+            if (_android)
+                Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
+            else
+                Driver.doInSequentialOrder(classes, writer, _ssa);
 
             db.close();
         }
