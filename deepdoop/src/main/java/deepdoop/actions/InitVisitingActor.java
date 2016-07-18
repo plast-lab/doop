@@ -74,23 +74,24 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			String compName = entry.getValue();
 			Component c     = n.comps.get(compName);
 			_id             = initName;
-			initP.addComp((Component) c.accept(this));
+			initP.addComponent((Component) c.accept(this));
 		}
 
 		initP.accept(visitor);
 		for (Propagation prop : n.props) {
-			_id             = prop.fromId;
-			Set<String> newPreds = new HashSet<>();
+			_id                          = prop.fromId;
+			Component fromComp           = initP.comps.get(prop.fromId);
+			Map<String, IAtom> declAtoms = acActor.getDeclaringAtoms(fromComp);
+			Set<IAtom> newPreds          = new HashSet<>();
 
 			// Propagate all predicates (*)
-			if (prop.preds.isEmpty()) {
-				Component fromComp = initP.comps.get(prop.fromId);
-				newPreds.addAll(acActor.getDeclaringAtoms(fromComp).keySet());
-			}
+			if (prop.preds.isEmpty())
+				newPreds.addAll(declAtoms.values());
 			else
-				for (String pred : prop.preds) newPreds.add(name(pred));
+				for (IAtom pred : prop.preds)
+					newPreds.add(declAtoms.get(name(pred.name())));
 
-			initP.addPropagate(prop.fromId, newPreds, prop.toId);
+			initP.addPropagation(prop.fromId, newPreds, prop.toId);
 		}
 		return initP;
 	}

@@ -5,6 +5,7 @@ import deepdoop.actions.IVisitable;
 import deepdoop.actions.PostOrderVisitor;
 import deepdoop.datalog.Program;
 import deepdoop.datalog.DeepDoopException;
+import deepdoop.datalog.element.atom.IAtom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,15 +29,14 @@ public class DependencyGraph {
 				fromNode.addEdgeTo(getNode(prop.toId, false));
 			// Propagation *to* global space
 			else
-				for (String predName : prop.preds)
-					fromNode.addEdgeTo(getNode(predName, true));
+				for (IAtom pred : prop.preds)
+					fromNode.addEdgeTo(getNode(pred.name(), true));
 
 			// Dependencies *from* global space
 			Component fromComp = p.comps.get(prop.fromId);
 			for (String globalAtom : acActor.getUsedAtoms(fromComp).keySet())
 				getNode(globalAtom, true).addEdgeTo(fromNode);
 		}
-		//for (Node n : _nodes.values()) n.print();
 
 		// Topological sort
 		Map<Node, Integer> inDegrees = new HashMap<>();
@@ -70,6 +70,8 @@ public class DependencyGraph {
 				throw new DeepDoopException("Cycle detected in the dependency graph of components");
 			zeroInNodes = newZeroInNodes;
 		}
+		//System.out.println(layers);
+		//for (Node n : _nodes.values()) n.print();
 	}
 
 	Node getNode(String name, boolean isPredicate) {

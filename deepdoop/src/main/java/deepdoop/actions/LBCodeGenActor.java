@@ -65,11 +65,7 @@ public class LBCodeGenActor implements IActor<IVisitable> {
 		for (Component c : n.comps.values()) finalP.globalComp.addAll(c);
 
 		for (Propagation prop : n.props) {
-			Component fromComp  = n.comps.get(prop.fromId);
-			Map<String, IAtom> declAtoms = _acActor.getDeclaringAtoms(fromComp);
-
-			for (String predName : prop.preds) {
-				IAtom atom = declAtoms.get(predName);
+			for (IAtom atom : prop.preds) {
 				if (atom instanceof Directive) continue;
 
 				List<VariableExpr> vars = new ArrayList<>(atom.arity());
