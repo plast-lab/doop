@@ -29,7 +29,7 @@ public class FlatteningActor implements IActor<IVisitable> {
 	@Override
 	public Program exit(Program n, Map<IVisitable, IVisitable> m) {
 		Program flatP = new Program(n.globalComp, null, n.inits, n.props);
-		for (Component c : n.comps.values()) flatP.addComp((Component) m.get(c));
+		for (Component c : n.comps.values()) flatP.addComponent((Component) m.get(c));
 		return flatP;
 	}
 

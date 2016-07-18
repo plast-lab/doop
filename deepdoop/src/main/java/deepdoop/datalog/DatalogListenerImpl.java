@@ -52,16 +52,19 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
-		_program.addComp(_currComp);
+		_program.addComponent(_currComp);
 		_currComp = _program.globalComp;
 	}
 	public void exitInit_(Init_Context ctx) {
 		_program.addInit(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPropagate(PropagateContext ctx) {
-		_program.addPropagate(
+		Set<String> predNames = (ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())));
+		Set<IAtom>  preds = new HashSet<>();
+		for (String predName : predNames) preds.add(new StubAtom(predName));
+		_program.addPropagation(
 				ctx.IDENTIFIER(0).getText(),
-				ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())),
+				preds,
 				ctx.GLOBAL() != null ? null : ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPredicateNameList(PredicateNameListContext ctx) {
@@ -73,7 +76,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
 	}
 	public void exitCmd(CmdContext ctx) {
-		_program.addComp(_currComp);
+		_program.addComponent(_currComp);
 		_currComp = _program.globalComp;
 	}
 	public void enterDeclaration(DeclarationContext ctx) {

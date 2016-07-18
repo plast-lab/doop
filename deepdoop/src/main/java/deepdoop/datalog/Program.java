@@ -3,6 +3,7 @@ package deepdoop.datalog;
 import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.component.*;
+import deepdoop.datalog.element.atom.IAtom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class Program implements IVisitable {
 		this(null, null, null, null);
 	}
 
-	public void addComp(Component comp) {
+	public void addComponent(Component comp) {
 		comps.put(comp.name, comp);
 	}
 	public void addInit(String id, String comp) {
@@ -35,7 +36,7 @@ public class Program implements IVisitable {
 
 		inits.put(id, comp);
 	}
-	public void addPropagate(String fromId, Set<String> preds, String toId) {
+	public void addPropagation(String fromId, Set<IAtom> preds, String toId) {
 		props.add(new Propagation(fromId, preds, toId));
 	}
 
