@@ -1,3 +1,16 @@
+// AndroidEntryPoints
+
+lang:physical:storageModel[`_AndroidEntryPoint] = "DelimitedFile".
+lang:physical:filePath[`_AndroidEntryPoint] = "facts/AndroidEntryPoint.facts".
+lang:physical:delimiter[`_AndroidEntryPoint] = "\t".
+lang:physical:hasColumnNames[`_AndroidEntryPoint] = false.
+
+_AndroidEntryPoint(?method) ->
+   string(?method).
+
++AndroidEntryPoint(?method) <-
+   _AndroidEntryPoint(?method).
+
 // AssignLocal
 
 lang:physical:storageModel[`_AssignLocal] = "DelimitedFile".

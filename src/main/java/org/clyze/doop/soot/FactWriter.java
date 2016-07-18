@@ -32,6 +32,11 @@ class FactWriter
         _varTypeMap = new HashMap<>();
     }
 
+    void writeAndroidEntryPoint(SootMethod m) {
+        _db.add(ANDROID_ENTRY_POINT,
+                _db.asEntity(_rep.signature(m)));
+    }
+
     void writeProperty(String path, String key, String value)
     {
         // Add heap allocations for string constants

@@ -1,1 +1,1 @@
-./doop -i /home/anantoni/android/com.facebook.katana_v82.0.0.23.70-32429886_Android-5.0.apk -a context-insensitive --platform android_23 -ldebug
+./doop -j ~/android/com.facebook.katana_v86.0.0.13.69-33840476_Android-5.0.apk -a context-insensitive --platform android_23 -ldebug

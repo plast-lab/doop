@@ -9,6 +9,7 @@ import java.io.Writer;
 
 enum PredicateFile
 {
+    ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     CLASS_TYPE("ClassType"),
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),

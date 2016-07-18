@@ -728,3 +728,9 @@ lang:physical:capacity[`NullType] = 32768.
 lang:physical:capacity[`ArrayType] = 32768.
 lang:physical:capacity[`ClassType] = 32768.
 lang:physical:capacity[`InterfaceType] = 32768.
+
+
+//------------------------------------
+//          Android Entry Points
+//------------------------------------
+AndroidEntryPoint(?m) -> MethodSignature(?m).

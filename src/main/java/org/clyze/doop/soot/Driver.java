@@ -1,6 +1,7 @@
 package org.clyze.doop.soot;
 
 import soot.SootClass;
+import soot.SootMethod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +54,16 @@ class Driver {
             sequentialFactGenerator.generate(c);
         }
     }
+
+    static void doInSequentialOrder(SootMethod dummyMain, List<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+        SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
+        sequentialFactGenerator.generate(dummyMain, new Session());
+        writer.writeAndroidEntryPoint(dummyMain);
+        for(SootClass c : sootClasses) {
+            sequentialFactGenerator.generate(c);
+        }
+    }
+
     void generate(SootClass _sootClass) {
         _classCounter++;
         _sootClasses.add(_sootClass);
