@@ -2,10 +2,7 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
-import soot.ClassProvider;
-import soot.Scene;
-import soot.SootClass;
-import soot.SootMethod;
+import soot.*;
 import soot.jimple.infoflow.entryPointCreators.AndroidEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 
@@ -88,6 +85,7 @@ public class Main {
                     soot.options.Options.v().set_process_dir(_inputs);
                     soot.options.Options.v().set_allow_phantom_refs(true);
                     soot.options.Options.v().set_no_bodies_for_excluded(true);
+//                    soot.options.Options.v().set_verbose(true);
 
                 }
                 else if (args[i].equals("-l")) {
@@ -198,13 +196,7 @@ public class Main {
                 _outputDir = System.getProperty("user.dir");
             }
 
-            /*
-             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
-             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
-             * a runtime exception when running soot with java 1.8, however it leads to different
-             * input fact generation thus leading to different analysis results
-             */
-            Scene.v().addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
+
             run();
         }
         catch(Exception exc) {
@@ -256,15 +248,15 @@ public class Main {
             }
         }
         List<ClassProvider> providersList = new ArrayList<>();
-        providersList.add(classProvider);
         providersList.add(dexProvider);
+        providersList.add(classProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 //        soot.SourceLocator.v().setClassProviders(Collections.singletonList(new DexClassProvider()));
         Scene scene = Scene.v();
         if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
         }
-
+//
         if(_mode == Mode.FULL) {
             soot.options.Options.v().set_full_resolver(true);
         }
@@ -284,9 +276,15 @@ public class Main {
         List<SootClass> classes = new ArrayList<>();
         if (_android) {
             for (String className : dexProvider.getClassNames()) {
-                scene.loadClass(className, SootClass.SIGNATURES);
-                SootClass c = scene.loadClass(className, SootClass.BODIES);
+//                System.out.println("Niania");
+//                scene.loadClass(className, SootClass.SIGNATURES);
+//                System.out.println("NIIONOIO");
 
+                scene.addBasicClass(className, SootClass.BODIES);
+                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+                if (c != null) {
+                    c.setApplicationClass();
+                }
                 classes.add(c);
             }
         }
@@ -298,6 +296,13 @@ public class Main {
         }
 
         if (!_android) {
+            /*
+             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
+             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
+             * a runtime exception when running soot with java 1.8, however it leads to different
+             * input fact generation thus leading to different analysis results
+             */
+            scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
             /*
             * For simulating the FileSystem class, we need the implementation
             * of the FileSystem, but the classes are not loaded automatically
