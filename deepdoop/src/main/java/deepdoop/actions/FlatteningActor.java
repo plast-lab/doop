@@ -4,14 +4,9 @@ import deepdoop.datalog.*;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
-import deepdoop.datalog.element.atom.*;
 import deepdoop.datalog.expr.*;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class FlatteningActor implements IActor<IVisitable> {

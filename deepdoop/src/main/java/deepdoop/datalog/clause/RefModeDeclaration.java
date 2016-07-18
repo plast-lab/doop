@@ -1,6 +1,5 @@
 package deepdoop.datalog.clause;
 
-import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.element.atom.*;
 import java.util.Arrays;
