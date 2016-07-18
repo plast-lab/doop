@@ -7,6 +7,7 @@ import org.jf.dexlib2.iface.ClassDef;
 import soot.ClassProvider;
 import soot.ClassSource;
 import soot.CoffiClassSource;
+import soot.DexClassSource;
 import soot.dexpler.Util;
 
 import java.io.*;
@@ -64,7 +65,6 @@ class NoSearchingDexProvider implements ClassProvider {
     private List<String> addClasses(String path, NoSearchingDexProvider.Resource resource) throws IOException {
         InputStream fis = resource.open();
         File tempFile = File.createTempFile("temp", ".tmp");
-        tempFile.deleteOnExit();
         FileOutputStream fos = new FileOutputStream(tempFile);
         IOUtils.copy(fis, fos);
         fos.close();
@@ -73,7 +73,6 @@ class NoSearchingDexProvider implements ClassProvider {
         DexBackedDexFile d = DexFileFactory.loadDexFile(tempFile, 1, false);
         List<String> result = new ArrayList<>();
 
-        System.out.println("ADDING " + d.getClasses().size() + " CLASSES ********************************************************************************************************************************************");
         for (ClassDef c : d.getClasses()) {
             String className = Util.dottedClassName(c.getType());
             result.add(className);
@@ -85,6 +84,7 @@ class NoSearchingDexProvider implements ClassProvider {
                 _classes.put(className, resource);
             }
         }
+        tempFile.delete();
 
         return result;
     }
@@ -114,6 +114,47 @@ class NoSearchingDexProvider implements ClassProvider {
     }
 
     /**
+     * Finds the class for the given className. This method is invoked
+     * by the Soot SourceLocator.
+     */
+    public ClassSource find(String className) {
+        System.out.println("find called from dex provider for class: " + className);
+        NoSearchingDexProvider.Resource resource = _classes.get(className);
+
+        if(resource == null) {
+            String fileName = className + ".dex";
+
+            for(ZipFile archive : _archives) {
+                ZipEntry entry = archive.getEntry(fileName);
+                if(entry != null) {
+                    resource = new NoSearchingDexProvider.ZipEntryResource(archive, entry);
+                    break;
+                }
+            }
+        }
+
+        if(resource == null) {
+            return null;
+        }
+        else {
+
+            try {
+                InputStream fis = resource.open();
+                File tempFile = File.createTempFile("temp", ".tmp");
+                tempFile.deleteOnExit();
+                FileOutputStream fos = new FileOutputStream(tempFile);
+                IOUtils.copy(fis, fos);
+                fis.close();
+                fos.close();
+                return new DexClassSource(className, tempFile);
+            }
+            catch(IOException exc) {
+                throw new RuntimeException(exc);
+            }
+        }
+    }
+
+    /**
      * Adds an application archive to the class provider.
      */
     List<String> addArchive(File f) throws IOException {
@@ -124,7 +165,6 @@ class NoSearchingDexProvider implements ClassProvider {
 
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
-            System.out.println("entry: " + entry.getName());
 
             if(entry.getName().endsWith("dex")) {
                 List<String> classNames = addClasses(archive, entry);
@@ -142,11 +182,6 @@ class NoSearchingDexProvider implements ClassProvider {
      */
     void addArchiveForResolving(File f) throws IOException {
         _archives.add(new ZipFile(f));
-    }
-
-    @Override
-    public ClassSource find(String s) {
-        return null;
     }
 
     /**
