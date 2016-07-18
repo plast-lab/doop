@@ -84,7 +84,8 @@ public class Main {
                     soot.options.Options.v().set_whole_program(true);
                     soot.options.Options.v().set_process_dir(_inputs);
                     soot.options.Options.v().set_allow_phantom_refs(true);
-                    soot.options.Options.v().set_no_bodies_for_excluded(true);
+//                    soot.options.Options.v().set_no_bodies_for_excluded(true);
+//                    soot.options.Options.v().set_debug_resolver(true);
 //                    soot.options.Options.v().set_verbose(true);
 
                 }
@@ -196,7 +197,6 @@ public class Main {
                 _outputDir = System.getProperty("user.dir");
             }
 
-
             run();
         }
         catch(Exception exc) {
@@ -276,15 +276,17 @@ public class Main {
         List<SootClass> classes = new ArrayList<>();
         if (_android) {
             for (String className : dexProvider.getClassNames()) {
-//                System.out.println("Niania");
-//                scene.loadClass(className, SootClass.SIGNATURES);
-//                System.out.println("NIIONOIO");
+                System.out.println("Niania");
+                scene.loadClass(className, SootClass.SIGNATURES);
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
 
-                scene.addBasicClass(className, SootClass.BODIES);
-                SootClass c = scene.forceResolve(className, SootClass.BODIES);
-                if (c != null) {
-                    c.setApplicationClass();
-                }
+                System.out.println("NIIONOIO");
+
+//                scene.addBasicClass(className, SootClass.BODIES);
+//                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+//                if (c != null) {
+//                    c.setApplicationClass();
+//                }
                 classes.add(c);
             }
         }
