@@ -238,9 +238,6 @@ public class Main {
 //                    System.out.println("Adding file: " + arg);
 //                }
             }
-            Field f = DexClassProvider.class.getField("index");
-            Map index = (Map)f.get(dexClassProvider);
-            System.out.println("CLASSES FOUND: " + index.entrySet().size());
         }
 
         for (String lib : _libraries) {
@@ -294,6 +291,8 @@ public class Main {
                 classes.add(c);
             }
         }
+        Map index = SourceLocator.v().dexClassIndex();
+        System.out.println("CLASSES FOUND: " + index.entrySet().size());
 //        System.out.println("Phantom counter: " + dexClassProvider.phantomCounter);
 
         for (String className : classProvider.getClassNames()) {
