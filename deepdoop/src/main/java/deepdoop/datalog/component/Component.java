@@ -56,7 +56,6 @@ public class Component implements IVisitable {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		//builder.append("_____" + name + "______\n");
 		for (Declaration d : declarations) builder.append(d + "\n");
 		for (Constraint c : constraints)   builder.append(c + "\n");
 		for (Rule r : rules)               builder.append(r + "\n");

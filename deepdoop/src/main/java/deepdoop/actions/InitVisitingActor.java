@@ -22,8 +22,12 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	Set<String> _globalAtomNames;
 
 	public InitVisitingActor(String oldId, String id, Set<String> globalAtomNames) {
-		super(null);             // TODO FIX ugly?
-		_actor           = this; // TODO FIX ugly?
+		// Implemented this way, because Java doesn't allow usage of "this"
+		// keyword before all implicit/explicit calls to super/this have
+		// returned
+		super(null);
+		_actor           = this;
+
 		_oldId           = oldId;
 		_id              = id;
 		_globalAtomNames = globalAtomNames;
@@ -82,6 +86,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		for (Propagation prop : n.props) {
 			_id                          = prop.fromId;
 			Component fromComp           = initP.comps.get(prop.fromId);
+			Component toComp             = (prop.toId == null ? initP.globalComp : initP.comps.get(prop.toId));
 			Map<String, IAtom> declAtoms = acActor.getDeclaringAtoms(fromComp);
 			Set<IAtom> newPreds          = new HashSet<>();
 
@@ -108,9 +113,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
 					accept(new InitVisitingActor(prop.fromId, prop.toId, _globalAtomNames));
 				IElement body = (IAtom) atom.instantiate(null, vars);
-				Rule r = new Rule(new LogicalElement(head), body);
-				if (prop.toId == null) initP.globalComp.addRule(r);
-				else                   initP.comps.get(prop.toId).addRule(r);
+				toComp.addRule(new Rule(new LogicalElement(head), body));
 			}
 		}
 		return initP;
@@ -138,6 +141,9 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 	@Override
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
+		if (!n.rules.isEmpty())
+			throw new DeepDoopException("Normal rules are not supported in a command block");
+
 		Set<Declaration> newDeclarations = new HashSet<>();
 		for (Declaration d : n.declarations) newDeclarations.add((Declaration) m.get(d));
 		Set<StubAtom> newImports = new HashSet<>();
