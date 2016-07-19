@@ -1,10 +1,10 @@
 P(x) -> string(x).
 
-.comp Foo {
+component Foo {
 	P1(x) <- P(x).
 }
 
-.cmd Bar {
+command Bar {
 	lang:cmd:DIR[] = "../dir1".
 	lang:cmd:EVAL[] = "dir2/run.sh -flag1".
 	lang:cmd:export(`P1).
@@ -14,8 +14,8 @@ P(x) -> string(x).
 	lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 }
 
-.init S1 = Foo
-.init S2 = Bar
+S1 = new Foo
+S2 = new Bar
 
-.propagate S1 { * } to S2
-.propagate S2 { * } .global
+propagate S1 { * } to S2
+propagate S2 { * } .global

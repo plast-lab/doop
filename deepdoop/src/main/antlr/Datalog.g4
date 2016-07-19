@@ -12,7 +12,7 @@ comp
 	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ;
 
 init_
-	: INIT IDENTIFIER '=' IDENTIFIER ;
+	: IDENTIFIER '=' NEW IDENTIFIER ;
 
 propagate
 	: PROPAGATE IDENTIFIER '{' (ALL | predicateNameList) '}' TO (IDENTIFIER | GLOBAL) ;
@@ -122,19 +122,19 @@ CAPACITY
 	: '[' ('32' | '64' | '128') ']' ;
 
 CMD
-	: '.cmd' ;
+	: 'command' ;
 
 COMP
-	: '.comp' ;
-
-INIT
-	: '.init' ;
+	: 'component' ;
 
 GLOBAL
 	: '.global' ;
 
+NEW
+	: 'new' ;
+
 PROPAGATE
-	: '.propagate' ;
+	: 'propagate' ;
 
 TO
 	: 'to' ;

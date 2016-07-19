@@ -1,15 +1,15 @@
 P(x) -> string(x).
 P("hello").
 
-.comp Foo {
+component Foo {
 	P1(x) <- P(x).
 }
-.comp Bar {
+component Bar {
 	P2(x) <- P0@past(x).
 }
 
-.init S1 = Foo
-.init S2 = Bar
+S1 = new Foo
+S2 = new Bar
 
-.propagate S1 { * } to S2
-.propagate S2 { * } to .global
+propagate S1 { * } to S2
+propagate S2 { * } to .global

@@ -2,22 +2,22 @@
 P(x) -> string(x).
 P("hello").
 
-.comp Foo {
+component Foo {
 	P1(x) <- P(x).
 	P1(x) -> string(x).
 }
-.comp Bar {
+component Bar {
 	P2(x) <- P1@past(x).
 }
-.comp Baz {
+component Baz {
 	P3(x) <- P2@past(x).
 }
 
-.init S1 = Foo
-.init S2 = Bar
-.init S3 = Baz
+S1 = new Foo
+S2 = new Bar
+S3 = new Baz
 
-.propagate S1 { * } to S2
-.propagate S2 { * } to S3
-.propagate S3 { * } to S1
-.propagate S3 { P3 } to .global
+propagate S1 { * } to S2
+propagate S2 { * } to S3
+propagate S3 { * } to S1
+propagate S3 { P3 } to .global

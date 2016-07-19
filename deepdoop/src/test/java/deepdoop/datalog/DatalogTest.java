@@ -37,7 +37,6 @@ public class DatalogTest {
 			Program flatP = (Program) p.accept(v);
 
 			new LBCodeGenerator(flatP).generate();
-			//System.out.println(_listener.getProgram().flatten());
 		} catch (Exception e) {
 			Assert.fail(e.getMessage() + " on " + filename);
 		}
