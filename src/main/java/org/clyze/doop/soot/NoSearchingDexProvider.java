@@ -4,13 +4,13 @@ import org.apache.commons.io.IOUtils;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.ClassDef;
-import soot.ClassProvider;
-import soot.ClassSource;
-import soot.CoffiClassSource;
-import soot.DexClassSource;
+import soot.*;
 import soot.dexpler.Util;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.KeyStore;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -18,10 +18,11 @@ import java.util.zip.ZipFile;
 /**
  * Created by anantoni on 12/7/2016.
  */
-class NoSearchingDexProvider implements ClassProvider {
+class NoSearchingDexProvider extends DexClassProvider implements ClassProvider {
     private Map<String, NoSearchingDexProvider.Resource> _classes;
     private List<ZipFile> _archives;
     private Map<String, Properties> _properties;
+    public int phantomCounter = 0;
 
     NoSearchingDexProvider() {
         _classes = new HashMap<>();
@@ -75,6 +76,7 @@ class NoSearchingDexProvider implements ClassProvider {
 
         for (ClassDef c : d.getClasses()) {
             String className = Util.dottedClassName(c.getType());
+
             result.add(className);
             if(_classes.containsKey(className)) {
                 throw new RuntimeException(
@@ -84,7 +86,6 @@ class NoSearchingDexProvider implements ClassProvider {
                 _classes.put(className, resource);
             }
         }
-        System.out.println("_classes_size: " + _classes.size());
         tempFile.delete();
 
         return result;
@@ -118,24 +119,32 @@ class NoSearchingDexProvider implements ClassProvider {
      * Finds the class for the given className. This method is invoked
      * by the Soot SourceLocator.
      */
+//    public ClassSource find(String className) {
+//        System.out.println("find called from dex provider for class: " + className);
+//        NoSearchingDexProvider.Resource resource = _classes.get(className);
+//
+//        try {
+//            InputStream fis = resource.open();
+//            File tempFile = File.createTempFile("temp", ".tmp");
+//            tempFile.deleteOnExit();
+//            FileOutputStream fos = new FileOutputStream(tempFile);
+//            IOUtils.copy(fis, fos);
+//            fis.close();
+//            fos.close();
+//            return new DexClassSource(className, tempFile);
+//
+//        }
+//        catch(IOException exc) {
+//            throw new RuntimeException(exc);
+//        }
+//    }
+
     public ClassSource find(String className) {
-        System.out.println("find called from dex provider for class: " + className);
-        NoSearchingDexProvider.Resource resource = _classes.get(className);
+        DexClassSource dexClassSource = (DexClassSource) super.find(className);
 
-        try {
-            InputStream fis = resource.open();
-            File tempFile = File.createTempFile("temp", ".tmp");
-            tempFile.deleteOnExit();
-            FileOutputStream fos = new FileOutputStream(tempFile);
-            IOUtils.copy(fis, fos);
-            fis.close();
-            fos.close();
-            return new DexClassSource(className, tempFile);
-
-        }
-        catch(IOException exc) {
-            throw new RuntimeException(exc);
-        }
+        if (dexClassSource == null)
+            phantomCounter++;
+        return dexClassSource;
     }
 
     /**
