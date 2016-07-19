@@ -10,6 +10,7 @@ import soot.options.Options;
 
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -237,6 +238,9 @@ public class Main {
 //                    System.out.println("Adding file: " + arg);
 //                }
             }
+            Field f = DexClassProvider.class.getField("index");
+            Map index = (Map)f.get(dexClassProvider);
+            System.out.println("CLASSES FOUND: " + index.entrySet().size());
         }
 
         for (String lib : _libraries) {
