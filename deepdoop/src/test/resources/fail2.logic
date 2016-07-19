@@ -3,12 +3,12 @@ Q(x, y) -> string(x), int(y).
 
 Q(x, y) <- P(x), y = 10.
 
-.comp Foo {
+component Foo {
 	P1(x) <- P(x).
 	Z(y) <- Q(_, y).
 	P(x) <- Q(x, _), !Q(_, x).
 }
 
-.init S1 = Foo
+S1 = new Foo
 
-.propagate S1 { P } to .global
+propagate S1 { P } to .global

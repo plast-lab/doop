@@ -1,11 +1,11 @@
 P(x) -> string(x).
 P("hello").
 
-.comp Foo {
+component Foo {
 	P1(x) <- P0(x).
 	Z(x) <- P1(x).
 }
 
-.init S1 = Foo
+S1 = new Foo
 
-.propagate S1 { * } to .global
+propagate S1 { * } to .global

@@ -5,33 +5,33 @@ Q(x, y) -> string(x), int(y).
 Q(x, y) <- P(x), y = 10.
 Q("hello", 0).
 
-.comp First {
+component First {
 	Z(x) -> string(x).
 }
 
-.comp Base {
+component Base {
 	lang:derivationType[`P1] = "Derived".
 	P1(x) <- P(x).
 	P1(x) -> string(x).
 }
 
-.comp Foo : Base {
+component Foo : Base {
 	Z(y) -> int(y).
 	Z(y) <- Q(_, y).
 	W(x) <- Z@past(x).
 }
 
-.init S0 = First
-.init S1 = Base
-.init S2 = Foo
-.init S3 = Foo
-.init S4 = Foo
+S0 = new First
+S1 = new Base
+S2 = new Foo
+S3 = new Foo
+S4 = new Foo
 
-.propagate S0 { * } to S2
-.propagate S1 { * } to .global
-.propagate S2 { * } to S3
-.propagate S3 { W, P1 } to S4
-.propagate S4 { * } to .global
+propagate S0 { * } to S2
+propagate S1 { * } to .global
+propagate S2 { * } to S3
+propagate S3 { W, P1 } to S4
+propagate S4 { * } to .global
 
 
 Pred(x) <- W(x).
