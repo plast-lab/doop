@@ -13,7 +13,7 @@ buildscript {
     }
 }
 
-applicationDefaultJvmArgs = ["-Xmx6g"]
+applicationDefaultJvmArgs = ["-Xmx10g"]
 //sourceCompatibility = "1.6"
 //targetCompatibility = "1.6"
 
@@ -44,7 +44,7 @@ dependencies {
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
             'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
 
-    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar')                               // Soot is a compile time dependency
+    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/axml-2.0.jar')                               // Soot is a compile time dependency
 
     runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
     runtime files('lib/averroes-no-properties.jar', 'lib/dexlib2-2.1.0-dev.jar' , 'lib/util-2.1.0-dev.jar')

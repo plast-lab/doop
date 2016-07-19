@@ -688,7 +688,7 @@ class FactWriter
                 _db.asIntColumn(String.valueOf(indexTo)),
                 // method
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-        
+
         Value condStmt = ((IfStmt) stmt).getCondition();
         if (condStmt instanceof ConditionExpr) {
             ConditionExpr condition = (ConditionExpr) condStmt;
