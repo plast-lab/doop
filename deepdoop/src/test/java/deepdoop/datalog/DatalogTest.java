@@ -1,5 +1,6 @@
 package deepdoop.datalog;
 
+import deepdoop.actions.*;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Parser;
@@ -29,7 +30,14 @@ public class DatalogTest {
 		try {
 			ParseTree tree = open(filename).program();
 			_walker.walk(_listener, tree);
-			System.out.println(_listener.getProgram().flatten());
+
+			Program p = _listener.getProgram();
+
+			PostOrderVisitor<IVisitable> v = new PostOrderVisitor<>(new FlatteningActor(p.comps));
+			Program flatP = (Program) p.accept(v);
+
+			new LBCodeGenerator(flatP).generate();
+			//System.out.println(_listener.getProgram().flatten());
 		} catch (Exception e) {
 			Assert.fail(e.getMessage() + " on " + filename);
 		}
@@ -106,6 +114,14 @@ public class DatalogTest {
 	@Test
 	public void test_Fail7() throws IOException {
 		test("/fail7.logic");
+	}
+	@Test
+	public void test_Fail8() throws IOException {
+		test("/fail8.logic");
+	}
+	@Test
+	public void test_Fail9() throws IOException {
+		test("/fail9.logic");
 	}
 
 
