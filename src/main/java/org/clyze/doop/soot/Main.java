@@ -3,8 +3,10 @@ package org.clyze.doop.soot;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
+import soot.jimple.infoflow.android.axml.ApkHandler;
 import soot.jimple.infoflow.entryPointCreators.AndroidEntryPointCreator;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
+import soot.options.Options;
 
 
 import java.io.File;
@@ -78,12 +80,13 @@ public class Main {
                     _allowPhantom = true;
                     _android = true;
                     String _androidJars = args[i];
-                    soot.options.Options.v().set_src_prec(5);
+                    soot.options.Options.v().set_src_prec(Options.src_prec_apk);
                     soot.options.Options.v().set_android_jars(_androidJars);
                     soot.options.Options.v().set_ignore_resolution_errors(true);
                     soot.options.Options.v().set_whole_program(true);
                     soot.options.Options.v().set_process_dir(_inputs);
                     soot.options.Options.v().set_allow_phantom_refs(true);
+                    soot.options.Options.v().set_process_multiple_dex(true);
 //                    soot.options.Options.v().set_no_bodies_for_excluded(true);
 //                    soot.options.Options.v().set_debug_resolver(true);
 //                    soot.options.Options.v().set_verbose(true);
@@ -206,10 +209,10 @@ public class Main {
     }
 
     private static void run() throws Exception {
-        NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
-        NoSearchingDexProvider dexProvider = new NoSearchingDexProvider();
-        List<String> androidClasses = null;
 
+        NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
+        DexClassProvider dexClassProvider = new DexClassProvider();
+        Set<String> androidClasses = null;
 
         if (!_android) {
             for (String arg : _inputs) {
@@ -223,13 +226,16 @@ public class Main {
             }
         }
         else {
+            androidClasses = new HashSet<>();
             for (String arg : _inputs) {
-                if (arg.endsWith(".apk")) {
-                    System.out.println("Adding apk file: " + arg);
-                    androidClasses = dexProvider.addArchive(new File(arg));
-                } else {
-                    System.out.println("Adding file: " + arg);
-                }
+
+                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
+//                if (arg.endsWith(".apk")) {
+//                    System.out.println("Adding apk file: " + arg);
+//                    androidClasses = dexClassProvider.addArchive(new File(arg));
+//                } else {
+//                    System.out.println("Adding file: " + arg);
+//                }
             }
         }
 
@@ -241,14 +247,11 @@ public class Main {
             if (!libraryFile.exists()) {
                 System.err.println("Library file does not exist: " + libraryFile);
             } else {
-                if (lib.contains("android.jar"))
-                    classProvider.addArchive(libraryFile);
-                else
-                    classProvider.addArchiveForResolving(libraryFile);
+                classProvider.addArchiveForResolving(libraryFile);
             }
         }
         List<ClassProvider> providersList = new ArrayList<>();
-        providersList.add(dexProvider);
+        providersList.add(dexClassProvider);
         providersList.add(classProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 //        soot.SourceLocator.v().setClassProviders(Collections.singletonList(new DexClassProvider()));
@@ -256,7 +259,7 @@ public class Main {
         if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
         }
-//
+
         if(_mode == Mode.FULL) {
             soot.options.Options.v().set_full_resolver(true);
         }
@@ -275,21 +278,20 @@ public class Main {
 
         List<SootClass> classes = new ArrayList<>();
         if (_android) {
-            for (String className : dexProvider.getClassNames()) {
-                System.out.println("Niania");
-                scene.loadClass(className, SootClass.SIGNATURES);
-                SootClass c = scene.loadClass(className, SootClass.BODIES);
+            for (String className : androidClasses) {
+//                scene.loadClass(className, SootClass.SIGNATURES);
+//                SootClass c = scene.loadClass(className, SootClass.BODIES);
 
-                System.out.println("NIIONOIO");
-
-//                scene.addBasicClass(className, SootClass.BODIES);
-//                SootClass c = scene.forceResolve(className, SootClass.BODIES);
-//                if (c != null) {
-//                    c.setApplicationClass();
-//                }
+                scene.addBasicClass(className, SootClass.BODIES);
+                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+                if (c != null) {
+                    c.setApplicationClass();
+                }
                 classes.add(c);
             }
         }
+//        System.out.println("Phantom counter: " + dexClassProvider.phantomCounter);
+
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
@@ -322,25 +324,25 @@ public class Main {
             addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
         }
 
-        // load all entryPoint classes with their bodies
-//        if (_android) {
-//            assert androidClasses != null;
-//            for (String className : androidClasses)
-//                scene.addBasicClass(className, SootClass.BODIES);
-//            System.out.println("Basic class loading done.");
-//        }
+//         load all entryPoint classes with their bodies
+        if (_android) {
+            assert androidClasses != null;
+            for (String className : androidClasses)
+                scene.addBasicClass(className, SootClass.BODIES);
+            System.out.println("Basic class loading done.");
+        }
 
         scene.loadNecessaryClasses();
 
-//        if (_android) {
-//            assert androidClasses != null;
-//            for (String className : androidClasses) {
-//                SootClass c = scene.forceResolve(className, SootClass.BODIES);
-//                if (c != null) {
-//                    c.setApplicationClass();
-//                }
-//            }
-//        }
+        if (_android) {
+            assert androidClasses != null;
+            for (String className : androidClasses) {
+                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+                if (c != null) {
+                    c.setApplicationClass();
+                }
+            }
+        }
 
         /*
         * This part should definitely appear after the call to
