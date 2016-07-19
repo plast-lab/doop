@@ -3,16 +3,13 @@ package org.clyze.doop.soot;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
-import soot.jimple.infoflow.android.axml.ApkHandler;
-import soot.jimple.infoflow.entryPointCreators.AndroidEntryPointCreator;
+import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.options.Options;
 
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
 
@@ -24,6 +21,7 @@ public class Main {
     private static String _main = null;
     private static boolean _ssa = false;
     private static boolean _android = false;
+    private static String _androidJars = null;
     private static boolean _allowPhantom = false;
     private static boolean _useOriginalNames = false;
     private static boolean _keepLineNumber = false;
@@ -80,18 +78,7 @@ public class Main {
                     i = shift(args, i);
                     _allowPhantom = true;
                     _android = true;
-                    String _androidJars = args[i];
-                    soot.options.Options.v().set_src_prec(Options.src_prec_apk);
-                    soot.options.Options.v().set_android_jars(_androidJars);
-                    soot.options.Options.v().set_ignore_resolution_errors(true);
-                    soot.options.Options.v().set_whole_program(true);
-                    soot.options.Options.v().set_process_dir(_inputs);
-                    soot.options.Options.v().set_allow_phantom_refs(true);
-                    soot.options.Options.v().set_process_multiple_dex(true);
-//                    soot.options.Options.v().set_no_bodies_for_excluded(true);
-//                    soot.options.Options.v().set_debug_resolver(true);
-//                    soot.options.Options.v().set_verbose(true);
-
+                    _androidJars = args[i];
                 }
                 else if (args[i].equals("-l")) {
                     i = shift(args, i);
@@ -213,9 +200,29 @@ public class Main {
 
         NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         DexClassProvider dexClassProvider = new DexClassProvider();
+        SootMethod dummyMain = null;
         Set<String> androidClasses = null;
 
-        if (!_android) {
+        if (_android) {
+            SetupApplication app = new SetupApplication(_libraries.get(0), _inputs.get(0));
+            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+            dummyMain = app.getDummyMainMethod();
+
+            soot.options.Options.v().set_src_prec(Options.src_prec_apk);
+            soot.options.Options.v().set_android_jars(_androidJars);
+            soot.options.Options.v().set_ignore_resolution_errors(true);
+            soot.options.Options.v().set_whole_program(true);
+            soot.options.Options.v().set_process_dir(_inputs);
+            soot.options.Options.v().set_allow_phantom_refs(true);
+            soot.options.Options.v().set_process_multiple_dex(true);
+            soot.options.Options.v().set_no_bodies_for_excluded(true);
+            androidClasses = new HashSet<>();
+            for (String arg : _inputs) {
+
+                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
+            }
+        }
+        else {
             for (String arg : _inputs) {
                 if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
                     System.out.println("Adding archive: " + arg);
@@ -224,19 +231,6 @@ public class Main {
                     System.out.println("Adding file: " + arg);
                     classProvider.addClass(new File(arg));
                 }
-            }
-        }
-        else {
-            androidClasses = new HashSet<>();
-            for (String arg : _inputs) {
-
-                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
-//                if (arg.endsWith(".apk")) {
-//                    System.out.println("Adding apk file: " + arg);
-//                    androidClasses = dexClassProvider.addArchive(new File(arg));
-//                } else {
-//                    System.out.println("Adding file: " + arg);
-//                }
             }
         }
 
@@ -248,14 +242,20 @@ public class Main {
             if (!libraryFile.exists()) {
                 System.err.println("Library file does not exist: " + libraryFile);
             } else {
-                classProvider.addArchiveForResolving(libraryFile);
+                if (_android) {
+                    classProvider.addArchive(libraryFile);
+                    break;
+                }
+                else
+                    classProvider.addArchiveForResolving(libraryFile);
             }
         }
+
         List<ClassProvider> providersList = new ArrayList<>();
         providersList.add(dexClassProvider);
         providersList.add(classProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
-//        soot.SourceLocator.v().setClassProviders(Collections.singletonList(new DexClassProvider()));
+
         Scene scene = Scene.v();
         if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
@@ -278,13 +278,14 @@ public class Main {
         }
 
         List<SootClass> classes = new ArrayList<>();
+
         if (_android) {
             for (String className : androidClasses) {
-//                scene.loadClass(className, SootClass.SIGNATURES);
-//                SootClass c = scene.loadClass(className, SootClass.BODIES);
+                scene.loadClass(className, SootClass.SIGNATURES);
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
 
                 scene.addBasicClass(className, SootClass.BODIES);
-                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+                c = scene.forceResolve(className, SootClass.BODIES);
                 if (c != null) {
                     c.setApplicationClass();
                 }
@@ -293,14 +294,21 @@ public class Main {
         }
         Map index = SourceLocator.v().dexClassIndex();
         System.out.println("CLASSES FOUND: " + index.entrySet().size());
-//        System.out.println("Phantom counter: " + dexClassProvider.phantomCounter);
 
+        androidClasses = SourceLocator.v().dexClassIndex().keySet();
+        System.out.println("Android classes in source locator: " + androidClasses.size());
+
+        for (String className : androidClasses) {
+            classes.add(scene.getSootClass(className));
+        }
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             SootClass c = scene.loadClass(className, SootClass.BODIES);
 
             classes.add(c);
         }
+
+        System.out.println("CLASSES FOUND: " + classes.size());
 
         if (!_android) {
             /*
@@ -311,10 +319,10 @@ public class Main {
              */
             scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
             /*
-            * For simulating the FileSystem class, we need the implementation
-            * of the FileSystem, but the classes are not loaded automatically
-            * due to the indirection via native code.
-            */
+             * For simulating the FileSystem class, we need the implementation
+             * of the FileSystem, but the classes are not loaded automatically
+             * due to the indirection via native code.
+             */
             addCommonDynamicClass(scene, classProvider, "java.io.UnixFileSystem");
             addCommonDynamicClass(scene, classProvider, "java.io.WinNTFileSystem");
             addCommonDynamicClass(scene, classProvider, "java.io.Win32FileSystem");
@@ -327,25 +335,7 @@ public class Main {
             addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
         }
 
-//         load all entryPoint classes with their bodies
-        if (_android) {
-            assert androidClasses != null;
-            for (String className : androidClasses)
-                scene.addBasicClass(className, SootClass.BODIES);
-            System.out.println("Basic class loading done.");
-        }
-
         scene.loadNecessaryClasses();
-
-        if (_android) {
-            assert androidClasses != null;
-            for (String className : androidClasses) {
-                SootClass c = scene.forceResolve(className, SootClass.BODIES);
-                if (c != null) {
-                    c.setApplicationClass();
-                }
-            }
-        }
 
         /*
         * This part should definitely appear after the call to
@@ -355,7 +345,7 @@ public class Main {
         * call to `setApplicationClass()').
         */
 
-        for(SootClass c : classes) {
+        for (SootClass c : classes) {
             if (isApplicationClass(c))
                 c.setApplicationClass();
         }
@@ -376,21 +366,16 @@ public class Main {
 //            ThreadFactory factory = new ThreadFactory(writer, _ssa);
 //            Driver driver = new Driver(factory, _ssa, classes.size());
 
-            IEntryPointCreator entryPointCreator;
-            SootMethod dummyMain = null;
-            System.out.println("ANDROID CLASSES: " + androidClasses.size());
-            if (_android) {
-                entryPointCreator = new AndroidEntryPointCreator(androidClasses);
-                dummyMain = entryPointCreator.createDummyMain();
-//                Scene.v().setEntryPoints(Collections.singletonList(dummyMain));
-            }
+            for (String classname : androidClasses)
+                classes.add(scene.getSootClass(classname));
+
 
             for(SootClass c : classes) {
                 if (c.isApplicationClass())
                     writer.writeApplicationClass(c);
             }
 
-//             Read all stored properties files
+            // Read all stored properties files
             for (Map.Entry<String,Properties> entry : classProvider.getProperties().entrySet()) {
                 String path = entry.getKey();
                 Properties properties = entry.getValue();

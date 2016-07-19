@@ -1,6 +1,9 @@
 #ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
 
 ImplicitReachable(sig) <-
+    MethodSignature:Value(sig:"<dummyMainClass: void dummyMainMethod(java.lang.String[])>").
+
+ImplicitReachable(sig) <-
    MethodSignature:Value(sig:"<java.lang.System: void initializeSystemClass()>").
 
 ImplicitReachable(sig) <-
