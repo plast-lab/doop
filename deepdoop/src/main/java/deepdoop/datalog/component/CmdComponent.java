@@ -39,8 +39,13 @@ public class CmdComponent extends Component {
 	}
 	@Override
 	public void addRule(Rule r) {
-		if (!r.isDirective)
-			throw new DeepDoopException("Only directives are supported in a command block");
+		// TODO must check for used defined rules but allow for frame rules
+		//if (!r.isDirective)
+		//	throw new DeepDoopException("Only directives are supported in a command block");
+		if (!r.isDirective) {
+			super.addRule(r);
+			return;
+		}
 
 		Directive d = r.getDirective();
 		switch (d.name) {

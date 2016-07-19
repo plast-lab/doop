@@ -1,6 +1,6 @@
 package deepdoop.actions;
 
-import deepdoop.datalog.Program;
+import deepdoop.datalog.*;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
@@ -8,6 +8,7 @@ import deepdoop.datalog.element.atom.*;
 import deepdoop.datalog.expr.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,11 +65,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	@Override
 	public IVisitable visit(Program n) {
 		AtomCollectingActor acActor = new AtomCollectingActor();
-		PostOrderVisitor<IVisitable> visitor = new PostOrderVisitor<>(acActor);
-		n.accept(visitor);
+		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(acActor);
+		n.accept(acVisitor);
 		_globalAtomNames = acActor.getDeclaringAtoms(n.globalComp).keySet();
 
-		Program initP = new Program(n.globalComp, null, null, null);
+		Program initP = Program.from(n.globalComp, new HashMap<>(), null, new HashSet<>());
 		for (Entry<String, String> entry : n.inits.entrySet()) {
 			String initName = entry.getKey();
 			String compName = entry.getValue();
@@ -76,15 +77,15 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			_id             = initName;
 			initP.addComponent((Component) c.accept(this));
 		}
+		initP.accept(acVisitor);
 
-		initP.accept(visitor);
 		for (Propagation prop : n.props) {
 			_id                          = prop.fromId;
 			Component fromComp           = initP.comps.get(prop.fromId);
 			Map<String, IAtom> declAtoms = acActor.getDeclaringAtoms(fromComp);
 			Set<IAtom> newPreds          = new HashSet<>();
 
-			// Propagate all predicates (*)
+			// Preprocess predicates for propagation
 			if (prop.preds.isEmpty())
 				newPreds.addAll(declAtoms.values());
 			else
@@ -92,6 +93,25 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 					newPreds.add(declAtoms.get(name(pred.name())));
 
 			initP.addPropagation(prop.fromId, newPreds, prop.toId);
+
+			// Generate frame rules
+			for (IAtom atom : newPreds) {
+				if (atom instanceof Directive) continue;
+
+				List<VariableExpr> vars = new ArrayList<>(atom.arity());
+				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
+
+				// Propagate to global scope
+				if (prop.toId == null && _globalAtomNames.contains(atom.name()))
+					throw new DeepDoopException("Reintroducing predicate '" + atom.name() + "' to global space");
+
+				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
+					accept(new InitVisitingActor(prop.fromId, prop.toId, _globalAtomNames));
+				IElement body = (IAtom) atom.instantiate(null, vars);
+				Rule r = new Rule(new LogicalElement(head), body);
+				if (prop.toId == null) initP.globalComp.addRule(r);
+				else                   initP.comps.get(prop.toId).addRule(r);
+			}
 		}
 		return initP;
 	}

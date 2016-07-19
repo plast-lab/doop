@@ -1,40 +1,53 @@
 package deepdoop.datalog.component;
 
-import deepdoop.actions.AtomCollectingActor;
-import deepdoop.actions.IVisitable;
-import deepdoop.actions.PostOrderVisitor;
+import deepdoop.actions.*;
 import deepdoop.datalog.Program;
 import deepdoop.datalog.DeepDoopException;
 import deepdoop.datalog.element.atom.IAtom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class DependencyGraph {
 
 	Map<String, Node> _nodes;
+	List<Set<Node>>   _layers;
 
 	public DependencyGraph(Program p) {
 		_nodes = new HashMap<>();
 
 		AtomCollectingActor acActor = new AtomCollectingActor();
-		PostOrderVisitor<IVisitable> visitor = new PostOrderVisitor<>(acActor);
-		p.accept(visitor);
+		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(acActor);
+		p.accept(acVisitor);
+
+		Set<String> globalAtoms = acActor.getDeclaringAtoms(p.globalComp).keySet();
+		Set<String> handledGlobalAtoms = new HashSet<>();
+
 		for (Propagation prop : p.props) {
-			Node fromNode = getNode(prop.fromId, false);
+			Node fromNode = getCompNode(prop.fromId);
 
+			// Propagate to another component
 			if (prop.toId != null)
-				fromNode.addEdgeTo(getNode(prop.toId, false));
-			// Propagation *to* global space
+				fromNode.addEdgeTo(getCompNode(prop.toId));
+			// Propagate to global space
 			else
-				for (IAtom pred : prop.preds)
-					fromNode.addEdgeTo(getNode(pred.name(), true));
+				for (IAtom pred : prop.preds) {
+					IAtom newPred = (IAtom) pred.accept(new InitVisitingActor(prop.fromId, null, new HashSet<>()));
+					fromNode.addEdgeTo(getPredNode(newPred.name()));
+					handledGlobalAtoms.add(newPred.name());
+				}
 
-			// Dependencies *from* global space
+			// Dependencies from global space
 			Component fromComp = p.comps.get(prop.fromId);
-			for (String globalAtom : acActor.getUsedAtoms(fromComp).keySet())
-				getNode(globalAtom, true).addEdgeTo(fromNode);
+			Set<String> fromGlobal  = acActor.getUsedAtoms(fromComp).keySet();
+			fromGlobal.retainAll(globalAtoms);
+
+			for (String globalAtomName : fromGlobal)
+				getPredNode(globalAtomName).addEdgeTo(fromNode);
+			handledGlobalAtoms.addAll(fromGlobal);
 		}
 
 		// Topological sort
@@ -47,17 +60,21 @@ public class DependencyGraph {
 		}
 
 		int curLayer = 0;
-		Map<Integer, Set<Node>> layers = new HashMap<>();
+		_layers = new ArrayList<>();
 		while (!zeroInNodes.isEmpty()) {
-			curLayer++;
 			Set<Node> newZeroInNodes = new HashSet<>();
 			boolean successorsExist = false;
 			for (Node n : zeroInNodes) {
 				inDegrees.remove(n);
-				Set<Node> layerNodes = layers.get(curLayer);
-				if (layerNodes == null) layerNodes = new HashSet<>();
-				layerNodes.add(n);
-				layers.put(curLayer, layerNodes);
+				if (_layers.size() == curLayer) {
+					Set<Node> layerNodes = new HashSet<>();
+					layerNodes.add(n);
+					_layers.add(layerNodes);
+				}
+				else {
+					Set<Node> layerNodes = _layers.get(curLayer);
+					layerNodes.add(n);
+				}
 				for (Node succ : n._outEdges) {
 					successorsExist = true;
 					int newInDegree = inDegrees.get(succ) - 1;
@@ -68,19 +85,31 @@ public class DependencyGraph {
 			if (newZeroInNodes.isEmpty() && successorsExist)
 				throw new DeepDoopException("Cycle detected in the dependency graph of components");
 			zeroInNodes = newZeroInNodes;
+			curLayer++;
 		}
-		//System.out.println(layers);
+
+		globalAtoms.removeAll(handledGlobalAtoms);
+		Set<Node> lastGlobalNodes = new HashSet<>();
+		for (String globalAtom : globalAtoms) lastGlobalNodes.add(getPredNode(globalAtom));
+		_layers.add(lastGlobalNodes);
+
+		//System.out.println(_layers);
 		//for (Node n : _nodes.values()) n.print();
 	}
 
-	Node getNode(String name, boolean isPredicate) {
-		// Differentiate predicate names (in the rare case a
-		// predicate and a component share the same name)
-		if (isPredicate) name = "@" + name;
-
+	Node getCompNode(String name) {
+		name = "<" + name + ">";
 		Node node = _nodes.get(name);
 		if (node == null) {
-			node = (isPredicate ? new Node(Node.Type.PRED, name) : new Node(Node.Type.COMP, name));
+			node = new Node(Node.Type.COMP, name);
+			_nodes.put(name, node);
+		}
+		return node;
+	}
+	Node getPredNode(String name) {
+		Node node = _nodes.get(name);
+		if (node == null) {
+			node = new Node(Node.Type.COMP, name);
 			_nodes.put(name, node);
 		}
 		return node;

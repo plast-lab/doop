@@ -5,6 +5,7 @@ import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
 import deepdoop.datalog.expr.*;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class FlatteningActor implements IActor<IVisitable> {
 
 	@Override
 	public Program exit(Program n, Map<IVisitable, IVisitable> m) {
-		Program flatP = new Program(n.globalComp, null, n.inits, n.props);
+		Program flatP = Program.from(n.globalComp, new HashMap<>(), n.inits, n.props);
 		for (Component c : n.comps.values()) flatP.addComponent((Component) m.get(c));
 		return flatP;
 	}

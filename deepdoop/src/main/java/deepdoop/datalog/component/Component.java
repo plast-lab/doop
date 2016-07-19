@@ -17,9 +17,9 @@ public class Component implements IVisitable {
 	public Component(Component other) {
 		this.name         = other.name;
 		this.superComp    = other.superComp;
-		this.declarations = other.declarations;
-		this.constraints  = other.constraints;
-		this.rules        = other.rules;
+		this.declarations = new HashSet<>(other.declarations);
+		this.constraints  = new HashSet<>(other.constraints);
+		this.rules        = new HashSet<>(other.rules);
 	}
 	public Component(String name, String superComp, Set<Declaration> declarations, Set<Constraint> constraints, Set<Rule> rules) {
 		this.name         = name;
@@ -56,6 +56,7 @@ public class Component implements IVisitable {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
+		//builder.append("_____" + name + "______\n");
 		for (Declaration d : declarations) builder.append(d + "\n");
 		for (Constraint c : constraints)   builder.append(c + "\n");
 		for (Rule r : rules)               builder.append(r + "\n");
