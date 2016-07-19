@@ -28,7 +28,7 @@ public class StubAtom implements IAtom {
 
 	@Override
 	public String toString() {
-		return "STUB: " + name;
+		return "STUB<" + name + ">";
 	}
 
 

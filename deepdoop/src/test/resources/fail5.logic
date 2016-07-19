@@ -19,4 +19,4 @@ P(x) -> string(x).
 .init S2 = Bar
 
 .propagate S1 { * } to S2
-.propagate S2 { * } .global
+.propagate S2 { * } to .global

@@ -14,12 +14,10 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 
 	Map<IVisitable, Map<String, IAtom>> _declAtoms;
 	Map<IVisitable, Map<String, IAtom>> _usedAtoms;
-	Map<IVisitable, Map<String, IAtom>> _allAtoms;
 
 	public AtomCollectingActor() {
 		_declAtoms = new HashMap<>();
 		_usedAtoms = new HashMap<>();
-		_allAtoms  = new HashMap<>();
 	}
 
 	public Map<String, IAtom> getDeclaringAtoms(IVisitable n) {
@@ -29,19 +27,6 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 	public Map<String, IAtom> getUsedAtoms(IVisitable n) {
 		Map<String, IAtom> m = _usedAtoms.get(n);
 		return (m != null ? m : Collections.emptyMap());
-	}
-	public Map<String, IAtom> getAtoms(IVisitable n) {
-		Map<String, IAtom> allMap = _allAtoms.get(n);
-		if (allMap != null) return allMap;
-
-		Map<String, IAtom> declMap = getDeclaringAtoms(n);
-		Map<String, IAtom> usedMap = getUsedAtoms(n);
-		if (declMap.isEmpty() && usedMap.isEmpty()) return Collections.emptyMap();
-
-		allMap = new HashMap<>(declMap);
-		allMap.putAll(usedMap);
-		_allAtoms.put(n, allMap);
-		return allMap;
 	}
 
 

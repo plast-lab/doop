@@ -18,13 +18,13 @@ public class Program implements IVisitable {
 	public final Set<Propagation>       props;
 
 	public Program(Component globalComp, Map<String, Component> comps, Map<String, String> inits, Set<Propagation> props) {
-		this.globalComp = (globalComp != null ? globalComp : new Component());
-		this.comps      = (comps != null ? comps : new HashMap<>());
-		this.inits      = (inits != null ? inits : new HashMap<>());
-		this.props      = (props != null ? props : new HashSet<>());
+		this.globalComp = globalComp;
+		this.comps      = comps;
+		this.inits      = inits;
+		this.props      = props;
 	}
 	public Program() {
-		this(null, null, null, null);
+		this(new Component(), new HashMap<>(), new HashMap<>(), new HashSet<>());
 	}
 
 	public void addComponent(Component comp) {
@@ -45,6 +45,8 @@ public class Program implements IVisitable {
 		StringJoiner joiner = new StringJoiner("\n");
 		joiner.add(globalComp.toString());
 		for (Component c : comps.values()) joiner.add(c.toString());
+		if (inits != null) for (Map.Entry<String, String> entry : inits.entrySet()) joiner.add(entry.toString());
+		if (props != null) for (Propagation prop : props) joiner.add(prop.toString());
 		return joiner.toString();
 	}
 
@@ -52,5 +54,15 @@ public class Program implements IVisitable {
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+
+
+	public static Program from(Component globalComp, Map<String, Component> comps, Map<String, String> inits, Set<Propagation> props) {
+		return new Program(
+				globalComp == null ? null : new Component(globalComp),
+				comps      == null ? null : new HashMap<>(comps),
+				inits      == null ? null : new HashMap<>(inits),
+				props      == null ? null : new HashSet<>(props)
+				);
 	}
 }
