@@ -240,10 +240,11 @@
   .decl MayReachableMayContext(?ctx:MayContext)
   .decl RootMethodForMayAnalysis(?meth:MethodSignature) output
   .decl MayCallGraphEdge(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) output
-  .decl MethodMayAssignField(?fld:FieldSignature, ?toMethod:MethodSignature) output
-  .decl MethodHasUnresolvedInvocation(?toMethod:MethodSignature) output
+  .decl MethodMayAssignField(?fld:FieldSignature, ?ctx: MayContext, ?toMethod:MethodSignature) output
+  .decl MethodHasUnresolvedInvocation(?ctx: MayContext, ?toMethod:MethodSignature) output
 
   .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:MethodSignature, ?callerCtx:MayContext, ?invo:MethodInvocationInsn) output
+  .decl MayReachableMethodUnderMayContext_Prev(?ctx:MayContext, ?meth:MethodSignature) output
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -346,13 +347,12 @@
   // the phi node, it means it wasn't invalidated in any of the
   // other paths!
   AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) :-
-    AssignLocal_Insn(?insn),
-    PhiNodeHead(?insn, _),
-    AssignInstruction_To(?insn, ?to),
     PhiNodeVarWithResolvedMayPointTo(?ctx, ?to),
+    AssignInstruction_To(?insn, ?to),
     AssignLocal_From(?insn, ?from),
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
+    PhiNodeHead(?insn, _),
     AccessPath_BaseVar(?fromAp, ?from),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
 
   // Load and Store instructions
@@ -557,18 +557,18 @@
   // First, place an order to the access path factory to create them, if
   // needed.
   AccessPathShouldBeRebased(?actualAp, ?actual, ?formal) :-
-    MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
-    FormalParam(?index, ?toMethod, ?formal),
-    ActualParam(?index, ?invo, ?actual),
     Before_AccessPathMayPointTo(_, _, ?actualAp, ?callerCtx, ?invo),
-	?actualAp = [ ?actual, ?flds ], ?flds=?flds.
+    MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
+	?actualAp = [ ?actual, ?flds ], ?flds=?flds,
+    ActualParam(?index, ?invo, ?actual),
+    FormalParam(?index, ?toMethod, ?formal).
 
   AccessPathShouldBeRebased(?baseAp, ?base, ?this) :-
+    Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
     MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
     (VirtualMethodInvocation_Base(?invo, ?base);
      SpecialMethodInvocation_Base(?invo, ?base)),
     ThisVar(?toMethod, ?this),
-    Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
 	?baseAp = [ ?base, ?flds ], ?flds = ?flds.
 
   .decl AccessPathRebasedForCall(?newAp:AccessPath, ?ap:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
@@ -586,19 +586,19 @@
     RebaseCompositeAccessPath(?ap, ?base, ?this, ?newAp).
 
   Before_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo),
+    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPathRebasedForCall(?calleeAp, ?callerAp, ?callerCtx, ?invo),
     FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
   // Let's not forget static fields and unchanged access paths
   Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo),
+    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPath_ContainsStaticField(?staticAp, ?fld),
-    FirstInstructionOfMethod(?toMethod, ?firstInsn),
-    (MethodMayAssignField(?fld, ?toMethod);
-     MethodHasUnresolvedInvocation(?toMethod)).
+    FirstInstructionOfMethod(?toMethod, ?firstInsn).
+  //    (MethodMayAssignField(?fld, ?calleeCtx, ?toMethod);
+  //    MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod)).
   // The last two lines are a refinement, for optimization. See also below.
 
   ///// POINT1--unchanged access paths code goes here
@@ -873,17 +873,17 @@
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     SingleFieldAccessPath(?fld, ?ap),
-    MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField(?fld, ?toMethod),
-    !MethodHasUnresolvedInvocation(?toMethod).
+    MayCallGraphEdge(?calleeCtx, ?toMethod, ?ctx, ?insn),
+    !MethodMayAssignField(?fld, ?calleeCtx, ?toMethod),
+    !MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod).
 
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-    MayCallGraphEdge(_, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField(?fld1, ?toMethod),
-    !MethodMayAssignField(?fld2, ?toMethod),
-    !MethodHasUnresolvedInvocation(?toMethod).
+    MayCallGraphEdge(?calleeCtx, ?toMethod, ?ctx, ?insn),
+    !MethodMayAssignField(?fld1, ?calleeCtx, ?toMethod),
+    !MethodMayAssignField(?fld2, ?calleeCtx, ?toMethod),
+    !MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod).
 
   //// POINT4 insert here
 
@@ -900,53 +900,46 @@
 
   // note that the "InitialMayContext" is an overapproximation. It's
   // stronger than what we typically need.
-  .decl InvocationSiteFullyResolved(?invo:Instruction)
-  InvocationSiteFullyResolved(?invo) :-
-	InitialMayContext(?initCtx),
-    MayCallGraphEdge_Prev(_, _, ?initCtx, ?invo).
+  .decl InvocationSiteFullyResolved(?ctx: MayContext, ?invo:Instruction)
+  InvocationSiteFullyResolved(?ctx, ?invo) :-
+    MayCallGraphEdge_Prev(_, _, ?ctx, ?invo).
 
   .decl MethodHasInvocationSite(?invo:Instruction, ?method:MethodSignature)
   MethodHasInvocationSite(?invo, ?method) :-
     MethodInvocation(?invo),
     Instruction_Method(?invo, ?method).
 
-  .decl MethodCanCallOther(?method:MethodSignature, ?toMethod:MethodSignature)
-  MethodCanCallOther(?method, ?toMethod) :-
-    MayCallGraphEdge_Prev(_, ?toMethod, _, ?invo),
+  .decl MethodCanCallOther(?ctxFrom:MayContext, ?method:MethodSignature, ?ctxTo:MayContext, ?toMethod:MethodSignature)
+  MethodCanCallOther(?ctxFrom, ?method, ?ctxTo, ?toMethod) :-
+    MayCallGraphEdge_Prev(?ctxTo, ?toMethod, ?ctxFrom, ?invo),
     Instruction_Method(?invo, ?method).
 
-  // transitive must-callgraph from pre-analysis
-  .decl MethodCanReachOther(?method:MethodSignature, ?toMethod:MethodSignature)
-  MethodCanReachOther(?toMethod, ?method) :-
-    MethodCanCallOther(?method, ?toMethod).
-
-  MethodCanReachOther(?toMethod, ?method) :-
-    MethodCanReachOther(?toMethod, ?intermMethod),
-    MethodCanCallOther(?method, ?intermMethod).
-
   // transitive unresolved call
-  MethodHasUnresolvedInvocation(?method) :-
+  MethodHasUnresolvedInvocation(?ctx, ?method) :-
+	MayReachableMethodUnderMayContext_Prev(?ctx, ?method),
     MethodHasInvocationSite(?invo, ?method),
-    !InvocationSiteFullyResolved(?invo).
+    !InvocationSiteFullyResolved(?ctx, ?invo),
+    !IgnorableMethodInvocation(?invo).
 
-  MethodHasUnresolvedInvocation(?method) :-
-    MethodHasUnresolvedInvocation(?toMethod),
-    MethodCanCallOther(?method, ?toMethod).
+  MethodHasUnresolvedInvocation(?ctx, ?method) :-
+    MethodHasUnresolvedInvocation(?ctxTo, ?toMethod),
+    MethodCanCallOther(?ctx, ?method, ?ctxTo, ?toMethod).
 
   // transitive may-assign-field based on sound-callgraph
-  MethodMayAssignField(?fld, ?method) :-
+  MethodMayAssignField(?fld, ?ctx, ?method) :-
+	MayReachableMethodUnderMayContext_Prev(?ctx, ?method),
     Instruction_Method(?insn, ?method),
     FieldInstruction_Signature(?insn, ?fld).
 
-  MethodMayAssignField(?fld, ?method) :-
-    MethodMayAssignField(?fld, ?toMethod),
-    MethodCanCallOther(?method, ?toMethod).
+  MethodMayAssignField(?fld, ?ctx, ?method) :-
+    MethodMayAssignField(?fld, ?ctxTo, ?toMethod),
+    MethodCanCallOther(?ctx, ?method, ?ctxTo, ?toMethod).
 
   // Now we can do a lazy check for definite ?fld, ?method pairs
   // to see whether a method is certain to *not* destroy a field
   // value by saying:
-  // !MethodMayAssignField(?fld, ?method),
-  // !MethodHasUnresolvedInvocation(?method).
+  // !MethodMayAssignField(?fld, ?ctx, ?method),
+  // !MethodHasUnresolvedInvocation(?ctx, ?method).
 
   //// POINT5: DominatedPathMayInvalidateFieldPointsTo, enter here
 
@@ -957,17 +950,19 @@
     FieldSignature_DeclaringClass(?fld, ?cls),
     MethodSignature_DeclaringType(?consMeth, ?cls).
 
+  // REVIEW: should this be a context-sensitive concept? I think not.
   .decl MethodReachableFromConstructorOfClassOfField(?fld:FieldSignature, ?consMeth:MethodSignature)
   MethodReachableFromConstructorOfClassOfField(?fld, ?meth) :-
     ConstructorOfClassOfField(?fld, ?meth).
   MethodReachableFromConstructorOfClassOfField(?fld, ?meth) :-
-    ConstructorOfClassOfField(?fld, ?consMeth),
-    MethodCanReachOther(?meth, ?consMeth).
+    MethodReachableFromConstructorOfClassOfField(?fld, ?otherMeth),
+    MethodCanCallOther(_, ?otherMeth, _, ?meth).
 
+  // REVIEW: should this be a context-sensitive concept? I think not.
   .decl ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld:FieldSignature)
   ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld) :-
     ConstructorOfClassOfField(?fld, ?consMeth),
-    MethodHasUnresolvedInvocation(?consMeth).
+    MethodHasUnresolvedInvocation(_, ?consMeth).
 
   // It's not enough to have the instruction not in the constructor, it
   // needs to be after the end of the constructor.
@@ -1703,34 +1698,51 @@ AccessPath_MaxLength(3).
 .init SoundMayPhase2 = SoundMay
 SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase1.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase3 = SoundMay
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase4 = SoundMay
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase4.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase3.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase5 = SoundMay
 SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase4.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase6 = SoundMay
 SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase6.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase5.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase7 = SoundMay
 SoundMayPhase7.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase6.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase7.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase6.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase8 = SoundMay
 SoundMayPhase8.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase7.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase8.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase7.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 .init SoundMayPhase9 = SoundMay
 SoundMayPhase9.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase8.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase9.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase8.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
 
 .init IntraprocMustForStats = IntraproceduralMust
 IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
