@@ -208,6 +208,7 @@ public class Main {
             app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
             dummyMain = app.getDummyMainMethod();
 
+            soot.G.reset();
             soot.options.Options.v().set_src_prec(Options.src_prec_apk);
             soot.options.Options.v().set_android_jars(_androidJars);
             soot.options.Options.v().set_ignore_resolution_errors(true);
@@ -257,6 +258,8 @@ public class Main {
         soot.SourceLocator.v().setClassProviders(providersList);
 
         Scene scene = Scene.v();
+        scene.loadNecessaryClasses();
+
         if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
         }
@@ -335,7 +338,6 @@ public class Main {
             addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
         }
 
-        scene.loadNecessaryClasses();
 
         /*
         * This part should definitely appear after the call to
