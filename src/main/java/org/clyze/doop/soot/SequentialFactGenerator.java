@@ -58,9 +58,12 @@ public class SequentialFactGenerator
         {
             generate(f);
         }
-
-        for(SootMethod m : c.getMethods())
+        System.out.println(c.getName());
+        Iterator<SootMethod> it = c.getMethods().listIterator();
+        while(it.hasNext())
         {
+            SootMethod m = it.next();
+            System.out.println(m.getName());
             Session session = new Session();
             try {
                 generate(m, session);
