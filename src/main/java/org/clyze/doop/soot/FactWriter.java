@@ -676,6 +676,7 @@ class FactWriter
         int index = session.getUnitNumber(stmt);
 
         // index was already computed earlier
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
 
         String rep = _rep.instruction(m, stmt, session, index);
