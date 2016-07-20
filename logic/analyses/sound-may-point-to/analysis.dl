@@ -302,10 +302,11 @@
     AssignLocal_From(?insn, ?from),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
     !PhiNodeHead(?insn, _),
-    AssignInstruction_To(?insn, ?to),
     AccessPath_BaseVar(?fromAp, ?from),
+    AssignInstruction_To(?insn, ?to),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
-   
+  //   .plan 1: (3,2,1,4,5), 2: (5,3,1,4,2)  // another core dump
+
   // casts are like local assignments
   //// TODO: filter our badly typed values
   MustAlias([?from, nil], [?to, nil], ?ctx, ?insn),
@@ -499,17 +500,22 @@
 
   // static or special method invocation
 
+  .decl StaticOrSpecialInvocationInMethod(?invo:MethodInvocationInsn, ?inMeth:MethodSignature)
+  StaticOrSpecialInvocationInMethod(?invo, ?inMeth) :-
+	(StaticMethodInvocation_Insn(?invo);
+	 SpecialMethodInvocation_Insn(?invo)),
+	Instruction_Method(?invo, ?inMeth).
+    
   //MergeMacroMay(?ctx, ?invo, ?hctx, ?heap, ?calleeCtx),
   ComputedContext([?invo, ?ctx]),
   MayCallGraphEdge([?invo, ?ctx], ?toMeth, ?ctx, ?invo) :-
-    MethodInvocation_Signature(?invo, ?toMeth),
-	(StaticMethodInvocation_Insn(?invo);
-	 SpecialMethodInvocation_Insn(?invo)),
-	Instruction_Method(?invo, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth),
-    MaxMayContextDepth(?maxCtxDepth),
     MayContextDepth(?ctx, ?ctxDepth),
-    ?ctxDepth < ?maxCtxDepth.
+    MaxMayContextDepth(?maxCtxDepth),
+    ?ctxDepth < ?maxCtxDepth,
+    StaticOrSpecialInvocationInMethod(?invo, ?inMeth),
+    MethodInvocation_Signature(?invo, ?toMeth).
+  //   .plan 1: (2,1,3,4,5) // caused a crash!
 
   // special method invocation "this" variable assignment
   .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocationInsn)
@@ -563,13 +569,18 @@
     ActualParam(?index, ?invo, ?actual),
     FormalParam(?index, ?toMethod, ?formal).
 
+  .decl OptVirtualOrSpecialMethodInvocation_Base(?invo:MethodInvocationInsn, ?base:Var)
+  OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base) :-
+    VirtualMethodInvocation_Base(?invo, ?base);
+    SpecialMethodInvocation_Base(?invo, ?base).
+    
   AccessPathShouldBeRebased(?baseAp, ?base, ?this) :-
     Before_AccessPathMayPointTo(_, _, ?baseAp, ?callerCtx, ?invo),
+	OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base),
     MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
-    (VirtualMethodInvocation_Base(?invo, ?base);
-     SpecialMethodInvocation_Base(?invo, ?base)),
     ThisVar(?toMethod, ?this),
 	?baseAp = [ ?base, ?flds ], ?flds = ?flds.
+   .plan 1: (3,2,1,4)
 
   .decl AccessPathRebasedForCall(?newAp:AccessPath, ?ap:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
   AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
@@ -577,13 +588,14 @@
     FormalParam(?index, ?toMethod, ?formal),
     ActualParam(?index, ?invo, ?actual),
     RebaseCompositeAccessPath(?ap, ?actual, ?formal, ?newAp).
+   .plan 1: (4,3,1,2)
 
   AccessPathRebasedForCall(?newAp, ?ap, ?callerCtx, ?invo)  :-
     MayCallGraphEdge(_, ?toMethod, ?callerCtx, ?invo),
-    (VirtualMethodInvocation_Base(?invo, ?base);
-     SpecialMethodInvocation_Base(?invo, ?base)),
+	OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base),
     ThisVar(?toMethod, ?this),
     RebaseCompositeAccessPath(?ap, ?base, ?this, ?newAp).
+   .plan 1: (4,3,1,2)
 
   Before_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo),
@@ -718,29 +730,32 @@
   // //// Weakening rules
 
   MayPointTo(?hctx, ?heap, ?ctx, ?var) :-
-    MayReachableMethodUnderMayContext(?ctx, ?method),
+    MayPointTo(?hctx, ?heap, ?initCtx, ?var),
     InitialMayContext(?initCtx),
     Var_DeclaringMethod(?var, ?method),
-    MayPointTo(?hctx, ?heap, ?initCtx, ?var).
-	// .plan?
+    MayReachableMethodUnderMayContext(?ctx, ?method).
+	.plan 1: (4,3,2,1)
   
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
+    InitialMayContext(?initCtx),
     Instruction_Method(?insn, ?method),
-    MayReachableMethodUnderMayContext(?ctx, ?method),
-    InitialMayContext(?initCtx).
+    MayReachableMethodUnderMayContext(?ctx, ?method).
+	.plan 1: (4,3,2,1)
   
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
+    InitialMayContext(?initCtx),
     Instruction_Method(?insn, ?method),
-    MayReachableMethodUnderMayContext(?ctx, ?method),
-    InitialMayContext(?initCtx).
+    MayReachableMethodUnderMayContext(?ctx, ?method).
+	.plan 1: (4,3,2,1)
   
   MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
     MustAlias(?ap1, ?ap2, ?initCtx, ?insn),
+    InitialMayContext(?initCtx),
     Instruction_Method(?insn, ?method),
-    MayReachableMethodUnderMayContext(?ctx, ?method),
-    InitialMayContext(?initCtx).
+    MayReachableMethodUnderMayContext(?ctx, ?method).
+	.plan 1: (4,3,2,1)
   
   // //// END weakening rules
   // //// ====================================
@@ -834,20 +849,20 @@
   // if it's a non-array operation on collections but the info concerns an array
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    LibraryCollectionStoreOperation(?insn),
     AccessPath_IsCollection(?ap),
 	?ap = [?base, [nil, "dummyCollection"]],
     Var_Type(?base, ?type),
-    ArrayType(?type),
-    LibraryCollectionStoreOperation(?insn).
+    ArrayType(?type).
   
   // and the converse. TODO: more fine-grained distinction of library collections?
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    StoreArrayIndex_Base(?insn,_),
     AccessPath_IsCollection(?ap),
 	?ap = [?base, [nil, "dummyCollection"]],
     Var_Type(?base, ?type),
-    LibraryCollectionType(?type),
-    StoreArrayIndex_Base(?insn,_).
+    LibraryCollectionType(?type).
 
   /// Final fields
 
@@ -859,8 +874,13 @@
     SingleFieldAccessPath(?fld, ?ap),
     FieldModifier(?mod, ?fld),
 	Modifier_final(?mod),
-    !InstructionUnderConstructorOfClassOfField(?fld, ?insn),
+	Instruction_Method(?insn, ?method),
+    !MethodReachableFromConstructorOfClassOfField(?fld, ?method),
     !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
+  // It's not enough to have the instruction not in the constructor,
+  // it needs to be after the end of the constructor.  Is this huge?
+  // Probably not, by nature of constructors and the sound callgraph.
+
 
   // TODO: also, for freshly allocated objects, it should be enough to have
   //       instance field points-to information for one path. The object doesn't
@@ -947,8 +967,8 @@
   .decl ConstructorOfClassOfField(?fld:FieldSignature, ?consMeth:MethodSignature)
   ConstructorOfClassOfField(?fld, ?consMeth) :-
     MethodSignature_SimpleName(?consMeth, "<init>"),
-    FieldSignature_DeclaringClass(?fld, ?cls),
-    MethodSignature_DeclaringType(?consMeth, ?cls).
+    MethodSignature_DeclaringType(?consMeth, ?cls),
+    FieldSignature_DeclaringClass(?fld, ?cls).
 
   // REVIEW: should this be a context-sensitive concept? I think not.
   .decl MethodReachableFromConstructorOfClassOfField(?fld:FieldSignature, ?consMeth:MethodSignature)
@@ -963,15 +983,6 @@
   ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld) :-
     ConstructorOfClassOfField(?fld, ?consMeth),
     MethodHasUnresolvedInvocation(_, ?consMeth).
-
-  // It's not enough to have the instruction not in the constructor, it
-  // needs to be after the end of the constructor.
-  // Is this huge?  Probably not, by nature of constructors and the
-  // Must-callgraph.
-  .decl InstructionUnderConstructorOfClassOfField(?fld:FieldSignature, ?insn:Instruction)
-  InstructionUnderConstructorOfClassOfField(?fld, ?insn) :-
-    MethodReachableFromConstructorOfClassOfField(?fld, ?meth),
-    Instruction_Method(?insn, ?meth).
 
   // //// END escape-like logic
   // //// ====================================
@@ -1355,9 +1366,10 @@
     FieldList_Length(?rest, ?len).
   
   AccessPath_Length(?ap, ?len+1) :-
-    ComputedAccessPath(?ap),
+	ComputedAccessPath(?ap),
     ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
     FieldList_Length(?fldList, ?len).
+  // .plan 1: (2,1)
   
   SingleFieldAccessPath(?fld, ?ap) :-
     AccessPath_ContainsStaticField(?ap, ?fld),
@@ -1393,7 +1405,7 @@
   ////  -create APs for all var.fld load/store expressions in the program text
   ////  -create APs by rebasing all APs that may point somewhere at assignments
   ////  -create APs by rebasing APs that may point somewhere at calls/returns
-    ////  -create extended AP if base was aliased to one that has extension (key rule)
+  ////  -create extended AP if base was aliased to one that has extension (key rule)
   //// 
   //// This policy is fine for AccessPathMayPointTo, but may miss useful
   //// MustAlias relations. E.g., the "APs that may point somewhere"
@@ -1409,34 +1421,7 @@
   
   // The rules below create access paths from all variables
   // and all access fields in the program.
-  ComputedAccessPath([?var, nil]) :-
-    Var_Type(?var, ?type),
-    ReferenceType(?type).
-  
-  // Invariant: all computed access paths are type safe: the fields
-  // exist in the static type of the prefix. REVIEW: This may (rarely)
-  // prevent detection of valid aliasing.
-  ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
-    LoadInstanceField_Base(?insn, ?base),
-    FieldInstruction_Signature(?insn, ?fld),
-    FieldSignature_Type(?fld, ?type),
-    ReferenceType(?type).
-  ComputedAccessPath([?base, [ nil, ?fld ] ]) :-
-    StoreInstanceField_Base(?insn, ?base),
-    FieldInstruction_Signature(?insn, ?fld),
-    FieldSignature_Type(?fld, ?type),
-    ReferenceType(?type).
-  
-  ComputedAccessPath([?fld, nil ]) :-
-    LoadStaticField_To(?insn, _),
-    FieldInstruction_Signature(?insn, ?fld),
-    FieldSignature_Type(?fld, ?type),
-    ReferenceType(?type).
-  ComputedAccessPath([?fld, nil ]) :-
-    StoreStaticField_From(?insn, _),
-    FieldInstruction_Signature(?insn, ?fld),
-    FieldSignature_Type(?fld, ?type),
-    ReferenceType(?type).
+  ComputedAccessPath(?ap) :- InitialComputedAccessPath(?ap).
   
   // implies it's computed
   .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var) output
@@ -1502,7 +1487,9 @@
   
   MayContextDepth(?ctx, 0) :-
     InitialMayContext(?ctx).
-  
+  ComputedContext(?ctx) :-
+    InitialMayContext(?ctx).
+
   MayContextDepth([?invo,?poppedCtx], ?depth+1) :-
     ComputedContext(?ctx),
     ?ctx = [?invo,?poppedCtx],
@@ -1550,32 +1537,13 @@
   TempMayPointTo(?heap, ?ctx, ?to),
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    LoadCollection_Base(?insn, ?base),
     AccessPath_IsCollection(?ap),
     ?ap = [?base, [nil, "dummyCollection"]],
-    LoadCollection_Base(?insn, ?base),
-    LoadCollection_To(?insn, ?to). 
+    LoadCollection_To(?insn, ?to).
+	
   // //// END handling of collections
   // //// ====================================
-
-  //// Some trivial must-alias handling to see the possible
-  //// impact. Remove eagerly. The same rules are later, commented
-  //// out.
-  // MustAlias is symmetrically and transitively closed. The explicit
-  // representation (and computation of TC) is too wasteful, but
-  // hopefully won't matter since this is an intra-procedural concept.
-  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-    MustAlias(?ap2, ?ap1, ?ctx, ?insn).
-
-  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-    MustAlias(?ap1, ?ap3, ?ctx, ?insn),
-    MustAlias(?ap2, ?ap3, ?ctx, ?insn).
-
-  // Catch-all access path inference from MustAlias
-  AccessPathMayPointTo(?hctx, ?heap, ?ap1, ?ctx, ?insn) :-
-    MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-    AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn),
-    (AccessPath_IsComposite(?ap1);
-     AccessPath_ContainsStaticField(?ap1, _)).
 
   // //// ====================================
   // //// BEGIN Utilities for establishing relevant predecessors
@@ -1808,6 +1776,8 @@ SoundMayPhase9.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase8.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase9.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase8.MayReachableMethodUnderMayContext(?ctx, ?meth).
+/*
+*/
 
 .init IntraprocMustForStats = IntraproceduralMust
 IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
@@ -1859,9 +1829,9 @@ ClinitMethodOfClass(?meth, ?class) :-
    
 
 FirstInstructionOfMethod(?meth, ?firstInsn) :-
-  Instruction_Method(?firstInsn, ?meth),
   Instruction_Index(?firstInsn, 1),
-  !IsJumpTarget(?firstInsn).
+  !IsJumpTarget(?firstInsn),
+  Instruction_Method(?firstInsn, ?meth).
 
 .decl IgnorableMethodInvocation(?invo:MethodInvocationInsn)
 .decl IgnorableForNonCollectionsMethodInvocation(?invo:MethodInvocationInsn)
@@ -1901,6 +1871,40 @@ SomePathFromFirstInstructionContainsCall(?blockHead) :-
   BBHeadIsFirstInstruction(?firstInsn),
   SomePathBetweenBasicBlocksContainsCall(?firstInsn, ?blockHead).
 
+// Initial computed access paths. Faster than doing the same thing all over?
+.decl InitialComputedAccessPath(?ap:AccessPath) 
+
+// The rules below create access paths from all variables
+// and all access fields in the program.
+InitialComputedAccessPath([?var, nil]) :-
+  Var_Type(?var, ?type),
+  ReferenceType(?type).
+
+// Invariant: all computed access paths are type safe: the fields
+// exist in the static type of the prefix. REVIEW: This may (rarely)
+// prevent detection of valid aliasing.
+InitialComputedAccessPath([?base, [ nil, ?fld ] ]) :-
+  LoadInstanceField_Base(?insn, ?base),
+  FieldInstruction_Signature(?insn, ?fld),
+  FieldSignature_Type(?fld, ?type),
+  ReferenceType(?type).
+InitialComputedAccessPath([?base, [ nil, ?fld ] ]) :-
+  StoreInstanceField_Base(?insn, ?base),
+  FieldInstruction_Signature(?insn, ?fld),
+  FieldSignature_Type(?fld, ?type),
+  ReferenceType(?type).
+
+InitialComputedAccessPath([?fld, nil ]) :-
+  LoadStaticField_To(?insn, _),
+  FieldInstruction_Signature(?insn, ?fld),
+  FieldSignature_Type(?fld, ?type),
+  ReferenceType(?type).
+InitialComputedAccessPath([?fld, nil ]) :-
+  StoreStaticField_From(?insn, _),
+  FieldInstruction_Signature(?insn, ?fld),
+  FieldSignature_Type(?fld, ?type),
+  ReferenceType(?type).
+  
 //// END utilities
 
 
