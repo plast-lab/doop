@@ -4,6 +4,7 @@ import soot.SootClass;
 import soot.SootMethod;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,7 +37,7 @@ class Driver {
         _executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
-    void doInParallel(List<SootClass> sootClasses) {
+    void doInParallel(Set<SootClass> sootClasses) {
         for(SootClass c : sootClasses) {
             generate(c);
         }
@@ -48,14 +49,14 @@ class Driver {
         }
     }
 
-    static void doInSequentialOrder(List<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+    static void doInSequentialOrder(Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
         SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
         for(SootClass c : sootClasses) {
             sequentialFactGenerator.generate(c);
         }
     }
 
-    static void doInSequentialOrder(SootMethod dummyMain, List<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+    static void doInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
         SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
         sequentialFactGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
