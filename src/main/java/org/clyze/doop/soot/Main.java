@@ -9,7 +9,12 @@ import soot.options.Options;
 
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 public class Main {
 
@@ -217,11 +222,43 @@ public class Main {
             soot.options.Options.v().set_process_dir(_inputs);
             soot.options.Options.v().set_allow_phantom_refs(true);
             soot.options.Options.v().set_process_multiple_dex(true);
-            soot.options.Options.v().set_no_bodies_for_excluded(true);
+//            soot.options.Options.v().set_no_bodies_for_excluded(true);
+//            soot.options.Options.v().set_debug(true);
+//            soot.options.Options.v().set_debug_resolver(true);
             androidClasses = new HashSet<>();
+//            List<File> dexList = new ArrayList<>();
             for (String arg : _inputs) {
-                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
-            }
+//                if (arg.endsWith(".apk")) {
+//                    byte[] buffer = new byte[1024];
+//
+//                    ZipInputStream zis = new ZipInputStream(new FileInputStream(arg));
+//                    //get the zipped file list entry
+//                    ZipEntry ze = zis.getNextEntry();
+//
+//                    while(ze!=null){
+//                        if (ze.getName().endsWith(".dex")) {
+//                            String fileName = ze.getName();
+//                            File newFile = new File(fileName);
+//
+//                            System.out.println("file unzip : "+ newFile.getAbsoluteFile());
+//                            FileOutputStream fos = new FileOutputStream(newFile);
+//
+//                            int len;
+//                            while ((len = zis.read(buffer)) > 0) {
+//                                fos.write(buffer, 0, len);
+//                            }
+//                            dexList.add(newFile);
+//                            fos.close();
+//                        }
+//                        ze = zis.getNextEntry();
+//                    }
+//
+//                    zis.closeEntry();
+//                    zis.close();
+//                    for (File dexFile : dexList)
+                    androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
+                }
+            System.out.println("Android classes discovered from classesOfDex on apk: " + androidClasses.size()); //this finds only the classes.dex
         }
         else {
             for (String arg : _inputs) {

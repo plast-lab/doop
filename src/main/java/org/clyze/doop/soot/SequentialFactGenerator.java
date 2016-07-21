@@ -18,7 +18,10 @@ import soot.RefLikeType;
 import soot.RefType;
 import soot.ArrayType;
 
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -58,12 +61,8 @@ public class SequentialFactGenerator
         {
             generate(f);
         }
-        System.out.println(c.getName());
-        Iterator<SootMethod> it = c.getMethods().listIterator();
-        while(it.hasNext())
-        {
-            SootMethod m = it.next();
-            System.out.println(m.getName());
+
+        for (SootMethod m : new ArrayList<>(c.getMethods())) {
             Session session = new Session();
             try {
                 generate(m, session);
@@ -72,6 +71,7 @@ public class SequentialFactGenerator
                 throw exc;
             }
         }
+
     }
 
     public void generate(SootField f)
@@ -204,13 +204,13 @@ public class SequentialFactGenerator
                 m.retrieveActiveBody();
             }
 
+
             Body b = m.getActiveBody();
             if(_ssa)
             {
                 b = Shimple.v().newBody(b);
                 m.setActiveBody(b);
             }
-
             generate(m, b, session);
 
             m.releaseActiveBody();
@@ -292,6 +292,9 @@ public class SequentialFactGenerator
                 {
                     session.calcUnitNumber(stmt);
                 }
+                else if (stmt instanceof NopStmt) {
+                    session.calcUnitNumber(stmt);
+                }
                 else
                 {
                     throw new RuntimeException("Cannot handle statement: " + stmt);
@@ -325,7 +328,6 @@ public class SequentialFactGenerator
                 _writer.writeLookupSwitch(m, (LookupSwitchStmt) stmt, session);
             }
         }
-
         Trap previous = null;
         for(Trap t : b.getTraps())
         {
@@ -440,6 +442,8 @@ public class SequentialFactGenerator
                             || op instanceof FloatConstant
                             || op instanceof DoubleConstant
                             || op instanceof NullConstant
+                            || op instanceof StringConstant
+                            || op instanceof ClassConstant
                     )
             {
                 // make sure we can jump to statement we do not care about (yet)
@@ -630,5 +634,4 @@ public class SequentialFactGenerator
             throw new RuntimeException("Unhandled throw statement: " + stmt);
         }
     }
-
 }

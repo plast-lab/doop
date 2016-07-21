@@ -707,19 +707,19 @@ NativeReturnVar(?var, ?method) ->
 //------------------------------------------------------
 
 
-lang:physical:capacity[`FieldSignature] = 131072.
-lang:physical:capacity[`MethodSignature] = 131072.
+lang:physical:capacity[`FieldSignature] = 524288.
+lang:physical:capacity[`MethodSignature] = 524288.
 lang:physical:capacity[`MethodDescriptor] = 131072.
-lang:physical:capacity[`Instruction] = 4194304. /* 2^22 */
+lang:physical:capacity[`Instruction] = 8388608. /* 2^22 */
 lang:physical:capacity[`Throw:Insn] = 4194304. /* = instruction */
-lang:physical:capacity[`CallGraphEdgeSource] = 4194304. /* = instruction */
-lang:physical:capacity[`HeapAllocation] = 4194304. /* = instruction */
-lang:physical:capacity[`MethodInvocation] = 4194304. /* = instruction */
-lang:physical:capacity[`StringConstant] = 4194304./* = HeapAllocation */
+lang:physical:capacity[`CallGraphEdgeSource] = 8388608. /* = instruction */
+lang:physical:capacity[`HeapAllocation] = 8388608. /* = instruction */
+lang:physical:capacity[`MethodInvocation] = 8388608. /* = instruction */
+lang:physical:capacity[`StringConstant] = 8388608./* = HeapAllocation */
 lang:physical:capacity[`ClassConstant] = 4194304./* = HeapAllocation */
 lang:physical:capacity[`SimpleName] = 131072.
 lang:physical:capacity[`ExceptionHandler] = 131072.
-lang:physical:capacity[`Var] = 2097152. /* 2^21 */
+lang:physical:capacity[`Var] = 4194304. /* 2^22 */
 lang:physical:capacity[`Modifier] = 32.
 //lang:physical:capacity[`Type] = 32768.
 //lang:physical:capacity[`PrimitiveType] = 32768.

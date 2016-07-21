@@ -650,9 +650,11 @@ class FactWriter
     void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session)
     {
         // index was already computed earlier
+        session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
 
         // index was already computed earlier
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
 
         String rep = _rep.instruction(m, stmt, session, index);
@@ -866,6 +868,8 @@ class FactWriter
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
         String rep = _rep.handler(m, handler, session);
+        session.calcUnitNumber(handler.getBeginUnit());
+        session.calcUnitNumber(handler.getEndUnit());
         _db.add(EXCEPTION_HANDLER,
                 _db.asEntity(rep),
                 // method
@@ -877,6 +881,7 @@ class FactWriter
                 // formal param
                 _db.asEntity(_rep.local(m, caught)),
                 // begin
+
                 _db.asIntColumn(String.valueOf(session.getUnitNumber(handler.getBeginUnit()))),
                 // end
                 _db.asIntColumn(String.valueOf(session.getUnitNumber(handler.getEndUnit()))));
