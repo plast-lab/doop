@@ -9,5 +9,6 @@ public enum JRE {
     JRE14,
     JRE15,
     JRE16,
-    JRE17
+    JRE17,
+    JRE18
 }

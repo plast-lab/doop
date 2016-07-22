@@ -318,21 +318,21 @@ public class Main {
                 }
                 classes.add(c);
             }
-        }
-        Map index = SourceLocator.v().dexClassIndex();
-        System.out.println("CLASSES FOUND: " + index.entrySet().size());
+            androidClasses = SourceLocator.v().dexClassIndex().keySet();
+            System.out.println("Android classes in source locator: " + androidClasses.size());
 
-        androidClasses = SourceLocator.v().dexClassIndex().keySet();
-        System.out.println("Android classes in source locator: " + androidClasses.size());
-
-        for (String className : androidClasses) {
-            scene.addBasicClass(className, SootClass.BODIES);
-            classes.add(scene.forceResolve(className, SootClass.BODIES));
+            for (String className : androidClasses) {
+                scene.addBasicClass(className, SootClass.BODIES);
+                classes.add(scene.forceResolve(className, SootClass.BODIES));
+            }
         }
+//        Map index = SourceLocator.v().dexClassIndex();
+//        System.out.println("CLASSES FOUND: " + index.entrySet().size());
+
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             classes.add(scene.loadClass(className, SootClass.BODIES));
-            classes.add(scene.forceResolve(className, SootClass.BODIES));
+//            classes.add(scene.forceResolve(className, SootClass.BODIES));
         }
         System.out.println("CLASSES IN SCENE: " + scene.getClasses().size());
         System.out.println("CLASSES FOUND: " + classes.size());
@@ -393,12 +393,6 @@ public class Main {
             FactWriter writer = new FactWriter(db);
 //            ThreadFactory factory = new ThreadFactory(writer, _ssa);
 //            Driver driver = new Driver(factory, _ssa, classes.size());
-            
-            
-            // for (String classname : androidClasses)
-            //     classes.add(scene.getSootClass(classname));
-            for (SootClass c : classes)
-                scene.forceResolve(c.getName(), SootClass.BODIES);
 
              for(SootClass c : classes) {
                  if (c.isApplicationClass())
