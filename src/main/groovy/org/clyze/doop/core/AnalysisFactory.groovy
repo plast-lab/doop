@@ -235,6 +235,7 @@ import java.util.jar.JarFile
             case "1.5":
             case "1.6":
             case "1.7":
+            case "1.8":
                 return Helper.checkFiles(["${path}/rt.jar".toString(),
                                           "${path}/jce.jar".toString(),
                                           "${path}/jsse.jar".toString()])
@@ -457,6 +458,9 @@ import java.util.jar.JarFile
                 break
             case "1.7":
                 jreVersion = JRE.JRE17
+                break
+            case "1.8":
+                jreVersion = JRE.JRE18
                 break
             default:
                 throw new RuntimeException("Invalid JRE version: $jreValue")
