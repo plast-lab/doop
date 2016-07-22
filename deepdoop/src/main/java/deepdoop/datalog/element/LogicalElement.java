@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 
 public class LogicalElement implements IElement {
 
@@ -24,13 +23,6 @@ public class LogicalElement implements IElement {
 	public LogicalElement(IElement element) {
 		this.type     = LogicType.AND;
 		this.elements = Collections.singleton(element);
-	}
-
-	@Override
-	public String toString() {
-		StringJoiner joiner = new StringJoiner(type == LogicType.AND ? ", " : "; ");
-		for (IElement e : elements) joiner.add(e.toString());
-		return joiner.toString();
 	}
 
 

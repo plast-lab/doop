@@ -26,11 +26,6 @@ public class ConstantExpr implements IExpr {
 		value = s;
 	}
 
-	@Override
-	public String toString() {
-		return value.toString();
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

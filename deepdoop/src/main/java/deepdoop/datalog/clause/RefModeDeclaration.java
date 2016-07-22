@@ -11,11 +11,6 @@ public class RefModeDeclaration extends Declaration {
 		super(refmode, new HashSet<>(Arrays.asList(entity, primitive)));
 	}
 
-	@Override
-	public String toString() {
-		return types.get(0) + ", " + atom + " -> " + types.get(1) + ".";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

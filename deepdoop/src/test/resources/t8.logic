@@ -2,6 +2,7 @@ P(x) -> string(x).
 Q(x, y) -> string(x), int(y).
 
 Q(x, y) <- P(x), y = 10.
+P(x) <- Q(x, x).
 
 component Foo {
 	P1(x) <- P(x).

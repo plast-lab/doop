@@ -10,13 +10,13 @@ import deepdoop.datalog.expr.*;
 public interface IVisitor<T> {
 	T visit(Program n);
 
+	T visit(CmdComponent n);
+	T visit(Component n);
+
 	T visit(Constraint n);
 	T visit(Declaration n);
 	T visit(RefModeDeclaration n);
 	T visit(Rule n);
-
-	T visit(CmdComponent n);
-	T visit(Component n);
 
 	T visit(AggregationElement n);
 	T visit(ComparisonElement n);

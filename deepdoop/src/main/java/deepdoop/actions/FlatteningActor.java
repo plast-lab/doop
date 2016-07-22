@@ -30,18 +30,9 @@ public class FlatteningActor implements IActor<IVisitable> {
 	}
 
 	@Override
-	public Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
-		IElement head = (IElement) m.get(n.head);
-		IElement body = (IElement) m.get(n.body);
-		return (head == n.head && body == n.body ? n : new Constraint(head, body));
+	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
+		return n;
 	}
-	@Override
-	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		LogicalElement head = (LogicalElement) m.get(n.head);
-		IElement       body = (IElement) m.get(n.body);
-		return (head == n.head && body == n.body ? n : new Rule(head, body));
-	}
-
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
 		Component currComp = n;
@@ -52,9 +43,18 @@ public class FlatteningActor implements IActor<IVisitable> {
 		}
 		return flatComp;
 	}
+
 	@Override
-	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
-		return n;
+	public Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
+		IElement head = (IElement) m.get(n.head);
+		IElement body = (IElement) m.get(n.body);
+		return (head == n.head && body == n.body ? n : new Constraint(head, body));
+	}
+	@Override
+	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
+		LogicalElement head = (LogicalElement) m.get(n.head);
+		IElement       body = (IElement) m.get(n.body);
+		return (head == n.head && body == n.body ? n : new Rule(head, body));
 	}
 
 	@Override

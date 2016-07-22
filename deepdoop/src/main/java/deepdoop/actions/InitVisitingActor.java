@@ -19,18 +19,18 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 	String      _oldId;
 	String      _id;
-	Set<String> _globalAtomNames;
+	Set<String> _globalAtoms;
 
-	public InitVisitingActor(String oldId, String id, Set<String> globalAtomNames) {
+	public InitVisitingActor(String oldId, String id, Set<String> globalAtoms) {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
 		super(null);
-		_actor           = this;
+		_actor       = this;
 
-		_oldId           = oldId;
-		_id              = id;
-		_globalAtomNames = globalAtomNames;
+		_oldId       = oldId;
+		_id          = id;
+		_globalAtoms = globalAtoms;
 	}
 	public InitVisitingActor() {
 		this(null, null, null);
@@ -38,7 +38,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 	String name(String name, String stage) {
 		// *In* global space
-		if (_globalAtomNames.contains(name)) {
+		if (_globalAtoms.contains(name)) {
 			assert !"@past".equals(stage);
 			return name;
 		}
@@ -71,7 +71,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		AtomCollectingActor acActor = new AtomCollectingActor();
 		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(acActor);
 		n.accept(acVisitor);
-		_globalAtomNames = acActor.getDeclaringAtoms(n.globalComp).keySet();
+		_globalAtoms = acActor.getDeclaringAtoms(n.globalComp).keySet();
 
 		Program initP = Program.from(n.globalComp, new HashMap<>(), null, new HashSet<>());
 		for (Entry<String, String> entry : n.inits.entrySet()) {
@@ -107,11 +107,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
 
 				// Propagate to global scope
-				if (prop.toId == null && _globalAtomNames.contains(atom.name()))
+				if (prop.toId == null && _globalAtoms.contains(atom.name()))
 					throw new DeepDoopException("Reintroducing predicate '" + atom.name() + "' to global space");
 
 				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
-					accept(new InitVisitingActor(prop.fromId, prop.toId, _globalAtomNames));
+					accept(new InitVisitingActor(prop.fromId, prop.toId, _globalAtoms));
 				IElement body = (IAtom) atom.instantiate(null, vars);
 				toComp.addRule(new Rule(new LogicalElement(head), body));
 			}
@@ -119,25 +119,6 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		return initP;
 	}
 
-
-	@Override
-	public Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
-		return new Constraint((IElement) m.get(n.head), (IElement) m.get(n.body));
-	}
-	@Override
-	public Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
-		Set<IAtom> newTypes = new HashSet<>();
-		for (IAtom t : n.types) newTypes.add((IAtom) m.get(t));
-		return new Declaration((IAtom) m.get(n.atom), newTypes);
-	}
-	@Override
-	public RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
-		return new RefModeDeclaration((RefMode) m.get(n.atom), (Predicate) m.get(n.types.get(0)), (Primitive) m.get(n.types.get(1)));
-	}
-	@Override
-	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		return new Rule((LogicalElement) m.get(n.head), (IElement) m.get(n.body));
-	}
 
 	@Override
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
@@ -159,6 +140,25 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		for (Constraint c : n.constraints)   newComp.constraints.add((Constraint) m.get(c));
 		for (Rule r : n.rules)               newComp.rules.add((Rule) m.get(r));
 		return newComp;
+	}
+
+	@Override
+	public Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
+		return new Constraint((IElement) m.get(n.head), (IElement) m.get(n.body));
+	}
+	@Override
+	public Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
+		Set<IAtom> newTypes = new HashSet<>();
+		for (IAtom t : n.types) newTypes.add((IAtom) m.get(t));
+		return new Declaration((IAtom) m.get(n.atom), newTypes);
+	}
+	@Override
+	public RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
+		return new RefModeDeclaration((RefMode) m.get(n.atom), (Predicate) m.get(n.types.get(0)), (Primitive) m.get(n.types.get(1)));
+	}
+	@Override
+	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
+		return new Rule((LogicalElement) m.get(n.head), (IElement) m.get(n.body));
 	}
 
 	@Override

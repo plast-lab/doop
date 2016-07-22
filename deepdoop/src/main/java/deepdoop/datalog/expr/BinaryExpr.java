@@ -15,11 +15,6 @@ public class BinaryExpr implements IExpr {
 		this.right = right;
 	}
 
-	@Override
-	public String toString() {
-		return left + " " + op + " " + right;
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

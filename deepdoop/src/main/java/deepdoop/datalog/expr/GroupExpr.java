@@ -10,11 +10,6 @@ public class GroupExpr implements IExpr {
 		this.expr  = expr;
 	}
 
-	@Override
-	public String toString() {
-		return "(" + expr + ")";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

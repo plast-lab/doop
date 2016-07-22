@@ -47,15 +47,6 @@ public class Directive implements IAtom {
 		return this;
 	}
 
-	@Override
-	public String toString() {
-		String middle = (backtick != null ? "`" + backtick.name : "");
-		if (isPredicate)
-			return name + "(" + middle + ")";
-		else
-			return name + "[" + middle + "] = " + constant;
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

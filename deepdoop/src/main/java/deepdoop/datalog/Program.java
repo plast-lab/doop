@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 
 public class Program implements IVisitable {
 
@@ -38,16 +37,6 @@ public class Program implements IVisitable {
 	}
 	public void addPropagation(String fromId, Set<IAtom> preds, String toId) {
 		props.add(new Propagation(fromId, preds, toId));
-	}
-
-	@Override
-	public String toString() {
-		StringJoiner joiner = new StringJoiner("\n");
-		joiner.add(globalComp.toString());
-		for (Component c : comps.values()) joiner.add(c.toString());
-		if (inits != null) for (Map.Entry<String, String> entry : inits.entrySet()) joiner.add(entry.toString());
-		if (props != null) for (Propagation prop : props) joiner.add(prop.toString());
-		return joiner.toString();
 	}
 
 

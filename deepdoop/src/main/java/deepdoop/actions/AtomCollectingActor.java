@@ -48,6 +48,43 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 	}
 
 	@Override
+	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> declMap = new HashMap<>();
+		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
+		_declAtoms.put(n, declMap);
+
+		Set<String> importPreds = new HashSet<>();
+		for (StubAtom p : n.imports) {
+			String pName = p.name();
+			importPreds.add(pName);
+			if (declMap.get(pName) == null)
+				throw new DeepDoopException("Predicate `" + pName + "` is imported but has no declaration");
+		}
+		for (String declName : declMap.keySet())
+			if (!importPreds.contains(declName))
+				throw new DeepDoopException("Predicate `" + declName + "` is declared but not imported");
+
+		Map<String, IAtom> usedMap = new HashMap<>();
+		for (StubAtom p : n.exports) usedMap.put(p.name, p);
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+	@Override
+	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> declMap = new HashMap<>();
+		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
+		for (Rule r : n.rules)               declMap.putAll(getDeclaringAtoms(r));
+		_declAtoms.put(n, declMap);
+
+		Map<String, IAtom> usedMap = new HashMap<>();
+		for (Declaration d : n.declarations) usedMap.putAll(getUsedAtoms(d));
+		for (Constraint c : n.constraints)   usedMap.putAll(getUsedAtoms(c));
+		for (Rule r : n.rules)               usedMap.putAll(getUsedAtoms(r));
+		_usedAtoms.put(n, usedMap);
+		return n;
+	}
+
+	@Override
 	public Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = new HashMap<>();
 		usedMap.putAll(getUsedAtoms(n.head));
@@ -81,43 +118,6 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 
 		Map<String, IAtom> usedMap = new HashMap<>();
 		usedMap.putAll(getUsedAtoms(n.body));
-		_usedAtoms.put(n, usedMap);
-		return n;
-	}
-
-	@Override
-	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> declMap = new HashMap<>();
-		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
-		_declAtoms.put(n, declMap);
-
-		Set<String> importPreds = new HashSet<>();
-		for (StubAtom p : n.imports) {
-			String pName = p.name();
-			importPreds.add(pName);
-			if (declMap.get(pName) == null)
-				throw new DeepDoopException("Predicate `" + pName + "` is imported but has no declaration");
-		}
-		for (String declName : declMap.keySet())
-			if (!importPreds.contains(declName))
-				throw new DeepDoopException("Predicate `" + declName + "` is declared but not imported");
-
-		Map<String, IAtom> usedMap = new HashMap<>();
-		for (StubAtom p : n.exports) usedMap.put(p.name, p);
-		_usedAtoms.put(n, usedMap);
-		return n;
-	}
-	@Override
-	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> declMap = new HashMap<>();
-		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
-		for (Rule r : n.rules)               declMap.putAll(getDeclaringAtoms(r));
-		_declAtoms.put(n, declMap);
-
-		Map<String, IAtom> usedMap = new HashMap<>();
-		for (Declaration d : n.declarations) usedMap.putAll(getUsedAtoms(d));
-		for (Constraint c : n.constraints)   usedMap.putAll(getUsedAtoms(c));
-		for (Rule r : n.rules)               usedMap.putAll(getUsedAtoms(r));
 		_usedAtoms.put(n, usedMap);
 		return n;
 	}

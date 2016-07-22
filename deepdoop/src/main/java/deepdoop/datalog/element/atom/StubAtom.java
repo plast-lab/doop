@@ -26,11 +26,6 @@ public class StubAtom implements IAtom {
 	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) { throw new UnsupportedOperationException(); }
 
-	@Override
-	public String toString() {
-		return "STUB<" + name + ">";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

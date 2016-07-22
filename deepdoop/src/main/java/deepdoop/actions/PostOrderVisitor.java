@@ -28,6 +28,26 @@ public class PostOrderVisitor<T> implements IVisitor<T> {
 	}
 
 	@Override
+	public T visit(CmdComponent n) {
+		_actor.enter(n);
+		Map<IVisitable, T> m = new HashMap<>();
+		for (StubAtom p : n.exports)         m.put(p, p.accept(this));
+		for (StubAtom p : n.imports)         m.put(p, p.accept(this));
+		for (Declaration d : n.declarations) m.put(d, d.accept(this));
+		for (Rule r : n.rules)               m.put(r, r.accept(this));
+		return _actor.exit(n, m);
+	}
+	@Override
+	public T visit(Component n) {
+		_actor.enter(n);
+		Map<IVisitable, T> m = new HashMap<>();
+		for (Declaration d : n.declarations) m.put(d, d.accept(this));
+		for (Constraint c : n.constraints)   m.put(c, c.accept(this));
+		for (Rule r : n.rules)               m.put(r, r.accept(this));
+		return _actor.exit(n, m);
+	}
+
+	@Override
 	public T visit(Constraint n) {
 		_actor.enter(n);
 		Map<IVisitable, T> m = new HashMap<>();
@@ -57,25 +77,6 @@ public class PostOrderVisitor<T> implements IVisitor<T> {
 		Map<IVisitable, T> m = new HashMap<>();
 		m.put(n.head, n.head.accept(this));
 		if (n.body != null) m.put(n.body, n.body.accept(this));
-		return _actor.exit(n, m);
-	}
-
-	@Override
-	public T visit(CmdComponent n) {
-		_actor.enter(n);
-		Map<IVisitable, T> m = new HashMap<>();
-		for (StubAtom p : n.exports)         m.put(p, p.accept(this));
-		for (StubAtom p : n.imports)         m.put(p, p.accept(this));
-		for (Declaration d : n.declarations) m.put(d, d.accept(this));
-		return _actor.exit(n, m);
-	}
-	@Override
-	public T visit(Component n) {
-		_actor.enter(n);
-		Map<IVisitable, T> m = new HashMap<>();
-		for (Declaration d : n.declarations) m.put(d, d.accept(this));
-		for (Constraint c : n.constraints)   m.put(c, c.accept(this));
-		for (Rule r : n.rules)               m.put(r, r.accept(this));
 		return _actor.exit(n, m);
 	}
 

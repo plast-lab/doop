@@ -14,11 +14,6 @@ public class Constraint implements IVisitable {
 		this.body = body;
 	}
 
-	@Override
-	public String toString() {
-		return head + " -> " + body + ".";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {
