@@ -233,7 +233,11 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		for (Node node : nodes)
 			if (node instanceof CompNode) {
 				Component c = n.comps.get(node.name);
-				write(_latestFile, m.get(c));
+				List<String> l = new ArrayList<>();
+				for (Declaration d : c.declarations) l.add(_codeMap.get(d));
+				for (Constraint con: c.constraints)  l.add(_codeMap.get(con));
+				for (Rule r : c.rules)               l.add(_codeMap.get(r));
+				write(_latestFile, l);
 			}
 			else if (node instanceof CmdNode)
 				assert false;
@@ -253,38 +257,43 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 			assert node instanceof CmdNode;
 			assert _latestFile != null;
 			CmdComponent c = (CmdComponent) n.comps.get(node.name);
+			// Write frame rules from previous components
 			for (Rule r : c.rules)
 				write(_latestFile, _codeMap.get(r));
 
-			for (StubAtom export : c.exports) {
+			for (StubAtom export : c.exports)
 				write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name()+" -exportDataDir . -exportDelimiter '\\t'");
-			}
+
 			write(_bashFile, c.eval);
+
 			_latestFile = create("AUTO_", "-delta.logic");
 			for (Declaration d : c.declarations) {
+				assert !(d instanceof RefModeDeclaration);
+				IAtom atom = _acActor.getDeclaringAtoms(d).values().iterator().next();
+				String name = atom.name();
 
-			IAtom atom = _acActor.getDeclaringAtoms(d).values().iterator().next();
-			//assert set.size() == 1;
+				List<VariableExpr> vars = new ArrayList<>(atom.arity());
+				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
 
-			write(_latestFile, "lang:physical:storageModel[`_"+atom.name()+"] = \"DelimitedFile\".");
-			write(_latestFile, "lang:physical:filePath[`_"+atom.name()+"] = \""+atom.name()+".facts\".");
-			write(_latestFile, "lang:physical:delimiter[`"+atom.name()+"_] = \"\\t\".");
-			write(_latestFile, "lang:physical:hasColumnNames[`_"+atom.name()+"] = false.");
+				String head = atom.name() + "(";
+				StringJoiner joiner = new StringJoiner(", ");
+				for (VariableExpr v : vars) joiner.add(v.name);
+				head += joiner + ")";
 
-			List<VariableExpr> vars = new ArrayList<>(atom.arity());
-			for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
+				String decl = "_" + head + " -> ";
+				joiner = new StringJoiner(", ");
+				for (int i = 0 ; i < atom.arity() ; i++)
+					joiner.add(d.types.get(i).name() + "(" + vars.get(i).name + ")");
+				decl += joiner + ".";
 
-			String head = atom.name() + "(";
-			StringJoiner joiner = new StringJoiner(", ");
-			for (VariableExpr v : vars) joiner.add(v.name);
-			head += joiner + ")";
-
-			String res = "_" + head + " -> ";
-			joiner = new StringJoiner(", ");
-			for (int i = 0 ; i < atom.arity() ; i++) joiner.add(d.types.get(i).name() + "(" + vars.get(i).name + ")");
-			res += joiner + ".";
-			write(_latestFile, res);
-			write(_latestFile, "+" + head + " <- _" + head + ".");
+				write(_latestFile, Arrays.asList(
+					"lang:physical:storageModel[`_"+name+"] = \"DelimitedFile\".",
+					"lang:physical:filePath[`_"+name+"] = \""+name+".facts\".",
+					"lang:physical:delimiter[`"+name+"_] = \"\\t\".",
+					"lang:physical:hasColumnNames[`_"+name+"] = false.",
+					decl,
+					"+" + head + " <- _" + head + "."
+				));
 			}
 			write(_bashFile, "bloxbatch -db DB -execute -file " + _latestFile);
 		}
@@ -301,8 +310,11 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		return null;
 	}
 	void write(Path file, String data) {
+		write(file, Arrays.asList(data));
+	}
+	void write(Path file, List<String> data) {
 		try {
-			Files.write(file, Arrays.asList(data), Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+			Files.write(file, data, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
 		}
 		catch (IOException e) {
 			// TODO
