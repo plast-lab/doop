@@ -16,11 +16,6 @@ public class AggregationElement implements IElement {
 		this.body      = body;
 	}
 
-	@Override
-	public String toString() {
-		return "agg<<" + var + " = " + predicate + ">> " + body;
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

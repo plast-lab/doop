@@ -13,11 +13,6 @@ public class VariableExpr implements IExpr {
 	}
 
 	@Override
-	public String toString() {
-		return name;
-	}
-
-	@Override
 	public boolean equals(Object o) {
 		return (o instanceof VariableExpr) && ((VariableExpr)o).name.equals(name);
 	}

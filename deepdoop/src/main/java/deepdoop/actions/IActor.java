@@ -14,6 +14,11 @@ public interface IActor<T> {
 	default void enter(Program n)                              {}
 	default T exit(Program n, Map<IVisitable, T> m)            { return null; }
 
+	default void enter(CmdComponent n)                         {}
+	default T exit(CmdComponent n, Map<IVisitable, T> m)       { return null; }
+	default void enter(Component n)                            {}
+	default T exit(Component n, Map<IVisitable, T> m)          { return null; }
+
 	default void enter(Constraint n)                           {}
 	default T exit(Constraint n, Map<IVisitable, T> m)         { return null; }
 	default void enter(Declaration n)                          {}
@@ -22,11 +27,6 @@ public interface IActor<T> {
 	default T exit(RefModeDeclaration n, Map<IVisitable, T> m) { return null; }
 	default void enter(Rule n)                                 {}
 	default T exit(Rule n, Map<IVisitable, T> m)               { return null; }
-
-	default void enter(CmdComponent n)                         {}
-	default T exit(CmdComponent n, Map<IVisitable, T> m)       { return null; }
-	default void enter(Component n)                            {}
-	default T exit(Component n, Map<IVisitable, T> m)          { return null; }
 
 	default void enter(AggregationElement n)                   {}
 	default T exit(AggregationElement n, Map<IVisitable, T> m) { return null; }

@@ -33,11 +33,6 @@ public class Primitive implements IAtom {
 		return this;
 	}
 
-	@Override
-	public String toString() {
-		return name + "(" + var + ")";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

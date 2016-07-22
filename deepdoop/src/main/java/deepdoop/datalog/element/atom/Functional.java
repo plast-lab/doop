@@ -5,7 +5,6 @@ import deepdoop.datalog.expr.IExpr;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 
 public class Functional implements IAtom {
 
@@ -39,13 +38,6 @@ public class Functional implements IAtom {
 		assert arity() == vars.size();
 		VariableExpr valueVar = (VariableExpr) vars.remove(vars.size()-1);
 		return new Functional(name, stage, new ArrayList<>(vars), valueVar);
-	}
-
-	@Override
-	public String toString() {
-		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr e : keyExprs) joiner.add(e.toString());
-		return name + (stage == null ? "" : stage) + "[" + joiner + "]" + (valueExpr != null ? " = " + valueExpr : "");
 	}
 
 

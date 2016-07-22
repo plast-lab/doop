@@ -5,7 +5,6 @@ import deepdoop.datalog.expr.IExpr;
 import deepdoop.datalog.expr.VariableExpr;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 
 public class Predicate implements IAtom {
 
@@ -38,13 +37,6 @@ public class Predicate implements IAtom {
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size();
 		return new Predicate(name, stage, new ArrayList<>(vars));
-	}
-
-	@Override
-	public String toString() {
-		StringJoiner joiner = new StringJoiner(", ");
-		for (IExpr e : exprs) joiner.add(e.toString());
-		return name + (stage == null ? "" : stage) + "(" + joiner + ")";
 	}
 
 

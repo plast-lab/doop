@@ -16,11 +16,6 @@ public class FunctionalHeadExpr implements IExpr {
 		this.functional = functional;
 	}
 
-	@Override
-	public String toString() {
-		return functional.toString();
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

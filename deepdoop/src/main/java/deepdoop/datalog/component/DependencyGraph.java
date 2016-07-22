@@ -27,26 +27,28 @@ public class DependencyGraph {
 		Set<String> handledGlobalAtoms = new HashSet<>();
 
 		for (Propagation prop : p.props) {
-			Node fromNode = getCompNode(prop.fromId);
+			Component fromComp = p.comps.get(prop.fromId);
+			Component toComp   = p.comps.get(prop.toId);
+
+			Node fromNode = getNode(fromComp);
 
 			// Propagate to another component
-			if (prop.toId != null)
-				fromNode.addEdgeTo(getCompNode(prop.toId));
+			if (toComp != null)
+				fromNode.addEdgeTo(getNode(toComp));
 			// Propagate to global space
 			else
 				for (IAtom pred : prop.preds) {
 					IAtom newPred = (IAtom) pred.accept(new InitVisitingActor(prop.fromId, null, new HashSet<>()));
-					fromNode.addEdgeTo(getPredNode(newPred.name()));
+					fromNode.addEdgeTo(getNode(newPred.name()));
 					handledGlobalAtoms.add(newPred.name());
 				}
 
 			// Dependencies from global space
-			Component fromComp = p.comps.get(prop.fromId);
 			Set<String> fromGlobal  = acActor.getUsedAtoms(fromComp).keySet();
 			fromGlobal.retainAll(globalAtoms);
 
 			for (String globalAtomName : fromGlobal)
-				getPredNode(globalAtomName).addEdgeTo(fromNode);
+				getNode(globalAtomName).addEdgeTo(fromNode);
 			handledGlobalAtoms.addAll(fromGlobal);
 		}
 
@@ -54,7 +56,7 @@ public class DependencyGraph {
 		Map<Node, Integer> inDegrees = new HashMap<>();
 		Set<Node> zeroInNodes = new HashSet<>();
 		for (Node n : _nodes.values()) {
-			int inDegree = n._inEdges.size();
+			int inDegree = n.inEdges.size();
 			inDegrees.put(n, inDegree);
 			if (inDegree == 0) zeroInNodes.add(n);
 		}
@@ -75,7 +77,7 @@ public class DependencyGraph {
 					Set<Node> layerNodes = _layers.get(curLayer);
 					layerNodes.add(n);
 				}
-				for (Node succ : n._outEdges) {
+				for (Node succ : n.outEdges) {
 					successorsExist = true;
 					int newInDegree = inDegrees.get(succ) - 1;
 					inDegrees.put(succ, newInDegree);
@@ -90,60 +92,78 @@ public class DependencyGraph {
 
 		globalAtoms.removeAll(handledGlobalAtoms);
 		Set<Node> lastGlobalNodes = new HashSet<>();
-		for (String globalAtom : globalAtoms) lastGlobalNodes.add(getPredNode(globalAtom));
+		for (String globalAtom : globalAtoms) lastGlobalNodes.add(getNode(globalAtom));
 		_layers.add(lastGlobalNodes);
 
-		//System.out.println(_layers);
+		System.out.println(_layers);
 		//for (Node n : _nodes.values()) n.print();
 	}
 
-	Node getCompNode(String name) {
-		name = "<" + name + ">";
-		Node node = _nodes.get(name);
+	public List<Set<Node>> getLayers() {
+		return _layers;
+	}
+
+	Node getNode(String name) {
+		String key = "<" + name + ">";
+		Node node = _nodes.get(key);
 		if (node == null) {
-			node = new Node(Node.Type.COMP, name);
-			_nodes.put(name, node);
+			node = new PredNode(name);
+			_nodes.put(key, node);
 		}
 		return node;
 	}
-	Node getPredNode(String name) {
-		Node node = _nodes.get(name);
+	Node getNode(Component comp) {
+		String key = comp.name;
+		Node node = _nodes.get(key);
 		if (node == null) {
-			node = new Node(Node.Type.COMP, name);
-			_nodes.put(name, node);
+			node = (comp instanceof CmdComponent ? new CmdNode(comp.name) : new CompNode(comp.name));
+			_nodes.put(key, node);
 		}
 		return node;
 	}
 
 
-	static class Node {
+	public abstract static class Node {
 
-		enum Type { PRED, COMP, CMD }
+		public final String    name;
+		public final Set<Node> inEdges;
+		public final Set<Node> outEdges;
 
-		Type      _type;
-		String    _name;
-		Set<Node> _inEdges;
-		Set<Node> _outEdges;
-
-		Node(Type type, String name) {
-			_type = type;
-			_name = name;
-			_inEdges = new HashSet<>();
-			_outEdges = new HashSet<>();
+		Node(String name) {
+			this.name     = name;
+			this.inEdges  = new HashSet<>();
+			this.outEdges = new HashSet<>();
 		}
 
 		void addEdgeTo(Node toNode) {
-			this._outEdges.add(toNode);
-			toNode._inEdges.add(this);
+			outEdges.add(toNode);
+			toNode.inEdges.add(this);
 		}
 
 		void print() {
-			for (Node n : _outEdges) System.out.println(_name + " -----> "+ n._name);
+			for (Node n : outEdges) System.out.println(this + " -----> "+ n);
 		}
+	}
 
-		@Override
-		public String toString() {
-			return _name;
+	public static class PredNode extends Node {
+		public PredNode(String name) {
+			super(name);
 		}
+		@Override
+		public String toString() { return name; }
+	}
+	public static class CompNode extends Node {
+		public CompNode(String name) {
+			super(name);
+		}
+		@Override
+		public String toString() { return "<" + name + ">"; }
+	}
+	public static class CmdNode extends Node {
+		public CmdNode(String name) {
+			super(name);
+		}
+		@Override
+		public String toString() { return "{" + name + "}"; }
 	}
 }

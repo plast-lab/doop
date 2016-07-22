@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.StringJoiner;
 
 public class Declaration implements IVisitable {
 
@@ -30,13 +29,6 @@ public class Declaration implements IVisitable {
 
 		this.atom  = atom;
 		this.types = new ArrayList<>(Arrays.asList(ordered));
-	}
-
-	@Override
-	public String toString() {
-		StringJoiner joiner = new StringJoiner(", ");
-		for (IAtom t : types) joiner.add(t.toString());
-		return atom + " -> " + joiner + ".";
 	}
 
 

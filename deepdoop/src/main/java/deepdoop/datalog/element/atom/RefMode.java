@@ -37,11 +37,6 @@ public class RefMode implements IAtom {
 		return new RefMode(name, stage, vars.get(0), vars.get(1));
 	}
 
-	@Override
-	public String toString() {
-		return name + (stage == null ? "" : stage) + "(" + entityVar + ":" + valueExpr + ")";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

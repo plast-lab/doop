@@ -51,7 +51,7 @@ public class CmdComponent extends Component {
 					   dir = (String) d.constant.value; break;
 			case "lang:cmd:EVAL"  :
 					   if (eval != null) throw new DeepDoopException("EVAL property is already specified in command block `" + this.name + "`");
-					   eval = (String) d.constant.value; break;
+					   eval = ((String) d.constant.value).replaceAll("^\"|\"$", ""); break;
 			case "lang:cmd:export":
 					   exports.add(new StubAtom(d.backtick.name + ":past")); break;
 			case "lang:cmd:import":
@@ -63,15 +63,6 @@ public class CmdComponent extends Component {
 	@Override
 	public void addAll(Component other) {
 		throw new UnsupportedOperationException("`addAll` is not supported on a command block");
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		for (StubAtom p : exports)         builder.append(p + "\n");
-		for (StubAtom p : imports)         builder.append(p + "\n");
-		for (Declaration d : declarations) builder.append(d + "\n");
-		return builder.toString();
 	}
 
 

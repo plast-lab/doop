@@ -16,11 +16,6 @@ public class ComparisonElement implements IElement {
 		this.expr = expr;
 	}
 
-	@Override
-	public String toString() {
-		return expr.toString();
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

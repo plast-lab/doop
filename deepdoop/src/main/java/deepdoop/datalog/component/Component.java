@@ -53,15 +53,6 @@ public class Component implements IVisitable {
 		rules.addAll(other.rules);
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		for (Declaration d : declarations) builder.append(d + "\n");
-		for (Constraint c : constraints)   builder.append(c + "\n");
-		for (Rule r : rules)               builder.append(r + "\n");
-		return builder.toString();
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

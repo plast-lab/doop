@@ -26,11 +26,6 @@ public class Rule implements IVisitable {
 		return (isDirective ? (Directive) head.elements.iterator().next() : null);
 	}
 
-	@Override
-	public String toString() {
-		return head + (body != null ? " <- " + body : "") + ".";
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {

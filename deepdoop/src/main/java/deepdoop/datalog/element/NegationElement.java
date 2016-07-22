@@ -10,11 +10,6 @@ public class NegationElement implements IElement {
 		this.element = element;
 	}
 
-	@Override
-	public String toString() {
-		return "!" + element;
-	}
-
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {
