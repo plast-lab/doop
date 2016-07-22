@@ -5,6 +5,7 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,7 +51,7 @@ class FactGenerator implements Runnable {
                 generate(f);
             }
 
-            for (SootMethod m : _sootClass.getMethods()) {
+            for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
                 Session session = new Session();
 
                 try {
