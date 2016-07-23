@@ -8,7 +8,7 @@ import java.util.Map;
 public class DeepDoopException extends RuntimeException {
 
 	public enum Error {
-		CMD_CONSTRAIN,
+		CMD_CONSTRAINT,
 		CMD_DIRECTIVE,
 		CMD_EVAL,
 		CMD_RULE,
@@ -23,7 +23,7 @@ public class DeepDoopException extends RuntimeException {
 	static Map<Error, String> _msgMap;
 	static {
 		_msgMap = new EnumMap<>(Error.class);
-		_msgMap.put(Error.CMD_CONSTRAIN, "Constraints are not supported in a command block");
+		_msgMap.put(Error.CMD_CONSTRAINT, "Constraints are not supported in a command block");
 		_msgMap.put(Error.CMD_DIRECTIVE, "Invalid directive in command block `{0}`");
 		_msgMap.put(Error.CMD_EVAL, "EVAL property already specified in command block `{0}`");
 		_msgMap.put(Error.CMD_RULE, "Normal rules are not supported in a command block");

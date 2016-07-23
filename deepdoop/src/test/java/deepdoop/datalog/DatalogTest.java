@@ -1,6 +1,8 @@
 package deepdoop.datalog;
 
 import deepdoop.actions.*;
+import deepdoop.datalog.DeepDoopException;
+import deepdoop.datalog.DeepDoopException.Error;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Parser;
@@ -27,6 +29,9 @@ public class DatalogTest {
 	}
 
 	public void test(String filename) throws IOException {
+		test(filename, null);
+	}
+	public void test(String filename, Error expectedErrorId) throws IOException {
 		try {
 			ParseTree tree = open(filename).program();
 			_walker.walk(_listener, tree);
@@ -37,7 +42,13 @@ public class DatalogTest {
 			Program flatP = (Program) p.accept(v);
 
 			flatP.accept(new LBCodeGenVisitingActor());
-		} catch (Exception e) {
+		}
+		catch (DeepDoopException e) {
+			if (expectedErrorId == null || e.errorId != expectedErrorId)
+				Assert.fail(e.errorId + e.getMessage() + " on " + filename);
+			System.err.println("Expected failure on " + filename);
+		}
+		catch (Exception e) {
 			Assert.fail(e.getMessage() + " on " + filename);
 		}
 	}
@@ -88,39 +99,39 @@ public class DatalogTest {
 
 	@Test
 	public void test_Fail1() throws IOException {
-		test("/fail1.logic");
+		test("/fail1.logic", Error.DEP_CYCLE);
 	}
 	@Test
 	public void test_Fail2() throws IOException {
-		test("/fail2.logic");
+		test("/fail2.logic", Error.DEP_GLOBAL);
 	}
 	@Test
 	public void test_Fail3() throws IOException {
-		test("/fail3.logic");
+		test("/fail3.logic", Error.NO_DECL);
 	}
 	@Test
 	public void test_Fail4() throws IOException {
-		test("/fail4.logic");
+		test("/fail4.logic", Error.NO_DECL);
 	}
 	@Test
 	public void test_Fail5() throws IOException {
-		test("/fail5.logic");
+		test("/fail5.logic", Error.CMD_RULE);
 	}
 	@Test
 	public void test_Fail6() throws IOException {
-		test("/fail6.logic");
+		test("/fail6.logic", Error.CMD_CONSTRAINT);
 	}
 	@Test
 	public void test_Fail7() throws IOException {
-		test("/fail7.logic");
+		test("/fail7.logic", Error.CMD_DIRECTIVE);
 	}
 	@Test
 	public void test_Fail8() throws IOException {
-		test("/fail8.logic");
+		test("/fail8.logic", Error.CMD_NO_DECL);
 	}
 	@Test
 	public void test_Fail9() throws IOException {
-		test("/fail9.logic");
+		test("/fail9.logic", Error.CMD_NO_IMPORT);
 	}
 
 
