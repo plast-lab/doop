@@ -1,6 +1,7 @@
 package deepdoop.actions;
 
 import deepdoop.datalog.*;
+import deepdoop.datalog.DeepDoopException.Error;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
@@ -58,11 +59,11 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 			String pName = p.name();
 			importPreds.add(pName);
 			if (declMap.get(pName) == null)
-				throw new DeepDoopException("Predicate `" + pName + "` is imported but has no declaration");
+				throw new DeepDoopException(Error.CMD_NO_DECL, pName);
 		}
 		for (String declName : declMap.keySet())
 			if (!importPreds.contains(declName))
-				throw new DeepDoopException("Predicate `" + declName + "` is declared but not imported");
+				throw new DeepDoopException(Error.CMD_NO_IMPORT, declName);
 
 		Map<String, IAtom> usedMap = new HashMap<>();
 		for (StubAtom p : n.exports) usedMap.put(p.name, p);
