@@ -31,7 +31,7 @@ public class CmdComponent extends Component {
 	}
 	@Override
 	public void addCons(Constraint c) {
-		throw new DeepDoopException(Error.CMD_CONSTRAIN);
+		throw new DeepDoopException(Error.CMD_CONSTRAINT);
 	}
 	@Override
 	public void addRule(Rule r) {
