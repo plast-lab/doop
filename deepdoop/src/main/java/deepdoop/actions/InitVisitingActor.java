@@ -131,7 +131,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		for (StubAtom p : n.imports) newImports.add((StubAtom) m.get(p));
 		Set<StubAtom> newExports = new HashSet<>();
 		for (StubAtom p : n.exports) newExports.add((StubAtom) m.get(p));
-		return new CmdComponent(_id, newDeclarations, n.eval, n.dir, newImports, newExports);
+		return new CmdComponent(_id, newDeclarations, n.eval, newImports, newExports);
 	}
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {

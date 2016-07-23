@@ -8,4 +8,4 @@ component Foo {
 
 S1 = new Foo
 
-propagate S1 { * } to .global
+S1 { * } copyto .global

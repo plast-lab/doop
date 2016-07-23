@@ -27,11 +27,11 @@ S2 = new Foo
 S3 = new Foo
 S4 = new Foo
 
-propagate S0 { * } to S2
-propagate S1 { * } to .global
-propagate S2 { * } to S3
-propagate S3 { W, P1 } to S4
-propagate S4 { * } to .global
+S0 { * } copyto S2
+S1 { * } copyto .global
+S2 { * } copyto S3
+S3 { W, P1 } copyto S4
+S4 { * } copyto .global
 
 
 Pred(x) <- W(x).

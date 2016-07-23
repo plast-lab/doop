@@ -17,7 +17,7 @@ S1 = new Foo
 S2 = new Bar
 S3 = new Baz
 
-propagate S1 { * } to S2
-propagate S2 { * } to S3
-propagate S3 { * } to S1
-propagate S3 { P3 } to .global
+S1 { * } copyto S2
+S2 { * } copyto S3
+S3 { * } copyto S1
+S3 { P3 } copyto .global

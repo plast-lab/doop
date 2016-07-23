@@ -11,23 +11,18 @@ import java.util.Set;
 public class CmdComponent extends Component {
 
 	public String              eval;
-	public String              dir;
 	public final Set<StubAtom> exports;
 	public final Set<StubAtom> imports;
 
-	public CmdComponent(String name, Set<Declaration> declarations, String eval, String dir, Set<StubAtom> imports, Set<StubAtom> exports) {
+	public CmdComponent(String name, Set<Declaration> declarations, String eval, Set<StubAtom> imports, Set<StubAtom> exports) {
 		super(name, null, declarations, new HashSet<>(), new HashSet<>());
 		this.eval         = eval;
-		this.dir          = dir;
 		this.imports      = imports;
 		this.exports      = exports;
 	}
 	public CmdComponent(String name) {
-		this(name, new HashSet<>(), null, null, new HashSet<>(), new HashSet<>());
+		this(name, new HashSet<>(), null, new HashSet<>(), new HashSet<>());
 	}
-
-	public String eval() { return eval; }
-	public String dir()  { return dir; }
 
 	@Override
 	public void addDecl(Declaration d) {
@@ -46,9 +41,6 @@ public class CmdComponent extends Component {
 
 		Directive d = r.getDirective();
 		switch (d.name) {
-			case "lang:cmd:DIR"   :
-					   if (dir != null) throw new DeepDoopException("DIR property is already specified in command block `" + this.name + "`");
-					   dir = (String) d.constant.value; break;
 			case "lang:cmd:EVAL"  :
 					   if (eval != null) throw new DeepDoopException("EVAL property is already specified in command block `" + this.name + "`");
 					   eval = ((String) d.constant.value).replaceAll("^\"|\"$", ""); break;

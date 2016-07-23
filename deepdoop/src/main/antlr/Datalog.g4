@@ -15,7 +15,7 @@ init_
 	: IDENTIFIER '=' NEW IDENTIFIER ;
 
 propagate
-	: PROPAGATE IDENTIFIER '{' (ALL | predicateNameList) '}' TO (IDENTIFIER | GLOBAL) ;
+	: IDENTIFIER '{' (ALL | predicateNameList) '}' PROPAGATE (IDENTIFIER | GLOBAL) ;
 
 predicateNameList
 	: predicateName
@@ -134,10 +134,7 @@ NEW
 	: 'new' ;
 
 PROPAGATE
-	: 'propagate' ;
-
-TO
-	: 'to' ;
+	: 'copyto' ;
 
 INTEGER
 	: [0-9]+

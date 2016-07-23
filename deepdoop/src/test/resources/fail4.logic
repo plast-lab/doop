@@ -11,5 +11,5 @@ component Bar {
 S1 = new Foo
 S2 = new Bar
 
-propagate S1 { * } to S2
-propagate S2 { * } to .global
+S1 { * } copyto S2
+S2 { * } copyto .global
