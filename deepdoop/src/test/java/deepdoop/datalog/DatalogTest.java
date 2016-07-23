@@ -41,7 +41,7 @@ public class DatalogTest {
 			PostOrderVisitor<IVisitable> v = new PostOrderVisitor<>(new FlatteningActor(p.comps));
 			Program flatP = (Program) p.accept(v);
 
-			flatP.accept(new LBCodeGenVisitingActor());
+			flatP.accept(new LBCodeGenVisitingActor("build/"));
 		}
 		catch (DeepDoopException e) {
 			if (expectedErrorId == null || e.errorId != expectedErrorId)

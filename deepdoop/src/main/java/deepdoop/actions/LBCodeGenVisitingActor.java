@@ -32,10 +32,11 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	Component               _unhandledGlobal;
 	Set<String>             _handledAtoms;
 
+	Path                    _workDir;
 	Path                    _bashFile;
 	Path                    _latestFile;
 
-	public LBCodeGenVisitingActor() {
+	public LBCodeGenVisitingActor(String workDirStr) {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
@@ -47,8 +48,12 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 
 		_handledAtoms = new HashSet<>();
 
+		_workDir      = Paths.get(workDirStr);
 		_bashFile     = create("RUN_", ".sh");
 		write(_bashFile, "#!/bin/bash");
+	}
+	public LBCodeGenVisitingActor() {
+		this(".");
 	}
 
 
@@ -303,7 +308,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 
 	Path create(String prefix, String suffix) {
 		try {
-			return Files.createTempFile(Paths.get("build"), prefix, suffix);
+			return Files.createTempFile(_workDir, prefix, suffix);
 		}
 		catch (IOException e) {
 			// TODO
