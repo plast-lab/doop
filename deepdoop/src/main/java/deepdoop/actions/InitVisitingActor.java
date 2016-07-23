@@ -1,6 +1,7 @@
 package deepdoop.actions;
 
 import deepdoop.datalog.*;
+import deepdoop.datalog.DeepDoopException.Error;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.*;
@@ -108,7 +109,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 				// Propagate to global scope
 				if (prop.toId == null && _globalAtoms.contains(atom.name()))
-					throw new DeepDoopException("Reintroducing predicate '" + atom.name() + "' to global space");
+					throw new DeepDoopException(Error.DEP_GLOBAL, atom.name());
 
 				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
 					accept(new InitVisitingActor(prop.fromId, prop.toId, _globalAtoms));
@@ -123,7 +124,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	@Override
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
 		if (!n.rules.isEmpty())
-			throw new DeepDoopException("Normal rules are not supported in a command block");
+			throw new DeepDoopException(Error.CMD_RULE);
 
 		Set<Declaration> newDeclarations = new HashSet<>();
 		for (Declaration d : n.declarations) newDeclarations.add((Declaration) m.get(d));

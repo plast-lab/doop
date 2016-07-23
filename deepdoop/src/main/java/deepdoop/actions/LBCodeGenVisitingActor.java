@@ -1,6 +1,7 @@
 package deepdoop.actions;
 
 import deepdoop.datalog.*;
+import deepdoop.datalog.DeepDoopException.Error;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.component.DependencyGraph.*;
@@ -93,7 +94,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 				}
 			}
 			if (!declFound)
-				throw new DeepDoopException("Predicate `" + usedPred + "` used but not declared");
+				throw new DeepDoopException(Error.NO_DECL, usedPred);
 		}
 
 		// Compute dependency graph for components (and global predicates)

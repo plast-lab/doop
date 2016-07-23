@@ -2,6 +2,7 @@ package deepdoop.datalog;
 
 import deepdoop.actions.IVisitable;
 import deepdoop.actions.IVisitor;
+import deepdoop.datalog.DeepDoopException.Error;
 import deepdoop.datalog.component.*;
 import deepdoop.datalog.element.atom.IAtom;
 import java.util.HashMap;
@@ -31,8 +32,7 @@ public class Program implements IVisitable {
 	}
 	public void addInit(String id, String comp) {
 		if (inits.get(id) != null)
-			throw new DeepDoopException("Id `" + id + "` already used to initialize a component");
-
+			throw new DeepDoopException(Error.ID_IN_USE, id);
 		inits.put(id, comp);
 	}
 	public void addPropagation(String fromId, Set<IAtom> preds, String toId) {

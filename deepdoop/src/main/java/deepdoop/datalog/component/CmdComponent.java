@@ -2,6 +2,7 @@ package deepdoop.datalog.component;
 
 import deepdoop.actions.IVisitor;
 import deepdoop.datalog.DeepDoopException;
+import deepdoop.datalog.DeepDoopException.Error;
 import deepdoop.datalog.clause.*;
 import deepdoop.datalog.element.atom.Directive;
 import deepdoop.datalog.element.atom.StubAtom;
@@ -30,7 +31,7 @@ public class CmdComponent extends Component {
 	}
 	@Override
 	public void addCons(Constraint c) {
-		throw new DeepDoopException("Constraints are not supported in a command block");
+		throw new DeepDoopException(Error.CMD_CONSTRAIN);
 	}
 	@Override
 	public void addRule(Rule r) {
@@ -42,14 +43,14 @@ public class CmdComponent extends Component {
 		Directive d = r.getDirective();
 		switch (d.name) {
 			case "lang:cmd:EVAL"  :
-					   if (eval != null) throw new DeepDoopException("EVAL property is already specified in command block `" + this.name + "`");
+					   if (eval != null) throw new DeepDoopException(Error.CMD_EVAL, name);
 					   eval = ((String) d.constant.value).replaceAll("^\"|\"$", ""); break;
 			case "lang:cmd:export":
 					   exports.add(new StubAtom(d.backtick.name + ":past")); break;
 			case "lang:cmd:import":
 					   imports.add(new StubAtom(d.backtick.name)); break;
 			default               :
-					   throw new DeepDoopException("Invalid directive in command block `" + name + "`");
+					   throw new DeepDoopException(Error.CMD_DIRECTIVE, name);
 		}
 	}
 	@Override

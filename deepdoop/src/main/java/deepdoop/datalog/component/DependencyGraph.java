@@ -3,6 +3,7 @@ package deepdoop.datalog.component;
 import deepdoop.actions.*;
 import deepdoop.datalog.Program;
 import deepdoop.datalog.DeepDoopException;
+import deepdoop.datalog.DeepDoopException.Error;
 import deepdoop.datalog.element.atom.IAtom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,7 +86,7 @@ public class DependencyGraph {
 				}
 			}
 			if (newZeroInNodes.isEmpty() && successorsExist)
-				throw new DeepDoopException("Cycle detected in the dependency graph of components");
+				throw new DeepDoopException(Error.DEP_CYCLE);
 			zeroInNodes = newZeroInNodes;
 			curLayer++;
 		}
