@@ -36,7 +36,7 @@ public class DatalogTest {
 			PostOrderVisitor<IVisitable> v = new PostOrderVisitor<>(new FlatteningActor(p.comps));
 			Program flatP = (Program) p.accept(v);
 
-			new LBCodeGenerator(flatP).generate();
+			flatP.accept(new LBCodeGenVisitingActor());
 		} catch (Exception e) {
 			Assert.fail(e.getMessage() + " on " + filename);
 		}

@@ -11,4 +11,4 @@ component Foo {
 
 S1 = new Foo
 
-propagate S1 { P } to .global
+S1 { P } copyto .global
