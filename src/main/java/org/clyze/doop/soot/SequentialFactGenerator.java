@@ -1,27 +1,11 @@
 package org.clyze.doop.soot;
 
+import soot.*;
 import soot.jimple.*;
-import soot.Body;
-import soot.Local;
-import soot.Modifier;
-import soot.PrimType;
-import soot.SootClass;
-import soot.SootField;
-import soot.SootMethod;
-import soot.Trap;
-import soot.Unit;
-import soot.Value;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
-import soot.Type;
-import soot.RefLikeType;
-import soot.RefType;
-import soot.ArrayType;
 
 import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -36,13 +20,13 @@ public class SequentialFactGenerator
     private FactWriter _writer;
     private boolean _ssa;
 
-    public SequentialFactGenerator(FactWriter writer, boolean ssa)
+    SequentialFactGenerator(FactWriter writer, boolean ssa)
     {
         _writer = writer;
         _ssa = ssa;
     }
 
-    public void generate(SootClass c)
+    void generate(SootClass c)
     {
         _writer.writeClassOrInterfaceType(c);
 
@@ -57,10 +41,7 @@ public class SequentialFactGenerator
             _writer.writeDirectSuperinterface(c, i);
         }
 
-        for(SootField f : c.getFields())
-        {
-            generate(f);
-        }
+        c.getFields().forEach(this::generate);
 
         for (SootMethod m : new ArrayList<>(c.getMethods())) {
             Session session = new Session();
@@ -74,7 +55,7 @@ public class SequentialFactGenerator
 
     }
 
-    public void generate(SootField f)
+    private void generate(SootField f)
     {
         _writer.writeFieldSignature(f);
 
@@ -130,13 +111,11 @@ public class SequentialFactGenerator
             if(phantomBased(m.getParameterType(i)))
                 return true;
 
-        if (phantomBased(m.getReturnType()))
-            return true;
+        return phantomBased(m.getReturnType());
 
-        return false;
     }
 
-    public void generate(SootMethod m, Session session)
+    void generate(SootMethod m, Session session)
     {
         if (phantomBased(m)) {
             //m.setPhantom(true);
@@ -217,7 +196,7 @@ public class SequentialFactGenerator
         }
     }
 
-    public void generate(SootMethod m, Body b, Session session)
+    private void generate(SootMethod m, Body b, Session session)
     {
         b.validate();
 
@@ -245,7 +224,7 @@ public class SequentialFactGenerator
                 }
                 else if(stmt instanceof InvokeStmt)
                 {
-                    _writer.writeInvoke(m, stmt, ((InvokeStmt) stmt).getInvokeExpr(), session);
+                    _writer.writeInvoke(m, stmt, stmt.getInvokeExpr(), session);
                 }
                 else if(stmt instanceof ReturnStmt)
                 {
@@ -344,7 +323,7 @@ public class SequentialFactGenerator
     /**
      * Assignment statement
      */
-    public void generate(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generate(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
 
@@ -358,7 +337,7 @@ public class SequentialFactGenerator
         }
     }
 
-    public void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generateLeftLocal(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Local left = (Local) stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -476,7 +455,7 @@ public class SequentialFactGenerator
         }
     }
 
-    public void generateLeftNonLocal(SootMethod inMethod, AssignStmt stmt, Session session)
+    private void generateLeftNonLocal(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -547,7 +526,7 @@ public class SequentialFactGenerator
         }
     }
 
-    public void generate(SootMethod inMethod, IdentityStmt stmt, Session session)
+    private void generate(SootMethod inMethod, IdentityStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
         Value right = stmt.getRightOp();
@@ -580,7 +559,7 @@ public class SequentialFactGenerator
     /**
      * Return statement
      */
-    public void generate(SootMethod inMethod, ReturnStmt stmt, Session session)
+    private void generate(SootMethod inMethod, ReturnStmt stmt, Session session)
     {
         Value v = stmt.getOp();
 
@@ -616,7 +595,7 @@ public class SequentialFactGenerator
         }
     }
 
-    public void generate(SootMethod inMethod, ThrowStmt stmt, Session session)
+    private void generate(SootMethod inMethod, ThrowStmt stmt, Session session)
     {
         Value v = stmt.getOp();
 

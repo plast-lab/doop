@@ -71,16 +71,14 @@ class CSVDatabase implements Database
     @Override
     public void add(PredicateFile predicateFile, Column arg, Column ... args)
     {
-        boolean shouldTruncate = false; // predicateFile.equals(PredicateFile.STRING_CONST);
-
         try {
             synchronized(predicateFile) {
                 Writer writer = getWriter(predicateFile);
-                addColumn(writer, arg, shouldTruncate);
+                addColumn(writer, arg, false);
                 
 
                 for (Column col : args)
-                    addColumn(writer.append(SEP), col, shouldTruncate);
+                    addColumn(writer.append(SEP), col, false);
 
                 writer.write(EOL);
             }

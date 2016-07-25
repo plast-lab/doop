@@ -13,12 +13,12 @@ import java.util.List;
 
 class FactPrinter implements Runnable {
 
-    boolean _ssa;
-    boolean _toStdout;
-    String _outputDir;
-    PrintWriter _writer;
-    final String _suffix;
-    List<SootClass> _sootClasses;
+    private boolean _ssa;
+    private boolean _toStdout;
+    private String _outputDir;
+    private  PrintWriter _writer;
+    private final String _suffix;
+    private List<SootClass> _sootClasses;
 
     FactPrinter(boolean ssa, boolean toStdout, String outputDir, PrintWriter writer, List<SootClass> sootClasses) {
         _ssa = ssa;
@@ -59,13 +59,13 @@ class FactPrinter implements Runnable {
                 }
                 else {
                     _writer = new PrintWriter(new File(_outputDir, c.getName() + _suffix));
-                    Printer.v().printTo(c, _writer);
-                    _writer.close();
+                    synchronized (_writer) {
+                        Printer.v().printTo(c, _writer);
+                        _writer.close();
+                    }
                 }
 
-                for (SootMethod m : c.getMethods()) {
-                    m.releaseActiveBody();
-                }
+                c.getMethods().forEach(SootMethod::releaseActiveBody);
             }
         } catch (FileNotFoundException e) {
             System.err.println(e.getMessage());

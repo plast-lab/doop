@@ -751,10 +751,15 @@ import org.apache.commons.logging.LogFactory
      */
     private List<String> jreAverroesLibraries() {
 
-        String jre = options.JRE.value
-        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
+        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
+        assert platformLibsValue.size() == 2
+        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+        assert platform == "java"
+
+        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+
         //Not using if/else for readability
-        switch(jre) {
+        switch(version) {
             case "1.3":
                 return []
             case "1.4":
@@ -776,16 +781,13 @@ import org.apache.commons.logging.LogFactory
      */
     private String javaAverroesLibrary() {
 
-        String jre = options.JRE.value
+        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
+        assert platformLibsValue.size() == 2
+        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+        assert platform == "java"
 
-        if (jre == "system") {
-            String javaHome = System.getProperty("java.home")
-            return "$javaHome/lib/rt.jar"
-        }
-        else {
-            String path = "${options.JRE_LIB.value}/jre${jre}/lib"
-            return "$path/rt.jar"
-        }
+        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+        return "$path/rt.jar"
     }
 
     /**

@@ -731,6 +731,7 @@ class FactWriter
 
         for(int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++)
         {
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(TABLE_SWITCH_TARGET,
@@ -739,6 +740,7 @@ class FactWriter
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(TABLE_SWITCH_DEFAULT,
@@ -768,6 +770,7 @@ class FactWriter
         for(int i = 0, end = stmt.getTargetCount(); i < end; i++)
         {
             int tgIndex = stmt.getLookupValue(i);
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(LOOKUP_SWITCH_TARGET,
@@ -778,6 +781,7 @@ class FactWriter
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(LOOKUP_SWITCH_DEFAULT,

@@ -5,6 +5,7 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,15 +47,13 @@ class RunnableFactGenerator implements Runnable {
                 _writer.writeDirectSuperinterface(_sootClass, i);
             }
 
-            for (SootField f : _sootClass.getFields()) {
-                generate(f);
-            }
+            _sootClass.getFields().forEach(this::generate);
 
-            for (SootMethod m : _sootClass.getMethods()) {
+            for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
                 Session session = new Session();
 
                 try {
-                    generate(m, session); // try multithread this
+                    generate(m, session);
                 } catch (RuntimeException exc) {
                     System.err.println("Error while processing method: " + m);
                     throw exc;
@@ -122,10 +121,8 @@ class RunnableFactGenerator implements Runnable {
             if(phantomBased(m.getParameterType(i)))
                 return true;
 
-        if (phantomBased(m.getReturnType()))
-            return true;
+        return phantomBased(m.getReturnType());
 
-        return false;
     }
 
     private void generate(SootMethod m, Session session)
@@ -239,7 +236,7 @@ class RunnableFactGenerator implements Runnable {
                 }
                 else if(stmt instanceof InvokeStmt)
                 {
-                    _writer.writeInvoke(m, stmt, ((InvokeStmt) stmt).getInvokeExpr(), session);
+                    _writer.writeInvoke(m, stmt, stmt.getInvokeExpr(), session);
                 }
                 else if(stmt instanceof ReturnStmt)
                 {
@@ -284,6 +281,9 @@ class RunnableFactGenerator implements Runnable {
                 }
                 else if(stmt instanceof LookupSwitchStmt)
                 {
+                    session.calcUnitNumber(stmt);
+                }
+                else if (stmt instanceof NopStmt) {
                     session.calcUnitNumber(stmt);
                 }
                 else
@@ -444,7 +444,7 @@ class RunnableFactGenerator implements Runnable {
                 // seems to always get optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
-            else if (op instanceof NullConstant)
+            else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)
             {
                 _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }

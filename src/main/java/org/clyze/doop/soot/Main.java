@@ -4,17 +4,10 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.entryPointCreators.IEntryPointCreator;
 import soot.options.Options;
 
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 public class Main {
 
@@ -222,42 +215,11 @@ public class Main {
             soot.options.Options.v().set_process_dir(_inputs);
             soot.options.Options.v().set_allow_phantom_refs(true);
             soot.options.Options.v().set_process_multiple_dex(true);
-//            soot.options.Options.v().set_no_bodies_for_excluded(true);
-//            soot.options.Options.v().set_debug(true);
-//            soot.options.Options.v().set_debug_resolver(true);
+
             androidClasses = new HashSet<>();
-//            List<File> dexList = new ArrayList<>();
             for (String arg : _inputs) {
-//                if (arg.endsWith(".apk")) {
-//                    byte[] buffer = new byte[1024];
-//
-//                    ZipInputStream zis = new ZipInputStream(new FileInputStream(arg));
-//                    //get the zipped file list entry
-//                    ZipEntry ze = zis.getNextEntry();
-//
-//                    while(ze!=null){
-//                        if (ze.getName().endsWith(".dex")) {
-//                            String fileName = ze.getName();
-//                            File newFile = new File(fileName);
-//
-//                            System.out.println("file unzip : "+ newFile.getAbsoluteFile());
-//                            FileOutputStream fos = new FileOutputStream(newFile);
-//
-//                            int len;
-//                            while ((len = zis.read(buffer)) > 0) {
-//                                fos.write(buffer, 0, len);
-//                            }
-//                            dexList.add(newFile);
-//                            fos.close();
-//                        }
-//                        ze = zis.getNextEntry();
-//                    }
-//
-//                    zis.closeEntry();
-//                    zis.close();
-//                    for (File dexFile : dexList)
                     androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
-                }
+            }
             System.out.println("Android classes discovered from classesOfDex on apk: " + androidClasses.size()); //this finds only the classes.dex
         }
         else {
@@ -310,6 +272,7 @@ public class Main {
         }
 
         if (_android) {
+            assert androidClasses != null;
             for (String className : androidClasses) {
                 scene.addBasicClass(className, SootClass.BODIES);
                 SootClass c = scene.forceResolve(className, SootClass.BODIES);
@@ -319,24 +282,20 @@ public class Main {
                 classes.add(c);
             }
             androidClasses = SourceLocator.v().dexClassIndex().keySet();
-            System.out.println("Android classes in source locator: " + androidClasses.size());
 
             for (String className : androidClasses) {
                 scene.addBasicClass(className, SootClass.BODIES);
                 classes.add(scene.forceResolve(className, SootClass.BODIES));
             }
         }
-//        Map index = SourceLocator.v().dexClassIndex();
-//        System.out.println("CLASSES FOUND: " + index.entrySet().size());
+//
 
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
             classes.add(scene.loadClass(className, SootClass.BODIES));
-//            classes.add(scene.forceResolve(className, SootClass.BODIES));
         }
-        System.out.println("CLASSES IN SCENE: " + scene.getClasses().size());
-        System.out.println("CLASSES FOUND: " + classes.size());
-        
+        System.out.println("Total number of classes discovered (application + library): " + scene.getClasses().size());
+
 
         if (!_android) {
             /*
@@ -373,10 +332,7 @@ public class Main {
         * call to `setApplicationClass()').
         */
 
-        for (SootClass c : classes) {
-            if (isApplicationClass(c))
-                c.setApplicationClass();
-        }
+        classes.stream().filter(Main::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
         if(_mode == Mode.FULL && !_onlyApplicationClassesFactGen) {
             classes = new HashSet<>(scene.getClasses());
@@ -391,13 +347,10 @@ public class Main {
         else {
             Database db = new CSVDatabase(new File(_outputDir));
             FactWriter writer = new FactWriter(db);
-//            ThreadFactory factory = new ThreadFactory(writer, _ssa);
-//            Driver driver = new Driver(factory, _ssa, classes.size());
+            ThreadFactory factory = new ThreadFactory(writer, _ssa);
+            Driver driver = new Driver(factory, _ssa, classes.size());
 
-             for(SootClass c : classes) {
-                 if (c.isApplicationClass())
-                     writer.writeApplicationClass(c);
-             }
+            classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
             // Read all stored properties files
             for (Map.Entry<String,Properties> entry : classProvider.getProperties().entrySet()) {
@@ -412,6 +365,13 @@ public class Main {
             }
 
             db.flush();
+
+//            if (_android) {
+//                driver.generateDummyMainMethod(dummyMain);
+//                driver.doInParallel(classes);
+//            }
+//            else
+//                driver.doInParallel(classes);
 
             if (_android)
                 Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
