@@ -14,8 +14,8 @@ buildscript {
 }
 
 applicationDefaultJvmArgs = ["-Xmx10g"]
-//sourceCompatibility = "1.6"
-//targetCompatibility = "1.6"
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 project.group = 'org.clyze'
 project.version = 1.0
