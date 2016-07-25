@@ -3,10 +3,6 @@
  * have been discovered using reflection. Basically, the rest of the
  * reflection logic sets things up, and the logic in this file actually
  * does the invocations, field set/gets, etc. that affect points-to info.
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
  *************************************************************/
 
 

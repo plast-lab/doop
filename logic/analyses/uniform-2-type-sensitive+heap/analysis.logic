@@ -4,8 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 2 types and 1 call-site and a
  * context-sensitive heap abstraction.
- *
- * @author George Kastrinis
  */
 
 ClassHasInstr(?class, ?instr) <- MethodSignature:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.

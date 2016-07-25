@@ -16,9 +16,6 @@ import java.util.jar.JarFile
  * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (e.g. entailed
  * in the Helper class) but they are protected instance methods to allow descendants to customize
  * all possible aspects of Analysis creation.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 31/8/2014
  */
 @TypeChecked class AnalysisFactory {
 

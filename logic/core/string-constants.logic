@@ -6,9 +6,6 @@
  * abstraction is used. In many cases, this precision is not actually
  * useful for a points-to analysis, so handling them in a less precise
  * way is beneficial.
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
  *************************************************************/
 
 // REVIEW: The current major decision is to only access application-level

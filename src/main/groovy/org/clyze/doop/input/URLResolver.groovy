@@ -5,8 +5,6 @@ import org.apache.commons.io.FilenameUtils
 
 /**
  * Resolves the input as a URL.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class URLResolver implements InputResolver{
 

@@ -9,9 +9,6 @@ import org.clyze.doop.core.AnalysisOption
 
 /**
  * A native c preprocessor (invokes the cpp executable).
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 2/9/2014
  */
 @TypeChecked
 class CppPreprocessor {

@@ -4,9 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 2 types and a
  * context-sensitive heap abstraction.
- *
- * @author Yannis Smaragdakis
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a pair of Types

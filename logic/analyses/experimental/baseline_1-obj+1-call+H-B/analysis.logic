@@ -1,8 +1,6 @@
 /**
  * Context-sensitive pointer analysis with context of 1 object and a
  * context-sensitive heap abstraction.
- *
- * @author George Kastrinis
  */
 
 #include "macros.logic"

@@ -4,9 +4,6 @@ import org.apache.log4j.Logger
 
 /**
  * Doop initialization and supported options.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 9/7/2014
  */
 class Doop {
 

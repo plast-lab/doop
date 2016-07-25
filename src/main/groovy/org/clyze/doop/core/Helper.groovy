@@ -8,11 +8,9 @@ import org.apache.commons.cli.Option
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.*
+
 /**
  * Various helper methods.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 30/8/2014
  */
 class Helper {
 

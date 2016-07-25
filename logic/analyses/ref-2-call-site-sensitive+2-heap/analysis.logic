@@ -4,10 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 2 call sites and
  * a context-sensitive heap abstraction of 2 call sites.
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
  */
 
 // In this analysis, the real context and the real heap context

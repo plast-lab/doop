@@ -4,8 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 2 objects
  * (AND for static calls 1 call-site).
- *
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a pair of HeapAllocation AND
