@@ -254,10 +254,24 @@ import java.util.jar.JarFile
                 break
             case "android":
                 String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
-                return Helper.checkFiles(["${path}/android.jar".toString(),
-                                          "${path}/optional/org.apache.http.legacy.jar".toString(),
-                                          "${path}/data/layoutlib.jar".toString(),
-                                          "${path}/uiautomator.jar".toString()])
+                switch(version) {
+                    case "21":
+                    case "22":
+                        return Helper.checkFiles(["${path}/android.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString(),
+                                                  "${path}/uiautomator.jar".toString()])
+                        break
+                    case "23":
+                    case "24":
+
+                        return Helper.checkFiles(["${path}/android.jar".toString(),
+                                                  "${path}/optional/org.apache.http.legacy.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString(),
+                                                  "${path}/uiautomator.jar".toString()])
+                        break
+                    default:
+                        throw new RuntimeException("Unsupported Android version")
+                }
                 break
             default:
                 throw new RuntimeException("Unsupported platform")
