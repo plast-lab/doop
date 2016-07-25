@@ -191,24 +191,35 @@
 
 // This is the representative of an unknown reflective object, after it has been cast. 
 // Has a real type. We pre-generate for all types and casts in the universe.
+_OptAssignCastClassType(?type) <-
+   AssignCast(?type, _, _, _),
+   ClassType(?type).
+
+_OptReflectionMethod(?method) <-
+   MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+   MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+   MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+   MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>").
+
+_OptMethodInvocation:Signature(?invocation, ?method) <-
+   MethodInvocation:Signature@previous[?invocation] = ?method,
+   VirtualMethodInvocation:Insn@previous(?invocation).
+   
+_OptReflectionMethodInvocation(?invocation) <-
+   _OptReflectionMethod(?method),
+   _OptMethodInvocation:Signature(?invocation, ?method).
+
 +UnknownReflectiveObject[?type, ?invocation] = ?heap,
 +Instruction:Value(?heap:?strHeap),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   AssignCast(?type, _, _, _),
-   ClassType(?type),
+   _OptAssignCastClassType(?type),
    Type:fqn@previous(?type:?strType),
-   (MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
-   MethodInvocation:Signature@previous[?invocation] = ?method,
-   VirtualMethodInvocation:Insn@previous(?invocation),
+   _OptReflectionMethodInvocation(?invocation),
    Instruction:Value@previous(?invocation:?strInvocation),
    ?strHeap = "<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">".
 
-/*
 // This is the representative of an unknown reflective object that flows from the reflection
 // operation to a cast.
 +MarkerReflectiveObject[?invocation] = ?heap,
@@ -216,16 +227,10 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
-   MethodInvocation:Signature@previous[?invocation] = ?method,
-   VirtualMethodInvocation:Insn@previous(?invocation),
+   _OptReflectionMethodInvocation(?invocation),
    Type:fqn(?type:"java.lang.Object"),
    Instruction:Value@previous(?invocation:?strInvocation),
    ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
-*/
 #endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 
