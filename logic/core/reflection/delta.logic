@@ -208,6 +208,7 @@
    Instruction:Value@previous(?invocation:?strInvocation),
    ?strHeap = "<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">".
 
+/*
 // This is the representative of an unknown reflective object that flows from the reflection
 // operation to a cast.
 +MarkerReflectiveObject[?invocation] = ?heap,
@@ -224,7 +225,7 @@
    Type:fqn(?type:"java.lang.Object"),
    Instruction:Value@previous(?invocation:?strInvocation),
    ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
-
+*/
 #endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 
