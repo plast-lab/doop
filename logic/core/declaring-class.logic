@@ -63,8 +63,6 @@ DeclaringClass:Allocation[?heap] = ?type <-
  * Specific to analyses that look up a type to use as context, given an
  * allocation site. Need to supply dummy surrounding types for the dummy
  * allocation sites in delta.logic
- *
- * @author George Kastrinis
  */
 DeclaringClass:Allocation[?heap] = ?type <-
    HeapAllocationValue(?heap, "<<initial-context>>"),

@@ -3,9 +3,6 @@
 
 /**
  * Context-insensitive pointer analysis with on-the-fly call graph discovery.
- *
- * @author Martin Bravenboer
- * @author George Kastrinis
  */
 
 UniqueContext[] = ?ctx,

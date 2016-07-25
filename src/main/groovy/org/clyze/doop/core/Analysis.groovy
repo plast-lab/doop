@@ -25,9 +25,6 @@ import org.apache.commons.logging.LogFactory
  *
  * The run() method is the only public method exposed by this class: no other methods should be called directly
  * by other classes.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 9/7/2014
  */
 @TypeChecked class Analysis implements Runnable {
 

@@ -9,9 +9,6 @@ import org.clyze.doop.core.Doop
 
 /**
  * A factory for creating Analysis objects from the command line.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 2/10/2014
  */
 class CommandLineAnalysisFactory extends AnalysisFactory {
 

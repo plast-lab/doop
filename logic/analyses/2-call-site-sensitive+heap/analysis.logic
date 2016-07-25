@@ -4,9 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 2 call site and
  * a context-sensitive heap abstraction of 1 call site
- *
- * @author Martin Bravenboer
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a pair of MethodInvocations

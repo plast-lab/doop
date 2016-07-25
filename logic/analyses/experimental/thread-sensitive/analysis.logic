@@ -1,7 +1,5 @@
 /**
  * Context-sensitive pointer analysis with context of executing thread.
- *
- * @author Martin Bravenboer
  */
 
 #include "macros.logic"

@@ -13,10 +13,6 @@
  *
  * Only checks for invocations of getClass in source code, not in method
  * invocations discovered during reflection analysis.
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
  *************************************************************/
 
 #include "java.lang.Class.logic"

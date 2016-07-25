@@ -4,8 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 3 types and a
  * context-sensitive heap abstraction.
- *
- * @author George Kastrinis
  */
 
 // In this analysis, the real context and the real heap context

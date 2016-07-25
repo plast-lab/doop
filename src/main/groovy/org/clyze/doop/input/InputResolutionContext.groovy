@@ -3,8 +3,6 @@ package org.clyze.doop.input
 /**
  * The input resolution mechanism.
  * Resolves inputs (given as strings) to a set of files.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 24/3/2015
  */
 interface InputResolutionContext {
 

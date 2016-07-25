@@ -2,8 +2,6 @@
  * Simulation of native code by code generation.
  *
  * Note that some other natives are simulated by logic.
- *
- * @author Martin Bravenboer
  **********************************************************************************/
 
 /**

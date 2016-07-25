@@ -18,9 +18,6 @@
  *     G. Wonnacott. Robustness Testing of Java Server
  *     Applications. IEEE Transactions on Software Engineering, 31(4),
  *     Apr. 2005.
- *
- * @author               Martin Bravenboer
- * @last-major-revision  1/20/2009
  */
 
 NativeExceptionHeapAllocation(?heap, ?method) ->

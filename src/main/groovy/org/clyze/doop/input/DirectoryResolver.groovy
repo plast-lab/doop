@@ -2,8 +2,6 @@ package org.clyze.doop.input
 import org.clyze.doop.core.Helper
 /**
  * Resolves the input as a directory that contains jar files.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class DirectoryResolver implements InputResolver {
 

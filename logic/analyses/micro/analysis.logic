@@ -1,10 +1,5 @@
 /**
  * Generic context-insensitive pointer analysis
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
- * @refactoring Anastasios Antoniadis
  */
 #include "../../facts/macros.logic"
 #include "../../core/class-initialization.logic"

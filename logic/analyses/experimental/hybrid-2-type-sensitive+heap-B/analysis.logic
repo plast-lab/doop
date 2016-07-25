@@ -1,9 +1,6 @@
 /**
  * Context-sensitive pointer analysis with context of 2 types and a
  * context-sensitive heap abstraction.
- *
- * @author Martin Bravenboer
- * @author George Kastrinis
  */
 
 #include "macros.logic"

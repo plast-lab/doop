@@ -11,8 +11,6 @@
  * C pointer analysis, such as the constraint graph or sparse analyses. All
  * these are essentially pre-analyses to simplify the subsequent real analysis
  * logic.
- *
- * @author Yannis Smaragdakis
  */
 
 // Root variables are the ones that have data in-flow via instructions

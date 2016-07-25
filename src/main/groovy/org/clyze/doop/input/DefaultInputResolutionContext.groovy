@@ -5,9 +5,6 @@ import org.apache.commons.logging.LogFactory
 
 /**
  * The default implementation of the input resolution mechanism.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class DefaultInputResolutionContext implements InputResolutionContext {
 

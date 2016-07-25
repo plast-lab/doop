@@ -7,9 +7,6 @@ import org.apache.commons.logging.LogFactory
 import org.clyze.doop.core.Analysis
 import org.clyze.doop.core.Doop
 
-/**
- * Created by saiko on 19/10/2015.
- */
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
     protected Log logger = LogFactory.getLog(getClass())

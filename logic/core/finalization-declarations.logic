@@ -6,8 +6,6 @@
  * from the method that allocates to the register method, since there
  * is technically not such edge. Maybe we can add a notion of implicit
  * call graph edges for that.
- *
- * @author Martin Bravenboer
  ***********************************************************************/
 
 /**

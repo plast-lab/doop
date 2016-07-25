@@ -3,10 +3,6 @@ package org.clyze.doop.input
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
-/**
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
- */
 class ChainResolver implements InputResolver {
 
     private final List<InputResolver> resolvers

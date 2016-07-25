@@ -4,8 +4,6 @@
 /**
  * Context-sensitive pointer analysis with context of 1 object
  * (OR for static calls 1 call-site).
- *
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a HeapAllocation OR

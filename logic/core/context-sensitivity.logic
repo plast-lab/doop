@@ -18,10 +18,6 @@
 
 /**
  * Generic context-sensitive pointer analysis
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
  */
 
 // There should be no need for this. It's a bad sign if there is.
