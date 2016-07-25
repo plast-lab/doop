@@ -89,4 +89,5 @@ If we omit `--branch default` in the last command, changes from **ALL** branches
 
 * Don't include timestamps in comments
 * Don't include comments regarding licencing issues. Licence is covered in [LICENCE](LICENCE)
-* Don't include comments regarding authors. All authors should be referenced in [COLLABORATORS](COLLABORATOS)
+* Don't include comments regarding authors. All authors should be referenced in [COLLABORATORS](COLLABORATORS)
+* Read [How to write a Git Commit Message](http://chris.beams.io/posts/git-commit/). The lessons from the article can be applied to mercurial as well.
