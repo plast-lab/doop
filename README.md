@@ -125,4 +125,3 @@ Please consult the [doop.properties](doop.properties) template file for more inf
 
 ## License
 MIT license (see [LICENSE](LICENSE)).
-
