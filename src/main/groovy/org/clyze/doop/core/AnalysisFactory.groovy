@@ -408,18 +408,20 @@ import java.util.jar.JarFile
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         } else {
-            JarFile jarFile = new JarFile(vars.inputFiles[0])
-            //Try to read the main class from the manifest contained in the jar
-            String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
-            if (main) {
-                logger.debug "The main class is automatically set to ${main}"
-                options.MAIN_CLASS.value = main
-            } else {
-                //Check whether the jar contains a class with the same name
-                String jarName = FilenameUtils.getBaseName(jarFile.getName())
-                if (jarFile.getJarEntry("${jarName}.class")) {
-                    logger.debug "The main class is automatically set to ${jarName}"
-                    options.MAIN_CLASS.value = jarName
+            if (vars.inputFiles[0].toString().endsWith(".jar")) {
+                JarFile jarFile = new JarFile(vars.inputFiles[0])
+                //Try to read the main class from the manifest contained in the jar
+                String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
+                if (main) {
+                    logger.debug "The main class is automatically set to ${main}"
+                    options.MAIN_CLASS.value = main
+                } else {
+                    //Check whether the jar contains a class with the same name
+                    String jarName = FilenameUtils.getBaseName(jarFile.getName())
+                    if (jarFile.getJarEntry("${jarName}.class")) {
+                        logger.debug "The main class is automatically set to ${jarName}"
+                        options.MAIN_CLASS.value = jarName
+                    }
                 }
             }
         }
