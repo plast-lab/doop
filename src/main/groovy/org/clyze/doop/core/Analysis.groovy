@@ -296,7 +296,29 @@ import org.apache.commons.logging.LogFactory
      * Performs the main part of the analysis.
      */
     protected void analyze() {
+        String addonsPath = "${Doop.doopLogic}/addons"
+        String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
+
+        preprocess(this, "${Doop.doopLogic}/basic/basic.logic", "${outDir}/basic.logic", macros)
+
+		lbScript
+			.echo("-- Basic Analysis --")
+			.startTimer()
+			.transaction()
+			.addBlockFile("basic.logic")
+
+        if (options.CFG_ANALYSIS.value) {
+            FileUtils.copyFile(new File("${addonsPath}/cfg-analysis/declarations.logic"),
+                               new File("${outDir}/cfg-analysis-declarations.logic"))
+            lbScript.addBlockFile("cfg-analysis-declarations.logic")
+
+	        preprocess(this, "${addonsPath}/cfg-analysis/rules.logic", "${outDir}/cfg-analysis-rules.logic")
+			lbScript.addBlockFile("cfg-analysis-rules.logic")
+        }
+
         lbScript
+			.commit()
+			.elapsedTime()
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
@@ -336,7 +358,7 @@ import org.apache.commons.logging.LogFactory
 
 
         if (options.ENABLE_REFLECTION.value) {
-            String reflectionPath = "${Doop.doopLogic}/core/reflection"
+            String reflectionPath = "${Doop.doopLogic}/analyses/core/reflection"
 
             preprocess(this, "${reflectionPath}/delta.logic", "${outDir}/reflection-delta.logic")
             lbScript
@@ -346,8 +368,6 @@ import org.apache.commons.logging.LogFactory
                 .executeFile("${reflectionPath}/allocations-delta.logic")
         }
 
-        String addonsPath = "${Doop.doopLogic}/addons"
-        String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
         /**
          * Generic file for incrementally adding addons logic from various
          * points. This is necessary in some cases to avoid weird errors from
@@ -357,15 +377,6 @@ import org.apache.commons.logging.LogFactory
         File addons = new File(outDir, "addons.logic")
         FileUtils.deleteQuietly(addons)
         FileUtils.touch(addons)
-
-        if (options.CFG_ANALYSIS.value) {
-            FileUtils.copyFile(new File("${addonsPath}/cfg-analysis/declarations.logic"),
-                               new File("${outDir}/cfg-analysis-declarations.logic"))
-            lbScript.addBlockFile("cfg-analysis-declarations.logic")
-
-            logger.info "Adding CFG-analysis rules to addons logic"
-            preprocessAtStart(this, "${addonsPath}/cfg-analysis/rules.logic", "${outDir}/addons.logic")
-        }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             FileUtils.copyFile(new File("${addonsPath}/dacapo/declarations.logic"),
@@ -610,7 +621,7 @@ import org.apache.commons.logging.LogFactory
         File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
         inputJarFiles[0] = f
     }
-    
+
     protected void runAverroes() {
         logger.info "-- Running averroes --"
 

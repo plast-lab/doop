@@ -1,0 +1,8 @@
+#include "basic-declarations.logic"
+
+#include "declaring-class.logic"
+#include "exceptions.logic"
+#include "method-resolution.logic"
+#include "subclass.logic"
+#include "superinterface.logic"
+#include "type-hierarchy.logic"
