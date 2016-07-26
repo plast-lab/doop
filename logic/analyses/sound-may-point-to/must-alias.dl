@@ -1,6 +1,13 @@
 // A sound must-alias analysis, for use in sound-may-point-to. Imports a sound
 // call-graph, computed by the sound-may-point-to analysis.
 
+// For use when we don't want to incur the cost (typical case)
+.comp DummyMustAlias {
+  // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
+  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+}
+
 .comp SoundMustAlias {
   // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
   .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
@@ -95,14 +102,75 @@
     MustAlias(?ap2, ?ap1, ?ctx, ?prev),
     PrevInSameBasicBlock(?insn, ?prev).
 
-/*
-  MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+  // Frame rules: unchanged information
+  .decl MustAliasBaseInvalidated(?ap1:AccessPath, ?ap2:AccessPath, ?insn:Instruction)
+  MustAliasBaseInvalidated(?ap1, ?ap2, ?insn) :-
+    Before_MustAlias(?ap1, ?ap2, _, ?insn),
+	?ap1 = [ ?base1, ?rest1 ], ?rest1 = ?rest1,
+	?ap2 = [ ?base2, ?rest2 ], ?rest2 = ?rest2,
+	(AssignInstruction_To(?insn, ?base1);
+     AssignInstruction_To(?insn, ?base2)).
+
+  // single variable access paths
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
     Before_MustAlias(?ap1, ?ap2, ?ctx, ?insn),
-	?ap1 = [ ?base1, nil ],
-	?ap2 = [ ?base2, nil ],
-	!AssignInstruction_To(?insn, ?base1),
-	!AssignInstruction_To(?insn, ?base2).
-*/
+    ?ap1 = [ ?base1, nil ],
+    ?ap2 = [ ?base2, nil ],
+    !MustAliasBaseInvalidated(?ap1, ?ap2, ?insn).
+
+  // non-collection access paths
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    Before_MustAlias(?ap1, ?ap2, ?ctx, ?insn),
+	!AccessPath_IsCollection(?ap1),
+	!AccessPath_IsCollection(?ap2),
+    !MustAliasBaseInvalidated(?ap1, ?ap2, ?insn),
+	!MonitorInstruction(?insn),
+    (!MethodInvocation(?insn);
+     IgnorableMethodInvocation(?insn);
+     IgnorableForNonCollectionsMethodInvocation(?insn)),
+    !StoreInstruction(?insn).
+
+
+// // now painstaking case analysis of store instruction cases.
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    FieldInstruction_Signature[?insn] != ?fld.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld1, ?ap1),
+//    SingleFieldAccessPath(?fld2, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    SingleFieldAccessPath(?fld3, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3, ?fld != ?fld4.
+
+// //// and still, we only covered up to 3.
+
+// TODO extend to longer access paths
+
+
 
   //// Auxiliary, forall emulations
   
@@ -171,16 +239,6 @@
 
 
 
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    (AccessPath_IsComposite(?ap1) ;
-//     AccessPath_IsVariable(?ap1) ;
-// 	AccessPath_ByStaticFieldInv(?ap1, _)),
-//    (!MethodInvocation(?insn);
-//     IgnorableMethodInvocation(?insn);
-// 	IgnorableForNonCollectionsMethodInvocation(?insn)),
-//    !_StoreInstruction(?insn).
-
 // // Now method calls. Painstaking.
 // MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
 //    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
@@ -229,45 +287,6 @@
 //    !MethodMayAssignField(?fld4, ?toMethod),
 //    !MethodHasUnresolvedInvocation(?toMethod).
 
-
-// // now painstaking case analysis of store instruction cases.
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    SingleFieldAccessPath(?fld, ?ap1),
-//    AccessPath_IsVariable(?ap2),
-//    FieldInstruction_Signature[?insn] != ?fld.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    SingleFieldAccessPath(?fld1, ?ap1),
-//    SingleFieldAccessPath(?fld2, ?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    AccessPath_IsVariable(?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    SingleFieldAccessPath(?fld3, ?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3.
-
-// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
-//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
-//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
-//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
-//    FieldInstruction_Signature(?insn, ?fld),
-//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3, ?fld != ?fld4.
-
-// //// and still, we only covered up to 3.
-
-// TODO extend to longer access paths
 
 
   // // *MustAlias*

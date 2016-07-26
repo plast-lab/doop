@@ -215,7 +215,7 @@
   .decl Before_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
 
   #include "must-alias.dl"
-  .init MustAliasAnalysis = SoundMustAlias
+  .init MustAliasAnalysis = DummyMustAlias
 
   //// =====================================
   //// BEGIN final relations for stats
@@ -564,10 +564,7 @@
     Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo),
     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPath_ContainsStaticField(?staticAp, ?fld),
-    FirstInstructionOfMethod(?toMethod, ?firstInsn),
-    (MethodMayAssignField(?fld, ?calleeCtx, ?toMethod);
-     MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod)).
-    // The last two lines are a refinement, for optimization.
+    FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
   ///// POINT1--unchanged access paths code goes here
 
@@ -755,7 +752,7 @@
     (!MethodInvocation(?insn);
      IgnorableMethodInvocation(?insn);
      IgnorableForNonCollectionsMethodInvocation(?insn)),
-     !StoreInstruction(?insn).
+    !StoreInstruction(?insn).
 
   // Now for store instructions. Also handles static field
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
@@ -848,20 +845,35 @@
   // Now method calls. We use an overapproximation of the method's
   // effects, rather than passing all the access paths in.  Interesting
   // rules!
+
+  .decl CalleeMayAssignField(?fld:FieldSignature, ?ctx:MayContext, ?insn:Instruction) 
+  CalleeMayAssignField(?fld, ?ctx, ?insn) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?ctx, ?insn),
+    MethodMayAssignField(?fld, ?calleeCtx, ?toMethod).
+
+  .decl CalleeHasUnresolvedInvocation(?ctx:MayContext, ?insn:Instruction) 
+  CalleeHasUnresolvedInvocation(?ctx, ?insn) :-
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?ctx, ?insn),
+    MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod).
+
+  .decl Temp1(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  Temp1(?hctx, ?heap, ?ap, ?ctx, ?insn),
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     SingleFieldAccessPath(?fld, ?ap),
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField(?fld, ?calleeCtx, ?toMethod),
-    !MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod).
+    MayCallGraphEdge_Prev(_, _, ?ctx, ?insn),
+    !CalleeMayAssignField(?fld, ?ctx, ?insn),
+    !CalleeHasUnresolvedInvocation(?ctx, ?insn).
 
+  .decl Temp2(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  Temp2(?hctx, ?heap, ?ap, ?ctx, ?insn),
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     DoubleFieldAccessPath(?fld1, ?fld2, ?ap),
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?ctx, ?insn),
-    !MethodMayAssignField(?fld1, ?calleeCtx, ?toMethod),
-    !MethodMayAssignField(?fld2, ?calleeCtx, ?toMethod),
-    !MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod).
+    MayCallGraphEdge_Prev(_, _, ?ctx, ?insn),
+    !CalleeMayAssignField(?fld1, ?ctx, ?insn),
+    !CalleeMayAssignField(?fld2, ?ctx, ?insn),
+    !CalleeHasUnresolvedInvocation(?ctx, ?insn).
 
   //// POINT4 insert here
 
