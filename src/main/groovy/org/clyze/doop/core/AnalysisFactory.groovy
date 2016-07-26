@@ -255,6 +255,11 @@ import java.util.jar.JarFile
             case "android":
                 String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
                 switch(version) {
+		    case "15":
+                        return Helper.checkFiles(["${path}/android.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString()])
+                        break
+		    case "16":
                     case "21":
                     case "22":
                         return Helper.checkFiles(["${path}/android.jar".toString(),
@@ -533,6 +538,9 @@ import java.util.jar.JarFile
                         break
                     case "16":
                         androidVersion = ANDROID.ANDROID16
+                        break
+                    case "15":
+                        androidVersion = ANDROID.ANDROID15
                         break
                     default:
                         throw new RuntimeException("Invalid Android version: $version")
