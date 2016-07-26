@@ -4,6 +4,7 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
 import java.io.File;
@@ -203,9 +204,15 @@ public class Main {
         Set<SootClass> classes = new HashSet<>();
         
         if (_android) {
-            SetupApplication app = new SetupApplication(_libraries.get(0), _inputs.get(0));
-            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
-            dummyMain = app.getDummyMainMethod();
+           SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+           app.getConfig().setMaxThreadNum(Runtime.getRuntime().availableProcessors());
+           app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+           app.setTaintWrapper(new EasyTaintWrapper("EasyTaintWrapperSource.txt"));
+           app.getConfig().setEnableCallbacks(true);
+           app.getConfig().setEnableCallbackSources(true);
+           app.getConfig().setEnableStaticFieldTracking(true);
+           app.getConfig().setEnableImplicitFlows(true);
+           dummyMain = app.getDummyMainMethod();
 
             soot.G.reset();
             soot.options.Options.v().set_src_prec(Options.src_prec_apk);
@@ -288,7 +295,6 @@ public class Main {
                 classes.add(scene.forceResolve(className, SootClass.BODIES));
             }
         }
-//
 
         for (String className : classProvider.getClassNames()) {
             scene.loadClass(className, SootClass.SIGNATURES);
@@ -338,6 +344,18 @@ public class Main {
             classes = new HashSet<>(scene.getClasses());
         }
 
+        // if (_android) {
+        //     SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+        //     app.getConfig().setMaxThreadNum(Runtime.getRuntime().availableProcessors());
+        //     app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+        //     app.setTaintWrapper(new EasyTaintWrapper("EasyTaintWrapperSource.txt"));
+        //     app.getConfig().setEnableCallbacks(true);
+        //     app.getConfig().setEnableCallbackSources(true);
+        //     app.getConfig().setEnableStaticFieldTracking(true);
+        //     app.getConfig().setEnableImplicitFlows(true);
+        //     dummyMain = app.getDummyMainMethod();
+        // }
+
         if (_bytecode2jimple) {
             ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);
             Driver driver = new Driver(factory, _ssa, classes.size());
@@ -370,13 +388,10 @@ public class Main {
 //                driver.generateDummyMainMethod(dummyMain);
 //                driver.doInParallel(classes);
 //            }
-//            else
-//                driver.doInParallel(classes);
-
             if (_android)
                 Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
-                Driver.doInSequentialOrder(classes, writer, _ssa);
+                driver.doInParallel(classes);
 
             db.close();
         }
