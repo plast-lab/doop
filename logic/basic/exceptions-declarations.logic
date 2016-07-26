@@ -1,15 +1,4 @@
 /**
- * TODO: Implicitly thrown exceptions are not included (neither are in Paddle)
- */
-
-/**
- * Represents the heap abstractions of the exceptions a method can throw
- */
-ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) ->
-   HContext(?hctx), HeapAllocation(?heap),
-   Context(?ctx), MethodSignature(?method).
-
-/**
  * Compute for an instruction which exception handlers handle which exception
  * types
  */

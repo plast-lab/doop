@@ -1,15 +1,10 @@
 #include "class-initialization.logic"
-#include "declaring-class.logic"
 #include "finalization.logic"
 #include "implicit-reachable.logic"
-#include "method-resolution.logic"
 #include "native.logic"
 #include "reference.logic"
 #include "string-constants.logic"
-#include "subclass.logic"
-#include "superinterface.logic"
 #include "threads.logic"
-#include "type-hierarchy.logic"
 
 #if defined(EXCEPTIONS_PRECISE) && !defined(PADDLE_COMPAT)
 #include "exceptions/precise.logic"
