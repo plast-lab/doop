@@ -29,12 +29,12 @@ class Driver {
         _sootClasses = new ArrayList<>();
         _totalClasses = totalClasses;
         _cores = Runtime.getRuntime().availableProcessors();
-//        if (_cores > 2) {
-//            _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
-//        } else {
-//            _executor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
-//        }
-        _executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+        if (_cores > 2) {
+            _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        } else {
+            _executor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        }
+//        _executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
     void doInParallel(Set<SootClass> sootClasses) {

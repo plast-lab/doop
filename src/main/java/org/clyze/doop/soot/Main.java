@@ -4,11 +4,12 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.taintWrappers.EasyTaintWrapper;
 import soot.options.Options;
 
 import java.io.File;
 import java.util.*;
+
+import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class Main {
 
@@ -206,9 +207,16 @@ public class Main {
         if (_android) {
             SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
             app.setLibraries(_libraries);
+            app.getConfig().setEnableCallbacks(true);
+            app.getConfig().setEnableCallbackSources(true);
+            app.getConfig().setEnableStaticFieldTracking(true);
+            app.getConfig().setEnableImplicitFlows(true);
+            app.getConfig().setCallbackAnalyzer(Fast);
             app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
             dummyMain = app.getDummyMainMethod();
-
+            if (dummyMain == null) {
+                throw new RuntimeException("Dummy main null");
+            }
             soot.G.reset();
             soot.options.Options.v().set_src_prec(Options.src_prec_apk);
             soot.options.Options.v().set_android_jars(_androidJars);
