@@ -1,0 +1,59 @@
+FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
+
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+   
+ServletClass(?class) <-
+   AllConcreteImplementations(?class, ?staticType),
+   Type:fqn(?staticType:"javax.servlet.http.HttpServlet").
+   
+ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
+
+// TODO: very big, can we be smarter ?
+GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
+   FormalParamOpt(?index, ?method, ?formal),
+   Var:Type[?formal] = ?staticType,
+   AllConcreteImplementations(?subtype, ?staticType),
+   MethodSignature:Value(?method:?methodStr),
+   // TODO: replace with ClassTypeValue macro
+   Type:fqn(?subtype:?subtypeStr), 
+   ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
+
+// Servlet service methods
+MockEntryPoint(?class, ?entry) <-
+   ServletClass(?class),
+   Type:fqn(?class:?classStr),
+   ServletEntryMethodName(?serviceMethodName),
+   MethodSignature:Value(?entry:methodSigStr),
+   (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
+   ServletEntryMethodName(?serviceMethodName).
+
+// bind mock objects to formals
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
+ <-
+   ReachableContext(?ctx, ?method),
+   ImmutableHContext[] = ?hctx,
+   GetMocksForFormals(?heapStr, _, ?index, ?method),
+   MockEntryPoint(_, ?method),
+   FormalParam[?index, ?method] = ?formal,
+   // TODO: replace with HeapAllocationValue macro
+   Instruction:Value(?heap:?heapStr), 
+   HeapAllocation(?heap).
+
+
+SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>").
+SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
+SanitizationMethod(0, "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
+SanitizationMethod(0, "<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>").
+SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>").
+
+// LeakingSinkMethod(0, ?method) <-
+//    MethodSignature:SimpleName[?method] = "println".
+
+LeakingSinkMethod(0, "<java.io.PrintWriter: void println(java.lang.String)>").

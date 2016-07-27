@@ -1,0 +1,116 @@
+/**
+ * Exception-flow analysis
+ *
+ * This analysis is based on the idea of exception-catch links (e-c
+ * links), introduced by Fu et al. [1,2]. The analysis reports for a
+ * throw the exception handlers that can potentially handle exceptions
+ * thrown by this throw statement.
+ *
+ * This analysis needs to be applied with the precise exception
+ * analysis of Doop, otherwise it is virtually useless.
+ *
+ * [1] Chen Fu, Barbara G. Ryder, Ana Milanova, David
+ *     G. Wonnacott. Testing of Java Web Services for Robustness, In
+ *     Proceedings of the International Symposium on Software Testing
+ *     and Analysis (ISSTA 2004), Boston, MA, Jul. 2004
+ *
+ * [2] Chen Fu, Ana Milanova, Barbara G. Ryder, David
+ *     G. Wonnacott. Robustness Testing of Java Server
+ *     Applications. IEEE Transactions on Software Engineering, 31(4),
+ *     Apr. 2005.
+ */
+
+NativeExceptionHeapAllocation(?heap, ?method) ->
+   MethodSignature(?method),
+   HeapAllocation(?heap).
+
+/**
+ * An exception thrown by throw instruction ?throw might be handled by
+ * exception handler ?handler.
+ *
+ * Notice that this actually supports links between throw and catches
+ * that involve a rethrow of the exception.
+
+ExceptionCatchLink(?throw, ?handler) ->
+   Throw:Insn(?throw),
+   ExceptionHandler(?handler).
+ */
+
+NativeExceptionCatchLink(?native, ?handler) ->
+   MethodSignature(?native),
+   ExceptionHandler(?handler).
+
+/**
+ * Results restricted to application code.
+ */
+ExceptionHandlerApplication(?handler) ->
+   ExceptionHandler(?handler).
+
+/*
+ExceptionCatchLinkApplication(?throw, ?handler) ->
+   Throw:Insn(?throw),
+   ExceptionHandler(?handler).
+*/
+
+NativeExceptionCatchLinkApplication(?native, ?handler) ->
+   MethodSignature(?native),
+   ExceptionHandler(?handler).
+
+/**
+ * Throw instruction ?throw may throw abstract exception object ?heap.
+
+Throw:Throws(?throw, HeapAbstraction(?heap)) ->
+   Throw:Insn(?throw),
+   DeclareHeapAbstraction(?heap).
+ */
+
+/**
+ * Exception handler ?handler may handle abstract exception object ?heap.
+ */
+ExceptionHandler:Handles(?handler, HeapAbstraction(?heap)) ->
+   ExceptionHandler(?handler),
+   DeclareHeapAbstraction(?heap).
+
+/**
+ * Native method ?method may throw abstract exception object ?heap.
+ */
+Native:Throws(?method, HeapAbstraction(?heap)) ->
+   MethodSignature(?method),
+   DeclareHeapAbstraction(?heap).
+
+/**
+ * Useful query for reachable natives throwing IOExceptions
+ */
+NativeThrowingIOException(?method, ?exceptionType) -> MethodSignature(?method), Type(?exceptionType).
+
+NativeMethod(?method) -> MethodSignature(?method).
+
+/**
+ * e-c links restricted to application catch, native method throwing IOException.
+ */
+NativeIOExceptionCatchLinkApplication(?native, ?handler) ->
+   MethodSignature(?native),
+   ExceptionHandler(?handler).
+
+/**
+ * e-c links restricted to application catch, native throw source selected by Fu et al.
+ */
+Fu:ExceptionCatchLink(?native, ?handler) ->
+   MethodSignature(?native),
+   ExceptionHandler(?handler).
+
+ThrowableHandler(?handler) ->
+   ExceptionHandler(?handler).
+
+/**
+ * Compute all native methods invoked in throw sources as defined by
+ * Fu et al. in ISSTA'04.
+ */
+Fu:NativeThrowSource(?native) -> MethodSignature(?native).
+
+
+/**
+ * This is a selection of throw sources, selected by Fu et al. for their
+ * ISSTA'04 paper.
+ */
+Fu:ThrowSource(?method) -> MethodSignature(?method).

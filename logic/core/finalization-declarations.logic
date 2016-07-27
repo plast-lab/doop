@@ -1,0 +1,22 @@
+/**********************************************************************
+ * Handles the implicit calls to java.lang.ref.Finalizer.register by
+ * the JVM.
+ *
+ * As opposed to Paddle, we don't make an explicit call graph edge
+ * from the method that allocates to the register method, since there
+ * is technically not such edge. Maybe we can add a notion of implicit
+ * call graph edges for that.
+ ***********************************************************************/
+
+/**
+ * Auxillary predicate providing the necessary information for generating
+ * implicit invocations to java.lang.ref.Finalizer.register.
+ */
+FinalizerRegisterInfo(?register, ?formal) -> MethodSignature(?register), Var(?formal).
+
+/**
+ * Classes that override Object.finalize
+ *
+ * TODO change Type to ClassType when BloxUnit supports it.
+ */
+OverridesFinalize(?class) -> Type(?class).
