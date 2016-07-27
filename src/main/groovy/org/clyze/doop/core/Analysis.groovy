@@ -26,7 +26,8 @@ import org.apache.commons.logging.LogFactory
  * The run() method is the only public method exposed by this class: no other methods should be called directly
  * by other classes.
  */
-@TypeChecked class Analysis implements Runnable {
+@TypeChecked
+class Analysis implements Runnable {
 
     protected Log logger = LogFactory.getLog(getClass())
 
@@ -145,10 +146,12 @@ import org.apache.commons.logging.LogFactory
 
         initDatabase()
 
-        analyze()
+        basicAnalysis()
+
+        mainAnalysis()
 
         try {
-            File f = Helper.checkFileOrThrowException("${Doop.doopLogic}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+            File f = Helper.checkFileOrThrowException("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
             logger.info "-- Re-Analyze --"
             reanalyze()
         }
@@ -243,15 +246,15 @@ import org.apache.commons.logging.LogFactory
     protected void initDatabase() {
 
         FileUtils.deleteQuietly(database)
-        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/declarations.logic"),
+        FileUtils.copyFile(new File("${Doop.factsPath}/declarations.logic"),
                            new File("${outDir}/facts-declarations.logic"))
-        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-declarations.logic"),
+        FileUtils.copyFile(new File("${Doop.factsPath}/flow-insensitivity-declarations.logic"),
                            new File("${outDir}/flow-insensitivity-declarations.logic"))
-        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/entities-import.logic"),
+        FileUtils.copyFile(new File("${Doop.factsPath}/entities-import.logic"),
                            new File("${outDir}/entities-import.logic"))
-        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/import.logic"),
+        FileUtils.copyFile(new File("${Doop.factsPath}/import.logic"),
                            new File("${outDir}/facts-import.logic"))
-        FileUtils.copyFile(new File("${Doop.doopLogic}/facts/flow-insensitivity-delta.logic"),
+        FileUtils.copyFile(new File("${Doop.factsPath}/flow-insensitivity-delta.logic"),
                            new File("${outDir}/flow-insensitivity-delta.logic"))
 
         lbScript
@@ -267,7 +270,7 @@ import org.apache.commons.logging.LogFactory
             .executeFile("flow-insensitivity-delta.logic")
 
         if (options.TAMIFLEX.value) {
-            String tamiflexDir = "${Doop.doopLogic}/addons/tamiflex"
+            def tamiflexDir = "${Doop.addonsPath}/tamiflex"
 
             FileUtils.copyFile(new File("${tamiflexDir}/fact-declarations.logic"),
                                new File("${outDir}/tamiflex-fact-declarations.logic"))
@@ -292,59 +295,7 @@ import org.apache.commons.logging.LogFactory
             runTransformInput()
     }
 
-    /**
-     * Performs the main part of the analysis.
-     */
-    protected void analyze() {
-        def addonsPath = "${Doop.doopLogic}/addons"
-        def factMacros = "${Doop.doopLogic}/facts/macros.logic"
-        def macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
-
-        preprocess(this, "${Doop.doopLogic}/basic/basic.logic", "${outDir}/basic.logic", factMacros)
-
-        lbScript
-            .echo("-- Basic Analysis --")
-            .startTimer()
-            .transaction()
-            .addBlockFile("basic.logic")
-
-        if (options.CFG_ANALYSIS.value) {
-            FileUtils.copyFile(new File("${addonsPath}/cfg-analysis/declarations.logic"),
-                               new File("${outDir}/cfg-analysis-declarations.logic"))
-            lbScript.addBlockFile("cfg-analysis-declarations.logic")
-
-            preprocess(this, "${addonsPath}/cfg-analysis/rules.logic", "${outDir}/cfg-analysis-rules.logic")
-            lbScript.addBlockFile("cfg-analysis-rules.logic")
-        }
-
-        lbScript
-            .commit()
-            .elapsedTime()
-            .echo("-- Prologue --")
-            .startTimer()
-            .transaction()
-
-        def corePath = "${Doop.doopLogic}/analyses/core"
-        def analysisPath = "${Doop.doopLogic}/analyses/${name}"
-		// By default, assume we run a context-sensitive analysis
-        Boolean isContextSensitive = true
-        try {
-            File f = Helper.checkFileOrThrowException("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
-			Properties props = Helper.loadProperties(f)
-			isContextSensitive = props.getProperty("is_context_sensitive")
-        }
-        catch(e) {
-            logger.debug e.getMessage()
-        }
-        if (isContextSensitive) {
-            preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic", "${corePath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic", factMacros, "${corePath}/core-delta.logic")
-            preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic", factMacros, macros, "${corePath}/context-sensitivity.logic")
-        }
-        else {
-            // TODO e.g. naive/micro
-        }
-
+    protected void basicAnalysis() {
         if (options.DYNAMIC.value) {
             //TODO: Check arity of DYNAMIC file
             List<String> dynFiles = options.DYNAMIC.value as List<String>
@@ -364,21 +315,75 @@ import org.apache.commons.logging.LogFactory
             }
         }
 
-        //preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic")
+        def factMacros = "${Doop.factsPath}/macros.logic"
+        preprocess(this, "${Doop.logicPath}/basic/basic.logic", "${outDir}/basic.logic", factMacros)
+
+        lbScript
+            .echo("-- Basic Analysis --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("basic.logic")
+
+        if (options.CFG_ANALYSIS.value) {
+            FileUtils.copyFile(new File("${Doop.addonsPath}/cfg-analysis/declarations.logic"),
+                               new File("${outDir}/cfg-analysis-declarations.logic"))
+            lbScript.addBlockFile("cfg-analysis-declarations.logic")
+
+            preprocess(this, "${Doop.addonsPath}/cfg-analysis/rules.logic", "${outDir}/cfg-analysis-rules.logic")
+            lbScript.addBlockFile("cfg-analysis-rules.logic")
+        }
+
+        lbScript
+            .commit()
+            .elapsedTime()
+    }
+
+    /**
+     * Performs the main part of the analysis.
+     */
+    protected void mainAnalysis() {
+        def factMacros = "${Doop.factsPath}/macros.logic"
+        def macros       = "${Doop.analysesPath}/${name}/macros.logic"
+        def corePath     = "${Doop.analysesPath}/core"
+        def analysisPath = "${Doop.analysesPath}/${name}"
+
+        lbScript
+            .echo("-- Prologue --")
+            .startTimer()
+            .transaction()
+
+        // By default, assume we run a context-sensitive analysis
+        Boolean isContextSensitive = true
+        try {
+            File f = Helper.checkFileOrThrowException("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
+            Properties props = Helper.loadProperties(f)
+            isContextSensitive = props.getProperty("is_context_sensitive")
+        }
+        catch(e) {
+            logger.debug e.getMessage()
+        }
+        if (isContextSensitive) {
+            preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic", "${corePath}/context-sensitivity-declarations.logic")
+            preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic", factMacros, "${corePath}/core-delta.logic")
+            preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic", factMacros, macros, "${corePath}/context-sensitivity.logic")
+        }
+        else {
+            // TODO e.g. naive/micro
+        }
+
         lbScript.addBlockFile("${name}-declarations.logic")
 
         if (options.SANITY.value) {
             lbScript
-                .echo("-- Loading Sanity Rules --")
-                .addBlockFile("${Doop.doopLogic}/addons/sanity.logic")
+                .echo("-- Sanity Rules --")
+                .addBlockFile("${Doop.addonsPath}/sanity.logic")
         }
 
-        //preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic")
         lbScript.executeFile("${name}-delta.logic")
 
 
         if (options.ENABLE_REFLECTION.value) {
-            String reflectionPath = "${Doop.doopLogic}/analyses/core/reflection"
+            String reflectionPath = "${Doop.analysesPath}/core/reflection"
 
             preprocess(this, "${reflectionPath}/delta.logic", "${outDir}/reflection-delta.logic")
             lbScript
@@ -399,52 +404,52 @@ import org.apache.commons.logging.LogFactory
         FileUtils.touch(addons)
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            FileUtils.copyFile(new File("${addonsPath}/dacapo/declarations.logic"),
+            FileUtils.copyFile(new File("${Doop.addonsPath}/dacapo/declarations.logic"),
                                new File("${outDir}/dacapo-declarations.logic"))
-            preprocess(this, "${addonsPath}/dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
+            preprocess(this, "${Doop.addonsPath}/dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
             lbScript
                 .addBlockFile("dacapo-declarations.logic")
                 .executeFile("dacapo-delta.logic")
 
             logger.info "Adding DaCapo rules to addons logic"
-            preprocessAtStart(this, "${addonsPath}/dacapo/rules.logic", "${outDir}/addons.logic")
+            preprocessAtStart(this, "${Doop.addonsPath}/dacapo/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.INFORMATION_FLOW.value) {
-            FileUtils.copyFile(new File("${addonsPath}/information-flow/declarations.logic"),
+            FileUtils.copyFile(new File("${Doop.addonsPath}/information-flow/declarations.logic"),
                                new File("${outDir}/information-flow-declarations.logic"))
-            preprocess(this, "${addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            preprocess(this, "${Doop.addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
             lbScript
                 .addBlockFile("information-flow-declarations.logic")
             logger.info "Adding Information flow rules to addons logic"
-            preprocessAtStart(this, "${addonsPath}/information-flow/rules.logic", "${outDir}/addons.logic")
+            preprocessAtStart(this, "${Doop.addonsPath}/information-flow/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.TAMIFLEX.value) {
-            FileUtils.copyFile(new File("${addonsPath}/tamiflex/declarations.logic"),
+            FileUtils.copyFile(new File("${Doop.addonsPath}/tamiflex/declarations.logic"),
                                new File("${outDir}/tamiflex-declarations.logic"))
-            FileUtils.copyFile(new File("${addonsPath}/tamiflex/delta.logic"),
+            FileUtils.copyFile(new File("${Doop.addonsPath}/tamiflex/delta.logic"),
                                new File("${outDir}/tamiflex-delta.logic"))
             lbScript
                 .addBlockFile("tamiflex-declarations.logic")
                 .executeFile("tamiflex-delta.logic")
 
             logger.info "Adding tamiflex rules to addons logic"
-            preprocessAtStart(this, "${addonsPath}/tamiflex/rules.logic", "${outDir}/addons.logic")
+            preprocessAtStart(this, "${Doop.addonsPath}/tamiflex/rules.logic", "${outDir}/addons.logic")
         }
 
         if (options.FU_EXCEPTION_FLOW.value) {
-            preprocess(this, "${addonsPath}/fu-exception-flow/declarations.logic", "${outDir}/fu-exception-flow.logic",
+            preprocess(this, "${Doop.addonsPath}/fu-exception-flow/declarations.logic", "${outDir}/fu-exception-flow.logic",
                                     "fu-exception-flow/rules.logic")
-            preprocess(this, "${addonsPath}/fu-exception-flow/delta.logic", "${outDir}/fu-exception-flow-delta.logic")
+            preprocess(this, "${Doop.addonsPath}/fu-exception-flow/delta.logic", "${outDir}/fu-exception-flow-delta.logic")
             lbScript
                 .addBlockFile("${outDir}/fu-exception-flow.logic")
                 .executeFile("${outDir}/fu-exception-flow-delta.logic")
         }
 
         if (options.AUXILIARY_HEAP.value) {
-            preprocess(this, "${addonsPath}/auxiliary-heap-allocations/declarations.logic", "${outDir}/client-extensions.logic")
-            preprocess(this, "${addonsPath}/auxiliary-heap-allocations/delta.logic", "${outDir}/client-extensions-delta.logic")
+            preprocess(this, "${Doop.addonsPath}/auxiliary-heap-allocations/declarations.logic", "${outDir}/client-extensions.logic")
+            preprocess(this, "${Doop.addonsPath}/auxiliary-heap-allocations/delta.logic", "${outDir}/client-extensions-delta.logic")
             lbScript
                 .addBlockFile("${outDir}/client-extensions.logic")
                 .executeFile("${outDir}/client-extensions-delta.logic")
@@ -453,7 +458,6 @@ import org.apache.commons.logging.LogFactory
         if (options.REFINE.value)
             refine()
 
-        //preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
         preprocessAtStart(this, "${outDir}/addons.logic", "${outDir}/${name}.logic", macros)
 
         lbScript
@@ -467,9 +471,9 @@ import org.apache.commons.logging.LogFactory
             .elapsedTime()
 
         if (options.MUST.value) {
-            FileUtils.copyFile(new File("${Doop.doopLogic}/analyses/must-point-to/may-pre-analysis.logic"),
+            FileUtils.copyFile(new File("${Doop.analysesPath}/must-point-to/may-pre-analysis.logic"),
                                new File("${outDir}/must-point-to-may-pre-analysis.logic"))
-            preprocess(this, "${Doop.doopLogic}/analyses/must-point-to/analysis-simple.logic", "${outDir}/must-point-to.logic")
+            preprocess(this, "${Doop.analysesPath}/must-point-to/analysis-simple.logic", "${outDir}/must-point-to.logic")
 
             lbScript
                 .echo("-- Pre Analysis (for Must) --")
@@ -497,7 +501,7 @@ import org.apache.commons.logging.LogFactory
     protected void reanalyze() {
         logger.info "Loading ${name} refinement-delta rules"
 
-        preprocess(this, "${Doop.doopLogic}/${name}/refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
+        preprocess(this, "${Doop.analysesPath}/${name}/refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
         // TODO: handle exportCsv in script
         timing {
             bloxbatchPipe database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
@@ -523,7 +527,7 @@ import org.apache.commons.logging.LogFactory
         initDatabase()
         //TODO: We don't need to write-meta, do we?
         options.REFINE.value = true
-        analyze()
+        mainAnalysis()
     }
 
     protected void refine() {
@@ -573,7 +577,7 @@ import org.apache.commons.logging.LogFactory
     }
 
     protected void runTransformInput() {
-        preprocess(this, "${Doop.doopLogic}/addons/transform/rules.logic", "${outDir}/transform.logic", "${Doop.doopLogic}/addons/transform/declarations.logic")
+        preprocess(this, "${Doop.addonsPath}/transform/rules.logic", "${outDir}/transform.logic", "${Doop.addonsPath}/transform/declarations.logic")
         lbScript
             .echo("-- Transforming Facts --")
             .startTimer()
@@ -585,7 +589,7 @@ import org.apache.commons.logging.LogFactory
             lbScript
                 .echo(""" "-- Transformation (step $i) --" """)
                 .transaction()
-                .executeFile("${Doop.doopLogic}/addons/transform/delta.logic")
+                .executeFile("${Doop.addonsPath}/transform/delta.logic")
                 .commit()
         }
         lbScript.elapsedTime()
@@ -599,7 +603,7 @@ import org.apache.commons.logging.LogFactory
             return
         }
 
-        String statsPath = "${Doop.doopLogic}/addons/statistics"
+        def statsPath = "${Doop.addonsPath}/statistics"
         preprocess(this, "${statsPath}/statistics-simple.logic", "${outDir}/statistics-simple.logic")
         preprocess(this, "${statsPath}/delta.logic", "${outDir}/statistics-delta.logic")
 
