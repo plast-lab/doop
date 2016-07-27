@@ -1,0 +1,10 @@
++TaintedHeapAllocation(?invocation),
++HeapAllocation(?invocation),
++HeapAllocation:Type[?invocation] = ?retType <-
+  TaintSourceMethod(?tomethod),
+//  (StaticMethodInvocation(?invocation, ?tomethod, _); VirtualMethodInvocation(?invocation, ?tomethod, _)),
+//  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  AnyMethodInvocation(?invocation, ?tomethod),
+  MethodSignature:ReturnType[?tomethod] = ?retType.
+
+// see gatekeeper paper (ben livshits)

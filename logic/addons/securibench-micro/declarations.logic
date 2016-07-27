@@ -1,0 +1,9 @@
+ServletClass(?type) -> Type(?type).
+
+ServletMockObject(?receiverHeap, ?class) ->
+   HeapAllocation(?receiverHeap), ServletClass(?class).
+
+MockEntryPoint(?class, ?method) ->
+   ServletClass(?class), MethodSignature(?method).
+
+ServletEntryMethodName(?str) -> string(?str).

@@ -1,0 +1,51 @@
+import org.apache.tools.ant.util.TeeOutputStream
+
+def defaultCommonArgs = ['--timeout', '90', '--ssa', '--cache']
+def defaultAnalyses = ['context-insensitive', '1-object-sensitive', '2-type-sensitive+heap']
+def defaultOutDir = '.'
+def defaultPrefix = ''
+
+ext.commonArgs = (project.hasProperty('commonArgs') ? project.property('commonArgs').split() : defaultCommonArgs)
+ext.analyses = (project.hasProperty('analyses') ? project.property('analyses').split() : defaultAnalyses)
+ext.outDir = (project.hasProperty('outDir') ? project.property('outDir') : defaultOutDir)
+ext.prefix = (project.hasProperty('prefix') ? project.property('prefix') : defaultPrefix)
+
+ext.DaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
+task runDaCapo2006 {
+    dependsOn << analyses.collect { analysis -> DaCapo2006.collect { BM -> "dacapo2006-$analysis-$BM" } }
+}
+analyses.each { analysis ->
+    DaCapo2006.each { BM ->
+        task "dacapo2006-$analysis-$BM" (type: JavaExec) {
+            doFirst {
+                new File(outDir).mkdirs()
+                standardOutput = new TeeOutputStream(new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace"), System.out);
+            }
+            classpath = sourceSets.main.runtimeClasspath
+            main = 'org.clyze.doop.Main'
+
+            def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-2006/${BM}.jar"
+            args = ['-a', analysis, '-j', jarFile, '--dacapo'] + commonArgs
+        }
+    }
+}
+
+ext.DaCapoBach = ['avrora', 'batik', 'eclipse', 'h2', 'jython', 'luindex', 'lusearch', 'pmd', 'sunflow', 'xalan']
+task runDaCapoBach {
+    dependsOn << analyses.collect { analysis -> DaCapoBach.collect { BM -> "dacapoBach-$analysis-$BM" } }
+}
+analyses.each { analysis ->
+    DaCapoBach.each { BM ->
+        task "dacapoBach-$analysis-$BM" (type: JavaExec) {
+            doFirst {
+                new File(outDir).mkdirs()
+                standardOutput = new TeeOutputStream(new FileOutputStream("${outDir}/${prefix}${analysis}-${BM}.trace"), System.out);
+            }
+            classpath = sourceSets.main.runtimeClasspath
+            main = 'org.clyze.doop.Main'
+
+            def jarFile = "${environment.DOOP_BENCHMARKS}/dacapo-bach/${BM}/${BM}.jar"
+            args = ['-a', analysis, '-j', jarFile, '--dacapoBach'] + commonArgs
+        }
+    }
+}
