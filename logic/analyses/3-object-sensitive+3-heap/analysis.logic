@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 // In this analysis, both the real context and the real heap context 
 // are triplets of HeapAllocations. Keeping mapping 
 // functions is the way to handle analyses where HContext = Context 

@@ -1,7 +1,3 @@
-/**
- * Macros that fix the lack of ref-modes on subtypes in LB
- */
-
 #define PlusHeapAllocation(x,string,type) \
   +Instruction:Value(x:string), \
   +HeapAllocation(x), \
@@ -49,6 +45,9 @@
   +Instruction:Value(x:string), \
   +StaticMethodInvocation:Insn(x)
 
+/**
+ * Macros that fix the lack of ref-modes on subtypes in LB
+ */
 #define HeapAllocationValue(x, y) Instruction:Value(x:y), HeapAllocation(x)
 #define MethodInvocationValue(x, y) Instruction:Value(x:y), MethodInvocation(x)
 #define ClassTypeValue(x,y) Type:fqn(x:y), ClassType(x)

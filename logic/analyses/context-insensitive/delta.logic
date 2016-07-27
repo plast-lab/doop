@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../core/core-delta.logic"
-
 /**
  * Special objects
  */
