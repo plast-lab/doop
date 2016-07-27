@@ -22,7 +22,8 @@ OptContextInsensCallGraphEdge(?invo, ?toMethod) <-
 MethodMayStoreToStaticField(?fld, ?method) <-
    StoreStaticField:Insn(?insn),
    FieldInstruction:Signature[?insn] = ?fld,
-   Instruction:Method[?insn] = ?method.
+   Instruction:Method[?insn] = ?method,
+   Reachable(?method).
 
 OptCalledMethodMayStoreToStaticField(?insn, ?fld) <-
    CalledMethodMayStoreToStaticField(?fld, ?insn).
@@ -40,6 +41,7 @@ IsFieldStoreBase(?base, ?inMethod) <-
 
 // Fastest way I've found to compute MayAlias
 CompatibleTypes(?t1, ?t2) <-
+   Reachable(?inMethod),
    Var:DeclaringMethod(?var1, ?inMethod),
    Var:DeclaringMethod(?var2, ?inMethod),
    IsFieldStoreBase(?var2, ?inMethod),
@@ -49,6 +51,7 @@ CompatibleTypes(?t1, ?t2) <-
    SubtypeOf(?t, ?t2).
 
 CompatibleVarsInMethod(?var1, ?var2) <-
+   Reachable(?inMethod),
    Var:DeclaringMethod(?var1, ?inMethod),
    Var:DeclaringMethod(?var2, ?inMethod),
    IsFieldStoreBase(?var2, ?inMethod),
@@ -61,13 +64,14 @@ MayAliasInMethod(?var1, ?var2) <-
 
 // Which methods may ever update the field
 MethodMayStoreToInstanceField(?fld, ?method) <-
+   Reachable(?method),
    StoreInstanceField:Insn(?insn),
    FieldInstruction:Signature[?insn] = ?fld,
    Instruction:Method[?insn] = ?method.
 
 CalledMethodMayStoreToInstanceField(?fld, ?invo),
 MethodMayStoreToInstanceField(?fld, ?method) <-
-//   CHAMayCall(?invo, ?toMethod),
+   //   CHAMayCall(?invo, ?toMethod),
    OptContextInsensCallGraphEdge(?invo, ?toMethod),
    Instruction:Method[?invo] = ?method,
    MethodMayStoreToInstanceField(?fld, ?toMethod).
@@ -75,6 +79,7 @@ MethodMayStoreToInstanceField(?fld, ?method) <-
 // Which methods may ever do the heap allocation
 MethodMayAllocateHeap(?heap, ?method) <-
 // REVIEW: This introduces dependency on string-constants.logic
+   Reachable(?method),
    AssignNormalHeapAllocation(?heap, _, ?method).
 
 CalledMethodMayAllocateHeap(?heap, ?invo),
@@ -83,3 +88,16 @@ MethodMayAllocateHeap(?heap, ?method) <-
    OptContextInsensCallGraphEdge(?invo, ?toMethod),
    Instruction:Method[?invo] = ?method,
    MethodMayAllocateHeap(?heap, ?toMethod).
+
+// Which methods may ever update the field
+MethodMayLoadFromInstanceField(?fld, ?method) <-
+   LoadInstanceField:Insn(?insn),
+   FieldInstruction:Signature[?insn] = ?fld,
+   Instruction:Method[?insn] = ?method,
+   Reachable(?method).
+
+MethodMayLoadFromInstanceField(?fld, ?method) <-
+//   CHAMayCall(?invo, ?toMethod),
+   OptContextInsensCallGraphEdge(?invo, ?toMethod),
+   Instruction:Method[?invo] = ?method,
+   MethodMayLoadFromInstanceField(?fld, ?toMethod).
