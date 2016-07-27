@@ -480,9 +480,12 @@ class Doop {
 
     // Not the best pattern, but limits the source code size :)
     static String doopHome
-    static String doopLogic
     static String doopOut
     static String doopCache
+    static String logicPath
+    static String factsPath
+    static String addonsPath
+    static String analysesPath
 
     /**
      * Initializes Doop.
@@ -497,9 +500,12 @@ class Doop {
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
         Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
-        doopLogic = "$doopHome/logic"
-        doopOut   = outPath ?: "$doopHome/out"
-        doopCache = cachePath ?: "$doopHome/cache"
+        doopOut      = outPath ?: "$doopHome/out"
+        doopCache    = cachePath ?: "$doopHome/cache"
+        logicPath    = "$doopHome/logic"
+        factsPath    = "$logicPath/facts"
+        addonsPath   = "$logicPath/addons"
+        analysesPath = "$logicPath/analyses"
 
         //create all necessary files/folders
         File f = new File(doopOut)

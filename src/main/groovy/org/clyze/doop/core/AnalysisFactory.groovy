@@ -135,7 +135,7 @@ import java.util.jar.JarFile
      */
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
-        String analysisPath = "${Doop.doopLogic}/analyses/${name}/analysis.logic"
+        def analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 
@@ -189,7 +189,7 @@ import java.util.jar.JarFile
             AnalysisOption option -> option.toString()
         }
 
-        Collection<String> checksums = new File("${Doop.doopLogic}/facts").listFiles().collect {
+        Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
             File file -> Helper.checksum(file, HASH_ALGO)
         }
 
