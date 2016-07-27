@@ -200,19 +200,14 @@ public class Main {
         DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
         Set<String> androidClasses = null;
-        
+
         Set<SootClass> classes = new HashSet<>();
-        
+
         if (_android) {
-           SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
-           app.getConfig().setMaxThreadNum(Runtime.getRuntime().availableProcessors());
-           app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
-           app.setTaintWrapper(new EasyTaintWrapper("EasyTaintWrapperSource.txt"));
-           app.getConfig().setEnableCallbacks(true);
-           app.getConfig().setEnableCallbackSources(true);
-           app.getConfig().setEnableStaticFieldTracking(true);
-           app.getConfig().setEnableImplicitFlows(true);
-           dummyMain = app.getDummyMainMethod();
+            SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+            app.setLibraries(_libraries);
+            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+            dummyMain = app.getDummyMainMethod();
 
             soot.G.reset();
             soot.options.Options.v().set_src_prec(Options.src_prec_apk);
@@ -225,7 +220,7 @@ public class Main {
 
             androidClasses = new HashSet<>();
             for (String arg : _inputs) {
-                    androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
+                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
             }
             System.out.println("Android classes discovered from classesOfDex on apk: " + androidClasses.size()); //this finds only the classes.dex
         }
@@ -343,18 +338,6 @@ public class Main {
         if(_mode == Mode.FULL && !_onlyApplicationClassesFactGen) {
             classes = new HashSet<>(scene.getClasses());
         }
-
-        // if (_android) {
-        //     SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
-        //     app.getConfig().setMaxThreadNum(Runtime.getRuntime().availableProcessors());
-        //     app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
-        //     app.setTaintWrapper(new EasyTaintWrapper("EasyTaintWrapperSource.txt"));
-        //     app.getConfig().setEnableCallbacks(true);
-        //     app.getConfig().setEnableCallbackSources(true);
-        //     app.getConfig().setEnableStaticFieldTracking(true);
-        //     app.getConfig().setEnableImplicitFlows(true);
-        //     dummyMain = app.getDummyMainMethod();
-        // }
 
         if (_bytecode2jimple) {
             ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);

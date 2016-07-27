@@ -13,7 +13,7 @@ buildscript {
     }
 }
 
-applicationDefaultJvmArgs = ["-Xmx10g"]
+applicationDefaultJvmArgs = ["-Xmx50g"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
