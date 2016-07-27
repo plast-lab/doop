@@ -296,34 +296,54 @@ import org.apache.commons.logging.LogFactory
      * Performs the main part of the analysis.
      */
     protected void analyze() {
-        String addonsPath = "${Doop.doopLogic}/addons"
-        String macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
+        def addonsPath = "${Doop.doopLogic}/addons"
+        def factMacros = "${Doop.doopLogic}/facts/macros.logic"
+        def macros = "${Doop.doopLogic}/analyses/${name}/macros.logic"
 
-        preprocess(this, "${Doop.doopLogic}/basic/basic.logic", "${outDir}/basic.logic", macros)
+        preprocess(this, "${Doop.doopLogic}/basic/basic.logic", "${outDir}/basic.logic", factMacros)
 
-		lbScript
-			.echo("-- Basic Analysis --")
-			.startTimer()
-			.transaction()
-			.addBlockFile("basic.logic")
+        lbScript
+            .echo("-- Basic Analysis --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("basic.logic")
 
         if (options.CFG_ANALYSIS.value) {
             FileUtils.copyFile(new File("${addonsPath}/cfg-analysis/declarations.logic"),
                                new File("${outDir}/cfg-analysis-declarations.logic"))
             lbScript.addBlockFile("cfg-analysis-declarations.logic")
 
-	        preprocess(this, "${addonsPath}/cfg-analysis/rules.logic", "${outDir}/cfg-analysis-rules.logic")
-			lbScript.addBlockFile("cfg-analysis-rules.logic")
+            preprocess(this, "${addonsPath}/cfg-analysis/rules.logic", "${outDir}/cfg-analysis-rules.logic")
+            lbScript.addBlockFile("cfg-analysis-rules.logic")
         }
 
         lbScript
-			.commit()
-			.elapsedTime()
+            .commit()
+            .elapsedTime()
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
 
+        def corePath = "${Doop.doopLogic}/analyses/core"
         def analysisPath = "${Doop.doopLogic}/analyses/${name}"
+		// By default, assume we run a context-sensitive analysis
+        Boolean isContextSensitive = true
+        try {
+            File f = Helper.checkFileOrThrowException("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
+			Properties props = Helper.loadProperties(f)
+			isContextSensitive = props.getProperty("is_context_sensitive")
+        }
+        catch(e) {
+            logger.debug e.getMessage()
+        }
+        if (isContextSensitive) {
+            preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic", "${corePath}/context-sensitivity-declarations.logic")
+            preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic", factMacros, "${corePath}/core-delta.logic")
+            preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic", factMacros, macros, "${corePath}/context-sensitivity.logic")
+        }
+        else {
+            // TODO e.g. naive/micro
+        }
 
         if (options.DYNAMIC.value) {
             //TODO: Check arity of DYNAMIC file
@@ -344,7 +364,7 @@ import org.apache.commons.logging.LogFactory
             }
         }
 
-        preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic")
+        //preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic")
         lbScript.addBlockFile("${name}-declarations.logic")
 
         if (options.SANITY.value) {
@@ -353,7 +373,7 @@ import org.apache.commons.logging.LogFactory
                 .addBlockFile("${Doop.doopLogic}/addons/sanity.logic")
         }
 
-        preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic")
+        //preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic")
         lbScript.executeFile("${name}-delta.logic")
 
 
@@ -433,7 +453,7 @@ import org.apache.commons.logging.LogFactory
         if (options.REFINE.value)
             refine()
 
-        preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
+        //preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
         preprocessAtStart(this, "${outDir}/addons.logic", "${outDir}/${name}.logic", macros)
 
         lbScript

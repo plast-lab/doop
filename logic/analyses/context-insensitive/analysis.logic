@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../core/context-sensitivity.logic"
-
 /**
  * Context-insensitive pointer analysis with on-the-fly call graph discovery.
  */
