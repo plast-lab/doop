@@ -440,23 +440,6 @@ class Analysis implements Runnable {
             preprocessAtStart(this, "${Doop.addonsPath}/tamiflex/rules.logic", "${outDir}/addons.logic")
         }
 
-        if (options.FU_EXCEPTION_FLOW.value) {
-            preprocess(this, "${Doop.addonsPath}/fu-exception-flow/declarations.logic", "${outDir}/fu-exception-flow.logic",
-                                    "fu-exception-flow/rules.logic")
-            preprocess(this, "${Doop.addonsPath}/fu-exception-flow/delta.logic", "${outDir}/fu-exception-flow-delta.logic")
-            lbScript
-                .addBlockFile("${outDir}/fu-exception-flow.logic")
-                .executeFile("${outDir}/fu-exception-flow-delta.logic")
-        }
-
-        if (options.AUXILIARY_HEAP.value) {
-            preprocess(this, "${Doop.addonsPath}/auxiliary-heap-allocations/declarations.logic", "${outDir}/client-extensions.logic")
-            preprocess(this, "${Doop.addonsPath}/auxiliary-heap-allocations/delta.logic", "${outDir}/client-extensions-delta.logic")
-            lbScript
-                .addBlockFile("${outDir}/client-extensions.logic")
-                .executeFile("${outDir}/client-extensions-delta.logic")
-        }
-
         if (options.REFINE.value)
             refine()
 

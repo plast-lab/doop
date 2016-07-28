@@ -271,30 +271,6 @@ import java.util.jar.JarFile
          * even though the majority of checks are not required.
          */
 
-        if (options.PADDLE_COMPAT.value) {
-            disableAllExceptionOptions(options)
-        }
-
-        if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
-            disableAllExceptionOptions(options)
-        }
-
-        if (options.EXCEPTIONS_IMPRECISE.value) {
-            disableAllExceptionOptions(options)
-            options.EXCEPTIONS_IMPRECISE.value = true
-        }
-
-        if (options.DISABLE_MERGE_EXCEPTIONS.value) {
-            disableAllExceptionOptions(options)
-            options.EXCEPTIONS_PRECISE.value = true
-            options.SEPARATE_EXCEPTION_OBJECTS.value = true
-        }
-
-        if (options.EXCEPTIONS_EXPERIMENTAL.value) {
-            disableAllExceptionOptions(options)
-            options.EXCEPTIONS_EXPERIMENTAL.value = true
-        }
-
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
@@ -585,17 +561,6 @@ import java.util.jar.JarFile
         return env
     }
 
-    /**
-     * Sets all exception options/flags to false. The exception options are determined by their flagType.
-     */
-    protected void disableAllExceptionOptions(Map<String, AnalysisOption> options) {
-        logger.debug "Disabling all exception preprocessor flags"
-        options.values().each { AnalysisOption option ->
-            if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
-                option.value = false
-            }
-        }
-    }
 
     /**
      * Sets all constant options/flags to false. The constant options are determined by their flagType.

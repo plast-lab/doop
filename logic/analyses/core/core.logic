@@ -1,18 +1,11 @@
 #include "class-initialization.logic"
+#include "exceptions.logic"
 #include "finalization.logic"
 #include "implicit-reachable.logic"
 #include "native.logic"
 #include "reference.logic"
 #include "string-constants.logic"
 #include "threads.logic"
-
-#if defined(EXCEPTIONS_PRECISE) && !defined(PADDLE_COMPAT)
-#include "exceptions/precise.logic"
-#elif defined(EXCEPTIONS_IMPRECISE)
-#include "exceptions/imprecise.logic"
-#elif defined(EXCEPTIONS_EXPERIMENTAL)
-#include "exceptions/experimental.logic"
-#endif
 
 #if defined(ENABLE_REFLECTION) && !defined(PADDLE_COMPAT)
 #include "reflection/rules.logic" 

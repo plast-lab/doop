@@ -4,6 +4,5 @@ package org.clyze.doop.core
  */
  enum PreprocessorFlag {
 	NORMAL_FLAG,
-	EXCEPTION_FLAG,
 	CONSTANT_FLAG
  }
