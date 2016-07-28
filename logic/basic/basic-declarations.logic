@@ -5,8 +5,5 @@
 #include "superinterface-declarations.logic"
 #include "type-hierarchy-declarations.logic"
 
-/**
- * Main method
- */
 MainMethodDeclaration(?method) ->
    MethodSignature(?method).

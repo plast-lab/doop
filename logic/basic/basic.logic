@@ -6,3 +6,11 @@
 #include "subclass.logic"
 #include "superinterface.logic"
 #include "type-hierarchy.logic"
+
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   MethodSignature:DeclaringType[?method] = ?type,
+   MethodSignature:SimpleName[?method] = "main",
+   MethodSignature:Descriptor[?method] = "void(java.lang.String[])",
+   MethodModifier("public", ?method),
+   MethodModifier("static", ?method).
