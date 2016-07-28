@@ -351,11 +351,6 @@ class Analysis implements Runnable {
         def corePath     = "${Doop.analysesPath}/core"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
-        lbScript
-            .echo("-- Prologue --")
-            .startTimer()
-            .transaction()
-
         // By default, assume we run a context-sensitive analysis
         Boolean isContextSensitive = true
         try {
@@ -375,26 +370,29 @@ class Analysis implements Runnable {
             // TODO e.g. naive/micro
         }
 
-        lbScript.addBlockFile("${name}-declarations.logic")
+        lbScript
+            .echo("-- Prologue --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("${name}-declarations.logic")
+            .executeFile("${name}-delta.logic")
 
         if (options.SANITY.value) {
-            lbScript
-                .echo("-- Sanity Rules --")
-                .addBlockFile("${Doop.addonsPath}/sanity.logic")
+            lbScript.addBlockFile("${Doop.addonsPath}/sanity.logic")
         }
-
-        lbScript.executeFile("${name}-delta.logic")
-
 
         if (options.ENABLE_REFLECTION.value) {
             String reflectionPath = "${Doop.analysesPath}/core/reflection"
 
             preprocess(this, "${reflectionPath}/delta.logic", "${outDir}/reflection-delta.logic")
+            FileUtils.copyFile(new File("${reflectionPath}/allocations-delta.logic"),
+                               new File("${outDir}/reflection-allocations-delta.logic"))
             lbScript
+                .checkpoint()
                 .executeFile("reflection-delta.logic")
-                .commit()
-                .transaction()
-                .executeFile("${reflectionPath}/allocations-delta.logic")
+                .checkpoint()
+                .executeFile("reflection-allocations-delta.logic")
+                .checkpoint()
         }
 
         /**
