@@ -47,7 +47,8 @@ class Doop {
             isFile:true,
             description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
             value:[],
-            webUI:true
+            cli:false,
+            isAdvanced:true,
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
