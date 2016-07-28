@@ -301,11 +301,9 @@ class Analysis implements Runnable {
 
     protected void basicAnalysis() {
         if (options.DYNAMIC.value) {
-            //TODO: Check arity of DYNAMIC file
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.eachWithIndex { String dynFile, Integer index ->
                 File f = new File(dynFile)
-                FilenameUtils
                 File dynImport = new File(outDir, "dynamic${index}.import")
                 Helper.writeToFile dynImport, """\
                                               option,delimiter,"\t"
