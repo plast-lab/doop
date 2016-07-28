@@ -457,14 +457,28 @@ class Doop {
             nonStandard:true
         ),
         new AnalysisOption<String>(
-            id:"X_ONLY_FACTS",
-            name:"Xonly-facts",
+            id:"X_STOP_AT_FACTS",
+            name:"XstopAt:facts",
             argName:"FACTS_DIR",
             isFile:true,
             description:"Only generate facts and exit.",
             value:false,
             nonStandard:true
-        )
+        ),
+        new AnalysisOption<String>(
+            id:"X_STOP_AT_INIT",
+            name:"XstopAt:init",
+            description:"Initialize database with facts and exit.",
+            value:false,
+            nonStandard:true
+        ),
+        new AnalysisOption<String>(
+            id:"X_STOP_AT_BASIC",
+            name:"XstopAt:basic",
+            description:"Run the basic analysis and exit.",
+            value:false,
+            nonStandard:true
+        ),
         /* End of non-standard flags */
     ]
 

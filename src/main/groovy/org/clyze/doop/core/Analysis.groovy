@@ -141,25 +141,29 @@ class Analysis implements Runnable {
         lbScript    = new BloxbatchScript(new File(outDir, "run.lb"))
 
         generateFacts()
-        if (options.X_ONLY_FACTS.value)
-            return
+        if (options.X_STOP_AT_FACTS.value) return
 
         initDatabase()
+        if (!options.X_STOP_AT_INIT.value) {
 
-        basicAnalysis()
+            basicAnalysis()
+            if (!options.X_STOP_AT_BASIC.value) {
 
-        mainAnalysis()
+                mainAnalysis()
 
-        try {
-            File f = Helper.checkFileOrThrowException("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-            logger.info "-- Re-Analyze --"
-            reanalyze()
+                try {
+                    File f = Helper.checkFileOrThrowException("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+                    logger.info "-- Re-Analyze --"
+                    reanalyze()
+                }
+                catch(e) {
+                    logger.debug e.getMessage()
+                }
+
+                produceStats()
+
+            }
         }
-        catch(e) {
-            logger.debug e.getMessage()
-        }
-
-        produceStats()
 
         lbScript.close()
 
@@ -259,7 +263,7 @@ class Analysis implements Runnable {
 
         lbScript
             .createDB(database.getName())
-            .echo("-- Facts --")
+            .echo("-- Init DB --")
             .startTimer()
             .transaction()
             .addBlockFile("facts-declarations.logic")
