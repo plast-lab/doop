@@ -5,17 +5,19 @@
 // when a tainted variable is "used" by primitive operations
 // the output of the primitive operations is also tainted
 
-//VarIsTaintedFrom(?to, ?from) <-
+//VarIsTaintedFromVar(?to, ?from) <-
 //  VarDef(?to, ?insn),
 //  VarUse(?from, ?insn).
 
 //VarDef(?to, ?insn) <-
 //  AssignInstruction:To[?insn] = ?to,
 //  (AssignBinop:Insn(?insn) ; AssignUnop:Insn(?insn)).
+#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- MethodSignature:Value(method:value), string:like(value, pattern)
 
-TaintSourceMethod("<javax.servlet.ServletRequest: java.lang.String getParameter(java.lang.String)>").
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.http.Cookie: % get%(%)>").
 
-// TODO
 TaintSourceMethod(?overriddenMethod) <-
    TaintSourceMethod(?method),
    MethodSignature:DeclaringType[?method] = ?superclass,
@@ -30,9 +32,13 @@ TaintSourceMethod(?overriddenMethod) <-
 VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
 
 VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
-  VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from),
+  VarIsTaintedFromVar(?toCtx, ?to, ?fromCtx, ?from),
   TaintedHeapAllocation(?heap),
   VarPointsTo(?hctx, ?heap, ?fromCtx, ?from).
+
+VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+   TaintedHeapAllocation(?heap),
+   VarIsTaintedFromHeap(?hctx, ?heap, ?toCtx, ?to).
 
 CallTaintingMethod(?ctx, ?invocation) <-
   TaintSourceMethod(?tomethod),
@@ -54,19 +60,22 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?var),
   StringFactoryVar(?var).
 
-VarIsTaintedFrom(?ctx, ?ret, ?ctx, ?param) <-
+VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?param) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   ActualParam[0, ?invocation] = ?param,
   AssignReturnValue[?invocation] = ?ret.
 
-VarIsTaintedFrom(?ctx, ?ret, ?ctx, ?base) <-
+VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "toString",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   AssignReturnValue[?invocation] = ?ret.
 
+VarIsTaintedFromHeap(?hctx, ?heap, ?ctx, ?var) -> HContext(?hctx), HeapAllocation(?heap), Context(?ctx), Var(?var).
+VarIsTaintedFromHeap(?basehctx, ?baseheap, ?ctx, ?to) <-
+   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap).
 /**
  * Sanitization
  */

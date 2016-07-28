@@ -1,11 +1,9 @@
-+ServletMockObject(?classHeap, ?class),
 // create heap allocation for receiver object
 +HeapAllocation(?classHeap),
 +HeapAllocation:Type[?classHeap] = ?class
- <- ServletClass(?class),
-      Type:fqn(?class:?classStr),
-      ?classHeap = "<Mock allocation for " + ?classStr + ">".
+ <- MockObject(?classHeap, ?class).
 
+// create heap allocation for all formal parameters
 +HeapAllocation(?formalMockStr),
 +HeapAllocation:Type[?formalMockStr] = ?formalMockType
  <-

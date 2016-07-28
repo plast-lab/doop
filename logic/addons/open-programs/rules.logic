@@ -11,15 +11,22 @@ AllConcreteImplementations(?class, ?staticType) <-
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
    Type:fqn(?staticType:"javax.servlet.http.HttpServlet").
-   
+
+MockObject(?classHeap, ?class) <-
+   ServletClass(?class),
+   Type:fqn(?class:?classStr),
+   ?classHeap = "<Mock allocation for " + ?classStr + ">".
+
+
 ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
 // TODO: very big, can we be smarter ?
 GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
-   FormalParamOpt(?index, ?method, ?formal),
+   FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
    AllConcreteImplementations(?subtype, ?staticType),
    MethodSignature:Value(?method:?methodStr),
+   MockEntryPoint(_, ?method),
    // TODO: replace with ClassTypeValue macro
    Type:fqn(?subtype:?subtypeStr), 
    ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
@@ -35,14 +42,30 @@ MockEntryPoint(?class, ?entry) <-
 
 // bind mock objects to formals
 
+HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
+   GetMocksForFormals(?heapStr, _, ?index, ?method),
+   ReachableContext(?ctx, ?method),
+   FormalParam[?index, ?method] = ?formal.
+
 VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
  <-
-   ReachableContext(?ctx, ?method),
+   HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
+   Instruction:Value(?heap:?heapStr), 
    ImmutableHContext[] = ?hctx,
-   GetMocksForFormals(?heapStr, _, ?index, ?method),
-   MockEntryPoint(_, ?method),
-   FormalParam[?index, ?method] = ?formal,
-   // TODO: replace with HeapAllocationValue macro
+   HeapAllocation(?heap).
+
+// bind mock objects to receivers
+HeapIdForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
+   ReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?receiver,
+   MockEntryPoint(?class, ?method),
+   MockObject(?heapStr, ?class).
+   
+VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
+ <-
+   ImmutableHContext[] = ?hctx,
+   MockObject(?heapStr, _), //TODO indexing
+   HeapIdForReceiverInContext(?ctx, ?receiver, ?heapStr),
    Instruction:Value(?heap:?heapStr), 
    HeapAllocation(?heap).
 
