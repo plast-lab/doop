@@ -175,8 +175,8 @@ class Analysis implements Runnable {
         }
         logger.info "Analysis END\n"
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
-        bloxbatchPipe database, """-execute '+Stats:Runtime("script wall-clock time (sec)", $t).
-                                             +Stats:Runtime("disk footprint (KB)", $dbSize).'"""
+        bloxbatchPipe database, """-addBlock 'Stats:Runtime("script wall-clock time (sec)", $t).
+                                              Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
 
@@ -268,7 +268,7 @@ class Analysis implements Runnable {
             .transaction()
             .addBlockFile("facts-declarations.logic")
             .addBlockFile("flow-insensitivity-declarations.logic")
-            .execute("""+Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
+            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
             .executeFile("entities-import.logic")
             .executeFile("facts-import.logic")
             .executeFile("flow-insensitivity-delta.logic")
@@ -609,7 +609,6 @@ class Analysis implements Runnable {
 
         def statsPath = "${Doop.addonsPath}/statistics"
         preprocess(this, "${statsPath}/statistics-simple.logic", "${outDir}/statistics-simple.logic")
-        preprocess(this, "${statsPath}/delta.logic", "${outDir}/statistics-delta.logic")
 
         lbScript
             .echo("-- Statistics --")
@@ -623,10 +622,6 @@ class Analysis implements Runnable {
         }
 
         lbScript
-            .commit()
-            // Need to be in a separate transaction, since IDB and delta rules shouldn't be together
-            .transaction()
-            .executeFile("statistics-delta.logic")
             .commit()
             .elapsedTime()
     }
