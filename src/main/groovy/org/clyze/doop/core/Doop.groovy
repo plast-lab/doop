@@ -60,11 +60,6 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"AUXILIARY_HEAP",
-            value:false,
-            cli:false
-        ),
-        new AnalysisOption<String>(
             id:"CFG_ANALYSIS",
             name:"cfg",
             description:"Run a control flow graph analysis.",
@@ -126,45 +121,6 @@ class Doop {
             value:false,
             webUI:true,
             forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_FILTER",
-            name:"enable-exceptions-filter",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_ORDER",
-            name:"enable-exceptions-order",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_RANGE",
-            name:"enable-exceptions-range",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_CS",
-            name:"enable-exceptions-cs",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"FU_EXCEPTION_FLOW",
-            name:"enable-fu-exception-flow",
-            value:false,
-            webUI:true,
             isAdvanced:true
         ),
 
@@ -259,58 +215,13 @@ class Doop {
         ),
         /* End of preprocessor normal flags */
 
-        /* Start of preprocessor exception flags */
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_PRECISE",
-            value:true,
-            cli:false,
-            forPreprocessor:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_IMPRECISE",
-            name:"enable-imprecise-exceptions",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
         new AnalysisOption<Boolean>(
             id:"SEPARATE_EXCEPTION_OBJECTS",
-            value:false,
-            cli:false,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_EXPERIMENTAL",
-            name:"enable-exceptions-experimental",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        /* End of preprocessor exception flags */
-
-        //other options/flags
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_PRECISE_EXCEPTIONS",
-            name:"disable-precise-exceptions",
-            value:false,
-            webUI:true,
-            forPreprocessor:false,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_MERGE_EXCEPTIONS",
             name:"disable-merge-exceptions",
             value:false,
             webUI:true,
-            forPreprocessor:false,
-            isAdvanced:true
+            forPreprocessor:true,
+            isAdvanced:true,
         ),
         new AnalysisOption<Boolean>(
             id:"REFINE",
@@ -459,9 +370,9 @@ class Doop {
         new AnalysisOption<String>(
             id:"X_STOP_AT_FACTS",
             name:"XstopAt:facts",
-            argName:"FACTS_DIR",
+            argName:"OUT_DIR",
             isFile:true,
-            description:"Only generate facts and exit.",
+            description:"Only generate facts and exit. Link result to OUT_DIR",
             value:false,
             nonStandard:true
         ),
