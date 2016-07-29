@@ -135,7 +135,7 @@ import java.util.jar.JarFile
      */
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
-        String analysisPath = "${Doop.doopLogic}/analyses/${name}/analysis.logic"
+        def analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
         Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
     }
 
@@ -189,7 +189,7 @@ import java.util.jar.JarFile
             AnalysisOption option -> option.toString()
         }
 
-        Collection<String> checksums = new File("${Doop.doopLogic}/facts").listFiles().collect {
+        Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
             File file -> Helper.checksum(file, HASH_ALGO)
         }
 
@@ -270,30 +270,6 @@ import java.util.jar.JarFile
          * We mimic the checks of the run script for verifiability of this implementation, 
          * even though the majority of checks are not required.
          */
-
-        if (options.PADDLE_COMPAT.value) {
-            disableAllExceptionOptions(options)
-        }
-
-        if (options.DISABLE_PRECISE_EXCEPTIONS.value) {           
-            disableAllExceptionOptions(options)
-        }
-
-        if (options.EXCEPTIONS_IMPRECISE.value) {
-            disableAllExceptionOptions(options)
-            options.EXCEPTIONS_IMPRECISE.value = true
-        }
-
-        if (options.DISABLE_MERGE_EXCEPTIONS.value) {
-            disableAllExceptionOptions(options)
-            options.EXCEPTIONS_PRECISE.value = true
-            options.SEPARATE_EXCEPTION_OBJECTS.value = true
-        }
-
-        if (options.EXCEPTIONS_EXPERIMENTAL.value) {
-            disableAllExceptionOptions(options)
-            options.EXCEPTIONS_EXPERIMENTAL.value = true
-        }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
@@ -585,17 +561,6 @@ import java.util.jar.JarFile
         return env
     }
 
-    /**
-     * Sets all exception options/flags to false. The exception options are determined by their flagType.
-     */
-    protected void disableAllExceptionOptions(Map<String, AnalysisOption> options) {
-        logger.debug "Disabling all exception preprocessor flags"
-        options.values().each { AnalysisOption option ->
-            if (option.forPreprocessor && option.flagType == PreprocessorFlag.EXCEPTION_FLAG) {
-                option.value = false
-            }
-        }
-    }
 
     /**
      * Sets all constant options/flags to false. The constant options are determined by their flagType.

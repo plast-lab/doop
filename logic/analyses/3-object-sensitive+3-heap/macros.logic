@@ -1,5 +1,3 @@
-#include "../../facts/macros.logic"
-
 // For this analysis, every heap context recorded on allocation
 // corresponds to the calling context of the allocator method.
 // Subtle point: this may need to be created because even though it

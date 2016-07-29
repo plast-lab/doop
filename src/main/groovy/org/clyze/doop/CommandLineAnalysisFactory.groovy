@@ -84,7 +84,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
-        def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
+        def list = Helper.namesOfAvailableAnalyses(Doop.analysesPath).sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),

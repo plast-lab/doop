@@ -1,5 +1,3 @@
-#include "../../facts/macros.logic"
-
 /**
  * Some library modules are generically defined, and need the macro
  * definitions for the context-sensitive pointer analysis they are

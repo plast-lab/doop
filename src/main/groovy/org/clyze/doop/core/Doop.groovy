@@ -47,7 +47,8 @@ class Doop {
             isFile:true,
             description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
             value:[],
-            webUI:true
+            cli:false,
+            isAdvanced:true,
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
@@ -58,11 +59,6 @@ class Doop {
             description:"Use file with tamiflex data for reflection.",
             value:null,
             webUI:true
-        ),
-        new AnalysisOption<String>(
-            id:"AUXILIARY_HEAP",
-            value:false,
-            cli:false
         ),
         new AnalysisOption<String>(
             id:"CFG_ANALYSIS",
@@ -126,45 +122,6 @@ class Doop {
             value:false,
             webUI:true,
             forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_FILTER",
-            name:"enable-exceptions-filter",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_ORDER",
-            name:"enable-exceptions-order",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_RANGE",
-            name:"enable-exceptions-range",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_CS",
-            name:"enable-exceptions-cs",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"FU_EXCEPTION_FLOW",
-            name:"enable-fu-exception-flow",
-            value:false,
-            webUI:true,
             isAdvanced:true
         ),
 
@@ -259,58 +216,13 @@ class Doop {
         ),
         /* End of preprocessor normal flags */
 
-        /* Start of preprocessor exception flags */
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_PRECISE",
-            value:true,
-            cli:false,
-            forPreprocessor:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_IMPRECISE",
-            name:"enable-imprecise-exceptions",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
         new AnalysisOption<Boolean>(
             id:"SEPARATE_EXCEPTION_OBJECTS",
-            value:false,
-            cli:false,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_EXPERIMENTAL",
-            name:"enable-exceptions-experimental",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        /* End of preprocessor exception flags */
-
-        //other options/flags
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_PRECISE_EXCEPTIONS",
-            name:"disable-precise-exceptions",
-            value:false,
-            webUI:true,
-            forPreprocessor:false,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_MERGE_EXCEPTIONS",
             name:"disable-merge-exceptions",
             value:false,
             webUI:true,
-            forPreprocessor:false,
-            isAdvanced:true
+            forPreprocessor:true,
+            isAdvanced:true,
         ),
         new AnalysisOption<Boolean>(
             id:"REFINE",
@@ -457,14 +369,28 @@ class Doop {
             nonStandard:true
         ),
         new AnalysisOption<String>(
-            id:"X_ONLY_FACTS",
-            name:"Xonly-facts",
-            argName:"FACTS_DIR",
+            id:"X_STOP_AT_FACTS",
+            name:"XstopAt:facts",
+            argName:"OUT_DIR",
             isFile:true,
-            description:"Only generate facts and exit.",
+            description:"Only generate facts and exit. Link result to OUT_DIR",
             value:false,
             nonStandard:true
-        )
+        ),
+        new AnalysisOption<String>(
+            id:"X_STOP_AT_INIT",
+            name:"XstopAt:init",
+            description:"Initialize database with facts and exit.",
+            value:false,
+            nonStandard:true
+        ),
+        new AnalysisOption<String>(
+            id:"X_STOP_AT_BASIC",
+            name:"XstopAt:basic",
+            description:"Run the basic analysis and exit.",
+            value:false,
+            nonStandard:true
+        ),
         /* End of non-standard flags */
     ]
 
@@ -480,9 +406,12 @@ class Doop {
 
     // Not the best pattern, but limits the source code size :)
     static String doopHome
-    static String doopLogic
     static String doopOut
     static String doopCache
+    static String logicPath
+    static String factsPath
+    static String addonsPath
+    static String analysesPath
 
     /**
      * Initializes Doop.
@@ -497,9 +426,12 @@ class Doop {
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
         Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
-        doopLogic = "$doopHome/logic"
-        doopOut   = outPath ?: "$doopHome/out"
-        doopCache = cachePath ?: "$doopHome/cache"
+        doopOut      = outPath ?: "$doopHome/out"
+        doopCache    = cachePath ?: "$doopHome/cache"
+        logicPath    = "$doopHome/logic"
+        factsPath    = "$logicPath/facts"
+        addonsPath   = "$logicPath/addons"
+        analysesPath = "$logicPath/analyses"
 
         //create all necessary files/folders
         File f = new File(doopOut)
