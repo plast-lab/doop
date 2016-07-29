@@ -1,11 +1,6 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Context-sensitive pointer analysis with context of 2 types
  * (AND for static calls 1 call-site).
- *
- * @author George Kastrinis
  */
 
 ClassHasInstr(?class, ?instr) <- MethodSignature:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.

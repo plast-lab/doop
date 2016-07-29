@@ -36,6 +36,9 @@ class BloxbatchScript {
     public BloxbatchScript commit() {
         return wr("commit")
     }
+    public BloxbatchScript checkpoint() {
+        return commit().transaction()
+    }
     public BloxbatchScript createDB(String database) {
         return wr("create $database --overwrite --blocks base")
     }

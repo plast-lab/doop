@@ -1,12 +1,5 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Experimental
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a pair of HeapAllocations

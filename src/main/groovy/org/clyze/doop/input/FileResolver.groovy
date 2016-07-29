@@ -4,8 +4,6 @@ import org.clyze.doop.core.Helper
 
 /**
  * Resolves the input as a local file.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class FileResolver implements InputResolver {
 

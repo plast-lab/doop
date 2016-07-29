@@ -5,8 +5,6 @@ import org.clyze.doop.core.Helper
 
 /**
  * A helper class for generating the doop skeleton properties file and the checksums file.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
  */
 class FileGenerator {
 

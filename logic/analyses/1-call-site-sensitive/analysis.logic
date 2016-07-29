@@ -1,11 +1,5 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Context-sensitive pointer analysis with context of 1 call site.
- *
- * @author Martin Bravenboer
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a MethodInvocation. Keeping mapping 

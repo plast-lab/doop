@@ -139,6 +139,18 @@ _FieldModifier(?param1, ?param2) ->
   _FieldModifier(?param1, ?param2).
 
 
+lang:physical:storageModel[`_ClassModifier] = "DelimitedFile".
+lang:physical:filePath[`_ClassModifier] = "facts/ClassModifier.facts".
+lang:physical:delimiter[`_ClassModifier] = "\t".
+lang:physical:hasColumnNames[`_ClassModifier] = false.
+
+_ClassModifier(?param1, ?param2) ->
+  string(?param1),
+  string(?param2).
+
++ClassModifier(?class, ?modifier) <-
+  _ClassModifier(?class, ?modifier).
+
 // FormalParam
 
 lang:physical:storageModel[`_FormalParam] = "DelimitedFile".

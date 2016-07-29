@@ -1,11 +1,3 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
-/**
- * @author Martin Bravenboer
- * @author George Kastrinis
- */
-
 // In this analysis, the real context is a pair of HeapAllocations.
 // Keeping mapping functions is the way to handle analyses where HContext = Context 
 // (since the language considers them different types).
