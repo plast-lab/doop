@@ -344,17 +344,17 @@ class Analysis implements Runnable {
      * Performs the main part of the analysis.
      */
     protected void mainAnalysis() {
-        def factMacros = "${Doop.factsPath}/macros.logic"
+        def factMacros   = "${Doop.factsPath}/macros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
         def corePath     = "${Doop.analysesPath}/core"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
         // By default, assume we run a context-sensitive analysis
-        Boolean isContextSensitive = true
+        boolean isContextSensitive = true
         try {
             File f = Helper.checkFileOrThrowException("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
             Properties props = Helper.loadProperties(f)
-            isContextSensitive = props.getProperty("is_context_sensitive")
+            isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
         catch(e) {
             logger.debug e.getMessage()
@@ -365,7 +365,9 @@ class Analysis implements Runnable {
             preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic", factMacros, macros, "${corePath}/context-sensitivity.logic")
         }
         else {
-            // TODO e.g. naive/micro
+            preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic")
+            preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic")
+            preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
         }
 
         lbScript
