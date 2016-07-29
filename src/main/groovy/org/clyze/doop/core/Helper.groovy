@@ -12,9 +12,6 @@ import java.util.zip.ZipFile
 
 /**
  * Various helper methods.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 30/8/2014
  */
 class Helper {
 

@@ -2,8 +2,6 @@ package org.clyze.doop.input
 
 /**
  * A resolved input.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class ResolvedInput implements Input{
     private final String input

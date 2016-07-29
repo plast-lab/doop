@@ -4,7 +4,7 @@ This document contains instructions for invoking the main driver of Doop. For an
 
 ## Getting Started
 
-At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically *LogiQL*, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. You can [request an academic license for the LogicBlox engine](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
+At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. You can [request an academic license for the LogicBlox engine](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
 
 For trouble-free configuration:
 
@@ -125,3 +125,7 @@ Please consult the [doop.properties](doop.properties) template file for more inf
 
 ## License
 MIT license (see [LICENSE](LICENSE)).
+
+
+## Doop Coding Guidelines
+If you intend to develop code for the Doop framework, please consult the [Doop Coding Guidelines](docs/guide.md) document.

@@ -119,7 +119,7 @@ Var:DeclaringMethod(?var, ?method), MethodSignature:Value(?method:"<Example: voi
 Note here that Doop analyzes Java **bytecode**. Input facts are generated using
 Soot, which transforms Java bytecode to
 [Jimple](https://en.wikipedia.org/wiki/Soot_%28software%29#Jimple), a language
-based on *three address code*. As a result new temporary variables are
+based on **three address code**. As a result new temporary variables are
 introduced and also original variable names might be lost (they can be retained
 through specific flags in javac and Soot).
 

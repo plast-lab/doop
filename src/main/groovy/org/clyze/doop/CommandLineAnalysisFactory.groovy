@@ -5,9 +5,6 @@ import org.clyze.doop.core.*
 
 /**
  * A factory for creating Analysis objects from the command line.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 2/10/2014
  */
 class CommandLineAnalysisFactory extends AnalysisFactory {
 
@@ -83,7 +80,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
-        def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
+        def list = Helper.namesOfAvailableAnalyses(Doop.analysesPath).sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),

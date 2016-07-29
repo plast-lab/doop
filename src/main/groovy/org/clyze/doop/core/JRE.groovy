@@ -1,9 +1,5 @@
 package org.clyze.doop.core
 
-/**
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 19/7/2014
- */
 public enum JRE {
     JRE13,
     JRE14,

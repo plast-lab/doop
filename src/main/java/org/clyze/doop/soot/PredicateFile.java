@@ -11,6 +11,7 @@ enum PredicateFile
 {
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     CLASS_TYPE("ClassType"),
+    CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),
     COMPONENT_TYPE("ComponentType"),

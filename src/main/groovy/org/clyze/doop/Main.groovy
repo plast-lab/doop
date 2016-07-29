@@ -16,8 +16,6 @@ import java.util.concurrent.TimeoutException
 
 /**
  * The entry point for the standalone doop app.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
  */
 @CompileStatic class Main {
 

@@ -1,5 +1,3 @@
-#include "../../core/context-sensitivity-declarations.logic"
-
 // This analysis has no context for either method calls or heap
 // objects. This is emulated by creating a single Context object
 // and a single HContext object, which are used everywhere.

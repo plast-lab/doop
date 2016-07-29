@@ -12,10 +12,6 @@ import java.util.List;
  * Traverses Soot classes and invokes methods in FactWriter to
  * generate facts. The class FactGenerator is the main class
  * controlling what facts are generated.
- *
- * @author Martin Bravenboer
- * @author Jim Mouris
- * @license MIT
  */
 
 class RunnableFactGenerator implements Runnable {
@@ -37,6 +33,10 @@ class RunnableFactGenerator implements Runnable {
         for (SootClass _sootClass : _sootClasses) {
 
             _writer.writeClassOrInterfaceType(_sootClass);
+
+            int modifiers = _sootClass.getModifiers();
+            if(Modifier.isAbstract(modifiers))
+                _writer.writeClassModifier(_sootClass, "abstract");
 
             // the isInterface condition prevents Object as superclass of interface
             if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {

@@ -1,10 +1,5 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Context-sensitive pointer analysis with context of 1 object and 1 call-site.
- *
- * @author George Kastrinis
  */
 
 // In this analysis, the real context is a HeapAllocation and

@@ -1,7 +1,5 @@
 /**
  * Declarations of facts generated from Jimple (analysis independent)
- *
- * @author Martin Bravenboer, George Balatsouras
  */
 
 
@@ -154,6 +152,10 @@ FieldSignature:Type[?signature] = ?type ->
 // Field modifiers
 FieldModifier(?modifier, ?field) ->
    FieldSignature(?field), Modifier(?modifier).
+
+// Class modifiers
+ClassModifier(?modifier, ?class) ->
+   ClassType(?class), Modifier(?modifier).
 
 
 //----------------------

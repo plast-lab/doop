@@ -1,0 +1,26 @@
+/**
+ * Context-sensitive pointer analysis with context of executing thread.
+ */
+
+#include "macros.logic"
+#include "../context-sensitive.logic"
+#include "../library.logic"
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  MainThread(?ctx).
+
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?ctx, "<<jvm-startup>>").
+
+/**
+ * TODO This is somewhat unsatisfactory.
+ */
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?ctx, "<<class-initialization>>").

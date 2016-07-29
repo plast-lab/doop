@@ -1,21 +1,7 @@
-/**
- * Generic context-insensitive pointer analysis
- *
- * @author Martin Bravenboer
- * @author Yannis Smaragdakis
- * @author George Kastrinis
- * @refactoring Anastasios Antoniadis
- */
 #include "../../facts/macros.logic"
-#include "../../core/class-initialization.logic"
-#include "../../core/declaring-class.logic"
-#include "../../core/implicit-reachable.logic"
-#include "../../core/method-resolution.logic"
-#include "../../core/native.logic"
-#include "../../core/string-constants.logic"
-#include "../../core/subclass.logic"
-#include "../../core/superinterface.logic"
-#include "../../core/type-hierarchy.logic"
+#include "../core/class-initialization.logic"
+#include "../core/implicit-reachable.logic"
+#include "../core/string-constants.logic"
 
 
 /**

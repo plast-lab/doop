@@ -1,46 +1,54 @@
 /**
- * Definitions of sources and sinks
- */
-
-// TODO: use a richer language for sources
-TaintSourceMethod(?method) <-
-  MethodSignature:SimpleName[?method] = "readLine".
-
-// TODO: use a richer language for sinks
-LeakingSinkMethod(0, ?method) <-
-  MethodSignature:SimpleName[?method] = "println".
-
-/**
  * Information flow through primitive operations
  */
 
 // when a tainted variable is "used" by primitive operations
 // the output of the primitive operations is also tainted
 
-//VarIsTaintedFrom(?to, ?from) <-
+//VarIsTaintedFromVar(?to, ?from) <-
 //  VarDef(?to, ?insn),
 //  VarUse(?from, ?insn).
 
 //VarDef(?to, ?insn) <-
 //  AssignInstruction:To[?insn] = ?to,
 //  (AssignBinop:Insn(?insn) ; AssignUnop:Insn(?insn)).
+#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- MethodSignature:Value(method:value), string:like(value, pattern)
+
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.http.Cookie: % get%(%)>").
+
+TaintSourceMethod(?overriddenMethod) <-
+   TaintSourceMethod(?method),
+   MethodSignature:DeclaringType[?method] = ?superclass,
+   MethodSignature:SimpleName[?method] = ?name,
+   MethodSignature:Descriptor[?method] = ?descriptor,
+   SubtypeOf(?class, ?superclass),
+   ClassType(?class),
+   MethodSignature:DeclaringType[?overriddenMethod] = ?class,
+   MethodSignature:SimpleName[?overriddenMethod] = ?name,
+   MethodSignature:Descriptor[?overriddenMethod] = ?descriptor.
 
 VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
 
 VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
-  VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from),
+  VarIsTaintedFromVar(?toCtx, ?to, ?fromCtx, ?from),
   TaintedHeapAllocation(?heap),
   VarPointsTo(?hctx, ?heap, ?fromCtx, ?from).
+
+VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+   TaintedHeapAllocation(?heap),
+   VarIsTaintedFromHeap(?hctx, ?heap, ?toCtx, ?to).
 
 CallTaintingMethod(?ctx, ?invocation) <-
   TaintSourceMethod(?tomethod),
   CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
 
-
 /**
  * String operations
  */
 StringFactoryType(?type) <-
+  Type:fqn(?type:"java.lang.String") ;
   Type:fqn(?type:"java.lang.StringBuffer") ;
   Type:fqn(?type:"java.lang.StringBuilder").
 
@@ -52,24 +60,25 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?var),
   StringFactoryVar(?var).
 
-VarIsTaintedFrom(?ctx, ?ret, ?ctx, ?param) <-
+VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?param) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   ActualParam[0, ?invocation] = ?param,
   AssignReturnValue[?invocation] = ?ret.
 
-VarIsTaintedFrom(?ctx, ?ret, ?ctx, ?base) <-
+VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "toString",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   AssignReturnValue[?invocation] = ?ret.
 
+VarIsTaintedFromHeap(?hctx, ?heap, ?ctx, ?var) -> HContext(?hctx), HeapAllocation(?heap), Context(?ctx), Var(?var).
+VarIsTaintedFromHeap(?basehctx, ?baseheap, ?ctx, ?to) <-
+   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap).
 /**
  * Sanitization
  */
-SanitizationMethod(0, ?method) <-
-  MethodSignature:SimpleName[?method] = "sanitize".
 
 SanitizedObject(?hctx, ?heap) <-
   SanitizationMethod(?index, ?tomethod),
@@ -77,6 +86,7 @@ SanitizedObject(?hctx, ?heap) <-
   ActualParam[?index, ?invocation] = ?var,
   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
   TaintedObject(?hctx, ?heap).
+
 
 /**
  * Sinks and leaks
@@ -102,4 +112,3 @@ VarPointsTo(?hctx, ?invocation, ?callerCtx, ?to) <-
   CallTaintingMethod(?callerCtx, ?invocation),
   TaintedHeapAllocation(?invocation),
   AssignReturnValue[?invocation] = ?to.
-
