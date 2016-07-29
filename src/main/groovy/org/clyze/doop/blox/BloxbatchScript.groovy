@@ -1,7 +1,7 @@
 package org.clyze.doop.blox
 
-import org.clyze.doop.system.Executor
 import org.apache.commons.io.FileUtils
+import org.clyze.doop.system.Executor
 
 class BloxbatchScript {
 

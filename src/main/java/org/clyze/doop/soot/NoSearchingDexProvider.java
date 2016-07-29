@@ -4,13 +4,13 @@ import org.apache.commons.io.IOUtils;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.ClassDef;
-import soot.*;
+import soot.ClassProvider;
+import soot.ClassSource;
+import soot.DexClassProvider;
+import soot.DexClassSource;
 import soot.dexpler.Util;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.security.KeyStore;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;

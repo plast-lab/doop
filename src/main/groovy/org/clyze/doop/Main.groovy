@@ -9,7 +9,10 @@ import org.clyze.doop.core.Analysis
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.Helper
 
-import java.util.concurrent.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * The entry point for the standalone doop app.
