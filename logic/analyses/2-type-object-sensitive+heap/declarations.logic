@@ -1,5 +1,3 @@
-#include "../../core/context-sensitivity-declarations.logic"
-
 MySystemThreadGroup(?heap, ?alloc) ->
   HeapAllocation(?heap), HeapAllocation(?alloc).
 

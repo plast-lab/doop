@@ -10,18 +10,16 @@ import org.clyze.doop.core.Doop
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
     protected Log logger = LogFactory.getLog(getClass())
-
+    
     @Override
     void process(Analysis analysis) {
-        printStats(analysis)
+        if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
+            printStats(analysis)
         linkResult(analysis)
     }
 
 
     protected void printStats(Analysis analysis) {
-        if (analysis.options.X_ONLY_FACTS.value)
-            return
-
         // We have to store the query results to a list since the
         // closure argument of the connector does not generate an
         // iterable stream.
@@ -53,8 +51,8 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
     }
 
     protected void linkResult(Analysis analysis) {
-        if (analysis.options.X_ONLY_FACTS.value) {
-            def facts = new File(analysis.options.X_ONLY_FACTS.value)
+        if (analysis.options.X_STOP_AT_FACTS.value) {
+            def facts = new File(analysis.options.X_STOP_AT_FACTS.value)
             logger.info "Making facts available at $facts"
             analysis.executor.execute("ln -s -f ${analysis.facts} $facts")
             return
@@ -73,5 +71,4 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         logger.info "Making database available at $lastAnalysis"
         analysis.executor.execute("ln -s -f -n ${analysis.database} $lastAnalysis")
     }
-
 }

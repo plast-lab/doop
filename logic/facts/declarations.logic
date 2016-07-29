@@ -153,7 +153,7 @@ FieldSignature:Type[?signature] = ?type ->
 FieldModifier(?modifier, ?field) ->
    FieldSignature(?field), Modifier(?modifier).
 
-// Field modifiers
+// Class modifiers
 ClassModifier(?modifier, ?class) ->
    ClassType(?class), Modifier(?modifier).
 

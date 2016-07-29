@@ -3,7 +3,4 @@ startTimer
 transaction
 addBlock -F statistics.logic
 commit
-transaction
-exec -F statistics-delta.logic
-commit
 elapsedTime

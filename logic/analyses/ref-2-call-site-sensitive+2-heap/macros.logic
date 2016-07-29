@@ -1,5 +1,3 @@
-#include "../../facts/macros.logic"
-
 /// (YS) This is currently broken and I think I see at least one major thing
 /// that's off. The RecordMacro should use a unique contex (InitialInvValue),
 /// not propagate what it gets from ctx. Fix when we need this analysis.
