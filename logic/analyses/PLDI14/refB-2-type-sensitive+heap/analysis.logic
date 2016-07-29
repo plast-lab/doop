@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../../../core/context-sensitivity.logic"
-
 // In this analysis, the real context is a pair of Types
 // and the real heap context a single Type. Keeping mapping 
 // functions is the way to handle analyses where HContext = Context 
