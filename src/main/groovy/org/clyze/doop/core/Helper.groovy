@@ -1,13 +1,15 @@
 package org.clyze.doop.core
 
-import java.lang.reflect.Method
-import java.security.MessageDigest
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 import org.apache.commons.cli.Option
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.*
+
+import java.lang.reflect.Method
+import java.security.MessageDigest
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+
 /**
  * Various helper methods.
  *

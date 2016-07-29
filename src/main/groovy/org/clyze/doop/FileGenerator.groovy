@@ -1,8 +1,7 @@
 package org.clyze.doop
 
-import org.clyze.doop.core.Helper
 import org.clyze.doop.core.Doop
-
+import org.clyze.doop.core.Helper
 
 /**
  * A helper class for generating the doop skeleton properties file and the checksums file.

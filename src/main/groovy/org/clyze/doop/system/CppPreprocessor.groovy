@@ -1,6 +1,6 @@
 package org.clyze.doop.system
 
-import groovy.transform.TypeChecked;
+import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
