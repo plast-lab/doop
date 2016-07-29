@@ -1,22 +1,20 @@
 package org.clyze.doop.core
 
-import org.clyze.doop.blox.BloxbatchConnector
-import org.clyze.doop.system.Executor
-import org.clyze.doop.blox.BloxbatchScript
-import org.clyze.doop.blox.WorkspaceConnector
-import org.clyze.doop.input.InputResolutionContext
-
-import static org.clyze.doop.core.Doop.*
-import static org.clyze.doop.core.Doop.*
-import static org.clyze.doop.system.CppPreprocessor.*
-
 import groovy.transform.TypeChecked
-
-import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.doop.blox.BloxbatchConnector
+import org.clyze.doop.blox.BloxbatchScript
+import org.clyze.doop.blox.WorkspaceConnector
+import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.system.Executor
+
+import java.util.regex.Pattern
+
+import static org.clyze.doop.system.CppPreprocessor.preprocess
+import static org.clyze.doop.system.CppPreprocessor.preprocessAtStart
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
