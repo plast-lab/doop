@@ -266,11 +266,6 @@ import java.util.jar.JarFile
         
         Map<String, AnalysisOption> options = vars.options
         
-        /*
-         * We mimic the checks of the run script for verifiability of this implementation, 
-         * even though the majority of checks are not required.
-         */
-
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
