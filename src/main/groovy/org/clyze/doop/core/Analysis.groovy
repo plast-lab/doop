@@ -6,6 +6,8 @@ import org.clyze.doop.blox.BloxbatchScript
 import org.clyze.doop.blox.WorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
 
+import static org.clyze.doop.core.Doop.*
+import static org.clyze.doop.core.Doop.*
 import static org.clyze.doop.system.CppPreprocessor.*
 
 import groovy.transform.TypeChecked
@@ -405,13 +407,13 @@ class Analysis implements Runnable {
         FileUtils.touch(addons)
 
         if (options.INFORMATION_FLOW.value) {
-            FileUtils.copyFile(new File("${addonsPath}/information-flow/declarations.logic"),
+            FileUtils.copyFile(new File("${Doop.addonsPath}/information-flow/declarations.logic"),
                                new File("${outDir}/information-flow-declarations.logic"))
-            preprocess(this, "${addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            preprocess(this, "${Doop.addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
             lbScript
                 .addBlockFile("information-flow-declarations.logic")
             logger.info "Adding Information flow rules to addons logic"
-            preprocessAtStart(this, "${addonsPath}/information-flow/rules.logic", "${outDir}/addons.logic")
+            preprocessAtStart(this, "${Doop.addonsPath}/information-flow/rules.logic", "${outDir}/addons.logic")
 
             lbScript.commit().transaction().executeFile("information-flow-delta.logic")
         }
