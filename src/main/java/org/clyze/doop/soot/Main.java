@@ -207,6 +207,7 @@ public class Main {
         if (_android) {
             SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
             app.setLibraries(_libraries);
+
             app.getConfig().setEnableCallbacks(true);
             app.getConfig().setEnableCallbackSources(true);
             app.getConfig().setEnableStaticFieldTracking(true);
@@ -217,6 +218,7 @@ public class Main {
             if (dummyMain == null) {
                 throw new RuntimeException("Dummy main null");
             }
+
             soot.G.reset();
             soot.options.Options.v().set_src_prec(Options.src_prec_apk);
             soot.options.Options.v().set_android_jars(_androidJars);
