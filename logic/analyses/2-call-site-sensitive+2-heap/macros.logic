@@ -1,5 +1,3 @@
-#include "../../facts/macros.logic"
-
 // For this analysis, every heap context recorded on allocation
 // corresponds to every element of the calling context of the allocator method.
 #define RecordMacro(ctx, heap, hctx) \

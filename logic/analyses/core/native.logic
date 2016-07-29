@@ -1,11 +1,3 @@
-MainMethodDeclaration(?method) <-
-   MainClass(?type),
-   MethodSignature:DeclaringType[?method] = ?type,
-   MethodSignature:SimpleName[?method] = "main",
-   MethodSignature:Descriptor[?method] = "void(java.lang.String[])",
-   MethodModifier("public", ?method),
-   MethodModifier("static", ?method).
-
 VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
 ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-
    ImmutableHContext[] = ?hctx,

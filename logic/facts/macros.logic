@@ -1,22 +1,3 @@
-/**
- * Macros that fix the lack of ref-modes on subtypes in LB
- */
-
-/**
- * HeapAllocation cannot have a ref-mode, because it is a subtype
- * of Instruction. To more or less hide this, we define a
- * macro that uses the ref-mode (Instruction:Value) of the
- * base type and checks if it is a HeapAllocation.
- */
-
-#define HeapAllocationValue(x,y) \
-  Instruction:Value(x:y), \
-  HeapAllocation(x)
-
-#define StringConstantEntity(x,y) \
-  Instruction:Value(x:y), \
-  StringConstant(x)
-
 #define PlusHeapAllocation(x,string,type) \
   +Instruction:Value(x:string), \
   +HeapAllocation(x), \
@@ -48,14 +29,6 @@
   +Type(x ## Type), \
   +Type:fqn(x ## Type:"java.lang.Class")
 
-/**
- * Same for method invocations
- */
-
-#define MethodInvocationValue(x, y) \
-  Instruction:Value(x:y), \
-  MethodInvocation(x)
-
 #define PlusMethodInvocation(x,string) \
   +Instruction:Value(x:string), \
   +MethodInvocation(x)
@@ -72,11 +45,9 @@
   +Instruction:Value(x:string), \
   +StaticMethodInvocation:Insn(x)
 
-
-/*
- * Similar for class type
+/**
+ * Macros that fix the lack of ref-modes on subtypes in LB
  */
-
-#define ClassTypeValue(x,y) \
-  Type:fqn(x:y), \
-  ClassType(x)
+#define HeapAllocationValue(x, y) Instruction:Value(x:y), HeapAllocation(x)
+#define MethodInvocationValue(x, y) Instruction:Value(x:y), MethodInvocation(x)
+#define ClassTypeValue(x,y) Type:fqn(x:y), ClassType(x)
