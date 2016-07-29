@@ -19,9 +19,8 @@ import org.apache.commons.logging.LogFactory
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  *
- * In general, the Analysis run() method implements the behavior of the original doop script.
- * For supporting invocations over the web, the behavior of the get-stats function of the original doop script is
- * broken into two parts: (a) produce statistics and (b) print statistics.
+ * For supporting invocations over the web, the statistic step is broken into
+ * two parts: (a) produce statistics and (b) print statistics.
  *
  * The run() method is the only public method exposed by this class: no other methods should be called directly
  * by other classes.
