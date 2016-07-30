@@ -70,7 +70,7 @@ task bytecode2jimple(type: JavaExec) {
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') || project.property('args').isEmpty()) {
-        args "--bytecode2jimpleHelp"
+        args "--bytecode2jimpleHelp -allow-phantom-refs"
     } else {
         args = ["--bytecode2jimple"] + project.property('args').tokenize()
     }

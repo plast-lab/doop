@@ -1,9 +1,9 @@
 #! /usr/bin/python
 
-"""BloxBatch results anayser
+"""Database analysis results anayser
 
 Usage:
-  db-analyser.py <db1> <db2>
+  db-analyser.py <db1> --delta <db2>
 
 Options:
   -h --help     Show this screen.

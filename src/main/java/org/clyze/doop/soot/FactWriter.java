@@ -579,6 +579,14 @@ class FactWriter
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)));
     }
 
+    void writeClassModifier(SootClass f, String modifier)
+    {
+        _db.add(CLASS_MODIFIER,
+                _db.asEntity(_rep.modifier(modifier)),
+                _db.asEntity(CLASS_TYPE, _rep.type(f)));
+    }
+
+
     void writeMethodSignature(SootMethod m)
     {
         _db.add(METHOD_SIGNATURE,
