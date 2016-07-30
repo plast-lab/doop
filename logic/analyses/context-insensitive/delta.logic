@@ -1,0 +1,11 @@
+/**
+ * Special objects
+ */
++MySystemThreadGroup(?alloc),
+  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThreadGroup(?alloc),
+  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThread(?alloc),
+  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").

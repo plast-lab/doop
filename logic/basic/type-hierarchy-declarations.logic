@@ -1,0 +1,5 @@
+SubtypeOf(?subtype, ?type) ->
+   Type(?subtype), Type(?type).
+
+SupertypeOf(?supertype, ?type) ->
+   Type(?supertype), Type(?type).

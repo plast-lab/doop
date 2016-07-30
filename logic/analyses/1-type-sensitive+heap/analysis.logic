@@ -1,0 +1,71 @@
+/**
+ * Context-sensitive pointer analysis with context of 1 type and a
+ * context-sensitive heap abstraction.
+ */
+
+// In this analysis, both the real context and the real heap context 
+// are Types. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+// The type is not always a class type, because of arrays currently being
+// a non-class subtype of Object
+ContextFromRealContext[?type] = ?ctx ->
+  Context(?ctx), Type(?type).
+lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?type -> 
+  Context(?ctx), Type(?type).
+
+RealContextFromContext[?ctx] = ?type <-
+  ContextFromRealContext[?type] = ?ctx.
+
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Type(?type).
+lang:skolem(`HContextFromRealHContext).
+
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  Type:fqn(?immutable:"<<immutable>>").
+
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?type, ?alloc).
+
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?type, ?alloc).
+
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?type, ?alloc).
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?type] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  Type:fqn(?type:"<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?type] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  Type:fqn(?type:"<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?type] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  Type:fqn(?type:"<<class-initialization>>").
