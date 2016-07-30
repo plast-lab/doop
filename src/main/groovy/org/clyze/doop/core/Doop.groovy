@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import org.apache.log4j.Logger
+import org.clyze.doop.system.FileOps
 
 /**
  * Doop initialization and supported options.
@@ -14,7 +15,7 @@ class Doop {
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
             value:System.getenv("LOGICBLOX_HOME"),
-            cli:false 
+            cli:false
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
@@ -424,7 +425,7 @@ class Doop {
 
         doopHome = homePath
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
-        Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
+        FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
         doopOut      = outPath ?: "$doopHome/out"
         doopCache    = cachePath ?: "$doopHome/cache"
@@ -436,10 +437,10 @@ class Doop {
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut")
+        FileOps.findDirOrThrow(f, "Could not create ouput directory: $doopOut")
         f = new File(doopCache)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create cache directory: $doopCache")
+        FileOps.findDirOrThrow(f, "Could not create cache directory: $doopCache")
     }
 
     /**

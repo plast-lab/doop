@@ -1,14 +1,14 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import java.util.jar.Attributes
+import java.util.jar.JarFile
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
-
-import java.util.jar.Attributes
-import java.util.jar.JarFile
+import org.clyze.doop.system.*
 
 /**
  * A Factory for creating Analysis objects.
@@ -136,7 +136,7 @@ import java.util.jar.JarFile
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
         def analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
-        Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
+        FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
     }
 
     protected String validateUserSuppliedId(String id) {
@@ -156,11 +156,10 @@ import java.util.jar.JarFile
      * Creates the analysis output dir, if required.
      */
     protected File createOutputDirectory(AnalysisVars vars, String id) {
-        String outDir = "${Doop.doopOut}/${vars.name}/${id}"
-        File f = new File(outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
-        return f
+        def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
+        outDir.mkdirs()
+        FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
+        return outDir
     }
 
     /**
@@ -176,7 +175,7 @@ import java.util.jar.JarFile
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
-        return Helper.checksum(id, HASH_ALGO)
+        return CheckSum.checksum(id, HASH_ALGO)
     }
 
     /**
@@ -190,31 +189,31 @@ import java.util.jar.JarFile
         }
 
         Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
-            File file -> Helper.checksum(file, HASH_ALGO)
+            File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
         checksums += vars.inputJarFiles.collect {
-            File file -> Helper.checksum(file, HASH_ALGO)
+            File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
         checksums += vars.jreJars.collect {
-            String file -> Helper.checksum(new File(file), HASH_ALGO)
+            String file -> CheckSum.checksum(new File(file), HASH_ALGO)
         }
 
         if(vars.options.TAMIFLEX.value) {
-            checksums += [Helper.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
+            checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
         }
 
-        File checksumsFile = Helper.checkFileOrThrowException("${Doop.doopHome}/checksums.properties", "Invalid checksums")
-        Properties p = Helper.loadProperties(checksumsFile)
-        checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY)]
+        def checksumsFile = FileOps.findFileOrThrow("${Doop.doopHome}/checksums.properties", "Invalid checksums")
+        Properties props = FileOps.loadProperties(checksumsFile)
+        checksums += [props.getProperty(Doop.SOOT_CHECKSUM_KEY)]
 
         idComponents = checksums + idComponents
 
         logger.debug("Cache ID components: $idComponents")
         String id = idComponents.join('-')
 
-        return Helper.checksum(id, HASH_ALGO)
+        return CheckSum.checksum(id, HASH_ALGO)
     }
 
     /**
@@ -227,15 +226,15 @@ import java.util.jar.JarFile
 
         switch(jre) {
             case "1.3":
-                return Helper.checkFiles(["${path}/rt.jar".toString()])
+                return FileOps.findFiles(["${path}/rt.jar".toString()])
             case "1.4":
             case "1.5":
             case "1.6":
             case "1.7":
             case "1.8":
-                return Helper.checkFiles(["${path}/rt.jar".toString(),
-                                          "${path}/jce.jar".toString(),
-                                          "${path}/jsse.jar".toString()])
+                return FileOps.findFiles(["${path}/rt.jar".toString(),
+                                           "${path}/jce.jar".toString(),
+                                           "${path}/jsse.jar".toString()])
             case "system":
                 /*
                 String javaHome = System.getProperty("java.home")
@@ -244,7 +243,7 @@ import java.util.jar.JarFile
                 return []
         }
     }
-    
+
     /**
      * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
      * using the input resolution mechanism. It finally returns the inputs as a List<File>.
@@ -261,13 +260,13 @@ import java.util.jar.JarFile
      * Processes the options of the analysis.
      */
     protected void processOptions(AnalysisVars vars) {
-    
+
         logger.debug "Processing analysis options"
-        
+
         Map<String, AnalysisOption> options = vars.options
-        
+
         /*
-         * We mimic the checks of the run script for verifiability of this implementation, 
+         * We mimic the checks of the run script for verifiability of this implementation,
          * even though the majority of checks are not required.
          */
 
@@ -306,7 +305,7 @@ import java.util.jar.JarFile
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
         }
-        
+
         if (options.DACAPO.value) {
             if (!options.ENABLE_REFLECTION.value) {
                 def inputJarName = vars.inputJarFiles[0].toString()
@@ -316,7 +315,7 @@ import java.util.jar.JarFile
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
             }
         }
-        
+
         if (options.DACAPO_BACH.value) {
             if (!options.ENABLE_REFLECTION.value) {
                 def inputJarName = vars.inputJarFiles[0].toString()
@@ -345,42 +344,42 @@ import java.util.jar.JarFile
 
         //Check the value of the JRE_LIB option (it should point to the JREs directory)
         String externals = options.JRE_LIB.value
-        Helper.checkDirectoryOrThrowException(externals as String, "The JRE_LIB directory is invalid: $externals")
-        
+        FileOps.findDirOrThrow(externals as String, "The JRE_LIB directory is invalid: $externals")
+
         checkOS(vars)
-        
+
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         }
         else {
             JarFile jarFile = new JarFile(vars.inputJarFiles[0])
-            //Try to read the main class from the manifest contained in the jar            
+            //Try to read the main class from the manifest contained in the jar
             String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
-                logger.debug "The main class is automatically set to ${main}"             
+                logger.debug "The main class is automatically set to ${main}"
                 options.MAIN_CLASS.value = main
             }
             else {
                 //Check whether the jar contains a class with the same name
-                String jarName = FilenameUtils.getBaseName(jarFile.getName())                
+                String jarName = FilenameUtils.getBaseName(jarFile.getName())
                 if (jarFile.getJarEntry("${jarName}.class")) {
                     logger.debug "The main class is automatically set to ${jarName}"
                     options.MAIN_CLASS.value = jarName
                 }
             }
         }
-        
+
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
-                Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+                FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
         }
-        
+
         if (options.TAMIFLEX.value) {
-            String tamFile = options.TAMIFLEX.value.toString()
-            Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+            def tamFile = options.TAMIFLEX.value.toString()
+            FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }
 
         if (!options.ENABLE_REFLECTION.value) {
@@ -404,7 +403,7 @@ import java.util.jar.JarFile
         for (def option : options) logger.debug option
         logger.debug "---------------"
     }
-    
+
     /**
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
@@ -438,7 +437,7 @@ import java.util.jar.JarFile
             default:
                 throw new RuntimeException("Invalid JRE version: $jreValue")
         }
-        
+
         //generate the JRE constant for the preprocessor
         AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
             id:jreVersion.name(),
@@ -447,7 +446,7 @@ import java.util.jar.JarFile
         )
         vars.options[(jreOption.id)] = jreOption
     }
-    
+
     /**
      * Checks the OS. For now, it is always OS.OS_UNIX (the default).
      */
@@ -479,14 +478,14 @@ import java.util.jar.JarFile
             logger.info "Running dacapo benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
-        
+
         if (vars.options.DACAPO_BACH.value) {
             String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
             logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
     }
-    
+
     /**
      * Determines application classes.
      *
@@ -495,7 +494,7 @@ import java.util.jar.JarFile
     protected void checkAppGlob(AnalysisVars vars) {
         if (!vars.options.APP_REGEX.value) {
             logger.debug "Generating app regex"
-            
+
             //We process only the first jar for determining the application classes
             /*
             Set excluded = ["*", "**"] as Set
@@ -509,27 +508,27 @@ import java.util.jar.JarFile
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
-    
+
     /**
      * Verifies the correctness of the LogicBlox related options
      */
     protected void checkLogicBlox(AnalysisVars vars) {
 
         //BLOX_OPTS is set by the main method
-    
+
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
 
         logger.debug "Verifying LogicBlox home: ${lbhome.value}"
 
-        File lbHomeDir = Helper.checkDirectoryOrThrowException(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
-        String oldldpath = System.getenv("LD_LIBRARY_PATH")
+        def oldldpath = System.getenv("LD_LIBRARY_PATH")
         vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin" + ":" + oldldpath
-        String bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
-        Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
+        def bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
+        FileOps.findFileOrThrow(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         vars.options.BLOXBATCH.value = bloxbatch
     }
-    
+
     /**
      * Initializes the external commands environment of the given analysis, by:
      * <ul>
@@ -541,10 +540,10 @@ import java.util.jar.JarFile
     protected Map<String, String> initExternalCommandsEnvironment(AnalysisVars vars) {
 
         logger.debug "Initializing the environment of the external commands"
-        
+
         Map<String, String> env = [:]
         env.putAll(System.getenv())
-        
+
         String path = env.PATH
         AnalysisOption ldLibraryPath = vars.options.LD_LIBRARY_PATH
         if (path) {

@@ -1,6 +1,5 @@
 package org.clyze.doop.system
 
-import org.clyze.doop.core.Helper
 import groovy.transform.TypeChecked
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory;
@@ -25,7 +24,7 @@ class Executor {
 
         def pb = new ProcessBuilder("/bin/bash", "-c", commandLine)
         if (workingDirectory) {
-            File cwd = Helper.checkDirectoryOrThrowException(workingDirectory, "Working directory is invalid: $workingDirectory")
+            File cwd = FileOps.findDirOrThrow(workingDirectory, "Working directory is invalid: $workingDirectory")
             pb.directory(cwd)
         }
         def environment = pb.environment()
