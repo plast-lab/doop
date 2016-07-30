@@ -250,23 +250,23 @@ class Analysis implements Runnable {
     protected void initDatabase() {
 
         FileUtils.deleteQuietly(database)
-        preprocess(this, "${outDir}/facts-declarations.logic", "${Doop.factsPath}/declarations.logic")
-        preprocess(this, "${outDir}/flow-insensitivity-declarations.logic", "${Doop.factsPath}/flow-insensitivity-declarations.logic")
-        preprocess(this, "${outDir}/entities-import.logic", "${Doop.factsPath}/entities-import.logic")
-        preprocess(this, "${outDir}/facts-import.logic", "${Doop.factsPath}/import.logic")
-        preprocess(this, "${outDir}/flow-insensitivity-delta.logic", "${Doop.factsPath}/flow-insensitivity-delta.logic")
+        preprocess(this, "${outDir}/flow-sensitive-schema.logic", "${Doop.factsPath}/flow-sensitive-schema.logic")
+        preprocess(this, "${outDir}/flow-insensitive-schema.logic", "${Doop.factsPath}/flow-insensitive-schema.logic")
+        preprocess(this, "${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
+        preprocess(this, "${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
+        preprocess(this, "${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
 
         lbScript
             .createDB(database.getName())
             .echo("-- Init DB --")
             .startTimer()
             .transaction()
-            .addBlockFile("facts-declarations.logic")
-            .addBlockFile("flow-insensitivity-declarations.logic")
+            .addBlockFile("flow-sensitive-schema.logic")
+            .addBlockFile("flow-insensitive-schema.logic")
             .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
-            .executeFile("entities-import.logic")
-            .executeFile("facts-import.logic")
-            .executeFile("flow-insensitivity-delta.logic")
+            .executeFile("import-entities.logic")
+            .executeFile("import-facts.logic")
+            .executeFile("to-flow-insensitive-delta.logic")
 
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
