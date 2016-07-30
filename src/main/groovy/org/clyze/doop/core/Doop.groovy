@@ -322,11 +322,6 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<OS>(
-            id:"OS",
-            value:OS.OS_UNIX,
-            cli:false
-        ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
             name:"regex",
@@ -400,7 +395,6 @@ class Doop {
         "LD_LIBRARY_PATH",
         "BLOXBATCH",
         "BLOX_OPTS",
-        "OS",
         "CACHE",
         "JRE_LIB"
     ]

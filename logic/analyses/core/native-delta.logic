@@ -199,7 +199,6 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
  **********************************************************************************/
 
 #ifndef PADDLE_COMPAT
-#ifdef OS_UNIX
 PlusHeapAllocation(?alloc, "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem", "java.io.UnixFileSystem").
 PlusHeapAllocation(?alloc, "java.io.UnixFileSystem.list/new java.lang.String[]", "java.lang.String[]").
 PlusHeapAllocation(?alloc, "java.io.UnixFileSystem.list/new java.lang.String", "java.lang.String").
@@ -214,42 +213,6 @@ SimulateNativeStringArrayAllocation(
   "java.io.UnixFileSystem.list/new java.lang.String[]",
   "java.io.UnixFileSystem.list/new java.lang.String",
   "java.lang.String").
-
-#endif
-
-#ifdef OS_WIN32
-PlusHeapAllocation(?alloc, "java.io.FileSystem.getFileSystem/new java.io.Win32FileSystem", "java.io.Win32FileSystem").
-PlusHeapAllocation(?alloc, "java.io.Win32FileSystem.list/new java.lang.String[]", "java.lang.String[]").
-PlusHeapAllocation(?alloc, "java.io.Win32FileSystem.list/new java.lang.String", "java.lang.String").
-
-SimulateNativeAllocation(
-  "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
-  "java.io.FileSystem.getFileSystem/new java.io.Win32FileSystem",
-  "<java.io.Win32FileSystem: void <init>()>").
-
-SimulateNativeStringArrayAllocation(
-  "<java.io.Win32FileSystem: java.lang.String[] list(java.io.File)>",
-  "java.io.Win32FileSystem.list/new java.lang.String[]",
-  "java.io.Win32FileSystem.list/new java.lang.String",
-  "java.lang.String").
-#endif
-
-#ifdef OS_WINNT
-PlusHeapAllocation(?alloc, "java.io.FileSystem.getFileSystem/new java.io.WinNTFileSystem", "java.io.WinNTFileSystem").
-PlusHeapAllocation(?alloc, "java.io.Win32FileSystem.list/new java.lang.String[]", "java.lang.String[]").
-PlusHeapAllocation(?alloc, "java.io.Win32FileSystem.list/new java.lang.String", "java.lang.String").
-
-SimulateNativeAllocation(
-  "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
-  "java.io.FileSystem.getFileSystem/new java.io.WinNTFileSystem",
-  "<java.io.WinNTFileSystem: void <init>()>").
-
-SimulateNativeStringArrayAllocation(
-  "<java.io.WinNTFileSystem: java.lang.String[] list(java.io.File)>",
-  "java.io.WinNTFileSystem.list/new java.lang.String[]",
-  "java.io.WinNTFileSystem.list/new java.lang.String",
-  "java.lang.String").
-#endif
 #endif
 
 /**********************************************************************************

@@ -346,8 +346,6 @@ import org.clyze.doop.system.*
         String externals = options.JRE_LIB.value
         FileOps.findDirOrThrow(externals as String, "The JRE_LIB directory is invalid: $externals")
 
-        checkOS(vars)
-
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         }
@@ -445,28 +443,6 @@ import org.clyze.doop.system.*
             forPreprocessor: true
         )
         vars.options[(jreOption.id)] = jreOption
-    }
-
-    /**
-     * Checks the OS. For now, it is always OS.OS_UNIX (the default).
-     */
-    protected void checkOS(AnalysisVars vars) {
-
-        OS os = vars.options.OS.value as OS
-
-        //sanity check
-        EnumSet<OS> supportedValues = EnumSet.allOf(OS)
-        if (! (os in supportedValues)) {
-            throw new RuntimeException("Unsupported OS: $os")
-        }
-
-        //generate the OS constant for preprocessor
-        AnalysisOption<Boolean> osOption = new AnalysisOption<Boolean>(
-            id:os.name(),
-            value:true,
-            forPreprocessor: true
-        )
-        vars.options[(osOption.id)] = osOption
     }
 
     /**
