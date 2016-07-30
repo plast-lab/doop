@@ -1,20 +1,18 @@
 package org.clyze.doop.core
 
-import org.clyze.doop.blox.BloxbatchConnector
-import org.clyze.doop.system.Executor
-import org.clyze.doop.blox.BloxbatchScript
-import org.clyze.doop.blox.WorkspaceConnector
-import org.clyze.doop.input.InputResolutionContext
-
-import static org.clyze.doop.system.CppPreprocessor.*
-
 import groovy.transform.TypeChecked
-
 import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.doop.blox.BloxbatchConnector
+import org.clyze.doop.blox.BloxbatchScript
+import org.clyze.doop.blox.WorkspaceConnector
+import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.system.*
+
+import static org.clyze.doop.system.CppPreprocessor.*
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
@@ -152,7 +150,7 @@ class Analysis implements Runnable {
                 mainAnalysis()
 
                 try {
-                    File f = Helper.checkFileOrThrowException("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
+                    FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
                     logger.info "-- Re-Analyze --"
                     reanalyze()
                 }
@@ -196,7 +194,7 @@ class Analysis implements Runnable {
 
         if (cacheFacts.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheFacts"
-            Helper.copyDirectoryContents(cacheFacts, facts)
+            FileOps.copyDirContents(cacheFacts, facts)
         }
         else {
             logger.info "-- Fact Generation --"
@@ -230,7 +228,7 @@ class Analysis implements Runnable {
             logger.info "Caching facts in $cacheFacts"
             FileUtils.deleteQuietly(cacheFacts)
             cacheFacts.mkdirs()
-            Helper.copyDirectoryContents(facts, cacheFacts)
+            FileOps.copyDirContents(facts, cacheFacts)
             new File(cacheFacts, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
         }
     }
@@ -297,7 +295,7 @@ class Analysis implements Runnable {
             dynFiles.eachWithIndex { String dynFile, Integer index ->
                 File f = new File(dynFile)
                 File dynImport = new File(outDir, "dynamic${index}.import")
-                Helper.writeToFile dynImport, """\
+                FileOps.writeToFile dynImport, """\
                                               option,delimiter,"\t"
                                               option,hasColumnNames,false
 
@@ -341,8 +339,8 @@ class Analysis implements Runnable {
         // By default, assume we run a context-sensitive analysis
         boolean isContextSensitive = true
         try {
-            File f = Helper.checkFileOrThrowException("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
-            Properties props = Helper.loadProperties(f)
+            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
+            Properties props = FileOps.loadProperties(file)
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
         catch(e) {
@@ -545,8 +543,7 @@ class Analysis implements Runnable {
         logger.info "loading $name refinement facts "
         files.each { Map.Entry<String, String> entry ->
             File f = new File(outDir, "${name}-${entry.key}.import")
-            Helper.writeToFile f, entry.value
-            Helper.checkFileOrThrowException(f, "Could not create import file: $f")
+            FileOps.writeToFile f, entry.value
             lbScript.wr("import -f $f")
         }
     }
@@ -612,8 +609,7 @@ class Analysis implements Runnable {
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        inputJarFiles[0] = f
+        inputJarFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
     protected void runAverroes() {
@@ -628,7 +624,7 @@ class Analysis implements Runnable {
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            inputJarFiles[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputJarFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
@@ -733,10 +729,10 @@ class Analysis implements Runnable {
             props.store(writer, null)
         }
 
-        File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
-        File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
+        def file1 = FileOps.findFileOrThrow(jar, "averroes jar missing or invalid: $jar")
+        def file2 = FileOps.findFileOrThrow(properties, "averroes properties missing or invalid: $properties")
 
-        List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        List<URL> classpath = [file1.toURI().toURL(), file2.toURI().toURL()]
         return new URLClassLoader(classpath as URL[])
     }
 

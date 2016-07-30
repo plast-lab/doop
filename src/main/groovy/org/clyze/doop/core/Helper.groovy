@@ -1,26 +1,16 @@
 package org.clyze.doop.core
 
 import java.lang.reflect.Method
-import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import org.apache.commons.cli.Option
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
 import org.apache.log4j.*
+import org.apache.commons.io.FilenameUtils
 
 /**
  * Various helper methods.
  */
 class Helper {
-
-    private static final FileFilter ALL_FILES = [
-        accept: { File f -> f.isFile() }
-    ] as FileFilter
-
-    private static final FileFilter ALL_FILES_AND_DIRECTORIES = [
-        accept: { File f -> true }
-    ] as FileFilter
 
     /**
      * Initializes Log4j (logging framework).
@@ -58,108 +48,12 @@ class Helper {
         root.addAppender(new ConsoleAppender(new PatternLayout("%m%n")))
     }
 
-    static FilenameFilter extensionFilter(String extension) {
-        def filter = [
-            accept: {File f, String name ->
-                String ext = FilenameUtils.getExtension(name)
-                return ext == extension
-            }
-        ] as FilenameFilter
-
-        return filter
-    }
-
-    /**
-     * Loads the given properties file
-     */
-    static Properties loadProperties(String file) {
-        File f = checkFileOrThrowException(file, "Not a valid file: $file")
-        return loadProperties(f)
-    }
-
-    /**
-     * Loads the given properties file
-     */
-    static Properties loadProperties(File f) {
-        Properties props = new Properties()
-        f.withReader { BufferedReader r -> props.load(r)}
-        return props
-    }
-
-    /**
-     * Loads a properties file from the classpath
-     * @return the Properties loaded
-     */
-    static Properties loadPropertiesFromClasspath(String path) {
-        Properties p = new Properties()
-        InputStream s
-        try {
-            s = ClassLoader.getSystemResourceAsStream(path)
-            if (s == null) throw new RuntimeException("$path not found in classpath")
-            p.load(s)
-        }
-        finally {
-            if (s) s.close()
-        }
-        return p
-    }
-
-    /**
-     * Checks that the given file exists or throws the given message
-     */
-    static File checkFileOrThrowException(String file, String message) {
-        if (!file) throw new RuntimeException(message)
-        return checkFileOrThrowException(new File(file), message)
-    }
-
-    /**
-     * Checks that the given file exists or throws the given message
-     */
-    static File checkFileOrThrowException(File f, String message) {
-        if (!f) throw new RuntimeException(message)
-
-        if (!f.exists() || !f.isFile() || !f.canRead()) {
-            throw new RuntimeException(message)
-        }
-        return f
-    }
-
-    /**
-     * Checks that the given list of files exist.
-     */
-    static List<String> checkFiles(List<String> files) {
-        files.each { String file ->
-            checkFileOrThrowException(file, "File is invalid: $file")
-        }
-        return files
-    }
-
-    /**
-     * Checks that the given dir exists or throws the given message
-     */
-    static File checkDirectoryOrThrowException(String dir, String message) {
-        if (!dir) throw new RuntimeException(message)
-        return checkDirectoryOrThrowException(new File(dir), message)
-    }
-
-    /**
-     * Checks that the given dir exists or throws the given message
-     */
-    static File checkDirectoryOrThrowException(File dir, String message) {
-        if (!dir) throw new RuntimeException(message)
-
-        if (!dir.exists() || !dir.isDirectory()) {
-            throw new RuntimeException(message)
-        }
-        return dir
-    }
-
     /**
      * Executes the given Java main class using the supplied class loader.
      */
     static void execJava(ClassLoader cl, String mainClass, String[] params) {
         //This is a better way to invoke the main method using a different
-        //classloader (the runWithClassLoader/invokeMainMethod methods are 
+        //classloader (the runWithClassLoader/invokeMainMethod methods are
         //problematic and should be removed).
         Class theClass = Class.forName(mainClass, true, cl)
         Method mainMethod = theClass.getMethod("main", [String[].class] as Class[])
@@ -211,7 +105,7 @@ class Helper {
         }
         return analyses
     }
-    
+
     /**
      * Returns a set of the packages contained in the given jar.
      * Any classes that are not included in packages are also retrieved.
@@ -234,74 +128,6 @@ class Helper {
         packages = packages.unique()
 
         return (packages as Set)
-    }
-    
-    /**
-     * Generates a checksum of the input string (in hex) using the supplied algorithm (SHA-256, MD5, etc).
-     */
-    static String checksum(String s, String algorithm) {
-        MessageDigest digest = MessageDigest.getInstance(algorithm)
-        return toHex(digest.digest(s.getBytes("UTF-8")))
-    }
-
-    /**
-     * Generates a checksum of the input file (in hex) using the supplied algorithm.
-     */
-    static String checksum(File f, String algorithm) {
-        return f.withInputStream { InputStream input ->
-            return checksum(input, algorithm)
-        }
-    }
-
-    /**
-     * Generates a checksum of the input stream (in hex) using the supplied algorithm.
-     */
-    static String checksum(InputStream input, String algorithm) {
-        MessageDigest digest = MessageDigest.getInstance(algorithm)
-        byte[] bytes = new byte[4096]
-        int bytesRead
-        while ((bytesRead = input.read(bytes)) != -1) {
-            digest.update(bytes, 0, bytesRead)
-        }
-        return toHex(digest.digest())
-    }
-
-    /**
-     * Returns the hex string of the input bytes.
-     */
-    private static String toHex(byte[] bytes) {
-        BigInteger number = new BigInteger(1, bytes)
-        String checksum = number.toString(16)
-        int len = checksum.length()
-        while (len < 32) {
-            checksum = "0" + checksum
-        }
-        return checksum
-    }
-
-    /**
-     *  Moves the contents of the src directory to dest (as in: mv src/* dest).
-     */
-    static void moveDirectoryContents(File src, File dest) {
-        FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
-        FileUtils.cleanDirectory(src)
-    }
-
-    /**
-     * Copies the contents of the src directory to dest (as in: cp -R src/* dest).
-     */
-    static void copyDirectoryContents(File src, File dest) {
-        FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
-    }
-
-    /**
-     * Writes the given string to the given file.
-     */
-    static File writeToFile(File f, String s) {
-        f.withWriter { Writer w ->
-            w.write s
-        }
-        return f
     }
 
     /**

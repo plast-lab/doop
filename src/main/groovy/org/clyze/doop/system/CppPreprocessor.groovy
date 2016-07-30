@@ -1,6 +1,6 @@
 package org.clyze.doop.system
 
-import groovy.transform.TypeChecked;
+import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.clyze.doop.core.Analysis
 import org.clyze.doop.core.AnalysisOption
@@ -13,10 +13,10 @@ class CppPreprocessor {
         .findAll { AnalysisOption option ->
             option.forPreprocessor && option.value
         }
-        .collect{ AnalysisOption option -> 
+        .collect{ AnalysisOption option ->
             if (option.value instanceof Boolean)
-                return "-D${option.id}" 
-            else 
+                return "-D${option.id}"
+            else
                 return "-D${option.id}='\"${option.value}\"'"
         }
         .join(" ")

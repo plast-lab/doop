@@ -1,7 +1,7 @@
 package org.clyze.doop.blox
 
-import org.clyze.doop.system.Executor
 import org.apache.commons.io.FileUtils
+import org.clyze.doop.system.Executor
 
 class BloxbatchScript {
 
@@ -62,7 +62,7 @@ class BloxbatchScript {
     public BloxbatchScript include(String filePath) {
         def inDir  = (new File(filePath)).getParentFile()
         def outDir = script.getParentFile()
-		def file   = new File(outDir, "_tmp.logic")
+        def file   = new File(outDir, "_tmp.logic")
         new Executor(System.getenv()).execute("cpp -P $filePath $file")
         file.eachLine { line ->
             def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
