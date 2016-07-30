@@ -1,0 +1,32 @@
+/*************************************************************
+ * Method.invoke
+ *
+ *   public Object invoke(Object obj, Object[] args)
+ *
+ * If the underlying method is static, then the specified obj argument is
+ * ignored. It may be null. If the number of formal parameters required by the
+ * underlying method is 0, the supplied args array may be of length 0 or null. 
+ *
+ * If the underlying field is static, the class that declared the field is
+ * initialized if it has not already been initialized.
+ *
+ * TODO Check if class initialization handled by reflective.logic
+ ************************************************************/
+
+ReflectiveMethodInvocation(?ctx, ?invocation, ?signature) <-
+  java:lang:reflect:Method:invoke(?invocation, ?from),
+  VarPointsTo(_, ?method, ?ctx, ?from),
+  ReifiedMethod[?signature] = ?method.
+
+ReflectiveBaseVar[?invocation] = ?base <-
+  java:lang:reflect:Method:invoke(?invocation, _),
+  ActualParam[0, ?invocation] = ?base.
+
+ReflectiveAssignReturnValue[?invocation] = ?var <-
+  java:lang:reflect:Method:invoke(?invocation, _),
+  AssignReturnValue[?invocation] = ?var.
+
+ReflectiveActualParams[?invocation] = ?argsParam <-
+  java:lang:reflect:Method:invoke(?invocation, _),
+  ActualParam[1, ?invocation] = ?argsParam.
+

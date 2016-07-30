@@ -1,0 +1,10 @@
+// For this analysis, contexts are types, so this is
+// what the initial system objects should have.
+MySystemThreadGroup(?type1, ?type2, ?type3, ?heap) ->
+  Type(?type1), Type(?type2), Type(?type3), HeapAllocation(?heap).
+
+MyMainThreadGroup(?type1, ?type2, ?type3, ?heap) ->
+  Type(?type1), Type(?type2), Type(?type3), HeapAllocation(?heap).
+
+MyMainThread(?type1, ?type2, ?type3, ?heap) ->
+  Type(?type1), Type(?type2), Type(?type3), HeapAllocation(?heap).
