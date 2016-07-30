@@ -17,9 +17,8 @@ import static org.clyze.doop.system.CppPreprocessor.*
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  *
- * In general, the Analysis run() method implements the behavior of the original doop script.
- * For supporting invocations over the web, the behavior of the get-stats function of the original doop script is
- * broken into two parts: (a) produce statistics and (b) print statistics.
+ * For supporting invocations over the web, the statistic step is broken into
+ * two parts: (a) produce statistics and (b) print statistics.
  *
  * The run() method is the only public method exposed by this class: no other methods should be called directly
  * by other classes.
@@ -397,6 +396,21 @@ class Analysis implements Runnable {
         FileUtils.deleteQuietly(addons)
         FileUtils.touch(addons)
 
+        if (options.INFORMATION_FLOW.value) {
+            preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
+            preprocess(this, "${Doop.addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            logger.info "Adding Information flow rules to addons logic"
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/information-flow/rules.logic")
+
+            lbScript
+                .addBlockFile("information-flow-declarations.logic")
+                .commit()
+                .transaction()
+                .executeFile("information-flow-delta.logic")
+                .commit()
+                .transaction()
+        }
+
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             preprocess(this, "${outDir}/dacapo-declarations.logic", "${Doop.addonsPath}/dacapo/declarations.logic")
             preprocess(this, "${outDir}/dacapo-delta.logic", "${Doop.addonsPath}/dacapo/delta.logic", macros)
@@ -406,16 +420,6 @@ class Analysis implements Runnable {
             lbScript
                 .addBlockFile("dacapo-declarations.logic")
                 .executeFile("dacapo-delta.logic")
-        }
-
-        if (options.INFORMATION_FLOW.value) {
-            preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
-            preprocess(this, "${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
-            logger.info "Adding Information flow rules to addons logic"
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/information-flow/rules.logic")
-
-            lbScript
-                .addBlockFile("information-flow-declarations.logic")
         }
 
         if (options.TAMIFLEX.value) {
@@ -463,9 +467,6 @@ class Analysis implements Runnable {
                 .commit()
                 .elapsedTime()
         }
-
-        if (options.INFORMATION_FLOW.value)
-            lbScript.transaction().executeFile("information-flow-delta.logic").commit().elapsedTime()
     }
 
     /**
@@ -638,8 +639,7 @@ class Analysis implements Runnable {
 
         }
 
-        Collection<String> params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-
+        Collection<String> params = ["--allow-phantom", "--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
         if (options.SSA.value) {
             params = params + ["--ssa"]
         }

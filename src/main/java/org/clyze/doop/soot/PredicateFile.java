@@ -10,6 +10,7 @@ import java.io.Writer;
 enum PredicateFile
 {
     CLASS_TYPE("ClassType"),
+    CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),
     COMPONENT_TYPE("ComponentType"),
