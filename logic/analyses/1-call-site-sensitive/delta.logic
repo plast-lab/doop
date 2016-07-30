@@ -5,9 +5,6 @@ PlusMethodInvocation(?invo, "<<initial-context>>").
 PlusMethodInvocation(?invo, "<<jvm-startup>>").
 PlusMethodInvocation(?invo, "<<class-initialization>>").
 
-/* used only for Paddle compatibility */
-PlusMethodInvocation(?invo, "<<no-context>>").
-
 /**
  * Special objects
  */

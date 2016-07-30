@@ -41,11 +41,7 @@ MainThread(?hctx, ?alloc) <-
   MyMainThread(?alloc).
 
 StartupInvocation[] = ?startupInvocation <-
-#ifdef PADDLE_COMPAT
-  MethodInvocationValue(?startupInvocation, "<<no-context>>").
-#else
   MethodInvocationValue(?startupInvocation, "<<jvm-startup>>").
-#endif
 
 
 /**
@@ -56,22 +52,14 @@ ContextFromRealContext[?invo] = ?ctx,
 Context(?ctx)
  <-
   MainMethodDeclaration(?method),
-#ifdef PADDLE_COMPAT
-  MethodInvocationValue(?invo, "<<no-context>>").
-#else
   MethodInvocationValue(?invo, "<<initial-context>>").
-#endif
 
 ReachableContext(?ctx, ?method),
 ContextFromRealContext[?invo] = ?ctx,
 Context(?ctx)
  <-
   ImplicitReachable(?method),
-#ifdef PADDLE_COMPAT
-  MethodInvocationValue(?invo, "<<no-context>>").
-#else
   MethodInvocationValue(?invo, "<<jvm-startup>>").
-#endif
 
 ReachableContext(?ctx, ?clinit),
 ContextFromRealContext[?invo] = ?ctx,
@@ -79,8 +67,4 @@ Context(?ctx)
  <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-#ifdef PADDLE_COMPAT
-  MethodInvocationValue(?invo, "<<no-context>>").
-#else
   MethodInvocationValue(?invo, "<<class-initialization>>").
-#endif

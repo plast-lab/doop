@@ -56,12 +56,6 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
  * String constants
  *************************************************************/
 
-#ifdef PADDLE_COMPAT
-HeapAllocation:Merge[?heap] = ?constant <-
-  StringConstant(?heap),
-  HeapAllocationValue(?constant, "<<string-constant>>").
-
-#else
 ReflectionObject(?heap) -> HeapAllocation(?heap).
 ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 
@@ -300,8 +294,6 @@ FieldNamePrefix(?sig, ?prefix) <-
 
 #endif // substrings
 
-#endif  // not PADDLE_COMPAT
-
 
 /*************************************************************
  * Analysis of reflection strings.
@@ -526,8 +518,6 @@ HeapRepresentative[?heap] = ?representativeHeap <-
  * Throwable
  *************************************************************/
 
-#ifndef PADDLE_COMPAT
-
 /*
  // (Yannis) This is the original, precise and straightforward treatment
  // of throwables. They were allocated context insensitively. This still
@@ -581,8 +571,6 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapRepresentative[?heap] = ?mergeHeap.
 */
 
-#endif // ifndef PADDLE_COMPAT
-
 /*************************************************************
  * Primitive arrays
  *
@@ -591,13 +579,11 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  *
  *************************************************************/
 
-#ifndef PADDLE_COMPAT
 HeapAllocation:ContextInsensitive(?heap) <-
   HeapAllocation:Type[?heap] = ?type,
   ArrayType(?type),
   ComponentType[?type] = ?componentType,
   PrimitiveType(?componentType).
-#endif
 
 /*************************************************************
  * Class without reference fields
@@ -606,8 +592,6 @@ HeapAllocation:ContextInsensitive(?heap) <-
  * but doesn't hurt much either.
  *************************************************************/
 /*
-#ifndef PADDLE_COMPAT
-
 HeapAllocation:ContextInsensitive(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   Type:HasNoReferenceField(?heaptype),
@@ -641,6 +625,4 @@ FieldIsStatic(?sig) <-
 //FieldIsStaticOrFinal?sig) <-
 //  Modifier:Value(?final:"final"),
 //  FieldModifier(?final, ?sig).
-
-#endif
 */

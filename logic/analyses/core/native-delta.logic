@@ -82,8 +82,6 @@
       Type:fqn(?type:strElementType), \
       HeapAllocationValue(?heap, strElement)
 
-#ifndef PADDLE_COMPAT
-
 #define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
   PlusVirtualMethodInvocation(?invocation, ?strInvocation), \
   +VirtualMethodInvocation(?invocation, ?signature, ?inmethod), \
@@ -104,22 +102,6 @@
       MethodSignature:Value(?inmethod:strMethod), \
       ReturnVar@previous(?return, ?inmethod), \
       ?strInvocation = strMethod + "/native " + strVirtual
-
-#else
-
-#define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
-  +VirtualMethodInvocation(?invocation, ?virtual, ?inmethod), \
-  +VirtualMethodInvocation:Base[?invocation] = ?base, \
-  +Instruction:Method[?invocation] = ?inmethod, \
-  +MethodInvocation:Signature[?invocation] = ?virtual \
-    <- \
-      MethodSignature:Value(?native:strMethod), \
-      MethodInvocation:Signature[?invocation] = ?native, \
-      StaticMethodInvocation:Insn(?invocation), \
-      Instruction:Method[?invocation] = ?inmethod, \
-      ActualParam@previous[0, ?invocation] = ?base, \
-      MethodSignature:Value(?virtual:strVirtual)
-#endif
 
 
 /**********************************************************************************
@@ -149,7 +131,6 @@ PlusAssignLocal(
  *
  ***************************************************/
 
-#ifndef PADDLE_COMPAT
 /**
  * <java.lang.System: void setIn0(java.io.InputStream)>
  */
@@ -173,12 +154,10 @@ PlusStoreStaticField(
   "<java.lang.System: void setErr0(java.io.PrintStream)>",
   "java.lang.System.setErr0/@param0",
   "<java.lang.System: java.io.PrintStream err>").
-#endif
 
 /**
  * <java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>
  */
-#ifndef PADDLE_COMPAT
 PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
 +LoadArrayIndex(?src, ?tmp, ?inmethod),
 +StoreArrayIndex(?tmp, ?dest, ?inmethod)
@@ -190,7 +169,6 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
       MethodInvocationValue(?invocation, ?strInvocation),
       ?tmpStr =  ?strInvocation + "/@tmp-arraycopy",
       Type:fqn(?tmpType:"java.lang.Object").
-#endif
 
 /**********************************************************************************
  *
@@ -198,7 +176,6 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
  *
  **********************************************************************************/
 
-#ifndef PADDLE_COMPAT
 PlusHeapAllocation(?alloc, "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem", "java.io.UnixFileSystem").
 PlusHeapAllocation(?alloc, "java.io.UnixFileSystem.list/new java.lang.String[]", "java.lang.String[]").
 PlusHeapAllocation(?alloc, "java.io.UnixFileSystem.list/new java.lang.String", "java.lang.String").
@@ -213,7 +190,6 @@ SimulateNativeStringArrayAllocation(
   "java.io.UnixFileSystem.list/new java.lang.String[]",
   "java.io.UnixFileSystem.list/new java.lang.String",
   "java.lang.String").
-#endif
 
 /**********************************************************************************
  *

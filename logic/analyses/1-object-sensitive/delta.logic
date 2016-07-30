@@ -9,9 +9,6 @@ PlusHeapAllocation(?heap, "<<initial-context>>", "java.lang.String").
 PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String").
 PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.String").
 
-/* used only for Paddle compatibility */
-PlusHeapAllocation(?heap, "<<no-context>>", "java.lang.String").
-
 /**
  * Special objects
  */

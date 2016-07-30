@@ -680,14 +680,6 @@ ExceptionHandler:Previous[?handler] = ?previous ->
    ExceptionHandler(?previous).
 
 
-// fact for Paddle compatibility mode
-
-SimpleExceptionHandler(?type, ?var, ?inmethod) ->
-   Type(?type),
-   MethodSignature(?inmethod),
-   Var(?var).
-
-
 //------------------------------------------------------
 //                   Miscellaneous
 //------------------------------------------------------
