@@ -285,9 +285,6 @@
    Throw@previous(?ref, ?var),
    Copies@previous[?var] = ?noncopyVar.
 
-// (REVIEW) No need to pre-process SimpleExceptionHandler: only used 
-// for Paddle compatibility mode.
-
 ^ExceptionHandler:FormalParam[?handler] = ?noncopyVar <-
    ExceptionHandler:FormalParam@previous[?handler] = ?var, Copies@previous[?var] = ?noncopyVar.
 

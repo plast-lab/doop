@@ -143,8 +143,6 @@ ReachableContext(?calleeCtx, ?callee) <-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
 #ifndef REFLECTION_CONTEXT_SENSITIVITY
-// REVIEW (YS): Does this break Paddle compatibility? The code originally
-// just used as callee context the calling context of the caller.
 DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
 
 // Using the main method's (unique) context as a dummy context.

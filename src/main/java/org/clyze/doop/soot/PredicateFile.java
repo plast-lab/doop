@@ -26,7 +26,6 @@ enum PredicateFile
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
     APP_CLASS("ApplicationClass"),
     THIS_VAR("ThisVar"),
-    SIMPLE_EXCEPTION_HANDLER("SimpleExceptionHandler"),
     EXCEPT_HANDLER_PREV("ExceptionHandler-Previous"),
     ASSIGN_RETURN_VALUE("AssignReturnValue"),
     PROPERTIES("Properties"),

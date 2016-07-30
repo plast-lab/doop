@@ -62,14 +62,12 @@ ReachableCurrentThreadInvocation(?callerCtx, ?local) <-
  * invoking the private ThreadGroup() constructor (openjdk:
  * create_initial_thread_group).
  */
-#ifndef PADDLE_COMPAT
 MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
    MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>()>"),
    ThisVar[?sig] = ?this,
    SystemThreadGroup(?hctx, ?heap).
-#endif
 
 /**
  * Initialization of the main thread group
@@ -81,7 +79,6 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
  *
  * TODO: set the "main" argument.
  */
-#ifndef PADDLE_COMPAT
 MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
@@ -91,7 +88,6 @@ VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
    FormalParam[0, ?sig] = ?groupParam,
    MainThreadGroup(?hctx, ?heap),
    SystemThreadGroup(?groupCtx, ?group).
-#endif
 
 /**
  * Initialization of the main thread

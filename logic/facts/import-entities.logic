@@ -301,28 +301,6 @@ _ThisVar(?param1, ?param2) ->
   _ThisVar(?param1, ?param2).
 
 
-// SimpleExceptionHandler
-
-lang:physical:storageModel[`_SimpleExceptionHandler] = "DelimitedFile".
-lang:physical:filePath[`_SimpleExceptionHandler] = "facts/SimpleExceptionHandler.facts".
-lang:physical:delimiter[`_SimpleExceptionHandler] = "\t".
-lang:physical:hasColumnNames[`_SimpleExceptionHandler] = false.
-
-_SimpleExceptionHandler(?param1, ?param2, ?param3) ->
-  string(?param1),
-  string(?param2),
-  string(?param3).
-
-+Type:fqn(?type:?param1),
-+Type(?type),
-+Var:Value(?var:?param2),
-+Var(?var),
-+MethodSignature:Value(?inmethod:?param3),
-+MethodSignature(?inmethod),
-+SimpleExceptionHandler(?type, ?var, ?inmethod) <-
-  _SimpleExceptionHandler(?param1, ?param2, ?param3).
-
-
 // ExceptionHandler:Previous
 
 lang:physical:storageModel[`_ExceptionHandler:Previous] = "DelimitedFile".

@@ -117,14 +117,6 @@ class Doop {
             webUI:true,
             forPreprocessor:true
         ),
-        new AnalysisOption<Boolean>(
-            id:"PADDLE_COMPAT",
-            name:"paddle-compat",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
 
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION",
