@@ -1,0 +1,71 @@
+/**
+ * Context-sensitive pointer analysis with context of 1 object.
+ */
+
+// In this analysis, the real context is a HeapAllocation. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+ContextFromRealContext[?heap] = ?ctx ->
+  Context(?ctx), HeapAllocation(?heap).
+lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+RealContextFromContext[?ctx] = ?heap <-
+  ContextFromRealContext[?heap] = ?ctx.
+
+// This analysis has no context for heap objects.
+// This is emulated by creating a single HContext object,
+// which is used everywhere.
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).
+
+// No need to unwrap anything. Only used for arrays, never to
+// produce regular contexts of called methods.
+HContextFromContext[?ctx] = ?hctx -> Context(?ctx), HContext(?hctx).
+lang:skolem(`HContextFromContext).
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+ImmutableHContext[] = ?hctx <- .
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?alloc).
+
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?alloc).
+
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?alloc).
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?heap] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?heap, "<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?heap] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?heap, "<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?heap] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?heap, "<<class-initialization>>").
