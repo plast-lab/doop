@@ -1,0 +1,8 @@
+MySystemThreadGroup(?heap, ?alloc) ->
+  HeapAllocation(?heap), HeapAllocation(?alloc).
+
+MyMainThreadGroup(?heap, ?alloc) ->
+  HeapAllocation(?heap), HeapAllocation(?alloc).
+
+MyMainThread(?heap, ?alloc) ->
+  HeapAllocation(?heap), HeapAllocation(?alloc).
