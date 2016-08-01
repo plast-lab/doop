@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Context-sensitive pointer analysis with context of 1 object and a
  * context-sensitive heap abstraction.
@@ -53,22 +50,14 @@ ContextFromRealContext[?heap] = ?ctx,
 Context(?ctx)
  <-
   MainMethodDeclaration(?method),
-#ifdef PADDLE_COMPAT
-  HeapAllocationValue(?heap, "<<no-context>>").
-#else
   HeapAllocationValue(?heap, "<<initial-context>>").
-#endif
 
 ReachableContext(?ctx, ?method),
 ContextFromRealContext[?heap] = ?ctx,
 Context(?ctx)
  <-
   ImplicitReachable(?method),
-#ifdef PADDLE_COMPAT
-  HeapAllocationValue(?heap, "<<no-context>>").
-#else
   HeapAllocationValue(?heap, "<<jvm-startup>>").
-#endif
 
 ReachableContext(?ctx, ?clinit),
 ContextFromRealContext[?heap] = ?ctx,
@@ -76,8 +65,4 @@ Context(?ctx)
  <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-#ifdef PADDLE_COMPAT
-  HeapAllocationValue(?heap, "<<no-context>>").
-#else
   HeapAllocationValue(?heap, "<<class-initialization>>").
-#endif

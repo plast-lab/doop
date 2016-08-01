@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Context-sensitive pointer analysis with context of 2 types
  * (AND for static calls 1 call-site).
