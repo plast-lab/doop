@@ -34,7 +34,6 @@ class Driver {
         } else {
             _executor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         }
-//        _executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
     void doInParallel(Set<SootClass> sootClasses) {
