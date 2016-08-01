@@ -853,17 +853,6 @@ class FactWriter
             }
         }
 
-        /* simple fact for Paddle compatibility mode. Makes no sense
-           to have this be flow sensitive (i.e., add instruction
-           information), when it doesn't store instruction begin/end
-           indices. The expectation is that this predicate will only
-           be used for flow-insensitive analyses.
-        */
-        _db.add(SIMPLE_EXCEPTION_HANDLER,
-                _db.asEntity(_rep.type(exc)),
-                _db.asEntity(_rep.local(m, caught)),
-                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-
         String rep = _rep.handler(m, handler, session);
         _db.add(EXCEPTION_HANDLER,
                 _db.asEntity(rep),

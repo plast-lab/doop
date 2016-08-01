@@ -1,10 +1,9 @@
 package org.clyze.doop.soot;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import soot.Unit;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Session
 {

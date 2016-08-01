@@ -1,11 +1,7 @@
 package org.clyze.doop
 
-import org.clyze.doop.core.AnalysisFactory
-import org.clyze.doop.core.Helper
 import org.apache.commons.cli.Option
-import org.clyze.doop.core.Analysis
-import org.clyze.doop.core.AnalysisOption
-import org.clyze.doop.core.Doop
+import org.clyze.doop.core.*
 
 /**
  * A factory for creating Analysis objects from the command line.
@@ -84,7 +80,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
-        def list = Helper.namesOfAvailableAnalyses("${Doop.doopLogic}/analyses").sort().join(', ')
+        def list = Helper.namesOfAvailableAnalyses(Doop.analysesPath).sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),

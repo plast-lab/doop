@@ -1,6 +1,3 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
 /**
  * Context-sensitive pointer analysis with context of 1 type and a
  * context-sensitive heap abstraction.

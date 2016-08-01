@@ -1,10 +1,9 @@
-package org.clyze.doop.blox;
+package org.clyze.doop.blox
 
-import groovy.transform.TypeChecked;
-
-import java.util.regex.Pattern;
-import org.clyze.doop.util.process.CalledProcessException;
+import groovy.transform.TypeChecked
+import java.util.regex.Pattern
 import org.apache.log4j.Logger
+import org.clyze.doop.util.process.CalledProcessException
 
 
 /**
