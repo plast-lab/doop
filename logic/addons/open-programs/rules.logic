@@ -1,0 +1,78 @@
+FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
+
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+   
+ServletClass(?class) <-
+   AllConcreteImplementations(?class, ?staticType),
+   Type:fqn(?staticType:"javax.servlet.http.HttpServlet").
+
+MockObject(?classHeap, ?class) <-
+   ServletClass(?class),
+   Type:fqn(?class:?classStr),
+   ?classHeap = "<Mock allocation for " + ?classStr + ">".
+
+
+ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
+
+GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
+   FormalParam[?index, ?method] = ?formal,
+   Var:Type[?formal] = ?staticType,
+   AllConcreteImplementations(?subtype, ?staticType),
+   MethodSignature:Value(?method:?methodStr),
+   MockEntryPoint(_, ?method),
+   // TODO: replace with ClassTypeValue macro
+   Type:fqn(?subtype:?subtypeStr), 
+   ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
+
+// Servlet service methods
+MockEntryPoint(?class, ?entry) <-
+   ServletClass(?class),
+   Type:fqn(?class:?classStr),
+   ServletEntryMethodName(?serviceMethodName),
+   MethodSignature:Value(?entry:methodSigStr),
+   (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
+   ServletEntryMethodName(?serviceMethodName).
+
+// bind mock objects to formals
+
+HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
+   GetMocksForFormals(?heapStr, _, ?index, ?method),
+   ReachableContext(?ctx, ?method),
+   FormalParam[?index, ?method] = ?formal.
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
+ <-
+   HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
+   Instruction:Value(?heap:?heapStr), 
+   ImmutableHContext[] = ?hctx,
+   HeapAllocation(?heap).
+
+// bind mock objects to receivers
+HeapIdForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
+   ReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?receiver,
+   MockEntryPoint(?class, ?method),
+   MockObject(?heapStr, ?class).
+   
+VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
+ <-
+   ImmutableHContext[] = ?hctx,
+   MockObject(?heapStr, _), //TODO indexing
+   HeapIdForReceiverInContext(?ctx, ?receiver, ?heapStr),
+   Instruction:Value(?heap:?heapStr), 
+   HeapAllocation(?heap).
+
+
+SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>").
+SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
+SanitizationMethod(0, "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
+SanitizationMethod(0, "<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>").
+SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>").
+
+LeakingSinkMethod(0, "<java.io.PrintWriter: void println(java.lang.String)>").

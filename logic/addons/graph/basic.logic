@@ -1,0 +1,9 @@
+#include "../../macros.logic"
+
+Graph:Node(?fromNode), Graph:Node(?toNode), 
+Graph:CreateNode[Context(?caller, ?fromMethod)] = ?fromNode,
+Graph:CreateNode[Context(?callee, ?toMethod)] = ?toNode,
+Graph:Edge(?fromNode, ?toNode)
+<-
+   CallGraphEdge(Context(?caller, ?invocation), Context(?callee, ?toMethod)),
+   Instruction:Method[?invocation] = ?fromMethod.

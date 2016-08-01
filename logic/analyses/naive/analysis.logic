@@ -1,0 +1,53 @@
+#include "../../core/class-initialization.logic"
+#include "../../core/method-resolution.logic"
+#include "../../core/native.logic"
+#include "../../core/subclass.logic"
+
+
+Reachable(?method) <-
+  MainMethodDeclaration(?method).
+
+Reachable(?clinit) <-
+  InitializedClass(?class), ClassInitializer[?class] = ?clinit.
+
+Assign(?to, ?from) <-
+  AssignLocal(?from, ?to, _).
+
+Assign(?formal, ?actual) <-
+  CallGraphEdge(?invocation, ?toMethod),
+  FormalParam[?index, ?toMethod] = ?formal,
+  ActualParam[?index, ?invocation] = ?actual.
+
+Assign(?local, ?return) <-
+  CallGraphEdge(?invocation, ?toMethod),
+  ReturnVar(?return, ?toMethod),
+  AssignReturnValue[?invocation] = ?local.
+
+VarPointsTo(?var, ?heap) <-
+  AssignHeapAllocation(?heap, ?var, ?inMethod),
+  Reachable(?inMethod).
+
+VarPointsTo(?to, ?heap) <-
+  Assign(?to, ?from),
+  VarPointsTo(?from, ?heap).
+
+FieldPointsTo(?baseheap, ?fld, ?heap) <-
+  StoreInstanceField(?from, ?base, ?fld, _),
+  VarPointsTo(?base, ?baseheap),
+  VarPointsTo(?from, ?heap).
+
+VarPointsTo(?to, ?heap) <-
+  LoadInstanceField(?base, ?fld, ?to, _),
+  VarPointsTo(?base, ?baseheap),
+  FieldPointsTo(?baseheap, ?fld, ?heap).
+
+Reachable(?toMethod),
+CallGraphEdge(?invocation, ?toMethod),
+VarPointsTo(?this, ?heap) <-
+  Reachable(?inMethod),
+  Instruction:Method[?invocation] = ?inMethod,
+  VirtualMethodInvocation:Base[?invocation] = ?base,
+  VarPointsTo(?base, ?heap),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ResolveInvocation(?invocation, ?heaptype, ?toMethod),
+  ThisVar[?toMethod] = ?this.
