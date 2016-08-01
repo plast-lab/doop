@@ -1,28 +1,24 @@
+apply plugin: 'groovy'
+apply plugin: 'application'
+apply plugin: 'ivy-publish'
+apply from  : 'DaCapo.gradle'
+
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
-
-apply plugin: 'groovy'
-apply plugin: 'application'
-apply from  : 'DaCapo.gradle'
-apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
-
-applicationDefaultJvmArgs = ["-Xmx20g"]
+applicationDefaultJvmArgs = ["-Xmx100g"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
-group = 'org.clyze'
-version = '1.0-SNAPSHOT'
+project.group = 'org.clyze'
+project.version = 1.0
 
 //For the doop app
 mainClassName = 'org.clyze.doop.Main'
@@ -45,9 +41,10 @@ dependencies {
             'commons-cli:commons-cli:1.2',                      // Command line processor
             'org.anarres:jcpp:1.4.5',                           // C preprocessor in Java
             'commons-io:commons-io:2.4',                        // File Utils
-            'org.apache.ivy:ivy:2.3.0'                         // Apache Ivy (for downloading jars from maven repos)
+            'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
+            'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
 
-    compile files(sootJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar')                               // Soot is a compile time dependency
+    compile files(sootJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/axml-2.0.jar')                               // Soot is a compile time dependency
 
     runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
     runtime files('lib/averroes-no-properties.jar')
@@ -70,7 +67,7 @@ task bytecode2jimple(type: JavaExec) {
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') || project.property('args').isEmpty()) {
-        args "--bytecode2jimpleHelp -allow-phantom-refs"
+        args "--bytecode2jimpleHelp"
     } else {
         args = ["--bytecode2jimple"] + project.property('args').tokenize()
     }
@@ -99,29 +96,23 @@ startScripts {
 }
 
 publishing {
+    repositories {
+        ivy {
+            name 'local-ivy-repo'
+            url '../ivy-repo'
+        }
+    }
+
     publications {
-        mavenJava(MavenPublication) {
+
+        doop(IvyPublication) {
+            organisation "$group"
+            module 'doop'
+            revision "$version"
             from components.java
         }
     }
 }
-
-artifactory {
-    contextUrl = "${artifactory_contextUrl}"
-    publish {
-        repository {
-            repoKey = 'libs-snapshot-local'
-            username = "${artifactory_user}"
-            password = "${artifactory_password}"
-            maven = true
-
-        }
-        defaults {
-            publications 'mavenJava'
-        }
-    }
-}
-
 
 import org.apache.commons.io.FileUtils
 
