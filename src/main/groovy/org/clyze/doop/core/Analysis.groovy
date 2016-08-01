@@ -778,16 +778,13 @@ class Analysis implements Runnable {
             case "1.3":
                 return []
             case "1.4":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.5":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.6":
-                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.7":
+            case "1.8":
                 return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            case "system":
-                String javaHome = System.getProperty("java.home")
-                return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
+            default:
+                throw new RuntimeException("Unsupported platform")
         }
     }
 

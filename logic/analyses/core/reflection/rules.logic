@@ -92,9 +92,9 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?to) <-
 
 // some auxiliary stuff
 
-OptAssignCast(?supertype, ?inmethod, ?from) ->
+_OptAssignCast(?supertype, ?inmethod, ?from) ->
   Type(?supertype), MethodSignature(?inmethod), Var(?from).
-OptAssignCast(?supertype, ?inmethod, ?from) <-
+_OptAssignCast(?supertype, ?inmethod, ?from) <-
   AssignCast(?supertype, ?from, _, ?inmethod).
 
 OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclass) <-
@@ -166,7 +166,7 @@ InferredType:MaximumSubtypes[] = 5.
 // This produces too many targets so we impose a limit on the number
 // of subtypes of the type cast to.
 InferredType:AssignCast(?subtype, ?from) <-
-  OptAssignCast(?type, _, ?from),
+  _OptAssignCast(?type, _, ?from),
   SubtypeOf(?subtype, ?type),
   ClassType(?subtype),
   NumberOfSubtypes[?type] <= InferredType:MaximumSubtypes[].            
@@ -303,7 +303,7 @@ OptMethodSignatureType(?signature, ?classtype) <-
 // the return array of getMethods with the matching ones.
 
 OptSpecialInvokeHeapCast(?type, ?getMethodsInvocation) <-
-  OptAssignCast(?type, _, ?from),
+  _OptAssignCast(?type, _, ?from),
   VarPointsTo(_, ?specialheap, _, ?from),
   OptSpecialMissingInvokeHeapFromGetMethods(?getMethodsInvocation, ?specialheap).
 
@@ -349,7 +349,7 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
   AssignReturnValue[?invocation] = ?var.
 
 Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation) <-
-  OptAssignCast(?type, _, ?from),
+  _OptAssignCast(?type, _, ?from),
   VarPointsTo(_, ?specialheap, _, ?from),
   OptSpecialMissingInvokeHeapFromGetMethod(?getMethodInvocation, ?specialheap).
 
@@ -445,7 +445,7 @@ OptFieldSignatureType(?type, ?signature, ?declaringClassType) <-
 // the return array of getFields with the matching ones.
 
 OptSpecialGetHeapCast(?type, ?getFieldsInvocation) <-
-  OptAssignCast(?type, _, ?from),
+  _OptAssignCast(?type, _, ?from),
   VarPointsTo(_, ?specialheap, _, ?from),
   OptSpecialMissingGetHeapFromGetFields(?getFieldsInvocation, ?specialheap).
 
@@ -491,7 +491,7 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
   AssignReturnValue[?invocation] = ?var.
 
 Opt2SpecialGetHeapCast(?type, ?getFieldInvocation) <-
-  OptAssignCast(?type, _, ?from),
+  _OptAssignCast(?type, _, ?from),
   VarPointsTo(_, ?specialheap, _, ?from),
   OptSpecialMissingGetHeapFromGetField(?getFieldInvocation, ?specialheap).
 
