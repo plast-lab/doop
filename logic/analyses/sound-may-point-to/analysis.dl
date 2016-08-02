@@ -217,6 +217,8 @@
   #include "must-alias.dl"
   .init MustAliasAnalysis = DummyMustAlias
 
+  #include "must-point-to.dl"
+  .init MustPointToAnalysis = SoundMustPointTo 
   //// =====================================
   //// BEGIN final relations for stats
 
@@ -434,7 +436,7 @@
     Var_DeclaringMethod(?to, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth).
 
-  // Not clear this is currently fully effective. We need to recognize
+  // TODO: Not clear this is currently fully effective. We need to recognize
   // simple must-aliasing so that any access path equivalent to
   // "this.fld" will work.
   FinalFieldMayPointTo(?hctx, ?heap, ?fld) :-
@@ -563,7 +565,7 @@
   Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo),
     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
-    AccessPath_ContainsStaticField(?staticAp, ?fld),
+    AccessPath_ContainsStaticField(?staticAp, _),
     FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
   ///// POINT1--unchanged access paths code goes here
@@ -595,17 +597,6 @@
   ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AssignReturnValue(?invo, ?to).
-
-  .decl MethodReturnVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?meth:MethodSignature) output
-  MethodReturnVarMayPointTo(?hctx, ?heap, ?ctx, ?meth) :-
-    ReturnNonvoid_Var(?return, ?var),
-    MayPointTo(?hctx, ?heap, ?ctx, ?var),
-  	Instruction_Method(?return, ?meth).
-
-  .decl SomeCallsiteReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?callerCtx:MayContext, ?invo:MethodInvocationInsn)
-  SomeCallsiteReturnMayPointTo(?hctx, ?heap, ?callerCtx, ?invo) :-
-    MayCallGraphEdge_Prev(?calleeCtx, ?meth, ?callerCtx, ?invo),
-    MethodReturnVarMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
 
   MayPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
     ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
@@ -1114,10 +1105,11 @@
 	FirstCalleeFromCallsite(?calleeCtx, ?meth),
 	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
 
-  UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
-    UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?prevCalleeCtx, ?prevMeth),
+  UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?calleeCtx, ?meth),
+  UpToCallee_ReturnMayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth) :-
+    UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?prevCalleeCtx, ?prevMeth),
     NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
-	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+	AllReturn_MayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth).
 
   .decl AllCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:MethodSignature)
   AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
@@ -1131,10 +1123,11 @@
 	FirstCalleeFromCallsite(?calleeCtx, ?meth),
 	AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth).
 
-  UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
-    UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?prevCalleeCtx, ?prevMeth),
+  UpToCallee_ReturnAccessPathMayPointTo(?hctx1, ?heap1, ?calleeAp, ?calleeCtx, ?meth),
+  UpToCallee_ReturnAccessPathMayPointTo(?hctx2, ?heap2, ?calleeAp, ?calleeCtx, ?meth) :-
+    UpToCallee_ReturnAccessPathMayPointTo(?hctx1, ?heap1, ?calleeAp, ?prevCalleeCtx, ?prevMeth),
     NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
-	AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth).
+	AllReturn_AccessPathMayPointTo(?hctx2, ?heap2, ?calleeAp, ?calleeCtx, ?meth).
 
   .decl AllCallee_ReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeAp:AccessPath, ?calleeCtx:MayContext, ?meth:MethodSignature)
   AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
@@ -1590,13 +1583,13 @@ SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+/*
 .init SoundMayPhase4 = SoundMay
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase4.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase3.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
 .init SoundMayPhase5 = SoundMay
 SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
