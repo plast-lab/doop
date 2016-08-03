@@ -13,7 +13,7 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 
 public class Main {
 
-    public static enum Mode {INPUTS, FULL;}
+    private enum Mode {INPUTS, FULL}
     private static Mode _mode = null;
     private static List<String> _inputs = new ArrayList<>();
     private static List<String> _libraries = new ArrayList<>();
@@ -55,120 +55,120 @@ public class Main {
             }
 
             for (int i = 0; i < args.length; i++) {
-                if (args[i].equals("--full")) {
-                    if( _mode != null) {
-                        System.err.println("error: duplicate mode argument");
-                        System.exit(1);
-                    }
-
-                    _mode = Mode.FULL;
-                }
-                else if (args[i].equals("-d")) {
-                    i = shift(args, i);
-                    _outputDir = args[i];
-                }
-                else if (args[i].equals("--main")) {
-                    i = shift(args, i);
-                    _main = args[i];
-                }
-                else if (args[i].equals("--ssa")) {
-                    _ssa = true;
-                }
-                else if (args[i].equals("--android-jars")) {
-                    i = shift(args, i);
-                    _allowPhantom = true;
-                    _android = true;
-                    _androidJars = args[i];
-                }
-                else if (args[i].equals("-l")) {
-                    i = shift(args, i);
-                    _libraries.add(args[i]);
-                }
-                else if (args[i].equals("-lsystem")) {
-                    String javaHome = System.getProperty("java.home");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
-                }
-                else if (args[i].equals("--deps")) {
-                    i = shift(args, i);
-                    String folderName = args[i];
-                    File f = new File(folderName);
-                    if (!f.exists()) {
-                        System.err.println("Dependency folder " + folderName + " does not exist");
-                        System.exit(0);
-                    }
-                    else if (!f.isDirectory()) {
-                        System.err.println("Dependency folder " + folderName + " is not a directory");
-                        System.exit(0);
-                    }
-                    for (File file : f.listFiles()) {
-                        if (file.isFile() && file.getName().endsWith(".jar")) {
-                            _libraries.add(file.getCanonicalPath());
+                switch (args[i]) {
+                    case "--full":
+                        if (_mode != null) {
+                            System.err.println("error: duplicate mode argument");
+                            System.exit(1);
                         }
-                    }
-                }
-                else if (args[i].equals("--application-regex")) {
-                    i = shift(args, i);
-                    appRegex = args[i];
-                }
-                else if (args[i].equals("--allow-phantom")) {
-                    _allowPhantom = true;
-                }
-                else if (args[i].equals("--use-original-names")) {
-                    _useOriginalNames = true;
-                }
-                else if (args[i].equals("--only-application-classes-fact-gen")) {
-                    _onlyApplicationClassesFactGen = true;
-                }
-                else if (args[i].equals("--keep-line-number")) {
-                    _keepLineNumber = true;
-                }
-                else if (args[i].equals("--bytecode2jimple")) {
-                    _bytecode2jimple = true;
-                }
-                else if (args[i].equals("--stdout")) {
-                    _toStdout = true;
-                }
-                else if (args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
-                    System.err.println("usage: [options] file");
-                    System.err.println("options:");
-                    System.err.println("  --main <class>                        Specify the main name of the main class");
-                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  --full                                Generate facts by full transitive resolution");
-                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                              Find classes in default system classes.");
-                    System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                    System.err.println("  --use-original-names                  Use original (source code) local variable names");
-                    System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
-                    System.err.println("  --keep-line-number                    Keep line number information for statements");
 
-                    System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
-                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+                        _mode = Mode.FULL;
+                        break;
+                    case "-d":
+                        i = shift(args, i);
+                        _outputDir = args[i];
+                        break;
+                    case "--main":
+                        i = shift(args, i);
+                        _main = args[i];
+                        break;
+                    case "--ssa":
+                        _ssa = true;
+                        break;
+                    case "--android-jars":
+                        i = shift(args, i);
+                        _allowPhantom = true;
+                        _android = true;
+                        _androidJars = args[i];
+                        break;
+                    case "-l":
+                        i = shift(args, i);
+                        _libraries.add(args[i]);
+                        break;
+                    case "-lsystem":
+                        String javaHome = System.getProperty("java.home");
+                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+                        break;
+                    case "--deps":
+                        i = shift(args, i);
+                        String folderName = args[i];
+                        File f = new File(folderName);
+                        if (!f.exists()) {
+                            System.err.println("Dependency folder " + folderName + " does not exist");
+                            System.exit(0);
+                        } else if (!f.isDirectory()) {
+                            System.err.println("Dependency folder " + folderName + " is not a directory");
+                            System.exit(0);
+                        }
+                        for (File file : f.listFiles()) {
+                            if (file.isFile() && file.getName().endsWith(".jar")) {
+                                _libraries.add(file.getCanonicalPath());
+                            }
+                        }
+                        break;
+                    case "--application-regex":
+                        i = shift(args, i);
+                        appRegex = args[i];
+                        break;
+                    case "--allow-phantom":
+                        _allowPhantom = true;
+                        break;
+                    case "--use-original-names":
+                        _useOriginalNames = true;
+                        break;
+                    case "--only-application-classes-fact-gen":
+                        _onlyApplicationClassesFactGen = true;
+                        break;
+                    case "--keep-line-number":
+                        _keepLineNumber = true;
+                        break;
+                    case "--bytecode2jimple":
+                        _bytecode2jimple = true;
+                        break;
+                    case "--stdout":
+                        _toStdout = true;
+                        break;
+                    case "-h":
+                    case "--help":
+                    case "-help":
+                        System.err.println("usage: [options] file");
+                        System.err.println("options:");
+                        System.err.println("  --main <class>                        Specify the main name of the main class");
+                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+                        System.err.println("  --full                                Generate facts by full transitive resolution");
+                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
+                        System.err.println("  --use-original-names                  Use original (source code) local variable names");
+                        System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
+                        System.err.println("  --keep-line-number                    Keep line number information for statements");
 
-                    System.err.println("  -h, -help                             Print this help message.");
-                    System.exit(0);
-                }
-                else if (args[i].equals("--bytecode2jimpleHelp")) {
-                    System.err.println("usage: [options] file");
-                    System.err.println("options:");
-                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  --full                                Generate facts by full transitive resolution");
-                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                              Find classes in default system classes.");
-                    System.exit(0);
-                }
-                else {
-                    if (args[i].charAt(0) == '-') {
-                        System.err.println("error: unrecognized option: " + args[i]);
+                        System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
+                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+
+                        System.err.println("  -h, -help                             Print this help message.");
                         System.exit(0);
-                    }
-                    else {
-                        _inputs.add(args[i]);
-                    }
+                    case "--bytecode2jimpleHelp":
+                        System.err.println("usage: [options] file");
+                        System.err.println("options:");
+                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+                        System.err.println("  --full                                Generate facts by full transitive resolution");
+                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.exit(0);
+                    default:
+                        if (args[i].charAt(0) == '-') {
+                            System.err.println("error: unrecognized option: " + args[i]);
+                            System.exit(0);
+                        } else {
+                            _inputs.add(args[i]);
+                        }
+                        break;
                 }
             }
 
@@ -206,12 +206,11 @@ public class Main {
 
         if (_android) {
             SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
-            app.setLibraries(_libraries);
+            soot.options.Options.v().set_debug(false);
+            soot.options.Options.v().set_verbose(false);
+            soot.options.Options.v().set_unfriendly_mode(false);
 
-            app.getConfig().setEnableCallbacks(true);
-            app.getConfig().setEnableCallbackSources(true);
-            app.getConfig().setEnableStaticFieldTracking(true);
-            app.getConfig().setEnableImplicitFlows(true);
+            app.setLibraries(_libraries);
             app.getConfig().setCallbackAnalyzer(Fast);
             app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
             dummyMain = app.getDummyMainMethod();
