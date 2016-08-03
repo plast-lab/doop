@@ -94,8 +94,7 @@ FieldModifier(?mod, ?field) ->
 
 //-----------------------------------------------------------------------------
 
-// TODO: Is this necessary? What does it represent and how does it
-// differ from method signature?
+// Represents the return type and the argument types of a method
 MethodDescriptor(?x), MethodDescriptor:Value(?x:?id) -> string(?id).
 
 MethodSignature(?x), MethodSignature:Value(?x:?id) -> string(?id).
@@ -434,7 +433,6 @@ AssignInstanceOf:Type[?insn] = ?type ->
 AssignOper:From(?insn, ?from) ->
    AssignOper:Insn(?insn), Var(?from).
 
-// TODO what is type?? why string
 AssignOper:Type(?insn, ?type) ->
    AssignOper:Insn(?insn), string(?type).
 
