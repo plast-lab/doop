@@ -45,7 +45,7 @@ enum PredicateFile
     FIELD_SIGNATURE("FieldSignature"),
     ENTER_MONITOR("EnterMonitor"),
     EXIT_MONITOR("ExitMonitor"),
-    METHOD_INV_LINENUM("MethodInvocation-LineNumber"),
+    METHOD_INV_LINE("MethodInvocation-Line"),
     STATIC_METHOD_INV("StaticMethodInvocation"),
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_UNOP("AssignUnop"),

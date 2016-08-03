@@ -79,8 +79,8 @@ ClassModifier(?mod, ?class) ->
 
 FieldSignature(?x), FieldSignature:Value(?x:?id) -> string(?id).
 
-FieldSignature:DeclaringClass[?field] = ?declaringClass ->
-   FieldSignature(?field), ClassType(?declaringClass).
+FieldSignature:DeclaringType[?field] = ?declaringClass ->
+   FieldSignature(?field), ReferenceType(?declaringClass).
 
 FieldSignature:SimpleName[?field] = ?simpleName ->
    FieldSignature(?field), SimpleName(?simpleName).
@@ -101,7 +101,7 @@ MethodDescriptor(?x), MethodDescriptor:Value(?x:?id) -> string(?id).
 MethodSignature(?x), MethodSignature:Value(?x:?id) -> string(?id).
 
 MethodSignature:DeclaringType[?method] = ?declaringType ->
-   MethodSignature(?method), ClassType(?declaringType).
+   MethodSignature(?method), ReferenceType(?declaringType).
 
 MethodSignature:ReturnType[?method] = ?returnType ->
    MethodSignature(?method), Type(?returnType).
@@ -463,8 +463,8 @@ ReturnNonvoid:Var[?return] = ?var ->
 //-----------------------------------------------------------------------------
 
 // The line number of a method invocation
-MethodInvocation:LineNumber[?invocation] = ?lineNumber ->
-   MethodInvocation(?invocation), int[64](?lineNumber).
+MethodInvocation:Line[?invocation] = ?line ->
+   MethodInvocation(?invocation), int[64](?line).
 
 // The signature of the method being called
 MethodInvocation:Signature[?invocation] = ?signature ->

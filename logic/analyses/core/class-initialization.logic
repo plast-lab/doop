@@ -70,7 +70,7 @@ InitializedClass(?class) <-
 InitializedClass(?classOrInterface) <-
    Reachable(?inmethod),
    StoreStaticField(_, ?signature, ?inmethod),
-   FieldSignature:DeclaringClass[?signature] = ?classOrInterface.
+   FieldSignature:DeclaringType[?signature] = ?classOrInterface.
 
 /**
  * A static field declared by T is used and the field is not a constant
@@ -81,7 +81,7 @@ InitializedClass(?classOrInterface) <-
 InitializedClass(?classOrInterface) <-
    Reachable(?inmethod),
    LoadStaticField(?signature, _, ?inmethod),
-   FieldSignature:DeclaringClass[?signature] = ?classOrInterface.
+   FieldSignature:DeclaringType[?signature] = ?classOrInterface.
 
 /**
  * T is a top-level class, and an assert statement lexically nested within T is
