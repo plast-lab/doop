@@ -5,6 +5,34 @@
  * does the invocations, field set/gets, etc. that affect points-to info.
  *************************************************************/
 
+/**
+ * REVIEW: the problem is that currently reflective allocations are not
+ * uniquely identified. This would produce way too many facts. So instead we
+ * cheat and use the type of the reflective allocation as the type *containing*
+ * the reflective allocation.  If we are to fix this in the future, it will
+ * look like this:
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReflectiveHeapAllocation[?invocation, _] = ?heap,
+   Instruction:Method[?invocation] = ?inmethod,
+   MethodSignature:DeclaringType[?inmethod] = ?type,
+   !StringConstant(?heap).
+*/
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReflectiveHeapAllocation[_, ?type] = ?heap.
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedConstructor[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedMethod[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedField[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
 
 /*************************************************************
  * Reflective method calls
