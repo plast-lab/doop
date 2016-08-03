@@ -27,6 +27,15 @@
   // null. Every local variable by definition points to the abstract
   // object corresponding to the variable itself.
 
+  // RecordMacroMay...
+  MustPointTo(?hctx, ?heap, ?ctx, ?var) :-
+    Var_DeclaringMethod(?var, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    Var_Type(?var, ?type),
+    ReferenceType(?type),
+    EmptyHeapContext(?hctx),
+    ?heap = [?var, "var-object"].
+
   // Move, but not Phi nodes, which are also represented as local assignments.
   MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
     AssignLocal_From(?insn, ?from),
@@ -34,29 +43,10 @@
     !PhiNodeHead(?insn, _),
     AssignInstruction_To(?insn, ?to).
 
-  // RecordMacroMay...
-  MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignLocal_From(?insn, ?from),
-    !PhiNodeHead(?insn, _),
-    Instruction_Method(?insn, ?inMeth),
-    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
-    ?heap = [?from, "var-object"],
-    EmptyHeapContext(?hctx),
-    AssignInstruction_To(?insn, ?to).
-
   // Cast assignments, handled similarly
   MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
     AssignCast_From(?insn, ?from),
     MustPointTo(?hctx, ?heap, ?ctx, ?from),
-    AssignInstruction_To(?insn, ?to).
-
-  // RecordMacroMay...
-  MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignCast_From(?insn, ?from),
-    Instruction_Method(?insn, ?inMeth),
-    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
-    ?heap = [?from, "var-object"],
-    EmptyHeapContext(?hctx),
     AssignInstruction_To(?insn, ?to).
 
   // Phi: shows that this is a must and not a may analysis
