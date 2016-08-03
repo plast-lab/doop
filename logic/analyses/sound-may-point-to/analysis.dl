@@ -378,7 +378,8 @@
     StoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
     StoreInstanceField_Base(?insn, ?base),
     FieldInstruction_Signature(?insn, ?fld),
-	MustAliasAnalysis.MustAlias([?base, nil], [?base2, nil], ?ctx, ?insn),
+    (MustPointToAnalysis.VarMustAlias(?base, ?base2, ?ctx);
+     MustAliasAnalysis.MustAlias([?base, nil], [?base2, nil], ?ctx, ?insn)),
 	?ap = [?base2, [nil, ?fld]].
 
   // weak update of access paths with the same field but different base
@@ -436,14 +437,12 @@
     Var_DeclaringMethod(?to, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth).
 
-  // TODO: Not clear this is currently fully effective. We need to recognize
-  // simple must-aliasing so that any access path equivalent to
-  // "this.fld" will work.
   FinalFieldMayPointTo(?hctx, ?heap, ?fld) :-
     InitialMayContext(?initCtx),
     AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?meth),
-	?ap = [ ?this, [ ?rest, ?fld ] ], ?rest = ?rest,
-    ThisVar(?meth, ?this),
+	?ap = [ ?var, [ ?rest, ?fld ] ], ?rest = ?rest,
+    (ThisVar(?meth, ?var);
+     MustPointToAnalysis.VarMustAliasThis(?var)),
     MethodSignature_SimpleName(?meth, "<init>"),
     FieldModifier(?mod, ?fld),
 	Modifier_final(?mod).

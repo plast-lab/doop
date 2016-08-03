@@ -1,5 +1,12 @@
 .type MustAbstractObject = [ ?var:Var, ?label:String ]
 
+// For use when we don't want to incur the cost
+.comp DummyMustPointTo {
+  .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var) output
+  .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:FieldSignature, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction) output
+  .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:FieldSignature, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction) output
+}
+
 .comp SoundMustPointTo {
 
   // A strange "must-point-to" relation, used only to compute
@@ -125,13 +132,27 @@
     !FieldInstruction_Signature(?insn, ?fld).    
 
   // //// ====================================
-  // //// Our final client: MustAlias. Maybe too demanding and computed lazily in the future
+  // //// Our final client: VarMustAlias. Maybe too demanding and computed lazily in the future
 
-  .decl MustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) output
-  MustAlias(?var1, ?var2, ?ctx) :-
+  .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) output
+  VarMustAlias(?var1, ?var2, ?ctx) :-
     MustPointTo(?hctx, ?heap, ?ctx, ?var1),
-    MustPointTo(?hctx, ?heap, ?ctx, ?var2).
+    MustPointTo(?hctx, ?heap, ?ctx, ?var2),
+    ?var1 != ?var2.
   .plan 1: (2,1)
+
+  VarMustAlias(?var1, ?var2, ?ctx) :-
+    (MustPointTo(?hctx, [?var2, "var-object"], ?ctx, ?var1);
+     MustPointTo(?hctx, [?var1, "var-object"], ?ctx, ?var2)),
+    ?var1 != ?var2.
+
+  .decl VarMustAliasThis(?var1:Var)
+  VarMustAliasThis(?var1) :-
+    VarMustAlias(?var1, ?var2, _),
+    ThisVar(_, ?var2).
+
+
+//  FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-
 
 
   // //// ====================================
