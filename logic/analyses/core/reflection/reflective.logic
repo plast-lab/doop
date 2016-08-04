@@ -34,6 +34,20 @@ DeclaringClass:Allocation[?heap] = ?type <-
    ReifiedField[_] = ?heap,
    HeapAllocation:Type[?heap] = ?type.
 
+
+SpecialObject(?heap) <-
+  SpecialMissingForNameHeap[_] = ?heap;
+  SpecialMissingNewInstanceHeap[_] = ?heap;
+  SpecialMissingGetConstructorHeap[_] = ?heap;
+  SpecialMissingGetMethodHeap[_] = ?heap;
+  SpecialMissingGetMethodsHeap[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethod[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethods[_] = ?heap;
+  SpecialMissingGetFieldHeap[_] = ?heap;
+  SpecialMissingGetFieldsHeap[_] = ?heap;
+  SpecialMissingGetHeapFromGetField[_] = ?heap;
+  SpecialMissingGetHeapFromGetFields[_] = ?heap.
+
 /*************************************************************
  * Reflective method calls
  *
