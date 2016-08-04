@@ -3,7 +3,7 @@
  * probably due to some weird issue with the engine.
  */
 Tamiflex:ReflectionMap(?mapped, ?invocation) <-
-   Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+   Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?line),
 
    Type:fqn(?class:?classStr), ClassType(?class),
    MethodSignature:SimpleName[?method] = ?methodStr,
