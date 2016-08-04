@@ -264,3 +264,11 @@ SimulateNativeStaticToVirtual(
 +HeapAllocation:Type[?heap] = "java.lang.String" <-
   ?arrayHeapStr = "<Main Method Arguments Array>",
   ?heapStr = "<Main Method Argument Heap Object>".
+
+
+/**
+ * Special initial system objects
+ */
+PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
+PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
+PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").
