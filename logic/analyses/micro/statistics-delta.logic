@@ -1,0 +1,93 @@
+__t1[] = ?c <- agg<<?c = count()>> VarPointsTo(_, _).
+__t2[] = ?c <- agg<<?c = count()>> Stats:Application:VarPointsTo(_, _).
+__t3[] = ?c <- agg<<?c = count()>> Stats:ReachableVar(_).
+
+__t4[] = ?c <- agg<<?c = count()>> ArrayIndexPointsTo(_, _).
+__t5[] = ?c <- agg<<?c = count()>> Stats:Application:ArrayIndexPointsTo(_, _).
+
+__t6[] = ?c <- agg<<?c = count()>> InstanceFieldPointsTo(_, _, _).
+__t7[] = ?c <- agg<<?c = count()>> StaticFieldPointsTo(_, _).
+__t8[] = ?c <- agg<<?c = count()>> Stats:Application:InstanceFieldPointsTo(_, _, _).
+
+__t9[] = ?c <- agg<<?c = count()>> CallGraphEdge(_, _).
+__t10[] = ?c <- agg<<?c = count()>> Stats:NonReachableApplicationConcreteMethod(_).
+__t11[] = ?c <- agg<<?c = count()>> Reachable(_).
+
+__t12[] = ?c <- agg<<?c = count()>> VirtualMethodInvocation:Insn(_).
+__t13[] = ?c <- agg<<?c = count()>> Stats:ReachableVirtualMethodInvocation(_).
+__t14[] = ?c <- agg<<?c = count()>> Stats:PolymorphicCallSite(_).
+__t15[] = ?c <- agg<<?c = count()>> Stats:NullVirtualMethodInvocation(_).
+__t16[] = ?c <- agg<<?c = count()>> Stats:EmptyVirtualMethodInvocation(_).
+__t17[] = ?c <- agg<<?c = count()>> Stats:Application:VirtualMethodInvocation(_).
+__t18[] = ?c <- agg<<?c = count()>> Stats:Application:ReachableVirtualMethodInvocation(_).
+__t19[] = ?c <- agg<<?c = count()>> Stats:Application:PolymorphicCallSite(_).
+__t20[] = ?c <- agg<<?c = count()>> Stats:Application:NullVirtualMethodInvocation(_).
+__t21[] = ?c <- agg<<?c = count()>> Stats:Application:EmptyVirtualMethodInvocation(_).
+
+__t22[] = ?c <- agg<<?c = count()>> AssignCast(_, _, _, _).
+__t23[] = ?c <- agg<<?c = count()>> Stats:ReachableCast(_, _, _, _).
+__t24[] = ?c <- agg<<?c = count()>> Stats:PotentiallyFailingCast(_, _, _).
+__t25[] = ?c <- agg<<?c = count()>> Stats:Application:Cast(_, _, _, _).
+__t26[] = ?c <- agg<<?c = count()>> Stats:Application:ReachableCast(_, _, _, _).
+__t27[] = ?c <- agg<<?c = count()>> Stats:Application:PotentiallyFailingCast(_, _, _).
+
+_t1[] = ?c <- (__t1[] = ?c) ; (!__t1[] = _, ?c = 0).
+_t2[] = ?c <- (__t2[] = ?c) ; (!__t2[] = _, ?c = 0).
+_t3[] = ?c <- (__t3[] = ?c) ; (!__t3[] = _, ?c = 0).
+_t4[] = ?c <- (__t4[] = ?c) ; (!__t4[] = _, ?c = 0).
+_t5[] = ?c <- (__t5[] = ?c) ; (!__t5[] = _, ?c = 0).
+_t6[] = ?c <- (__t6[] = ?c) ; (!__t6[] = _, ?c = 0).
+_t7[] = ?c <- (__t7[] = ?c) ; (!__t7[] = _, ?c = 0).
+_t8[] = ?c <- (__t8[] = ?c) ; (!__t8[] = _, ?c = 0).
+_t9[] = ?c <- (__t9[] = ?c) ; (!__t9[] = _, ?c = 0).
+_t10[] = ?c <- (__t10[] = ?c) ; (!__t10[] = _, ?c = 0).
+_t11[] = ?c <- (__t11[] = ?c) ; (!__t11[] = _, ?c = 0).
+_t12[] = ?c <- (__t12[] = ?c) ; (!__t12[] = _, ?c = 0).
+_t13[] = ?c <- (__t13[] = ?c) ; (!__t13[] = _, ?c = 0).
+_t14[] = ?c <- (__t14[] = ?c) ; (!__t14[] = _, ?c = 0).
+_t16[] = ?c <- (__t16[] = ?c) ; (!__t16[] = _, ?c = 0).
+_t17[] = ?c <- (__t17[] = ?c) ; (!__t17[] = _, ?c = 0).
+_t18[] = ?c <- (__t18[] = ?c) ; (!__t18[] = _, ?c = 0).
+_t19[] = ?c <- (__t19[] = ?c) ; (!__t19[] = _, ?c = 0).
+_t21[] = ?c <- (__t21[] = ?c) ; (!__t21[] = _, ?c = 0).
+_t22[] = ?c <- (__t22[] = ?c) ; (!__t22[] = _, ?c = 0).
+_t23[] = ?c <- (__t23[] = ?c) ; (!__t23[] = _, ?c = 0).
+_t24[] = ?c <- (__t24[] = ?c) ; (!__t24[] = _, ?c = 0).
+_t25[] = ?c <- (__t25[] = ?c) ; (!__t25[] = _, ?c = 0).
+_t26[] = ?c <- (__t26[] = ?c) ; (!__t26[] = _, ?c = 0).
+_t27[] = ?c <- (__t27[] = ?c) ; (!__t27[] = _, ?c = 0).
+_t15[] = ?c <- (__t15[] = ?c) ; (!__t15[] = _, ?c = 0).
+_t20[] = ?c <- (__t20[] = ?c) ; (!__t20[] = _, ?c = 0).
+
++Stats:Metrics("01a@ var points-to", _t1[]).
++Stats:Metrics("05b@ app var points-to", _t2[]).
++Stats:Metrics("10b@ reachable variables", _t3[]).
+
++Stats:Metrics("02b@ array index points-to", _t4[]).
++Stats:Metrics("06b@ app array index points-to", _t5[]).
+
++Stats:Metrics("03b@ instance field points-to", _t6[]).
++Stats:Metrics("04b@ static field points-to", _t7[]).
++Stats:Metrics("07b@ app instance field points-to", _t8[]).
+
++Stats:Metrics("08b@ call graph edges", _t9[]).
++Stats:Metrics("09@ non-reachable app concrete methods", _t10[]).
++Stats:Metrics("11a@ reachable methods", _t11[]).
+
++Stats:Metrics("12@ virtual call sites (statically)", _t12[]).
++Stats:Metrics("13@ reachable virtual call sites", _t13[]).
++Stats:Metrics("14@ polymorphic virtual call sites", _t14[]).
++Stats:Metrics("15a@ null virtual call sites", _t15[]).
++Stats:Metrics("15b@ empty virtual call sites", _t16[]).
++Stats:Metrics("16@ app virtual call sites (statically)", _t17[]).
++Stats:Metrics("17@ app reachable virtual call sites", _t18[]).
++Stats:Metrics("18@ app polymorphic virtual call sites", _t19[]).
++Stats:Metrics("19a@ app null virtual call sites", _t20[]).
++Stats:Metrics("19b@ app empty virtual call sites", _t21[]).
+
++Stats:Metrics("20@ casts (statically)", _t22[]).
++Stats:Metrics("21@ reachable casts", _t23[]).
++Stats:Metrics("22@ reachable casts that may fail", _t24[]).
++Stats:Metrics("23@ app casts (statically)", _t25[]).
++Stats:Metrics("24@ app reachable casts", _t26[]).
++Stats:Metrics("25@ app reachable casts that may fail", _t27[]).
