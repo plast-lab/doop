@@ -1,0 +1,28 @@
+echo "-- opening DB --"
+open last-analysis
+
+echo "-- applying may-point-to --"
+startTimer
+transaction
+addBlock -F logic/analyses/sound-may-point-to/analysis.logic 
+commit
+elapsedTime
+
+echo "-- collecting stats --"
+startTimer
+transaction
+addBlock -F logic/analyses/sound-may-point-to/stats.logic 
+commit
+elapsedTime
+
+echo "-- preparing stats for printing --"
+startTimer
+transaction
+exec -F logic/analyses/sound-may-point-to/delta.logic
+commit
+elapsedTime
+
+transaction
+print Stats:SoundMay:Metrics
+commit
+

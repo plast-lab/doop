@@ -1,0 +1,8 @@
+_path(?fromMethod, ?toMethod) <-
+  CallGraphEdge(?invocation, ?toMethod),
+  Instruction:Method[?invocation] = ?fromMethod.
+
+_path(?fromMethod, ?toMethod) <-
+  _path(?fromMethod, ?toMethodMid),
+  CallGraphEdge(?invocation, ?toMethod),
+  Instruction:Method[?invocation] = ?toMethodMid.
