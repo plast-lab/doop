@@ -1,7 +1,4 @@
 #include "../2-object-sensitive+heap/analysis.logic"
-#include "../../addons/cfg-analysis/rules.logic"
-
-
 
 /* Made for optimizing TaintedLoad */
 AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) <-
