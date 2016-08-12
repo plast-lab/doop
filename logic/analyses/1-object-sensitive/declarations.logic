@@ -1,16 +1,20 @@
 // In this analysis, the real context is a HeapAllocation. Keeping mapping
 // functions is the way to handle analyses where HContext = Context
 // (since the language considers them different types).
-ContextFromRealContext[?heap] = ?ctx -> HeapAllocation(?heap), Context(?ctx).
+ContextFromRealContext[?heap] = ?ctx ->
+  Context(?ctx), HeapAllocation(?heap).
 lang:skolem(`ContextFromRealContext).
-RealContextFromContext[?ctx] = ?heap -> Context(?ctx), HeapAllocation(?heap).
+RealContextFromContext[?ctx] = ?heap ->
+  Context(?ctx), HeapAllocation(?heap).
 
 // This analysis has no context for heap objects.  This is emulated by creating
 // a single HContext object, which is used everywhere.
-HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+HContextFromRealHContext[] = ?hctx ->
+  HContext(?hctx).
 lang:skolem(`HContextFromRealHContext).
 
 // No need to unwrap anything. Only used for arrays, never to produce regular
 // contexts of called methods.
-HContextFromContext[?ctx] = ?hctx -> Context(?ctx), HContext(?hctx).
+HContextFromContext[?ctx] = ?hctx ->
+  Context(?ctx), HContext(?hctx).
 lang:skolem(`HContextFromContext).

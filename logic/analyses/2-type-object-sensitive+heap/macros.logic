@@ -1,5 +1,5 @@
 // For this analysis, every heap context recorded on allocation
-// corresponds to the most significant element of the calling 
+// corresponds to the most significant element of the calling
 // context of the allocator method.
 #define RecordMacro(ctx, heap, hctx) \
   HContext(hctx), \
@@ -7,7 +7,7 @@
 
 
 // For this analysis the context of a method call corresponds to the
-// identity of the receiver object and the declaring class of the 
+// identity of the receiver object and the declaring class of the
 // receiver object of the caller. Again, this may trigger creation of
 // a new object.
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
