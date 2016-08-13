@@ -16,7 +16,7 @@ HContext(?hctx),
 HContextFromRealHContext[?type, ?heap] = ?hctx,
 ImmutableHContext[] = ?hctx <-
   ClassTypeValue(?type, "java.lang.String"),
-  HeapAllocationValue(?heap, "<<immutable-hcontext>>").
+  HeapAllocationValue(?heap, "<<immutable>>").
 
 
 // Create initial objects with their heap contexts

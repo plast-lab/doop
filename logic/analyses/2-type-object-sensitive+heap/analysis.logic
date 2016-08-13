@@ -14,7 +14,7 @@ ImmutableContext[] = ?ctx <-
 HContext(?hctx),
 HContextFromRealHContext[?heap] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  HeapAllocationValue(?heap, "<<immutable-hcontext>>").
+  HeapAllocationValue(?heap, "<<immutable>>").
 
 
 // Create initial objects with their heap contexts
