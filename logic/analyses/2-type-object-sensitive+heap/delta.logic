@@ -10,3 +10,4 @@ PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.Object").
 PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.Object").
 PlusHeapAllocation(?heap, "<<immutable-context>>", "java.lang.Object").
 PlusHeapAllocation(?heap, "<<immutable-hcontext>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<immutable>>", "java.lang.Object").
