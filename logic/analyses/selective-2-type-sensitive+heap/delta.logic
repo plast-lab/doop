@@ -1,26 +1,8 @@
 /**
  * Special calling contexts
- *
- * Note: the type is necessary (java.lang.String), but never used. It
- * could be anything. It also needs to be an existing type, otherwise
- * the sanity checks will barf.
  */
-+Instruction(?type), +Instruction:Value(?type, "<<initial-context>>").
-+Instruction(?type), +Instruction:Value(?type, "<<jvm-startup>>").
-+Instruction(?type), +Instruction:Value(?type, "<<class-initialization>>").
-+Instruction(?type), +Instruction:Value(?type, "<<immutable>>").
-
-/**
- * Special objects
- */
-+MySystemThreadGroup(?type, ?alloc),
-  +Instruction(?type), +Instruction:Value(?type, "<<jvm-startup>>"),
-  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
-
-+MyMainThreadGroup(?type, ?alloc),
-  +Instruction(?type), +Instruction:Value(?type, "<<jvm-startup>>"),
-  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
-
-+MyMainThread(?type, ?alloc),
-  +Instruction(?type), +Instruction:Value(?type, "<<jvm-startup>>"),
-  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").
++Instruction(?instr), +Instruction:Value(?instr, "<<initial-context>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<jvm-startup>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<class-initialization>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<immutable-context>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<immutable-hcontext>>").
