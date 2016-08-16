@@ -39,6 +39,11 @@ class Analysis implements Runnable {
     String name
 
     /**
+     * The name of the analysis stripped of directory separators
+     */
+    String safename
+
+    /**
      * The output dir for the analysis
      */
     String outDir
@@ -73,9 +78,11 @@ class Analysis implements Runnable {
      */
     Map<String, String> commandsEnvironment
 
+    boolean isRefineStep
+
     Executor executor
 
-    File facts, cacheFacts, database, exportDir, averroesDir
+    File facts, cacheFacts, database, averroesDir
 
     BloxbatchScript lbScript
 
@@ -109,7 +116,8 @@ class Analysis implements Runnable {
         this.id = id
         this.outDir = outDir
         this.cacheDir = cacheDir
-        this.name = name.replace(File.separator, "-")
+        this.name = name
+        this.safename = name.replace(File.separator, "-")
         this.options = options
         this.ctx = ctx
         this.inputJarFiles = inputJarFiles
@@ -123,7 +131,6 @@ class Analysis implements Runnable {
         facts       = new File(outDir, "facts")
         cacheFacts  = new File(cacheDir)
         database    = new File(outDir, "database")
-        exportDir   = new File(outDir, "export")
         averroesDir = new File(outDir, "averroes")
 
         // Create workspace connector (needed by the post processor and the server-side analysis execution)
@@ -150,7 +157,6 @@ class Analysis implements Runnable {
 
                 try {
                     FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-                    logger.info "-- Re-Analyze --"
                     reanalyze()
                 }
                 catch(e) {
@@ -181,7 +187,7 @@ class Analysis implements Runnable {
      * @return A string representation of the analysis
      */
     String toString() {
-        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -338,7 +344,7 @@ class Analysis implements Runnable {
         // By default, assume we run a context-sensitive analysis
         boolean isContextSensitive = true
         try {
-            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
+            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${safename}")
             Properties props = FileOps.loadProperties(file)
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
@@ -346,25 +352,25 @@ class Analysis implements Runnable {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
-            preprocess(this, "${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic",
+            preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${corePath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic",
+            preprocess(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
                              factMacros, "${corePath}/core-delta.logic")
-            preprocess(this, "${outDir}/${name}.logic", "${analysisPath}/analysis.logic",
+            preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
                              factMacros, macros, "${corePath}/context-sensitivity.logic")
         }
         else {
-            preprocess(this, "${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic")
-            preprocess(this, "${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic")
-            preprocess(this, "${outDir}/${name}.logic", "${analysisPath}/analysis.logic")
+            preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
+            preprocess(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
+            preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
         }
 
         lbScript
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
-            .addBlockFile("${name}-declarations.logic")
-            .executeFile("${name}-delta.logic")
+            .addBlockFile("${safename}-declarations.logic")
+            .executeFile("${safename}-delta.logic")
 
         if (options.SANITY.value) {
             lbScript.addBlockFile("${Doop.addonsPath}/sanity.logic")
@@ -433,18 +439,19 @@ class Analysis implements Runnable {
                 .executeFile("tamiflex-delta.logic")
         }
 
-        if (options.REFINE.value)
-            refine()
-
-        includeAtStart(this, "${outDir}/${name}.logic", "${outDir}/addons.logic")
+        includeAtStart(this, "${outDir}/${safename}.logic", "${outDir}/addons.logic")
 
         lbScript
             .commit()
             .elapsedTime()
+
+        if (isRefineStep) importRefinement()
+
+        lbScript
             .echo("-- Main Analysis --")
             .startTimer()
             .transaction()
-            .addBlockFile("${name}.logic")
+            .addBlockFile("${safename}.logic")
             .commit()
             .elapsedTime()
 
@@ -473,80 +480,81 @@ class Analysis implements Runnable {
      * Reanalyze.
      */
     protected void reanalyze() {
-        logger.info "Loading ${name} refinement-delta rules"
+        preprocess(this, "${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
 
-        preprocess(this, "${outDir}/${name}-refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
-        // TODO: handle exportCsv in script
-        timing {
-            bloxbatch database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
-        }
+        lbScript
+            .echo("++++ Refinement ++++")
+            .echo("-- Pre-Export --")
+            .startTimer()
+            .transaction()
+            .executeFile("refinement-delta.logic")
+            .commit()
+            .elapsedTime()
+            .echo("-- Export --")
+            .startTimer()
+            .transaction()
+            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempSiteToRefine")
+            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempNegativeSiteFilter")
+            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempObjectToRefine")
+            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempNegativeObjectFilter")
+            .commit()
+            .elapsedTime()
 
-        timing {
-            bloxbatch database, "-exportCsv TempSiteToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        timing {
-            bloxbatch database, "-exportCsv TempNegativeSiteFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        timing {
-            bloxbatch database, "-exportCsv TempObjectToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        timing {
-            bloxbatch database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        generateFacts()
+        isRefineStep = true
         initDatabase()
-        //TODO: We don't need to write-meta, do we?
-        options.REFINE.value = true
+        basicAnalysis()
         mainAnalysis()
     }
 
-    protected void refine() {
-
-        //The files and their contents
+    void importRefinement() {
         Map<String, String> files = [
                 "refine-site": """\
                                option,delimiter,","
-                               option,hasColumnNames,false
+                               option,hasColumnNames,true
                                option,quotedValues,true
                                option,escapeQuotedValues,true
 
-                               fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
+                               fromFile,"${outDir}/TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
                                toPredicate,SiteToRefine,CallGraphEdgeSource""".toString().stripIndent(),
 
                 "negative-site": """\
                                  option,delimiter,","
-                                 option,hasColumnNames,false
+                                 option,hasColumnNames,true
 
-                                 fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
+                                 fromFile,"${outDir}/TempNegativeSiteFilter.csv",string,string
                                  toPredicate,NegativeSiteFilter,string""".toString().stripIndent(),
 
                 "refine-object": """\
                                  option,delimiter,","
-                                 option,hasColumnNames,false
+                                 option,hasColumnNames,true
                                  option,quotedValues,true
                                  option,escapeQuotedValues,true
 
-                                 fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
+                                 fromFile,"${outDir}/TempObjectToRefine.csv",HeapAllocation,HeapAllocation
                                  toPredicate,ObjectToRefine,HeapAllocation""".toString().stripIndent(),
 
                 "negative-object": """\
                                    option,delimiter,","
-                                   option,hasColumnNames,false
+                                   option,hasColumnNames,true
 
-                                   fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
+                                   fromFile,"${outDir}/TempNegativeObjectFilter.csv",string,string
                                    toPredicate,NegativeObjectFilter,string""".toString().stripIndent()
         ]
 
-        logger.info "loading $name refinement facts "
+        lbScript
+            .echo("-- Import --")
+            .startTimer()
+            .transaction()
+
         files.each { Map.Entry<String, String> entry ->
-            File f = new File(outDir, "${name}-${entry.key}.import")
+            File f = new File(outDir, "${entry.key}.import")
             FileOps.writeToFile f, entry.value
-            lbScript.wr("import -f $f")
+            lbScript.wr("import --format script --importDir . --files ${f.getName()}")
         }
+
+        lbScript
+            .commit()
+            .elapsedTime()
     }
 
     protected void runTransformInput() {
