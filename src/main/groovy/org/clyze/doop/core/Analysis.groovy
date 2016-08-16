@@ -398,9 +398,12 @@ class Analysis implements Runnable {
 
         if (options.INFORMATION_FLOW.value) {
             preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
-            preprocess(this, "${Doop.addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            preprocess(this, "${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
+            preprocess(this, "${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
+            
             logger.info "Adding Information flow rules to addons logic"
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/information-flow/rules.logic")
+            
+            includeAtStart(this, "${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
 
             lbScript
                 .addBlockFile("information-flow-declarations.logic")
