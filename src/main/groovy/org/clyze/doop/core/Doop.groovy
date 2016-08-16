@@ -218,11 +218,6 @@ class Doop {
             isAdvanced:true,
         ),
         new AnalysisOption<Boolean>(
-            id:"REFINE",
-            value:false,
-            cli:false
-        ),
-        new AnalysisOption<Boolean>(
             id:"SSA",
             name:"ssa",
             description:"Use ssa transformation for input.",
