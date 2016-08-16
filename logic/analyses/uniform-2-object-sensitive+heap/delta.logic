@@ -1,32 +1,17 @@
 /**
  * Special calling contexts
  *
- * Note: the type is necessary (java.lang.String), but never used. It
+ * Note: the type is necessary (java.lang.Object), but never used. It
  * could be anything. It also needs to be an existing type, otherwise
  * the sanity checks will barf.
  */
-PlusHeapAllocation(?heap, "<<initial-context>>", "java.lang.String").
-PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String").
-PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.String").
-PlusHeapAllocation(?heap, "<<immutable>>", "java.lang.String").
+PlusHeapAllocation(?heap, "<<initial-context>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<immutable-context>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<immutable-hcontext>>", "java.lang.Object").
 
-PlusMethodInvocation(?invo, "<<initial-context2>>").
-PlusMethodInvocation(?invo, "<<jvm-startup2>>").
-PlusMethodInvocation(?invo, "<<class-initialization2>>").
-PlusMethodInvocation(?invo, "<<immutable2>>").
-
-
-/**
- * Special objects
- */
-+MySystemThreadGroup(?heap, ?alloc),
-  PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String"),
-  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
-
-+MyMainThreadGroup(?heap, ?alloc),
-  PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String"),
-  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
-
-+MyMainThread(?heap, ?alloc),
-  PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String"),
-  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").
+PlusMethodInvocation(?invo, "<<initial-context-2>>").
+PlusMethodInvocation(?invo, "<<jvm-startup-2>>").
+PlusMethodInvocation(?invo, "<<class-initialization-2>>").
+PlusMethodInvocation(?invo, "<<immutable-context-2>>").

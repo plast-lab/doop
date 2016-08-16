@@ -153,24 +153,6 @@ ReachableLoadInstanceFieldBase(?base) <-
 OptLoadInstanceField(?to, ?sig, ?base) <-
   LoadInstanceField(?base, ?sig, ?to, _).
 
-
-// special objects are just artificial ones that we use to find
-// where the result of a reflective call can flow to. We don't want
-// to track them through the heap.
-SpecialObject(?heap) -> HeapAllocation(?heap).
-SpecialObject(?heap) <-
-  SpecialMissingForNameHeap[_] = ?heap;
-  SpecialMissingNewInstanceHeap[_] = ?heap;
-  SpecialMissingGetConstructorHeap[_] = ?heap;
-  SpecialMissingGetMethodHeap[_] = ?heap;
-  SpecialMissingGetMethodsHeap[_] = ?heap;
-  SpecialMissingInvokeHeapFromGetMethod[_] = ?heap;
-  SpecialMissingInvokeHeapFromGetMethods[_] = ?heap;
-  SpecialMissingGetFieldHeap[_] = ?heap;
-  SpecialMissingGetFieldsHeap[_] = ?heap;
-  SpecialMissingGetHeapFromGetField[_] = ?heap;
-  SpecialMissingGetHeapFromGetFields[_] = ?heap.
-
 /**
  * Store instance fields
  */

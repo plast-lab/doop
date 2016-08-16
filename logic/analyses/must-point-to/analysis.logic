@@ -916,7 +916,7 @@ AccessPath:Length[?ap] = ?len ->
    AccessPath(?ap), int[32](?len).
 
 TypeContainsField(?fld, ?type) <-
-   FieldSignature:DeclaringClass[?fld] = ?type.
+   FieldSignature:DeclaringType[?fld] = ?type.
 
 TypeContainsField(?fld, ?type) <-
    Subclass(?superType, ?type),

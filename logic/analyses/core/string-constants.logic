@@ -189,7 +189,7 @@ FieldNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   Instruction:Value(?heap:?string),
-  FieldSignature:DeclaringClass[?sig] = ?declaringClass,
+  FieldSignature:DeclaringType[?sig] = ?declaringClass,
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
   FieldSignature:SimpleName[?sig] = ?string.
 
@@ -222,7 +222,7 @@ FieldNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
   Instruction:Value(?heap:?string),
-  FieldSignature:DeclaringClass[?sig] = ?declaringClass,
+  FieldSignature:DeclaringType[?sig] = ?declaringClass,
   ApplicationClass(?declaringClass),
   (FieldNameSuffix(?sig, ?string);
    FieldNamePrefix(?sig, ?string)).
@@ -612,7 +612,7 @@ Type:HasNoReferenceField(?class) <-
 
 Type:DeclaresReferenceField(?class) <-
   ClassType(?class),
-  FieldSignature:DeclaringClass[?signature] = ?class,
+  FieldSignature:DeclaringType[?signature] = ?class,
   FieldSignature:Type[?signature] = ?type,
   ReferenceType(?type),
   !FieldIsStatic(?signature).

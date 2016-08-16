@@ -1027,7 +1027,7 @@ class FactWriter
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if(tag != null)
         {
-            _db.add(METHOD_INV_LINENUM,
+            _db.add(METHOD_INV_LINE,
                     _db.asEntity(rep),
                     _db.asIntColumn(String.valueOf(tag.getLineNumber())));
         }
