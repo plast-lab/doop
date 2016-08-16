@@ -165,5 +165,6 @@ if __name__ == '__main__':
     detected = pd.Series(parseOut(getProcess(arguments['<db1>']).stdout)).sort_index()
     diff = (correct_vulnerabilities - detected)
     print(diff[diff != 0].sort_values())
-    print('Recall: %f%%'%((139 - diff[diff > 0].sum())/1.39))
+    print('Recall: %f%%'%((139 - diff[diff > 0].count())/1.39))
+    print('%d false positives'%int(diff[diff < 0].sum() * -1))
 
