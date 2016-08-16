@@ -3,18 +3,25 @@
 /**
  * Generic declarations for context-sensitive pointer analysis.
  */
-
 Context(?ctx) ->.
 lang:entity(`Context).
 lang:physical:storageModel[`Context]="ScalableSparse".
-//lang:physical:capacity[`Context] = 33554432.
 lang:physical:capacity[`Context] = 8388608.
 
 HContext(?hctx) ->.
 lang:entity(`HContext).
 lang:physical:storageModel[`HContext]="ScalableSparse".
-//lang:physical:capacity[`HContext] = 33554432.
 lang:physical:capacity[`HContext] = 8388608.
+
+ImmutableContext[]  = ?ctx  -> Context(?ctx).
+ImmutableHContext[] = ?hctx -> HContext(?hctx).
+
+
+// Special objects are just artificial ones that we use to find
+// where the result of a reflective call can flow to. We don't want
+// to track them through the heap.
+SpecialObject(?heap) -> HeapAllocation(?heap).
+
 
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) ->
   HContext(?hctx), HeapAllocation(?heap), Context(?ctx), Var(?var).

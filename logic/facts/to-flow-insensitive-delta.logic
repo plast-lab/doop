@@ -2,19 +2,12 @@
    Throw:Insn(?insn),
    Throw:Var[?insn] = ?var.
 
-//Fields
 +LoadInstanceField(?base, ?sig, ?to, ?inmethod) <-
    LoadInstanceField:Insn(?insn),
    Instruction:Method[?insn] = ?inmethod,
    LoadInstanceField:Base[?insn] = ?base,
    FieldInstruction:Signature[?insn] = ?sig,
    LoadInstanceField:To[?insn] = ?to.
-
-+LoadStaticField(?sig, ?to, ?inmethod) <-
-   LoadStaticField:Insn(?insn),
-   Instruction:Method[?insn] = ?inmethod,
-   FieldInstruction:Signature[?insn] = ?sig,
-   LoadStaticField:To[?insn] = ?to.
 
 +StoreInstanceField(?from, ?base, ?sig, ?inmethod) <-
    StoreInstanceField:Insn(?insn),
@@ -23,6 +16,12 @@
    StoreInstanceField:Base[?insn] = ?base,
    FieldInstruction:Signature[?insn] = ?sig.
 
++LoadStaticField(?sig, ?to, ?inmethod) <-
+   LoadStaticField:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   FieldInstruction:Signature[?insn] = ?sig,
+   LoadStaticField:To[?insn] = ?to.
+
 +StoreStaticField(?from, ?sig, ?inmethod) <-
    StoreStaticField:Insn(?insn),
    Instruction:Method[?insn] = ?inmethod,
@@ -30,7 +29,6 @@
    FieldInstruction:Signature[?insn] = ?sig.
 
 
-// Arrays
 +LoadArrayIndex(?base, ?to, ?inmethod) <-
    LoadArrayIndex:Insn(?insn),
    Instruction:Method[?insn] = ?inmethod,
@@ -44,7 +42,6 @@
    StoreArrayIndex:Base[?insn] = ?base.
 
 
-// Assignments
 +AssignCast(?type, ?from, ?to, ?inmethod) <-
    AssignCast:Insn(?insn),
    Instruction:Method[?insn] = ?inmethod,
@@ -70,7 +67,6 @@
    AssignInstruction:To[?insn] = ?to.
 
 
-// Return (Note: a Jimple method can have multiple return variables)
 +ReturnVar(?var, ?method) <-
    ReturnNonvoid:Insn(?insn),
    Instruction:Method[?insn] = ?method,
@@ -80,11 +76,10 @@
    NativeReturnVar(?var, ?method).
 
 
-// Method Invocations
 +VirtualMethodInvocation(?invocation, ?signature, ?inmethod) <-
    VirtualMethodInvocation:Insn(?invocation),
    Instruction:Method[?invocation] = ?inmethod,
-   MethodInvocation:Signature[?invocation] = ?signature.  
+   MethodInvocation:Signature[?invocation] = ?signature.
 
 +StaticMethodInvocation(?invocation, ?signature, ?inmethod) <-
    StaticMethodInvocation:Insn(?invocation),

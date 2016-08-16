@@ -386,10 +386,10 @@ _FieldSignature(?ref, ?declaringClass, ?simplename, ?type) ->
 
 +FieldSignature(?x),
 +FieldSignature:Value(?x:?signature),
-+FieldSignature:DeclaringClass[?x] = ?declaringClass,
++FieldSignature:DeclaringType[?x] = ?declaringType,
 +FieldSignature:SimpleName[?x] = ?simplename,
 +FieldSignature:Type[?x] = ?type <-
-   _FieldSignature(?signature, ?declaringClass, ?simplename, ?type).
+   _FieldSignature(?signature, ?declaringType, ?simplename, ?type).
 
 
 // EnterMonitor
@@ -436,19 +436,19 @@ _ExitMonitor(?ref, ?index, ?var, ?method) ->
 
 // Method invocation line numbers
 
-lang:physical:storageModel[`_MethodInvocation:LineNumber] = "DelimitedFile".
-lang:physical:filePath[`_MethodInvocation:LineNumber] = "facts/MethodInvocation-LineNumber.facts".
-lang:physical:delimiter[`_MethodInvocation:LineNumber] = "\t".
-lang:physical:hasColumnNames[`_MethodInvocation:LineNumber] = false.
+lang:physical:storageModel[`_MethodInvocation:Line] = "DelimitedFile".
+lang:physical:filePath[`_MethodInvocation:Line] = "facts/MethodInvocation-Line.facts".
+lang:physical:delimiter[`_MethodInvocation:Line] = "\t".
+lang:physical:hasColumnNames[`_MethodInvocation:Line] = false.
 
-_MethodInvocation:LineNumber(?ref, ?lineNumber) ->
+_MethodInvocation:Line(?ref, ?line) ->
    string(?ref),
-   int[64](?lineNumber).
+   int[64](?line).
 
 +MethodInvocation(?x),
 +Instruction:Value(?x:?instruction),
-+MethodInvocation:LineNumber[?x] = ?lineNumber <-
-   _MethodInvocation:LineNumber(?instruction, ?lineNumber).
++MethodInvocation:Line[?x] = ?line <-
+   _MethodInvocation:Line(?instruction, ?line).
 
 
 // Static method invocation

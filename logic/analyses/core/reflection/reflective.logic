@@ -5,6 +5,48 @@
  * does the invocations, field set/gets, etc. that affect points-to info.
  *************************************************************/
 
+/**
+ * REVIEW: the problem is that currently reflective allocations are not
+ * uniquely identified. This would produce way too many facts. So instead we
+ * cheat and use the type of the reflective allocation as the type *containing*
+ * the reflective allocation.  If we are to fix this in the future, it will
+ * look like this:
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReflectiveHeapAllocation[?invocation, _] = ?heap,
+   Instruction:Method[?invocation] = ?inmethod,
+   MethodSignature:DeclaringType[?inmethod] = ?type,
+   !StringConstant(?heap).
+*/
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReflectiveHeapAllocation[_, ?type] = ?heap.
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedConstructor[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedMethod[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedField[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+
+
+SpecialObject(?heap) <-
+  SpecialMissingForNameHeap[_] = ?heap;
+  SpecialMissingNewInstanceHeap[_] = ?heap;
+  SpecialMissingGetConstructorHeap[_] = ?heap;
+  SpecialMissingGetMethodHeap[_] = ?heap;
+  SpecialMissingGetMethodsHeap[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethod[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethods[_] = ?heap;
+  SpecialMissingGetFieldHeap[_] = ?heap;
+  SpecialMissingGetFieldsHeap[_] = ?heap;
+  SpecialMissingGetHeapFromGetField[_] = ?heap;
+  SpecialMissingGetHeapFromGetFields[_] = ?heap.
 
 /*************************************************************
  * Reflective method calls
@@ -422,7 +464,7 @@ ReflectiveLoadInstanceField(?toCtx, ?to, ?signature, ?baseCtx, ?base) ->
 LoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?baseheap) <-
   ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
-  FieldSignature:DeclaringClass[?sig] = ?declaringClass,
+  FieldSignature:DeclaringType[?sig] = ?declaringClass,
   SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).
 
@@ -439,6 +481,6 @@ ReflectiveStoreInstanceField(?fromCtx, ?from, ?signature, ?baseCtx, ?base) ->
 StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) <-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
-  FieldSignature:DeclaringClass[?sig] = ?declaringClass,
+  FieldSignature:DeclaringType[?sig] = ?declaringClass,
   SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).

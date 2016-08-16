@@ -1,6 +1,6 @@
 #include "macros.logic"
 
-// Avoid refining at invocation sites that pass more than N objects as arguments. 
+// Avoid refining at invocation sites that pass more than N objects as arguments.
 _ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
 +_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
 

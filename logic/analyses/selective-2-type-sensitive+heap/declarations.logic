@@ -1,10 +1,29 @@
-// For this analysis, contexts are types, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?type, ?alloc) ->
-  Instruction(?type), HeapAllocation(?alloc).
+// In this analysis, the real context is a pair of Types AND a MethodInvocation
+// (for static calls) sometimes.  The real heap context is a single Type.
+// Keeping mapping functions is the way to handle analyses where HContext =
+// Context (since the language considers them different types).  The type is
+// not always a class type, because of arrays currently being a non-class
+// subtype of Object
+// NOTE: Changed from HeapAllocation to CallGraphEdgeSource in order to use the
+// invocation site for static calls.
+ContextFromRealContext[?type1, ?type2] = ?ctx ->
+  Context(?ctx), Instruction(?type1), Instruction(?type2).
+lang:skolem(`ContextFromRealContext).
 
-MyMainThreadGroup(?type, ?alloc) ->
-  Instruction(?type), HeapAllocation(?alloc).
+// NOTE: Use the following when using both the normal (caller's) context and
+// the invocation site for static calls.
+SpecialContextFromRealContext[?type1, ?invocation, ?type2] = ?ctx ->
+  Instruction(?type1), Instruction(?type2),
+  CallGraphEdgeSource(?invocation), Context(?ctx).
+lang:skolem(`SpecialContextFromRealContext).
 
-MyMainThread(?type, ?alloc) ->
-  Instruction(?type), HeapAllocation(?alloc).
+RealContext1FromContext[?ctx] = ?type ->
+  Context(?ctx), Instruction(?type).
+RealContext2FromContext[?ctx] = ?type ->
+  Context(?ctx), Instruction(?type).
+
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Instruction(?type).
+lang:skolem(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?type ->
+  HContext(?hctx), Instruction(?type).

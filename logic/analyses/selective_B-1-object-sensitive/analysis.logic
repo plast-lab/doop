@@ -1,24 +1,6 @@
-/**
- * Context-sensitive pointer analysis with context of 1 object
- * (AND for static calls 1 call-site).
- */
+// Context-sensitive pointer analysis with context of 1 object
+// (AND for static calls 1 call-site).
 
-// In this analysis, the real context is a HeapAllocation AND
-// a MethodInvocation (for static calls) sometimes. Keeping mapping 
-// functions is the way to handle analyses where HContext = Context 
-// (since the language considers them different types).
-// NOTE: Changed from HeapAllocation to CallGraphEdgeSource
-// in order to use the invocation site for static calls.
-ContextFromRealContext[?heap] = ?ctx ->
-  Context(?ctx), CallGraphEdgeSource(?heap).
-lang:skolem(`ContextFromRealContext).
-// NOTE: Use the following when using both the normal (caller's) context
-// and the invocation site for static calls.
-SpecialContextFromRealContext[?invocation, ?heap] = ?ctx ->
-  Context(?ctx), CallGraphEdgeSource(?invocation), CallGraphEdgeSource(?heap).
-lang:skolem(`SpecialContextFromRealContext).
-RealContextFromContext[?ctx] = ?heap -> 
-  Context(?ctx), CallGraphEdgeSource(?heap).
 RealContextFromContext[?ctx] = ?heap <-
   ContextFromRealContext[?heap] = ?ctx.
 // NOTE: Use the following when using both the normal (caller's) context
@@ -26,55 +8,49 @@ RealContextFromContext[?ctx] = ?heap <-
 RealContextFromContext[?ctx] = ?heap <-
   SpecialContextFromRealContext[_, ?heap] = ?ctx.
 
-// This analysis has no context for heap objects.
-// This is emulated by creating a single HContext object,
-// which is used everywhere.
-HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
-  
-HContext(?hctx),
-HContextFromRealHContext[] = ?hctx,
-ImmutableHContext[] = ?hctx <- .
-
-
-// Create initial objects with their heapcontexts.
-HContextFromRealHContext[] = ?hctx,
-HContext(?hctx),
-SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?alloc).
-
-HContextFromRealHContext[] = ?hctx,
-HContext(?hctx),
-MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?alloc).
-
-HContextFromRealHContext[] = ?hctx,
-HContext(?hctx),
-MainThread(?hctx, ?alloc) <-
-  MyMainThread(?alloc).
-  
-
-/**
- * Reachable
- */
-ReachableContext(?ctx, ?method),
+Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
-Context(?ctx)
- <-
+ImmutableContext[] = ?ctx <-
+  HeapAllocationValue(?heap, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+ImmutableHContext[] = ?hctx.
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  HeapAllocationValue(?alloc, "<<main-thread>>").
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   HeapAllocationValue(?heap, "<<initial-context>>").
 
-ReachableContext(?ctx, ?method),
+Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   HeapAllocationValue(?heap, "<<jvm-startup>>").
 
-ReachableContext(?ctx, ?clinit),
+Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
   HeapAllocationValue(?heap, "<<class-initialization>>").
