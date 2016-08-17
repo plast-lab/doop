@@ -23,12 +23,16 @@ FieldInformation(?signature, ?fieldtype, ?class) ->
 
 FieldInformation(?signature, ?fieldtype, ?class) <-
    FieldSignature:Type[?signature] = ?fieldtype,
-   FieldSignature:DeclaringClass[?signature] = ?class.
+   FieldSignature:DeclaringType[?signature] = ?class.
 
 FieldInformation(?signature, ?fieldtype, ?class) <-
    FieldInformation(?signature, ?fieldtype, ?staticType),
    AllConcreteImplementations(?class, ?staticType).
-   
+
+FieldInformation(?signature, ?fieldConcreteType, ?class) <-
+   FieldInformation(?signature, ?fieldStaticType, ?class),
+   AllConcreteImplementations(?fieldConcreteType, ?fieldStaticType).
+
 MockHeapForField(?signature, ?baseheap, ?fieldtype) ->
    FieldSignature(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
 
