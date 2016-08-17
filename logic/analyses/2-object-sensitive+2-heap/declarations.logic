@@ -1,10 +1,18 @@
-// For this analysis, contexts are pairs of heap objects, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?heap1, ?heap2, ?alloc) ->
-  HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?alloc).
+// In this analysis, both the real context and the real heap context are pairs
+// of HeapAllocations. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+ContextFromRealContext[?heap1, ?heap2] = ?ctx ->
+  Context(?ctx), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap ->
+  Context(?ctx), HeapAllocation(?heap).
+RealContext2FromContext[?ctx] = ?heap ->
+  Context(?ctx), HeapAllocation(?heap).
 
-MyMainThreadGroup(?heap1, ?heap2, ?alloc) ->
-  HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?alloc).
+HContextFromRealHContext[?heap1, ?heap2] = ?hctx ->
+  HContext(?hctx), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`HContextFromRealHContext).
 
-MyMainThread(?heap1, ?heap2, ?alloc) ->
-  HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?alloc).
+RealHContext2FromHContext[?hctx] = ?heap ->
+  HContext(?hctx), HeapAllocation(?heap).

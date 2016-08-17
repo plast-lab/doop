@@ -1,7 +1,16 @@
-// For this analysis, contexts are heap objects, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?alloc) -> HeapAllocation(?alloc).
+// In this analysis, the real context is a HeapAllocation and a
+// MethodInvocation. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+// NOTE: Changed from HeapAllocation to CallGraphEdgeSource in order to use the
+// invocation site for static calls.
+ContextFromRealContext[?heap, ?invocation] = ?ctx ->
+  Context(?ctx), CallGraphEdgeSource(?heap), CallGraphEdgeSource(?invocation).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap ->
+  Context(?ctx), CallGraphEdgeSource(?heap).
+RealContext2FromContext[?ctx] = ?invocation ->
+  Context(?ctx), CallGraphEdgeSource(?invocation).
 
-MyMainThreadGroup(?alloc) -> HeapAllocation(?alloc).
-
-MyMainThread(?alloc) -> HeapAllocation(?alloc).
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).

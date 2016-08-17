@@ -3,7 +3,7 @@
  * probably due to some weird issue with the engine.
  */
 Tamiflex:ReflectionMap(?mapped, ?invocation) <-
-   Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+   Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?line),
 
    Type:fqn(?class:?classStr), ClassType(?class),
    MethodSignature:SimpleName[?method] = ?methodStr,
@@ -16,11 +16,11 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    (
      // There is line information for this invocation. Match exactly with one
      // invocation.
-     ?lineNumber > 0, MethodInvocation:LineNumber[?invocation] = ?lineNumber
+     ?line > 0, MethodInvocation:Line[?invocation] = ?line
    ;
      // No line information available. Overapproximate by matching with any
      // invocation inside ?inMethod matching ?method.
-     ?lineNumber = 0
+     ?line = 0
    ),
    MethodInvocation:Signature[?invocation] = ?method,
    Instruction:Method[?invocation] = ?inMethod.

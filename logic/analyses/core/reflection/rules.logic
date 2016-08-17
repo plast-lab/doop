@@ -212,7 +212,7 @@ TypeMatchingFieldName(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
 TypeMatchingFieldName(?subtype, ?constant) <-
   FieldNameStringConstant:Signature(?signature, ?constant),
-  FieldSignature:DeclaringClass[?signature] = ?type,
+  FieldSignature:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingFieldName[?constant] = ?n ->
@@ -436,7 +436,7 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
 OptFieldSignatureType(?type, ?signature, ?declaringClassType) ->
    FieldSignature(?signature), Type(?declaringClassType), Type(?type).
 OptFieldSignatureType(?type, ?signature, ?declaringClassType) <-
-   FieldSignature:DeclaringClass[?signature] = ?declaringClassType,
+   FieldSignature:DeclaringType[?signature] = ?declaringClassType,
    FieldSignature:Type[?signature] = ?type.
 
 // The clincher: if we see the cast of a result that came
