@@ -1,6 +1,4 @@
 #include "../2-object-sensitive+heap/declarations.logic"
-#include "../../addons/cfg-analysis/declarations.logic"
-
 
 /* Methods for instruction-by-instruction analysis */
 

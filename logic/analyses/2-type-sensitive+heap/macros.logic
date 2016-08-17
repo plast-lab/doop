@@ -49,7 +49,7 @@
 
 
 //// ---- Leftovers from experiment below ----
-//// What if we had context-sensitive reflective calls but separated from 
+//// What if we had context-sensitive reflective calls but separated from
 //// regular ones (with unique context constructors)
 //#define ReflectiveRecordMacro(ctx, heap, hctx) \
 //  HContext(hctx), \

@@ -113,7 +113,7 @@ _DirectSuperclass(?param1, ?param2) ->
   string(?param2).
 
 +Type:fqn(?class:?param1),
-+ReferenceType(?class),
++ClassType(?class),
 +Type:fqn(?superclass:?param2),
 +ClassType(?superclass),
 +DirectSuperclass[?class] = ?superclass <-
@@ -183,7 +183,7 @@ _Method:DeclaresException(?param1, ?param2) ->
   string(?param2).
 
 +Type:fqn(?exceptionType:?param1),
-+Type(?exceptionType),
++ReferenceType(?exceptionType),
 +MethodSignature:Value(?method:?param2),
 +MethodSignature(?method),
 +Method:DeclaresException(?exceptionType, ?method) <-
@@ -277,7 +277,7 @@ _ApplicationClass(?param1) ->
   string(?param1).
 
 +Type:fqn(?ref:?param1),
-+Type(?ref),
++ReferenceType(?ref),
 +ApplicationClass(?ref) <-
   _ApplicationClass(?param1).
 
