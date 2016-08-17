@@ -1,0 +1,29 @@
+/**
+ * Special calling contexts
+ *
+ * Note: the type is necessary (java.lang.String), but never used. It
+ * could be anything. It also needs to be an existing type, otherwise
+ * the sanity checks will barf.
+ */
+PlusHeapAllocation(?heap, "<<initial-context>>", "java.lang.String").
+PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.String").
+PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.String").
+PlusHeapAllocation(?heap, "<<immutable>>", "java.lang.String").
+
+PlusMethodInvocation(?invo, "<<initial-context2>>").
+PlusMethodInvocation(?invo, "<<jvm-startup2>>").
+PlusMethodInvocation(?invo, "<<class-initialization2>>").
+PlusMethodInvocation(?invo, "<<immutable2>>").
+
+
+/**
+ * Special objects
+ */
++MySystemThreadGroup(?alloc),
+  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThreadGroup(?alloc),
+  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThread(?alloc),
+  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").

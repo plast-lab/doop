@@ -1,0 +1,85 @@
+// In this analysis, the real context is a pair of Types
+// and the real heap context a single Type. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+// The type is not always a class type, because of arrays currently being
+// a non-class subtype of Object
+
+ContextFromRealContext[?type1, ?type2] = ?ctx ->
+  Context(?ctx), Type(?type1), Type(?type2).
+lang:skolem(`ContextFromRealContext).
+
+RealContext1FromContext[?ctx] = ?type -> 
+  Context(?ctx), Type(?type).
+RealContext2FromContext[?ctx] = ?type -> 
+  Context(?ctx), Type(?type).
+
+RealContext1FromContext[?ctx] = ?type1,
+RealContext2FromContext[?ctx] = ?type2 <- 
+  ContextFromRealContext[?type1, ?type2] = ?ctx.
+
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Type(?type).
+lang:skolem(`HContextFromRealHContext).
+
+RealHContextFromHContext[?hctx] = ?type -> 
+  HContext(?hctx), Type(?type).
+
+RealHContextFromHContext[?hctx] = ?type <-
+  HContextFromRealHContext[?type] = ?hctx.
+
+
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  // Special immutable constant
+  Type:fqn(?immutable:"<<immutable>>").
+
+// and initial type constant
+InitialTypeValue[] = ?initType <-
+  Type:fqn(?initType:"<<initial-context>>").
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?type, ?alloc).
+
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?type, ?alloc).
+
+HContextFromRealHContext[?type] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?type, ?alloc).
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?type1, ?type2] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  ClassTypeValue(?type1, "java.lang.String"),
+  Type:fqn(?type2:"<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?type1, ?type2] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  ClassTypeValue(?type1, "java.lang.String"),
+  Type:fqn(?type2:"<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?type1, ?type2] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  ClassTypeValue(?type1, "java.lang.String"),
+  Type:fqn(?type2:"<<class-initialization>>").
