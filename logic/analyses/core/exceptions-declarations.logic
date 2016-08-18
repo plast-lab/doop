@@ -7,4 +7,4 @@
  */
 ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) ->
    HContext(?hctx), HeapAllocation(?heap),
-   Context(?ctx), MethodSignature(?method).
+   Context(?ctx), Method(?method).

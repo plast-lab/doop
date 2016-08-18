@@ -136,7 +136,7 @@ class FactGenerator implements Runnable {
             return;
         }
 
-        _writer.writeMethodSignature(m);
+        _writer.writeMethod(m);
 
         int modifiers = m.getModifiers();
         if(Modifier.isAbstract(modifiers))

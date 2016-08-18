@@ -97,34 +97,34 @@ Field:Modifier(?mod, ?field) ->
 // Represents the return type and the argument types of a method
 MethodDescriptor(?x), MethodDescriptor:Value(?x:?id) -> string(?id).
 
-MethodSignature(?x), MethodSignature:Value(?x:?id) -> string(?id).
+Method(?x), Method:Value(?x:?id) -> string(?id).
 
-MethodSignature:DeclaringType[?method] = ?declaringType ->
-   MethodSignature(?method), ReferenceType(?declaringType).
+Method:DeclaringType[?method] = ?declaringType ->
+   Method(?method), ReferenceType(?declaringType).
 
-MethodSignature:ReturnType[?method] = ?returnType ->
-   MethodSignature(?method), Type(?returnType).
+Method:ReturnType[?method] = ?returnType ->
+   Method(?method), Type(?returnType).
 
-MethodSignature:SimpleName[?method] = ?simplename ->
-   MethodSignature(?method), SimpleName(?simplename).
+Method:SimpleName[?method] = ?simplename ->
+   Method(?method), SimpleName(?simplename).
 
-MethodSignature:Descriptor[?method] = ?descriptor ->
-   MethodSignature(?method), MethodDescriptor(?descriptor).
+Method:Descriptor[?method] = ?descriptor ->
+   Method(?method), MethodDescriptor(?descriptor).
 
-MethodModifier(?mod, ?method) ->
-   MethodSignature(?method), Modifier(?mod).
+Method:Modifier(?mod, ?method) ->
+   Method(?method), Modifier(?mod).
 
 // Method ?method declares to throw exception ?exceptionType.
 // This predicate corresponds to Java's throws clause, or the
 // Exceptions clause in Java bytecode.
 Method:DeclaresException(?exceptionType, ?method) ->
-   ReferenceType(?exceptionType), MethodSignature(?method).
+   ReferenceType(?exceptionType), Method(?method).
 
 FormalParam[?index, ?method] = ?var ->
-   ParamIndex(?index), MethodSignature(?method), Var(?var).
+   ParamIndex(?index), Method(?method), Var(?var).
 
 ThisVar[?method] = ?var ->
-   MethodSignature(?method), Var(?var).
+   Method(?method), Var(?var).
 
 
 //-----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ Var:Type[?var] = ?type ->
    Var(?var), Type(?type).
 
 Var:DeclaringMethod(?var, ?method) ->
-   Var(?var), MethodSignature(?method).
+   Var(?var), Method(?method).
 
 
 //-----------------------------------------------------------------------------
@@ -173,7 +173,7 @@ Instruction:Index[?insn] = ?index ->
    Instruction(?insn), int[32](?index).
 
 Instruction:Method[?insn] = ?inMethod ->
-   Instruction(?insn), MethodSignature(?inMethod).
+   Instruction(?insn), Method(?inMethod).
 
 lang:entity(`Throw:Insn).
 lang:entity(`ThrowNull:Insn).
@@ -466,7 +466,7 @@ MethodInvocation:Line[?invocation] = ?line ->
 
 // The signature of the method being called
 MethodInvocation:Signature[?invocation] = ?signature ->
-   MethodInvocation(?invocation), MethodSignature(?signature).
+   MethodInvocation(?invocation), Method(?signature).
 
 // The (call-site) variable that holds the result of the invocation
 AssignReturnValue[?invocation] = ?to ->
@@ -493,7 +493,7 @@ SpecialMethodInvocation:Base[?invocation] = ?base ->
 ExceptionHandler(?x), ExceptionHandler:Value(?x:?id) -> string(?id).
 
 ExceptionHandler:Method[?handler] = ?inmethod ->
-   ExceptionHandler(?handler), MethodSignature(?inmethod).
+   ExceptionHandler(?handler), Method(?inmethod).
 
 // Instruction index of handling code
 ExceptionHandler:Index[?handler] = ?index ->
@@ -530,7 +530,7 @@ Properties[?path, ?key] = ?value ->
 
 // Return variables of native methods (no instructions exist)
 NativeReturnVar(?var, ?method) ->
-   Var(?var), MethodSignature(?method).
+   Var(?var), Method(?method).
 
 MainMethodArgsArray(?argsArray) -> HeapAllocation(?argsArray).
 
@@ -551,7 +551,7 @@ Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
 //-----------------------------------------------------------------------------
 
 lang:physical:capacity[`Field]               = 131072.
-lang:physical:capacity[`MethodSignature]     = 131072.
+lang:physical:capacity[`Method]              = 131072.
 lang:physical:capacity[`MethodDescriptor]    = 131072.
 lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */
 lang:physical:capacity[`Throw:Insn]          = 4194304. /* = instruction */

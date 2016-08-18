@@ -7,7 +7,7 @@
  * here is that the current code does not consider reflective method
  * invocations, only virtual method invocations. For example:
  *      
- *   MethodSignature:Value(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
+ *   Method:Value(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
  *   VirtualMethodInvocation:Insn(?invocation),
  *   MethodInvocation:Signature[?invocation] = ?getClass,
  *
@@ -93,7 +93,7 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?to) <-
 // some auxiliary stuff
 
 OptAssignCast(?supertype, ?inmethod, ?from) ->
-  Type(?supertype), MethodSignature(?inmethod), Var(?from).
+  Type(?supertype), Method(?inmethod), Var(?from).
 OptAssignCast(?supertype, ?inmethod, ?from) <-
   AssignCast(?supertype, ?from, _, ?inmethod).
 
@@ -180,20 +180,20 @@ InferredType:AssignCast(?subtype, ?from) <-
 // from getMethod/getField calls and to use those to enhance what
 // forName must have returned.
 
-TypeMatchingMethodSignature(?type, ?constant) ->
+TypeMatchingMethod(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
-TypeMatchingMethodSignature(?subtype, ?constant) <-
+TypeMatchingMethod(?subtype, ?constant) <-
   MethodNameStringConstant:Signature(?signature, ?constant),
-  MethodSignature:DeclaringType[?signature] = ?type,
+  Method:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
-NumberOfTypesMatchingMethodSignature[?constant] = ?n ->
+NumberOfTypesMatchingMethod[?constant] = ?n ->
   HeapAllocation(?constant), int[64](?n).
-NumberOfTypesMatchingMethodSignature[?constant] = ?n <-
-  agg<<?n = count()>>(TypeMatchingMethodSignature(_,?constant)).
+NumberOfTypesMatchingMethod[?constant] = ?n <-
+  agg<<?n = count()>>(TypeMatchingMethod(_,?constant)).
 
 FairlyInformativeMethodName(?constant) <-
-  NumberOfTypesMatchingMethodSignature[?constant] <= InferredType:MaximumSubtypes[].  
+  NumberOfTypesMatchingMethod[?constant] <= InferredType:MaximumSubtypes[].  
 
 // The problem is that strings are remarkably lousy in precision. A single
 // string (e.g., "encode") will match many tens of methods all over the
@@ -205,7 +205,7 @@ BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   OptSpecialMissingForNameHeap(?forNameInvocation, ?specialheap),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   FairlyInformativeMethodName(?constant),
-  TypeMatchingMethodSignature(?type, ?constant),
+  TypeMatchingMethod(?type, ?constant),
   UnresolvedForNameInvocation(?forNameCtx, ?forNameInvocation).
 
 TypeMatchingFieldName(?type, ?constant) ->
@@ -292,10 +292,10 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
 //  HeapAllocation:Type[?heap] = ?heapType,
 //  SupertypeOf(?type, ?heapType).
 
-OptMethodSignatureType(?signature, ?classtype) ->
-  MethodSignature(?signature), Type(?classtype).
-OptMethodSignatureType(?signature, ?classtype) <-
-  MethodSignature:DeclaringType[?signature] = ?classtype.
+OptMethodType(?signature, ?classtype) ->
+  Method(?signature), Type(?classtype).
+OptMethodType(?signature, ?classtype) <-
+  Method:DeclaringType[?signature] = ?classtype.
 
 // The clincher: if we see the cast of a result that came
 // from an invoke, over a method that came from a getMethods, match
@@ -310,8 +310,8 @@ OptSpecialInvokeHeapCast(?type, ?getMethodsInvocation) <-
 OptMethodObjectFromInvoke(?methodHeap, ?return) <-
   OptSpecialInvokeHeapCast(?type, ?getMethodsInvocation),
   OptGetMethodsClass(?classtype, ?getMethodsInvocation),
-  OptMethodSignatureType(?signature, ?classtype),
-  MethodSignature:ReturnType[?signature] = ?type,
+  OptMethodType(?signature, ?classtype),
+  Method:ReturnType[?signature] = ?type,
   AssignReturnValue[?getMethodsInvocation] = ?return,
   ReifiedMethod[?signature] = ?methodHeap.
 
@@ -377,9 +377,9 @@ VarPointsTo(?hctx, ?methodHeap, ?ctx, ?return) <-
   ImmutableHContext[] = ?hctx,
   Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation),
   OptGetMethodClass(?classtype, ?ctx, ?getMethodInvocation),
-  OptMethodSignatureType(?signature, ?classtype),
+  OptMethodType(?signature, ?classtype),
   AssignReturnValue[?getMethodInvocation] = ?return,
-  MethodSignature:ReturnType[?signature] = ?type,
+  Method:ReturnType[?signature] = ?type,
   ReifiedMethod[?signature] = ?methodHeap.
 
 
@@ -541,7 +541,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
   MarkerReflectiveObject[?invocation] = ?heap.
 
 Opt2AssignCast(?inmethod, ?type, ?to, ?from) ->
-  MethodSignature(?inmethod), Var(?from), Var(?to), Type(?type).
+  Method(?inmethod), Var(?from), Var(?to), Type(?type).
 Opt2AssignCast(?inmethod, ?supertype, ?to, ?from) <-
   AssignCast(?supertype, ?from, ?to, ?inmethod).
 

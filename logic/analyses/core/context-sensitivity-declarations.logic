@@ -50,16 +50,16 @@ Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) ->
  */
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method) ->
   Context(?callerCtx), CallGraphEdgeSource(?invocation),
-  Context(?calleeCtx), MethodSignature(?method).
+  Context(?calleeCtx), Method(?method).
 
 /**
  * Reachable
  */
 Reachable(?method) ->
-  MethodSignature(?method).
+  Method(?method).
 
 ReachableContext(?ctx, ?method) ->
-  Context(?ctx), MethodSignature(?method).
+  Context(?ctx), Method(?method).
 
 OptLoadInstanceField(?to, ?signature, ?base) ->
   Var(?base),
@@ -120,13 +120,13 @@ StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) ->
   Context(?ctx), Var(?from).
 
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
-  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
-  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
-  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 /**
  * Special heap abstractions.

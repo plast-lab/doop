@@ -467,7 +467,7 @@ class Analysis implements Runnable {
                 .startTimer()
                 .transaction()
                 .addBlockFile("must-point-to-may-pre-analysis.logic")
-                .addBlock("RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
+                .addBlock("RootMethodForMustAnalysis(?meth) <- Method:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
                 .commit()
                 .elapsedTime()
                 .echo("-- Must Analysis --")

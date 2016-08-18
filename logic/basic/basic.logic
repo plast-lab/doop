@@ -9,8 +9,8 @@
 
 MainMethodDeclaration(?method) <-
    MainClass(?type),
-   MethodSignature:DeclaringType[?method] = ?type,
-   MethodSignature:SimpleName[?method] = "main",
-   MethodSignature:Descriptor[?method] = "void(java.lang.String[])",
-   MethodModifier("public", ?method),
-   MethodModifier("static", ?method).
+   Method:DeclaringType[?method] = ?type,
+   Method:SimpleName[?method] = "main",
+   Method:Descriptor[?method] = "void(java.lang.String[])",
+   Method:Modifier("public", ?method),
+   Method:Modifier("static", ?method).

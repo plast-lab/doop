@@ -34,7 +34,7 @@ Stats:VirtualCallGraphEdge(?from, ?to) <-
  ***************************************************/
 Stats:ApplicationMethod(?method) <-
 	 ApplicationClass(?class),
-	 MethodSignature:DeclaringType[?method] = ?class.
+	 Method:DeclaringType[?method] = ?class.
 
 Stats:ReachableApplicationMethod(?method) <-
 	 Reachable(?method),
@@ -42,7 +42,7 @@ Stats:ReachableApplicationMethod(?method) <-
 
 Stats:ApplicationConcreteMethod(?method) <-
    Stats:ApplicationMethod(?method),
-   ! MethodModifier(?abstract, ?method),
+   ! Method:Modifier(?abstract, ?method),
    Modifier:Value(?abstract:"abstract").
 
 Stats:NonReachableApplicationConcreteMethod(?method) <-

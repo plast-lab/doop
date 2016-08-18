@@ -2,7 +2,7 @@
  * NOTE "?sig" is reserved for this macro
  */
 #define VirtualMethodMacro(invocation, to, from, sigStr) \
-   MethodSignature:Value(?sig:sigStr), \
+   Method:Value(?sig:sigStr), \
    MethodInvocation:Signature[invocation] = ?sig, \
    AssignReturnValue[invocation] = to, \
    VirtualMethodInvocation:Base[invocation] = from
@@ -40,8 +40,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
    StaticMethodInvocation@previous(?invocation, ?forName, _),
    Type:fqn(?type:"java.lang.Class"),
    Instruction:Value@previous(?invocation:?strInvocation),
@@ -54,8 +54,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
    StaticMethodInvocation@previous(?invocation, ?forName, _),
    Type:fqn(?type:"java.lang.Object"),
    Instruction:Value@previous(?invocation:?strInvocation),
@@ -67,8 +67,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    MethodSignature:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
    StaticMethodInvocation@previous(?invocation, ?forName, _),
    Type:fqn(?type:"java.lang.reflect.Constructor"),
    Instruction:Value@previous(?invocation:?strInvocation),
@@ -83,8 +83,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-    MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
+   (Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
    MethodInvocation:Signature@previous[?invocation] = ?getMethods,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.reflect.Method"),
@@ -96,8 +96,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-    MethodSignature:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
+   (Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
    MethodInvocation:Signature@previous[?invocation] = ?getMethods,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.Object"),
@@ -109,8 +109,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
-    MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
+   (Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
+    Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
    MethodInvocation:Signature@previous[?invocation] = ?getMethod,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.reflect.Method"),
@@ -122,8 +122,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
-    MethodSignature:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
+   (Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
+    Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
    MethodInvocation:Signature@previous[?invocation] = ?getMethod,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.Object"),
@@ -136,8 +136,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-    MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
+   (Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
    MethodInvocation:Signature@previous[?invocation] = ?getFields,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.reflect.Field"),
@@ -149,8 +149,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-    MethodSignature:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
+   (Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
    MethodInvocation:Signature@previous[?invocation] = ?getFields,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.Object"),
@@ -162,8 +162,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
-    MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
+   (Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
+    Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
    MethodInvocation:Signature@previous[?invocation] = ?getField,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.reflect.Field"),
@@ -175,8 +175,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
-    MethodSignature:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
+   (Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
+    Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
    MethodInvocation:Signature@previous[?invocation] = ?getField,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.Object"),
@@ -199,10 +199,10 @@
    AssignCast(?type, _, _, _),
    ClassType(?type),
    Type:fqn@previous(?type:?strType),
-   (MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    Method:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
    MethodInvocation:Signature@previous[?invocation] = ?method,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Instruction:Value@previous(?invocation:?strInvocation),
@@ -215,10 +215,10 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   (MethodSignature:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-    MethodSignature:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    Method:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
    MethodInvocation:Signature@previous[?invocation] = ?method,
    VirtualMethodInvocation:Insn@previous(?invocation),
    Type:fqn(?type:"java.lang.Object"),
@@ -236,8 +236,8 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   MethodSignature:SimpleName[?signature] = "<init>",
-   MethodSignature:Value(?signature:?strSignature),
+   Method:SimpleName[?signature] = "<init>",
+   Method:Value(?signature:?strSignature),
    ?strHeap = "<reified constructor " + ?strSignature + ">",
    Type:fqn(?type:"java.lang.reflect.Constructor").
 
@@ -249,9 +249,9 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   MethodSignature:SimpleName[?signature] = ?simplename,
+   Method:SimpleName[?signature] = ?simplename,
    ?simplename != "<init>", ?simplename != "<clinit>",
-   MethodSignature:Value(?signature:?strSignature),
+   Method:Value(?signature:?strSignature),
    ?strHeap = "<reified method " + ?strSignature + ">",
    Type:fqn(?type:"java.lang.reflect.Method").
 

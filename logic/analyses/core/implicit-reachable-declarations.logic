@@ -2,4 +2,4 @@
  * These methods are implicitly reachable according to Soot (see soot/EntryPoints.java)
  */
 ImplicitReachable(?sig) ->
-   MethodSignature(?sig).
+   Method(?sig).

@@ -154,8 +154,8 @@ VarPointsTo(?hctx, ?arrayHeap, ?callerCtx, ?to) <-
 //VERSION-A
 ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:PublicMethods(?hctx, ?arrayHeap, ?type),
-  MethodSignature:DeclaringType[?signature] = ?type,
-  MethodModifier("public", ?signature),
+  Method:DeclaringType[?signature] = ?type,
+  Method:Modifier("public", ?signature),
   ReifiedMethod[?signature] = ?heap,
   MethodNameStringConstant:Signature(?signature, _).
 // we assume the returned methods will be filtered by some string
@@ -178,8 +178,8 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:Class:getMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
-  MethodSignature:DeclaringType[?signature] = ?type,
-  MethodModifier("public", ?signature),
+  Method:DeclaringType[?signature] = ?type,
+  Method:Modifier("public", ?signature),
   ReifiedMethod[?signature] = ?heap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
   MethodNameStringConstant:Signature(?signature, ?constant).
@@ -189,7 +189,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 // REVIEW: why reuse the hctx? Just for lack of anything better? Also later.
 ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:Methods(?hctx, ?arrayHeap, ?type),
-  MethodSignature:DeclaringType[?signature] = ?type,
+  Method:DeclaringType[?signature] = ?type,
   ReifiedMethod[?signature] = ?heap,
   MethodNameStringConstant:Signature(?signature, _).
 */
@@ -207,7 +207,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:Class:getDeclaredMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
-  MethodSignature:DeclaringType[?signature] = ?type,
+  Method:DeclaringType[?signature] = ?type,
   ReifiedMethod[?signature] = ?heap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
   MethodNameStringConstant:Signature(?signature, ?constant).
@@ -227,7 +227,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:PublicConstructors(?hctx, ?arrayHeap, ?classHeap),
   OptClassToConstructor(?constructor, ?classHeap),
-  MethodModifier("public", ?constructor),
+  Method:Modifier("public", ?constructor),
   ReifiedConstructor[?constructor] = ?heap.
 */
 
@@ -246,7 +246,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:Class:getConstructor(?to, ?from),
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classHeap),
-  MethodModifier("public", ?constructor),
+  Method:Modifier("public", ?constructor),
   ReifiedConstructor[?constructor] = ?heap.
 
 /*
@@ -377,8 +377,8 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 // Simple optimization predicate. It matters.
 OptClassToConstructor(?constructor, ?classHeap) <-
   ReifiedClass[?type] = ?classHeap,
-  MethodSignature:DeclaringType[?constructor] = ?type,
-  MethodSignature:SimpleName[?constructor] = "<init>".
+  Method:DeclaringType[?constructor] = ?type,
+  Method:SimpleName[?constructor] = "<init>".
 
 ReflectiveAssignHeapAllocation(?invocation, ?type, ?ctx, ?to),
 ReflectiveSpecialMethodInvocation(?invocation, ?constructor, ?ctx, ?to),
@@ -386,7 +386,7 @@ ReflectiveBaseVar[?invocation] = ?to <-
   java:lang:Class:newInstance(?invocation, ?to, ?from),
   VarPointsTo(_, ?class, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?class),
-  MethodSignature:DeclaringType[?constructor] = ?type.
+  Method:DeclaringType[?constructor] = ?type.
 
 
 /*************************************************************
