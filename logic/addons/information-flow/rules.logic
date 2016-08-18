@@ -73,9 +73,9 @@ CallTaintingMethod(?ctx, ?invocation) <-
  * Information flow through complex relations
  */
 StringFactoryType(?type) <-
-  Type:fqn(?type:"java.lang.String") ;
-  Type:fqn(?type:"java.lang.StringBuffer") ;
-  Type:fqn(?type:"java.lang.StringBuilder").
+  Type:Value(?type:"java.lang.String") ;
+  Type:Value(?type:"java.lang.StringBuffer") ;
+  Type:Value(?type:"java.lang.StringBuilder").
 
 StringFactoryVar(?var) <-
   Var:Type[?var] = ?type,

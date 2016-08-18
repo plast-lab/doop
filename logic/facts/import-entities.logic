@@ -8,7 +8,7 @@ lang:physical:hasColumnNames[`_ClassType] = false.
 _ClassType(?param1) ->
   string(?param1).
 
-+Type:fqn(?t:?param1),
++Type:Value(?t:?param1),
 +ClassType(?t) <-
   _ClassType(?param1).
 
@@ -23,7 +23,7 @@ lang:physical:hasColumnNames[`_ArrayType] = false.
 _ArrayType(?param1) ->
   string(?param1).
 
-+Type:fqn(?t:?param1),
++Type:Value(?t:?param1),
 +ArrayType(?t) <-
   _ArrayType(?param1).
 
@@ -38,7 +38,7 @@ lang:physical:hasColumnNames[`_InterfaceType] = false.
 _InterfaceType(?param1) ->
   string(?param1).
 
-+Type:fqn(?t:?param1),
++Type:Value(?t:?param1),
 +InterfaceType(?t) <-
   _InterfaceType(?param1).
 
@@ -54,9 +54,9 @@ _ComponentType(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?arrayType:?param1),
++Type:Value(?arrayType:?param1),
 +ArrayType(?arrayType),
-+Type:fqn(?componentType:?param2),
++Type:Value(?componentType:?param2),
 +Type(?componentType),
 +ComponentType[?arrayType] = ?componentType <-
   _ComponentType(?param1, ?param2).
@@ -93,9 +93,9 @@ _DirectSuperinterface(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?class:?param1),
++Type:Value(?class:?param1),
 +ReferenceType(?class),
-+Type:fqn(?interface:?param2),
++Type:Value(?interface:?param2),
 +InterfaceType(?interface),
 +DirectSuperinterface(?class, ?interface) <-
   _DirectSuperinterface(?param1, ?param2).
@@ -112,9 +112,9 @@ _DirectSuperclass(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?class:?param1),
++Type:Value(?class:?param1),
 +ClassType(?class),
-+Type:fqn(?superclass:?param2),
++Type:Value(?superclass:?param2),
 +ClassType(?superclass),
 +DirectSuperclass[?class] = ?superclass <-
   _DirectSuperclass(?param1, ?param2).
@@ -182,7 +182,7 @@ _Method:DeclaresException(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?exceptionType:?param1),
++Type:Value(?exceptionType:?param1),
 +ReferenceType(?exceptionType),
 +Method:Value(?method:?param2),
 +Method(?method),
@@ -241,7 +241,7 @@ _Var:Type(?param1, ?param2) ->
 
 +Var:Value(?ref:?param1),
 +Var(?ref),
-+Type:fqn(?type:?param2),
++Type:Value(?type:?param2),
 +Type(?type),
 +Var:Type[?ref] = ?type <-
   _Var:Type(?param1, ?param2).
@@ -276,7 +276,7 @@ lang:physical:hasColumnNames[`_ApplicationClass] = false.
 _ApplicationClass(?param1) ->
   string(?param1).
 
-+Type:fqn(?ref:?param1),
++Type:Value(?ref:?param1),
 +ReferenceType(?ref),
 +ApplicationClass(?ref) <-
   _ApplicationClass(?param1).

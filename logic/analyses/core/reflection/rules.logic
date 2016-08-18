@@ -548,7 +548,7 @@ Opt2AssignCast(?inmethod, ?supertype, ?to, ?from) <-
 OptSpecialObjectOfTypeObject(?specialheap) <-
   SpecialObject(?specialheap),
   HeapAllocation:Type[?specialheap] = ?specialtype,
-  Type:fqn(?specialtype:"java.lang.Object").
+  Type:Value(?specialtype:"java.lang.Object").
 
 OptMarkerReflectiveObject(?invocation, ?heap) ->
   HeapAllocation(?heap), MethodInvocation(?invocation).

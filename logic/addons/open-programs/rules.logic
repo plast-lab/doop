@@ -10,12 +10,12 @@ AllConcreteImplementations(?class, ?staticType) <-
    
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
-   Type:fqn(?staticType:"javax.servlet.http.HttpServlet").
+   Type:Value(?staticType:"javax.servlet.http.HttpServlet").
 
 MockObject(?classHeap, ?class) <-
    ClassType(?class),
    !ClassModifier("abstract", ?class),
-   Type:fqn(?class:?classStr),
+   Type:Value(?class:?classStr),
    ?classHeap = "<Mock allocation for " + ?classStr + ">".
 
 
@@ -56,13 +56,13 @@ GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
    Method:Value(?method:?methodStr),
    MockEntryPoint(_, ?method),
    // TODO: replace with ClassTypeValue macro
-   Type:fqn(?subtype:?subtypeStr), 
+   Type:Value(?subtype:?subtypeStr), 
    ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
 
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
-   Type:fqn(?class:?classStr),
+   Type:Value(?class:?classStr),
    ServletEntryMethodName(?serviceMethodName),
    Method:Value(?entry:methodSigStr),
    (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),

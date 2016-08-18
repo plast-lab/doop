@@ -1030,16 +1030,16 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 
 // Basic Types as nullary functional-predicates
 
-+PrimitiveType(?t), +Type:fqn(?t:"boolean"), +Type:boolean[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"byte"),    +Type:byte[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"char"),    +Type:char[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"short"),   +Type:short[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"int"),     +Type:int[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"long"),    +Type:long[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"float"),   +Type:float[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"double"),  +Type:double[] = ?t.
-+NullType(?t),  +Type:fqn(?t:"null_type"), +Type:null[] = ?t.
-+ClassType(?t), +Type:fqn(?t:"java.lang.Object"), +Type:object[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"boolean"), +Type:boolean[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"byte"),    +Type:byte[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"char"),    +Type:char[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"short"),   +Type:short[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"int"),     +Type:int[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"long"),    +Type:long[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"float"),   +Type:float[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"double"),  +Type:double[] = ?t.
++NullType(?t),  +Type:Value(?t:"null_type"), +Type:null[] = ?t.
++ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.
 
 
 // Create single null object

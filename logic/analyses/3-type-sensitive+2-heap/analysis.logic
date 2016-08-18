@@ -13,31 +13,31 @@ RealHContext2FromHContext[?hctx] = ?type2 <-
 Context(?ctx),
 ContextFromRealContext[?type, ?type, ?type] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  Type:fqn(?type, "<<immutable-context>>").
+  Type:Value(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Type:fqn(?type, "<<immutable-hcontext>>").
+  Type:Value(?type, "<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<system-thread-group>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<main-thread-group>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<main-thread>>").
 
 
@@ -63,14 +63,14 @@ Context(?ctx),
 ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:fqn(?type12:"<<initial-context>>"),
+  Type:Value(?type12:"<<initial-context>>"),
   ClassTypeValue(?type3, "java.lang.String").
 
 Context(?ctx),
 ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:fqn(?type12:"<<jvm-startup>>"),
+  Type:Value(?type12:"<<jvm-startup>>"),
   ClassTypeValue(?type3, "java.lang.String").
 
 Context(?ctx),
@@ -78,5 +78,5 @@ ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:fqn(?type12:"<<class-initialization>>"),
+  Type:Value(?type12:"<<class-initialization>>"),
   ClassTypeValue(?type3, "java.lang.String").

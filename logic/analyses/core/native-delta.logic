@@ -59,7 +59,7 @@
       Method:Value(?method:strMethod), \
       ReturnVar@previous(?base, ?method), \
       ?strVar = strMethod + "/@native-array-element", \
-      Type:fqn(?type:strElementType), \
+      Type:Value(?type:strElementType), \
       HeapAllocationValue(?heap, strElement)
 
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
@@ -79,7 +79,7 @@
       Method:Value(?method:strMethod), \
       ReturnVar@previous(?base, ?method), \
       ?strVar = strMethod + "/@native-array-element", \
-      Type:fqn(?type:strElementType), \
+      Type:Value(?type:strElementType), \
       HeapAllocationValue(?heap, strElement)
 
 #define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
@@ -168,7 +168,7 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
       ActualParam@previous[2, ?invocation] = ?dest,
       MethodInvocationValue(?invocation, ?strInvocation),
       ?tmpStr =  ?strInvocation + "/@tmp-arraycopy",
-      Type:fqn(?tmpType:"java.lang.Object").
+      Type:Value(?tmpType:"java.lang.Object").
 
 /**********************************************************************************
  *

@@ -12,9 +12,9 @@
 +ReifiedClass[?type] = ?classHeap,
 +HeapAllocation:Type[?classHeap] = ?javaLangClass <-
   ReferenceType(?type),
-  Type:fqn(?type:?typeStr),
+  Type:Value(?type:?typeStr),
   ?classHeap = "<class " + ?typeStr + ">",
-  Type:fqn(?javaLangClass:"java.lang.Class").
+  Type:Value(?javaLangClass:"java.lang.Class").
 
 /**
  * Heap allocations for reified constructors (java.lang.reflect.Constructor)
@@ -26,7 +26,7 @@
   Method:SimpleName[?signature] = "<init>",
   Method:Value(?signature:?signatureStr),
   ?heapStr = "<reified constructor " + ?signatureStr + ">",
-  Type:fqn(?type:"java.lang.reflect.Constructor").
+  Type:Value(?type:"java.lang.reflect.Constructor").
 
 /**
  * Heap allocations for reified methods (java.lang.reflect.Method)
@@ -39,7 +39,7 @@
   ?simplename != "<init>", ?simplename != "<clinit>",
   Method:Value(?signature:?signatureStr),
   ?heapStr = "<reified method " + ?signatureStr + ">",
-  Type:fqn(?type:"java.lang.reflect.Method").
+  Type:Value(?type:"java.lang.reflect.Method").
 
 /**
  * Heap allocations for reified fields (java.lang.reflect.Field)
@@ -50,4 +50,4 @@
 +HeapAllocation:Type[?heap] = ?type <-
   Field:Value(?fld:?signature),
   ?heapStr = "<reified field " + ?signature + ">",
-  Type:fqn(?type:"java.lang.reflect.Field").
+  Type:Value(?type:"java.lang.reflect.Field").

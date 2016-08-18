@@ -284,7 +284,7 @@ class Analysis implements Runnable {
         }
 
         if (options.MAIN_CLASS.value)
-            lbScript.execute("""+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").""")
+            lbScript.execute("""+MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
 
         lbScript
             .commit()
