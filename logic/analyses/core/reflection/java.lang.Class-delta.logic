@@ -85,7 +85,7 @@
 +TempDelta(?invocation, ?type, ?type, ?heapStr),
 +java:lang:Class:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
-  ClassType(?type), Type:fqn(?type:?typeStr),
+  ClassType(?type), Type:Value(?type:?typeStr),
 #ifdef REFLECTION_REFINED_OBJECTS
   Instruction:Value@prev(?invocation:?invocationStr),
   ?heapStr = "<reflective Class.newInstance/" + ?invocationStr + ?typeStr + ">".
@@ -99,12 +99,12 @@
 +java:lang:Class:getClassLoader(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.ClassLoader getClassLoader()>"),
   // Use a single dummy heap object for any ClassLoader
-  Type:fqn(?type:"java.lang.ClassLoader"),
+  Type:Value(?type:"java.lang.ClassLoader"),
   ?heapStr = "<reflective dummy ClassLoader>".
 
 +TempDelta(?invocation, ?type, ?type, ?heapStr),
 +java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.ClassLoader: java.net.URL getResource(java.lang.String)>"),
   // Use a single dummy heap object for any URL resource
-  Type:fqn(?type:"java.net.URL"),
+  Type:Value(?type:"java.net.URL"),
   ?heapStr = "<reflective dummy URL resource>".

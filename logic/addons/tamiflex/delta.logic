@@ -8,7 +8,7 @@
    Tamiflex:ReflectionMap(?objTypeStr, ?invocation),
    Instruction:Value@previous(?invocation:?invocationStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
-   Type:fqn(?objType:?objTypeStr).
+   Type:Value(?objType:?objTypeStr).
 
 +Instruction:Value(?obj:?objStr),
 +HeapAllocation(?obj),
@@ -21,7 +21,7 @@
    Instruction:Value@previous(?invocation:?invocationStr),
    Method:Value(?constructor:?constructorStr),
    Method:DeclaringType[?constructor] = ?objType,
-   Type:fqn(?objType:?objTypeStr),
+   Type:Value(?objType:?objTypeStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">".
 
 +Instruction:Value(?obj:?objStr),
@@ -34,7 +34,7 @@
    Tamiflex:ReflectionMap(?objTypeStr, ?invocation),
    Instruction:Value@previous(?invocation:?invocationStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
-   Type:fqn(?objType:?objTypeStr).
+   Type:Value(?objType:?objTypeStr).
 
 +LoadArrayIndex(?array, ?value, ?inmethod)
 <-
@@ -99,7 +99,7 @@
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
    Field:Value(?fld:?fldStr),
    ?heapStr = "<(Tamiflex) " + ?fldStr + ">",
-   Type:fqn(?javaField:"java.lang.reflect.Field").
+   Type:Value(?javaField:"java.lang.reflect.Field").
 
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
@@ -110,9 +110,9 @@
     Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getFields()>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?typeStr, ?invocation),
-   Type:fqn(?type:?typeStr),
+   Type:Value(?type:?typeStr),
    ?heapStr = "<(Tamiflex) " + ?typeStr + "/Field[]>",
-   Type:fqn(?javaFieldArray:"java.lang.reflect.Field[]").
+   Type:Value(?javaFieldArray:"java.lang.reflect.Field[]").
 
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
@@ -125,7 +125,7 @@
    Tamiflex:ReflectionMap(?methodStr, ?invocation),
    Method:Value(?method:?methodStr),
    ?heapStr = "<(Tamiflex) " + ?methodStr + ">",
-   Type:fqn(?javaMethod:"java.lang.reflect.Method").
+   Type:Value(?javaMethod:"java.lang.reflect.Method").
 
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
@@ -136,6 +136,6 @@
     Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?typeStr, ?invocation),
-   Type:fqn(?type:?typeStr),
+   Type:Value(?type:?typeStr),
    ?heapStr = "<(Tamiflex) " + ?typeStr + "/Method[]>",
-   Type:fqn(?javaMethodArray:"java.lang.reflect.Method[]").
+   Type:Value(?javaMethodArray:"java.lang.reflect.Method[]").

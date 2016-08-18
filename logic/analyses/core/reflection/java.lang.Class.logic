@@ -117,7 +117,7 @@ VarPointsTo(?hctx, ?superClassHeap, ?callerCtx, ?to) <-
   java:lang:Class:getSuperclass(?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
   ReifiedClass[?type] = ?classHeap,
-  ArrayType(?type), Type:fqn(?superType:"java.lang.Object"),
+  ArrayType(?type), Type:Value(?superType:"java.lang.Object"),
   ReifiedClass[?superType] = ?superClassHeap.
 
 

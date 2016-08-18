@@ -151,7 +151,7 @@ ClassNameStringConstantExact:Type(?type, ?heap)
   (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
-  Type:fqn(?type:?string).
+  Type:Value(?type:?string).
 
 MethodNameStringConstant(?heap) -> HeapAllocation(?heap).
 MethodNameStringConstant:Signature(?sig, ?heap) ->
@@ -240,7 +240,7 @@ MemberSuffixIterationTrick(?length) <-
 // Precompute suffixes. Crucial for efficiency.
 ClassNameSuffix(?type, ?suffix) <-
   ReferenceType(?type),
-  Type:fqn(?type:?className),
+  Type:Value(?type:?className),
   string:length[?className] = ?classNameLength,
   ClassIterationTrick(?length),
   string:substring[?className, ?classNameLength - ?length, ?length] = ?suffix.
@@ -270,7 +270,7 @@ FieldNamePrefix(?sig, ?prefix) <-
 //// Too costly!
 //ClassNameSuffix(?type, ?suffix) <-
 //  ReferenceType(?type),
-//  Type:fqn(?type:?className),
+//  Type:Value(?type:?className),
 //  string:length[?className] = ?classNameLength,
 //  ?pos = ?classNameLength / 2 + 1,
 //  ?suffixLength = ?classNameLength - ?pos, 
@@ -302,8 +302,8 @@ FieldNamePrefix(?sig, ?prefix) <-
 #ifdef REFLECTION_STRING_FLOW_ANALYSIS
 
 StringFactoryType(?type) <-
-  Type:fqn(?type:"java.lang.StringBuffer") ;
-  Type:fqn(?type:"java.lang.StringBuilder").
+  Type:Value(?type:"java.lang.StringBuffer") ;
+  Type:Value(?type:"java.lang.StringBuilder").
 
 StringFactoryObject(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -445,12 +445,12 @@ HeapAllocation:ContextInsensitive(?heap) <-
 #ifdef MERGE_STRING_BUFFERS
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
-  Type:fqn(?type:"java.lang.StringBuffer"),
+  Type:Value(?type:"java.lang.StringBuffer"),
   HeapAllocationValue(?mergeHeap, "<<string-buffer>>").
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
-  Type:fqn(?type:"java.lang.StringBuilder"),
+  Type:Value(?type:"java.lang.StringBuilder"),
   HeapAllocationValue(?mergeHeap, "<<string-builder>>").
 #endif
 
@@ -472,7 +472,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
 AllocationMergeThreshold[] = 50.
 
 ExceptionType(?heaptype) <-
-  Type:fqn(?throw:"java.lang.Throwable"),
+  Type:Value(?throw:"java.lang.Throwable"),
   SubtypeOf(?heaptype, ?throw).
 
 OptAssignHeapAllocation(?inmethod, ?heap) <-
@@ -491,8 +491,8 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
 #ifdef MERGE_STRING_BUFFERS
-  !Type:fqn(?heaptype:"java.lang.StringBuffer"),
-  !Type:fqn(?heaptype:"java.lang.StringBuilder"),
+  !Type:Value(?heaptype:"java.lang.StringBuffer"),
+  !Type:Value(?heaptype:"java.lang.StringBuilder"),
 #endif
   !ObjectAllocatedMultiply(?heap).
 
@@ -535,7 +535,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 //TypeToHeap2(?heap, ?heaptype) <-
 //  HeapAllocation:Type[?heap] = ?heaptype,
-//  Type:fqn(?throw:"java.lang.Throwable"),
+//  Type:Value(?throw:"java.lang.Throwable"),
 //  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
@@ -557,7 +557,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
 // same type that are thrown in the same method.
 SameTypeAndMethod(?heap1, ?heap2) <-
   HeapAllocation:Type[?heap1] = ?heaptype,
-  Type:fqn(?throw:"java.lang.Throwable"),
+  Type:Value(?throw:"java.lang.Throwable"),
   SubtypeOf(?heaptype, ?throw),
   HeapAllocation:Type[?heap2] = ?heaptype,
   AssignHeapAllocation(?heap1,_,?inmethod),
@@ -602,7 +602,7 @@ Type:HasNoReferenceField(?type) -> Type(?type).
 Type:DeclaresReferenceField(?type) -> Type(?type).
 
 Type:HasNoReferenceField(?type) <-
-  Type:fqn(?type:"java.lang.Object").
+  Type:Value(?type:"java.lang.Object").
 
 Type:HasNoReferenceField(?class) <-
   ClassType(?class),

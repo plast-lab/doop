@@ -9,7 +9,7 @@
    Method(?constructor),
    Method:SimpleName[?constructor] = "<init>",
    Method:DeclaringType[?constructor] = ?type,
-   Type:fqn(?type:?typeStr),
+   Type:Value(?type:?typeStr),
    Method:Value(?constructor:?constrStr),
    ThisVar[?constructor] = ?this,
    string:add[string:add["/new ", ?typeStr], "/dummy"] = ?postfix,

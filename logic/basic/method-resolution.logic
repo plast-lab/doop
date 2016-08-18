@@ -22,7 +22,7 @@ MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
  */
 MethodLookup[?simplename, ?descriptor, ?arraytype] = ?method <-
    ArrayType(?arraytype),
-   Type:fqn(?object:"java.lang.Object"),
+   Type:Value(?object:"java.lang.Object"),
    MethodImplemented[?simplename, ?descriptor, ?object] = ?method.
 
 MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-

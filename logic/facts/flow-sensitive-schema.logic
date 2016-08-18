@@ -24,7 +24,7 @@ Modifier:static[]   = ?mod -> Modifier(?mod).
 
 // Java Type Hierarchy
 
-Type(?x), Type:fqn(?x:?id) -> string(?id).
+Type(?x), Type:Value(?x:?id) -> string(?id).
 
 PrimitiveType(?t) -> Type(?t).
 ReferenceType(?t) -> Type(?t).
