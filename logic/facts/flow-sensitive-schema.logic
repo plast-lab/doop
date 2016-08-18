@@ -149,12 +149,6 @@ StringConstant(?x) -> HeapAllocation(?x).
 ClassConstant(?x)  -> HeapAllocation(?x).
 EmptyArray(?x)     -> HeapAllocation(?x).
 
-// TODO: should we add the following?
-// NormalObject(?x) -> HeapAllocation(?x).
-
-// TODO: see Invocations
-// HeapAllocation(?x), HeapAllocation:Value(?x:?s) -> string(?s).
-
 // Null object
 HeapAllocation:Null[] = ?nullObject ->
    HeapAllocation(?nullObject).
@@ -259,6 +253,9 @@ ReturnNonvoid:Insn(?insn)              -> ReturnInstruction(?insn).
 
 CallGraphEdgeSource(?insn)             -> Instruction(?insn).
 
+// TODO: Heap Allocations are not really instructions; we should
+// change their supertypes and their refmodes from Instruction:Value
+// to HeapAllocation:Value
 // TODO: HeapAllocation being a CallGraphEdgeSource is an artifact
 // from previous versions; we should change it carefully so as not to
 // break hybrid analysis.

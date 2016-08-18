@@ -38,7 +38,6 @@ enum PredicateFile
     ASSIGN_NUM_CONST("AssignNumConstant"),
     ASSIGN_NULL("AssignNull"),
     ASSIGN_INSTANCE_OF("AssignInstanceOf"),
-    NORMAL_OBJ("NormalObject"),
     EMPTY_ARRAY("EmptyArray"),
     CLASS_OBJ("ClassObject"),
     STRING_CONST("StringConstant"),
