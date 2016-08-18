@@ -2,7 +2,7 @@
 // (AND for static calls 1 call-site).
 
 ClassHasInstr(?class, ?instr) <-
-  MethodSignature:DeclaringType[?method] = ?class,
+  Method:DeclaringType[?method] = ?class,
   Instruction:Method[?instr] = ?method.
 
 ClassToInstr[?class] = ?instr <-

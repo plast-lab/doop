@@ -8,7 +8,7 @@ lang:physical:hasColumnNames[`_ClassType] = false.
 _ClassType(?param1) ->
   string(?param1).
 
-+Type:fqn(?t:?param1),
++Type:Value(?t:?param1),
 +ClassType(?t) <-
   _ClassType(?param1).
 
@@ -23,7 +23,7 @@ lang:physical:hasColumnNames[`_ArrayType] = false.
 _ArrayType(?param1) ->
   string(?param1).
 
-+Type:fqn(?t:?param1),
++Type:Value(?t:?param1),
 +ArrayType(?t) <-
   _ArrayType(?param1).
 
@@ -38,7 +38,7 @@ lang:physical:hasColumnNames[`_InterfaceType] = false.
 _InterfaceType(?param1) ->
   string(?param1).
 
-+Type:fqn(?t:?param1),
++Type:Value(?t:?param1),
 +InterfaceType(?t) <-
   _InterfaceType(?param1).
 
@@ -54,9 +54,9 @@ _ComponentType(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?arrayType:?param1),
++Type:Value(?arrayType:?param1),
 +ArrayType(?arrayType),
-+Type:fqn(?componentType:?param2),
++Type:Value(?componentType:?param2),
 +Type(?componentType),
 +ComponentType[?arrayType] = ?componentType <-
   _ComponentType(?param1, ?param2).
@@ -93,9 +93,9 @@ _DirectSuperinterface(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?class:?param1),
++Type:Value(?class:?param1),
 +ReferenceType(?class),
-+Type:fqn(?interface:?param2),
++Type:Value(?interface:?param2),
 +InterfaceType(?interface),
 +DirectSuperinterface(?class, ?interface) <-
   _DirectSuperinterface(?param1, ?param2).
@@ -112,31 +112,31 @@ _DirectSuperclass(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?class:?param1),
++Type:Value(?class:?param1),
 +ClassType(?class),
-+Type:fqn(?superclass:?param2),
++Type:Value(?superclass:?param2),
 +ClassType(?superclass),
 +DirectSuperclass[?class] = ?superclass <-
   _DirectSuperclass(?param1, ?param2).
 
 
-// FieldModifier
+// Field:Modifier
 
-lang:physical:storageModel[`_FieldModifier] = "DelimitedFile".
-lang:physical:filePath[`_FieldModifier] = "facts/FieldModifier.facts".
-lang:physical:delimiter[`_FieldModifier] = "\t".
-lang:physical:hasColumnNames[`_FieldModifier] = false.
+lang:physical:storageModel[`_Field:Modifier] = "DelimitedFile".
+lang:physical:filePath[`_Field:Modifier] = "facts/Field-Modifier.facts".
+lang:physical:delimiter[`_Field:Modifier] = "\t".
+lang:physical:hasColumnNames[`_Field:Modifier] = false.
 
-_FieldModifier(?param1, ?param2) ->
+_Field:Modifier(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
 +Modifier:Value(?modifier:?param1),
 +Modifier(?modifier),
-+FieldSignature:Value(?field:?param2),
-+FieldSignature(?field),
-+FieldModifier(?modifier, ?field) <-
-  _FieldModifier(?param1, ?param2).
++Field:Value(?field:?param2),
++Field(?field),
++Field:Modifier(?modifier, ?field) <-
+  _Field:Modifier(?param1, ?param2).
 
 
 lang:physical:storageModel[`_ClassModifier] = "DelimitedFile".
@@ -163,8 +163,8 @@ _FormalParam(?param1, ?param2, ?param3) ->
   string(?param2),
   string(?param3).
 
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +Var:Value(?var:?param3),
 +Var(?var),
 +FormalParam[?index, ?method] = ?var <-
@@ -182,31 +182,31 @@ _Method:DeclaresException(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:fqn(?exceptionType:?param1),
++Type:Value(?exceptionType:?param1),
 +ReferenceType(?exceptionType),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +Method:DeclaresException(?exceptionType, ?method) <-
   _Method:DeclaresException(?param1, ?param2).
 
 
-// MethodModifier
+// Method:Modifier
 
-lang:physical:storageModel[`_MethodModifier] = "DelimitedFile".
-lang:physical:filePath[`_MethodModifier] = "facts/MethodModifier.facts".
-lang:physical:delimiter[`_MethodModifier] = "\t".
-lang:physical:hasColumnNames[`_MethodModifier] = false.
+lang:physical:storageModel[`_Method:Modifier] = "DelimitedFile".
+lang:physical:filePath[`_Method:Modifier] = "facts/Method-Modifier.facts".
+lang:physical:delimiter[`_Method:Modifier] = "\t".
+lang:physical:hasColumnNames[`_Method:Modifier] = false.
 
-_MethodModifier(?param1, ?param2) ->
+_Method:Modifier(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
 +Modifier:Value(?mod:?param1),
 +Modifier(?mod),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
-+MethodModifier(?mod, ?method) <-
-  _MethodModifier(?param1, ?param2).
++Method:Value(?method:?param2),
++Method(?method),
++Method:Modifier(?mod, ?method) <-
+  _Method:Modifier(?param1, ?param2).
 
 
 // NativeReturnVar
@@ -222,8 +222,8 @@ _NativeReturnVar(?param1, ?param2) ->
 
 +Var:Value(?var:?param1),
 +Var(?var),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +NativeReturnVar(?var, ?method) <-
   _NativeReturnVar(?param1, ?param2).
 
@@ -241,7 +241,7 @@ _Var:Type(?param1, ?param2) ->
 
 +Var:Value(?ref:?param1),
 +Var(?ref),
-+Type:fqn(?type:?param2),
++Type:Value(?type:?param2),
 +Type(?type),
 +Var:Type[?ref] = ?type <-
   _Var:Type(?param1, ?param2).
@@ -260,8 +260,8 @@ _Var:DeclaringMethod(?param1, ?param2) ->
 
 +Var:Value(?ref:?param1),
 +Var(?ref),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +Var:DeclaringMethod(?ref, ?method) <-
   _Var:DeclaringMethod(?param1, ?param2).
 
@@ -276,7 +276,7 @@ lang:physical:hasColumnNames[`_ApplicationClass] = false.
 _ApplicationClass(?param1) ->
   string(?param1).
 
-+Type:fqn(?ref:?param1),
++Type:Value(?ref:?param1),
 +ReferenceType(?ref),
 +ApplicationClass(?ref) <-
   _ApplicationClass(?param1).
@@ -293,8 +293,8 @@ _ThisVar(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+MethodSignature:Value(?method:?param1),
-+MethodSignature(?method),
++Method:Value(?method:?param1),
++Method(?method),
 +Var:Value(?var:?param2),
 +Var(?var),
 +ThisVar[?method] = ?var <-

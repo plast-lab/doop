@@ -11,7 +11,7 @@ lang:physical:storageModel[`Graph:Node]="ScalableSparse".
 lang:physical:capacity[`Graph:Node] = 1048576.
 
 Graph:CreateNode[Context(?ctx, ?method)] = x -> 
-   DeclareContext(?ctx, MethodSignature(?method)), Graph:Node(x).
+   DeclareContext(?ctx, Method(?method)), Graph:Node(x).
 
 lang:skolem(`Graph:CreateNode).
 

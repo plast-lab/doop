@@ -43,7 +43,7 @@ _ContextsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count
 
 /* THIS ALSO WORKED FAIRLY OK.
 // Avoid refining allocation site with large FieldPointsTo
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 
@@ -63,7 +63,7 @@ _MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64
 // to heap objects with a high max number of field-points-to facts. This is what
 // causes explosion for deep-context analyses.
 
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 

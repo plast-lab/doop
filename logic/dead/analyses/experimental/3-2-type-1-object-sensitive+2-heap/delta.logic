@@ -17,16 +17,16 @@ PlusHeapAllocation(?heap, "<<immutable>>", "java.lang.String").
  * Special objects
  */
 +MySystemThreadGroup(?type1, ?heap2, ?alloc),
-  +Type:fqn(?type1:"java.lang.String"), +ClassType(?type1),
+  +Type:Value(?type1:"java.lang.String"), +ClassType(?type1),
   PlusHeapAllocation(?heap2, "<<jvm-startup>>", "java.lang.String"),
   PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
 
 +MyMainThreadGroup(?type1, ?heap2, ?alloc),
-  +Type:fqn(?type1:"java.lang.String"), +ClassType(?type1),
+  +Type:Value(?type1:"java.lang.String"), +ClassType(?type1),
   PlusHeapAllocation(?heap2, "<<jvm-startup>>", "java.lang.String"),
   PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
 
 +MyMainThread(?type1, ?heap2, ?alloc),
-  +Type:fqn(?type1:"java.lang.String"), +ClassType(?type1),
+  +Type:Value(?type1:"java.lang.String"), +ClassType(?type1),
   PlusHeapAllocation(?heap2, "<<jvm-startup>>", "java.lang.String"),
   PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").

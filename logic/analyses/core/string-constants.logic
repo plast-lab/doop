@@ -151,15 +151,15 @@ ClassNameStringConstantExact:Type(?type, ?heap)
   (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
-  Type:fqn(?type:?string).
+  Type:Value(?type:?string).
 
 MethodNameStringConstant(?heap) -> HeapAllocation(?heap).
 MethodNameStringConstant:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), MethodSignature(?sig).
+  HeapAllocation(?heap), Method(?sig).
 MethodNameStringConstantExact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), MethodSignature(?sig).
+  HeapAllocation(?heap), Method(?sig).
 MethodNameStringConstantInexact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), MethodSignature(?sig).
+  HeapAllocation(?heap), Method(?sig).
 
 MethodNameStringConstant(?heap),
 MethodNameStringConstant:Signature(?sig, ?heap),
@@ -167,21 +167,21 @@ MethodNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   Instruction:Value(?heap:?string),
-  MethodSignature:DeclaringType[?sig] = ?type, 
+  Method:DeclaringType[?sig] = ?type, 
   (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
      // there is some possibility of accessing methods and fields
      // reflectively, even in system classes. Maybe one needs to 
      // circumvent access control, or maybe one wants to treat all
      // fields uniformly and some are inherited from a system superclass.
-  MethodSignature:SimpleName[?sig] = ?string.
+  Method:SimpleName[?sig] = ?string.
 
 FieldNameStringConstant(?heap) -> HeapAllocation(?heap).
 FieldNameStringConstant:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), FieldSignature(?sig).
+  HeapAllocation(?heap), Field(?sig).
 FieldNameStringConstantExact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), FieldSignature(?sig).
+  HeapAllocation(?heap), Field(?sig).
 FieldNameStringConstantInexact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), FieldSignature(?sig).
+  HeapAllocation(?heap), Field(?sig).
 
 FieldNameStringConstant(?heap),
 FieldNameStringConstant:Signature(?sig, ?heap),
@@ -189,9 +189,9 @@ FieldNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   Instruction:Value(?heap:?string),
-  FieldSignature:DeclaringType[?sig] = ?declaringClass,
+  Field:DeclaringType[?sig] = ?declaringClass,
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
-  FieldSignature:SimpleName[?sig] = ?string.
+  Field:SimpleName[?sig] = ?string.
 
 #ifdef REFLECTION_SUBSTRING_ANALYSIS
 // Creating class/field/method names via string concatenation makes more
@@ -211,7 +211,7 @@ MethodNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
   Instruction:Value(?heap:?string),
-  MethodSignature:DeclaringType[?sig] = ?type,
+  Method:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
   (MethodNameSuffix(?sig, ?string);
    MethodNamePrefix(?sig, ?string)).
@@ -222,7 +222,7 @@ FieldNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
   Instruction:Value(?heap:?string),
-  FieldSignature:DeclaringType[?sig] = ?declaringClass,
+  Field:DeclaringType[?sig] = ?declaringClass,
   ApplicationClass(?declaringClass),
   (FieldNameSuffix(?sig, ?string);
    FieldNamePrefix(?sig, ?string)).
@@ -240,37 +240,37 @@ MemberSuffixIterationTrick(?length) <-
 // Precompute suffixes. Crucial for efficiency.
 ClassNameSuffix(?type, ?suffix) <-
   ReferenceType(?type),
-  Type:fqn(?type:?className),
+  Type:Value(?type:?className),
   string:length[?className] = ?classNameLength,
   ClassIterationTrick(?length),
   string:substring[?className, ?classNameLength - ?length, ?length] = ?suffix.
 
 MethodNameSuffix(?sig, ?suffix) <-
-  MethodSignature:SimpleName[?sig] = ?methodName,
+  Method:SimpleName[?sig] = ?methodName,
   string:length[?methodName] = ?methodNameLength,
   MemberSuffixIterationTrick(?length),
   string:substring[?methodName, ?methodNameLength - ?length, ?length] = ?suffix.
 
 MethodNamePrefix(?sig, ?prefix) <-
-  MethodSignature:SimpleName[?sig] = ?methodName,
+  Method:SimpleName[?sig] = ?methodName,
   MemberPrefixIterationTrick(?length),
   string:substring[?methodName, 0, ?length] = ?prefix.
 
 FieldNameSuffix(?sig, ?suffix) <-
-  FieldSignature:SimpleName[?sig] = ?fieldName,
+  Field:SimpleName[?sig] = ?fieldName,
   string:length[?fieldName] = ?fieldNameLength,
   MemberSuffixIterationTrick(?length),
   string:substring[?fieldName, ?fieldNameLength - ?length, ?length] = ?suffix.
 
 FieldNamePrefix(?sig, ?prefix) <-
-  FieldSignature:SimpleName[?sig] = ?fieldName,
+  Field:SimpleName[?sig] = ?fieldName,
   MemberPrefixIterationTrick(?length),
   string:substring[?fieldName, 0, ?length] = ?prefix.
 
 //// Too costly!
 //ClassNameSuffix(?type, ?suffix) <-
 //  ReferenceType(?type),
-//  Type:fqn(?type:?className),
+//  Type:Value(?type:?className),
 //  string:length[?className] = ?classNameLength,
 //  ?pos = ?classNameLength / 2 + 1,
 //  ?suffixLength = ?classNameLength - ?pos, 
@@ -289,7 +289,7 @@ FieldNamePrefix(?sig, ?prefix) <-
 //  <-
 //  NonTrivialStringConstant(?heap),
 //  Instruction:Value(?heap:?string),
-//  MethodSignature:SimpleName[?sig] = ?methodName,
+//  Method:SimpleName[?sig] = ?methodName,
 //  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
 
 #endif // substrings
@@ -302,8 +302,8 @@ FieldNamePrefix(?sig, ?prefix) <-
 #ifdef REFLECTION_STRING_FLOW_ANALYSIS
 
 StringFactoryType(?type) <-
-  Type:fqn(?type:"java.lang.StringBuffer") ;
-  Type:fqn(?type:"java.lang.StringBuilder").
+  Type:Value(?type:"java.lang.StringBuffer") ;
+  Type:Value(?type:"java.lang.StringBuilder").
 
 StringFactoryObject(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -445,12 +445,12 @@ HeapAllocation:ContextInsensitive(?heap) <-
 #ifdef MERGE_STRING_BUFFERS
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
-  Type:fqn(?type:"java.lang.StringBuffer"),
+  Type:Value(?type:"java.lang.StringBuffer"),
   HeapAllocationValue(?mergeHeap, "<<string-buffer>>").
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
-  Type:fqn(?type:"java.lang.StringBuilder"),
+  Type:Value(?type:"java.lang.StringBuilder"),
   HeapAllocationValue(?mergeHeap, "<<string-builder>>").
 #endif
 
@@ -472,7 +472,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
 AllocationMergeThreshold[] = 50.
 
 ExceptionType(?heaptype) <-
-  Type:fqn(?throw:"java.lang.Throwable"),
+  Type:Value(?throw:"java.lang.Throwable"),
   SubtypeOf(?heaptype, ?throw).
 
 OptAssignHeapAllocation(?inmethod, ?heap) <-
@@ -491,8 +491,8 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
 #ifdef MERGE_STRING_BUFFERS
-  !Type:fqn(?heaptype:"java.lang.StringBuffer"),
-  !Type:fqn(?heaptype:"java.lang.StringBuilder"),
+  !Type:Value(?heaptype:"java.lang.StringBuffer"),
+  !Type:Value(?heaptype:"java.lang.StringBuilder"),
 #endif
   !ObjectAllocatedMultiply(?heap).
 
@@ -535,7 +535,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 //TypeToHeap2(?heap, ?heaptype) <-
 //  HeapAllocation:Type[?heap] = ?heaptype,
-//  Type:fqn(?throw:"java.lang.Throwable"),
+//  Type:Value(?throw:"java.lang.Throwable"),
 //  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
@@ -557,7 +557,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
 // same type that are thrown in the same method.
 SameTypeAndMethod(?heap1, ?heap2) <-
   HeapAllocation:Type[?heap1] = ?heaptype,
-  Type:fqn(?throw:"java.lang.Throwable"),
+  Type:Value(?throw:"java.lang.Throwable"),
   SubtypeOf(?heaptype, ?throw),
   HeapAllocation:Type[?heap2] = ?heaptype,
   AssignHeapAllocation(?heap1,_,?inmethod),
@@ -602,7 +602,7 @@ Type:HasNoReferenceField(?type) -> Type(?type).
 Type:DeclaresReferenceField(?type) -> Type(?type).
 
 Type:HasNoReferenceField(?type) <-
-  Type:fqn(?type:"java.lang.Object").
+  Type:Value(?type:"java.lang.Object").
 
 Type:HasNoReferenceField(?class) <-
   ClassType(?class),
@@ -612,17 +612,17 @@ Type:HasNoReferenceField(?class) <-
 
 Type:DeclaresReferenceField(?class) <-
   ClassType(?class),
-  FieldSignature:DeclaringType[?signature] = ?class,
-  FieldSignature:Type[?signature] = ?type,
+  Field:DeclaringType[?signature] = ?class,
+  Field:Type[?signature] = ?type,
   ReferenceType(?type),
   !FieldIsStatic(?signature).
 
 FieldIsStatic(?sig) <-
   Modifier:Value(?static:"static"),
-  FieldModifier(?static, ?sig).
+  Field:Modifier(?static, ?sig).
 
 //// Quite risky: even final fields hold interesting state.
 //FieldIsStaticOrFinal?sig) <-
 //  Modifier:Value(?final:"final"),
-//  FieldModifier(?final, ?sig).
+//  Field:Modifier(?final, ?sig).
 */

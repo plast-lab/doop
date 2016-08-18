@@ -28,11 +28,11 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) ->
 
 InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) ->
   HContext(?hctx), HeapAllocation(?heap),
-  FieldSignature(?sig),
+  Field(?sig),
   HContext(?basehctx), HeapAllocation(?baseheap).
 
 StaticFieldPointsTo(?hctx, ?heap, ?sig) ->
-  FieldSignature(?sig),
+  Field(?sig),
   HContext(?hctx), HeapAllocation(?heap).
 
 // array-element insensitive
@@ -50,34 +50,34 @@ Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) ->
  */
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method) ->
   Context(?callerCtx), CallGraphEdgeSource(?invocation),
-  Context(?calleeCtx), MethodSignature(?method).
+  Context(?calleeCtx), Method(?method).
 
 /**
  * Reachable
  */
 Reachable(?method) ->
-  MethodSignature(?method).
+  Method(?method).
 
 ReachableContext(?ctx, ?method) ->
-  Context(?ctx), MethodSignature(?method).
+  Context(?ctx), Method(?method).
 
 OptLoadInstanceField(?to, ?signature, ?base) ->
   Var(?base),
-  FieldSignature(?signature),
+  Field(?signature),
   Var(?to).
 
 OptLoadStaticField(?ctx, ?to, ?signature) ->
-  FieldSignature(?signature),
+  Field(?signature),
   Context(?ctx), Var(?to).
 
 OptStoreStaticField(?signature, ?from) ->
   Var(?from),
-  FieldSignature(?signature).
+  Field(?signature).
 
 OptStoreInstanceField(?from, ?signature, ?base) ->
   Var(?from),
   Var(?base),
-  FieldSignature(?signature).
+  Field(?signature).
 
 /*
 ReachableSpecialMethodInvocation(?invocation, ?base) ->
@@ -103,12 +103,12 @@ OptStoreArrayIndex(?from, ?base) ->
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) ->
   HContext(?basehctx), HeapAllocation(?baseheap),
-  FieldSignature(?sig),
+  Field(?sig),
   Context(?ctx), Var(?to).
 
 StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?ctx, ?from) ->
   Context(?ctx), Var(?from),
-  FieldSignature(?sig),
+  Field(?sig),
   HContext(?basehctx), HeapAllocation(?baseheap).
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) ->
@@ -120,13 +120,13 @@ StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) ->
   Context(?ctx), Var(?from).
 
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
-  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
-  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
-  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 /**
  * Special heap abstractions.

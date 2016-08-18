@@ -2,13 +2,13 @@ ReifiedClass[?type] = ?heap ->
   Type(?type), ClassConstant(?heap).
 
 ReifiedConstructor[?constructor] = ?heap ->
-  MethodSignature(?constructor), HeapAllocation(?heap).
+  Method(?constructor), HeapAllocation(?heap).
 
 ReifiedMethod[?method] = ?heap ->
-  MethodSignature(?method), HeapAllocation(?heap).
+  Method(?method), HeapAllocation(?heap).
 
 ReifiedField[?field] = ?heap ->
-  FieldSignature(?field), HeapAllocation(?heap).
+  Field(?field), HeapAllocation(?heap).
 
 
 ReflectiveHeap(?heap) -> HeapAllocation(?heap).
@@ -61,7 +61,7 @@ java:lang:Object:getClass(?to, ?from) ->
   Var(?to), Var(?from).
 
 java:lang:Class:forName(?invocation, ?inmethod) ->
-  MethodInvocation(?invocation), MethodSignature(?inmethod).
+  MethodInvocation(?invocation), Method(?inmethod).
 
 java:lang:Class:getName(?to, ?from) ->
   Var(?to), Var(?from).

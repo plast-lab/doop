@@ -6,4 +6,4 @@
 #include "type-hierarchy-declarations.logic"
 
 MainMethodDeclaration(?method) ->
-   MethodSignature(?method).
+   Method(?method).

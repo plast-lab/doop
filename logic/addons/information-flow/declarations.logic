@@ -1,9 +1,9 @@
 /**
  * Definitions of sources and sinks
  */
-TaintSourceMethod(?method) -> MethodSignature(?method).
+TaintSourceMethod(?method) -> Method(?method).
 
-LeakingSinkMethod(?index, ?method) -> MethodSignature(?method), int[32](?index).
+LeakingSinkMethod(?index, ?method) -> Method(?method), int[32](?index).
 
 LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
   MethodInvocation(?tomethod), Var(?var), Context(?ctx).
@@ -19,7 +19,7 @@ VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from) ->
   Context(?toCtx), Var(?to),
   Context(?fromCtx), Var(?from).
 
-SanitizationMethod(?index, ?method) -> MethodSignature(?method), int[32](?index).
+SanitizationMethod(?index, ?method) -> Method(?method), int[32](?index).
 
 AnyMethodInvocation(?invocation, ?tomethod)
  <- (StaticMethodInvocation(?invocation, ?tomethod, _);

@@ -144,8 +144,8 @@ VarPointsTo(?heap, ?this) <-
    VirtualMethodInvocation:Base[?invocation] = ?base,
    VarPointsTo( ?heap, ?base ),
    HeapAllocation:Type[?heap] = ?type,
-   MethodSignature:SimpleName[?signature] = ?simplename,
-   MethodSignature:Descriptor[?signature] = ?descriptor,
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor,
    ThisVar[?tomethod] = ?this,
    MethodLookup[?simplename, ?descriptor, ?type] = ?tomethod.
 

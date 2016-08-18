@@ -33,7 +33,7 @@ SupertypeOf(?t, ?s) <-
 SubtypeOf(?s, ?t),
 SupertypeOf(?t, ?s) <-
    InterfaceType(?s),
-   Type:fqn(?t:"java.lang.Object").
+   Type:Value(?t:"java.lang.Object").
 
 /**
  * If T is an interface type, then
@@ -57,7 +57,7 @@ SupertypeOf(?t, ?s) <-
 SubtypeOf(?s, ?t),
 SupertypeOf(?t, ?s) <-
    ArrayType(?s),
-   Type:fqn(?t:"java.lang.Object").
+   Type:Value(?t:"java.lang.Object").
 
 /**
  *  If T is an array type TC[], that is, an array of components of type TC,
@@ -92,13 +92,13 @@ SubtypeOf(?s, ?t),
 SupertypeOf(?t, ?s) <-
    ArrayType(?s),
    InterfaceType(?t),
-   Type:fqn(?t:"java.lang.Cloneable").
+   Type:Value(?t:"java.lang.Cloneable").
 
 SubtypeOf(?s, ?t),
 SupertypeOf(?t, ?s) <-
    ArrayType(?s),
    InterfaceType(?t),
-   Type:fqn(?t:"java.io.Serializable").
+   Type:Value(?t:"java.io.Serializable").
 
 
 /**

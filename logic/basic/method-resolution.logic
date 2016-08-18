@@ -22,28 +22,28 @@ MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
  */
 MethodLookup[?simplename, ?descriptor, ?arraytype] = ?method <-
    ArrayType(?arraytype),
-   Type:fqn(?object:"java.lang.Object"),
+   Type:Value(?object:"java.lang.Object"),
    MethodImplemented[?simplename, ?descriptor, ?object] = ?method.
 
 MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
-   MethodSignature:SimpleName[?method] = ?simplename,
-   MethodSignature:Descriptor[?method] = ?descriptor,
-   MethodSignature:DeclaringType[?method] = ?type,
-   ! MethodModifier("abstract", ?method).
+   Method:SimpleName[?method] = ?simplename,
+   Method:Descriptor[?method] = ?descriptor,
+   Method:DeclaringType[?method] = ?type,
+   ! Method:Modifier("abstract", ?method).
 
 
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    VirtualMethodInvocation:Insn(?invocation),
    MethodInvocation:Signature[?invocation] = ?signature,
-   MethodSignature:SimpleName[?signature] = ?simplename,
-   MethodSignature:Descriptor[?signature] = ?descriptor.
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor.
 
 
 // NOTE: This seems to be OK performance-wise. If we put it in a different
 // block, we have to declared it as DerivedAndStored which has an impact.
 ResolveInvocation(?invocation, ?heaptype, ?tomethod) ->
-   MethodInvocation(?invocation), Type(?heaptype), MethodSignature(?tomethod).
+   MethodInvocation(?invocation), Type(?heaptype), Method(?tomethod).
 lang:derivationType[`ResolveInvocation] = "Derived".
 
 ResolveInvocation(?invocation, ?heaptype, ?tomethod) <-
