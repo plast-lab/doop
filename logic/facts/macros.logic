@@ -3,7 +3,7 @@
   +HeapAllocation(x), \
   +HeapAllocation:Type[x] = x ## Type, \
   +Type(x ## Type), \
-  +Type:fqn(x ## Type:type)
+  +Type:Value(x ## Type:type)
 
 #define PlusVar(x,method,string,type) \
   +Var(x), \
@@ -13,21 +13,21 @@
 
 #define PlusType(x,string) \
   +Type(x), \
-  +Type:fqn(x:string)
+  +Type:Value(x:string)
 
 #define PlusStringConstant(x,string) \
   +Instruction:Value(x:string), \
   +StringConstant(x), \
   +HeapAllocation:Type[x] = x ## Type, \
   +Type(x ## Type), \
-  +Type:fqn(x ## Type:"java.lang.String")
+  +Type:Value(x ## Type:"java.lang.String")
 
 #define PlusClassConstant(x,string) \
   +Instruction:Value(x:string), \
   +ClassConstant(x), \
   +HeapAllocation:Type[x] = x ## Type, \
   +Type(x ## Type), \
-  +Type:fqn(x ## Type:"java.lang.Class")
+  +Type:Value(x ## Type:"java.lang.Class")
 
 #define PlusMethodInvocation(x,string) \
   +Instruction:Value(x:string), \
@@ -50,4 +50,4 @@
  */
 #define HeapAllocationValue(x, y) Instruction:Value(x:y), HeapAllocation(x)
 #define MethodInvocationValue(x, y) Instruction:Value(x:y), MethodInvocation(x)
-#define ClassTypeValue(x,y) Type:fqn(x:y), ClassType(x)
+#define ClassTypeValue(x,y) Type:Value(x:y), ClassType(x)

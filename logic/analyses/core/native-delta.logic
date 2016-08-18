@@ -15,18 +15,18 @@
   +AssignLocal(?from, ?to, ?method) <- \
     Var:Value(?from:strFrom), \
     Var:Value(?to:strTo), \
-    MethodSignature:Value(?method:strMethod)
+    Method:Value(?method:strMethod)
 
 #define PlusStoreStaticField(method, local, field) \
   +StoreStaticField(?l, ?sig, ?m) <- \
-    MethodSignature:Value(?m:method), \
+    Method:Value(?m:method), \
     Var:Value(?l:local), \
-    FieldSignature:Value(?sig:field)
+    Field:Value(?sig:field)
 
 #define SimulateNativeAllocation(strMethod, strHeap, strConstructor) \
   +AssignHeapAllocation(?heap, ?return, ?method) \
     <- \
-      MethodSignature:Value(?method:strMethod), \
+      Method:Value(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
       HeapAllocationValue(?heap, strHeap). \
   \
@@ -36,16 +36,16 @@
   PlusSpecialMethodInvocation(?invocation, ?strInvocation), \
   +Instruction:Index[?invocation] = ?index \
     <- \
-      MethodSignature:Value(?method:strMethod), \
+      Method:Value(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
       ?strInvocation = strMethod + "/native " + strConstructor, \
-      MethodSignature:Value(?constructor:strConstructor), \
+      Method:Value(?constructor:strConstructor), \
       ?index = 1
 
 #define SimulateNativeArrayAllocation(strMethod, strArray, strElement, strElementType) \
   +AssignHeapAllocation(?heap, ?return, ?method) \
     <- \
-      MethodSignature:Value(?method:strMethod), \
+      Method:Value(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
       HeapAllocationValue(?heap, strArray). \
   \
@@ -56,16 +56,16 @@
   +AssignHeapAllocation(?heap, ?var, ?method), \
   +StoreArrayIndex(?var, ?base, ?method) \
     <- \
-      MethodSignature:Value(?method:strMethod), \
+      Method:Value(?method:strMethod), \
       ReturnVar@previous(?base, ?method), \
       ?strVar = strMethod + "/@native-array-element", \
-      Type:fqn(?type:strElementType), \
+      Type:Value(?type:strElementType), \
       HeapAllocationValue(?heap, strElement)
 
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
   +AssignHeapAllocation(?heap, ?return, ?method) \
     <- \
-      MethodSignature:Value(?method:strMethod), \
+      Method:Value(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
       HeapAllocationValue(?heap, strArray). \
   \
@@ -76,10 +76,10 @@
   +AssignHeapAllocation(?heap, ?var, ?method), \
   +StoreArrayIndex(?var, ?base, ?method) \
     <- \
-      MethodSignature:Value(?method:strMethod), \
+      Method:Value(?method:strMethod), \
       ReturnVar@previous(?base, ?method), \
       ?strVar = strMethod + "/@native-array-element", \
-      Type:fqn(?type:strElementType), \
+      Type:Value(?type:strElementType), \
       HeapAllocationValue(?heap, strElement)
 
 #define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
@@ -90,16 +90,16 @@
   +MethodInvocation:Signature[?invocation] = ?signature, \
   +Instruction:Index[?invocation] = ?index \
     <- \
-      MethodSignature:Value(?inmethod:strMethod), \
+      Method:Value(?inmethod:strMethod), \
       FormalParam@previous[0, ?inmethod] = ?base, \
       ?strInvocation = strMethod + "/native " + strVirtual, \
-      MethodSignature:Value(?signature:strVirtual), \
+      Method:Value(?signature:strVirtual), \
       ?index = 1.\
   \
   PlusMethodInvocation(?invocation, ?strInvocation), \
   +AssignReturnValue[?invocation] = ?return \
     <- \
-      MethodSignature:Value(?inmethod:strMethod), \
+      Method:Value(?inmethod:strMethod), \
       ReturnVar@previous(?return, ?inmethod), \
       ?strInvocation = strMethod + "/native " + strVirtual
 
@@ -162,13 +162,13 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
 +LoadArrayIndex(?src, ?tmp, ?inmethod),
 +StoreArrayIndex(?tmp, ?dest, ?inmethod)
     <-
-      MethodSignature:Value(?arraycopy:"<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>"),
+      Method:Value(?arraycopy:"<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>"),
       StaticMethodInvocation(?invocation, ?arraycopy, ?inmethod),
       ActualParam@previous[0, ?invocation] = ?src,
       ActualParam@previous[2, ?invocation] = ?dest,
       MethodInvocationValue(?invocation, ?strInvocation),
       ?tmpStr =  ?strInvocation + "/@tmp-arraycopy",
-      Type:fqn(?tmpType:"java.lang.Object").
+      Type:Value(?tmpType:"java.lang.Object").
 
 /**********************************************************************************
  *

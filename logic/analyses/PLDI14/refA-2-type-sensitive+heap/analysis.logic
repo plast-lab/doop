@@ -6,36 +6,36 @@ RealHContextFromHContext[?hctx] = ?type <-
   HContextFromRealHContext[?type] = ?hctx.
 
 InitialTypeValue[] = ?initType <-
-  Type:fqn(?initType:"<<initial-context>>").
+  Type:Value(?initType:"<<initial-context>>").
 
 Context(?ctx),
 ContextFromRealContext[?type, ?type] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  Type:fqn(?type, "<<immutable-context>>").
+  Type:Value(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Type:fqn(?type, "<<immutable-hcontext>>").
+  Type:Value(?type, "<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<system-thread-group>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<main-thread-group>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<main-thread>>").
 
 
@@ -45,14 +45,14 @@ ContextFromRealContext[?type1, ?type2] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<initial-context>>").
+  Type:Value(?type2:"<<initial-context>>").
 
 Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<jvm-startup>>").
+  Type:Value(?type2:"<<jvm-startup>>").
 
 Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
@@ -60,4 +60,4 @@ ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<class-initialization>>").
+  Type:Value(?type2:"<<class-initialization>>").

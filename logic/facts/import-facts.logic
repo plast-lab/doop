@@ -312,27 +312,6 @@ _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
    _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
 
 
-// TODO: Heap Allocations are not really instructions; we should
-// change their supertypes and their refmodes from Instruction:Value
-// to HeapAllocation:Value
-
-// Normal Object
-
-lang:physical:storageModel[`_NormalObject] = "DelimitedFile".
-lang:physical:filePath[`_NormalObject] = "facts/NormalObject.facts".
-lang:physical:delimiter[`_NormalObject] = "\t".
-lang:physical:hasColumnNames[`_NormalObject] = false.
-
-_NormalObject(?repr, ?type) ->
-   string(?repr),
-   string(?type).
-
-+HeapAllocation(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
-   _NormalObject(?repr, ?type).
-
-
 // ClassConstant
 
 lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
@@ -371,25 +350,25 @@ _StringConstant(?repr, ?type) ->
    _StringConstant(?repr, ?type).
 
 
-// FieldSignature
+// Field
 
-lang:physical:storageModel[`_FieldSignature] = "DelimitedFile".
-lang:physical:filePath[`_FieldSignature] = "facts/FieldSignature.facts".
-lang:physical:delimiter[`_FieldSignature] = "\t".
-lang:physical:hasColumnNames[`_FieldSignature] = false.
+lang:physical:storageModel[`_Field] = "DelimitedFile".
+lang:physical:filePath[`_Field] = "facts/Field.facts".
+lang:physical:delimiter[`_Field] = "\t".
+lang:physical:hasColumnNames[`_Field] = false.
 
-_FieldSignature(?ref, ?declaringClass, ?simplename, ?type) ->
+_Field(?ref, ?declaringClass, ?simplename, ?type) ->
    string(?ref),
    string(?declaringClass),
    string(?simplename),
    string(?type).
 
-+FieldSignature(?x),
-+FieldSignature:Value(?x:?signature),
-+FieldSignature:DeclaringType[?x] = ?declaringType,
-+FieldSignature:SimpleName[?x] = ?simplename,
-+FieldSignature:Type[?x] = ?type <-
-   _FieldSignature(?signature, ?declaringType, ?simplename, ?type).
++Field(?x),
++Field:Value(?x:?signature),
++Field:DeclaringType[?x] = ?declaringType,
++Field:SimpleName[?x] = ?simplename,
++Field:Type[?x] = ?type <-
+   _Field(?signature, ?declaringType, ?simplename, ?type).
 
 
 // EnterMonitor
@@ -587,25 +566,25 @@ _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
 
 // Method signature
 
-lang:physical:storageModel[`_MethodSignature] = "DelimitedFile".
-lang:physical:filePath[`_MethodSignature] = "facts/MethodSignature.facts".
-lang:physical:delimiter[`_MethodSignature] = "\t".
-lang:physical:hasColumnNames[`_MethodSignature] = false.
+lang:physical:storageModel[`_Method] = "DelimitedFile".
+lang:physical:filePath[`_Method] = "facts/Method.facts".
+lang:physical:delimiter[`_Method] = "\t".
+lang:physical:hasColumnNames[`_Method] = false.
 
-_MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
+_Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
    string(?ref),
    string(?simplename),
    string(?descriptor),
    string(?declaringType),
    string(?returnType).
 
-+MethodSignature(?x),
-+MethodSignature:Value(?x:?ref),
-+MethodSignature:SimpleName[?x] = ?simplename,
-+MethodSignature:Descriptor[?x] = ?descriptor,
-+MethodSignature:DeclaringType[?x] = ?declaringType,
-+MethodSignature:ReturnType[?x] = ?returnType <-
-   _MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType).
++Method(?x),
++Method:Value(?x:?ref),
++Method:SimpleName[?x] = ?simplename,
++Method:Descriptor[?x] = ?descriptor,
++Method:DeclaringType[?x] = ?declaringType,
++Method:ReturnType[?x] = ?returnType <-
+   _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType).
 
 
 // StoreInstanceField
@@ -1030,16 +1009,16 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 
 // Basic Types as nullary functional-predicates
 
-+PrimitiveType(?t), +Type:fqn(?t:"boolean"), +Type:boolean[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"byte"),    +Type:byte[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"char"),    +Type:char[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"short"),   +Type:short[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"int"),     +Type:int[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"long"),    +Type:long[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"float"),   +Type:float[] = ?t.
-+PrimitiveType(?t), +Type:fqn(?t:"double"),  +Type:double[] = ?t.
-+NullType(?t),  +Type:fqn(?t:"null_type"), +Type:null[] = ?t.
-+ClassType(?t), +Type:fqn(?t:"java.lang.Object"), +Type:object[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"boolean"), +Type:boolean[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"byte"),    +Type:byte[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"char"),    +Type:char[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"short"),   +Type:short[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"int"),     +Type:int[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"long"),    +Type:long[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"float"),   +Type:float[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"double"),  +Type:double[] = ?t.
++NullType(?t),  +Type:Value(?t:"null_type"), +Type:null[] = ?t.
++ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.
 
 
 // Create single null object

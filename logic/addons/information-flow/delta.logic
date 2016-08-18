@@ -4,6 +4,6 @@
   TaintSourceMethod(?tomethod),
 //  CallGraphEdge(_, ?invocation, _, ?tomethod),
   AnyMethodInvocation(?invocation, ?tomethod),
-  MethodSignature:ReturnType[?tomethod] = ?retType.
+  Method:ReturnType[?tomethod] = ?retType.
 
 // see gatekeeper paper (ben livshits)

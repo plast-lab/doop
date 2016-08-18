@@ -5,13 +5,13 @@
 Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?line),
 
-   Type:fqn(?class:?classStr), ClassType(?class),
-   MethodSignature:SimpleName[?method] = ?methodStr,
-   MethodSignature:DeclaringType[?method] = ?class,
+   Type:Value(?class:?classStr), ClassType(?class),
+   Method:SimpleName[?method] = ?methodStr,
+   Method:DeclaringType[?method] = ?class,
 
-   Type:fqn(?inClass:?inClassStr), ClassType(?inClass),
-   MethodSignature:SimpleName[?inMethod] = ?inMethodStr,
-   MethodSignature:DeclaringType[?inMethod] = ?inClass,
+   Type:Value(?inClass:?inClassStr), ClassType(?inClass),
+   Method:SimpleName[?inMethod] = ?inMethodStr,
+   Method:DeclaringType[?inMethod] = ?inClass,
 
    (
      // There is line information for this invocation. Match exactly with one

@@ -60,7 +60,7 @@ Stats:Simple:VirtualCallGraphEdge(?from, ?to) <-
  ***************************************************/
 Stats:Simple:ApplicationMethod(?method) <-
 	 ApplicationClass(?class),
-	 MethodSignature:DeclaringType[?method] = ?class.
+	 Method:DeclaringType[?method] = ?class.
 
 Stats:Simple:InsensReachableApplicationMethod(?method),
 Stats:Simple:ReachableApplicationMethod(?ctx, ?method) <-
@@ -69,7 +69,7 @@ Stats:Simple:ReachableApplicationMethod(?ctx, ?method) <-
 
 Stats:Simple:ApplicationConcreteMethod(?method) <-
    Stats:Simple:ApplicationMethod(?method),
-   ! MethodModifier(?abstract, ?method),
+   ! Method:Modifier(?abstract, ?method),
    Modifier:Value(?abstract:"abstract").
 
 Stats:Simple:NonReachableApplicationConcreteMethod(?method) <-

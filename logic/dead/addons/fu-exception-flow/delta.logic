@@ -3,9 +3,9 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?exceptionType
 <-
-   MethodModifier(?native, ?method),
+   Method:Modifier(?native, ?method),
    Modifier:Value(?native:"native"),
    Method:DeclaresException(?exceptionType, ?method),
-   Type:fqn(?exceptionType:?typeString),
-   MethodSignature:Value(?method:?methodString),
+   Type:Value(?exceptionType:?typeString),
+   Method:Value(?method:?methodString),
    ?s = ?methodString + "/native new " + ?typeString.

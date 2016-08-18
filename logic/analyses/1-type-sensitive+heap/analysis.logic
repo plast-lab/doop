@@ -7,31 +7,31 @@ RealContextFromContext[?ctx] = ?type <-
 Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  Type:fqn(?type, "<<immutable-context>>").
+  Type:Value(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Type:fqn(?type, "<<immutable-hcontext>>").
+  Type:Value(?type, "<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<system-thread-group>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<main-thread-group>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Type:fqn(?type, "<<jvm-startup>>"),
+  Type:Value(?type, "<<jvm-startup>>"),
   HeapAllocationValue(?alloc, "<<main-thread>>").
 
 
@@ -40,17 +40,17 @@ Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:fqn(?type:"<<initial-context>>").
+  Type:Value(?type:"<<initial-context>>").
 
 Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:fqn(?type:"<<jvm-startup>>").
+  Type:Value(?type:"<<jvm-startup>>").
 
 Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:fqn(?type:"<<class-initialization>>").
+  Type:Value(?type:"<<class-initialization>>").

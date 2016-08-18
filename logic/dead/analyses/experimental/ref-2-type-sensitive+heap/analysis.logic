@@ -33,11 +33,11 @@ HContext(?hctx),
 HContextFromRealHContext[?immutable] = ?hctx,
 ImmutableHContext[] = ?hctx <-
   // Special immutable constant
-  Type:fqn(?immutable:"<<immutable>>").
+  Type:Value(?immutable:"<<immutable>>").
 
 // and initial type constant
 InitialTypeValue[] = ?initType <-
-  Type:fqn(?initType:"<<initial-context>>").
+  Type:Value(?initType:"<<initial-context>>").
 
 // Create initial objects with their heapcontexts.
 HContextFromRealHContext[?type] = ?hctx,
@@ -65,7 +65,7 @@ Context(?ctx)
  <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<initial-context>>").
+  Type:Value(?type2:"<<initial-context>>").
 
 ReachableContext(?ctx, ?method),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
@@ -73,7 +73,7 @@ Context(?ctx)
  <-
   ImplicitReachable(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<jvm-startup>>").
+  Type:Value(?type2:"<<jvm-startup>>").
 
 ReachableContext(?ctx, ?clinit),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
@@ -82,4 +82,4 @@ Context(?ctx)
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<class-initialization>>").
+  Type:Value(?type2:"<<class-initialization>>").

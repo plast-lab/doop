@@ -4,7 +4,7 @@
 
 
 MainMethodDeclaration(?method) ->
-   MethodSignature(?method).
+   Method(?method).
 
 /*
  * Declarations
@@ -20,12 +20,12 @@ VarPointsTo(?heap, ?var) ->
 
 InstanceFieldPointsTo(?heap, ?signature, ?baseheap) ->
    HeapAllocation(?heap),
-   FieldSignature(?signature),
+   Field(?signature),
    HeapAllocation(?baseheap).
 
 StaticFieldPointsTo(?heap, ?signature) ->
    HeapAllocation(?heap),
-   FieldSignature(?signature).
+   Field(?signature).
 
 Assign(?type, ?from, ?to) ->
    Type(?type),
@@ -33,19 +33,19 @@ Assign(?type, ?from, ?to) ->
    Var(?to).
 
 Reachable(?method) ->
-   MethodSignature( ?method ).
+   Method( ?method ).
 
 CallGraphEdge(?invocation, ?tomethod) ->
    MethodInvocation(?invocation),
-   MethodSignature(?tomethod).
+   Method(?tomethod).
 
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
    HeapAllocation(?heap),
    Var(?var),
-   MethodSignature(?inmethod).
+   Method(?inmethod).
 
 AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
-   HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+   HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
-   HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+   HeapAllocation(?heap), Var(?var), Method(?inmethod).

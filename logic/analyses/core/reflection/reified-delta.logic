@@ -12,9 +12,9 @@
 +ReifiedClass[?type] = ?classHeap,
 +HeapAllocation:Type[?classHeap] = ?javaLangClass <-
   ReferenceType(?type),
-  Type:fqn(?type:?typeStr),
+  Type:Value(?type:?typeStr),
   ?classHeap = "<class " + ?typeStr + ">",
-  Type:fqn(?javaLangClass:"java.lang.Class").
+  Type:Value(?javaLangClass:"java.lang.Class").
 
 /**
  * Heap allocations for reified constructors (java.lang.reflect.Constructor)
@@ -23,10 +23,10 @@
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type <-
-  MethodSignature:SimpleName[?signature] = "<init>",
-  MethodSignature:Value(?signature:?signatureStr),
+  Method:SimpleName[?signature] = "<init>",
+  Method:Value(?signature:?signatureStr),
   ?heapStr = "<reified constructor " + ?signatureStr + ">",
-  Type:fqn(?type:"java.lang.reflect.Constructor").
+  Type:Value(?type:"java.lang.reflect.Constructor").
 
 /**
  * Heap allocations for reified methods (java.lang.reflect.Method)
@@ -35,11 +35,11 @@
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type <-
-  MethodSignature:SimpleName[?signature] = ?simplename,
+  Method:SimpleName[?signature] = ?simplename,
   ?simplename != "<init>", ?simplename != "<clinit>",
-  MethodSignature:Value(?signature:?signatureStr),
+  Method:Value(?signature:?signatureStr),
   ?heapStr = "<reified method " + ?signatureStr + ">",
-  Type:fqn(?type:"java.lang.reflect.Method").
+  Type:Value(?type:"java.lang.reflect.Method").
 
 /**
  * Heap allocations for reified fields (java.lang.reflect.Field)
@@ -48,6 +48,6 @@
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type <-
-  FieldSignature:Value(?fld:?signature),
+  Field:Value(?fld:?signature),
   ?heapStr = "<reified field " + ?signature + ">",
-  Type:fqn(?type:"java.lang.reflect.Field").
+  Type:Value(?type:"java.lang.reflect.Field").

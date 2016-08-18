@@ -187,10 +187,6 @@ class FactWriter
     {
         String heap = _rep.heapAlloc(m, expr, session);
 
-        _db.add(NORMAL_OBJ,
-                _db.asEntity(heap),
-                writeType(expr.getType()));
-
         if(expr instanceof NewArrayExpr)
         {
             NewArrayExpr newArray = (NewArrayExpr) expr;
@@ -243,10 +239,6 @@ class FactWriter
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add(NORMAL_OBJ,
-                _db.asEntity(heap),
-                writeType(arrayType));
-
         _db.add(ASSIGN_HEAP_ALLOC,
                 _db.asEntity(rep),
                 _db.asIntColumn(String.valueOf(index)),
@@ -286,12 +278,7 @@ class FactWriter
     /*
     public void writeAssignNewMultiArrayExpr(SootMethod m, Stmt stmt, Local l, NewMultiArrayExpr expr, Session session)
     {
-        // what is a normal object?
         String heap = _rep.heapAlloc(m, expr, session);
-
-        _db.add("NormalObject",
-                _db.asEntity(heap),
-                writeType(expr.getType()));
 
         // local variable to assign the current array allocation to.
         String assignTo = _rep.local(m, l);
@@ -320,7 +307,7 @@ class FactWriter
                 _db.asEntity(heap),
                 _db.asIntColumn(String.valueOf(dimensions)),
                 _db.asEntity(assignTo),
-                _db.asEntity("MethodSignature", _rep.method(m)));
+                _db.asEntity("Method", _rep.method(m)));
 
     // idea: do generate the heap allocations, but not the assignments
     // (to array indices). Do store the type of those heap allocations
@@ -563,7 +550,7 @@ class FactWriter
                 writeType(application));
     }
 
-    void writeFieldSignature(SootField f)
+    void writeField(SootField f)
     {
         _db.add(FIELD_SIGNATURE,
                 _db.asEntity(_rep.signature(f)),
@@ -587,7 +574,7 @@ class FactWriter
     }
 
 
-    void writeMethodSignature(SootMethod m)
+    void writeMethod(SootMethod m)
     {
         _db.add(METHOD_SIGNATURE,
                 _db.asEntity(_rep.signature(m)),

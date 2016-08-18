@@ -3,25 +3,25 @@
 +HeapAllocation:Type[?obj] = ?objType,
 +Tamiflex:Class:NewInstance(?invocation, ?obj)
 <-
-   MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
+   Method:Value(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?objTypeStr, ?invocation),
    Instruction:Value@previous(?invocation:?invocationStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
-   Type:fqn(?objType:?objTypeStr).
+   Type:Value(?objType:?objTypeStr).
 
 +Instruction:Value(?obj:?objStr),
 +HeapAllocation(?obj),
 +HeapAllocation:Type[?obj] = ?objType,
 +Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
+   Method:Value(?sig:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?constructorStr, ?invocation),
    Instruction:Value@previous(?invocation:?invocationStr),
-   MethodSignature:Value(?constructor:?constructorStr),
-   MethodSignature:DeclaringType[?constructor] = ?objType,
-   Type:fqn(?objType:?objTypeStr),
+   Method:Value(?constructor:?constructorStr),
+   Method:DeclaringType[?constructor] = ?objType,
+   Type:Value(?objType:?objTypeStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">".
 
 +Instruction:Value(?obj:?objStr),
@@ -29,63 +29,63 @@
 +HeapAllocation:Type[?obj] = ?objType,
 +Tamiflex:Array:NewInstance(?invocation, ?obj)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
+   Method:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
    StaticMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?objTypeStr, ?invocation),
    Instruction:Value@previous(?invocation:?invocationStr),
    ?objStr = "<(Tamiflex) " + ?invocationStr + "/" + ?objTypeStr + ">",
-   Type:fqn(?objType:?objTypeStr).
+   Type:Value(?objType:?objTypeStr).
 
 +LoadArrayIndex(?array, ?value, ?inmethod)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
+   Method:Value(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
    StaticMethodInvocation(?invocation, ?sig, ?inmethod),
    ActualParam[0, ?invocation] = ?array,
    AssignReturnValue[?invocation] = ?value.
 
 +StoreArrayIndex(?value, ?array, ?inmethod)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>"),
+   Method:Value(?sig:"<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>"),
    StaticMethodInvocation(?invocation, ?sig, ?inmethod),
    ActualParam[0, ?invocation] = ?array,
    ActualParam[2, ?invocation] = ?value.
 
 +LoadInstanceField(?base, ?fld, ?to, ?inmethod)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+   Method:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   ! FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   ! Field:Modifier("static", ?fld),
    ActualParam[0, ?invocation] = ?base,
    AssignReturnValue[?invocation] = ?to.
 
 +LoadStaticField(?fld, ?to, ?inmethod)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+   Method:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   Field:Modifier("static", ?fld),
    AssignReturnValue[?invocation] = ?to.
 
 +StoreInstanceField(?from, ?base, ?fld, ?inmethod)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+   Method:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   ! FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   ! Field:Modifier("static", ?fld),
    ActualParam[0, ?invocation] = ?base,
    ActualParam[1, ?invocation] = ?from.
 
 +StoreStaticField(?from, ?fld, ?inmethod)
 <-
-   MethodSignature:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+   Method:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   Field:Modifier("static", ?fld),
    ActualParam[1, ?invocation] = ?from.
 
 +Instruction:Value(?heap:?heapStr),
@@ -93,49 +93,49 @@
 +HeapAllocation:Type[?heap] = ?javaField,
 +Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
 <-
-   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>") ;
-    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ),
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
+   Field:Value(?fld:?fldStr),
    ?heapStr = "<(Tamiflex) " + ?fldStr + ">",
-   Type:fqn(?javaField:"java.lang.reflect.Field").
+   Type:Value(?javaField:"java.lang.reflect.Field").
 
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?javaFieldArray,
 +Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
 <-
-   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getFields()>") ),
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getFields()>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?typeStr, ?invocation),
-   Type:fqn(?type:?typeStr),
+   Type:Value(?type:?typeStr),
    ?heapStr = "<(Tamiflex) " + ?typeStr + "/Field[]>",
-   Type:fqn(?javaFieldArray:"java.lang.reflect.Field[]").
+   Type:Value(?javaFieldArray:"java.lang.reflect.Field[]").
 
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?javaMethod,
 +Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
 <-
-   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>") ;
-    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ),
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?methodStr, ?invocation),
-   MethodSignature:Value(?method:?methodStr),
+   Method:Value(?method:?methodStr),
    ?heapStr = "<(Tamiflex) " + ?methodStr + ">",
-   Type:fqn(?javaMethod:"java.lang.reflect.Method").
+   Type:Value(?javaMethod:"java.lang.reflect.Method").
 
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?javaMethodArray,
 +Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation)
 <-
-   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>") ),
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?typeStr, ?invocation),
-   Type:fqn(?type:?typeStr),
+   Type:Value(?type:?typeStr),
    ?heapStr = "<(Tamiflex) " + ?typeStr + "/Method[]>",
-   Type:fqn(?javaMethodArray:"java.lang.reflect.Method[]").
+   Type:Value(?javaMethodArray:"java.lang.reflect.Method[]").

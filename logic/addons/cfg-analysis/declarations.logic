@@ -1,5 +1,5 @@
 OptInstructionFromMethodIndex[?method, ?index] = ?insn ->
-   Instruction(?insn), int[32](?index), MethodSignature(?method).
+   Instruction(?insn), int[32](?index), Method(?method).
 
 Instruction:Next[?i] = ?next ->
    Instruction(?i), Instruction(?next).
