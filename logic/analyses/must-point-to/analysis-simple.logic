@@ -56,7 +56,7 @@ MustPointTo[?var, ?callCtx, ?insn] = ?heap ->
 // (non-summary).
 InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
    HeapAllocation(?heap), HeapAllocation(?baseHeap), 
-   MustContext(?ctx), Instruction(?insn), FieldSignature(?fld).
+   MustContext(?ctx), Instruction(?insn), Field(?fld).
 
 // NOTE: MustPointTo and InstanceFieldMustPointTo relations are
 // derived only from the AccessPathMustPointTo relation. We use them for
@@ -285,7 +285,7 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 StaticFinalFieldMustPointTo[?fld] = ?heap <-
    Modifier:final[] = ?final,
-   FieldModifier(?final, ?fld),
+   Field:Modifier(?final, ?fld),
    SingleAllContext[] = ?ctx,
    AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap,
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
@@ -804,14 +804,14 @@ IsVariable(?ap) <-
 
 // Constructor from static field
 AccessPath:ByStaticField[?fld] = ?ap ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 lang:skolem(`AccessPath:ByStaticField).
 
 AccessPath:ByStaticFieldInv[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
 
 AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2 ->
-   FieldSignature(?fld), AccessPath(?ap1), AccessPath(?ap2).
+   Field(?fld), AccessPath(?ap1), AccessPath(?ap2).
 lang:skolem(`AccessPath:ByFieldAccess).
 
 AccessPath:ByFieldAccessInv[?ap1, ?fld] = ?ap2 <- 
@@ -834,7 +834,7 @@ AccessPath:LastFieldInv(?ap, ?fld) <-
 
 // Fields in access path
 AccessPath:ContainsField(?fld, ?ap) ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 
 AccessPath:ContainsField(?fld, ?ap) <-
    AccessPath:LastField[?ap] = ?fld.
@@ -845,7 +845,7 @@ AccessPath:ContainsField(?fld, ?ap) <-
 
 // Access path has static field as base
 AccessPath:ContainsStaticField[?ap] = ?fld ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 
 AccessPath:ContainsStaticField[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
@@ -865,7 +865,7 @@ AccessPath:Length[?ap] = ?len ->
    AccessPath(?ap), int[32](?len).
 
 TypeContainsField(?fld, ?type) <-
-   FieldSignature:DeclaringType[?fld] = ?type.
+   Field:DeclaringType[?fld] = ?type.
 
 TypeContainsField(?fld, ?type) <-
    Subclass(?superType, ?type),
@@ -876,7 +876,7 @@ AccessPath:Type[?ap] = ?type ->
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
-   FieldSignature:Type[?fld] = ?type.
+   Field:Type[?fld] = ?type.
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:ByVarInv[?ap] = ?var,
@@ -884,7 +884,7 @@ AccessPath:Type[?ap] = ?type <-
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:LastField[?ap] = ?fld,
-   FieldSignature:Type[?fld] = ?type.
+   Field:Type[?fld] = ?type.
 
 AccessPath:MaxLength[] = ?maxLen ->
    int[32](?maxLen).
@@ -931,7 +931,7 @@ NameFromRefMode[?ref] = ?varName <-
 lang:derivationType[`NameFromRefMode] = "Derived".
 
 NameFromRefMode[?ref] = ?varName <-
-   FieldSignature:Value(_:?ref),
+   Field:Value(_:?ref),
    FieldRefModeLastTokenIndex[?ref] = ?maxIdx,
    string:split[?ref, "/", ?maxIdx] = ?varName.
 lang:derivationType[`NameFromRefMode] = "Derived".
@@ -943,7 +943,7 @@ VarRefModeLastTokenIndex[?ref] = ?maxIdx <-
 
 FieldRefModeLastTokenIndex[?ref] = ?maxIdx <-
    agg<<?maxIdx = max(?idx)>>
-   FieldSignature:Value(_:?ref),
+   Field:Value(_:?ref),
    string:split[?ref, "/", ?idx] = _.
 
 
@@ -993,7 +993,7 @@ AccessPath:Length[?ap] = 2 <-
    Reachable(?meth),
 #endif
    AccessPath:ByVar[?base] = ?baseAp,
-   ReferenceType(FieldSignature:Type[?fld]).
+   ReferenceType(Field:Type[?fld]).
 
 AccessPath(?ap),
 AccessPath:ByStaticField[?fld] = ?ap,
@@ -1004,7 +1004,7 @@ AccessPath:Length[?ap] = 1 <-
 #ifdef MUST_AFTER_MAY
    Reachable(?meth),
 #endif
-   ReferenceType(FieldSignature:Type[?fld]).
+   ReferenceType(Field:Type[?fld]).
 
 
 //// END access path creation

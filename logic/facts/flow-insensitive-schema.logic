@@ -19,16 +19,16 @@ Throw(?insn, ?var) ->
 // Note: in generat OPT inmethod last
 
 LoadInstanceField(?base, ?sig, ?to, ?inmethod) ->
-   Var(?base), FieldSignature(?sig), Var(?to), MethodSignature(?inmethod).
+   Var(?base), Field(?sig), Var(?to), MethodSignature(?inmethod).
 
 StoreInstanceField(?from, ?base, ?signature, ?inmethod) ->
-   Var(?from), Var(?base), FieldSignature(?signature), MethodSignature(?inmethod).
+   Var(?from), Var(?base), Field(?signature), MethodSignature(?inmethod).
 
 LoadStaticField(?sig, ?to, ?inmethod) ->
-   FieldSignature(?sig), Var(?to), MethodSignature(?inmethod).
+   Field(?sig), Var(?to), MethodSignature(?inmethod).
 
 StoreStaticField(?from, ?signature, ?inmethod) ->
-   Var(?from), FieldSignature(?signature), MethodSignature(?inmethod).
+   Var(?from), Field(?signature), MethodSignature(?inmethod).
 
 LoadArrayIndex(?base, ?to, ?inmethod) ->
    Var(?base), Var(?to), MethodSignature(?inmethod).

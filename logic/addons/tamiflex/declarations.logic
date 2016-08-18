@@ -13,7 +13,7 @@ Tamiflex:Invoke(?callerCtx, ?invocation, ?method) ->
    Context(?callerCtx), MethodInvocation(?invocation), MethodSignature(?method).
 
 Tamiflex:ReifiedField(?fld, ?heap, ?invocation) ->
-   FieldSignature(?fld), HeapAllocation(?heap), MethodInvocation(?invocation).
+   Field(?fld), HeapAllocation(?heap), MethodInvocation(?invocation).
 
 Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation) ->
    Type(?type), HeapAllocation(?heap), MethodInvocation(?invocation).

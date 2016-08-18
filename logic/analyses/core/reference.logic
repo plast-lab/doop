@@ -8,6 +8,6 @@
  */
 
 StaticFieldPointsTo(?hctx, ?heap, ?pending) <-
-   FieldSignature:Value(?pending:"<java.lang.ref.Reference: java.lang.ref.Reference pending>"),
+   Field:Value(?pending:"<java.lang.ref.Reference: java.lang.ref.Reference pending>"),
    Var:Value(?this:"<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this"),
    VarPointsTo(?hctx, ?heap, _, ?this).

@@ -164,7 +164,7 @@ InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
   // The next three clauses shouldn't filter anything normally, but they do for
   // reflective field assignments.
   HeapAllocation:Type[?heap] = ?heaptype,
-  FieldSignature:Type[?signature] = ?fieldtype,
+  Field:Type[?signature] = ?fieldtype,
   SupertypeOf(?fieldtype, ?heaptype).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from) <-
@@ -624,7 +624,7 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
 #endif
 
 ReachableLoadInstanceField(?to, ?sig, ?base) ->
-  Var(?to), FieldSignature(?sig), Var(?base).
+  Var(?to), Field(?sig), Var(?base).
 ReachableLoadInstanceField(?to, ?sig, ?base) <-
   LoadInstanceField(?base, ?sig, ?to, ?inmethod),
   Reachable(?inmethod).

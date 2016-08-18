@@ -20,12 +20,12 @@ VarPointsTo(?heap, ?var) ->
 
 InstanceFieldPointsTo(?heap, ?signature, ?baseheap) ->
    HeapAllocation(?heap),
-   FieldSignature(?signature),
+   Field(?signature),
    HeapAllocation(?baseheap).
 
 StaticFieldPointsTo(?heap, ?signature) ->
    HeapAllocation(?heap),
-   FieldSignature(?signature).
+   Field(?signature).
 
 Assign(?type, ?from, ?to) ->
    Type(?type),

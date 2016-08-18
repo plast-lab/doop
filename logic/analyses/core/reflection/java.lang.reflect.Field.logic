@@ -21,12 +21,12 @@ ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature) <-
 // TODO Check if class initialization handled by reflective.logic
 ReflectiveLoadStaticField(?ctx, ?to, ?signature) <-
   ReflectiveLoadField(_, ?ctx, ?to, ?signature),
-  FieldModifier("static", ?signature).
+  Field:Modifier("static", ?signature).
 
 // Load of an instance field
 ReflectiveLoadInstanceField(?ctx, ?to, ?signature, ?ctx, ?base) <-
   ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature),
-  ! FieldModifier("static", ?signature),
+  ! Field:Modifier("static", ?signature),
   java:lang:reflect:Field:get:base[?invocation] = ?base.
 
 
@@ -50,10 +50,10 @@ ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from) <-
 // TODO Check if class initialization handled by reflective.logic
 ReflectiveStoreStaticField(?signature, ?ctx, ?from) <-
   ReflectiveStoreField(_, ?signature, ?ctx, ?from),
-  FieldModifier("static", ?signature).
+  Field:Modifier("static", ?signature).
 
 // Store of an instance field
 ReflectiveStoreInstanceField(?ctx, ?from, ?signature, ?ctx, ?base) <-
   ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from),
-  ! FieldModifier("static", ?signature),
+  ! Field:Modifier("static", ?signature),
   java:lang:reflect:Field:set:base[?invocation] = ?base.

@@ -77,19 +77,19 @@ ClassModifier(?mod, ?class) ->
 
 //-----------------------------------------------------------------------------
 
-FieldSignature(?x), FieldSignature:Value(?x:?id) -> string(?id).
+Field(?x), Field:Value(?x:?id) -> string(?id).
 
-FieldSignature:DeclaringType[?field] = ?declaringClass ->
-   FieldSignature(?field), ReferenceType(?declaringClass).
+Field:DeclaringType[?field] = ?declaringClass ->
+   Field(?field), ReferenceType(?declaringClass).
 
-FieldSignature:SimpleName[?field] = ?simpleName ->
-   FieldSignature(?field), SimpleName(?simpleName).
+Field:SimpleName[?field] = ?simpleName ->
+   Field(?field), SimpleName(?simpleName).
 
-FieldSignature:Type[?field] = ?type ->
-   FieldSignature(?field), Type(?type).
+Field:Type[?field] = ?type ->
+   Field(?field), Type(?type).
 
-FieldModifier(?mod, ?field) ->
-   Modifier(?mod), FieldSignature(?field).
+Field:Modifier(?mod, ?field) ->
+   Modifier(?mod), Field(?field).
 
 
 //-----------------------------------------------------------------------------
@@ -312,7 +312,7 @@ ExitMonitor:Var[?insn] = ?var ->
 // all types of field instuctions.
 
 FieldInstruction:Signature[?insn] = ?sign ->
-   FieldInstruction(?insn), FieldSignature(?sign).
+   FieldInstruction(?insn), Field(?sign).
 
 //------------------------------------------------
 // A LoadInstanceField instruction has the form:
@@ -550,7 +550,7 @@ Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
 // [Capacities]
 //-----------------------------------------------------------------------------
 
-lang:physical:capacity[`FieldSignature]      = 131072.
+lang:physical:capacity[`Field]               = 131072.
 lang:physical:capacity[`MethodSignature]     = 131072.
 lang:physical:capacity[`MethodDescriptor]    = 131072.
 lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */

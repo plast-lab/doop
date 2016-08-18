@@ -8,7 +8,7 @@ ReifiedMethod[?method] = ?heap ->
   MethodSignature(?method), HeapAllocation(?heap).
 
 ReifiedField[?field] = ?heap ->
-  FieldSignature(?field), HeapAllocation(?heap).
+  Field(?field), HeapAllocation(?heap).
 
 
 ReflectiveHeap(?heap) -> HeapAllocation(?heap).

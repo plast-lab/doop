@@ -13,7 +13,7 @@
  * ?heap        The heap object containing the field
  */
 AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) ->
-    FieldSignature(?fld),
+    Field(?fld),
     HContext(?hctx),
     HeapAllocation(?heap).
 
@@ -102,7 +102,7 @@ SecureInstruction(?insn) ->
  */
 StoreFldTo(?base, ?fld, ?insn) ->
     Var(?base),
-    FieldSignature(?fld),
+    Field(?fld),
     StoreInstanceField:Insn(?insn).
 
 /**
@@ -115,7 +115,7 @@ StoreFldTo(?base, ?fld, ?insn) ->
 LoadFldFrom(?insn, ?base, ?fld) ->
     LoadInstanceField:Insn(?insn),
     Var(?base),
-    FieldSignature(?fld).
+    Field(?fld).
 
 
 /**

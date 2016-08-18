@@ -120,23 +120,23 @@ _DirectSuperclass(?param1, ?param2) ->
   _DirectSuperclass(?param1, ?param2).
 
 
-// FieldModifier
+// Field:Modifier
 
-lang:physical:storageModel[`_FieldModifier] = "DelimitedFile".
-lang:physical:filePath[`_FieldModifier] = "facts/FieldModifier.facts".
-lang:physical:delimiter[`_FieldModifier] = "\t".
-lang:physical:hasColumnNames[`_FieldModifier] = false.
+lang:physical:storageModel[`_Field:Modifier] = "DelimitedFile".
+lang:physical:filePath[`_Field:Modifier] = "facts/Field-Modifier.facts".
+lang:physical:delimiter[`_Field:Modifier] = "\t".
+lang:physical:hasColumnNames[`_Field:Modifier] = false.
 
-_FieldModifier(?param1, ?param2) ->
+_Field:Modifier(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
 +Modifier:Value(?modifier:?param1),
 +Modifier(?modifier),
-+FieldSignature:Value(?field:?param2),
-+FieldSignature(?field),
-+FieldModifier(?modifier, ?field) <-
-  _FieldModifier(?param1, ?param2).
++Field:Value(?field:?param2),
++Field(?field),
++Field:Modifier(?modifier, ?field) <-
+  _Field:Modifier(?param1, ?param2).
 
 
 lang:physical:storageModel[`_ClassModifier] = "DelimitedFile".
