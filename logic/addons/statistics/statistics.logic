@@ -161,10 +161,10 @@ Stats:InsensMethodVarCount[?method] = ?n <-
 Stats:MethodsWithVars[] = ?n <- agg<<?n = count()>> Stats:MethodVarCount[_, _] = _.
 Stats:InsensMethodsWithVars[] = ?n <- agg<<?n = count()>> Stats:InsensMethodVarCount[_] = _.
 
-Stats:ReachableNativeMethod(?method) -> MethodSignature(?method).
+Stats:ReachableNativeMethod(?method) -> Method(?method).
 Stats:ReachableNativeMethod(?method) <-
 	Reachable(?method),
-	MethodModifier(?native, ?method),
+	Method:Modifier(?native, ?method),
 	Modifier:Value(?native:"native").
 */
 
@@ -186,7 +186,7 @@ Stats:Dominance:VarPointsTo:Object[?hctx, ?heap] = ?count ->
 Stats:Dominance:VarPointsTo:Object[?hctx, ?heap] = count <-
 	agg<<count = count()>>(VarPointsTo(?hctx, ?heap, _, _)).
 
-Stats:Dominance:VarPointsTo:Method[?method] = ?count -> MethodSignature(?method), int[64](?count).
+Stats:Dominance:VarPointsTo:Method[?method] = ?count -> Method(?method), int[64](?count).
 Stats:Dominance:VarPointsTo:Method[?method] = count <-
 	agg<<count = total(varCount)>>(
 	Reachable(?method),
@@ -225,7 +225,7 @@ Stats:InsensCallGraphEdgesFromSize[?from] = ?size -> CallGraphEdgeSource(?from),
 Stats:InsensCallGraphEdgesFromSize[?from] = size <-
 	agg<<size = count()>>(Stats:Simple:InsensCallGraphEdge(?from, _)).
 
-Stats:InsensCallGraphEdgesToSize[?to] = ?size -> MethodSignature(?to), int[64](?size).
+Stats:InsensCallGraphEdgesToSize[?to] = ?size -> Method(?to), int[64](?size).
 Stats:InsensCallGraphEdgesToSize[?to] = size <-
 	agg<<size = count()>>(Stats:Simple:InsensCallGraphEdge(_, ?to)).
 */
@@ -235,11 +235,11 @@ Stats:InsensCallGraphEdgesToSize[?to] = size <-
  ***************************************************/
 
 Stats:InsensHeapThrowPointsTo(?heap, ?ctx, ?method) ->
-	HeapAllocation(?heap), Context(?ctx), MethodSignature(?method).
+	HeapAllocation(?heap), Context(?ctx), Method(?method).
 
 /*
 Stats:InsensHeapThrowPointsToSize[?ctx, ?method] = ?size ->
-	Context(?ctx), MethodSignature(?method), int[64](?size).
+	Context(?ctx), Method(?method), int[64](?size).
 
 Stats:InsensHeapThrowPointsToSize[?ctx, ?method] = size <-
 	agg<<size = count()>>(Stats:InsensHeapThrowPointsTo(_, ?ctx, ?method)).
@@ -249,11 +249,11 @@ Stats:InsensHeapThrowPointsTo(?heap, ?ctx, ?method) <-
 	ThrowPointsTo(_, ?heap, ?ctx, ?method).
 
 Stats:InsensThrowPointsTo(?heap, ?method) ->
-	HeapAllocation(?heap), MethodSignature(?method).
+	HeapAllocation(?heap), Method(?method).
 
 /*
 Stats:InsensThrowPointsToSize[?method] = ?size ->
-	MethodSignature(?method), int[64](?size).
+	Method(?method), int[64](?size).
 
 Stats:InsensThrowPointsToSize[?method] = size <-
 	agg<<size = count()>>(Stats:InsensThrowPointsTo(_, ?method)).

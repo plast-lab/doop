@@ -320,7 +320,7 @@ class FactWriter
                 _db.asEntity(heap),
                 _db.asIntColumn(String.valueOf(dimensions)),
                 _db.asEntity(assignTo),
-                _db.asEntity("MethodSignature", _rep.method(m)));
+                _db.asEntity("Method", _rep.method(m)));
 
     // idea: do generate the heap allocations, but not the assignments
     // (to array indices). Do store the type of those heap allocations
@@ -587,7 +587,7 @@ class FactWriter
     }
 
 
-    void writeMethodSignature(SootMethod m)
+    void writeMethod(SootMethod m)
     {
         _db.add(METHOD_SIGNATURE,
                 _db.asEntity(_rep.signature(m)),

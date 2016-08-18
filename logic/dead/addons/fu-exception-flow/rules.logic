@@ -28,7 +28,7 @@ NativeThrowingIOException(?method, ?exceptionType) <-
    SubtypeOf(?exceptionType, ?io).
 
 NativeMethod(?method) <-
-   MethodModifier(?native, ?method),
+   Method:Modifier(?native, ?method),
    Modifier:Value(?native:"native").
 
 /**
@@ -37,7 +37,7 @@ NativeMethod(?method) <-
 
 ExceptionHandlerApplication(?handler) <-
    ApplicationClass(?class),
-   MethodSignature:DeclaringType[?method] = ?class,
+   Method:DeclaringType[?method] = ?class,
    ExceptionHandler:Method[?handler] = ?method.
 
 /*
@@ -112,7 +112,7 @@ Native:Throws(?nativeMethod, ?heap) <-
 #endif
 
 
-#define InitFuThrowSource(s) Fu:ThrowSource(?sig) <- MethodSignature:Value(?sig : s).
+#define InitFuThrowSource(s) Fu:ThrowSource(?sig) <- Method:Value(?sig : s).
 
 InitFuThrowSource("<java.net.Socket: void <init>(java.net.InetAddress,int,java.net.InetAddress,int,boolean)>")
 InitFuThrowSource("<java.net.Socket: void <init>(java.net.SocketImpl)>")

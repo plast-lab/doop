@@ -1,6 +1,6 @@
 DeclaringClass:Allocation[?heap] = ?type <-
    AssignHeapAllocation(?heap, _, ?inmethod),
-   MethodSignature:DeclaringType[?inmethod] = ?type,
+   Method:DeclaringType[?inmethod] = ?type,
    !StringConstant(?heap),
    !ClassConstant(?heap).
 

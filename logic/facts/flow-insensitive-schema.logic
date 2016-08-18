@@ -19,45 +19,45 @@ Throw(?insn, ?var) ->
 // Note: in generat OPT inmethod last
 
 LoadInstanceField(?base, ?sig, ?to, ?inmethod) ->
-   Var(?base), Field(?sig), Var(?to), MethodSignature(?inmethod).
+   Var(?base), Field(?sig), Var(?to), Method(?inmethod).
 
 StoreInstanceField(?from, ?base, ?signature, ?inmethod) ->
-   Var(?from), Var(?base), Field(?signature), MethodSignature(?inmethod).
+   Var(?from), Var(?base), Field(?signature), Method(?inmethod).
 
 LoadStaticField(?sig, ?to, ?inmethod) ->
-   Field(?sig), Var(?to), MethodSignature(?inmethod).
+   Field(?sig), Var(?to), Method(?inmethod).
 
 StoreStaticField(?from, ?signature, ?inmethod) ->
-   Var(?from), Field(?signature), MethodSignature(?inmethod).
+   Var(?from), Field(?signature), Method(?inmethod).
 
 LoadArrayIndex(?base, ?to, ?inmethod) ->
-   Var(?base), Var(?to), MethodSignature(?inmethod).
+   Var(?base), Var(?to), Method(?inmethod).
 
 StoreArrayIndex(?from, ?base, ?inmethod) ->
-   Var(?from), Var(?base), MethodSignature(?inmethod).
+   Var(?from), Var(?base), Method(?inmethod).
 
 AssignCast(?type, ?from, ?to, ?inmethod) ->
-   Var(?from), Var(?to), Type(?type), MethodSignature(?inmethod).
+   Var(?from), Var(?to), Type(?type), Method(?inmethod).
 
 AssignLocal(?from, ?to, ?inmethod) ->
-   Var(?from), Var(?to), MethodSignature(?inmethod).
+   Var(?from), Var(?to), Method(?inmethod).
 
 AssignNull(?to, ?inmethod) ->
-   Var(?to), MethodSignature(?inmethod).
+   Var(?to), Method(?inmethod).
 
 AssignHeapAllocation(?heap, ?to, ?inmethod) ->
-   HeapAllocation(?heap), Var(?to), MethodSignature(?inmethod).
+   HeapAllocation(?heap), Var(?to), Method(?inmethod).
 
 // Note: a Jimple method can have multiple return variables
 ReturnVar(?var, ?method) ->
-   Var(?var), MethodSignature(?method).
+   Var(?var), Method(?method).
 
 VirtualMethodInvocation(?invocation, ?signature, ?inmethod) ->
    MethodInvocation(?invocation),
-   MethodSignature(?signature),
-   MethodSignature(?inmethod).
+   Method(?signature),
+   Method(?inmethod).
 
 StaticMethodInvocation(?invocation, ?signature, ?inmethod) ->
    MethodInvocation(?invocation),
-   MethodSignature(?signature),
-   MethodSignature(?inmethod).
+   Method(?signature),
+   Method(?inmethod).

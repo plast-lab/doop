@@ -90,7 +90,7 @@ SecureInstruction(?insn) ->
  * ?meth        The secure method
  */
  SecureMethod(?meth) ->
-    MethodSignature(?meth).
+    Method(?meth).
 
 
 /**
@@ -148,7 +148,7 @@ InstructionDefinesVar(?instruction, ?var) ->
  */
 CFGLeaf(?headInsn, ?method) ->
     Instruction(?headInsn),
-    MethodSignature(?method).
+    Method(?method).
 
 /**
  * A basic block does not dominate another one

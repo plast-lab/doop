@@ -24,9 +24,9 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?runThis),
 RunningThread(?hctx, ?heap) 
 <-
 #if defined(JRE13) || defined(JRE14)
-   MethodSignature:Value(?start:"<java.lang.Thread: void start()>"),
+   Method:Value(?start:"<java.lang.Thread: void start()>"),
 #else
-   MethodSignature:Value(?start:"<java.lang.Thread: void start0()>"),
+   Method:Value(?start:"<java.lang.Thread: void start0()>"),
 #endif
    ThisVar[?start] = ?startThis,
    VarPointsTo(?hctx, ?heap, ?callerCtx, ?startThis),
@@ -51,7 +51,7 @@ VarPointsTo(?hctx, ?heap, ?callerCtx, ?local) <-
 
 ReachableCurrentThreadInvocation(?callerCtx, ?local) <-
    ReachableContext(?callerCtx, ?inmethod),
-   MethodSignature:Value(?signature:"<java.lang.Thread: java.lang.Thread currentThread()>"),
+   Method:Value(?signature:"<java.lang.Thread: java.lang.Thread currentThread()>"),
    StaticMethodInvocation(?invocation, ?signature, ?inmethod),
    AssignReturnValue[?invocation] = ?local.
 
@@ -65,7 +65,7 @@ ReachableCurrentThreadInvocation(?callerCtx, ?local) <-
 MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-   MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>()>"),
+   Method:Value(?sig:"<java.lang.ThreadGroup: void <init>()>"),
    ThisVar[?sig] = ?this,
    SystemThreadGroup(?hctx, ?heap).
 
@@ -83,7 +83,7 @@ MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
 VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
-   MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   Method:Value(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
    ThisVar[?sig] = ?this,
    FormalParam[0, ?sig] = ?groupParam,
    MainThreadGroup(?hctx, ?heap),
@@ -102,7 +102,7 @@ MergeStartupMacro(?hctx, ?heap, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
 VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
-   MethodSignature:Value(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   Method:Value(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
    ThisVar[?sig] = ?this,
    FormalParam[0, ?sig] = ?groupParam,
    MainThread(?hctx, ?heap),

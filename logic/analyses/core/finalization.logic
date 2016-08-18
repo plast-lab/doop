@@ -31,10 +31,10 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
 
 
 FinalizerRegisterInfo(?register, ?formal) <-
-   MethodSignature:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
+   Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal.
 
 OverridesFinalize(?class) <-
    MethodLookup["finalize", "void()", ?class] = ?method,
-   MethodSignature:Value(?finalizeInObject:"<java.lang.Object: void finalize()>"),
+   Method:Value(?finalizeInObject:"<java.lang.Object: void finalize()>"),
    ?finalizeInObject != ?method.

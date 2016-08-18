@@ -53,7 +53,7 @@ GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
    FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
    AllConcreteImplementations(?subtype, ?staticType),
-   MethodSignature:Value(?method:?methodStr),
+   Method:Value(?method:?methodStr),
    MockEntryPoint(_, ?method),
    // TODO: replace with ClassTypeValue macro
    Type:fqn(?subtype:?subtypeStr), 
@@ -64,7 +64,7 @@ MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
    Type:fqn(?class:?classStr),
    ServletEntryMethodName(?serviceMethodName),
-   MethodSignature:Value(?entry:methodSigStr),
+   Method:Value(?entry:methodSigStr),
    (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
    ServletEntryMethodName(?serviceMethodName).
 
@@ -86,7 +86,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
 HeapForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
    ReachableContext(?ctx, ?method),
    ThisVar[?method] = ?receiver,
-   MethodSignature:DeclaringType[?method] = ?class,
+   Method:DeclaringType[?method] = ?class,
    MockObjectHeap(?heapStr, ?class).
    
 VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)

@@ -5,11 +5,11 @@
 #ifdef EXCEPTIONS_CS
 ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) ->
    HContext(?hctx), HeapAllocation(?heap),
-   Context(?ctx), MethodSignature(?method).
+   Context(?ctx), Method(?method).
 #else
 ThrowPointsTo(?hctx, ?heap, ?method) ->
    HContext(?hctx), HeapAllocation(?heap),
-   MethodSignature(?method).
+   Method(?method).
 #endif
 
 #if defined(EXCEPTIONS_FILTER) && !defined(EXCEPTIONS_ORDER)

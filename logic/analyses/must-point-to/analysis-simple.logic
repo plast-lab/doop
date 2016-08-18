@@ -36,7 +36,7 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
    AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn), MustContext(?ctx).
 
-RootMethodForMustAnalysis(?meth) -> MethodSignature(?meth).
+RootMethodForMustAnalysis(?meth) -> Method(?meth).
 
 //// ====================================
 //// BEGIN Auxiliary relations
@@ -70,20 +70,20 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
 // Need to identify relevant (i.e., reachable) methods for the must
 // analysis, instead of blindly applying it to all available code.
 ReachableMethodUnderMustContext(?ctx, ?meth) ->
-   MustContext(?ctx), MethodSignature(?meth).
+   MustContext(?ctx), Method(?meth).
 
 ReachableMethodUnderMustContext(?ctx, ?meth) <-
    SingleAllContext[] = ?ctx,
    RootMethodForMustAnalysis(?meth).
 
 RootMethodForMustAnalysis(?meth) <-
-   MethodSignature(?meth).
+   Method(?meth).
 
 ReachableMethodUnderMustContext(?ctx, ?meth) <-
    MustCallGraphEdge:Context[_, ?invo] = ?ctx,
    MustCallGraphEdge:ToMethod[?invo] = ?meth.
 
-MustReachable(?meth) -> MethodSignature(?meth).
+MustReachable(?meth) -> Method(?meth).
 MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 
 // For some caller context, the call at ?invocation will get
@@ -92,7 +92,7 @@ MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 // but only qualified by ?calleeCtx.
 MustCallGraphEdge:ToMethod[?invocation] = ?toMethod ->
    CallGraphEdgeSource(?invocation), 
-   MethodSignature(?toMethod).
+   Method(?toMethod).
 MustCallGraphEdge:Context[?ctx, ?invocation] = ?calleeCtx ->
    CallGraphEdgeSource(?invocation), 
    MustContext(?calleeCtx), MustContext(?ctx).
@@ -289,7 +289,7 @@ StaticFinalFieldMustPointTo[?fld] = ?heap <-
    SingleAllContext[] = ?ctx,
    AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap,
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
-   MethodSignature:SimpleName[?method] = "<clinit>".
+   Method:SimpleName[?method] = "<clinit>".
 */
 
 // Frame rules

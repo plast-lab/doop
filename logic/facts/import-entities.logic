@@ -163,8 +163,8 @@ _FormalParam(?param1, ?param2, ?param3) ->
   string(?param2),
   string(?param3).
 
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +Var:Value(?var:?param3),
 +Var(?var),
 +FormalParam[?index, ?method] = ?var <-
@@ -184,29 +184,29 @@ _Method:DeclaresException(?param1, ?param2) ->
 
 +Type:fqn(?exceptionType:?param1),
 +ReferenceType(?exceptionType),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +Method:DeclaresException(?exceptionType, ?method) <-
   _Method:DeclaresException(?param1, ?param2).
 
 
-// MethodModifier
+// Method:Modifier
 
-lang:physical:storageModel[`_MethodModifier] = "DelimitedFile".
-lang:physical:filePath[`_MethodModifier] = "facts/MethodModifier.facts".
-lang:physical:delimiter[`_MethodModifier] = "\t".
-lang:physical:hasColumnNames[`_MethodModifier] = false.
+lang:physical:storageModel[`_Method:Modifier] = "DelimitedFile".
+lang:physical:filePath[`_Method:Modifier] = "facts/Method-Modifier.facts".
+lang:physical:delimiter[`_Method:Modifier] = "\t".
+lang:physical:hasColumnNames[`_Method:Modifier] = false.
 
-_MethodModifier(?param1, ?param2) ->
+_Method:Modifier(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
 +Modifier:Value(?mod:?param1),
 +Modifier(?mod),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
-+MethodModifier(?mod, ?method) <-
-  _MethodModifier(?param1, ?param2).
++Method:Value(?method:?param2),
++Method(?method),
++Method:Modifier(?mod, ?method) <-
+  _Method:Modifier(?param1, ?param2).
 
 
 // NativeReturnVar
@@ -222,8 +222,8 @@ _NativeReturnVar(?param1, ?param2) ->
 
 +Var:Value(?var:?param1),
 +Var(?var),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +NativeReturnVar(?var, ?method) <-
   _NativeReturnVar(?param1, ?param2).
 
@@ -260,8 +260,8 @@ _Var:DeclaringMethod(?param1, ?param2) ->
 
 +Var:Value(?ref:?param1),
 +Var(?ref),
-+MethodSignature:Value(?method:?param2),
-+MethodSignature(?method),
++Method:Value(?method:?param2),
++Method(?method),
 +Var:DeclaringMethod(?ref, ?method) <-
   _Var:DeclaringMethod(?param1, ?param2).
 
@@ -293,8 +293,8 @@ _ThisVar(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+MethodSignature:Value(?method:?param1),
-+MethodSignature(?method),
++Method:Value(?method:?param1),
++Method(?method),
 +Var:Value(?var:?param2),
 +Var(?var),
 +ThisVar[?method] = ?var <-

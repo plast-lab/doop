@@ -155,11 +155,11 @@ ClassNameStringConstantExact:Type(?type, ?heap)
 
 MethodNameStringConstant(?heap) -> HeapAllocation(?heap).
 MethodNameStringConstant:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), MethodSignature(?sig).
+  HeapAllocation(?heap), Method(?sig).
 MethodNameStringConstantExact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), MethodSignature(?sig).
+  HeapAllocation(?heap), Method(?sig).
 MethodNameStringConstantInexact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), MethodSignature(?sig).
+  HeapAllocation(?heap), Method(?sig).
 
 MethodNameStringConstant(?heap),
 MethodNameStringConstant:Signature(?sig, ?heap),
@@ -167,13 +167,13 @@ MethodNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   Instruction:Value(?heap:?string),
-  MethodSignature:DeclaringType[?sig] = ?type, 
+  Method:DeclaringType[?sig] = ?type, 
   (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
      // there is some possibility of accessing methods and fields
      // reflectively, even in system classes. Maybe one needs to 
      // circumvent access control, or maybe one wants to treat all
      // fields uniformly and some are inherited from a system superclass.
-  MethodSignature:SimpleName[?sig] = ?string.
+  Method:SimpleName[?sig] = ?string.
 
 FieldNameStringConstant(?heap) -> HeapAllocation(?heap).
 FieldNameStringConstant:Signature(?sig, ?heap) ->
@@ -211,7 +211,7 @@ MethodNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
   Instruction:Value(?heap:?string),
-  MethodSignature:DeclaringType[?sig] = ?type,
+  Method:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
   (MethodNameSuffix(?sig, ?string);
    MethodNamePrefix(?sig, ?string)).
@@ -246,13 +246,13 @@ ClassNameSuffix(?type, ?suffix) <-
   string:substring[?className, ?classNameLength - ?length, ?length] = ?suffix.
 
 MethodNameSuffix(?sig, ?suffix) <-
-  MethodSignature:SimpleName[?sig] = ?methodName,
+  Method:SimpleName[?sig] = ?methodName,
   string:length[?methodName] = ?methodNameLength,
   MemberSuffixIterationTrick(?length),
   string:substring[?methodName, ?methodNameLength - ?length, ?length] = ?suffix.
 
 MethodNamePrefix(?sig, ?prefix) <-
-  MethodSignature:SimpleName[?sig] = ?methodName,
+  Method:SimpleName[?sig] = ?methodName,
   MemberPrefixIterationTrick(?length),
   string:substring[?methodName, 0, ?length] = ?prefix.
 
@@ -289,7 +289,7 @@ FieldNamePrefix(?sig, ?prefix) <-
 //  <-
 //  NonTrivialStringConstant(?heap),
 //  Instruction:Value(?heap:?string),
-//  MethodSignature:SimpleName[?sig] = ?methodName,
+//  Method:SimpleName[?sig] = ?methodName,
 //  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
 
 #endif // substrings

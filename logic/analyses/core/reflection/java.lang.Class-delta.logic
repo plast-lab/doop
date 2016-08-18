@@ -2,8 +2,8 @@
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Object: java.lang.Class getClass()>").
 
 +java:lang:Class:forName(?invocation, ?inmethod) <-
-  ( MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+  ( Method:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
 
 +java:lang:Class:getName(?to, ?from) <-

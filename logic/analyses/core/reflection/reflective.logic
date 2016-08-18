@@ -15,7 +15,7 @@
 DeclaringClass:Allocation[?heap] = ?type <-
    ReflectiveHeapAllocation[?invocation, _] = ?heap,
    Instruction:Method[?invocation] = ?inmethod,
-   MethodSignature:DeclaringType[?inmethod] = ?type,
+   Method:DeclaringType[?inmethod] = ?type,
    !StringConstant(?heap).
 */
 
@@ -83,7 +83,7 @@ SpecialObject(?heap) <-
  */
 ReflectiveMethodInvocation(?ctx, ?invocation, ?signature) ->
   Context(?ctx), MethodInvocation(?invocation),
-  MethodSignature(?signature).
+  Method(?signature).
 
 /**
  * The base variable of a reflective method call.
@@ -117,15 +117,15 @@ ReflectiveActualParams[?invocation] = ?actualParams ->
 
 ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) ->
   Context(?ctx), MethodInvocation(?invocation),
-  MethodSignature(?signature), Var(?base).
+  Method(?signature), Var(?base).
 
 ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) ->
   Context(?ctx), MethodInvocation(?invocation),
-  MethodSignature(?signature).
+  Method(?signature).
 
 ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) ->
   Context(?ctx), MethodInvocation(?invocation),
-  MethodSignature(?signature), Var(?base).
+  Method(?signature), Var(?base).
 
 /**
  * Private method invocations are special methods, unless they are static.
@@ -138,9 +138,9 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) ->
 ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
   Modifier:Value(?private:"private"),
-  MethodModifier(?private, ?signature),
+  Method:Modifier(?private, ?signature),
   Modifier:Value(?static:"static"),
-  ! MethodModifier(?static, ?signature),
+  ! Method:Modifier(?static, ?signature),
   ReflectiveBaseVar[?invocation] = ?base.
 
 /**
@@ -149,7 +149,7 @@ ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
 ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
   Modifier:Value(?static:"static"),
-  MethodModifier(?static, ?signature).
+  Method:Modifier(?static, ?signature).
 
 /**
  * All others are virtual method invocations
@@ -157,9 +157,9 @@ ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
 ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) <-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
   Modifier:Value(?private:"private"),
-  ! MethodModifier(?private, ?signature),
+  ! Method:Modifier(?private, ?signature),
   Modifier:Value(?static:"static"),
-  ! MethodModifier(?static, ?signature),
+  ! Method:Modifier(?static, ?signature),
   ReflectiveBaseVar[?invocation] = ?base.
 
 
@@ -179,7 +179,7 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) <-
  */
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
   Context(?callerCtx), MethodInvocation(?invocation),
-  Context(?calleeCtx), MethodSignature(?callee).
+  Context(?calleeCtx), Method(?callee).
 
 ReachableContext(?calleeCtx, ?callee) <-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
@@ -251,10 +251,10 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  MethodSignature:DeclaringType[?signature] = ?type,
+  Method:DeclaringType[?signature] = ?type,
   SupertypeOf(?type, ?heaptype), // TODO need nicer check
-  MethodSignature:SimpleName[?signature] = ?simplename,
-  MethodSignature:Descriptor[?signature] = ?descriptor,
+  Method:SimpleName[?signature] = ?simplename,
+  Method:Descriptor[?signature] = ?descriptor,
   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
   ThisVar[?tomethod] = ?this.
 #else
@@ -265,10 +265,10 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  MethodSignature:DeclaringType[?signature] = ?type,
+  Method:DeclaringType[?signature] = ?type,
   SupertypeOf(?type, ?heaptype), // TODO need nicer check
-  MethodSignature:SimpleName[?signature] = ?simplename,
-  MethodSignature:Descriptor[?signature] = ?descriptor,
+  Method:SimpleName[?signature] = ?simplename,
+  Method:Descriptor[?signature] = ?descriptor,
   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
   ThisVar[?tomethod] = ?this.
 #endif
