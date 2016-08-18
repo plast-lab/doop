@@ -20,14 +20,14 @@ MockObject(?classHeap, ?class) <-
 
 
 FieldInformation(?signature, ?fieldtype, ?class) ->
-   FieldSignature(?signature), Type(?fieldtype), Type(?class).
+   Field(?signature), Type(?fieldtype), Type(?class).
 
 FieldInformation(?signature, ?fieldtype, ?class) <-
-   FieldSignature:Type[?signature] = ?fieldtype,
-   FieldSignature:DeclaringClass[?signature] = ?class.
+   Field:Type[?signature] = ?fieldtype,
+   Field:DeclaringClass[?signature] = ?class.
 
 MockHeapForField(?signature, ?baseheap, ?fieldtype) ->
-   FieldSignature(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
+   Field(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
 
 MockHeapForField(?signature, ?baseheap, ?fieldtype) <-
   FieldInformation(?signature, ?fieldtype, ?class),

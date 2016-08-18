@@ -23,7 +23,7 @@ _NumHeapsForMethod[?method] = ?count ->
 // Avoid refining method calls that refer to methods containing variables that point
 // to heap objects with a high max number of field-points-to facts. This is what
 // causes explosion for deep-context analyses.
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 
@@ -102,7 +102,7 @@ _HeapsPerVar[?var] = ?count -> Var(?var), int[64](?count).
 // causes explosion for deep-context analyses.
 */
 /*
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 
@@ -136,7 +136,7 @@ _MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64
 // equally fast, sometimes more sometimes less precise.
 */
 /*
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 
@@ -203,7 +203,7 @@ _NumHeapsForInvocationArgs[?invocation] = ?count ->
 // Much more scalable than tempD, for very little precision loss.
 */
 /*
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 
@@ -276,7 +276,7 @@ _NumHeapsForInvocationArgs[?invocation] = ?count ->
 // Avoid refining method calls that refer to methods containing variables that point
 // to heap objects with a high max number of field-points-to facts. This is what
 // causes explosion for deep-context analyses.
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 

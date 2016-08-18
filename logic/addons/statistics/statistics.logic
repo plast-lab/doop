@@ -193,7 +193,7 @@ Stats:Dominance:VarPointsTo:Method[?method] = count <-
 	Var:DeclaringMethod(?var, ?method),
 	Stats:Dominance:VarPointsTo:Var[?var] = varCount).
 
-Stats:Dominance:InstanceFieldPointsTo:Signature[?sig] = ?count -> FieldSignature(?sig), int[64](?count).
+Stats:Dominance:InstanceFieldPointsTo:Signature[?sig] = ?count -> Field(?sig), int[64](?count).
 Stats:Dominance:InstanceFieldPointsTo:Signature[?sig] = count <-
 	agg<<count = count()>>(InstanceFieldPointsTo(_, _, ?sig, _, _)).
 

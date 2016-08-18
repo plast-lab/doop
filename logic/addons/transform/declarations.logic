@@ -1,9 +1,9 @@
 RedundantStoreInstanceField(?from, ?sig, ?base, ?inmethod) ->
    Var(?from), Var(?base), MethodSignature(?inmethod),
-   FieldSignature(?sig).
+   Field(?sig).
 
 RedundantStoreStaticField(?from, ?sig, ?inmethod) ->
-   Var(?from), MethodSignature(?inmethod), FieldSignature(?sig).
+   Var(?from), MethodSignature(?inmethod), Field(?sig).
 
 RedundantInvocation(?inv) -> MethodInvocation(?inv).
 

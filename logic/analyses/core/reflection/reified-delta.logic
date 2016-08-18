@@ -48,6 +48,6 @@
 +Instruction:Value(?heap:?heapStr),
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type <-
-  FieldSignature:Value(?fld:?signature),
+  Field:Value(?fld:?signature),
   ?heapStr = "<reified field " + ?signature + ">",
   Type:fqn(?type:"java.lang.reflect.Field").

@@ -212,7 +212,7 @@ TypeMatchingFieldName(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
 TypeMatchingFieldName(?subtype, ?constant) <-
   FieldNameStringConstant:Signature(?signature, ?constant),
-  FieldSignature:DeclaringType[?signature] = ?type,
+  Field:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingFieldName[?constant] = ?n ->
@@ -433,11 +433,11 @@ VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
 //  HeapAllocation:Type[?heap] = ?heapType,
 //  SupertypeOf(?type, ?heapType).
 
-OptFieldSignatureType(?type, ?signature, ?declaringClassType) ->
-   FieldSignature(?signature), Type(?declaringClassType), Type(?type).
-OptFieldSignatureType(?type, ?signature, ?declaringClassType) <-
-   FieldSignature:DeclaringType[?signature] = ?declaringClassType,
-   FieldSignature:Type[?signature] = ?type.
+OptFieldType(?type, ?signature, ?declaringClassType) ->
+   Field(?signature), Type(?declaringClassType), Type(?type).
+OptFieldType(?type, ?signature, ?declaringClassType) <-
+   Field:DeclaringType[?signature] = ?declaringClassType,
+   Field:Type[?signature] = ?type.
 
 // The clincher: if we see the cast of a result that came
 // from a get, over a field that came from a getFields, match
@@ -452,7 +452,7 @@ OptSpecialGetHeapCast(?type, ?getFieldsInvocation) <-
 OptFieldObjectFromGet(?fieldHeap, ?return) <-
   OptSpecialGetHeapCast(?type, ?getFieldsInvocation),
   OptGetFieldsClass(?classtype, ?getFieldsInvocation),
-  OptFieldSignatureType(?type, ?signature, ?classtype),
+  OptFieldType(?type, ?signature, ?classtype),
   // REVIEW: the real test shouldn't be for type identity
   AssignReturnValue[?getFieldsInvocation] = ?return,
   ReifiedField[?signature] = ?fieldHeap.
@@ -519,7 +519,7 @@ VarPointsTo(?hctx, ?fieldHeap, ?ctx, ?return) <-
   ImmutableHContext[] = ?hctx,
   Opt2SpecialGetHeapCast(?type, ?getFieldInvocation),
   OptGetFieldClass(?classtype, ?ctx, ?getFieldInvocation),
-  OptFieldSignatureType(?type, ?signature, ?classtype),
+  OptFieldType(?type, ?signature, ?classtype),
   AssignReturnValue[?getFieldInvocation] = ?return,
   ReifiedField[?signature] = ?fieldHeap.
 

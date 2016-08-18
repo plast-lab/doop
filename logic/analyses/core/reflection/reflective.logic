@@ -424,7 +424,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
  *************************************************************/
 
 ReflectiveLoadStaticField(?ctx, ?to, ?signature) ->
-  FieldSignature(?signature), Context(?ctx), Var(?to).
+  Field(?signature), Context(?ctx), Var(?to).
 
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   ReflectiveLoadStaticField(?ctx, ?to, ?signature),
@@ -442,13 +442,13 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
  *************************************************************/
 
 ReflectiveStoreStaticField(?signature, ?ctx, ?from) ->
-  FieldSignature(?signature), Context(?ctx), Var(?from).
+  Field(?signature), Context(?ctx), Var(?from).
 
 StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
   ReflectiveStoreStaticField(?signature, ?ctx, ?from),
   VarPointsTo(?hctx, ?heap, ?ctx, ?from),
   HeapAllocation:Type[?heap] = ?heaptype,
-  FieldSignature:Type[?signature] = ?fieldtype, 
+  Field:Type[?signature] = ?fieldtype, 
   SupertypeOf(?fieldtype, ?heaptype).
 
 /*************************************************************
@@ -458,13 +458,13 @@ StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
  *************************************************************/
 
 ReflectiveLoadInstanceField(?toCtx, ?to, ?signature, ?baseCtx, ?base) ->
-  Context(?baseCtx), Var(?base), FieldSignature(?signature),
+  Context(?baseCtx), Var(?base), Field(?signature),
   Context(?toCtx), Var(?to).
 
 LoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?baseheap) <-
   ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
-  FieldSignature:DeclaringType[?sig] = ?declaringClass,
+  Field:DeclaringType[?sig] = ?declaringClass,
   SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).
 
@@ -476,11 +476,11 @@ LoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?baseheap) <-
 
 ReflectiveStoreInstanceField(?fromCtx, ?from, ?signature, ?baseCtx, ?base) ->
   Context(?fromCtx), Var(?from), Context(?baseCtx), Var(?base),
-  FieldSignature(?signature).
+  Field(?signature).
 
 StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) <-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
-  FieldSignature:DeclaringType[?sig] = ?declaringClass,
+  Field:DeclaringType[?sig] = ?declaringClass,
   SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).

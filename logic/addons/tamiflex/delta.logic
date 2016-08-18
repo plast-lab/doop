@@ -55,8 +55,8 @@
    MethodSignature:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   ! FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   ! Field:Modifier("static", ?fld),
    ActualParam[0, ?invocation] = ?base,
    AssignReturnValue[?invocation] = ?to.
 
@@ -65,8 +65,8 @@
    MethodSignature:Value(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   Field:Modifier("static", ?fld),
    AssignReturnValue[?invocation] = ?to.
 
 +StoreInstanceField(?from, ?base, ?fld, ?inmethod)
@@ -74,8 +74,8 @@
    MethodSignature:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   ! FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   ! Field:Modifier("static", ?fld),
    ActualParam[0, ?invocation] = ?base,
    ActualParam[1, ?invocation] = ?from.
 
@@ -84,8 +84,8 @@
    MethodSignature:Value(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
    VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
-   FieldModifier("static", ?fld),
+   Field:Value(?fld:?fldStr),
+   Field:Modifier("static", ?fld),
    ActualParam[1, ?invocation] = ?from.
 
 +Instruction:Value(?heap:?heapStr),
@@ -97,7 +97,7 @@
     MethodSignature:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ),
    VirtualMethodInvocation@previous(?invocation, ?sig, _),
    Tamiflex:ReflectionMap(?fldStr, ?invocation),
-   FieldSignature:Value(?fld:?fldStr),
+   Field:Value(?fld:?fldStr),
    ?heapStr = "<(Tamiflex) " + ?fldStr + ">",
    Type:fqn(?javaField:"java.lang.reflect.Field").
 

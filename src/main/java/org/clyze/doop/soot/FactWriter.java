@@ -563,7 +563,7 @@ class FactWriter
                 writeType(application));
     }
 
-    void writeFieldSignature(SootField f)
+    void writeField(SootField f)
     {
         _db.add(FIELD_SIGNATURE,
                 _db.asEntity(_rep.signature(f)),

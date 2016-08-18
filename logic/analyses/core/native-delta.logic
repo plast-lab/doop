@@ -21,7 +21,7 @@
   +StoreStaticField(?l, ?sig, ?m) <- \
     MethodSignature:Value(?m:method), \
     Var:Value(?l:local), \
-    FieldSignature:Value(?sig:field)
+    Field:Value(?sig:field)
 
 #define SimulateNativeAllocation(strMethod, strHeap, strConstructor) \
   +AssignHeapAllocation(?heap, ?return, ?method) \

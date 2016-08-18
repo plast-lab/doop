@@ -263,6 +263,6 @@
 +HeapAllocation(?heap),
 +HeapAllocation:Type[?heap] = ?type
 <-
-   FieldSignature:Value(?x:?signature),
+   Field:Value(?x:?signature),
    ?strHeap = "<reified field " + ?signature + ">",
    Type:fqn(?type:"java.lang.reflect.Field").

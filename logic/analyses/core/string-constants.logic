@@ -177,11 +177,11 @@ MethodNameStringConstantExact:Signature(?sig, ?heap)
 
 FieldNameStringConstant(?heap) -> HeapAllocation(?heap).
 FieldNameStringConstant:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), FieldSignature(?sig).
+  HeapAllocation(?heap), Field(?sig).
 FieldNameStringConstantExact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), FieldSignature(?sig).
+  HeapAllocation(?heap), Field(?sig).
 FieldNameStringConstantInexact:Signature(?sig, ?heap) ->
-  HeapAllocation(?heap), FieldSignature(?sig).
+  HeapAllocation(?heap), Field(?sig).
 
 FieldNameStringConstant(?heap),
 FieldNameStringConstant:Signature(?sig, ?heap),
@@ -189,9 +189,9 @@ FieldNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   Instruction:Value(?heap:?string),
-  FieldSignature:DeclaringType[?sig] = ?declaringClass,
+  Field:DeclaringType[?sig] = ?declaringClass,
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
-  FieldSignature:SimpleName[?sig] = ?string.
+  Field:SimpleName[?sig] = ?string.
 
 #ifdef REFLECTION_SUBSTRING_ANALYSIS
 // Creating class/field/method names via string concatenation makes more
@@ -222,7 +222,7 @@ FieldNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
   Instruction:Value(?heap:?string),
-  FieldSignature:DeclaringType[?sig] = ?declaringClass,
+  Field:DeclaringType[?sig] = ?declaringClass,
   ApplicationClass(?declaringClass),
   (FieldNameSuffix(?sig, ?string);
    FieldNamePrefix(?sig, ?string)).
@@ -257,13 +257,13 @@ MethodNamePrefix(?sig, ?prefix) <-
   string:substring[?methodName, 0, ?length] = ?prefix.
 
 FieldNameSuffix(?sig, ?suffix) <-
-  FieldSignature:SimpleName[?sig] = ?fieldName,
+  Field:SimpleName[?sig] = ?fieldName,
   string:length[?fieldName] = ?fieldNameLength,
   MemberSuffixIterationTrick(?length),
   string:substring[?fieldName, ?fieldNameLength - ?length, ?length] = ?suffix.
 
 FieldNamePrefix(?sig, ?prefix) <-
-  FieldSignature:SimpleName[?sig] = ?fieldName,
+  Field:SimpleName[?sig] = ?fieldName,
   MemberPrefixIterationTrick(?length),
   string:substring[?fieldName, 0, ?length] = ?prefix.
 
@@ -612,17 +612,17 @@ Type:HasNoReferenceField(?class) <-
 
 Type:DeclaresReferenceField(?class) <-
   ClassType(?class),
-  FieldSignature:DeclaringType[?signature] = ?class,
-  FieldSignature:Type[?signature] = ?type,
+  Field:DeclaringType[?signature] = ?class,
+  Field:Type[?signature] = ?type,
   ReferenceType(?type),
   !FieldIsStatic(?signature).
 
 FieldIsStatic(?sig) <-
   Modifier:Value(?static:"static"),
-  FieldModifier(?static, ?sig).
+  Field:Modifier(?static, ?sig).
 
 //// Quite risky: even final fields hold interesting state.
 //FieldIsStaticOrFinal?sig) <-
 //  Modifier:Value(?final:"final"),
-//  FieldModifier(?final, ?sig).
+//  Field:Modifier(?final, ?sig).
 */
