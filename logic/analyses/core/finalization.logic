@@ -14,7 +14,7 @@ CallGraphEdge(?callerCtx, ?heap, ?calleeCtx, ?register),
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
-   FinalizerRegisterInfo(?register, ?formal),
+   FinalizerRegisterInfo[?register] = ?formal,
    ObjectSupportsFinalize(?heap, ?inmethod),
    ObjectShouldNotBeRefined(?heap).
 
@@ -24,13 +24,13 @@ CallGraphEdge(?callerCtx, ?heap, ?calleeCtx, ?register),
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
-   FinalizerRegisterInfo(?register, ?formal),
+   FinalizerRegisterInfo[?register] = ?formal,
    ObjectSupportsFinalize(?heap, ?inmethod),
    ObjectShouldBeRefined(?heap).
 #endif
 
 
-FinalizerRegisterInfo(?register, ?formal) <-
+FinalizerRegisterInfo[?register] = ?formal <-
    Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal.
 

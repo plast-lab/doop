@@ -11,7 +11,7 @@
  * Auxillary predicate providing the necessary information for generating
  * implicit invocations to java.lang.ref.Finalizer.register.
  */
-FinalizerRegisterInfo(?register, ?formal) -> Method(?register), Var(?formal).
+FinalizerRegisterInfo[?register] = ?formal -> Method(?register), Var(?formal).
 
 /**
  * Classes that override Object.finalize
