@@ -12,9 +12,9 @@
 //VarDef(?to, ?insn) <-
 //  AssignInstruction:To[?insn] = ?to,
 //  (AssignBinop:Insn(?insn) ; AssignUnop:Insn(?insn)).
-#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Value(method:value), string:like(value, pattern)
+#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- MethodSignature:Value(method:value), string:like(value, pattern)
 
-#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Value(method:value), string:like(value, pattern)                            
+#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- MethodSignature:Value(method:value), string:like(value, pattern)                            
 
 TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
@@ -33,25 +33,25 @@ SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers6: java.lang.Stri
 
 TaintSourceMethod(?overriddenMethod) <-
    TaintSourceMethod(?method),
-   Method:DeclaringType[?method] = ?superclass,
-   Method:SimpleName[?method] = ?name,
-   Method:Descriptor[?method] = ?descriptor,
+   MethodSignature:DeclaringType[?method] = ?superclass,
+   MethodSignature:SimpleName[?method] = ?name,
+   MethodSignature:Descriptor[?method] = ?descriptor,
    SubtypeOf(?class, ?superclass),
    ClassType(?class),
-   Method:DeclaringType[?overriddenMethod] = ?class,
-   Method:SimpleName[?overriddenMethod] = ?name,
-   Method:Descriptor[?overriddenMethod] = ?descriptor.
+   MethodSignature:DeclaringType[?overriddenMethod] = ?class,
+   MethodSignature:SimpleName[?overriddenMethod] = ?name,
+   MethodSignature:Descriptor[?overriddenMethod] = ?descriptor.
 
 LeakingSinkMethod(?n, ?overriddenMethod) <-
    LeakingSinkMethod(?n, ?method),
-   Method:DeclaringType[?method] = ?superclass,
-   Method:SimpleName[?method] = ?name,
-   Method:Descriptor[?method] = ?descriptor,
+   MethodSignature:DeclaringType[?method] = ?superclass,
+   MethodSignature:SimpleName[?method] = ?name,
+   MethodSignature:Descriptor[?method] = ?descriptor,
    SubtypeOf(?class, ?superclass),
    ClassType(?class),
-   Method:DeclaringType[?overriddenMethod] = ?class,
-   Method:SimpleName[?overriddenMethod] = ?name,
-   Method:Descriptor[?overriddenMethod] = ?descriptor.
+   MethodSignature:DeclaringType[?overriddenMethod] = ?class,
+   MethodSignature:SimpleName[?overriddenMethod] = ?name,
+   MethodSignature:Descriptor[?overriddenMethod] = ?descriptor.
 
 
 VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
@@ -73,9 +73,9 @@ CallTaintingMethod(?ctx, ?invocation) <-
  * Information flow through complex relations
  */
 StringFactoryType(?type) <-
-  Type:Value(?type:"java.lang.String") ;
-  Type:Value(?type:"java.lang.StringBuffer") ;
-  Type:Value(?type:"java.lang.StringBuilder").
+  Type:fqn(?type:"java.lang.String") ;
+  Type:fqn(?type:"java.lang.StringBuffer") ;
+  Type:fqn(?type:"java.lang.StringBuilder").
 
 StringFactoryVar(?var) <-
   Var:Type[?var] = ?type,
@@ -134,7 +134,7 @@ SanitizedObject(?hctx, ?heap) <-
   TaintedObject(?hctx, ?heap).
 
 
-//MethodInvocationInContext(?ctx, ?invocation, ?tomethod) -> Context(?ctx), MethodInvocation(?invocation), Method(?tomethod).
+//MethodInvocationInContext(?ctx, ?invocation, ?tomethod) -> Context(?ctx), MethodInvocation(?invocation), MethodSignature(?tomethod).
 
 // Option 1
 MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
@@ -143,9 +143,9 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
 // Option 2
 //AnyMethodInvocationOpt(?tomethod, ?invocation) <- AnyMethodInvocation(?invocation, ?tomethod).
 
-//MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
-//   AnyMethodInvocationOpt(?tomethod, ?invocation),
-//   ReachableContext(?ctx, ?invocation).
+MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
+   AnyMethodInvocationOpt(?tomethod, ?invocation),
+   ReachableContext(?ctx, ?invocation).
 
 /**
  * Sinks and leaks
