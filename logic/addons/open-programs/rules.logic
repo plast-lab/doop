@@ -7,17 +7,26 @@ AllConcreteImplementations(?class, ?staticType) <-
    SubtypeOf(?class, ?staticType),
    ClassType(?class),
    !ClassModifier("abstract", ?class).
+
+ConcreteImplementations[?staticType] = ?class <-
+   agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
+
+AnyConcreteImplementations(?class, ?staticType) <-
+   ConcreteImplementations[?staticType] = ?class.
    
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
+   ClassType(?class),
    Type:Value(?staticType:"javax.servlet.http.HttpServlet").
 
+        
 MockObject(?classHeap, ?class) <-
    ClassType(?class),
    !ClassModifier("abstract", ?class),
    Type:Value(?class:?classStr),
    ?classHeap = "<Mock allocation for " + ?classStr + ">".
 
+                    
 FieldInformation(?signature, ?fieldtype, ?class) ->
    Field(?signature), Type(?fieldtype), Type(?class).
 
@@ -27,12 +36,12 @@ FieldInformation(?signature, ?fieldtype, ?class) <-
 
 FieldInformation(?signature, ?fieldtype, ?class) <-
    FieldInformation(?signature, ?fieldtype, ?staticType),
-   AllConcreteImplementations(?class, ?staticType).
+   AnyConcreteImplementations(?class, ?staticType).
 
 FieldInformation(?signature, ?fieldConcreteType, ?class) <-
    FieldInformation(?signature, ?fieldStaticType, ?class),
-   AllConcreteImplementations(?fieldConcreteType, ?fieldStaticType).
-
+   AnyConcreteImplementations(?fieldConcreteType, ?fieldStaticType).
+   
 MockHeapForField(?signature, ?baseheap, ?fieldtype) ->
    Field(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
 
@@ -60,7 +69,7 @@ ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
    FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
-   AllConcreteImplementations(?subtype, ?staticType),
+   AnyConcreteImplementations(?subtype, ?staticType),
    Method:Value(?method:?methodStr),
    MockEntryPoint(_, ?method),
    // TODO: replace with ClassTypeValue macro
