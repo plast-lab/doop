@@ -1,5 +1,7 @@
 DeclaringClass:Allocation[?heap] = ?type <-
-   AssignHeapAllocation(?heap, _, ?inmethod),
+   AssignHeapAllocation:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   AssignHeapAllocation:Heap[?insn] = ?heap,
    Method:DeclaringType[?inmethod] = ?type,
    !StringConstant(?heap),
    !ClassConstant(?heap).
