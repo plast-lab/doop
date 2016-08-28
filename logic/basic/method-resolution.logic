@@ -29,7 +29,8 @@ MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
    Method:SimpleName[?method] = ?simplename,
    Method:Descriptor[?method] = ?descriptor,
    Method:DeclaringType[?method] = ?type,
-   ! Method:Modifier("abstract", ?method).
+   Modifier:abstract[] = abstract,
+   ! Method:Modifier(abstract, ?method).
 
 
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
