@@ -5,7 +5,7 @@
 // appears in a key position of a predicate, the engine will switch to
 // left-to-right ordering. !!
 //-----------------------------------------------------------------------------
-ParamIndex(?x), ParamIndex:Value(?x:?id) -> int[32](?id).
+ParamIndex(?x), ParamIndex:Value(?x:?id) -> INT32(?id).
 SimpleName(?x), SimpleName:Value(?x:?id) -> string(?id).
 
 //-----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ HeapAllocation:Type[?heap] = ?type ->
 Instruction(?x), Instruction:Value(?x:?id) -> string(?id).
 
 Instruction:Index[?insn] = ?index ->
-   Instruction(?insn), int[32](?index).
+   Instruction(?insn), INT32(?index).
 
 Instruction:Method[?insn] = ?inMethod ->
    Instruction(?insn), Method(?inMethod).
@@ -280,19 +280,19 @@ Throw:Var[?insn] = ?var ->
    Throw:Insn(?insn), Var(?var).
 
 Goto:Target[?insn] = ?index ->
-   Goto:Insn(?insn), int[32](?index).
+   Goto:Insn(?insn), INT32(?index).
 
 If:Target[?insn] = ?index ->
-   If:Insn(?insn), int[32](?index).
+   If:Insn(?insn), INT32(?index).
 
 Switch:Key[?insn] = ?key ->
    Switch:Insn(?insn), Var(?key).
 
 Switch:Target[?insn, ?value] = ?index ->
-   Switch:Insn(?insn), int[32](?value), int[32](?index).
+   Switch:Insn(?insn), INT32(?value), INT32(?index).
 
 Switch:DefaultTarget[?insn] = ?index ->
-   Switch:Insn(?insn), int[32](?index).
+   Switch:Insn(?insn), INT32(?index).
 
 EnterMonitor:Var[?insn] = ?var ->
    EnterMonitor:Insn(?insn), Var(?var).
@@ -438,7 +438,7 @@ AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
    AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
 
 AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
-   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
+   AssignMultiArrayAllocation:Insn(?insn), INT32(?dim).
 
 // Assign Heap Allocation
 AssignHeapAllocation:Heap[?insn] = ?heap ->
@@ -459,7 +459,7 @@ ReturnNonvoid:Var[?return] = ?var ->
 
 // The line number of a method invocation
 MethodInvocation:Line[?invocation] = ?line ->
-   MethodInvocation(?invocation), int[64](?line).
+   MethodInvocation(?invocation), INT64(?line).
 
 // The signature of the method being called
 MethodInvocation:Signature[?invocation] = ?signature ->
@@ -494,7 +494,7 @@ ExceptionHandler:Method[?handler] = ?inmethod ->
 
 // Instruction index of handling code
 ExceptionHandler:Index[?handler] = ?index ->
-   ExceptionHandler(?handler), int[32](?index).
+   ExceptionHandler(?handler), INT32(?index).
 
 ExceptionHandler:Type[?handler] = ?type ->
    ExceptionHandler(?handler), Type(?type).
@@ -505,12 +505,12 @@ ExceptionHandler:FormalParam[?handler] = ?var ->
 
 // First index of the bytecodes covered by this handler
 ExceptionHandler:Begin[?handler] = ?index ->
-   ExceptionHandler(?handler), int[32](?index).
+   ExceptionHandler(?handler), INT32(?index).
 
 // Last index (excluding this index) of the bytecodes covered by this
 // handler
 ExceptionHandler:End[?handler] = ?index ->
-   ExceptionHandler(?handler), int[32](?index).
+   ExceptionHandler(?handler), INT32(?index).
 
 // Previous exception handler (handlers are ordered inside a method)
 ExceptionHandler:Previous[?handler] = ?previous ->
@@ -539,9 +539,11 @@ Config:DynamicClass(?class, ?invocation) ->
 
 
 // Predicates to store runtime metrics and statistics
-Stats:Runtime(?attr, ?value) -> string(?attr), decimal[64](?value).
-Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
+Stats:Runtime(?attr, ?value) -> string(?attr), DECIMAL(?value).
+Stats:Metrics(?attr, ?value) -> string(?attr), UINT64(?value).
 
+
+#ifndef LB4
 
 //-----------------------------------------------------------------------------
 // [Capacities]
@@ -568,3 +570,5 @@ lang:physical:capacity[`NullType]            = 32768.
 lang:physical:capacity[`ArrayType]           = 32768.
 lang:physical:capacity[`ClassType]           = 32768.
 lang:physical:capacity[`InterfaceType]       = 32768.
+
+#endif

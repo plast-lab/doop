@@ -1,13 +1,21 @@
+#ifdef LB4
+lang:compiler:error:FUNC_SEMICOLON_DEPRECATED[] = false.
+lang:compiler:warning:FUNC_SEMICOLON_DEPRECATED[] = false.
+#endif
+
 // AssignLocal
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignLocal] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignLocal] = "facts/AssignLocal.facts".
 lang:physical:delimiter[`_AssignLocal] = "\t".
 lang:physical:hasColumnNames[`_AssignLocal] = false.
 
-_AssignLocal(?instruction, ?index, ?from, ?to, ?inmethod) ->
+_AssignLocal(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?from, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?from),
    string(?to),
    string(?inmethod).
@@ -18,19 +26,25 @@ _AssignLocal(?instruction, ?index, ?from, ?to, ?inmethod) ->
 +Instruction:Method[?x] = ?method,
 +AssignLocal:From[?x] = ?from,
 +AssignInstruction:To[?x] = ?to <-
-   _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
+   _AssignLocal(OFFSET_USE(offset) ?instruction, ?index, ?from1, ?to1, ?method1),
+   Var:Value[?from] = ?from1,
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignBinop
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignBinop] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignBinop] = "facts/AssignBinop.facts".
 lang:physical:delimiter[`_AssignBinop] = "\t".
 lang:physical:hasColumnNames[`_AssignBinop] = false.
 
-_AssignBinop(?instruction, ?index, ?to, ?inmethod) ->
+_AssignBinop(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?inmethod).
 
@@ -39,19 +53,24 @@ _AssignBinop(?instruction, ?index, ?to, ?inmethod) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
-   _AssignBinop(?instruction, ?index, ?to, ?method).
+   _AssignBinop(OFFSET_USE(offset) ?instruction, ?index, ?to1, ?method1),
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignUnop
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignUnop] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignUnop] = "facts/AssignUnop.facts".
 lang:physical:delimiter[`_AssignUnop] = "\t".
 lang:physical:hasColumnNames[`_AssignUnop] = false.
 
-_AssignUnop(?instruction, ?index, ?to, ?inmethod) ->
+_AssignUnop(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?inmethod).
 
@@ -60,67 +79,84 @@ _AssignUnop(?instruction, ?index, ?to, ?inmethod) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
-   _AssignUnop(?instruction, ?index, ?to, ?method).
+   _AssignUnop(OFFSET_USE(offset) ?instruction, ?index, ?to1, ?method1),
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignOperFrom
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignOperFrom] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignOperFrom] = "facts/AssignOperFrom.facts".
 lang:physical:delimiter[`_AssignOperFrom] = "\t".
 lang:physical:hasColumnNames[`_AssignOperFrom] = false.
 
-_AssignOperFrom(?instruction, ?from) ->
+_AssignOperFrom(OFFSET_DECL_LEFT(offset) ?instruction, ?from) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
    string(?from).
 
 +AssignOper:From(?insn, ?from) <-
    AssignOper:Insn(?insn),
    Instruction:Value(?insn:?insnval),
-   _AssignOperFrom(?insnval, ?from).
+   Var:Value[?from] = ?from1,
+   _AssignOperFrom(OFFSET_USE(offset) ?insnval, ?from1).
 
 // AssignOperType
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignOperType] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignOperType] = "facts/AssignOperType.facts".
 lang:physical:delimiter[`_AssignOperType] = "\t".
 lang:physical:hasColumnNames[`_AssignOperType] = false.
 
-_AssignOperType(?instruction, ?type) ->
+_AssignOperType(OFFSET_DECL_LEFT(offset) ?instruction, ?type) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
    string(?type).
 
-+AssignOper:Type(?insn, ?type) <-
++AssignOper:Type(?insn, ?type)
+   <-
+   _AssignOperType(OFFSET_USE(offset) ?insnval, ?type),
    AssignOper:Insn(?insn),
-   Instruction:Value(?insn:?insnval),
-   _AssignOperType(?insnval, ?type).
+   Instruction:Value(?insn:?insnval).
 
 // IfVar
 
+#ifndef LB4
 lang:physical:storageModel[`_IfVar] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_IfVar] = "facts/IfVar.facts".
 lang:physical:delimiter[`_IfVar] = "\t".
 lang:physical:hasColumnNames[`_IfVar] = false.
 
-_IfVar(?instruction, ?var) ->
+_IfVar(OFFSET_DECL_LEFT(offset) ?instruction, ?var) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
    string(?var).
 
 +If:Var(?insn, ?var) <-
    If:Insn(?insn),
    Instruction:Value(?insn, ?insnval),
-   _IfVar(?insnval, ?var).
+   Var:Value[?var] = ?var1,
+   _IfVar(OFFSET_USE(offset) ?insnval, ?var1).
 
 // AssignCast
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignCast] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignCast] = "facts/AssignCast.facts".
 lang:physical:delimiter[`_AssignCast] = "\t".
 lang:physical:hasColumnNames[`_AssignCast] = false.
 
-_AssignCast(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+_AssignCast(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?from),
    string(?to),
    string(?type),
@@ -133,19 +169,26 @@ _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
 +AssignCast:Type[?x] = ?type,
 +AssignCast:From[?x] = ?from,
 +AssignInstruction:To[?x] = ?to <-
-   _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+   _AssignCast(OFFSET_USE(offset) ?instruction, ?index, ?from1, ?to1, ?type1, ?method1),
+   Type:Value[?type] = ?type1,
+   Var:Value[?to] = ?to1,
+   Var:Value[?from] = ?from1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignCastNumConstant
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignCastNumConstant] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignCastNumConstant] = "facts/AssignCastNumConstant.facts".
 lang:physical:delimiter[`_AssignCastNumConstant] = "\t".
 lang:physical:hasColumnNames[`_AssignCastNumConstant] = false.
 
-_AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
+_AssignCastNumConstant(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?const),
    string(?to),
    string(?type),
@@ -157,20 +200,29 @@ _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
 +Instruction:Method[?x] = ?method,
 +AssignCast:Type[?x] = ?type,
 +AssignCastNumConstant:Value[?x] = ?const,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?method).
++AssignInstruction:To[?x] = ?to,
++NumConstant(?const),
++NumConstant:Value[?const] = ?const1
+   <-
+   _AssignCastNumConstant(OFFSET_USE(offset) ?instruction, ?index, ?const1, ?to1, ?type1, ?method1),
+   Type:Value[?type] = ?type1,
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignCastNull
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignCastNull] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignCastNull] = "facts/AssignCastNull.facts".
 lang:physical:delimiter[`_AssignCastNull] = "\t".
 lang:physical:hasColumnNames[`_AssignCastNull] = false.
 
-_AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
+_AssignCastNull(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?to, ?type, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?type),
    string(?inmethod).
@@ -180,20 +232,27 @@ _AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignCast:Type[?x] = ?type,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignCastNull(?instruction, ?index, ?to, ?type, ?method).
++AssignInstruction:To[?x] = ?to
+   <-
+   _AssignCastNull(OFFSET_USE(offset) ?instruction, ?index, ?to1, ?type1, ?method1),
+   Var:Value[?to] = ?to1,
+   Type:Value[?type] = ?type1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignHeapAllocation
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
 lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
 lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
 
-_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
+_AssignHeapAllocation(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?heap, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?heap),
    string(?to),
    string(?inmethod).
@@ -203,33 +262,47 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignHeapAllocation:Heap[?x] = ?heap,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method).
++AssignInstruction:To[?x] = ?to,
++HeapAllocation(?heap),
++Instruction:Value[?heap] = ?heap1
+   <-
+   _AssignHeapAllocation(OFFSET_USE(offset) ?instruction, ?index, ?heap1, ?to1, ?method1),
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 // EmptyArray
+
+#ifndef LB4
 lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_EmptyArray] = "facts/EmptyArray.facts".
 lang:physical:delimiter[`_EmptyArray] = "\t".
 lang:physical:hasColumnNames[`_EmptyArray] = false.
 
-_EmptyArray(?heap) ->
+_EmptyArray(OFFSET_DECL_LEFT(offset) ?heap) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?heap).
 
-+EmptyArray(?heap) <-
-   _EmptyArray(?heap).
++EmptyArray(?heap),
++Instruction:Value[?heap] = ?heap1
+  <-
+   _EmptyArray(OFFSET_USE(offset) ?heap1).
 
 // AssignMultiArrayAllocation
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignMultiArrayAllocation] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignMultiArrayAllocation] = "facts/AssignMultiArrayAllocation.facts".
 lang:physical:delimiter[`_AssignMultiArrayAllocation] = "\t".
 lang:physical:hasColumnNames[`_AssignMultiArrayAllocation] = false.
 
-_AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) ->
+_AssignMultiArrayAllocation(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?heap),
-   int[32](?dim),
+   INT32(?dim),
    string(?to),
    string(?inmethod).
 
@@ -239,20 +312,28 @@ _AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) -
 +Instruction:Method[?x] = ?method,
 +AssignMultiArrayAllocation:Heap[?x] = ?heap,
 +AssignMultiArrayAllocation:Dimensions[?x] = ?dim,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?method).
++AssignInstruction:To[?x] = ?to,
++HeapAllocation(?heap),
++Instruction:Value[?heap] = ?heap1
+   <-
+   _AssignMultiArrayAllocation(OFFSET_USE(offset) ?instruction, ?index, ?heap1, ?dim, ?to1, ?method1),
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignNumConstant
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignNumConstant] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignNumConstant] = "facts/AssignNumConstant.facts".
 lang:physical:delimiter[`_AssignNumConstant] = "\t".
 lang:physical:hasColumnNames[`_AssignNumConstant] = false.
 
-_AssignNumConstant(?instruction, ?index, ?const, ?to, ?inmethod) ->
+_AssignNumConstant(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?const, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?const),
    string(?to),
    string(?inmethod).
@@ -262,20 +343,28 @@ _AssignNumConstant(?instruction, ?index, ?const, ?to, ?inmethod) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignNumConstant:Value[?x] = ?const,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignNumConstant(?instruction, ?index, ?const, ?to, ?method).
++AssignInstruction:To[?x] = ?to,
++NumConstant(?const),
++NumConstant:Value[?const] = ?const1
+   <-
+   _AssignNumConstant(OFFSET_USE(offset) ?instruction, ?index, ?const1, ?to1, ?method1),
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // AssignNull
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignNull] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignNull] = "facts/AssignNull.facts".
 lang:physical:delimiter[`_AssignNull] = "\t".
 lang:physical:hasColumnNames[`_AssignNull] = false.
 
-_AssignNull(?instruction, ?index, ?to, ?inmethod) ->
+_AssignNull(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?to, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?inmethod).
 
@@ -283,20 +372,26 @@ _AssignNull(?instruction, ?index, ?to, ?inmethod) ->
 +Instruction:Value(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignNull(?instruction, ?index, ?to, ?method).
++AssignInstruction:To[?x] = ?to
+   <-
+   _AssignNull(OFFSET_USE(offset) ?instruction, ?index, ?to1, ?method1),
+   Method:Value[?method] = ?method1,
+   Var:Value[?to] = ?to1.
 
 
 // AssignInstanceOf
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignInstanceOf] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignInstanceOf] = "facts/AssignInstanceOf.facts".
 lang:physical:delimiter[`_AssignInstanceOf] = "\t".
 lang:physical:hasColumnNames[`_AssignInstanceOf] = false.
 
-_AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+_AssignInstanceOf(OFFSET_DECL_LEFT(offset) ?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?instruction),
-   int[32](?index),
+   INT32(?index),
    string(?from),
    string(?to),
    string(?type),
@@ -309,7 +404,11 @@ _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
 +AssignInstanceOf:From[?x] = ?from,
 +AssignInstanceOf:Type[?x] = ?type,
 +AssignInstruction:To[?x] = ?to <-
-   _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
+   _AssignInstanceOf(OFFSET_USE(offset) ?instruction, ?index, ?from1, ?to1, ?type1, ?method1),
+   Type:Value[?type] = ?type1,
+   Var:Value[?from] = ?from1,
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // TODO: Heap Allocations are not really instructions; we should
@@ -318,29 +417,37 @@ _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
 
 // Normal Object
 
+#ifndef LB4
 lang:physical:storageModel[`_NormalObject] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_NormalObject] = "facts/NormalObject.facts".
 lang:physical:delimiter[`_NormalObject] = "\t".
 lang:physical:hasColumnNames[`_NormalObject] = false.
 
-_NormalObject(?repr, ?type) ->
+_NormalObject(OFFSET_DECL_LEFT(offset) ?repr, ?type) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?repr),
    string(?type).
 
 +HeapAllocation(?x),
 +Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
-   _NormalObject(?repr, ?type).
++HeapAllocation:Type[?x] = ?type
+   <-
+   _NormalObject(OFFSET_USE(offset) ?repr, ?type1),
+   Type:Value[?type] = ?type1.
 
 
 // ClassConstant
 
+#ifndef LB4
 lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_ClassObject] = "facts/ClassObject.facts".
 lang:physical:delimiter[`_ClassObject] = "\t".
 lang:physical:hasColumnNames[`_ClassObject] = false.
 
-_ClassObject(?repr, ?type, ?actualtype) ->
+_ClassObject(OFFSET_DECL_LEFT(offset) ?repr, ?type, ?actualtype) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?repr),
    string(?actualtype),
    string(?type).
@@ -350,35 +457,43 @@ _ClassObject(?repr, ?type, ?actualtype) ->
 // +ReifiedClass[?actualtype] = ?x,
 // --> REVIEW: the above is no longer needed
 +HeapAllocation:Type[?x] = ?type
- <-
-   _ClassObject(?repr, ?type, _ /* ?actualtype */).
-
+   <-
+   _ClassObject(OFFSET_USE(offset) ?repr, ?type1, _ /* ?actualtype */),
+   Type:Value[?type] = ?type1.
 
 // StringConstant
 
+#ifndef LB4
 lang:physical:storageModel[`_StringConstant] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_StringConstant] = "facts/StringConstant.facts".
 lang:physical:delimiter[`_StringConstant] = "\t".
 lang:physical:hasColumnNames[`_StringConstant] = false.
 
-_StringConstant(?repr, ?type) ->
+_StringConstant(OFFSET_DECL_LEFT(offset) ?repr, ?type) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?repr),
    string(?type).
 
 +StringConstant(?x),
 +Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
-   _StringConstant(?repr, ?type).
++HeapAllocation:Type[?x] = ?type
+   <-
+   _StringConstant(OFFSET_USE(offset) ?repr, ?type1),
+   Type:Value[?type] = ?type1.
 
 
 // Field
 
+#ifndef LB4
 lang:physical:storageModel[`_Field] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_Field] = "facts/Field.facts".
 lang:physical:delimiter[`_Field] = "\t".
 lang:physical:hasColumnNames[`_Field] = false.
 
-_Field(?ref, ?declaringClass, ?simplename, ?type) ->
+_Field(OFFSET_DECL_LEFT(offset) ?ref, ?declaringClass, ?simplename, ?type) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
    string(?declaringClass),
    string(?simplename),
@@ -388,20 +503,28 @@ _Field(?ref, ?declaringClass, ?simplename, ?type) ->
 +Field:Value(?x:?signature),
 +Field:DeclaringType[?x] = ?declaringType,
 +Field:SimpleName[?x] = ?simplename,
-+Field:Type[?x] = ?type <-
-   _Field(?signature, ?declaringType, ?simplename, ?type).
++Field:Type[?x] = ?type
+   <-
+   _Field(OFFSET_USE(offset) ?signature, ?declaringType1, ?simplename1, ?type1),
+   SimpleName:Value[?simplename] = ?simplename1,
+   Type:Value[?type] = ?type1,
+   Type:Value[?declaringType] = ?declaringType1,
+   ReferenceType(?declaringType).
 
 
 // EnterMonitor
 
+#ifndef LB4
 lang:physical:storageModel[`_EnterMonitor] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_EnterMonitor] = "facts/EnterMonitor.facts".
 lang:physical:delimiter[`_EnterMonitor] = "\t".
 lang:physical:hasColumnNames[`_EnterMonitor] = false.
 
-_EnterMonitor(?ref, ?index, ?var, ?method) ->
+_EnterMonitor(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?var, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?var),
    string(?method).
 
@@ -410,19 +533,24 @@ _EnterMonitor(?ref, ?index, ?var, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +EnterMonitor:Var[?x] = ?var <-
-   _EnterMonitor(?instruction, ?index, ?var, ?method).
+   _EnterMonitor(OFFSET_USE(offset) ?instruction, ?index, ?var1, ?method1),
+   Var:Value[?var] = ?var1,
+   Method:Value[?method] = ?method1.
 
 
 // ExitMonitor
 
+#ifndef LB4
 lang:physical:storageModel[`_ExitMonitor] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_ExitMonitor] = "facts/ExitMonitor.facts".
 lang:physical:delimiter[`_ExitMonitor] = "\t".
 lang:physical:hasColumnNames[`_ExitMonitor] = false.
 
-_ExitMonitor(?ref, ?index, ?var, ?method) ->
+_ExitMonitor(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?var, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?var),
    string(?method).
 
@@ -431,36 +559,45 @@ _ExitMonitor(?ref, ?index, ?var, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +ExitMonitor:Var[?x] = ?var <-
-   _ExitMonitor(?instruction, ?index, ?var, ?method).
+   _ExitMonitor(OFFSET_USE(offset) ?instruction, ?index, ?var1, ?method1),
+   Var:Value[?var] = ?var1,
+   Method:Value[?method] = ?method1.
 
 
 // Method invocation line numbers
 
+#ifndef LB4
 lang:physical:storageModel[`_MethodInvocation:Line] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_MethodInvocation:Line] = "facts/MethodInvocation-Line.facts".
 lang:physical:delimiter[`_MethodInvocation:Line] = "\t".
 lang:physical:hasColumnNames[`_MethodInvocation:Line] = false.
 
-_MethodInvocation:Line(?ref, ?line) ->
+_MethodInvocation:Line(OFFSET_DECL_LEFT(offset) ?ref, ?line) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[64](?line).
+   INT64(?line).
 
 +MethodInvocation(?x),
 +Instruction:Value(?x:?instruction),
-+MethodInvocation:Line[?x] = ?line <-
-   _MethodInvocation:Line(?instruction, ?line).
++MethodInvocation:Line[?x] = ?line
+   <-
+   _MethodInvocation:Line(OFFSET_USE(offset) ?instruction, ?line).
 
 
 // Static method invocation
 
+#ifndef LB4
 lang:physical:storageModel[`_StaticMethodInvocation] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_StaticMethodInvocation] = "facts/StaticMethodInvocation.facts".
 lang:physical:delimiter[`_StaticMethodInvocation] = "\t".
 lang:physical:hasColumnNames[`_StaticMethodInvocation] = false.
 
-_StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
+_StaticMethodInvocation(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?signature, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?signature),
    string(?method).
 
@@ -469,19 +606,24 @@ _StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +MethodInvocation:Signature[?x] = ?signature <-
-   _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
+   _StaticMethodInvocation(OFFSET_USE(offset) ?instruction, ?index, ?signature1, ?method1),
+   Method:Value[?signature] = ?signature1,
+   Method:Value[?method] = ?method1.
 
 
 // Special method invocation
 
+#ifndef LB4
 lang:physical:storageModel[`_SpecialMethodInvocation] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_SpecialMethodInvocation] = "facts/SpecialMethodInvocation.facts".
 lang:physical:delimiter[`_SpecialMethodInvocation] = "\t".
 lang:physical:hasColumnNames[`_SpecialMethodInvocation] = false.
 
-_SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
+_SpecialMethodInvocation(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?signature, ?base, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?signature),
    string(?base),
    string(?method).
@@ -491,20 +633,27 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +SpecialMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
-   _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
++MethodInvocation:Signature[?x] = ?signature
+   <-
+   _SpecialMethodInvocation(OFFSET_USE(offset) ?instruction, ?index, ?signature1, ?base1, ?method1),
+   Var:Value[?base] = ?base1,
+   Method:Value[?signature] = ?signature1,
+   Method:Value[?method] = ?method1.
 
 
 // Virtual method invocation
 
+#ifndef LB4
 lang:physical:storageModel[`_VirtualMethodInvocation] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_VirtualMethodInvocation] = "facts/VirtualMethodInvocation.facts".
 lang:physical:delimiter[`_VirtualMethodInvocation] = "\t".
 lang:physical:hasColumnNames[`_VirtualMethodInvocation] = false.
 
-_VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
+_VirtualMethodInvocation(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?signature, ?base, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?signature),
    string(?base),
    string(?method).
@@ -514,20 +663,27 @@ _VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +VirtualMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
-   _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
++MethodInvocation:Signature[?x] = ?signature
+   <-
+   _VirtualMethodInvocation(OFFSET_USE(offset) ?instruction, ?index, ?signature1, ?base1, ?method1),
+   Var:Value[?base] = ?base1,
+   Method:Value[?signature] = ?signature1,
+   Method:Value[?method] = ?method1.
 
 
 // Throw
 
+#ifndef LB4
 lang:physical:storageModel[`_Throw] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_Throw] = "facts/Throw.facts".
 lang:physical:delimiter[`_Throw] = "\t".
 lang:physical:hasColumnNames[`_Throw] = false.
 
-_Throw(?ref, ?index, ?var, ?method) ->
+_Throw(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?var, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?var),
    string(?method).
 
@@ -535,44 +691,54 @@ _Throw(?ref, ?index, ?var, ?method) ->
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+Throw:Var[?x] = ?var <-
-   _Throw(?ref, ?index, ?var, ?method).
++Throw:Var[?x] = ?var
+   <-
+   _Throw(OFFSET_USE(offset) ?ref, ?index, ?var1, ?method1),
+   Var:Value[?var] = ?var1,
+   Method:Value[?method] = ?method1.
 
 
 // ThrowNull
 
+#ifndef LB4
 lang:physical:storageModel[`_ThrowNull] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_ThrowNull] = "facts/ThrowNull.facts".
 lang:physical:delimiter[`_ThrowNull] = "\t".
 lang:physical:hasColumnNames[`_ThrowNull] = false.
 
-_ThrowNull(?ref, ?index, ?method) ->
+_ThrowNull(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?method).
 
 +ThrowNull:Insn(?x),
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
-   _ThrowNull(?ref, ?index, ?method).
+   _ThrowNull(OFFSET_USE(offset) ?ref, ?index, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // Exception handler
 
+#ifndef LB4
 lang:physical:storageModel[`_ExceptionHandler] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_ExceptionHandler] = "facts/ExceptionHandler.facts".
 lang:physical:delimiter[`_ExceptionHandler] = "\t".
 lang:physical:hasColumnNames[`_ExceptionHandler] = false.
 
-_ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
+_ExceptionHandler(OFFSET_DECL_LEFT(offset) ?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
    string(?method),
-   int[32](?index),
+   INT32(?index),
    string(?type),
    string(?var),
-   int[32](?begin),
-   int[32](?end).
+   INT32(?begin),
+   INT32(?end).
 
 +ExceptionHandler(?x),
 +ExceptionHandler:Value(?x:?ref),
@@ -581,18 +747,25 @@ _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
 +ExceptionHandler:Type[?x] = ?type,
 +ExceptionHandler:FormalParam[?x] = ?var,
 +ExceptionHandler:Begin[?x] = ?begin,
-+ExceptionHandler:End[?x] = ?end <-
-   _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end).
++ExceptionHandler:End[?x] = ?end
+   <-
+   _ExceptionHandler(OFFSET_USE(offset) ?ref, ?method1, ?index, ?type1, ?var1, ?begin, ?end),
+   Method:Value[?method] = ?method1,
+   Var:Value[?var] = ?var1,
+   Type:Value[?type] = ?type1.
 
 
 // Method signature
 
+#ifndef LB4
 lang:physical:storageModel[`_Method] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_Method] = "facts/Method.facts".
 lang:physical:delimiter[`_Method] = "\t".
 lang:physical:hasColumnNames[`_Method] = false.
 
-_Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
+_Method(OFFSET_DECL_LEFT(offset) ?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
    string(?simplename),
    string(?descriptor),
@@ -604,20 +777,32 @@ _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
 +Method:SimpleName[?x] = ?simplename,
 +Method:Descriptor[?x] = ?descriptor,
 +Method:DeclaringType[?x] = ?declaringType,
-+Method:ReturnType[?x] = ?returnType <-
-   _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType).
++Method:ReturnType[?x] = ?returnType,
++SimpleName(?simplename),
++SimpleName:Value[?simplename] = ?simplename1,
++MethodDescriptor(?descriptor),
++MethodDescriptor:Value[?descriptor] = ?descriptor1
+   <-
+   _Method(OFFSET_USE(offset) ?ref, ?simplename1, ?descriptor1, ?declaringType1, ?returnType1),
+   ReferenceType(?declaringType),
+   Type:Value[?declaringType] = ?declaringType1,
+   Type:Value[?returnType] = ?returnType1.
+   
 
 
 // StoreInstanceField
 
+#ifndef LB4
 lang:physical:storageModel[`_StoreInstanceField] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_StoreInstanceField] = "facts/StoreInstanceField.facts".
 lang:physical:delimiter[`_StoreInstanceField] = "\t".
 lang:physical:hasColumnNames[`_StoreInstanceField] = false.
 
-_StoreInstanceField(?ref, ?index, ?from, ?base, ?signature, ?method) ->
+_StoreInstanceField(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?from, ?base, ?signature, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?from),
    string(?base),
    string(?signature),
@@ -629,20 +814,28 @@ _StoreInstanceField(?ref, ?index, ?from, ?base, ?signature, ?method) ->
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
 +StoreInstanceField:Base[?x] = ?base,
-+StoreInstanceField:From[?x] = ?from <-
-   _StoreInstanceField(?ref, ?index, ?from, ?base, ?signature, ?method).
++StoreInstanceField:From[?x] = ?from
+   <-
+   _StoreInstanceField(OFFSET_USE(offset) ?ref, ?index, ?from1, ?base1, ?signature1, ?method1),
+   Field:Value[?signature] = ?signature1,
+   Var:Value[?from] = ?from1,
+   Var:Value[?base] = ?base1,
+   Method:Value[?method] = ?method1.
 
 
 // LoadInstanceField
 
+#ifndef LB4
 lang:physical:storageModel[`_LoadInstanceField] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_LoadInstanceField] = "facts/LoadInstanceField.facts".
 lang:physical:delimiter[`_LoadInstanceField] = "\t".
 lang:physical:hasColumnNames[`_LoadInstanceField] = false.
 
-_LoadInstanceField(?ref, ?index, ?to, ?base, ?signature, ?method) ->
+_LoadInstanceField(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?to, ?base, ?signature, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?base),
    string(?signature),
@@ -654,20 +847,28 @@ _LoadInstanceField(?ref, ?index, ?to, ?base, ?signature, ?method) ->
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
 +LoadInstanceField:Base[?x] = ?base,
-+LoadInstanceField:To[?x] = ?to <-
-   _LoadInstanceField(?ref, ?index, ?to, ?base, ?signature, ?method).
++LoadInstanceField:To[?x] = ?to
+   <-
+   _LoadInstanceField(OFFSET_USE(offset) ?ref, ?index, ?to1, ?base1, ?signature1, ?method1),
+   Field:Value[?signature] = ?signature1,
+   Var:Value[?to] = ?to1,
+   Var:Value[?base] = ?base1,
+   Method:Value[?method] = ?method1.
 
 
 // StoreStaticField
 
+#ifndef LB4
 lang:physical:storageModel[`_StoreStaticField] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_StoreStaticField] = "facts/StoreStaticField.facts".
 lang:physical:delimiter[`_StoreStaticField] = "\t".
 lang:physical:hasColumnNames[`_StoreStaticField] = false.
 
-_StoreStaticField(?ref, ?index, ?from, ?signature, ?method) ->
+_StoreStaticField(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?from, ?signature, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?from),
    string(?signature),
    string(?method).
@@ -677,20 +878,27 @@ _StoreStaticField(?ref, ?index, ?from, ?signature, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
-+StoreStaticField:From[?x] = ?from <-
-   _StoreStaticField(?ref, ?index, ?from, ?signature, ?method).
++StoreStaticField:From[?x] = ?from
+   <-
+   _StoreStaticField(OFFSET_USE(offset) ?ref, ?index, ?from1, ?signature1, ?method1),
+   Field:Value[?signature] = ?signature1,
+   Var:Value[?from] = ?from1,
+   Method:Value[?method] = ?method1.
 
 
 // LoadStaticField
 
+#ifndef LB4
 lang:physical:storageModel[`_LoadStaticField] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_LoadStaticField] = "facts/LoadStaticField.facts".
 lang:physical:delimiter[`_LoadStaticField] = "\t".
 lang:physical:hasColumnNames[`_LoadStaticField] = false.
 
-_LoadStaticField(?ref, ?index, ?to, ?signature, ?method) ->
+_LoadStaticField(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?to, ?signature, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?signature),
    string(?method).
@@ -701,19 +909,25 @@ _LoadStaticField(?ref, ?index, ?to, ?signature, ?method) ->
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
 +LoadStaticField:To[?x] = ?to <-
-   _LoadStaticField(?ref, ?index, ?to, ?signature, ?method).
+   _LoadStaticField(OFFSET_USE(offset) ?ref, ?index, ?to1, ?signature1, ?method1),
+   Field:Value[?signature] = ?signature1,
+   Var:Value[?to] = ?to1,
+   Method:Value[?method] = ?method1.
 
 
 // StoreArrayIndex
 
+#ifndef LB4
 lang:physical:storageModel[`_StoreArrayIndex] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_StoreArrayIndex] = "facts/StoreArrayIndex.facts".
 lang:physical:delimiter[`_StoreArrayIndex] = "\t".
 lang:physical:hasColumnNames[`_StoreArrayIndex] = false.
 
-_StoreArrayIndex(?ref, ?index, ?from, ?base, ?method) ->
+_StoreArrayIndex(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?from, ?base, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?from),
    string(?base),
    string(?method).
@@ -723,20 +937,27 @@ _StoreArrayIndex(?ref, ?index, ?from, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +StoreArrayIndex:Base[?x] = ?base,
-+StoreArrayIndex:From[?x] = ?from <-
-   _StoreArrayIndex(?ref, ?index, ?from, ?base, ?method).
++StoreArrayIndex:From[?x] = ?from
+   <-
+   _StoreArrayIndex(OFFSET_USE(offset) ?ref, ?index, ?from1, ?base1, ?method1),
+   Var:Value[?base] = ?base1,
+   Var:Value[?from] = ?from1,
+   Method:Value[?method] = ?method1.
 
 
 // LoadArrayIndex
 
+#ifndef LB4
 lang:physical:storageModel[`_LoadArrayIndex] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_LoadArrayIndex] = "facts/LoadArrayIndex.facts".
 lang:physical:delimiter[`_LoadArrayIndex] = "\t".
 lang:physical:hasColumnNames[`_LoadArrayIndex] = false.
 
-_LoadArrayIndex(?ref, ?index, ?to, ?base, ?method) ->
+_LoadArrayIndex(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?to, ?base, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?to),
    string(?base),
    string(?method).
@@ -746,35 +967,50 @@ _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +LoadArrayIndex:Base[?x] = ?base,
-+LoadArrayIndex:To[?x] = ?to <-
-   _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method).
++LoadArrayIndex:To[?x] = ?to
+   <-
+   _LoadArrayIndex(OFFSET_USE(offset) ?ref, ?index, ?to1, ?base1, ?method1),
+   Var:Value[?to] = ?to1,
+   Var:Value[?base] = ?base1,
+   Method:Value[?method] = ?method1.
 
 
 // ArrayInsnIndex 
 
+#ifndef LB4
 lang:physical:storageModel[`_ArrayInsnIndex] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_ArrayInsnIndex] = "facts/ArrayInsnIndex.facts".
 lang:physical:delimiter[`_ArrayInsnIndex] = "\t".
 lang:physical:hasColumnNames[`_ArrayInsnIndex] = false.
 
-_ArrayInsnIndex(?ref, ?index) ->
+_ArrayInsnIndex(OFFSET_DECL_LEFT(offset) ?ref, ?index) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
    string(?index).
 
-+ArrayInsnIndex[?insn] = ?index <-
-   _ArrayInsnIndex(?insn, ?index).
+// MB TODO not sure if this is correct
++Instruction(?insn),
++Instruction:Value(?insn:?insn1),
++ArrayInsnIndex[?insn] = ?index
+   <-
+   _ArrayInsnIndex(OFFSET_USE(offset) ?insn1, ?index1),
+   Var:Value[?index] = ?index1.
 
 // Goto
 
+#ifndef LB4
 lang:physical:storageModel[`_Goto] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_Goto] = "facts/Goto.facts".
 lang:physical:delimiter[`_Goto] = "\t".
 lang:physical:hasColumnNames[`_Goto] = false.
 
-_Goto(?ref, ?index, ?to, ?method) ->
+_Goto(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?to, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
-   int[32](?to),
+   INT32(?index),
+   INT32(?to),
    string(?method).
 
 +Goto:Insn(?x),
@@ -782,20 +1018,24 @@ _Goto(?ref, ?index, ?to, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Goto:Target[?x] = ?to <-
-   _Goto(?ref, ?index, ?to, ?method).
+   _Goto(OFFSET_USE(offset) ?ref, ?index, ?to, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // If
 
+#ifndef LB4
 lang:physical:storageModel[`_If] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_If] = "facts/If.facts".
 lang:physical:delimiter[`_If] = "\t".
 lang:physical:hasColumnNames[`_If] = false.
 
-_If(?ref, ?index, ?to, ?method) ->
+_If(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?to, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
-   int[32](?to),
+   INT32(?index),
+   INT32(?to),
    string(?method).
 
 +If:Insn(?x),
@@ -803,18 +1043,22 @@ _If(?ref, ?index, ?to, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +If:Target[?x] = ?to <-
-   _If(?ref, ?index, ?to, ?method).
+   _If(OFFSET_USE(offset) ?ref, ?index, ?to, ?method1),
+   Method:Value[?method] = ?method1.
 
 // Switch Statements
 
+#ifndef LB4
 lang:physical:storageModel[`_TableSwitch] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_TableSwitch] = "facts/TableSwitch.facts".
 lang:physical:delimiter[`_TableSwitch] = "\t".
 lang:physical:hasColumnNames[`_TableSwitch] = false.
 
-_TableSwitch(?ref, ?index, ?key, ?method) ->
+_TableSwitch(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?key, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?key),
    string(?method).
 
@@ -823,16 +1067,21 @@ _TableSwitch(?ref, ?index, ?key, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Switch:Key[?x] = ?key <-
-   _TableSwitch(?ref, ?index, ?key, ?method).
+   _TableSwitch(OFFSET_USE(offset) ?ref, ?index, ?key1, ?method1),
+   Var:Value[?key] = ?key1,
+   Method:Value[?method] = ?method1.
 
+#ifndef LB4
 lang:physical:storageModel[`_LookupSwitch] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_LookupSwitch] = "facts/LookupSwitch.facts".
 lang:physical:delimiter[`_LookupSwitch] = "\t".
 lang:physical:hasColumnNames[`_LookupSwitch] = false.
 
-_LookupSwitch(?ref, ?index, ?key, ?method) ->
+_LookupSwitch(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?key, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?key),
    string(?method).
 
@@ -840,79 +1089,99 @@ _LookupSwitch(?ref, ?index, ?key, ?method) ->
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+Switch:Key[?x] = ?key <-
-   _LookupSwitch(?ref, ?index, ?key, ?method).
++Switch:Key[?x] = ?key
+   <-
+   _LookupSwitch(OFFSET_USE(offset) ?ref, ?index, ?key1, ?method1),
+   Var:Value[?key] = ?key1,
+   Method:Value[?method] = ?method1.
 
 // Targets
+
+#ifndef LB4
 lang:physical:storageModel[`_TableSwitch:Target] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_TableSwitch:Target] = "facts/TableSwitch-Target.facts".
 lang:physical:delimiter[`_TableSwitch:Target] = "\t".
 lang:physical:hasColumnNames[`_TableSwitch:Target] = false.
 
-_TableSwitch:Target(?ref, ?value, ?target) ->
+_TableSwitch:Target(OFFSET_DECL_LEFT(offset) ?ref, ?value, ?target) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?value),
-   int[32](?target).
+   INT32(?value),
+   INT32(?target).
 
 +TableSwitch:Insn(?x),
 +Instruction:Value(?x:?ref),
 +Switch:Target[?x, ?value] = ?target <-
-   _TableSwitch:Target(?ref, ?value, ?target).
+   _TableSwitch:Target(OFFSET_USE(offset) ?ref, ?value, ?target).
 
+#ifndef LB4
 lang:physical:storageModel[`_LookupSwitch:Target] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_LookupSwitch:Target] = "facts/LookupSwitch-Target.facts".
 lang:physical:delimiter[`_LookupSwitch:Target] = "\t".
 lang:physical:hasColumnNames[`_LookupSwitch:Target] = false.
 
-_LookupSwitch:Target(?ref, ?value, ?target) ->
+_LookupSwitch:Target(OFFSET_DECL_LEFT(offset) ?ref, ?value, ?target) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?value),
-   int[32](?target).
+   INT32(?value),
+   INT32(?target).
 
 +LookupSwitch:Insn(?x),
 +Instruction:Value(?x:?ref),
 +Switch:Target[?x, ?value] = ?target <-
-   _LookupSwitch:Target(?ref, ?value, ?target).
+   _LookupSwitch:Target(OFFSET_USE(offset) ?ref, ?value, ?target).
 
 // Default target
+
+#ifndef LB4
 lang:physical:storageModel[`_TableSwitch:DefaultTarget] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_TableSwitch:DefaultTarget] = "facts/TableSwitch-Default.facts".
 lang:physical:delimiter[`_TableSwitch:DefaultTarget] = "\t".
 lang:physical:hasColumnNames[`_TableSwitch:DefaultTarget] = false.
 
-_TableSwitch:DefaultTarget(?ref, ?target) ->
+_TableSwitch:DefaultTarget(OFFSET_DECL_LEFT(offset) ?ref, ?target) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?target).
+   INT32(?target).
 
 +TableSwitch:Insn(?x),
 +Instruction:Value(?x:?ref),
 +Switch:DefaultTarget[?x] = ?target <-
-   _TableSwitch:DefaultTarget(?ref, ?target).
+   _TableSwitch:DefaultTarget(OFFSET_USE(offset) ?ref, ?target).
 
+#ifndef LB4
 lang:physical:storageModel[`_LookupSwitch:DefaultTarget] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_LookupSwitch:DefaultTarget] = "facts/LookupSwitch-Default.facts".
 lang:physical:delimiter[`_LookupSwitch:DefaultTarget] = "\t".
 lang:physical:hasColumnNames[`_LookupSwitch:DefaultTarget] = false.
 
-_LookupSwitch:DefaultTarget(?ref, ?target) ->
+_LookupSwitch:DefaultTarget(OFFSET_DECL_LEFT(offset) ?ref, ?target) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?target).
+   INT32(?target).
 
 +LookupSwitch:Insn(?x),
 +Instruction:Value(?x:?ref),
 +Switch:DefaultTarget[?x] = ?target <-
-   _LookupSwitch:DefaultTarget(?ref, ?target).
+   _LookupSwitch:DefaultTarget(OFFSET_USE(offset) ?ref, ?target).
 
 // ReturnNonvoid
 
+#ifndef LB4
 lang:physical:storageModel[`_Return] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_Return] = "facts/Return.facts".
 lang:physical:delimiter[`_Return] = "\t".
 lang:physical:hasColumnNames[`_Return] = false.
 
-_Return(?ref, ?index, ?var, ?method) ->
+_Return(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?var, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?var),
    string(?method).
 
@@ -921,102 +1190,125 @@ _Return(?ref, ?index, ?var, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +ReturnNonvoid:Var[?x] = ?var <-
-   _Return(?ref, ?index, ?var, ?method).
+   _Return(OFFSET_USE(offset) ?ref, ?index, ?var1, ?method1),
+   Var:Value[?var] = ?var1,
+   Method:Value[?method] = ?method1.
 
 
 // ReturnVoid
 
+#ifndef LB4
 lang:physical:storageModel[`_ReturnVoid] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_ReturnVoid] = "facts/ReturnVoid.facts".
 lang:physical:delimiter[`_ReturnVoid] = "\t".
 lang:physical:hasColumnNames[`_ReturnVoid] = false.
 
-_ReturnVoid(?ref, ?index, ?method) ->
+_ReturnVoid(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?method).
 
 +ReturnVoid:Insn(?x),
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
-   _ReturnVoid(?ref, ?index, ?method).
+   _ReturnVoid(OFFSET_USE(offset) ?ref, ?index, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // AssignPhantomInvoke
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignPhantomInvoke] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_AssignPhantomInvoke] = "facts/AssignPhantomInvoke.facts".
 lang:physical:delimiter[`_AssignPhantomInvoke] = "\t".
 lang:physical:hasColumnNames[`_AssignPhantomInvoke] = false.
 
-_AssignPhantomInvoke(?ref, ?index, ?method) ->
+_AssignPhantomInvoke(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?method).
 
 +AssignPhantomInvoke(?x),
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
-   _AssignPhantomInvoke(?ref, ?index, ?method).
+   _AssignPhantomInvoke(OFFSET_USE(offset) ?ref, ?index, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // PhantomInvoke
 
+#ifndef LB4
 lang:physical:storageModel[`_PhantomInvoke] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_PhantomInvoke] = "facts/PhantomInvoke.facts".
 lang:physical:delimiter[`_PhantomInvoke] = "\t".
 lang:physical:hasColumnNames[`_PhantomInvoke] = false.
 
-_PhantomInvoke(?ref, ?index, ?method) ->
+_PhantomInvoke(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?method).
 
 +PhantomInvoke(?x),
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
-   _PhantomInvoke(?ref, ?index, ?method).
+   _PhantomInvoke(OFFSET_USE(offset) ?ref, ?index, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // BreakpointStmt
 
+#ifndef LB4
 lang:physical:storageModel[`_BreakpointStmt] = "DelimitedFile".
+#endif
 lang:physical:filePath[`_BreakpointStmt] = "facts/BreakpointStmt.facts".
 lang:physical:delimiter[`_BreakpointStmt] = "\t".
 lang:physical:hasColumnNames[`_BreakpointStmt] = false.
 
-_BreakpointStmt(?ref, ?index, ?method) ->
+_BreakpointStmt(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?method).
 
 +BreakpointStmt(?x),
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
-   _BreakpointStmt(?ref, ?index, ?method).
+   _BreakpointStmt(OFFSET_USE(offset) ?ref, ?index, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // UnsupportedInstruction
 
+#ifndef LB4
 lang:physical:storageModel[`_UnsupportedInstruction] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_UnsupportedInstruction] = "facts/UnsupportedInstruction.facts".
 lang:physical:delimiter[`_UnsupportedInstruction] = "\t".
 lang:physical:hasColumnNames[`_UnsupportedInstruction] = false.
 
-_UnsupportedInstruction(?ref, ?index, ?method) ->
+_UnsupportedInstruction(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
+   OFFSET_DECL_RIGHT(offset)
    string(?ref),
-   int[32](?index),
+   INT32(?index),
    string(?method).
 
 +UnsupportedInstruction(?x),
 +Instruction:Value(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
-   _UnsupportedInstruction(?ref, ?index, ?method).
+   _UnsupportedInstruction(OFFSET_USE(offset) ?ref, ?index, ?method1),
+   Method:Value[?method] = ?method1.
 
 
 // Access Modifiers

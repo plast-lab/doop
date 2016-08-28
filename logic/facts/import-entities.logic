@@ -1,56 +1,77 @@
+#ifdef LB4
+lang:compiler:error:FUNC_SEMICOLON_DEPRECATED[] = false.
+lang:compiler:warning:FUNC_SEMICOLON_DEPRECATED[] = false.
+#endif
+
 // ClassType
 
+#ifndef LB4
 lang:physical:storageModel[`_ClassType] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ClassType] = "facts/ClassType.facts".
 lang:physical:delimiter[`_ClassType] = "\t".
 lang:physical:hasColumnNames[`_ClassType] = false.
 
-_ClassType(?param1) ->
+_ClassType(OFFSET_DECL_LEFT(offset) ?param1) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1).
 
 +Type:Value(?t:?param1),
 +ClassType(?t) <-
-  _ClassType(?param1).
+  _ClassType(OFFSET_USE(offset) ?param1).
 
 
 // ArrayType
 
+#ifndef LB4
 lang:physical:storageModel[`_ArrayType] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ArrayType] = "facts/ArrayType.facts".
 lang:physical:delimiter[`_ArrayType] = "\t".
 lang:physical:hasColumnNames[`_ArrayType] = false.
 
-_ArrayType(?param1) ->
+_ArrayType(OFFSET_DECL_LEFT(offset) ?param1) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1).
 
 +Type:Value(?t:?param1),
 +ArrayType(?t) <-
-  _ArrayType(?param1).
+  _ArrayType(OFFSET_USE(offset) ?param1).
 
 
 // InterfaceType
 
+#ifndef LB4
 lang:physical:storageModel[`_InterfaceType] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_InterfaceType] = "facts/InterfaceType.facts".
 lang:physical:delimiter[`_InterfaceType] = "\t".
 lang:physical:hasColumnNames[`_InterfaceType] = false.
 
-_InterfaceType(?param1) ->
+_InterfaceType(OFFSET_DECL_LEFT(offset) ?param1) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1).
 
 +Type:Value(?t:?param1),
 +InterfaceType(?t) <-
-  _InterfaceType(?param1).
+  _InterfaceType(OFFSET_USE(offset) ?param1).
 
 
 // ComponentType
 
+#ifndef LB4
 lang:physical:storageModel[`_ComponentType] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ComponentType] = "facts/ComponentType.facts".
 lang:physical:delimiter[`_ComponentType] = "\t".
 lang:physical:hasColumnNames[`_ComponentType] = false.
 
-_ComponentType(?param1, ?param2) ->
+_ComponentType(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -59,18 +80,22 @@ _ComponentType(?param1, ?param2) ->
 +Type:Value(?componentType:?param2),
 +Type(?componentType),
 +ComponentType[?arrayType] = ?componentType <-
-  _ComponentType(?param1, ?param2).
+  _ComponentType(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // ActualParam
 
+#ifndef LB4
 lang:physical:storageModel[`_ActualParam] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ActualParam] = "facts/ActualParam.facts".
 lang:physical:delimiter[`_ActualParam] = "\t".
 lang:physical:hasColumnNames[`_ActualParam] = false.
 
-_ActualParam(?param1, ?param2, ?param3) ->
-  int[64](?param1),
+_ActualParam(OFFSET_DECL_LEFT(offset) ?param1, ?param2, ?param3) ->
+  OFFSET_DECL_RIGHT(offset)
+  INT64(?param1),
   string(?param2),
   string(?param3).
 
@@ -78,18 +103,25 @@ _ActualParam(?param1, ?param2, ?param3) ->
 +MethodInvocation(?invocation),
 +Var:Value(?var:?param3),
 +Var(?var),
-+ActualParam[?index, ?invocation] = ?var <-
-  _ActualParam(?index, ?param2, ?param3).
++ParamIndex(?param),
++ParamIndex:Value[?param] = ?index,
++ActualParam[?param, ?invocation] = ?var
+  <-
+  _ActualParam(OFFSET_USE(offset) ?index, ?param2, ?param3).
 
 
 // DirectSuperinterface
 
+#ifndef LB4
 lang:physical:storageModel[`_DirectSuperinterface] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_DirectSuperinterface] = "facts/DirectSuperinterface.facts".
 lang:physical:delimiter[`_DirectSuperinterface] = "\t".
 lang:physical:hasColumnNames[`_DirectSuperinterface] = false.
 
-_DirectSuperinterface(?param1, ?param2) ->
+_DirectSuperinterface(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -98,17 +130,21 @@ _DirectSuperinterface(?param1, ?param2) ->
 +Type:Value(?interface:?param2),
 +InterfaceType(?interface),
 +DirectSuperinterface(?class, ?interface) <-
-  _DirectSuperinterface(?param1, ?param2).
+  _DirectSuperinterface(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // DirectSuperclass
 
+#ifndef LB4
 lang:physical:storageModel[`_DirectSuperclass] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_DirectSuperclass] = "facts/DirectSuperclass.facts".
 lang:physical:delimiter[`_DirectSuperclass] = "\t".
 lang:physical:hasColumnNames[`_DirectSuperclass] = false.
 
-_DirectSuperclass(?param1, ?param2) ->
+_DirectSuperclass(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -117,17 +153,21 @@ _DirectSuperclass(?param1, ?param2) ->
 +Type:Value(?superclass:?param2),
 +ClassType(?superclass),
 +DirectSuperclass[?class] = ?superclass <-
-  _DirectSuperclass(?param1, ?param2).
+  _DirectSuperclass(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // Field:Modifier
 
+#ifndef LB4
 lang:physical:storageModel[`_Field:Modifier] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_Field:Modifier] = "facts/Field-Modifier.facts".
 lang:physical:delimiter[`_Field:Modifier] = "\t".
 lang:physical:hasColumnNames[`_Field:Modifier] = false.
 
-_Field:Modifier(?param1, ?param2) ->
+_Field:Modifier(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -136,30 +176,42 @@ _Field:Modifier(?param1, ?param2) ->
 +Field:Value(?field:?param2),
 +Field(?field),
 +Field:Modifier(?modifier, ?field) <-
-  _Field:Modifier(?param1, ?param2).
+  _Field:Modifier(OFFSET_USE(offset) ?param1, ?param2).
 
-
+#ifndef LB4
 lang:physical:storageModel[`_ClassModifier] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ClassModifier] = "facts/ClassModifier.facts".
 lang:physical:delimiter[`_ClassModifier] = "\t".
 lang:physical:hasColumnNames[`_ClassModifier] = false.
 
-_ClassModifier(?param1, ?param2) ->
+_ClassModifier(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
-+ClassModifier(?class, ?modifier) <-
-  _ClassModifier(?class, ?modifier).
++Modifier(?m),
++Modifier:Value[?m] = ?modifier,
++ClassModifier(?m, ?classtype),
++Type:Value[?classtype] = ?class,
++ClassType(?classtype)
+  <-
+  _ClassModifier(OFFSET_USE(offset) ?modifier, ?class).
 
 // FormalParam
 
+#ifndef LB4
 lang:physical:storageModel[`_FormalParam] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_FormalParam] = "facts/FormalParam.facts".
 lang:physical:delimiter[`_FormalParam] = "\t".
 lang:physical:hasColumnNames[`_FormalParam] = false.
 
-_FormalParam(?param1, ?param2, ?param3) ->
-  int[64](?param1),
+_FormalParam(OFFSET_DECL_LEFT(offset) ?param1, ?param2, ?param3) ->
+  OFFSET_DECL_RIGHT(offset)
+  INT64(?param1),
   string(?param2),
   string(?param3).
 
@@ -167,18 +219,25 @@ _FormalParam(?param1, ?param2, ?param3) ->
 +Method(?method),
 +Var:Value(?var:?param3),
 +Var(?var),
-+FormalParam[?index, ?method] = ?var <-
-  _FormalParam(?index, ?param2, ?param3).
++ParamIndex(?param),
++ParamIndex:Value[?param] = ?index,
++FormalParam[?param, ?method] = ?var
+  <-
+  _FormalParam(OFFSET_USE(offset) ?index, ?param2, ?param3).
 
 
 // Method:DeclaresException
 
+#ifndef LB4
 lang:physical:storageModel[`_Method:DeclaresException] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_Method:DeclaresException] = "facts/Method-DeclaresException.facts".
 lang:physical:delimiter[`_Method:DeclaresException] = "\t".
 lang:physical:hasColumnNames[`_Method:DeclaresException] = false.
 
-_Method:DeclaresException(?param1, ?param2) ->
+_Method:DeclaresException(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -186,18 +245,23 @@ _Method:DeclaresException(?param1, ?param2) ->
 +ReferenceType(?exceptionType),
 +Method:Value(?method:?param2),
 +Method(?method),
-+Method:DeclaresException(?exceptionType, ?method) <-
-  _Method:DeclaresException(?param1, ?param2).
++Method:DeclaresException(?exceptionType, ?method)
+  <-
+  _Method:DeclaresException(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // Method:Modifier
 
+#ifndef LB4
 lang:physical:storageModel[`_Method:Modifier] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_Method:Modifier] = "facts/Method-Modifier.facts".
 lang:physical:delimiter[`_Method:Modifier] = "\t".
 lang:physical:hasColumnNames[`_Method:Modifier] = false.
 
-_Method:Modifier(?param1, ?param2) ->
+_Method:Modifier(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -206,17 +270,21 @@ _Method:Modifier(?param1, ?param2) ->
 +Method:Value(?method:?param2),
 +Method(?method),
 +Method:Modifier(?mod, ?method) <-
-  _Method:Modifier(?param1, ?param2).
+  _Method:Modifier(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // NativeReturnVar
 
+#ifndef LB4
 lang:physical:storageModel[`_NativeReturnVar] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_NativeReturnVar] = "facts/NativeReturnVar.facts".
 lang:physical:delimiter[`_NativeReturnVar] = "\t".
 lang:physical:hasColumnNames[`_NativeReturnVar] = false.
 
-_NativeReturnVar(?param1, ?param2) ->
+_NativeReturnVar(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -225,17 +293,21 @@ _NativeReturnVar(?param1, ?param2) ->
 +Method:Value(?method:?param2),
 +Method(?method),
 +NativeReturnVar(?var, ?method) <-
-  _NativeReturnVar(?param1, ?param2).
+  _NativeReturnVar(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // Var:Type
 
+#ifndef LB4
 lang:physical:storageModel[`_Var:Type] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_Var:Type] = "facts/Var-Type.facts".
 lang:physical:delimiter[`_Var:Type] = "\t".
 lang:physical:hasColumnNames[`_Var:Type] = false.
 
-_Var:Type(?param1, ?param2) ->
+_Var:Type(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -244,17 +316,21 @@ _Var:Type(?param1, ?param2) ->
 +Type:Value(?type:?param2),
 +Type(?type),
 +Var:Type[?ref] = ?type <-
-  _Var:Type(?param1, ?param2).
+  _Var:Type(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // Var:DeclaringMethod
 
+#ifndef LB4
 lang:physical:storageModel[`_Var:DeclaringMethod] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_Var:DeclaringMethod] = "facts/Var-DeclaringMethod.facts".
 lang:physical:delimiter[`_Var:DeclaringMethod] = "\t".
 lang:physical:hasColumnNames[`_Var:DeclaringMethod] = false.
 
-_Var:DeclaringMethod(?param1, ?param2) ->
+_Var:DeclaringMethod(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -263,33 +339,41 @@ _Var:DeclaringMethod(?param1, ?param2) ->
 +Method:Value(?method:?param2),
 +Method(?method),
 +Var:DeclaringMethod(?ref, ?method) <-
-  _Var:DeclaringMethod(?param1, ?param2).
+  _Var:DeclaringMethod(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // ApplicationClass
 
+#ifndef LB4
 lang:physical:storageModel[`_ApplicationClass] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ApplicationClass] = "facts/ApplicationClass.facts".
 lang:physical:delimiter[`_ApplicationClass] = "\t".
 lang:physical:hasColumnNames[`_ApplicationClass] = false.
 
-_ApplicationClass(?param1) ->
+_ApplicationClass(OFFSET_DECL_LEFT(offset) ?param1) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1).
 
 +Type:Value(?ref:?param1),
 +ReferenceType(?ref),
 +ApplicationClass(?ref) <-
-  _ApplicationClass(?param1).
+  _ApplicationClass(OFFSET_USE(offset) ?param1).
 
 
 // ThisVar
 
+#ifndef LB4
 lang:physical:storageModel[`_ThisVar] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ThisVar] = "facts/ThisVar.facts".
 lang:physical:delimiter[`_ThisVar] = "\t".
 lang:physical:hasColumnNames[`_ThisVar] = false.
 
-_ThisVar(?param1, ?param2) ->
+_ThisVar(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -298,17 +382,21 @@ _ThisVar(?param1, ?param2) ->
 +Var:Value(?var:?param2),
 +Var(?var),
 +ThisVar[?method] = ?var <-
-  _ThisVar(?param1, ?param2).
+  _ThisVar(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // ExceptionHandler:Previous
 
+#ifndef LB4
 lang:physical:storageModel[`_ExceptionHandler:Previous] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_ExceptionHandler:Previous] = "facts/ExceptionHandler-Previous.facts".
 lang:physical:delimiter[`_ExceptionHandler:Previous] = "\t".
 lang:physical:hasColumnNames[`_ExceptionHandler:Previous] = false.
 
-_ExceptionHandler:Previous(?param1, ?param2) ->
+_ExceptionHandler:Previous(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -317,17 +405,21 @@ _ExceptionHandler:Previous(?param1, ?param2) ->
 +ExceptionHandler:Value(?previous:?param2),
 +ExceptionHandler(?previous),
 +ExceptionHandler:Previous[?handler] = ?previous <-
-  _ExceptionHandler:Previous(?param1, ?param2).
+  _ExceptionHandler:Previous(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // AssignReturnValue
 
+#ifndef LB4
 lang:physical:storageModel[`_AssignReturnValue] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_AssignReturnValue] = "facts/AssignReturnValue.facts".
 lang:physical:delimiter[`_AssignReturnValue] = "\t".
 lang:physical:hasColumnNames[`_AssignReturnValue] = false.
 
-_AssignReturnValue(?param1, ?param2) ->
+_AssignReturnValue(OFFSET_DECL_LEFT(offset) ?param1, ?param2) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2).
 
@@ -336,17 +428,21 @@ _AssignReturnValue(?param1, ?param2) ->
 +Var:Value(?to:?param2),
 +Var(?to),
 +AssignReturnValue[?invocation] = ?to <-
-  _AssignReturnValue(?param1, ?param2).
+  _AssignReturnValue(OFFSET_USE(offset) ?param1, ?param2).
 
 
 // Properties
 
+#ifndef LB4
 lang:physical:storageModel[`_Properties] = "DelimitedFile".
+#endif
+
 lang:physical:filePath[`_Properties] = "facts/Properties.facts".
 lang:physical:delimiter[`_Properties] = "\t".
 lang:physical:hasColumnNames[`_Properties] = false.
 
-_Properties(?param1, ?param2, ?param3) ->
+_Properties(OFFSET_DECL_LEFT(offset) ?param1, ?param2, ?param3) ->
+  OFFSET_DECL_RIGHT(offset)
   string(?param1),
   string(?param2),
   string(?param3).
@@ -358,4 +454,5 @@ _Properties(?param1, ?param2, ?param3) ->
 +Instruction:Value(?value:?param3),
 +StringConstant(?value),
 +Properties[?path, ?key] = ?value <-
-  _Properties(?param1, ?param2, ?param3).
+  _Properties(OFFSET_USE(offset) ?param1, ?param2, ?param3).
+
