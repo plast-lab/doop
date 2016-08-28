@@ -1,0 +1,19 @@
+#ifdef LB4
+
+#define INT32 int
+#define INT64 int
+#define UINT64 int
+#define DECIMAL decimal
+
+#define OFFSET_DECL_LEFT(x) x ;
+#define OFFSET_DECL_RIGHT(x) int(x) ,
+#define OFFSET_USE(x) _ ;
+
+#else
+
+#define INT32 int[32]
+#define INT64 int[64]
+#define UINT64 uint[64]
+#define DECIMAL decimal[64]
+
+#endif
