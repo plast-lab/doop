@@ -1334,6 +1334,11 @@ _UnsupportedInstruction(OFFSET_DECL_LEFT(offset) ?ref, ?index, ?method) ->
 +ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.
 
 
+// MB TODO it's not entirely clear to me how void used by handled. It
+// looks like the creation of the void type relied on refmode
+// conversion and it was never explicitly created elsewhere.
++Type(?t), +Type:Value(?t:"void").
+
 // Create single null object
 +HeapAllocation(?nullObject),
 +Instruction:Value(?nullObject:"<<<null pseudo object>>>"),
