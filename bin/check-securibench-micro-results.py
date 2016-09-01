@@ -153,6 +153,10 @@ def parseOut(out):
         linesplit = line.split(', ')
         if len(linesplit) < 2: continue
         try:
+            if 'securibench.micro' not in linesplit[0]:
+                continue
+            if 'securibench.micro' not in linesplit[1]:
+                continue
             interesting = linesplit[1].split('securibench.micro')[1].split('.doGet')[0].split('.')[-1].strip()
             res[interesting]+=1
         except:
