@@ -4,8 +4,8 @@
  <- MockObject(?classHeap, ?class).
 
 // create heap allocation for all formal parameters
-+HeapAllocation(?formalMockStr),
-+HeapAllocation:Type[?formalMockStr] = ?formalMockType
- <-
-   MockEntryPoint(_, ?entry),
-   GetMocksForFormals(?formalMockStr, ?formalMockType, _, ?entry).
+//+HeapAllocation(?formalMockStr),
+//+HeapAllocation:Type[?formalMockStr] = ?formalMockType
+// <-
+//   MockEntryPoint(_, ?entry),
+//   MocksForFormals(?formalMockStr, ?formalMockType, _, ?entry).
