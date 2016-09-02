@@ -358,16 +358,16 @@ class Analysis implements Runnable {
         if (isContextSensitive) {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${corePath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
-            preprocess(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
+            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
                              factMacros, "${corePath}/core-delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
                              factMacros, macros, "${corePath}/context-sensitivity.logic")
         }
         else {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
-            preprocess(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
-            preprocess(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
         }
 

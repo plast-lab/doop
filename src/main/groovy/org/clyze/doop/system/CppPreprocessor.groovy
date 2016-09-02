@@ -8,6 +8,11 @@ import org.clyze.doop.core.AnalysisOption
 @TypeChecked
 class CppPreprocessor {
 
+    static void preprocessIfExists(Analysis analysis, String output, String input, String... includes) {
+        if (new File(input).isFile()) preprocess(analysis, output, input, includes)
+        else new File(output).withWriter { BufferedWriter w -> w.write("// Dummy file") }
+    }
+
     static void preprocess(Analysis analysis, String output, String input, String... includes) {
         def macroCli = analysis.options.values()
         .findAll { AnalysisOption option ->
