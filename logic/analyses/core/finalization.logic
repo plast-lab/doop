@@ -4,37 +4,24 @@
  * allocated object becomes the actual parameter to Finalizer.register.
  */
 
-ObjectSupportsFinalize(?heap, ?inmethod) <-
-   AssignHeapAllocation(?heap, _, ?inmethod),
-   HeapAllocation:Type[?heap] = ?class,
-   OverridesFinalize(?class).
-
 RecordMacro(?callerCtx, ?heap, ?hctx),
-CallGraphEdge(?callerCtx, ?heap, ?calleeCtx, ?register),
+CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?register),
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
-   FinalizerRegisterInfo(?register, ?formal),
-   ObjectSupportsFinalize(?heap, ?inmethod),
+   Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
+   FormalParam[0, ?register] = ?formal,
+   AllocatedObjectSupportsFinalize(?heap, ?inmethod),
    ObjectShouldNotBeRefined(?heap).
 
 #ifdef RecordRefinedMacro
 RecordRefinedMacro(?callerCtx, ?heap, ?hctx),
-CallGraphEdge(?callerCtx, ?heap, ?calleeCtx, ?register),
+CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?register),
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
-   FinalizerRegisterInfo(?register, ?formal),
-   ObjectSupportsFinalize(?heap, ?inmethod),
+   Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
+   FormalParam[0, ?register] = ?formal,
+   AllocatedObjectSupportsFinalize(?heap, ?inmethod),
    ObjectShouldBeRefined(?heap).
 #endif
-
-
-FinalizerRegisterInfo(?register, ?formal) <-
-   Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
-   FormalParam[0, ?register] = ?formal.
-
-OverridesFinalize(?class) <-
-   MethodLookup["finalize", "void()", ?class] = ?method,
-   Method:Value(?finalizeInObject:"<java.lang.Object: void finalize()>"),
-   ?finalizeInObject != ?method.

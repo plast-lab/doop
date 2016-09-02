@@ -49,7 +49,7 @@ Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) ->
  * Call graph
  */
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method) ->
-  Context(?callerCtx), CallGraphEdgeSource(?invocation),
+  Context(?callerCtx), MethodInvocation(?invocation),
   Context(?calleeCtx), Method(?method).
 
 /**

@@ -1,6 +1,5 @@
 #include "class-initialization-declarations.logic"
 #include "exceptions-declarations.logic"
-#include "finalization-declarations.logic"
 #include "implicit-reachable-declarations.logic"
 #include "string-constants-declarations.logic"
 #include "threads-declarations.logic"
@@ -8,3 +7,6 @@
 #if defined(ENABLE_REFLECTION)
 #include "reflection/declarations.logic" 
 #endif
+
+FakeInvocation:RegisterFinalize[?heap] = ?invo ->
+   HeapAllocation(?heap), MethodInvocation(?invo).
