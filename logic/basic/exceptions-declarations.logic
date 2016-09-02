@@ -1,0 +1,33 @@
+/**
+ * Compute for an instruction which exception handlers handle which exception
+ * types
+ */
+ExceptionHandler:At[?type, ?instruction] = ?handler ->
+   ExceptionHandler(?handler), Type(?type), Instruction(?instruction).
+
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) ->
+   ExceptionHandler(?handler), Type(?type), Instruction(?instruction).
+
+/**
+ * All possible handlers of an exception type for an instruction
+ */
+PossibleExceptionHandler(?handler, ?type, ?instruction) ->
+   ExceptionHandler(?handler),
+   Type(?type),
+   Instruction(?instruction).
+
+/**
+ * Instructions that are in the range of an exception handler
+ */
+ExceptionHandler:InRange(?handler, ?instruction) ->
+   ExceptionHandler(?handler),
+   Instruction(?instruction).
+
+/**
+ * Transitive closure of ExceptionHandler:Previous.
+ */
+ExceptionHandler:Before(?before, ?handler) ->
+   ExceptionHandler(?before),
+   ExceptionHandler(?handler).
+
+InRangeOfExceptionHandler(?instruction) -> Instruction(?instruction).
