@@ -1,0 +1,56 @@
+// Context-sensitive pointer analysis with context of 1 object and a
+// context-sensitive heap abstraction.
+
+RealContextFromContext[?ctx] = ?heap <-
+  ContextFromRealContext[?heap] = ?ctx.
+
+Context(?ctx),
+ContextFromRealContext[?heap] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  HeapAllocationValue(?heap, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  HeapAllocationValue(?heap, "<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread>>").
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?heap, "<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?heap, "<<jvm-startup>>").
+
+Context(?ctx),
+ContextFromRealContext[?heap] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?heap, "<<class-initialization>>").

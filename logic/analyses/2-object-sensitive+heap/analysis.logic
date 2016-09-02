@@ -1,0 +1,75 @@
+// Context-sensitive pointer analysis with context of 1 object and a
+// context-sensitive heap abstraction.
+
+RealContext1FromContext[?ctx] = ?heap1,
+RealContext2FromContext[?ctx] = ?heap2 <-
+  ContextFromRealContext[?heap1, ?heap2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?heap <-
+  HContextFromRealHContext[?heap] = ?hctx.
+
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  HeapAllocationValue(?heap, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  HeapAllocationValue(?heap, "<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?heap] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  HeapAllocationValue(?heap, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread>>").
+
+
+// Merge optimization hack
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?hctx, ?heap) <-
+  MergeBasis(_, _, ?hctx, ?heap).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealHContextFromHContext[?hctx],?heap] = ?calleeCtx,
+OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?heap).
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?heap, "<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?heap, "<<jvm-startup>>").
+
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?heap, "<<class-initialization>>").
