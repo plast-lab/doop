@@ -17,6 +17,20 @@ ImmutableContext[]  = ?ctx  -> Context(?ctx).
 ImmutableHContext[] = ?hctx -> HContext(?hctx).
 
 
+// Needed when context is comprised of different kinds
+ContextComponent(?comp) -> .
+lang:entity(`ContextComponent).
+lang:physical:storageModel[`ContextComponent] = "ScalableSparse".
+
+ContextComponent:Invocation[?invo] = ?comp ->
+   MethodInvocation(?invo), ContextComponent(?comp).
+lang:constructor(`ContextComponent:Invocation).
+
+ContextComponent:HeapAllocation[?heap] = ?comp ->
+   HeapAllocation(?heap), ContextComponent(?comp).
+lang:constructor(`ContextComponent:HeapAllocation).
+
+
 // Special objects are just artificial ones that we use to find
 // where the result of a reflective call can flow to. We don't want
 // to track them through the heap.
@@ -146,10 +160,10 @@ MainThread(?hctx, ?heap) ->
  */
 
 SiteToRefine(?invocation) -> 
-  CallGraphEdgeSource(?invocation).
+  MethodInvocation(?invocation).
 
 TempSiteToRefine(?invocation) -> 
-  CallGraphEdgeSource(?invocation).
+  MethodInvocation(?invocation).
 
 ObjectToRefine(?heap) -> 
   HeapAllocation(?heap).
