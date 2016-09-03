@@ -9,5 +9,5 @@ RealContextFromContext[?ctx] = ?invocation ->
   Context(?ctx), MethodInvocation(?invocation).
 
 HContextFromRealHContext[?invocation] = ?hctx ->
-  HContext(?hctx), CallGraphEdgeSource(?invocation).
+  HContext(?hctx), MethodInvocation(?invocation).
 lang:skolem(`HContextFromRealHContext).
