@@ -204,7 +204,6 @@ lang:entity(`ReturnInstruction).
 lang:entity(`ReturnNonvoid:Insn).
 lang:entity(`ReturnVoid:Insn).
 
-lang:entity(`CallGraphEdgeSource).
 lang:entity(`MethodInvocation).
 lang:entity(`SpecialMethodInvocation:Insn).
 lang:entity(`StaticMethodInvocation:Insn).
@@ -251,16 +250,8 @@ ReturnInstruction(?insn)               -> Instruction(?insn).
 ReturnVoid:Insn(?insn)                 -> ReturnInstruction(?insn).
 ReturnNonvoid:Insn(?insn)              -> ReturnInstruction(?insn).
 
-CallGraphEdgeSource(?insn)             -> Instruction(?insn).
-
-// TODO: Heap Allocations are not really instructions; we should
-// change their supertypes and their refmodes from Instruction:Value
-// to HeapAllocation:Value
-// TODO: HeapAllocation being a CallGraphEdgeSource is an artifact
-// from previous versions; we should change it carefully so as not to
-// break hybrid analysis.
-HeapAllocation(?insn)                  -> CallGraphEdgeSource(?insn).
-MethodInvocation(?insn)                -> CallGraphEdgeSource(?insn).
+HeapAllocation(?insn)                  -> Instruction(?insn).
+MethodInvocation(?insn)                -> Instruction(?insn).
 VirtualMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 SpecialMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 StaticMethodInvocation:Insn(?insn)     -> MethodInvocation(?insn).
@@ -552,7 +543,6 @@ lang:physical:capacity[`Method]              = 131072.
 lang:physical:capacity[`MethodDescriptor]    = 131072.
 lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */
 lang:physical:capacity[`Throw:Insn]          = 4194304. /* = instruction */
-lang:physical:capacity[`CallGraphEdgeSource] = 4194304. /* = instruction */
 lang:physical:capacity[`HeapAllocation]      = 4194304. /* = instruction */
 lang:physical:capacity[`MethodInvocation]    = 4194304. /* = instruction */
 lang:physical:capacity[`StringConstant]      = 4194304./* = HeapAllocation */
