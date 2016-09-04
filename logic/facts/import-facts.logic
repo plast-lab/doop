@@ -312,10 +312,6 @@ _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
    _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
 
 
-// TODO: Heap Allocations are not really instructions; we should
-// change their supertypes and their refmodes from Instruction:Value
-// to HeapAllocation:Value
-
 // Normal Object
 
 lang:physical:storageModel[`_NormalObject] = "DelimitedFile".
@@ -327,31 +323,8 @@ _NormalObject(?repr, ?type) ->
    string(?repr),
    string(?type).
 
-+HeapAllocation(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
++HeapAllocation0:Normal(?repr, ?type) <-
    _NormalObject(?repr, ?type).
-
-
-// ClassConstant
-
-lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
-lang:physical:filePath[`_ClassObject] = "facts/ClassObject.facts".
-lang:physical:delimiter[`_ClassObject] = "\t".
-lang:physical:hasColumnNames[`_ClassObject] = false.
-
-_ClassObject(?repr, ?type, ?actualtype) ->
-   string(?repr),
-   string(?actualtype),
-   string(?type).
-
-+ClassConstant(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-// +ReifiedClass[?actualtype] = ?x,
-// --> REVIEW: the above is no longer needed
-+HeapAllocation:Type[?x] = ?type
- <-
-   _ClassObject(?repr, ?type, _ /* ?actualtype */).
 
 
 // StringConstant
@@ -361,14 +334,27 @@ lang:physical:filePath[`_StringConstant] = "facts/StringConstant.facts".
 lang:physical:delimiter[`_StringConstant] = "\t".
 lang:physical:hasColumnNames[`_StringConstant] = false.
 
-_StringConstant(?repr, ?type) ->
-   string(?repr),
-   string(?type).
+_StringConstant(?repr) -> string(?repr).
 
-+StringConstant(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
-   _StringConstant(?repr, ?type).
++HeapAllocation0:String(?repr) <-
+   _StringConstant(?repr).
+
+
+// ClassConstant
+
+lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
+lang:physical:filePath[`_ClassObject] = "facts/ClassObject.facts".
+lang:physical:delimiter[`_ClassObject] = "\t".
+lang:physical:hasColumnNames[`_ClassObject] = false.
+
+_ClassObject(?repr) -> string(?repr).
+
++Type:Value(?t:?str),
++ClassType(?t) <-
+   ?str = "java.lang.Class".
+
++HeapAllocation0:Class(?repr) <-
+   _ClassObject(?repr).
 
 
 // Field

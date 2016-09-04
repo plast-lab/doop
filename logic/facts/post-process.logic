@@ -1,0 +1,19 @@
+NormalHeap(?heap),
+HeapAllocation:Normal:Con[?id] = ?heap,
+Heap:Type[?heap] = ?type,
+Heap:Value[?heap] = ?id <-
+   HeapAllocation0:Normal(?id, ?type).
+
+StringHeap(?heap),
+HeapAllocation:String:Con[?id] = ?heap,
+Heap:Type[?heap] = ?type,
+Heap:Value[?heap] = ?id <-
+   HeapAllocation0:String(?id),
+   Type:Value(?type:"java.lang.String").
+
+ClassHeap(?heap),
+HeapAllocation:Class:Con[?id] = ?heap,
+Heap:Type[?heap] = ?type,
+Heap:Value[?heap] = ?id <-
+   HeapAllocation0:Class(?id),
+   Type:Value(?type:"java.lang.Class").

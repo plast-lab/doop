@@ -535,6 +535,39 @@ Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
 
 
 //-----------------------------------------------------------------------------
+// [Heap Allocation]
+//-----------------------------------------------------------------------------
+
+HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
+HeapAllocation0:String(?repr) -> string(?repr).
+HeapAllocation0:Class(?repr) -> string(?repr).
+
+Heap(?x) -> .
+NormalHeap(?x) -> Heap(?x).
+StringHeap(?x) -> Heap(?x).
+ClassHeap(?x)  -> Heap(?x).
+
+lang:physical:storageModel[`Heap] = "ScalableSparse".
+lang:entity(`Heap).
+lang:entity(`NormalHeap).
+lang:entity(`ClassHeap).
+lang:entity(`StringHeap).
+
+HeapAllocation:Con[?id] = ?heap -> string(?id), Heap(?heap).
+HeapAllocation:Normal:Con[?id] = ?heap -> string(?id), NormalHeap(?heap).
+HeapAllocation:String:Con[?id] = ?heap -> string(?id), StringHeap(?heap).
+HeapAllocation:Class:Con[?id] = ?heap  -> string(?id), ClassHeap(?heap).
+
+lang:constructor(`HeapAllocation:Con).
+lang:constructor(`HeapAllocation:Normal:Con).
+lang:constructor(`HeapAllocation:String:Con).
+lang:constructor(`HeapAllocation:Class:Con).
+
+Heap:Type[?heap] = ?type   -> Heap(?heap), Type(?type).
+Heap:Value[?heap] = ?value -> Heap(?heap), string(?value).
+
+
+//-----------------------------------------------------------------------------
 // [Capacities]
 //-----------------------------------------------------------------------------
 
@@ -558,3 +591,7 @@ lang:physical:capacity[`NullType]            = 32768.
 lang:physical:capacity[`ArrayType]           = 32768.
 lang:physical:capacity[`ClassType]           = 32768.
 lang:physical:capacity[`InterfaceType]       = 32768.
+lang:physical:capacity[`Heap]                = 4194304.
+lang:physical:capacity[`NormalHeap]          = 4194304.
+lang:physical:capacity[`StringHeap]          = 4194304.
+lang:physical:capacity[`ClassHeap]           = 4194304.
