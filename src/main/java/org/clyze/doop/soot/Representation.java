@@ -268,12 +268,6 @@ public class Representation
         String s = constant.toString();
         String content = s.substring(1, s.length() - 1);
 
-        // TODO this is a temporary solution to workaround string length
-        // limitations. May need to do something better to keep distinct string
-        // constants unique in the database.
-        if(content.length() > 1000)
-          content = content.substring(0, 1000);
-
         if(content.trim().equals(content) && content.length() > 0)
         {
             return content;
