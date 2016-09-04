@@ -71,7 +71,7 @@ class CSVDatabase implements Database
     @Override
     public void add(PredicateFile predicateFile, Column arg, Column ... args)
     {
-        boolean shouldTruncate = false; // predicateFile.equals(PredicateFile.STRING_CONST);
+        boolean shouldTruncate = predicateFile.equals(PredicateFile.STRING_CONST);
 
         try {
             synchronized(predicateFile) {
