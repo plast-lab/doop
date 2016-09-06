@@ -14,7 +14,7 @@
     ((!NegativeSiteFilter("true"), SiteToRefine(invocation)); \
     (NegativeSiteFilter("true"), !SiteToRefine(invocation)))
 
-#include "core.logic"
+#include "main.logic"
 
 /**
  * Generic context-sensitive pointer analysis
@@ -363,7 +363,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 
 #else /* there is optimized behavior available */
 
-// The optimization is as follows: the core analysis (this file)
+// The optimization is as follows: the main analysis (this file)
 // first creates all the possible bindings that the Merge logic
 // might need to create a new context. Then each individual analysis
 // creates new context objects carefully by invoking the skolem
@@ -372,7 +372,7 @@ MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
-// Finally, the step of the core analysis that should be creating the
+// Finally, the step of the main analysis that should be creating the
 // new objects is merely looking up the previously created context
 // objects.
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
