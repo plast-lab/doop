@@ -251,22 +251,6 @@ SimulateNativeStaticToVirtual(
 
 
 /**
- * Heap object to simulate the arguments array of the main method and a single
- * heap object to simulate any external argument stored in the array.
- */
-+MainMethodArgsArray(?arrayHeap),
-+MainMethodArgHeap(?heap),
-+Instruction:Value(?arrayHeap:?arrayHeapStr),
-+HeapAllocation(?arrayHeap),
-+HeapAllocation:Type[?arrayHeap] = "java.lang.String[]",
-+Instruction:Value(?heap:?heapStr),
-+HeapAllocation(?heap),
-+HeapAllocation:Type[?heap] = "java.lang.String" <-
-  ?arrayHeapStr = "<Main Method Arguments Array>",
-  ?heapStr = "<Main Method Argument Heap Object>".
-
-
-/**
  * Special initial system objects
  */
 PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
