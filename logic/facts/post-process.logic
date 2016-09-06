@@ -23,7 +23,7 @@ HeapAllocation:Con[?id] = ?heap,
 HeapAllocation:Null[] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id <-
-   ?id = "<<<null pseudo object>>>",
+   ?id = "<<null pseudo object>>",
    ?type = Type:null[].
 
 HeapAllocation(?heap),
@@ -31,7 +31,7 @@ HeapAllocation:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 MainMethodArgArray[] = ?heap <-
-   ?id = "<<<main method array>>>",
+   ?id = "<<main method array>>",
    ?type = "java.lang.String[]".
 
 HeapAllocation(?heap),
@@ -39,7 +39,7 @@ HeapAllocation:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 MainMethodArgArrayContent[] = ?heap <-
-   ?id = "<<<main method array content>>>",
+   ?id = "<<main method array content>>",
    ?type = "java.lang.String".
 
 HeapAllocation:byValue[?id] = ?heap <-
