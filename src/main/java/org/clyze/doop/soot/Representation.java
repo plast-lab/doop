@@ -268,6 +268,10 @@ public class Representation
         String s = constant.toString();
         String content = s.substring(1, s.length() - 1);
 
+        // TODO This is a hack
+        if(content.length() > 1000)
+            content = content.substring(0, 1000);
+
         if(content.trim().equals(content) && content.length() > 0)
         {
             return content;
