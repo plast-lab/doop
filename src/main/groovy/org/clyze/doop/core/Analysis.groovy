@@ -342,7 +342,7 @@ class Analysis implements Runnable {
     protected void mainAnalysis() {
         def factMacros   = "${Doop.factsPath}/macros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
-        def corePath     = "${Doop.analysesPath}/core"
+        def mainPath     = "${Doop.logicPath}/main"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
         // By default, assume we run a context-sensitive analysis
@@ -357,12 +357,12 @@ class Analysis implements Runnable {
         }
         if (isContextSensitive) {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
-                             "${corePath}/context-sensitivity-declarations.logic")
+                             "${mainPath}/context-sensitivity-declarations.logic")
             preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
-                             factMacros, "${corePath}/core-delta.logic")
+                             factMacros, "${mainPath}/main-delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
-                             factMacros, macros, "${corePath}/context-sensitivity.logic")
+                             factMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
@@ -386,7 +386,7 @@ class Analysis implements Runnable {
         }
 
         if (options.ENABLE_REFLECTION.value) {
-            def reflectionPath = "${Doop.analysesPath}/core/reflection"
+            def reflectionPath = "${Doop.analysesPath}/main/reflection"
             preprocess(this, "${outDir}/reflection-delta.logic", "${reflectionPath}/delta.logic")
             preprocess(this, "${outDir}/reflection-allocations-delta.logic", "${reflectionPath}/allocations-delta.logic")
 
