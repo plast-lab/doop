@@ -407,9 +407,9 @@ AssignOper:Type(?insn, ?type) ->
 // Assign multi-array allocation instruction
 //AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
 //   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
-
-AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
-   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
+//
+//AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
+//   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
 
 // Assign Heap Allocation
 AssignHeapAllocation:Heap[?insn] = ?heap ->
