@@ -1,19 +1,55 @@
 NormalHeap(?heap),
 HeapAllocation:Normal:Con[?id] = ?heap,
-Heap:Type[?heap] = ?type,
-Heap:Value[?heap] = ?id <-
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
    HeapAllocation0:Normal(?id, ?type).
 
-StringHeap(?heap),
+StringConstant(?heap),
 HeapAllocation:String:Con[?id] = ?heap,
-Heap:Type[?heap] = ?type,
-Heap:Value[?heap] = ?id <-
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
    HeapAllocation0:String(?id),
    Type:Value(?type:"java.lang.String").
 
 ClassHeap(?heap),
 HeapAllocation:Class:Con[?id] = ?heap,
-Heap:Type[?heap] = ?type,
-Heap:Value[?heap] = ?id <-
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
    HeapAllocation0:Class(?id),
    Type:Value(?type:"java.lang.Class").
+
+HeapAllocation(?heap),
+HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Null[] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<<null pseudo object>>>",
+   ?type = Type:null[].
+
+HeapAllocation(?heap),
+HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+MainMethodArgArray[] = ?heap <-
+   ?id = "<<<main method array>>>",
+   ?type = "java.lang.String[]".
+
+HeapAllocation(?heap),
+HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+MainMethodArgArrayContent[] = ?heap <-
+   ?id = "<<<main method array content>>>",
+   ?type = "java.lang.String".
+
+HeapAllocation:byValue[?id] = ?heap <-
+   HeapAllocation:Value[?heap] = ?id.
+
+
+HeapAllocation:EmptyArray(?heap) <-
+   HeapAllocation0:EmptyArray(?id),
+   HeapAllocation:byValue[?id] = ?heap.
+
+AssignHeapAllocation:Heap[?instr] = ?heap <-
+   AssignHeapAllocation0(?instr, ?heapId),
+   HeapAllocation:byValue[?heapId] = ?heap.

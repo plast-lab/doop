@@ -1,8 +1,8 @@
-VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
-ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-
+VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
+ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) <-
    ImmutableHContext[] = ?hctx,
    MainMethodDeclaration(?mainMethod),
    ReachableContext(?ctx, ?mainMethod),
    FormalParam[0, ?mainMethod] = ?args,
-   MainMethodArgsArray(?argsArray),
-   MainMethodArgHeap(?argHeap).
+   MainMethodArgArray[] = ?argArray,
+   MainMethodArgArrayContent[] = ?argArrayContent.

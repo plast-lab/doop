@@ -139,26 +139,7 @@ Var:DeclaringMethod(?var, ?method) ->
 
 
 //-----------------------------------------------------------------------------
-
-lang:entity(`HeapAllocation).
-lang:entity(`ClassConstant).
-lang:entity(`StringConstant).
-lang:entity(`EmptyArray).
-
-StringConstant(?x) -> HeapAllocation(?x).
-ClassConstant(?x)  -> HeapAllocation(?x).
-EmptyArray(?x)     -> HeapAllocation(?x).
-
-// Null object
-HeapAllocation:Null[] = ?nullObject ->
-   HeapAllocation(?nullObject).
-
-HeapAllocation:Type[?heap] = ?type ->
-   HeapAllocation(?heap), Type(?type).
-
-
-//-----------------------------------------------------------------------------
-//   Bytecode Instructions
+// [Bytecode Instructions]
 //-----------------------------------------------------------------------------
 
 Instruction(?x), Instruction:Value(?x:?id) -> string(?id).
@@ -250,7 +231,6 @@ ReturnInstruction(?insn)               -> Instruction(?insn).
 ReturnVoid:Insn(?insn)                 -> ReturnInstruction(?insn).
 ReturnNonvoid:Insn(?insn)              -> ReturnInstruction(?insn).
 
-HeapAllocation(?insn)                  -> Instruction(?insn).
 MethodInvocation(?insn)                -> Instruction(?insn).
 VirtualMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 SpecialMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
@@ -425,8 +405,8 @@ AssignOper:Type(?insn, ?type) ->
    AssignOper:Insn(?insn), string(?type).
 
 // Assign multi-array allocation instruction
-AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
-   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
+//AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
+//   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
 
 AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
    AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
@@ -520,14 +500,9 @@ Properties[?path, ?key] = ?value ->
 NativeReturnVar(?var, ?method) ->
    Var(?var), Method(?method).
 
-MainMethodArgsArray(?argsArray) -> HeapAllocation(?argsArray).
-
-MainMethodArgHeap(?argHeap) -> HeapAllocation(?argHeap).
-
 // Types potentially returned by a specific Class.forName invocation
 Config:DynamicClass(?class, ?invocation) ->
   ReferenceType(?class), MethodInvocation(?invocation).
-
 
 // Predicates to store runtime metrics and statistics
 Stats:Runtime(?attr, ?value) -> string(?attr), decimal[64](?value).
@@ -541,30 +516,44 @@ Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
 HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
 HeapAllocation0:String(?repr) -> string(?repr).
 HeapAllocation0:Class(?repr) -> string(?repr).
+HeapAllocation0:EmptyArray(?repr) -> string(?repr).
+AssignHeapAllocation0(?instr, ?heapId) ->
+   AssignHeapAllocation:Insn(?instr), string(?heapId).
 
-Heap(?x) -> .
-NormalHeap(?x) -> Heap(?x).
-StringHeap(?x) -> Heap(?x).
-ClassHeap(?x)  -> Heap(?x).
 
-lang:physical:storageModel[`Heap] = "ScalableSparse".
-lang:entity(`Heap).
+HeapAllocation(?heap) -> .
+NormalHeap(?heap)     -> HeapAllocation(?heap).
+StringConstant(?heap) -> HeapAllocation(?heap).
+ClassHeap(?heap)      -> HeapAllocation(?heap).
+
+lang:physical:storageModel[`HeapAllocation] = "ScalableSparse".
+lang:entity(`HeapAllocation).
 lang:entity(`NormalHeap).
+lang:entity(`StringConstant).
 lang:entity(`ClassHeap).
-lang:entity(`StringHeap).
 
-HeapAllocation:Con[?id] = ?heap -> string(?id), Heap(?heap).
+HeapAllocation:Con[?id] = ?heap -> string(?id), HeapAllocation(?heap).
 HeapAllocation:Normal:Con[?id] = ?heap -> string(?id), NormalHeap(?heap).
-HeapAllocation:String:Con[?id] = ?heap -> string(?id), StringHeap(?heap).
-HeapAllocation:Class:Con[?id] = ?heap  -> string(?id), ClassHeap(?heap).
+HeapAllocation:String:Con[?id] = ?heap -> string(?id), StringConstant(?heap).
+HeapAllocation:Class:Con[?id] = ?heap -> string(?id), ClassHeap(?heap).
 
 lang:constructor(`HeapAllocation:Con).
 lang:constructor(`HeapAllocation:Normal:Con).
 lang:constructor(`HeapAllocation:String:Con).
 lang:constructor(`HeapAllocation:Class:Con).
 
-Heap:Type[?heap] = ?type   -> Heap(?heap), Type(?type).
-Heap:Value[?heap] = ?value -> Heap(?heap), string(?value).
+HeapAllocation:Value[?heap] = ?id -> HeapAllocation(?heap), string(?id).
+HeapAllocation:byValue[?id] = ?heap -> string(?id), HeapAllocation(?heap).
+
+HeapAllocation:Type[?heap] = ?type   -> HeapAllocation(?heap), Type(?type).
+
+// [Miscellaneous]
+HeapAllocation:Null[] = ?heap -> HeapAllocation(?heap).
+
+HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
+
+MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
+MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
 
 
 //-----------------------------------------------------------------------------
@@ -576,10 +565,7 @@ lang:physical:capacity[`Method]              = 131072.
 lang:physical:capacity[`MethodDescriptor]    = 131072.
 lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */
 lang:physical:capacity[`Throw:Insn]          = 4194304. /* = instruction */
-lang:physical:capacity[`HeapAllocation]      = 4194304. /* = instruction */
 lang:physical:capacity[`MethodInvocation]    = 4194304. /* = instruction */
-lang:physical:capacity[`StringConstant]      = 4194304./* = HeapAllocation */
-lang:physical:capacity[`ClassConstant]       = 4194304./* = HeapAllocation */
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 131072.
 lang:physical:capacity[`Var]                 = 2097152. /* 2^21 */
@@ -591,7 +577,8 @@ lang:physical:capacity[`NullType]            = 32768.
 lang:physical:capacity[`ArrayType]           = 32768.
 lang:physical:capacity[`ClassType]           = 32768.
 lang:physical:capacity[`InterfaceType]       = 32768.
-lang:physical:capacity[`Heap]                = 4194304.
+
+lang:physical:capacity[`HeapAllocation]      = 4194304.
 lang:physical:capacity[`NormalHeap]          = 4194304.
-lang:physical:capacity[`StringHeap]          = 4194304.
+lang:physical:capacity[`StringConstant]      = 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
