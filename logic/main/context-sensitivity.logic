@@ -216,7 +216,7 @@ ReachableStoreStaticFieldFrom(?from) <-
  * Load array index
  */
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-   !EmptyArray(?baseheap),
+   !HeapAllocation:EmptyArray(?baseheap),
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
    ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
    // this used to be necessary when this rule also handled the
@@ -252,7 +252,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) <-
   StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from),
   VarPointsTo(?hctx, ?heap, ?ctx, ?from),
   !SpecialObject(?heap),
-  !EmptyArray(?baseheap),
+  !HeapAllocation:EmptyArray(?baseheap),
   HeapAllocation:Type[?heap] = ?heaptype,
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
   ComponentType[?baseheaptype] = ?componenttype,
