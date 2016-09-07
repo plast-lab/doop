@@ -37,3 +37,24 @@ HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id <-
    ?id = "<<main-thread>>",
    ?type = "java.lang.Thread".
+
+HeapAllocation(?heap),
+HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
+   ?type = "java.io.UnixFileSystem".
+
+HeapAllocation(?heap),
+HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "java.io.UnixFileSystem.list/new java.lang.String[]",
+   ?type = "java.lang.String[]".
+
+HeapAllocation(?heap),
+HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "java.io.UnixFileSystem.list/new java.lang.String",
+   ?type = "java.lang.String".

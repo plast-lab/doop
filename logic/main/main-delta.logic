@@ -1,17 +1,8 @@
 #include "native-delta.logic"
 
-PlusHeapAllocation(?alloc, "<<string-constant>>", "java.lang.String").
-PlusHeapAllocation(?alloc, "<<reflection-string-constant>>", "java.lang.String").
-PlusHeapAllocation(?alloc, "<<string-buffer>>", "java.lang.StringBuffer").
-
-#if defined(JRE15) || defined(JRE16) || defined(JRE17)
-PlusHeapAllocation(?alloc, "<<string-builder>>", "java.lang.StringBuilder").
-#endif
-
-
 +FakeInvocation:RegisterFinalize[?heap] = ?invo,
 PlusMethodInvocation(?invo, ?str) <-
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
    Method:Value@prev(?inmethod:?val1),
-   Instruction:Value@prev(?heap:?val2),
+   HeapAllocation:Value@prev[?heap] = ?val2,
    ?str = "<register-finalize " + ?val1 + "/" + ?val2 +"  >".
