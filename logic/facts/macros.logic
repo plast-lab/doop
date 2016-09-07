@@ -1,10 +1,3 @@
-#define PlusHeapAllocation(x,string,type) \
-  +Instruction:Value(x:string), \
-  +HeapAllocation(x), \
-  +HeapAllocation:Type[x] = x ## Type, \
-  +Type(x ## Type), \
-  +Type:Value(x ## Type:type)
-
 #define PlusVar(x,method,string,type) \
   +Var(x), \
   +Var:Value(x:string), \
@@ -48,6 +41,5 @@
 /**
  * Macros that fix the lack of ref-modes on subtypes in LB
  */
-#define HeapAllocationValue(x, y) Instruction:Value(x:y), HeapAllocation(x)
 #define MethodInvocationValue(x, y) Instruction:Value(x:y), MethodInvocation(x)
 #define ClassTypeValue(x,y) Type:Value(x:y), ClassType(x)
