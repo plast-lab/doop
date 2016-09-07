@@ -358,6 +358,7 @@ class Analysis implements Runnable {
         if (isContextSensitive) {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${mainPath}/context-sensitivity-declarations.logic")
+            preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
                              factMacros, "${mainPath}/main-delta.logic")
@@ -376,6 +377,7 @@ class Analysis implements Runnable {
             .startTimer()
             .transaction()
             .addBlockFile("${safename}-declarations.logic")
+            .addBlockFile("prologue.logic")
             .addBlockFile("${safename}-prologue.logic")
             .commit()
             .transaction()
