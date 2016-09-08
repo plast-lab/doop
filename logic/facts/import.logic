@@ -605,20 +605,22 @@ lang:physical:filePath[`_MethodSignature] = "facts/MethodSignature.facts".
 lang:physical:delimiter[`_MethodSignature] = "\t".
 lang:physical:hasColumnNames[`_MethodSignature] = false.
 
-_MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
+_MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor) ->
    string(?ref),
    string(?simplename),
    string(?descriptor),
    string(?declaringType),
-   string(?returnType).
+   string(?returnType),
+   string(?jvmDescriptor).
 
 +MethodSignature(?x),
 +MethodSignature:Value(?x:?ref),
 +MethodSignature:SimpleName[?x] = ?simplename,
 +MethodSignature:Descriptor[?x] = ?descriptor,
 +MethodSignature:DeclaringType[?x] = ?declaringType,
++MethodSignature:JVMDescriptor[?x] = ?jvmDescriptor,
 +MethodSignature:ReturnType[?x] = ?returnType <-
-   _MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType).
+   _MethodSignature(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor).
 
 
 // StoreInstanceField
