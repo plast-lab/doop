@@ -1,5 +1,5 @@
 ReifiedClass[?type] = ?heap ->
-  Type(?type), ClassConstant(?heap).
+  Type(?type), ClassHeap(?heap).
 
 ReifiedConstructor[?constructor] = ?heap ->
   Method(?constructor), HeapAllocation(?heap).

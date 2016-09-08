@@ -1,22 +1,8 @@
-// Convert from the representation used (in some places) in Tamiflex to the one
-// used in Doop
-+Tamiflex:ToDoopFormat["Class"] = "java.lang.Class".
-+Tamiflex:ToDoopFormat["Constructor"] = "java.lang.reflect.Constructor".
-+Tamiflex:ToDoopFormat["Field"] = "java.lang.reflect.Field".
-+Tamiflex:ToDoopFormat["Method"] = "java.lang.reflect.Method".
-+Tamiflex:ToDoopFormat["Array"] = "java.lang.reflect.Array".
-
-+Tamiflex:ToDoopFormat["get*"] = "get".
-+Tamiflex:ToDoopFormat["set*"] = "set".
-
-
 // Import data from the reflection log generated from tamiflex
-
 lang:physical:storageModel[`_Tamiflex:ReflectionData] = "DelimitedFile".
 lang:physical:filePath[`_Tamiflex:ReflectionData] = "facts/Tamiflex.facts".
 lang:physical:delimiter[`_Tamiflex:ReflectionData] = ";".
 lang:physical:hasColumnNames[`_Tamiflex:ReflectionData] = false.
-
 _Tamiflex:ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
    string(?original), string(?mapped), string(?inClassStr), string(?inMethodStr), int[64](?lineNumber).
 

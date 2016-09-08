@@ -26,7 +26,7 @@ _StringConstant(?id) ->
    _StringConstant(?id).
 
 
-// ClassConstant
+// ClassObject
 lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
 lang:physical:filePath[`_ClassObject] = "facts/ClassObject.facts".
 lang:physical:delimiter[`_ClassObject] = "\t".
