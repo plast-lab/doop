@@ -267,7 +267,6 @@ class Analysis implements Runnable {
             .transaction()
             .addBlockFile("flow-sensitive-schema.logic")
             .addBlockFile("flow-insensitive-schema.logic")
-            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
             .executeFile("import-entities.logic")
             .executeFile("import-facts.logic")
             .executeFile("to-flow-insensitive-delta.logic")
@@ -288,6 +287,7 @@ class Analysis implements Runnable {
             lbScript.addBlock("""MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
 
         lbScript
+            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
             .commit()
             .transaction()
             .addBlockFile("post-process.logic")
@@ -388,7 +388,7 @@ class Analysis implements Runnable {
         }
 
         if (options.ENABLE_REFLECTION.value) {
-            def reflectionPath = "${Doop.analysesPath}/main/reflection"
+            def reflectionPath = "${mainPath}/reflection"
             preprocess(this, "${outDir}/reflection-delta.logic", "${reflectionPath}/delta.logic")
             preprocess(this, "${outDir}/reflection-allocations-delta.logic", "${reflectionPath}/allocations-delta.logic")
 
@@ -431,16 +431,8 @@ class Analysis implements Runnable {
                 .transaction()
         }
 
-        if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            preprocess(this, "${outDir}/dacapo-declarations.logic", "${Doop.addonsPath}/dacapo/declarations.logic")
-            preprocess(this, "${outDir}/dacapo-delta.logic", "${Doop.addonsPath}/dacapo/delta.logic", macros)
-            logger.info "Adding DaCapo rules to addons logic"
+        if (options.DACAPO.value || options.DACAPO_BACH.value)
             includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic")
-
-            lbScript
-                .addBlockFile("dacapo-declarations.logic")
-                .executeFile("dacapo-delta.logic")
-        }
 
         if (options.TAMIFLEX.value) {
             preprocess(this, "${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")

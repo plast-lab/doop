@@ -8,20 +8,6 @@
   +Type(x), \
   +Type:Value(x:string)
 
-#define PlusStringConstant(x,string) \
-  +Instruction:Value(x:string), \
-  +StringConstant(x), \
-  +HeapAllocation:Type[x] = x ## Type, \
-  +Type(x ## Type), \
-  +Type:Value(x ## Type:"java.lang.String")
-
-#define PlusClassConstant(x,string) \
-  +Instruction:Value(x:string), \
-  +ClassConstant(x), \
-  +HeapAllocation:Type[x] = x ## Type, \
-  +Type(x ## Type), \
-  +Type:Value(x ## Type:"java.lang.Class")
-
 #define PlusMethodInvocation(x,string) \
   +Instruction:Value(x:string), \
   +MethodInvocation(x)
