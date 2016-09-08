@@ -1,5 +1,5 @@
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:Class:NewInstance(?invocation, ?heap)
@@ -12,7 +12,7 @@ Tamiflex:Class:NewInstance(?invocation, ?heap)
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
@@ -27,7 +27,7 @@ Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:Array:NewInstance(?invocation, ?heap)
@@ -40,7 +40,7 @@ Tamiflex:Array:NewInstance(?invocation, ?heap)
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
@@ -54,7 +54,7 @@ Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
    ?id = "<(Tamiflex) " + ?fldStr + ">".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?javaFieldArrayType,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
@@ -68,7 +68,7 @@ Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
    ?id = "<(Tamiflex) " + ?typeStr + "/Field[]>".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
@@ -82,7 +82,7 @@ Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
    ?id = "<(Tamiflex) " + ?methodStr + ">".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?javaMethodArrayType,
 HeapAllocation:Value[?heap] = ?id,
 Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation)

@@ -532,15 +532,15 @@ lang:entity(`NormalHeap).
 lang:entity(`StringConstant).
 lang:entity(`ClassHeap).
 
-HeapAllocation:Con[?id] = ?heap -> string(?id), HeapAllocation(?heap).
 HeapAllocation:Normal:Con[?id] = ?heap -> string(?id), NormalHeap(?heap).
 HeapAllocation:String:Con[?id] = ?heap -> string(?id), StringConstant(?heap).
-HeapAllocation:Class:Con[?id] = ?heap -> string(?id), ClassHeap(?heap).
+HeapAllocation:Class:Con[?id]  = ?heap -> string(?id), ClassHeap(?heap).
+HeapAllocation:Mockup:Con[?id] = ?heap -> string(?id), HeapAllocation(?heap).
 
-lang:constructor(`HeapAllocation:Con).
 lang:constructor(`HeapAllocation:Normal:Con).
 lang:constructor(`HeapAllocation:String:Con).
 lang:constructor(`HeapAllocation:Class:Con).
+lang:constructor(`HeapAllocation:Mockup:Con).
 
 HeapAllocation:Value[?heap] = ?id -> HeapAllocation(?heap), string(?id).
 HeapAllocation:byValue[?id] = ?heap -> string(?id), HeapAllocation(?heap).

@@ -19,7 +19,7 @@ HeapAllocation:Value[?heap] = ?id <-
    Type:Value(?type:"java.lang.Class").
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Null[] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id <-
@@ -27,7 +27,7 @@ HeapAllocation:Value[?heap] = ?id <-
    ?type = Type:null[].
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 MainMethodArgArray[] = ?heap <-
@@ -35,7 +35,7 @@ MainMethodArgArray[] = ?heap <-
    ?type = "java.lang.String[]".
 
 HeapAllocation(?heap),
-HeapAllocation:Con[?id] = ?heap,
+HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id,
 MainMethodArgArrayContent[] = ?heap <-

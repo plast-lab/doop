@@ -21,11 +21,11 @@ HeapAllocation:Special(?heap) -> HeapAllocation(?heap).
 /**
  * Objects that should use a context-insensitive heap abstraction.
  */
-HeapAllocation:ContextInsensitive(?heap) ->
+HeapAllocation:Mockup:ContextInsensitive(?heap) ->
   HeapAllocation(?heap).
 
 HeapAllocation:Special(?heap) <-
-  HeapAllocation:ContextInsensitive(?heap).
+  HeapAllocation:Mockup:ContextInsensitive(?heap).
 
 /**
  * Objects that should be merged to some heap abstraction (implies context-insensitive)
@@ -50,7 +50,7 @@ AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) <-
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
-  HeapAllocation:ContextInsensitive(?heap).
+  HeapAllocation:Mockup:ContextInsensitive(?heap).
 
 /*************************************************************
  * String constants
@@ -90,7 +90,7 @@ HeapAllocation:Merge[?heap] = ?constant <-
   !ClassNameStringConstant(?heap),
   HeapAllocation:byValue["<<reflection-string-constant>>"] = ?constant.
 
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ClassNameStringConstant(?heap).
 
 // ClassNameStringConstant(?constant),
@@ -112,13 +112,13 @@ FieldNameStringConstant:Signature(?sig, ?constant)
   HeapAllocation:byValue["<<reflection-string-constant>>"] = ?constant.
 
 #else
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ReflectionObject(?heap).
 #endif // REFLECTION_MERGE_MEMBER_CONSTANTS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 #ifdef DISTINGUISH_ALL_STRING_CONSTANTS
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   StringConstant(?heap).
 #endif 
 
@@ -434,7 +434,7 @@ ReflectionObjectFlowsIntoVar(?hctx, ?heap, ?ctx, ?var) <-
  * Class constants
  *************************************************************/
 
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ClassHeap(?heap).
 
 
@@ -524,7 +524,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
  // produced huge ThrowPointsTo sets and caused slowdowns.
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ExceptionType(HeapAllocation:Type[?heap]).
 #else
 
@@ -579,7 +579,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  *
  *************************************************************/
 
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   HeapAllocation:Type[?heap] = ?type,
   ArrayType(?type),
   ComponentType[?type] = ?componentType,
@@ -592,7 +592,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
  * but doesn't hurt much either.
  *************************************************************/
 /*
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   Type:HasNoReferenceField(?heaptype),
   !(HeapAllocation:Merge[?heap] = _).
