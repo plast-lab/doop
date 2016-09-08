@@ -129,6 +129,8 @@ Type:object[] = ?t ->
 
 MethodDescriptor(x), MethodDescriptor:Value(x:s) -> string(s).
 
+MethodJVMDescriptor(x), MethodJVMDescriptor:Value(x:s) -> string(s).
+
 
 //----------------------
 // [Field Signatures]
@@ -179,6 +181,10 @@ MethodSignature:SimpleName[?signature] = ?simplename ->
 // Associated method descriptor
 MethodSignature:Descriptor[?signature] = ?descriptor ->
    MethodSignature(?signature), MethodDescriptor(?descriptor).
+
+// JVM method descriptor
+MethodSignature:JVMDescriptor[?signature] = ?descriptor ->
+   MethodSignature(?signature), MethodJVMDescriptor(?descriptor).
 
 // Method modifiers
 MethodModifier(?mod, ?method) ->
@@ -712,6 +718,7 @@ NativeReturnVar(?var, ?method) ->
 lang:physical:capacity[`FieldSignature] = 524288.
 lang:physical:capacity[`MethodSignature] = 524288.
 lang:physical:capacity[`MethodDescriptor] = 131072.
+lang:physical:capacity[`MethodJVMDescriptor] = 524288.
 lang:physical:capacity[`NumConstant] = 1048576.
 lang:physical:capacity[`Instruction] = 67108864. /* 2^26 */
 lang:physical:capacity[`Throw:Insn] = 67108864. /* = instruction */
@@ -722,7 +729,7 @@ lang:physical:capacity[`StringConstant] = 67108864./* = HeapAllocation */
 lang:physical:capacity[`ClassConstant] = 67108864./* = HeapAllocation */
 lang:physical:capacity[`SimpleName] = 131072.
 lang:physical:capacity[`ExceptionHandler] = 131072.
-lang:physical:capacity[`Var] = 4194304. /* 2^22 */
+lang:physical:capacity[`Var] = 8388608. /* 2^23 */
 lang:physical:capacity[`Modifier] = 32.
 lang:physical:capacity[`Type] = 131072.
 lang:physical:capacity[`PrimitiveType] = 131072.

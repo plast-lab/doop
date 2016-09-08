@@ -4,6 +4,7 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
+import soot.util.backend.ASMBackendUtils;
 import soot.tagkit.LineNumberTag;
 
 import java.util.HashMap;
@@ -599,7 +600,8 @@ class FactWriter
                 _db.asEntity(_rep.simpleName(m)),
                 _db.asEntity(_rep.descriptor(m)),
                 writeType(m.getDeclaringClass()),
-                writeType(m.getReturnType()));
+                writeType(m.getReturnType()),
+		_db.asEntity(ASMBackendUtils.toTypeDesc(m.makeRef())));
     }
 
     void writeMethodModifier(SootMethod m, String modifier)
