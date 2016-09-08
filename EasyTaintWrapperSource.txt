@@ -39,7 +39,6 @@
 <java.util.Collection: boolean addAll(java.util.Collection)>
 -<java.util.Collection: void clear()>
 ~<java.util.Collection: int size()>
-
 <java.util.Vector: void <init>(java.util.Collection)>
 <java.util.Vector: void add(int,java.lang.Object)>
 <java.util.Vector: boolean add(java.lang.Object)>
@@ -345,7 +344,7 @@
 <java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>
 <java.util.Arrays: java.lang.String toString(java.lang.Object[])>
 
-<java.util.UUID: void <init>(long,long)> 
+<java.util.UUID: void <init>(long,long)>
 
 ~<android.app.Activity: android.view.View findViewById(int)>
 ~<android.app.Activity: void setContentView(int)>
