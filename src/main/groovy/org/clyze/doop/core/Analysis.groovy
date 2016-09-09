@@ -269,7 +269,6 @@ class Analysis implements Runnable {
             .addBlockFile("flow-insensitive-schema.logic")
             .executeFile("import-entities.logic")
             .executeFile("import-facts.logic")
-            .executeFile("to-flow-insensitive-delta.logic")
 
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
@@ -288,9 +287,10 @@ class Analysis implements Runnable {
 
         lbScript
             .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
+            .addBlockFile("post-process.logic")
             .commit()
             .transaction()
-            .addBlockFile("post-process.logic")
+            .executeFile("to-flow-insensitive-delta.logic")
             .commit()
             .elapsedTime()
 
