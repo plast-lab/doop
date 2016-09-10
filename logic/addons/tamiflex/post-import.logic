@@ -1,14 +1,3 @@
-// Convert from the representation used (in some places) in Tamiflex to the one
-// used in Doop
-Tamiflex:ToDoopFormat["Class"] = "java.lang.Class".
-Tamiflex:ToDoopFormat["Constructor"] = "java.lang.reflect.Constructor".
-Tamiflex:ToDoopFormat["Field"] = "java.lang.reflect.Field".
-Tamiflex:ToDoopFormat["Method"] = "java.lang.reflect.Method".
-Tamiflex:ToDoopFormat["Array"] = "java.lang.reflect.Array".
-
-Tamiflex:ToDoopFormat["get*"] = "get".
-Tamiflex:ToDoopFormat["set*"] = "set".
-
 /**
  * This rule couldn't be part of the delta logic that imports the facts
  * probably due to some weird issue with the engine.
