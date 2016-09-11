@@ -1,0 +1,13 @@
+// In this analysis, both the real context and the real heap context are
+// MethodInvocations. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+ContextFromRealContext[?invocation] = ?ctx ->
+  Context(?ctx), CallGraphEdgeSource(?invocation).
+lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?invocation ->
+  Context(?ctx), CallGraphEdgeSource(?invocation).
+
+HContextFromRealHContext[?invocation] = ?hctx ->
+  HContext(?hctx), CallGraphEdgeSource(?invocation).
+lang:skolem(`HContextFromRealHContext).

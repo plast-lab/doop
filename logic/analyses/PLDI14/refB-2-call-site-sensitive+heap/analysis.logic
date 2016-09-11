@@ -1,0 +1,63 @@
+RealContext1FromContext[?ctx] = ?invocation1,
+RealContext2FromContext[?ctx] = ?invocation2 <-
+  ContextFromRealContext[?invocation1, ?invocation2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?invocation <-
+  HContextFromRealHContext[?invocation] = ?hctx.
+
+InitialInvValue[] = ?initInv <-
+  MethodInvocationValue(?initInv, "<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?invo, ?invo] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  MethodInvocationValue(?invo, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  MethodInvocationValue(?invo, "<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  MethodInvocationValue(?invo, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  MethodInvocationValue(?invo, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  MethodInvocationValue(?invo, "<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread>>").
+
+StartupInvocation[] = ?startupInvocation <-
+  MethodInvocationValue(?startupInvocation, "<<jvm-startup>>").
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?invo, ?invo] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  MethodInvocationValue(?invo, "<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?invo, ?invo] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  MethodInvocationValue(?invo, "<<jvm-startup>>").
+
+Context(?ctx),
+ContextFromRealContext[?invo, ?invo] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  MethodInvocationValue(?invo, "<<class-initialization>>").

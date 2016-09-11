@@ -1,0 +1,63 @@
+//-----------------------------------------------------------------------------
+// [Flow-insensitive Schema Layer]
+//
+// The following section contains a slightly modified schema that hides the
+// underlying instruction entities, which are irrelevant to flow-insensitive
+// analyses.
+//
+// The basic pattern is that, for each instruction entity, we introduce another
+// predicate that joins all of its properties (encoded as functional
+// predicates) but does not contain the instruction itself.
+//
+// Note that this pattern applies only to a subset of instructions that is
+// important for flow-insensitive analysis.
+//-----------------------------------------------------------------------------
+
+Throw(?insn, ?var) ->
+   Throw:Insn(?insn), Var(?var).
+
+// Note: in generat OPT inmethod last
+
+LoadInstanceField(?base, ?sig, ?to, ?inmethod) ->
+   Var(?base), Field(?sig), Var(?to), Method(?inmethod).
+
+StoreInstanceField(?from, ?base, ?signature, ?inmethod) ->
+   Var(?from), Var(?base), Field(?signature), Method(?inmethod).
+
+LoadStaticField(?sig, ?to, ?inmethod) ->
+   Field(?sig), Var(?to), Method(?inmethod).
+
+StoreStaticField(?from, ?signature, ?inmethod) ->
+   Var(?from), Field(?signature), Method(?inmethod).
+
+LoadArrayIndex(?base, ?to, ?inmethod) ->
+   Var(?base), Var(?to), Method(?inmethod).
+
+StoreArrayIndex(?from, ?base, ?inmethod) ->
+   Var(?from), Var(?base), Method(?inmethod).
+
+AssignCast(?type, ?from, ?to, ?inmethod) ->
+   Var(?from), Var(?to), Type(?type), Method(?inmethod).
+
+AssignLocal(?from, ?to, ?inmethod) ->
+   Var(?from), Var(?to), Method(?inmethod).
+
+AssignNull(?to, ?inmethod) ->
+   Var(?to), Method(?inmethod).
+
+AssignHeapAllocation(?heap, ?to, ?inmethod) ->
+   HeapAllocation(?heap), Var(?to), Method(?inmethod).
+
+// Note: a Jimple method can have multiple return variables
+ReturnVar(?var, ?method) ->
+   Var(?var), Method(?method).
+
+VirtualMethodInvocation(?invocation, ?signature, ?inmethod) ->
+   MethodInvocation(?invocation),
+   Method(?signature),
+   Method(?inmethod).
+
+StaticMethodInvocation(?invocation, ?signature, ?inmethod) ->
+   MethodInvocation(?invocation),
+   Method(?signature),
+   Method(?inmethod).
