@@ -1,0 +1,13 @@
+/**
+/**
+ * Special calling contexts
+ *
+ * Note: the type is necessary (java.lang.Object), but never used. It
+ * could be anything. It also needs to be an existing type, otherwise
+ * the sanity checks will barf.
+ */
+PlusHeapAllocation(?heap, "<<initial-context>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<jvm-startup>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<class-initialization>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<immutable-context>>", "java.lang.Object").
+PlusHeapAllocation(?heap, "<<immutable-hcontext>>", "java.lang.Object").

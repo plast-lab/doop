@@ -1,0 +1,16 @@
++Instruction(?dummy),
++Instruction:Value(?dummy:?string), 
++CallGraphEdgeSource(?dummy),
++HeapAllocation(?dummy),
++HeapAllocation:Type[?dummy] = ?type,
++DummyConstructorObject(?dummy),
++AssignAuxiliaryHeapAllocation(?dummy, ?this, ?constructor)
+<-
+   Method(?constructor),
+   Method:SimpleName[?constructor] = "<init>",
+   Method:DeclaringType[?constructor] = ?type,
+   Type:Value(?type:?typeStr),
+   Method:Value(?constructor:?constrStr),
+   ThisVar[?constructor] = ?this,
+   string:add[string:add["/new ", ?typeStr], "/dummy"] = ?postfix,
+   string:add[?constrStr, ?postfix] = ?string.
