@@ -65,6 +65,8 @@ SubtypeOf(?s, ?t) <-
    ComponentType[?t] = ?sc,
    PrimitiveType(?sc).
 
+
+
 /**
  * - TC and SC are reference types (2.4.6), and type SC can be cast to TC by
  * recursive application of these rules
@@ -115,3 +117,80 @@ SubtypeOf(Type:byte[], Type:short[]).
  */
 SubtypeOf(?t, ?t)
    <- Type(?t).
+
+
+// Extra logic for determining whether it is possible to subclass a type (based on Oracle Souffle)
+Unsubclassable(?type) -> Type(?type).
+
+Unsubclassable("java.lang.ClassLoader").
+Unsubclassable("java.lang.SecurityManager").
+
+
+//
+// Subclassable
+//
+Subclassable(?type) -> Type(?type).
+
+Subclassable(?type) <-
+  ClassModifier("public", ?type),
+  ! ClassModifier("final", ?type),
+  ClassConstructor(?method, ?type),
+  Method:Modifier("public", ?method),
+  ! Unsubclassable(?type).
+
+Subclassable(?type) <-
+  ClassModifier("public", ?type),
+  ! ClassModifier("final", ?type),
+  ClassConstructor(?method, ?type),
+  Method:Modifier("protected", ?method),
+  ! Unsubclassable(?type).
+
+
+CheckCast(?s1,?s2) -> Type(?s1), Type(?s2).
+
+CheckCast(?s,?s) <-
+   ClassType(?s).
+
+CheckCast(?s,?t) <- 
+   Subclass(?t,?s).
+
+CheckCast(?s,?t) <- 
+   ClassType(?s),
+   Superinterface(?t,?s).
+
+CheckCast(?s,"java.lang.Object") <-
+   InterfaceType(?s),
+   Type("java.lang.Object").
+
+CheckCast(?s,?s) <-
+   InterfaceType(?s).
+
+CheckCast(?s,?t) <-
+   InterfaceType(?s),
+   Superinterface(?t,?s).
+
+CheckCast(?s,"java.lang.Object") <-
+   ArrayType(?s),
+   Type("java.lang.Object").
+
+CheckCast(?s,?t) <-
+   ComponentType[?s] = ?sc,
+   ComponentType[?t] = ?tc,
+   ReferenceType(?sc),
+   ReferenceType(?tc),
+   CheckCast(?sc,?tc).
+
+CheckCast(?s,?t) <-
+   ArrayType(?s),
+   ArrayType(?t),
+   ComponentType[?s] = ?sc,
+   ComponentType[?t] = ?sc,
+   PrimitiveType(?sc).
+
+CheckCast(?s,"java.lang.Cloneable") <-
+   ArrayType(?s),
+   InterfaceType("java.lang.Cloneable").
+
+CheckCast(?s,"java.io.Serializable") <-
+   ArrayType(?s),
+   InterfaceType("java.io.Serializable").

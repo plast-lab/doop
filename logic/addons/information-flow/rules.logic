@@ -20,7 +20,7 @@ TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.http.Cookie: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: % get%(%)>").
-LeakingSinkMethodPattern(0, "<java.io.PrintWriter: void println(%)>").
+LeakingSinkMethodPattern(0, "<java.io.Print%: void println(%)>").
 LeakingSinkMethodPattern(0, "<java.sql.Statement: % execute%(%)>").
 LeakingSinkMethodPattern(0, "<java.io.File%er: void <init>(%)>").
 LeakingSinkMethodPattern(0, "<java.io.File%Stream: void <init>(%)>").
@@ -28,7 +28,7 @@ LeakingSinkMethodPattern(0, "<java.io.File%Stream: void <init>(%)>").
 SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>").
 SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
 SanitizationMethod(0, "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
-SanitizationMethod(0, "<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>").
+//SanitizationMethod(0, "<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>").
 SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>").
 
 TaintSourceMethod(?overriddenMethod) <-
