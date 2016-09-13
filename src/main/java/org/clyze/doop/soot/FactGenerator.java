@@ -37,6 +37,12 @@ class FactGenerator implements Runnable {
             int modifiers = _sootClass.getModifiers();
             if(Modifier.isAbstract(modifiers))
                 _writer.writeClassModifier(_sootClass, "abstract");
+            if(Modifier.isFinal(modifiers))
+                _writer.writeClassModifier(_sootClass, "final");
+            if(Modifier.isPublic(modifiers))
+                _writer.writeClassModifier(_sootClass, "public");
+            if(Modifier.isPrivate(modifiers))
+                _writer.writeClassModifier(_sootClass, "private");
 
             // the isInterface condition prevents Object as superclass of interface
             if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
