@@ -263,23 +263,23 @@ public class Representation
         return compactMethod(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
     }
 
-    String stringconstant(SootMethod inMethod, StringConstant constant)
-    {
+    String stringConstant(SootMethod inMethod, StringConstant constant) {
+        String content = stringConstantRaw(inMethod, constant);
+
+        if(content.length() <= 256)
+            return content;
+        else
+            return "<<HASH:" + content.hashCode() + ">>";
+    }
+
+    String stringConstantRaw(SootMethod inMethod, StringConstant constant) {
         String s = constant.toString();
         String content = s.substring(1, s.length() - 1);
 
-        // TODO This is a hack
-        if(content.length() > 1000)
-            content = content.substring(0, 1000);
-
         if(content.trim().equals(content) && content.length() > 0)
-        {
             return content;
-        }
         else
-        {
             return "<<\"" + content + "\">>";
-        }
     }
 
     String numconstant(SootMethod inMethod, NumericConstant constant)

@@ -555,6 +555,11 @@ HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
 MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
 MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
 
+// Use an entity to represent raw strings since the engine is having problems
+// with huge strings as keys.
+StringRaw(?x), StringRaw:Value(?x:?id) -> string(?id).
+String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
+
 
 //-----------------------------------------------------------------------------
 // [Capacities]
@@ -582,3 +587,4 @@ lang:physical:capacity[`HeapAllocation]      = 4194304.
 lang:physical:capacity[`NormalHeap]          = 4194304.
 lang:physical:capacity[`StringConstant]      = 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
+lang:physical:capacity[`StringRaw]           = 4194304.

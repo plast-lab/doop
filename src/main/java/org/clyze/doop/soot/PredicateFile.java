@@ -42,6 +42,7 @@ enum PredicateFile
     EMPTY_ARRAY("EmptyArray"),
     CLASS_OBJ("ClassObject"),
     STRING_CONST("StringConstant"),
+    STRING_RAW("StringRaw"),
     FIELD_SIGNATURE("Field"),
     ENTER_MONITOR("EnterMonitor"),
     EXIT_MONITOR("ExitMonitor"),
@@ -82,19 +83,16 @@ enum PredicateFile
 
     private final String name;
 
-    PredicateFile(String name)
-    {
+    PredicateFile(String name) {
         this.name = name;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return  name;
     }
 
-    public Writer getWriter(File directory, String suffix) throws IOException
-    {
+    public Writer getWriter(File directory, String suffix) throws IOException {
         File factsFile = new File(directory, name + suffix);
         FileUtils.touch(factsFile);
         return new FileWriter(factsFile);

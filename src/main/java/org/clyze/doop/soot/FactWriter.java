@@ -326,11 +326,14 @@ class FactWriter
 
     void writeAssignStringConstant(SootMethod m, Stmt stmt, Local l, StringConstant s, Session session)
     {
-        String heap = _rep.stringconstant(m, s);
+        String heap    = _rep.stringConstant(m, s);
+        String heapRaw = _rep.stringConstantRaw(m, s);
 
         // statement
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
+
+        _db.add(STRING_RAW, _db.asEntity(heap), _db.asEntity(heapRaw));
 
         // write heap allocation
         _db.add(STRING_CONST, _db.asEntity(heap));

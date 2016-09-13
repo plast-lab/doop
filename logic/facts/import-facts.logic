@@ -25,6 +25,19 @@ _StringConstant(?id) ->
 +HeapAllocation0:String(?id) <-
    _StringConstant(?id).
 
+// StringRaw
+lang:physical:storageModel[`_StringRaw] = "DelimitedFile".
+lang:physical:filePath[`_StringRaw] = "facts/StringRaw.facts".
+lang:physical:delimiter[`_StringRaw] = "\t".
+lang:physical:hasColumnNames[`_StringRaw] = false.
+_StringRaw(?id, ?rawId) ->
+   string(?id), string(?rawId).
+
++StringRaw(?raw),
++StringRaw:Value(?raw:?rawId),
++String:toRaw[?id] = ?raw <-
+   _StringRaw(?id, ?rawId).
+
 
 // ClassObject
 lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
@@ -73,11 +86,6 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
 +AssignInstruction:To[?instr] = ?to,
 +AssignHeapAllocation0(?instr, ?heapId) <-
    _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
-
-
-
-
-
 
 
 
