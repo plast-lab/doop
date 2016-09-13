@@ -9,9 +9,6 @@ import java.util.Map;
 
 class CSVDatabase implements Database
 {
-    /** The maximum number of characters per column */
-    private static final int MAX_COLUMN_LENGTH = 256;
-
     private static final char SEP = '\t';
     private static final char EOL = '\n';
 
@@ -42,7 +39,7 @@ class CSVDatabase implements Database
     }
 
 
-    private void addColumn(Writer writer, Column column, boolean shouldTruncate)
+    private void addColumn(Writer writer, Column column)
         throws IOException
     {
         // Quote some special characters
@@ -51,36 +48,21 @@ class CSVDatabase implements Database
             .replaceAll("\n", "\\\\n")
             .replaceAll("\t", "\\\\t");
 
-        // Truncate column if necessary
-        if (shouldTruncate)
-        {
-            int length = data.length();
-
-            // TODO: log the event
-            if (length > MAX_COLUMN_LENGTH)
-                length = MAX_COLUMN_LENGTH;
-
-            writer.write(data, 0, length);
-        }
-        else {
-            writer.write(data);
-        }
+        writer.write(data);
     }
 
 
     @Override
     public void add(PredicateFile predicateFile, Column arg, Column ... args)
     {
-        boolean shouldTruncate = false; //predicateFile.equals(PredicateFile.STRING_CONST);
-
         try {
             synchronized(predicateFile) {
                 Writer writer = getWriter(predicateFile);
-                addColumn(writer, arg, shouldTruncate);
+                addColumn(writer, arg);
                 
 
                 for (Column col : args)
-                    addColumn(writer.append(SEP), col, shouldTruncate);
+                    addColumn(writer.append(SEP), col);
 
                 writer.write(EOL);
             }
