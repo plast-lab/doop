@@ -316,8 +316,8 @@ class Analysis implements Runnable {
             }
         }
 
-        def factMacros = "${Doop.factsPath}/macros.logic"
-        preprocess(this, "${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", factMacros)
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
+        preprocess(this, "${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 
         lbScript
             .echo("-- Basic Analysis --")
@@ -340,7 +340,7 @@ class Analysis implements Runnable {
      * Performs the main part of the analysis.
      */
     protected void mainAnalysis() {
-        def factMacros   = "${Doop.factsPath}/macros.logic"
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
         def mainPath     = "${Doop.logicPath}/main"
         def analysisPath = "${Doop.analysesPath}/${name}"
@@ -361,9 +361,9 @@ class Analysis implements Runnable {
             preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
-                             factMacros, "${mainPath}/main-delta.logic")
+                             commonMacros, "${mainPath}/main-delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
-                             factMacros, macros, "${mainPath}/context-sensitivity.logic")
+                             commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
