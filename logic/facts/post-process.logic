@@ -23,7 +23,7 @@ HeapAllocation:Mockup:Con[?id] = ?heap,
 HeapAllocation:Null[] = ?heap,
 HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id <-
-   ?id = "<<null pseudo object>>",
+   ?id = "<<null pseudo heap>>",
    ?type = Type:null[].
 
 HeapAllocation(?heap),

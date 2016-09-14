@@ -23,7 +23,7 @@
    arrayHeapStr = "<reflective "+ ?invocationStr +"/new "+ arrayTypeStr +">"
 
 
-#include "../../facts/macros.logic"
+#include "../../commonMacros.logic"
 #include "java.lang.Class-delta.logic"
 #include "java.lang.reflect.Array-delta.logic"
 #include "java.lang.reflect.Constructor-delta.logic"

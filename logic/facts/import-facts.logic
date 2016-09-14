@@ -1,13 +1,13 @@
-// Normal Object
-lang:physical:storageModel[`_NormalObject] = "DelimitedFile".
-lang:physical:filePath[`_NormalObject] = "facts/NormalObject.facts".
-lang:physical:delimiter[`_NormalObject] = "\t".
-lang:physical:hasColumnNames[`_NormalObject] = false.
-_NormalObject(?id, ?type) ->
+// NormalHeap
+lang:physical:storageModel[`_NormalHeap] = "DelimitedFile".
+lang:physical:filePath[`_NormalHeap] = "facts/NormalHeap.facts".
+lang:physical:delimiter[`_NormalHeap] = "\t".
+lang:physical:hasColumnNames[`_NormalHeap] = false.
+_NormalHeap(?id, ?type) ->
    string(?id), string(?type).
 
 +HeapAllocation0:Normal(?id, ?type) <-
-   _NormalObject(?id, ?type).
+   _NormalHeap(?id, ?type).
 
 
 // StringConstant
@@ -39,12 +39,12 @@ _StringRaw(?id, ?rawId) ->
    _StringRaw(?id, ?rawId).
 
 
-// ClassObject
-lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
-lang:physical:filePath[`_ClassObject] = "facts/ClassObject.facts".
-lang:physical:delimiter[`_ClassObject] = "\t".
-lang:physical:hasColumnNames[`_ClassObject] = false.
-_ClassObject(?id) ->
+// ClassHeap
+lang:physical:storageModel[`_ClassHeap] = "DelimitedFile".
+lang:physical:filePath[`_ClassHeap] = "facts/ClassHeap.facts".
+lang:physical:delimiter[`_ClassHeap] = "\t".
+lang:physical:hasColumnNames[`_ClassHeap] = false.
+_ClassHeap(?id) ->
    string(?id).
 
 +Type:Value(?t:?str),
@@ -52,7 +52,7 @@ _ClassObject(?id) ->
    ?str = "java.lang.Class".
 
 +HeapAllocation0:Class(?id) <-
-   _ClassObject(?id).
+   _ClassHeap(?id).
 
 
 // EmptyArray

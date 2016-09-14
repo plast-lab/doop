@@ -1,4 +1,4 @@
-#include "../../facts/macros.logic"
+#include "../../commonMacros.logic"
 #include "../../main/class-initialization.logic"
 #include "../../main/implicit-reachable.logic"
 #include "../../main/string-constants.logic"
