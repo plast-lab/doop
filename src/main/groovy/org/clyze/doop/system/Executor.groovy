@@ -20,7 +20,6 @@ class Executor {
 
     void execute(String workingDirectory,
                  String commandLine,
-                 Collection<String> ignoredWarnings = null,
                  Closure outputLineProcessor = STDOUT_PRINTER) {
 
         def pb = new ProcessBuilder("/bin/bash", "-c", commandLine)
@@ -67,11 +66,6 @@ class Executor {
         // Create an error string that contains everything in the stderr stream
         def errorMessages = es.getText();
 
-        // Prune some redundant warnings
-        for (warning in ignoredWarnings) {
-            errorMessages = errorMessages.replaceAll(warning) { String _ -> "" }
-        }
-
         // Print the remaining warnings
         if (!errorMessages.isAllWhitespace()) {
             System.err.print(errorMessages)
@@ -83,7 +77,7 @@ class Executor {
         }
     }
 
-    void execute(String commandLine, Collection<String> ignoredWarnings=null, Closure outputLineProcessor = STDOUT_PRINTER) {
-        execute(null, commandLine, ignoredWarnings, outputLineProcessor)
+    void execute(String commandLine, Closure outputLineProcessor = STDOUT_PRINTER) {
+        execute(null, commandLine, outputLineProcessor)
     }
 }
