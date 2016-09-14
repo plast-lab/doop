@@ -13,16 +13,6 @@ import org.clyze.doop.util.process.CalledProcessException
 @TypeChecked
 class BloxbatchConnector implements WorkspaceConnector
 {
-    private static final List<String> IGNORED_WARNINGS = [
-        """\
-        *******************************************************************
-        Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.
-        Please use 'lb' instead of 'bloxbatch'.
-        *******************************************************************
-        """
-    ]*.stripIndent()
-
-
     /** The path to the workspace */
     private final String workspace
 
@@ -87,11 +77,6 @@ class BloxbatchConnector implements WorkspaceConnector
 
         // Create an error string that contains everything in the stderr stream
         String errorMessages = es.getText();
-
-        // Prune some redundant warnings
-        for (warning in IGNORED_WARNINGS.collect{ w -> Pattern.quote(w) }) {
-            errorMessages = errorMessages.replaceAll(warning) { String _ -> "" }
-        }
 
         // Print the remaining warnings
         if (!errorMessages.isAllWhitespace()) {
