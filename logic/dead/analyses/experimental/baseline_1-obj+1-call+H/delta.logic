@@ -1,0 +1,35 @@
+#include "macros.logic"
+#include "../../../core/core-delta.logic"
+
+/**
+ * Special calling contexts
+ *
+ * Note: the type is necessary (java.lang.String), but never used. It
+ * could be anything. It also needs to be an existing type, otherwise
+ * the sanity checks will barf.
+ */
+PlusHeapAllocation(?ctx, "<<initial-context>>", "java.lang.String").
+PlusHeapAllocation(?ctx, "<<jvm-startup>>", "java.lang.String").
+PlusHeapAllocation(?ctx, "<<class-initialization>>", "java.lang.String").
+PlusHeapAllocation(?ctx, "<<immutable>>", "java.lang.String").
+
+PlusMethodInvocation(?ctx, "<<initial-context2>>").
+PlusMethodInvocation(?ctx, "<<jvm-startup2>>").
+PlusMethodInvocation(?ctx, "<<class-initialization2>>").
+PlusMethodInvocation(?ctx, "<<immutable2>>").
+
+
+/**
+ * Special objects, ?ctx is a heap object used only as context
+ */
++MySystemThreadGroup(?invocation, ?alloc),
+  PlusMethodInvocation(?invocation, "<<jvm-startup2>>"),
+  PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThreadGroup(?invocation, ?alloc),
+  PlusMethodInvocation(?invocation, "<<jvm-startup2>>"),
+  PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
+
++MyMainThread(?invocation, ?alloc),
+  PlusMethodInvocation(?invocation, "<<jvm-startup2>>"),
+  PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").

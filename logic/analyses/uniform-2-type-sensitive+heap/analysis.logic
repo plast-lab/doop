@@ -1,0 +1,97 @@
+// Context-sensitive pointer analysis with context of 2 types and 1 call-site
+// and a context-sensitive heap abstraction.
+
+ClassHasInstr(?class, ?instr) <-
+  Method:DeclaringType[?method] = ?class,
+  Instruction:Method[?instr] = ?method.
+
+ClassToInstr[?class] = ?instr <-
+  agg<<?instr = min(?otherInstr)>> ClassHasInstr(?class, ?otherInstr).
+
+RealContext1FromContext[?ctx] = ?type1,
+RealContext2FromContext[?ctx] = ?invocation,
+RealContext3FromContext[?ctx] = ?type2 <-
+  ContextFromRealContext[?type1, ?invocation, ?type2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?type <-
+  HContextFromRealHContext[?type] = ?hctx.
+
+// Creating special immutable heap allocation constant
+ImmutableInvValue[] = ?immInv <-
+  MethodInvocationValue(?immInv, "<<immutable-context-2>>").
+
+Context(?ctx),
+ContextFromRealContext[?instr, ?invo, ?instr] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  Instruction:Value(?instr, "<<immutable-context>>"),
+  MethodInvocationValue(?invo, "<<immutable-context-2>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?instr] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  Instruction:Value(?instr:"<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?instr] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  Instruction:Value(?instr:"<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?instr] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  Instruction:Value(?instr:"<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?instr] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  Instruction:Value(?instr:"<<jvm-startup>>"),
+  HeapAllocationValue(?alloc, "<<main-thread>>").
+
+
+// Merge optimization hack
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?hctx, ?invocation, ?heap) <-
+  MergeBasis(_, ?hctx, ?invocation, ?heap).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealHContextFromHContext[?hctx], ?invocation, ClassToInstr[DeclaringClass:Allocation[?heap]]] = ?calleeCtx,
+OptimizeMerge[?hctx, ?invocation, ?heap] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?invocation, ?heap).
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?type1,?invocation,?type2] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  ClassTypeValue(?class1, "java.lang.String"),
+  ClassToInstr[?class1] = ?type1,
+  Instruction:Value(?type2:"<<initial-context>>"),
+  MethodInvocationValue(?invocation, "<<initial-context-2>>").
+
+Context(?ctx),
+ContextFromRealContext[?type1,?invocation,?type2] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  ClassTypeValue(?class1, "java.lang.String"),
+  ClassToInstr[?class1] = ?type1,
+  Instruction:Value(?type2:"<<jvm-startup>>"),
+  MethodInvocationValue(?invocation, "<<jvm-startup-2>>").
+
+Context(?ctx),
+ContextFromRealContext[?type1,?invocation,?type2] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  ClassTypeValue(?class1, "java.lang.String"),
+  ClassToInstr[?class1] = ?type1,
+  Instruction:Value(?type2:"<<class-initialization>>"),
+  MethodInvocationValue(?invocation, "<<class-initialization-2>>").

@@ -1,0 +1,27 @@
+// In this analysis, the real context is a pair of HeapAllocation AND a
+// MethodInvocation (for static calls) sometimes.  The real heap context is a
+// single HeapAllocation. Keeping mapping functions is the way to handle
+// analyses where HContext = Context (since the language considers them
+// different types).
+// NOTE: Changed from HeapAllocation to CallGraphEdgeSource in order to use the
+// invocation site for static calls.
+ContextFromRealContext[?heap1, ?heap2] = ?ctx ->
+  Context(?ctx), CallGraphEdgeSource(?heap1), CallGraphEdgeSource(?heap2).
+lang:skolem(`ContextFromRealContext).
+
+// NOTE: Use the following when using both the normal (caller's) context and
+// the invocation site for static calls.
+SpecialContextFromRealContext[?heap1, ?invocation, ?heap2] = ?ctx ->
+  CallGraphEdgeSource(?heap1), CallGraphEdgeSource(?heap2),
+  CallGraphEdgeSource(?invocation), Context(?ctx).
+lang:skolem(`SpecialContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap ->
+  Context(?ctx), CallGraphEdgeSource(?heap).
+RealContext2FromContext[?ctx] = ?heap ->
+  Context(?ctx), CallGraphEdgeSource(?heap).
+
+HContextFromRealHContext[?heap] = ?hctx ->
+  HContext(?hctx), CallGraphEdgeSource(?heap).
+lang:skolem(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?heap ->
+  HContext(?hctx), CallGraphEdgeSource(?heap).
