@@ -90,15 +90,6 @@ class Analysis implements Runnable {
 
     WorkspaceConnector connector
 
-    private static final List<String> IGNORED_WARNINGS = [
-        """\
-        *******************************************************************
-        Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.
-        Please use 'lb' instead of 'bloxbatch'.
-        *******************************************************************
-        """
-    ].collect{ line -> Pattern.quote(line.stripIndent()) }
-
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
@@ -174,7 +165,7 @@ class Analysis implements Runnable {
         logger.info "\nAnalysis START"
         long t = timing {
              def bloxOpts = options.BLOX_OPTS.value ?: ''
-             executor.execute(outDir, "${options.BLOXBATCH.value} -script ${lbScript.getPath()} $bloxOpts", IGNORED_WARNINGS)
+             executor.execute(outDir, "${options.BLOXBATCH.value} -script ${lbScript.getPath()} $bloxOpts")
         }
         logger.info "Analysis END\n"
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
@@ -790,7 +781,7 @@ class Analysis implements Runnable {
     }
 
     private void bloxbatch(File database, String params) {
-        executor.execute("${options.BLOXBATCH.value} -db $database $params", IGNORED_WARNINGS)
+        executor.execute("${options.BLOXBATCH.value} -db $database $params")
     }
 
     private long timing(Closure c) {
