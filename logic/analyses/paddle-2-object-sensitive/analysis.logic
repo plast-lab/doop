@@ -1,0 +1,65 @@
+RealContext1FromContext[?ctx] = ?heap1,
+RealContext2FromContext[?ctx] = ?heap2 <-
+  ContextFromRealContext[?heap1, ?heap2] = ?ctx.
+
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  HeapAllocationValue(?heap, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+ImmutableHContext[] = ?hctx.
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  HeapAllocationValue(?alloc, "<<main-thread>>").
+
+
+// Merge optimization hack
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?callerCtx, ?heap) <-
+  MergeBasis(_, _, ?callerCtx, ?heap).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealContext2FromContext[?callerCtx], ?heap] = ?calleeCtx,
+OptimizeMerge[?callerCtx, ?heap] = ?calleeCtx <-
+  MyMergeBasis(?callerCtx, ?heap).
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?heap, "<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?heap, "<<jvm-startup>>").
+
+Context(?ctx),
+ContextFromRealContext[?heap, ?heap] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?heap, "<<class-initialization>>").
