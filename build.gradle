@@ -11,7 +11,6 @@ buildscript {
 apply plugin: 'groovy'
 apply plugin: 'application'
 apply from  : 'DaCapo.gradle'
-apply plugin: 'maven-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 sourceCompatibility = "1.7"
@@ -95,27 +94,6 @@ startScripts {
     dependsOn generateFiles
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
-
-    repositories {
-        maven {
-            credentials {
-                username artifactory_user
-                password artifactory_password
-            }
-
-            url version.endsWith("-SNAPSHOT") ?
-                "${artifactory_contextUrl}/libs-snapshot-local" :
-                "${artifactory_contextUrl}/libs-release-local"
-        }
-    }
-}
-
 
 import org.apache.commons.io.FileUtils
 
@@ -124,4 +102,30 @@ clean.doFirst {
     file('out'    ).list().each { f -> delete "out/${f}" }
     file('results').list().each { f -> delete "results/${f}" }
     FileUtils.deleteQuietly(new File('last-analysis'))
+}
+
+if (project.hasProperty('artifactory_user')) {
+
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+
+        repositories {
+            maven {
+                credentials {
+                    username artifactory_user
+                    password artifactory_password
+                }
+
+                url version.endsWith("-SNAPSHOT") ?
+                        "${artifactory_contextUrl}/libs-snapshot-local" :
+                        "${artifactory_contextUrl}/libs-release-local"
+            }
+        }
+    }
 }
