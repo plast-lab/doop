@@ -10,21 +10,21 @@
 // identity of the receiver object and the receiver object of the
 // caller and the call-site.
 // Again, this may trigger creation of a new object.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invo, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], invocation, heap] = calleeCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], invo, heap] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
-  MergeBasis(callerCtx, hctx, invocation, heap)
+#define MergeBasisMacro(callerCtx, invo, hctx, heap) \
+  MergeBasis(callerCtx, hctx, invo, heap)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-  OptimizeMerge[hctx, invocation, heap] = calleeCtx
+#define OptimizeMergeMacro(callerCtx, invo, hctx, heap, calleeCtx) \
+  OptimizeMerge[hctx, invo, heap] = calleeCtx
 
 // For this analysis, static calls use the invocation site and
 // the receiver object of the caller as a context.
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealContext1FromContext[callerCtx], invocation, \
+  ContextFromRealContext[RealContext1FromContext[callerCtx], invo, \
                          RealContext3FromContext[callerCtx]] = calleeCtx
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext

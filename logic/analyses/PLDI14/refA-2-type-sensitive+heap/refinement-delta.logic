@@ -7,14 +7,14 @@ _ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
 +_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
 
 _HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
-  Var(?arg), CallGraphEdgeSource(?invocation), HeapAllocation(?heap).
+  Var(?arg), MethodInvocation(?invocation), HeapAllocation(?heap).
 +_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
   CallGraphEdge(_, ?invocation, _, _),
   ActualParam[_, ?invocation] = ?arg,
   _ContextInsensVPT(?heap, ?arg).
 
 _NumHeapsForInvocationArgs[?invocation] = ?count ->
-  CallGraphEdgeSource(?invocation), int[64](?count).
+  MethodInvocation(?invocation), int[64](?count).
 +_NumHeapsForInvocationArgs[?invocation] = ?count <-
   agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
 

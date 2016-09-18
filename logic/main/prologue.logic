@@ -58,3 +58,49 @@ HeapAllocation:Type[?heap] = ?type,
 HeapAllocation:Value[?heap] = ?id <-
    ?id = "java.io.UnixFileSystem.list/new java.lang.String",
    ?type = "java.lang.String".
+
+// Special objects for contexts
+// Note: the type is necessary (java.lang.Object), but never used. It could be
+// anything. It also needs to be an existing type, otherwise the sanity checks
+// will barf.
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<initial-context>>",
+   Type:Value(?type:"java.lang.Object").
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<jvm-startup>>",
+   Type:Value(?type:"java.lang.Object").
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<class-initialization>>",
+   Type:Value(?type:"java.lang.Object").
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<immutable-context>>",
+   Type:Value(?type:"java.lang.Object").
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<immutable-hcontext>>",
+   Type:Value(?type:"java.lang.Object").
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id <-
+   ?id = "<<immutable>>",
+   Type:Value(?type:"java.lang.Object").

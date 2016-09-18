@@ -408,9 +408,6 @@ class Analysis implements Runnable {
             preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
             preprocess(this, "${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
             preprocess(this, "${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
-            
-            logger.info "Adding Information flow rules to addons logic"
-            
             includeAtStart(this, "${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
 
             lbScript
@@ -428,7 +425,6 @@ class Analysis implements Runnable {
         if (options.TAMIFLEX.value) {
             preprocess(this, "${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
             preprocess(this, "${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
-            logger.info "Adding tamiflex rules to addons logic"
             includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic")
 
             lbScript

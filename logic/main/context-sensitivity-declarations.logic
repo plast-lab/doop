@@ -21,6 +21,7 @@ ImmutableHContext[] = ?hctx -> HContext(?hctx).
 ContextComponent(?comp) -> .
 lang:entity(`ContextComponent).
 lang:physical:storageModel[`ContextComponent] = "ScalableSparse".
+lang:physical:capacity[`ContextComponent] = 8388608.
 
 ContextComponent:Invocation[?invo] = ?comp ->
    MethodInvocation(?invo), ContextComponent(?comp).
