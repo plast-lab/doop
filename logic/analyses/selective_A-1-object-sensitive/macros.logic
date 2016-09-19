@@ -8,25 +8,35 @@
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object. Again, this may trigger creation of
 // a new object.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invo, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[heap] = calleeCtx
+  ContextFromRealContext[heapComp] = calleeCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp
 
 // For this analysis, static calls use the invocation site as a context.
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[invocation] = calleeCtx
+  ContextFromRealContext[invoComp] = calleeCtx, \
+  ContextComponent(invoComp), \
+  ContextComponent:Invocation[invo] = invoComp
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[heap] = newCtx
+  ContextFromRealContext[heapComp] = newCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp
 
 #define MergeStartupMacro(hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[heap] = calleeCtx
+  ContextFromRealContext[heapComp] = calleeCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[heap] = newCtx
+  ContextFromRealContext[heapComp] = newCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp

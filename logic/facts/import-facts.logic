@@ -1,3 +1,94 @@
+// NormalHeap
+lang:physical:storageModel[`_NormalHeap] = "DelimitedFile".
+lang:physical:filePath[`_NormalHeap] = "facts/NormalHeap.facts".
+lang:physical:delimiter[`_NormalHeap] = "\t".
+lang:physical:hasColumnNames[`_NormalHeap] = false.
+_NormalHeap(?id, ?type) ->
+   string(?id), string(?type).
+
++HeapAllocation0:Normal(?id, ?type) <-
+   _NormalHeap(?id, ?type).
+
+
+// StringConstant
+lang:physical:storageModel[`_StringConstant] = "DelimitedFile".
+lang:physical:filePath[`_StringConstant] = "facts/StringConstant.facts".
+lang:physical:delimiter[`_StringConstant] = "\t".
+lang:physical:hasColumnNames[`_StringConstant] = false.
+_StringConstant(?id) ->
+   string(?id).
+
++Type:Value(?t:?str),
++ClassType(?t) <-
+   ?str = "java.lang.String".
+
++HeapAllocation0:String(?id) <-
+   _StringConstant(?id).
+
+// StringRaw
+lang:physical:storageModel[`_StringRaw] = "DelimitedFile".
+lang:physical:filePath[`_StringRaw] = "facts/StringRaw.facts".
+lang:physical:delimiter[`_StringRaw] = "\t".
+lang:physical:hasColumnNames[`_StringRaw] = false.
+_StringRaw(?id, ?rawId) ->
+   string(?id), string(?rawId).
+
++StringRaw(?raw),
++StringRaw:Value(?raw:?rawId),
++String:toRaw[?id] = ?raw <-
+   _StringRaw(?id, ?rawId).
+
+
+// ClassHeap
+lang:physical:storageModel[`_ClassHeap] = "DelimitedFile".
+lang:physical:filePath[`_ClassHeap] = "facts/ClassHeap.facts".
+lang:physical:delimiter[`_ClassHeap] = "\t".
+lang:physical:hasColumnNames[`_ClassHeap] = false.
+_ClassHeap(?id) ->
+   string(?id).
+
++Type:Value(?t:?str),
++ClassType(?t) <-
+   ?str = "java.lang.Class".
+
++HeapAllocation0:Class(?id) <-
+   _ClassHeap(?id).
+
+
+// EmptyArray
+lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".
+lang:physical:filePath[`_EmptyArray] = "facts/EmptyArray.facts".
+lang:physical:delimiter[`_EmptyArray] = "\t".
+lang:physical:hasColumnNames[`_EmptyArray] = false.
+_EmptyArray(?id) ->
+   string(?id).
+
++HeapAllocation0:EmptyArray(?id) <-
+   _EmptyArray(?id).
+
+
+// AssignHeapAllocation
+lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
+lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
+_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?heap),
+   string(?to),
+   string(?inmethod).
+
++AssignHeapAllocation:Insn(?instr),
++Instruction:Value(?instr:?instrId),
++Instruction:Index[?instr] = ?index,
++Instruction:Method[?instr] = ?method,
++AssignInstruction:To[?instr] = ?to,
++AssignHeapAllocation0(?instr, ?heapId) <-
+   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
+
+
+
 // AssignLocal
 
 lang:physical:storageModel[`_AssignLocal] = "DelimitedFile".
@@ -184,63 +275,28 @@ _AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
    _AssignCastNull(?instruction, ?index, ?to, ?type, ?method).
 
 
-// AssignHeapAllocation
-
-lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
-lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
-lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
-lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
-
-_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
-   string(?instruction),
-   int[32](?index),
-   string(?heap),
-   string(?to),
-   string(?inmethod).
-
-+AssignHeapAllocation:Insn(?x),
-+Instruction:Value(?x:?instruction),
-+Instruction:Index[?x] = ?index,
-+Instruction:Method[?x] = ?method,
-+AssignHeapAllocation:Heap[?x] = ?heap,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method).
-
-// EmptyArray
-lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".
-lang:physical:filePath[`_EmptyArray] = "facts/EmptyArray.facts".
-lang:physical:delimiter[`_EmptyArray] = "\t".
-lang:physical:hasColumnNames[`_EmptyArray] = false.
-
-_EmptyArray(?heap) ->
-   string(?heap).
-
-+EmptyArray(?heap) <-
-   _EmptyArray(?heap).
-
 // AssignMultiArrayAllocation
-
-lang:physical:storageModel[`_AssignMultiArrayAllocation] = "DelimitedFile".
-lang:physical:filePath[`_AssignMultiArrayAllocation] = "facts/AssignMultiArrayAllocation.facts".
-lang:physical:delimiter[`_AssignMultiArrayAllocation] = "\t".
-lang:physical:hasColumnNames[`_AssignMultiArrayAllocation] = false.
-
-_AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) ->
-   string(?instruction),
-   int[32](?index),
-   string(?heap),
-   int[32](?dim),
-   string(?to),
-   string(?inmethod).
-
-+AssignMultiArrayAllocation:Insn(?x),
-+Instruction:Value(?x:?instruction),
-+Instruction:Index[?x] = ?index,
-+Instruction:Method[?x] = ?method,
-+AssignMultiArrayAllocation:Heap[?x] = ?heap,
-+AssignMultiArrayAllocation:Dimensions[?x] = ?dim,
-+AssignInstruction:To[?x] = ?to <-
-   _AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?method).
+//lang:physical:storageModel[`_AssignMultiArrayAllocation] = "DelimitedFile".
+//lang:physical:filePath[`_AssignMultiArrayAllocation] = "facts/AssignMultiArrayAllocation.facts".
+//lang:physical:delimiter[`_AssignMultiArrayAllocation] = "\t".
+//lang:physical:hasColumnNames[`_AssignMultiArrayAllocation] = false.
+//
+//_AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) ->
+//   string(?instruction),
+//   int[32](?index),
+//   string(?heap),
+//   int[32](?dim),
+//   string(?to),
+//   string(?inmethod).
+//
+//+AssignMultiArrayAllocation:Insn(?x),
+//+Instruction:Value(?x:?instruction),
+//+Instruction:Index[?x] = ?index,
+//+Instruction:Method[?x] = ?method,
+//+AssignMultiArrayAllocation:Heap[?x] = ?heap,
+//+AssignMultiArrayAllocation:Dimensions[?x] = ?dim,
+//+AssignInstruction:To[?x] = ?to <-
+//   _AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?method).
 
 
 // AssignNumConstant
@@ -310,65 +366,6 @@ _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
 +AssignInstanceOf:Type[?x] = ?type,
 +AssignInstruction:To[?x] = ?to <-
    _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
-
-
-// TODO: Heap Allocations are not really instructions; we should
-// change their supertypes and their refmodes from Instruction:Value
-// to HeapAllocation:Value
-
-// Normal Object
-
-lang:physical:storageModel[`_NormalObject] = "DelimitedFile".
-lang:physical:filePath[`_NormalObject] = "facts/NormalObject.facts".
-lang:physical:delimiter[`_NormalObject] = "\t".
-lang:physical:hasColumnNames[`_NormalObject] = false.
-
-_NormalObject(?repr, ?type) ->
-   string(?repr),
-   string(?type).
-
-+HeapAllocation(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
-   _NormalObject(?repr, ?type).
-
-
-// ClassConstant
-
-lang:physical:storageModel[`_ClassObject] = "DelimitedFile".
-lang:physical:filePath[`_ClassObject] = "facts/ClassObject.facts".
-lang:physical:delimiter[`_ClassObject] = "\t".
-lang:physical:hasColumnNames[`_ClassObject] = false.
-
-_ClassObject(?repr, ?type, ?actualtype) ->
-   string(?repr),
-   string(?actualtype),
-   string(?type).
-
-+ClassConstant(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-// +ReifiedClass[?actualtype] = ?x,
-// --> REVIEW: the above is no longer needed
-+HeapAllocation:Type[?x] = ?type
- <-
-   _ClassObject(?repr, ?type, _ /* ?actualtype */).
-
-
-// StringConstant
-
-lang:physical:storageModel[`_StringConstant] = "DelimitedFile".
-lang:physical:filePath[`_StringConstant] = "facts/StringConstant.facts".
-lang:physical:delimiter[`_StringConstant] = "\t".
-lang:physical:hasColumnNames[`_StringConstant] = false.
-
-_StringConstant(?repr, ?type) ->
-   string(?repr),
-   string(?type).
-
-+StringConstant(?x),
-+Instruction:Value(?x:?repr), // +HeapAllocation:Value(?x:?repr),
-+HeapAllocation:Type[?x] = ?type <-
-   _StringConstant(?repr, ?type).
 
 
 // Field
@@ -1040,10 +1037,3 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 +PrimitiveType(?t), +Type:Value(?t:"double"),  +Type:double[] = ?t.
 +NullType(?t),  +Type:Value(?t:"null_type"), +Type:null[] = ?t.
 +ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.
-
-
-// Create single null object
-+HeapAllocation(?nullObject),
-+Instruction:Value(?nullObject:"<<<null pseudo object>>>"),
-+HeapAllocation:Type[?nullObject] = Type:null[],
-+HeapAllocation:Null[] = ?nullObject.

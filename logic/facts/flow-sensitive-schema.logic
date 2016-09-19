@@ -139,26 +139,7 @@ Var:DeclaringMethod(?var, ?method) ->
 
 
 //-----------------------------------------------------------------------------
-
-lang:entity(`HeapAllocation).
-lang:entity(`ClassConstant).
-lang:entity(`StringConstant).
-lang:entity(`EmptyArray).
-
-StringConstant(?x) -> HeapAllocation(?x).
-ClassConstant(?x)  -> HeapAllocation(?x).
-EmptyArray(?x)     -> HeapAllocation(?x).
-
-// Null object
-HeapAllocation:Null[] = ?nullObject ->
-   HeapAllocation(?nullObject).
-
-HeapAllocation:Type[?heap] = ?type ->
-   HeapAllocation(?heap), Type(?type).
-
-
-//-----------------------------------------------------------------------------
-//   Bytecode Instructions
+// [Bytecode Instructions]
 //-----------------------------------------------------------------------------
 
 Instruction(?x), Instruction:Value(?x:?id) -> string(?id).
@@ -204,7 +185,6 @@ lang:entity(`ReturnInstruction).
 lang:entity(`ReturnNonvoid:Insn).
 lang:entity(`ReturnVoid:Insn).
 
-lang:entity(`CallGraphEdgeSource).
 lang:entity(`MethodInvocation).
 lang:entity(`SpecialMethodInvocation:Insn).
 lang:entity(`StaticMethodInvocation:Insn).
@@ -251,16 +231,7 @@ ReturnInstruction(?insn)               -> Instruction(?insn).
 ReturnVoid:Insn(?insn)                 -> ReturnInstruction(?insn).
 ReturnNonvoid:Insn(?insn)              -> ReturnInstruction(?insn).
 
-CallGraphEdgeSource(?insn)             -> Instruction(?insn).
-
-// TODO: Heap Allocations are not really instructions; we should
-// change their supertypes and their refmodes from Instruction:Value
-// to HeapAllocation:Value
-// TODO: HeapAllocation being a CallGraphEdgeSource is an artifact
-// from previous versions; we should change it carefully so as not to
-// break hybrid analysis.
-HeapAllocation(?insn)                  -> CallGraphEdgeSource(?insn).
-MethodInvocation(?insn)                -> CallGraphEdgeSource(?insn).
+MethodInvocation(?insn)                -> Instruction(?insn).
 VirtualMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 SpecialMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 StaticMethodInvocation:Insn(?insn)     -> MethodInvocation(?insn).
@@ -434,11 +405,11 @@ AssignOper:Type(?insn, ?type) ->
    AssignOper:Insn(?insn), string(?type).
 
 // Assign multi-array allocation instruction
-AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
-   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
-
-AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
-   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
+//AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
+//   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
+//
+//AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
+//   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
 
 // Assign Heap Allocation
 AssignHeapAllocation:Heap[?insn] = ?heap ->
@@ -529,18 +500,65 @@ Properties[?path, ?key] = ?value ->
 NativeReturnVar(?var, ?method) ->
    Var(?var), Method(?method).
 
-MainMethodArgsArray(?argsArray) -> HeapAllocation(?argsArray).
-
-MainMethodArgHeap(?argHeap) -> HeapAllocation(?argHeap).
-
 // Types potentially returned by a specific Class.forName invocation
 Config:DynamicClass(?class, ?invocation) ->
   ReferenceType(?class), MethodInvocation(?invocation).
 
-
 // Predicates to store runtime metrics and statistics
 Stats:Runtime(?attr, ?value) -> string(?attr), decimal[64](?value).
 Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
+
+
+//-----------------------------------------------------------------------------
+// [Heap Allocation]
+//-----------------------------------------------------------------------------
+
+HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
+HeapAllocation0:String(?repr) -> string(?repr).
+HeapAllocation0:Class(?repr) -> string(?repr).
+HeapAllocation0:EmptyArray(?repr) -> string(?repr).
+AssignHeapAllocation0(?instr, ?heapId) ->
+   AssignHeapAllocation:Insn(?instr), string(?heapId).
+
+
+HeapAllocation(?heap) -> .
+NormalHeap(?heap)     -> HeapAllocation(?heap).
+StringConstant(?heap) -> HeapAllocation(?heap).
+ClassHeap(?heap)      -> HeapAllocation(?heap).
+
+lang:physical:storageModel[`HeapAllocation] = "ScalableSparse".
+lang:entity(`HeapAllocation).
+lang:entity(`NormalHeap).
+lang:entity(`StringConstant).
+lang:entity(`ClassHeap).
+
+HeapAllocation:Normal:Con[?id] = ?heap -> string(?id), NormalHeap(?heap).
+HeapAllocation:String:Con[?id] = ?heap -> string(?id), StringConstant(?heap).
+HeapAllocation:Class:Con[?id]  = ?heap -> string(?id), ClassHeap(?heap).
+HeapAllocation:Mockup:Con[?id] = ?heap -> string(?id), HeapAllocation(?heap).
+
+lang:constructor(`HeapAllocation:Normal:Con).
+lang:constructor(`HeapAllocation:String:Con).
+lang:constructor(`HeapAllocation:Class:Con).
+lang:constructor(`HeapAllocation:Mockup:Con).
+
+HeapAllocation:Value[?heap] = ?id -> HeapAllocation(?heap), string(?id).
+HeapAllocation:byValue[?id] = ?heap -> string(?id), HeapAllocation(?heap).
+
+HeapAllocation:Type[?heap] = ?type   -> HeapAllocation(?heap), Type(?type).
+
+// [Miscellaneous]
+HeapAllocation:Null[] = ?heap -> HeapAllocation(?heap).
+
+HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
+
+MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
+MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
+
+// Use an entity to represent raw strings since the engine is having problems
+// with huge strings as keys.
+StringRaw(?x), StringRaw:Value(?x:?id) -> string(?id).
+String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 
 
 //-----------------------------------------------------------------------------
@@ -552,11 +570,7 @@ lang:physical:capacity[`Method]              = 131072.
 lang:physical:capacity[`MethodDescriptor]    = 131072.
 lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */
 lang:physical:capacity[`Throw:Insn]          = 4194304. /* = instruction */
-lang:physical:capacity[`CallGraphEdgeSource] = 4194304. /* = instruction */
-lang:physical:capacity[`HeapAllocation]      = 4194304. /* = instruction */
 lang:physical:capacity[`MethodInvocation]    = 4194304. /* = instruction */
-lang:physical:capacity[`StringConstant]      = 4194304./* = HeapAllocation */
-lang:physical:capacity[`ClassConstant]       = 4194304./* = HeapAllocation */
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 131072.
 lang:physical:capacity[`Var]                 = 2097152. /* 2^21 */
@@ -568,3 +582,9 @@ lang:physical:capacity[`NullType]            = 32768.
 lang:physical:capacity[`ArrayType]           = 32768.
 lang:physical:capacity[`ClassType]           = 32768.
 lang:physical:capacity[`InterfaceType]       = 32768.
+
+lang:physical:capacity[`HeapAllocation]      = 4194304.
+lang:physical:capacity[`NormalHeap]          = 4194304.
+lang:physical:capacity[`StringConstant]      = 4194304.
+lang:physical:capacity[`ClassHeap]           = 4194304.
+lang:physical:capacity[`StringRaw]           = 4194304.

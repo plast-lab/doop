@@ -1,15 +1,4 @@
-/**
- * TODO Handle version for multiarray? If yes, add to ReifiedClass as well
- */
-+TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
-+java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
-  Method:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
-  MethodInvocation:Signature[?invocation] = ?sig,
-  StaticMethodInvocation:Insn(?invocation),
-  AssignReturnValue[?invocation] = ?to,
-  ActualParam[0, ?invocation] = ?param,
-  ArrayType(?arrayType),
-  ReflectiveArrayMacro(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr, "").
+#include "../../commonMacros.logic"
 
 +LoadArrayIndex(?array, ?value, ?inmethod)/*,
 +java:lang:reflect:Array:get(?invocation)*/ <-

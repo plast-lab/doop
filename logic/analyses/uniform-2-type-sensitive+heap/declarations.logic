@@ -1,12 +1,5 @@
-// In this analysis, the real context is a pair of HeapAllocations and a
-// MethodInvocation. Keeping mapping functions is the way to handle analyses
-// where HContext = Context (since the language considers them different
-// types).
-// NOTE: Changed from HeapAllocation to CallGraphEdgeSource in order to use the
-// invocation site for static calls.
 ContextFromRealContext[?type1, ?invocation, ?type2] = ?ctx ->
-  Instruction(?type1), Instruction(?type2),
-  Instruction(?invocation), Context(?ctx).
+  Instruction(?type1), Instruction(?invocation), Instruction(?type2), Context(?ctx).
 lang:skolem(`ContextFromRealContext).
 RealContext1FromContext[?ctx] = ?type ->
   Context(?ctx), Instruction(?type).
