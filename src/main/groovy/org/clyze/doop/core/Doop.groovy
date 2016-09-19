@@ -118,7 +118,7 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"ENABLE_CONTEXT_SENSITIVE_LIBRARY_ANALYSIS",
+            id:"CONTEXT_SENSITIVE_LIBRARY_ANALYSIS",
             name:"enable-cs-library",
             description:"Enable context-sensitive analysis for internal library objects.",
             value:false,
