@@ -138,7 +138,9 @@ MethodNameMatchingStringConstantExact:Signature(?sig, ?heap)
      // reflectively, even in system classes. Maybe one needs to 
      // circumvent access control, or maybe one wants to treat all
      // fields uniformly and some are inherited from a system superclass.
-  Method:SimpleName[?sig] = ?string.
+  Method:SimpleName[?sig] = ?string,
+  ?string != "<init>",
+  ?string != "<clinit>". // common, yet not methods callable via reflection
 
 FieldNameMatchingStringConstant(?heap) -> HeapAllocation(?heap).
 FieldNameMatchingStringConstant:Signature(?sig, ?heap) ->
@@ -179,7 +181,10 @@ MethodNameMatchingStringConstantInexact:Signature(?sig, ?heap)
   Method:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
   (MethodNameSuffix(?sig, ?string);
-   MethodNamePrefix(?sig, ?string)).
+   MethodNamePrefix(?sig, ?string)),
+  ?string != "<init>",
+  ?string != "<clinit>". // common, yet not methods callable via reflection
+   
 
 FieldNameMatchingStringConstant(?heap),
 FieldNameMatchingStringConstant:Signature(?sig, ?heap),
@@ -296,14 +301,10 @@ VarAssignedFromStringFactoryVar(?ret, ?base)
   StringFactoryVar(?base),
   AssignReturnValue[?invocation] = ?ret.
 
-/*
-// VERSION A (Version B is below). They are interchangeable.  Ver. A
-// is far too slow with the current runtime when reflection strings
-// are not merged. When they are merged, however, this becomes fast
-// enough to work well (much better than B, e.g., for hsqldb-2typeH).
-// Note: Ver. A + MERGE_STRING_BUFFERS subsumes the merging of Ver. B
-// (but is more severe: merges the string buffers for all purposes).
-
+// There can be many variations of the code below: less precision
+// (merge reflection strings), less coverage (require that string
+// in/out operations on Builders/Buffers are in the same method).  The
+// current approach (precise) seems to work ok.
 VarFlowsIntoStringFactory(?factoryHctx, ?factoryHeap, ?ctx, ?var)
  <-
   VarOfReflectionInterest(?ctx, ?var),
@@ -323,50 +324,11 @@ ReflectionObjectVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
 OptVarMethod(?method, ?var) <-
   Var:DeclaringMethod(?var, ?method).
 
-// The next two are the killer rules, under the current runtime
-ReflectionObjectFlowsIntoStringFactory(?inmethod, ?hctx, ?heap, ?factoryHctx, ?factoryHeap)
- <-
-  VarFlowsIntoStringFactory(?factoryHctx, ?factoryHeap, ?ctx, ?var),
-  ReflectionObjectVarPointsTo(?hctx, ?heap, ?ctx, ?var),
-  OptVarMethod(?inmethod, ?var).
-
-//// temporary name, used to distinguish during experiments
-//ReflectionObjectFlowsIntoVar(?hctx, ?heap, ?ctx, ?var)
-VarPointsTo(?hctx, ?heap, ?ctx, ?var)
- <-
-  ReflectionObjectFlowsIntoStringFactory(?method, ?hctx, ?heap, ?factoryHctx, ?factoryHeap),
-  VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryHeap),
-  OptVarMethod(?method, ?var).
-
-// END VERSION A
-*/
-VarFlowsIntoStringFactory(?factoryHctx, ?factoryHeap, ?ctx, ?var)
- <-
-  VarOfReflectionInterest(?ctx, ?var),
-  VarAssignedToStringFactoryVar(?var, ?factoryVar),
-  StringFactoryVarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?factoryVar).
-
-VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryHeap)
- <-
-  VarAssignedFromStringFactoryVar(?var, ?factoryVar),
-  StringFactoryVarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?factoryVar).
-
-VarOfReflectionInterest(?ctx, ?var),
-ReflectionObjectVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  VarPointsTo(?hctx, ?heap, ?ctx, ?var),
-  ReflectionSubstringObject(?heap).
-
-OptVarMethod(?method, ?var) <-
-  Var:DeclaringMethod(?var, ?method).
-
-// The next two are the killer rules, under the current runtime
 ReflectionObjectFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap)
  <-
   VarFlowsIntoStringFactory(?factoryHctx, ?factoryHeap, ?ctx, ?var),
   ReflectionObjectVarPointsTo(?hctx, ?heap, ?ctx, ?var).
 
-//// temporary name, used to distinguish during experiments
-//ReflectionObjectFlowsIntoVar(?hctx, ?heap, ?ctx, ?var)
 VarPointsTo(?hctx, ?heap, ?ctx, ?var)
  <-
   ReflectionObjectFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap),
