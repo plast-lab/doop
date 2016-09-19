@@ -114,7 +114,7 @@ ResolvedForNameInvocation(?invocation) <-
   java:lang:Class:forName(?invocation, ?inmethod),
 //  ActualParam[0, ?invocation] = ?param,
   AssignContextInsensitiveHeapAllocation(?string, _, ?inmethod),
-  ClassNameStringConstant(?string).
+  ClassNameMatchingStringConstant(?string).
 
 ResolvedForNameInvocation(?invocation) <-
   java:lang:Class:forName(?invocation, _),
@@ -133,7 +133,7 @@ UnresolvedForNameInvocation(?ctx, ?invocation) <-
   !ResolvedForNameInvocation(?invocation),
   ActualParam[0, ?invocation] = ?param,
   VarPointsTo(_, ?nonstring, ?ctx, ?param),
-  !ClassNameStringConstant(?nonstring).
+  !ClassNameMatchingStringConstant(?nonstring).
 
 // ... and next comes the logic to tie it all together. This is amazingly nice!
 // If a special unknown object o that got created from a newInstance
@@ -183,7 +183,7 @@ InferredType:AssignCast(?subtype, ?from) <-
 TypeMatchingMethod(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
 TypeMatchingMethod(?subtype, ?constant) <-
-  MethodNameStringConstant:Signature(?signature, ?constant),
+  MethodNameMatchingStringConstant:Signature(?signature, ?constant),
   Method:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
@@ -211,7 +211,7 @@ BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
 TypeMatchingFieldName(?type, ?constant) ->
   Type(?type), HeapAllocation(?constant).
 TypeMatchingFieldName(?subtype, ?constant) <-
-  FieldNameStringConstant:Signature(?signature, ?constant),
+  FieldNameMatchingStringConstant:Signature(?signature, ?constant),
   Field:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
@@ -365,7 +365,7 @@ UnresolvedGetMethodInvocation(?ctx, ?invocation) <-
     "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>"),
    ActualParam[0, ?invocation] = ?param,
    VarPointsTo(_, ?nonstring, ?ctx, ?param),
-   !ClassNameStringConstant(?nonstring).
+   !ClassNameMatchingStringConstant(?nonstring).
 
 OptGetMethodClass(?type, ?ctx, ?getMethodInvocation) <-
   UnresolvedGetMethodInvocation(?ctx, ?getMethodInvocation),
@@ -507,7 +507,7 @@ UnresolvedGetFieldInvocation(?ctx, ?invocation) <-
     "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>"),
    ActualParam[0, ?invocation] = ?param,
    VarPointsTo(_, ?nonstring, ?ctx, ?param),
-   !ClassNameStringConstant(?nonstring).
+   !ClassNameMatchingStringConstant(?nonstring).
 
 OptGetFieldClass(?type, ?ctx, ?getFieldInvocation) <-
   UnresolvedGetFieldInvocation(?ctx, ?getFieldInvocation),
