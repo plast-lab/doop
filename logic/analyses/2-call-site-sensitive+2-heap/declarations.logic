@@ -3,17 +3,17 @@
 // where HContext = Context (since the language considers them different
 // types).
 ContextFromRealContext[?invocation1, ?invocation2] = ?ctx ->
-  Context(?ctx), CallGraphEdgeSource(?invocation1), CallGraphEdgeSource(?invocation2).
+  Context(?ctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
 lang:skolem(`ContextFromRealContext).
 RealContext1FromContext[?ctx] = ?invocation ->
-  Context(?ctx), CallGraphEdgeSource(?invocation).
+  Context(?ctx), MethodInvocation(?invocation).
 RealContext2FromContext[?ctx] = ?invocation ->
-  Context(?ctx), CallGraphEdgeSource(?invocation).
+  Context(?ctx), MethodInvocation(?invocation).
 
 HContextFromRealHContext[?invocation1, ?invocation2] = ?hctx ->
-  HContext(?hctx), CallGraphEdgeSource(?invocation1), CallGraphEdgeSource(?invocation2).
+  HContext(?hctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
 lang:skolem(`HContextFromRealHContext).
 RealHContext1FromHContext[?hctx] = ?invocation ->
-  HContext(?hctx), CallGraphEdgeSource(?invocation).
+  HContext(?hctx), MethodInvocation(?invocation).
 RealHContext2FromHContext[?hctx] = ?invocation ->
-  HContext(?hctx), CallGraphEdgeSource(?invocation).
+  HContext(?hctx), MethodInvocation(?invocation).

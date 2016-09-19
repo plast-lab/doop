@@ -28,7 +28,7 @@
     <- \
       Method:Value(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
-      HeapAllocationValue(?heap, strHeap). \
+      HeapAllocation:byValue[strHeap] = ?heap. \
   \
   +SpecialMethodInvocation:Base[?invocation] = ?return, \
   +Instruction:Method[?invocation] = ?method, \
@@ -42,32 +42,12 @@
       Method:Value(?constructor:strConstructor), \
       ?index = 1
 
-#define SimulateNativeArrayAllocation(strMethod, strArray, strElement, strElementType) \
-  +AssignHeapAllocation(?heap, ?return, ?method) \
-    <- \
-      Method:Value(?method:strMethod), \
-      ReturnVar@previous(?return, ?method), \
-      HeapAllocationValue(?heap, strArray). \
-  \
-  +Var:Value(?var), \
-  +Var:Value(?var:?strVar), \
-  +Var:Type[?var] = ?type, \
-  +Var:DeclaringMethod(?var, ?method), \
-  +AssignHeapAllocation(?heap, ?var, ?method), \
-  +StoreArrayIndex(?var, ?base, ?method) \
-    <- \
-      Method:Value(?method:strMethod), \
-      ReturnVar@previous(?base, ?method), \
-      ?strVar = strMethod + "/@native-array-element", \
-      Type:Value(?type:strElementType), \
-      HeapAllocationValue(?heap, strElement)
-
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
   +AssignHeapAllocation(?heap, ?return, ?method) \
     <- \
       Method:Value(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
-      HeapAllocationValue(?heap, strArray). \
+      HeapAllocation:byValue[strArray] = ?heap. \
   \
   +Var(?var), \
   +Var:Value(?var:?strVar), \
@@ -80,7 +60,7 @@
       ReturnVar@previous(?base, ?method), \
       ?strVar = strMethod + "/@native-array-element", \
       Type:Value(?type:strElementType), \
-      HeapAllocationValue(?heap, strElement)
+      HeapAllocation:byValue[strElement] = ?heap
 
 #define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
   PlusVirtualMethodInvocation(?invocation, ?strInvocation), \
@@ -176,10 +156,6 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
  *
  **********************************************************************************/
 
-PlusHeapAllocation(?alloc, "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem", "java.io.UnixFileSystem").
-PlusHeapAllocation(?alloc, "java.io.UnixFileSystem.list/new java.lang.String[]", "java.lang.String[]").
-PlusHeapAllocation(?alloc, "java.io.UnixFileSystem.list/new java.lang.String", "java.lang.String").
-
 SimulateNativeAllocation(
   "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
   "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
@@ -248,27 +224,3 @@ SimulateNativeStaticToVirtual(
 SimulateNativeStaticToVirtual(
   "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>",
   "<java.security.PrivilegedExceptionAction: java.lang.Object run()>").
-
-
-/**
- * Heap object to simulate the arguments array of the main method and a single
- * heap object to simulate any external argument stored in the array.
- */
-+MainMethodArgsArray(?arrayHeap),
-+MainMethodArgHeap(?heap),
-+Instruction:Value(?arrayHeap:?arrayHeapStr),
-+HeapAllocation(?arrayHeap),
-+HeapAllocation:Type[?arrayHeap] = "java.lang.String[]",
-+Instruction:Value(?heap:?heapStr),
-+HeapAllocation(?heap),
-+HeapAllocation:Type[?heap] = "java.lang.String" <-
-  ?arrayHeapStr = "<Main Method Arguments Array>",
-  ?heapStr = "<Main Method Argument Heap Object>".
-
-
-/**
- * Special initial system objects
- */
-PlusHeapAllocation(?alloc, "<<system-thread-group>>", "java.lang.ThreadGroup").
-PlusHeapAllocation(?alloc, "<<main-thread-group>>", "java.lang.ThreadGroup").
-PlusHeapAllocation(?alloc, "<<main-thread>>", "java.lang.Thread").

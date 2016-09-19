@@ -351,11 +351,11 @@ _Properties(?param1, ?param2, ?param3) ->
   string(?param2),
   string(?param3).
 
-+Instruction:Value(?path:?param1),
-+StringConstant(?path),
-+Instruction:Value(?key:?param2),
-+StringConstant(?key),
-+Instruction:Value(?value:?param3),
-+StringConstant(?value),
-+Properties[?path, ?key] = ?value <-
-  _Properties(?param1, ?param2, ?param3).
+//+Instruction:Value(?path:?param1),
+//+StringConstant(?path),
+//+Instruction:Value(?key:?param2),
+//+StringConstant(?key),
+//+Instruction:Value(?value:?param3),
+//+StringConstant(?value),
+//+Properties[?path, ?key] = ?value <-
+//  _Properties(?param1, ?param2, ?param3).
