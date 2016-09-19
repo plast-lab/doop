@@ -1331,3 +1331,46 @@ ReifiedField[?fld] = ?heap
    Field:Value(?fld:?signature),
    ?heapId = "<<reified field " + ?signature + ">>",
    Type:Value(?type:"java.lang.reflect.Field").
+
+
+
+
+#ifdef REFLECTION_INVENT_UNKNOWN_OBJECTS
+
+// This is the representative of an unknown reflective object, after it has been cast. 
+// Has a real type. We pre-generate for all types and casts in the universe.
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?strHeap] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+UnknownReflectiveObject[?type, ?invocation] = ?heap
+<-
+   AssignCast(?type, _, _, _),
+   ClassType(?type),
+   Type:Value(?type:?strType),
+   (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    Method:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   MethodInvocation:Signature[?invocation] = ?method,
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Value(?invocation:?strInvocation),
+   ?strHeap = "<<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">>".
+
+// This is the representative of an unknown reflective object that flows from the reflection
+// operation to a cast.
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?strHeap] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+MarkerReflectiveObject[?invocation] = ?heap
+<-
+   (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    Method:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    Method:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   MethodInvocation:Signature[?invocation] = ?method,
+   VirtualMethodInvocation:Insn(?invocation),
+   Type:Value(?type:"java.lang.Object"),
+   Instruction:Value(?invocation:?strInvocation),
+   ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
+
+#endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
