@@ -27,19 +27,19 @@ HContext(?hctx),
 HContextFromRealHContext[?type, ?type, ?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
   Type:Value(?type, "<<jvm-startup>>"),
-  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type, ?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
   Type:Value(?type, "<<jvm-startup>>"),
-  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type, ?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
   Type:Value(?type, "<<jvm-startup>>"),
-  HeapAllocationValue(?alloc, "<<main-thread>>").
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
 // Merge optimization hack

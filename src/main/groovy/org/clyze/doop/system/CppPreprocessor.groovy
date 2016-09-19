@@ -8,6 +8,17 @@ import org.clyze.doop.core.AnalysisOption
 @TypeChecked
 class CppPreprocessor {
 
+    static void preprocessIfExists(Analysis analysis, String output, String input, String... includes) {
+        if (new File(input).isFile())
+            preprocess(analysis, output, input, includes)
+        else {
+            def tmpFile = new File(FileUtils.getTempDirectory(), "tmpFile")
+            tmpFile.createNewFile()
+            preprocess(analysis, output, tmpFile.getCanonicalPath(), includes)
+            FileUtils.deleteQuietly(tmpFile)
+        }
+    }
+
     static void preprocess(Analysis analysis, String output, String input, String... includes) {
         def macroCli = analysis.options.values()
         .findAll { AnalysisOption option ->

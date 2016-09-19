@@ -71,11 +71,11 @@ VarPointsTo(?hctx, ?classNameHeap, ?callerCtx, ?to) <-
   ImmutableHContext[] = ?hctx,
   java:lang:Class:getName(?to, ?from),
   VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
-  Instruction:Value(?classHeap:?str),
+  HeapAllocation:Value[?classHeap] = ?str,
   // ?str is of the form "<class TYPE>" ; we want TYPE
   string:substring[?str, 7, string:length[?str] - 8] = ?className,
-  StringConstant(?classNameHeap),
-  Instruction:Value(?classNameHeap:?className).
+  HeapAllocation:byValue[?className] = ?classNameHeap,
+  StringConstant(?classNameHeap).
 
 
 /*************************************************************
@@ -402,7 +402,8 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:Class:getClassLoader(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
-  ReflectiveHeapAllocation[?invocation, "java.lang.ClassLoader"] = ?heap.
+  Type:Value(?type:"java.lang.ClassLoader"),
+  ReflectiveHeapAllocation[?invocation, ?type] = ?heap.
   
 /*************************************************************
  * java.lang.ClassLoader.getResource
@@ -417,4 +418,5 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
-  ReflectiveHeapAllocation[?invocation, "java.net.URL"] = ?heap.
+  Type:Value(?type:"java.net.URL"),
+  ReflectiveHeapAllocation[?invocation, ?type] = ?heap.

@@ -27,4 +27,4 @@
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[heap] = newCtx
+  ContextFromRealContext[FakeInvocation:RegisterFinalize[heap]] = newCtx

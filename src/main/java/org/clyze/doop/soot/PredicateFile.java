@@ -38,10 +38,11 @@ enum PredicateFile
     ASSIGN_NUM_CONST("AssignNumConstant"),
     ASSIGN_NULL("AssignNull"),
     ASSIGN_INSTANCE_OF("AssignInstanceOf"),
-    NORMAL_OBJ("NormalObject"),
+    NORMAL_HEAP("NormalHeap"),
     EMPTY_ARRAY("EmptyArray"),
-    CLASS_OBJ("ClassObject"),
+    CLASS_HEAP("ClassHeap"),
     STRING_CONST("StringConstant"),
+    STRING_RAW("StringRaw"),
     FIELD_SIGNATURE("Field"),
     ENTER_MONITOR("EnterMonitor"),
     EXIT_MONITOR("ExitMonitor"),
@@ -82,19 +83,16 @@ enum PredicateFile
 
     private final String name;
 
-    PredicateFile(String name)
-    {
+    PredicateFile(String name) {
         this.name = name;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return  name;
     }
 
-    public Writer getWriter(File directory, String suffix) throws IOException
-    {
+    public Writer getWriter(File directory, String suffix) throws IOException {
         File factsFile = new File(directory, name + suffix);
         FileUtils.touch(factsFile);
         return new FileWriter(factsFile);

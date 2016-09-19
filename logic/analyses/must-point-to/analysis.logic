@@ -85,10 +85,10 @@ MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 // ?invocation. In this way, information can be passed to the callee,
 // but only qualified by ?calleeCtx.
 MustCallGraphEdge:ToMethod[?invocation] = ?toMethod ->
-   CallGraphEdgeSource(?invocation), 
+   MethodInvocation(?invocation), 
    Method(?toMethod).
 MustCallGraphEdge:Context[?ctx, ?invocation] = ?calleeCtx ->
-   CallGraphEdgeSource(?invocation), 
+   MethodInvocation(?invocation), 
    MustContext(?calleeCtx), MustContext(?ctx).
 
 // static or special method invocation without "this" value
@@ -776,7 +776,7 @@ MustContext(?ctx) <-
    EmptyContext[] = ?emptyCtx.
 
 PushMustContext[?invo, ?ctx] = ?pushedCtx ->
-   MustContext(?pushedCtx), MustContext(?ctx), CallGraphEdgeSource(?invo).
+   MustContext(?pushedCtx), MustContext(?ctx), MethodInvocation(?invo).
 lang:skolem(`PushMustContext).
 PopMustContext[?ctx] = ?poppedCtx ->
    MustContext(?poppedCtx), MustContext(?ctx).
@@ -789,7 +789,7 @@ PopMustContext[?ctx] = ?poppedCtx <-
 //    PushAllOntoContext[?poppedCtx] = ?ctx.
 
 InvoFromContext[?ctx] = ?invocation ->
-   MustContext(?ctx), CallGraphEdgeSource(?invocation).
+   MustContext(?ctx), MethodInvocation(?invocation).
 InvoFromContext[?ctx] = ?invocation <- 
    PushMustContext[?invocation, _] = ?ctx.
 

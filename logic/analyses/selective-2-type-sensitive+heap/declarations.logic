@@ -4,8 +4,6 @@
 // Context (since the language considers them different types).  The type is
 // not always a class type, because of arrays currently being a non-class
 // subtype of Object
-// NOTE: Changed from HeapAllocation to CallGraphEdgeSource in order to use the
-// invocation site for static calls.
 ContextFromRealContext[?type1, ?type2] = ?ctx ->
   Context(?ctx), Instruction(?type1), Instruction(?type2).
 lang:skolem(`ContextFromRealContext).
@@ -13,8 +11,7 @@ lang:skolem(`ContextFromRealContext).
 // NOTE: Use the following when using both the normal (caller's) context and
 // the invocation site for static calls.
 SpecialContextFromRealContext[?type1, ?invocation, ?type2] = ?ctx ->
-  Instruction(?type1), Instruction(?type2),
-  CallGraphEdgeSource(?invocation), Context(?ctx).
+  Instruction(?type1), MethodInvocation(?invocation), Instruction(?type2), Context(?ctx).
 lang:skolem(`SpecialContextFromRealContext).
 
 RealContext1FromContext[?ctx] = ?type ->

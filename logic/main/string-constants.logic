@@ -21,11 +21,11 @@ HeapAllocation:Special(?heap) -> HeapAllocation(?heap).
 /**
  * Objects that should use a context-insensitive heap abstraction.
  */
-HeapAllocation:ContextInsensitive(?heap) ->
+HeapAllocation:Mockup:ContextInsensitive(?heap) ->
   HeapAllocation(?heap).
 
 HeapAllocation:Special(?heap) <-
-  HeapAllocation:ContextInsensitive(?heap).
+  HeapAllocation:Mockup:ContextInsensitive(?heap).
 
 /**
  * Objects that should be merged to some heap abstraction (implies context-insensitive)
@@ -50,7 +50,7 @@ AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) <-
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
-  HeapAllocation:ContextInsensitive(?heap).
+  HeapAllocation:Mockup:ContextInsensitive(?heap).
 
 /*************************************************************
  * String constants
@@ -62,7 +62,7 @@ ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 #ifdef DISTINGUISH_NO_STRING_CONSTANTS
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
-  HeapAllocationValue(?constant, "<<string-constant>>").
+  HeapAllocation:byValue["<<string-constant>>"] = ?constant.
 #endif
 #ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 ReflectionObject(?heap) <-
@@ -78,7 +78,7 @@ ReflectionSubstringObject(?heap) <-
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   ! ReflectionObject(?heap), 
-  HeapAllocationValue(?constant, "<<string-constant>>").
+  HeapAllocation:byValue["<<string-constant>>"] = ?constant.
 
 #ifdef REFLECTION_MERGE_MEMBER_CONSTANTS
 // There are two reasonable options: merge all, or merge just method and
@@ -88,43 +88,43 @@ HeapAllocation:Merge[?heap] = ?constant <-
   (MethodNameStringConstant(?heap);
    FieldNameStringConstant(?heap)),
   !ClassNameStringConstant(?heap),
-  HeapAllocationValue(?constant, "<<reflection-string-constant>>").
+  HeapAllocation:byValue["<<reflection-string-constant>>"] = ?constant.
 
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ClassNameStringConstant(?heap).
 
 // ClassNameStringConstant(?constant),
 // ClassNameStringConstant:Type(?type, ?constant)
 //   <-
 //   ClassNameStringConstant:Type(?type, _),
-//   HeapAllocationValue(?constant, "<<reflection-string-constant>>").
+//   HeapAllocation:byValue["<<reflection-string-constant>>"] = ?constant.
 
 MethodNameStringConstant(?constant),
 MethodNameStringConstant:Signature(?sig, ?constant)
   <-
   MethodNameStringConstantInexact:Signature(?sig, _),
-  HeapAllocationValue(?constant, "<<reflection-string-constant>>").
+  HeapAllocation:byValue["<<reflection-string-constant>>"] = ?constant.
 
 FieldNameStringConstant(?constant),
 FieldNameStringConstant:Signature(?sig, ?constant)
   <-
   FieldNameStringConstantInexact:Signature(?sig, _),
-  HeapAllocationValue(?constant, "<<reflection-string-constant>>").
+  HeapAllocation:byValue["<<reflection-string-constant>>"] = ?constant.
 
 #else
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ReflectionObject(?heap).
 #endif // REFLECTION_MERGE_MEMBER_CONSTANTS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 #ifdef DISTINGUISH_ALL_STRING_CONSTANTS
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   StringConstant(?heap).
 #endif 
 
 NonTrivialStringConstant(?heap) <-
   StringConstant(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   string:length[?string] >= 6.
 
 /**
@@ -146,7 +146,7 @@ ClassNameStringConstant:Type(?type, ?heap),
 ClassNameStringConstantExact:Type(?type, ?heap)
   <-
   StringConstant(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   ReferenceType(?type),
   (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
      // library classes are known and in known packages. Makes no sense
@@ -166,7 +166,7 @@ MethodNameStringConstant:Signature(?sig, ?heap),
 MethodNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   Method:DeclaringType[?sig] = ?type, 
   (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
      // there is some possibility of accessing methods and fields
@@ -188,7 +188,7 @@ FieldNameStringConstant:Signature(?sig, ?heap),
 FieldNameStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   Field:DeclaringType[?sig] = ?declaringClass,
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
   Field:SimpleName[?sig] = ?string.
@@ -201,7 +201,7 @@ ClassNameStringConstant:Type(?type, ?heap),
 ClassNameStringConstantInexact:Type(?type, ?heap)
   <-
   NonTrivialStringConstant(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   ClassNameSuffix(?type, ?string),
   ApplicationClass(?type).
 
@@ -210,7 +210,7 @@ MethodNameStringConstant:Signature(?sig, ?heap),
 MethodNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   Method:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
   (MethodNameSuffix(?sig, ?string);
@@ -221,7 +221,7 @@ FieldNameStringConstant:Signature(?sig, ?heap),
 FieldNameStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
-  Instruction:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   Field:DeclaringType[?sig] = ?declaringClass,
   ApplicationClass(?declaringClass),
   (FieldNameSuffix(?sig, ?string);
@@ -280,7 +280,7 @@ FieldNamePrefix(?sig, ?prefix) <-
 //ClassNameStringConstant:Type(?type, ?heap)
 //  <-
 //  NonTrivialStringConstant(?heap),
-//  Instruction:Value(?heap:?string),
+//  HeapAllocation:Value[?heap] = ?string,
 //  ClassNameSuffix(?type, ?suffix),
 //  string:substring[?suffix, _, string:length[?string]] = ?string.
 //
@@ -288,7 +288,7 @@ FieldNamePrefix(?sig, ?prefix) <-
 //MethodNameStringConstant:Signature(?sig, ?heap)
 //  <-
 //  NonTrivialStringConstant(?heap),
-//  Instruction:Value(?heap:?string),
+//  HeapAllocation:Value[?heap] = ?string,
 //  Method:SimpleName[?sig] = ?methodName,
 //  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
 
@@ -434,8 +434,8 @@ ReflectionObjectFlowsIntoVar(?hctx, ?heap, ?ctx, ?var) <-
  * Class constants
  *************************************************************/
 
-HeapAllocation:ContextInsensitive(?heap) <-
-  ClassConstant(?heap).
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
+  ClassHeap(?heap).
 
 
 /*************************************************************
@@ -446,12 +446,12 @@ HeapAllocation:ContextInsensitive(?heap) <-
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuffer"),
-  HeapAllocationValue(?mergeHeap, "<<string-buffer>>").
+  HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap.
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuilder"),
-  HeapAllocationValue(?mergeHeap, "<<string-builder>>").
+  HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap.
 #endif
 
 
@@ -524,7 +524,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
  // produced huge ThrowPointsTo sets and caused slowdowns.
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   ExceptionType(HeapAllocation:Type[?heap]).
 #else
 
@@ -579,7 +579,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  *
  *************************************************************/
 
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   HeapAllocation:Type[?heap] = ?type,
   ArrayType(?type),
   ComponentType[?type] = ?componentType,
@@ -603,7 +603,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
  * but doesn't hurt much either.
  *************************************************************/
 /*
-HeapAllocation:ContextInsensitive(?heap) <-
+HeapAllocation:Mockup:ContextInsensitive(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   Type:HasNoReferenceField(?heaptype),
   !(HeapAllocation:Merge[?heap] = _).
