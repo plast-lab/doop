@@ -1,5 +1,5 @@
 ReifiedClass[?type] = ?heap ->
-  Type(?type), ClassHeap(?heap).
+  ReferenceType(?type), ClassHeap(?heap).
 
 ReifiedConstructor[?constructor] = ?heap ->
   Method(?constructor), HeapAllocation(?heap).
@@ -14,7 +14,7 @@ ReifiedField[?field] = ?heap ->
 ReflectiveHeap(?heap) -> HeapAllocation(?heap).
 
 ReflectiveHeapAllocation[?instruction, ?type] = ?heap ->
-  Instruction(?instruction), Type(?type), HeapAllocation(?heap).
+  Instruction(?instruction), ReferenceType(?type), HeapAllocation(?heap).
 
 // Special objects to signify unknown results of reflective calls
 SpecialMissingForNameHeap[?invocation] = ?heap ->
@@ -142,5 +142,5 @@ java:lang:ClassLoader:getResource(?invocation, ?to, ?from) ->
   MethodInvocation(?invocation), Var(?to), Var(?from).
 
 
-TempDelta(?invocation, ?classType, ?heapType, ?heapStr) ->
-  MethodInvocation(?invocation), Type(?classType), Type(?heapType), string(?heapStr).
+//TempDelta(?invocation, ?classType, ?heapType, ?heapStr) ->
+//  MethodInvocation(?invocation), ReferenceType(?classType), Type(?heapType), string(?heapStr).
