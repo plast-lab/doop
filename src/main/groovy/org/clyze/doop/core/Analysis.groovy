@@ -379,17 +379,12 @@ class Analysis implements Runnable {
         }
 
         if (options.ENABLE_REFLECTION.value) {
-            def reflectionPath = "${mainPath}/reflection"
-            preprocess(this, "${outDir}/reflection-delta.logic", "${reflectionPath}/delta.logic")
-            preprocess(this, "${outDir}/reflection-allocations-delta.logic", "${reflectionPath}/allocations-delta.logic")
+            preprocess(this, "${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
             lbScript
                 .commit()
                 .transaction()
                 .executeFile("reflection-delta.logic")
-                .commit()
-                .transaction()
-                .executeFile("reflection-allocations-delta.logic")
                 .commit()
                 .transaction()
         }
