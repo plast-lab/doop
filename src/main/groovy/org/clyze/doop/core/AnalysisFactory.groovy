@@ -304,10 +304,6 @@ import org.clyze.doop.system.*
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
         }
 
-        if (options.ENABLE_CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
-            options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value = true
-        }
-
         if (options.DACAPO.value) {
             if (!options.ENABLE_REFLECTION.value) {
                 def inputJarName = vars.inputJarFiles[0].toString()
