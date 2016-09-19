@@ -221,7 +221,7 @@ Stats:Dominance:InstanceFieldPointsTo:ValueObject[?hctx, ?heap] = count <-
  ***************************************************/
 
 /*
-Stats:InsensCallGraphEdgesFromSize[?from] = ?size -> CallGraphEdgeSource(?from), int[64](?size).
+Stats:InsensCallGraphEdgesFromSize[?from] = ?size -> MethodInvocation(?from), int[64](?size).
 Stats:InsensCallGraphEdgesFromSize[?from] = size <-
 	agg<<size = count()>>(Stats:Simple:InsensCallGraphEdge(?from, _)).
 

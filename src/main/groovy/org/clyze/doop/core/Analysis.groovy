@@ -249,6 +249,7 @@ class Analysis implements Runnable {
         preprocess(this, "${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
         preprocess(this, "${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
         preprocess(this, "${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
+        preprocess(this, "${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic")
 
         lbScript
             .createDB(database.getName())
@@ -257,10 +258,8 @@ class Analysis implements Runnable {
             .transaction()
             .addBlockFile("flow-sensitive-schema.logic")
             .addBlockFile("flow-insensitive-schema.logic")
-            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
             .executeFile("import-entities.logic")
             .executeFile("import-facts.logic")
-            .executeFile("to-flow-insensitive-delta.logic")
 
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
@@ -275,9 +274,14 @@ class Analysis implements Runnable {
         }
 
         if (options.MAIN_CLASS.value)
-            lbScript.execute("""+MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
+            lbScript.addBlock("""MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
 
         lbScript
+            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
+            .addBlockFile("post-process.logic")
+            .commit()
+            .transaction()
+            .executeFile("to-flow-insensitive-delta.logic")
             .commit()
             .elapsedTime()
 
@@ -303,8 +307,8 @@ class Analysis implements Runnable {
             }
         }
 
-        def factMacros = "${Doop.factsPath}/macros.logic"
-        preprocess(this, "${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", factMacros)
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
+        preprocess(this, "${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 
         lbScript
             .echo("-- Basic Analysis --")
@@ -327,9 +331,9 @@ class Analysis implements Runnable {
      * Performs the main part of the analysis.
      */
     protected void mainAnalysis() {
-        def factMacros   = "${Doop.factsPath}/macros.logic"
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
-        def corePath     = "${Doop.analysesPath}/core"
+        def mainPath     = "${Doop.logicPath}/main"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
         // By default, assume we run a context-sensitive analysis
@@ -344,15 +348,18 @@ class Analysis implements Runnable {
         }
         if (isContextSensitive) {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
-                             "${corePath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
-                             factMacros, "${corePath}/core-delta.logic")
+                             "${mainPath}/context-sensitivity-declarations.logic")
+            preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
+                             commonMacros, "${mainPath}/main-delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
-                             factMacros, macros, "${corePath}/context-sensitivity.logic")
+                             commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
-            preprocess(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
         }
 
@@ -361,6 +368,10 @@ class Analysis implements Runnable {
             .startTimer()
             .transaction()
             .addBlockFile("${safename}-declarations.logic")
+            .addBlockFile("prologue.logic")
+            .addBlockFile("${safename}-prologue.logic")
+            .commit()
+            .transaction()
             .executeFile("${safename}-delta.logic")
 
         if (options.SANITY.value) {
@@ -368,17 +379,12 @@ class Analysis implements Runnable {
         }
 
         if (options.ENABLE_REFLECTION.value) {
-            def reflectionPath = "${Doop.analysesPath}/core/reflection"
-            preprocess(this, "${outDir}/reflection-delta.logic", "${reflectionPath}/delta.logic")
-            preprocess(this, "${outDir}/reflection-allocations-delta.logic", "${reflectionPath}/allocations-delta.logic")
+            preprocess(this, "${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
             lbScript
                 .commit()
                 .transaction()
                 .executeFile("reflection-delta.logic")
-                .commit()
-                .transaction()
-                .executeFile("reflection-allocations-delta.logic")
                 .commit()
                 .transaction()
         }
@@ -397,9 +403,6 @@ class Analysis implements Runnable {
             preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
             preprocess(this, "${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
             preprocess(this, "${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
-            
-            logger.info "Adding Information flow rules to addons logic"
-            
             includeAtStart(this, "${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
 
             lbScript
@@ -411,21 +414,12 @@ class Analysis implements Runnable {
                 .transaction()
         }
 
-        if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            preprocess(this, "${outDir}/dacapo-declarations.logic", "${Doop.addonsPath}/dacapo/declarations.logic")
-            preprocess(this, "${outDir}/dacapo-delta.logic", "${Doop.addonsPath}/dacapo/delta.logic", macros)
-            logger.info "Adding DaCapo rules to addons logic"
+        if (options.DACAPO.value || options.DACAPO_BACH.value)
             includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic")
-
-            lbScript
-                .addBlockFile("dacapo-declarations.logic")
-                .executeFile("dacapo-delta.logic")
-        }
 
         if (options.TAMIFLEX.value) {
             preprocess(this, "${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
             preprocess(this, "${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
-            logger.info "Adding tamiflex rules to addons logic"
             includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic")
 
             lbScript
@@ -478,14 +472,11 @@ class Analysis implements Runnable {
 
         lbScript
             .echo("++++ Refinement ++++")
-            .echo("-- Pre-Export --")
+            .echo("-- Export --")
             .startTimer()
             .transaction()
             .executeFile("refinement-delta.logic")
             .commit()
-            .elapsedTime()
-            .echo("-- Export --")
-            .startTimer()
             .transaction()
             .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempSiteToRefine")
             .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempNegativeSiteFilter")
@@ -508,8 +499,8 @@ class Analysis implements Runnable {
                                option,quotedValues,true
                                option,escapeQuotedValues,true
 
-                               fromFile,"${outDir}/TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
-                               toPredicate,SiteToRefine,CallGraphEdgeSource""".toString().stripIndent(),
+                               fromFile,"${outDir}/TempSiteToRefine.csv",MethodInvocation,MethodInvocation
+                               toPredicate,SiteToRefine,MethodInvocation""".toString().stripIndent(),
 
                 "negative-site": """\
                                  option,delimiter,","
@@ -524,8 +515,8 @@ class Analysis implements Runnable {
                                  option,quotedValues,true
                                  option,escapeQuotedValues,true
 
-                                 fromFile,"${outDir}/TempObjectToRefine.csv",HeapAllocation,HeapAllocation
-                                 toPredicate,ObjectToRefine,HeapAllocation""".toString().stripIndent(),
+                                 fromFile,"${outDir}/TempObjectToRefine.csv",string,string
+                                 toPredicate,ObjectToRefine0,string""".toString().stripIndent(),
 
                 "negative-object": """\
                                    option,delimiter,","
@@ -547,6 +538,9 @@ class Analysis implements Runnable {
         }
 
         lbScript
+            .commit()
+            .transaction()
+            .addBlock("ObjectToRefine(?heap) <- ObjectToRefine0(?id), HeapAllocation:byValue[?id] = ?heap.")
             .commit()
             .elapsedTime()
     }

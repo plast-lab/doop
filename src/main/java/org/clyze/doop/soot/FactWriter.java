@@ -32,9 +32,9 @@ class FactWriter
     void writeProperty(String path, String key, String value)
     {
         // Add heap allocations for string constants
-        _db.add(STRING_CONST, _db.asEntity(path), _db.asEntity("java.lang.String"));
-        _db.add(STRING_CONST, _db.asEntity(key), _db.asEntity("java.lang.String"));
-        _db.add(STRING_CONST, _db.asEntity(value), _db.asEntity("java.lang.String"));
+        _db.add(STRING_CONST, _db.asEntity(path));
+        _db.add(STRING_CONST, _db.asEntity(key));
+        _db.add(STRING_CONST, _db.asEntity(value));
 
         _db.add(PROPERTIES,
                 _db.asEntity(path),
@@ -56,10 +56,7 @@ class FactWriter
             col = _db.addEntity(CLASS_TYPE, rep);
         }
 
-        _db.add(CLASS_OBJ,
-                _db.asEntity(_rep.classconstant(c)),
-                _db.addEntity(CLASS_TYPE, "java.lang.Class"),
-                col);
+        _db.add(CLASS_HEAP, _db.asEntity(_rep.classconstant(c)));
     }
 
     void writeDirectSuperclass(SootClass sub, SootClass sup)
@@ -187,7 +184,7 @@ class FactWriter
     {
         String heap = _rep.heapAlloc(m, expr, session);
 
-        _db.add(NORMAL_OBJ,
+        _db.add(NORMAL_HEAP,
                 _db.asEntity(heap),
                 writeType(expr.getType()));
 
@@ -243,7 +240,7 @@ class FactWriter
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add(NORMAL_OBJ,
+        _db.add(NORMAL_HEAP,
                 _db.asEntity(heap),
                 writeType(arrayType));
 
@@ -329,14 +326,17 @@ class FactWriter
 
     void writeAssignStringConstant(SootMethod m, Stmt stmt, Local l, StringConstant s, Session session)
     {
-        String heap = _rep.stringconstant(m, s);
+        String heap    = _rep.stringConstant(m, s);
+        String heapRaw = _rep.stringConstantRaw(m, s);
 
         // statement
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
+        _db.add(STRING_RAW, _db.asEntity(heap), _db.asEntity(heapRaw));
+
         // write heap allocation
-        _db.add(STRING_CONST, _db.asEntity(heap), writeType(s.getType()));
+        _db.add(STRING_CONST, _db.asEntity(heap));
 
         _db.add(ASSIGN_HEAP_ALLOC,
                 _db.asEntity(rep),
@@ -407,10 +407,7 @@ class FactWriter
         }
 
         // write heap allocation
-        _db.add(CLASS_OBJ,
-                _db.asEntity(heap),
-                _db.addEntity(CLASS_TYPE, "java.lang.Class"),
-                _db.asEntity(actualType));
+        _db.add(CLASS_HEAP, _db.asEntity(heap));
 
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
