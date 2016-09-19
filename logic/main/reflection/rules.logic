@@ -1283,16 +1283,14 @@ java:lang:reflect:Method:invoke(?invocation, ?method) <-
  * type of the allocated object.
  *************************************************************/
 
-// TODO: why?? what is ClassHeap then?
-
-HeapAllocation(?classHeap),
-HeapAllocation:Mockup:Con[?classHeapId] = ?classHeap,
+ClassHeap(?classHeap),
+HeapAllocation:Class:Con[?classHeapId] = ?classHeap,
 HeapAllocation:Type[?classHeap] = ?javaLangClass,
 ReifiedClass[?type] = ?classHeap
 <-
   ReferenceType(?type),
   Type:Value(?type:?typeStr),
-  ?classHeapId = "<<class " + ?typeStr + ">>",
+  ?classHeapId = "<class " + ?typeStr + ">",
   Type:Value(?javaLangClass:"java.lang.Class").
 
 /**
