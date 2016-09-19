@@ -44,8 +44,9 @@ _VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
 +_VarsPerAllocSite[?alloc] = ?count <-
   agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
 
-+TempObjectToRefine(?alloc) <-
++TempObjectToRefine(?allocId) <-
   _VarsPerAllocSite[?alloc] = ?count,
+  HeapAllocation:Value[?alloc] = ?allocId,
   ?count > 1500.
 
 +TempNegativeObjectFilter("true").
