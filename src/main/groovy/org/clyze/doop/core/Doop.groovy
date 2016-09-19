@@ -104,7 +104,7 @@ class Doop {
         /* Start of preprocessor normal flags */
         new AnalysisOption<Boolean>(
             id:"MERGE_STRING_BUFFERS",
-            name:"merge-string-buffers",
+            name:"enable-merge-string-buffers",
             value:false,
             webUI:true,
             forPreprocessor: true,
@@ -148,14 +148,6 @@ class Doop {
             forPreprocessor: true,
             isAdvanced:true,
             flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
-            name:"enable-reflection-merge-member-constants",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_STRING_FLOW_ANALYSIS",

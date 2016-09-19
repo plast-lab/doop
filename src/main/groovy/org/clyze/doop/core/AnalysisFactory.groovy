@@ -278,10 +278,6 @@ import org.clyze.doop.system.*
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
-        } else {
-            // Merging of method and field names happens only if we distinguish
-            // reflection strings in the first place.
-            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
         }
 
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
@@ -299,7 +295,6 @@ import org.clyze.doop.system.*
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
-            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = true
             options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
         }
@@ -384,7 +379,6 @@ import org.clyze.doop.system.*
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
                 options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
                 options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                 options.REFLECTION_CONTEXT_SENSITIVITY.value ||
