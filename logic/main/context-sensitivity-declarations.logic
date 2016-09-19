@@ -160,17 +160,19 @@ MainThread(?hctx, ?heap) ->
  * Filter predicate for refinement-based/adaptive analyses
  */
 
-SiteToRefine(?invocation) -> 
+SiteToRefine(?invocation) ->
   MethodInvocation(?invocation).
 
-TempSiteToRefine(?invocation) -> 
+TempSiteToRefine(?invocation) ->
   MethodInvocation(?invocation).
 
-ObjectToRefine(?heap) -> 
+ObjectToRefine0(?heap) ->
+  string(?heap).
+ObjectToRefine(?heap) ->
   HeapAllocation(?heap).
 
-TempObjectToRefine(?heap) -> 
-  HeapAllocation(?heap).
+TempObjectToRefine(?heap) ->
+  string(?heap).
 
 TaintedHeapAllocation(?heap) -> HeapAllocation(?heap).
 
@@ -180,7 +182,7 @@ NegativeSiteFilter(?v) -> string(?v).
 TempNegativeSiteFilter(?v) -> string(?v).
 // I could also declare a constant: NegativeSiteFilter() ->. But this is not
 // exportable due to an apparent bug. Also, I tried boolean instead of string,
-// but this also fails during import 
+// but this also fails during import
 // ("cannot convert string 'boolean' to type '[].[boolean]')
 
 // Is the ObjectToRefine the real list of objects needing

@@ -477,14 +477,11 @@ class Analysis implements Runnable {
 
         lbScript
             .echo("++++ Refinement ++++")
-            .echo("-- Pre-Export --")
+            .echo("-- Export --")
             .startTimer()
             .transaction()
             .executeFile("refinement-delta.logic")
             .commit()
-            .elapsedTime()
-            .echo("-- Export --")
-            .startTimer()
             .transaction()
             .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempSiteToRefine")
             .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempNegativeSiteFilter")
@@ -507,8 +504,8 @@ class Analysis implements Runnable {
                                option,quotedValues,true
                                option,escapeQuotedValues,true
 
-                               fromFile,"${outDir}/TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
-                               toPredicate,SiteToRefine,CallGraphEdgeSource""".toString().stripIndent(),
+                               fromFile,"${outDir}/TempSiteToRefine.csv",MethodInvocation,MethodInvocation
+                               toPredicate,SiteToRefine,MethodInvocation""".toString().stripIndent(),
 
                 "negative-site": """\
                                  option,delimiter,","
@@ -523,8 +520,8 @@ class Analysis implements Runnable {
                                  option,quotedValues,true
                                  option,escapeQuotedValues,true
 
-                                 fromFile,"${outDir}/TempObjectToRefine.csv",HeapAllocation,HeapAllocation
-                                 toPredicate,ObjectToRefine,HeapAllocation""".toString().stripIndent(),
+                                 fromFile,"${outDir}/TempObjectToRefine.csv",string,string
+                                 toPredicate,ObjectToRefine0,string""".toString().stripIndent(),
 
                 "negative-object": """\
                                    option,delimiter,","
@@ -546,6 +543,9 @@ class Analysis implements Runnable {
         }
 
         lbScript
+            .commit()
+            .transaction()
+            .addBlock("ObjectToRefine(?heap) <- ObjectToRefine0(?id), HeapAllocation:byValue[?id] = ?heap.")
             .commit()
             .elapsedTime()
     }
