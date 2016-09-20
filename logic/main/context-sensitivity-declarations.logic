@@ -23,9 +23,9 @@ lang:entity(`ContextComponent).
 lang:physical:storageModel[`ContextComponent] = "ScalableSparse".
 lang:physical:capacity[`ContextComponent] = 8388608.
 
-ContextComponent:Invocation[?invo] = ?comp ->
+ContextComponent:MethodInvocation[?invo] = ?comp ->
    MethodInvocation(?invo), ContextComponent(?comp).
-lang:constructor(`ContextComponent:Invocation).
+lang:constructor(`ContextComponent:MethodInvocation).
 
 ContextComponent:HeapAllocation[?heap] = ?comp ->
    HeapAllocation(?heap), ContextComponent(?comp).
