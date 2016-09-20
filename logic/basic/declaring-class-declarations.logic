@@ -1,9 +1,3 @@
-/**
- * The Type is almost always a ClassType, except for Object methods dispatched
- * on arrays. The Instruction is almost always a HeapAllocation, except for
- * reflectively allocated objects which have a regular invocation site as their
- * id.
- */
 DeclaringClass:Allocation[?heap] = ?type ->
-   Instruction(?heap),
-   Type(?type).
+   HeapAllocation(?heap),
+   ReferenceType(?type).

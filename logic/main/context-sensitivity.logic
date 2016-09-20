@@ -14,7 +14,7 @@
     ((!NegativeSiteFilter("true"), SiteToRefine(invocation)); \
     (NegativeSiteFilter("true"), !SiteToRefine(invocation)))
 
-#include "core.logic"
+#include "main.logic"
 
 /**
  * Generic context-sensitive pointer analysis
@@ -216,7 +216,7 @@ ReachableStoreStaticFieldFrom(?from) <-
  * Load array index
  */
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-   !EmptyArray(?baseheap),
+   !HeapAllocation:EmptyArray(?baseheap),
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
    ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
    // this used to be necessary when this rule also handled the
@@ -252,7 +252,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) <-
   StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from),
   VarPointsTo(?hctx, ?heap, ?ctx, ?from),
   !SpecialObject(?heap),
-  !EmptyArray(?baseheap),
+  !HeapAllocation:EmptyArray(?baseheap),
   HeapAllocation:Type[?heap] = ?heaptype,
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
   ComponentType[?baseheaptype] = ?componenttype,
@@ -363,7 +363,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 
 #else /* there is optimized behavior available */
 
-// The optimization is as follows: the core analysis (this file)
+// The optimization is as follows: the main analysis (this file)
 // first creates all the possible bindings that the Merge logic
 // might need to create a new context. Then each individual analysis
 // creates new context objects carefully by invoking the skolem
@@ -372,7 +372,7 @@ MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
-// Finally, the step of the core analysis that should be creating the
+// Finally, the step of the main analysis that should be creating the
 // new objects is merely looking up the previously created context
 // objects.
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),

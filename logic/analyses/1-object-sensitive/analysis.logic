@@ -6,7 +6,7 @@ RealContextFromContext[?ctx] = ?heap <-
 Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  HeapAllocationValue(?heap, "<<immutable-context>>").
+  HeapAllocation:byValue["<<immutable-context>>"] = ?heap.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
@@ -17,17 +17,17 @@ ImmutableHContext[] = ?hctx.
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  HeapAllocationValue(?alloc, "<<main-thread>>").
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
 // Initially reachable methods
@@ -35,17 +35,17 @@ Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  HeapAllocationValue(?heap, "<<initial-context>>").
+  HeapAllocation:byValue["<<initial-context>>"] = ?heap.
 
 Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  HeapAllocationValue(?heap, "<<jvm-startup>>").
+  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap.
 
 Context(?ctx),
 ContextFromRealContext[?heap] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  HeapAllocationValue(?heap, "<<class-initialization>>").
+  HeapAllocation:byValue["<<class-initialization>>"] = ?heap.

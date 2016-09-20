@@ -16,7 +16,7 @@
 Throw(?insn, ?var) ->
    Throw:Insn(?insn), Var(?var).
 
-// Note: in generat OPT inmethod last
+// Note: for OPT inmethod last
 
 LoadInstanceField(?base, ?sig, ?to, ?inmethod) ->
    Var(?base), Field(?sig), Var(?to), Method(?inmethod).
