@@ -1,6 +1,6 @@
-#include "../core/class-initialization-declarations.logic"
-#include "../core/implicit-reachable-declarations.logic"
-#include "../core/string-constants-declarations.logic"
+#include "../../main/class-initialization-declarations.logic"
+#include "../../main/implicit-reachable-declarations.logic"
+#include "../../main/string-constants-declarations.logic"
 
 
 MainMethodDeclaration(?method) ->

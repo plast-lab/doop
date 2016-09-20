@@ -18,15 +18,15 @@ ImmutableHContext[] = ?hctx <-
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) <-
   UniqueHContext[] = ?hctx,
-  HeapAllocationValue(?alloc, "<<system-thread-group>>").
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 MainThreadGroup(?hctx, ?alloc) <-
   UniqueHContext[] = ?hctx,
-  HeapAllocationValue(?alloc, "<<main-thread-group>>").
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 MainThread(?hctx, ?alloc) <-
   UniqueHContext[] = ?hctx,
-  HeapAllocationValue(?alloc, "<<main-thread>>").
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
 // The main method is reachable
