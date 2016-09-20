@@ -28,7 +28,8 @@ HeapAllocation:Special(?heap) <-
   HeapAllocation:ContextInsensitive(?heap).
 
 /**
- * Objects that should be merged to some heap abstraction (implies context-insensitive)
+ * Objects that should be merged to some heap abstraction 
+ * (distinct from merely context-insensitive objects)
  */
 HeapAllocation:Merge[?heap] = ?mergeHeap ->
   HeapAllocation(?heap),
@@ -50,7 +51,8 @@ AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) <-
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
-  HeapAllocation:ContextInsensitive(?heap).
+  HeapAllocation:ContextInsensitive(?heap),
+  !(HeapAllocation:Merge[?heap] = _). // should be unnecessary, but has bitten us many times  
 
 /*************************************************************
  * String constants
@@ -82,10 +84,9 @@ HeapAllocation:Merge[?heap] = ?constant <-
 
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
-#ifdef DISTINGUISH_ALL_STRING_CONSTANTS
 HeapAllocation:ContextInsensitive(?heap) <-
-  StringConstant(?heap).
-#endif 
+  StringConstant(?heap),
+  !(HeapAllocation:Merge[?heap] = _).
 
 NonTrivialStringConstant(?heap) <-
   StringConstant(?heap),
@@ -207,7 +208,7 @@ MemberSuffixIterationTrick(?length) <-
   ?length = 5; ?length = 6; ?length = 7; ?length = 8; ?length = 9;
   ?length = 10; ?length = 11; ?length = 12; ?length = 13; ?length = 14.
 
-// Precompute suffixes. Crucial for efficiency.
+// Precompute proper suffixes. Crucial for efficiency.
 ClassNameSuffix(?type, ?suffix) <-
   ReferenceType(?type),
   Type:Value(?type:?className),
@@ -219,22 +220,28 @@ MethodNameSuffix(?sig, ?suffix) <-
   Method:SimpleName[?sig] = ?methodName,
   string:length[?methodName] = ?methodNameLength,
   MemberSuffixIterationTrick(?length),
+  ?methodNameLength > ?length,
   string:substring[?methodName, ?methodNameLength - ?length, ?length] = ?suffix.
 
 MethodNamePrefix(?sig, ?prefix) <-
   Method:SimpleName[?sig] = ?methodName,
+  string:length[?methodName] = ?methodNameLength,
   MemberPrefixIterationTrick(?length),
+  ?methodNameLength > ?length,
   string:substring[?methodName, 0, ?length] = ?prefix.
 
 FieldNameSuffix(?sig, ?suffix) <-
   Field:SimpleName[?sig] = ?fieldName,
   string:length[?fieldName] = ?fieldNameLength,
   MemberSuffixIterationTrick(?length),
+  ?fieldNameLength > ?length,
   string:substring[?fieldName, ?fieldNameLength - ?length, ?length] = ?suffix.
 
 FieldNamePrefix(?sig, ?prefix) <-
   Field:SimpleName[?sig] = ?fieldName,
+  string:length[?fieldName] = ?fieldNameLength,
   MemberPrefixIterationTrick(?length),
+  ?fieldNameLength > ?length,
   string:substring[?fieldName, 0, ?length] = ?prefix.
 
 //// Too costly!
