@@ -4,10 +4,7 @@
  */
 DacapoHarnessClass(?classNameHeap) -> StringConstant(?classNameHeap).
 
-StringConstant(?heap),
-HeapAllocation:String:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+StringConstantConsMacro(?id, ?type, ?heap),
 DacapoHarnessClass(?heap)
 <-
    ?benchmark = DACAPO_BENCHMARK,

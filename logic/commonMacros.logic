@@ -1,3 +1,28 @@
+#define NormalHeapConsMacro(id, type, heap) \
+  HeapAllocation:Normal:Con[id] = heap, \
+  HeapAllocation:Value[heap] = id, \
+  NormalHeap(heap), \
+  HeapAllocation:Type[heap] = type
+
+#define StringConstantConsMacro(id, type, heap) \
+  HeapAllocation:String:Con[id] = heap, \
+  HeapAllocation:Value[heap] = id, \
+  StringConstant(heap), \
+  HeapAllocation:Type[heap] = type
+
+#define ClassHeapConsMacro(id, type, heap) \
+  HeapAllocation:Class:Con[id] = heap, \
+  HeapAllocation:Value[heap] = id, \
+  ClassHeap(heap), \
+  HeapAllocation:Type[heap] = type
+
+#define MockupHeapConsMacro(id, type, heap) \
+  HeapAllocation:Mockup:Con[id] = heap, \
+  HeapAllocation:Value[heap] = id, \
+  HeapAllocation(heap), \
+  HeapAllocation:Type[heap] = type
+
+
 #define PlusVar(x,method,string,type) \
   +Var(x), \
   +Var:Value(x:string), \

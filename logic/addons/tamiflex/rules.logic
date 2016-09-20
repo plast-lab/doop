@@ -1,7 +1,4 @@
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:Class:NewInstance(?invocation, ?heap)
 <-
    Method:Value(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
@@ -11,10 +8,7 @@ Tamiflex:Class:NewInstance(?invocation, ?heap)
    Type:Value(?type:?typeStr),
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
 <-
    Method:Value(?sig:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
@@ -26,10 +20,7 @@ Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
    Type:Value(?type:?typeStr),
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:Array:NewInstance(?invocation, ?heap)
 <-
    Method:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
@@ -39,10 +30,7 @@ Tamiflex:Array:NewInstance(?invocation, ?heap)
    Type:Value(?type:?typeStr),
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
 <-
    (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>") ;
@@ -53,10 +41,7 @@ Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
    Type:Value(?type:"java.lang.reflect.Field"),
    ?id = "<(Tamiflex) " + ?fldStr + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?javaFieldArrayType,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?javaFieldArrayType, ?heap),
 Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
 <-
    (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
@@ -67,10 +52,7 @@ Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
    Type:Value(?javaFieldArrayType:"java.lang.reflect.Field[]"),
    ?id = "<(Tamiflex) " + ?typeStr + "/Field[]>".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
 <-
    (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>") ;
@@ -81,10 +63,7 @@ Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
    Type:Value(?type:"java.lang.reflect.Method"),
    ?id = "<(Tamiflex) " + ?methodStr + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?javaMethodArrayType,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?javaMethodArrayType, ?heap),
 Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation)
 <-
    (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
