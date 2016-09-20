@@ -1,43 +1,25 @@
-NormalHeap(?heap),
-HeapAllocation:Normal:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+NormalHeapConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:Normal(?id, ?type).
 
-StringConstant(?heap),
-HeapAllocation:String:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+StringConstantConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:String(?id),
    Type:Value(?type:"java.lang.String").
 
-ClassHeap(?heap),
-HeapAllocation:Class:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+ClassHeapConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:Class(?id),
    Type:Value(?type:"java.lang.Class").
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Null[] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap),
+HeapAllocation:Null[] = ?heap <-
    ?id = "<<null pseudo heap>>",
    ?type = Type:null[].
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 MainMethodArgArray[] = ?heap <-
    ?id = "<<main method array>>",
    ?type = "java.lang.String[]".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id,
+MockupHeapConsMacro(?id, ?type, ?heap),
 MainMethodArgArrayContent[] = ?heap <-
    ?id = "<<main method array content>>",
    ?type = "java.lang.String".

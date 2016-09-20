@@ -1,61 +1,37 @@
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    (?id = "<<string-constant>>";
     ?id = "<<reflection-string-constant>>"),
    ?type = "java.lang.String".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<string-buffer>>",
    ?type = "java.lang.StringBuffer".
 
 #if defined(JRE15) || defined(JRE16) || defined(JRE17)
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<string-builder>>",
    ?type = "java.lang.StringBuilder".
 #endif
 
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    (?id = "<<system-thread-group>>";
     ?id = "<<main-thread-group>>"),
    ?type = "java.lang.ThreadGroup".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<main-thread>>",
    ?type = "java.lang.Thread".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
    ?type = "java.io.UnixFileSystem".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "java.io.UnixFileSystem.list/new java.lang.String[]",
    ?type = "java.lang.String[]".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "java.io.UnixFileSystem.list/new java.lang.String",
    ?type = "java.lang.String".
 
@@ -63,44 +39,26 @@ HeapAllocation:Value[?heap] = ?id <-
 // Note: the type is necessary (java.lang.Object), but never used. It could be
 // anything. It also needs to be an existing type, otherwise the sanity checks
 // will barf.
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<initial-context>>",
    Type:Value(?type:"java.lang.Object").
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<jvm-startup>>",
    Type:Value(?type:"java.lang.Object").
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<class-initialization>>",
    Type:Value(?type:"java.lang.Object").
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<immutable-context>>",
    Type:Value(?type:"java.lang.Object").
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<immutable-hcontext>>",
    Type:Value(?type:"java.lang.Object").
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?id] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
-HeapAllocation:Value[?heap] = ?id <-
+MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<immutable>>",
    Type:Value(?type:"java.lang.Object").
