@@ -1071,9 +1071,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 
 
 #define TempDelta(invocation, classType, heapType, heapStr) \
-   HeapAllocation(heap), \
-   HeapAllocation:Mockup:Con[heapStr] = heap, \
-   HeapAllocation:Type[heap] = heapType, \
+   MockupHeapConsMacro(heapStr, heapType, heap), \
    ReflectiveHeap(heap), \
    ReflectiveHeapAllocation[invocation, classType] = heap
 
@@ -1281,9 +1279,7 @@ java:lang:reflect:Method:invoke(?invocation, ?method) <-
  * type of the allocated object.
  *************************************************************/
 
-ClassHeap(?classHeap),
-HeapAllocation:Class:Con[?classHeapId] = ?classHeap,
-HeapAllocation:Type[?classHeap] = ?javaLangClass,
+ClassHeapConsMacro(?classHeapId, ?javaLangClass, ?classHeap),
 ReifiedClass[?type] = ?classHeap
 <-
   ReferenceType(?type),
@@ -1294,49 +1290,41 @@ ReifiedClass[?type] = ?classHeap
 /**
  * Heap allocations for reified constructors (java.lang.reflect.Constructor)
  */
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?heapId] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?id, ?type, ?heap),
 ReifiedConstructor[?signature] = ?heap
 <-
    Method:SimpleName[?signature] = "<init>",
    Method:Value(?signature:?strSignature),
-   ?heapId = "<<reified constructor " + ?strSignature + ">>",
+   ?id = "<<reified constructor " + ?strSignature + ">>",
    Type:Value(?type:"java.lang.reflect.Constructor").
 
 /**
  * Heap allocations for reified methods (java.lang.reflect.Method).
  */
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?heapId] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?id, ?type, ?heap),
 ReifiedMethod[?signature] = ?heap
 <-
    Method:SimpleName[?signature] = ?simplename,
    ?simplename != "<init>", ?simplename != "<clinit>",
    Method:Value(?signature:?strSignature),
-   ?heapId = "<<reified method " + ?strSignature + ">>",
+   ?id = "<<reified method " + ?strSignature + ">>",
    Type:Value(?type:"java.lang.reflect.Method").
 
 /**
  * Heap allocations for reified fields (java.lang.reflect.Field).
  */
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?heapId] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?id, ?type, ?heap),
 ReifiedField[?fld] = ?heap
 <-
    Field:Value(?fld:?signature),
-   ?heapId = "<<reified field " + ?signature + ">>",
+   ?id = "<<reified field " + ?signature + ">>",
    Type:Value(?type:"java.lang.reflect.Field").
 
 
 
 #ifdef REFLECTION_USE_BASED_ANALYSIS
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingForNameHeap[?invocation] = ?heap
 <-
    (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
@@ -1348,9 +1336,7 @@ SpecialMissingForNameHeap[?invocation] = ?heap
 
 // Note how the return type is that of newInstance (Object), although the relation remembers the forName
 // call that produced the Class on which newInstance got called.
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingNewInstanceHeap[?invocation] = ?heap
 <-
    (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
@@ -1361,9 +1347,7 @@ SpecialMissingNewInstanceHeap[?invocation] = ?heap
    ?strHeap = "<special object for missing newInstance values " + ?strInvocation + ">".
 
 // Special heap value that propagates through all constructor calls and remembers the original forName 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetConstructorHeap[?invocation] = ?heap
 <-
    (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
@@ -1377,9 +1361,7 @@ SpecialMissingGetConstructorHeap[?invocation] = ?heap
 // where their unknown result flows to. Note how the return type is a single Method
 // and not an array. The array is always there, the special value just gets added to
 // its contents to represent all unknown methods collectively.
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetMethodsHeap[?invocation] = ?heap
 <-
    (Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
@@ -1390,9 +1372,7 @@ SpecialMissingGetMethodsHeap[?invocation] = ?heap
    Instruction:Value(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Methods values " + ?strInvocation + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap
 <-
    (Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
@@ -1403,9 +1383,7 @@ SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap
    Instruction:Value(?invocation:?strInvocation),
    ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetMethodHeap[?invocation] = ?heap
 <-
    (Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
@@ -1416,9 +1394,7 @@ SpecialMissingGetMethodHeap[?invocation] = ?heap
    Instruction:Value(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Method values " + ?strInvocation + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap
 <-
    (Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
@@ -1430,9 +1406,7 @@ SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap
    ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
 
 // Special objects for get[Declared]Field[s]. Very similar to methods.
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetFieldsHeap[?invocation] = ?heap
 <-
    (Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
@@ -1443,9 +1417,7 @@ SpecialMissingGetFieldsHeap[?invocation] = ?heap
    Instruction:Value(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Fields values " + ?strInvocation + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetHeapFromGetFields[?invocation] = ?heap
 <-
    (Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
@@ -1456,9 +1428,7 @@ SpecialMissingGetHeapFromGetFields[?invocation] = ?heap
    Instruction:Value(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetFieldHeap[?invocation] = ?heap
 <-
    (Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
@@ -1469,9 +1439,7 @@ SpecialMissingGetFieldHeap[?invocation] = ?heap
    Instruction:Value(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Field values " + ?strInvocation + ">".
 
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetHeapFromGetField[?invocation] = ?heap
 <-
    (Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
@@ -1489,9 +1457,7 @@ SpecialMissingGetHeapFromGetField[?invocation] = ?heap
 
 // This is the representative of an unknown reflective object, after it has been cast. 
 // Has a real type. We pre-generate for all types and casts in the universe.
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 UnknownReflectiveObject[?type, ?invocation] = ?heap
 <-
    AssignCast(?type, _, _, _),
@@ -1508,9 +1474,7 @@ UnknownReflectiveObject[?type, ?invocation] = ?heap
 
 // This is the representative of an unknown reflective object that flows from the reflection
 // operation to a cast.
-HeapAllocation(?heap),
-HeapAllocation:Mockup:Con[?strHeap] = ?heap,
-HeapAllocation:Type[?heap] = ?type,
+MockupHeapConsMacro(?strHeap, ?type, ?heap),
 MarkerReflectiveObject[?invocation] = ?heap
 <-
    (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;

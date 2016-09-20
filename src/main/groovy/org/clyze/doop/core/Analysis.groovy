@@ -242,6 +242,7 @@ class Analysis implements Runnable {
     }
 
     protected void initDatabase() {
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
 
         FileUtils.deleteQuietly(database)
         preprocess(this, "${outDir}/flow-sensitive-schema.logic", "${Doop.factsPath}/flow-sensitive-schema.logic")
@@ -249,7 +250,7 @@ class Analysis implements Runnable {
         preprocess(this, "${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
         preprocess(this, "${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
         preprocess(this, "${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
-        preprocess(this, "${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic")
+        preprocess(this, "${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
 
         lbScript
             .createDB(database.getName())
@@ -349,7 +350,7 @@ class Analysis implements Runnable {
         if (isContextSensitive) {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${mainPath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic")
+            preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
             preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
                              commonMacros, "${mainPath}/main-delta.logic")
@@ -415,12 +416,12 @@ class Analysis implements Runnable {
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic")
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic", commonMacros)
 
         if (options.TAMIFLEX.value) {
             preprocess(this, "${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
             preprocess(this, "${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic")
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic", commonMacros)
 
             lbScript
                 .addBlockFile("tamiflex-declarations.logic")
