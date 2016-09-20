@@ -1,0 +1,49 @@
+#include "class-initialization.logic"
+#include "exceptions.logic"
+#include "finalization.logic"
+#include "implicit-reachable.logic"
+#include "native.logic"
+#include "reference.logic"
+#include "string-constants.logic"
+#include "threads.logic"
+
+#if defined(ENABLE_REFLECTION)
+#include "reflection/rules.logic" 
+#endif
+
+/**
+ * Specific to analyses that look up a type to use as context, given an
+ * allocation site. Need to supply dummy surrounding types for the dummy
+ * allocation sites in delta.logic
+ */
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<initial-context>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<class-initialization>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<immutable>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<no-context>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<system-thread-group>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<main-thread-group>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   HeapAllocation:byValue["<<main-thread>>"] = ?heap,
+   ClassTypeValue(?type, "java.lang.String").

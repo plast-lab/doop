@@ -1,0 +1,31 @@
+#define PlusVar(x,method,string,type) \
+  +Var(x), \
+  +Var:Value(x:string), \
+  +Var:Type[x] = type, \
+  +Var:DeclaringMethod(x, method)
+
+#define PlusType(x,string) \
+  +Type(x), \
+  +Type:Value(x:string)
+
+#define PlusMethodInvocation(x,string) \
+  +Instruction:Value(x:string), \
+  +MethodInvocation(x)
+
+#define PlusVirtualMethodInvocation(x,string) \
+  +Instruction:Value(x:string), \
+  +VirtualMethodInvocation:Insn(x)
+
+#define PlusSpecialMethodInvocation(x,string) \
+  +Instruction:Value(x:string), \
+  +SpecialMethodInvocation:Insn(x)
+
+#define PlusStaticMethodInvocation(x,string) \
+  +Instruction:Value(x:string), \
+  +StaticMethodInvocation:Insn(x)
+
+/**
+ * Macros that fix the lack of ref-modes on subtypes in LB
+ */
+#define MethodInvocationValue(x, y) Instruction:Value(x:y), MethodInvocation(x)
+#define ClassTypeValue(x,y) Type:Value(x:y), ClassType(x)

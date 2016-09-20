@@ -1,0 +1,214 @@
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:Class:NewInstance(?invocation, ?heap)
+<-
+   Method:Value(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?typeStr, ?invocation),
+   Instruction:Value(?invocation:?invocationStr),
+   Type:Value(?type:?typeStr),
+   ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
+<-
+   Method:Value(?sig:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?constructorStr, ?invocation),
+   Instruction:Value(?invocation:?invocationStr),
+   Method:Value(?constructor:?constructorStr),
+   Method:DeclaringType[?constructor] = ?type,
+   Type:Value(?type:?typeStr),
+   ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:Array:NewInstance(?invocation, ?heap)
+<-
+   Method:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
+   StaticMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?typeStr, ?invocation),
+   Instruction:Value(?invocation:?invocationStr),
+   Type:Value(?type:?typeStr),
+   ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
+<-
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   Field:Value(?fld:?fldStr),
+   Type:Value(?type:"java.lang.reflect.Field"),
+   ?id = "<(Tamiflex) " + ?fldStr + ">".
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?javaFieldArrayType,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
+<-
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Field[] getFields()>") ),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?typeStr, ?invocation),
+   Type:Value(?type:?typeStr),
+   Type:Value(?javaFieldArrayType:"java.lang.reflect.Field[]"),
+   ?id = "<(Tamiflex) " + ?typeStr + "/Field[]>".
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?type,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
+<-
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?methodStr, ?invocation),
+   Method:Value(?method:?methodStr),
+   Type:Value(?type:"java.lang.reflect.Method"),
+   ?id = "<(Tamiflex) " + ?methodStr + ">".
+
+HeapAllocation(?heap),
+HeapAllocation:Mockup:Con[?id] = ?heap,
+HeapAllocation:Type[?heap] = ?javaMethodArrayType,
+HeapAllocation:Value[?heap] = ?id,
+Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation)
+<-
+   (Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>") ),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?typeStr, ?invocation),
+   Type:Value(?type:?typeStr),
+   Type:Value(?javaMethodArrayType:"java.lang.reflect.Method[]"),
+   ?id = "<(Tamiflex) " + ?typeStr + "/Method[]>".
+
+
+/**
+ * Using the main method's (unique) context as a dummy context.  No reason to
+ * use normal context for reflective calls, since we are using the results from
+ * tamiflex to resolve targets. Thus there is no information to distinguish
+ * things per context.
+ */
+DummyContextForReflective[] = ?dummyCtx
+<-
+   MainMethodDeclaration(?mainMethod),
+   ReachableContext(?dummyCtx, ?mainMethod).
+
+
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
+<-
+   ImmutableHContext[] = ?hctx,
+   (Method:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?classStr, ?invocation),
+   ?classObjStr = "<class " + ?classStr + ">",
+   HeapAllocation:byValue[?classObjStr] = ?classObj,
+   HeapAllocation:Type[?classObj] = "java.lang.Class",
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+
+VarPointsTo(?hctx, ?obj, ?ctx, ?return)
+<-
+   ImmutableHContext[] = ?hctx,
+   (Tamiflex:Class:NewInstance(?invocation, ?obj) ;
+    Tamiflex:Array:NewInstance(?invocation, ?obj) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+
+VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
+VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
+<-
+   ImmutableHContext[] = ?hctx,
+   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return,
+   ThisVar[?constructor] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+
+
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
+<-
+   Method:Value(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?methodStr, ?invocation),
+   Method:Value(?method:?methodStr),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod).
+
+
+/**
+ * Private method invocations are special methods, unless they are static.
+ * But they are handled the same as virtual methods in the context of tamiflex
+ * since tamiflex has already resolved the final target method.
+ */
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ! Method:Modifier("static", ?callee),
+   ActualParam[0, ?invocation] = ?base,
+   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+   ThisVar[?callee] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+
+/**
+ * Static method invocations
+ */
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   Method:Modifier("static", ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+
+/**
+ * Return values of reflective method invocations
+ */
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   AssignReturnValue[?invocation] = ?local,
+   ReturnVar(?return, ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+
+/**
+ * Handle the array of actual parameters of a reflective method call
+ */
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ActualParam[1, ?invocation] = ?argsParam,
+   FormalParam[_, ?callee] = ?formal,
+   VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?argsParam),
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
+   Var:Type[?formal] = ?type,
+   HeapAllocation:Type[?heap] = ?heaptype,
+   SupertypeOf(?type, ?heaptype),
+   DummyContextForReflective[] = ?calleeCtx.
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?return)
+<-
+   ImmutableHContext[] = ?hctx,
+   (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethodArray(_, ?heap, ?invocation) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.

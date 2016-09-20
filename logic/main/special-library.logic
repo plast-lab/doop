@@ -1,0 +1,18 @@
+SpecialLibraryObject(?heap) -> HeapAllocation(?heap).
+
+SpecialLibraryObject(?heap) <-
+  AssignHeapAllocation:Heap[?insn] = ?heap,
+  Instruction:Method[?insn] = ?method,
+  Method:DeclaringType[?method] = ?class,
+  ClassType(?class),
+  !ApplicationClass(?class),
+  !CollectionLibraryClass(?class).
+
+
+CollectionLibraryClass(?class) -> Type(?class).
+
+CollectionLibraryClass(?class) <-
+  ClassType(?class),
+  !ApplicationClass(?class),
+  Type:Value(?class:?className),
+  string:substring[?className, 0, _] = "java.util".
