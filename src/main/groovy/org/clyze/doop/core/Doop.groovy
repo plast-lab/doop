@@ -82,17 +82,17 @@ class Doop {
 
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_ALL_STRING_CONSTANTS",
-            name:"toggle-distinguish-all-string-constants",
+            id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
+            name:"enable-distinguish-reflection-only-string-constants",
             value:false,
             webUI:true,
-            forPreprocessor:true,
+            forPreprocessor: true,
             isAdvanced:true,
             flagType:PreprocessorFlag.CONSTANT_FLAG
         ),
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_NO_STRING_CONSTANTS",
-            name:"toggle-distinguish-no-string-constants",
+            name:"enable-distinguish-no-string-constants",
             value:true,
             webUI:true,
             forPreprocessor: true,
@@ -104,8 +104,8 @@ class Doop {
         /* Start of preprocessor normal flags */
         new AnalysisOption<Boolean>(
             id:"MERGE_STRING_BUFFERS",
-            name:"disable-merge-string-buffers",
-            value:true, //enabled by default in run script
+            name:"enable-merge-string-buffers",
+            value:false,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
@@ -139,23 +139,6 @@ class Doop {
             description:"Enable (classic subset of) logic for handling Java reflection.",
             value:false,
             webUI:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
-            name:"toggle-distinguish-reflection-only-string-constants",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
-            name:"enable-reflection-merge-member-constants",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_STRING_FLOW_ANALYSIS",
