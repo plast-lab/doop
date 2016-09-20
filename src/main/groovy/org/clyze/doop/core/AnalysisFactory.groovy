@@ -270,11 +270,6 @@ import org.clyze.doop.system.*
          * even though the majority of checks are not required.
          */
 
-        if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
-        }
-
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
