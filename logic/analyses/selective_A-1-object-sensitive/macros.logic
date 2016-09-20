@@ -19,7 +19,7 @@
   Context(calleeCtx), \
   ContextFromRealContext[invoComp] = calleeCtx, \
   ContextComponent(invoComp), \
-  ContextComponent:Invocation[invo] = invoComp
+  ContextComponent:MethodInvocation[invo] = invoComp
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
