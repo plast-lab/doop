@@ -70,7 +70,7 @@ class Doop {
         new AnalysisOption<String>(
             id:"MUST",
             name:"must",
-            description:"Run the must analysis.",
+            description:"Run the must-alias analysis.",
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -83,7 +83,8 @@ class Doop {
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
-            name:"enable-distinguish-reflection-only-string-constants",
+            name:"distinguish-reflection-only-string-constants",
+            description:"Merge all string constants except those useful for reflection",
             value:false,
             webUI:true,
             forPreprocessor: true,
@@ -91,9 +92,10 @@ class Doop {
             flagType:PreprocessorFlag.CONSTANT_FLAG
         ),
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_NO_STRING_CONSTANTS",
-            name:"enable-distinguish-no-string-constants",
-            value:true,
+            id:"DISTINGUISH_STRING_CONSTANTS",
+            name:"distinguish-all-string-constants",
+            description:"Treat string constants as regular objects",
+            value:false,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true,
@@ -111,9 +113,9 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<String>(
-            id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
+            id:"EXCLUDE_IMPLICITLY_REACHABLE_CODE",
             name:"exclude-implicitly-reachable-code",
-            value:true,
+            value:false,
             webUI:true,
             forPreprocessor:true
         ),
@@ -139,14 +141,6 @@ class Doop {
             description:"Enable (classic subset of) logic for handling Java reflection.",
             value:false,
             webUI:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_STRING_FLOW_ANALYSIS",
-            name:"enable-reflection-string-flow-analysis",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_SUBSTRING_ANALYSIS",

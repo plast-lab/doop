@@ -61,11 +61,15 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
 ReflectionObject(?heap) -> HeapAllocation(?heap).
 ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 
-#ifdef DISTINGUISH_NO_STRING_CONSTANTS
+#ifndef DISTINGUISH_STRING_CONSTANTS
+#ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
+#define DISTINGUISH_NO_STRING_CONSTANTS
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   HeapAllocation:byValue["<<string-constant>>"] = ?constant.
 #endif
+#endif // DISTINGUISH_NO_STRING_CONSTANTS mode
+
 #ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 ReflectionObject(?heap) <-
   ClassNameMatchingStringConstant(?heap);
@@ -90,7 +94,7 @@ HeapAllocation:Mockup:ContextInsensitive(?heap) <-
 
 NonTrivialStringConstant(?heap) <-
   StringConstant(?heap),
-  HeapAllocation:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   string:length[?string] >= 6.
 
 /**
@@ -112,7 +116,7 @@ ClassNameMatchingStringConstant:Type(?type, ?heap),
 ClassNameMatchingStringConstantExact:Type(?type, ?heap)
   <-
   StringConstant(?heap),
-  HeapAllocation:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   ReferenceType(?type),
   (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
      // library classes are known and in known packages. Makes no sense
@@ -132,7 +136,7 @@ MethodNameMatchingStringConstant:Signature(?sig, ?heap),
 MethodNameMatchingStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
-  HeapAllocation:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   Method:DeclaringType[?sig] = ?type, 
   (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
      // there is some possibility of accessing methods and fields
@@ -156,7 +160,7 @@ FieldNameMatchingStringConstant:Signature(?sig, ?heap),
 FieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
-  HeapAllocation:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   Field:DeclaringType[?sig] = ?declaringClass,
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
   Field:SimpleName[?sig] = ?string.
@@ -169,7 +173,7 @@ ClassNameMatchingStringConstant:Type(?type, ?heap),
 ClassNameMatchingStringConstantInexact:Type(?type, ?heap)
   <-
   NonTrivialStringConstant(?heap),
-  HeapAllocation:Value(?heap:?string),
+  HeapAllocation:Value[?heap] = ?string,
   ClassNameSuffix(?type, ?string),
   ApplicationClass(?type).
 
@@ -269,14 +273,10 @@ FieldNamePrefix(?sig, ?prefix) <-
 //  Method:SimpleName[?sig] = ?methodName,
 //  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
 
-#endif // substrings
-
 
 /*************************************************************
- * Analysis of reflection strings.
+ * Analysis of reflection strings flowing through String Factories
  *************************************************************/
-
-#ifdef REFLECTION_STRING_FLOW_ANALYSIS
 
 StringFactoryType(?type) <-
   Type:Value(?type:"java.lang.StringBuffer") ;
@@ -341,8 +341,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var)
   ReflectionObjectFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap),
   VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryHeap).
 
-
-#endif // REFLECTION_STRING_FLOW_ANALYSIS
+#endif // REFLECTION_SUBSTRING_ANALYSIS
 
 
 /*************************************************************
