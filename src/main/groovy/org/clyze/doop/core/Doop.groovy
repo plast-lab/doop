@@ -325,7 +325,7 @@ class Doop {
                 id:"PLATFORM_LIBS",
                 name:"platform-libs",
                 description:"The path to the platform libs directory.",
-                value:System.getenv("DOOP_PLATFORM_LIBS"),
+                value:System.getenv("DOOP_PLATFORMS_LIB"),
                 isAdvanced:true
         ),
         new AnalysisOption<String>(
