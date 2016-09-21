@@ -29,24 +29,24 @@ import org.clyze.doop.system.*
     protected static class AnalysisVars {
         String name
         Map<String, AnalysisOption> options
-        Set<String> inputJars
-        List<File> inputJarFiles
-        List<String> jreJars
+        Set<String> inputs
+        List<File> inputFiles
+        List<String> platformLibs
 
         @Override
         String toString() {
             return [
-                name     : name,
-                options  : options.values().toString(),
-                inputJars: inputJars.toString(),
-                inputJarFiles: inputJarFiles.toString(),
-                jreJars  : jreJars.toString()
+                    name     :      name,
+                    options  :      options.values().toString(),
+                    inputs:         inputs.toString(),
+                    inputFiles:     inputFiles.toString(),
+                    platformLibs:   platformLibs.toString()
             ].toString()
         }
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its id, name, options and inputJars using
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputs using
      * the supplied input resolution mechanism.
      * If the supplied id is empty or null, an id will be generated automatically.
      * Otherwise the id will be validated:
@@ -59,11 +59,11 @@ import org.clyze.doop.system.*
         checkName(name)
 
         AnalysisVars vars = new AnalysisVars(
-            name     : name,
-            options  : options,
-            inputJars: context.inputs(),
-            inputJarFiles: checkInputs(context),
-            jreJars  : jreLinkArgs(options)
+                name     : name,
+                options  : options,
+                inputs: context.inputs(),
+                inputFiles: checkInputs(context),
+                platformLibs: platformLinkArgs(options)
         )
 
         logger.debug vars
@@ -77,16 +77,11 @@ import org.clyze.doop.system.*
         //init the environment used for executing commands
         Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
 
-        //TODO: Create empty jar. Is it needed?
-
-        //TODO: Check if input is given (incremental). Is it needed?
         checkDACAPO(vars)
 
         checkAppGlob(vars)
 
         //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
-
-        //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
 
         String analysisId
         if (id) { //non-empty or null
@@ -105,15 +100,15 @@ import org.clyze.doop.system.*
         File cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
-            analysisId,
-            outDir.toString(),
-            cacheDir.toString(),
-            name,
-            options,
-            context,
-            vars.inputJarFiles,
-            vars.jreJars,
-            commandsEnv
+                analysisId,
+                outDir.toString(),
+                cacheDir.toString(),
+                name,
+                options,
+                context,
+                vars.inputFiles,
+                vars.platformLibs,
+                commandsEnv
         )
 
         logger.debug "Created new analysis"
@@ -121,12 +116,12 @@ import org.clyze.doop.system.*
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, options and inputJars using
+     * Creates a new analysis, verifying the correctness of its name, options and inputs using
      * the default input resolution mechanism.
      */
-    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> jars) {
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputs) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
-        context.add(jars)
+        context.add(inputs)
         return newAnalysis(id, name, options, context)
     }
 
@@ -147,7 +142,7 @@ import org.clyze.doop.system.*
 
         if (!isValid) {
             throw new RuntimeException("Invalid analysis id: $id. The id should contain only letters, digits, " +
-                                       "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
+                    "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
         }
         return trimmed
     }
@@ -163,7 +158,7 @@ import org.clyze.doop.system.*
     }
 
     /**
-     * Generates the analysis ID using all of its components (name, inputJars and options).
+     * Generates the analysis ID using all of its components (name, inputs and options).
      */
     protected String generateID(AnalysisVars vars) {
         Collection<String> idComponents = vars.options.keySet().findAll {
@@ -171,7 +166,7 @@ import org.clyze.doop.system.*
         }.collect {
             String option -> return vars.options.get(option).toString()
         }
-        idComponents = [vars.name] + vars.inputJars + idComponents
+        idComponents = [vars.name] + vars.inputs + idComponents
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
@@ -192,11 +187,11 @@ import org.clyze.doop.system.*
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.inputJarFiles.collect {
+        checksums += vars.inputFiles.collect {
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.jreJars.collect {
+        checksums += vars.platformLibs.collect {
             String file -> CheckSum.checksum(new File(file), HASH_ALGO)
         }
 
@@ -217,30 +212,62 @@ import org.clyze.doop.system.*
     }
 
     /**
-     * Generates a list of the jre link arguments for soot
+     * Generates a list of the platform library link arguments for soot
      */
-    protected List<String> jreLinkArgs(Map<String, AnalysisOption> options) {
+    protected List<String> platformLinkArgs(Map<String, AnalysisOption> options) {
+        def platformOfChoice = options.PLATFORM.value.toString().tokenize("_")
+        assert platformOfChoice.size() == 2
+        def (platform, version) = [platformOfChoice[0], platformOfChoice[1].toInteger()]
+        assert platform == "android" || platform == "java"
+        assert version instanceof Integer
 
-        String jre = options.JRE.value
-        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
+        switch(platform) {
+            case "java":
+                String path = "${options.PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+                switch(version) {
+                    case "3":
+                        return FileOps.findFiles(["${path}/rt.jar".toString()])
+                    case "4":
+                    case "5":
+                    case "6":
+                    case "7":
+                    case "8":
+                        return FileOps.findFiles(["${path}/rt.jar".toString(),
+                                                  "${path}/jce.jar".toString(),
+                                                  "${path}/jsse.jar".toString()])
+                    case "system":
 
-        switch(jre) {
-            case "1.3":
-                return FileOps.findFiles(["${path}/rt.jar".toString()])
-            case "1.4":
-            case "1.5":
-            case "1.6":
-            case "1.7":
-            case "1.8":
-                return FileOps.findFiles(["${path}/rt.jar".toString(),
-                                           "${path}/jce.jar".toString(),
-                                           "${path}/jsse.jar".toString()])
-            case "system":
-                /*
-                String javaHome = System.getProperty("java.home")
-                return ["$javaHome/lib/rt.jar", "$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"]
-                */
-                return []
+                        return []
+                }
+                break
+            case "android":
+                String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
+                switch(version) {
+		    case "15":
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString()])
+                        break
+		    case "16":
+                    case "21":
+                    case "22":
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString(),
+                                                  "${path}/uiautomator.jar".toString()])
+                        break
+                    case "23":
+                    case "24":
+
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
+                                                  "${path}/optional/org.apache.http.legacy.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString(),
+                                                  "${path}/uiautomator.jar".toString()])
+                        break
+                    default:
+                        throw new RuntimeException("Unsupported Android version")
+                }
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
         }
     }
 
@@ -289,22 +316,22 @@ import org.clyze.doop.system.*
 
         if (options.DACAPO.value) {
             if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputJarFiles[0].toString()
+                def inputJarName = vars.inputFiles[0].toString()
                 def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!vars.inputJarFiles.contains(deps))
-                    vars.inputJarFiles.add(new File(deps))
+                if (!vars.inputFiles.contains(deps))
+                    vars.inputFiles.add(new File(deps))
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
             }
         }
 
         if (options.DACAPO_BACH.value) {
             if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputJarFiles[0].toString()
+                def inputJarName = vars.inputFiles[0].toString()
                 def depsDir = inputJarName.replace(".jar", "-libs")
                 new File(depsDir).eachFile { File depsFile ->
                     if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") &&
-                        !vars.inputJarFiles.contains(depsFile)) {
-                        vars.inputJarFiles.add(depsFile)
+                            !vars.inputFiles.contains(depsFile)) {
+                        vars.inputFiles.add(depsFile)
                     }
                 }
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
@@ -321,29 +348,28 @@ import org.clyze.doop.system.*
             options.MUST_AFTER_MAY.value = true
         }
 
-        checkJRE(vars)
-
-        //Check the value of the JRE_LIB option (it should point to the JREs directory)
-        String externals = options.JRE_LIB.value
-        FileOps.findDirOrThrow(externals as String, "The JRE_LIB directory is invalid: $externals")
+        checkPlatformLibs(vars)
+        //Check the value of the JRE_LIB option (it should point to the platform libs directory)
+        String externals = options.PLATFORM_LIBS.value
+        FileOps.findDirOrThrow(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
-        }
-        else {
-            JarFile jarFile = new JarFile(vars.inputJarFiles[0])
-            //Try to read the main class from the manifest contained in the jar
-            String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
-            if (main) {
-                logger.debug "The main class is automatically set to ${main}"
-                options.MAIN_CLASS.value = main
-            }
-            else {
-                //Check whether the jar contains a class with the same name
-                String jarName = FilenameUtils.getBaseName(jarFile.getName())
-                if (jarFile.getJarEntry("${jarName}.class")) {
-                    logger.debug "The main class is automatically set to ${jarName}"
-                    options.MAIN_CLASS.value = jarName
+        } else {
+            if (vars.inputFiles[0].toString().endsWith(".jar")) {
+                JarFile jarFile = new JarFile(vars.inputFiles[0])
+                //Try to read the main class from the manifest contained in the jar
+                String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
+                if (main) {
+                    logger.debug "The main class is automatically set to ${main}"
+                    options.MAIN_CLASS.value = main
+                } else {
+                    //Check whether the jar contains a class with the same name
+                    String jarName = FilenameUtils.getBaseName(jarFile.getName())
+                    if (jarFile.getJarEntry("${jarName}.class")) {
+                        logger.debug "The main class is automatically set to ${jarName}"
+                        options.MAIN_CLASS.value = jarName
+                    }
                 }
             }
         }
@@ -384,44 +410,92 @@ import org.clyze.doop.system.*
     /**
      * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
      */
-    protected void checkJRE(AnalysisVars vars) {
-        String jreValue = vars.options.JRE.value
-        if (jreValue == "system")
-            jreValue = System.getProperty("java.specification.version")
-
-        logger.debug "Verifying JRE version: $jreValue"
+    protected void checkPlatformLibs(AnalysisVars vars) {
+        def platformLibsValue = vars.options.PLATFORM.value.toString().tokenize("_")
+        assert platformLibsValue.size() == 2
+        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+        assert platform == "android" || platform == "java"
+        logger.debug "Verifying platform version: $platformLibsValue"
 
         JRE jreVersion
-        switch(jreValue) {
-            case "1.3":
-                jreVersion = JRE.JRE13
+        ANDROID androidVersion
+        switch(platform) {
+            case "java":
+                switch (version) {
+                    case "3":
+                        jreVersion = JRE.JRE13
+                        break
+                    case "4":
+                        jreVersion = JRE.JRE14
+                        break
+                    case "5":
+                        jreVersion = JRE.JRE15
+                        break
+                    case "6":
+                        jreVersion = JRE.JRE16
+                        break
+                    case "7":
+                        jreVersion = JRE.JRE17
+                        break
+                    case "8":
+                        jreVersion = JRE.JRE18
+                        break
+                    default:
+                        throw new RuntimeException("Invalid JRE version: $version")
+                }
+                //generate the JRE constant for the preprocessor
+                AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
+                        id:jreVersion.name(),
+                        value:true,
+                        forPreprocessor: true
+                )
+                vars.options[(jreOption.id)] = jreOption
                 break
-            case "1.4":
-                jreVersion = JRE.JRE14
-                break
-            case "1.5":
-                jreVersion = JRE.JRE15
-                break
-            case "1.6":
-                jreVersion = JRE.JRE16
-                break
-            case "1.7":
-                jreVersion = JRE.JRE17
-                break
-            case "1.8":
-                jreVersion = JRE.JRE18
+            case "android":
+                switch (version) {
+                    case "24":
+                        androidVersion = ANDROID.ANDROID24
+                        break
+                    case "23":
+                        androidVersion = ANDROID.ANDROID23
+                        break
+                    case "22":
+                        androidVersion = ANDROID.ANDROID22
+                        break
+                    case "21":
+                        androidVersion = ANDROID.ANDROID21
+                        break
+                    case "20":
+                        androidVersion = ANDROID.ANDROID20
+                        break
+                    case "19":
+                        androidVersion = ANDROID.ANDROID19
+                        break
+                    case "18":
+                        androidVersion = ANDROID.ANDROID18
+                        break
+                    case "17":
+                        androidVersion = ANDROID.ANDROID17
+                        break
+                    case "16":
+                        androidVersion = ANDROID.ANDROID16
+                        break
+                    case "15":
+                        androidVersion = ANDROID.ANDROID15
+                        break
+                    default:
+                        throw new RuntimeException("Invalid Android version: $version")
+                }
+                AnalysisOption<Boolean> androidOption = new AnalysisOption<Boolean>(
+                        id:androidVersion.name(),
+                        value:true,
+                        forPreprocessor: true
+                )
+                vars.options[(androidOption.id)] = androidOption
                 break
             default:
-                throw new RuntimeException("Invalid JRE version: $jreValue")
+                throw new RuntimeException("Unsupported platform")
         }
-
-        //generate the JRE constant for the preprocessor
-        AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-            id:jreVersion.name(),
-            value:true,
-            forPreprocessor: true
-        )
-        vars.options[(jreOption.id)] = jreOption
     }
 
     /**
@@ -429,13 +503,13 @@ import org.clyze.doop.system.*
     */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
 
         if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
             logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
@@ -459,7 +533,7 @@ import org.clyze.doop.system.*
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputJarFiles[0])
+            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }

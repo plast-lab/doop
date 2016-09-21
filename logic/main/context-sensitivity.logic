@@ -2,17 +2,17 @@
 // these predicates. Unfortunately derived predicates don't seem to
 // be supported by the join optimizer currently.
 #define ObjectShouldNotBeRefined(heap) \
-    ((NegativeObjectFilter("true"), ObjectToRefine(heap)); \
-    (!NegativeObjectFilter("true"), !ObjectToRefine(heap)))
+    ((NegativeObjectFilter[] = true, ObjectToRefine(heap)); \
+    (!NegativeObjectFilter[] = true, !ObjectToRefine(heap)))
 #define ObjectShouldBeRefined(heap) \
-    ((!NegativeObjectFilter("true"), ObjectToRefine(heap)); \
-    (NegativeObjectFilter("true"), !ObjectToRefine(heap)))
+    ((!NegativeObjectFilter[] = true, ObjectToRefine(heap)); \
+    (NegativeObjectFilter[] = true, !ObjectToRefine(heap)))
 #define SiteShouldNotBeRefined(invocation) \
-    ((!NegativeSiteFilter("true"), !SiteToRefine(invocation)); \
-    (NegativeSiteFilter("true"), SiteToRefine(invocation)))
+    ((!NegativeSiteFilter[] = true, !SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, SiteToRefine(invocation)))
 #define SiteShouldBeRefined(invocation) \
-    ((!NegativeSiteFilter("true"), SiteToRefine(invocation)); \
-    (NegativeSiteFilter("true"), !SiteToRefine(invocation)))
+    ((!NegativeSiteFilter[] = true, SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, !SiteToRefine(invocation)))
 
 #include "main.logic"
 

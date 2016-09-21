@@ -4,6 +4,7 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
+import soot.util.backend.ASMBackendUtils;
 import soot.tagkit.LineNumberTag;
 
 import java.util.HashMap;
@@ -27,6 +28,11 @@ class FactWriter
         _db = db;
         _rep = new Representation();
         _varTypeMap = new HashMap<>();
+    }
+
+    void writeAndroidEntryPoint(SootMethod m) {
+        _db.add(ANDROID_ENTRY_POINT,
+                _db.asEntity(_rep.signature(m)));
     }
 
     void writeProperty(String path, String key, String value)
@@ -517,7 +523,7 @@ class FactWriter
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
-    void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session)
+    void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, /*Local arrIndex,*/ Session session)
     {
         int index = session.calcUnitNumber(stmt);
 
@@ -530,13 +536,13 @@ class FactWriter
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
-        if (arrIndex != null)
-            _db.add(ARRAY_INSN_INDEX,
-                _db.asEntity(rep),
-                _db.asEntity(_rep.local(m, arrIndex)));
+//        if (arrIndex != null)
+//            _db.add(ARRAY_INSN_INDEX,
+//                _db.asEntity(rep),
+//                _db.asEntity(_rep.local(m, arrIndex)));
     }
 
-    void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Local arrIndex, Session session)
+    void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, /*Local arrIndex,*/ Session session)
     {
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
@@ -548,10 +554,10 @@ class FactWriter
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
-        if (arrIndex != null)
-            _db.add(ARRAY_INSN_INDEX,
-                _db.asEntity(rep),
-                _db.asEntity(_rep.local(m, arrIndex)));
+//        if (arrIndex != null)
+//            _db.add(ARRAY_INSN_INDEX,
+//                _db.asEntity(rep),
+//                _db.asEntity(_rep.local(m, arrIndex)));
     }
 
     void writeApplicationClass(SootClass application)
@@ -591,7 +597,8 @@ class FactWriter
                 _db.asEntity(_rep.simpleName(m)),
                 _db.asEntity(_rep.descriptor(m)),
                 writeType(m.getDeclaringClass()),
-                writeType(m.getReturnType()));
+                writeType(m.getReturnType()),
+		_db.asEntity(ASMBackendUtils.toTypeDesc(m.makeRef())));
     }
 
     void writeMethodModifier(SootMethod m, String modifier)
@@ -647,9 +654,11 @@ class FactWriter
     void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session)
     {
         // index was already computed earlier
+        session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
 
         // index was already computed earlier
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
 
         String rep = _rep.instruction(m, stmt, session, index);
@@ -673,6 +682,7 @@ class FactWriter
         int index = session.getUnitNumber(stmt);
 
         // index was already computed earlier
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
 
         String rep = _rep.instruction(m, stmt, session, index);
@@ -685,7 +695,7 @@ class FactWriter
                 _db.asIntColumn(String.valueOf(indexTo)),
                 // method
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-        
+
         Value condStmt = ((IfStmt) stmt).getCondition();
         if (condStmt instanceof ConditionExpr) {
             ConditionExpr condition = (ConditionExpr) condStmt;
@@ -725,6 +735,7 @@ class FactWriter
 
         for(int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++)
         {
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(TABLE_SWITCH_TARGET,
@@ -733,6 +744,7 @@ class FactWriter
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(TABLE_SWITCH_DEFAULT,
@@ -762,6 +774,7 @@ class FactWriter
         for(int i = 0, end = stmt.getTargetCount(); i < end; i++)
         {
             int tgIndex = stmt.getLookupValue(i);
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(LOOKUP_SWITCH_TARGET,
@@ -772,6 +785,7 @@ class FactWriter
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(LOOKUP_SWITCH_DEFAULT,
@@ -851,6 +865,8 @@ class FactWriter
         }
 
         String rep = _rep.handler(m, handler, session);
+        session.calcUnitNumber(handler.getBeginUnit());
+        session.calcUnitNumber(handler.getEndUnit());
         _db.add(EXCEPTION_HANDLER,
                 _db.asEntity(rep),
                 // method
@@ -862,6 +878,7 @@ class FactWriter
                 // formal param
                 _db.asEntity(_rep.local(m, caught)),
                 // begin
+
                 _db.asIntColumn(String.valueOf(session.getUnitNumber(handler.getBeginUnit()))),
                 // end
                 _db.asIntColumn(String.valueOf(session.getUnitNumber(handler.getEndUnit()))));

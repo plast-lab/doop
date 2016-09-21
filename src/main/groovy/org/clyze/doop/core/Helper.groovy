@@ -49,6 +49,16 @@ class Helper {
     }
 
     /**
+     * Checks that the given list of files exist.
+     */
+    static List<String> checkFiles(List<String> files) {
+        files.each { String file ->
+            checkFileOrThrowException(file, "File is invalid: $file")
+        }
+        return files
+    }
+
+    /**
      * Executes the given Java main class using the supplied class loader.
      */
     static void execJava(ClassLoader cl, String mainClass, String[] params) {

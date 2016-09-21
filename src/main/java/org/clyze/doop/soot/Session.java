@@ -16,12 +16,12 @@ public class Session
 
     if(x == null)
     {
-      x = Integer.valueOf(0);
+      x = 0;
     }
 
-    _tempVarMap.put(s, Integer.valueOf(x.intValue() + 1));
+    _tempVarMap.put(s, x + 1);
 
-    return x.intValue();
+    return x;
   }
 
   /** keeps the unique index of an instruction in the method. This cannot be computed up front,

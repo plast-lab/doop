@@ -1,20 +1,24 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'application'
 apply from  : 'DaCapo.gradle'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 group = 'org.clyze'
 version = '1.0-SNAPSHOT'
@@ -32,6 +36,7 @@ repositories {
 }
 
 def sootClassesJar = file('lib/sootclasses-trunk.jar')
+def sootJar = file('lib/soot-trunk.jar')
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
@@ -43,7 +48,8 @@ dependencies {
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
             'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
 
-    compile files(sootClassesJar)                               // Soot is a compile time dependency
+    // compile files(sootClassesJar)                               // Soot is a compile time dependency
+    compile files(sootJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/axml-2.0.jar')                                      // Soot is a compile time dependency
 
     runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
     runtime files('lib/averroes-no-properties.jar', 'lib/dexlib2-2.0.7-dev.jar' , 'lib/util-2.0.7-dev.jar')
@@ -56,7 +62,8 @@ task generateFiles(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     args = [
         projectDir,
-        sootClassesJar
+        // sootClassesJar
+	    sootJar
     ]
 }
 
@@ -93,7 +100,6 @@ run {
 startScripts {
     dependsOn generateFiles
 }
-
 
 import org.apache.commons.io.FileUtils
 

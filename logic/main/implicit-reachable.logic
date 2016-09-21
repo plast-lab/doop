@@ -1,6 +1,9 @@
 #ifndef EXCLUDE_IMPLICITLY_REACHABLE_CODE
 
 ImplicitReachable(sig) <-
+    AndroidEntryPoint(sig).
+
+ImplicitReachable(sig) <-
    Method:Value(sig:"<java.lang.System: void initializeSystemClass()>").
 
 ImplicitReachable(sig) <-
