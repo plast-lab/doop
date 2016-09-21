@@ -312,6 +312,7 @@ import org.clyze.doop.system.*
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
+            options.DISTINGUISH_STRING_BUFFERS.value = true
         }
 
         if (options.DACAPO.value) {

@@ -382,7 +382,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  * many objects of same type. Doesn't apply to exceptions.
  *************************************************************/
 
-AllocationMergeThreshold[] = 50.
+AllocationMergeThreshold[] = 20.
 
 ExceptionType(?heaptype) <-
   Type:Value(?throw:"java.lang.Throwable"),
@@ -403,7 +403,10 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
-#ifdef DISTINGUISH_STRING_BUFFERS
+// the ifndef is confusing, but it's meant to prevent a dependency
+// violation by having two ways to pick a representative. It's
+// not meant to prevent the merging of these objects.
+#ifndef DISTINGUISH_STRING_BUFFERS
   !Type:Value(?heaptype:"java.lang.StringBuffer"),
   !Type:Value(?heaptype:"java.lang.StringBuilder"),
 #endif
