@@ -21,7 +21,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     //Always true, but this may change in the future
     boolean transitive = true
 
-    //The set of resolved inputFiles
+    //The set of resolved inputs
     protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
 
     //the input resolver

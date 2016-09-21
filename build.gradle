@@ -63,7 +63,7 @@ task generateFiles(type: JavaExec) {
     args = [
         projectDir,
         // sootClassesJar
-	sootJar
+	    sootJar
     ]
 }
 
@@ -100,23 +100,6 @@ run {
 startScripts {
     dependsOn generateFiles
 }
-
-artifactory {
-    contextUrl = "${artifactory_contextUrl}"
-    publish {
-        repository {
-            repoKey = 'libs-snapshot-local'
-            username = "${artifactory_user}"
-            password = "${artifactory_password}"
-            maven = true
-
-        }
-        defaults {
-            publications 'mavenJava'
-        }
-    }
-}
-
 
 import org.apache.commons.io.FileUtils
 

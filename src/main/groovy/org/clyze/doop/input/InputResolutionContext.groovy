@@ -22,7 +22,7 @@ interface InputResolutionContext {
     void add(String input)
 
     /**
-     * Adds the given list of inputFiles for resolution.
+     * Adds the given list of inputs for resolution.
      */
     void add(List<String> inputs)
 
@@ -48,20 +48,20 @@ interface InputResolutionContext {
     Set<File> get(String input)
 
     /**
-     * Resolves the inputFiles to their corresponding files.
+     * Resolves the inputs to their corresponding files.
      * If an input is unresolved --it has not file(s)-- an exception is thrown.
      */
     void resolve()
 
     /**
-     * Gets the set of files that correspond to the inputFiles of this context.
+     * Gets the set of files that correspond to the inputs of this context.
      * The set is returned as a list for convenience.
      * If an input is found to be unresolved --it has not file(s)-- an exception is thrown.
      */
     List<File> getAll()
 
     /**
-     * Returns the inputFiles of this context.
+     * Returns the inputs of this context.
      */
     Set<String> inputs()
 }

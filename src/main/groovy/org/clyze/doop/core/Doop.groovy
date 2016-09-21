@@ -312,15 +312,6 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
-            id:"JRE",
-            name:"jre",
-            argName:"VERSION",
-            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
-            value:"system",
-            forCacheID:true,
-            webUI:true
-        ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
             name:"regex",
@@ -331,12 +322,11 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"JRE_LIB",
-            name:"jre-lib",
-            description:"The path to the JRE lib directory (containing different JRE versions).",
-            value:System.getenv("DOOP_JRE_LIB"),
-            webUI:false,
-            isAdvanced:true
+                id:"PLATFORM_LIBS",
+                name:"platform-libs",
+                description:"The path to the platform libs directory.",
+                value:System.getenv("DOOP_PLATFORM_LIBS"),
+                isAdvanced:true
         ),
         new AnalysisOption<String>(
                 id:"PLATFORM",
@@ -428,7 +418,7 @@ class Doop {
 
         doopHome = homePath
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
-        Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
+        FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
         doopOut      = outPath ?: "$doopHome/out"
         doopCache    = cachePath ?: "$doopHome/cache"
@@ -440,10 +430,10 @@ class Doop {
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut")
+        FileOps.findDirOrThrow(f, "Could not create ouput directory: $doopOut")
         f = new File(doopCache)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create cache directory: $doopCache")
+        FileOps.findDirOrThrow(f, "Could not create cache directory: $doopCache")
     }
 
     /**

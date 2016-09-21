@@ -1,0 +1,746 @@
+/**
+ * Declarations of facts generated from Jimple (analysis independent)
+ */
+
+
+// Numeric Constant Abstraction
+NumConstant(?x), NumConstant:Value(?x:?s) -> string(?s).
+
+
+//------------------------------------------------------
+//          Access Modifiers (plus selectors)
+//------------------------------------------------------
+
+Modifier(?x), Modifier:Value(?x:?s) -> string(?s).
+
+Modifier:abstract[] = ?mod ->
+   Modifier(?mod).
+
+Modifier:final[] = ?mod ->
+   Modifier(?mod).
+
+Modifier:public[] = ?mod ->
+   Modifier(?mod).
+
+Modifier:private[] = ?mod ->
+   Modifier(?mod).
+
+Modifier:static[] = ?mod ->
+   Modifier(?mod).
+
+
+//------------------------------------------------------
+//                Auxiliary Entities
+// 
+// !! These entities exist only to facilitate indexing.
+// When a primitive appears in a key position of a predicate,
+// the engine will switch to left-to-right ordering. !!
+//------------------------------------------------------
+ParamIndex(x), ParamIndex:Value(x:y) -> int[32](y).
+SimpleName(x), SimpleName:Value(x:s) -> string(s).
+
+
+//------------------------------------------------------
+//               Java Type Hierarchy
+//
+// TODO Improve type hierarchy: ArrayType is a subtype
+// of ClassType, turn ClassType into OrdinaryClassType.
+//------------------------------------------------------
+
+
+Type(?x), Type:fqn(?x:?s) -> string(?s).
+
+PrimitiveType(?x) -> Type(?x).
+ReferenceType(?x) -> Type(?x).
+NullType(?x) -> ReferenceType(?x).
+
+lang:entity(`PrimitiveType).
+lang:entity(`ReferenceType).
+lang:entity(`NullType).
+
+
+ArrayType(?x) -> ReferenceType(?x).
+ClassType(?x) -> ReferenceType(?x).
+InterfaceType(?x) -> ReferenceType(?x).
+
+lang:entity(`ArrayType).
+lang:entity(`ClassType).
+lang:entity(`InterfaceType).
+
+
+// Inheritance and Subtyping
+
+DirectSuperclass[?class] = ?superclass ->
+   ReferenceType(?class), ClassType(?superclass).
+
+DirectSuperinterface(?class, ?interface) ->
+   ReferenceType(?class), InterfaceType(?interface).
+
+
+// Important class subsets
+
+ApplicationClass(?ref) ->
+   Type(?ref).
+
+MainClass(?ref) ->
+   ClassType(?ref).
+
+
+// Common type selectors
+
+Type:boolean[] = ?t ->
+   PrimitiveType(?t).
+
+Type:byte[] = ?t ->
+   PrimitiveType(?t).
+
+Type:char[] = ?t ->
+   PrimitiveType(?t).
+
+Type:short[] = ?t ->
+   PrimitiveType(?t).
+
+Type:int[] = ?t ->
+   PrimitiveType(?t).
+
+Type:long[] = ?t ->
+   PrimitiveType(?t).
+
+Type:float[] = ?t ->
+   PrimitiveType(?t).
+
+Type:double[] = ?t ->
+   PrimitiveType(?t).
+
+Type:null[] = ?t ->
+   NullType(?t).
+
+Type:object[] = ?t ->
+   ClassType(?t).
+
+
+//------------------------------------------------------
+//           Field and Method Signatures
+//------------------------------------------------------
+
+
+// TODO: Is this necessary? What does it represent and how does it
+// differ from method signature?
+
+MethodDescriptor(x), MethodDescriptor:Value(x:s) -> string(s).
+
+MethodJVMDescriptor(x), MethodJVMDescriptor:Value(x:s) -> string(s).
+
+
+//----------------------
+// [Field Signatures]
+//----------------------
+
+FieldSignature(x), FieldSignature:Value(x:s) -> string(s).
+
+// TODO declare this as a ClassType
+// Type that contains the field declaration
+FieldSignature:DeclaringClass[?signature] = ?declaringClass ->
+   FieldSignature(?signature), Type(?declaringClass).
+
+// Simple name of this field
+FieldSignature:SimpleName[?signature] = ?simpleName ->
+   FieldSignature(?signature), SimpleName(?simpleName).
+
+// Type of this field
+FieldSignature:Type[?signature] = ?type ->
+   FieldSignature(?signature), Type(?type).
+
+// Field modifiers
+FieldModifier(?modifier, ?field) ->
+   FieldSignature(?field), Modifier(?modifier).
+
+// Class modifiers
+ClassModifier(?modifier, ?class) ->
+   ClassType(?class), Modifier(?modifier).
+
+
+//----------------------
+// [Method Signatures]
+//----------------------
+
+MethodSignature(x), MethodSignature:Value(x:s) -> string(s).
+
+// Type that contains the method decl
+MethodSignature:DeclaringType[?signature] = ?declaringType ->
+   MethodSignature(?signature), Type(?declaringType).
+
+// Return type of method
+MethodSignature:ReturnType[?signature] = ?returnType ->
+   MethodSignature(?signature), Type(?returnType).
+
+// Simple name of this method
+MethodSignature:SimpleName[?signature] = ?simplename ->
+   MethodSignature(?signature), SimpleName(?simplename).
+
+// Associated method descriptor
+MethodSignature:Descriptor[?signature] = ?descriptor ->
+   MethodSignature(?signature), MethodDescriptor(?descriptor).
+
+// JVM method descriptor
+MethodSignature:JVMDescriptor[?signature] = ?descriptor ->
+   MethodSignature(?signature), MethodJVMDescriptor(?descriptor).
+
+// Method modifiers
+MethodModifier(?mod, ?method) ->
+   MethodSignature(?method), Modifier(?mod).
+
+
+// Parameters
+
+FormalParam[?index, ?method] = ?var ->
+   MethodSignature(?method), ParamIndex(?index), Var(?var).
+
+ThisVar[?method] = ?var ->
+   MethodSignature(?method), Var(?var).
+
+
+// Method ?method declares to throw exception ?exceptionType.
+// This predicate corresponds to Java's throws clause, or the
+// Exceptions clause in Java bytecode.
+
+Method:DeclaresException(?exceptionType, ?method) ->
+   MethodSignature(?method), Type(?exceptionType).
+
+
+
+//------------------------------------------------------
+//              Variable Definitions
+//------------------------------------------------------
+
+Var(?x), Var:Value(?x:?s) -> string(?s).
+
+// The type of the variable
+Var:Type[?ref] = ?type ->
+   Var(?ref), Type(?type).
+
+// The method where the variable was declared
+Var:DeclaringMethod(?ref, ?method) ->
+   Var(?ref), MethodSignature(?method).
+
+
+//------------------------------------------------------
+//                Heap Allocations
+//------------------------------------------------------
+
+lang:entity(`HeapAllocation).
+lang:entity(`ClassConstant).
+lang:entity(`StringConstant).
+
+StringConstant(?x) -> HeapAllocation(?x).
+ClassConstant(?x)  -> HeapAllocation(?x).
+EmptyArray(?x) -> HeapAllocation(?x).
+
+// TODO: should we add the following?
+// NormalObject(?x) -> HeapAllocation(?x).
+
+// TODO: see Invocations
+// HeapAllocation(?x), HeapAllocation:Value(?x:?s) -> string(?s).
+
+// Null object
+HeapAllocation:Null[] = ?nullObject ->
+   HeapAllocation(?nullObject).
+
+
+HeapAllocation:Type[?heap] = ?type ->
+   HeapAllocation(?heap), Type(?type).
+
+
+//------------------------------------------------------
+//   Bytecode Instructions (entity representation)
+//------------------------------------------------------
+
+
+Instruction(?insn), Instruction:Value(?insn:?s) -> string(?s).
+
+Instruction:Index[?insn] = ?index ->
+   Instruction(?insn), int[32](?index).
+
+Instruction:Method[?insn] = ?inmethod ->
+   Instruction(?insn), MethodSignature(?inmethod).
+
+UnsupportedInstruction(?insn) -> Instruction(?insn).
+
+AssignPhantomInvoke(?insn) -> UnsupportedInstruction(?insn).
+PhantomInvoke(?insn) -> UnsupportedInstruction(?insn).
+BreakpointStmt(?insn) -> UnsupportedInstruction(?insn).
+
+lang:entity(`Throw:Insn).
+lang:entity(`ThrowNull:Insn).
+lang:entity(`If:Insn).
+lang:entity(`Goto:Insn).
+lang:entity(`TableSwitch:Insn).
+lang:entity(`LookupSwitch:Insn).
+lang:entity(`EnterMonitor:Insn).
+lang:entity(`ExitMonitor:Insn).
+lang:entity(`LoadInstanceField:Insn).
+lang:entity(`StoreInstanceField:Insn).
+lang:entity(`LoadStaticField:Insn).
+lang:entity(`StoreStaticField:Insn).
+lang:entity(`LoadArrayIndex:Insn).
+lang:entity(`StoreArrayIndex:Insn).
+lang:entity(`AssignInstruction).
+lang:entity(`AssignCast:Insn).
+lang:entity(`AssignHeapAllocation:Insn).
+lang:entity(`AssignLocal:Insn).
+lang:entity(`AssignInstanceOf:Insn).
+lang:entity(`AssignBinop:Insn).
+lang:entity(`AssignUnop:Insn).
+lang:entity(`AssignNull:Insn).
+lang:entity(`AssignNumConstant:Insn).
+lang:entity(`AssignCastNull:Insn).
+lang:entity(`AssignCastNumConstant:Insn).
+lang:entity(`AssignMultiArrayAllocation:Insn).
+lang:entity(`ReturnNonvoid:Insn).
+lang:entity(`ReturnVoid:Insn).
+lang:entity(`CallGraphEdgeSource).
+lang:entity(`MethodInvocation).
+lang:entity(`SpecialMethodInvocation:Insn).
+lang:entity(`StaticMethodInvocation:Insn).
+lang:entity(`VirtualMethodInvocation:Insn).
+lang:entity(`UnsupportedInstruction).
+lang:entity(`AssignPhantomInvoke).
+lang:entity(`PhantomInvoke).
+lang:entity(`BreakpointStmt).
+
+//------------------------
+// [Throw Instruction]
+//------------------------
+
+Throw:Insn(?insn) -> Instruction(?insn).
+ThrowNull:Insn(?insn) -> Throw:Insn(?insn).
+
+Throw:Var[?insn] = ?var ->
+   Throw:Insn(?insn), Var(?var).
+
+//------------------------
+// [Goto Instruction]
+//------------------------
+
+Goto:Insn(?insn) -> Instruction(?insn).
+
+Goto:Target[?insn] = ?index ->
+   Goto:Insn(?insn), int[32](?index).
+
+//------------------------
+// [If Instruction]
+//------------------------
+
+If:Insn(?insn) -> Instruction(?insn).
+
+If:Target[?insn] = ?index ->
+   If:Insn(?insn), int[32](?index).
+
+//------------------------
+// [Switch Instructions]
+//------------------------
+
+Switch:Insn(?insn) -> Instruction(?insn).
+
+TableSwitch:Insn(?insn) -> Switch:Insn(?insn).
+LookupSwitch:Insn(?insn) -> Switch:Insn(?insn).
+
+
+Switch:Key[?insn] = ?key ->
+   Switch:Insn(?insn), Var(?key).
+
+Switch:Target[?insn, ?value] = ?index ->
+   Switch:Insn(?insn), int[32](?value), int[32](?index).
+
+Switch:DefaultTarget[?insn] = ?index ->
+   Switch:Insn(?insn), int[32](?index).
+
+//-------------------------
+// [Monitor Instructions]
+//-------------------------
+
+MonitorInstruction(?insn)    ->    Instruction(?insn).
+EnterMonitor:Insn(?insn) -> MonitorInstruction(?insn).
+ExitMonitor:Insn(?insn)  -> MonitorInstruction(?insn).
+
+EnterMonitor:Var[?insn] = ?var ->
+   EnterMonitor:Insn(?insn), Var(?var).
+
+ExitMonitor:Var[?insn] = ?var ->
+   ExitMonitor:Insn(?insn), Var(?var).
+
+//------------------------
+// [Field Instructions]
+//------------------------
+
+FieldInstruction(?insn) -> Instruction(?insn).
+
+LoadInstanceField:Insn(?insn)  -> FieldInstruction(?insn).
+StoreInstanceField:Insn(?insn) -> FieldInstruction(?insn).
+
+LoadStaticField:Insn(?insn)    -> FieldInstruction(?insn).
+StoreStaticField:Insn(?insn)   -> FieldInstruction(?insn).
+
+
+// The associated *field* of this instruction. It applies to
+// all types of field instuctions.
+
+FieldInstruction:Signature[?insn] = ?sign ->
+   FieldInstruction(?insn), FieldSignature(?sign).
+
+
+//------------------------------------------------
+// A LoadInstanceField instruction has the form:
+//    x = y.f
+//
+// Its three components are:
+//   1. Base (y)
+//   2. Field (f)
+//   3. To (x)
+//------------------------------------------------
+
+LoadInstanceField:Base[?insn] = ?var ->
+   LoadInstanceField:Insn(?insn), Var(?var).
+
+LoadInstanceField:To[?insn] = ?var ->
+   LoadInstanceField:Insn(?insn), Var(?var).
+
+
+//------------------------------------------------
+// A StoreInstanceField instruction has the form:
+//    x.f = y
+//
+// Its three components are:
+//   1. Base (x)
+//   2. Field (f)
+//   3. From (y)
+//------------------------------------------------
+
+StoreInstanceField:From[?insn] = ?var ->
+   StoreInstanceField:Insn(?insn), Var(?var).
+
+StoreInstanceField:Base[?insn] = ?var ->
+   StoreInstanceField:Insn(?insn), Var(?var).
+
+
+//------------------------------------------------
+// A LoadStaticField instruction has the form:
+//    x = Y.f
+//
+// Its two components are:
+//   1. Field (Y.f)
+//   2. To (x)
+//------------------------------------------------
+
+LoadStaticField:To[?insn] = ?var ->
+   LoadStaticField:Insn(?insn), Var(?var).
+
+
+//------------------------------------------------
+// A StoreStaticField instruction has the form:
+//    X.f = y
+//
+// Its two components are:
+//   1. Field (X.f)
+//   2. From (y)
+//------------------------------------------------
+
+StoreStaticField:From[?insn] = ?var ->
+   StoreStaticField:Insn(?insn), Var(?var).
+
+
+//------------------------
+// [Array Instructions]
+//------------------------
+
+// TODO: replace LoadArrayIndex:Base, StoreArrayIndex:Base with ArrayInstruction:Base
+ArrayInstruction(?insn)     ->      Instruction(?insn).
+LoadArrayIndex:Insn(?insn)  -> ArrayInstruction(?insn).
+StoreArrayIndex:Insn(?insn) -> ArrayInstruction(?insn).
+
+
+ComponentType[?arrayType] = ?componentType ->
+   ArrayType(?arrayType), Type(?componentType).
+
+
+LoadArrayIndex:Base[?insn] = ?var ->
+   LoadArrayIndex:Insn(?insn), Var(?var).
+
+LoadArrayIndex:To[?insn] = ?var ->
+   LoadArrayIndex:Insn(?insn), Var(?var).
+
+
+ArrayInsnIndex[?insn] = ?index ->
+   Instruction(?insn), Var(?index).
+
+
+StoreArrayIndex:From[?insn] = ?var ->
+   StoreArrayIndex:Insn(?insn), Var(?var).
+
+StoreArrayIndex:Base[?insn] = ?var ->
+   StoreArrayIndex:Insn(?insn), Var(?var).
+
+
+//------------------------
+// [Assign Instructions]
+//------------------------
+
+AssignInstruction(?insn) -> Instruction(?insn).
+
+AssignCast:Insn(?insn)  ->  AssignInstruction(?insn).
+AssignBinop:Insn(?insn) -> AssignOper:Insn(?insn).
+AssignOper:Insn(?insn) -> AssignInstruction(?insn).
+AssignUnop:Insn(?insn) -> AssignOper:Insn(?insn).
+AssignLocal:Insn(?insn) ->  AssignOper:Insn(?insn).
+AssignInstanceOf:Insn(?insn) ->  AssignInstruction(?insn).
+AssignNull:Insn(?insn)  ->  AssignInstruction(?insn).
+AssignNumConstant:Insn(?insn) -> AssignInstruction(?insn).
+AssignCastNull:Insn(?insn)  ->  AssignCast:Insn(?insn).
+AssignCastNumConstant:Insn(?insn) -> AssignCast:Insn(?insn).
+AssignHeapAllocation:Insn(?insn) -> AssignInstruction(?insn).
+AssignMultiArrayAllocation:Insn(?insn) -> AssignInstruction(?insn).
+
+
+// The target of all assignment instructions
+AssignInstruction:To[?insn] = ?to ->
+   AssignInstruction(?insn), Var(?to).
+
+
+// Assign numeric constant instruction
+
+AssignNumConstant:Value[?insn] = ?const ->
+   AssignNumConstant:Insn(?insn), NumConstant(?const).
+
+
+// Assign cast instruction
+
+AssignCast:From[?insn] = ?from ->
+   AssignCast:Insn(?insn), Var(?from).
+
+AssignCast:Type[?insn] = ?type ->
+   AssignCast:Insn(?insn), Type(?type).
+
+
+// Assign numeric constant casting instruction
+
+AssignCastNumConstant:Value[?insn] = ?const ->
+   AssignCastNumConstant:Insn(?insn), NumConstant(?const).
+
+
+// Assign local instruction
+
+AssignLocal:From[?insn] = ?from ->
+   AssignLocal:Insn(?insn), Var(?from).
+
+// Assign instanceof expression
+
+AssignInstanceOf:From[?insn] = ?from ->
+   AssignInstanceOf:Insn(?insn), Var(?from).
+
+AssignInstanceOf:Type[?insn] = ?type ->
+   AssignInstanceOf:Insn(?insn), Type(?type).
+
+
+// Assign expression vars
+
+AssignOper:From(?insn, ?from) ->
+   AssignOper:Insn(?insn), Var(?from).
+
+AssignOper:Type(?insn, ?type) ->
+   AssignOper:Insn(?insn), string(?type).
+
+// Variables used in ifs
+
+If:Var(?insn, ?var) ->
+   If:Insn(?insn), Var(?var).
+
+// Assign multi-array allocation instruction
+
+AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
+   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
+
+AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
+   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
+
+
+// Assign Heap Allocation
+
+AssignHeapAllocation:Heap[?insn] = ?heap ->
+   AssignHeapAllocation:Insn(?insn), HeapAllocation(?heap).
+
+
+//------------------------
+// [Return Instructions]
+//------------------------
+
+ReturnInstruction(?insn) -> Instruction(?insn).
+ReturnVoid:Insn(?insn) -> ReturnInstruction(?insn).
+ReturnNonvoid:Insn(?insn) -> ReturnInstruction(?insn).
+
+
+// Note: a Jimple method can have multiple return variables.
+
+ReturnNonvoid:Var[?return] = ?var ->
+  ReturnNonvoid:Insn(?return), Var(?var).
+
+
+//---------------------------
+// [Invocation Instructions]
+//---------------------------
+
+CallGraphEdgeSource(?insn) -> Instruction(?insn).
+
+// TODO: HeapAllocation being a CallGraphEdgeSource is an artifact
+// from previous versions; we should change it carefully so as not to
+// break hybrid analysis.
+
+HeapAllocation(?insn) -> CallGraphEdgeSource(?insn).
+MethodInvocation(?insn) -> CallGraphEdgeSource(?insn).
+
+VirtualMethodInvocation:Insn(?insn) -> MethodInvocation(?insn).
+SpecialMethodInvocation:Insn(?insn) -> MethodInvocation(?insn).
+StaticMethodInvocation:Insn(?insn)  -> MethodInvocation(?insn).
+
+
+// The line number of a method invocation
+MethodInvocation:LineNumber[?invocation] = ?lineNumber ->
+   MethodInvocation(?invocation), int[64](?lineNumber).
+
+// The signature of the method being called
+MethodInvocation:Signature[?invocation] = ?signature ->
+   MethodInvocation(?invocation), MethodSignature(?signature).
+
+// The (call-site) variable that holds the result of the invocation
+AssignReturnValue[?invocation] = ?to ->
+   MethodInvocation(?invocation), Var(?to).
+
+// The actual parameters of the invocation. Note: this does not
+// contain the receiver object (see MethodInvocation:Base predicates).
+ActualParam[?index, ?invocation] = ?var ->
+   MethodInvocation(?invocation), ParamIndex(?index), Var(?var).
+
+
+// Virtual Method Invocation
+
+VirtualMethodInvocation:Base[?invocation] = ?base ->
+   VirtualMethodInvocation:Insn(?invocation), Var(?base).
+
+
+// Special Method Invocation
+
+SpecialMethodInvocation:Base[?invocation] = ?base ->
+   SpecialMethodInvocation:Insn(?invocation), Var(?base).
+
+
+
+//------------------------------------------------------
+//                Exception Handlers
+//------------------------------------------------------
+
+
+ExceptionHandler(x), ExceptionHandler:Value(x:s) -> string(s).
+
+ExceptionHandler:Method[?handler] = ?inmethod ->
+   ExceptionHandler(?handler),
+   MethodSignature(?inmethod).
+
+
+// Instruction index of handling codec
+
+ExceptionHandler:Index[?handler] = ?index ->
+   ExceptionHandler(?handler),
+   int[32](?index).
+
+
+ExceptionHandler:Type[?handler] = ?type ->
+   ExceptionHandler(?handler),
+   Type(?type).
+
+
+// Variable to which caught exceptions are assigned.
+
+ExceptionHandler:FormalParam[?handler] = ?var ->
+   ExceptionHandler(?handler),
+   Var(?var).
+
+
+// First index of the bytecodes covered by this handler.
+
+ExceptionHandler:Begin[?handler] = ?index ->
+   ExceptionHandler(?handler),
+   int[32](?index).
+
+
+// Last index (excluding this index) of the bytecodes covered by this
+// handler.
+
+ExceptionHandler:End[?handler] = ?index ->
+   ExceptionHandler(?handler),
+   int[32](?index).
+
+
+// Previous exception handler (handlers are ordered inside a method).
+
+ExceptionHandler:Previous[?handler] = ?previous ->
+   ExceptionHandler(?handler),
+   ExceptionHandler(?previous).
+
+
+// fact for Paddle compatibility mode
+
+SimpleExceptionHandler(?type, ?var, ?inmethod) ->
+   Type(?type),
+   MethodSignature(?inmethod),
+   Var(?var).
+
+
+//------------------------------------------------------
+//                   Miscellaneous
+//------------------------------------------------------
+
+
+// Contents of properties files
+Properties[?path, ?key] = ?value ->
+   StringConstant(?path), StringConstant(?key), StringConstant(?value).
+
+
+// Return variables of native methods (no instructions exist)
+NativeReturnVar(?var, ?method) ->
+   Var(?var), MethodSignature(?method).
+
+
+
+//------------------------------------------------------
+//               Capacity Declarations
+//------------------------------------------------------
+
+
+lang:physical:capacity[`FieldSignature] = 524288.
+lang:physical:capacity[`MethodSignature] = 524288.
+lang:physical:capacity[`MethodDescriptor] = 131072.
+lang:physical:capacity[`MethodJVMDescriptor] = 524288.
+lang:physical:capacity[`NumConstant] = 1048576.
+lang:physical:capacity[`Instruction] = 67108864. /* 2^26 */
+lang:physical:capacity[`Throw:Insn] = 67108864. /* = instruction */
+lang:physical:capacity[`CallGraphEdgeSource] = 67108864. /* = instruction */
+lang:physical:capacity[`HeapAllocation] = 67108864. /* = instruction */
+lang:physical:capacity[`MethodInvocation] = 67108864. /* = instruction */
+lang:physical:capacity[`StringConstant] = 67108864./* = HeapAllocation */
+lang:physical:capacity[`ClassConstant] = 67108864./* = HeapAllocation */
+lang:physical:capacity[`SimpleName] = 131072.
+lang:physical:capacity[`ExceptionHandler] = 131072.
+lang:physical:capacity[`Var] = 8388608. /* 2^23 */
+lang:physical:capacity[`Modifier] = 32.
+lang:physical:capacity[`Type] = 131072.
+lang:physical:capacity[`PrimitiveType] = 131072.
+lang:physical:capacity[`ReferenceType] = 131072.
+lang:physical:capacity[`NullType] = 131072.
+lang:physical:capacity[`ArrayType] = 131072.
+lang:physical:capacity[`ClassType] = 131072.
+lang:physical:capacity[`InterfaceType] = 131072.
+
+
+//------------------------------------
+//          Android Entry Points
+//------------------------------------
+AndroidEntryPoint(?m) -> MethodSignature(?m).
