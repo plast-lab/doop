@@ -1,0 +1,5 @@
+Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
+   string(?classStr), string(?methodStr), string(?mapped), string(?inClassStr), string(?inMethodStr), int[64](?lineNumber).
+
+Tamiflex:ReflectionMap(?mapped, ?invocation) ->
+   string(?mapped), MethodInvocation(?invocation).

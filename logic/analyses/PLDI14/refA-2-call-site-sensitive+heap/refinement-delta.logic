@@ -1,0 +1,52 @@
+#include "macros.logic"
+
+// Avoid refining at invocation sites that pass more than N objects as arguments.
+_ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
++_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
+
+_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
+  Var(?arg), MethodInvocation(?invocation), HeapAllocation(?heap).
++_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
+  CallGraphEdge(_, ?invocation, _, _),
+  ActualParam[_, ?invocation] = ?arg,
+  _ContextInsensVPT(?heap, ?arg).
+
+_NumHeapsForInvocationArgs[?invocation] = ?count ->
+  MethodInvocation(?invocation), int[64](?count).
++_NumHeapsForInvocationArgs[?invocation] = ?count <-
+  agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
+
++TempSiteToRefine(?invocation) <-
+  _NumHeapsForInvocationArgs[?invocation] > 1000.
+
+// Avoid refining method calls that refer to methods containing variables that point
+// to heap objects with a high max number of field-points-to facts. This is what
+// causes explosion for deep-context analyses.
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
++_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
+
+_MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_MaxFieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = max(?v)>>(_FieldPointsToPerAllocSiteAndField[?alloc,_] = ?v).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  VarPointsTo(_, ?alloc, _, ?var),
+  _MaxFieldPointsToPerAllocSite[?alloc] > 3000,
+  Var:DeclaringMethod(?var, ?tomethod).
+
++TempNegativeSiteFilter("true").
+
+
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
++TempObjectToRefine(?allocId) <-
+  _VarsPerAllocSite[?alloc] = ?count,
+  HeapAllocation:Value[?alloc] = ?allocId,
+  ?count > 1500.
+
++TempNegativeObjectFilter("true").

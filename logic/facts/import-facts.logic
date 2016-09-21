@@ -1,0 +1,1039 @@
+// NormalHeap
+lang:physical:storageModel[`_NormalHeap] = "DelimitedFile".
+lang:physical:filePath[`_NormalHeap] = "facts/NormalHeap.facts".
+lang:physical:delimiter[`_NormalHeap] = "\t".
+lang:physical:hasColumnNames[`_NormalHeap] = false.
+_NormalHeap(?id, ?type) ->
+   string(?id), string(?type).
+
++HeapAllocation0:Normal(?id, ?type) <-
+   _NormalHeap(?id, ?type).
+
+
+// StringConstant
+lang:physical:storageModel[`_StringConstant] = "DelimitedFile".
+lang:physical:filePath[`_StringConstant] = "facts/StringConstant.facts".
+lang:physical:delimiter[`_StringConstant] = "\t".
+lang:physical:hasColumnNames[`_StringConstant] = false.
+_StringConstant(?id) ->
+   string(?id).
+
++Type:Value(?t:?str),
++ClassType(?t) <-
+   ?str = "java.lang.String".
+
++HeapAllocation0:String(?id) <-
+   _StringConstant(?id).
+
+// StringRaw
+lang:physical:storageModel[`_StringRaw] = "DelimitedFile".
+lang:physical:filePath[`_StringRaw] = "facts/StringRaw.facts".
+lang:physical:delimiter[`_StringRaw] = "\t".
+lang:physical:hasColumnNames[`_StringRaw] = false.
+_StringRaw(?id, ?rawId) ->
+   string(?id), string(?rawId).
+
++StringRaw(?raw),
++StringRaw:Value(?raw:?rawId),
++String:toRaw[?id] = ?raw <-
+   _StringRaw(?id, ?rawId).
+
+
+// ClassHeap
+lang:physical:storageModel[`_ClassHeap] = "DelimitedFile".
+lang:physical:filePath[`_ClassHeap] = "facts/ClassHeap.facts".
+lang:physical:delimiter[`_ClassHeap] = "\t".
+lang:physical:hasColumnNames[`_ClassHeap] = false.
+_ClassHeap(?id) ->
+   string(?id).
+
++Type:Value(?t:?str),
++ClassType(?t) <-
+   ?str = "java.lang.Class".
+
++HeapAllocation0:Class(?id) <-
+   _ClassHeap(?id).
+
+
+// EmptyArray
+lang:physical:storageModel[`_EmptyArray] = "DelimitedFile".
+lang:physical:filePath[`_EmptyArray] = "facts/EmptyArray.facts".
+lang:physical:delimiter[`_EmptyArray] = "\t".
+lang:physical:hasColumnNames[`_EmptyArray] = false.
+_EmptyArray(?id) ->
+   string(?id).
+
++HeapAllocation0:EmptyArray(?id) <-
+   _EmptyArray(?id).
+
+
+// AssignHeapAllocation
+lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
+lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
+_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?heap),
+   string(?to),
+   string(?inmethod).
+
++AssignHeapAllocation:Insn(?instr),
++Instruction:Value(?instr:?instrId),
++Instruction:Index[?instr] = ?index,
++Instruction:Method[?instr] = ?method,
++AssignInstruction:To[?instr] = ?to,
++AssignHeapAllocation0(?instr, ?heapId) <-
+   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
+
+
+
+// AssignLocal
+
+lang:physical:storageModel[`_AssignLocal] = "DelimitedFile".
+lang:physical:filePath[`_AssignLocal] = "facts/AssignLocal.facts".
+lang:physical:delimiter[`_AssignLocal] = "\t".
+lang:physical:hasColumnNames[`_AssignLocal] = false.
+
+_AssignLocal(?instruction, ?index, ?from, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?from),
+   string(?to),
+   string(?inmethod).
+
++AssignLocal:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignLocal:From[?x] = ?from,
++AssignInstruction:To[?x] = ?to <-
+   _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
+
+
+// AssignBinop
+
+lang:physical:storageModel[`_AssignBinop] = "DelimitedFile".
+lang:physical:filePath[`_AssignBinop] = "facts/AssignBinop.facts".
+lang:physical:delimiter[`_AssignBinop] = "\t".
+lang:physical:hasColumnNames[`_AssignBinop] = false.
+
+_AssignBinop(?instruction, ?index, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?inmethod).
+
++AssignBinop:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstruction:To[?x] = ?to <-
+   _AssignBinop(?instruction, ?index, ?to, ?method).
+
+
+// AssignUnop
+
+lang:physical:storageModel[`_AssignUnop] = "DelimitedFile".
+lang:physical:filePath[`_AssignUnop] = "facts/AssignUnop.facts".
+lang:physical:delimiter[`_AssignUnop] = "\t".
+lang:physical:hasColumnNames[`_AssignUnop] = false.
+
+_AssignUnop(?instruction, ?index, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?inmethod).
+
++AssignUnop:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstruction:To[?x] = ?to <-
+   _AssignUnop(?instruction, ?index, ?to, ?method).
+
+
+// AssignOperFrom
+
+lang:physical:storageModel[`_AssignOperFrom] = "DelimitedFile".
+lang:physical:filePath[`_AssignOperFrom] = "facts/AssignOperFrom.facts".
+lang:physical:delimiter[`_AssignOperFrom] = "\t".
+lang:physical:hasColumnNames[`_AssignOperFrom] = false.
+
+_AssignOperFrom(?instruction, ?from) ->
+   string(?instruction),
+   string(?from).
+
++AssignOper:From(?insn, ?from) <-
+   AssignOper:Insn(?insn),
+   Instruction:Value(?insn:?insnval),
+   _AssignOperFrom(?insnval, ?from).
+
+// AssignOperType
+
+lang:physical:storageModel[`_AssignOperType] = "DelimitedFile".
+lang:physical:filePath[`_AssignOperType] = "facts/AssignOperType.facts".
+lang:physical:delimiter[`_AssignOperType] = "\t".
+lang:physical:hasColumnNames[`_AssignOperType] = false.
+
+_AssignOperType(?instruction, ?type) ->
+   string(?instruction),
+   string(?type).
+
++AssignOper:Type(?insn, ?type) <-
+   AssignOper:Insn(?insn),
+   Instruction:Value(?insn:?insnval),
+   _AssignOperType(?insnval, ?type).
+
+// IfVar
+
+lang:physical:storageModel[`_IfVar] = "DelimitedFile".
+lang:physical:filePath[`_IfVar] = "facts/IfVar.facts".
+lang:physical:delimiter[`_IfVar] = "\t".
+lang:physical:hasColumnNames[`_IfVar] = false.
+
+_IfVar(?instruction, ?var) ->
+   string(?instruction),
+   string(?var).
+
++If:Var(?insn, ?var) <-
+   If:Insn(?insn),
+   Instruction:Value(?insn, ?insnval),
+   _IfVar(?insnval, ?var).
+
+// AssignCast
+
+lang:physical:storageModel[`_AssignCast] = "DelimitedFile".
+lang:physical:filePath[`_AssignCast] = "facts/AssignCast.facts".
+lang:physical:delimiter[`_AssignCast] = "\t".
+lang:physical:hasColumnNames[`_AssignCast] = false.
+
+_AssignCast(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?from),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCast:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignCast:From[?x] = ?from,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+
+
+// AssignCastNumConstant
+
+lang:physical:storageModel[`_AssignCastNumConstant] = "DelimitedFile".
+lang:physical:filePath[`_AssignCastNumConstant] = "facts/AssignCastNumConstant.facts".
+lang:physical:delimiter[`_AssignCastNumConstant] = "\t".
+lang:physical:hasColumnNames[`_AssignCastNumConstant] = false.
+
+_AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?const),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCastNumConstant:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignCastNumConstant:Value[?x] = ?const,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?method).
+
+
+// AssignCastNull
+
+lang:physical:storageModel[`_AssignCastNull] = "DelimitedFile".
+lang:physical:filePath[`_AssignCastNull] = "facts/AssignCastNull.facts".
+lang:physical:delimiter[`_AssignCastNull] = "\t".
+lang:physical:hasColumnNames[`_AssignCastNull] = false.
+
+_AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignCastNull:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignCast:Type[?x] = ?type,
++AssignInstruction:To[?x] = ?to <-
+   _AssignCastNull(?instruction, ?index, ?to, ?type, ?method).
+
+
+// AssignMultiArrayAllocation
+//lang:physical:storageModel[`_AssignMultiArrayAllocation] = "DelimitedFile".
+//lang:physical:filePath[`_AssignMultiArrayAllocation] = "facts/AssignMultiArrayAllocation.facts".
+//lang:physical:delimiter[`_AssignMultiArrayAllocation] = "\t".
+//lang:physical:hasColumnNames[`_AssignMultiArrayAllocation] = false.
+//
+//_AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) ->
+//   string(?instruction),
+//   int[32](?index),
+//   string(?heap),
+//   int[32](?dim),
+//   string(?to),
+//   string(?inmethod).
+//
+//+AssignMultiArrayAllocation:Insn(?x),
+//+Instruction:Value(?x:?instruction),
+//+Instruction:Index[?x] = ?index,
+//+Instruction:Method[?x] = ?method,
+//+AssignMultiArrayAllocation:Heap[?x] = ?heap,
+//+AssignMultiArrayAllocation:Dimensions[?x] = ?dim,
+//+AssignInstruction:To[?x] = ?to <-
+//   _AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?method).
+
+
+// AssignNumConstant
+
+lang:physical:storageModel[`_AssignNumConstant] = "DelimitedFile".
+lang:physical:filePath[`_AssignNumConstant] = "facts/AssignNumConstant.facts".
+lang:physical:delimiter[`_AssignNumConstant] = "\t".
+lang:physical:hasColumnNames[`_AssignNumConstant] = false.
+
+_AssignNumConstant(?instruction, ?index, ?const, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?const),
+   string(?to),
+   string(?inmethod).
+
++AssignNumConstant:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignNumConstant:Value[?x] = ?const,
++AssignInstruction:To[?x] = ?to <-
+   _AssignNumConstant(?instruction, ?index, ?const, ?to, ?method).
+
+
+// AssignNull
+
+lang:physical:storageModel[`_AssignNull] = "DelimitedFile".
+lang:physical:filePath[`_AssignNull] = "facts/AssignNull.facts".
+lang:physical:delimiter[`_AssignNull] = "\t".
+lang:physical:hasColumnNames[`_AssignNull] = false.
+
+_AssignNull(?instruction, ?index, ?to, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?to),
+   string(?inmethod).
+
++AssignNull:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstruction:To[?x] = ?to <-
+   _AssignNull(?instruction, ?index, ?to, ?method).
+
+
+// AssignInstanceOf
+
+lang:physical:storageModel[`_AssignInstanceOf] = "DelimitedFile".
+lang:physical:filePath[`_AssignInstanceOf] = "facts/AssignInstanceOf.facts".
+lang:physical:delimiter[`_AssignInstanceOf] = "\t".
+lang:physical:hasColumnNames[`_AssignInstanceOf] = false.
+
+_AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
+   string(?instruction),
+   int[32](?index),
+   string(?from),
+   string(?to),
+   string(?type),
+   string(?inmethod).
+
++AssignInstanceOf:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++AssignInstanceOf:From[?x] = ?from,
++AssignInstanceOf:Type[?x] = ?type,
++AssignInstruction:To[?x] = ?to <-
+   _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
+
+
+// Field
+
+lang:physical:storageModel[`_Field] = "DelimitedFile".
+lang:physical:filePath[`_Field] = "facts/Field.facts".
+lang:physical:delimiter[`_Field] = "\t".
+lang:physical:hasColumnNames[`_Field] = false.
+
+_Field(?ref, ?declaringClass, ?simplename, ?type) ->
+   string(?ref),
+   string(?declaringClass),
+   string(?simplename),
+   string(?type).
+
++Field(?x),
++Field:Value(?x:?signature),
++Field:DeclaringType[?x] = ?declaringType,
++Field:SimpleName[?x] = ?simplename,
++Field:Type[?x] = ?type <-
+   _Field(?signature, ?declaringType, ?simplename, ?type).
+
+
+// EnterMonitor
+
+lang:physical:storageModel[`_EnterMonitor] = "DelimitedFile".
+lang:physical:filePath[`_EnterMonitor] = "facts/EnterMonitor.facts".
+lang:physical:delimiter[`_EnterMonitor] = "\t".
+lang:physical:hasColumnNames[`_EnterMonitor] = false.
+
+_EnterMonitor(?ref, ?index, ?var, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?var),
+   string(?method).
+
++EnterMonitor:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++EnterMonitor:Var[?x] = ?var <-
+   _EnterMonitor(?instruction, ?index, ?var, ?method).
+
+
+// ExitMonitor
+
+lang:physical:storageModel[`_ExitMonitor] = "DelimitedFile".
+lang:physical:filePath[`_ExitMonitor] = "facts/ExitMonitor.facts".
+lang:physical:delimiter[`_ExitMonitor] = "\t".
+lang:physical:hasColumnNames[`_ExitMonitor] = false.
+
+_ExitMonitor(?ref, ?index, ?var, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?var),
+   string(?method).
+
++ExitMonitor:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++ExitMonitor:Var[?x] = ?var <-
+   _ExitMonitor(?instruction, ?index, ?var, ?method).
+
+
+// Method invocation line numbers
+
+lang:physical:storageModel[`_MethodInvocation:Line] = "DelimitedFile".
+lang:physical:filePath[`_MethodInvocation:Line] = "facts/MethodInvocation-Line.facts".
+lang:physical:delimiter[`_MethodInvocation:Line] = "\t".
+lang:physical:hasColumnNames[`_MethodInvocation:Line] = false.
+
+_MethodInvocation:Line(?ref, ?line) ->
+   string(?ref),
+   int[64](?line).
+
++MethodInvocation(?x),
++Instruction:Value(?x:?instruction),
++MethodInvocation:Line[?x] = ?line <-
+   _MethodInvocation:Line(?instruction, ?line).
+
+
+// Static method invocation
+
+lang:physical:storageModel[`_StaticMethodInvocation] = "DelimitedFile".
+lang:physical:filePath[`_StaticMethodInvocation] = "facts/StaticMethodInvocation.facts".
+lang:physical:delimiter[`_StaticMethodInvocation] = "\t".
+lang:physical:hasColumnNames[`_StaticMethodInvocation] = false.
+
+_StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?signature),
+   string(?method).
+
++StaticMethodInvocation:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++MethodInvocation:Signature[?x] = ?signature <-
+   _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
+
+
+// Special method invocation
+
+lang:physical:storageModel[`_SpecialMethodInvocation] = "DelimitedFile".
+lang:physical:filePath[`_SpecialMethodInvocation] = "facts/SpecialMethodInvocation.facts".
+lang:physical:delimiter[`_SpecialMethodInvocation] = "\t".
+lang:physical:hasColumnNames[`_SpecialMethodInvocation] = false.
+
+_SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?signature),
+   string(?base),
+   string(?method).
+
++SpecialMethodInvocation:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++SpecialMethodInvocation:Base[?x] = ?base,
++MethodInvocation:Signature[?x] = ?signature <-
+   _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+
+
+// Virtual method invocation
+
+lang:physical:storageModel[`_VirtualMethodInvocation] = "DelimitedFile".
+lang:physical:filePath[`_VirtualMethodInvocation] = "facts/VirtualMethodInvocation.facts".
+lang:physical:delimiter[`_VirtualMethodInvocation] = "\t".
+lang:physical:hasColumnNames[`_VirtualMethodInvocation] = false.
+
+_VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?signature),
+   string(?base),
+   string(?method).
+
++VirtualMethodInvocation:Insn(?x),
++Instruction:Value(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++VirtualMethodInvocation:Base[?x] = ?base,
++MethodInvocation:Signature[?x] = ?signature <-
+   _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+
+
+// Throw
+
+lang:physical:storageModel[`_Throw] = "DelimitedFile".
+lang:physical:filePath[`_Throw] = "facts/Throw.facts".
+lang:physical:delimiter[`_Throw] = "\t".
+lang:physical:hasColumnNames[`_Throw] = false.
+
+_Throw(?ref, ?index, ?var, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?var),
+   string(?method).
+
++Throw:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++Throw:Var[?x] = ?var <-
+   _Throw(?ref, ?index, ?var, ?method).
+
+
+// ThrowNull
+
+lang:physical:storageModel[`_ThrowNull] = "DelimitedFile".
+lang:physical:filePath[`_ThrowNull] = "facts/ThrowNull.facts".
+lang:physical:delimiter[`_ThrowNull] = "\t".
+lang:physical:hasColumnNames[`_ThrowNull] = false.
+
+_ThrowNull(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++ThrowNull:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _ThrowNull(?ref, ?index, ?method).
+
+
+// Exception handler
+
+lang:physical:storageModel[`_ExceptionHandler] = "DelimitedFile".
+lang:physical:filePath[`_ExceptionHandler] = "facts/ExceptionHandler.facts".
+lang:physical:delimiter[`_ExceptionHandler] = "\t".
+lang:physical:hasColumnNames[`_ExceptionHandler] = false.
+
+_ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
+   string(?ref),
+   string(?method),
+   int[32](?index),
+   string(?type),
+   string(?var),
+   int[32](?begin),
+   int[32](?end).
+
++ExceptionHandler(?x),
++ExceptionHandler:Value(?x:?ref),
++ExceptionHandler:Method[?x] = ?method,
++ExceptionHandler:Index[?x] = ?index,
++ExceptionHandler:Type[?x] = ?type,
++ExceptionHandler:FormalParam[?x] = ?var,
++ExceptionHandler:Begin[?x] = ?begin,
++ExceptionHandler:End[?x] = ?end <-
+   _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end).
+
+
+// Method signature
+
+lang:physical:storageModel[`_Method] = "DelimitedFile".
+lang:physical:filePath[`_Method] = "facts/Method.facts".
+lang:physical:delimiter[`_Method] = "\t".
+lang:physical:hasColumnNames[`_Method] = false.
+
+_Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType) ->
+   string(?ref),
+   string(?simplename),
+   string(?descriptor),
+   string(?declaringType),
+   string(?returnType).
+
++Method(?x),
++Method:Value(?x:?ref),
++Method:SimpleName[?x] = ?simplename,
++Method:Descriptor[?x] = ?descriptor,
++Method:DeclaringType[?x] = ?declaringType,
++Method:ReturnType[?x] = ?returnType <-
+   _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType).
+
+
+// StoreInstanceField
+
+lang:physical:storageModel[`_StoreInstanceField] = "DelimitedFile".
+lang:physical:filePath[`_StoreInstanceField] = "facts/StoreInstanceField.facts".
+lang:physical:delimiter[`_StoreInstanceField] = "\t".
+lang:physical:hasColumnNames[`_StoreInstanceField] = false.
+
+_StoreInstanceField(?ref, ?index, ?from, ?base, ?signature, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?from),
+   string(?base),
+   string(?signature),
+   string(?method).
+
++StoreInstanceField:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++FieldInstruction:Signature[?x] = ?signature,
++StoreInstanceField:Base[?x] = ?base,
++StoreInstanceField:From[?x] = ?from <-
+   _StoreInstanceField(?ref, ?index, ?from, ?base, ?signature, ?method).
+
+
+// LoadInstanceField
+
+lang:physical:storageModel[`_LoadInstanceField] = "DelimitedFile".
+lang:physical:filePath[`_LoadInstanceField] = "facts/LoadInstanceField.facts".
+lang:physical:delimiter[`_LoadInstanceField] = "\t".
+lang:physical:hasColumnNames[`_LoadInstanceField] = false.
+
+_LoadInstanceField(?ref, ?index, ?to, ?base, ?signature, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?to),
+   string(?base),
+   string(?signature),
+   string(?method).
+
++LoadInstanceField:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++FieldInstruction:Signature[?x] = ?signature,
++LoadInstanceField:Base[?x] = ?base,
++LoadInstanceField:To[?x] = ?to <-
+   _LoadInstanceField(?ref, ?index, ?to, ?base, ?signature, ?method).
+
+
+// StoreStaticField
+
+lang:physical:storageModel[`_StoreStaticField] = "DelimitedFile".
+lang:physical:filePath[`_StoreStaticField] = "facts/StoreStaticField.facts".
+lang:physical:delimiter[`_StoreStaticField] = "\t".
+lang:physical:hasColumnNames[`_StoreStaticField] = false.
+
+_StoreStaticField(?ref, ?index, ?from, ?signature, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?from),
+   string(?signature),
+   string(?method).
+
++StoreStaticField:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++FieldInstruction:Signature[?x] = ?signature,
++StoreStaticField:From[?x] = ?from <-
+   _StoreStaticField(?ref, ?index, ?from, ?signature, ?method).
+
+
+// LoadStaticField
+
+lang:physical:storageModel[`_LoadStaticField] = "DelimitedFile".
+lang:physical:filePath[`_LoadStaticField] = "facts/LoadStaticField.facts".
+lang:physical:delimiter[`_LoadStaticField] = "\t".
+lang:physical:hasColumnNames[`_LoadStaticField] = false.
+
+_LoadStaticField(?ref, ?index, ?to, ?signature, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?to),
+   string(?signature),
+   string(?method).
+
++LoadStaticField:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++FieldInstruction:Signature[?x] = ?signature,
++LoadStaticField:To[?x] = ?to <-
+   _LoadStaticField(?ref, ?index, ?to, ?signature, ?method).
+
+
+// StoreArrayIndex
+
+lang:physical:storageModel[`_StoreArrayIndex] = "DelimitedFile".
+lang:physical:filePath[`_StoreArrayIndex] = "facts/StoreArrayIndex.facts".
+lang:physical:delimiter[`_StoreArrayIndex] = "\t".
+lang:physical:hasColumnNames[`_StoreArrayIndex] = false.
+
+_StoreArrayIndex(?ref, ?index, ?from, ?base, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?from),
+   string(?base),
+   string(?method).
+
++StoreArrayIndex:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++StoreArrayIndex:Base[?x] = ?base,
++StoreArrayIndex:From[?x] = ?from <-
+   _StoreArrayIndex(?ref, ?index, ?from, ?base, ?method).
+
+
+// LoadArrayIndex
+
+lang:physical:storageModel[`_LoadArrayIndex] = "DelimitedFile".
+lang:physical:filePath[`_LoadArrayIndex] = "facts/LoadArrayIndex.facts".
+lang:physical:delimiter[`_LoadArrayIndex] = "\t".
+lang:physical:hasColumnNames[`_LoadArrayIndex] = false.
+
+_LoadArrayIndex(?ref, ?index, ?to, ?base, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?to),
+   string(?base),
+   string(?method).
+
++LoadArrayIndex:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++LoadArrayIndex:Base[?x] = ?base,
++LoadArrayIndex:To[?x] = ?to <-
+   _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method).
+
+
+// ArrayInsnIndex 
+
+lang:physical:storageModel[`_ArrayInsnIndex] = "DelimitedFile".
+lang:physical:filePath[`_ArrayInsnIndex] = "facts/ArrayInsnIndex.facts".
+lang:physical:delimiter[`_ArrayInsnIndex] = "\t".
+lang:physical:hasColumnNames[`_ArrayInsnIndex] = false.
+
+_ArrayInsnIndex(?ref, ?index) ->
+   string(?ref),
+   string(?index).
+
++ArrayInsnIndex[?insn] = ?index <-
+   _ArrayInsnIndex(?insn, ?index).
+
+// Goto
+
+lang:physical:storageModel[`_Goto] = "DelimitedFile".
+lang:physical:filePath[`_Goto] = "facts/Goto.facts".
+lang:physical:delimiter[`_Goto] = "\t".
+lang:physical:hasColumnNames[`_Goto] = false.
+
+_Goto(?ref, ?index, ?to, ?method) ->
+   string(?ref),
+   int[32](?index),
+   int[32](?to),
+   string(?method).
+
++Goto:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++Goto:Target[?x] = ?to <-
+   _Goto(?ref, ?index, ?to, ?method).
+
+
+// If
+
+lang:physical:storageModel[`_If] = "DelimitedFile".
+lang:physical:filePath[`_If] = "facts/If.facts".
+lang:physical:delimiter[`_If] = "\t".
+lang:physical:hasColumnNames[`_If] = false.
+
+_If(?ref, ?index, ?to, ?method) ->
+   string(?ref),
+   int[32](?index),
+   int[32](?to),
+   string(?method).
+
++If:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++If:Target[?x] = ?to <-
+   _If(?ref, ?index, ?to, ?method).
+
+// Switch Statements
+
+lang:physical:storageModel[`_TableSwitch] = "DelimitedFile".
+lang:physical:filePath[`_TableSwitch] = "facts/TableSwitch.facts".
+lang:physical:delimiter[`_TableSwitch] = "\t".
+lang:physical:hasColumnNames[`_TableSwitch] = false.
+
+_TableSwitch(?ref, ?index, ?key, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?key),
+   string(?method).
+
++TableSwitch:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++Switch:Key[?x] = ?key <-
+   _TableSwitch(?ref, ?index, ?key, ?method).
+
+lang:physical:storageModel[`_LookupSwitch] = "DelimitedFile".
+lang:physical:filePath[`_LookupSwitch] = "facts/LookupSwitch.facts".
+lang:physical:delimiter[`_LookupSwitch] = "\t".
+lang:physical:hasColumnNames[`_LookupSwitch] = false.
+
+_LookupSwitch(?ref, ?index, ?key, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?key),
+   string(?method).
+
++LookupSwitch:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++Switch:Key[?x] = ?key <-
+   _LookupSwitch(?ref, ?index, ?key, ?method).
+
+// Targets
+lang:physical:storageModel[`_TableSwitch:Target] = "DelimitedFile".
+lang:physical:filePath[`_TableSwitch:Target] = "facts/TableSwitch-Target.facts".
+lang:physical:delimiter[`_TableSwitch:Target] = "\t".
+lang:physical:hasColumnNames[`_TableSwitch:Target] = false.
+
+_TableSwitch:Target(?ref, ?value, ?target) ->
+   string(?ref),
+   int[32](?value),
+   int[32](?target).
+
++TableSwitch:Insn(?x),
++Instruction:Value(?x:?ref),
++Switch:Target[?x, ?value] = ?target <-
+   _TableSwitch:Target(?ref, ?value, ?target).
+
+lang:physical:storageModel[`_LookupSwitch:Target] = "DelimitedFile".
+lang:physical:filePath[`_LookupSwitch:Target] = "facts/LookupSwitch-Target.facts".
+lang:physical:delimiter[`_LookupSwitch:Target] = "\t".
+lang:physical:hasColumnNames[`_LookupSwitch:Target] = false.
+
+_LookupSwitch:Target(?ref, ?value, ?target) ->
+   string(?ref),
+   int[32](?value),
+   int[32](?target).
+
++LookupSwitch:Insn(?x),
++Instruction:Value(?x:?ref),
++Switch:Target[?x, ?value] = ?target <-
+   _LookupSwitch:Target(?ref, ?value, ?target).
+
+// Default target
+lang:physical:storageModel[`_TableSwitch:DefaultTarget] = "DelimitedFile".
+lang:physical:filePath[`_TableSwitch:DefaultTarget] = "facts/TableSwitch-Default.facts".
+lang:physical:delimiter[`_TableSwitch:DefaultTarget] = "\t".
+lang:physical:hasColumnNames[`_TableSwitch:DefaultTarget] = false.
+
+_TableSwitch:DefaultTarget(?ref, ?target) ->
+   string(?ref),
+   int[32](?target).
+
++TableSwitch:Insn(?x),
++Instruction:Value(?x:?ref),
++Switch:DefaultTarget[?x] = ?target <-
+   _TableSwitch:DefaultTarget(?ref, ?target).
+
+lang:physical:storageModel[`_LookupSwitch:DefaultTarget] = "DelimitedFile".
+lang:physical:filePath[`_LookupSwitch:DefaultTarget] = "facts/LookupSwitch-Default.facts".
+lang:physical:delimiter[`_LookupSwitch:DefaultTarget] = "\t".
+lang:physical:hasColumnNames[`_LookupSwitch:DefaultTarget] = false.
+
+_LookupSwitch:DefaultTarget(?ref, ?target) ->
+   string(?ref),
+   int[32](?target).
+
++LookupSwitch:Insn(?x),
++Instruction:Value(?x:?ref),
++Switch:DefaultTarget[?x] = ?target <-
+   _LookupSwitch:DefaultTarget(?ref, ?target).
+
+// ReturnNonvoid
+
+lang:physical:storageModel[`_Return] = "DelimitedFile".
+lang:physical:filePath[`_Return] = "facts/Return.facts".
+lang:physical:delimiter[`_Return] = "\t".
+lang:physical:hasColumnNames[`_Return] = false.
+
+_Return(?ref, ?index, ?var, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?var),
+   string(?method).
+
++ReturnNonvoid:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++ReturnNonvoid:Var[?x] = ?var <-
+   _Return(?ref, ?index, ?var, ?method).
+
+
+// ReturnVoid
+
+lang:physical:storageModel[`_ReturnVoid] = "DelimitedFile".
+lang:physical:filePath[`_ReturnVoid] = "facts/ReturnVoid.facts".
+lang:physical:delimiter[`_ReturnVoid] = "\t".
+lang:physical:hasColumnNames[`_ReturnVoid] = false.
+
+_ReturnVoid(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++ReturnVoid:Insn(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _ReturnVoid(?ref, ?index, ?method).
+
+
+// AssignPhantomInvoke
+
+lang:physical:storageModel[`_AssignPhantomInvoke] = "DelimitedFile".
+lang:physical:filePath[`_AssignPhantomInvoke] = "facts/AssignPhantomInvoke.facts".
+lang:physical:delimiter[`_AssignPhantomInvoke] = "\t".
+lang:physical:hasColumnNames[`_AssignPhantomInvoke] = false.
+
+_AssignPhantomInvoke(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++AssignPhantomInvoke(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _AssignPhantomInvoke(?ref, ?index, ?method).
+
+
+// PhantomInvoke
+
+lang:physical:storageModel[`_PhantomInvoke] = "DelimitedFile".
+lang:physical:filePath[`_PhantomInvoke] = "facts/PhantomInvoke.facts".
+lang:physical:delimiter[`_PhantomInvoke] = "\t".
+lang:physical:hasColumnNames[`_PhantomInvoke] = false.
+
+_PhantomInvoke(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++PhantomInvoke(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _PhantomInvoke(?ref, ?index, ?method).
+
+
+// BreakpointStmt
+
+lang:physical:storageModel[`_BreakpointStmt] = "DelimitedFile".
+lang:physical:filePath[`_BreakpointStmt] = "facts/BreakpointStmt.facts".
+lang:physical:delimiter[`_BreakpointStmt] = "\t".
+lang:physical:hasColumnNames[`_BreakpointStmt] = false.
+
+_BreakpointStmt(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++BreakpointStmt(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _BreakpointStmt(?ref, ?index, ?method).
+
+
+// UnsupportedInstruction
+
+lang:physical:storageModel[`_UnsupportedInstruction] = "DelimitedFile".
+lang:physical:filePath[`_UnsupportedInstruction] = "facts/UnsupportedInstruction.facts".
+lang:physical:delimiter[`_UnsupportedInstruction] = "\t".
+lang:physical:hasColumnNames[`_UnsupportedInstruction] = false.
+
+_UnsupportedInstruction(?ref, ?index, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?method).
+
++UnsupportedInstruction(?x),
++Instruction:Value(?x:?ref),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method <-
+   _UnsupportedInstruction(?ref, ?index, ?method).
+
+
+// Access Modifiers
+
++Modifier(?x), +Modifier:Value(?x:"abstract"), +Modifier:abstract[] = ?x.
++Modifier(?x), +Modifier:Value(?x:"public"),   +Modifier:public[]   = ?x.
++Modifier(?x), +Modifier:Value(?x:"private"),  +Modifier:private[]  = ?x.
++Modifier(?x), +Modifier:Value(?x:"final"),    +Modifier:final[]    = ?x.
++Modifier(?x), +Modifier:Value(?x:"static"),   +Modifier:static[]   = ?x.
+
+
+// Basic Types as nullary functional-predicates
+
++PrimitiveType(?t), +Type:Value(?t:"boolean"), +Type:boolean[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"byte"),    +Type:byte[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"char"),    +Type:char[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"short"),   +Type:short[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"int"),     +Type:int[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"long"),    +Type:long[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"float"),   +Type:float[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"double"),  +Type:double[] = ?t.
++NullType(?t),  +Type:Value(?t:"null_type"), +Type:null[] = ?t.
++ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.

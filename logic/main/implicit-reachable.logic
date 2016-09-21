@@ -1,0 +1,49 @@
+#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.System: void initializeSystemClass()>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ThreadGroup: void <init>()>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.Thread: void exit()>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ThreadGroup: void uncaughtException(java.lang.Thread,java.lang.Throwable)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ClassLoader: void <init>()>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ClassLoader: java.lang.Class loadClassInternal(java.lang.String)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ClassLoader: void checkPackageAccess(java.lang.Class,java.security.ProtectionDomain)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ClassLoader: void addClass(java.lang.Class)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ClassLoader: long findNative(java.lang.ClassLoader,java.lang.String)>").
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.security.PrivilegedActionException: void <init>(java.lang.Exception)>").
+
+/**
+ * TODO: this method does not seems to be implicitly reachable. There is a
+ * method Finalizer.runFinalization, but this method is invoked via a native call
+ * from Runtime.runFinalization. runFinalizer is invoked from the FinalizerThread,
+ * which the analyses should be able to figure out by itself.
+
+ImplicitReachable(sig) <-
+   Method:Value(sig:"<java.lang.ref.Finalizer: void runFinalizer()>").
+*/
+
+#endif
