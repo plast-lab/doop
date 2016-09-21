@@ -105,8 +105,8 @@ class Doop {
 
         /* Start of preprocessor normal flags */
         new AnalysisOption<Boolean>(
-            id:"MERGE_STRING_BUFFERS",
-            name:"enable-merge-string-buffers",
+            id:"DISTINGUISH_STRING_BUFFERS",
+            name:"disable-merge-string-buffers",
             value:false,
             webUI:true,
             forPreprocessor: true,
