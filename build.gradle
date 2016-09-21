@@ -28,7 +28,7 @@ mainClassName = 'org.clyze.doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.14'
+    gradleVersion = '3.1'
 }
 
 repositories {
@@ -36,7 +36,6 @@ repositories {
 }
 
 def sootClassesJar = file('lib/sootclasses-trunk.jar')
-def sootJar = file('lib/soot-trunk.jar')
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
@@ -46,13 +45,13 @@ dependencies {
             'org.anarres:jcpp:1.4.5',                           // C preprocessor in Java
             'commons-io:commons-io:2.4',                        // File Utils
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
-            'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
+            'org.ow2.asm:asm-debug-all:5.1'                   // Java Bytecode library
 
     // compile files(sootClassesJar)                               // Soot is a compile time dependency
-    compile files(sootJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/axml-2.0.jar')                                      // Soot is a compile time dependency
+    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/AXMLPrinter2.jar', 'lib/dexlib2-2.1.3-a5d82813.jar')                                      // Soot is a compile time dependency
 
     runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
-    runtime files('lib/averroes-no-properties.jar', 'lib/dexlib2-2.0.7-dev.jar' , 'lib/util-2.0.7-dev.jar')
+    runtime files('lib/averroes-no-properties.jar', 'lib/herosclasses-trunk.jar' , 'lib/util-2.1.3-a5d82813.jar')
 }
 
 task generateFiles(type: JavaExec) {
@@ -62,8 +61,7 @@ task generateFiles(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     args = [
         projectDir,
-        // sootClassesJar
-	    sootJar
+        sootClassesJar
     ]
 }
 
