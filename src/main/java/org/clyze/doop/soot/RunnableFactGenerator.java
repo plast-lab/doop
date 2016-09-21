@@ -423,18 +423,18 @@ class RunnableFactGenerator implements Runnable {
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-//            if(index instanceof Local)
-//            {
-//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
-//            }
-//            else if(index instanceof IntConstant)
-//            {
-//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
-//            }
-//            else
-//            {
-//                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
-//            }
+            if(index instanceof Local)
+            {
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+            }
+            else if(index instanceof IntConstant)
+            {
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+            }
+            else
+            {
+                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
+            }
         }
         else if(right instanceof CastExpr)
         {
@@ -533,10 +533,10 @@ class RunnableFactGenerator implements Runnable {
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-//            if (index instanceof Local)
-//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
-//            else
-//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
+            if (index instanceof Local)
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
+            else
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)
