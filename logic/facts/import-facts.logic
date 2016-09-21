@@ -275,30 +275,6 @@ _AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
    _AssignCastNull(?instruction, ?index, ?to, ?type, ?method).
 
 
-// AssignMultiArrayAllocation
-//lang:physical:storageModel[`_AssignMultiArrayAllocation] = "DelimitedFile".
-//lang:physical:filePath[`_AssignMultiArrayAllocation] = "facts/AssignMultiArrayAllocation.facts".
-//lang:physical:delimiter[`_AssignMultiArrayAllocation] = "\t".
-//lang:physical:hasColumnNames[`_AssignMultiArrayAllocation] = false.
-//
-//_AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?inmethod) ->
-//   string(?instruction),
-//   int[32](?index),
-//   string(?heap),
-//   int[32](?dim),
-//   string(?to),
-//   string(?inmethod).
-//
-//+AssignMultiArrayAllocation:Insn(?x),
-//+Instruction:Value(?x:?instruction),
-//+Instruction:Index[?x] = ?index,
-//+Instruction:Method[?x] = ?method,
-//+AssignMultiArrayAllocation:Heap[?x] = ?heap,
-//+AssignMultiArrayAllocation:Dimensions[?x] = ?dim,
-//+AssignInstruction:To[?x] = ?to <-
-//   _AssignMultiArrayAllocation(?instruction, ?index, ?heap, ?dim, ?to, ?method).
-
-
 // AssignNumConstant
 
 lang:physical:storageModel[`_AssignNumConstant] = "DelimitedFile".

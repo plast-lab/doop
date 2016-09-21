@@ -180,7 +180,6 @@ lang:entity(`AssignCast:Insn).
 lang:entity(`AssignCastNull:Insn).
 lang:entity(`AssignCastNumConstant:Insn).
 lang:entity(`AssignHeapAllocation:Insn).
-lang:entity(`AssignMultiArrayAllocation:Insn).
 lang:entity(`ReturnInstruction).
 lang:entity(`ReturnNonvoid:Insn).
 lang:entity(`ReturnVoid:Insn).
@@ -226,7 +225,6 @@ AssignCast:Insn(?insn)                 -> AssignInstruction(?insn).
 AssignCastNull:Insn(?insn)             -> AssignCast:Insn(?insn).
 AssignCastNumConstant:Insn(?insn)      -> AssignCast:Insn(?insn).
 AssignHeapAllocation:Insn(?insn)       -> AssignInstruction(?insn).
-AssignMultiArrayAllocation:Insn(?insn) -> AssignInstruction(?insn).
 ReturnInstruction(?insn)               -> Instruction(?insn).
 ReturnVoid:Insn(?insn)                 -> ReturnInstruction(?insn).
 ReturnNonvoid:Insn(?insn)              -> ReturnInstruction(?insn).
@@ -403,13 +401,6 @@ AssignOper:From(?insn, ?from) ->
 
 AssignOper:Type(?insn, ?type) ->
    AssignOper:Insn(?insn), string(?type).
-
-// Assign multi-array allocation instruction
-//AssignMultiArrayAllocation:Heap[?insn] = ?heap ->
-//   AssignMultiArrayAllocation:Insn(?insn), HeapAllocation(?heap).
-//
-//AssignMultiArrayAllocation:Dimensions[?insn] = ?dim ->
-//   AssignMultiArrayAllocation:Insn(?insn), int[32](?dim).
 
 // Assign Heap Allocation
 AssignHeapAllocation:Heap[?insn] = ?heap ->
