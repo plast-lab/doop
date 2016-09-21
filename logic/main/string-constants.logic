@@ -29,7 +29,7 @@ HeapAllocation:Special(?heap) <-
 
 /**
  * Objects that should be merged to some heap abstraction 
- * (distinct from merely context-insensitive objects)
+ * (may overlap with merely context-insensitive objects)
  */
 HeapAllocation:Merge[?heap] = ?mergeHeap ->
   HeapAllocation(?heap),
@@ -52,7 +52,7 @@ AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) <-
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
   HeapAllocation:ContextInsensitive(?heap),
-  !(HeapAllocation:Merge[?heap] = _). // should be unnecessary, but has bitten us many times  
+  !(HeapAllocation:Merge[?heap] = _). // should be mostly unnecessary, but has bitten us many times  
 
 /*************************************************************
  * String constants
@@ -85,7 +85,6 @@ HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   ! ReflectionObject(?heap), 
   HeapAllocation:byValue["<<string-constant>>"] = ?constant.
-
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 HeapAllocation:ContextInsensitive(?heap) <-
