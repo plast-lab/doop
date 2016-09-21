@@ -11,7 +11,7 @@ For trouble-free configuration:
 * The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine.
 * The `DOOP_HOME` environment variable should point to the top-level directory of Doop.
 * The `LB_PAGER_FORCE_START` environment variable should be set to true. (You will likely get an engine error about this, which becomes a warning with the flag. To eliminate, also set `LB_MEM_NOWARN` to true.)
-* The `PLATFORMS_LIB` environment variable should point to your PLATFORM lib directory (see below--can be overridden with the `--platform-lib` option). JRE 6 or higher. ANDROID 20 or higher.
+* The `DOOP_PLATFORMS_LIB` environment variable should point to your PLATFORM lib directory (see below--can be overridden with the `--platform-lib` option). JRE 6 or higher. ANDROID 20 or higher.
 * The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `$DOOP_HOME/out`).
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `$DOOP_HOME/cache`).
 
