@@ -141,18 +141,23 @@ correct_vulnerabilities = pd.Series({
     'Datastructures6': 1
 })
 
+query = '_(?invocation, ?obj) <- LeakingTaintedInformation(_, ?invocation, _, ?obj).'
 def getProcess(db):
-    process = subprocess.run(['bloxbatch', '-db', db, '-print', 'LeakingTaintedInformation'], stdout=subprocess.PIPE, universal_newlines=True)
+    process = subprocess.run(['bloxbatch', '-db', db, '-query',query],
+                             stdout=subprocess.PIPE, universal_newlines=True)
     return process
 
 def parseOut(out):
     res = dict((k,0) for k in correct_vulnerabilities.index)
     for line in out.split('\n'):
         linesplit = line.split(', ')
-        if len(linesplit) < 4:
-            continue
+        if len(linesplit) < 2: continue
         try:
-            interesting = linesplit[3].split('securibench.micro')[1].split('.doGet')[0].split('.')[-1].strip()
+            if 'securibench.micro' not in linesplit[0]:
+                continue
+            if 'securibench.micro' not in linesplit[1]:
+                continue
+            interesting = linesplit[1].split('securibench.micro')[1].split('.doGet')[0].split('.')[-1].strip()
             res[interesting]+=1
         except:
             import pdb; pdb.set_trace()
@@ -164,3 +169,6 @@ if __name__ == '__main__':
     detected = pd.Series(parseOut(getProcess(arguments['<db1>']).stdout)).sort_index()
     diff = (correct_vulnerabilities - detected)
     print(diff[diff != 0].sort_values())
+    print('Recall: %f%%'%((139 - diff[diff > 0].count())/1.39))
+    print('%d false positives'%int(diff[diff < 0].sum() * -1))
+

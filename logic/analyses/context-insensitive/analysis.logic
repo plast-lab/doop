@@ -1,50 +1,47 @@
-/**
- * Context-insensitive pointer analysis with on-the-fly call graph discovery.
- */
+// Context-insensitive pointer analysis with on-the-fly call graph discovery
 
-UniqueContext[] = ?ctx,
+Context(?ctx),
 ContextFromRealContext[] = ?ctx,
-Context(?ctx)
-  <- .
+UniqueContext[] = ?ctx.
 
-UniqueHContext[] = ?hctx,
+HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
-HContext(?hctx)
-  <- .
+UniqueHContext[] = ?hctx.
+
+ImmutableContext[] = ?ctx  <-
+  UniqueContext[] = ?ctx.
 
 ImmutableHContext[] = ?hctx <-
   UniqueHContext[] = ?hctx.
 
-// Create initial objects with their heapcontexts.
+
+// Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?alloc), UniqueHContext[] = ?hctx.
+  UniqueHContext[] = ?hctx,
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?alloc), UniqueHContext[] = ?hctx.
+  UniqueHContext[] = ?hctx,
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 MainThread(?hctx, ?alloc) <-
-  MyMainThread(?alloc), UniqueHContext[] = ?hctx.
+  UniqueHContext[] = ?hctx,
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
-/**
- * Reachable methods. Main method, for sure.
- */
+// The main method is reachable
 ReachableContext(?ctx, ?method) <-
-  MainMethodDeclaration(?method), UniqueContext[] = ?ctx.
+  MainMethodDeclaration(?method),
+  UniqueContext[] = ?ctx.
 
-/**
- * Implicitly reachable methods are invoked by the JVM on startup.
- */
+// Implicitly reachable methods are invoked by the JVM on startup.
 ReachableContext(?ctx, ?method) <-
-  ImplicitReachable(?method), UniqueContext[] = ?ctx.
+  ImplicitReachable(?method),
+  UniqueContext[] = ?ctx.
 
-/**
- * If a class needs to be initialized, then its class initializer is
- * invoked.
- *
- * Note that InitializedClass already deals with superclasses that
- * needs to be initialized as well, so we don't need to invoke class
- * initializers of the super class here.
- */
+// If a class needs to be initialized, then its class initializer is invoked
+// Note: InitializedClass already deals with superclasses that need initialization
 ReachableContext(?ctx, ?clinit) <-
-  InitializedClass(?class), ClassInitializer[?class] = ?clinit, UniqueContext[] = ?ctx.
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  UniqueContext[] = ?ctx.

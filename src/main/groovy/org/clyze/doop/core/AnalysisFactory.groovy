@@ -1,14 +1,14 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import java.util.jar.Attributes
+import java.util.jar.JarFile
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
-
-import java.util.jar.Attributes
-import java.util.jar.JarFile
+import org.clyze.doop.system.*
 
 /**
  * A Factory for creating Analysis objects.
@@ -77,16 +77,11 @@ import java.util.jar.JarFile
         //init the environment used for executing commands
         Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
 
-        //TODO: Create empty jar. Is it needed?
-
-        //TODO: Check if input is given (incremental). Is it needed?
         checkDACAPO(vars)
 
         checkAppGlob(vars)
 
         //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
-
-        //TODO: Add client code extensions into the main logic (/bin/weave-client-logic)
 
         String analysisId
         if (id) { //non-empty or null
@@ -136,7 +131,7 @@ import java.util.jar.JarFile
     protected void checkName(String name) {
         logger.debug "Verifying analysis name: $name"
         def analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
-        Helper.checkFileOrThrowException(analysisPath, "Unsupported analysis: $name")
+        FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
     }
 
     protected String validateUserSuppliedId(String id) {
@@ -156,11 +151,10 @@ import java.util.jar.JarFile
      * Creates the analysis output dir, if required.
      */
     protected File createOutputDirectory(AnalysisVars vars, String id) {
-        String outDir = "${Doop.doopOut}/${vars.name}/${id}"
-        File f = new File(outDir)
-        f.mkdirs()
-        Helper.checkDirectoryOrThrowException(outDir, "Could not create analysis directory: ${outDir}")
-        return f
+        def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
+        outDir.mkdirs()
+        FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
+        return outDir
     }
 
     /**
@@ -176,7 +170,7 @@ import java.util.jar.JarFile
         logger.debug("ID components: $idComponents")
         String id = idComponents.join('-')
 
-        return Helper.checksum(id, HASH_ALGO)
+        return CheckSum.checksum(id, HASH_ALGO)
     }
 
     /**
@@ -190,31 +184,31 @@ import java.util.jar.JarFile
         }
 
         Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
-            File file -> Helper.checksum(file, HASH_ALGO)
+            File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.inputFiles.collect {
-            File file -> Helper.checksum(file, HASH_ALGO)
+        checksums += vars.inputJarFiles.collect {
+            File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.platformLibs.collect {
-            String file -> Helper.checksum(new File(file), HASH_ALGO)
+        checksums += vars.jreJars.collect {
+            String file -> CheckSum.checksum(new File(file), HASH_ALGO)
         }
 
         if(vars.options.TAMIFLEX.value) {
-            checksums += [Helper.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
+            checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
         }
 
-        File checksumsFile = Helper.checkFileOrThrowException("${Doop.doopHome}/checksums.properties", "Invalid checksums")
-        Properties p = Helper.loadProperties(checksumsFile)
-        checksums += [p.getProperty(Doop.SOOT_CHECKSUM_KEY)]
+        def checksumsFile = FileOps.findFileOrThrow("${Doop.doopHome}/checksums.properties", "Invalid checksums")
+        Properties props = FileOps.loadProperties(checksumsFile)
+        checksums += [props.getProperty(Doop.SOOT_CHECKSUM_KEY)]
 
         idComponents = checksums + idComponents
 
         logger.debug("Cache ID components: $idComponents")
         String id = idComponents.join('-')
 
-        return Helper.checksum(id, HASH_ALGO)
+        return CheckSum.checksum(id, HASH_ALGO)
     }
 
     /**
@@ -298,6 +292,11 @@ import java.util.jar.JarFile
 
         Map<String, AnalysisOption> options = vars.options
 
+        /*
+         * We mimic the checks of the run script for verifiability of this implementation,
+         * even though the majority of checks are not required.
+         */
+
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
@@ -373,8 +372,6 @@ import java.util.jar.JarFile
         String externals = options.PLATFORM_LIBS.value
         Helper.checkDirectoryOrThrowException(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
 
-        checkOS(vars)
-
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         } else {
@@ -399,25 +396,25 @@ import java.util.jar.JarFile
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
-                Helper.checkFileOrThrowException(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+                FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
                 logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
         }
 
         if (options.TAMIFLEX.value) {
-            String tamFile = options.TAMIFLEX.value.toString()
-            Helper.checkFileOrThrowException(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+            def tamFile = options.TAMIFLEX.value.toString()
+            FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                    options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
-                    options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
-                    options.REFLECTION_SUBSTRING_ANALYSIS.value ||
-                    options.REFLECTION_CONTEXT_SENSITIVITY.value ||
-                    options.REFLECTION_USE_BASED_ANALYSIS.value ||
-                    options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
-                    options.REFLECTION_REFINED_OBJECTS.value) {
+                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
+                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
+                options.REFLECTION_SUBSTRING_ANALYSIS.value ||
+                options.REFLECTION_CONTEXT_SENSITIVITY.value ||
+                options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
+                options.REFLECTION_REFINED_OBJECTS.value) {
                 logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
             } else if (!options.TAMIFLEX.value) {
                 logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
@@ -523,39 +520,17 @@ import java.util.jar.JarFile
     }
 
     /**
-     * Checks the OS. For now, it is always OS.OS_UNIX (the default).
-     */
-    protected void checkOS(AnalysisVars vars) {
-
-        OS os = vars.options.OS.value as OS
-
-        //sanity check
-        EnumSet<OS> supportedValues = EnumSet.allOf(OS)
-        if (! (os in supportedValues)) {
-            throw new RuntimeException("Unsupported OS: $os")
-        }
-
-        //generate the OS constant for preprocessor
-        AnalysisOption<Boolean> osOption = new AnalysisOption<Boolean>(
-                id:os.name(),
-                value:true,
-                forPreprocessor: true
-        )
-        vars.options[(osOption.id)] = osOption
-    }
-
-    /**
      * DACAPO hooks.
      */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
 
         if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
             logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
@@ -579,7 +554,7 @@ import java.util.jar.JarFile
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
+            Set<String> packages = Helper.getPackages(vars.inputJarFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
@@ -595,12 +570,12 @@ import java.util.jar.JarFile
 
         logger.debug "Verifying LogicBlox home: ${lbhome.value}"
 
-        File lbHomeDir = Helper.checkDirectoryOrThrowException(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
 
-        String oldldpath = System.getenv("LD_LIBRARY_PATH")
+        def oldldpath = System.getenv("LD_LIBRARY_PATH")
         vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin" + ":" + oldldpath
-        String bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
-        Helper.checkFileOrThrowException(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
+        def bloxbatch = lbHomeDir.getAbsolutePath() + "/bin/bloxbatch"
+        FileOps.findFileOrThrow(bloxbatch, "The bloxbatch file is invalid: $bloxbatch")
         vars.options.BLOXBATCH.value = bloxbatch
     }
 

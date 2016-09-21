@@ -1,40 +1,12 @@
 DeclaringClass:Allocation[?heap] = ?type <-
    AssignHeapAllocation(?heap, _, ?inmethod),
-   MethodSignature:DeclaringType[?inmethod] = ?type,
+   Method:DeclaringType[?inmethod] = ?type,
    !StringConstant(?heap),
-   !ClassConstant(?heap).
+   !ClassHeap(?heap).
 
-/**
- * REVIEW: the problem is that currently reflective allocations are not
- * uniquely identified. This would produce way too many facts. So instead we
- * cheat and use the type of the reflective allocation as the type *containing*
- * the reflective allocation.  If we are to fix this in the future, it will
- * look like this:
 
 DeclaringClass:Allocation[?heap] = ?type <-
-   ReflectiveHeapAllocation[?invocation, _] = ?heap,
-   Instruction:Method[?invocation] = ?inmethod,
-   MethodSignature:DeclaringType[?inmethod] = ?type,
-   !StringConstant(?heap).
-*/
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReflectiveHeapAllocation[_, ?type] = ?heap.
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReifiedConstructor[_] = ?heap,
-   HeapAllocation:Type[?heap] = ?type.
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReifiedMethod[_] = ?heap,
-   HeapAllocation:Type[?heap] = ?type.
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReifiedField[_] = ?heap,
-   HeapAllocation:Type[?heap] = ?type.
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   ClassConstant(?heap),
+   ClassHeap(?heap),
    ClassTypeValue(?type, "java.lang.String").
 
 DeclaringClass:Allocation[?heap] = ?type <-
@@ -42,56 +14,19 @@ DeclaringClass:Allocation[?heap] = ?type <-
    ClassTypeValue(?type, "java.lang.String").
 
 DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<string-constant>>"),
+   HeapAllocation:byValue["<<string-constant>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
 
 DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<reflection-string-constant>>"),
+   HeapAllocation:byValue["<<reflection-string-constant>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
 
 DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<string-buffer>>"),
+   HeapAllocation:byValue["<<string-buffer>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
 
 #if defined(JRE15) || defined(JRE16) || defined(JRE17)
 DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<string-builder>>"),
+   HeapAllocation:byValue["<<string-builder>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
 #endif
-
-/**
- * Specific to analyses that look up a type to use as context, given an
- * allocation site. Need to supply dummy surrounding types for the dummy
- * allocation sites in delta.logic
- */
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<initial-context>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<jvm-startup>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<class-initialization>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<immutable>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<no-context>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<system-thread-group>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<main-thread-group>>"),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocationValue(?heap, "<<main-thread>>"),
-   ClassTypeValue(?type, "java.lang.String").

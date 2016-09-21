@@ -1,10 +1,18 @@
-// For this analysis, contexts are types, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?type, ?heap) ->
-  Type(?type), HeapAllocation(?heap).
+// In this analysis, the real context is a pair of Types and the real heap
+// context a single Type. Keeping mapping functions is the way to handle
+// analyses where HContext = Context (since the language considers them
+// different types).  The type is not always a class type, because of arrays
+// currently being a non-class subtype of Object
+ContextFromRealContext[?type1, ?type2] = ?ctx ->
+  Context(?ctx), Type(?type1), Type(?type2).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
+RealContext2FromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
 
-MyMainThreadGroup(?type, ?heap) ->
-  Type(?type), HeapAllocation(?heap).
-
-MyMainThread(?type, ?heap) ->
-  Type(?type), HeapAllocation(?heap).
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Type(?type).
+lang:skolem(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?type ->
+  HContext(?hctx), Type(?type).

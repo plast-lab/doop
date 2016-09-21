@@ -6,7 +6,7 @@
 #include "macros.logic"
 #include "../../../core/context-sensitivity.logic"
 
-ClassHasInstr(?class, ?instr) <- MethodSignature:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.
+ClassHasInstr(?class, ?instr) <- Method:DeclaringType[?method] = ?class, Instruction:Method[?instr] = ?method.
 ClassToInstr[?class] = ?instr <- agg<<?instr = min(?otherInstr)>>(ClassHasInstr(?class, ?otherInstr)).
 
 // In this analysis, both the real context and the real heap context 

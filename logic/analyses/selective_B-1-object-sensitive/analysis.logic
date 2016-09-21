@@ -1,80 +1,64 @@
-/**
- * Context-sensitive pointer analysis with context of 1 object
- * (AND for static calls 1 call-site).
- */
+// Context-sensitive pointer analysis with context of 1 object
+// (AND for static calls 1 call-site).
 
-// In this analysis, the real context is a HeapAllocation AND
-// a MethodInvocation (for static calls) sometimes. Keeping mapping 
-// functions is the way to handle analyses where HContext = Context 
-// (since the language considers them different types).
-// NOTE: Changed from HeapAllocation to CallGraphEdgeSource
-// in order to use the invocation site for static calls.
-ContextFromRealContext[?heap] = ?ctx ->
-  Context(?ctx), CallGraphEdgeSource(?heap).
-lang:skolem(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?heapComp <-
+  ContextFromRealContext[?heapComp] = ?ctx.
 // NOTE: Use the following when using both the normal (caller's) context
 // and the invocation site for static calls.
-SpecialContextFromRealContext[?invocation, ?heap] = ?ctx ->
-  Context(?ctx), CallGraphEdgeSource(?invocation), CallGraphEdgeSource(?heap).
-lang:skolem(`SpecialContextFromRealContext).
-RealContextFromContext[?ctx] = ?heap -> 
-  Context(?ctx), CallGraphEdgeSource(?heap).
-RealContextFromContext[?ctx] = ?heap <-
-  ContextFromRealContext[?heap] = ?ctx.
-// NOTE: Use the following when using both the normal (caller's) context
-// and the invocation site for static calls.
-RealContextFromContext[?ctx] = ?heap <-
-  SpecialContextFromRealContext[_, ?heap] = ?ctx.
+RealContextFromContext[?ctx] = ?heapComp <-
+  SpecialContextFromRealContext[_, ?heapComp] = ?ctx.
 
-// This analysis has no context for heap objects.
-// This is emulated by creating a single HContext object,
-// which is used everywhere.
-HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
-  
+Context(?ctx),
+ContextFromRealContext[?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ImmutableContext[] = ?ctx <-
+  HeapAllocation:byValue["<<immutable-context>>"] = ?heap.
+
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
-ImmutableHContext[] = ?hctx <- .
+ImmutableHContext[] = ?hctx.
 
 
-// Create initial objects with their heapcontexts.
-HContextFromRealHContext[] = ?hctx,
+// Create initial objects with their heap contexts
 HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?alloc).
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?alloc).
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  MyMainThread(?alloc).
-  
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
-/**
- * Reachable
- */
-ReachableContext(?ctx, ?method),
-ContextFromRealContext[?heap] = ?ctx,
-Context(?ctx)
- <-
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  HeapAllocationValue(?heap, "<<initial-context>>").
+  HeapAllocation:byValue["<<initial-context>>"] = ?heap.
 
-ReachableContext(?ctx, ?method),
-ContextFromRealContext[?heap] = ?ctx,
-Context(?ctx)
- <-
+Context(?ctx),
+ContextFromRealContext[?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  HeapAllocationValue(?heap, "<<jvm-startup>>").
+  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap.
 
-ReachableContext(?ctx, ?clinit),
-ContextFromRealContext[?heap] = ?ctx,
-Context(?ctx)
- <-
+Context(?ctx),
+ContextFromRealContext[?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  HeapAllocationValue(?heap, "<<class-initialization>>").
+  HeapAllocation:byValue["<<class-initialization>>"] = ?heap.

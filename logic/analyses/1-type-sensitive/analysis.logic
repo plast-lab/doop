@@ -1,68 +1,51 @@
-/**
- * Context-sensitive pointer analysis with context of 1 type.
- */
-
-// In this analysis, the real context is a Type. 
-// The type is not always a class type, because of arrays currently being
-// a non-class subtype of Object
-ContextFromRealContext[?type] = ?ctx ->
-  Context(?ctx), Type(?type).
-lang:skolem(`ContextFromRealContext).
-RealContextFromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
+// Context-sensitive pointer analysis with context of 1 type.
 
 RealContextFromContext[?ctx] = ?type <-
   ContextFromRealContext[?type] = ?ctx.
 
-// This analysis has no context for heap objects.
-// This is emulated by creating a single HContext object,
-// which is used everywhere.
-HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
+Context(?ctx),
+ContextFromRealContext[?type] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  Type:Value(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
-ImmutableHContext[] = ?hctx <- .
+ImmutableHContext[] = ?hctx.
 
 
-// Create initial objects with their heapcontexts.
-HContextFromRealHContext[] = ?hctx,
+// Create initial objects with their heap contexts
 HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?alloc).
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?alloc).
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  MyMainThread(?alloc).
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
-/**
- * Reachable
- */
-ReachableContext(?ctx, ?method),
+// Initially reachable methods
+Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:fqn(?type:"<<initial-context>>").
+  Type:Value(?type:"<<initial-context>>").
 
-ReachableContext(?ctx, ?method),
+Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:fqn(?type:"<<jvm-startup>>").
+  Type:Value(?type:"<<jvm-startup>>").
 
-ReachableContext(?ctx, ?clinit),
+Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:fqn(?type:"<<class-initialization>>").
+  Type:Value(?type:"<<class-initialization>>").

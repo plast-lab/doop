@@ -1,5 +1,0 @@
-+java:lang:reflect:Method:invoke(?invocation, ?method) <-
-  MethodSignature:Value(?signature:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
-  MethodInvocation:Signature[?invocation] = ?signature,
-  VirtualMethodInvocation:Base[?invocation] = ?method.
-

@@ -65,22 +65,14 @@ ContextFromRealContext[?realctx] = ?ctx,
 Context(?ctx)
  <-
   MainMethodDeclaration(?method),
-#ifdef PADDLE_COMPAT
-  HeapAllocationValue(?realctx, "<<no-context>>").
-#else
   HeapAllocationValue(?realctx, "<<initial-context>>").
-#endif
 
 ReachableContext(?ctx, ?method),
 ContextFromRealContext[?realctx] = ?ctx,
 Context(?ctx)
  <-
   ImplicitReachable(?method),
-#ifdef PADDLE_COMPAT
-  HeapAllocationValue(?realctx, "<<no-context>>").
-#else
   HeapAllocationValue(?realctx, "<<jvm-startup>>").
-#endif
 
 ReachableContext(?ctx, ?clinit),
 ContextFromRealContext[?realctx] = ?ctx,
@@ -88,8 +80,4 @@ Context(?ctx)
  <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-#ifdef PADDLE_COMPAT
-  HeapAllocationValue(?realctx, "<<no-context>>").
-#else
   HeapAllocationValue(?realctx, "<<class-initialization>>").
-#endif

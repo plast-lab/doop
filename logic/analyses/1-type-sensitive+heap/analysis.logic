@@ -1,71 +1,56 @@
-/**
- * Context-sensitive pointer analysis with context of 1 type and a
- * context-sensitive heap abstraction.
- */
-
-// In this analysis, both the real context and the real heap context 
-// are Types. Keeping mapping 
-// functions is the way to handle analyses where HContext = Context 
-// (since the language considers them different types).
-// The type is not always a class type, because of arrays currently being
-// a non-class subtype of Object
-ContextFromRealContext[?type] = ?ctx ->
-  Context(?ctx), Type(?type).
-lang:skolem(`ContextFromRealContext).
-RealContextFromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
+// Context-sensitive pointer analysis with context of 1 type and a
+// context-sensitive heap abstraction.
 
 RealContextFromContext[?ctx] = ?type <-
   ContextFromRealContext[?type] = ?ctx.
 
-HContextFromRealHContext[?type] = ?hctx ->
-  HContext(?hctx), Type(?type).
-lang:skolem(`HContextFromRealHContext).
+Context(?ctx),
+ContextFromRealContext[?type] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  Type:Value(?type, "<<immutable-context>>").
 
 HContext(?hctx),
-HContextFromRealHContext[?immutable] = ?hctx,
+HContextFromRealHContext[?type] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Type:fqn(?immutable:"<<immutable>>").
+  Type:Value(?type, "<<immutable-hcontext>>").
 
 
-// Create initial objects with their heapcontexts.
-HContextFromRealHContext[?type] = ?hctx,
+// Create initial objects with their heap contexts
 HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?type, ?alloc).
+  Type:Value(?type, "<<jvm-startup>>"),
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[?type] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?type, ?alloc).
+  Type:Value(?type, "<<jvm-startup>>"),
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[?type] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  MyMainThread(?type, ?alloc).
+  Type:Value(?type, "<<jvm-startup>>"),
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
-/**
- * Reachable
- */
-ReachableContext(?ctx, ?method),
+// Initially reachable methods
+Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:fqn(?type:"<<initial-context>>").
+  Type:Value(?type:"<<initial-context>>").
 
-ReachableContext(?ctx, ?method),
+Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:fqn(?type:"<<jvm-startup>>").
+  Type:Value(?type:"<<jvm-startup>>").
 
-ReachableContext(?ctx, ?clinit),
+Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:fqn(?type:"<<class-initialization>>").
+  Type:Value(?type:"<<class-initialization>>").

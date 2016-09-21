@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
@@ -9,9 +10,7 @@ import org.clyze.doop.blox.BloxbatchConnector
 import org.clyze.doop.blox.BloxbatchScript
 import org.clyze.doop.blox.WorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.system.Executor
-
-import java.util.regex.Pattern
+import org.clyze.doop.system.*
 
 import static java.io.File.separator
 import static org.clyze.doop.system.CppPreprocessor.preprocess
@@ -42,6 +41,11 @@ class Analysis implements Runnable {
     String name
 
     /**
+     * The name of the analysis stripped of directory separators
+     */
+    String safename
+
+    /**
      * The output dir for the analysis
      */
     String outDir
@@ -64,36 +68,29 @@ class Analysis implements Runnable {
     /**
      * The input jar files/dependencies of the analysis
      */
-    List<File> inputs
+    List<File> inputJarFiles
 
     /**
      * The jre library jars for soot
      */
-    List<String> platformLibs
+    List<String> jreJars
 
     /**
      * The environment for running external commands
      */
     Map<String, String> commandsEnvironment
 
+    boolean isRefineStep
+
     Executor executor
 
-    File facts, cacheFacts, database, exportDir, averroesDir
+    File facts, cacheFacts, database, averroesDir
 
     BloxbatchScript lbScript
 
     long sootTime
 
     WorkspaceConnector connector
-
-    private static final List<String> IGNORED_WARNINGS = [
-            """\
-        *******************************************************************
-        Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.
-        Please use 'lb' instead of 'bloxbatch'.
-        *******************************************************************
-        """
-    ].collect{ line -> Pattern.quote(line.stripIndent()) }
 
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
@@ -106,17 +103,18 @@ class Analysis implements Runnable {
                        String name,
                        Map<String, AnalysisOption> options,
                        InputResolutionContext ctx,
-                       List<File> inputs,
-                       List<String> platformLibs,
+                       List<File> inputJarFiles,
+                       List<String> jreJars,
                        Map<String, String> commandsEnvironment) {
         this.id = id
         this.outDir = outDir
         this.cacheDir = cacheDir
-        this.name = name.replace(separator, "-")
+        this.name = name
+        this.safename = name.replace(File.separator, "-")
         this.options = options
         this.ctx = ctx
-        this.inputs = inputs
-        this.platformLibs = platformLibs
+        this.inputJarFiles = inputJarFiles
+        this.jreJars = jreJars
         this.commandsEnvironment = commandsEnvironment
 
         executor = new Executor(commandsEnvironment)
@@ -126,7 +124,6 @@ class Analysis implements Runnable {
         facts       = new File(outDir, "facts")
         cacheFacts  = new File(cacheDir)
         database    = new File(outDir, "database")
-        exportDir   = new File(outDir, "export")
         averroesDir = new File(outDir, "averroes")
 
         // Create workspace connector (needed by the post processor and the server-side analysis execution)
@@ -152,8 +149,7 @@ class Analysis implements Runnable {
                 mainAnalysis()
 
                 try {
-                    File f = Helper.checkFileOrThrowException("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
-                    logger.info "-- Re-Analyze --"
+                    FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
                     reanalyze()
                 }
                 catch(e) {
@@ -170,13 +166,13 @@ class Analysis implements Runnable {
         logger.info "Using generated script ${lbScript.getPath()}"
         logger.info "\nAnalysis START"
         long t = timing {
-            def bloxOpts = options.BLOX_OPTS.value ?: ''
-            executor.execute(outDir, "${options.BLOXBATCH.value} -script ${lbScript.getPath()} $bloxOpts", IGNORED_WARNINGS)
+             def bloxOpts = options.BLOX_OPTS.value ?: ''
+             executor.execute(outDir, "${options.BLOXBATCH.value} -script ${lbScript.getPath()} $bloxOpts")
         }
         logger.info "Analysis END\n"
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
-        bloxbatchPipe database, """-addBlock 'Stats:Runtime("script wall-clock time (sec)", $t).
-                                              Stats:Runtime("disk footprint (KB)", $dbSize).'"""
+        bloxbatch database, """-addBlock 'Stats:Runtime("script wall-clock time (sec)", $t).
+                                          Stats:Runtime("disk footprint (KB)", $dbSize).'"""
     }
 
 
@@ -184,9 +180,9 @@ class Analysis implements Runnable {
      * @return A string representation of the analysis
      */
     String toString() {
-        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
-                "\n" +
-                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
+        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+               "\n" +
+               options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
 
     protected void generateFacts() {
@@ -196,7 +192,7 @@ class Analysis implements Runnable {
 
         if (cacheFacts.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheFacts"
-            Helper.copyDirectoryContents(cacheFacts, facts)
+            FileOps.copyDirContents(cacheFacts, facts)
         }
         else {
             logger.info "-- Fact Generation --"
@@ -230,13 +226,13 @@ class Analysis implements Runnable {
             logger.info "Caching facts in $cacheFacts"
             FileUtils.deleteQuietly(cacheFacts)
             cacheFacts.mkdirs()
-            Helper.copyDirectoryContents(facts, cacheFacts)
+            FileOps.copyDirContents(facts, cacheFacts)
             new File(cacheFacts, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
         }
     }
 
     private String cacheMeta() {
-        Collection<String> inputJars = inputs.collect {
+        Collection<String> inputJars = inputJarFiles.collect {
             File file -> file.toString()
         }
         Collection<String> cacheOptions = options.values().findAll {
@@ -248,57 +244,53 @@ class Analysis implements Runnable {
     }
 
     protected void initDatabase() {
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
 
         FileUtils.deleteQuietly(database)
-        FileUtils.copyFile(new File("${Doop.factsPath}/declarations.logic"),
-                           new File("${outDir}/facts-declarations.logic"))
-        FileUtils.copyFile(new File("${Doop.factsPath}/flow-insensitivity-declarations.logic"),
-                           new File("${outDir}/flow-insensitivity-declarations.logic"))
-        FileUtils.copyFile(new File("${Doop.factsPath}/entities-import.logic"),
-                           new File("${outDir}/entities-import.logic"))
-        FileUtils.copyFile(new File("${Doop.factsPath}/import.logic"),
-                           new File("${outDir}/facts-import.logic"))
-        FileUtils.copyFile(new File("${Doop.factsPath}/flow-insensitivity-delta.logic"),
-                           new File("${outDir}/flow-insensitivity-delta.logic"))
+        preprocess(this, "${outDir}/flow-sensitive-schema.logic", "${Doop.factsPath}/flow-sensitive-schema.logic")
+        preprocess(this, "${outDir}/flow-insensitive-schema.logic", "${Doop.factsPath}/flow-insensitive-schema.logic")
+        preprocess(this, "${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
+        preprocess(this, "${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
+        preprocess(this, "${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
+        preprocess(this, "${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
 
         lbScript
             .createDB(database.getName())
             .echo("-- Init DB --")
             .startTimer()
             .transaction()
-            .addBlockFile("facts-declarations.logic")
-            .addBlockFile("flow-insensitivity-declarations.logic")
-            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
-            .executeFile("entities-import.logic")
-            .executeFile("facts-import.logic")
-            .executeFile("flow-insensitivity-delta.logic")
+            .addBlockFile("flow-sensitive-schema.logic")
+            .addBlockFile("flow-insensitive-schema.logic")
+            .executeFile("import-entities.logic")
+            .executeFile("import-facts.logic")
 
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
+            preprocess(this, "${outDir}/tamiflex-fact-declarations.logic", "${tamiflexDir}/fact-declarations.logic")
+            preprocess(this, "${outDir}/tamiflex-import.logic", "${tamiflexDir}/import.logic")
+            preprocess(this, "${outDir}/tamiflex-post-import.logic", "${tamiflexDir}/post-import.logic")
 
-            FileUtils.copyFile(new File("${tamiflexDir}/fact-declarations.logic"),
-                    new File("${outDir}/tamiflex-fact-declarations.logic"))
-            FileUtils.copyFile(new File("${tamiflexDir}/import.logic"),
-                    new File("${outDir}/tamiflex-import.logic"))
-            FileUtils.copyFile(new File("${tamiflexDir}/post-import.logic"),
-                    new File("${outDir}/tamiflex-post-import.logic"))
             lbScript
-                    .addBlockFile("tamiflex-fact-declarations.logic")
-                    .executeFile("tamiflex-import.logic")
-                    .addBlockFile("tamiflex-post-import.logic")
+                .addBlockFile("tamiflex-fact-declarations.logic")
+                .executeFile("tamiflex-import.logic")
+                .addBlockFile("tamiflex-post-import.logic")
         }
 
         if (options.MAIN_CLASS.value)
-            lbScript.execute("""+MainClass(x) <- ClassType(x), Type:fqn(x:"${options.MAIN_CLASS.value}").""")
+            lbScript.addBlock("""MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
 
         lbScript
-                .commit()
-                .elapsedTime()
+            .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
+            .addBlockFile("post-process.logic")
+            .commit()
+            .transaction()
+            .executeFile("to-flow-insensitive-delta.logic")
+            .commit()
+            .elapsedTime()
 
         if (options.TRANSFORM_INPUT.value)
             runTransformInput()
     }
-
 
     protected void basicAnalysis() {
         if (options.DYNAMIC.value) {
@@ -306,7 +298,7 @@ class Analysis implements Runnable {
             dynFiles.eachWithIndex { String dynFile, Integer index ->
                 File f = new File(dynFile)
                 File dynImport = new File(outDir, "dynamic${index}.import")
-                Helper.writeToFile dynImport, """\
+                FileOps.writeToFile dynImport, """\
                                               option,delimiter,"\t"
                                               option,hasColumnNames,false
 
@@ -318,8 +310,8 @@ class Analysis implements Runnable {
             }
         }
 
-        def factMacros = "${Doop.factsPath}/macros.logic"
-        preprocess(this, "${Doop.logicPath}/basic/basic.logic", "${outDir}/basic.logic", factMacros)
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
+        preprocess(this, "${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 
         lbScript
             .echo("-- Basic Analysis --")
@@ -328,12 +320,9 @@ class Analysis implements Runnable {
             .addBlockFile("basic.logic")
 
         if (options.CFG_ANALYSIS.value) {
-            FileUtils.copyFile(new File("${Doop.addonsPath}/cfg-analysis/declarations.logic"),
-                               new File("${outDir}/cfg-analysis-declarations.logic"))
-            lbScript.addBlockFile("cfg-analysis-declarations.logic")
-
-            preprocess(this, "${Doop.addonsPath}/cfg-analysis/rules.logic", "${outDir}/cfg-analysis-rules.logic")
-            lbScript.addBlockFile("cfg-analysis-rules.logic")
+            preprocess(this, "${outDir}/cfg-analysis.logic", "${Doop.addonsPath}/cfg-analysis/analysis.logic",
+                             "${Doop.addonsPath}/cfg-analysis/declarations.logic")
+            lbScript.addBlockFile("cfg-analysis.logic")
         }
 
         lbScript
@@ -345,55 +334,62 @@ class Analysis implements Runnable {
      * Performs the main part of the analysis.
      */
     protected void mainAnalysis() {
-        def factMacros   = "${Doop.factsPath}/macros.logic"
+        def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
-        def corePath     = "${Doop.analysesPath}/core"
+        def mainPath     = "${Doop.logicPath}/main"
         def analysisPath = "${Doop.analysesPath}/${name}"
 
         // By default, assume we run a context-sensitive analysis
         boolean isContextSensitive = true
         try {
-            File f = Helper.checkFileOrThrowException("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
-            Properties props = Helper.loadProperties(f)
+            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${safename}")
+            Properties props = FileOps.loadProperties(file)
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
         catch(e) {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
-            preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic", "${corePath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic", factMacros, "${corePath}/core-delta.logic")
-            preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic", factMacros, macros, "${corePath}/context-sensitivity.logic")
+            preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
+                             "${mainPath}/context-sensitivity-declarations.logic")
+            preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
+            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
+                             commonMacros, "${mainPath}/main-delta.logic")
+            preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
+                             commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
-            preprocess(this, "${analysisPath}/declarations.logic", "${outDir}/${name}-declarations.logic")
-            preprocess(this, "${analysisPath}/delta.logic", "${outDir}/${name}-delta.logic")
-            preprocess(this, "${analysisPath}/analysis.logic", "${outDir}/${name}.logic")
+            preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
+            preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
         }
 
         lbScript
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
-            .addBlockFile("${name}-declarations.logic")
-            .executeFile("${name}-delta.logic")
+            .addBlockFile("${safename}-declarations.logic")
+            .addBlockFile("prologue.logic")
+            .addBlockFile("${safename}-prologue.logic")
+            .commit()
+            .transaction()
+            .executeFile("${safename}-delta.logic")
 
         if (options.SANITY.value) {
             lbScript.addBlockFile("${Doop.addonsPath}/sanity.logic")
         }
 
         if (options.ENABLE_REFLECTION.value) {
-            String reflectionPath = "${Doop.analysesPath}/core/reflection"
+            preprocess(this, "${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
-            preprocess(this, "${reflectionPath}/delta.logic", "${outDir}/reflection-delta.logic")
-            FileUtils.copyFile(new File("${reflectionPath}/allocations-delta.logic"),
-                               new File("${outDir}/reflection-allocations-delta.logic"))
             lbScript
-                .checkpoint()
+                .commit()
+                .transaction()
                 .executeFile("reflection-delta.logic")
-                .checkpoint()
-                .executeFile("reflection-allocations-delta.logic")
-                .checkpoint()
+                .commit()
+                .transaction()
         }
 
         /**
@@ -407,80 +403,67 @@ class Analysis implements Runnable {
         FileUtils.touch(addons)
 
         if (options.INFORMATION_FLOW.value) {
-            FileUtils.copyFile(new File("${Doop.addonsPath}/information-flow/declarations.logic"),
-                               new File("${outDir}/information-flow-declarations.logic"))
-            preprocess(this, "${Doop.addonsPath}/information-flow/delta.logic", "${outDir}/information-flow-delta.logic", macros)
+            preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
+            preprocess(this, "${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
+            preprocess(this, "${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
+            includeAtStart(this, "${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
+
             lbScript
                 .addBlockFile("information-flow-declarations.logic")
-            logger.info "Adding Information flow rules to addons logic"
-            preprocessAtStart(this, "${Doop.addonsPath}/information-flow/rules.logic", "${outDir}/addons.logic")
-
-            lbScript.commit().transaction().executeFile("information-flow-delta.logic")
+                .commit()
+                .transaction()
+                .executeFile("information-flow-delta.logic")
+                .commit()
+                .transaction()
         }
 
-        if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            FileUtils.copyFile(new File("${Doop.addonsPath}/dacapo/declarations.logic"),
-                               new File("${outDir}/dacapo-declarations.logic"))
-            preprocess(this, "${Doop.addonsPath}/dacapo/delta.logic", "${outDir}/dacapo-delta.logic", macros)
-            lbScript
-                    .addBlockFile("dacapo-declarations.logic")
-                    .executeFile("dacapo-delta.logic")
-
-            logger.info "Adding DaCapo rules to addons logic"
-            preprocessAtStart(this, "${Doop.addonsPath}/dacapo/rules.logic", "${outDir}/addons.logic")
-        }
-
-
+        if (options.DACAPO.value || options.DACAPO_BACH.value)
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic", commonMacros)
 
         if (options.TAMIFLEX.value) {
-            FileUtils.copyFile(new File("${Doop.addonsPath}/tamiflex/declarations.logic"),
-                               new File("${outDir}/tamiflex-declarations.logic"))
-            FileUtils.copyFile(new File("${Doop.addonsPath}/tamiflex/delta.logic"),
-                               new File("${outDir}/tamiflex-delta.logic"))
+            preprocess(this, "${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
+            preprocess(this, "${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic", commonMacros)
+
             lbScript
-                    .addBlockFile("tamiflex-declarations.logic")
-                    .executeFile("tamiflex-delta.logic")
-
-            logger.info "Adding tamiflex rules to addons logic"
-
-            preprocessAtStart(this, "${Doop.addonsPath}/tamiflex/rules.logic", "${outDir}/addons.logic")
+                .addBlockFile("tamiflex-declarations.logic")
+                .executeFile("tamiflex-delta.logic")
         }
 
-        if (options.REFINE.value)
-            refine()
-
-        preprocessAtStart(this, "${outDir}/addons.logic", "${outDir}/${name}.logic", macros)
+        includeAtStart(this, "${outDir}/${safename}.logic", "${outDir}/addons.logic")
 
         lbScript
-                .commit()
-                .elapsedTime()
-                .echo("-- Main Analysis --")
-                .startTimer()
-                .transaction()
-                .addBlockFile("${name}.logic")
-                .commit()
-                .elapsedTime()
+            .commit()
+            .elapsedTime()
+
+        if (isRefineStep) importRefinement()
+
+        lbScript
+            .echo("-- Main Analysis --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("${safename}.logic")
+            .commit()
+            .elapsedTime()
 
         if (options.MUST.value) {
-            FileUtils.copyFile(new File("${Doop.analysesPath}/must-point-to/may-pre-analysis.logic"),
-                               new File("${outDir}/must-point-to-may-pre-analysis.logic"))
-            preprocess(this, "${Doop.analysesPath}/must-point-to/analysis-simple.logic", "${outDir}/must-point-to.logic")
-
+            preprocess(this, "${outDir}/must-point-to-may-pre-analysis.logic", "${Doop.analysesPath}/must-point-to/may-pre-analysis.logic")
+            preprocess(this, "${outDir}/must-point-to.logic", "${Doop.analysesPath}/must-point-to/analysis-simple.logic")
 
             lbScript
-                    .echo("-- Pre Analysis (for Must) --")
-                    .startTimer()
-                    .transaction()
-                    .addBlockFile("must-point-to-may-pre-analysis.logic")
-                    .addBlock("RootMethodForMustAnalysis(?meth) <- MethodSignature:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
-                    .commit()
-                    .elapsedTime()
-                    .echo("-- Must Analysis --")
-                    .startTimer()
-                    .transaction()
-                    .addBlockFile("must-point-to.logic")
-                    .commit()
-                    .elapsedTime()
+                .echo("-- Pre Analysis (for Must) --")
+                .startTimer()
+                .transaction()
+                .addBlockFile("must-point-to-may-pre-analysis.logic")
+                .addBlock("RootMethodForMustAnalysis(?meth) <- Method:DeclaringType[?meth] = ?class, ApplicationClass(?class), Reachable(?meth).")
+                .commit()
+                .elapsedTime()
+                .echo("-- Must Analysis --")
+                .startTimer()
+                .transaction()
+                .addBlockFile("must-point-to.logic")
+                .commit()
+                .elapsedTime()
         }
     }
 
@@ -488,91 +471,46 @@ class Analysis implements Runnable {
      * Reanalyze.
      */
     protected void reanalyze() {
-        logger.info "Loading ${name} refinement-delta rules"
+        preprocess(this, "${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
+        preprocess(this, "${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
+        preprocess(this, "${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
 
-        preprocess(this, "${Doop.analysesPath}/${name}/refinement-delta.logic", "${outDir}/${name}-refinement-delta.logic")
-        // TODO: handle exportCsv in script
-        timing {
-            bloxbatchPipe database, "-execute -file ${outDir}/${name}-refinement-delta.logic"
-        }
+        lbScript
+            .echo("++++ Refinement ++++")
+            .echo("-- Export --")
+            .startTimer()
+            .transaction()
+            .executeFile("refinement-delta.logic")
+            .commit()
+            .transaction()
+            .executeFile("export-refinement.logic")
+            .commit()
+            .elapsedTime()
 
-        timing {
-            bloxbatchPipe database, "-exportCsv TempSiteToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        timing {
-            bloxbatchPipe database, "-exportCsv TempNegativeSiteFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        timing {
-            bloxbatchPipe database, "-exportCsv TempObjectToRefine -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        timing {
-            bloxbatchPipe database, "-exportCsv TempNegativeObjectFilter -overwrite -exportDataDir $outDir -exportFilePrefix ${name}-"
-        }
-
-        generateFacts()
+        isRefineStep = true
         initDatabase()
-        //TODO: We don't need to write-meta, do we?
-        options.REFINE.value = true
+        basicAnalysis()
         mainAnalysis()
     }
 
-    protected void refine() {
-
-        //The files and their contents
-        Map<String, String> files = [
-                "refine-site": """\
-                               option,delimiter,","
-                               option,hasColumnNames,false
-                               option,quotedValues,true
-                               option,escapeQuotedValues,true
-
-                               fromFile,"${outDir}/${name}-TempSiteToRefine.csv",CallGraphEdgeSource,CallGraphEdgeSource
-                               toPredicate,SiteToRefine,CallGraphEdgeSource""".toString().stripIndent(),
-
-                "negative-site": """\
-                                 option,delimiter,","
-                                 option,hasColumnNames,false
-
-                                 fromFile,"${outDir}/${name}-TempNegativeSiteFilter.csv",string,string
-                                 toPredicate,NegativeSiteFilter,string""".toString().stripIndent(),
-
-                "refine-object": """\
-                                 option,delimiter,","
-                                 option,hasColumnNames,false
-                                 option,quotedValues,true
-                                 option,escapeQuotedValues,true
-
-                                 fromFile,"${outDir}/${name}-TempObjectToRefine.csv",HeapAllocation,HeapAllocation
-                                 toPredicate,ObjectToRefine,HeapAllocation""".toString().stripIndent(),
-
-                "negative-object": """\
-                                   option,delimiter,","
-                                   option,hasColumnNames,false
-
-                                   fromFile,"${outDir}/${name}-TempNegativeObjectFilter.csv",string,string
-                                   toPredicate,NegativeObjectFilter,string""".toString().stripIndent()
-        ]
-
-        logger.info "loading $name refinement facts "
-        files.each { Map.Entry<String, String> entry ->
-            File f = new File(outDir, "${name}-${entry.key}.import")
-            Helper.writeToFile f, entry.value
-            Helper.checkFileOrThrowException(f, "Could not create import file: $f")
-            lbScript.wr("import -f $f")
-        }
+    void importRefinement() {
+        lbScript
+            .echo("-- Import --")
+            .startTimer()
+            .transaction()
+            .executeFile("import-refinement.logic")
+            .commit()
+            .elapsedTime()
     }
 
     protected void runTransformInput() {
-        preprocess(this, "${Doop.addonsPath}/transform/rules.logic", "${outDir}/transform.logic", "${Doop.addonsPath}/transform/declarations.logic")
+        preprocess(this, "${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
         lbScript
-                .echo("-- Transforming Facts --")
-                .startTimer()
-                .transaction()
-                .addBlockFile("${outDir}/transform.logic")
-                .commit()
+            .echo("-- Transforming Facts --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("${outDir}/transform.logic")
+            .commit()
 
         2.times { int i ->
             lbScript
@@ -593,16 +531,16 @@ class Analysis implements Runnable {
         }
 
         def statsPath = "${Doop.addonsPath}/statistics"
-        preprocess(this, "${statsPath}/statistics-simple.logic", "${outDir}/statistics-simple.logic")
+        preprocess(this, "${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic")
 
         lbScript
-                .echo("-- Statistics --")
-                .startTimer()
-                .transaction()
-                .addBlockFile("statistics-simple.logic")
+            .echo("-- Statistics --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
-            preprocess(this, "${statsPath}/statistics.logic", "${outDir}/statistics.logic")
+            preprocess(this, "${outDir}/statistics.logic", "${statsPath}/statistics.logic")
             lbScript.addBlockFile("statistics.logic")
         }
 
@@ -614,7 +552,7 @@ class Analysis implements Runnable {
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = inputs[0].toString()
+        String jar = inputJarFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -626,8 +564,7 @@ class Analysis implements Runnable {
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        File f = Helper.checkFileOrThrowException("$outDir/$newJar", "jphantom invocation failed")
-        inputs[0] = f
+        inputJarFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
     protected void runAverroes() {
@@ -640,32 +577,23 @@ class Analysis implements Runnable {
     protected void runSoot() {
         Collection<String> depArgs
 
-        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
-        assert platform == "android" || platform == "java"
-
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            inputs[0] = Helper.checkFileOrThrowException("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputJarFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            depArgs = platformLibs.collect{ String arg -> ["-l", arg]}.flatten() +  deps
+            Collection<String> deps = inputJarFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            if (jreJars.isEmpty()) {
+                depArgs = ["-lsystem"] + deps
+            }
+            else {
+                depArgs = jreJars.collect{ String arg -> ["-l", arg]}.flatten() + deps
+            }
+
         }
 
-        Collection<String> params = null;
-
-        switch(platform) {
-            case "java":
-                params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
-                break
-            case "android":
-                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", options.PLATFORM_LIBS.value.toString() + separator + "Android" + separator + "Sdk" + separator + "platforms"]
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
-
+        Collection<String> params = ["--allow-phantom", "--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
         if (options.SSA.value) {
             params = params + ["--ssa"]
         }
@@ -682,16 +610,17 @@ class Analysis implements Runnable {
             params = params + ["--only-application-classes-fact-gen"]
         }
 
-        params = params + ["-d", facts.toString(), inputs[0].toString()]
+        params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
+
         logger.debug "Params of soot: ${params.join(' ')}"
 
         sootTime = timing {
-            //We invoke soot reflectively using a separate class-loader to be able 
+            //We invoke soot reflectively using a separate class-loader to be able
             //to support multiple soot invocations in the same JVM @ server-side.
             //TODO: Investigate whether this approach may lead to memory leaks,
             //not only for soot but for all other Java-based tools, like jphantom
-            //or averroes. 
-            //In such a case, we should invoke all Java-based tools using a 
+            //or averroes.
+            //In such a case, we should invoke all Java-based tools using a
             //separate process.
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
@@ -727,13 +656,13 @@ class Analysis implements Runnable {
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        Collection<String> libraryJars = inputs.drop(1).collect { it.toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = inputJarFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
 
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", inputs[0].toString())
+        props.setProperty("input_jar_files", inputJarFiles[0].toString())
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
@@ -754,37 +683,35 @@ class Analysis implements Runnable {
             props.store(writer, null)
         }
 
-        File f1 = Helper.checkFileOrThrowException(jar, "averroes jar missing or invalid: $jar")
-        File f2 = Helper.checkFileOrThrowException(properties, "averroes properties missing or invalid: $properties")
+        def file1 = FileOps.findFileOrThrow(jar, "averroes jar missing or invalid: $jar")
+        def file2 = FileOps.findFileOrThrow(properties, "averroes properties missing or invalid: $properties")
 
-        List<URL> classpath = [f1.toURI().toURL(), f2.toURI().toURL()]
+        List<URL> classpath = [file1.toURI().toURL(), file2.toURI().toURL()]
         return new URLClassLoader(classpath as URL[])
     }
 
     /**
-     * Generates a list for the jre libs for averroes 
+     * Generates a list for the jre libs for averroes
      */
     private List<String> jreAverroesLibraries() {
 
-        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
-        assert platformLibsValue.size() == 2
-        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-        assert platform == "java"
-
-        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
-
+        String jre = options.JRE.value
+        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
         //Not using if/else for readability
-        switch(version) {
+        switch(jre) {
             case "1.3":
                 return []
             case "1.4":
-            case "1.5":
-            case "1.6":
-            case "1.7":
-            case "1.8":
                 return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
-            default:
-                throw new RuntimeException("Unsupported platform")
+            case "1.5":
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+            case "1.6":
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+            case "1.7":
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+            case "system":
+                String javaHome = System.getProperty("java.home")
+                return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
         }
     }
 
@@ -793,24 +720,20 @@ class Analysis implements Runnable {
      */
     private String javaAverroesLibrary() {
 
-        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
-        assert platformLibsValue.size() == 2
-        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-        assert platform == "java"
+        String jre = options.JRE.value
 
-        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
-        return "$path/rt.jar"
+        if (jre == "system") {
+            String javaHome = System.getProperty("java.home")
+            return "$javaHome/lib/rt.jar"
+        }
+        else {
+            String path = "${options.JRE_LIB.value}/jre${jre}/lib"
+            return "$path/rt.jar"
+        }
     }
 
-    /**
-     * Invokes bloxbatch on the given database with the given params, piping it up with supplied pipeCommands.
-     */
-    private void bloxbatchPipe(File database, String params, String... pipeCommands) {
-        String command = "${options.BLOXBATCH.value} -db $database $params"
-        if (pipeCommands)
-            command += " | ${pipeCommands.join(" |")}"
-
-        executor.execute(command, IGNORED_WARNINGS)
+    private void bloxbatch(File database, String params) {
+        executor.execute("${options.BLOXBATCH.value} -db $database $params")
     }
 
     private long timing(Closure c) {

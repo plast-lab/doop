@@ -8,9 +8,9 @@
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the call-site.
 // Again, this may trigger creation of a new object.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invo, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[heap, invocation] = calleeCtx
+  ContextFromRealContext[heap, invo] = calleeCtx
 
 //#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
 //  MergeBasis(hctx, callerCtx, heap, invocation)
@@ -20,9 +20,9 @@
 
 // For this analysis, static calls use the invocation site and
 // the receiver object of the caller as a context.
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealContext1FromContext[callerCtx], invocation] = calleeCtx
+  ContextFromRealContext[RealContext1FromContext[callerCtx], invo] = calleeCtx
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.

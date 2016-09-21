@@ -1,6 +1,7 @@
 package org.clyze.doop.core
 
 import org.apache.log4j.Logger
+import org.clyze.doop.system.FileOps
 
 /**
  * Doop initialization and supported options.
@@ -14,7 +15,7 @@ class Doop {
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
             value:System.getenv("LOGICBLOX_HOME"),
-            cli:false 
+            cli:false
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
@@ -117,14 +118,13 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"PADDLE_COMPAT",
-            name:"paddle-compat",
+            id:"CONTEXT_SENSITIVE_LIBRARY_ANALYSIS",
+            name:"enable-cs-library",
+            description:"Enable context-sensitive analysis for internal library objects.",
             value:false,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
+            forPreprocessor:true
         ),
-
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION",
             name:"enable-reflection",
@@ -312,10 +312,14 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<OS>(
-            id:"OS",
-            value:OS.OS_UNIX,
-            cli:false
+        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
+            id:"JRE",
+            name:"jre",
+            argName:"VERSION",
+            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
+            value:"system",
+            forCacheID:true,
+            webUI:true
         ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
@@ -327,10 +331,11 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"PLATFORM_LIBS",
-            name:"platform-libs",
-            description:"The path to the platform libs directory.",
-            value:System.getenv("DOOP_PLATFORM_LIBS"),
+            id:"JRE_LIB",
+            name:"jre-lib",
+            description:"The path to the JRE lib directory (containing different JRE versions).",
+            value:System.getenv("DOOP_JRE_LIB"),
+            webUI:false,
             isAdvanced:true
         ),
         new AnalysisOption<String>(
@@ -399,7 +404,6 @@ class Doop {
         "LD_LIBRARY_PATH",
         "BLOXBATCH",
         "BLOX_OPTS",
-        "OS",
         "CACHE",
         "JRE_LIB"
     ]
@@ -522,7 +526,7 @@ class Doop {
         } else if (option.argName) {
             option.value = property
         } else {
-            option.value = Boolean.parseBoolean(property)
+            option.value = property.toBoolean()
         }
     }
 

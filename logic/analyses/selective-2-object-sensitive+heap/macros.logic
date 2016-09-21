@@ -1,5 +1,5 @@
 // For this analysis, every heap context recorded on allocation
-// corresponds to the most significant element of the calling 
+// corresponds to the most significant element of the calling
 // context of the allocator method.
 #define RecordMacro(ctx, heap, hctx) \
   HContext(hctx), \
@@ -12,7 +12,9 @@
 // Again, this may trigger creation of a new object.
 #define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], heap] = calleeCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], heapComp] = calleeCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp
 
 #define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
   MergeBasis(callerCtx, invocation, hctx, heap)
@@ -21,20 +23,26 @@
   OptimizeMerge[hctx, heap] = calleeCtx
 
 // For this analysis, static calls use additionally the invocation site as a context.
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
   Context(calleeCtx), \
-  SpecialContextFromRealContext[RealContext1FromContext[callerCtx], invocation, \
-                                RealContext2FromContext[callerCtx]] = calleeCtx
+  SpecialContextFromRealContext[RealContext1FromContext[callerCtx], invoComp, \
+                                RealContext2FromContext[callerCtx]] = calleeCtx, \
+  ContextComponent(invoComp), \
+  ContextComponent:MethodInvocation[invo] = invoComp
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], heap] = newCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], heapComp] = newCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp
 
 #define MergeStartupMacro(hctx, heap, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], heap] = calleeCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], heapComp] = calleeCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -47,4 +55,6 @@
 // hctx) is a hint for avoiding this problem.
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealContext2FromContext[callerCtx], heap] = newCtx
+  ContextFromRealContext[RealContext2FromContext[callerCtx], heapComp] = newCtx, \
+  ContextComponent(heapComp), \
+  ContextComponent:HeapAllocation[heap] = heapComp

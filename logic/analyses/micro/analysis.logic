@@ -1,7 +1,7 @@
-#include "../../facts/macros.logic"
-#include "../core/class-initialization.logic"
-#include "../core/implicit-reachable.logic"
-#include "../core/string-constants.logic"
+#include "../../commonMacros.logic"
+#include "../../main/class-initialization.logic"
+#include "../../main/implicit-reachable.logic"
+#include "../../main/string-constants.logic"
 
 
 /**
@@ -144,8 +144,8 @@ VarPointsTo(?heap, ?this) <-
    VirtualMethodInvocation:Base[?invocation] = ?base,
    VarPointsTo( ?heap, ?base ),
    HeapAllocation:Type[?heap] = ?type,
-   MethodSignature:SimpleName[?signature] = ?simplename,
-   MethodSignature:Descriptor[?signature] = ?descriptor,
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor,
    ThisVar[?tomethod] = ?this,
    MethodLookup[?simplename, ?descriptor, ?type] = ?tomethod.
 

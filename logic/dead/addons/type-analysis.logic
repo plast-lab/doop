@@ -142,7 +142,7 @@ _ApplicationVar(?var) <-
  
 _ApplicationMethod(?method) <-
    ApplicationClass(?class),
-   MethodSignature:DeclaringType[?method] = ?class.
+   Method:DeclaringType[?method] = ?class.
   
 _OptDeclaringMethod[?v] = ?meth <-
    Var:DeclaringMethod(?v, ?meth).
