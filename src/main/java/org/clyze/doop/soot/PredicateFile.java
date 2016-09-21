@@ -34,7 +34,6 @@ enum PredicateFile
     ASSIGN_CAST_NUM_CONST("AssignCastNumConstant"),
     ASSIGN_CAST_NULL("AssignCastNull"),
     ASSIGN_HEAP_ALLOC("AssignHeapAllocation"),
-    ASSIGN_MULT_ARRY_ALLOC("AssignMultiArrayAllocation"),
     ASSIGN_NUM_CONST("AssignNumConstant"),
     ASSIGN_NULL("AssignNull"),
     ASSIGN_INSTANCE_OF("AssignInstanceOf"),
