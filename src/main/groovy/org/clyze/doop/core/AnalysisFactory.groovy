@@ -275,13 +275,13 @@ import org.clyze.doop.system.*
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
         }
 
-        if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
+        if (options.DISTINGUISH_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
+            options.DISTINGUISH_STRING_CONSTANTS.value = true
         }
 
         if (options.ENABLE_REFLECTION_CLASSIC.value) {
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
