@@ -223,7 +223,7 @@ import org.clyze.doop.system.*
 
         switch(platform) {
             case "java":
-                String path = "${options.PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+                String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
                 switch(version) {
                     case "3":
                         return FileOps.findFiles(["${path}/rt.jar".toString()])
@@ -241,7 +241,7 @@ import org.clyze.doop.system.*
                 }
                 break
             case "android":
-                String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
+                String path = "${options.PLATFORMS_LIB.value}/Android/Sdk/platforms/android-${version}"
                 switch(version) {
 		    case "15":
                         return FileOps.findFiles(["${path}/android.jar".toString(),
@@ -368,8 +368,8 @@ import org.clyze.doop.system.*
 
         checkPlatformLibs(vars)
         //Check the value of the JRE_LIB option (it should point to the platform libs directory)
-        String externals = options.PLATFORM_LIBS.value
-        FileOps.findDirOrThrow(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
+        String externals = options.PLATFORMS_LIB.value
+        FileOps.findDirOrThrow(externals as String, "The PLATFORMS_LIB directory is invalid: $externals")
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
