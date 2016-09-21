@@ -1,0 +1,146 @@
+ReifiedClass[?type] = ?heap ->
+  ReferenceType(?type), ClassHeap(?heap).
+
+ReifiedConstructor[?constructor] = ?heap ->
+  Method(?constructor), HeapAllocation(?heap).
+
+ReifiedMethod[?method] = ?heap ->
+  Method(?method), HeapAllocation(?heap).
+
+ReifiedField[?field] = ?heap ->
+  Field(?field), HeapAllocation(?heap).
+
+
+ReflectiveHeap(?heap) -> HeapAllocation(?heap).
+
+ReflectiveHeapAllocation[?instruction, ?type] = ?heap ->
+  Instruction(?instruction), ReferenceType(?type), HeapAllocation(?heap).
+
+// Special objects to signify unknown results of reflective calls
+SpecialMissingForNameHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingNewInstanceHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetConstructorHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetMethodHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetMethodsHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetFieldHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetFieldsHeap[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetHeapFromGetField[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+SpecialMissingGetHeapFromGetFields[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+UnknownReflectiveObject[?class, ?invocation] = ?heap ->
+  Type(?class), MethodInvocation(?invocation), HeapAllocation(?heap).
+
+MarkerReflectiveObject[?invocation] = ?heap ->
+  MethodInvocation(?invocation), HeapAllocation(?heap).
+
+
+java:lang:Object:getClass(?to, ?from) ->
+  Var(?to), Var(?from).
+
+java:lang:Class:forName(?invocation, ?inmethod) ->
+  MethodInvocation(?invocation), Method(?inmethod).
+
+java:lang:Class:getName(?to, ?from) ->
+  Var(?to), Var(?from).
+
+java:lang:Class:getComponentType(?to, ?from) ->
+  Var(?to), Var(?from).
+
+java:lang:Class:getSuperclass(?to, ?from) ->
+  Var(?to), Var(?from).
+
+java:lang:Class:getInterfaces(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getMethods(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getMethod(?to, ?param, ?from) ->
+  Var(?to), Var(?param), Var(?from).
+
+java:lang:Class:getDeclaredMethods(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getDeclaredMethod(?to, ?param, ?from) ->
+  Var(?to), Var(?param), Var(?from).
+
+java:lang:Class:getConstructors(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getConstructor(?to, ?from) ->
+  Var(?to), Var(?from).
+
+java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getDeclaredConstructor(?to, ?from) ->
+  Var(?to), Var(?from).
+
+java:lang:Class:getFields(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getField(?to, ?param, ?from) ->
+  Var(?to), Var(?param), Var(?from).
+
+java:lang:Class:getDeclaredFields(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:Class:getDeclaredField(?to, ?param, ?from) ->
+  Var(?to), Var(?param), Var(?from).
+
+java:lang:Class:newInstance(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) ->
+  MethodInvocation(?invocation), Var(?to), Var(?param).
+
+java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:reflect:Field:get(?invocation, ?to, ?field) ->
+  MethodInvocation(?invocation), Var(?to), Var(?field).
+
+java:lang:reflect:Field:get:base[?invocation] = ?base ->
+  MethodInvocation(?invocation), Var(?base).
+
+java:lang:reflect:Field:set(?invocation, ?from, ?field) ->
+  MethodInvocation(?invocation), Var(?from), Var(?field).
+
+java:lang:reflect:Field:set:base[?invocation] = ?base ->
+  MethodInvocation(?invocation), Var(?base).
+
+java:lang:reflect:Method:invoke(?invocation, ?method) ->
+  MethodInvocation(?invocation), Var(?method).
+
+java:lang:Class:getClassLoader(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+java:lang:ClassLoader:getResource(?invocation, ?to, ?from) ->
+  MethodInvocation(?invocation), Var(?to), Var(?from).
+
+
+//TempDelta(?invocation, ?classType, ?heapType, ?heapStr) ->
+//  MethodInvocation(?invocation), ReferenceType(?classType), Type(?heapType), string(?heapStr).
