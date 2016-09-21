@@ -112,7 +112,7 @@ class Doop {
             forPreprocessor: true,
             isAdvanced:true
         ),
-        new AnalysisOption<String>(
+        new AnalysisOption<Boolean>(
             id:"EXCLUDE_IMPLICITLY_REACHABLE_CODE",
             name:"exclude-implicitly-reachable-code",
             value:false,
