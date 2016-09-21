@@ -32,7 +32,7 @@ _VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
   agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
 
 // The real metric is the product of the two.
-+TempObjectToRefine(?allocId) <-
++TempObjectToRefine(?alloc) <-
   _FieldPointsToPerAllocSite[?alloc] * _VarsPerAllocSite[?alloc] > 200000.
 
 +TempNegativeObjectFilter[] = true.
