@@ -355,7 +355,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
  * String buffers and builders
  *************************************************************/
 
-#ifdef MERGE_STRING_BUFFERS
+#ifndef DISTINGUISH_STRING_BUFFERS
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuffer"),
@@ -403,7 +403,7 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
-#ifdef MERGE_STRING_BUFFERS
+#ifdef DISTINGUISH_STRING_BUFFERS
   !Type:Value(?heaptype:"java.lang.StringBuffer"),
   !Type:Value(?heaptype:"java.lang.StringBuilder"),
 #endif
