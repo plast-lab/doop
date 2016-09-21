@@ -202,6 +202,11 @@ class Doop {
             isAdvanced:true,
         ),
         new AnalysisOption<Boolean>(
+            id:"REFINE",
+            value:false,
+            cli:false
+        ),
+        new AnalysisOption<Boolean>(
             id:"SSA",
             name:"ssa",
             description:"Use ssa transformation for input.",
@@ -284,15 +289,6 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
-            id:"JRE",
-            name:"jre",
-            argName:"VERSION",
-            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
-            value:"system",
-            forCacheID:true,
-            webUI:true
-        ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
             name:"regex",
@@ -303,12 +299,21 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"JRE_LIB",
-            name:"jre-lib",
-            description:"The path to the JRE lib directory (containing different JRE versions).",
-            value:System.getenv("DOOP_JRE_LIB"),
-            webUI:false,
-            isAdvanced:true
+                id:"PLATFORM_LIBS",
+                name:"platform-libs",
+                description:"The path to the platform libs directory.",
+                value:System.getenv("DOOP_PLATFORMS_LIB"),
+                isAdvanced:true
+        ),
+        new AnalysisOption<String>(
+                id:"PLATFORM",
+                name:"platform",
+                argName: "platform",
+                description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
+                value: "java_7",
+                webUI: true,
+                forCacheID: true
+//                cli: true
         ),
 
         /* Start of non-standard flags */

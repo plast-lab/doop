@@ -6,12 +6,12 @@ We will run a simple naive analysis (`-a naive` option) on the generated jar
 file (`-j Example.jar` option). This analysis has only a few basic rules but
 it's a good representative skeleton of actual analyses. Since Doop performs a
 whole program analysis, the library will be analyzed along with application
-code. We can also specify the desired JRE version of library code (`--jre 1.7`
-option).
+code. We need to specify the desired version for the library code of the platform (`--platform java_7`
+or `--platform android_24` option).
 
 ```
 #!bash
-$ ./doop -a naive -j docs/doop-101-examples/Example.jar --jre 1.7 --Xstats:none
+$ ./doop -a naive -j docs/doop-101-examples/Example.jar --platform java_7 --Xstats:none
 ```
 
 After the analysis has run, we can gather results by issuing queries directly to the database.
@@ -175,7 +175,7 @@ let's analyze the `antlr` benchmark using a 2 type-sensitive analysis.
 
 ```
 #!bash
-$ ./doop -a 2-type-sensitive+heap -j benchmarks/dacapo-2006/antlr.jar --dacapo --jre 1.7
+$ ./doop -a 2-type-sensitive+heap -j benchmarks/dacapo-2006/antlr.jar --dacapo --platform java_7
 ```
 
 Towards the end of execution, Doop will report a set of metrics gathered from

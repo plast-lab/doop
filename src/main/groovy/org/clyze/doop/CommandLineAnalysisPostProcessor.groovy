@@ -52,21 +52,20 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         if (analysis.options.X_STOP_AT_FACTS.value) {
             def facts = new File(analysis.options.X_STOP_AT_FACTS.value)
             logger.info "Making facts available at $facts"
-            analysis.executor.execute("ln -s -f ${analysis.facts} $facts")
+            analysis.executor.execute("ln -s -f ${analysis.facts} \"$facts\"")
             return
         }
 
-        def jre = analysis.options.JRE.value
-        if (jre != "system") jre = "jre${jre}"
-        def jarName = FilenameUtils.getBaseName(analysis.inputJarFiles[0].toString())
+        def platform = analysis.options.PLATFORM.value
+        def inputName = FilenameUtils.getBaseName(analysis.inputs[0].toString())
 
-        def humanDatabase = new File("${Doop.doopHome}/results/${jarName}/${analysis.name}/${jre}/${analysis.id}")
+        def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()
         logger.info "Making database available at $humanDatabase"
-        analysis.executor.execute("ln -s -f ${analysis.database} $humanDatabase")
+        analysis.executor.execute("ln -s -f ${analysis.database} \"$humanDatabase\"")
 
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
-        analysis.executor.execute("ln -s -f -n ${analysis.database} $lastAnalysis")
+        analysis.executor.execute("ln -s -f -n ${analysis.database} \"$lastAnalysis\"")
     }
 }

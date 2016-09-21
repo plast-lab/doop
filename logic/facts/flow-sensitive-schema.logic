@@ -111,6 +111,12 @@ Method:SimpleName[?method] = ?simplename ->
 Method:Descriptor[?method] = ?descriptor ->
    Method(?method), MethodDescriptor(?descriptor).
 
+JVMDescriptor(?descriptor), JVMDescriptor:Value(?descriptor:?s) -> string(?s).
+
+// JVM method descriptor
+Method:JVMDescriptor[?method] = ?descriptor ->
+   Method(?method), JVMDescriptor(?descriptor).
+
 Method:Modifier(?mod, ?method) ->
    Method(?method), Modifier(?mod).
 
@@ -562,6 +568,7 @@ lang:physical:capacity[`MethodDescriptor]    = 131072.
 lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */
 lang:physical:capacity[`Throw:Insn]          = 4194304. /* = instruction */
 lang:physical:capacity[`MethodInvocation]    = 4194304. /* = instruction */
+lang:physical:capacity[`JVMDescriptor]       = 524288.
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 131072.
 lang:physical:capacity[`Var]                 = 2097152. /* 2^21 */
@@ -579,3 +586,8 @@ lang:physical:capacity[`NormalHeap]          = 4194304.
 lang:physical:capacity[`StringConstant]      = 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
 lang:physical:capacity[`StringRaw]           = 4194304.
+
+//------------------------------------
+//          Android Entry Points
+//------------------------------------
+AndroidEntryPoint(?m) -> Method(?m).

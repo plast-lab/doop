@@ -14,13 +14,13 @@ import java.util.List;
  * controlling what facts are generated.
  */
 
-class FactGenerator implements Runnable {
+class RunnableFactGenerator implements Runnable {
 
     private FactWriter _writer;
     private boolean _ssa;
     private List<SootClass> _sootClasses;
 
-    FactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
+    RunnableFactGenerator(FactWriter writer, boolean ssa, List<SootClass> sootClasses)
     {
         this._writer = writer;
         this._ssa = ssa;
@@ -53,15 +53,13 @@ class FactGenerator implements Runnable {
                 _writer.writeDirectSuperinterface(_sootClass, i);
             }
 
-            for (SootField f : _sootClass.getFields()) {
-                generate(f);
-            }
+            _sootClass.getFields().forEach(this::generate);
 
             for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
                 Session session = new Session();
 
                 try {
-                    generate(m, session); // try multithread this
+                    generate(m, session);
                 } catch (RuntimeException exc) {
                     System.err.println("Error while processing method: " + m);
                     throw exc;
@@ -129,10 +127,8 @@ class FactGenerator implements Runnable {
             if(phantomBased(m.getParameterType(i)))
                 return true;
 
-        if (phantomBased(m.getReturnType()))
-            return true;
+        return phantomBased(m.getReturnType());
 
-        return false;
     }
 
     private void generate(SootMethod m, Session session)
@@ -246,7 +242,7 @@ class FactGenerator implements Runnable {
                 }
                 else if(stmt instanceof InvokeStmt)
                 {
-                    _writer.writeInvoke(m, stmt, ((InvokeStmt) stmt).getInvokeExpr(), session);
+                    _writer.writeInvoke(m, stmt, stmt.getInvokeExpr(), session);
                 }
                 else if(stmt instanceof ReturnStmt)
                 {
@@ -291,6 +287,9 @@ class FactGenerator implements Runnable {
                 }
                 else if(stmt instanceof LookupSwitchStmt)
                 {
+                    session.calcUnitNumber(stmt);
+                }
+                else if (stmt instanceof NopStmt) {
                     session.calcUnitNumber(stmt);
                 }
                 else
@@ -424,18 +423,18 @@ class FactGenerator implements Runnable {
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-            if(index instanceof Local)
-            {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
-            }
-            else if(index instanceof IntConstant)
-            {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
-            }
-            else
-            {
-                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
-            }
+//            if(index instanceof Local)
+//            {
+//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
+//            }
+//            else if(index instanceof IntConstant)
+//            {
+//                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
+//            }
+//            else
+//            {
+//                throw new RuntimeException("Cannot handle assignment: " + stmt + " (index: " + index.getClass() + ")");
+//            }
         }
         else if(right instanceof CastExpr)
         {
@@ -451,7 +450,7 @@ class FactGenerator implements Runnable {
                 // seems to always get optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
-            else if (op instanceof NullConstant)
+            else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)
             {
                 _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }
@@ -534,10 +533,10 @@ class FactGenerator implements Runnable {
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-            if (index instanceof Local)
-                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
-            else
-                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
+//            if (index instanceof Local)
+//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
+//            else
+//                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)

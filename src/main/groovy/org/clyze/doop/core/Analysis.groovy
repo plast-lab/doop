@@ -1,7 +1,6 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
-import java.util.regex.Pattern
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
@@ -12,7 +11,9 @@ import org.clyze.doop.blox.WorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*
 
-import static org.clyze.doop.system.CppPreprocessor.*
+import static org.clyze.doop.system.CppPreprocessor.includeAtStart
+import static org.clyze.doop.system.CppPreprocessor.preprocess
+import static org.clyze.doop.system.CppPreprocessor.preprocessIfExists
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
@@ -64,14 +65,14 @@ class Analysis implements Runnable {
     InputResolutionContext ctx
 
     /**
-     * The input jar files/dependencies of the analysis
+     * The input files/dependencies of the analysis
      */
-    List<File> inputJarFiles
+    List<File> inputs
 
     /**
      * The jre library jars for soot
      */
-    List<String> jreJars
+    List<String> platformLibs
 
     /**
      * The environment for running external commands
@@ -101,8 +102,8 @@ class Analysis implements Runnable {
                        String name,
                        Map<String, AnalysisOption> options,
                        InputResolutionContext ctx,
-                       List<File> inputJarFiles,
-                       List<String> jreJars,
+                       List<File> inputs,
+                       List<String> platformLibs,
                        Map<String, String> commandsEnvironment) {
         this.id = id
         this.outDir = outDir
@@ -111,8 +112,8 @@ class Analysis implements Runnable {
         this.safename = name.replace(File.separator, "-")
         this.options = options
         this.ctx = ctx
-        this.inputJarFiles = inputJarFiles
-        this.jreJars = jreJars
+        this.inputs = inputs
+        this.platformLibs = platformLibs
         this.commandsEnvironment = commandsEnvironment
 
         executor = new Executor(commandsEnvironment)
@@ -230,7 +231,7 @@ class Analysis implements Runnable {
     }
 
     private String cacheMeta() {
-        Collection<String> inputJars = inputJarFiles.collect {
+        Collection<String> inputJars = inputs.collect {
             File file -> file.toString()
         }
         Collection<String> cacheOptions = options.values().findAll {
@@ -470,6 +471,8 @@ class Analysis implements Runnable {
      */
     protected void reanalyze() {
         preprocess(this, "${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
+        preprocess(this, "${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
+        preprocess(this, "${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
 
         lbScript
             .echo("++++ Refinement ++++")
@@ -479,10 +482,7 @@ class Analysis implements Runnable {
             .executeFile("refinement-delta.logic")
             .commit()
             .transaction()
-            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempSiteToRefine")
-            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempNegativeSiteFilter")
-            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempObjectToRefine")
-            .wr("export --keepSystemPreds --format script --dataDir . --overwrite --predicates TempNegativeObjectFilter")
+            .executeFile("export-refinement.logic")
             .commit()
             .elapsedTime()
 
@@ -493,55 +493,11 @@ class Analysis implements Runnable {
     }
 
     void importRefinement() {
-        Map<String, String> files = [
-                "refine-site": """\
-                               option,delimiter,","
-                               option,hasColumnNames,true
-                               option,quotedValues,true
-                               option,escapeQuotedValues,true
-
-                               fromFile,"${outDir}/TempSiteToRefine.csv",MethodInvocation,MethodInvocation
-                               toPredicate,SiteToRefine,MethodInvocation""".toString().stripIndent(),
-
-                "negative-site": """\
-                                 option,delimiter,","
-                                 option,hasColumnNames,true
-
-                                 fromFile,"${outDir}/TempNegativeSiteFilter.csv",string,string
-                                 toPredicate,NegativeSiteFilter,string""".toString().stripIndent(),
-
-                "refine-object": """\
-                                 option,delimiter,","
-                                 option,hasColumnNames,true
-                                 option,quotedValues,true
-                                 option,escapeQuotedValues,true
-
-                                 fromFile,"${outDir}/TempObjectToRefine.csv",string,string
-                                 toPredicate,ObjectToRefine0,string""".toString().stripIndent(),
-
-                "negative-object": """\
-                                   option,delimiter,","
-                                   option,hasColumnNames,true
-
-                                   fromFile,"${outDir}/TempNegativeObjectFilter.csv",string,string
-                                   toPredicate,NegativeObjectFilter,string""".toString().stripIndent()
-        ]
-
         lbScript
             .echo("-- Import --")
             .startTimer()
             .transaction()
-
-        files.each { Map.Entry<String, String> entry ->
-            File f = new File(outDir, "${entry.key}.import")
-            FileOps.writeToFile f, entry.value
-            lbScript.wr("import --format script --importDir . --files ${f.getName()}")
-        }
-
-        lbScript
-            .commit()
-            .transaction()
-            .addBlock("ObjectToRefine(?heap) <- ObjectToRefine0(?id), HeapAllocation:byValue[?id] = ?heap.")
+            .executeFile("import-refinement.logic")
             .commit()
             .elapsedTime()
     }
@@ -595,7 +551,7 @@ class Analysis implements Runnable {
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = inputJarFiles[0].toString()
+        String jar = inputs[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -607,7 +563,7 @@ class Analysis implements Runnable {
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        inputJarFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
+        inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
     protected void runAverroes() {
@@ -622,16 +578,16 @@ class Analysis implements Runnable {
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            inputJarFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputs[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputJarFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            if (jreJars.isEmpty()) {
+            Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            if (platformLibs.isEmpty()) {
                 depArgs = ["-lsystem"] + deps
             }
             else {
-                depArgs = jreJars.collect{ String arg -> ["-l", arg]}.flatten() + deps
+                depArgs = platformLibs.collect{ String arg -> ["-l", arg]}.flatten() + deps
             }
 
         }
@@ -653,7 +609,7 @@ class Analysis implements Runnable {
             params = params + ["--only-application-classes-fact-gen"]
         }
 
-        params = params + ["-d", facts.toString(), inputJarFiles[0].toString()]
+        params = params + ["-d", facts.toString(), inputs[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -699,13 +655,13 @@ class Analysis implements Runnable {
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        Collection<String> libraryJars = inputJarFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = inputs.drop(1).collect { it.toString() } + jreAverroesLibraries()
 
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", inputJarFiles[0].toString())
+        props.setProperty("input_jar_files", inputs[0].toString())
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
@@ -738,10 +694,15 @@ class Analysis implements Runnable {
      */
     private List<String> jreAverroesLibraries() {
 
-        String jre = options.JRE.value
-        String path = "${options.JRE_LIB.value}/jre${jre}/lib"
+        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
+        assert platformLibsValue.size() == 2
+        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+        assert platform == "java"
+
+        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+
         //Not using if/else for readability
-        switch(jre) {
+        switch(version) {
             case "1.3":
                 return []
             case "1.4":
@@ -763,16 +724,13 @@ class Analysis implements Runnable {
      */
     private String javaAverroesLibrary() {
 
-        String jre = options.JRE.value
+        def platformLibsValue = options.PLATFORM.value.toString().tokenize("_")
+        assert platformLibsValue.size() == 2
+        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
+        assert platform == "java"
 
-        if (jre == "system") {
-            String javaHome = System.getProperty("java.home")
-            return "$javaHome/lib/rt.jar"
-        }
-        else {
-            String path = "${options.JRE_LIB.value}/jre${jre}/lib"
-            return "$path/rt.jar"
-        }
+        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+        return "$path/rt.jar"
     }
 
     private void bloxbatch(File database, String params) {

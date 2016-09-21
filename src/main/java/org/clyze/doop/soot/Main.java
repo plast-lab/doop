@@ -2,22 +2,26 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
-import soot.ClassProvider;
-import soot.Scene;
-import soot.SootClass;
+import soot.*;
+import soot.jimple.infoflow.android.SetupApplication;
+import soot.options.Options;
 
 import java.io.File;
 import java.util.*;
 
+import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
+
 public class Main {
 
-    public static enum Mode {INPUTS, FULL;}
+    private enum Mode {INPUTS, FULL}
     private static Mode _mode = null;
-    private static List<String> _inputs = new ArrayList<String>();
-    private static List<String> _libraries = new ArrayList<String>();
+    private static List<String> _inputs = new ArrayList<>();
+    private static List<String> _libraries = new ArrayList<>();
     private static String _outputDir = null;
     private static String _main = null;
     private static boolean _ssa = false;
+    private static boolean _android = false;
+    private static String _androidJars = null;
     private static boolean _allowPhantom = false;
     private static boolean _useOriginalNames = false;
     private static boolean _keepLineNumber = false;
@@ -51,115 +55,120 @@ public class Main {
             }
 
             for (int i = 0; i < args.length; i++) {
-                if (args[i].equals("--full")) {
-                    if( _mode != null) {
-                        System.err.println("error: duplicate mode argument");
-                        System.exit(1);
-                    }
-
-                    _mode = Mode.FULL;
-                }
-                else if (args[i].equals("-d")) {
-                    i = shift(args, i);
-                    _outputDir = args[i];
-                }
-                else if (args[i].equals("--main")) {
-                    i = shift(args, i);
-                    _main = args[i];
-                }
-                else if (args[i].equals("--ssa")) {
-                    _ssa = true;
-                }
-                else if (args[i].equals("-l")) {
-                    i = shift(args, i);
-                    _libraries.add(args[i]);
-                }
-                else if (args[i].equals("-lsystem")) {
-                    String javaHome = System.getProperty("java.home");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                    _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
-                }
-                else if (args[i].equals("--deps")) {
-                    i = shift(args, i);
-                    String folderName = args[i];
-                    File f = new File(folderName);
-                    if (!f.exists()) {
-                        System.err.println("Dependency folder " + folderName + " does not exist");
-                        System.exit(0);
-                    }
-                    else if (!f.isDirectory()) {
-                        System.err.println("Dependency folder " + folderName + " is not a directory");
-                        System.exit(0);
-                    }
-                    for (File file : f.listFiles()) {
-                        if (file.isFile() && file.getName().endsWith(".jar")) {
-                            _libraries.add(file.getCanonicalPath());
+                switch (args[i]) {
+                    case "--full":
+                        if (_mode != null) {
+                            System.err.println("error: duplicate mode argument");
+                            System.exit(1);
                         }
-                    }
-                }
-                else if (args[i].equals("--application-regex")) {
-                    i = shift(args, i);
-                    appRegex = args[i];
-                }
-                else if (args[i].equals("--allow-phantom")) {
-                    _allowPhantom = true;
-                }
-                else if (args[i].equals("--use-original-names")) {
-                    _useOriginalNames = true;
-                }
-                else if (args[i].equals("--only-application-classes-fact-gen")) {
-                    _onlyApplicationClassesFactGen = true;
-                }
-                else if (args[i].equals("--keep-line-number")) {
-                    _keepLineNumber = true;
-                }
 
-                else if (args[i].equals("--bytecode2jimple")) {
-                    _bytecode2jimple = true;
-                }
-                else if (args[i].equals("--stdout")) {
-                    _toStdout = true;
-                }
-                else if (args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")) {
-                    System.err.println("usage: [options] file");
-                    System.err.println("options:");
-                    System.err.println("  --main <class>                        Specify the main name of the main class");
-                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  --full                                Generate facts by full transitive resolution");
-                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                              Find classes in default system classes.");
-                    System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                    System.err.println("  --use-original-names                  Use original (source code) local variable names");
-                    System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
-                    System.err.println("  --keep-line-number                    Keep line number information for statements");
+                        _mode = Mode.FULL;
+                        break;
+                    case "-d":
+                        i = shift(args, i);
+                        _outputDir = args[i];
+                        break;
+                    case "--main":
+                        i = shift(args, i);
+                        _main = args[i];
+                        break;
+                    case "--ssa":
+                        _ssa = true;
+                        break;
+                    case "--android-jars":
+                        i = shift(args, i);
+                        _allowPhantom = true;
+                        _android = true;
+                        _androidJars = args[i];
+                        break;
+                    case "-l":
+                        i = shift(args, i);
+                        _libraries.add(args[i]);
+                        break;
+                    case "-lsystem":
+                        String javaHome = System.getProperty("java.home");
+                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+                        break;
+                    case "--deps":
+                        i = shift(args, i);
+                        String folderName = args[i];
+                        File f = new File(folderName);
+                        if (!f.exists()) {
+                            System.err.println("Dependency folder " + folderName + " does not exist");
+                            System.exit(0);
+                        } else if (!f.isDirectory()) {
+                            System.err.println("Dependency folder " + folderName + " is not a directory");
+                            System.exit(0);
+                        }
+                        for (File file : f.listFiles()) {
+                            if (file.isFile() && file.getName().endsWith(".jar")) {
+                                _libraries.add(file.getCanonicalPath());
+                            }
+                        }
+                        break;
+                    case "--application-regex":
+                        i = shift(args, i);
+                        appRegex = args[i];
+                        break;
+                    case "--allow-phantom":
+                        _allowPhantom = true;
+                        break;
+                    case "--use-original-names":
+                        _useOriginalNames = true;
+                        break;
+                    case "--only-application-classes-fact-gen":
+                        _onlyApplicationClassesFactGen = true;
+                        break;
+                    case "--keep-line-number":
+                        _keepLineNumber = true;
+                        break;
+                    case "--bytecode2jimple":
+                        _bytecode2jimple = true;
+                        break;
+                    case "--stdout":
+                        _toStdout = true;
+                        break;
+                    case "-h":
+                    case "--help":
+                    case "-help":
+                        System.err.println("usage: [options] file");
+                        System.err.println("options:");
+                        System.err.println("  --main <class>                        Specify the main name of the main class");
+                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+                        System.err.println("  --full                                Generate facts by full transitive resolution");
+                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
+                        System.err.println("  --use-original-names                  Use original (source code) local variable names");
+                        System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
+                        System.err.println("  --keep-line-number                    Keep line number information for statements");
 
-                    System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
-                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+                        System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
+                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
 
-                    System.err.println("  -h, -help                             Print this help message.");
-                    System.exit(0);
-                }
-                else if (args[i].equals("--bytecode2jimpleHelp")) {
-                    System.err.println("usage: [options] file");
-                    System.err.println("options:");
-                    System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                    System.err.println("  --full                                Generate facts by full transitive resolution");
-                    System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                    System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                    System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                    System.err.println("  -lsystem                              Find classes in default system classes.");
-                    System.exit(0);
-                }
-                else {
-                    if (args[i].charAt(0) == '-') {
-                        System.err.println("error: unrecognized option: " + args[i]);
+                        System.err.println("  -h, -help                             Print this help message.");
                         System.exit(0);
-                    }
-                    else {
-                        _inputs.add(args[i]);
-                    }
+                    case "--bytecode2jimpleHelp":
+                        System.err.println("usage: [options] file");
+                        System.err.println("options:");
+                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
+                        System.err.println("  --full                                Generate facts by full transitive resolution");
+                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
+                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.exit(0);
+                    default:
+                        if (args[i].charAt(0) == '-') {
+                            System.err.println("error: unrecognized option: " + args[i]);
+                            System.exit(0);
+                        } else {
+                            _inputs.add(args[i]);
+                        }
+                        break;
                 }
             }
 
@@ -179,13 +188,6 @@ public class Main {
                 _outputDir = System.getProperty("user.dir");
             }
 
-            /*
-             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
-             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
-             * a runtime exception when running soot with java 1.8, however it leads to different
-             * input fact generation thus leading to different analysis results
-             */
-            Scene.v().addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
             run();
         }
         catch(Exception exc) {
@@ -195,34 +197,71 @@ public class Main {
     }
 
     private static void run() throws Exception {
-        NoSearchingClassProvider provider = new NoSearchingClassProvider();
+        NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
+        DexClassProvider dexClassProvider = new DexClassProvider();
+        SootMethod dummyMain = null;
+        Set<String> androidClasses = null;
 
-        for(String arg : _inputs) {
-            if(arg.endsWith(".jar") || arg.endsWith(".zip")) {
-                System.out.println("Adding archive: " + arg);
-                provider.addArchive(new File(arg));
+        Set<SootClass> classes = new HashSet<>();
+
+        if (_android) {
+            SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+            soot.options.Options.v().set_debug(false);
+            soot.options.Options.v().set_verbose(false);
+            soot.options.Options.v().set_unfriendly_mode(false);
+
+            app.setLibraries(_libraries);
+            app.getConfig().setCallbackAnalyzer(Fast);
+            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+            dummyMain = app.getDummyMainMethod();
+            if (dummyMain == null) {
+                throw new RuntimeException("Dummy main null");
             }
-            else {
-                System.out.println("Adding file: " + arg);
-                provider.addClass(new File(arg));
+
+            soot.G.reset();
+            soot.options.Options.v().set_src_prec(Options.src_prec_apk);
+            soot.options.Options.v().set_android_jars(_androidJars);
+            soot.options.Options.v().set_ignore_resolution_errors(true);
+            soot.options.Options.v().set_whole_program(true);
+            soot.options.Options.v().set_process_dir(_inputs);
+            soot.options.Options.v().set_allow_phantom_refs(true);
+            soot.options.Options.v().set_process_multiple_dex(true);
+
+            androidClasses = new HashSet<>();
+            for (String arg : _inputs) {
+                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
+            }
+            System.out.println("Android classes discovered from classesOfDex on apk: " + androidClasses.size()); //this finds only the classes.dex
+        }
+        else {
+            for (String arg : _inputs) {
+                if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
+                    System.out.println("Adding archive: " + arg);
+                    classProvider.addArchive(new File(arg));
+                } else {
+                    System.out.println("Adding file: " + arg);
+                    classProvider.addClass(new File(arg));
+                }
             }
         }
-
-        for(String lib: _libraries) {
+        Scene scene = Scene.v();
+        for (String lib : _libraries) {
             System.out.println("Adding archive for resolving: " + lib);
 
             File libraryFile = new File(lib);
 
             if (!libraryFile.exists()) {
                 System.err.println("Library file does not exist: " + libraryFile);
-            }
-            else {
-                provider.addArchiveForResolving(libraryFile);
+            } else {
+                classProvider.addArchiveForResolving(libraryFile);
             }
         }
 
-        soot.SourceLocator.v().setClassProviders(Collections.singletonList((ClassProvider) provider));
-        Scene scene = Scene.v();
+        List<ClassProvider> providersList = new ArrayList<>();
+        providersList.add(dexClassProvider);
+        providersList.add(classProvider);
+        soot.SourceLocator.v().setClassProviders(providersList);
+
         if(_main != null) {
             soot.options.Options.v().set_main_class(_main);
         }
@@ -243,35 +282,59 @@ public class Main {
             soot.options.Options.v().set_keep_line_number(true);
         }
 
-        List<SootClass> classes = new ArrayList<>();
-        for(String className : provider.getClassNames()) {
-            scene.loadClass(className, SootClass.SIGNATURES);
-            SootClass c = scene.loadClass(className, SootClass.BODIES);
+        if (_android) {
+            assert androidClasses != null;
+            for (String className : androidClasses) {
+                scene.addBasicClass(className, SootClass.BODIES);
+                SootClass c = scene.forceResolve(className, SootClass.BODIES);
+                if (c != null) {
+                    c.setApplicationClass();
+                }
+                classes.add(c);
+            }
+            androidClasses = SourceLocator.v().dexClassIndex().keySet();
 
-            classes.add(c);
+            for (String className : androidClasses) {
+                scene.addBasicClass(className, SootClass.BODIES);
+                classes.add(scene.forceResolve(className, SootClass.BODIES));
+            }
         }
 
+        for (String className : classProvider.getClassNames()) {
+            scene.loadClass(className, SootClass.SIGNATURES);
+            classes.add(scene.loadClass(className, SootClass.BODIES));
+        }
+        System.out.println("Total number of classes discovered (application + library): " + scene.getClasses().size());
 
-        /*
-         * For simulating the FileSystem class, we need the implementation
-         * of the FileSystem, but the classes are not loaded automatically
-         * due to the indirection via native code.
-         */
-        addCommonDynamicClass(scene, provider, "java.io.UnixFileSystem");
-        addCommonDynamicClass(scene, provider, "java.io.WinNTFileSystem");
-        addCommonDynamicClass(scene, provider, "java.io.Win32FileSystem");
 
-        /* java.net.URL loads handlers dynamically */
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.file.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.ftp.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.http.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.https.Handler");
-        addCommonDynamicClass(scene, provider, "sun.net.www.protocol.jar.Handler");
+        if (!_android) {
+            /*
+             * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
+             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
+             * a runtime exception when running soot with java 1.8, however it leads to different
+             * input fact generation thus leading to different analysis results
+             */
+            scene.addBasicClass("sun.net.www.protocol.ftp.FtpURLConnection", 1);
+            /*
+             * For simulating the FileSystem class, we need the implementation
+             * of the FileSystem, but the classes are not loaded automatically
+             * due to the indirection via native code.
+             */
+            addCommonDynamicClass(scene, classProvider, "java.io.UnixFileSystem");
+            addCommonDynamicClass(scene, classProvider, "java.io.WinNTFileSystem");
+            addCommonDynamicClass(scene, classProvider, "java.io.Win32FileSystem");
+
+            /* java.net.URL loads handlers dynamically */
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.file.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.ftp.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.http.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.https.Handler");
+            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
+        }
 
         scene.loadNecessaryClasses();
-
-
-       /*
+        
+        /*
         * This part should definitely appear after the call to
         * `Scene.loadNecessaryClasses()', since the latter may alter
         * the set of application classes by explicitly specifying
@@ -279,13 +342,10 @@ public class Main {
         * call to `setApplicationClass()').
         */
 
-        for(SootClass c : classes) {
-            if (isApplicationClass(c))
-                c.setApplicationClass();
-        }
+        classes.stream().filter(Main::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
 
         if(_mode == Mode.FULL && !_onlyApplicationClassesFactGen) {
-            classes = new ArrayList<>(scene.getClasses());
+            classes = new HashSet<>(scene.getClasses());
         }
 
         if (_bytecode2jimple) {
@@ -300,13 +360,10 @@ public class Main {
             ThreadFactory factory = new ThreadFactory(writer, _ssa);
             Driver driver = new Driver(factory, _ssa, classes.size());
 
-            for(SootClass c : classes) {
-                if (c.isApplicationClass())
-                    writer.writeApplicationClass(c);
-            }
+            classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
             // Read all stored properties files
-            for (Map.Entry<String,Properties> entry : provider.getProperties().entrySet()) {
+            for (Map.Entry<String,Properties> entry : classProvider.getProperties().entrySet()) {
                 String path = entry.getKey();
                 Properties properties = entry.getValue();
 
@@ -319,7 +376,14 @@ public class Main {
 
             db.flush();
 
-            driver.doInParallel(classes);
+//            if (_android) {
+//                driver.generateDummyMainMethod(dummyMain);
+//                driver.doInParallel(classes);
+//            }
+            if (_android)
+                Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
+            else
+                driver.doInParallel(classes);
 
             db.close();
         }
