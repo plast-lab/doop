@@ -1,7 +1,19 @@
-// For this analysis, there are no heap contexts, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?alloc) -> HeapAllocation(?alloc).
+// The real context is a HeapAllocation AND a MethodInvocation (for static
+// calls) sometimes. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+ContextFromRealContext[?heapComp] = ?ctx ->
+  Context(?ctx), ContextComponent(?heapComp).
+lang:skolem(`ContextFromRealContext).
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invoComp site for static calls.
+SpecialContextFromRealContext[?invoComp, ?heapComp] = ?ctx ->
+  Context(?ctx), ContextComponent(?invoComp), ContextComponent(?heapComp).
+lang:skolem(`SpecialContextFromRealContext).
+RealContextFromContext[?ctx] = ?heapComp ->
+  Context(?ctx), ContextComponent(?heapComp).
 
-MyMainThreadGroup(?alloc) -> HeapAllocation(?alloc).
-
-MyMainThread(?alloc) -> HeapAllocation(?alloc).
+// This analysis has no context for heap objects. This is emulated by creating
+// a single HContext object, which is used everywhere.
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).

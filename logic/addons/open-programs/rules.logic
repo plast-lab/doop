@@ -7,43 +7,123 @@ AllConcreteImplementations(?class, ?staticType) <-
    SubtypeOf(?class, ?staticType),
    ClassType(?class),
    !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) <-
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?type, ?type) <-
+   ArrayType(?type).
+
+ConcreteImplementations[?staticType] = ?class <-
+   agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
+
+AnyConcreteImplementations(?class, ?staticType) <-
+   ConcreteImplementations[?staticType] = ?class.
    
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
-   Type:fqn(?staticType:"javax.servlet.http.HttpServlet").
+   ClassType(?class),
+   Type:Value(?staticType:"javax.servlet.http.HttpServlet").
+
+ClassToMock(?class) <-
+   MockEntryPoint(?class, _).
+
+ClassToMock(?fieldType) <-
+   FieldInformationOpt(_, _, ?fieldType),
+   !ClassModifier("abstract", ?fieldType),
+   ReferenceType(?fieldType).
 
 MockObject(?classHeap, ?class) <-
-   ServletClass(?class),
-   Type:fqn(?class:?classStr),
+   ClassToMock(?class),
+   !ClassModifier("abstract", ?class),
+   Type:Value(?class:?classStr),
    ?classHeap = "<Mock allocation for " + ?classStr + ">".
 
+ClassToMock(?class) <-
+   MockObject(_, ?type),
+   ArrayType(?type),
+   ComponentType[?type] = ?componentType,
+   AnyConcreteImplementations(?class, ?componentType).
+                 
+FieldInformation(?signature, ?fieldtype, ?class) ->
+   Field(?signature), Type(?fieldtype), Type(?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   Field:Type[?signature] = ?fieldtype,
+   Field:DeclaringType[?signature] = ?class,
+   MockObject(_, ?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   FieldInformation(?signature, ?fieldtype, ?staticType),
+   AllConcreteImplementations(?class, ?staticType),
+   MockObject(_, ?class).
+
+FieldInformation(?signature, ?fieldConcreteType, ?class) <-
+   FieldInformationOpt(?signature, ?class, ?fieldStaticType),
+   AnyConcreteImplementations(?fieldConcreteType, ?fieldStaticType).
+
+FieldInformationOpt(?signature, ?class, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class).
+   
+MockHeapForField(?signature, ?baseheap, ?fieldtype) ->
+   Field(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
+
+MockHeapForField(?signature, ?baseheap, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class),
+   MockObjectHeap(?baseheap, ?class).
+
+MockObjectHeap(?heap, ?fieldtype) -> HeapAllocation(?heap), Type(?fieldtype).
+
+MockObjectOpt(?fieldtype, ?heap) <- MockObject(?heap, ?fieldtype).
+
+MockObjectHeap(?heap, ?fieldtype) <-
+   MockObjectOpt(?fieldtype, ?heapStr),
+   Instruction:Value(?heap:?heapStr), 
+   HeapAllocation(?heap).
+
+Blah(?heap, ?signature, ?baseheap),
+InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?hctx, ?baseheap) <-
+   ImmutableHContext[] = ?hctx,
+   MockHeapForField(?signature, ?baseheap, ?fieldtype),
+   MockObjectHeap(?heap, ?fieldtype).
+
+
+Blah2(?hctx, ?componentHeap, ?hctx, ?arrayHeap),
+ArrayIndexPointsTo(?hctx, ?componentHeap, ?hctx, ?arrayHeap) <-
+   MockObjectHeap(?arrayHeap, ?arrayType),
+   ArrayType(?arrayType),
+   ComponentType[?arrayType] = ?componentType,
+   AnyConcreteImplementations(?class, ?componentType),
+   MockObjectHeap(?componentHeap, ?class),
+   ImmutableHContext[] = ?hctx.
 
 ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
-// TODO: very big, can we be smarter ?
-GetMocksForFormals(?description, ?subtype, ?index, ?method) <-
+MockObject(?description, ?subtype),
+MocksForFormals(?description, ?subtype, ?index, ?method) <-
    FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
-   AllConcreteImplementations(?subtype, ?staticType),
-   MethodSignature:Value(?method:?methodStr),
+   AnyConcreteImplementations(?subtype, ?staticType),
+   Method:Value(?method:?methodStr),
    MockEntryPoint(_, ?method),
-   // TODO: replace with ClassTypeValue macro
-   Type:fqn(?subtype:?subtypeStr), 
+   Type:Value(?subtype:?subtypeStr), 
    ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
 
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
-   Type:fqn(?class:?classStr),
+   Type:Value(?class:?classStr),
    ServletEntryMethodName(?serviceMethodName),
-   MethodSignature:Value(?entry:methodSigStr),
+   Method:Value(?entry:methodSigStr),
+   // TODO: try removing initializer
    (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
    ServletEntryMethodName(?serviceMethodName).
 
 // bind mock objects to formals
 
 HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
-   GetMocksForFormals(?heapStr, _, ?index, ?method),
+   MocksForFormals(?heapStr, _, ?index, ?method),
    ReachableContext(?ctx, ?method),
    FormalParam[?index, ?method] = ?formal.
 
@@ -55,28 +135,13 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
    HeapAllocation(?heap).
 
 // bind mock objects to receivers
-HeapIdForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
+HeapForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
    ReachableContext(?ctx, ?method),
    ThisVar[?method] = ?receiver,
-   MockEntryPoint(?class, ?method),
-   MockObject(?heapStr, ?class).
+   Method:DeclaringType[?method] = ?class,
+   MockObjectHeap(?heapStr, ?class).
    
 VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
  <-
    ImmutableHContext[] = ?hctx,
-   MockObject(?heapStr, _), //TODO indexing
-   HeapIdForReceiverInContext(?ctx, ?receiver, ?heapStr),
-   Instruction:Value(?heap:?heapStr), 
-   HeapAllocation(?heap).
-
-
-SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>").
-SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
-SanitizationMethod(0, "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
-SanitizationMethod(0, "<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>").
-SanitizationMethod(0, "<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>").
-
-// LeakingSinkMethod(0, ?method) <-
-//    MethodSignature:SimpleName[?method] = "println".
-
-LeakingSinkMethod(0, "<java.io.PrintWriter: void println(java.lang.String)>").
+   HeapForReceiverInContext(?ctx, ?receiver, ?heap).

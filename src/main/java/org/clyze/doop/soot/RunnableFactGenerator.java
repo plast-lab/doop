@@ -37,6 +37,12 @@ class RunnableFactGenerator implements Runnable {
             int modifiers = _sootClass.getModifiers();
             if(Modifier.isAbstract(modifiers))
                 _writer.writeClassModifier(_sootClass, "abstract");
+            if(Modifier.isFinal(modifiers))
+                _writer.writeClassModifier(_sootClass, "final");
+            if(Modifier.isPublic(modifiers))
+                _writer.writeClassModifier(_sootClass, "public");
+            if(Modifier.isPrivate(modifiers))
+                _writer.writeClassModifier(_sootClass, "private");
 
             // the isInterface condition prevents Object as superclass of interface
             if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
@@ -66,7 +72,7 @@ class RunnableFactGenerator implements Runnable {
 
     private void generate(SootField f)
     {
-        _writer.writeFieldSignature(f);
+        _writer.writeField(f);
 
         int modifiers = f.getModifiers();
         if(Modifier.isAbstract(modifiers))
@@ -132,7 +138,7 @@ class RunnableFactGenerator implements Runnable {
             return;
         }
 
-        _writer.writeMethodSignature(m);
+        _writer.writeMethod(m);
 
         int modifiers = m.getModifiers();
         if(Modifier.isAbstract(modifiers))

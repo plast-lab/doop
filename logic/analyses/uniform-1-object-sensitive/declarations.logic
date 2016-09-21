@@ -1,7 +1,10 @@
-// For this analysis, contexts are heap objects, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?alloc) -> HeapAllocation(?alloc).
+ContextFromRealContext[?heap, ?invo] = ?ctx ->
+  Context(?ctx), HeapAllocation(?heap), MethodInvocation(?invo).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap ->
+  Context(?ctx), HeapAllocation(?heap).
+RealContext2FromContext[?ctx] = ?invo ->
+  Context(?ctx), MethodInvocation(?invo).
 
-MyMainThreadGroup(?alloc) -> HeapAllocation(?alloc).
-
-MyMainThread(?alloc) -> HeapAllocation(?alloc).
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).

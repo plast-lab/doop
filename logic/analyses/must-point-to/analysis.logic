@@ -33,7 +33,7 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
    AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn), MustContext(?ctx).
 
-RootMethodForMustAnalysis(?meth) -> MethodSignature(?meth).
+RootMethodForMustAnalysis(?meth) -> Method(?meth).
 
 //// ====================================
 //// BEGIN Auxiliary relations
@@ -53,7 +53,7 @@ MustPointTo[?var, ?callCtx, ?insn] = ?heap ->
 // (non-summary).
 InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
    HeapAllocation(?heap), HeapAllocation(?baseHeap), 
-   MustContext(?ctx), Instruction(?insn), FieldSignature(?fld).
+   MustContext(?ctx), Instruction(?insn), Field(?fld).
 
 // NOTE: MustPointTo and InstanceFieldMustPointTo relations are
 // derived only from the AccessPathMustPointTo relation. We use them for
@@ -67,7 +67,7 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
 // Need to identify relevant (i.e., reachable) methods for the must
 // analysis, instead of blindly applying it to all available code.
 ReachableMethodUnderMustContext(?ctx, ?meth) ->
-   MustContext(?ctx), MethodSignature(?meth).
+   MustContext(?ctx), Method(?meth).
 
 ReachableMethodUnderMustContext(?ctx, ?meth) <-
    SingleAllContext[] = ?ctx,
@@ -77,7 +77,7 @@ ReachableMethodUnderMustContext(?ctx, ?meth) <-
    MustCallGraphEdge:Context[_, ?invo] = ?ctx,
    MustCallGraphEdge:ToMethod[?invo] = ?meth.
 
-MustReachable(?meth) -> MethodSignature(?meth).
+MustReachable(?meth) -> Method(?meth).
 MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 
 // For some caller context, the call at ?invocation will get
@@ -85,10 +85,10 @@ MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 // ?invocation. In this way, information can be passed to the callee,
 // but only qualified by ?calleeCtx.
 MustCallGraphEdge:ToMethod[?invocation] = ?toMethod ->
-   CallGraphEdgeSource(?invocation), 
-   MethodSignature(?toMethod).
+   MethodInvocation(?invocation), 
+   Method(?toMethod).
 MustCallGraphEdge:Context[?ctx, ?invocation] = ?calleeCtx ->
-   CallGraphEdgeSource(?invocation), 
+   MethodInvocation(?invocation), 
    MustContext(?calleeCtx), MustContext(?ctx).
 
 // static or special method invocation without "this" value
@@ -271,11 +271,11 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 StaticFinalFieldMustPointTo[?fld] = ?heap <-
    Modifier:final[] = ?final,
-   FieldModifier(?final, ?fld),
+   Field:Modifier(?final, ?fld),
    SingleAllContext[] = ?ctx,
    AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap,
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
-   MethodSignature:SimpleName[?method] = "<clinit>".
+   Method:SimpleName[?method] = "<clinit>".
 
 
 // Frame rules
@@ -776,7 +776,7 @@ MustContext(?ctx) <-
    EmptyContext[] = ?emptyCtx.
 
 PushMustContext[?invo, ?ctx] = ?pushedCtx ->
-   MustContext(?pushedCtx), MustContext(?ctx), CallGraphEdgeSource(?invo).
+   MustContext(?pushedCtx), MustContext(?ctx), MethodInvocation(?invo).
 lang:skolem(`PushMustContext).
 PopMustContext[?ctx] = ?poppedCtx ->
    MustContext(?poppedCtx), MustContext(?ctx).
@@ -789,7 +789,7 @@ PopMustContext[?ctx] = ?poppedCtx <-
 //    PushAllOntoContext[?poppedCtx] = ?ctx.
 
 InvoFromContext[?ctx] = ?invocation ->
-   MustContext(?ctx), CallGraphEdgeSource(?invocation).
+   MustContext(?ctx), MethodInvocation(?invocation).
 InvoFromContext[?ctx] = ?invocation <- 
    PushMustContext[?invocation, _] = ?ctx.
 
@@ -855,14 +855,14 @@ IsVariable(?ap) <-
 
 // Constructor from static field
 AccessPath:ByStaticField[?fld] = ?ap ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 lang:skolem(`AccessPath:ByStaticField).
 
 AccessPath:ByStaticFieldInv[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
 
 AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2 ->
-   FieldSignature(?fld), AccessPath(?ap1), AccessPath(?ap2).
+   Field(?fld), AccessPath(?ap1), AccessPath(?ap2).
 lang:skolem(`AccessPath:ByFieldAccess).
 
 AccessPath:ByFieldAccessInv[?ap1, ?fld] = ?ap2 <- 
@@ -885,7 +885,7 @@ AccessPath:LastFieldInv(?ap, ?fld) <-
 
 // Fields in access path
 AccessPath:ContainsField(?fld, ?ap) ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 
 AccessPath:ContainsField(?fld, ?ap) <-
    AccessPath:LastField[?ap] = ?fld.
@@ -896,7 +896,7 @@ AccessPath:ContainsField(?fld, ?ap) <-
 
 // Access path has static field as base
 AccessPath:ContainsStaticField[?ap] = ?fld ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 
 AccessPath:ContainsStaticField[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
@@ -916,7 +916,7 @@ AccessPath:Length[?ap] = ?len ->
    AccessPath(?ap), int[32](?len).
 
 TypeContainsField(?fld, ?type) <-
-   FieldSignature:DeclaringClass[?fld] = ?type.
+   Field:DeclaringType[?fld] = ?type.
 
 TypeContainsField(?fld, ?type) <-
    Subclass(?superType, ?type),
@@ -927,7 +927,7 @@ AccessPath:Type[?ap] = ?type ->
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
-   FieldSignature:Type[?fld] = ?type.
+   Field:Type[?fld] = ?type.
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:ByVarInv[?ap] = ?var,
@@ -935,7 +935,7 @@ AccessPath:Type[?ap] = ?type <-
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:LastField[?ap] = ?fld,
-   FieldSignature:Type[?fld] = ?type.
+   Field:Type[?fld] = ?type.
 
 AccessPath:MaxLength[] = ?maxLen ->
    int[32](?maxLen).
@@ -982,7 +982,7 @@ NameFromRefMode[?ref] = ?varName <-
 lang:derivationType[`NameFromRefMode] = "Derived".
 
 NameFromRefMode[?ref] = ?varName <-
-   FieldSignature:Value(_:?ref),
+   Field:Value(_:?ref),
    FieldRefModeLastTokenIndex[?ref] = ?maxIdx,
    string:split[?ref, "/", ?maxIdx] = ?varName.
 lang:derivationType[`NameFromRefMode] = "Derived".
@@ -994,7 +994,7 @@ VarRefModeLastTokenIndex[?ref] = ?maxIdx <-
 
 FieldRefModeLastTokenIndex[?ref] = ?maxIdx <-
    agg<<?maxIdx = max(?idx)>>
-   FieldSignature:Value(_:?ref),
+   Field:Value(_:?ref),
    string:split[?ref, "/", ?idx] = _.
 
 
@@ -1044,7 +1044,7 @@ AccessPath:Length[?ap] = 2 <-
    Reachable(?meth),
 #endif
    AccessPath:ByVar[?base] = ?baseAp,
-   ReferenceType(FieldSignature:Type[?fld]).
+   ReferenceType(Field:Type[?fld]).
 
 AccessPath(?ap),
 AccessPath:ByStaticField[?fld] = ?ap,
@@ -1055,7 +1055,7 @@ AccessPath:Length[?ap] = 1 <-
 #ifdef MUST_AFTER_MAY
    Reachable(?meth),
 #endif
-   ReferenceType(FieldSignature:Type[?fld]).
+   ReferenceType(Field:Type[?fld]).
 
 
 //// END access path creation

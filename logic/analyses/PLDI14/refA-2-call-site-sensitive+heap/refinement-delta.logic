@@ -1,18 +1,18 @@
 #include "macros.logic"
 
-// Avoid refining at invocation sites that pass more than N objects as arguments. 
+// Avoid refining at invocation sites that pass more than N objects as arguments.
 _ContextInsensVPT(?heap, ?var) -> Var(?var), HeapAllocation(?heap).
 +_ContextInsensVPT(?heap, ?var) <- VarPointsTo(_, ?heap, _, ?var).
 
 _HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) ->
-  Var(?arg), CallGraphEdgeSource(?invocation), HeapAllocation(?heap).
+  Var(?arg), MethodInvocation(?invocation), HeapAllocation(?heap).
 +_HeapsPerInvocationPerArg(?heap, ?arg, ?invocation) <-
   CallGraphEdge(_, ?invocation, _, _),
   ActualParam[_, ?invocation] = ?arg,
   _ContextInsensVPT(?heap, ?arg).
 
 _NumHeapsForInvocationArgs[?invocation] = ?count ->
-  CallGraphEdgeSource(?invocation), int[64](?count).
+  MethodInvocation(?invocation), int[64](?count).
 +_NumHeapsForInvocationArgs[?invocation] = ?count <-
   agg<<?count = count()>>(_HeapsPerInvocationPerArg(_, _, ?invocation)).
 
@@ -22,7 +22,7 @@ _NumHeapsForInvocationArgs[?invocation] = ?count ->
 // Avoid refining method calls that refer to methods containing variables that point
 // to heap objects with a high max number of field-points-to facts. This is what
 // causes explosion for deep-context analyses.
-_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), FieldSignature(?fld).
+_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count -> HeapAllocation(?alloc), int[64](?count), Field(?fld).
 +_FieldPointsToPerAllocSiteAndField[?alloc, ?fld] = ?count <-
   agg<<?count = count()>>(InstanceFieldPointsTo(_, _, ?fld, _, ?alloc)).
 
@@ -36,7 +36,7 @@ _MaxFieldPointsToPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64
   _MaxFieldPointsToPerAllocSite[?alloc] > 3000,
   Var:DeclaringMethod(?var, ?tomethod).
 
-+TempNegativeSiteFilter("true").
++TempNegativeSiteFilter[] = true.
 
 
 // Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
@@ -48,4 +48,4 @@ _VarsPerAllocSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
   _VarsPerAllocSite[?alloc] = ?count,
   ?count > 1500.
 
-+TempNegativeObjectFilter("true").
++TempNegativeObjectFilter[] = true.

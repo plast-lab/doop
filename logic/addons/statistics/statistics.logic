@@ -21,7 +21,7 @@ Stats:ThrowablesInMethod(?heaptype, ?method),
 Stats:InsensThrowableHeapsOnMethodBoundaries(?heap, ?var),
 Stats:ThrowableHeapsOnMethodBoundaries(?hctx, ?heap, ?ctx, ?var) <-
 	Stats:HeapsOnMethodBoundaries(?hctx, ?heap, ?ctx, ?var), HeapAllocation:Type[?heap] = ?heaptype,
-	Type:fqn(?throw:"java.lang.Throwable"), SupertypeOf(?throw, ?heaptype), Var:DeclaringMethod(?var, ?method).
+	Type:Value(?throw:"java.lang.Throwable"), SupertypeOf(?throw, ?heaptype), Var:DeclaringMethod(?var, ?method).
 
 Stats:InsensAppThrowableHeapsOnMethodBoundaries(?heap, ?var),
 Stats:AppThrowableHeapsOnMethodBoundaries(?hctx, ?heap, ?ctx, ?var) <-
@@ -62,7 +62,7 @@ Stats:InsensVars[] = ?n <- agg<<?n = count()>> Stats:InsensVarCount[_] = _.
 Stats:InsensVarPointsToNonThrowable(?heap, ?var),
 Stats:VarPointsToNonThrowable(?hctx, ?heap, ?ctx, ?var) <-
 	VarPointsTo(?hctx, ?heap, ?ctx, ?var), HeapAllocation:Type[?heap] = ?heaptype,
-	Type:fqn(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
+	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
 */
 
 /****************************************************************
@@ -127,15 +127,15 @@ Stats:InsensFields[] = ?n <- agg<<?n = count()>> Stats:InsensFieldCount[_, _] = 
 Stats:InsensInstanceFieldPointsToNonThrowable(?heap, ?sig, ?baseheap),
 Stats:InstanceFieldPointsToNonThrowable(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) <-
 	InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap), HeapAllocation:Type[?heap] = ?heaptype,
-	Type:fqn(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
+	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
 Stats:InsensInstanceFieldPointsToNonThrowable2(?heap, ?sig, ?baseheap),
 Stats:InstanceFieldPointsToNonThrowable2(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) <-
 	InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap), HeapAllocation:Type[?baseheap] = ?heaptype,
-	Type:fqn(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
+	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
 Stats:InsensInstanceFieldPointsToNonThrowable3(?heap, ?sig, ?baseheap),
 Stats:InstanceFieldPointsToNonThrowable3(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) <-
 	InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap), HeapAllocation:Type[?heap] = ?heaptype, HeapAllocation:Type[?baseheap] = ?baseheaptype,
-	Type:fqn(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype), !SupertypeOf(?throw, ?baseheaptype).
+	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype), !SupertypeOf(?throw, ?baseheaptype).
 */
 
 /***************************************************
@@ -161,10 +161,10 @@ Stats:InsensMethodVarCount[?method] = ?n <-
 Stats:MethodsWithVars[] = ?n <- agg<<?n = count()>> Stats:MethodVarCount[_, _] = _.
 Stats:InsensMethodsWithVars[] = ?n <- agg<<?n = count()>> Stats:InsensMethodVarCount[_] = _.
 
-Stats:ReachableNativeMethod(?method) -> MethodSignature(?method).
+Stats:ReachableNativeMethod(?method) -> Method(?method).
 Stats:ReachableNativeMethod(?method) <-
 	Reachable(?method),
-	MethodModifier(?native, ?method),
+	Method:Modifier(?native, ?method),
 	Modifier:Value(?native:"native").
 */
 
@@ -186,14 +186,14 @@ Stats:Dominance:VarPointsTo:Object[?hctx, ?heap] = ?count ->
 Stats:Dominance:VarPointsTo:Object[?hctx, ?heap] = count <-
 	agg<<count = count()>>(VarPointsTo(?hctx, ?heap, _, _)).
 
-Stats:Dominance:VarPointsTo:Method[?method] = ?count -> MethodSignature(?method), int[64](?count).
+Stats:Dominance:VarPointsTo:Method[?method] = ?count -> Method(?method), int[64](?count).
 Stats:Dominance:VarPointsTo:Method[?method] = count <-
 	agg<<count = total(varCount)>>(
 	Reachable(?method),
 	Var:DeclaringMethod(?var, ?method),
 	Stats:Dominance:VarPointsTo:Var[?var] = varCount).
 
-Stats:Dominance:InstanceFieldPointsTo:Signature[?sig] = ?count -> FieldSignature(?sig), int[64](?count).
+Stats:Dominance:InstanceFieldPointsTo:Signature[?sig] = ?count -> Field(?sig), int[64](?count).
 Stats:Dominance:InstanceFieldPointsTo:Signature[?sig] = count <-
 	agg<<count = count()>>(InstanceFieldPointsTo(_, _, ?sig, _, _)).
 
@@ -221,11 +221,11 @@ Stats:Dominance:InstanceFieldPointsTo:ValueObject[?hctx, ?heap] = count <-
  ***************************************************/
 
 /*
-Stats:InsensCallGraphEdgesFromSize[?from] = ?size -> CallGraphEdgeSource(?from), int[64](?size).
+Stats:InsensCallGraphEdgesFromSize[?from] = ?size -> MethodInvocation(?from), int[64](?size).
 Stats:InsensCallGraphEdgesFromSize[?from] = size <-
 	agg<<size = count()>>(Stats:Simple:InsensCallGraphEdge(?from, _)).
 
-Stats:InsensCallGraphEdgesToSize[?to] = ?size -> MethodSignature(?to), int[64](?size).
+Stats:InsensCallGraphEdgesToSize[?to] = ?size -> Method(?to), int[64](?size).
 Stats:InsensCallGraphEdgesToSize[?to] = size <-
 	agg<<size = count()>>(Stats:Simple:InsensCallGraphEdge(_, ?to)).
 */
@@ -235,11 +235,11 @@ Stats:InsensCallGraphEdgesToSize[?to] = size <-
  ***************************************************/
 
 Stats:InsensHeapThrowPointsTo(?heap, ?ctx, ?method) ->
-	HeapAllocation(?heap), Context(?ctx), MethodSignature(?method).
+	HeapAllocation(?heap), Context(?ctx), Method(?method).
 
 /*
 Stats:InsensHeapThrowPointsToSize[?ctx, ?method] = ?size ->
-	Context(?ctx), MethodSignature(?method), int[64](?size).
+	Context(?ctx), Method(?method), int[64](?size).
 
 Stats:InsensHeapThrowPointsToSize[?ctx, ?method] = size <-
 	agg<<size = count()>>(Stats:InsensHeapThrowPointsTo(_, ?ctx, ?method)).
@@ -249,11 +249,11 @@ Stats:InsensHeapThrowPointsTo(?heap, ?ctx, ?method) <-
 	ThrowPointsTo(_, ?heap, ?ctx, ?method).
 
 Stats:InsensThrowPointsTo(?heap, ?method) ->
-	HeapAllocation(?heap), MethodSignature(?method).
+	HeapAllocation(?heap), Method(?method).
 
 /*
 Stats:InsensThrowPointsToSize[?method] = ?size ->
-	MethodSignature(?method), int[64](?size).
+	Method(?method), int[64](?size).
 
 Stats:InsensThrowPointsToSize[?method] = size <-
 	agg<<size = count()>>(Stats:InsensThrowPointsTo(_, ?method)).

@@ -1,24 +1,27 @@
-apply plugin: 'groovy'
-apply plugin: 'application'
-apply plugin: 'ivy-publish'
-apply from  : 'DaCapo.gradle'
-
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
-applicationDefaultJvmArgs = ["-Xmx100g"]
+apply plugin: 'groovy'
+apply plugin: 'application'
+apply from  : 'DaCapo.gradle'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
+
+//applicationDefaultJvmArgs = ["-Xmx2048m"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
-project.group = 'org.clyze'
-project.version = 1.0
+group = 'org.clyze'
+version = '1.0-SNAPSHOT'
 
 //For the doop app
 mainClassName = 'org.clyze.doop.Main'
@@ -32,6 +35,7 @@ repositories {
     mavenCentral()
 }
 
+def sootClassesJar = file('lib/sootclasses-trunk.jar')
 def sootJar = file('lib/soot-trunk.jar')
 
 dependencies {
@@ -44,10 +48,11 @@ dependencies {
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
             'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
 
-    compile files(sootJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/axml-2.0.jar')                               // Soot is a compile time dependency
+    // compile files(sootClassesJar)                               // Soot is a compile time dependency
+    compile files(sootJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/axml-2.0.jar')                                      // Soot is a compile time dependency
 
     runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
-    runtime files('lib/averroes-no-properties.jar')
+    runtime files('lib/averroes-no-properties.jar', 'lib/dexlib2-2.0.7-dev.jar' , 'lib/util-2.0.7-dev.jar')
 }
 
 task generateFiles(type: JavaExec) {
@@ -57,7 +62,8 @@ task generateFiles(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     args = [
         projectDir,
-        sootJar
+        // sootClassesJar
+	sootJar
     ]
 }
 
@@ -67,7 +73,7 @@ task bytecode2jimple(type: JavaExec) {
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') || project.property('args').isEmpty()) {
-        args "--bytecode2jimpleHelp"
+        args "--bytecode2jimpleHelp -allow-phantom-refs"
     } else {
         args = ["--bytecode2jimple"] + project.property('args').tokenize()
     }
@@ -95,24 +101,22 @@ startScripts {
     dependsOn generateFiles
 }
 
-publishing {
-    repositories {
-        ivy {
-            name 'local-ivy-repo'
-            url '../ivy-repo'
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"
+    publish {
+        repository {
+            repoKey = 'libs-snapshot-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+
         }
-    }
-
-    publications {
-
-        doop(IvyPublication) {
-            organisation "$group"
-            module 'doop'
-            revision "$version"
-            from components.java
+        defaults {
+            publications 'mavenJava'
         }
     }
 }
+
 
 import org.apache.commons.io.FileUtils
 
@@ -121,4 +125,30 @@ clean.doFirst {
     file('out'    ).list().each { f -> delete "out/${f}" }
     file('results').list().each { f -> delete "results/${f}" }
     FileUtils.deleteQuietly(new File('last-analysis'))
+}
+
+if (project.hasProperty('artifactory_user')) {
+
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+
+        repositories {
+            maven {
+                credentials {
+                    username artifactory_user
+                    password artifactory_password
+                }
+
+                url version.endsWith("-SNAPSHOT") ?
+                        "${artifactory_contextUrl}/libs-snapshot-local" :
+                        "${artifactory_contextUrl}/libs-release-local"
+            }
+        }
+    }
 }

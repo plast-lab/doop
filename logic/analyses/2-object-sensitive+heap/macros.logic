@@ -1,5 +1,5 @@
 // For this analysis, every heap context recorded on allocation
-// corresponds to the most significant element of the calling 
+// corresponds to the most significant element of the calling
 // context of the allocator method.
 #define RecordMacro(ctx, heap, hctx) \
   HContext(hctx), \

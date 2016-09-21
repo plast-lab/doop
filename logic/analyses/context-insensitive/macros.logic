@@ -1,7 +1,7 @@
 /**
  * Some library modules are generically defined, and need the macro
  * definitions for the context-sensitive pointer analysis they are
- * used in. For a context-insensitive pointer analysis we just 
+ * used in. For a context-insensitive pointer analysis we just
  * generate constant contexts.
  */
 

@@ -1,23 +1,19 @@
 package org.clyze.doop
 
 import groovy.transform.CompileStatic
+import java.util.concurrent.*
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.clyze.doop.core.Analysis
-import org.clyze.doop.core.Doop
-import org.clyze.doop.core.Helper
-
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
+import org.clyze.doop.core.*
+import org.clyze.doop.system.FileOps
 
 /**
  * The entry point for the standalone doop app.
  */
-@CompileStatic class Main {
+@CompileStatic
+class Main {
 
     private static final Log logger = LogFactory.getLog(Main)
     private static final int DEFAULT_TIMEOUT = 180 // 3 hours
@@ -76,9 +72,9 @@ import java.util.concurrent.TimeoutException
             if (cli['p']) {
                 //create analysis from the properties file & the cli options
                 String file = cli['p'] as String
-                File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
+                File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
                 File propsBaseDir = f.getParentFile()
-                Properties props = Helper.loadProperties(f)
+                Properties props = FileOps.loadProperties(f)
 
                 //There are no mandatory properties since the name and jars can be overridden too.
                 /*

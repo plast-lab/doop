@@ -44,12 +44,12 @@ class AnalysisOption<T>  {
      * Indicates whether the option affects the cacheID generation
      */
     boolean forCacheID = false
-    
+
     /**
      * Indicates whether the option affects the preprocessor
      */
     boolean forPreprocessor = false
-    
+
     /**
      * The type of the preprocessor flag (ignored when forPreprocessor is false)
      */
@@ -74,7 +74,7 @@ class AnalysisOption<T>  {
      * The name of the option's arg value. If null, the option does not take arguments (it is a flag/boolean option).
      */
     String argName = null
-    
+
     /**
      * Indicates whether the option is "advanced". Advanced options are treated differently by the UIs.
      */

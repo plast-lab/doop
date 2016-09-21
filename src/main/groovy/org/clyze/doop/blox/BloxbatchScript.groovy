@@ -36,9 +36,6 @@ class BloxbatchScript {
     public BloxbatchScript commit() {
         return wr("commit")
     }
-    public BloxbatchScript checkpoint() {
-        return commit().transaction()
-    }
     public BloxbatchScript createDB(String database) {
         return wr("create $database --overwrite --blocks base")
     }
@@ -65,7 +62,7 @@ class BloxbatchScript {
     public BloxbatchScript include(String filePath) {
         def inDir  = (new File(filePath)).getParentFile()
         def outDir = script.getParentFile()
-		def file   = new File(outDir, "_tmp.logic")
+        def file   = new File(outDir, "_tmp.logic")
         new Executor(System.getenv()).execute("cpp -P $filePath $file")
         file.eachLine { line ->
             def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)

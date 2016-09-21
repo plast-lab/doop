@@ -24,11 +24,11 @@ NativeThrowingIOException(?method, ?exceptionType) <-
    Reachable(?method),
    NativeMethod(?method),
    Method:DeclaresException(?exceptionType, ?method),
-   Type:fqn(?io:"java.io.IOException"),
+   Type:Value(?io:"java.io.IOException"),
    SubtypeOf(?exceptionType, ?io).
 
 NativeMethod(?method) <-
-   MethodModifier(?native, ?method),
+   Method:Modifier(?native, ?method),
    Modifier:Value(?native:"native").
 
 /**
@@ -37,7 +37,7 @@ NativeMethod(?method) <-
 
 ExceptionHandlerApplication(?handler) <-
    ApplicationClass(?class),
-   MethodSignature:DeclaringType[?method] = ?class,
+   Method:DeclaringType[?method] = ?class,
    ExceptionHandler:Method[?handler] = ?method.
 
 /*
@@ -61,7 +61,7 @@ Fu:ExceptionCatchLink(?native, ?handler) <-
    not ThrowableHandler(?handler).
 
 ThrowableHandler(?handler) <-
-   Type:fqn(?throwable:"java.lang.Throwable"),
+   Type:Value(?throwable:"java.lang.Throwable"),
    ExceptionHandler:Type[?handler] = ?throwable.
 
 Fu:NativeThrowSource(?native) <-
@@ -112,7 +112,7 @@ Native:Throws(?nativeMethod, ?heap) <-
 #endif
 
 
-#define InitFuThrowSource(s) Fu:ThrowSource(?sig) <- MethodSignature:Value(?sig : s).
+#define InitFuThrowSource(s) Fu:ThrowSource(?sig) <- Method:Value(?sig : s).
 
 InitFuThrowSource("<java.net.Socket: void <init>(java.net.InetAddress,int,java.net.InetAddress,int,boolean)>")
 InitFuThrowSource("<java.net.Socket: void <init>(java.net.SocketImpl)>")

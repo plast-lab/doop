@@ -3,14 +3,12 @@ package org.clyze.doop
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.doop.core.Analysis
-import org.clyze.doop.core.AnalysisPostProcessor
-import org.clyze.doop.core.Doop
+import org.clyze.doop.core.*
 
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
     protected Log logger = LogFactory.getLog(getClass())
-    
+
     @Override
     void process(Analysis analysis) {
         if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)

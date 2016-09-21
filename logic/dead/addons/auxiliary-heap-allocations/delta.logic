@@ -6,11 +6,11 @@
 +DummyConstructorObject(?dummy),
 +AssignAuxiliaryHeapAllocation(?dummy, ?this, ?constructor)
 <-
-   MethodSignature(?constructor),
-   MethodSignature:SimpleName[?constructor] = "<init>",
-   MethodSignature:DeclaringType[?constructor] = ?type,
-   Type:fqn(?type:?typeStr),
-   MethodSignature:Value(?constructor:?constrStr),
+   Method(?constructor),
+   Method:SimpleName[?constructor] = "<init>",
+   Method:DeclaringType[?constructor] = ?type,
+   Type:Value(?type:?typeStr),
+   Method:Value(?constructor:?constrStr),
    ThisVar[?constructor] = ?this,
    string:add[string:add["/new ", ?typeStr], "/dummy"] = ?postfix,
    string:add[?constrStr, ?postfix] = ?string.
