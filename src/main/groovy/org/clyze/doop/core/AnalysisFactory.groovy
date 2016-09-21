@@ -187,11 +187,11 @@ import org.clyze.doop.system.*
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.inputJarFiles.collect {
+        checksums += vars.inputFiles.collect {
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
 
-        checksums += vars.jreJars.collect {
+        checksums += vars.platformLibs.collect {
             String file -> CheckSum.checksum(new File(file), HASH_ALGO)
         }
 
@@ -226,13 +226,13 @@ import org.clyze.doop.system.*
                 String path = "${options.PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
                 switch(version) {
                     case "3":
-                        return Helper.checkFiles(["${path}/rt.jar".toString()])
+                        return FileOps.findFiles(["${path}/rt.jar".toString()])
                     case "4":
                     case "5":
                     case "6":
                     case "7":
                     case "8":
-                        return Helper.checkFiles(["${path}/rt.jar".toString(),
+                        return FileOps.findFiles(["${path}/rt.jar".toString(),
                                                   "${path}/jce.jar".toString(),
                                                   "${path}/jsse.jar".toString()])
                     case "system":
@@ -244,20 +244,20 @@ import org.clyze.doop.system.*
                 String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
                 switch(version) {
 		    case "15":
-                        return Helper.checkFiles(["${path}/android.jar".toString(),
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
                                                   "${path}/data/layoutlib.jar".toString()])
                         break
 		    case "16":
                     case "21":
                     case "22":
-                        return Helper.checkFiles(["${path}/android.jar".toString(),
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
                                                   "${path}/data/layoutlib.jar".toString(),
                                                   "${path}/uiautomator.jar".toString()])
                         break
                     case "23":
                     case "24":
 
-                        return Helper.checkFiles(["${path}/android.jar".toString(),
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
                                                   "${path}/optional/org.apache.http.legacy.jar".toString(),
                                                   "${path}/data/layoutlib.jar".toString(),
                                                   "${path}/uiautomator.jar".toString()])
@@ -272,13 +272,13 @@ import org.clyze.doop.system.*
     }
 
     /**
-     * Given the list of analysis inputFiles, as Strings, the method validates that the inputFiles exist,
-     * using the input resolution mechanism. It finally returns the inputFiles as a List<File>.
+     * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
+     * using the input resolution mechanism. It finally returns the inputs as a List<File>.
      */
     protected List<File> checkInputs(InputResolutionContext context) {
         Collection<String> inputs = context.inputs()
-        logger.debug "Verifying analysis inputFiles: $inputs"
-        if (!inputs) throw new RuntimeException("No inputFiles provided for the analysis")
+        logger.debug "Verifying analysis inputs: $inputs"
+        if (!inputs) throw new RuntimeException("No inputs provided for the analysis")
         context.resolve()
         return context.getAll()
     }
@@ -315,7 +315,6 @@ import org.clyze.doop.system.*
         if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
-            options.PADDLE_COMPAT.value = false
         }
 
         if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
@@ -370,7 +369,7 @@ import org.clyze.doop.system.*
         checkPlatformLibs(vars)
         //Check the value of the JRE_LIB option (it should point to the platform libs directory)
         String externals = options.PLATFORM_LIBS.value
-        Helper.checkDirectoryOrThrowException(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
+        FileOps.findDirOrThrow(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
@@ -524,13 +523,13 @@ import org.clyze.doop.system.*
      */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
             logger.info "Running dacapo benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
 
         if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputJarFiles[0].toString())
+            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
             logger.info "Running dacapo-bach benchmark: $benchmark"
             vars.options.DACAPO_BENCHMARK.value = benchmark
         }
@@ -554,7 +553,7 @@ import org.clyze.doop.system.*
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputJarFiles[0])
+            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
