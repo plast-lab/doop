@@ -18,7 +18,7 @@ For trouble-free configuration:
 You can change [environment.sh](bin/environment.sh) accordingly for your system, and then source it (`source ./bin/environment.sh`).
 
 
-## Benchmarks & JRE Lib
+## Benchmarks & Platform Lib
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
 
