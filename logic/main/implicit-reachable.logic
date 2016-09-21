@@ -1,4 +1,4 @@
-#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
+#ifndef EXCLUDE_IMPLICITLY_REACHABLE_CODE
 
 ImplicitReachable(sig) <-
    Method:Value(sig:"<java.lang.System: void initializeSystemClass()>").

@@ -280,17 +280,10 @@ import org.clyze.doop.system.*
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
         }
 
-        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
-            // It makes no sense to analyze partial strings that may match fields
-            // when we don't track the flow of these strings through StringBuilders.
-            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
-        }
-
         if (options.ENABLE_REFLECTION_CLASSIC.value) {
             options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
-            options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
         }
 
@@ -370,7 +363,6 @@ import org.clyze.doop.system.*
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
                 options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                 options.REFLECTION_CONTEXT_SENSITIVITY.value ||
                 options.REFLECTION_USE_BASED_ANALYSIS.value ||

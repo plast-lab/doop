@@ -1,4 +1,4 @@
-#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
+#ifndef EXCLUDE_IMPLICITLY_REACHABLE_CODE
 
 /**
  * The main thread is never explicitly started, which would make it a
@@ -7,7 +7,6 @@
 RunningThread(?hctx, ?heap) <-
    MainThread(?hctx, ?heap).
 
-#ifdef INCLUDE_IMPLICITLY_REACHABLE_CODE
 /**
  * Calls to Thread.start() get redirected to Thread.run
  *
@@ -34,7 +33,6 @@ RunningThread(?hctx, ?heap)
    MethodLookup["run", "void()", ?heaptype] = ?run,
    ThisVar[?run] = ?runThis,
    ?callerCtx = ?callerCtx. // Just to ignore "only used once" message (depends on the macro)
-#endif
 
 /**
  * Thread.currentThread() return running threads
