@@ -1,0 +1,10 @@
+/**
+ * Class initializer ?method of a ?type
+ *
+ * TODO declare this is a ReferenceType (or ClassOrInterfaceType?)
+ */
+ClassInitializer[?type] = ?method ->
+   Type(?type), Method(?method).
+
+InitializedClass(?classOrInterface) ->
+   Type(?classOrInterface).
