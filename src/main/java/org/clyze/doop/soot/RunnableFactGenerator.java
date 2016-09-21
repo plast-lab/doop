@@ -425,11 +425,11 @@ class RunnableFactGenerator implements Runnable {
 
             if(index instanceof Local)
             {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
             }
             else if(index instanceof IntConstant)
             {
-                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, session);
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
             }
             else
             {
@@ -534,9 +534,9 @@ class RunnableFactGenerator implements Runnable {
             Value index = ref.getIndex();
 
             if (index instanceof Local)
-                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, (Local) index, session);
             else
-                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, session);
+                _writer.writeStoreArrayIndex(inMethod, stmt, base, rightLocal, null, session);
         }
         // NoNullSupport: use the line below to remove Null Constants from the facts.
         // else if(left instanceof InstanceFieldRef && rightLocal != null)
