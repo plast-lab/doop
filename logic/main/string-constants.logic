@@ -277,14 +277,6 @@ FieldNamePrefix(?sig, ?prefix) <-
  * Analysis of reflection strings flowing through String Factories
  *************************************************************/
 
-StringFactoryType(?type) <-
-  Type:Value(?type:"java.lang.StringBuffer") ;
-  Type:Value(?type:"java.lang.StringBuilder").
-
-StringFactoryObject(?heap) <-
-  HeapAllocation:Type[?heap] = ?heaptype,
-  StringFactoryType(?heaptype).
-
 StringFactoryVar(?var) <-
   Var:Type[?var] = ?type,
   StringFactoryType(?type).
@@ -393,8 +385,7 @@ AllocationsPerMethodAndType[?type, ?meth] = ?n <-
 
 AllocationShouldBeMerged(?heaptype, ?meth) <-
   AllocationsPerMethodAndType[?heaptype, ?meth] > AllocationMergeThreshold[],
-  !Type:Value(?heaptype:"java.lang.StringBuffer"),
-  !Type:Value(?heaptype:"java.lang.StringBuilder").
+  !StringFactoryType(?heaptype).
 
 TypeToMergedHeap(?heap, ?heaptype, ?meth) <-
   AllocationShouldBeMerged(?heaptype, ?meth),
@@ -412,13 +403,20 @@ HeapRepresentative[?heap] = ?representativeHeap <-
  * String buffers and builders
  *************************************************************/
 
+StringFactoryType(?type) <-
+  Type:Value(?type:"java.lang.StringBuffer") ;
+  Type:Value(?type:"java.lang.StringBuilder").
+
+StringFactoryObject(?heap) <-
+  HeapAllocation:Type[?heap] = ?heaptype,
+  StringFactoryType(?heaptype).
+
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifdef DISTINGUISH_STRING_BUFFERS_PER_METHOD
 // all string buffers (and builders) in the same method are merged
 AllocationShouldBeMerged(?heaptype, ?meth) <-
   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
-  (Type:Value(?heaptype:"java.lang.StringBuffer") ;
-   Type:Value(?heaptype:"java.lang.StringBuilder")).
+  StringFactoryType(?heaptype).
 #else // not DISTINGUISH_STRING_BUFFERS_PER_METHOD
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
