@@ -61,7 +61,7 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
 ReflectionObject(?heap) -> HeapAllocation(?heap).
 ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 
-#ifndef DISTINGUISH_STRING_CONSTANTS
+#ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #define DISTINGUISH_NO_STRING_CONSTANTS
 HeapAllocation:Merge[?heap] = ?constant <-
@@ -352,23 +352,6 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 
 /*************************************************************
- * String buffers and builders
- *************************************************************/
-
-#ifndef DISTINGUISH_STRING_BUFFERS
-HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  HeapAllocation:Type[?heap] = ?type,
-  Type:Value(?type:"java.lang.StringBuffer"),
-  HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap.
-
-HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  HeapAllocation:Type[?heap] = ?type,
-  Type:Value(?type:"java.lang.StringBuilder"),
-  HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap.
-#endif
-
-
-/*************************************************************
  * Special handling for all sorts of arbitrary objects. If the
  * object has a representative, it is merged into it.
  *************************************************************/
@@ -382,7 +365,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  * many objects of same type. Doesn't apply to exceptions.
  *************************************************************/
 
-AllocationMergeThreshold[] = 20.
+AllocationMergeThreshold[] = 50.
 
 ExceptionType(?heaptype) <-
   Type:Value(?throw:"java.lang.Throwable"),
@@ -403,20 +386,15 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
-// the ifndef is confusing, but it's meant to prevent a dependency
-// violation by having two ways to pick a representative. It's
-// not meant to prevent the merging of these objects.
-#ifndef DISTINGUISH_STRING_BUFFERS
-  !Type:Value(?heaptype:"java.lang.StringBuffer"),
-  !Type:Value(?heaptype:"java.lang.StringBuilder"),
-#endif
   !ObjectAllocatedMultiply(?heap).
 
 AllocationsPerMethodAndType[?type, ?meth] = ?n <-
   agg<<?n=count()>> MethodAndTypeToHeap(_, ?type, ?meth).
 
 AllocationShouldBeMerged(?heaptype, ?meth) <-
-  AllocationsPerMethodAndType[?heaptype, ?meth] > AllocationMergeThreshold[].
+  AllocationsPerMethodAndType[?heaptype, ?meth] > AllocationMergeThreshold[],
+  !Type:Value(?heaptype:"java.lang.StringBuffer"),
+  !Type:Value(?heaptype:"java.lang.StringBuilder").
 
 TypeToMergedHeap(?heap, ?heaptype, ?meth) <-
   AllocationShouldBeMerged(?heaptype, ?meth),
@@ -429,6 +407,30 @@ HeapRepresentative[?heap] = ?representativeHeap <-
   MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
   TypeToMergedHeap(?heap, ?type, ?meth).
 
+
+/*************************************************************
+ * String buffers and builders
+ *************************************************************/
+
+#ifndef DISTINGUISH_ALL_STRING_BUFFERS
+#ifdef DISTINGUISH_STRING_BUFFERS_PER_METHOD
+// all string buffers (and builders) in the same method are merged
+AllocationShouldBeMerged(?heaptype, ?meth) <-
+  AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
+  (Type:Value(?heaptype:"java.lang.StringBuffer") ;
+   Type:Value(?heaptype:"java.lang.StringBuilder")).
+#else // not DISTINGUISH_STRING_BUFFERS_PER_METHOD
+HeapAllocation:Merge[?heap] = ?mergeHeap <-
+  HeapAllocation:Type[?heap] = ?type,
+  Type:Value(?type:"java.lang.StringBuffer"),
+  HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap.
+
+HeapAllocation:Merge[?heap] = ?mergeHeap <-
+  HeapAllocation:Type[?heap] = ?type,
+  Type:Value(?type:"java.lang.StringBuilder"),
+  HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap.
+#endif
+#endif
 
 /*************************************************************
  * Throwable
