@@ -292,27 +292,27 @@ import org.clyze.doop.system.*
 
         Map<String, AnalysisOption> options = vars.options
 
-        /*
-         * We mimic the checks of the run script for verifiability of this implementation,
-         * even though the majority of checks are not required.
-         */
+        if (options.DISTINGUISH_ALL_STRING_BUFFERS &&
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD) {
+                logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+        }
 
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
         }
 
-        if (options.DISTINGUISH_STRING_CONSTANTS.value) {
+        if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
-            options.DISTINGUISH_STRING_CONSTANTS.value = true
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
         }
 
         if (options.ENABLE_REFLECTION_CLASSIC.value) {
-            options.DISTINGUISH_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
-            options.DISTINGUISH_STRING_BUFFERS.value = true
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value = true
         }
 
         if (options.DACAPO.value) {

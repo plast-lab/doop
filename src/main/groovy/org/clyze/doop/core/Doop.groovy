@@ -92,7 +92,7 @@ class Doop {
             flagType:PreprocessorFlag.CONSTANT_FLAG
         ),
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_STRING_CONSTANTS",
+            id:"DISTINGUISH_ALL_STRING_CONSTANTS",
             name:"distinguish-all-string-constants",
             description:"Treat string constants as regular objects",
             value:false,
@@ -105,8 +105,16 @@ class Doop {
 
         /* Start of preprocessor normal flags */
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_STRING_BUFFERS",
-            name:"disable-merge-string-buffers",
+            id:"DISTINGUISH_ALL_STRING_BUFFERS",
+            name:"distinguish-all-string-buffers",
+            value:false,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"DISTINGUISH_STRING_BUFFERS_PER_METHOD",
+            name:"distinguish-string-buffers-per-method",
             value:false,
             webUI:true,
             forPreprocessor: true,
