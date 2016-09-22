@@ -1,20 +1,16 @@
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'application'
 apply from  : 'DaCapo.gradle'
-apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 sourceCompatibility = "1.8"
