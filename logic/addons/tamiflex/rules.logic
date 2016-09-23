@@ -1,3 +1,19 @@
+DeclaringClass:Allocation[?heap] = ?type <-
+   Type:Value(?type:"java.lang.Class"),
+   ReferenceType(?type),
+   Tamiflex:Class:NewInstance(_, ?heap).
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   Type:Value(?type:"java.lang.reflect.Constructor"),
+   ReferenceType(?type),
+   Tamiflex:Constructor:NewInstance(_, _, ?heap).
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   Type:Value(?type:"java.lang.reflect.Array"),
+   ReferenceType(?type),
+   Tamiflex:Array:NewInstance(_, ?heap).
+
+
 MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:Class:NewInstance(?invocation, ?heap)
 <-
