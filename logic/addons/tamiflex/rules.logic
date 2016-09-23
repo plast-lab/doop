@@ -1,3 +1,15 @@
+DeclaringClass:Allocation[?heap] = ?type <-
+   (Tamiflex:Class:NewInstance(?invocation, ?heap) ;
+    Tamiflex:Constructor:NewInstance(?invocation, _, ?heap) ;
+    Tamiflex:Array:NewInstance(?invocation, ?heap) ;
+    Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethodArray(_, ?heap, ?invocation)),
+   Instruction:Method[?invocation] = ?meth,
+   Method:DeclaringType[?meth] = ?type.
+
+
 MockupHeapConsMacro(?id, ?type, ?heap),
 Tamiflex:Class:NewInstance(?invocation, ?heap)
 <-

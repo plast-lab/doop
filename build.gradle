@@ -1,20 +1,16 @@
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'application'
 apply from  : 'DaCapo.gradle'
-apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 sourceCompatibility = "1.8"
@@ -51,7 +47,7 @@ dependencies {
     compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/AXMLPrinter2.jar', 'lib/dexlib2-2.1.3-a5d82813.jar')                                      // Soot is a compile time dependency
 
     runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
-    runtime files('lib/averroes-no-properties.jar', 'lib/herosclasses-trunk.jar' , 'lib/util-2.1.3-a5d82813.jar')
+    runtime files('lib/averroes-no-properties.jar', 'lib/herosclasses-trunk.jar' , 'lib/util-2.1.3-a5d82813.jar', 'lib/axml-2.0.jar')
 }
 
 task generateFiles(type: JavaExec) {
