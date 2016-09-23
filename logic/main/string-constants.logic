@@ -398,6 +398,25 @@ HeapRepresentative[?heap] = ?representativeHeap <-
   MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
   TypeToMergedHeap(?heap, ?type, ?meth).
 
+/*************************************************************
+ * Library class that should be treated specially
+ *************************************************************/
+
+#ifndef CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
+#include "special-library.logic"
+HeapAllocation:ContextInsensitive(?heap) <-
+  SpecialLibraryObject(?heap),
+  !(HeapAllocation:Merge[?heap] = _).
+
+#ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
+AllocationShouldBeMerged(?heaptype, ?meth) <-
+  AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
+  Method:DeclaringType[?meth] = ?class,
+  !StringFactoryType(?heaptype),
+  SpecialLibraryClass(?class).
+#endif
+#endif
+
 
 /*************************************************************
  * String buffers and builders
@@ -500,17 +519,6 @@ HeapAllocation:ContextInsensitive(?heap) <-
   ArrayType(?type),
   ComponentType[?type] = ?componentType,
   PrimitiveType(?componentType).
-
-/*************************************************************
- * Library class that should be treated specially
- *************************************************************/
-
-#ifndef CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
-#include "special-library.logic"
-HeapAllocation:ContextInsensitive(?heap) <-
-  SpecialLibraryObject(?heap),
-  !(HeapAllocation:Merge[?heap] = _).
-#endif
 
 /*************************************************************
  * Class without reference fields

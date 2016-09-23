@@ -292,9 +292,14 @@ import org.clyze.doop.system.*
 
         Map<String, AnalysisOption> options = vars.options
 
-        if (options.DISTINGUISH_ALL_STRING_BUFFERS &&
-            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD) {
-                logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+        if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
+            logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+        }
+
+        if (!options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
+            options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
+            logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
         }
 
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
