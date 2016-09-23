@@ -128,6 +128,14 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
+            id:"MERGE_LIBRARY_OBJECTS_PER_METHOD",
+            name:"disable-merge-library-objects",
+            description:"Disable default policy of merging library (non-collection) objects of the same type per-method.",
+            value:true,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
             id:"CONTEXT_SENSITIVE_LIBRARY_ANALYSIS",
             name:"enable-cs-library",
             description:"Enable context-sensitive analysis for internal library objects.",

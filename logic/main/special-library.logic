@@ -3,14 +3,20 @@ SpecialLibraryObject(?heap) -> HeapAllocation(?heap).
 SpecialLibraryObject(?heap) <-
   AssignHeapAllocation:Heap[?insn] = ?heap,
   Instruction:Method[?insn] = ?method,
+  SpecialLibraryMethod(?method).
+
+SpecialLibraryMethod(?method) -> Method(?method).
+SpecialLibraryMethod(?method) <-
   Method:DeclaringType[?method] = ?class,
+  SpecialLibraryClass(?class).
+
+SpecialLibraryClass(?class) -> Type(?class).
+SpecialLibraryClass(?class) <-
   ClassType(?class),
   !ApplicationClass(?class),
   !CollectionLibraryClass(?class).
 
-
 CollectionLibraryClass(?class) -> Type(?class).
-
 CollectionLibraryClass(?class) <-
   ClassType(?class),
   !ApplicationClass(?class),
