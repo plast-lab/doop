@@ -7,11 +7,9 @@ MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<string-buffer>>",
    ?type = "java.lang.StringBuffer".
 
-#if defined(JRE15) || defined(JRE16) || defined(JRE17)
 MockupHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "<<string-builder>>",
    ?type = "java.lang.StringBuilder".
-#endif
 
 
 MockupHeapConsMacro(?id, ?type, ?heap) <-
