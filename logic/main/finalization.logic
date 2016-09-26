@@ -12,6 +12,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal,
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
+   !(HeapAllocation:Merge[?heap] = _),  // the object retains its identity
    ObjectShouldNotBeRefined(?heap).
 
 #ifdef RecordRefinedMacro
@@ -23,5 +24,6 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal,
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
+   !(HeapAllocation:Merge[?heap] = _),  // the object retains its identity
    ObjectShouldBeRefined(?heap).
 #endif

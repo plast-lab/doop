@@ -22,6 +22,15 @@
 #include "java.lang.reflect.Method.logic"
 
 /*************************************************************
+ * Reflection objects: don't merge them, no matter what!
+ *************************************************************/
+HeapAllocation:Keep(?heap) <-
+  ReifiedClass[_] = ?heap;
+  ReifiedConstructor[_] = ?heap;
+  ReifiedMethod[_] = ?heap;
+  ReifiedField[_] = ?heap.
+
+/*************************************************************
  * Implementation of points-to propagation for concrete actions that
  * have been discovered using reflection. Basically, the rest of the
  * reflection logic sets things up, and the logic in this file actually
@@ -516,7 +525,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 ReflectiveStoreInstanceField(?fromCtx, ?from, ?signature, ?baseCtx, ?base) ->
   Context(?fromCtx), Var(?from), Context(?baseCtx), Var(?base),
   Field(?signature).
-ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) ->
+ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?fromCtx, ?from) ->
   Context(?fromCtx), Var(?from), HeapAllocation(?baseheap), HContext(?basehctx),
   Field(?signature).
 
