@@ -2,7 +2,7 @@
 // This is emulated by creating a single Context object and a single HContext
 // object, which are used everywhere.
 ContextFromRealContext[] = ?ctx -> Context(?ctx).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 
 HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).

@@ -83,7 +83,7 @@ ReachableContext(?ctx, ?clinit) <-
 //// regular ones (with unique context constructors)
 //ReflectiveContextFromRealContext[?type1, ?type2] = ?ctx ->
 //  Context(?ctx), Type(?type1), Type(?type2).
-//lang:skolem(`ReflectiveContextFromRealContext).
+//lang:constructor(`ReflectiveContextFromRealContext).
 //
 //RealContext1FromContext[?ctx] = ?type1,
 //RealContext2FromContext[?ctx] = ?type2 <-
@@ -91,6 +91,6 @@ ReachableContext(?ctx, ?clinit) <-
 //
 //ReflectiveHContextFromRealHContext[?type] = ?hctx ->
 //  HContext(?hctx), Type(?type).
-//lang:skolem(`ReflectiveHContextFromRealHContext).
+//lang:constructor(`ReflectiveHContextFromRealHContext).
 //RealHContextFromHContext[?hctx] = ?type <-
 //  ReflectiveHContextFromRealHContext[?type] = ?hctx.

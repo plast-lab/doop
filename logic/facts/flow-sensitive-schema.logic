@@ -587,7 +587,9 @@ lang:physical:capacity[`StringConstant]      = 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
 lang:physical:capacity[`StringRaw]           = 4194304.
 
-//------------------------------------
-//          Android Entry Points
-//------------------------------------
+
+//-----------------------------------------------------------------------------
+// [Android]
+//-----------------------------------------------------------------------------
+
 AndroidEntryPoint(?m) -> Method(?m).

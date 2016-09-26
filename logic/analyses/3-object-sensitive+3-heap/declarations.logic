@@ -4,7 +4,7 @@
 // different types).
 ContextFromRealContext[?heap1, ?heap2, ?heap3] = ?ctx ->
   Context(?ctx), HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?heap3).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContext1FromContext[?ctx] = ?heap ->
   Context(?ctx), HeapAllocation(?heap).
 RealContext2FromContext[?ctx] = ?heap ->
@@ -14,7 +14,7 @@ RealContext3FromContext[?ctx] = ?heap ->
 
 HContextFromRealHContext[?heap1, ?heap2, ?heap3] = ?hctx ->
   HContext(?hctx), HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?heap3).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).
 RealHContext1FromHContext[?hctx] = ?heap ->
   HContext(?hctx), HeapAllocation(?heap).
 RealHContext2FromHContext[?hctx] = ?heap ->

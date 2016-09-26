@@ -4,10 +4,10 @@
 // types).
 ContextFromRealContext[?heap] = ?ctx ->
   Context(?ctx), HeapAllocation(?heap).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContextFromContext[?ctx] = ?heap ->
   Context(?ctx), HeapAllocation(?heap).
 
 HContextFromRealHContext[?heap] = ?hctx ->
   HContext(?hctx), HeapAllocation(?heap).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).

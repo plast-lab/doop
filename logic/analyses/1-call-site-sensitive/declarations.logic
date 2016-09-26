@@ -3,7 +3,7 @@
 // (since the language considers them different types).
 ContextFromRealContext[?invocation] = ?ctx ->
   Context(?ctx), MethodInvocation(?invocation).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContextFromContext[?ctx] = ?invocation ->
   Context(?ctx), MethodInvocation(?invocation).
 
@@ -12,4 +12,4 @@ RealContextFromContext[?ctx] = ?invocation ->
 // which is used everywhere.
 HContextFromRealHContext[] = ?hctx ->
   HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).
