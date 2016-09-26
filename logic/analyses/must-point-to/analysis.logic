@@ -762,12 +762,12 @@ lang:physical:storageModel[`MustContext]="ScalableSparse".
 lang:physical:capacity[`MustContext] = 8388608.
 
 EmptyContext[] = ?ctx -> MustContext(?ctx).
-lang:skolem(`EmptyContext).
+lang:constructor(`EmptyContext).
 EmptyContext[] = ?ctx, MustContext(?ctx)  <- .
 
 PushAllOntoContext[?ctx] = ?pushedCtx -> 
    MustContext(?ctx), MustContext(?pushedCtx).
-lang:skolem(`PushAllOntoContext).
+lang:constructor(`PushAllOntoContext).
 
 SingleAllContext[] = ?ctx -> MustContext(?ctx).
 SingleAllContext[] = ?ctx,
@@ -777,7 +777,7 @@ MustContext(?ctx) <-
 
 PushMustContext[?invo, ?ctx] = ?pushedCtx ->
    MustContext(?pushedCtx), MustContext(?ctx), MethodInvocation(?invo).
-lang:skolem(`PushMustContext).
+lang:constructor(`PushMustContext).
 PopMustContext[?ctx] = ?poppedCtx ->
    MustContext(?poppedCtx), MustContext(?ctx).
 PopMustContext[?ctx] = ?poppedCtx <-
@@ -835,14 +835,14 @@ lang:physical:storageModel[`AccessPath] = "ScalableSparse".
 lang:physical:capacity[`AccessPath] = 8388608.
 
 NullAccessPath[] = ?nullAp -> AccessPath(?nullAp).
-lang:skolem(`NullAccessPath).
+lang:constructor(`NullAccessPath).
 
 NullAccessPath[] = ?nullAp, AccessPath(?nullAp) <- .
 
 // Constructor from variable.
 AccessPath:ByVar[?var] = ?ap ->
    Var(?var), AccessPath(?ap).
-lang:skolem(`AccessPath:ByVar).
+lang:constructor(`AccessPath:ByVar).
 
 AccessPath:ByVarInv[?ap] = ?var ->
    AccessPath(?ap), Var(?var).
@@ -856,14 +856,14 @@ IsVariable(?ap) <-
 // Constructor from static field
 AccessPath:ByStaticField[?fld] = ?ap ->
    Field(?fld), AccessPath(?ap).
-lang:skolem(`AccessPath:ByStaticField).
+lang:constructor(`AccessPath:ByStaticField).
 
 AccessPath:ByStaticFieldInv[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
 
 AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2 ->
    Field(?fld), AccessPath(?ap1), AccessPath(?ap2).
-lang:skolem(`AccessPath:ByFieldAccess).
+lang:constructor(`AccessPath:ByFieldAccess).
 
 AccessPath:ByFieldAccessInv[?ap1, ?fld] = ?ap2 <- 
    AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2.

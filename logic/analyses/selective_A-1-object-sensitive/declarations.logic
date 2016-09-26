@@ -3,7 +3,7 @@
 // HContext = Context (since the language considers them different types).
 ContextFromRealContext[?heapComp] = ?ctx ->
   Context(?ctx), ContextComponent(?heapComp).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContextFromContext[?ctx] = ?heapComp ->
   Context(?ctx), ContextComponent(?heapComp).
 RealContextFromContext[?ctx] = ?heapComp <-
@@ -12,4 +12,4 @@ RealContextFromContext[?ctx] = ?heapComp <-
 // This analysis has no context for heap objects. This is emulated by creating
 // a single HContext object, which is used everywhere.
 HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).
