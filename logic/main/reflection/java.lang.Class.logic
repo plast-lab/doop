@@ -50,7 +50,7 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   ReachableContext(?ctx, ?inmethod),
   ActualParam[0, ?invocation] = ?param,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  ClassNameStringConstant:Type(?type, ?constant).
+  ClassNameMatchingStringConstant:Type(?type, ?constant).
 
 /**
  * Class.forName invocations with user-configured dynamic classes
@@ -157,7 +157,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   Method:DeclaringType[?signature] = ?type,
   Method:Modifier("public", ?signature),
   ReifiedMethod[?signature] = ?heap,
-  MethodNameStringConstant:Signature(?signature, _).
+  MethodNameMatchingStringConstant:Signature(?signature, _).
 // we assume the returned methods will be filtered by some string
 */
 
@@ -182,7 +182,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   Method:Modifier("public", ?signature),
   ReifiedMethod[?signature] = ?heap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  MethodNameStringConstant:Signature(?signature, ?constant).
+  MethodNameMatchingStringConstant:Signature(?signature, ?constant).
 
 /*
 //VERSION-A
@@ -191,7 +191,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:Methods(?hctx, ?arrayHeap, ?type),
   Method:DeclaringType[?signature] = ?type,
   ReifiedMethod[?signature] = ?heap,
-  MethodNameStringConstant:Signature(?signature, _).
+  MethodNameMatchingStringConstant:Signature(?signature, _).
 */
 
 FillArray:Methods(?hctx, ?arrayHeap, ?type),
@@ -210,7 +210,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   Method:DeclaringType[?signature] = ?type,
   ReifiedMethod[?signature] = ?heap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  MethodNameStringConstant:Signature(?signature, ?constant).
+  MethodNameMatchingStringConstant:Signature(?signature, ?constant).
 
 
 /*************************************************************
@@ -301,7 +301,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   Field:DeclaringType[?fld] = ?superClass,
   Field:Modifier("public", ?fld),
   ReifiedField[?fld] = ?heap,
-  FieldNameStringConstant:Signature(?fld, _).
+  FieldNameMatchingStringConstant:Signature(?fld, _).
 */
 
 FillArray:PublicFields(?hctx, ?arrayHeap, ?type),
@@ -321,7 +321,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  FieldNameStringConstant:Signature(?fld, ?constant),
+  FieldNameMatchingStringConstant:Signature(?fld, ?constant),
   SupertypeOf(?superClass, ?type),
   Field:DeclaringType[?fld] = ?superClass,
   Field:Modifier("public", ?fld),
@@ -333,7 +333,7 @@ ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
   FillArray:Fields(?hctx, ?arrayHeap, ?class),
   Field:DeclaringType[?fld] = ?class,
   ReifiedField[?fld] = ?heap,
-  FieldNameStringConstant:Signature(?fld, _).
+  FieldNameMatchingStringConstant:Signature(?fld, _).
 */
 
 FillArray:Fields(?hctx, ?arrayHeap, ?type),
@@ -350,7 +350,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   VarPointsTo(_, ?classHeap, ?ctx, ?from),
   ReifiedClass[?type] = ?classHeap,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  FieldNameStringConstant:Signature(?fld, ?constant),
+  FieldNameMatchingStringConstant:Signature(?fld, ?constant),
   Field:DeclaringType[?fld] = ?type,
   ReifiedField[?fld] = ?heap.
 

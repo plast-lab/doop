@@ -25,8 +25,6 @@ DeclaringClass:Allocation[?heap] = ?type <-
    HeapAllocation:byValue["<<string-buffer>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
 
-#if defined(JRE15) || defined(JRE16) || defined(JRE17)
 DeclaringClass:Allocation[?heap] = ?type <-
    HeapAllocation:byValue["<<string-builder>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
-#endif
