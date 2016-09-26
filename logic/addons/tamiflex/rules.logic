@@ -185,12 +185,20 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
 /**
  * Handle the array of actual parameters of a reflective method call
  */
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
-<-
+
+// Optimizing indexing
+TamiflexInvocationFirstParam(?formal, ?callerCtx, ?argsParam) <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
    ActualParam[1, ?invocation] = ?argsParam,
-   FormalParam[_, ?callee] = ?formal,
-   VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?argsParam),
+   FormalParam[_, ?callee] = ?formal.
+
+// Optimizing indexing
+TamiflexInvocationArgumentArrayObject(?formal, ?basehctx, ?baseheap) <-
+   TamiflexInvocationFirstParam(?formal, ?ctx, ?base),
+   VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
+   TamiflexInvocationArgumentArrayObject(?formal, ?basehctx, ?baseheap),
    ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
    Var:Type[?formal] = ?type,
    HeapAllocation:Type[?heap] = ?heaptype,
