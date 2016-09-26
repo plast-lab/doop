@@ -35,6 +35,9 @@ HeapAllocation:Merge[?heap] = ?mergeHeap ->
   HeapAllocation(?heap),
   HeapAllocation(?mergeHeap).
 
+// The ones that absolutely have to be kept distinct
+HeapAllocation:Keep(?heap) -> HeapAllocation(?heap).
+
 /**
  * Join with AssignHeapAllocation for performance.
  */
@@ -54,11 +57,12 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
   HeapAllocation:ContextInsensitive(?heap),
   !(HeapAllocation:Merge[?heap] = _). // should be mostly unnecessary, but has bitten us many times  
 
+
 /*************************************************************
  * String constants
  *************************************************************/
 
-ReflectionObject(?heap) -> HeapAllocation(?heap).
+ReflectionStringConstant(?heap) -> HeapAllocation(?heap).
 ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
@@ -66,12 +70,13 @@ ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 #define DISTINGUISH_NO_STRING_CONSTANTS
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
-  HeapAllocation:byValue["<<string-constant>>"] = ?constant.
+  HeapAllocation:byValue["<<string-constant>>"] = ?constant,
+  !HeapAllocation:Keep(?heap).
 #endif
 #endif // DISTINGUISH_NO_STRING_CONSTANTS mode
 
 #ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
-ReflectionObject(?heap) <-
+ReflectionStringConstant(?heap) <-
   ClassNameMatchingStringConstant(?heap);
   MethodNameMatchingStringConstant(?heap);
   FieldNameMatchingStringConstant(?heap).
@@ -83,8 +88,9 @@ ReflectionSubstringObject(?heap) <-
 
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
-  ! ReflectionObject(?heap), 
-  HeapAllocation:byValue["<<string-constant>>"] = ?constant.
+  !ReflectionStringConstant(?heap), 
+  HeapAllocation:byValue["<<string-constant>>"] = ?constant,
+  !HeapAllocation:Keep(?heap).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 HeapAllocation:ContextInsensitive(?heap) <-
@@ -315,21 +321,21 @@ VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryHeap)
   StringFactoryVarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?factoryVar).
 
 VarOfReflectionInterest(?ctx, ?var),
-ReflectionObjectVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+ReflectionStringConstantVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
   ReflectionSubstringObject(?heap).
 
 OptVarMethod(?method, ?var) <-
   Var:DeclaringMethod(?var, ?method).
 
-ReflectionObjectFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap)
+ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap)
  <-
   VarFlowsIntoStringFactory(?factoryHctx, ?factoryHeap, ?ctx, ?var),
-  ReflectionObjectVarPointsTo(?hctx, ?heap, ?ctx, ?var).
+  ReflectionStringConstantVarPointsTo(?hctx, ?heap, ?ctx, ?var).
 
 VarPointsTo(?hctx, ?heap, ?ctx, ?var)
  <-
-  ReflectionObjectFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap),
+  ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?heap, ?factoryHctx, ?factoryHeap),
   VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryHeap).
 
 #endif // REFLECTION_SUBSTRING_ANALYSIS
@@ -349,7 +355,8 @@ HeapAllocation:ContextInsensitive(?heap) <-
  *************************************************************/
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  HeapRepresentative[?heap] = ?mergeHeap.
+  HeapRepresentative[?heap] = ?mergeHeap,
+  !HeapAllocation:Keep(?heap).
 
 
 /*************************************************************
@@ -440,12 +447,15 @@ AllocationShouldBeMerged(?heaptype, ?meth) <-
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuffer"),
-  HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap.
+  HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap,
+  !HeapAllocation:Keep(?heap).
+
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuilder"),
-  HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap.
+  HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap,
+  !HeapAllocation:Keep(?heap).
 #endif
 #endif
 
