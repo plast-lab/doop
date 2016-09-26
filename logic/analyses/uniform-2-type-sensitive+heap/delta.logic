@@ -1,0 +1,13 @@
+/**
+ * Special calling contexts
+ */
++Instruction(?instr), +Instruction:Value(?instr, "<<initial-context>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<jvm-startup>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<class-initialization>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<immutable-context>>").
++Instruction(?instr), +Instruction:Value(?instr, "<<immutable-hcontext>>").
+
+PlusMethodInvocation(?ctx, "<<initial-context-2>>").
+PlusMethodInvocation(?ctx, "<<jvm-startup-2>>").
+PlusMethodInvocation(?ctx, "<<class-initialization-2>>").
+PlusMethodInvocation(?ctx, "<<immutable-context-2>>").
