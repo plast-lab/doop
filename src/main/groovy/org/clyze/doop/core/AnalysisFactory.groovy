@@ -292,44 +292,32 @@ import org.clyze.doop.system.*
 
         Map<String, AnalysisOption> options = vars.options
 
-        /*
-         * We mimic the checks of the run script for verifiability of this implementation,
-         * even though the majority of checks are not required.
-         */
+        if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
+            logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+        }
+
+        if (!options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
+            options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
+            logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
+        }
+
+        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+        }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
         }
 
-        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
-            options.PADDLE_COMPAT.value = false
-        } else {
-            // Merging of method and field names happens only if we distinguish
-            // reflection strings in the first place.
-            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
-        }
-
-        if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
-        }
-
-        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
-            // It makes no sense to analyze partial strings that may match fields
-            // when we don't track the flow of these strings through StringBuilders.
-            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
-        }
-
         if (options.ENABLE_REFLECTION_CLASSIC.value) {
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
-            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = true
-            options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value = true
         }
 
         if (options.DACAPO.value) {
@@ -407,8 +395,6 @@ import org.clyze.doop.system.*
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
-                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
                 options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                 options.REFLECTION_CONTEXT_SENSITIVITY.value ||
                 options.REFLECTION_USE_BASED_ANALYSIS.value ||
@@ -520,7 +506,7 @@ import org.clyze.doop.system.*
 
     /**
      * DACAPO hooks.
-     */
+    */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
             String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
