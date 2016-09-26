@@ -67,6 +67,7 @@ Type:int[] = ?t     -> PrimitiveType(?t).
 Type:long[] = ?t    -> PrimitiveType(?t).
 Type:float[] = ?t   -> PrimitiveType(?t).
 Type:double[] = ?t  -> PrimitiveType(?t).
+Type:void[] = ?t    -> PrimitiveType(?t).
 Type:null[] = ?t    -> NullType(?t).
 Type:object[] = ?t  -> ClassType(?t).
 

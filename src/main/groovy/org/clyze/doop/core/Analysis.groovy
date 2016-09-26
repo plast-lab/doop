@@ -377,10 +377,6 @@ class Analysis implements Runnable {
             .transaction()
             .executeFile("${safename}-delta.logic")
 
-        if (options.SANITY.value) {
-            lbScript.addBlockFile("${Doop.addonsPath}/sanity.logic")
-        }
-
         if (options.ENABLE_REFLECTION.value) {
             preprocess(this, "${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
@@ -429,6 +425,9 @@ class Analysis implements Runnable {
                 .addBlockFile("tamiflex-declarations.logic")
                 .executeFile("tamiflex-delta.logic")
         }
+
+        if (options.SANITY.value)
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
 
         includeAtStart(this, "${outDir}/${safename}.logic", "${outDir}/addons.logic")
 
