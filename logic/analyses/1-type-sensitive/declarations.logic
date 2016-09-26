@@ -2,7 +2,7 @@
 // class type, because of arrays currently being a non-class subtype of Object
 ContextFromRealContext[?type] = ?ctx ->
   Context(?ctx), Type(?type).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContextFromContext[?ctx] = ?type ->
   Context(?ctx), Type(?type).
 
@@ -10,4 +10,4 @@ RealContextFromContext[?ctx] = ?type ->
 // This is emulated by creating a single HContext object,
 // which is used everywhere.
 HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).

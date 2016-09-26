@@ -1,6 +1,6 @@
 ContextFromRealContext[?heap1, ?invo, ?heap2] = ?ctx ->
   Context(?ctx), HeapAllocation(?heap1), MethodInvocation(?invo), HeapAllocation(?heap2).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContext1FromContext[?ctx] = ?heap ->
   Context(?ctx), HeapAllocation(?heap).
 RealContext2FromContext[?ctx] = ?invo ->
@@ -10,6 +10,6 @@ RealContext3FromContext[?ctx] = ?heap ->
 
 HContextFromRealHContext[?heap] = ?hctx ->
   HContext(?hctx), HeapAllocation(?heap).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).
 RealHContextFromHContext[?hctx] = ?heap ->
   HContext(?hctx), HeapAllocation(?heap).
