@@ -4,10 +4,10 @@
 // types).
 ContextFromRealContext[?invocation] = ?ctx ->
   Context(?ctx), MethodInvocation(?invocation).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContextFromContext[?ctx] = ?invocation ->
   Context(?ctx), MethodInvocation(?invocation).
 
 HContextFromRealHContext[?invocation] = ?hctx ->
   HContext(?hctx), MethodInvocation(?invocation).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).
