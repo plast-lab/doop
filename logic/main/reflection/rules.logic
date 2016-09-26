@@ -440,7 +440,6 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 //  ComponentType[?arraytype] = ?componenttype,
 //  SupertypeOf(?componenttype, ?heaptype).
 
-
 /*************************************************************
  *
  * Reflective load of a static field
@@ -517,13 +516,28 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 ReflectiveStoreInstanceField(?fromCtx, ?from, ?signature, ?baseCtx, ?base) ->
   Context(?fromCtx), Var(?from), Context(?baseCtx), Var(?base),
   Field(?signature).
+ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) ->
+  Context(?fromCtx), Var(?from), HeapAllocation(?baseheap), HContext(?basehctx),
+  Field(?signature).
 
-StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) <-
+ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) <-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
   HeapAllocation:Type[?baseheap] = ?baseheaptype,
   Field:DeclaringType[?sig] = ?declaringClass,
   SupertypeOf(?declaringClass, ?baseheaptype),
   VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).
+
+// The code below is very similar to the logic in the main analysis,
+// however we split it out because of the need (here, but not for
+// normal heap loads) to filter type-incorrect values.
+InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
+  ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  HeapAllocation:Null[] != ?baseheap,
+  !SpecialObject(?heap),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  Field:Type[?signature] = ?fieldtype,
+  SupertypeOf(?fieldtype, ?heaptype).
 
 #if defined(REFLECTION_USE_BASED_ANALYSIS) || defined(REFLECTION_INVENT_UNKNOWN_OBJECTS)
 

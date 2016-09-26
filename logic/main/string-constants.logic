@@ -173,7 +173,7 @@ ClassNameMatchingStringConstantInexact:Type(?type, ?heap)
   <-
   NonTrivialStringConstant(?heap),
   HeapAllocation:Value[?heap] = ?string,
-  ClassNameSuffix(?type, ?string),
+  ClassNameSuffix(?string, ?type),
   ApplicationClass(?type).
 
 MethodNameMatchingStringConstant(?heap),
@@ -184,8 +184,8 @@ MethodNameMatchingStringConstantInexact:Signature(?sig, ?heap)
   HeapAllocation:Value[?heap] = ?string,
   Method:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
-  (MethodNameSuffix(?sig, ?string);
-   MethodNamePrefix(?sig, ?string)),
+  (MethodNameSuffix(?string, ?sig);
+   MethodNamePrefix(?string, ?sig)),
   ?string != "<init>",
   ?string != "<clinit>". // common, yet not methods callable via reflection
    
@@ -198,8 +198,8 @@ FieldNameMatchingStringConstantInexact:Signature(?sig, ?heap)
   HeapAllocation:Value[?heap] = ?string,
   Field:DeclaringType[?sig] = ?declaringClass,
   ApplicationClass(?declaringClass),
-  (FieldNameSuffix(?sig, ?string);
-   FieldNamePrefix(?sig, ?string)).
+  (FieldNameSuffix(?string, ?sig);
+   FieldNamePrefix(?string, ?sig)).
 
 ClassIterationTrick(?length) <-
   ?length = 6; ?length = 7; ?length = 8; ?length = 9; ?length = 10; 
@@ -212,35 +212,35 @@ MemberSuffixIterationTrick(?length) <-
   ?length = 10; ?length = 11; ?length = 12; ?length = 13; ?length = 14.
 
 // Precompute proper suffixes. Crucial for efficiency.
-ClassNameSuffix(?type, ?suffix) <-
+ClassNameSuffix(?suffix, ?type) <-
   ReferenceType(?type),
   Type:Value(?type:?className),
   string:length[?className] = ?classNameLength,
   ClassIterationTrick(?length),
   string:substring[?className, ?classNameLength - ?length, ?length] = ?suffix.
 
-MethodNameSuffix(?sig, ?suffix) <-
+MethodNameSuffix(?suffix, ?sig) <-
   Method:SimpleName[?sig] = ?methodName,
   string:length[?methodName] = ?methodNameLength,
   MemberSuffixIterationTrick(?length),
   ?methodNameLength > ?length,
   string:substring[?methodName, ?methodNameLength - ?length, ?length] = ?suffix.
 
-MethodNamePrefix(?sig, ?prefix) <-
+MethodNamePrefix(?prefix, ?sig) <-
   Method:SimpleName[?sig] = ?methodName,
   string:length[?methodName] = ?methodNameLength,
   MemberPrefixIterationTrick(?length),
   ?methodNameLength > ?length,
   string:substring[?methodName, 0, ?length] = ?prefix.
 
-FieldNameSuffix(?sig, ?suffix) <-
+FieldNameSuffix(?suffix, ?sig) <-
   Field:SimpleName[?sig] = ?fieldName,
   string:length[?fieldName] = ?fieldNameLength,
   MemberSuffixIterationTrick(?length),
   ?fieldNameLength > ?length,
   string:substring[?fieldName, ?fieldNameLength - ?length, ?length] = ?suffix.
 
-FieldNamePrefix(?sig, ?prefix) <-
+FieldNamePrefix(?prefix, ?sig) <-
   Field:SimpleName[?sig] = ?fieldName,
   string:length[?fieldName] = ?fieldNameLength,
   MemberPrefixIterationTrick(?length),
