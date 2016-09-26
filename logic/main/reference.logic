@@ -1,0 +1,13 @@
+/**
+ * Complete implementation: 
+ *
+ * The garbage collector assigns every reference to Reference.pending. So,
+ * basically Reference.pending can point to every reference. The
+ * ReferenceHandler takes care of enqueueing the references in a reference
+ * queue. This is all pure Java.
+ */
+
+StaticFieldPointsTo(?hctx, ?heap, ?pending) <-
+   Field:Value(?pending:"<java.lang.ref.Reference: java.lang.ref.Reference pending>"),
+   Var:Value(?this:"<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this"),
+   VarPointsTo(?hctx, ?heap, _, ?this).
