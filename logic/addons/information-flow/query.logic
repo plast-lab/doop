@@ -1,0 +1,12 @@
+// This file contains useful queries for taint analysis results
+
+VarPointsToOpt(?ctx, ?var, ?hctx, ?heap) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?var).
+
+TaintedVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  VarPointsToOpt(?ctx, ?var, ?hctx, ?heap),
+  TaintedObject(?hctx, ?heap).
+
+UnTaintedVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  VarPointsToOpt(?ctx, ?var, ?hctx, ?heap),
+  TaintedObject(?hctx, ?heap).

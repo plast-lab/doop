@@ -1,0 +1,11 @@
++NativeExceptionHeapAllocation(?heap, ?method),
++Instruction:Value(?heap:?s),
++HeapAllocation(?heap),
++HeapAllocation:Type[?heap] = ?exceptionType
+<-
+   Method:Modifier(?native, ?method),
+   Modifier:Value(?native:"native"),
+   Method:DeclaresException(?exceptionType, ?method),
+   Type:Value(?exceptionType:?typeString),
+   Method:Value(?method:?methodString),
+   ?s = ?methodString + "/native new " + ?typeString.

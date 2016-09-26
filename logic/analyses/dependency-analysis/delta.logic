@@ -1,0 +1,16 @@
+#include "../2-object-sensitive+heap/delta.logic"
+
+// Dependency source instructions
+// +DependencySourceInstruction("java.lang.Object.equals/return/instruction9").
++DependencySourceInstruction("gr.uoa.di.sigmod15.ParserWorker.defineSchema/new java.util.concurrent.Semaphore/0").
+// +DependencySourceInstruction("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction103").
++DependencySourceInstruction("Test.Test.readInt/java.util.Scanner.nextInt/0").
++DependencySourceInstruction("Test.CallSiteHeap.comp1/assign/instruction2").
++DependencySourceInstruction("Test.SmallTest.go/assign/instruction2").
+
+// Conditionals whose body should be considered safe and therefore should never be marked as dependent
++SecureInstruction("gr.uoa.di.sigmod15.IndexColumn.validate/if/instruction29").
++SecureInstruction("gr.uoa.di.sigmod15.ParserWorker.flush/if/instruction143").
++SecureInstruction("gr.uoa.di.sigmod15.QueryWrapper.execute/if/instruction4").
++SecureInstruction("gr.uoa.di.sigmod15.IndexColumn.validate/assign/instruction28").
++SecureMethod("<java.io.PrintStream: void write(int)>").
