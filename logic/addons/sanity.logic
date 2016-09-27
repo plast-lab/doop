@@ -19,7 +19,7 @@ HeapAllocation(?heap) -> DeclaringClass:Allocation[?heap] = _.
 
 
 ClassType(?t) -> !InterfaceType(?t).
-InterfacetType(?t) -> !ClassType(?t).
+InterfaceType(?t) -> !ClassType(?t).
 PrimitiveType(?t) -> !ReferenceType(?t).
 ReferenceType(?t) -> !PrimitiveType(?t).
 
