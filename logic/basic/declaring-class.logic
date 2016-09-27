@@ -4,27 +4,10 @@ DeclaringClass:Allocation[?heap] = ?type <-
    !StringConstant(?heap),
    !ClassHeap(?heap).
 
-
 DeclaringClass:Allocation[?heap] = ?type <-
    ClassHeap(?heap),
-   ClassTypeValue(?type, "java.lang.String").
+   ClassTypeValue(?type, "java.lang.System").
 
 DeclaringClass:Allocation[?heap] = ?type <-
    StringConstant(?heap),
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocation:byValue["<<string-constant>>"] = ?heap,
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocation:byValue["<<reflection-string-constant>>"] = ?heap,
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocation:byValue["<<string-buffer>>"] = ?heap,
-   ClassTypeValue(?type, "java.lang.String").
-
-DeclaringClass:Allocation[?heap] = ?type <-
-   HeapAllocation:byValue["<<string-builder>>"] = ?heap,
    ClassTypeValue(?type, "java.lang.String").
