@@ -1,0 +1,6 @@
+echo "-- Statistics --"
+startTimer
+transaction
+addBlock -F statistics.logic
+commit
+elapsedTime
