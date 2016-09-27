@@ -119,8 +119,6 @@ You can also override the options from a properties file with options from the c
 
     $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_6
 
-Please consult the [doop.properties](doop.properties) template file for more information.
-
 
 ## License
 MIT license (see [LICENSE](LICENSE)).
