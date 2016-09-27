@@ -563,27 +563,28 @@ String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 // [Capacities]
 //-----------------------------------------------------------------------------
 
-lang:physical:capacity[`Field]               = 131072.
-lang:physical:capacity[`Method]              = 131072.
-lang:physical:capacity[`MethodDescriptor]    = 131072.
-lang:physical:capacity[`Instruction]         = 4194304. /* 2^22 */
-lang:physical:capacity[`Throw:Insn]          = 4194304. /* = instruction */
-lang:physical:capacity[`MethodInvocation]    = 4194304. /* = instruction */
+lang:physical:capacity[`Field]               = 524288.
+lang:physical:capacity[`Method]              = 1048576. /* 2 ^ 20 */
+lang:physical:capacity[`MethodDescriptor]    = 1048576.
+lang:physical:capacity[`Instruction]         = 8388608. /* 2^23 */
+lang:physical:capacity[`Throw:Insn]          = 8388608. /* = instruction */
+lang:physical:capacity[`MethodInvocation]    = 8388608. /* = instruction */
 lang:physical:capacity[`JVMDescriptor]       = 524288.
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 131072.
-lang:physical:capacity[`Var]                 = 2097152. /* 2^21 */
+lang:physical:capacity[`Var]                 = 8388608. /* 2^23 */
 lang:physical:capacity[`Modifier]            = 32.
-lang:physical:capacity[`Type]                = 32768.
-lang:physical:capacity[`PrimitiveType]       = 32768.
-lang:physical:capacity[`ReferenceType]       = 32768.
-lang:physical:capacity[`NullType]            = 32768.
-lang:physical:capacity[`ArrayType]           = 32768.
-lang:physical:capacity[`ClassType]           = 32768.
-lang:physical:capacity[`InterfaceType]       = 32768.
+lang:physical:capacity[`Type]                = 131072.
+lang:physical:capacity[`PrimitiveType]       = 131072.
+lang:physical:capacity[`ReferenceType]       = 131072.
+lang:physical:capacity[`NullType]            = 131072.
+lang:physical:capacity[`ArrayType]           = 131072.
+lang:physical:capacity[`ClassType]           = 131072.
+lang:physical:capacity[`InterfaceType]       = 131072.
 
 lang:physical:capacity[`HeapAllocation]      = 4194304.
 lang:physical:capacity[`NormalHeap]          = 4194304.
+lang:physical:capacity[`NumConstant]         = 4194304.
 lang:physical:capacity[`StringConstant]      = 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
 lang:physical:capacity[`StringRaw]           = 4194304.
