@@ -73,7 +73,7 @@ Type:object[] = ?t  -> ClassType(?t).
 
 
 ClassModifier(?mod, ?class) ->
-   Modifier(?mod), ClassType(?class).
+   Modifier(?mod), ReferenceType(?class).
 
 
 //-----------------------------------------------------------------------------
