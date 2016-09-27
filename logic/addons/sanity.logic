@@ -8,9 +8,17 @@ VarPointsTo(_, _, _, ?var), Var:DeclaringMethod(?var, ?method) -> Reachable(?met
 VarPointsTo(_, ?heap, _, ?var), HeapAllocation:Type[?heap] = ?heapType, Var:Type[?var] = ?varType ->
    SubtypeOf(?heapType, ?varType).
 
+// No VarPointsTo is ever inferred for objects that should have been
+// merged. Suggests omission in the "Keep" predicate.
+VarPointsTo(_, ?heap, _, _), HeapAllocation:Merge[?heap] = ?heap2 -> ?heap2 = ?heap.
+
 // Every heap allocation has a type, a construction id and a declaring class
 HeapAllocation(?heap) -> HeapAllocation:Type[?heap] = _.
 HeapAllocation(?heap) -> HeapAllocation:Value[?heap] = _.
+VarPointsTo(_, ?heap, _, _) -> DeclaringClass:Allocation[?heap] = _.
+
+/*
+// These currently fail
 HeapAllocation(?heap) -> DeclaringClass:Allocation[?heap] = _.
 
 // Needed only because of implicit creations through refmodes
@@ -21,6 +29,7 @@ Type(?t) ->
    ArrayType(?t) ;
    PrimitiveType(?t) ;
    NullType(?t).
+*/
 
 // Every instruction is a concrete instruction
 Instruction(?insn) ->
