@@ -15,11 +15,10 @@ VarPointsTo(_, ?heap, _, _), HeapAllocation:Merge[?heap] = ?heap2 -> ?heap2 = ?h
 // Every heap allocation has a type, a construction id and a declaring class
 HeapAllocation(?heap) -> HeapAllocation:Type[?heap] = _.
 HeapAllocation(?heap) -> HeapAllocation:Value[?heap] = _.
-VarPointsTo(_, ?heap, _, _) -> DeclaringClass:Allocation[?heap] = _.
+HeapAllocation(?heap) -> DeclaringClass:Allocation[?heap] = _.
 
 /*
 // These currently fail
-HeapAllocation(?heap) -> DeclaringClass:Allocation[?heap] = _.
 
 // Needed only because of implicit creations through refmodes
 // Every type is a concrete type
