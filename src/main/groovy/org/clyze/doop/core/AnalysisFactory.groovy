@@ -555,7 +555,7 @@ import org.clyze.doop.system.*
 
         logger.debug "Verifying LogicBlox home: ${lbhome.value}"
 
-        def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.id} value is invalid: ${lbhome.value}")
 
         def oldldpath = System.getenv("LD_LIBRARY_PATH")
         vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin" + ":" + oldldpath
