@@ -128,7 +128,7 @@ correct_vulnerabilities = pd.Series({
     'StrongUpdates4': 1,
     'StrongUpdates5': 0,
     'Aliasing1': 1,
-    'Aliasing2': 1,
+    'Aliasing2': 0,
     'Aliasing3': 1,
     'Aliasing4': 1,
     'Aliasing5': 1,

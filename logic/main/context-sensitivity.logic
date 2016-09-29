@@ -124,28 +124,15 @@ OptAssignCast(?type, ?to, ?from) <-
 /**
  * Load instance fields
  *
- * ctx would not hurt in ReachableLoadInstanceField, but it's not necessary.
- * TODO: might it help?
  */
 
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
-  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap),
-  // The next three clauses shouldn't filter anything normally, but they do for
-  // reflective field assignments.
-  HeapAllocation:Type[?heap] = ?heaptype,
-  Var:Type[?to] = ?vartype,
-  SupertypeOf(?vartype, ?heaptype).
+  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap).
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
-  ReachableLoadInstanceFieldBase(?base),
   OptLoadInstanceField(?to, ?sig, ?base),
   VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
-
-ReachableLoadInstanceFieldBase(?base) -> Var(?base).
-ReachableLoadInstanceFieldBase(?base) <-
-  LoadInstanceField(?base, _, _, ?inmethod),
-  Reachable(?inmethod).
 
 //
 // TODO eliminate by reordering the input fact.
@@ -160,22 +147,11 @@ InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from),
   VarPointsTo(?hctx, ?heap, ?ctx, ?from),
   HeapAllocation:Null[] != ?baseheap,
-  !SpecialObject(?heap),
-  // The next three clauses shouldn't filter anything normally, but they do for
-  // reflective field assignments.
-  HeapAllocation:Type[?heap] = ?heaptype,
-  Field:Type[?signature] = ?fieldtype,
-  SupertypeOf(?fieldtype, ?heaptype).
+  !SpecialObject(?heap).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from) <-
-  ReachableStoreInstanceFieldBase(?base),
   OptStoreInstanceField(?from, ?signature, ?base),
   VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
-
-ReachableStoreInstanceFieldBase(?base) -> Var(?base).
-ReachableStoreInstanceFieldBase(?base) <-
-  StoreInstanceField(_, ?base, _, ?inmethod),
-  Reachable(?inmethod).
 
 /**
  * TODO eliminate

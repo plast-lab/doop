@@ -11,6 +11,7 @@ import org.clyze.doop.blox.WorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*
 
+import static java.io.File.separator
 import static org.clyze.doop.system.CppPreprocessor.includeAtStart
 import static org.clyze.doop.system.CppPreprocessor.preprocess
 import static org.clyze.doop.system.CppPreprocessor.preprocessIfExists
@@ -376,10 +377,6 @@ class Analysis implements Runnable {
             .transaction()
             .executeFile("${safename}-delta.logic")
 
-        if (options.SANITY.value) {
-            lbScript.addBlockFile("${Doop.addonsPath}/sanity.logic")
-        }
-
         if (options.ENABLE_REFLECTION.value) {
             preprocess(this, "${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
@@ -428,6 +425,9 @@ class Analysis implements Runnable {
                 .addBlockFile("tamiflex-declarations.logic")
                 .executeFile("tamiflex-delta.logic")
         }
+
+        if (options.SANITY.value)
+            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
 
         includeAtStart(this, "${outDir}/${safename}.logic", "${outDir}/addons.logic")
 
@@ -576,6 +576,9 @@ class Analysis implements Runnable {
     protected void runSoot() {
         Collection<String> depArgs
 
+        def platform = options.PLATFORM.value.toString().tokenize("_")[0]
+        assert platform == "android" || platform == "java"
+
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
             inputs[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
@@ -583,16 +586,22 @@ class Analysis implements Runnable {
         }
         else {
             Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            if (platformLibs.isEmpty()) {
-                depArgs = ["-lsystem"] + deps
-            }
-            else {
-                depArgs = platformLibs.collect{ String arg -> ["-l", arg]}.flatten() + deps
-            }
-
+            depArgs = platformLibs.collect{ String arg -> ["-l", arg]}.flatten() +  deps
         }
 
-        Collection<String> params = ["--allow-phantom", "--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+        Collection<String> params = null;
+
+        switch(platform) {
+            case "java":
+                params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                break
+            case "android":
+                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", options.PLATFORMS_LIB.value.toString() + separator + "Android" + separator + "Sdk" + separator + "platforms"]
+                break
+            default:
+                throw new RuntimeException("Unsupported platform")
+        }
+
         if (options.SSA.value) {
             params = params + ["--ssa"]
         }
@@ -699,7 +708,7 @@ class Analysis implements Runnable {
         def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
         assert platform == "java"
 
-        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+        String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
 
         //Not using if/else for readability
         switch(version) {
@@ -729,7 +738,7 @@ class Analysis implements Runnable {
         def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
         assert platform == "java"
 
-        String path = "${options.DOOP_PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+        String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
         return "$path/rt.jar"
     }
 

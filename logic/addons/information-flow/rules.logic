@@ -16,10 +16,13 @@
 
 #define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Value(method:value), string:like(value, pattern)                            
 
-TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+                                                                                                                    TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.ServletContext: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.http.Cookie: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpSession: % get%(%)>").
+TaintSourceMethod("<java.net.URLEncoder: java.lang.String decode(java.lang.String,java.lang.String)>").
 LeakingSinkMethodPattern(0, "<java.io.Print%: void println(%)>").
 LeakingSinkMethodPattern(0, "<java.sql.Statement: % execute%(%)>").
 LeakingSinkMethodPattern(0, "<java.io.File%er: void <init>(%)>").
@@ -85,7 +88,14 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryHeap, ?ctx, ?var),
   StringFactoryVar(?var).
 
-VarIsTaintedFromVar(?ctx, ?base, ?ctx, ?param),
+Iaminterested(?ctx, ?base, ?ctx, ?param),
+VarIsTaintedFromVar(?ctx, ?base, ?ctx, ?param) <-
+  VirtualMethodInvocation:SimpleName[?invocation] = "append",
+  VirtualMethodInvocation:Base[?invocation] = ?base,
+  StringFactoryVarPointsTo(_, _, ?ctx, ?base),
+  ActualParam[0, ?invocation] = ?param.
+
+
 VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?param) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
@@ -172,3 +182,12 @@ VarPointsTo(?hctx, ?invocation, ?callerCtx, ?to) <-
   CallTaintingMethod(?callerCtx, ?invocation),
   TaintedHeapAllocation(?invocation),
   AssignReturnValue[?invocation] = ?to.
+
+/**
+ * Information may flow through any cast
+ */
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  TaintedHeapAllocation(?heap),
+  OptAssignCast(_, ?to, ?from).
+

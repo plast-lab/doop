@@ -39,3 +39,6 @@ VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to)
    ReachableContext(?ctx, ?method),
    ActualParam[0, ?inv] = ?to,
    DacapoHarnessClass(?classNameHeap).
+
+HeapAllocation:Keep(?classNameHeap) <-
+   DacapoHarnessClass(?classNameHeap).

@@ -523,7 +523,7 @@ class FactWriter
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
 
-    void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, /*Local arrIndex,*/ Session session)
+    void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session)
     {
         int index = session.calcUnitNumber(stmt);
 
@@ -536,13 +536,13 @@ class FactWriter
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
-//        if (arrIndex != null)
-//            _db.add(ARRAY_INSN_INDEX,
-//                _db.asEntity(rep),
-//                _db.asEntity(_rep.local(m, arrIndex)));
+        if (arrIndex != null)
+            _db.add(ARRAY_INSN_INDEX,
+                _db.asEntity(rep),
+                _db.asEntity(_rep.local(m, arrIndex)));
     }
 
-    void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, /*Local arrIndex,*/ Session session)
+    void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Local arrIndex, Session session)
     {
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
@@ -554,10 +554,10 @@ class FactWriter
                 _db.asEntity(_rep.local(m, base)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
 
-//        if (arrIndex != null)
-//            _db.add(ARRAY_INSN_INDEX,
-//                _db.asEntity(rep),
-//                _db.asEntity(_rep.local(m, arrIndex)));
+        if (arrIndex != null)
+            _db.add(ARRAY_INSN_INDEX,
+                _db.asEntity(rep),
+                _db.asEntity(_rep.local(m, arrIndex)));
     }
 
     void writeApplicationClass(SootClass application)
