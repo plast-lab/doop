@@ -321,27 +321,23 @@ import org.clyze.doop.system.*
         }
 
         if (options.DACAPO.value) {
-            if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputFiles[0].toString()
-                def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!vars.inputFiles.contains(deps))
-                    vars.inputFiles.add(new File(deps))
+            def inputJarName = vars.inputFiles[0].toString()
+            def deps = inputJarName.replace(".jar", "-deps.jar")
+            if (!vars.inputFiles.contains(deps))
+                vars.inputFiles.add(new File(deps))
+            if (!options.ENABLE_REFLECTION.value)
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
-            }
         }
 
         if (options.DACAPO_BACH.value) {
-            if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputFiles[0].toString()
-                def depsDir = inputJarName.replace(".jar", "-libs")
-                new File(depsDir).eachFile { File depsFile ->
-                    if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") &&
-                            !vars.inputFiles.contains(depsFile)) {
-                        vars.inputFiles.add(depsFile)
-                    }
-                }
-                options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
+            def inputJarName = vars.inputFiles[0].toString()
+            def depsDir = inputJarName.replace(".jar", "-libs")
+            new File(depsDir).eachFile { File depsFile ->
+                if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !vars.inputFiles.contains(depsFile))
+                    vars.inputFiles.add(depsFile)
             }
+            if (!options.ENABLE_REFLECTION.value)
+                options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
         }
 
         if (options.TAMIFLEX.value) {
