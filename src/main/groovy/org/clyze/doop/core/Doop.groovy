@@ -388,7 +388,7 @@ class Doop {
         "BLOXBATCH",
         "BLOX_OPTS",
         "CACHE",
-        "JRE_LIB"
+        "PLATFORMS_LIB"
     ]
 
     // Not the best pattern, but limits the source code size :)
