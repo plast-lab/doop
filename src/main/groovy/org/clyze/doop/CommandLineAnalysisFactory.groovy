@@ -29,8 +29,8 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the name of the analysis (short option: a)
         String name = cli.a
 
-        //Get the inputs of the analysis (short option: j)
-        List<String> inputs = cli.js
+        //Get the inputs of the analysis (short option: i)
+        List<String> inputs = cli.is
 
         //Get the id of the analysis (short option: id)
         String id = cli.id ?: null
@@ -50,7 +50,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         String name = cli.a ?: props.getProperty("analysis")
 
         //Get the inputs of the analysis. If there are no inputs in the CLI, we get them from the properties.
-        List<String> inputs = cli.js
+        List<String> inputs = cli.is
         if (!inputs) {
             inputs = props.getProperty("jar").split().collect { String s -> s.trim() }
             //The inputs, if relative, are being resolved via the propsBaseDir
@@ -96,7 +96,6 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            j(longOpt: 'inputs', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputs")
             i(longOpt: 'inputs', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputs")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
