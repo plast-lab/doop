@@ -8,7 +8,7 @@ ClassToMock(?type) <- ?typeStr = "javax.servlet.http.Cookie", ReferenceType(?typ
 ClassToMock(?type) <- ?typeStr = "java.sql.Connection", ReferenceType(?type), Type:Value(?type:?typeStr).
 
 // statically initialize driver factory with a "fake" driver
-MockEntryPoint(?type, "<java.sql.DriverManager: java.sql.Connection registerDriver(java.sql.Driver driver)>") <- ?typeStr = "java.sql.DriverManager", ClassType(?type), Type:Value(?type:?typeStr).
+MockEntryPoint(?type, "<java.sql.DriverManager: void registerDriver(java.sql.Driver)>") <- ?typeStr = "java.sql.DriverManager", ClassType(?type), Type:Value(?type:?typeStr).
 
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").

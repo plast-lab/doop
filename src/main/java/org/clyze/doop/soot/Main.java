@@ -348,6 +348,7 @@ public class Main {
             classes = new HashSet<>(scene.getClasses());
         }
 
+        System.out.println("Generating facts for " + classes.size() + " classes.");
         if (_bytecode2jimple) {
             ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);
             Driver driver = new Driver(factory, _ssa, classes.size());

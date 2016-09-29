@@ -223,7 +223,7 @@ import org.clyze.doop.system.*
 
         switch(platform) {
             case "java":
-                String path = "${options.PLATFORM_LIBS.value}/JREs/jre1.${version}/lib"
+                String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
                 switch(version) {
                     case "3":
                         return FileOps.findFiles(["${path}/rt.jar".toString()])
@@ -241,7 +241,7 @@ import org.clyze.doop.system.*
                 }
                 break
             case "android":
-                String path = "${options.PLATFORM_LIBS.value}/Android/Sdk/platforms/android-${version}"
+                String path = "${options.PLATFORMS_LIB.value}/Android/Sdk/platforms/android-${version}"
                 switch(version) {
 		    case "15":
                         return FileOps.findFiles(["${path}/android.jar".toString(),
@@ -296,68 +296,52 @@ import org.clyze.doop.system.*
 
         Map<String, AnalysisOption> options = vars.options
 
-        /*
-         * We mimic the checks of the run script for verifiability of this implementation,
-         * even though the majority of checks are not required.
-         */
+        if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
+            logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
+        }
+
+        if (!options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
+            options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
+            logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
+        }
+
+        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
+            disableAllConstantOptions(options)
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+        }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
             disableAllConstantOptions(options)
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
         }
 
-        if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
-            options.PADDLE_COMPAT.value = false
-        } else {
-            // Merging of method and field names happens only if we distinguish
-            // reflection strings in the first place.
-            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = false
-        }
-
-        if (options.DISTINGUISH_NO_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = true
-        }
-
-        if (!options.REFLECTION_STRING_FLOW_ANALYSIS.value) {
-            // It makes no sense to analyze partial strings that may match fields
-            // when we don't track the flow of these strings through StringBuilders.
-            options.REFLECTION_SUBSTRING_ANALYSIS.value = false
-        }
-
         if (options.ENABLE_REFLECTION_CLASSIC.value) {
-            options.DISTINGUISH_NO_STRING_CONSTANTS.value = false
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.ENABLE_REFLECTION.value = true
-            options.REFLECTION_MERGE_MEMBER_CONSTANTS.value = true
-            options.REFLECTION_STRING_FLOW_ANALYSIS.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
+            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value = true
         }
 
         if (options.DACAPO.value) {
-            if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputFiles[0].toString()
-                def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!vars.inputFiles.contains(deps))
-                    vars.inputFiles.add(new File(deps))
+            def inputJarName = vars.inputFiles[0].toString()
+            def deps = inputJarName.replace(".jar", "-deps.jar")
+            if (!vars.inputFiles.contains(deps))
+                vars.inputFiles.add(new File(deps))
+            if (!options.ENABLE_REFLECTION.value)
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
-            }
         }
 
         if (options.DACAPO_BACH.value) {
-            if (!options.ENABLE_REFLECTION.value) {
-                def inputJarName = vars.inputFiles[0].toString()
-                def depsDir = inputJarName.replace(".jar", "-libs")
-                new File(depsDir).eachFile { File depsFile ->
-                    if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") &&
-                            !vars.inputFiles.contains(depsFile)) {
-                        vars.inputFiles.add(depsFile)
-                    }
-                }
-                options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
+            def inputJarName = vars.inputFiles[0].toString()
+            def depsDir = inputJarName.replace(".jar", "-libs")
+            new File(depsDir).eachFile { File depsFile ->
+                if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !vars.inputFiles.contains(depsFile))
+                    vars.inputFiles.add(depsFile)
             }
+            if (!options.ENABLE_REFLECTION.value)
+                options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
         }
 
         if (options.TAMIFLEX.value) {
@@ -372,8 +356,8 @@ import org.clyze.doop.system.*
 
         checkPlatformLibs(vars)
         //Check the value of the JRE_LIB option (it should point to the platform libs directory)
-        String externals = options.PLATFORM_LIBS.value
-        FileOps.findDirOrThrow(externals as String, "The PLATFORM_LIBS directory is invalid: $externals")
+        String externals = options.PLATFORMS_LIB.value
+        FileOps.findDirOrThrow(externals as String, "The PLATFORMS_LIB directory is invalid: $externals")
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
@@ -411,8 +395,6 @@ import org.clyze.doop.system.*
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                options.REFLECTION_MERGE_MEMBER_CONSTANTS.value ||
-                options.REFLECTION_STRING_FLOW_ANALYSIS.value ||
                 options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                 options.REFLECTION_CONTEXT_SENSITIVITY.value ||
                 options.REFLECTION_USE_BASED_ANALYSIS.value ||
@@ -524,7 +506,7 @@ import org.clyze.doop.system.*
 
     /**
      * DACAPO hooks.
-     */
+    */
     protected void checkDACAPO(AnalysisVars vars) {
         if (vars.options.DACAPO.value) {
             String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
@@ -573,7 +555,7 @@ import org.clyze.doop.system.*
 
         logger.debug "Verifying LogicBlox home: ${lbhome.value}"
 
-        def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.name} value is invalid: ${lbhome.value}")
+        def lbHomeDir = FileOps.findDirOrThrow(lbhome.value as String, "The ${lbhome.id} value is invalid: ${lbhome.value}")
 
         def oldldpath = System.getenv("LD_LIBRARY_PATH")
         vars.options.LD_LIBRARY_PATH.value = lbHomeDir.getAbsolutePath() + "/bin" + ":" + oldldpath
@@ -587,7 +569,9 @@ import org.clyze.doop.system.*
      * <ul>
      *     <li>adding the LD_LIBRARY_PATH option to the current environment
      *     <li>modifying PATH to also include the LD_LIBRARY_PATH option
-     *     <li>adding the value of the LOGICBLOX_HOME option to the current environment
+     *     <li>adding the LOGICBLOX_HOME option to the current environment
+     *     <li>adding the DOOP_HOME to the current environment
+     *     <li>adding the LB_PAGER_FORCE_START and the LB_MEM_NOWARN to the current environment
      * </ul>
      */
     protected Map<String, String> initExternalCommandsEnvironment(AnalysisVars vars) {
@@ -608,6 +592,9 @@ import org.clyze.doop.system.*
         env.PATH = path
         env.LD_LIBRARY_PATH = ldLibraryPath.value
         env.LOGICBLOX_HOME = vars.options.LOGICBLOX_HOME.value
+        //We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
+        env.LB_PAGER_FORCE_START = "true"
+        env.LB_MEM_NOWARN = "true"
         env.DOOP_HOME = Doop.doopHome
 
         return env

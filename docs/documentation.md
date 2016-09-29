@@ -117,7 +117,7 @@ The main command line options are described in the `README` file:
 
 * -a, --analysis: The name of the analysis.
 * -j, --jar: The jar file(s) to analyse.
-* --platform: The platform and version to use. Doop checks for the JRE-specific or Android-specific files in the `$DOOP_PLATFORM_LIBS`
+* --platform: The platform and version to use. Doop checks for the JRE-specific or Android-specific files in the `$DOOP_PLATFORMS_LIB`
          directory, while an alternate location can be provided through the `--doop-platform-libs` option. For instance,
           java_7 specifies the Java platform and the JRE 1.7 will be used to resolve library calls, while android_26 specifies the Android platform
           and the Android library version 26 (Marshmallow) will be used to resolve calls to the Android library).

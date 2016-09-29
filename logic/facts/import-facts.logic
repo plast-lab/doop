@@ -1026,5 +1026,6 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 +PrimitiveType(?t), +Type:Value(?t:"long"),    +Type:long[] = ?t.
 +PrimitiveType(?t), +Type:Value(?t:"float"),   +Type:float[] = ?t.
 +PrimitiveType(?t), +Type:Value(?t:"double"),  +Type:double[] = ?t.
++PrimitiveType(?t), +Type:Value(?t:"void"),    +Type:void[] = ?t.
 +NullType(?t),  +Type:Value(?t:"null_type"), +Type:null[] = ?t.
 +ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.

@@ -5,7 +5,7 @@
 // currently being a non-class subtype of Object
 ContextFromRealContext[?type1, ?type2] = ?ctx ->
   Context(?ctx), Type(?type1), Type(?type2).
-lang:skolem(`ContextFromRealContext).
+lang:constructor(`ContextFromRealContext).
 RealContext1FromContext[?ctx] = ?type ->
   Context(?ctx), Type(?type).
 RealContext2FromContext[?ctx] = ?type ->
@@ -13,6 +13,6 @@ RealContext2FromContext[?ctx] = ?type ->
 
 HContextFromRealHContext[?type] = ?hctx ->
   HContext(?hctx), Type(?type).
-lang:skolem(`HContextFromRealHContext).
+lang:constructor(`HContextFromRealHContext).
 RealHContextFromHContext[?hctx] = ?type ->
   HContext(?hctx), Type(?type).
