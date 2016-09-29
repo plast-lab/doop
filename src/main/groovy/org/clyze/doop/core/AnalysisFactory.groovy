@@ -243,11 +243,14 @@ import org.clyze.doop.system.*
             case "android":
                 String path = "${options.PLATFORMS_LIB.value}/Android/Sdk/platforms/android-${version}"
                 switch(version) {
+                    case "7":
                     case "15":
                         return FileOps.findFiles(["${path}/android.jar".toString(),
                                                   "${path}/data/layoutlib.jar".toString()])
-                        break
                     case "16":
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString(),
+                                                  "${path}/uiautomator.jar".toString()])
                     case "17":
                     case "18":
                     case "19":
@@ -255,17 +258,20 @@ import org.clyze.doop.system.*
                     case "21":
                     case "22":
                         return FileOps.findFiles(["${path}/android.jar".toString(),
+                                                  "${path}/data/icu4j.jar".toString(),
                                                   "${path}/data/layoutlib.jar".toString(),
                                                   "${path}/uiautomator.jar".toString()])
-                        break
                     case "23":
-                    case "24":
-
                         return FileOps.findFiles(["${path}/android.jar".toString(),
                                                   "${path}/optional/org.apache.http.legacy.jar".toString(),
                                                   "${path}/data/layoutlib.jar".toString(),
                                                   "${path}/uiautomator.jar".toString()])
-                        break
+                    case "24":
+                        return FileOps.findFiles(["${path}/android.jar".toString(),
+                                                  "${path}/android-stubs-src.jar".toString(),
+                                                  "${path}/optional/org.apache.http.legacy.jar".toString(),
+                                                  "${path}/data/layoutlib.jar".toString(),
+                                                  "${path}/uiautomator.jar".toString()])
                     default:
                         throw new RuntimeException("Unsupported Android version")
                 }
