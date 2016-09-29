@@ -248,6 +248,10 @@ import org.clyze.doop.system.*
                                                   "${path}/data/layoutlib.jar".toString()])
                         break
 		    case "16":
+		    case "17":
+		    case "18":
+		    case "19":
+		    case "20":
                     case "21":
                     case "22":
                         return FileOps.findFiles(["${path}/android.jar".toString(),
