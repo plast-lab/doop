@@ -17,7 +17,7 @@ import org.clyze.doop.system.*
  * in the Helper class) but they are protected instance methods to allow descendants to customize
  * all possible aspects of Analysis creation.
  */
-@TypeChecked class AnalysisFactory {
+class AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
@@ -63,7 +63,7 @@ import org.clyze.doop.system.*
                 options  : options,
                 inputs: context.inputs(),
                 inputFiles: checkInputs(context),
-                platformLibs: platformLinkArgs(options)
+                platformLibs: handlePlatform(options)
         )
 
         logger.debug vars
@@ -214,71 +214,83 @@ import org.clyze.doop.system.*
     /**
      * Generates a list of the platform library link arguments for soot
      */
-    protected List<String> platformLinkArgs(Map<String, AnalysisOption> options) {
-        def platformOfChoice = options.PLATFORM.value.toString().tokenize("_")
-        assert platformOfChoice.size() == 2
-        def (platform, version) = [platformOfChoice[0], platformOfChoice[1].toInteger()]
-        assert platform == "android" || platform == "java"
-        assert version instanceof Integer
+    protected List<String> handlePlatform(Map<String, AnalysisOption> options) {
+        def platformInfo = options.PLATFORM.value.toString().tokenize("_")
+        def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
+        List<String> files
         switch(platform) {
             case "java":
                 String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
                 switch(version) {
-                    case "3":
-                        return FileOps.findFiles(["${path}/rt.jar".toString()])
-                    case "4":
-                    case "5":
-                    case "6":
-                    case "7":
-                    case "8":
-                        return FileOps.findFiles(["${path}/rt.jar".toString(),
-                                                  "${path}/jce.jar".toString(),
-                                                  "${path}/jsse.jar".toString()])
-                    case "system":
-
-                        return []
+                    case 3:
+                        files = ["${path}/rt.jar"]
+                        break
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                        files = ["${path}/rt.jar",
+                                 "${path}/jce.jar",
+                                 "${path}/jsse.jar"]
+                        break
+                    default:
+                        throw new RuntimeException("Invalid JRE version: $version")
                 }
+                // generate the JRE constant for the preprocessor
+                AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
+                    id:"JRE1"+version,
+                    value:true,
+                    forPreprocessor: true
+                )
+                options[(jreOption.id)] = jreOption
                 break
             case "android":
                 String path = "${options.PLATFORMS_LIB.value}/Android/Sdk/platforms/android-${version}"
                 switch(version) {
-                    case "7":
-                    case "15":
-                        return FileOps.findFiles(["${path}/android.jar".toString(),
-                                                  "${path}/data/layoutlib.jar".toString()])
-                    case "16":
-                        return FileOps.findFiles(["${path}/android.jar".toString(),
-                                                  "${path}/data/layoutlib.jar".toString(),
-                                                  "${path}/uiautomator.jar".toString()])
-                    case "17":
-                    case "18":
-                    case "19":
-                    case "20":
-                    case "21":
-                    case "22":
-                        return FileOps.findFiles(["${path}/android.jar".toString(),
-                                                  "${path}/data/icu4j.jar".toString(),
-                                                  "${path}/data/layoutlib.jar".toString(),
-                                                  "${path}/uiautomator.jar".toString()])
-                    case "23":
-                        return FileOps.findFiles(["${path}/android.jar".toString(),
-                                                  "${path}/optional/org.apache.http.legacy.jar".toString(),
-                                                  "${path}/data/layoutlib.jar".toString(),
-                                                  "${path}/uiautomator.jar".toString()])
-                    case "24":
-                        return FileOps.findFiles(["${path}/android.jar".toString(),
-                                                  "${path}/android-stubs-src.jar".toString(),
-                                                  "${path}/optional/org.apache.http.legacy.jar".toString(),
-                                                  "${path}/data/layoutlib.jar".toString(),
-                                                  "${path}/uiautomator.jar".toString()])
+                    case 7:
+                    case 15:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/layoutlib.jar"]
+                        break
+                    case 16:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 17:
+                    case 18:
+                    case 19:
+                    case 20:
+                    case 21:
+                    case 22:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/icu4j.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 23:
+                        files = ["${path}/android.jar",
+                                 "${path}/optional/org.apache.http.legacy.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 24:
+                        files = ["${path}/android.jar",
+                                 "${path}/android-stubs-src.jar",
+                                 "${path}/optional/org.apache.http.legacy.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
                     default:
-                        throw new RuntimeException("Unsupported Android version")
+                        throw new RuntimeException("Invalid android version: $version")
                 }
                 break
             default:
-                throw new RuntimeException("Unsupported platform")
+                throw new RuntimeException("Invalid platform: $platform")
         }
+        return FileOps.findFiles(files)
     }
 
     /**
@@ -360,8 +372,7 @@ import org.clyze.doop.system.*
             options.MUST_AFTER_MAY.value = true
         }
 
-        checkPlatformLibs(vars)
-        //Check the value of the JRE_LIB option (it should point to the platform libs directory)
+        //Check the value of the PLATFORMS_LIB option (it should point to the platform libs directory)
         String externals = options.PLATFORMS_LIB.value
         FileOps.findDirOrThrow(externals as String, "The PLATFORMS_LIB directory is invalid: $externals")
 
@@ -417,97 +428,6 @@ import org.clyze.doop.system.*
         logger.debug "---------------"
         for (def option : options) logger.debug option
         logger.debug "---------------"
-    }
-
-    /**
-     * Checks the JRE version and injects the appropriate JRE option (as expected by the preprocessor logic)
-     */
-    protected void checkPlatformLibs(AnalysisVars vars) {
-        def platformLibsValue = vars.options.PLATFORM.value.toString().tokenize("_")
-        assert platformLibsValue.size() == 2
-        def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
-        assert platform == "android" || platform == "java"
-        logger.debug "Verifying platform version: $platformLibsValue"
-
-        JRE jreVersion
-        ANDROID androidVersion
-        switch(platform) {
-            case "java":
-                switch (version) {
-                    case "3":
-                        jreVersion = JRE.JRE13
-                        break
-                    case "4":
-                        jreVersion = JRE.JRE14
-                        break
-                    case "5":
-                        jreVersion = JRE.JRE15
-                        break
-                    case "6":
-                        jreVersion = JRE.JRE16
-                        break
-                    case "7":
-                        jreVersion = JRE.JRE17
-                        break
-                    case "8":
-                        jreVersion = JRE.JRE18
-                        break
-                    default:
-                        throw new RuntimeException("Invalid JRE version: $version")
-                }
-                //generate the JRE constant for the preprocessor
-                AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-                        id:jreVersion.name(),
-                        value:true,
-                        forPreprocessor: true
-                )
-                vars.options[(jreOption.id)] = jreOption
-                break
-            case "android":
-                switch (version) {
-                    case "24":
-                        androidVersion = ANDROID.ANDROID24
-                        break
-                    case "23":
-                        androidVersion = ANDROID.ANDROID23
-                        break
-                    case "22":
-                        androidVersion = ANDROID.ANDROID22
-                        break
-                    case "21":
-                        androidVersion = ANDROID.ANDROID21
-                        break
-                    case "20":
-                        androidVersion = ANDROID.ANDROID20
-                        break
-                    case "19":
-                        androidVersion = ANDROID.ANDROID19
-                        break
-                    case "18":
-                        androidVersion = ANDROID.ANDROID18
-                        break
-                    case "17":
-                        androidVersion = ANDROID.ANDROID17
-                        break
-                    case "16":
-                        androidVersion = ANDROID.ANDROID16
-                        break
-                    case "15":
-                        androidVersion = ANDROID.ANDROID15
-                        break
-                    default:
-                        throw new RuntimeException("Invalid Android version: $version")
-                }
-                AnalysisOption<Boolean> androidOption = new AnalysisOption<Boolean>(
-                        id:androidVersion.name(),
-                        value:true,
-                        forPreprocessor: true
-                )
-                vars.options[(androidOption.id)] = androidOption
-                break
-            default:
-                throw new RuntimeException("Unsupported platform")
-        }
     }
 
     /**
