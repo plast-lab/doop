@@ -19,7 +19,7 @@ for line in raw_sources_and_sinks.split('\n'):
 
     meth, kind = [l.strip() for l in line.split('->')]
 
-    meth = meth.split('>')[0] + '>'     # HACK permissions
+    meth = meth.split(')>')[0] + ')>'     # HACK permissions
     
     if kind == '_SOURCE_':
         template = SOURCE_TEMPLATE

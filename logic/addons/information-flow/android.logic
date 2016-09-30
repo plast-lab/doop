@@ -11,7 +11,7 @@ TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String toString(
 TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity,java.lang.String)>").
 TaintSourceMethod("<org.apache.http.util.EntityUtils: byte[] toByteArray(org.apache.http.HttpEntity)>").
 TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String getContentCharSet(org.apache.http.HttpEntity)>").
-LeakingSinkMethod(n, "<org.apache.http.message.BasicNameValuePair: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<org.apache.http.message.BasicNameValuePair: void <init>(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 TaintSourceMethod("<android.os.Bundle: java.lang.Object get(java.lang.String)>").
 TaintSourceMethod("<android.os.Bundle: boolean getBoolean(java.lang.String)>").
 TaintSourceMethod("<android.os.Bundle: boolean getBoolean(java.lang.String,boolean)>").
@@ -178,12 +178,12 @@ LeakingSinkMethod(n, "<org.apache.http.impl.client.DefaultHttpClient: org.apache
 LeakingSinkMethod(n, "<org.apache.http.client.HttpClient: org.apache.http.HttpResponse execute(org.apache.http.client.methods.HttpUriRequest)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 TaintSourceMethod("<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>").
 TaintSourceMethod("<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>").
-LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String,java.net.URLStreamHandler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.net.URL,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.Context: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.ContextWrapper: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.Context: void startActivity(android.content.Intent,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
