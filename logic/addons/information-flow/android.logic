@@ -1,9 +1,9 @@
 TaintSourceMethod("<android.location.Location: double getLatitude()>").
 TaintSourceMethod("<android.location.Location: double getLongitude()>").
-TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getDeviceId()> android.permission.READ_PHONE_STATE").
-TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getSubscriberId()> android.permission.READ_PHONE_STATE").
-TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getSimSerialNumber()> android.permission.READ_PHONE_STATE").
-TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getLine1Number()> android.permission.READ_PHONE_STATE").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getDeviceId()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getSubscriberId()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getSimSerialNumber()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getLine1Number()>").
 TaintSourceMethod("<java.net.URLConnection: java.io.OutputStream getOutputStream()>").
 TaintSourceMethod("<java.net.URLConnection: java.io.InputStream getInputStream()>").
 TaintSourceMethod("<org.apache.http.HttpResponse: org.apache.http.HttpEntity getEntity()>").
@@ -11,7 +11,7 @@ TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String toString(
 TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity,java.lang.String)>").
 TaintSourceMethod("<org.apache.http.util.EntityUtils: byte[] toByteArray(org.apache.http.HttpEntity)>").
 TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String getContentCharSet(org.apache.http.HttpEntity)>").
-LeakingSinkMethod(n, "<org.apache.http.message.BasicNameValuePair: void <init>(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<org.apache.http.message.BasicNameValuePair: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 TaintSourceMethod("<android.os.Bundle: java.lang.Object get(java.lang.String)>").
 TaintSourceMethod("<android.os.Bundle: boolean getBoolean(java.lang.String)>").
 TaintSourceMethod("<android.os.Bundle: boolean getBoolean(java.lang.String,boolean)>").
@@ -145,9 +145,9 @@ LeakingSinkMethod(n, "<android.media.MediaRecorder: void start()>") <- (n = 0); 
 LeakingSinkMethod(n, "<android.content.Context: android.content.Intent registerReceiver(android.content.BroadcastReceiver,android.content.IntentFilter)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.Context: android.content.Intent registerReceiver(android.content.BroadcastReceiver,android.content.IntentFilter,java.lang.String,android.os.Handler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.IntentFilter: void addAction(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendTextMessage(java.lang.String,java.lang.String,java.lang.String,android.app.PendingIntent,android.app.PendingIntent)> android.permission.SEND_SMS") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendDataMessage(java.lang.String,java.lang.String,short,byte[],android.app.PendingIntent,android.app.PendingIntent)> android.permission.SEND_SMS") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendMultipartTextMessage(java.lang.String,java.lang.String,java.util.ArrayList,java.util.ArrayList,java.util.ArrayList)> android.permission.SEND_SMS") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendTextMessage(java.lang.String,java.lang.String,java.lang.String,android.app.PendingIntent,android.app.PendingIntent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendDataMessage(java.lang.String,java.lang.String,short,byte[],android.app.PendingIntent,android.app.PendingIntent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendMultipartTextMessage(java.lang.String,java.lang.String,java.util.ArrayList,java.util.ArrayList,java.util.ArrayList)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<java.net.Socket: void connect(java.net.SocketAddress)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.os.Handler: boolean sendMessage(android.os.Message)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putBoolean(java.lang.String,boolean)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
@@ -178,12 +178,12 @@ LeakingSinkMethod(n, "<org.apache.http.impl.client.DefaultHttpClient: org.apache
 LeakingSinkMethod(n, "<org.apache.http.client.HttpClient: org.apache.http.HttpResponse execute(org.apache.http.client.methods.HttpUriRequest)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 TaintSourceMethod("<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>").
 TaintSourceMethod("<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>").
-LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String,java.net.URLStreamHandler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>(java.net.URL,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
-LeakingSinkMethod(n, "<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.Context: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.ContextWrapper: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
 LeakingSinkMethod(n, "<android.content.Context: void startActivity(android.content.Intent,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
