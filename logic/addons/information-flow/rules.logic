@@ -1,3 +1,5 @@
+#include "../../commonMacros.logic"
+ 
 /**
  * Information flow through primitive operations
  */
@@ -177,15 +179,11 @@ VarPointsTo(?hctx, ?heap, ?callerCtx, ?to) <-
   HeapAllocation:byValue[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?to.
 
-NewHeapAllocation[?insn] = ?heap -> Instruction(?insn), HeapAllocation(?heap).
-lang:constructor(`NewHeapAllocation).
-
 HeapAllocation(?heap),
 TaintedHeapAllocation(?heap),
-HeapAllocation:Type[?heap] = ?retType,
-NewHeapAllocation[?invocation] = ?heap
+MockupHeapConsMacro(?invocation, ?retType, ?heap)
  <-
    TaintSourceMethod(?tomethod),
-//  CallGraphEdge(_, ?invocation, _, ?tomethod),
+  //  CallGraphEdge(_, ?invocation, _, ?tomethod), // Recursion through negation
   AnyMethodInvocation(?invocation, ?tomethod),
   Method:ReturnType[?tomethod] = ?retType.
