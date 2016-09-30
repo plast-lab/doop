@@ -16,6 +16,8 @@
 
 #define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Value(method:value), string:like(value, pattern)                            
 
+                                                                                                                    
+TaintSourceMethod(?overriddenMethod) <-
    TaintSourceMethod(?method),
    Method:DeclaringType[?method] = ?superclass,
    Method:SimpleName[?method] = ?name,
@@ -175,13 +177,15 @@ VarPointsTo(?hctx, ?heap, ?callerCtx, ?to) <-
   HeapAllocation:byValue[?invocation] = ?heap,
   AssignReturnValue[?invocation] = ?to.
 
+NewHeapAllocation[?insn] = ?heap -> Instruction(?insn), HeapAllocation(?heap).
+lang:constructor(`NewHeapAllocation).
 
-TaintedHeapAllocation(?heap),
 HeapAllocation(?heap),
-HeapAllocation:Type[?heap] = ?retType
+TaintedHeapAllocation(?heap),
+HeapAllocation:Type[?heap] = ?retType,
+NewHeapAllocation[?invocation] = ?heap
  <-
    TaintSourceMethod(?tomethod),
-   HeapAllocation:byValue[?invocation] = ?heap,
 //  CallGraphEdge(_, ?invocation, _, ?tomethod),
   AnyMethodInvocation(?invocation, ?tomethod),
   Method:ReturnType[?tomethod] = ?retType.
