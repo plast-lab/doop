@@ -1,0 +1,2 @@
+AllocatedObjectSupportsFinalize(?heap, ?inmethod) ->
+   HeapAllocation(?heap), Method(?inmethod).
