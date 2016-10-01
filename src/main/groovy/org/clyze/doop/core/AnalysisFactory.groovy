@@ -1,6 +1,5 @@
 package org.clyze.doop.core
 
-import groovy.transform.TypeChecked
 import java.util.jar.Attributes
 import java.util.jar.JarFile
 import org.apache.commons.io.FilenameUtils
@@ -13,9 +12,10 @@ import org.clyze.doop.system.*
 /**
  * A Factory for creating Analysis objects.
  *
- * All the methods invoked by newAnalysis (either directly or indirectly) could have been static helpers (e.g. entailed
- * in the Helper class) but they are protected instance methods to allow descendants to customize
- * all possible aspects of Analysis creation.
+ * All the methods invoked by newAnalysis (either directly or indirectly) could
+ * have been static helpers (e.g. entailed in the Helper class) but they are
+ * protected instance methods to allow descendants to customize all possible
+ * aspects of Analysis creation.
  */
 class AnalysisFactory {
 
@@ -29,18 +29,20 @@ class AnalysisFactory {
     protected static class AnalysisVars {
         String name
         Map<String, AnalysisOption> options
-        Set<String> inputs
-        List<File> inputFiles
-        List<String> platformLibs
+        List<String> inputFilePaths
+        List<String> platformFilePaths
+        List<File>   inputFiles
+        List<File>   platformFiles
 
         @Override
         String toString() {
             return [
-                    name     :      name,
-                    options  :      options.values().toString(),
-                    inputs:         inputs.toString(),
-                    inputFiles:     inputFiles.toString(),
-                    platformLibs:   platformLibs.toString()
+                name:              name,
+                options:           options.values().toString(),
+                inputFilePaths:    inputFilePaths.toString(),
+                platformFilePaths: platformFilePaths.toString(),
+                inputFiles:        inputFiles.toString(),
+                platformFiles:     platformFiles.toString()
             ].toString()
         }
     }
@@ -55,62 +57,46 @@ class AnalysisFactory {
      */
     Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
-        //Verify that the name of the analysis is valid
-        checkName(name)
-
         AnalysisVars vars = new AnalysisVars(
-                name     : name,
-                options  : options,
-                inputs: context.inputs(),
-                inputFiles: checkInputs(context),
-                platformLibs: handlePlatform(options)
+            name:              name,
+            options:           options,
+            inputFilePaths:    context.inputs(),
+            platformFilePaths: platform(options)
         )
-
         logger.debug vars
 
-        //process the options
         processOptions(vars)
 
-        //verify lb options
+
+        checkAnalysis(name)
+
         checkLogicBlox(vars)
+
+        checkAppGlob(vars)
 
         //init the environment used for executing commands
         Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
 
-        checkDACAPO(vars)
+        // if not empty or null
+        def analysisId = id ? validateUserSuppliedId(id) : generateId(vars)
 
-        checkAppGlob(vars)
+        def cacheId = generateCacheID(vars)
 
-        //We don't need to renew the averroes properties file here (we do it in Analysis.runAverroes())
+        def outDir = createOutputDirectory(vars, analysisId)
 
-        String analysisId
-        if (id) { //non-empty or null
-            //validate and set the user supplied id
-            analysisId = validateUserSuppliedId(id)
-        }
-        else {
-            //Generate the id
-            analysisId = generateID(vars)
-        }
-        String cacheId = generateCacheID(vars)
-
-        //Create the outDir if required
-        File outDir = createOutputDirectory(vars, analysisId)
-
-        File cacheDir = new File("${Doop.doopCache}/$cacheId")
+        def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
-                analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
-                options,
-                context,
-                vars.inputFiles,
-                vars.platformLibs,
-                commandsEnv
+            analysisId,
+            outDir.toString(),
+            cacheDir.toString(),
+            name,
+            options,
+            context,
+            vars.inputFiles,
+            vars.platformFiles,
+            commandsEnv
         )
-
         logger.debug "Created new analysis"
         return analysis
     }
@@ -119,25 +105,22 @@ class AnalysisFactory {
      * Creates a new analysis, verifying the correctness of its name, options and inputs using
      * the default input resolution mechanism.
      */
-    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputs) {
+    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
-        context.add(inputs)
+        context.add(inputFilePaths)
         return newAnalysis(id, name, options, context)
     }
 
-    /**
-     * Verifies that the analysis, given by its name, exists
-     */
-    protected void checkName(String name) {
+    protected void checkAnalysis(String name) {
         logger.debug "Verifying analysis name: $name"
         def analysisPath = "${Doop.analysesPath}/${name}/analysis.logic"
         FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
     }
 
     protected String validateUserSuppliedId(String id) {
-        String trimmed = id.trim()
-        boolean isValid = trimmed.toCharArray().every { char c->
-            Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
+        def trimmed = id.trim()
+        def isValid = trimmed.toCharArray().every {
+            c -> Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
         }
 
         if (!isValid) {
@@ -147,9 +130,6 @@ class AnalysisFactory {
         return trimmed
     }
 
-    /**
-     * Creates the analysis output dir, if required.
-     */
     protected File createOutputDirectory(AnalysisVars vars, String id) {
         def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
         outDir.mkdirs()
@@ -157,68 +137,53 @@ class AnalysisFactory {
         return outDir
     }
 
-    /**
-     * Generates the analysis ID using all of its components (name, inputs and options).
-     */
-    protected String generateID(AnalysisVars vars) {
+    protected String generateId(AnalysisVars vars) {
         Collection<String> idComponents = vars.options.keySet().findAll {
             !Doop.OPTIONS_EXCLUDED_FROM_ID_GENERATION.contains(it)
         }.collect {
             String option -> return vars.options.get(option).toString()
         }
-        idComponents = [vars.name] + vars.inputs + idComponents
+        idComponents = [vars.name] + vars.inputFilePaths + idComponents
         logger.debug("ID components: $idComponents")
-        String id = idComponents.join('-')
+        def id = idComponents.join('-')
 
         return CheckSum.checksum(id, HASH_ALGO)
     }
 
-    /**
-     * Generates the cache ID (for input facts) using the needed components.
-     */
     protected String generateCacheID(AnalysisVars vars) {
-        Collection<String> idComponents = vars.options.values().findAll {
-            it.forCacheID
-        }.collect {
-            AnalysisOption option -> option.toString()
-        }
+        Collection<String> idComponents = vars.options.values()
+            .findAll { it.forCacheID }
+            .collect { option -> option.toString() }
 
         Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
+        checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
-        checksums += vars.inputFiles.collect {
-            File file -> CheckSum.checksum(file, HASH_ALGO)
-        }
-
-        checksums += vars.platformLibs.collect {
-            String file -> CheckSum.checksum(new File(file), HASH_ALGO)
-        }
-
-        if(vars.options.TAMIFLEX.value) {
+        if (vars.options.TAMIFLEX.value)
             checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
-        }
 
         def checksumsFile = FileOps.findFileOrThrow("${Doop.doopHome}/checksums.properties", "Invalid checksums")
-        Properties props = FileOps.loadProperties(checksumsFile)
+        def props = FileOps.loadProperties(checksumsFile)
         checksums += [props.getProperty(Doop.SOOT_CHECKSUM_KEY)]
 
         idComponents = checksums + idComponents
 
         logger.debug("Cache ID components: $idComponents")
-        String id = idComponents.join('-')
+        def id = idComponents.join('-')
 
         return CheckSum.checksum(id, HASH_ALGO)
     }
 
     /**
-     * Generates a list of the platform library link arguments for soot
+     * Generates a list of the platform library arguments for soot
      */
-    protected List<String> handlePlatform(Map<String, AnalysisOption> options) {
+    protected List<String> platform(Map<String, AnalysisOption> options) {
         def platformInfo = options.PLATFORM.value.toString().tokenize("_")
         def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
-        List<String> files
+        def files = []
         switch(platform) {
             case "java":
                 String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
@@ -290,19 +255,7 @@ class AnalysisFactory {
             default:
                 throw new RuntimeException("Invalid platform: $platform")
         }
-        return FileOps.findFiles(files)
-    }
-
-    /**
-     * Given the list of analysis inputs, as Strings, the method validates that the inputs exist,
-     * using the input resolution mechanism. It finally returns the inputs as a List<File>.
-     */
-    protected List<File> checkInputs(InputResolutionContext context) {
-        Collection<String> inputs = context.inputs()
-        logger.debug "Verifying analysis inputs: $inputs"
-        if (!inputs) throw new RuntimeException("No inputs provided for the analysis")
-        context.resolve()
-        return context.getAll()
+        return files
     }
 
     /**
@@ -343,23 +296,33 @@ class AnalysisFactory {
         }
 
         if (options.DACAPO.value) {
-            def inputJarName = vars.inputFiles[0].toString()
+            def inputJarName = vars.inputFilePaths[0]
             def deps = inputJarName.replace(".jar", "-deps.jar")
-            if (!vars.inputFiles.contains(deps))
-                vars.inputFiles.add(new File(deps))
+            if (!vars.inputFilePaths.contains(deps))
+                vars.inputFilePaths.add(deps)
+
             if (!options.ENABLE_REFLECTION.value)
-                options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
+                options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
+
+            def benchmark = FilenameUtils.getBaseName(inputJarName)
+            logger.info "Running dacapo benchmark: $benchmark"
+            options.DACAPO_BENCHMARK.value = benchmark
         }
 
         if (options.DACAPO_BACH.value) {
-            def inputJarName = vars.inputFiles[0].toString()
+            def inputJarName = vars.inputFilePaths[0]
             def depsDir = inputJarName.replace(".jar", "-libs")
             new File(depsDir).eachFile { File depsFile ->
                 if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !vars.inputFiles.contains(depsFile))
                     vars.inputFiles.add(depsFile)
             }
+
             if (!options.ENABLE_REFLECTION.value)
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
+
+            def benchmark = FilenameUtils.getBaseName(inputJarName)
+            logger.info "Running dacapo-bach benchmark: $benchmark"
+            options.DACAPO_BENCHMARK.value = benchmark
         }
 
         if (options.TAMIFLEX.value) {
@@ -372,27 +335,26 @@ class AnalysisFactory {
             options.MUST_AFTER_MAY.value = true
         }
 
-        //Check the value of the PLATFORMS_LIB option (it should point to the platform libs directory)
-        String externals = options.PLATFORMS_LIB.value
-        FileOps.findDirOrThrow(externals as String, "The PLATFORMS_LIB directory is invalid: $externals")
+
+        vars.inputFiles = resolve(vars.inputFilePaths)
+        vars.platformFiles = resolve(vars.platformFilePaths)
+
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         } else {
-            if (vars.inputFiles[0].toString().endsWith(".jar")) {
-                JarFile jarFile = new JarFile(vars.inputFiles[0])
-                //Try to read the main class from the manifest contained in the jar
-                String main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
-                if (main) {
-                    logger.debug "The main class is automatically set to ${main}"
-                    options.MAIN_CLASS.value = main
-                } else {
-                    //Check whether the jar contains a class with the same name
-                    String jarName = FilenameUtils.getBaseName(jarFile.getName())
-                    if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically set to ${jarName}"
-                        options.MAIN_CLASS.value = jarName
-                    }
+            JarFile jarFile = new JarFile(vars.inputFiles[0])
+            //Try to read the main class from the manifest contained in the jar
+            def main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
+            if (main) {
+                logger.debug "The main class is automatically set to ${main}"
+                options.MAIN_CLASS.value = main
+            } else {
+                //Check whether the jar contains a class with the same name
+                def jarName = FilenameUtils.getBaseName(jarFile.getName())
+                if (jarFile.getJarEntry("${jarName}.class")) {
+                    logger.debug "The main class is automatically set to ${jarName}"
+                    options.MAIN_CLASS.value = jarName
                 }
             }
         }
@@ -426,25 +388,15 @@ class AnalysisFactory {
         }
 
         logger.debug "---------------"
-        for (def option : options) logger.debug option
+        options.each { opt -> logger.debug opt }
         logger.debug "---------------"
     }
 
-    /**
-     * DACAPO hooks.
-    */
-    protected void checkDACAPO(AnalysisVars vars) {
-        if (vars.options.DACAPO.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
-            logger.info "Running dacapo benchmark: $benchmark"
-            vars.options.DACAPO_BENCHMARK.value = benchmark
-        }
-
-        if (vars.options.DACAPO_BACH.value) {
-            String benchmark = FilenameUtils.getBaseName(vars.inputFiles[0].toString())
-            logger.info "Running dacapo-bach benchmark: $benchmark"
-            vars.options.DACAPO_BENCHMARK.value = benchmark
-        }
+    List<File> resolve(List<String> filePaths) {
+        def context = new DefaultInputResolutionContext()
+        filePaths.each { f -> context.add(f) }
+        context.resolve()
+        return context.getAll()
     }
 
     /**
