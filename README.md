@@ -8,9 +8,9 @@ At its core, Doop is a collection of various analyses expressed in the form of D
 
 For trouble-free configuration:
 
-* The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine.
-* The `DOOP_HOME` environment variable should point to the top-level directory of Doop.
-* The `DOOP_PLATFORMS_LIB` environment variable should point to your PLATFORM lib directory (see below--can be overridden with the `--platform-lib` option).
+* The `LOGICBLOX_HOME` environment variable **should** point to the `logicblox` directory of the engine.
+* The `DOOP_HOME` environment variable **should** point to the top-level directory of Doop.
+* The `DOOP_PLATFORMS_LIB` environment variable could point to your PLATFORM lib directory (optional, see below).
 * The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `$DOOP_HOME/out`).
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `$DOOP_HOME/cache`).
 
@@ -21,7 +21,7 @@ You can change [environment.sh](bin/environment.sh) accordingly for your system,
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
 
-One important directory in that repository is `JREs`. It can be used for the `PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/
+One important directory in that repository is `JREs`. It can be used for the `PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/. Use the `--platform-lib` option to overwrite the default behavior.
 
 ## Running Doop
 
