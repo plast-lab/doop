@@ -22,7 +22,6 @@ class AnalysisFactory {
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
-    static final String ARTIFACTORY_PLATFORMS_URL = "http://centauri.di.uoa.gr:8081/artifactory/Platforms"
 
     /**
      * A helper class that acts as an intermediate holder of the analysis variables.
@@ -256,9 +255,6 @@ class AnalysisFactory {
     protected AnalysisVars processOptions(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         logger.debug "Processing analysis options"
-
-        if (!options.PLATFORMS_LIB.value)
-            options.PLATFORMS_LIB.value = ARTIFACTORY_PLATFORMS_URL
 
         def inputFilePaths = context.inputs()
         def platformFilePaths = platform(options)
