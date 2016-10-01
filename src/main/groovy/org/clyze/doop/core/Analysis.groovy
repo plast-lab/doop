@@ -73,7 +73,7 @@ class Analysis implements Runnable {
     /**
      * The jre library jars for soot
      */
-    List<String> platformLibs
+    List<File> platformLibs
 
     /**
      * The environment for running external commands
@@ -104,7 +104,7 @@ class Analysis implements Runnable {
                        Map<String, AnalysisOption> options,
                        InputResolutionContext ctx,
                        List<File> inputs,
-                       List<String> platformLibs,
+                       List<File> platformLibs,
                        Map<String, String> commandsEnvironment) {
         this.id = id
         this.outDir = outDir
@@ -586,7 +586,7 @@ class Analysis implements Runnable {
         }
         else {
             Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            depArgs = platformLibs.collect{ String arg -> ["-l", arg]}.flatten() +  deps
+            depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
         }
 
         Collection<String> params = null;

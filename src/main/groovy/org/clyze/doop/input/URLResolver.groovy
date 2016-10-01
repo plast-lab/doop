@@ -17,7 +17,7 @@ class URLResolver implements InputResolver{
     void resolve(String input, InputResolutionContext ctx) {
         try {
             URL url = new URL(input)
-            File tmpFile = File.createTempFile(FilenameUtils.getBaseName(input), "." + FilenameUtils.getExtension(input))
+            File tmpFile = File.createTempFile(FilenameUtils.getBaseName(input) + "_", "." + FilenameUtils.getExtension(input))
             FileUtils.copyURLToFile(url, tmpFile)
             tmpFile.deleteOnExit()
             ctx.set(input, tmpFile)
