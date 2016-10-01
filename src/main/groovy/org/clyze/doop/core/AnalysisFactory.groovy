@@ -22,6 +22,7 @@ class AnalysisFactory {
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
+    static final String ARTIFACTORY_PLATFORMS_URL = "http://centauri.di.uoa.gr:8081/artifactory/Platforms"
 
     /**
      * A helper class that acts as an intermediate holder of the analysis variables.
@@ -57,16 +58,7 @@ class AnalysisFactory {
      */
     Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
-        AnalysisVars vars = new AnalysisVars(
-            name:              name,
-            options:           options,
-            inputFilePaths:    context.inputs(),
-            platformFilePaths: platform(options)
-        )
-        logger.debug vars
-
-        processOptions(vars)
-
+        def vars = processOptions(name, options, context)
 
         checkAnalysis(name)
 
@@ -261,11 +253,16 @@ class AnalysisFactory {
     /**
      * Processes the options of the analysis.
      */
-    protected void processOptions(AnalysisVars vars) {
+    protected AnalysisVars processOptions(String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         logger.debug "Processing analysis options"
 
-        Map<String, AnalysisOption> options = vars.options
+        if (!options.PLATFORMS_LIB.value)
+            options.PLATFORMS_LIB.value = ARTIFACTORY_PLATFORMS_URL
+
+        def inputFilePaths = context.inputs()
+        def platformFilePaths = platform(options)
+
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
             options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
@@ -296,10 +293,10 @@ class AnalysisFactory {
         }
 
         if (options.DACAPO.value) {
-            def inputJarName = vars.inputFilePaths[0]
+            def inputJarName = inputFilePaths[0]
             def deps = inputJarName.replace(".jar", "-deps.jar")
-            if (!vars.inputFilePaths.contains(deps))
-                vars.inputFilePaths.add(deps)
+            if (!inputFilePaths.contains(deps))
+                inputFilePaths.add(deps)
 
             if (!options.ENABLE_REFLECTION.value)
                 options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
@@ -310,11 +307,11 @@ class AnalysisFactory {
         }
 
         if (options.DACAPO_BACH.value) {
-            def inputJarName = vars.inputFilePaths[0]
+            def inputJarName = inputFilePaths[0]
             def depsDir = inputJarName.replace(".jar", "-libs")
             new File(depsDir).eachFile { File depsFile ->
-                if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !vars.inputFiles.contains(depsFile))
-                    vars.inputFiles.add(depsFile)
+                if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !inputFiles.contains(depsFile))
+                    inputFiles.add(depsFile)
             }
 
             if (!options.ENABLE_REFLECTION.value)
@@ -336,14 +333,14 @@ class AnalysisFactory {
         }
 
 
-        vars.inputFiles = resolve(vars.inputFilePaths)
-        vars.platformFiles = resolve(vars.platformFilePaths)
+        def inputFiles = resolve(inputFilePaths)
+        def platformFiles = resolve(platformFilePaths)
 
 
         if (options.MAIN_CLASS.value) {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         } else {
-            JarFile jarFile = new JarFile(vars.inputFiles[0])
+            JarFile jarFile = new JarFile(inputFiles[0])
             //Try to read the main class from the manifest contained in the jar
             def main = jarFile.getManifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS)
             if (main) {
@@ -388,8 +385,18 @@ class AnalysisFactory {
         }
 
         logger.debug "---------------"
-        options.each { opt -> logger.debug opt }
+        AnalysisVars vars = new AnalysisVars(
+            name:              name,
+            options:           options,
+            inputFilePaths:    inputFilePaths,
+            platformFilePaths: platformFilePaths,
+            inputFiles:        inputFiles,
+            platformFiles:     platformFiles
+        )
+        logger.debug vars
         logger.debug "---------------"
+
+        return vars
     }
 
     List<File> resolve(List<String> filePaths) {
