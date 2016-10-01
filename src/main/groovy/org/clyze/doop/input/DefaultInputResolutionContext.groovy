@@ -21,6 +21,8 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     //Always true, but this may change in the future
     boolean transitive = true
 
+    List<String> inputs = new LinkedList<>()
+
     //The set of resolved inputs
     protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
 
@@ -37,12 +39,12 @@ class DefaultInputResolutionContext implements InputResolutionContext {
 
     @Override
     void add(String input) {
-        resolvedInputs.put(input, null)
+        inputs.add(input)
     }
 
     @Override
     void add(List<String> inputs) {
-        inputs.each {String input -> add(input)}
+        this.inputs.addAll(inputs)
     }
 
     @Override
@@ -58,28 +60,22 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     @Override
     Set<File> get(String input) {
         ResolvedInput resolvedInput = resolvedInputs.get(input)
-        if (resolvedInput) {
-            return resolvedInput.files()
-        }
-        else {
-            return Collections.emptySet()
-        }
+        return resolvedInput ? resolvedInput.files() : Collections.emptySet()
     }
 
     @Override
     void resolve() {
-        for (String input: inputs()) {
+        inputs.each { input ->
             ResolvedInput resolvedInput = resolvedInputs.get(input)
-            if (!resolvedInput) {
+            if (!resolvedInput)
                 resolver.resolve(input, this)
-            }
         }
     }
 
     @Override
     List<File> getAll() {
-        Set<File> allFiles = new LinkedHashSet<>()
-        for (String input: inputs()) {
+        def allFiles = new LinkedList<File>()
+        inputs.each { input ->
             logger.debug "Getting $input"
             ResolvedInput resolvedInput = resolvedInputs.get(input)
             if (resolvedInput) {
@@ -91,12 +87,12 @@ class DefaultInputResolutionContext implements InputResolutionContext {
             }
         }
 
-        return allFiles as List
+        return allFiles
     }
 
     @Override
-    Set<String> inputs() {
-        return Collections.unmodifiableSet(resolvedInputs.keySet())
+    List<String> inputs() {
+        return inputs
     }
 
     @Override
