@@ -1,20 +1,21 @@
-apply plugin: 'groovy'
+apply plugin: 'antlr'
 apply plugin: 'application'
-apply plugin: 'ivy-publish'
+apply plugin: 'groovy'
+//apply plugin: 'ivy-publish'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-//sourceCompatibility = "1.6"
-//targetCompatibility = "1.6"
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
-project.group = "plast-lab"
-project.version = 1.0
+//project.group = "plast-lab"
+//project.version = 1.0
 
 //For the doop app
 mainClassName = 'doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.4'
+    gradleVersion = '3.1'
 }
 
 repositories {
@@ -39,6 +40,11 @@ dependencies {
     compile files(antlrJar)                                     // Antlr is also a compile time dependency
 
     runtime files(jphantomJar, 'lib/averroes-no-properties.jar')
+
+    // DeepDoop
+    antlr "org.antlr:antlr4:4.5.1-1"
+    compile "org.antlr:antlr4-runtime:4.5.1-1"
+    testCompile "junit:junit:4.12"
 }
 
 task generateFiles(type: JavaExec) {
@@ -70,25 +76,40 @@ run {
     }
 }
 
-startScripts {
-    dependsOn generateFiles
-}
-
-publishing {
-    repositories {
-        ivy {
-            name "local-ivy-repo"
-            url "../ivy-repo"
-        }
-    }
-
-    publications {
-
-        doop(IvyPublication) {
-            organisation "$group"
-            module "doop"
-            revision "$version"
-            from components.java
-        }
+task deepdoop(type: JavaExec) {
+    description 'Run DeepDoop'
+    group = 'Other'
+    main = 'org.clyze.deepdoop.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    enableAssertions = true
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
     }
 }
+
+compileJava {
+    options.compilerArgs << '-Xlint:unchecked'
+}
+
+//startScripts {
+//    dependsOn generateFiles
+//}
+
+//publishing {
+//    repositories {
+//        ivy {
+//            name "local-ivy-repo"
+//            url "../ivy-repo"
+//        }
+//    }
+//
+//    publications {
+//
+//        doop(IvyPublication) {
+//            organisation "$group"
+//            module "doop"
+//            revision "$version"
+//            from components.java
+//        }
+//    }
+//}
