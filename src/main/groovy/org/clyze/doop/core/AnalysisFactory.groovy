@@ -204,43 +204,53 @@ class AnalysisFactory {
                 break
             case "android":
                 String path = "${options.PLATFORMS_LIB.value}/Android/Sdk/platforms/android-${version}"
-                switch(version) {
-                    case 7:
-                    case 15:
-                        files = ["${path}/android.jar",
-                                 "${path}/data/layoutlib.jar"]
-                        break
-                    case 16:
-                        files = ["${path}/android.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 17:
-                    case 18:
-                    case 19:
-                    case 20:
-                    case 21:
-                    case 22:
-                        files = ["${path}/android.jar",
-                                 "${path}/data/icu4j.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 23:
-                        files = ["${path}/android.jar",
-                                 "${path}/optional/org.apache.http.legacy.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    case 24:
-                        files = ["${path}/android.jar",
-                                 "${path}/android-stubs-src.jar",
-                                 "${path}/optional/org.apache.http.legacy.jar",
-                                 "${path}/data/layoutlib.jar",
-                                 "${path}/uiautomator.jar"]
-                        break
-                    default:
-                        throw new RuntimeException("Invalid android version: $version")
+                // Set this flag to true to have doop use a single android.jar found
+                // in its usual place. Use this flag together with an appropriate
+                // value of the $PLATFORMS_LIB environment variable to provide a
+                // custom android.jar (such as roboelectric).
+                def completeAndroidJar = false
+                if (completeAndroidJar) {
+                    files = ["${path}/android.jar"]
+                }
+                else {
+                    switch(version) {
+                        case 7:
+                        case 15:
+                            files = ["${path}/android.jar",
+                                     "${path}/data/layoutlib.jar"]
+                            break
+                        case 16:
+                            files = ["${path}/android.jar",
+                                     "${path}/data/layoutlib.jar",
+                                     "${path}/uiautomator.jar"]
+                            break
+                        case 17:
+                        case 18:
+                        case 19:
+                        case 20:
+                        case 21:
+                        case 22:
+                            files = ["${path}/android.jar",
+                                     "${path}/data/icu4j.jar",
+                                     "${path}/data/layoutlib.jar",
+                                     "${path}/uiautomator.jar"]
+                            break
+                        case 23:
+                            files = ["${path}/android.jar",
+                                     "${path}/optional/org.apache.http.legacy.jar",
+                                     "${path}/data/layoutlib.jar",
+                                     "${path}/uiautomator.jar"]
+                            break
+                        case 24:
+                            files = ["${path}/android.jar",
+                                     "${path}/android-stubs-src.jar",
+                                     "${path}/optional/org.apache.http.legacy.jar",
+                                     "${path}/data/layoutlib.jar",
+                                     "${path}/uiautomator.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid android version: $version")
+                    }
                 }
                 break
             default:
