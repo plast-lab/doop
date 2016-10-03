@@ -304,6 +304,7 @@ class AnalysisFactory {
 
         if (options.DACAPO_BACH.value) {
             def inputJarName = inputFilePaths[0]
+            if (inputJarName.startsWith("http")) throw new RuntimeException("Currently, a local path is required for DaCapo-Bach benchmarks")
             def depsDir = inputJarName.replace(".jar", "-libs")
             new File(depsDir).eachFile { File depsFile ->
                 if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !inputFiles.contains(depsFile))
