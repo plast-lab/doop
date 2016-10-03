@@ -1,0 +1,4 @@
+foo(x) -> string(x).
+ibar() <- foo(_).
+
+foo(x) <- bar(x, y), baz(t[x], y).

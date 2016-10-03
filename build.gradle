@@ -8,8 +8,10 @@ buildscript {
     }
 }
 
-apply plugin: 'groovy'
+apply plugin: 'antlr'
 apply plugin: 'application'
+apply plugin: 'groovy'
+
 apply from  : 'benchmarks.gradle'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
@@ -43,11 +45,18 @@ dependencies {
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
             'org.ow2.asm:asm-debug-all:5.1'                     // Java Bytecode library
 
+    // Soot is a compile time dependency
     // compile files(sootClassesJar)                               // Soot is a compile time dependency
-    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/AXMLPrinter2.jar', 'lib/dexlib2-2.1.3-a5d82813.jar')                                      // Soot is a compile time dependency
+    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/AXMLPrinter2.jar', 'lib/dexlib2-2.1.3-a5d82813.jar')
 
-    runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
+    // JPhantom is a runtime dependency
+    runtime 'org.clyze:jphantom:1.2'
     runtime files('lib/averroes-no-properties.jar', 'lib/herosclasses-trunk.jar' , 'lib/util-2.1.3-a5d82813.jar', 'lib/axml-2.0.jar')
+
+    // DeepDoop
+    antlr "org.antlr:antlr4:4.5.1-1"
+    compile "org.antlr:antlr4-runtime:4.5.1-1"
+    testCompile "junit:junit:4.12"
 }
 
 task generateFiles(type: JavaExec) {
@@ -91,8 +100,23 @@ run {
     }
 }
 
+task deepdoop(type: JavaExec) {
+    description 'Run DeepDoop'
+    group = 'Other'
+    main = 'org.clyze.deepdoop.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    enableAssertions = true
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
+
 startScripts {
     dependsOn generateFiles
+}
+
+compileJava {
+    options.compilerArgs << '-Xlint:unchecked'
 }
 
 import org.apache.commons.io.FileUtils
