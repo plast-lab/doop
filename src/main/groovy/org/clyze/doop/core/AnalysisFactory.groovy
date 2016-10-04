@@ -207,8 +207,8 @@ class AnalysisFactory {
                 // Set this flag to true to have doop use a single android.jar found
                 // in its usual place. Use this flag together with an appropriate
                 // value of the $PLATFORMS_LIB environment variable to provide a
-                // custom android.jar (such as roboelectric).
-                def completeAndroidJar = false
+                // custom android.jar (such as robolectric).
+                def completeAndroidJar = true
                 if (completeAndroidJar) {
                     files = ["${path}/android.jar"]
                 }
