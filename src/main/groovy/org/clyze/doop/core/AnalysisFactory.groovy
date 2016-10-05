@@ -281,12 +281,12 @@ class AnalysisFactory {
         }
 
         if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
+            options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
         }
 
         if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
-            disableAllConstantOptions(options)
+            options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = false
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
         }
 
@@ -490,18 +490,5 @@ class AnalysisFactory {
         env.DOOP_HOME = Doop.doopHome
 
         return env
-    }
-
-
-    /**
-     * Sets all constant options/flags to false. The constant options are determined by their flagType.
-     */
-    protected void disableAllConstantOptions(Map<String, AnalysisOption> options) {
-        logger.debug "Disabling all constant preprocessor flags"
-        options.values().each { AnalysisOption option ->
-            if (option.forPreprocessor && option.flagType == PreprocessorFlag.CONSTANT_FLAG) {
-                option.value = false
-            }
-        }
     }
 }

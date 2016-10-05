@@ -14,7 +14,6 @@ class AnalysisOption<T>  {
             value          : option.value,
             forCacheID     : option.forCacheID,
             forPreprocessor: option.forPreprocessor,
-            flagType       : option.flagType,
             webUI          : option.webUI,
             name           : option.name,
             cli            : option.cli,
@@ -49,11 +48,6 @@ class AnalysisOption<T>  {
      * Indicates whether the option affects the preprocessor
      */
     boolean forPreprocessor = false
-
-    /**
-     * The type of the preprocessor flag (ignored when forPreprocessor is false)
-     */
-    PreprocessorFlag flagType = PreprocessorFlag.NORMAL_FLAG
 
     /**
      * Indicates whether the option can be specified by the user in the web UI
