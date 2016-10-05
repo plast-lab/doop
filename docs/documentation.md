@@ -198,8 +198,6 @@ A class that models an analysis option. Each option contains the following attri
 * *description*: The description of the option (which is also presented to the end-user).
 * *value*: The value of the option.
 * *forPreprocessor*: Boolean flag indicating that the option is used by the preprocessor.
-* *flagType*: Enum value indicating the type of the preprocessor option: `NORMAL_FLAG` or `CONSTANT_FLAG`. 
-              See the `PreprocessorFlag` class. This value is ignored when the `forPreprocessor` option is false.
 * *cli*: Boolean flag indicating whether the option should be included in the CLI.
 * *webUI* - Boolean flag indicating whether the option should be included in the Web UI.
 * *argName* - The description of the option's value which will be displayed to the end-user. All String options should
@@ -264,10 +262,6 @@ argName of the option.
 * implement the validation/checks required for the new option (if any) in the `AnalysisFactory`,
 * update the implementation of `Analysis` to take into account the new option during the execution of the analysis phases.
 
-
-#### Other classes
-The Java/Groovy part of Doop contains some additional helper classes including the `OS`, `JRE`,
-`PreprocessorFlag` Enums and the `org.clyze.doop.preprocess.*` package which offers a Java-only C preprocessor.
 
 ### The classes of the Doop CLI {#design.cli}
 

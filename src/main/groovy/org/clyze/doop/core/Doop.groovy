@@ -89,8 +89,7 @@ class Doop {
             value:false,
             webUI:true,
             forPreprocessor: true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"DISTINGUISH_ALL_STRING_CONSTANTS",
@@ -99,8 +98,7 @@ class Doop {
             value:false,
             webUI:true,
             forPreprocessor: true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
+            isAdvanced:true
         ),
         /* End of preprocessor constant flags */
 
