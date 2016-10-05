@@ -103,9 +103,9 @@ class Main {
             }
 
             int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
-            ExecutorService executor = Executors.newSingleThreadExecutor()
+            ExecutorService executorService = Executors.newSingleThreadExecutor()
             try {
-                executor.submit(new Runnable() {
+                executorService.submit(new Runnable() {
                     @Override
                     void run() {
                         logger.info "Starting ${analysis.name} analysis on ${analysis.inputs[0]} - id: $analysis.id"
@@ -117,10 +117,11 @@ class Main {
                 }).get(timeout, TimeUnit.MINUTES)
             }
             catch (TimeoutException te) {
-               logger.error("Timeout has expired ($timeout min).")
-               System.exit(-1)
+                logger.error "Timeout has expired ($timeout min)."
+                executorService.shutdownNow()
+                System.exit(-1)
             }
-            executor.shutdown()
+            executorService.shutdownNow()
 
         } catch (e) {
             if (logger.debugEnabled)

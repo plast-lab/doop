@@ -32,39 +32,40 @@ class Executor {
         environment.putAll(this.environment)
         def process = pb.start()
 
-        //Add shutdown hook that permits us to kill the child process when the JVM exits
-        System.addShutdownHook {
-            logger.debug("Running shutdown hook to terminate process: $commandLine")
-            try {
-                //If the process has terminated, this will return a value. If not, it will throw an exception.
-                int exit = process.exitValue()
-                logger.debug("Process has exited with value $exit: $commandLine")
-            }
-            catch(any) {
-                //The process has not terminated, destroy it.
-                logger.debug("Destroying process: $commandLine")
-                process.destroy()
-                logger.debug("Process destroyed: $commandLine")
-            }
-        }
-
-        // Get its standard output and error streams as input streams
         final InputStream is = process.getInputStream()
         final InputStream es = process.getErrorStream()
 
-        is.newReader().withReader { reader ->
-            String nextLine;
+        ExecutorService executorService = Executors.newSingleThreadExecutor()
+        try {
+            executorService.submit(new Runnable() {
+                @Override
+                void run() {
+                    is.newReader().withReader { reader ->
+                        String nextLine;
 
-            while ((nextLine = reader.readLine()) != null) {
-                outputLineProcessor(nextLine.trim());
-            }
+                        while ((nextLine = reader.readLine()) != null) {
+                            outputLineProcessor(nextLine.trim());
+                        }
+                    }
+                }
+            }).get()
+        }
+        catch (InterruptedException e) {
+            //The process has not terminated, destroy it.
+            logger.debug("Destroying process: $commandLine")
+            process.destroy()
+            logger.debug("Process destroyed: $commandLine")
+            throw e
+        }
+        finally {
+            executorService.shutdownNow()
         }
 
         // Wait for process to terminate
-        def returnCode = process.waitFor();
+        def returnCode = process.waitFor()
 
         // Create an error string that contains everything in the stderr stream
-        def errorMessages = es.getText();
+        def errorMessages = es.getText()
 
         // Print the remaining warnings
         if (!errorMessages.isAllWhitespace()) {
