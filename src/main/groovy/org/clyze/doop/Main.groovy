@@ -38,27 +38,29 @@ class Main {
             }
 
             def argsToParse
-            String bloxOptions
-
-            //Check for bloxbath options
-            int len = args.length
-            int index = len
-            while (--index >= 0)
-                if (args[index] == "--")
-                    break
-
+            def bloxOptions
+            def index = args.findIndexOf { arg -> arg == "--" }
             if (index == -1) {
                 argsToParse = args
                 bloxOptions = null
             }
             else {
-                argsToParse = args[0..index-1]
-                bloxOptions = args[index+1..len-1].join(' ')
+                argsToParse = args[0..(index-1)]
+                bloxOptions = args[(index+1)..(args.length-1)].join(' ')
             }
 
             OptionAccessor cli = builder.parse(argsToParse)
 
-            if (!cli || cli['h']) {
+            if (!cli) {
+                usageBuilder.usage()
+                return
+            }
+            else if (cli.arguments().size() != 0) {
+                println "Invalid argument specified: " + cli.arguments()[0]
+                usageBuilder.usage()
+                return
+            }
+            else if (cli['h']) {
                 usageBuilder.usage()
                 return
             }
@@ -75,17 +77,6 @@ class Main {
                 File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
                 File propsBaseDir = f.getParentFile()
                 Properties props = FileOps.loadProperties(f)
-
-                //There are no mandatory properties since the name and jars can be overridden too.
-                /*
-                try {
-                    Helper.checkMandatoryProps(props)
-                }
-                catch(e) {
-                    println e.getMessage()
-                    return
-                }
-                */
 
                 changeLogLevel(cli['l'] ?: props.getProperty("level"))
 

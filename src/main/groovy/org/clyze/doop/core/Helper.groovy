@@ -49,16 +49,6 @@ class Helper {
     }
 
     /**
-     * Checks that the given list of files exist.
-     */
-    static List<String> checkFiles(List<String> files) {
-        files.each { String file ->
-            checkFileOrThrowException(file, "File is invalid: $file")
-        }
-        return files
-    }
-
-    /**
      * Executes the given Java main class using the supplied class loader.
      */
     static void execJava(ClassLoader cl, String mainClass, String[] params) {
@@ -197,22 +187,6 @@ class Helper {
             throw new RuntimeException("Missing required argument(s): " + (noAnalysis ? "a" : "") +
                                        (noJar ? (noAnalysis ? ", " : "") + "i" : ""))
     }
-
-    /**
-     * Checks that the mandatory options are present in the properties.
-     * This method is deprecated (there are no mandatory properties).
-     * @param props - the properties
-     */
-    @Deprecated static void checkMandatoryProps(Properties props) {
-        boolean noAnalysis = !props.getProperty("analysis")?.trim()
-        boolean noJar = !props.getProperty("jar")?.trim()
-        boolean error = noAnalysis || noJar
-
-        if (error)
-            throw new RuntimeException("Missing required properties: " + (noAnalysis ? "analysis" : "") +
-                                       (noJar ? (noAnalysis ? ", " : "") + "jar" : ""))
-    }
-
 
     /**
      * Parses the user supplied timeout.
