@@ -1,6 +1,7 @@
 package org.clyze.doop.system
 
 import groovy.transform.TypeChecked
+import java.util.concurrent.*
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.doop.core.Helper
