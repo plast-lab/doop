@@ -53,7 +53,7 @@ def templateLambda = { suiteName, benchmarks, specialArgs ->
                 main = 'org.clyze.doop.Main'
 
                 def jarFile = "${environment.DOOP_BENCHMARKS}/$suiteName/${BM}.jar"
-                args = ['-a', analysis, '-j', jarFile] + commonArgs + specialArgs
+                args = ['-a', analysis, '-i', jarFile] + commonArgs + specialArgs
             }
         }
     }

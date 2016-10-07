@@ -116,7 +116,7 @@ To list all the available options run Doop without any parameters (or with the -
 The main command line options are described in the `README` file:
 
 * -a, --analysis: The name of the analysis.
-* -j, --jar: The jar file(s) to analyse.
+* -i, --input: The jar file(s) to analyse.
 * --platform: The platform and version to use. Doop checks for the JRE-specific or Android-specific files in the `$DOOP_PLATFORMS_LIB`
          directory, while an alternate location can be provided through the `--doop-platform-libs` option. For instance,
           java_7 specifies the Java platform and the JRE 1.7 will be used to resolve library calls, while android_26 specifies the Android platform
@@ -134,11 +134,11 @@ more information on how to acquire those benchmarks.
 
 For example, in order to analyze a DaCapo 2006 benchmark we could issue the following:
 
-    $ ./doop -a context-insensitive -j benchmarks/dacapo-2006/antlr.jar --dacapo
+    $ ./doop -a context-insensitive -i benchmarks/dacapo-2006/antlr.jar --dacapo
 
 Respectively, for a DaCapo Bach benchmark we could issue the following:
 
-    $ ./doop -a context-insensitive -j benchmarks/dacapo-bach/avrora/avrora.jar --dacapo-bach
+    $ ./doop -a context-insensitive -i benchmarks/dacapo-bach/avrora/avrora.jar --dacapo-bach
 
 
 ## Design and Implementation {#design}

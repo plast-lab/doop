@@ -3,7 +3,7 @@
 Our running example can be found in [Example.java](doop-101-examples/Example.java).
 
 We will run a simple naive analysis (`-a naive` option) on the generated jar
-file (`-j Example.jar` option). This analysis has only a few basic rules but
+file (`-i Example.jar` option). This analysis has only a few basic rules but
 it's a good representative skeleton of actual analyses. Since Doop performs a
 whole program analysis, the library will be analyzed along with application
 code. We need to specify the desired version for the library code of the platform (`--platform java_7`
@@ -11,7 +11,7 @@ or `--platform android_24` option).
 
 ```
 #!bash
-$ ./doop -a naive -j docs/doop-101-examples/Example.jar --platform java_7 --Xstats:none
+$ ./doop -a naive -i docs/doop-101-examples/Example.jar --platform java_7 --Xstats:none
 ```
 
 After the analysis has run, we can gather results by issuing queries directly to the database.
@@ -175,7 +175,7 @@ let's analyze the `antlr` benchmark using a 2 type-sensitive analysis.
 
 ```
 #!bash
-$ ./doop -a 2-type-sensitive+heap -j benchmarks/dacapo-2006/antlr.jar --dacapo --platform java_7
+$ ./doop -a 2-type-sensitive+heap -i benchmarks/dacapo-2006/antlr.jar --dacapo --platform java_7
 ```
 
 Towards the end of execution, Doop will report a set of metrics gathered from
@@ -262,7 +262,7 @@ Datalog rule.
 Example:
 ```
 #!bash
-$ ./doop -a context-insensitive -j Example.jar -- -logLevel debugDetail@factbus > log.txt
+$ ./doop -a context-insensitive -i Example.jar -- -logLevel debugDetail@factbus > log.txt
 $ ./bin/LogAnalyzer.py log.txt 
  ImpossibleExceptionHandler(?handler :: ExceptionHandler, ?type :: Type, ?instruction :: Instruction) <-
    PossibleExceptionHandler(?handler :: ExceptionHandler, ?type :: Type, ?instruction :: Instruction),
