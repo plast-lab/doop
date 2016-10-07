@@ -361,6 +361,7 @@ class Analysis implements Runnable {
         }
         else {
             preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
+            preprocessIfExists(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
             preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
             preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
             preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
