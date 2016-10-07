@@ -27,7 +27,7 @@ One important directory in that repository is `JREs`. It can be used for the `PL
 
 Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
 
-    $ ./doop --platform java_7 -a context-insensitive -j com.example.some.jar
+    $ ./doop --platform java_7 -a context-insensitive -i com.example.some.jar
 
 ### Common command line options
 To see the list of available options (and valid argument values in certain cases), issue:
@@ -45,7 +45,7 @@ Example:
 
     $ ./doop -a context-insensitive
 
-#### Input files  (-j, -i, --inputs)
+#### Input files  (-i, --inputs)
 Mandatory. The input file(s) to analyse.
 
 The inputs option accepts multiple values and/or can be repeated multiple times.
@@ -61,11 +61,11 @@ Example:
 
 ```
 #!bash
-$ ./doop -j ./lib/asm-debug-all-4.1.jar      [local file]
-		 -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
-		 -j ./lib                            [local directory]
-		 -j http://www.example.com/some.jar  [remote file]
-		 -j one.jar other.jar                [multiple files separated with a space]
+$ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
+		 -i org.apache.ivy:ivy:2.3.0         [maven descriptor]
+		 -i ./lib                            [local directory]
+		 -i http://www.example.com/some.jar  [remote file]
+		 -i one.jar other.jar                [multiple files separated with a space]
 ```
 
 #### PLATFORM (--platform)
@@ -73,22 +73,22 @@ The platform to use for the analysis. The possible java options are java_N where
 
 Example:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar --platform java_4
-    $ ./doop -a context-insensitive -j some-app.apk --platform android_24
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_4
+    $ ./doop -a context-insensitive -i some-app.apk --platform android_24
 
 #### Main class (--main)
 The main class to use as the entry point. This class must declare a method with signature `public static void main(String [])`. If not specified, Doop will try to infer this information from the manifest file of the provided jar file(s).
 
 Example:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar --main com.example.some.Main
+    $ ./doop -a context-insensitive -i com.example.some.jar --main com.example.some.Main
 
 #### Timeout (-t, --timeout)
 Specify the analysis execution timeout in minutes.
 
 Example:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar -t 120
+    $ ./doop -a context-insensitive -i com.example.some.jar -t 120
 
 The above analysis will run for a maximum of 2 hours (120 minutes).
 
