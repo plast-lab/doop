@@ -1,0 +1,51 @@
+#include "../../main/class-initialization-declarations.logic"
+#include "../../main/implicit-reachable-declarations.logic"
+#include "../../main/string-constants-declarations.logic"
+
+
+MainMethodDeclaration(?method) ->
+   Method(?method).
+
+/*
+ * Declarations
+ */
+
+ArrayIndexPointsTo(?baseheap, ?heap) ->
+   HeapAllocation(?baseheap),
+   HeapAllocation(?heap).
+
+VarPointsTo(?heap, ?var) ->
+   HeapAllocation(?heap),
+   Var(?var).
+
+InstanceFieldPointsTo(?heap, ?signature, ?baseheap) ->
+   HeapAllocation(?heap),
+   Field(?signature),
+   HeapAllocation(?baseheap).
+
+StaticFieldPointsTo(?heap, ?signature) ->
+   HeapAllocation(?heap),
+   Field(?signature).
+
+Assign(?type, ?from, ?to) ->
+   Type(?type),
+   Var(?from),
+   Var(?to).
+
+Reachable(?method) ->
+   Method( ?method ).
+
+CallGraphEdge(?invocation, ?tomethod) ->
+   MethodInvocation(?invocation),
+   Method(?tomethod).
+
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
+   HeapAllocation(?heap),
+   Var(?var),
+   Method(?inmethod).
+
+AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
+   HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
+   HeapAllocation(?heap), Var(?var), Method(?inmethod).

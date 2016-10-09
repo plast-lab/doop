@@ -1,0 +1,87 @@
++Throw(?insn, ?var) <-
+   Throw:Insn(?insn),
+   Throw:Var[?insn] = ?var.
+
++LoadInstanceField(?base, ?sig, ?to, ?inmethod) <-
+   LoadInstanceField:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   LoadInstanceField:Base[?insn] = ?base,
+   FieldInstruction:Signature[?insn] = ?sig,
+   LoadInstanceField:To[?insn] = ?to.
+
++StoreInstanceField(?from, ?base, ?sig, ?inmethod) <-
+   StoreInstanceField:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   StoreInstanceField:From[?insn] = ?from,
+   StoreInstanceField:Base[?insn] = ?base,
+   FieldInstruction:Signature[?insn] = ?sig.
+
++LoadStaticField(?sig, ?to, ?inmethod) <-
+   LoadStaticField:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   FieldInstruction:Signature[?insn] = ?sig,
+   LoadStaticField:To[?insn] = ?to.
+
++StoreStaticField(?from, ?sig, ?inmethod) <-
+   StoreStaticField:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   StoreStaticField:From[?insn] = ?from,
+   FieldInstruction:Signature[?insn] = ?sig.
+
+
++LoadArrayIndex(?base, ?to, ?inmethod) <-
+   LoadArrayIndex:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   LoadArrayIndex:Base[?insn] = ?base,
+   LoadArrayIndex:To[?insn] = ?to.
+
++StoreArrayIndex(?from, ?base, ?inmethod) <-
+   StoreArrayIndex:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   StoreArrayIndex:From[?insn] = ?from,
+   StoreArrayIndex:Base[?insn] = ?base.
+
+
++AssignCast(?type, ?from, ?to, ?inmethod) <-
+   AssignCast:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   AssignCast:From[?insn] = ?from,
+   AssignInstruction:To[?insn] = ?to,
+   AssignCast:Type[?insn] = ?type.
+
++AssignLocal(?from, ?to, ?inmethod) <-
+   AssignLocal:Insn(?insn),
+   AssignInstruction:To[?insn] = ?to,
+   Instruction:Method[?insn] = ?inmethod,
+   AssignLocal:From[?insn] = ?from.
+
++AssignNull(?to, ?inmethod) <-
+   AssignNull:Insn(?insn),
+   AssignInstruction:To[?insn] = ?to,
+   Instruction:Method[?insn] = ?inmethod.
+
++AssignHeapAllocation(?heap, ?to, ?inmethod) <-
+   AssignHeapAllocation:Insn(?insn),
+   Instruction:Method[?insn] = ?inmethod,
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   AssignInstruction:To[?insn] = ?to.
+
+
++ReturnVar(?var, ?method) <-
+   ReturnNonvoid:Insn(?insn),
+   Instruction:Method[?insn] = ?method,
+   ReturnNonvoid:Var[?insn] = ?var.
+
++ReturnVar(?var, ?method) <-
+   NativeReturnVar(?var, ?method).
+
+
++VirtualMethodInvocation(?invocation, ?signature, ?inmethod) <-
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?inmethod,
+   MethodInvocation:Signature[?invocation] = ?signature.
+
++StaticMethodInvocation(?invocation, ?signature, ?inmethod) <-
+   StaticMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?inmethod,
+   MethodInvocation:Signature[?invocation] = ?signature.

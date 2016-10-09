@@ -1,0 +1,42 @@
+
+// this is a comment
+
+foo(x, y) -> string(x), int[32](y).
+bar(?x) -> string(?x).
+
+ent(?xy) -> .
+
+foo:bar(?y) -> ent(?y).
+
+test1(?y) <- foo(?x, ?y), bar(?x).
+
+test2(?x) <- foo(?x, _).
+
+test3(?x),
+test4(?y1) <-
+  test1(?thisVar2),
+?y1 = ?thisVar2 + 1, bar(?x).
+
+test5[?x] = ?y <- foo(?x, ?y), ?y > 10.
+
+/*
+test3(?x),
+test4(?y1) <-
+  test1(?thisVar2),
+?y1 = ?thisVar2 + 1, bar(?x).
+
+test5[?x] = ?y <- foo(?x, ?y), ?y > 10.*/
+
+test6(?x) <- foo(s, ?x), s = "Hello".
+
+test7(?x) <- (foo(?x, ?y), test1(?y)) ; bar(?x).
+
+//test8(?x) <- test5[?x] = ?y, test4(?y).
+//test8:B(?x) <- test4(test5[?x]).
+
+baz(x) -> float[32](x).
+test9(x) <- baz(x), x > 10.5 .
+test9(x) <- baz(x), x > .5.
+test9(x) <- baz(x), x > 10f.
+test9(x) <- baz(x), x > 0.6F.
+test9(x) <- baz(x), x > 10e2.

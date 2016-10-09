@@ -1,0 +1,7 @@
+/**
+ * Special calling contexts
+ */
+PlusMethodInvocation(?invo, "<<initial-context>>").
+PlusMethodInvocation(?invo, "<<jvm-startup>>").
+PlusMethodInvocation(?invo, "<<class-initialization>>").
+PlusMethodInvocation(?invo, "<<immutable-context>>").
