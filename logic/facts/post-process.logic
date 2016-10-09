@@ -1,3 +1,4 @@
+
 NormalHeapConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:Normal(?id, ?type).
 
@@ -13,9 +14,8 @@ HeapAllocation:byValue[?id] = ?heap <-
    HeapAllocation:Value[?heap] = ?id.
 
 
-HeapAllocation:EmptyArray(?heap) <-
-   HeapAllocation0:EmptyArray(?id),
-   HeapAllocation:byValue[?id] = ?heap.
+HeapAllocation:EmptyArray(?id) <-
+   HeapAllocation0:EmptyArray(?id)
 
 AssignHeapAllocation:Heap[?instr] = ?heap <-
    AssignHeapAllocation0(?instr, ?heapId),

@@ -520,6 +520,7 @@ AssignHeapAllocation0(?instr, ?heapId) ->
 
 
 HeapAllocation(?heap) -> .
+
 NormalHeap(?heap)     -> HeapAllocation(?heap).
 StringConstant(?heap) -> HeapAllocation(?heap).
 ClassHeap(?heap)      -> HeapAllocation(?heap).
@@ -595,3 +596,7 @@ lang:physical:capacity[`StringRaw]           = 4194304.
 //-----------------------------------------------------------------------------
 
 AndroidEntryPoint(?m) -> Method(?m).
+
+
+// Experimental
+PreAnalysisHeapAllocation(?heap, ?type) -> string(?heap), ReferenceType(?type).

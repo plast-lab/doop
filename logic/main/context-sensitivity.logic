@@ -334,8 +334,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   ResolveInvocation(?invocation, ?heaptype, ?tomethod),
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
-  SiteShouldNotBeRefined(?invocation),
-  !TaintedHeapAllocation(?heap).
+  SiteShouldNotBeRefined(?invocation).
 
 #else /* there is optimized behavior available */
 

@@ -13,6 +13,7 @@
 // worthwhile to make it flag-controllable later. For now we have way too
 // many configuration flags for reflection already.
 
+
 /**
  * Objects that should not be allocated as normal.
  */
@@ -32,8 +33,8 @@ HeapAllocation:Special(?heap) <-
  * (may overlap with merely context-insensitive objects)
  */
 HeapAllocation:Merge[?heap] = ?mergeHeap ->
-  HeapAllocation(?heap),
-  HeapAllocation(?mergeHeap).
+  string(?heap),
+  string(?mergeHeap).
 
 // The ones that absolutely have to be kept distinct
 HeapAllocation:Keep(?heap) -> HeapAllocation(?heap).
@@ -70,7 +71,7 @@ ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 #define DISTINGUISH_NO_STRING_CONSTANTS
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
-  HeapAllocation:byValue["<<string-constant>>"] = ?constant,
+  "<<string-constant>>" = ?constant,
   !HeapAllocation:Keep(?heap).
 #endif
 #endif // DISTINGUISH_NO_STRING_CONSTANTS mode
@@ -89,7 +90,7 @@ ReflectionSubstringObject(?heap) <-
 HeapAllocation:Merge[?heap] = ?constant <-
   StringConstant(?heap),
   !ReflectionStringConstant(?heap), 
-  HeapAllocation:byValue["<<string-constant>>"] = ?constant,
+  PreAnalysisHeapAllocation:byValue["<<string-constant>>"] = ?constant,
   !HeapAllocation:Keep(?heap).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
@@ -381,8 +382,8 @@ ObjectAllocatedMultiply(?heap) <-
   ?inmethod1 != ?inmethod2.
    
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
-  AssignHeapAllocation(?heap, _, ?meth),
-  HeapAllocation:Type[?heap] = ?heaptype,
+  PreAnalysisAssignHeapAllocation(?heap, _, ?meth),
+  PreAnalysisHeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
   !ObjectAllocatedMultiply(?heap).
@@ -434,7 +435,7 @@ StringFactoryType(?type) <-
   Type:Value(?type:"java.lang.StringBuilder").
 
 StringFactoryObject(?heap) <-
-  HeapAllocation:Type[?heap] = ?heaptype,
+  PreAnalysisHeapAllocation:Type[?heap] = ?heaptype,
   StringFactoryType(?heaptype).
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
@@ -445,16 +446,16 @@ AllocationShouldBeMerged(?heaptype, ?meth) <-
   StringFactoryType(?heaptype).
 #else // not DISTINGUISH_STRING_BUFFERS_PER_METHOD
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  HeapAllocation:Type[?heap] = ?type,
+  PreAnalysisHeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuffer"),
-  HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap,
+  PreAnalysisHeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
 
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  HeapAllocation:Type[?heap] = ?type,
+  PreAnalysisHeapAllocation:Type[?heap] = ?type,
   Type:Value(?type:"java.lang.StringBuilder"),
-  HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap,
+  PreAnalysisHeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
 #endif
 #endif
@@ -486,12 +487,12 @@ HeapAllocation:ContextInsensitive(?heap) <-
 //  SubtypeOf(?heaptype, ?handlertype).
 
 TypeToHeap(?heap, ?heaptype) <-
-  HeapAllocation:Type[?heap] = ?heaptype,
+  PreAnalysisHeapAllocation:Type[?heap] = ?heaptype,
   ExceptionType(?heaptype).
 
 // Quadratic but so local that it shouldn't matter, ever.
 ExceptionHeapRepresentative[?heap] = ?representativeHeap <-
-  agg<<?representativeHeap = min(?otherHeap)>>(TypeToHeap(?otherHeap, HeapAllocation:Type[?heap])).
+  agg<<?representativeHeap = min(?otherHeap)>>(TypeToHeap(?otherHeap, PreAnalysisHeapAllocation:Type[?heap])).
 
 HeapRepresentative[?heap] = ?representativeHeap <-
   ExceptionHeapRepresentative[?heap] = ?representativeHeap.
@@ -525,7 +526,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  *************************************************************/
 
 HeapAllocation:ContextInsensitive(?heap) <-
-  HeapAllocation:Type[?heap] = ?type,
+  PreAnalysisHeapAllocation:Type[?heap] = ?type,
   ArrayType(?type),
   ComponentType[?type] = ?componentType,
   PrimitiveType(?componentType).

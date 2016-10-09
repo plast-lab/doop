@@ -24,11 +24,11 @@
 /*************************************************************
  * Reflection objects: don't merge them, no matter what!
  *************************************************************/
-HeapAllocation:Keep(?heap) <-
-  ReifiedClass[_] = ?heap;
-  ReifiedConstructor[_] = ?heap;
-  ReifiedMethod[_] = ?heap;
-  ReifiedField[_] = ?heap.
+//HeapAllocation:Keep(?heap) <-
+//  ReifiedClass[_] = ?heap;
+//  ReifiedConstructor[_] = ?heap;
+//  ReifiedMethod[_] = ?heap;
+//  ReifiedField[_] = ?heap.
 
 /*************************************************************
  * Implementation of points-to propagation for concrete actions that

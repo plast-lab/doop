@@ -187,3 +187,12 @@ MockupHeapConsMacro(?invocation, ?retType, ?heap)
   //  CallGraphEdge(_, ?invocation, _, ?tomethod), // Recursion through negation
   AnyMethodInvocation(?invocation, ?tomethod),
   Method:ReturnType[?tomethod] = ?retType.
+
+// Experimental
+HeapAllocation(?newheap),
+TaintedHeapAllocation(?newheap),
+MockupHeapConsMacro(?invocation, "Char[]", ?newheap) <-
+    VirtualMethodInvocation:SimpleName[?invocation] = "toCharArray",
+    VirtualMethodInvocation:Base[?invocation] = ?base,
+    VarPointsTo(_, ?heap, _, ?base),
+    TaintedHeapAllocation(?heap).

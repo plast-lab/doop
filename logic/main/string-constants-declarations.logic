@@ -1,1 +1,3 @@
 // Placeholder
+PreAnalysisAssignHeapAllocation(?heap, ?to, ?inmethod) ->
+   string(?heap), Var(?to), Method(?inmethod).
