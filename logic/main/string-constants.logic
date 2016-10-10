@@ -375,11 +375,14 @@ ExceptionType(?heaptype) <-
 OptAssignHeapAllocation(?inmethod, ?heap) <-
   AssignHeapAllocation(?heap, _, ?inmethod).
 
+OptPreAnalysisAssignHeapAllocation(?inmethod, ?heap) <-
+  PreAnalysisAssignHeapAllocation(?heap, _, ?inmethod).
+
 // There are objects, like strings, null, and class objects, that
 // don't have a unique allocation site.
 ObjectAllocatedMultiply(?heap) <-
-  OptAssignHeapAllocation(?inmethod1, ?heap),
-  OptAssignHeapAllocation(?inmethod2, ?heap),
+  OptPreAnalysisAssignHeapAllocation(?inmethod1, ?heap),
+  OptPreAnalysisAssignHeapAllocation(?inmethod2, ?heap),
   ?inmethod1 != ?inmethod2.
    
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
