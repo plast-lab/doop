@@ -96,7 +96,7 @@ public class DependencyGraph {
 		for (String globalAtom : globalAtoms) lastGlobalNodes.add(getNode(globalAtom));
 		_layers.add(lastGlobalNodes);
 
-		System.out.println(_layers);
+		//System.out.println(_layers);
 		//for (Node n : _nodes.values()) n.print();
 	}
 
