@@ -14,8 +14,9 @@ HeapAllocation:byValue[?id] = ?heap <-
    HeapAllocation:Value[?heap] = ?id.
 
 
-HeapAllocation:EmptyArray(?id) <-
-   HeapAllocation0:EmptyArray(?id)
+HeapAllocation:EmptyArray(?heap) <-
+   HeapAllocation0:EmptyArray(?id),
+   PreAnalysisHeapAllocation:byValue[?id] = ?heap.
 
 AssignHeapAllocation:Heap[?instr] = ?heap <-
    AssignHeapAllocation0(?instr, ?heapId),

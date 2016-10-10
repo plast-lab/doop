@@ -522,8 +522,8 @@ AssignHeapAllocation0(?instr, ?heapId) ->
 HeapAllocation(?heap) -> .
 
 NormalHeap(?heap)     -> HeapAllocation(?heap).
-StringConstant(?heap) -> HeapAllocation(?heap).
-ClassHeap(?heap)      -> HeapAllocation(?heap).
+StringConstant(?heap) -> PreAnalysisHeapAllocation(?heap).
+ClassHeap(?heap)      -> PreAnalysisHeapAllocation(?heap).
 
 lang:physical:storageModel[`HeapAllocation] = "ScalableSparse".
 lang:entity(`HeapAllocation).
@@ -599,4 +599,11 @@ AndroidEntryPoint(?m) -> Method(?m).
 
 
 // Experimental
-PreAnalysisHeapAllocation(?heap, ?type) -> string(?heap), ReferenceType(?type).
+PreAnalysisHeapAllocation(?heap) -> HeapAllocation(?heap).
+
+PreAnalysisHeapAllocation:byValue[?id] = ?heap -> string(?id), PreAnalysisHeapAllocation(?heap).
+
+PreAnalysisHeapAllocation:Type[?heap] = ?type   -> PreAnalysisHeapAllocation(?heap), Type(?type).
+
+PreAnalysisAssignHeapAllocation(?heap, ?to, ?inmethod) ->
+   PreAnalysisHeapAllocation(?heap), Var(?to), Method(?inmethod).

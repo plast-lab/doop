@@ -13,17 +13,18 @@
 // worthwhile to make it flag-controllable later. For now we have way too
 // many configuration flags for reflection already.
 
+PreAnalysisHeapAllocation(?heap) -> HeapAllocation(?heap).
 
 /**
  * Objects that should not be allocated as normal.
  */
-HeapAllocation:Special(?heap) -> HeapAllocation(?heap).
+HeapAllocation:Special(?heap) -> PreAnalysisHeapAllocation(?heap).
 
 /**
  * Objects that should use a context-insensitive heap abstraction.
  */
 HeapAllocation:ContextInsensitive(?heap) ->
-  HeapAllocation(?heap).
+  PreAnalysisHeapAllocation(?heap).
 
 HeapAllocation:Special(?heap) <-
   HeapAllocation:ContextInsensitive(?heap).
@@ -33,11 +34,11 @@ HeapAllocation:Special(?heap) <-
  * (may overlap with merely context-insensitive objects)
  */
 HeapAllocation:Merge[?heap] = ?mergeHeap ->
-  string(?heap),
-  string(?mergeHeap).
+  PreAnalysisHeapAllocation(?heap),
+  PreAnalysisHeapAllocation(?mergeHeap).
 
 // The ones that absolutely have to be kept distinct
-HeapAllocation:Keep(?heap) -> HeapAllocation(?heap).
+HeapAllocation:Keep(?heap) -> PreAnalysisHeapAllocation(?heap).
 
 /**
  * Join with AssignHeapAllocation for performance.
@@ -50,11 +51,11 @@ HeapAllocation:Special(?heap) <-
   HeapAllocation:Merge[?heap] = _.
 
 AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) <-
-  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  PreAnalysisAssignHeapAllocation(?heap, ?var, ?inmethod),
   HeapAllocation:Merge[?heap] = ?mergeHeap.
 
 AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
-  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  PreAnalysisAssignHeapAllocation(?heap, ?var, ?inmethod),
   HeapAllocation:ContextInsensitive(?heap),
   !(HeapAllocation:Merge[?heap] = _). // should be mostly unnecessary, but has bitten us many times  
 
@@ -70,8 +71,8 @@ ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #define DISTINGUISH_NO_STRING_CONSTANTS
 HeapAllocation:Merge[?heap] = ?constant <-
-  StringConstant(?heap),
-  "<<string-constant>>" = ?constant,
+   StringConstant(?heap),
+   PreAnalysisHeapAllocation:byValue["<<string-constant>>"] = ?constant,
   !HeapAllocation:Keep(?heap).
 #endif
 #endif // DISTINGUISH_NO_STRING_CONSTANTS mode
@@ -411,10 +412,11 @@ HeapRepresentative[?heap] = ?representativeHeap <-
  *************************************************************/
 
 #ifndef CONTEXT_SENSITIVE_LIBRARY_ANALYSIS
-#include "special-library.logic"
-HeapAllocation:ContextInsensitive(?heap) <-
-  SpecialLibraryObject(?heap),
-  !(HeapAllocation:Merge[?heap] = _).
+ #include "special-library.logic"
+// TODO
+//HeapAllocation:ContextInsensitive(?heap) <-
+//  SpecialLibraryObject(?heap),
+//  !(HeapAllocation:Merge[?heap] = _).
 
 #ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
 AllocationShouldBeMerged(?heaptype, ?meth) <-
@@ -471,7 +473,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
 HeapAllocation:ContextInsensitive(?heap) <-
-  ExceptionType(HeapAllocation:Type[?heap]).
+  ExceptionType(PreAnalysisHeapAllocation:Type[?heap]).
 #else
 
 // The optimized treatment represents every exception (i.e., throwable)
