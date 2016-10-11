@@ -7,6 +7,7 @@
   .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:FieldSignature, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction) 
   .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) 
   .decl VarMustAliasThis(?var1:Var)
+  .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
 }
 
 .comp SoundMustPointTo {
@@ -143,13 +144,16 @@
     VarMustAlias(?var1, ?var2, _),
     ThisVar(_, ?var2).
 
-  /*
-  .decl APMustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
-  APMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
-    VarMustAlias(?var1, ?var2, ?ctx),
-    MustPointTo(?hctxBase, ?heapBase, ?ctx, ?var1),
-    FieldMustPointTo(?hctxBase, ?heapBase, ?fld1, ?hctx, ?heap, ?ctx, ?insn),
-  */
+/*
+  .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  VarMustAliasAP(?var, ?ap, ?ctx, ?insn) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?var),
+    MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
+    FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
+    ?ap = [?base, [nil, ?fld]].
+  .plan 1: (2,3,1)
+  .plan 2: (3,2,1)
+*/
 
   // //// ====================================
   // //// AUXILIARY. Helper relations, "forall" emulations.
