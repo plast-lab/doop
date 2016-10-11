@@ -679,6 +679,19 @@
     (AccessPath_IsComposite(?ap1);
      AccessPath_ContainsStaticField(?ap1, _)).
 
+  .decl OptAccessPathWithVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var, ?fld:FieldSignature, ?ctx:MayContext, ?insn:Instruction) output
+
+  OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?var, ?fld, ?ctx, ?insn) :-
+    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    ?ap = [?var, [nil, ?fld]].
+    
+  ComputedAccessPath(?ap2),
+  AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn) :-
+    OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?base1, ?fld, ?ctx, ?insn),
+    MustPointToAnalysis.VarMustAlias(?base1, ?base2, ?ctx),
+    ?ap2 = [?base2, [nil, ?fld]].
+  .plan 1: (2,1)
+
   // //// ====================================
   // //// Weakening rules
 
