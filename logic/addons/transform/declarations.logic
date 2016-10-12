@@ -1,0 +1,21 @@
+RedundantStoreInstanceField(?from, ?sig, ?base, ?inmethod) ->
+   Var(?from), Var(?base), Method(?inmethod),
+   Field(?sig).
+
+RedundantStoreStaticField(?from, ?sig, ?inmethod) ->
+   Var(?from), Method(?inmethod), Field(?sig).
+
+RedundantInvocation(?inv) -> MethodInvocation(?inv).
+
+// Keep track of eliminated variables and invocation sites so that
+// client analyses can do their own post-processing, in case they need
+// results for all of them.
+DupSameInvocation(?inv, ?inv2) -> 
+   MethodInvocation(?inv), MethodInvocation(?inv2).
+//DupCopies[?to] = ?from -> Var(?to), Var(?from).
+DupCopies(?to, ?from) -> Var(?to), Var(?from).
+
+// This may be slow to compute but is darn convenient.
+_CanReachBypassing(?from, ?to, ?bypass) -> Var(?from), Var(?to), Var(?bypass).
+
+_OutsideReachableBypassing(?from, ?to, ?bypass) -> Var(?from), Var(?to), Var(?bypass).

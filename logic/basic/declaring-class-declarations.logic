@@ -1,0 +1,3 @@
+DeclaringClass:Allocation[?heap] = ?type ->
+   HeapAllocation(?heap),
+   ReferenceType(?type).
