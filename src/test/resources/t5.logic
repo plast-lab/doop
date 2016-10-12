@@ -1,0 +1,7 @@
+lang:derivationType[`t1] = "Derived".
+lang:entity(`t2).
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
+
+t1(x) <- t2@previous(x).
+t2(x) <- t3@init(x).
+t2(x) <- t3@init[x] = _.
