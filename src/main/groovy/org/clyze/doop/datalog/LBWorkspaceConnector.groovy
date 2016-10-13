@@ -81,8 +81,7 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
     }
 
     public IWorkspaceAPI eval(String cmd) {
-        if (_workspace == null) throw new RuntimeException("Not connected to a valid workspace")
-        _executor.execute(_outDir.toString(), "$_bloxbatch -db $_workspace $cmd $_bloxOpts")
+        exec("$_bloxbatch -db $_workspace $cmd $_bloxOpts")
         return this
     }
 
@@ -97,8 +96,7 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
 
 
     public void processQuery(String logiqlString, String printOpt, Closure outputLineProcessor) {
-        if (_workspace == null) throw new RuntimeException("Not connected to a valid workspace")
-        _executor.execute(_outDir.toString(), "$_bloxbatch -db $_workspace -query '$logiqlString' $printOpt $_bloxOpts", outputLineProcessor)
+        exec("$_bloxbatch -db $_workspace -query '$logiqlString' $printOpt $_bloxOpts", outputLineProcessor)
     }
     public void processQuery(String logiqlString, Closure outputLineProcessor) {
         processQuery(logiqlString, "", outputLineProcessor)
@@ -106,9 +104,30 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
     public void processPredicate(String predicate, Closure outputLineProcessor) {
         processQuery(predicate, "", outputLineProcessor)
     }
+    public Map<String, Integer> popCount(String... predicates) {
+        def counters = [:]
+        exec("$_bloxbatch -db $_workspace -popCount ${predicates.join(',')}") { String line ->
+            def num = line.tokenize(':').last()
+            def predicate = line[0 .. -( 2 + num.size() )]
+            counters[predicate] = num as int
+        }
+
+        return counters.asImmutable()
+    }
+    public List<String> listPredicates() {
+        def predicates = []
+        exec("$_bloxbatch -db $_workspace -list") { String line -> predicates.add(line) }
+
+        return predicates.asImmutable()
+    }
+
+    private void exec(String cmd, Closure closure = Executor.STDOUT_PRINTER) {
+        if (_workspace == null) throw new RuntimeException("Not connected to a valid workspace")
+        _executor.execute(_outDir.toString(), cmd, closure)
+    }
 
 
-    // Auxialiary classes so the two kinds have a common supertype
+    // Auxialiary classes so the two kinds of components have a common supertype
     static interface IComponent {
         void add(String cmd)
         void invoke(Log logger, String bloxbatch, String bloxOpts, Executor executor)
