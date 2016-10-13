@@ -18,10 +18,6 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
 
     protected void printStats(Analysis analysis) {
-        // We have to store the query results to a list since the
-        // closure argument of the connector does not generate an
-        // iterable stream.
-
         def lines = [] as List<String>
         analysis.connector.processPredicate("Stats:Runtime") { String line ->
             lines.add(line)
