@@ -207,10 +207,28 @@ class AnalysisFactory {
                 // Set this flag to true to have doop use a single android.jar found
                 // in its usual place. Use this flag together with an appropriate
                 // value of the $PLATFORMS_LIB environment variable to provide a
-                // custom android.jar (such as robolectric).
-                def completeAndroidJar = true
+                // custom android.jar.
+                def completeAndroidJar = false
+		// Set the following flag to true to have doop use a
+		// custom set of JARs for Android. Use it with $PLATFORMS_LIB,
+		// as with the 'completeAndroidJar' flag.
+		def customJars = false
                 if (completeAndroidJar) {
-                    files = ["${path}/android.jar"]
+		    files = ["${path}/android.jar"]
+		}
+		else if (customJars) {
+		    // Custom-built Android 4.4 libraries. These come from building the
+		    // Android sources and looking in out/target/common/obj/JAVA_LIBRARIES.
+		    files = ["${path}/bouncycastle_intermediates.jar",      // com.android.org.bouncycastle
+                             "${path}/conscrypt_intermediates.jar",         // conscrypt
+                             "${path}/core-junit_intermediates.jar",        // junit.framework
+                             "${path}/core-libart_intermediates.jar",       // java.lang
+                             "${path}/ext_intermediates.jar",               // com.android.i18n, org.apache.commons.codec.binary, org.apache.http, org.ccil.cowan.tagsoup
+                             "${path}/framework_intermediates.jar",         // android.app, android.view, android.webkit
+                             "${path}/libphotoviewer_appcompat_intermediates.jar", // android.support.v7.internal.widget
+                             "${path}/okhttp_intermediates.jar",            // com.android.okhttp
+                             "${path}/telephony-common_intermediates.jar",  // android.provider, android.telephony
+			    ]
                 }
                 else {
                     switch(version) {

@@ -571,7 +571,7 @@ lang:physical:capacity[`Throw:Insn]          = 8388608. /* = instruction */
 lang:physical:capacity[`MethodInvocation]    = 8388608. /* = instruction */
 lang:physical:capacity[`JVMDescriptor]       = 524288.
 lang:physical:capacity[`SimpleName]          = 131072.
-lang:physical:capacity[`ExceptionHandler]    = 131072.
+lang:physical:capacity[`ExceptionHandler]    = 524288.
 lang:physical:capacity[`Var]                 = 8388608. /* 2^23 */
 lang:physical:capacity[`Modifier]            = 32.
 lang:physical:capacity[`Type]                = 131072.
