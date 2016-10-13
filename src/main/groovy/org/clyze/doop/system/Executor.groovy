@@ -36,6 +36,14 @@ class Executor {
         final InputStream is = process.getInputStream()
         final InputStream es = process.getErrorStream()
 
+        /*
+         * Put the use of readline in a separate thread because it ignores
+         * thread interrupts. When an interrupt occurs, the "parent" thread
+         * will handle it and destroy the process so that the underlying socket
+         * is closed and readLine will fail. Otherwise if when a timeout
+         * occurs, the process will continue to run ignoring any attempt to
+         * stop it.
+         */
         ExecutorService executorService = Executors.newSingleThreadExecutor()
         try {
             executorService.submit(new Runnable() {
