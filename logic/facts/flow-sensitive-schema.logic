@@ -5,15 +5,15 @@
 // appears in a key position of a predicate, the engine will switch to
 // left-to-right ordering. !!
 //-----------------------------------------------------------------------------
-ParamIndex(?x), ParamIndex:Value(?x:?id) -> int[32](?id).
-SimpleName(?x), SimpleName:Value(?x:?id) -> string(?id).
+ParamIndex(?x), ParamIndex:Id(?x:?id) -> int[32](?id).
+SimpleName(?x), SimpleName:Id(?x:?id) -> string(?id).
 
 //-----------------------------------------------------------------------------
 
-NumConstant(?x), NumConstant:Value(?x:?id) -> string(?id).
+NumConstant(?x), NumConstant:Id(?x:?id) -> string(?id).
 
 
-Modifier(?x), Modifier:Value(?x:?id) -> string(?id).
+Modifier(?x), Modifier:Id(?x:?id) -> string(?id).
 
 Modifier:abstract[] = ?mod -> Modifier(?mod).
 Modifier:final[]    = ?mod -> Modifier(?mod).
@@ -24,7 +24,7 @@ Modifier:static[]   = ?mod -> Modifier(?mod).
 
 // Java Type Hierarchy
 
-Type(?x), Type:Value(?x:?id) -> string(?id).
+Type(?x), Type:Id(?x:?id) -> string(?id).
 
 PrimitiveType(?t) -> Type(?t).
 ReferenceType(?t) -> Type(?t).
@@ -78,7 +78,7 @@ ClassModifier(?mod, ?class) ->
 
 //-----------------------------------------------------------------------------
 
-Field(?x), Field:Value(?x:?id) -> string(?id).
+Field(?x), Field:Id(?x:?id) -> string(?id).
 
 Field:DeclaringType[?field] = ?declaringClass ->
    Field(?field), ReferenceType(?declaringClass).
@@ -96,9 +96,9 @@ Field:Modifier(?mod, ?field) ->
 //-----------------------------------------------------------------------------
 
 // Represents the return type and the argument types of a method
-MethodDescriptor(?x), MethodDescriptor:Value(?x:?id) -> string(?id).
+MethodDescriptor(?x), MethodDescriptor:Id(?x:?id) -> string(?id).
 
-Method(?x), Method:Value(?x:?id) -> string(?id).
+Method(?x), Method:Id(?x:?id) -> string(?id).
 
 Method:DeclaringType[?method] = ?declaringType ->
    Method(?method), ReferenceType(?declaringType).
@@ -112,7 +112,7 @@ Method:SimpleName[?method] = ?simplename ->
 Method:Descriptor[?method] = ?descriptor ->
    Method(?method), MethodDescriptor(?descriptor).
 
-JVMDescriptor(?descriptor), JVMDescriptor:Value(?descriptor:?s) -> string(?s).
+JVMDescriptor(?descriptor), JVMDescriptor:Id(?descriptor:?s) -> string(?s).
 
 // JVM method descriptor
 Method:JVMDescriptor[?method] = ?descriptor ->
@@ -136,7 +136,7 @@ ThisVar[?method] = ?var ->
 
 //-----------------------------------------------------------------------------
 
-Var(?x), Var:Value(?x:?id) -> string(?id).
+Var(?x), Var:Id(?x:?id) -> string(?id).
 
 Var:Type[?var] = ?type ->
    Var(?var), Type(?type).
@@ -149,7 +149,7 @@ Var:DeclaringMethod(?var, ?method) ->
 // [Bytecode Instructions]
 //-----------------------------------------------------------------------------
 
-Instruction(?x), Instruction:Value(?x:?id) -> string(?id).
+Instruction(?x), Instruction:Id(?x:?id) -> string(?id).
 
 Instruction:Index[?insn] = ?index ->
    Instruction(?insn), int[32](?index).
@@ -377,7 +377,7 @@ AssignInstruction:To[?insn] = ?to ->
    AssignInstruction(?insn), Var(?to).
 
 // Assign numeric constant instruction
-AssignNumConstant:Value[?insn] = ?const ->
+AssignNumConstant:Id[?insn] = ?const ->
    AssignNumConstant:Insn(?insn), NumConstant(?const).
 
 // Assign cast instruction
@@ -388,7 +388,7 @@ AssignCast:Type[?insn] = ?type ->
    AssignCast:Insn(?insn), Type(?type).
 
 // Assign numeric constant casting instruction
-AssignCastNumConstant:Value[?insn] = ?const ->
+AssignCastNumConstant:Id[?insn] = ?const ->
    AssignCastNumConstant:Insn(?insn), NumConstant(?const).
 
 // Assign local instruction
@@ -456,7 +456,7 @@ SpecialMethodInvocation:Base[?invocation] = ?base ->
 // [Exception Handlers]
 //-----------------------------------------------------------------------------
 
-ExceptionHandler(?x), ExceptionHandler:Value(?x:?id) -> string(?id).
+ExceptionHandler(?x), ExceptionHandler:Id(?x:?id) -> string(?id).
 
 ExceptionHandler:Method[?handler] = ?inmethod ->
    ExceptionHandler(?handler), Method(?inmethod).
@@ -540,7 +540,7 @@ lang:constructor(`HeapAllocation:String:Con).
 lang:constructor(`HeapAllocation:Class:Con).
 lang:constructor(`HeapAllocation:Mockup:Con).
 
-HeapAllocation:Value[?heap] = ?id -> HeapAllocation(?heap), string(?id).
+HeapAllocation:Id[?heap] = ?id -> HeapAllocation(?heap), string(?id).
 HeapAllocation:byValue[?id] = ?heap -> string(?id), HeapAllocation(?heap).
 
 HeapAllocation:Type[?heap] = ?type   -> HeapAllocation(?heap), Type(?type).
@@ -555,7 +555,7 @@ MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
 
 // Use an entity to represent raw strings since the engine is having problems
 // with huge strings as keys.
-StringRaw(?x), StringRaw:Value(?x:?id) -> string(?id).
+StringRaw(?x), StringRaw:Id(?x:?id) -> string(?id).
 String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 
 

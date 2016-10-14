@@ -20,7 +20,7 @@ lang:physical:delimiter[`_TempObjectToRefine] = "\t".
 lang:physical:hasColumnNames[`_TempObjectToRefine] = false.
 _TempObjectToRefine(heapId) -> string(heapId).
 
-+_TempObjectToRefine(heapId) <- TempObjectToRefine(heap), HeapAllocation:Value[heap] = heapId.
++_TempObjectToRefine(heapId) <- TempObjectToRefine(heap), HeapAllocation:Id[heap] = heapId.
 
 lang:physical:storageModel[`_TempNegativeObjectFilter] = "DelimitedFile".
 lang:physical:filePath[`_TempNegativeObjectFilter] = "TempNegativeObjectFilter.facts".

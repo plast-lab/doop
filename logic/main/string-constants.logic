@@ -99,7 +99,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 NonTrivialStringConstant(?heap) <-
   StringConstant(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   string:length[?string] >= 6.
 
 /**
@@ -121,12 +121,12 @@ ClassNameMatchingStringConstant:Type(?type, ?heap),
 ClassNameMatchingStringConstantExact:Type(?type, ?heap)
   <-
   StringConstant(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   ReferenceType(?type),
   (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
-  Type:Value(?type:?string).
+  Type:Id(?type:?string).
 
 MethodNameMatchingStringConstant(?heap) -> HeapAllocation(?heap).
 MethodNameMatchingStringConstant:Signature(?sig, ?heap) ->
@@ -141,7 +141,7 @@ MethodNameMatchingStringConstant:Signature(?sig, ?heap),
 MethodNameMatchingStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   Method:DeclaringType[?sig] = ?type, 
   (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
      // there is some possibility of accessing methods and fields
@@ -165,7 +165,7 @@ FieldNameMatchingStringConstant:Signature(?sig, ?heap),
 FieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   Field:DeclaringType[?sig] = ?declaringClass,
   (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
   Field:SimpleName[?sig] = ?string.
@@ -178,7 +178,7 @@ ClassNameMatchingStringConstant:Type(?type, ?heap),
 ClassNameMatchingStringConstantInexact:Type(?type, ?heap)
   <-
   NonTrivialStringConstant(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   ClassNameSuffix(?string, ?type),
   ApplicationClass(?type).
 
@@ -187,7 +187,7 @@ MethodNameMatchingStringConstant:Signature(?sig, ?heap),
 MethodNameMatchingStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   Method:DeclaringType[?sig] = ?type,
   ApplicationClass(?type), 
   (MethodNameSuffix(?string, ?sig);
@@ -201,7 +201,7 @@ FieldNameMatchingStringConstant:Signature(?sig, ?heap),
 FieldNameMatchingStringConstantInexact:Signature(?sig, ?heap)
   <-
   HeapAllocation(?heap),
-  HeapAllocation:Value[?heap] = ?string,
+  HeapAllocation:Id[?heap] = ?string,
   Field:DeclaringType[?sig] = ?declaringClass,
   ApplicationClass(?declaringClass),
   (FieldNameSuffix(?string, ?sig);
@@ -220,7 +220,7 @@ MemberSuffixIterationTrick(?length) <-
 // Precompute proper suffixes. Crucial for efficiency.
 ClassNameSuffix(?suffix, ?type) <-
   ReferenceType(?type),
-  Type:Value(?type:?className),
+  Type:Id(?type:?className),
   string:length[?className] = ?classNameLength,
   ClassIterationTrick(?length),
   string:substring[?className, ?classNameLength - ?length, ?length] = ?suffix.
@@ -256,7 +256,7 @@ FieldNamePrefix(?prefix, ?sig) <-
 //// Too costly!
 //ClassNameSuffix(?type, ?suffix) <-
 //  ReferenceType(?type),
-//  Type:Value(?type:?className),
+//  Type:Id(?type:?className),
 //  string:length[?className] = ?classNameLength,
 //  ?pos = ?classNameLength / 2 + 1,
 //  ?suffixLength = ?classNameLength - ?pos, 
@@ -266,7 +266,7 @@ FieldNamePrefix(?prefix, ?sig) <-
 //ClassNameMatchingStringConstant:Type(?type, ?heap)
 //  <-
 //  NonTrivialStringConstant(?heap),
-//  HeapAllocation:Value[?heap] = ?string,
+//  HeapAllocation:Id[?heap] = ?string,
 //  ClassNameSuffix(?type, ?suffix),
 //  string:substring[?suffix, _, string:length[?string]] = ?string.
 //
@@ -274,7 +274,7 @@ FieldNamePrefix(?prefix, ?sig) <-
 //MethodNameMatchingStringConstant:Signature(?sig, ?heap)
 //  <-
 //  NonTrivialStringConstant(?heap),
-//  HeapAllocation:Value[?heap] = ?string,
+//  HeapAllocation:Id[?heap] = ?string,
 //  Method:SimpleName[?sig] = ?methodName,
 //  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
 
@@ -367,7 +367,7 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
 AllocationMergeThreshold[] = 50.
 
 ExceptionType(?heaptype) <-
-  Type:Value(?throw:"java.lang.Throwable"),
+  Type:Id(?throw:"java.lang.Throwable"),
   SubtypeOf(?heaptype, ?throw).
 
 OptAssignHeapAllocation(?inmethod, ?heap) <-
@@ -430,8 +430,8 @@ AllocationShouldBeMerged(?heaptype, ?meth) <-
  *************************************************************/
 
 StringFactoryType(?type) <-
-  Type:Value(?type:"java.lang.StringBuffer") ;
-  Type:Value(?type:"java.lang.StringBuilder").
+  Type:Id(?type:"java.lang.StringBuffer") ;
+  Type:Id(?type:"java.lang.StringBuilder").
 
 StringFactoryObject(?heap) <-
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -446,14 +446,14 @@ AllocationShouldBeMerged(?heaptype, ?meth) <-
 #else // not DISTINGUISH_STRING_BUFFERS_PER_METHOD
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
-  Type:Value(?type:"java.lang.StringBuffer"),
+  Type:Id(?type:"java.lang.StringBuffer"),
   HeapAllocation:byValue["<<string-buffer>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
 
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
-  Type:Value(?type:"java.lang.StringBuilder"),
+  Type:Id(?type:"java.lang.StringBuilder"),
   HeapAllocation:byValue["<<string-builder>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
 #endif
@@ -480,7 +480,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 //TypeToHeap2(?heap, ?heaptype) <-
 //  HeapAllocation:Type[?heap] = ?heaptype,
-//  Type:Value(?throw:"java.lang.Throwable"),
+//  Type:Id(?throw:"java.lang.Throwable"),
 //  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
@@ -502,7 +502,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
 // same type that are thrown in the same method.
 SameTypeAndMethod(?heap1, ?heap2) <-
   HeapAllocation:Type[?heap1] = ?heaptype,
-  Type:Value(?throw:"java.lang.Throwable"),
+  Type:Id(?throw:"java.lang.Throwable"),
   SubtypeOf(?heaptype, ?throw),
   HeapAllocation:Type[?heap2] = ?heaptype,
   AssignHeapAllocation(?heap1,_,?inmethod),
@@ -547,7 +547,7 @@ Type:HasNoReferenceField(?type) -> Type(?type).
 Type:DeclaresReferenceField(?type) -> Type(?type).
 
 Type:HasNoReferenceField(?type) <-
-  Type:Value(?type:"java.lang.Object").
+  Type:Id(?type:"java.lang.Object").
 
 Type:HasNoReferenceField(?class) <-
   ClassType(?class),
@@ -563,11 +563,11 @@ Type:DeclaresReferenceField(?class) <-
   !FieldIsStatic(?signature).
 
 FieldIsStatic(?sig) <-
-  Modifier:Value(?static:"static"),
+  Modifier:Id(?static:"static"),
   Field:Modifier(?static, ?sig).
 
 //// Quite risky: even final fields hold interesting state.
 //FieldIsStaticOrFinal?sig) <-
-//  Modifier:Value(?final:"final"),
+//  Modifier:Id(?final:"final"),
 //  Field:Modifier(?final, ?sig).
 */

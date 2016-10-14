@@ -35,5 +35,5 @@ DeclaringClass:Allocation[?heap] = ?type <-
    (HeapAllocation:Null[] = ?heap ;
     MainMethodArgArray[] = ?heap ;
     MainMethodArgArrayContent[] = ?heap),
-   Type:Value(?type:"java.lang.Object"),
+   Type:Id(?type:"java.lang.Object"),
    ReferenceType(?type).

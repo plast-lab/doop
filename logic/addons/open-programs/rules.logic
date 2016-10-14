@@ -24,7 +24,7 @@ AnyConcreteImplementations(?class, ?staticType) <-
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
    ClassType(?class),
-   Type:Value(?staticType:"javax.servlet.http.HttpServlet").
+   Type:Id(?staticType:"javax.servlet.http.HttpServlet").
 
 ClassToMock(?class) <-
    MockEntryPoint(?class, _).
@@ -37,7 +37,7 @@ ClassToMock(?fieldType) <-
 MockObject(?classHeap, ?class) <-
    ClassToMock(?class),
    !ClassModifier("abstract", ?class),
-   Type:Value(?class:?classStr),
+   Type:Id(?class:?classStr),
    ?classHeap = "<Mock allocation for " + ?classStr + ">".
 
 ClassToMock(?class) <-
@@ -79,7 +79,7 @@ MockObjectOpt(?fieldtype, ?heap) <- MockObject(?heap, ?fieldtype).
 
 MockObjectHeap(?heap, ?fieldtype) <-
    MockObjectOpt(?fieldtype, ?heapStr),
-   Instruction:Value(?heap:?heapStr), 
+   Instruction:Id(?heap:?heapStr), 
    HeapAllocation(?heap).
 
 Blah(?heap, ?signature, ?baseheap),
@@ -105,17 +105,17 @@ MocksForFormals(?description, ?subtype, ?index, ?method) <-
    FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
    AnyConcreteImplementations(?subtype, ?staticType),
-   Method:Value(?method:?methodStr),
+   Method:Id(?method:?methodStr),
    MockEntryPoint(_, ?method),
-   Type:Value(?subtype:?subtypeStr), 
+   Type:Id(?subtype:?subtypeStr), 
    ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
 
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
-   Type:Value(?class:?classStr),
+   Type:Id(?class:?classStr),
    ServletEntryMethodName(?serviceMethodName),
-   Method:Value(?entry:methodSigStr),
+   Method:Id(?entry:methodSigStr),
    // TODO: try removing initializer
    (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
    ServletEntryMethodName(?serviceMethodName).
@@ -130,7 +130,7 @@ HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
 VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
  <-
    HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
-   Instruction:Value(?heap:?heapStr), 
+   Instruction:Id(?heap:?heapStr), 
    ImmutableHContext[] = ?hctx,
    HeapAllocation(?heap).
 

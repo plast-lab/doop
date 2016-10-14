@@ -5,5 +5,5 @@ AllocatedObjectSupportsFinalize(?heap, ?inmethod) <-
 
 OverridesFinalize(?class) <-
    MethodLookup["finalize", "void()", ?class] = ?method,
-   Method:Value(?finalizeInObject:"<java.lang.Object: void finalize()>"),
+   Method:Id(?finalizeInObject:"<java.lang.Object: void finalize()>"),
    ?finalizeInObject != ?method.

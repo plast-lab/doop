@@ -20,5 +20,5 @@ CollectionLibraryClass(?class) -> Type(?class).
 CollectionLibraryClass(?class) <-
   ClassType(?class),
   !ApplicationClass(?class),
-  Type:Value(?class:?className),
+  Type:Id(?class:?className),
   string:substring[?className, 0, _] = "java.util".

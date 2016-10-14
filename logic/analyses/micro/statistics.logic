@@ -43,7 +43,7 @@ Stats:ReachableApplicationMethod(?method) <-
 Stats:ApplicationConcreteMethod(?method) <-
    Stats:ApplicationMethod(?method),
    ! Method:Modifier(?abstract, ?method),
-   Modifier:Value(?abstract:"abstract").
+   Modifier:Id(?abstract:"abstract").
 
 Stats:NonReachableApplicationConcreteMethod(?method) <-
    Stats:ApplicationConcreteMethod(?method),

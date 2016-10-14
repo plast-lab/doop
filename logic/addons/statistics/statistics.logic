@@ -21,7 +21,7 @@ Stats:ThrowablesInMethod(?heaptype, ?method),
 Stats:InsensThrowableHeapsOnMethodBoundaries(?heap, ?var),
 Stats:ThrowableHeapsOnMethodBoundaries(?hctx, ?heap, ?ctx, ?var) <-
 	Stats:HeapsOnMethodBoundaries(?hctx, ?heap, ?ctx, ?var), HeapAllocation:Type[?heap] = ?heaptype,
-	Type:Value(?throw:"java.lang.Throwable"), SupertypeOf(?throw, ?heaptype), Var:DeclaringMethod(?var, ?method).
+	Type:Id(?throw:"java.lang.Throwable"), SupertypeOf(?throw, ?heaptype), Var:DeclaringMethod(?var, ?method).
 
 Stats:InsensAppThrowableHeapsOnMethodBoundaries(?heap, ?var),
 Stats:AppThrowableHeapsOnMethodBoundaries(?hctx, ?heap, ?ctx, ?var) <-
@@ -62,7 +62,7 @@ Stats:InsensVars[] = ?n <- agg<<?n = count()>> Stats:InsensVarCount[_] = _.
 Stats:InsensVarPointsToNonThrowable(?heap, ?var),
 Stats:VarPointsToNonThrowable(?hctx, ?heap, ?ctx, ?var) <-
 	VarPointsTo(?hctx, ?heap, ?ctx, ?var), HeapAllocation:Type[?heap] = ?heaptype,
-	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
+	Type:Id(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
 */
 
 /****************************************************************
@@ -127,15 +127,15 @@ Stats:InsensFields[] = ?n <- agg<<?n = count()>> Stats:InsensFieldCount[_, _] = 
 Stats:InsensInstanceFieldPointsToNonThrowable(?heap, ?sig, ?baseheap),
 Stats:InstanceFieldPointsToNonThrowable(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) <-
 	InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap), HeapAllocation:Type[?heap] = ?heaptype,
-	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
+	Type:Id(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
 Stats:InsensInstanceFieldPointsToNonThrowable2(?heap, ?sig, ?baseheap),
 Stats:InstanceFieldPointsToNonThrowable2(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) <-
 	InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap), HeapAllocation:Type[?baseheap] = ?heaptype,
-	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
+	Type:Id(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype).
 Stats:InsensInstanceFieldPointsToNonThrowable3(?heap, ?sig, ?baseheap),
 Stats:InstanceFieldPointsToNonThrowable3(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) <-
 	InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap), HeapAllocation:Type[?heap] = ?heaptype, HeapAllocation:Type[?baseheap] = ?baseheaptype,
-	Type:Value(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype), !SupertypeOf(?throw, ?baseheaptype).
+	Type:Id(?throw:"java.lang.Throwable"), !SupertypeOf(?throw, ?heaptype), !SupertypeOf(?throw, ?baseheaptype).
 */
 
 /***************************************************
@@ -165,7 +165,7 @@ Stats:ReachableNativeMethod(?method) -> Method(?method).
 Stats:ReachableNativeMethod(?method) <-
 	Reachable(?method),
 	Method:Modifier(?native, ?method),
-	Modifier:Value(?native:"native").
+	Modifier:Id(?native:"native").
 */
 
 /****************************************************************
@@ -206,13 +206,13 @@ Stats:Dominance:InstanceFieldPointsTo:BaseObject[?hctx, ?heap] = ?count ->
 Stats:Dominance:InstanceFieldPointsTo:BaseObject[?hctx, ?heap] = count <-
 	agg<<count = count()>>(InstanceFieldPointsTo(_, _, _, ?hctx, ?heap)).
 
-Stats:Dominance:InstanceFieldPointsTo:ValueAllocationSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
-Stats:Dominance:InstanceFieldPointsTo:ValueAllocationSite[?alloc] = count <-
+Stats:Dominance:InstanceFieldPointsTo:IdAllocationSite[?alloc] = ?count -> HeapAllocation(?alloc), int[64](?count).
+Stats:Dominance:InstanceFieldPointsTo:IdAllocationSite[?alloc] = count <-
 	agg<<count = count()>>(InstanceFieldPointsTo(_, ?alloc, _, _, _)).
 
-Stats:Dominance:InstanceFieldPointsTo:ValueObject[?hctx, ?heap] = ?count ->
+Stats:Dominance:InstanceFieldPointsTo:IdObject[?hctx, ?heap] = ?count ->
 	HContext(?hctx), HeapAllocation(?heap), int[64](?count).
-Stats:Dominance:InstanceFieldPointsTo:ValueObject[?hctx, ?heap] = count <-
+Stats:Dominance:InstanceFieldPointsTo:IdObject[?hctx, ?heap] = count <-
 	agg<<count = count()>>(InstanceFieldPointsTo(?hctx, ?heap, _, _, _).
 */
 
@@ -304,52 +304,52 @@ Stats:InsensThrowMethods[] = ?n <- agg<<?n = count()>> Stats:InsensThrowsPerMeth
  ***************************************************/
 
 /*
-VarsRank(?r), VarsRank:Value(?r:?n) -> uint[32](?n).
+VarsRank(?r), VarsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`VarsRank] = 8388608.
 VarsRankNr(?r) <- uint32:range(1, Stats:Vars[], 1, ?r).
 +VarsRank(?r) <- +VarsRankNr(?r).
 
-InsensVarsRank(?r), InsensVarsRank:Value(?r:?n) -> uint[32](?n).
+InsensVarsRank(?r), InsensVarsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`InsensVarsRank] = 8388608.
 InsensVarsRankNr(?r) <- uint32:range(1, Stats:InsensVars[], 1, ?r).
 +InsensVarsRank(?r) <- +InsensVarsRankNr(?r).
 
-ArraysRank(?r), ArraysRank:Value(?r:?n) -> uint[32](?n).
+ArraysRank(?r), ArraysRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`ArraysRank] = 8388608.
 ArraysRankNr(?r) <- uint32:range(1, Stats:Arrays[], 1, ?r).
 +ArraysRank(?r) <- +ArraysRankNr(?r).
 
-InsensArraysRank(?r), InsensArraysRank:Value(?r:?n) -> uint[32](?n).
+InsensArraysRank(?r), InsensArraysRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`InsensArraysRank] = 8388608.
 InsensArraysRankNr(?r) <- uint32:range(1, Stats:InsensArrays[], 1, ?r).
 +InsensArraysRank(?r) <- +InsensArraysRankNr(?r).
 
-FieldsRank(?r), FieldsRank:Value(?r:?n) -> uint[32](?n).
+FieldsRank(?r), FieldsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`FieldsRank] = 8388608.
 FieldsRankNr(?r) <- uint32:range(1, Stats:Fields[], 1, ?r).
 +FieldsRank(?r) <- +FieldsRankNr(?r).
 
-InsensFieldsRank(?r), InsensFieldsRank:Value(?r:?n) -> uint[32](?n).
+InsensFieldsRank(?r), InsensFieldsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`InsensFieldsRank] = 8388608.
 InsensFieldsRankNr(?r) <- uint32:range(1, Stats:InsensFields[], 1, ?r).
 +InsensFieldsRank(?r) <- +InsensFieldsRankNr(?r).
 
-ThrowsRank(?r), ThrowsRank:Value(?r:?n) -> uint[32](?n).
+ThrowsRank(?r), ThrowsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`ThrowsRank] = 8388608.
 ThrowsRankNr(?r) <- uint32:range(1, Stats:ThrowMethods[], 1, ?r).
 +ThrowsRank(?r) <- +ThrowsRankNr(?r).
 
-MethodsRank(?r), MethodsRank:Value(?r:?n) -> uint[32](?n).
+MethodsRank(?r), MethodsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`MethodsRank] = 8388608.
 MethodsRankNr(?r) <- uint32:range(1, Stats:Methods[], 1, ?r).
 +MethodsRank(?r) <- +MethodsRankNr(?r).
 
-MethodVarsRank(?r), MethodVarsRank:Value(?r:?n) -> uint[32](?n).
+MethodVarsRank(?r), MethodVarsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`MethodVarsRank] = 8388608.
 MethodVarsRankNr(?r) <- uint32:range(1, Stats:MethodsWithVars[], 1, ?r).
 +MethodVarsRank(?r) <- +MethodVarsRankNr(?r).
 
-InsensMethodVarsRank(?r), InsensMethodVarsRank:Value(?r:?n) -> uint[32](?n).
+InsensMethodVarsRank(?r), InsensMethodVarsRank:Id(?r:?n) -> uint[32](?n).
 lang:physical:capacity[`InsensMethodVarsRank] = 8388608.
 InsensMethodVarsRankNr(?r) <- uint32:range(1, Stats:InsensMethodsWithVars[], 1, ?r).
 +InsensMethodVarsRank(?r) <- +InsensMethodVarsRankNr(?r).

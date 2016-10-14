@@ -9,7 +9,7 @@ CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?r
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
-   Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
+   Method:Id(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal,
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
    !(HeapAllocation:Merge[?heap] = _),  // the object retains its identity
@@ -21,7 +21,7 @@ CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?r
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
-   Method:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
+   Method:Id(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal,
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
    !(HeapAllocation:Merge[?heap] = _),  // the object retains its identity

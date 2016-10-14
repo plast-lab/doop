@@ -13,31 +13,31 @@ RealHContext2FromHContext[?hctx] = ?type2 <-
 Context(?ctx),
 ContextFromRealContext[?type, ?type, ?type] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  Type:Value(?type, "<<immutable-context>>").
+  Type:Id(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Type:Value(?type, "<<immutable-hcontext>>").
+  Type:Id(?type, "<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
+  Type:Id(?type, "<<jvm-startup>>"),
   HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
+  Type:Id(?type, "<<jvm-startup>>"),
   HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type, ?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
+  Type:Id(?type, "<<jvm-startup>>"),
   HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
@@ -63,14 +63,14 @@ Context(?ctx),
 ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:Value(?type12:"<<initial-context>>"),
+  Type:Id(?type12:"<<initial-context>>"),
   ClassTypeValue(?type3, "java.lang.String").
 
 Context(?ctx),
 ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:Value(?type12:"<<jvm-startup>>"),
+  Type:Id(?type12:"<<jvm-startup>>"),
   ClassTypeValue(?type3, "java.lang.String").
 
 Context(?ctx),
@@ -78,5 +78,5 @@ ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:Value(?type12:"<<class-initialization>>"),
+  Type:Id(?type12:"<<class-initialization>>"),
   ClassTypeValue(?type3, "java.lang.String").
