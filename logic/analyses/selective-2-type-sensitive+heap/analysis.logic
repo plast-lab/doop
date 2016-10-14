@@ -23,31 +23,31 @@ RealHContextFromHContext[?hctx] = ?type <-
 Context(?ctx),
 ContextFromRealContext[?instr, ?instr] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  Instruction:Value(?instr, "<<immutable-context>>").
+  Instruction:Id(?instr, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Instruction:Value(?instr:"<<immutable-hcontext>>").
+  Instruction:Id(?instr:"<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Instruction:Value(?instr:"<<jvm-startup>>"),
+  Instruction:Id(?instr:"<<jvm-startup>>"),
   HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Instruction:Value(?instr:"<<jvm-startup>>"),
+  Instruction:Id(?instr:"<<jvm-startup>>"),
   HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Instruction:Value(?instr:"<<jvm-startup>>"),
+  Instruction:Id(?instr:"<<jvm-startup>>"),
   HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
@@ -73,7 +73,7 @@ ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?class1, "java.lang.String"),
   ClassToInstr[?class1] = ?type1,
-  Instruction:Value(?type2:"<<initial-context>>").
+  Instruction:Id(?type2:"<<initial-context>>").
 
 Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
@@ -81,7 +81,7 @@ ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   ClassTypeValue(?class1, "java.lang.String"),
   ClassToInstr[?class1] = ?type1,
-  Instruction:Value(?type2:"<<jvm-startup>>").
+  Instruction:Id(?type2:"<<jvm-startup>>").
 
 Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
@@ -90,4 +90,4 @@ ReachableContext(?ctx, ?clinit) <-
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?class1, "java.lang.String"),
   ClassToInstr[?class1] = ?type1,
-  Instruction:Value(?type2:"<<class-initialization>>").
+  Instruction:Id(?type2:"<<class-initialization>>").

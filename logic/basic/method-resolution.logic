@@ -22,7 +22,7 @@ MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
  */
 MethodLookup[?simplename, ?descriptor, ?arraytype] = ?method <-
    ArrayType(?arraytype),
-   Type:Value(?object:"java.lang.Object"),
+   Type:Id(?object:"java.lang.Object"),
    MethodImplemented[?simplename, ?descriptor, ?object] = ?method.
 
 MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
@@ -67,5 +67,5 @@ OverridableMethod(?type, ?method) <-
 
 ClassConstructor(method, type) <-
   MethodLookup(_, _, type, method),
-  Method:Value(method:value),
+  Method:Id(method:value),
   string:like(value, "%<init>%").

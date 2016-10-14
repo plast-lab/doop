@@ -11,31 +11,31 @@ RealHContextFromHContext[?hctx] = ?type <-
 Context(?ctx),
 ContextFromRealContext[?type, ?type] = ?ctx,
 ImmutableContext[] = ?ctx <-
-  Type:Value(?type, "<<immutable-context>>").
+  Type:Id(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 ImmutableHContext[] = ?hctx <-
-  Type:Value(?type, "<<immutable-hcontext>>").
+  Type:Id(?type, "<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
+  Type:Id(?type, "<<jvm-startup>>"),
   HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
+  Type:Id(?type, "<<jvm-startup>>"),
   HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
+  Type:Id(?type, "<<jvm-startup>>"),
   HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
 
 
@@ -60,14 +60,14 @@ ContextFromRealContext[?type1, ?type2] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:Value(?type2:"<<initial-context>>").
+  Type:Id(?type2:"<<initial-context>>").
 
 Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:Value(?type2:"<<jvm-startup>>").
+  Type:Id(?type2:"<<jvm-startup>>").
 
 Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
@@ -75,7 +75,7 @@ ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:Value(?type2:"<<class-initialization>>").
+  Type:Id(?type2:"<<class-initialization>>").
 
 
 //// ---- Leftovers from experiment below ----

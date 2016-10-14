@@ -925,25 +925,25 @@ NameFromRefMode[?ref] = ?name ->
    string(?ref), string(?name).
 
 NameFromRefMode[?ref] = ?varName <-
-   Var:Value(_:?ref),
+   Var:Id(_:?ref),
    VarRefModeLastTokenIndex[?ref] = ?maxIdx,
    string:split[?ref, "/", ?maxIdx] = ?varName.
 lang:derivationType[`NameFromRefMode] = "Derived".
 
 NameFromRefMode[?ref] = ?varName <-
-   Field:Value(_:?ref),
+   Field:Id(_:?ref),
    FieldRefModeLastTokenIndex[?ref] = ?maxIdx,
    string:split[?ref, "/", ?maxIdx] = ?varName.
 lang:derivationType[`NameFromRefMode] = "Derived".
 
 VarRefModeLastTokenIndex[?ref] = ?maxIdx <-
    agg<<?maxIdx = max(?idx)>>
-   Var:Value(_:?ref),
+   Var:Id(_:?ref),
    string:split[?ref, "/", ?idx] = _.
 
 FieldRefModeLastTokenIndex[?ref] = ?maxIdx <-
    agg<<?maxIdx = max(?idx)>>
-   Field:Value(_:?ref),
+   Field:Id(_:?ref),
    string:split[?ref, "/", ?idx] = _.
 
 

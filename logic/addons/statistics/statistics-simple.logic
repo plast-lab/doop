@@ -70,7 +70,7 @@ Stats:Simple:ReachableApplicationMethod(?ctx, ?method) <-
 Stats:Simple:ApplicationConcreteMethod(?method) <-
    Stats:Simple:ApplicationMethod(?method),
    ! Method:Modifier(?abstract, ?method),
-   Modifier:Value(?abstract:"abstract").
+   Modifier:Id(?abstract:"abstract").
 
 Stats:Simple:NonReachableApplicationConcreteMethod(?method) <-
    Stats:Simple:ApplicationConcreteMethod(?method),

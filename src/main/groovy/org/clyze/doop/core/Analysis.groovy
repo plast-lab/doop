@@ -258,7 +258,7 @@ class Analysis implements Runnable {
         }
 
         if (options.MAIN_CLASS.value)
-            connector.queue().addBlock("""MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
+            connector.queue().addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
         connector.queue()
             .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")

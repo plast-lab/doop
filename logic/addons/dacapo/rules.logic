@@ -18,7 +18,7 @@ DacapoHarnessClass(?heap)
       string:substring[?benchmark, 1, string:length[?benchmark] - 1] +
       "Harness",
 #endif
-   Type:Value(?type:"java.lang.String").
+   Type:Id(?type:"java.lang.String").
 
 /**
  * Extra logic to handle a specific value read from a configuration file for

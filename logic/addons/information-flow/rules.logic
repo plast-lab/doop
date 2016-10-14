@@ -14,9 +14,9 @@
 //VarDef(?to, ?insn) <-
 //  AssignInstruction:To[?insn] = ?to,
 //  (AssignBinop:Insn(?insn) ; AssignUnop:Insn(?insn)).
-#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Value(method:value), string:like(value, pattern)
+#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Id(method:value), string:like(value, pattern)
 
-#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Value(method:value), string:like(value, pattern)                            
+#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Id(method:value), string:like(value, pattern)                            
 
                                                                                                                     
 TaintSourceMethod(?overriddenMethod) <-
@@ -61,9 +61,9 @@ CallTaintingMethod(?ctx, ?invocation) <-
  * Information flow through complex relations
  */
 StringFactoryType(?type) <-
-  Type:Value(?type:"java.lang.String") ;
-  Type:Value(?type:"java.lang.StringBuffer") ;
-  Type:Value(?type:"java.lang.StringBuilder").
+  Type:Id(?type:"java.lang.String") ;
+  Type:Id(?type:"java.lang.StringBuffer") ;
+  Type:Id(?type:"java.lang.StringBuilder").
 
 StringFactoryVar(?var) <-
   Var:Type[?var] = ?type,

@@ -3,14 +3,14 @@ NormalHeapConsMacro(?id, ?type, ?heap) <-
 
 StringConstantConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:String(?id),
-   Type:Value(?type:"java.lang.String").
+   Type:Id(?type:"java.lang.String").
 
 ClassHeapConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:Class(?id),
-   Type:Value(?type:"java.lang.Class").
+   Type:Id(?type:"java.lang.Class").
 
 HeapAllocation:byValue[?id] = ?heap <-
-   HeapAllocation:Value[?heap] = ?id.
+   HeapAllocation:Id[?heap] = ?id.
 
 
 HeapAllocation:EmptyArray(?heap) <-

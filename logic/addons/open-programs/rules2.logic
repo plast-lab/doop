@@ -3,12 +3,12 @@
 
 // Framework and benchmark specific stuff (TODO - take out of here) 
 
-ClassToMock(?type) <- ?typeStr = "javax.servlet.http.Cookie[]", ReferenceType(?type), Type:Value(?type:?typeStr).
-ClassToMock(?type) <- ?typeStr = "javax.servlet.http.Cookie", ReferenceType(?type), Type:Value(?type:?typeStr).
-ClassToMock(?type) <- ?typeStr = "java.sql.Connection", ReferenceType(?type), Type:Value(?type:?typeStr).
+ClassToMock(?type) <- ?typeStr = "javax.servlet.http.Cookie[]", ReferenceType(?type), Type:Id(?type:?typeStr).
+ClassToMock(?type) <- ?typeStr = "javax.servlet.http.Cookie", ReferenceType(?type), Type:Id(?type:?typeStr).
+ClassToMock(?type) <- ?typeStr = "java.sql.Connection", ReferenceType(?type), Type:Id(?type:?typeStr).
 
 // statically initialize driver factory with a "fake" driver
-MockEntryPoint(?type, "<java.sql.DriverManager: void registerDriver(java.sql.Driver)>") <- ?typeStr = "java.sql.DriverManager", ClassType(?type), Type:Value(?type:?typeStr).
+MockEntryPoint(?type, "<java.sql.DriverManager: void registerDriver(java.sql.Driver)>") <- ?typeStr = "java.sql.DriverManager", ClassType(?type), Type:Id(?type:?typeStr).
 
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").
@@ -30,7 +30,7 @@ AllConcreteImplementations(?type, ?type) <-
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
    ClassType(?class),
-   Type:Value(?staticType:"javax.servlet.http.HttpServlet").
+   Type:Id(?staticType:"javax.servlet.http.HttpServlet").
 
 ClassToMock(?class) -> ReferenceType(?class).
 
@@ -52,7 +52,7 @@ ClassToMock(?class) <-
 
 MockObject(?classHeap, ?class) <-
    ClassToMock(?class),
-   Type:Value(?class:?classStr),
+   Type:Id(?class:?classStr),
    ?classHeap = "<Mock allocation for " + ?classStr + ">".
 
 ClassToMock(?componentType) <-
@@ -93,7 +93,7 @@ MockObjectOpt(?fieldtype, ?heap) <- MockObject(?heap, ?fieldtype).
 
 MockObjectHeap(?heap, ?fieldtype) <-
    MockObjectOpt(?fieldtype, ?heapStr),
-   Instruction:Value(?heap:?heapStr), 
+   Instruction:Id(?heap:?heapStr), 
    HeapAllocation(?heap).
 
 
@@ -128,17 +128,17 @@ MocksForFormals(?description, ?staticType, ?index, ?method) <-
    ReferenceType(?staticType),
    FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
-   Method:Value(?method:?methodStr),
+   Method:Id(?method:?methodStr),
    MockEntryPoint(_, ?method),
-   Type:Value(?staticType:?staticTypeStr), 
+   Type:Id(?staticType:?staticTypeStr), 
    ?description = "<Mock " + ?methodStr + ": " + ?staticTypeStr + ">".
 
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
-   Type:Value(?class:?classStr),
+   Type:Id(?class:?classStr),
    ServletEntryMethodName(?serviceMethodName),
-   Method:Value(?entry:methodSigStr),
+   Method:Id(?entry:methodSigStr),
    // TODO: try removing initializer
    (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
    ServletEntryMethodName(?serviceMethodName).
@@ -154,7 +154,7 @@ HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
 VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
  <-
    HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
-   Instruction:Value(?heap:?heapStr), 
+   Instruction:Id(?heap:?heapStr), 
    ImmutableHContext[] = ?hctx,
    HeapAllocation(?heap).
 

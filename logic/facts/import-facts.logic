@@ -18,7 +18,7 @@ lang:physical:hasColumnNames[`_StringConstant] = false.
 _StringConstant(?id) ->
    string(?id).
 
-+Type:Value(?t:?str),
++Type:Id(?t:?str),
 +ClassType(?t) <-
    ?str = "java.lang.String".
 
@@ -34,7 +34,7 @@ _StringRaw(?id, ?rawId) ->
    string(?id), string(?rawId).
 
 +StringRaw(?raw),
-+StringRaw:Value(?raw:?rawId),
++StringRaw:Id(?raw:?rawId),
 +String:toRaw[?id] = ?raw <-
    _StringRaw(?id, ?rawId).
 
@@ -47,7 +47,7 @@ lang:physical:hasColumnNames[`_ClassHeap] = false.
 _ClassHeap(?id) ->
    string(?id).
 
-+Type:Value(?t:?str),
++Type:Id(?t:?str),
 +ClassType(?t) <-
    ?str = "java.lang.Class".
 
@@ -80,7 +80,7 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
    string(?inmethod).
 
 +AssignHeapAllocation:Insn(?instr),
-+Instruction:Value(?instr:?instrId),
++Instruction:Id(?instr:?instrId),
 +Instruction:Index[?instr] = ?index,
 +Instruction:Method[?instr] = ?method,
 +AssignInstruction:To[?instr] = ?to,
@@ -117,7 +117,7 @@ _AssignLocal(?instruction, ?index, ?from, ?to, ?inmethod) ->
    string(?inmethod).
 
 +AssignLocal:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignLocal:From[?x] = ?from,
@@ -139,7 +139,7 @@ _AssignBinop(?instruction, ?index, ?to, ?inmethod) ->
    string(?inmethod).
 
 +AssignBinop:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
@@ -160,7 +160,7 @@ _AssignUnop(?instruction, ?index, ?to, ?inmethod) ->
    string(?inmethod).
 
 +AssignUnop:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
@@ -180,7 +180,7 @@ _AssignOperFrom(?instruction, ?from) ->
 
 +AssignOper:From(?insn, ?from) <-
    AssignOper:Insn(?insn),
-   Instruction:Value(?insn:?insnval),
+   Instruction:Id(?insn:?insnval),
    _AssignOperFrom(?insnval, ?from).
 
 // AssignOperType
@@ -196,7 +196,7 @@ _AssignOperType(?instruction, ?type) ->
 
 +AssignOper:Type(?insn, ?type) <-
    AssignOper:Insn(?insn),
-   Instruction:Value(?insn:?insnval),
+   Instruction:Id(?insn:?insnval),
    _AssignOperType(?insnval, ?type).
 
 // IfVar
@@ -212,7 +212,7 @@ _IfVar(?instruction, ?var) ->
 
 +If:Var(?insn, ?var) <-
    If:Insn(?insn),
-   Instruction:Value(?insn, ?insnval),
+   Instruction:Id(?insn, ?insnval),
    _IfVar(?insnval, ?var).
 
 // AssignCast
@@ -231,7 +231,7 @@ _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
    string(?inmethod).
 
 +AssignCast:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignCast:Type[?x] = ?type,
@@ -256,11 +256,11 @@ _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?inmethod) ->
    string(?inmethod).
 
 +AssignCastNumConstant:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignCast:Type[?x] = ?type,
-+AssignCastNumConstant:Value[?x] = ?const,
++AssignCastNumConstant:Id[?x] = ?const,
 +AssignInstruction:To[?x] = ?to <-
    _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?method).
 
@@ -280,7 +280,7 @@ _AssignCastNull(?instruction, ?index, ?to, ?type, ?inmethod) ->
    string(?inmethod).
 
 +AssignCastNull:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignCast:Type[?x] = ?type,
@@ -303,10 +303,10 @@ _AssignNumConstant(?instruction, ?index, ?const, ?to, ?inmethod) ->
    string(?inmethod).
 
 +AssignNumConstant:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+AssignNumConstant:Value[?x] = ?const,
++AssignNumConstant:Id[?x] = ?const,
 +AssignInstruction:To[?x] = ?to <-
    _AssignNumConstant(?instruction, ?index, ?const, ?to, ?method).
 
@@ -325,7 +325,7 @@ _AssignNull(?instruction, ?index, ?to, ?inmethod) ->
    string(?inmethod).
 
 +AssignNull:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstruction:To[?x] = ?to <-
@@ -348,7 +348,7 @@ _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?inmethod) ->
    string(?inmethod).
 
 +AssignInstanceOf:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +AssignInstanceOf:From[?x] = ?from,
@@ -371,7 +371,7 @@ _Field(?ref, ?declaringClass, ?simplename, ?type) ->
    string(?type).
 
 +Field(?x),
-+Field:Value(?x:?signature),
++Field:Id(?x:?signature),
 +Field:DeclaringType[?x] = ?declaringType,
 +Field:SimpleName[?x] = ?simplename,
 +Field:Type[?x] = ?type <-
@@ -392,7 +392,7 @@ _EnterMonitor(?ref, ?index, ?var, ?method) ->
    string(?method).
 
 +EnterMonitor:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +EnterMonitor:Var[?x] = ?var <-
@@ -413,7 +413,7 @@ _ExitMonitor(?ref, ?index, ?var, ?method) ->
    string(?method).
 
 +ExitMonitor:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +ExitMonitor:Var[?x] = ?var <-
@@ -432,7 +432,7 @@ _MethodInvocation:Line(?ref, ?line) ->
    int[64](?line).
 
 +MethodInvocation(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +MethodInvocation:Line[?x] = ?line <-
    _MethodInvocation:Line(?instruction, ?line).
 
@@ -451,7 +451,7 @@ _StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
    string(?method).
 
 +StaticMethodInvocation:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +MethodInvocation:Signature[?x] = ?signature <-
@@ -473,7 +473,7 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
    string(?method).
 
 +SpecialMethodInvocation:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +SpecialMethodInvocation:Base[?x] = ?base,
@@ -496,7 +496,7 @@ _VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
    string(?method).
 
 +VirtualMethodInvocation:Insn(?x),
-+Instruction:Value(?x:?instruction),
++Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +VirtualMethodInvocation:Base[?x] = ?base,
@@ -518,7 +518,7 @@ _Throw(?ref, ?index, ?var, ?method) ->
    string(?method).
 
 +Throw:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Throw:Var[?x] = ?var <-
@@ -538,7 +538,7 @@ _ThrowNull(?ref, ?index, ?method) ->
    string(?method).
 
 +ThrowNull:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _ThrowNull(?ref, ?index, ?method).
@@ -561,7 +561,7 @@ _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end) ->
    int[32](?end).
 
 +ExceptionHandler(?x),
-+ExceptionHandler:Value(?x:?ref),
++ExceptionHandler:Id(?x:?ref),
 +ExceptionHandler:Method[?x] = ?method,
 +ExceptionHandler:Index[?x] = ?index,
 +ExceptionHandler:Type[?x] = ?type,
@@ -587,7 +587,7 @@ _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescrip
    string(?jvmDescriptor).
 
 +Method(?x),
-+Method:Value(?x:?ref),
++Method:Id(?x:?ref),
 +Method:SimpleName[?x] = ?simplename,
 +Method:Descriptor[?x] = ?descriptor,
 +Method:DeclaringType[?x] = ?declaringType,
@@ -612,7 +612,7 @@ _StoreInstanceField(?ref, ?index, ?from, ?base, ?signature, ?method) ->
    string(?method).
 
 +StoreInstanceField:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
@@ -637,7 +637,7 @@ _LoadInstanceField(?ref, ?index, ?to, ?base, ?signature, ?method) ->
    string(?method).
 
 +LoadInstanceField:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
@@ -661,7 +661,7 @@ _StoreStaticField(?ref, ?index, ?from, ?signature, ?method) ->
    string(?method).
 
 +StoreStaticField:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
@@ -684,7 +684,7 @@ _LoadStaticField(?ref, ?index, ?to, ?signature, ?method) ->
    string(?method).
 
 +LoadStaticField:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +FieldInstruction:Signature[?x] = ?signature,
@@ -707,7 +707,7 @@ _StoreArrayIndex(?ref, ?index, ?from, ?base, ?method) ->
    string(?method).
 
 +StoreArrayIndex:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +StoreArrayIndex:Base[?x] = ?base,
@@ -730,7 +730,7 @@ _LoadArrayIndex(?ref, ?index, ?to, ?base, ?method) ->
    string(?method).
 
 +LoadArrayIndex:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +LoadArrayIndex:Base[?x] = ?base,
@@ -766,7 +766,7 @@ _Goto(?ref, ?index, ?to, ?method) ->
    string(?method).
 
 +Goto:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Goto:Target[?x] = ?to <-
@@ -787,7 +787,7 @@ _If(?ref, ?index, ?to, ?method) ->
    string(?method).
 
 +If:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +If:Target[?x] = ?to <-
@@ -807,7 +807,7 @@ _TableSwitch(?ref, ?index, ?key, ?method) ->
    string(?method).
 
 +TableSwitch:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Switch:Key[?x] = ?key <-
@@ -825,7 +825,7 @@ _LookupSwitch(?ref, ?index, ?key, ?method) ->
    string(?method).
 
 +LookupSwitch:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Switch:Key[?x] = ?key <-
@@ -843,7 +843,7 @@ _TableSwitch:Target(?ref, ?value, ?target) ->
    int[32](?target).
 
 +TableSwitch:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Switch:Target[?x, ?value] = ?target <-
    _TableSwitch:Target(?ref, ?value, ?target).
 
@@ -858,7 +858,7 @@ _LookupSwitch:Target(?ref, ?value, ?target) ->
    int[32](?target).
 
 +LookupSwitch:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Switch:Target[?x, ?value] = ?target <-
    _LookupSwitch:Target(?ref, ?value, ?target).
 
@@ -873,7 +873,7 @@ _TableSwitch:DefaultTarget(?ref, ?target) ->
    int[32](?target).
 
 +TableSwitch:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Switch:DefaultTarget[?x] = ?target <-
    _TableSwitch:DefaultTarget(?ref, ?target).
 
@@ -887,7 +887,7 @@ _LookupSwitch:DefaultTarget(?ref, ?target) ->
    int[32](?target).
 
 +LookupSwitch:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Switch:DefaultTarget[?x] = ?target <-
    _LookupSwitch:DefaultTarget(?ref, ?target).
 
@@ -905,7 +905,7 @@ _Return(?ref, ?index, ?var, ?method) ->
    string(?method).
 
 +ReturnNonvoid:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +ReturnNonvoid:Var[?x] = ?var <-
@@ -925,7 +925,7 @@ _ReturnVoid(?ref, ?index, ?method) ->
    string(?method).
 
 +ReturnVoid:Insn(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _ReturnVoid(?ref, ?index, ?method).
@@ -944,7 +944,7 @@ _AssignPhantomInvoke(?ref, ?index, ?method) ->
    string(?method).
 
 +AssignPhantomInvoke(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _AssignPhantomInvoke(?ref, ?index, ?method).
@@ -963,7 +963,7 @@ _PhantomInvoke(?ref, ?index, ?method) ->
    string(?method).
 
 +PhantomInvoke(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _PhantomInvoke(?ref, ?index, ?method).
@@ -982,7 +982,7 @@ _BreakpointStmt(?ref, ?index, ?method) ->
    string(?method).
 
 +BreakpointStmt(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _BreakpointStmt(?ref, ?index, ?method).
@@ -1001,7 +1001,7 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
    string(?method).
 
 +UnsupportedInstruction(?x),
-+Instruction:Value(?x:?ref),
++Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _UnsupportedInstruction(?ref, ?index, ?method).
@@ -1009,23 +1009,23 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 
 // Access Modifiers
 
-+Modifier(?x), +Modifier:Value(?x:"abstract"), +Modifier:abstract[] = ?x.
-+Modifier(?x), +Modifier:Value(?x:"public"),   +Modifier:public[]   = ?x.
-+Modifier(?x), +Modifier:Value(?x:"private"),  +Modifier:private[]  = ?x.
-+Modifier(?x), +Modifier:Value(?x:"final"),    +Modifier:final[]    = ?x.
-+Modifier(?x), +Modifier:Value(?x:"static"),   +Modifier:static[]   = ?x.
++Modifier(?x), +Modifier:Id(?x:"abstract"), +Modifier:abstract[] = ?x.
++Modifier(?x), +Modifier:Id(?x:"public"),   +Modifier:public[]   = ?x.
++Modifier(?x), +Modifier:Id(?x:"private"),  +Modifier:private[]  = ?x.
++Modifier(?x), +Modifier:Id(?x:"final"),    +Modifier:final[]    = ?x.
++Modifier(?x), +Modifier:Id(?x:"static"),   +Modifier:static[]   = ?x.
 
 
 // Basic Types as nullary functional-predicates
 
-+PrimitiveType(?t), +Type:Value(?t:"boolean"), +Type:boolean[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"byte"),    +Type:byte[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"char"),    +Type:char[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"short"),   +Type:short[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"int"),     +Type:int[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"long"),    +Type:long[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"float"),   +Type:float[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"double"),  +Type:double[] = ?t.
-+PrimitiveType(?t), +Type:Value(?t:"void"),    +Type:void[] = ?t.
-+NullType(?t),  +Type:Value(?t:"null_type"), +Type:null[] = ?t.
-+ClassType(?t), +Type:Value(?t:"java.lang.Object"), +Type:object[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"boolean"), +Type:boolean[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"byte"),    +Type:byte[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"char"),    +Type:char[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"short"),   +Type:short[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"int"),     +Type:int[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"long"),    +Type:long[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"float"),   +Type:float[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"double"),  +Type:double[] = ?t.
++PrimitiveType(?t), +Type:Id(?t:"void"),    +Type:void[] = ?t.
++NullType(?t),      +Type:Id(?t:"null_type"), +Type:null[] = ?t.
++ClassType(?t),     +Type:Id(?t:"java.lang.Object"), +Type:object[] = ?t.
