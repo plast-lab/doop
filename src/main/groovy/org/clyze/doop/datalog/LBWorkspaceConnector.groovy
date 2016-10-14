@@ -40,6 +40,7 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
 
     void processQueue() {
         _queue._components.each { c -> c.invoke(_logger, _bloxbatch, _bloxOpts, _executor) }
+        _queue.clear()
     }
 
     public IWorkspaceAPI echo(String message) {

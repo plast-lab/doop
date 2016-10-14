@@ -15,6 +15,10 @@ class LBCommandQueue implements IWorkspaceAPI {
         _components.add(new LBWorkspaceConnector.Script(_outDir))
     }
 
+    public void clear() {
+        _components = new ArrayList<>()
+    }
+
     public IWorkspaceAPI echo(String message) {
         return eval('echo "' + message + '"')
     }
