@@ -40,16 +40,17 @@ VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    Method:Descriptor[?signature] = ?descriptor.
 
 
-// NOTE: This seems to be OK performance-wise. If we put it in a different
-// block, we have to declared it as DerivedAndStored which has an impact.
-ResolveInvocation(?invocation, ?heaptype, ?tomethod) ->
+// Encodes a CHA callgraph, effectively. 
+ResolveInvocation[?heaptype, ?invocation] = ?tomethod ->
    MethodInvocation(?invocation), Type(?heaptype), Method(?tomethod).
-lang:derivationType[`ResolveInvocation] = "Derived".
 
-ResolveInvocation(?invocation, ?heaptype, ?tomethod) <-
-   VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-   VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
-   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod.
+ResolveInvocation[?heaptype, ?invocation] = ?tomethod <-
+  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+  VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
+  VirtualMethodInvocation:Base[?invocation] = ?base,
+  Var:Type[?base] = ?basetype,
+  SubtypeOf(?heaptype, ?basetype),
+  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod.
 
 OverridableMethod(?type, ?method) <-
   MethodLookup(_, _, ?type, ?method),
