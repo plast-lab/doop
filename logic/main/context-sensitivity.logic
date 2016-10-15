@@ -31,6 +31,7 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
  * Heap allocation
  */
 
+#ifndef OptimizeRecordMacro
 RecordMacro(?ctx, ?heap, ?hctx),
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
@@ -39,6 +40,21 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
   !ArrayType(HeapAllocation:Type[?heap]),
 #endif
   ObjectShouldNotBeRefined(?heap).
+
+#else /* there is optimized behavior available */
+RecordBasisMacro(?ctx, ?var, ?heap) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  RecordBasisMacro(?ctx, ?var, ?heap),
+  OptimizeRecordMacro(?ctx, ?heap, ?hctx),
+#ifdef RecordArrayMacro
+  !ArrayType(HeapAllocation:Type[?heap]),
+#endif
+  ObjectShouldNotBeRefined(?heap).
+#endif /* #ifndef OptimizeMergeMacro */
+
 
 // There is scarcely any logical explanation, but breaking up the rule
 // as above results in faster execution!
@@ -331,7 +347,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation),
@@ -356,7 +372,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
   HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -380,7 +396,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
@@ -396,7 +412,7 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
   HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).

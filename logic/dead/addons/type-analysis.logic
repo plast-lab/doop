@@ -64,7 +64,7 @@ _Reachable(?tomethod)
    Instruction:Method[?invocation] = ?inmethod,
    VirtualMethodInvocation:Base[?invocation] = ?base,
    _Reachable(?inmethod),
-   ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+   ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
    ThisVar[?tomethod] = ?this.
 
 // SCALL
