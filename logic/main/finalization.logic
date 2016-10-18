@@ -6,7 +6,7 @@
 
 RecordMacro(?callerCtx, ?value, ?hctx),
 CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?register),
-MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
+MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?calleeCtx),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
    Method:Id(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
@@ -19,7 +19,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
 #ifdef RecordRefinedMacro
 RecordRefinedMacro(?callerCtx, ?value, ?hctx),
 CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?register),
-MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heap, ?calleeCtx),
+MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?calleeCtx),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
    Method:Id(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
