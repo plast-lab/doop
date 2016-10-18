@@ -153,8 +153,9 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value:Heap[?value] = ?heap,
   Value:Null[] != ?basevalue,
-  !SpecialValue(?value).
+  !SpecialObject(?heap).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
@@ -235,7 +236,8 @@ ReachableLoadArrayIndexBase(?base) <-
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  !SpecialValue(?value),
+  Value:Heap[?value] = ?heap,
+  !SpecialObject(?heap),
   Value:Heap[?basevalue] = ?baseheap,
   !HeapAllocation:EmptyArray(?baseheap),
   Value:Type[?value] = ?valuetype,

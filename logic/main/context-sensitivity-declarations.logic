@@ -32,10 +32,10 @@ ContextComponent:Value[?value] = ?comp ->
 lang:constructor(`ContextComponent:Value).
 
 
-// Special values are just artificial ones that we use to find where the
+// Special heap objects are just artificial ones that we use to find where the
 // result of a reflective call can flow to. We don't want to track them
 // through the heap.
-SpecialValue(?value) -> Value(?value).
+SpecialObject(?heap) -> HeapAllocation(?heap).
 
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) ->
