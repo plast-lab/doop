@@ -1,0 +1,17 @@
+// In this analysis, the real context is a pair of MethodInvocations and the
+// real heap context a single MethodInvocation. Keeping mapping functions is
+// the way to handle analyses where HContext = Context (since the language
+// considers them different types).
+ContextFromRealContext[?invocation1, ?invocation2] = ?ctx ->
+  Context(?ctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?invocation ->
+  Context(?ctx), MethodInvocation(?invocation).
+RealContext2FromContext[?ctx] = ?invocation ->
+  Context(?ctx), MethodInvocation(?invocation).
+
+HContextFromRealHContext[?invocation] = ?hctx ->
+  HContext(?hctx), MethodInvocation(?invocation).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?invocation ->
+  HContext(?hctx), MethodInvocation(?invocation).

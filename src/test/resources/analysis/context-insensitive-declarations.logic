@@ -1,0 +1,158 @@
+ClassInitializer[?type] = ?method ->
+   Type(?type), MethodSignature(?method).
+InitializedClass(?classOrInterface) ->
+   Type(?classOrInterface).
+DeclaringClass:Allocation[?heap] = ?type ->
+   Instruction(?heap),
+   Type(?type).
+FinalizerRegisterInfo(?register, ?formal) -> MethodSignature(?register), Var(?formal).
+OverridesFinalize(?class) -> Type(?class).
+ImplicitReachable(?sig) ->
+   MethodSignature(?sig).
+MethodLookup[?simplename, ?descriptor, ?type] = ?method ->
+   SimpleName(?simplename),
+   MethodDescriptor(?descriptor),
+   Type(?type),
+   MethodSignature(?method).
+MethodImplemented[?simplename, ?descriptor, ?type] = ?method ->
+   SimpleName(?simplename),
+   MethodDescriptor(?descriptor),
+   Type(?type),
+   MethodSignature(?method).
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
+   MethodInvocation(?invocation),
+   SimpleName(?simplename).
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
+   MethodInvocation(?invocation),
+   MethodDescriptor(?descriptor).
+NativeCallGraphEdge(?callerCtx, ?nativeMethod, ?calleeCtx, ?method) ->
+   Context(?callerCtx), MethodSignature(?nativeMethod),
+   Context(?calleeCtx), MethodSignature(?method).
+DirectSubclass[?a] = ?c -> Type(?a), Type(?c).
+Subclass(?c, ?a) -> Type(?c), Type(?a).
+Superclass(?c, ?a) -> Type(?c), Type(?a).
+Superinterface(?k, ?c) -> Type(?k), Type(?c).
+RunningThread(?hctx, ?heap) ->
+   HContext(?hctx), HeapAllocation(?heap).
+ReachableCurrentThreadInvocation(?callerCtx, ?local) ->
+   Context(?callerCtx), Var(?local).
+SubtypeOf(?subtype, ?type) ->
+   Type(?subtype), Type(?type).
+SupertypeOf(?supertype, ?type) ->
+   Type(?supertype), Type(?type).
+ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) ->
+   HContext(?hctx), HeapAllocation(?heap),
+   Context(?ctx), MethodSignature(?method).
+ExceptionHandler:At[?type, ?instruction] = ?handler ->
+   ExceptionHandler(?handler), Type(?type), Instruction(?instruction).
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) ->
+   ExceptionHandler(?handler), Type(?type), Instruction(?instruction).
+PossibleExceptionHandler(?handler, ?type, ?instruction) ->
+   ExceptionHandler(?handler),
+   Type(?type),
+   Instruction(?instruction).
+ExceptionHandler:InRange(?handler, ?instruction) ->
+   ExceptionHandler(?handler),
+   Instruction(?instruction).
+ExceptionHandler:Before(?before, ?handler) ->
+   ExceptionHandler(?before),
+   ExceptionHandler(?handler).
+InRangeOfExceptionHandler(?instruction) -> Instruction(?instruction).
+MainMethodDeclaration(?method) ->
+   MethodSignature(?method).
+Context(?ctx) ->.
+lang:entity(`Context).
+lang:physical:storageModel[`Context]="ScalableSparse".
+lang:physical:capacity[`Context] = 8388608.
+HContext(?hctx) ->.
+lang:entity(`HContext).
+lang:physical:storageModel[`HContext]="ScalableSparse".
+lang:physical:capacity[`HContext] = 8388608.
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) ->
+  HContext(?hctx), HeapAllocation(?heap), Context(?ctx), Var(?var).
+InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) ->
+  HContext(?hctx), HeapAllocation(?heap),
+  FieldSignature(?sig),
+  HContext(?basehctx), HeapAllocation(?baseheap).
+StaticFieldPointsTo(?hctx, ?heap, ?sig) ->
+  FieldSignature(?sig),
+  HContext(?hctx), HeapAllocation(?heap).
+ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) ->
+  HContext(?basehctx), HeapAllocation(?baseheap),
+  HContext(?hctx), HeapAllocation(?heap).
+Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) ->
+  Type(?type),
+  Context(?toCtx), Var(?to),
+  Context(?fromCtx), Var(?from).
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method) ->
+  Context(?callerCtx), CallGraphEdgeSource(?invocation),
+  Context(?calleeCtx), MethodSignature(?method).
+Reachable(?method) ->
+  MethodSignature(?method).
+ReachableContext(?ctx, ?method) ->
+  Context(?ctx), MethodSignature(?method).
+OptLoadInstanceField(?to, ?signature, ?base) ->
+  Var(?base),
+  FieldSignature(?signature),
+  Var(?to).
+OptLoadStaticField(?ctx, ?to, ?signature) ->
+  FieldSignature(?signature),
+  Context(?ctx), Var(?to).
+OptStoreStaticField(?signature, ?from) ->
+  Var(?from),
+  FieldSignature(?signature).
+OptStoreInstanceField(?from, ?signature, ?base) ->
+  Var(?from),
+  Var(?base),
+  FieldSignature(?signature).
+OptLoadArrayIndex(?to, ?base) ->
+  Var(?base),
+  Var(?to).
+OptStoreArrayIndex(?from, ?base) ->
+  Var(?from),
+  Var(?base).
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) ->
+  HContext(?basehctx), HeapAllocation(?baseheap),
+  FieldSignature(?sig),
+  Context(?ctx), Var(?to).
+StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?ctx, ?from) ->
+  Context(?ctx), Var(?from),
+  FieldSignature(?sig),
+  HContext(?basehctx), HeapAllocation(?baseheap).
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) ->
+  Context(?ctx), Var(?to),
+  HContext(?basehctx), HeapAllocation(?baseheap).
+StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) ->
+  HContext(?basehctx), HeapAllocation(?baseheap),
+  Context(?ctx), Var(?from).
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), MethodSignature(?inmethod).
+SystemThreadGroup(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+MainThreadGroup(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+MainThread(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+SiteToRefine(?invocation) ->
+  CallGraphEdgeSource(?invocation).
+TempSiteToRefine(?invocation) ->
+  CallGraphEdgeSource(?invocation).
+ObjectToRefine(?heap) ->
+  HeapAllocation(?heap).
+TempObjectToRefine(?heap) ->
+  HeapAllocation(?heap).
+NegativeSiteFilter(?v) -> string(?v).
+TempNegativeSiteFilter(?v) -> string(?v).
+NegativeObjectFilter(?v) -> string(?v) .
+TempNegativeObjectFilter(?v) -> string(?v).
+ContextFromRealContext[] = ?ctx -> Context(?ctx).
+lang:skolem(`ContextFromRealContext).
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:skolem(`HContextFromRealHContext).
+MySystemThreadGroup(?heap) -> HeapAllocation(?heap).
+MyMainThreadGroup(?heap) -> HeapAllocation(?heap).
+MyMainThread(?heap) -> HeapAllocation(?heap).

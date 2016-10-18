@@ -1,0 +1,98 @@
+// Context-sensitive pointer analysis with context of 2 objects
+// (AND for static calls 1 call-site).
+
+RealContext1FromContext[?ctx] = ?heapComp1,
+RealContext2FromContext[?ctx] = ?heapComp2 <-
+  ContextFromRealContext[?heapComp1, ?heapComp2] = ?ctx.
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invocation site for static calls.
+RealContext1FromContext[?ctx] = ?invoComp,
+RealContext2FromContext[?ctx] = ?heapComp2 <-
+  SpecialContextFromRealContext[_, ?invoComp, ?heapComp2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?heapComp <-
+  HContextFromRealHContext[?heapComp] = ?hctx.
+
+Context(?ctx),
+ContextFromRealContext[?heapComp, ?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ImmutableContext(?ctx) <-
+  HeapAllocation:byValue["<<immutable-context>>"] = ?heap.
+
+HContext(?hctx),
+HContextFromRealHContext[?heapComp] = ?hctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ImmutableHContext(?hctx) <-
+  HeapAllocation:byValue["<<immutable-hcontext>>"] = ?heap.
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?heapComp] = ?hctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+SystemThreadGroup(?hctx, ?alloc) <-
+  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?heapComp] = ?hctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+MainThreadGroup(?hctx, ?alloc) <-
+  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?heapComp] = ?hctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+MainThread(?hctx, ?alloc) <-
+  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+
+
+// Merge optimization hack
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?hctx, ?heap) <-
+  MergeBasis(_, _, ?hctx, ?heap).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealHContextFromHContext[?hctx],?heapComp] = ?calleeCtx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?heap).
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?heapComp, ?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  HeapAllocation:byValue["<<initial-context>>"] = ?heap.
+
+Context(?ctx),
+ContextFromRealContext[?heapComp, ?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap.
+
+Context(?ctx),
+ContextFromRealContext[?heapComp, ?heapComp] = ?ctx,
+ContextComponent(?heapComp),
+ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocation:byValue["<<class-initialization>>"] = ?heap.

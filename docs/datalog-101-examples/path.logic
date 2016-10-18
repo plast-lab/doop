@@ -1,0 +1,7 @@
+// Declarations
+Edge(x, y) -> int[32](x), int[32](y).
+Path(x, y) -> int[32](x), int[32](y).
+
+// Rules
+Path(x, y) <- Edge(x, y).
+Path(x, y) <- Path(x, z), Path(z, y).
