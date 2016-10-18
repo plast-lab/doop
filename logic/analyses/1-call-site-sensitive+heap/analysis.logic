@@ -1,0 +1,59 @@
+// Context-sensitive pointer analysis with context of 1 call site and a
+// context-sensitive heap abstraction of 1 call site
+
+RealContextFromContext[?ctx] = ?invocation <-
+  ContextFromRealContext[?invocation] = ?ctx.
+
+Context(?ctx),
+ContextFromRealContext[?invo] = ?ctx,
+ImmutableContext(?ctx) <-
+  MethodInvocationValue(?invo, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+ImmutableHContext(?hctx) <-
+  MethodInvocationValue(?invo, "<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  MethodInvocationValue(?invo, "<<jvm-startup>>"),
+  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  MethodInvocationValue(?invo, "<<jvm-startup>>"),
+  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?invo] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  MethodInvocationValue(?invo, "<<jvm-startup>>"),
+  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+
+StartupInvocation[] = ?startupInvocation <-
+  MethodInvocationValue(?startupInvocation, "<<jvm-startup>>").
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?invo] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  MethodInvocationValue(?invo, "<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?invo] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  MethodInvocationValue(?invo, "<<jvm-startup>>").
+
+Context(?ctx),
+ContextFromRealContext[?invo] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  MethodInvocationValue(?invo, "<<class-initialization>>").

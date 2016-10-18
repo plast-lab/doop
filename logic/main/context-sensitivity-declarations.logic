@@ -1,0 +1,185 @@
+#include "main-declarations.logic"
+
+/**
+ * Generic declarations for context-sensitive pointer analysis.
+ */
+Context(?ctx) ->.
+lang:entity(`Context).
+lang:physical:storageModel[`Context]="ScalableSparse".
+lang:physical:capacity[`Context] = 8388608.
+
+HContext(?hctx) ->.
+lang:entity(`HContext).
+lang:physical:storageModel[`HContext]="ScalableSparse".
+lang:physical:capacity[`HContext] = 8388608.
+
+// These are normally unique, but for partitioned analyses there may be
+// one per partition.
+ImmutableContext(?ctx) -> Context(?ctx).
+ImmutableHContext(?hctx) -> HContext(?hctx).
+// If we have many, get a compatible one from the other kind of context.
+ImmutableContextFromHContext[?hctx] = ?ctx -> Context(?ctx), HContext(?hctx).
+ImmutableHContextFromContext[?ctx] = ?hctx -> Context(?ctx), HContext(?hctx).
+ImmutableContextFromContext[?ctx1] = ?ctx2 -> Context(?ctx1), Context(?ctx2).
+
+
+// Needed when context consists of different kinds
+ContextComponent(?comp) -> .
+lang:entity(`ContextComponent).
+lang:physical:storageModel[`ContextComponent] = "ScalableSparse".
+lang:physical:capacity[`ContextComponent] = 8388608.
+
+ContextComponent:MethodInvocation[?invo] = ?comp ->
+   MethodInvocation(?invo), ContextComponent(?comp).
+lang:constructor(`ContextComponent:MethodInvocation).
+
+ContextComponent:HeapAllocation[?heap] = ?comp ->
+   HeapAllocation(?heap), ContextComponent(?comp).
+lang:constructor(`ContextComponent:HeapAllocation).
+
+
+// Special objects are just artificial ones that we use to find
+// where the result of a reflective call can flow to. We don't want
+// to track them through the heap.
+SpecialObject(?heap) -> HeapAllocation(?heap).
+
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) ->
+  HContext(?hctx), HeapAllocation(?heap), Context(?ctx), Var(?var).
+
+InstanceFieldPointsTo(?hctx, ?heap, ?sig, ?basehctx, ?baseheap) ->
+  HContext(?hctx), HeapAllocation(?heap),
+  Field(?sig),
+  HContext(?basehctx), HeapAllocation(?baseheap).
+
+StaticFieldPointsTo(?hctx, ?heap, ?sig) ->
+  Field(?sig),
+  HContext(?hctx), HeapAllocation(?heap).
+
+// array-element insensitive
+ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) ->
+  HContext(?basehctx), HeapAllocation(?baseheap),
+  HContext(?hctx), HeapAllocation(?heap).
+
+Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) ->
+  Type(?type),
+  Context(?toCtx), Var(?to),
+  Context(?fromCtx), Var(?from).
+
+/**
+ * Call graph
+ */
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method) ->
+  Context(?callerCtx), MethodInvocation(?invocation),
+  Context(?calleeCtx), Method(?method).
+
+/**
+ * Reachable
+ */
+Reachable(?method) ->
+  Method(?method).
+
+ReachableContext(?ctx, ?method) ->
+  Context(?ctx), Method(?method).
+
+OptLoadInstanceField(?to, ?signature, ?base) ->
+  Var(?base),
+  Field(?signature),
+  Var(?to).
+
+OptLoadStaticField(?ctx, ?to, ?signature) ->
+  Field(?signature),
+  Context(?ctx), Var(?to).
+
+OptStoreStaticField(?signature, ?from) ->
+  Var(?from),
+  Field(?signature).
+
+OptStoreInstanceField(?from, ?signature, ?base) ->
+  Var(?from),
+  Var(?base),
+  Field(?signature).
+
+/*
+ReachableSpecialMethodInvocation(?invocation, ?base) ->
+  MethodInvocation(?invocation),
+  Var(?base).
+
+ReachableVirtualMethodInvocation(?invocation, ?base) ->
+  MethodInvocation(?invocation),
+  Var(?base).
+*/
+
+OptLoadArrayIndex(?to, ?base) ->
+  Var(?base),
+  Var(?to).
+
+OptStoreArrayIndex(?from, ?base) ->
+  Var(?from),
+  Var(?base).
+
+/**
+ * Optimizations
+ */
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) ->
+  HContext(?basehctx), HeapAllocation(?baseheap),
+  Field(?sig),
+  Context(?ctx), Var(?to).
+
+StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?ctx, ?from) ->
+  Context(?ctx), Var(?from),
+  Field(?sig),
+  HContext(?basehctx), HeapAllocation(?baseheap).
+
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) ->
+  Context(?ctx), Var(?to),
+  HContext(?basehctx), HeapAllocation(?baseheap).
+
+StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) ->
+  HContext(?basehctx), HeapAllocation(?baseheap),
+  Context(?ctx), Var(?from).
+
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+/**
+ * Special heap abstractions.
+ */
+SystemThreadGroup(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+
+MainThreadGroup(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+
+MainThread(?hctx, ?heap) ->
+  HContext(?hctx), HeapAllocation(?heap).
+
+
+TaintedHeapAllocation(?heap) -> HeapAllocation(?heap).
+
+
+/**
+ * Filter predicate for refinement-based/adaptive analyses
+ */
+SiteToRefine(?invocation) -> MethodInvocation(?invocation).
+TempSiteToRefine(?invocation) -> MethodInvocation(?invocation).
+
+ObjectToRefine(?heap) -> HeapAllocation(?heap).
+TempObjectToRefine(?heap) -> HeapAllocation(?heap).
+
+// Is the SiteToRefine the real list of objects needing
+// refinement or its negation?
+NegativeSiteFilter[] = ?v -> boolean(?v).
+TempNegativeSiteFilter[] = ?v -> boolean(?v).
+
+// Is the ObjectToRefine the real list of objects needing
+// refinement or its negation?
+NegativeObjectFilter[] = ?v -> boolean(?v) .
+TempNegativeObjectFilter[] = ?v -> boolean(?v).

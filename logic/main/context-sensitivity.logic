@@ -1,0 +1,656 @@
+// This is a temporary hack. See near bottom for a proper definition of
+// these predicates. Unfortunately derived predicates don't seem to
+// be supported by the join optimizer currently.
+#define ObjectShouldNotBeRefined(heap) \
+    ((NegativeObjectFilter[] = true, ObjectToRefine(heap)); \
+    (!NegativeObjectFilter[] = true, !ObjectToRefine(heap)))
+#define ObjectShouldBeRefined(heap) \
+    ((!NegativeObjectFilter[] = true, ObjectToRefine(heap)); \
+    (NegativeObjectFilter[] = true, !ObjectToRefine(heap)))
+#define SiteShouldNotBeRefined(invocation) \
+    ((!NegativeSiteFilter[] = true, !SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, SiteToRefine(invocation)))
+#define SiteShouldBeRefined(invocation) \
+    ((!NegativeSiteFilter[] = true, SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, !SiteToRefine(invocation)))
+
+/**
+ * Elegance hacks, using macros: instead of burdening all normal
+ * analyses, provide default definitions for the common cases.
+ */
+
+#ifndef MULTIPLE_IMMUTABLE_CONTEXTS
+ImmutableContextFromHContext[?hctx] = ?ctx <-
+  ImmutableContext(?ctx), HContext(?hctx).
+
+ImmutableHContextFromContext[?ctx] = ?hctx <-
+  ImmutableHContext(?hctx), Context(?ctx).
+
+ImmutableContextFromContext[?ctx1] = ?ctx2 <-
+  ImmutableContext(?ctx2), Context(?ctx1).
+#endif // MULTIPLE_IMMUTABLE_CONTEXTS
+
+#ifndef CompatibleContextAndHContextMacro
+#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
+#endif
+
+
+#include "main.logic"
+
+/**
+ * Generic context-sensitive pointer analysis
+ */
+
+// There should be no need for this. It's a bad sign if there is.
+//lang:compiler:disableError:NEGATION_RECURSION[]=true.
+
+// Ignore verification of calculation in head
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
+
+
+/**
+ * Heap allocation
+ */
+
+#ifndef OptimizeRecordMacro
+RecordMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+#ifdef RecordArrayMacro
+  !ArrayType(HeapAllocation:Type[?heap]),
+#endif
+  ObjectShouldNotBeRefined(?heap).
+
+#else /* there is optimized behavior available */
+RecordBasisMacro(?ctx, ?var, ?heap) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  RecordBasisMacro(?ctx, ?var, ?heap),
+  OptimizeRecordMacro(?ctx, ?heap, ?hctx),
+#ifdef RecordArrayMacro
+  !ArrayType(HeapAllocation:Type[?heap]),
+#endif
+  ObjectShouldNotBeRefined(?heap).
+#endif /* #ifndef OptimizeMergeMacro */
+
+
+// There is scarcely any logical explanation, but breaking up the rule
+// as above results in faster execution!
+//RecordMacro(?ctx, ?heap, ?hctx),
+//VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+//  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+//  ReachableContext(?ctx, ?inmethod),
+//  ObjectShouldNotBeRefined(?heap).
+
+#ifdef RecordArrayMacro
+// This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
+// which greatly benefits) define this macro and handle arrays
+// specially.
+RecordArrayMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ArrayType(HeapAllocation:Type[?heap]),
+  ObjectShouldNotBeRefined(?heap).
+#endif // def RecordArrayMacro
+
+RecordMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+#ifdef RecordRefinedMacro
+RecordRefinedMacro(?ctx, ?heap, ?hctx),
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ObjectShouldBeRefined(?heap).
+#endif
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+/**
+ * Null assignments
+ */
+VarPointsTo(?hctx, ?nullobject, ?toCtx, ?to) <-
+  ImmutableHContextFromContext[?toCtx] = ?hctx,
+  AssignNull(?to, ?inmethod),
+  HeapAllocation:Null[] = ?nullobject,
+  ReachableContext(?toCtx, ?inmethod).
+
+/**
+ * Local assignments
+Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
+  AssignLocal(?from, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  Var:Type[?to] = ?type.
+*/
+
+// No need to check if type compatible: check is done at original
+// inputs to VarPointsTo
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  OptAssignLocal(?to, ?from).
+
+OptAssignLocal(?to, ?from) -> Var(?to), Var(?from).
+OptAssignLocal(?to, ?from) <-
+  Reachable(?inmethod),
+  AssignLocal(?from, ?to, ?inmethod).
+
+/**
+ * Cast assignments
+ */
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  OptAssignCast(?type, ?to, ?from),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  SupertypeOf(?type, ?heaptype).
+
+OptAssignCast(?type, ?to, ?from) -> Type(?type), Var(?to), Var(?from).
+OptAssignCast(?type, ?to, ?from) <-
+  Reachable(?inmethod),
+  AssignCast(?type, ?from, ?to, ?inmethod).
+
+
+/**
+ * Load instance fields
+ *
+ */
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
+  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap).
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
+  OptLoadInstanceField(?to, ?sig, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+//
+// TODO eliminate by reordering the input fact.
+//
+OptLoadInstanceField(?to, ?sig, ?base) <-
+  LoadInstanceField(?base, ?sig, ?to, _).
+
+/**
+ * Store instance fields
+ */
+InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
+  StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  HeapAllocation:Null[] != ?baseheap,
+  !SpecialObject(?heap).
+
+StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from) <-
+  OptStoreInstanceField(?from, ?signature, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+/**
+ * TODO eliminate
+ */
+OptStoreInstanceField(?from, ?signature, ?base) <-
+  StoreInstanceField(?from, ?base, ?signature, _).
+
+/**
+ * Load static fields
+ */
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  OptLoadStaticField(?ctx, ?to, ?sig),
+  StaticFieldPointsTo(?hctx, ?heap, ?sig),
+  CompatibleContextAndHContextMacro(?ctx, ?hctx).
+
+OptLoadStaticField(?ctx, ?to, ?sig) <-
+  LoadStaticField(?sig, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+/**
+ * Store static fields
+ *
+ * TODO: I don't think context actually matters. double check.
+ */
+StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
+  ReachableStoreStaticFieldFrom(?from),
+  OptStoreStaticField(?signature, ?from),
+  VarPointsTo(?hctx, ?heap, _, ?from).
+
+OptStoreStaticField(?signature, ?from) <-
+  StoreStaticField(?from, ?signature, _).
+
+ReachableStoreStaticFieldFrom(?from) -> Var(?from).
+ReachableStoreStaticFieldFrom(?from) <-
+  StoreStaticField(?from, _, ?inmethod),
+  Reachable(?inmethod).
+
+/**
+ * Load array index
+ */
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+   !HeapAllocation:EmptyArray(?baseheap),
+   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
+   // this used to be necessary when this rule also handled the
+   // arguments of Method.invoke() etc:
+   // HeapAllocation:Type[?baseheap] = ?baseheaptype,
+   // Var:Type[?to] = ?type,
+   // ComponentType[?baseheaptype] = ?basecomponenttype,
+   // SupertypeOf(?type, ?basecomponenttype).
+
+/* YANNIS: used to be the much less precise:
+  HeapAllocation:Type[?heap] = ?heaptype,
+  SupertypeOf(?type, ?heaptype).
+*/
+
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) <-
+  ReachableLoadArrayIndexBase(?base),
+  OptLoadArrayIndex(?to, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+OptLoadArrayIndex(?to, ?base) <-
+  LoadArrayIndex(?base, ?to, _).
+
+ReachableLoadArrayIndexBase(?base) -> Var(?base).
+ReachableLoadArrayIndexBase(?base) <-
+  LoadArrayIndex(?base, _, ?inmethod),
+  Reachable(?inmethod).
+
+/**
+ * Store array index
+ */
+
+ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) <-
+  StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  !SpecialObject(?heap),
+  !HeapAllocation:EmptyArray(?baseheap),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  HeapAllocation:Type[?baseheap] = ?baseheaptype,
+  ComponentType[?baseheaptype] = ?componenttype,
+  SupertypeOf(?componenttype, ?heaptype).
+
+StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) <-
+  ReachableStoreArrayIndexBase(?base),
+  OptStoreArrayIndex(?from, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+ReachableStoreArrayIndexBase(?base) -> Var(?base).
+ReachableStoreArrayIndexBase(?base) <-
+  StoreArrayIndex(_, ?base, ?inmethod),
+  Reachable(?inmethod).
+
+OptStoreArrayIndex(?from, ?base) <-
+  StoreArrayIndex(?from, ?base, _).
+
+
+/**
+ * Assignments for method invocations
+ */
+
+OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from) ->
+  Context(?toCtx), Var(?to), Context(?fromCtx), Var(?from).
+
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual)
+  <-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  FormalParam[?index, ?method] = ?formal,
+  ActualParam[?index, ?invocation] = ?actual.
+
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
+  <-
+  ReturnVar(?return, ?method),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  AssignReturnValue[?invocation] = ?local.
+
+VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
+
+
+/**
+ * Static method invocations
+ */
+
+MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+
+/**
+ * Virtual Method Invocation
+ */
+
+OptVirtualMethodInvocationBase(?invocation, ?base) ->
+  Var(?base), MethodInvocation(?invocation).
+
+// REVIEW: indexing changed in the Doop->flow-sens revision,
+// so the optimization below should be re-examined.
+OptVirtualMethodInvocationBase(?invocation, ?base) <-
+  Reachable(?inmethod),
+  Instruction:Method[?invocation] = ?inmethod,
+  VirtualMethodInvocation:Base[?invocation] = ?base.
+
+/*
+// Beginnings of something promising. Currently doesn't work
+// because we are implicitly assuming any var points at least to null.
+ViableInvocation0(?callerCtx, ?invocation) <-
+  (!ActualParam[0, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
+  (ActualParam[0, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
+
+ViableInvocation1(?callerCtx, ?invocation) <-
+  (!ActualParam[1, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
+  (ActualParam[1, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
+
+ViableInvocation2(?callerCtx, ?invocation) <-
+  (!ActualParam[2, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
+  (ActualParam[2, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
+
+ViableInvocation(?callerCtx, ?invocation) <-
+  ViableInvocation0(?callerCtx, ?invocation),
+  ViableInvocation1(?callerCtx, ?invocation),
+  ViableInvocation2(?callerCtx, ?invocation).
+*/
+
+// This rule is the default logic for the majority of analyses
+
+#ifndef OptimizeMergeMacro
+// This is the "proper" form of the rule. We diverge from it
+// only for reasons of optimization. Skolem object creation
+// is currently very slow and we shouldn't invoke it for
+// all the different combinations that will yield the same object.
+
+MergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+ <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+//  ViableInvocation(?callerCtx, ?invocation),
+  SiteShouldNotBeRefined(?invocation),
+  !TaintedHeapAllocation(?heap).
+
+#else /* there is optimized behavior available */
+
+// The optimization is as follows: the main analysis (this file)
+// first creates all the possible bindings that the Merge logic
+// might need to create a new context. Then each individual analysis
+// creates new context objects carefully by invoking the skolem
+// functions as rarely as possible.
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base).
+
+// Finally, the step of the main analysis that should be creating the
+// new objects is merely looking up the previously created context
+// objects.
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
+  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+//  ViableInvocation(?callerCtx, ?invocation),
+  SiteShouldNotBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+
+
+#ifdef MergeRefinedMacro
+#ifndef OptimizeMergeRefinedMacro
+// Default, unoptimized behavior
+/**
+ * This logic applies to refinement-based (or "adaptive") analyses. The
+ * analysis is first run with the filter predicate (SiteToRefine) empty,
+ * performing a low-precision but cheap computation. Then the external logic
+ * runs delta rules to populate the filter predicate and re-runs the analysis.
+ * (Note that the #ifdef just checks if the analysis has defined the
+ * appropriate macro. This is not an input flag.)
+ */
+MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+//  ViableInvocation(?callerCtx, ?invocation),
+  SiteShouldBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
+  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ResolveInvocation[?heaptype, ?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+//  ViableInvocation(?callerCtx, ?invocation),
+  SiteShouldBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifdef MergeRefinedMacro */
+
+/**
+ * Special method invocations. Optimized much like virtual methods.
+ */
+
+OptSpecialMethodInvocationBase(?invocation, ?base) ->
+  Var(?base), MethodInvocation(?invocation).
+
+// REVIEW: indexing changed in the Doop->flow-sens revision,
+// so the optimization below should be re-examined.
+OptSpecialMethodInvocationBase(?invocation, ?base) <-
+  Reachable(?inmethod),
+  Instruction:Method[?invocation] = ?inmethod,
+  SpecialMethodInvocation:Base[?invocation] = ?base.
+
+#ifndef OptimizeMergeMacro
+// Default, unoptimized behavior
+MergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?heap,  ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  MethodInvocation:Signature[?invocation] = ?tomethod,
+  SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldNotBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
+  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+  MethodInvocation:Signature[?invocation] = ?tomethod,
+  SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldNotBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+
+#ifdef MergeRefinedMacro
+#ifndef OptimizeMergeRefinedMacro
+// Default, unoptimized behavior
+MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  MethodInvocation:Signature[?invocation] = ?tomethod,
+  SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
+  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+  MethodInvocation:Signature[?invocation] = ?tomethod,
+  SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  SiteShouldBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifdef MergeRefinedMacro
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method) <-
+  CallGraphEdge(_, _, ?ctx, ?method).
+
+Reachable(?method) <-
+  ReachableContext(_, ?method).
+
+
+/**
+ * EXPERIMENTS ONLY below this point
+ */
+
+/**
+ * Logic to decide whether to apply refined or regular bindings for
+ * methods and objects
+ */
+// We want to allow predicates that express the *complement* of the set
+// of objects to refine. We introduce derived-only temp predicates to
+// avoid logic replication in the points-to rule itself.
+
+/*
+// Below is the proper way to write this but it's currently not well
+// supported by the query optimizer so I have to resort to brute
+// force (macro-)inlining.
+ObjectShouldNotBeRefined(?heap) ->
+  HeapAllocation(?heap).
+lang:derivationType[`ObjectShouldNotBeRefined] = "Derived".
+
+ObjectShouldNotBeRefined(?heap) <-
+  NegativeObjectFilter("true"), ObjectToRefine(?heap).
+
+ObjectShouldNotBeRefined(?heap) <-
+  !(NegativeObjectFilter("true")), !ObjectToRefine(?heap).
+
+ObjectShouldBeRefined(?heap) ->
+  HeapAllocation(?heap).
+lang:derivationType[`ObjectShouldBeRefined] = "Derived".
+
+ObjectShouldBeRefined(?heap) <-
+  !NegativeObjectFilter("true"), ObjectToRefine(?heap).
+
+ObjectShouldBeRefined(?heap) <-
+  NegativeObjectFilter("true"), !ObjectToRefine(?heap).
+
+SiteShouldNotBeRefined(?invocation) ->
+  MethodInvocation(?invocation).
+lang:derivationType[`SiteShouldNotBeRefined] = "Derived".
+
+SiteShouldNotBeRefined(?invocation) <-
+  !NegativeSiteFilter("true"), !SiteToRefine(?invocation).
+
+SiteShouldNotBeRefined(?invocation) <-
+  NegativeSiteFilter("true"), SiteToRefine(?invocation).
+
+SiteShouldBeRefined(?invocation) ->
+  MethodInvocation(?invocation).
+lang:derivationType[`SiteShouldBeRefined] = "Derived".
+
+SiteShouldBeRefined(?invocation) <-
+  !NegativeSiteFilter("true"), SiteToRefine(?invocation).
+
+SiteShouldBeRefined(?invocation) <-
+  NegativeSiteFilter("true"), !SiteToRefine(?invocation).
+*/
+
+/*
+// YANNIS: It is tempting to think that the code below works better
+//  than computing InstanceFieldPointsTo as an intermediate step.
+//  It doesn't. Objects are fewer than vars. Always avoid var
+//  cartesian products for efficiency.
+VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
+  FlowsTo(?toCtx, ?to, ?fromCtx, ?from).
+
+FlowsTo(?toCtx, ?to, ?fromCtx, ?from) <-
+  StoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from),
+  LoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?baseheap).
+*/
+
+/*
+// YANNIS: There's hardly any reason why the code below might work
+// better than regular interprocedural assignments (minor exception:
+// for return vars, there are methods that have multiple, so some
+// benefit might exist). But it was tempting, since interprocedural
+// assignments are such a bottleneck. This code doesn't pay off though.
+OptActualParam(?index, ?invocation, ?actual) <-
+  ActualParam[?index, ?invocation] = ?actual.
+
+OptInvocationWithParam(?index, ?calleeCtx, ?method, ?callerCtx, ?actual) <-
+  ActualParam[?index, ?invocation] = ?actual,
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method).
+
+MethodArgPointsTo(?hctx, ?heap, ?index, ?calleeCtx, ?method) <-
+  OptInvocationWithParam(?index, ?calleeCtx, ?method, ?callerCtx, ?actual),
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?actual).
+
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
+  FormalParam[?index, ?method] = ?formal,
+  MethodArgPointsTo(?hctx, ?heap, ?index, ?calleeCtx, ?method).
+
+OptReturnVar(?method, ?return) <-
+  ReturnVar(?return, ?method).
+
+ReturnVarPointsTo(?hctx, ?heap, ?calleeCtx, ?method) <-
+  OptReturnVar(?method, ?return),
+  VarPointsTo(?hctx, ?heap, ?calleeCtx, ?return).
+
+VarPointsTo(?hctx, ?heap, ?callerCtx, ?local) <-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  AssignReturnValue[?invocation] = ?local,
+  ReturnVarPointsTo(?hctx, ?heap, ?calleeCtx, ?method).
+*/
+/* YANNIS
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
+  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap).
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
+  ReachableLoadInstanceField(?to, ?sig, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+#endif
+
+ReachableLoadInstanceField(?to, ?sig, ?base) ->
+  Var(?to), Field(?sig), Var(?base).
+ReachableLoadInstanceField(?to, ?sig, ?base) <-
+  LoadInstanceField(?base, ?sig, ?to, ?inmethod),
+  Reachable(?inmethod).
+*/
+
+/*
+StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) <-
+  ReachableStoreArrayIndex(?from, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+ReachableStoreArrayIndex(?from, ?base) <-
+  StoreArrayIndex(?from, ?base, ?inmethod),
+  Reachable(?inmethod).
+*/

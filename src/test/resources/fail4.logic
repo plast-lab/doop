@@ -1,0 +1,15 @@
+P(x) -> string(x).
+P("hello").
+
+component Foo {
+	P1(x) <- P(x).
+}
+component Bar {
+	P2(x) <- P0@past(x).
+}
+
+S1 = new Foo
+S2 = new Bar
+
+S1 { * } copyto S2
+S2 { * } copyto .global

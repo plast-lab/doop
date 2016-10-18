@@ -1,0 +1,80 @@
+/**
+ * Experimental
+ */
+
+#include "macros.logic"
+#include "../../../core/context-sensitivity.logic"
+
+// In this analysis, the real context is a pair of HeapAllocations
+// and the real heap context a single HeapAllocation. Keeping mapping 
+// functions is the way to handle analyses where HContext = Context 
+// (since the language considers them different types).
+ContextFromRealContext[?heap1, ?heap2] = ?ctx ->
+  Context(?ctx), HeapAllocation(?heap1), HeapAllocation(?heap2).
+lang:skolem(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+RealContext2FromContext[?ctx] = ?heap -> 
+  Context(?ctx), HeapAllocation(?heap).
+
+RealContext1FromContext[?ctx] = ?heap1,
+RealContext2FromContext[?ctx] = ?heap2 <- 
+  ContextFromRealContext[?heap1, ?heap2] = ?ctx.
+
+HContextFromRealHContext[?heap] = ?hctx ->
+  HContext(?hctx), HeapAllocation(?heap).
+lang:skolem(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?heap -> 
+  HContext(?hctx), HeapAllocation(?heap).
+RealHContextFromHContext[?hctx] = ?heap <- HContextFromRealHContext[?heap] = ?hctx.
+
+HContext(?hctx),
+HContextFromRealHContext[?immutable] = ?hctx,
+ImmutableHContext(?hctx) <-
+  // Special immutable heap allocation constant
+  HeapAllocationValue(?immutable, "<<immutable>>").
+
+ImmutableHeapValue[] = ?immHeap <-
+  HeapAllocationValue(?immHeap, "<<immutable>>").
+
+
+// Create initial objects with their heapcontexts.
+HContextFromRealHContext[?heap] = ?hctx,
+HContext(?hctx),
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?heap, ?alloc).
+
+HContextFromRealHContext[?heap] = ?hctx,
+HContext(?hctx),
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?heap, ?alloc).
+
+HContextFromRealHContext[?heap] = ?hctx,
+HContext(?hctx),
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?heap, ?alloc).
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?initheap,?initheap] = ?ctx,
+Context(?ctx)
+ <-
+  MainMethodDeclaration(?method),
+  HeapAllocationValue(?initheap, "<<initial-context>>").
+
+ReachableContext(?ctx, ?method),
+ContextFromRealContext[?startupheap,?startupheap] = ?ctx,
+Context(?ctx)
+ <-
+  ImplicitReachable(?method),
+  HeapAllocationValue(?startupheap, "<<jvm-startup>>").
+
+ReachableContext(?ctx, ?clinit),
+ContextFromRealContext[?clinitheap,?clinitheap] = ?ctx,
+Context(?ctx)
+ <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  HeapAllocationValue(?clinitheap, "<<class-initialization>>").
