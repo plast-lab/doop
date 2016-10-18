@@ -72,19 +72,18 @@ Value:DeclaringType[?value] = ?type <-
    ReferenceType(?type).
 
 
-SpecialValue(?value) <-
-  (SpecialMissingForNameHeap[_] = ?heap;
-   SpecialMissingNewInstanceHeap[_] = ?heap;
-   SpecialMissingGetConstructorHeap[_] = ?heap;
-   SpecialMissingGetMethodHeap[_] = ?heap;
-   SpecialMissingGetMethodsHeap[_] = ?heap;
-   SpecialMissingInvokeHeapFromGetMethod[_] = ?heap;
-   SpecialMissingInvokeHeapFromGetMethods[_] = ?heap;
-   SpecialMissingGetFieldHeap[_] = ?heap;
-   SpecialMissingGetFieldsHeap[_] = ?heap;
-   SpecialMissingGetHeapFromGetField[_] = ?heap;
-   SpecialMissingGetHeapFromGetFields[_] = ?heap),
-  Value:byHeap[?heap] = ?value.
+SpecialObject(?heap) <-
+  SpecialMissingForNameHeap[_] = ?heap;
+  SpecialMissingNewInstanceHeap[_] = ?heap;
+  SpecialMissingGetConstructorHeap[_] = ?heap;
+  SpecialMissingGetMethodHeap[_] = ?heap;
+  SpecialMissingGetMethodsHeap[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethod[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethods[_] = ?heap;
+  SpecialMissingGetFieldHeap[_] = ?heap;
+  SpecialMissingGetFieldsHeap[_] = ?heap;
+  SpecialMissingGetHeapFromGetField[_] = ?heap;
+  SpecialMissingGetHeapFromGetFields[_] = ?heap,
 
 /*************************************************************
  * Reflective method calls
@@ -549,8 +548,9 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) <
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value:Heap[?value] = ?heap,
   Value:Null[] != ?basevalue,
-  !SpecialValue(?value),
+  !SpecialObject(?heap),
   Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype,
   SupertypeOf(?fieldtype, ?valuetype).
