@@ -1,0 +1,31 @@
+PredecessorBBsToSameBB(?insn, ?prev1, ?prev2) ->
+   BasicBlockBegin(?prev1),
+   BasicBlockBegin(?prev2),
+   BasicBlockBegin(?insn).
+
+CFGRoot(?insn, ?method) ->
+   OptInstructionFromMethodIndex[?method, 1] = ?insn;
+   ExceptionHandlerFirstInstruction(?insn).
+
+Dominates(?dominator, ?insn) ->
+   BasicBlockBegin(?dominator),
+   BasicBlockBegin(?insn).
+
+DoesNotDominate(_, ?insn) ->
+   BasicBlockBegin(?insn).
+
+BasicBlockHead[_] = ?insnHead,
+BasicBlockTail[?insnHead] = ?insnTail ->
+   BasicBlockHead[?insnTail] = ?insnHead,
+   BasicBlockEnd(?insnTail),
+   BasicBlockBegin(?insnHead),
+   BasicBlockHead[?insnHead] = ?insnHead.
+
+JumpTarget(?insn, ?prevInsn) ->
+   BasicBlockEnd(?prevInsn),
+   BasicBlockBegin(?insn).
+
+MaySuccessorBBModuloThrow(?next, ?prev) ->
+   BasicBlockBegin(?next),
+   BasicBlockBegin(?prev).
+   

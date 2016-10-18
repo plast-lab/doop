@@ -1,0 +1,179 @@
+#include "main-declarations.logic"
+
+/**
+ * Generic declarations for context-sensitive pointer analysis.
+ */
+Context(?ctx) -> .
+lang:entity(`Context).
+lang:physical:storageModel[`Context]="ScalableSparse".
+lang:physical:capacity[`Context] = 8388608.
+
+HContext(?hctx) -> .
+lang:entity(`HContext).
+lang:physical:storageModel[`HContext]="ScalableSparse".
+lang:physical:capacity[`HContext] = 8388608.
+
+ImmutableContext[]  = ?ctx  -> Context(?ctx).
+ImmutableHContext[] = ?hctx -> HContext(?hctx).
+
+
+// Needed when context is comprised of different kinds
+ContextComponent(?comp) -> .
+lang:entity(`ContextComponent).
+lang:physical:storageModel[`ContextComponent] = "ScalableSparse".
+lang:physical:capacity[`ContextComponent] = 8388608.
+
+ContextComponent:MethodInvocation[?invo] = ?comp ->
+   MethodInvocation(?invo), ContextComponent(?comp).
+lang:constructor(`ContextComponent:MethodInvocation).
+
+ContextComponent:Value[?value] = ?comp ->
+   Value(?value), ContextComponent(?comp).
+lang:constructor(`ContextComponent:Value).
+
+
+// Special values are just artificial ones that we use to find where the
+// result of a reflective call can flow to. We don't want to track them
+// through the heap.
+SpecialValue(?value) -> Value(?value).
+
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) ->
+  HContext(?hctx), Value(?value), Context(?ctx), Var(?var).
+
+InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue) ->
+  HContext(?hctx), Value(?value),
+  Field(?sig),
+  HContext(?basehctx), Value(?basevalue).
+
+StaticFieldPointsTo(?hctx, ?value, ?sig) ->
+  Field(?sig),
+  HContext(?hctx), Value(?value).
+
+// array-element insensitive
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) ->
+  HContext(?basehctx), Value(?basevalue),
+  HContext(?hctx), Value(?value).
+
+Assign(?type, ?toCtx, ?to, ?fromCtx, ?from) ->
+  Type(?type),
+  Context(?toCtx), Var(?to),
+  Context(?fromCtx), Var(?from).
+
+/**
+ * Call graph
+ */
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method) ->
+  Context(?callerCtx), MethodInvocation(?invocation),
+  Context(?calleeCtx), Method(?method).
+
+/**
+ * Reachable
+ */
+Reachable(?method) ->
+  Method(?method).
+
+ReachableContext(?ctx, ?method) ->
+  Context(?ctx), Method(?method).
+
+OptLoadInstanceField(?to, ?signature, ?base) ->
+  Var(?base),
+  Field(?signature),
+  Var(?to).
+
+OptLoadStaticField(?ctx, ?to, ?signature) ->
+  Field(?signature),
+  Context(?ctx), Var(?to).
+
+OptStoreStaticField(?signature, ?from) ->
+  Var(?from),
+  Field(?signature).
+
+OptStoreInstanceField(?from, ?signature, ?base) ->
+  Var(?from),
+  Var(?base),
+  Field(?signature).
+
+/*
+ReachableSpecialMethodInvocation(?invocation, ?base) ->
+  MethodInvocation(?invocation),
+  Var(?base).
+
+ReachableVirtualMethodInvocation(?invocation, ?base) ->
+  MethodInvocation(?invocation),
+  Var(?base).
+*/
+
+OptLoadArrayIndex(?to, ?base) ->
+  Var(?base),
+  Var(?to).
+
+OptStoreArrayIndex(?from, ?base) ->
+  Var(?from),
+  Var(?base).
+
+/**
+ * Optimizations
+ */
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) ->
+  HContext(?basehctx), Value(?basevalue),
+  Field(?sig),
+  Context(?ctx), Var(?to).
+
+StoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?ctx, ?from) ->
+  Context(?ctx), Var(?from),
+  Field(?sig),
+  HContext(?basehctx), Value(?basevalue).
+
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) ->
+  Context(?ctx), Var(?to),
+  HContext(?basehctx), Value(?basevalue).
+
+StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) ->
+  HContext(?basehctx), Value(?basevalue),
+  Context(?ctx), Var(?from).
+
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
+  HeapAllocation(?heap), Var(?var), Method(?inmethod).
+
+/**
+ * Special heap abstractions.
+ */
+SystemThreadGroup(?hctx, ?value) ->
+  HContext(?hctx), Value(?value).
+
+MainThreadGroup(?hctx, ?value) ->
+  HContext(?hctx), Value(?value).
+
+MainThread(?hctx, ?value) ->
+  HContext(?hctx), Value(?value).
+
+
+TaintedValue(?value) -> Value(?value).
+
+
+/**
+ * Filter predicate for refinement-based/adaptive analyses
+ */
+SiteToRefine(?invocation) -> MethodInvocation(?invocation).
+TempSiteToRefine(?invocation) -> MethodInvocation(?invocation).
+
+ValueToRefine(?value) -> Value(?value).
+TempValueToRefine(?value) -> Value(?value).
+
+// Is the SiteToRefine the real list of objects needing
+// refinement or its negation?
+NegativeSiteFilter[] = ?v -> boolean(?v).
+TempNegativeSiteFilter[] = ?v -> boolean(?v).
+
+// Is the ValueToRefine the real list of objects needing
+// refinement or its negation?
+NegativeObjectFilter[] = ?v -> boolean(?v) .
+TempNegativeObjectFilter[] = ?v -> boolean(?v).

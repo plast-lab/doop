@@ -1,0 +1,98 @@
+// Context-sensitive pointer analysis with context of 2 objects
+// (AND for static calls 1 call-site).
+
+RealContext1FromContext[?ctx] = ?valueComp1,
+RealContext2FromContext[?ctx] = ?valueComp2 <-
+  ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx.
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invocation site for static calls.
+RealContext1FromContext[?ctx] = ?invoComp,
+RealContext2FromContext[?ctx] = ?valueComp2 <-
+  SpecialContextFromRealContext[_, ?invoComp, ?valueComp2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?valueComp <-
+  HContextFromRealHContext[?valueComp] = ?hctx.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ImmutableContext[] = ?ctx <-
+  Value:byId["<<immutable-context>>"] = ?value.
+
+HContext(?hctx),
+HContextFromRealHContext[?valueComp] = ?hctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ImmutableHContext[] = ?hctx <-
+  Value:byId["<<immutable-hcontext>>"] = ?value.
+
+
+// Create initial objects with their value contexts
+HContext(?hctx),
+HContextFromRealHContext[?valueComp] = ?hctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+SystemThreadGroup(?hctx, ?alloc) <-
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?valueComp] = ?hctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+MainThreadGroup(?hctx, ?alloc) <-
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?valueComp] = ?hctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+MainThread(?hctx, ?alloc) <-
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<main-thread>>"] = ?alloc.
+
+
+// Merge optimization hack
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?hctx, ?value) <-
+  MergeBasis(_, _, ?hctx, ?value).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealHContextFromHContext[?hctx],?valueComp] = ?calleeCtx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value).
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  Value:byId["<<initial-context>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  Value:byId["<<jvm-startup>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  Value:byId["<<class-initialization>>"] = ?value.

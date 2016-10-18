@@ -1,0 +1,4 @@
+t[1] = c <- agg<<c = count( )>> foo(_,_).
+t[2] = c <- agg<<c = count()>> (foo(_, x), bar(x, _)).
+t[3] = m <- agg<<m = max( ?y)>> bar(_, ?y).
+t[4] = min <- agg<<min = min(x)>> foo(_, x).
