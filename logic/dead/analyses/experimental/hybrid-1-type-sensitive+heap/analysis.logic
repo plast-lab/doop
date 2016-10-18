@@ -31,7 +31,7 @@ lang:skolem(`HContextFromRealHContext).
 
 HContext(?hctx),
 HContextFromRealHContext[?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   // Special immutable constant
   Instruction:Value(?immutable:"<<immutable>>").
 

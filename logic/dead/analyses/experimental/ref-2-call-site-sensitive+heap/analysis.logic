@@ -28,7 +28,7 @@ RealHContextFromHContext[?hctx] = ?invocation <-
 
 HContext(?hctx),
 HContextFromRealHContext[?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   // Special immutable constant
   MethodInvocationValue(?immutable, "<<immutable>>").
 

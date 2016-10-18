@@ -83,7 +83,7 @@ SpecialObject(?heap) <-
   SpecialMissingGetFieldHeap[_] = ?heap;
   SpecialMissingGetFieldsHeap[_] = ?heap;
   SpecialMissingGetHeapFromGetField[_] = ?heap;
-  SpecialMissingGetHeapFromGetFields[_] = ?heap,
+  SpecialMissingGetHeapFromGetFields[_] = ?heap.
 
 /*************************************************************
  * Reflective method calls
@@ -221,15 +221,6 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
 ReachableContext(?calleeCtx, ?callee) <-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-#ifndef REFLECTION_CONTEXT_SENSITIVITY
-DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
-
-// Using the main method's (unique) context as a dummy context.
-DummyContextForReflective[] = ?dummyCtx <-
-  MainMethodDeclaration(?mainMethod),
-  ReachableContext(?dummyCtx, ?mainMethod).
-#endif
-
 /**
  * Static methods
  */
@@ -242,7 +233,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
-  DummyContextForReflective[] = ?calleeCtx,
+  ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
 #endif
 
@@ -262,7 +253,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  DummyContextForReflective[] = ?calleeCtx,
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx,
   VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   ThisVar[?callee] = ?this,
@@ -298,7 +289,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  DummyContextForReflective[] = ?calleeCtx,
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx,
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   Value:Type[?value] = ?valuetype,
@@ -357,7 +348,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 #else
 InitializedClass(?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation[?instruction, ?type]  = ?heap,
   Value:byHeap[?heap] = ?value,
@@ -416,7 +407,7 @@ InitializedClass(?type) <-
  * TODO This doesn't make any sense without a 'to' variable.
  */
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   ReifiedClass:Value[?type] = ?value,
   AssignReturnValue[?invocation] = ?return.
@@ -572,7 +563,7 @@ NumberOfSubtypes[?type] = ?count <-
  */
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   SpecialMissingForNameHeap[?invocation] = ?heap,
   Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -584,7 +575,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
 // created by forName flows, we return a new unknown object 
 // (of type Object and not Class) that remembers the forName site.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
   Value:Heap[?specialclass] = ?specialclassHeap,
@@ -594,7 +585,7 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) <-
 
 // Similar flow of special object through get[Declared]Constructor
 VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   (java:lang:Class:getConstructor(?to, ?var);
    java:lang:Class:getDeclaredConstructor(?to, ?var)),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
@@ -607,7 +598,7 @@ VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) <-
 // return var points to (established by forward logic) is populated
 // with the special Constructor object the call returns.
 ArrayIndexPointsTo(?immCtx, ?specialConstructorValue, ?hctx, ?arrayValue) <-
-  ImmutableHContext[] = ?immCtx,
+  ImmutableHContextFromContext[?ctx] = ?immCtx,
   OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to),
   SpecialMissingGetConstructorHeap[?forNameInvocation] = ?specialConstructorHeap,
@@ -623,7 +614,7 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) <-
 // Even though there was one more step in the special object propagation,
 // in the end Constructor.newInstance is handled similarly to Class.newInstance.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Constructor:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
   Value:Heap[?specialConstructor] = ?specialConstructorHeap,
@@ -793,7 +784,7 @@ OptSpecialMissingInvokeHeapFromGetMethods(?invokeInvocation, ?specialheap) <-
 // The array that the return var points to (established by forward logic)
 // is populated with the special Method object the call returns.
 ArrayIndexPointsTo(?immCtx, ?value, ?hctx, ?arrayValue) <-
-  ImmutableHContext[] = ?immCtx,
+  ImmutableHContextFromContext[?ctx] = ?immCtx,
   SpecialMissingGetMethodsHeap[?invocation] = ?heap,
   Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -824,7 +815,7 @@ OptInvokeOnSpecialMissingGetMethodsHeap(?getMethodsInvocation , ?ctx, ?invocatio
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   OptInvokeOnSpecialMissingGetMethodsHeap(?getMethodsInvocation , ?ctx, ?invocation),
   SpecialMissingInvokeHeapFromGetMethods[?getMethodsInvocation] = ?specialheap,
   Value:byHeap[?specialheap] = ?specialvalue,
@@ -879,7 +870,7 @@ OptSpecialMissingInvokeHeapFromGetMethod(?invokeInvocation, ?specialheap) <-
   SpecialMissingInvokeHeapFromGetMethod[?invokeInvocation] = ?specialheap.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   SpecialMissingGetMethodHeap[?invocation] = ?heap,
   Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -889,7 +880,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on. See similar handling of getMethods.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-  
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Method:invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
   Value:Heap[?specialMethodValue] = ?specialMethodHeap,
@@ -926,7 +917,7 @@ OptGetMethodClass(?type, ?ctx, ?getMethodInvocation) <-
   OptReifiedClass(?type, ?classValue).
 
 VarPointsTo(?hctx, ?methodValue, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation),
   OptGetMethodClass(?classtype, ?ctx, ?getMethodInvocation),
   OptMethodType(?signature, ?classtype),
@@ -948,7 +939,7 @@ OptSpecialMissingGetHeapFromGetFields(?getInvocation, ?specialheap) <-
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
 ArrayIndexPointsTo(?immCtx, ?value, ?hctx, ?arrayValue) <-
-  ImmutableHContext[] = ?immCtx,
+  ImmutableHContextFromContext[?ctx] = ?immCtx,
   SpecialMissingGetFieldsHeap[?invocation] = ?heap,
   Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -974,7 +965,7 @@ OptGetOnSpecialMissingGetFieldsHeap(?getFieldsInvocation , ?ctx, ?invocation) <-
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   OptGetOnSpecialMissingGetFieldsHeap(?getFieldsInvocation , ?ctx, ?invocation),
   SpecialMissingGetHeapFromGetFields[?getFieldsInvocation] = ?specialheap,
   Value:byHeap[?specialheap] = ?specialvalue,
@@ -1030,7 +1021,7 @@ OptSpecialMissingGetHeapFromGetField(?getInvocation, ?specialheap) <-
   SpecialMissingGetHeapFromGetField[?getInvocation] = ?specialheap.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   SpecialMissingGetFieldHeap[?invocation] = ?heap,
   Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -1040,7 +1031,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
 // Make a get return a special object that remembers the field it's
 // supposed to be called on. See similar handling of getFields.
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-  
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
   Value:Heap[?specialFieldValue] = ?specialFieldHeap,
@@ -1077,7 +1068,7 @@ OptGetFieldClass(?type, ?ctx, ?getFieldInvocation) <-
   OptReifiedClass(?type, ?classValue).
 
 VarPointsTo(?hctx, ?fieldValue, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   Opt2SpecialGetHeapCast(?type, ?getFieldInvocation),
   OptGetFieldClass(?classtype, ?ctx, ?getFieldInvocation),
   OptFieldType(?type, ?signature, ?classtype),
@@ -1090,7 +1081,7 @@ VarPointsTo(?hctx, ?fieldValue, ?ctx, ?return) <-
 
 // Propagate the marker object everywhere
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   VirtualMethodInvocation:Insn(?invocation),
   (MethodInvocation:Signature[?invocation] = "<java.lang.Class: java.lang.Object newInstance()>" ;
    MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>" ;

@@ -1,5 +1,3 @@
-DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
-
 Tamiflex:Class:NewInstance(?invocation, ?heap) ->
    MethodInvocation(?invocation), HeapAllocation(?heap).
 

@@ -17,14 +17,14 @@ Context(?ctx),
 ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
 ContextComponent(?valueComp),
 ContextComponent:Value[?value] = ?valueComp,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
 HContextFromRealHContext[?valueComp] = ?hctx,
 ContextComponent(?valueComp),
 ContextComponent:Value[?value] = ?valueComp,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   Value:byId["<<immutable-hcontext>>"] = ?value.
 
 

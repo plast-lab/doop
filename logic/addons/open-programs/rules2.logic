@@ -109,7 +109,7 @@ VirtualMethodInvocationOpt2(?callsite, ?tomethod, ?base) <-
 
 // TODO: try to remove
 //InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?hctx, ?baseheap) <-
-//   ImmutableHContext[] = ?hctx,
+//   ImmutableHContext(?hctx),
 //   MockHeapForField(?signature, ?baseheap, ?fieldtype),
 //   MockObjectHeap(?heap, ?fieldtype).
 
@@ -119,7 +119,7 @@ ArrayIndexPointsTo(?hctx, ?componentHeap, ?hctx, ?arrayHeap) <-
    ArrayType(?arrayType),
    ComponentType[?arrayType] = ?componentType,
    MockObjectHeap(?componentHeap, ?componentType),
-   ImmutableHContext[] = ?hctx.
+   ImmutableHContext(?hctx).
 
 ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
@@ -155,7 +155,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
  <-
    HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
    Instruction:Id(?heap:?heapStr), 
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    HeapAllocation(?heap).
 
 // bind mock objects to receivers
@@ -167,7 +167,7 @@ HeapForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
    
 VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
  <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    HeapForReceiverInContext(?ctx, ?receiver, ?heap).
 
 
@@ -220,7 +220,7 @@ VarPointsToExternalHeapObjectForType(?ctx, ?var, ?type) <-
    and the type of heap matches the type of var. 
 */
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <- // TODO create special merge macro
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   VarPointsToExternalHeapObjectForType(?ctx, ?var, ?type),
   MockObjectHeap(?heap, ?type).
 
@@ -229,7 +229,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <- // TODO create special merge macro
   and the type of heap matches the cast type
 */
 VarPointsTo(?hctx, ?heap, ?ctx, ?var) <- // TODO create special merge macro
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   VarPointsToExternalHeapObjectForType(?ctx, ?var, ?type),
   CompatibleAssignCast(_, ?var, ?type),
   MockObjectHeap(?heap, ?type).

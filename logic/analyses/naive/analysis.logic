@@ -40,5 +40,5 @@ VarPointsTo(?this, ?heap) <-
    VirtualMethodInvocation:Base[?invocation] = ?base,
    VarPointsTo(?base, ?heap),
    HeapAllocation:Type[?heap] = ?heaptype,
-   ResolveInvocation(?invocation, ?heaptype, ?toMethod),
+   ResolveInvocation[?heaptype, ?invocation] = ?toMethod,
    ThisVar[?toMethod] = ?this.

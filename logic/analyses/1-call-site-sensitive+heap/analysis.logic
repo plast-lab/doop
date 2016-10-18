@@ -6,12 +6,12 @@ RealContextFromContext[?ctx] = ?invocation <-
 
 Context(?ctx),
 ContextFromRealContext[?invo] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   MethodInvocationValue(?invo, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?invo] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   MethodInvocationValue(?invo, "<<immutable-hcontext>>").
 
 

@@ -48,7 +48,7 @@ ImmutableInvValue[] = ?immInv <-
 
 HContext(?hctx),
 HContextFromRealHContext[?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   // Special immutable heap allocation constant
   HeapAllocationValue(?immutable, "<<immutable>>").
 

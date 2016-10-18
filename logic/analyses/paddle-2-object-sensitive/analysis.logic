@@ -4,12 +4,12 @@ RealContext2FromContext[?ctx] = ?value2 <-
 
 Context(?ctx),
 ContextFromRealContext[?value, ?value] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
-ImmutableHContext[] = ?hctx.
+ImmutableHContext(?hctx).
 
 
 // Create initial objects with their heap contexts
