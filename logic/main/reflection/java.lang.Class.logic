@@ -14,7 +14,7 @@
  * Evaluate Object.getClass
  */
 VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Object:getClass(?to, ?from),
   VarPointsTo(_, ?value, ?ctx, ?from),
   Value:Type[?value] = ?type,
@@ -70,7 +70,7 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
 
 // TODO do this with a predicate, not with hacking the string id
 VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getName(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   Value:Heap[?classValue] = ?classHeap,
@@ -89,7 +89,7 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
  *************************************************************/
 
 VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getComponentType(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -109,7 +109,7 @@ VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) <-
  *************************************************************/
 
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -117,7 +117,7 @@ VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
   ReifiedClass:Value[?superType] = ?superClassValue.
 
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -138,7 +138,7 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) <-
 
 FillArray:Interfaces(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -168,7 +168,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:PublicMethods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -180,7 +180,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
 // NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
 // TODO Merge common parts
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -203,7 +203,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:Methods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -211,7 +211,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredMethod(?to, ?param, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -242,7 +242,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:PublicConstructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?class] = ?classValue,
@@ -252,7 +252,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getConstructor(?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classValue),
@@ -269,7 +269,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:Constructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?class] = ?classValue,
@@ -279,7 +279,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredConstructor(?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   OptClassToConstructor(?constructor, ?classValue),
@@ -317,7 +317,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:PublicFields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -328,7 +328,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
 // mode. The constant will never flow to ?param.
 // NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getField(?to, ?param, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -351,7 +351,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:Fields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -359,7 +359,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredField(?to, ?param, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
@@ -413,7 +413,7 @@ ReflectiveBaseVar[?invocation] = ?to <-
  * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getClassLoader(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
@@ -430,7 +430,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
  * We just create a dummy value to represent the URL resource returned.
  *************************************************************/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),

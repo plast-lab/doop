@@ -31,7 +31,7 @@ RealHContextFromHContext[?hctx] = ?type <-
 
 HContext(?hctx),
 HContextFromRealHContext[?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   // Special immutable constant
   Type:Value(?immutable:"<<immutable>>").
 

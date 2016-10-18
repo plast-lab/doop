@@ -2,20 +2,39 @@
 // these predicates. Unfortunately derived predicates don't seem to
 // be supported by the join optimizer currently.
 #define ObjectShouldNotBeRefined(heap) \
-  ((NegativeObjectFilter[] = true, ValueToRefine(heap)); \
-  (!NegativeObjectFilter[] = true, !ValueToRefine(heap)))
+    ((NegativeObjectFilter[] = true, ValueToRefine(heap)); \
+    (!NegativeObjectFilter[] = true, !ValueToRefine(heap)))
 #define ObjectShouldBeRefined(heap) \
-  ((!NegativeObjectFilter[] = true, ValueToRefine(heap)); \
-  (NegativeObjectFilter[] = true, !ValueToRefine(heap)))
+    ((!NegativeObjectFilter[] = true, ValueToRefine(heap)); \
+    (NegativeObjectFilter[] = true, !ValueToRefine(heap)))
 #define SiteShouldNotBeRefined(invocation) \
-  ((!NegativeSiteFilter[] = true, !SiteToRefine(invocation)); \
-  (NegativeSiteFilter[] = true, SiteToRefine(invocation)))
+    ((!NegativeSiteFilter[] = true, !SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, SiteToRefine(invocation)))
 #define SiteShouldBeRefined(invocation) \
-  ((!NegativeSiteFilter[] = true, SiteToRefine(invocation)); \
-  (NegativeSiteFilter[] = true, !SiteToRefine(invocation)))
+    ((!NegativeSiteFilter[] = true, SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, !SiteToRefine(invocation)))
+
+/**
+ * Elegance hacks, using macros: instead of burdening all normal
+ * analyses, provide default definitions for the common cases.
+ */
+
+#ifndef MULTIPLE_IMMUTABLE_CONTEXTS
+ImmutableContextFromHContext[?hctx] = ?ctx <-
+  ImmutableContext(?ctx), HContext(?hctx).
+
+ImmutableHContextFromContext[?ctx] = ?hctx <-
+  ImmutableHContext(?hctx), Context(?ctx).
+
+ImmutableContextFromContext[?ctx1] = ?ctx2 <-
+  ImmutableContext(?ctx2), Context(?ctx1).
+#endif // MULTIPLE_IMMUTABLE_CONTEXTS
+
+#ifndef CompatibleContextAndHContextMacro
+#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
+#endif
 
 
-ValueToRefine(?heap) <- ValueToRefine(?heap).
 #include "main.logic"
 
 /**
@@ -80,7 +99,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 #endif
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
   Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod).
@@ -89,7 +108,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
  * Null assignments
  */
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?toCtx] = ?hctx,
    AssignNull(?to, ?inmethod),
    Value:Null[] = ?null,
    ReachableContext(?toCtx, ?inmethod).
@@ -342,7 +361,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   Value:Type[?value] = ?valuetype,
-  ResolveInvocation(?invocation, ?valuetype, ?tomethod),
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -366,7 +385,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   Value:Type[?value] = ?valuetype,
-  ResolveInvocation(?invocation, ?valuetype, ?tomethod),
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -390,7 +409,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   Value:Type[?value] = ?valuetype,
-  ResolveInvocation(?invocation, ?valuetype, ?tomethod),
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
@@ -406,7 +425,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   Value:Type[?value] = ?valuetype,
-  ResolveInvocation(?invocation, ?valuetype, ?tomethod),
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
@@ -494,6 +513,7 @@ ReachableContext(?ctx, ?method) <-
 
 Reachable(?method) <-
   ReachableContext(_, ?method).
+
 
 /**
  * EXPERIMENTS ONLY below this point

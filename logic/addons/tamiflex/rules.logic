@@ -93,15 +93,11 @@ Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation)
 
 
 /**
- * Using the main method's (unique) context as a dummy context.  No reason to
- * use normal context for reflective calls, since we are using the results from
- * tamiflex to resolve targets. Thus there is no information to distinguish
- * things per context.
+ * The analysis is done under a default context (ImmutableContext). No
+ * reason to use normal context for reflective calls, since we are
+ * using the results from tamiflex to resolve targets. Thus there is
+ * no information to distinguish things per context.
  */
-DummyContextForReflective[] = ?dummyCtx
-<-
-   MainMethodDeclaration(?mainMethod),
-   ReachableContext(?dummyCtx, ?mainMethod).
 
 /**
  * A tamiflex call graph edge is not a real one: types in the signature
@@ -115,22 +111,24 @@ TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
 ReachableContext(?calleeCtx, ?callee) <-
   TamiflexCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-
-VarPointsTo(?hctx, ?classValue, ?ctx, ?return) <-
-   ImmutableHContext[] = ?hctx,
+OptForNameInvocation(?invocation, ?inmethod) <-
    (Method:Id(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
     Method:Id(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
-   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
+
+VarPointsTo(?hctx, ?classValue, ?ctx, ?return) <-
+   OptForNameInvocation(?invocation, ?inmethod),
+   ReachableContext(?ctx, ?inmethod),
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    Tamiflex:ReflectionMap(?classStr, ?invocation),
    ?classObjStr = "<class " + ?classStr + ">",
    HeapAllocation:byId[?classObjStr] = ?classObj,
    HeapAllocation:Type[?classObj] = "java.lang.Class",
    Value:byHeap[?classObj] = ?classValue,
-   ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    (Tamiflex:Class:NewInstance(?invocation, ?heap) ;
     Tamiflex:Array:NewInstance(?invocation, ?heap) ),
    Value:byHeap[?heap] = ?value,
@@ -138,19 +136,20 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
 
+// MergeMacro(?callerCtx, ?invocation, ?hctx, ?obj, ?calleeCtx),
 VarPointsTo(?hctx, ?value, ?callerCtx, ?return),
 TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?callerCtx] = ?hctx,
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
    Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap),
    Value:byHeap[?heap] = ?value,
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?callerCtx, ?inmethod),
    AssignReturnValue[?invocation] = ?return,
-   ThisVar[?constructor] = ?this,
-   DummyContextForReflective[] = ?calleeCtx.
+   ThisVar[?constructor] = ?this.
 
 
 Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
@@ -176,7 +175,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
    ActualParam[0, ?invocation] = ?base,
    VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
    ThisVar[?callee] = ?this,
-   DummyContextForReflective[] = ?calleeCtx.
+   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 
 /**
  * Static method invocations
@@ -184,7 +183,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
    Method:Modifier("static", ?callee),
-   DummyContextForReflective[] = ?calleeCtx.
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
 
 /**
  * Return values of reflective method invocations
@@ -193,7 +192,7 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
    AssignReturnValue[?invocation] = ?local,
    ReturnVar(?return, ?callee),
-   DummyContextForReflective[] = ?calleeCtx.
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
 
 /**
  * Handle the array of actual parameters of a reflective method call
@@ -205,7 +204,7 @@ TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) <-
    Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
    ActualParam[1, ?invocation] = ?argsParam,
    FormalParam[_, ?callee] = ?formal,
-   DummyContextForReflective[] = ?calleeCtx.
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
 /// ... vs. constructor calls
 TamiflexInvocationFirstParam(?calleeCtx, ?formal, ?callerCtx, ?argsParam) <-
    TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
@@ -225,7 +224,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
    SupertypeOf(?type, ?valuetype).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
     Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
     Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;

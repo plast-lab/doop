@@ -5,7 +5,7 @@
  *************************************************************/
 
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Array:newInstance(?invocation, ?to, ?param),
   VarPointsTo(_, ?componentClass, ?ctx, ?param),
   ReifiedClass:Value[?componentType] = ?componentClass,

@@ -13,11 +13,17 @@ lang:entity(`HContext).
 lang:physical:storageModel[`HContext]="ScalableSparse".
 lang:physical:capacity[`HContext] = 8388608.
 
-ImmutableContext[]  = ?ctx  -> Context(?ctx).
-ImmutableHContext[] = ?hctx -> HContext(?hctx).
+// These are normally unique, but for partitioned analyses there may be
+// one per partition.
+ImmutableContext(?ctx) -> Context(?ctx).
+ImmutableHContext(?hctx) -> HContext(?hctx).
+// If we have many, get a compatible one from the other kind of context.
+ImmutableContextFromHContext[?hctx] = ?ctx -> Context(?ctx), HContext(?hctx).
+ImmutableHContextFromContext[?ctx] = ?hctx -> Context(?ctx), HContext(?hctx).
+ImmutableContextFromContext[?ctx1] = ?ctx2 -> Context(?ctx1), Context(?ctx2).
 
 
-// Needed when context is comprised of different kinds
+// Needed when context consists of different kinds
 ContextComponent(?comp) -> .
 lang:entity(`ContextComponent).
 lang:physical:storageModel[`ContextComponent] = "ScalableSparse".

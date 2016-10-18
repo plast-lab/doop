@@ -13,12 +13,12 @@ RealHContext3FromHContext[?hctx] = ?value3 <-
 
 Context(?ctx),
 ContextFromRealContext[?value, ?value, ?value] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
 HContextFromRealHContext[?value, ?value, ?value] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   Value:byId["<<immutable-hcontext>>"] = ?value.
 
 

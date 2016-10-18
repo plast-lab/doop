@@ -10,12 +10,12 @@ RealHContextFromHContext[?hctx] = ?value <-
 
 Context(?ctx),
 ContextFromRealContext[?value, ?value] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
 HContextFromRealHContext[?value] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   Value:byId["<<immutable-hcontext>>"] = ?value.
 
 
@@ -48,8 +48,9 @@ MyMergeBasis(?hctx, ?value) <-
 
 // We create new context objects sparingly, because of the high cost.  We also
 // cache them, so they can be looked up without a join.
-Context(?calleeCtx),
-ContextFromRealContext[RealHContextFromHContext[?hctx],?value] = ?calleeCtx,
+////Context(?calleeCtx),
+////ContextFromRealContext[RealHContextFromHContext[?hctx],?value] = ?calleeCtx,
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
 OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?value).
 

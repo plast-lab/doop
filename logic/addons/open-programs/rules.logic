@@ -84,7 +84,7 @@ MockObjectHeap(?heap, ?fieldtype) <-
 
 Blah(?heap, ?signature, ?baseheap),
 InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?hctx, ?baseheap) <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContext(?hctx),
    MockHeapForField(?signature, ?baseheap, ?fieldtype),
    MockObjectHeap(?heap, ?fieldtype).
 
@@ -96,7 +96,7 @@ ArrayIndexPointsTo(?hctx, ?componentHeap, ?hctx, ?arrayHeap) <-
    ComponentType[?arrayType] = ?componentType,
    AnyConcreteImplementations(?class, ?componentType),
    MockObjectHeap(?componentHeap, ?class),
-   ImmutableHContext[] = ?hctx.
+   ImmutableHContext(?hctx).
 
 ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
@@ -131,7 +131,7 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
  <-
    HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
    Instruction:Id(?heap:?heapStr), 
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    HeapAllocation(?heap).
 
 // bind mock objects to receivers
@@ -143,5 +143,5 @@ HeapForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
    
 VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
  <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    HeapForReceiverInContext(?ctx, ?receiver, ?heap).

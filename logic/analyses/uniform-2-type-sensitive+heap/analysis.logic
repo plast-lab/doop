@@ -22,13 +22,13 @@ ImmutableInvValue[] = ?immInv <-
 
 Context(?ctx),
 ContextFromRealContext[?instr, ?invo, ?instr] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   Instruction:Id(?instr, "<<immutable-context>>"),
   MethodInvocationValue(?invo, "<<immutable-context-2>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   Instruction:Id(?instr:"<<immutable-hcontext>>").
 
 

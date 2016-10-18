@@ -7,13 +7,13 @@ RealHContextFromHContext[?hctx] = ?value <-
 
 Context(?ctx),
 ContextFromRealContext[?type, ?value] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ImmutableContext(?ctx) <-
   ClassTypeValue(?type, "java.lang.String"),
   Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
 HContextFromRealHContext[?value] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   Value:byId["<<immutable>>"] = ?value.
 
 

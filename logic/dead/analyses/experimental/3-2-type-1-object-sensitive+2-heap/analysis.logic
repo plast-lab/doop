@@ -38,7 +38,7 @@ RealHContext2FromHContext[?hctx] = ?heap <-
 
 HContext(?hctx),
 HContextFromRealHContext[?immutable1, ?immutable2] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   // Special immutable heap allocation constant
   ClassTypeValue(?immutable1, "java.lang.String"),
   HeapAllocationValue(?immutable2, "<<immutable>>").

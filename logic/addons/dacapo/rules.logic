@@ -27,7 +27,7 @@ DacapoHarnessClass(?heap)
  */
 VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to)
 <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    MethodInvocation:Signature[?inv] =
 #ifdef DACAPO_BACH
    "<org.dacapo.parser.Config: void setClass(java.lang.String)>",

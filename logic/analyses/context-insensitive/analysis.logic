@@ -8,10 +8,10 @@ HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 UniqueHContext[] = ?hctx.
 
-ImmutableContext[] = ?ctx  <-
+ImmutableContext(?ctx)  <-
   UniqueContext[] = ?ctx.
 
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   UniqueHContext[] = ?hctx.
 
 
