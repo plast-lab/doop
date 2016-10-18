@@ -1,0 +1,64 @@
+// Context-sensitive pointer analysis with context of 1 object
+// (AND for static calls 1 call-site).
+
+RealContextFromContext[?ctx] = ?valueComp <-
+  ContextFromRealContext[?valueComp] = ?ctx.
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invocation site for static calls.
+RealContextFromContext[?ctx] = ?valueComp <-
+  SpecialContextFromRealContext[_, ?valueComp] = ?ctx.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ImmutableContext[] = ?ctx <-
+  Value:byId["<<immutable-context>>"] = ?value.
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+ImmutableHContext[] = ?hctx.
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  Value:byId["<<main-thread>>"] = ?alloc.
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  Value:byId["<<initial-context>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  Value:byId["<<jvm-startup>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  Value:byId["<<class-initialization>>"] = ?value.

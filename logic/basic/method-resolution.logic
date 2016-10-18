@@ -1,0 +1,71 @@
+MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
+   MethodImplemented[?simplename, ?descriptor, ?type] = ?method.
+
+MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
+   DirectSuperclass[?type] = ?supertype,
+   MethodLookup[?simplename, ?descriptor, ?supertype] = ?method,
+   !(MethodImplemented[?simplename, ?descriptor, ?type]=_).
+
+/**
+ * Arrays
+ *
+ * TODO MethodLookup of clone in an array type now results in
+ *      Object.clone. This is not according to the spec, but in the
+ *      Sun JVM arrays don't have a declared clone method either. The
+ *      bytecode does indicate a call to clone in the array class, but
+ *      the Jimple code turns this into a call of
+ *      java.lang.Object.clone()
+ *
+ * TODO Alternative, better implementation: just make java.lang.Object
+ *      a direct superclass of array types, something we should do
+ *      anyway.
+ */
+MethodLookup[?simplename, ?descriptor, ?arraytype] = ?method <-
+   ArrayType(?arraytype),
+   Type:Id(?objectType:"java.lang.Object"),
+   MethodImplemented[?simplename, ?descriptor, ?objectType] = ?method.
+
+MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
+   Method:SimpleName[?method] = ?simplename,
+   Method:Descriptor[?method] = ?descriptor,
+   Method:DeclaringType[?method] = ?type,
+   ! Method:Modifier("abstract", ?method).
+
+
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor.
+
+
+// NOTE: This seems to be OK performance-wise. If we put it in a different
+// block, we have to declared it as DerivedAndStored which has an impact.
+ResolveInvocation(?invocation, ?type, ?tomethod) ->
+   MethodInvocation(?invocation), Type(?type), Method(?tomethod).
+lang:derivationType[`ResolveInvocation] = "Derived".
+
+ResolveInvocation(?invocation, ?type, ?tomethod) <-
+   VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+   VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
+   MethodLookup[?simplename, ?descriptor, ?type] = ?tomethod.
+
+OverridableMethod(?type, ?method) <-
+  MethodLookup(_, _, ?type, ?method),
+  !Method:Modifier("static", ?method),
+  !Method:Modifier("final", ?method),
+  Method:Modifier("public", ?method),
+  Subclassable(?type).
+
+OverridableMethod(?type, ?method) <-
+  MethodLookup(_, _, ?type, ?method),
+  !Method:Modifier("static", ?method),
+  !Method:Modifier("final", ?method),
+  Method:Modifier("protected", ?method),
+  Subclassable(?type).
+
+ClassConstructor(method, type) <-
+  MethodLookup(_, _, type, method),
+  Method:Id(method:value),
+  string:like(value, "%<init>%").

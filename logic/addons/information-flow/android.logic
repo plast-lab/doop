@@ -1,0 +1,231 @@
+TaintSourceMethod("<android.location.Location: double getLatitude()>").
+TaintSourceMethod("<android.location.Location: double getLongitude()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getDeviceId()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getSubscriberId()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getSimSerialNumber()>").
+TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getLine1Number()>").
+TaintSourceMethod("<java.net.URLConnection: java.io.OutputStream getOutputStream()>").
+TaintSourceMethod("<java.net.URLConnection: java.io.InputStream getInputStream()>").
+TaintSourceMethod("<org.apache.http.HttpResponse: org.apache.http.HttpEntity getEntity()>").
+TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity)>").
+TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity,java.lang.String)>").
+TaintSourceMethod("<org.apache.http.util.EntityUtils: byte[] toByteArray(org.apache.http.HttpEntity)>").
+TaintSourceMethod("<org.apache.http.util.EntityUtils: java.lang.String getContentCharSet(org.apache.http.HttpEntity)>").
+LeakingSinkMethod(n, "<org.apache.http.message.BasicNameValuePair: void <init>(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+TaintSourceMethod("<android.os.Bundle: java.lang.Object get(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: boolean getBoolean(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: boolean getBoolean(java.lang.String,boolean)>").
+TaintSourceMethod("<android.os.Bundle: boolean[] getBooleanArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: android.os.Bundle getBundle(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: byte getByte(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.lang.Byte getByte(java.lang.String,byte)>").
+TaintSourceMethod("<android.os.Bundle: byte[] getByteArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: char getChar(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: char getChar(java.lang.String,char)>").
+TaintSourceMethod("<android.os.Bundle: char[] getCharArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.lang.CharSequence getCharSequence(java.lang.String,java.lang.CharSequence)>").
+TaintSourceMethod("<android.os.Bundle: java.lang.CharSequence getCharSequence(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.lang.CharSequence[] getCharSequenceArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.util.ArrayList getCharSequenceArrayList(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.lang.ClassLoader getClassLoader()>").
+TaintSourceMethod("<android.os.Bundle: double getDouble(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: double getDouble(java.lang.String,double)>").
+TaintSourceMethod("<android.os.Bundle: double[] getDoubleArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: float getFloat(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: float getFloat(java.lang.String,float)>").
+TaintSourceMethod("<android.os.Bundle: float[] getFloatArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: int getInt(java.lang.String,int)>").
+TaintSourceMethod("<android.os.Bundle: int getInt(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: int[] getIntArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.util.ArrayList getIntegerArrayList(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: long getLong(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: long getLong(java.lang.String,long)>").
+TaintSourceMethod("<android.os.Bundle: long[] getLongArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: android.os.Parcelable[] getParcelableArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.util.ArrayList getParcelableArrayList(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.io.Serializable getSerializable(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: short getShort(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: short getShort(java.lang.String,short)>").
+TaintSourceMethod("<android.os.Bundle: short[] getShortArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: android.util.SparseArray getSparseParcelableArray(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.lang.String getString(java.lang.String)>").
+TaintSourceMethod("<android.os.Bundle: java.util.ArrayList getStringArrayList(java.lang.String key)>").
+LeakingSinkMethod(n, "<android.os.Bundle: void putBinder(java.lang.String,android.os.IBinder)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putBoolean(java.lang.String,boolean)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putBooleanArray(java.lang.String,boolean[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putBundle(java.lang.String,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putByte(java.lang.String,byte)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putByteArray(java.lang.String,byte[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putChar(java.lang.String,char)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putCharArray(java.lang.String,char[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putCharSequence(java.lang.String,java.lang.CharSequence)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putCharSequenceArray(java.lang.String,java.lang.CharSequence[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putCharSequenceArrayList(java.lang.String,java.util.ArrayList)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putDouble(java.lang.String,double)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putDoubleArray(java.lang.String,double[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putFloat(java.lang.String,float)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putFloatArray(java.lang.String,float[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putInt(java.lang.String,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putIntArray(java.lang.String,int[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putIntegerArrayList(java.lang.String,java.util.ArrayList)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putLong(java.lang.String,long)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putLongArray(java.lang.String,long[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putParcelable(java.lang.String,android.os.Parcelable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putParcelableArray(java.lang.String,android.os.Parcelable[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putParcelableArrayList(java.lang.String,java.util.ArrayList)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putSerializable(java.lang.String,java.io.Serializable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putShort(java.lang.String,short)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putShortArray(java.lang.String,short[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putSparseParcelableArray(java.lang.String,android.util.SparseArray)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putString(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putStringArray(java.lang.String,java.lang.String[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putStringArrayList(java.lang.String,java.util.ArrayList)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Bundle: void putAll(android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+TaintSourceMethod("<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int)>").
+TaintSourceMethod("<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int,android.os.Bundle)>").
+TaintSourceMethod("<android.app.PendingIntent: android.app.PendingIntent getBroadcast(android.content.Context,int,android.content.Intent,int)>").
+TaintSourceMethod("<android.app.PendingIntent: android.app.PendingIntent getService(android.content.Context,int,android.content.Intent,int)>").
+TaintSourceMethod("<android.media.AudioRecord: int read(short[],int,int)>").
+TaintSourceMethod("<android.media.AudioRecord: int read(byte[],int,int)>").
+TaintSourceMethod("<android.media.AudioRecord: int read(java.nio.ByteBuffer,int)>").
+TaintSourceMethod("<android.location.LocationManager: android.location.Location getLastKnownLocation(java.lang.String)>").
+TaintSourceMethod("<android.content.pm.PackageManager: java.util.List getInstalledApplications(int)>").
+TaintSourceMethod("<android.content.pm.PackageManager: java.util.List getInstalledPackages(int)>").
+TaintSourceMethod("<android.content.pm.PackageManager: java.util.List queryIntentActivities(android.content.Intent,int)>").
+TaintSourceMethod("<android.content.pm.PackageManager: java.util.List queryIntentServices(android.content.Intent,int)>").
+TaintSourceMethod("<android.content.pm.PackageManager: java.util.List queryBroadcastReceivers(android.content.Intent,int)>").
+TaintSourceMethod("<android.content.pm.PackageManager: java.util.List queryContentProviders(java.lang.String,int,int)>").
+TaintSourceMethod("<android.os.Handler: android.os.Message obtainMessage()>").
+TaintSourceMethod("<android.os.Handler: android.os.Message obtainMessage(int,int,int)>").
+TaintSourceMethod("<android.os.Handler: android.os.Message obtainMessage(int,int,int,java.lang.Object)>").
+TaintSourceMethod("<android.os.Handler: android.os.Message obtainMessage(int)>").
+TaintSourceMethod("<android.os.Handler: android.os.Message obtainMessage(int,java.lang.Object)>").
+LeakingSinkMethod(n, "<android.util.Log: int d(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int d(java.lang.String,java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int e(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int e(java.lang.String,java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int i(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int i(java.lang.String,java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int v(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int v(java.lang.String,java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int w(java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int w(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int w(java.lang.String,java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int wtf(java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int wtf(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.util.Log: int wtf(java.lang.String,java.lang.String,java.lang.Throwable)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.OutputStream: void write(byte[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.OutputStream: void write(byte[],int,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.OutputStream: void write(int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.FileOutputStream: void write(byte[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.FileOutputStream: void write(byte[],int,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.FileOutputStream: void write(int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.Writer: void write(char[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.Writer: void write(char[],int,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.Writer: void write(int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.Writer: void write(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.Writer: void write(java.lang.String,int,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.Writer: java.io.Writer append(java.lang.CharSequence)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.io.OutputStreamWriter: java.io.Writer append(java.lang.CharSequence)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void set(java.lang.String,java.lang.String,int,java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void set(java.lang.String,java.lang.String,int,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URLConnection: void setRequestProperty(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Intent: android.content.Intent setAction(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Intent: android.content.Intent setClassName(android.content.Context,java.lang.Class)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Intent: android.content.Intent setClassName(android.content.Context,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Intent: android.content.Intent setComponent(android.content.ComponentName)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void sendBroadcast(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void sendBroadcast(android.content.Intent,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void sendOrderedBroadcast(android.content.Intent,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContextWrapper: void sendOrderedBroadcast(android.content.Intent,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.media.MediaRecorder: void setVideoSource(int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.media.MediaRecorder: void setPreviewDisplay(android.view.Surface)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.media.MediaRecorder: void start()>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: android.content.Intent registerReceiver(android.content.BroadcastReceiver,android.content.IntentFilter)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: android.content.Intent registerReceiver(android.content.BroadcastReceiver,android.content.IntentFilter,java.lang.String,android.os.Handler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.IntentFilter: void addAction(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendTextMessage(java.lang.String,java.lang.String,java.lang.String,android.app.PendingIntent,android.app.PendingIntent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendDataMessage(java.lang.String,java.lang.String,short,byte[],android.app.PendingIntent,android.app.PendingIntent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.telephony.SmsManager: void sendMultipartTextMessage(java.lang.String,java.lang.String,java.util.ArrayList,java.util.ArrayList,java.util.ArrayList)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.Socket: void connect(java.net.SocketAddress)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.os.Handler: boolean sendMessage(android.os.Message)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putBoolean(java.lang.String,boolean)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putFloat(java.lang.String,float)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putInt(java.lang.String,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putLong(java.lang.String,long)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putString(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putBoolean(java.lang.String,boolean)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putFloat(java.lang.String,float)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putInt(java.lang.String,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putLong(java.lang.String,long)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putString(java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+TaintSourceMethod("<android.content.SharedPreferences: android.content.SharedPreferences getDefaultSharedPreferences(android.content.Context)>").
+TaintSourceMethod("<android.bluetooth.BluetoothAdapter: java.lang.String getAddress()>").
+TaintSourceMethod("<android.net.wifi.WifiInfo: java.lang.String getMacAddress()>").
+TaintSourceMethod("<java.util.Locale: java.lang.String getCountry()>").
+TaintSourceMethod("<android.net.wifi.WifiInfo: java.lang.String getSSID()>").
+TaintSourceMethod("<android.telephony.gsm.GsmCellLocation: int getCid()>").
+TaintSourceMethod("<android.telephony.gsm.GsmCellLocation: int getLac()>").
+TaintSourceMethod("<android.location.Location: double getLongitude()>").
+TaintSourceMethod("<android.location.Location: double getLatitude()>").
+TaintSourceMethod("<android.accounts.AccountManager: android.accounts.Account[] getAccounts()>").
+TaintSourceMethod("<java.util.Calendar: java.util.TimeZone getTimeZone()>").
+TaintSourceMethod("<android.provider.Browser: android.database.Cursor getAllBookmarks()>").
+TaintSourceMethod("<android.provider.Browser: android.database.Cursor getAllVisitedUrls()>").
+TaintSourceMethod("<java.net.URL: java.net.URLConnection openConnection()>").
+LeakingSinkMethod(n, "<org.apache.http.impl.client.DefaultHttpClient: org.apache.http.HttpResponse execute(org.apache.http.client.methods.HttpUriRequest)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<org.apache.http.client.HttpClient: org.apache.http.HttpResponse execute(org.apache.http.client.methods.HttpUriRequest)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+TaintSourceMethod("<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>").
+TaintSourceMethod("<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>").
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String,java.lang.String,int,java.lang.String,java.net.URLStreamHandler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.net.URL,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContextWrapper: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void startActivity(android.content.Intent,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void startActivities(android.content.Intent[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void startActivities(android.content.Intent[],android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: android.content.ComponentName startService(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: boolean bindService(android.content.Intent,android.content.ServiceConnection,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void sendBroadcast(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.Context: void sendBroadcast(android.content.Intent,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+TaintSourceMethod("<android.app.Activity: android.content.Intent getIntent()>").
+LeakingSinkMethod(n, "<android.app.Activity: void setResult(int,android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivity(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivity(android.content.Intent,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivities(android.content.Intent[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivities(android.content.Intent[],android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityForResult(android.content.Intent,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityForResult(android.content.Intent,int,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityFromChild(android.app.Activity,android.content.Intent,int,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityFromChild(android.app.Activity,android.content.Intent,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityFromFragment(android.app.Fragment,android.content.Intent,int,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityFromFragment(android.app.Fragment,android.content.Intent,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityIfNeeded(android.content.Intent,int,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void startActivityIfNeeded(android.content.Intent,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: android.content.ComponentName startService(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: boolean bindService(android.content.Intent,android.content.ServiceConnection,int)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendBroadcast(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendBroadcast(android.content.Intent,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendBroadcastAsUser(android.content.Intent,android.os.UserHandle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendBroadcastAsUser(android.content.Intent,android.os.UserHandle,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendOrderedBroadcast(android.content.Intent,java.lang.String,android.content.BroadcastReceiver,android.os.Handler,int,java.lang.String,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendOrderedBroadcast(android.content.Intent,java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendOrderedBroadcastAsUser(android.content.Intent,android.os.UserHandle,java.lang.String,android.content.BroadcastReceiver,android.os.Handler,int,java.lang.String,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendStickyBroadcast(android.content.Intent)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendStickyBroadcastAsUser(android.content.Intent,android.os.UserHandle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendStickyOrderedBroadcast(android.content.Intent,android.content.BroadcastReceiver,android.os.Handler,int,java.lang.String,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.app.Activity: void sendStickyOrderedBroadcastAsUser(android.content.Intent,android.os.UserHandle,android.content.BroadcastReceiver,android.os.Handler,int,java.lang.String,android.os.Bundle)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContentResolver: android.net.Uri insert(android.net.Uri,android.content.ContentValues)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContentResolver: int delete(android.net.Uri,java.lang.String,java.lang.String[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContentResolver: int update(android.net.Uri,android.content.ContentValues,java.lang.String,java.lang.String[])>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+LeakingSinkMethod(n, "<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).
+TaintSourceMethod("<android.database.Cursor: java.lang.String getString(int)>").
+TaintSourceMethod("<android.database.sqlite.SQLiteDatabase: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>").
+TaintSourceMethod("<android.database.sqlite.SQLiteDatabase: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>").
+LeakingSinkMethod(n, "<java.lang.ProcessBuilder: java.lang.Process start()>") <- (n = 0); (n = 1) ; (n = 2) ; (n = 3).

@@ -1,0 +1,31 @@
+lang:physical:storageModel[`_TempSiteToRefine] = "DelimitedFile".
+lang:physical:filePath[`_TempSiteToRefine] = "TempSiteToRefine.facts".
+lang:physical:delimiter[`_TempSiteToRefine] = "\t".
+lang:physical:hasColumnNames[`_TempSiteToRefine] = false.
+_TempSiteToRefine(invo) -> string(invo).
+
++SiteToRefine(invo) <- _TempSiteToRefine(invo).
+
+lang:physical:storageModel[`_TempNegativeSiteFilter] = "DelimitedFile".
+lang:physical:filePath[`_TempNegativeSiteFilter] = "TempNegativeSiteFilter.facts".
+lang:physical:delimiter[`_TempNegativeSiteFilter] = "\t".
+lang:physical:hasColumnNames[`_TempNegativeSiteFilter] = false.
+_TempNegativeSiteFilter[] = v -> boolean(v).
+
++NegativeSiteFilter[] = v <- _TempNegativeSiteFilter[] = v.
+
+lang:physical:storageModel[`_TempValueToRefine] = "DelimitedFile".
+lang:physical:filePath[`_TempValueToRefine] = "TempValueToRefine.facts".
+lang:physical:delimiter[`_TempValueToRefine] = "\t".
+lang:physical:hasColumnNames[`_TempValueToRefine] = false.
+_TempValueToRefine(heapId) -> string(heapId).
+
++ValueToRefine(heap) <- _TempValueToRefine(heapId), Value:byId[heapId] = heap.
+
+lang:physical:storageModel[`_TempNegativeObjectFilter] = "DelimitedFile".
+lang:physical:filePath[`_TempNegativeObjectFilter] = "TempNegativeObjectFilter.facts".
+lang:physical:delimiter[`_TempNegativeObjectFilter] = "\t".
+lang:physical:hasColumnNames[`_TempNegativeObjectFilter] = false.
+_TempNegativeObjectFilter[] = v -> boolean(v).
+
++NegativeObjectFilter[] = v <- _TempNegativeObjectFilter[] = v.

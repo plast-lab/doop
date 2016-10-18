@@ -1,0 +1,63 @@
+RealContext1FromContext[?ctx] = ?type1,
+RealContext2FromContext[?ctx] = ?type2 <-
+  ContextFromRealContext[?type1, ?type2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?type <-
+  HContextFromRealHContext[?type] = ?hctx.
+
+InitialTypeValue[] = ?initType <-
+  Type:Id(?initType:"<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?type, ?type] = ?ctx,
+ImmutableContext[] = ?ctx <-
+  Type:Id(?type, "<<immutable-context>>").
+
+HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
+ImmutableHContext[] = ?hctx <-
+  Type:Id(?type, "<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread>>"] = ?alloc.
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?type1, ?type2] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  ClassTypeValue(?type1, "java.lang.String"),
+  Type:Id(?type2:"<<initial-context>>").
+
+Context(?ctx),
+ContextFromRealContext[?type1, ?type2] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  ClassTypeValue(?type1, "java.lang.String"),
+  Type:Id(?type2:"<<jvm-startup>>").
+
+Context(?ctx),
+ContextFromRealContext[?type1, ?type2] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  ClassTypeValue(?type1, "java.lang.String"),
+  Type:Id(?type2:"<<class-initialization>>").
