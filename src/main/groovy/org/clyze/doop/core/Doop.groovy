@@ -308,7 +308,7 @@ class Doop {
             id:"APP_REGEX",
             name:"regex",
             argName:"regex-expression",
-            description:"A regex expression for the Java package names to be analyzed.",
+            description:"A regex expression for the Java package names of the analyzed application.",
             value:null,
             forCacheID:true,
             webUI:true

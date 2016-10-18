@@ -359,7 +359,7 @@ public class Main {
             Database db = new CSVDatabase(new File(_outputDir));
             FactWriter writer = new FactWriter(db);
             ThreadFactory factory = new ThreadFactory(writer, _ssa);
-            Driver driver = new Driver(factory, _ssa, classes.size());
+            //Driver driver = new Driver(factory, _ssa, classes.size());
 
             classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
@@ -377,14 +377,10 @@ public class Main {
 
             db.flush();
 
-//            if (_android) {
-//                driver.generateDummyMainMethod(dummyMain);
-//                driver.doInParallel(classes);
-//            }
             if (_android)
                 Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
-                driver.doInParallel(classes);
+                Driver.doInSequentialOrder(classes, writer, _ssa);
 
             db.close();
         }
