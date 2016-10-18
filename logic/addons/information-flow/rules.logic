@@ -186,9 +186,9 @@ TaintedHeapAllocation(?value) <-
   AnyMethodInvocation(?invocation, ?tomethod),
   Method:ReturnType[?tomethod] = ?retType.
 
-MockValueConsMacro(?invocation, "Char[]", ?newvalue),
-TaintedHeapAllocation(?newvalue) <-
-    VirtualMethodInvocation:SimpleName[?invocation] = "toCharArray",
-    VirtualMethodInvocation:Base[?invocation] = ?base,
-    VarPointsTo(_, ?value, _, ?base),
-    TaintedHeapAllocation(?value).
+//MockValueConsMacro(?invocation, "Char[]", ?newvalue),
+//TaintedHeapAllocation(?newvalue) <-
+//    VirtualMethodInvocation:SimpleName[?invocation] = "toCharArray",
+//    VirtualMethodInvocation:Base[?invocation] = ?base,
+//    VarPointsTo(_, ?value, _, ?base),
+//    TaintedHeapAllocation(?value).
