@@ -39,6 +39,14 @@ VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
+SpecialMethodInvocation:SimpleName[?invocation] = ?simplename,
+SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   SpecialMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor.
+
+
 
 // NOTE: This seems to be OK performance-wise. If we put it in a different
 // block, we have to declared it as DerivedAndStored which has an impact.
