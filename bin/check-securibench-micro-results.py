@@ -56,7 +56,7 @@ correct_vulnerabilities = pd.Series({
     'Basic28': 2,
     'Basic29': 2,
     'Basic30': 1,
-    'Basic31': 2,
+    'Basic31': 3,
     'Basic32': 1,
     'Basic33': 1,
     'Basic34': 2,
@@ -141,7 +141,7 @@ correct_vulnerabilities = pd.Series({
     'Datastructures6': 1
 })
 
-query = '_(?invocation, ?obj) <- LeakingTaintedInformation(_, ?invocation, _, ?obj).'
+query = '_(?invocation, ?objStr) <- LeakingTaintedInformation(_, ?invocation, _, ?obj), HeapAllocation:Value[?obj] = ?objStr.'
 def getProcess(db):
     process = subprocess.run(['bloxbatch', '-db', db, '-query',query],
                              stdout=subprocess.PIPE, universal_newlines=True)
@@ -153,14 +153,16 @@ def parseOut(out):
         linesplit = line.split(', ')
         if len(linesplit) < 2: continue
         try:
-            if 'securibench.micro' not in linesplit[0]:
-                continue
-            if 'securibench.micro' not in linesplit[1]:
-                continue
-            interesting = linesplit[1].split('securibench.micro')[1].split('.doGet')[0].split('.')[-1].strip()
-            res[interesting]+=1
-        except:
-            import pdb; pdb.set_trace()
+            benchSink = linesplit[0].split('securibench.micro.')[1].split('.')[1].strip()
+            benchSource = linesplit[1].split('securibench.micro.')[1].split('.')[1].strip()
+            # smallest substring probably contains name of benchmark
+            if (benchSink in benchSource):
+                res[benchSource]+=1
+            elif benchSource in benchSink:
+                res[benchSource]+=1
+            else:
+                print(line)
+        except Exception:
             pass
     return res
 
