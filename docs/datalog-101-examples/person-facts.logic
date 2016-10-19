@@ -1,0 +1,6 @@
++Person(p), +Person:cons[name, age] = p <-
+  name = "dave", age = 70.
++Person(p), +Person:cons[name, age] = p <-
+  name = "john", age = 50.
++Person(p), +Person:cons[name, age] = p <-
+  name = "harry", age = 25.

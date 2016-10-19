@@ -1,0 +1,40 @@
+#include "../library/fact-macros.logic"
+
+/**
+ * Thread context abstraction uses 1 context variable
+ */
+
+#define Context(basename, subject) basename ## Ctx, subject
+#define AnyContext(subject) _, subject
+#define DeclareContext(basename, subject) HeapAllocation(basename ## Ctx), subject
+
+/**
+ * Heap abstraction: no context (see +heap for analysis with context)
+ */
+
+#define HeapContext(basename, subject) subject
+#define HeapAbstraction(subject) subject
+#define AnyHeapAbstraction(subject) subject
+#define DeclareHeapAbstraction(basename) HeapAllocation(basename)
+
+/**
+ * Binding macros
+ */
+
+#define BindCallingContext(basename, invocation, basenameHeap, heap, basenameCaller) \
+  basename ## Ctx = basenameCaller ## Ctx, heap = heap
+
+#define BindStaticCallingContext(basename, invocation, heap, basenameCaller) \
+  basename ## Ctx = basenameCaller ## Ctx
+
+#define BindStartupCallingContext(basename, basenameHeap, heap) \
+   HeapAllocationValue(basename ## Ctx, "<<jvm-startup>>")
+
+#define BindNativeCallingContext(basename, basenameHeap, heap, basenameCaller) \
+  basename ## Ctx = basenameCaller ## Ctx
+
+#define BindFinalizerRegisterContext(basename, inmethod, heap, basenameCaller) \
+  basename ## Ctx = basenameCaller ## Ctx
+
+#define BindThreadStartCallingContext(basename, basenameHeap, heap, basenameCaller) \
+  basename ## Ctx = heap
