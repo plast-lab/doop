@@ -68,15 +68,12 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
  *   public String getName()
  *************************************************************/
 
-// TODO do this with a predicate, not with hacking the string id
 VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getName(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  Value:Heap[?classValue] = ?classHeap,
-  HeapAllocation:Id[?classHeap] = ?str,
-  // ?str is of the form "<class TYPE>" ; we want TYPE
-  string:substring[?str, 7, string:length[?str] - 8] = ?className,
+  ClassHeap:InstanceType[Value:Heap[?classValue]] = ?instanceType,
+  Type:Id(?instanceType:?className),
   HeapAllocation:byId[?className] = ?classNameHeap,
   StringConstant(?classNameHeap),
   Value:byHeap[?classNameHeap] = ?classNameValue.
