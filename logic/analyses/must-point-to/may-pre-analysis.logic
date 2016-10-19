@@ -1,0 +1,85 @@
+ContextInsensVPTModNull(?heap, ?var) <- 
+   VarPointsTo(_, ?heap, _, ?var), ?heap != Value:Null[].
+
+VPTTypeForVarModNull(?type, ?var) <-
+   ContextInsensVPTModNull(?heap, ?var),
+   HeapAllocation:Type[?heap] = ?type,
+   !NullType(?type).
+
+NumHeapsForVar[?var] = ?total <-
+   agg<<?total = count()>>(ContextInsensVPTModNull(_,?var)).
+NumTypesForVar[?var] = ?total <-
+   agg<<?total = count()>>(VPTTypeForVarModNull(_,?var)).
+
+ResolvedVar(?var) <-
+   NumHeapsForVar[?var] = 1.
+TypeResolvedVar(?var) <-
+   NumTypesForVar[?var] = 1.
+
+OptContextInsensCallGraphEdge(?invo, ?toMethod) <-
+   CallGraphEdge(_, ?invo, _, ?toMethod).
+
+MethodMayStoreToStaticField(?fld, ?method) <-
+   StoreStaticField:Insn(?insn),
+   FieldInstruction:Signature[?insn] = ?fld,
+   Instruction:Method[?insn] = ?method.
+
+OptCalledMethodMayStoreToStaticField(?insn, ?fld) <-
+   CalledMethodMayStoreToStaticField(?fld, ?insn).
+
+CalledMethodMayStoreToStaticField(?fld, ?invo),
+MethodMayStoreToStaticField(?fld, ?method) <-
+//   CHAMayCall(?invo, ?toMethod),
+   OptContextInsensCallGraphEdge(?invo, ?toMethod),
+   Instruction:Method[?invo] = ?method,
+   MethodMayStoreToStaticField(?fld, ?toMethod).
+
+IsFieldStoreBase(?base, ?inMethod) <-
+   StoreInstanceField:Base[?insn] = ?base,
+   Instruction:Method[?insn] = ?inMethod.
+
+// Fastest way I've found to compute MayAlias
+CompatibleTypes(?t1, ?t2) <-
+   Var:DeclaringMethod(?var1, ?inMethod),
+   Var:DeclaringMethod(?var2, ?inMethod),
+   IsFieldStoreBase(?var2, ?inMethod),
+   Var:Type[?var1] = ?t1,
+   Var:Type[?var2] = ?t2,
+   SubtypeOf(?t, ?t1),
+   SubtypeOf(?t, ?t2).
+
+CompatibleVarsInMethod(?var1, ?var2) <-
+   Var:DeclaringMethod(?var1, ?inMethod),
+   Var:DeclaringMethod(?var2, ?inMethod),
+   IsFieldStoreBase(?var2, ?inMethod),
+   CompatibleTypes(Var:Type[?var1], Var:Type[?var2]).
+
+MayAliasInMethod(?var1, ?var2) <-
+   ContextInsensVPTModNull(?heap, ?var1),
+   ContextInsensVPTModNull(?heap, ?var2),
+   CompatibleVarsInMethod(?var1, ?var2).
+
+// Which methods may ever update the field
+MethodMayStoreToInstanceField(?fld, ?method) <-
+   StoreInstanceField:Insn(?insn),
+   FieldInstruction:Signature[?insn] = ?fld,
+   Instruction:Method[?insn] = ?method.
+
+CalledMethodMayStoreToInstanceField(?fld, ?invo),
+MethodMayStoreToInstanceField(?fld, ?method) <-
+//   CHAMayCall(?invo, ?toMethod),
+   OptContextInsensCallGraphEdge(?invo, ?toMethod),
+   Instruction:Method[?invo] = ?method,
+   MethodMayStoreToInstanceField(?fld, ?toMethod).
+
+// Which methods may ever do the heap allocation
+MethodMayAllocateHeap(?heap, ?method) <-
+// REVIEW: This introduces dependency on string-constants.logic
+   AssignNormalHeapAllocation(?heap, _, ?method).
+
+CalledMethodMayAllocateHeap(?heap, ?invo),
+MethodMayAllocateHeap(?heap, ?method) <-
+//   CHAMayCall(?invo, ?toMethod),
+   OptContextInsensCallGraphEdge(?invo, ?toMethod),
+   Instruction:Method[?invo] = ?method,
+   MethodMayAllocateHeap(?heap, ?toMethod).

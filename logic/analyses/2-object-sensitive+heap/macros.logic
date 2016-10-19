@@ -1,0 +1,51 @@
+// For this analysis, every heap context recorded on allocation
+// corresponds to the most significant element of the calling
+// context of the allocator method.
+#define RecordMacro(ctx, value, hctx) \
+  HContext(hctx), \
+  HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
+
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object and the receiver object of the caller.
+// Again, this may trigger creation of a new object.
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+
+#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+  MergeBasis(callerCtx, invocation, hctx, value)
+
+#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  OptimizeMerge[hctx, value] = calleeCtx
+
+// For this analysis, static calls just keep the same context as the
+// caller. *Not* creating a new one, but pretending to, nonetheless,
+// so the engine doesn't barf.
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealContext1FromContext[callerCtx], \
+                         RealContext2FromContext[callerCtx]] = calleeCtx
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[RealHContextFromHContext[hctx], value] = newCtx
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+
+// This is exactly equivalent to the regular merge logic, but written
+// differently. At finalization, we create a new hctx, based on the
+// callerCtx, and then use this new hctx as we would in regular Merge.
+// The macro below does this, without referring to the new hctx (i.e.,
+// using knowledge of how it is created). This is necessary because since
+// the new hctx is created in the same rule, it will not yet have values
+// for its inverse functions (RealHContextFromHContext), so the rule will never
+// fire if done naively. The signature of the macro (which does not accept a
+// hctx) is a hint for avoiding this problem.
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[RealContext2FromContext[callerCtx], value] = newCtx

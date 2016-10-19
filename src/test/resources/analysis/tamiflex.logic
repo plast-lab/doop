@@ -1,0 +1,86 @@
+DummyContextForReflective[] = ?dummyCtx
+<-
+   MainMethodDeclaration(?mainMethod),
+   ReachableContext(?dummyCtx, ?mainMethod).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
+<-
+   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?classStr, ?invocation),
+   ?classObjStr = "<class " + ?classStr + ">",
+   Instruction:Value(?classObj:?classObjStr),
+   HeapAllocation(?classObj),
+   HeapAllocation:Type[?classObj] = "java.lang.Class",
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?obj, ?ctx, ?return)
+<-
+   (Tamiflex:Class:NewInstance(?invocation, ?obj) ;
+    Tamiflex:Array:NewInstance(?invocation, ?obj) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
+VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
+<-
+   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return,
+   ThisVar[?constructor] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?methodStr, ?invocation),
+   MethodSignature:Value(?method:?methodStr),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod).
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ! MethodModifier("static", ?callee),
+   ActualParam[0, ?invocation] = ?base,
+   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+   ThisVar[?callee] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   MethodModifier("static", ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+Assign(?type, ?callerCtx, ?local, ?calleeCtx, ?return)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   AssignReturnValue[?invocation] = ?local,
+   Var:Type[?local] = ?type,
+   ReturnVar(?return, ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ActualParam[1, ?invocation] = ?argsParam,
+   FormalParam[_, ?callee] = ?formal,
+   VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?argsParam),
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
+   Var:Type[?formal] = ?type,
+   HeapAllocation:Type[?heap] = ?heaptype,
+   SupertypeOf(?type, ?heaptype),
+   DummyContextForReflective[] = ?calleeCtx.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?heap, ?ctx, ?return)
+<-
+   (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethodArray(_, ?heap, ?invocation) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.

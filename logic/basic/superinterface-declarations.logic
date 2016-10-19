@@ -1,0 +1,4 @@
+/**
+ * An interface type K is a superinterface of class (or interface) type C
+ */
+Superinterface(?k, ?c) -> Type(?k), Type(?c).

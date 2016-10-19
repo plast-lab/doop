@@ -1,0 +1,59 @@
+#include "class-initialization.logic"
+#include "exceptions.logic"
+#include "finalization.logic"
+#include "implicit-reachable.logic"
+#include "native.logic"
+#include "reference.logic"
+#include "string-constants.logic"
+#include "threads.logic"
+
+#if defined(ENABLE_REFLECTION)
+#include "reflection/rules.logic" 
+#endif
+
+
+// NOTE: should be separate rules so the engine can treat them as alternative
+// indexes
+Value:byHeap[?heap] = ?value <-
+   Value:Heap:Cons[?heap] = ?value.
+Value:Heap[?value] = ?heap <-
+   Value:byHeap[?heap] = ?value.
+
+Value:byId[?id] = ?value <-
+   Value:Mock:Cons[?id] = ?value.
+Value:byId[?id] = ?value <-
+   Value:Heap:Cons[?heap] = ?value,
+   HeapAllocation:Id[?heap] = ?id.
+Value:Id[?value] = ?id <-
+   Value:byId[?id] = ?value.
+
+Value:Heap:Cons[?heap] = ?value,
+Value(?value),
+Value:Type[?value] = ?type <-
+   HeapAllocation(?heap),
+   HeapAllocation:Type[?heap] = ?type.
+
+Value:Null[] = ?nullValue <-
+   HeapAllocation:Null[] = ?nullHeap,
+   Value:byHeap[?nullHeap] = ?nullValue.
+
+
+Value:DeclaringType[?value] = ?type <-
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   Method:DeclaringType[?inmethod] = ?type,
+   !StringConstant(?heap),
+   !ClassHeap(?heap),
+   Value:byHeap[?heap] = ?value.
+
+Value:DeclaringType[?value] = "java.lang.System" <-
+   ClassHeap(?heap),
+   Value:byHeap[?heap] = ?value.
+
+Value:DeclaringType[?value] = "java.lang.String" <-
+   StringConstant(?heap),
+   Value:byHeap[?heap] = ?value.
+
+Value:DeclaringType[?value] = "java.lang.Object" <-
+   Value:Null[] = ?value ;
+   Value:byHeap[MainMethodArgArray[]] = ?value ;
+   Value:byHeap[MainMethodArgArrayContent[]] = ?value.

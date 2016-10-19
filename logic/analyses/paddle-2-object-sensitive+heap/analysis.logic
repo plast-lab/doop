@@ -1,0 +1,75 @@
+// Context-sensitive pointer analysis with context of 1 object and a
+// context-sensitive heap abstraction.
+
+RealContext1FromContext[?ctx] = ?value1,
+RealContext2FromContext[?ctx] = ?value2 <-
+  ContextFromRealContext[?value1, ?value2] = ?ctx.
+
+RealHContextFromHContext[?hctx] = ?value <-
+  HContextFromRealHContext[?value] = ?hctx.
+
+Context(?ctx),
+ContextFromRealContext[?value, ?value] = ?ctx,
+ImmutableContext(?ctx) <-
+  Value:byId["<<immutable-context>>"] = ?value.
+
+HContext(?hctx),
+HContextFromRealHContext[?value] = ?hctx,
+ImmutableHContext(?hctx) <-
+  Value:byId["<<immutable-hcontext>>"] = ?value.
+
+
+// Create initial objects with their value contexts
+HContext(?hctx),
+HContextFromRealHContext[?value] = ?hctx,
+SystemThreadGroup(?hctx, ?alloc) <-
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?value] = ?hctx,
+MainThreadGroup(?hctx, ?alloc) <-
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+HContext(?hctx),
+HContextFromRealHContext[?value] = ?hctx,
+MainThread(?hctx, ?alloc) <-
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<main-thread>>"] = ?alloc.
+
+
+// Merge optimization hack
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?callerCtx, ?value) <-
+  MergeBasis(_, _, ?callerCtx, ?value).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
+Context(?calleeCtx),
+ContextFromRealContext[RealContext2FromContext[?callerCtx], ?value] = ?calleeCtx,
+OptimizeMerge[?callerCtx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?callerCtx, ?value).
+
+
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?value, ?value] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  Value:byId["<<initial-context>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?value, ?value] = ?ctx,
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  Value:byId["<<jvm-startup>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?value, ?value] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  Value:byId["<<class-initialization>>"] = ?value.
