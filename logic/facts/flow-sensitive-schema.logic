@@ -513,7 +513,7 @@ Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
 
 HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
 HeapAllocation0:String(?repr) -> string(?repr).
-HeapAllocation0:Class(?repr) -> string(?repr).
+HeapAllocation0:Class(?repr, ?instanceType) -> string(?repr), Type(?instanceType).
 HeapAllocation0:EmptyArray(?repr) -> string(?repr).
 AssignHeapAllocation0(?instr, ?heapId) ->
    AssignHeapAllocation:Insn(?instr), string(?heapId).
@@ -550,6 +550,9 @@ HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
 HeapAllocation:Null[] = ?null -> HeapAllocation(?null).
 MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
 MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
+
+ClassHeap:InstanceType[?classHeap] = ?instanceType ->
+   ClassHeap(?classHeap), Type(?instanceType).
 
 // Use an entity to represent raw strings since the engine is having problems
 // with huge strings as keys.

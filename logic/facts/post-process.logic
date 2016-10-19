@@ -16,8 +16,9 @@ StringConstantConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:String(?id),
    Type:Id(?type:"java.lang.String").
 
-ClassHeapConsMacro(?id, ?type, ?heap) <-
-   HeapAllocation0:Class(?id),
+ClassHeapConsMacro(?id, ?type, ?heap),
+ClassHeap:InstanceType[?heap] = ?instanceType <-
+   HeapAllocation0:Class(?id, ?instanceType),
    Type:Id(?type:"java.lang.Class").
 
 HeapAllocation:EmptyArray(?heap) <-
