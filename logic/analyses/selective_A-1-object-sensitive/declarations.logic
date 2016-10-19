@@ -1,0 +1,15 @@
+// The real context is a Value OR a MethodInvocation (for static
+// calls). Keeping mapping functions is the way to handle analyses where
+// HContext = Context (since the language considers them different types).
+ContextFromRealContext[?valueComp] = ?ctx ->
+  Context(?ctx), ContextComponent(?valueComp).
+lang:constructor(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+RealContextFromContext[?ctx] = ?valueComp <-
+  ContextFromRealContext[?valueComp] = ?ctx.
+
+// This analysis has no context for heap objects. This is emulated by creating
+// a single HContext object, which is used everywhere.
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:constructor(`HContextFromRealHContext).

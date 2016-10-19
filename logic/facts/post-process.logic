@@ -1,0 +1,44 @@
+// NOTE: should be separate rules so the engine can treat them as alternative
+// indexes
+HeapAllocation:byId[?id] = ?heap <-
+   HeapAllocation:Normal:Cons[?id] = ?heap ;
+   HeapAllocation:String:Cons[?id] = ?heap ;
+   HeapAllocation:Class:Cons[?id]  = ?heap ;
+   HeapAllocation:Mock:Cons[?id]   = ?heap.
+HeapAllocation:Id[?heap] = ?id <-
+   HeapAllocation:byId[?id] = ?heap.
+
+
+NormalHeapConsMacro(?id, ?type, ?heap) <-
+   HeapAllocation0:Normal(?id, ?type).
+
+StringConstantConsMacro(?id, ?type, ?heap) <-
+   HeapAllocation0:String(?id),
+   Type:Id(?type:"java.lang.String").
+
+ClassHeapConsMacro(?id, ?type, ?heap) <-
+   HeapAllocation0:Class(?id),
+   Type:Id(?type:"java.lang.Class").
+
+HeapAllocation:EmptyArray(?heap) <-
+   HeapAllocation0:EmptyArray(?id),
+   HeapAllocation:byId[?id] = ?heap.
+
+MockHeapConsMacro(?id, ?type, ?null),
+HeapAllocation:Null[] = ?null <-
+   ?id = "<<null pseudo heap>>",
+   ?type = Type:null[].
+
+MockHeapConsMacro(?id, ?type, ?heap),
+MainMethodArgArray[] = ?heap <-
+   ?id = "<<main method array>>",
+   ?type = "java.lang.String[]".
+
+MockHeapConsMacro(?id, ?type, ?heap),
+MainMethodArgArrayContent[] = ?heap <-
+   ?id = "<<main method array content>>",
+   ?type = "java.lang.String".
+
+AssignHeapAllocation:Heap[?instr] = ?heap <-
+   AssignHeapAllocation0(?instr, ?heapId),
+   HeapAllocation:byId[?heapId] = ?heap.
