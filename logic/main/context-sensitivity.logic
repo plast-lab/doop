@@ -59,7 +59,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod),
 #ifdef RecordArrayMacro
-  !ArrayType(HeapAllocation:Type[?value]),
+  !ArrayType(Value:Type[?value]),
 #endif
   ObjectShouldNotBeRefined(?value).
 
