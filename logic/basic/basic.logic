@@ -1,0 +1,39 @@
+#include "basic-declarations.logic"
+
+#include "declaring-class.logic"
+#include "exceptions.logic"
+#include "finalization.logic"
+#include "method-resolution.logic"
+#include "subclass.logic"
+#include "superinterface.logic"
+#include "type-hierarchy.logic"
+
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   Method:DeclaringType[?method] = ?type,
+   Method:SimpleName[?method] = "main",
+   Method:Descriptor[?method] = "void(java.lang.String[])",
+   Method:Modifier("public", ?method),
+   Method:Modifier("static", ?method).
+
+MockupHeapConsMacro(?id, ?type, ?heap),
+HeapAllocation:Null[] = ?heap <-
+   ?id = "<<null pseudo heap>>",
+   ?type = Type:null[].
+
+MockupHeapConsMacro(?id, ?type, ?heap),
+MainMethodArgArray[] = ?heap <-
+   ?id = "<<main method array>>",
+   ?type = "java.lang.String[]".
+
+MockupHeapConsMacro(?id, ?type, ?heap),
+MainMethodArgArrayContent[] = ?heap <-
+   ?id = "<<main method array content>>",
+   ?type = "java.lang.String".
+
+DeclaringClass:Allocation[?heap] = ?type <-
+   (HeapAllocation:Null[] = ?heap ;
+    MainMethodArgArray[] = ?heap ;
+    MainMethodArgArrayContent[] = ?heap),
+   Type:Id(?type:"java.lang.Object"),
+   ReferenceType(?type).

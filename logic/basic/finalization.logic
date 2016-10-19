@@ -1,0 +1,9 @@
+AllocatedObjectSupportsFinalize(?heap, ?inmethod) <-
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   HeapAllocation:Type[?heap] = ?class,
+   OverridesFinalize(?class).
+
+OverridesFinalize(?class) <-
+   MethodLookup["finalize", "void()", ?class] = ?method,
+   Method:Id(?finalizeInObject:"<java.lang.Object: void finalize()>"),
+   ?finalizeInObject != ?method.

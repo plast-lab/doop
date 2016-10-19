@@ -1,0 +1,51 @@
++LoadArrayIndex(?array, ?value, ?inmethod)
+<-
+   Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   ActualParam[0, ?invocation] = ?array,
+   AssignReturnValue[?invocation] = ?value.
+
++StoreArrayIndex(?value, ?array, ?inmethod)
+<-
+   Method:Id(?sig:"<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>"),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   ActualParam[0, ?invocation] = ?array,
+   ActualParam[2, ?invocation] = ?value.
+
++LoadInstanceField(?base, ?fld, ?to, ?inmethod)
+<-
+   Method:Id(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   Field:Id(?fld:?fldStr),
+   ! Field:Modifier("static", ?fld),
+   ActualParam[0, ?invocation] = ?base,
+   AssignReturnValue[?invocation] = ?to.
+
++LoadStaticField(?fld, ?to, ?inmethod)
+<-
+   Method:Id(?sig:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   Field:Id(?fld:?fldStr),
+   Field:Modifier("static", ?fld),
+   AssignReturnValue[?invocation] = ?to.
+
++StoreInstanceField(?from, ?base, ?fld, ?inmethod)
+<-
+   Method:Id(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   Field:Id(?fld:?fldStr),
+   ! Field:Modifier("static", ?fld),
+   ActualParam[0, ?invocation] = ?base,
+   ActualParam[1, ?invocation] = ?from.
+
++StoreStaticField(?from, ?fld, ?inmethod)
+<-
+   Method:Id(?sig:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+   VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?fldStr, ?invocation),
+   Field:Id(?fld:?fldStr),
+   Field:Modifier("static", ?fld),
+   ActualParam[1, ?invocation] = ?from.
