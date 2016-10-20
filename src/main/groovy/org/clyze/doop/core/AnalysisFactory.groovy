@@ -37,12 +37,12 @@ class AnalysisFactory {
         @Override
         String toString() {
             return [
-                name:              name,
-                options:           options.values().toString(),
-                inputFilePaths:    inputFilePaths.toString(),
-                platformFilePaths: platformFilePaths.toString(),
-                inputFiles:        inputFiles.toString(),
-                platformFiles:     platformFiles.toString()
+                    name:              name,
+                    options:           options.values().toString(),
+                    inputFilePaths:    inputFilePaths.toString(),
+                    platformFilePaths: platformFilePaths.toString(),
+                    inputFiles:        inputFiles.toString(),
+                    platformFiles:     platformFiles.toString()
             ].toString()
         }
     }
@@ -78,15 +78,15 @@ class AnalysisFactory {
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis = new Analysis(
-            analysisId,
-            outDir.toString(),
-            cacheDir.toString(),
-            name,
-            options,
-            context,
-            vars.inputFiles,
-            vars.platformFiles,
-            commandsEnv
+                analysisId,
+                outDir.toString(),
+                cacheDir.toString(),
+                name,
+                options,
+                context,
+                vars.inputFiles,
+                vars.platformFiles,
+                commandsEnv
         )
         logger.debug "Created new analysis"
         return analysis
@@ -143,8 +143,8 @@ class AnalysisFactory {
 
     protected String generateCacheID(AnalysisVars vars) {
         Collection<String> idComponents = vars.options.values()
-            .findAll { it.forCacheID }
-            .collect { option -> option.toString() }
+                .findAll { it.forCacheID }
+                .collect { option -> option.toString() }
 
         Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
             File file -> CheckSum.checksum(file, HASH_ALGO)
@@ -196,9 +196,9 @@ class AnalysisFactory {
                 }
                 // generate the JRE constant for the preprocessor
                 AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-                    id:"JRE1"+version,
-                    value:true,
-                    forPreprocessor: true
+                        id:"JRE1"+version,
+                        value:true,
+                        forPreprocessor: true
                 )
                 options[(jreOption.id)] = jreOption
                 break
@@ -209,17 +209,17 @@ class AnalysisFactory {
                 // value of the $PLATFORMS_LIB environment variable to provide a
                 // custom android.jar.
                 def completeAndroidJar = false
-		// Set the following flag to true to have doop use a
-		// custom set of JARs for Android. Use it with $PLATFORMS_LIB,
-		// as with the 'completeAndroidJar' flag.
-		def customJars = false
+                // Set the following flag to true to have doop use a
+                // custom set of JARs for Android. Use it with $PLATFORMS_LIB,
+                // as with the 'completeAndroidJar' flag.
+                def customJars = false
                 if (completeAndroidJar) {
-		    files = ["${path}/android.jar"]
-		}
-		else if (customJars) {
-		    // Custom-built Android 4.4 libraries. These come from building the
-		    // Android sources and looking in out/target/common/obj/JAVA_LIBRARIES.
-		    files = ["${path}/bouncycastle_intermediates.jar",      // com.android.org.bouncycastle
+                    files = ["${path}/android.jar"]
+                }
+                else if (customJars) {
+                    // Custom-built Android 4.4 libraries. These come from building the
+                    // Android sources and looking in out/target/common/obj/JAVA_LIBRARIES.
+                    files = ["${path}/bouncycastle_intermediates.jar",      // com.android.org.bouncycastle
                              "${path}/conscrypt_intermediates.jar",         // conscrypt
                              "${path}/core-junit_intermediates.jar",        // junit.framework
                              "${path}/core-libart_intermediates.jar",       // java.lang
@@ -228,7 +228,7 @@ class AnalysisFactory {
                              "${path}/libphotoviewer_appcompat_intermediates.jar", // android.support.v7.internal.widget
                              "${path}/okhttp_intermediates.jar",            // com.android.okhttp
                              "${path}/telephony-common_intermediates.jar",  // android.provider, android.telephony
-			    ]
+                    ]
                 }
                 else {
                     switch(version) {
@@ -289,12 +289,12 @@ class AnalysisFactory {
 
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
-            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
+                options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
             logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
         }
 
         if (!options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
-            options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
+                options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
             logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
         }
 
@@ -396,11 +396,11 @@ class AnalysisFactory {
 
         if (!options.ENABLE_REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
-                options.REFLECTION_SUBSTRING_ANALYSIS.value ||
-                options.REFLECTION_CONTEXT_SENSITIVITY.value ||
-                options.REFLECTION_USE_BASED_ANALYSIS.value ||
-                options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
-                options.REFLECTION_REFINED_OBJECTS.value) {
+                    options.REFLECTION_SUBSTRING_ANALYSIS.value ||
+                    options.REFLECTION_CONTEXT_SENSITIVITY.value ||
+                    options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                    options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
+                    options.REFLECTION_REFINED_OBJECTS.value) {
                 logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
             } else if (!options.TAMIFLEX.value) {
                 logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
@@ -411,12 +411,12 @@ class AnalysisFactory {
 
         logger.debug "---------------"
         AnalysisVars vars = new AnalysisVars(
-            name:              name,
-            options:           options,
-            inputFilePaths:    inputFilePaths,
-            platformFilePaths: platformFilePaths,
-            inputFiles:        inputFiles,
-            platformFiles:     platformFiles
+                name:              name,
+                options:           options,
+                inputFilePaths:    inputFilePaths,
+                platformFilePaths: platformFilePaths,
+                inputFiles:        inputFiles,
+                platformFiles:     platformFiles
         )
         logger.debug vars
         logger.debug "---------------"
