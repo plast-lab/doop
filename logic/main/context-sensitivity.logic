@@ -33,6 +33,9 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
 #ifndef CompatibleContextAndHContextMacro
 #define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
 #endif
+#ifndef CompatibleHContextsMacro
+#define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
+#endif
 
 
 #include "main.logic"
