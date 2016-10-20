@@ -1,5 +1,5 @@
 ReifiedClass[?type] = ?heap ->
-  ReferenceType(?type), ClassHeap(?heap).
+  ReferenceType(?type), HeapAllocation(?heap).
 
 ReifiedConstructor[?constructor] = ?heap ->
   Method(?constructor), HeapAllocation(?heap).
@@ -11,9 +11,22 @@ ReifiedField[?field] = ?heap ->
   Field(?field), HeapAllocation(?heap).
 
 
-ReflectiveHeap(?heap) -> HeapAllocation(?heap).
+ReifiedClass:Value[?type] = ?value ->
+  ReferenceType(?type), Value(?value).
 
-ReflectiveHeapAllocation[?instruction, ?type] = ?heap ->
+ReifiedConstructor:Value[?constructor] = ?value ->
+  Method(?constructor), Value(?value).
+
+ReifiedMethod:Value[?method] = ?value ->
+  Method(?method), Value(?value).
+
+ReifiedField:Value[?field] = ?value ->
+  Field(?field), Value(?value).
+
+
+ReflectiveValue(?value) -> Value(?value).
+
+ReflectiveAllocation[?instruction, ?type] = ?heap ->
   Instruction(?instruction), ReferenceType(?type), HeapAllocation(?heap).
 
 // Special objects to signify unknown results of reflective calls

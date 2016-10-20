@@ -1,28 +1,28 @@
 #include "../2-object-sensitive+heap/analysis.logic"
 
 /* Made for optimizing TaintedLoad */
-AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) <-
+AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) <-
     DependentInstruction(?ctx, ?dependent),
     StoreFldTo(?var, ?fld, ?dependent),
-    VarPointsTo(?hctx, ?heap, ?ctx, ?var).
+    VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 /* An instruction that loads a field that a dependent instruction wrote to */
 TaintedLoad(?ctx, ?insn) <-
-    AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap),
+    AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value),
     LoadFldFrom(?insn, ?var2, ?fld),
-    VarPointsTo(?hctx, ?heap, ?ctx, ?var2).
+    VarPointsTo(?hctx, ?value, ?ctx, ?var2).
 
 /* Made for optimizing TaintedLoad */
-LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) <-
+LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) <-
     LoadArrayIndex:Base[?insn] = ?var,
-    VarPointsTo(?hctx, ?heap, ?ctx, ?var).
+    VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 /* An instruction that loads data from an array that a dependent instruction wrote to */
 TaintedLoad(?loadCtx, ?insn) <-
     DependentInstruction(?storeCtx, ?dependent),
     StoreArrayIndex:Base[?dependent] = ?var1,
-    LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?heap),
-    VarPointsTo(?hctx, ?heap, ?storeCtx, ?var1).
+    LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?value),
+    VarPointsTo(?hctx, ?value, ?storeCtx, ?var1).
 
 
 /* Data dependency between the formal and actual param */

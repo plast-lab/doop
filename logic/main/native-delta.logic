@@ -13,22 +13,22 @@
 
 #define PlusAssignLocal(strFrom, strTo, strMethod) \
   +AssignLocal(?from, ?to, ?method) <- \
-    Var:Value(?from:strFrom), \
-    Var:Value(?to:strTo), \
-    Method:Value(?method:strMethod)
+    Var:Id(?from:strFrom), \
+    Var:Id(?to:strTo), \
+    Method:Id(?method:strMethod)
 
 #define PlusStoreStaticField(method, local, field) \
   +StoreStaticField(?l, ?sig, ?m) <- \
-    Method:Value(?m:method), \
-    Var:Value(?l:local), \
-    Field:Value(?sig:field)
+    Method:Id(?m:method), \
+    Var:Id(?l:local), \
+    Field:Id(?sig:field)
 
 #define SimulateNativeAllocation(strMethod, strHeap, strConstructor) \
   +AssignHeapAllocation(?heap, ?return, ?method) \
     <- \
-      Method:Value(?method:strMethod), \
+      Method:Id(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
-      HeapAllocation:byValue[strHeap] = ?heap. \
+      HeapAllocation:byId[strHeap] = ?heap. \
   \
   +SpecialMethodInvocation:Base[?invocation] = ?return, \
   +Instruction:Method[?invocation] = ?method, \
@@ -36,31 +36,31 @@
   PlusSpecialMethodInvocation(?invocation, ?strInvocation), \
   +Instruction:Index[?invocation] = ?index \
     <- \
-      Method:Value(?method:strMethod), \
+      Method:Id(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
       ?strInvocation = strMethod + "/native " + strConstructor, \
-      Method:Value(?constructor:strConstructor), \
+      Method:Id(?constructor:strConstructor), \
       ?index = 1
 
 #define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
   +AssignHeapAllocation(?heap, ?return, ?method) \
     <- \
-      Method:Value(?method:strMethod), \
+      Method:Id(?method:strMethod), \
       ReturnVar@previous(?return, ?method), \
-      HeapAllocation:byValue[strArray] = ?heap. \
+      HeapAllocation:byId[strArray] = ?heap. \
   \
   +Var(?var), \
-  +Var:Value(?var:?strVar), \
+  +Var:Id(?var:?strVar), \
   +Var:Type[?var] = ?type, \
   +Var:DeclaringMethod(?var, ?method), \
   +AssignHeapAllocation(?heap, ?var, ?method), \
   +StoreArrayIndex(?var, ?base, ?method) \
     <- \
-      Method:Value(?method:strMethod), \
+      Method:Id(?method:strMethod), \
       ReturnVar@previous(?base, ?method), \
       ?strVar = strMethod + "/@native-array-element", \
-      Type:Value(?type:strElementType), \
-      HeapAllocation:byValue[strElement] = ?heap
+      Type:Id(?type:strElementType), \
+      HeapAllocation:byId[strElement] = ?heap
 
 #define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
   PlusVirtualMethodInvocation(?invocation, ?strInvocation), \
@@ -70,16 +70,16 @@
   +MethodInvocation:Signature[?invocation] = ?signature, \
   +Instruction:Index[?invocation] = ?index \
     <- \
-      Method:Value(?inmethod:strMethod), \
+      Method:Id(?inmethod:strMethod), \
       FormalParam@previous[0, ?inmethod] = ?base, \
       ?strInvocation = strMethod + "/native " + strVirtual, \
-      Method:Value(?signature:strVirtual), \
+      Method:Id(?signature:strVirtual), \
       ?index = 1.\
   \
   PlusMethodInvocation(?invocation, ?strInvocation), \
   +AssignReturnValue[?invocation] = ?return \
     <- \
-      Method:Value(?inmethod:strMethod), \
+      Method:Id(?inmethod:strMethod), \
       ReturnVar@previous(?return, ?inmethod), \
       ?strInvocation = strMethod + "/native " + strVirtual
 
@@ -142,13 +142,13 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
 +LoadArrayIndex(?src, ?tmp, ?inmethod),
 +StoreArrayIndex(?tmp, ?dest, ?inmethod)
     <-
-      Method:Value(?arraycopy:"<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>"),
+      Method:Id(?arraycopy:"<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>"),
       StaticMethodInvocation(?invocation, ?arraycopy, ?inmethod),
       ActualParam@previous[0, ?invocation] = ?src,
       ActualParam@previous[2, ?invocation] = ?dest,
       MethodInvocationValue(?invocation, ?strInvocation),
       ?tmpStr =  ?strInvocation + "/@tmp-arraycopy",
-      Type:Value(?tmpType:"java.lang.Object").
+      Type:Id(?tmpType:"java.lang.Object").
 
 /**********************************************************************************
  *

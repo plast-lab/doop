@@ -1,56 +1,58 @@
 #define NormalHeapConsMacro(id, type, heap) \
-  HeapAllocation:Normal:Con[id] = heap, \
-  HeapAllocation:Value[heap] = id, \
-  NormalHeap(heap), \
-  HeapAllocation:Type[heap] = type
+   HeapAllocation:Normal:Cons[id] = heap, \
+   NormalHeap(heap), \
+   HeapAllocation:Type[heap] = type
 
 #define StringConstantConsMacro(id, type, heap) \
-  HeapAllocation:String:Con[id] = heap, \
-  HeapAllocation:Value[heap] = id, \
-  StringConstant(heap), \
-  HeapAllocation:Type[heap] = type
+   HeapAllocation:String:Cons[id] = heap, \
+   StringConstant(heap), \
+   HeapAllocation:Type[heap] = type
 
 #define ClassHeapConsMacro(id, type, heap) \
-  HeapAllocation:Class:Con[id] = heap, \
-  HeapAllocation:Value[heap] = id, \
-  ClassHeap(heap), \
-  HeapAllocation:Type[heap] = type
+   HeapAllocation:Class:Cons[id] = heap, \
+   ClassHeap(heap), \
+   HeapAllocation:Type[heap] = type
 
-#define MockupHeapConsMacro(id, type, heap) \
-  HeapAllocation:Mockup:Con[id] = heap, \
-  HeapAllocation:Value[heap] = id, \
-  HeapAllocation(heap), \
-  HeapAllocation:Type[heap] = type
+#define MockHeapConsMacro(id, type, heap) \
+   HeapAllocation:Mock:Cons[id] = heap, \
+   HeapAllocation(heap), \
+   HeapAllocation:Type[heap] = type
+
+
+#define MockValueConsMacro(id, type, value) \
+   Value:Mock:Cons[id] = value, \
+   Value(value), \
+   Value:Type[value] = type
 
 
 #define PlusVar(x,method,string,type) \
-  +Var(x), \
-  +Var:Value(x:string), \
-  +Var:Type[x] = type, \
-  +Var:DeclaringMethod(x, method)
+   +Var(x), \
+   +Var:Id(x:string), \
+   +Var:Type[x] = type, \
+   +Var:DeclaringMethod(x, method)
 
 #define PlusType(x,string) \
-  +Type(x), \
-  +Type:Value(x:string)
+   +Type(x), \
+   +Type:Id(x:string)
 
 #define PlusMethodInvocation(x,string) \
-  +Instruction:Value(x:string), \
-  +MethodInvocation(x)
+   +Instruction:Id(x:string), \
+   +MethodInvocation(x)
 
 #define PlusVirtualMethodInvocation(x,string) \
-  +Instruction:Value(x:string), \
-  +VirtualMethodInvocation:Insn(x)
+   +Instruction:Id(x:string), \
+   +VirtualMethodInvocation:Insn(x)
 
 #define PlusSpecialMethodInvocation(x,string) \
-  +Instruction:Value(x:string), \
-  +SpecialMethodInvocation:Insn(x)
+   +Instruction:Id(x:string), \
+   +SpecialMethodInvocation:Insn(x)
 
 #define PlusStaticMethodInvocation(x,string) \
-  +Instruction:Value(x:string), \
-  +StaticMethodInvocation:Insn(x)
+   +Instruction:Id(x:string), \
+   +StaticMethodInvocation:Insn(x)
 
 /**
  * Macros that fix the lack of ref-modes on subtypes in LB
  */
-#define MethodInvocationValue(x, y) Instruction:Value(x:y), MethodInvocation(x)
-#define ClassTypeValue(x,y) Type:Value(x:y), ClassType(x)
+#define MethodInvocationValue(x, y) Instruction:Id(x:y), MethodInvocation(x)
+#define ClassTypeValue(x,y) Type:Id(x:y), ClassType(x)

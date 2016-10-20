@@ -14,8 +14,8 @@
 // Reflective load of a field (static or instance)
 ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature) <-
   java:lang:reflect:Field:get(?invocation, ?to, ?field),
-  VarPointsTo(_, ?fieldHeap, ?ctx, ?field),
-  ReifiedField[?signature] = ?fieldHeap.
+  VarPointsTo(_, ?fieldValue, ?ctx, ?field),
+  ReifiedField:Value[?signature] = ?fieldValue.
 
 // Load of a static field
 // TODO Check if class initialization handled by reflective.logic
@@ -43,8 +43,8 @@ ReflectiveLoadInstanceField(?ctx, ?to, ?signature, ?ctx, ?base) <-
 // Reflective store of a field (static or instance)
 ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from) <-
   java:lang:reflect:Field:set(?invocation, ?from, ?field),
-  VarPointsTo(_, ?fieldHeap, ?ctx, ?field),
-  ReifiedField[?signature] = ?fieldHeap.
+  VarPointsTo(_, ?fieldValue, ?ctx, ?field),
+  ReifiedField:Value[?signature] = ?fieldValue.
 
 // Store of a static field
 // TODO Check if class initialization handled by reflective.logic

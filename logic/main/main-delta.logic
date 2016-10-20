@@ -3,6 +3,6 @@
 +FakeInvocation:RegisterFinalize[?heap] = ?invo,
 PlusMethodInvocation(?invo, ?str) <-
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
-   Method:Value@prev(?inmethod:?val1),
-   HeapAllocation:Value@prev[?heap] = ?val2,
+   Method:Id@prev(?inmethod:?val1),
+   HeapAllocation:Id@prev[?heap] = ?val2,
    ?str = "<register-finalize " + ?val1 + "/" + ?val2 +"  >".

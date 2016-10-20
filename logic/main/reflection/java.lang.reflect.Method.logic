@@ -16,7 +16,7 @@
 ReflectiveMethodInvocation(?ctx, ?invocation, ?signature) <-
   java:lang:reflect:Method:invoke(?invocation, ?from),
   VarPointsTo(_, ?method, ?ctx, ?from),
-  ReifiedMethod[?signature] = ?method.
+  ReifiedMethod:Value[?signature] = ?method.
 
 ReflectiveBaseVar[?invocation] = ?base <-
   java:lang:reflect:Method:invoke(?invocation, _),

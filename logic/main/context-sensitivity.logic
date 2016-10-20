@@ -2,17 +2,41 @@
 // these predicates. Unfortunately derived predicates don't seem to
 // be supported by the join optimizer currently.
 #define ObjectShouldNotBeRefined(heap) \
-    ((NegativeObjectFilter[] = true, ObjectToRefine(heap)); \
-    (!NegativeObjectFilter[] = true, !ObjectToRefine(heap)))
+    ((NegativeObjectFilter[] = true, ValueToRefine(heap)); \
+    (!NegativeObjectFilter[] = true, !ValueToRefine(heap)))
 #define ObjectShouldBeRefined(heap) \
-    ((!NegativeObjectFilter[] = true, ObjectToRefine(heap)); \
-    (NegativeObjectFilter[] = true, !ObjectToRefine(heap)))
+    ((!NegativeObjectFilter[] = true, ValueToRefine(heap)); \
+    (NegativeObjectFilter[] = true, !ValueToRefine(heap)))
 #define SiteShouldNotBeRefined(invocation) \
     ((!NegativeSiteFilter[] = true, !SiteToRefine(invocation)); \
     (NegativeSiteFilter[] = true, SiteToRefine(invocation)))
 #define SiteShouldBeRefined(invocation) \
     ((!NegativeSiteFilter[] = true, SiteToRefine(invocation)); \
     (NegativeSiteFilter[] = true, !SiteToRefine(invocation)))
+
+/**
+ * Elegance hacks, using macros: instead of burdening all normal
+ * analyses, provide default definitions for the common cases.
+ */
+
+#ifndef MULTIPLE_IMMUTABLE_CONTEXTS
+ImmutableContextFromHContext[?hctx] = ?ctx <-
+  ImmutableContext(?ctx), HContext(?hctx).
+
+ImmutableHContextFromContext[?ctx] = ?hctx <-
+  ImmutableHContext(?hctx), Context(?ctx).
+
+ImmutableContextFromContext[?ctx1] = ?ctx2 <-
+  ImmutableContext(?ctx2), Context(?ctx1).
+#endif // MULTIPLE_IMMUTABLE_CONTEXTS
+
+#ifndef CompatibleContextAndHContextMacro
+#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
+#endif
+#ifndef CompatibleHContextsMacro
+#define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
+#endif
+
 
 #include "main.logic"
 
@@ -31,14 +55,32 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
  * Heap allocation
  */
 
-RecordMacro(?ctx, ?heap, ?hctx),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+#ifndef OptimizeRecordMacro
+RecordMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod),
 #ifdef RecordArrayMacro
-  !ArrayType(HeapAllocation:Type[?heap]),
+  !ArrayType(Value:Type[?value]),
 #endif
-  ObjectShouldNotBeRefined(?heap).
+  ObjectShouldNotBeRefined(?value).
+
+#else /* there is optimized behavior available */
+RecordBasisMacro(?ctx, ?var, ?value) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value:byHeap[?heap] = ?value,
+  ReachableContext(?ctx, ?inmethod).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  RecordBasisMacro(?ctx, ?var, ?value),
+  OptimizeRecordMacro(?ctx, ?value, ?hctx),
+#ifdef RecordArrayMacro
+  !ArrayType(HeapAllocation:Type[?value]),
+#endif
+  ObjectShouldNotBeRefined(?value).
+#endif /* #ifndef OptimizeMergeMacro */
+
 
 // There is scarcely any logical explanation, but breaking up the rule
 // as above results in faster execution!
@@ -52,39 +94,43 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
 // This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
 // which greatly benefits) define this macro and handle arrays
 // specially.
-RecordArrayMacro(?ctx, ?heap, ?hctx),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+RecordArrayMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod),
-  ArrayType(HeapAllocation:Type[?heap]),
-  ObjectShouldNotBeRefined(?heap).
+  ArrayType(Value:Type[?value]),
+  ObjectShouldNotBeRefined(?value).
 #endif // def RecordArrayMacro
 
-RecordMacro(?ctx, ?heap, ?hctx),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+RecordMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
+  Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod).
 
 #ifdef RecordRefinedMacro
-RecordRefinedMacro(?ctx, ?heap, ?hctx),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+RecordRefinedMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod),
-  ObjectShouldBeRefined(?heap).
+  ObjectShouldBeRefined(?value).
 #endif
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
+  Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod).
 
 /**
  * Null assignments
  */
-VarPointsTo(?hctx, ?nullobject, ?toCtx, ?to) <-
-   ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
+   ImmutableHContextFromContext[?toCtx] = ?hctx,
    AssignNull(?to, ?inmethod),
-   HeapAllocation:Null[] = ?nullobject,
+   Value:Null[] = ?null,
    ReachableContext(?toCtx, ?inmethod).
 
 /**
@@ -97,8 +143,8 @@ Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
   OptAssignLocal(?to, ?from).
 
 OptAssignLocal(?to, ?from) -> Var(?to), Var(?from).
@@ -109,11 +155,11 @@ OptAssignLocal(?to, ?from) <-
 /**
  * Cast assignments
  */
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
   OptAssignCast(?type, ?to, ?from),
-  HeapAllocation:Type[?heap] = ?heaptype,
-  SupertypeOf(?type, ?heaptype).
+  Value:Type[?value] = ?valuetype,
+  SupertypeOf(?type, ?valuetype).
 
 OptAssignCast(?type, ?to, ?from) -> Type(?type), Var(?to), Var(?from).
 OptAssignCast(?type, ?to, ?from) <-
@@ -126,13 +172,13 @@ OptAssignCast(?type, ?to, ?from) <-
  *
  */
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
-  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap).
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
-LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
   OptLoadInstanceField(?to, ?sig, ?base),
-  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 //
 // TODO eliminate by reordering the input fact.
@@ -143,15 +189,16 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
 /**
  * Store instance fields
  */
-InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
-  StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from),
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
-  HeapAllocation:Null[] != ?baseheap,
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value:Heap[?value] = ?heap,
+  Value:Null[] != ?basevalue,
   !SpecialObject(?heap).
 
-StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from) <-
+StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
-  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 /**
  * TODO eliminate
@@ -162,9 +209,10 @@ OptStoreInstanceField(?from, ?signature, ?base) <-
 /**
  * Load static fields
  */
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   OptLoadStaticField(?ctx, ?to, ?sig),
-  StaticFieldPointsTo(?hctx, ?heap, ?sig).
+  StaticFieldPointsTo(?hctx, ?value, ?sig),
+  CompatibleContextAndHContextMacro(?ctx, ?hctx).
 
 OptLoadStaticField(?ctx, ?to, ?sig) <-
   LoadStaticField(?sig, ?to, ?inmethod),
@@ -175,10 +223,10 @@ OptLoadStaticField(?ctx, ?to, ?sig) <-
  *
  * TODO: I don't think context actually matters. double check.
  */
-StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   ReachableStoreStaticFieldFrom(?from),
   OptStoreStaticField(?signature, ?from),
-  VarPointsTo(?hctx, ?heap, _, ?from).
+  VarPointsTo(?hctx, ?value, _, ?from).
 
 OptStoreStaticField(?signature, ?from) <-
   StoreStaticField(?from, ?signature, _).
@@ -191,10 +239,11 @@ ReachableStoreStaticFieldFrom(?from) <-
 /**
  * Load array index
  */
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+   Value:Heap[?basevalue] = ?baseheap,
    !HeapAllocation:EmptyArray(?baseheap),
-   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
-   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
+   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
    // this used to be necessary when this rule also handled the
    // arguments of Method.invoke() etc:
    // HeapAllocation:Type[?baseheap] = ?baseheaptype,
@@ -207,10 +256,10 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
   SupertypeOf(?type, ?heaptype).
 */
 
-LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) <-
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) <-
   ReachableLoadArrayIndexBase(?base),
   OptLoadArrayIndex(?to, ?base),
-  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 OptLoadArrayIndex(?to, ?base) <-
   LoadArrayIndex(?base, ?to, _).
@@ -224,20 +273,22 @@ ReachableLoadArrayIndexBase(?base) <-
  * Store array index
  */
 
-ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) <-
-  StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from),
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
+  StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value:Heap[?value] = ?heap,
   !SpecialObject(?heap),
+  Value:Heap[?basevalue] = ?baseheap,
   !HeapAllocation:EmptyArray(?baseheap),
-  HeapAllocation:Type[?heap] = ?heaptype,
-  HeapAllocation:Type[?baseheap] = ?baseheaptype,
-  ComponentType[?baseheaptype] = ?componenttype,
-  SupertypeOf(?componenttype, ?heaptype).
+  Value:Type[?value] = ?valuetype,
+  Value:Type[?basevalue] = ?basevaluetype,
+  ComponentType[?basevaluetype] = ?componenttype,
+  SupertypeOf(?componenttype, ?valuetype).
 
-StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) <-
+StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) <-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
-  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
 ReachableStoreArrayIndexBase(?base) -> Var(?base).
 ReachableStoreArrayIndexBase(?base) <-
@@ -267,8 +318,8 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   AssignReturnValue[?invocation] = ?local.
 
-VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
-  VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
 
 
@@ -324,14 +375,14 @@ ViableInvocation(?callerCtx, ?invocation) <-
 // is currently very slow and we shouldn't invoke it for
 // all the different combinations that will yield the same object.
 
-MergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
  <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
-  HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -343,19 +394,19 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 // might need to create a new context. Then each individual analysis
 // creates new context objects carefully by invoking the skolem
 // functions as rarely as possible.
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
 // Finally, the step of the main analysis that should be creating the
 // new objects is merely looking up the previously created context
 // objects.
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
-  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
-  HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
@@ -373,29 +424,29 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
  * (Note that the #ifdef just checks if the analysis has defined the
  * appropriate macro. This is not an input flag.)
  */
-MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
-  HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
 
 #else /* there is optimized behavior available */
 
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
-  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
-  HeapAllocation:Type[?heap] = ?heaptype,
-  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
@@ -418,10 +469,10 @@ OptSpecialMethodInvocationBase(?invocation, ?base) <-
 
 #ifndef OptimizeMergeMacro
 // Default, unoptimized behavior
-MergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  VarPointsTo(?hctx, ?heap,  ?callerCtx, ?base),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
   MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
@@ -430,14 +481,14 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
 
 #else /* there is optimized behavior available */
 
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
-  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
@@ -447,10 +498,10 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
 #ifdef MergeRefinedMacro
 #ifndef OptimizeMergeRefinedMacro
 // Default, unoptimized behavior
-MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
   MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
@@ -459,14 +510,14 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
 
 #else /* there is optimized behavior available */
 
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap) <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?heap),
-  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   MethodInvocation:Signature[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
@@ -483,6 +534,7 @@ ReachableContext(?ctx, ?method) <-
 
 Reachable(?method) <-
   ReachableContext(_, ?method).
+
 
 /**
  * EXPERIMENTS ONLY below this point
@@ -505,20 +557,20 @@ ObjectShouldNotBeRefined(?heap) ->
 lang:derivationType[`ObjectShouldNotBeRefined] = "Derived".
 
 ObjectShouldNotBeRefined(?heap) <-
-  NegativeObjectFilter("true"), ObjectToRefine(?heap).
+  NegativeObjectFilter("true"), ValueToRefine(?heap).
 
 ObjectShouldNotBeRefined(?heap) <-
-  !(NegativeObjectFilter("true")), !ObjectToRefine(?heap).
+  !(NegativeObjectFilter("true")), !ValueToRefine(?heap).
 
 ObjectShouldBeRefined(?heap) ->
   HeapAllocation(?heap).
 lang:derivationType[`ObjectShouldBeRefined] = "Derived".
 
 ObjectShouldBeRefined(?heap) <-
-  !NegativeObjectFilter("true"), ObjectToRefine(?heap).
+  !NegativeObjectFilter("true"), ValueToRefine(?heap).
 
 ObjectShouldBeRefined(?heap) <-
-  NegativeObjectFilter("true"), !ObjectToRefine(?heap).
+  NegativeObjectFilter("true"), !ValueToRefine(?heap).
 
 SiteShouldNotBeRefined(?invocation) ->
   MethodInvocation(?invocation).

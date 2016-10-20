@@ -5,16 +5,9 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.doop.blox.BloxbatchConnector
-import org.clyze.doop.blox.BloxbatchScript
-import org.clyze.doop.blox.WorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
-
-import static java.io.File.separator
-import static org.clyze.doop.system.CppPreprocessor.includeAtStart
-import static org.clyze.doop.system.CppPreprocessor.preprocess
-import static org.clyze.doop.system.CppPreprocessor.preprocessIfExists
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
@@ -75,27 +68,21 @@ class Analysis implements Runnable {
      */
     List<File> platformLibs
 
-    /**
-     * The environment for running external commands
-     */
-    Map<String, String> commandsEnvironment
-
     boolean isRefineStep
 
     Executor executor
 
+    CPreprocessor cpp
+
     File facts, cacheFacts, database, averroesDir
 
-    BloxbatchScript lbScript
+    LBWorkspaceConnector connector
 
     long sootTime
-
-    WorkspaceConnector connector
 
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
-     * This new constructor embodies the old init method and offers a ready-to-use analysis object.
      */
     protected Analysis(String id,
                        String outDir,
@@ -115,9 +102,10 @@ class Analysis implements Runnable {
         this.ctx = ctx
         this.inputs = inputs
         this.platformLibs = platformLibs
-        this.commandsEnvironment = commandsEnvironment
 
         executor = new Executor(commandsEnvironment)
+
+        cpp = new CPreprocessor(this, executor)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
 
@@ -125,17 +113,15 @@ class Analysis implements Runnable {
         cacheFacts  = new File(cacheDir)
         database    = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")
-
-        // Create workspace connector (needed by the post processor and the server-side analysis execution)
-        connector = new BloxbatchConnector(database, commandsEnvironment)
     }
 
     @Override
     void run() {
-        /*
-         Initialize the writer here and not in the constructor, in order to allow an analysis to be re-run.
-         */
-        lbScript    = new BloxbatchScript(new File(outDir, "run.lb"))
+        //Initialize the instance here and not in the constructor, in order to allow an analysis to be re-runnable.
+        connector = new LBWorkspaceConnector(new File(outDir),
+                                              options.BLOXBATCH.value as String,
+                                              (options.BLOX_OPTS.value ?: '') as String,
+                                              executor, cpp)
 
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
@@ -157,22 +143,17 @@ class Analysis implements Runnable {
                 }
 
                 produceStats()
-
             }
         }
 
-        lbScript.close()
-
-        logger.info "Using generated script ${lbScript.getPath()}"
         logger.info "\nAnalysis START"
-        long t = timing {
-             def bloxOpts = options.BLOX_OPTS.value ?: ''
-             executor.execute(outDir, "${options.BLOXBATCH.value} -script ${lbScript.getPath()} $bloxOpts")
-        }
+        long t = timing { connector.processQueue() }
         logger.info "Analysis END\n"
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
-        bloxbatch database, """-addBlock 'Stats:Runtime("script wall-clock time (sec)", $t).
-                                          Stats:Runtime("disk footprint (KB)", $dbSize).'"""
+        connector
+            .connect(database.toString())
+            .addBlock("""Stats:Runtime("script wall-clock time (sec)", $t).
+                         Stats:Runtime("disk footprint (KB)", $dbSize).""")
     }
 
 
@@ -247,14 +228,14 @@ class Analysis implements Runnable {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
 
         FileUtils.deleteQuietly(database)
-        preprocess(this, "${outDir}/flow-sensitive-schema.logic", "${Doop.factsPath}/flow-sensitive-schema.logic")
-        preprocess(this, "${outDir}/flow-insensitive-schema.logic", "${Doop.factsPath}/flow-insensitive-schema.logic")
-        preprocess(this, "${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
-        preprocess(this, "${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
-        preprocess(this, "${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
-        preprocess(this, "${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
+        cpp.preprocess("${outDir}/flow-sensitive-schema.logic", "${Doop.factsPath}/flow-sensitive-schema.logic")
+        cpp.preprocess("${outDir}/flow-insensitive-schema.logic", "${Doop.factsPath}/flow-insensitive-schema.logic")
+        cpp.preprocess("${outDir}/import-entities.logic", "${Doop.factsPath}/import-entities.logic")
+        cpp.preprocess("${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
+        cpp.preprocess("${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
+        cpp.preprocess("${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
 
-        lbScript
+        connector.queue()
             .createDB(database.getName())
             .echo("-- Init DB --")
             .startTimer()
@@ -266,20 +247,20 @@ class Analysis implements Runnable {
 
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
-            preprocess(this, "${outDir}/tamiflex-fact-declarations.logic", "${tamiflexDir}/fact-declarations.logic")
-            preprocess(this, "${outDir}/tamiflex-import.logic", "${tamiflexDir}/import.logic")
-            preprocess(this, "${outDir}/tamiflex-post-import.logic", "${tamiflexDir}/post-import.logic")
+            cpp.preprocess("${outDir}/tamiflex-fact-declarations.logic", "${tamiflexDir}/fact-declarations.logic")
+            cpp.preprocess("${outDir}/tamiflex-import.logic", "${tamiflexDir}/import.logic")
+            cpp.preprocess("${outDir}/tamiflex-post-import.logic", "${tamiflexDir}/post-import.logic")
 
-            lbScript
+            connector.queue()
                 .addBlockFile("tamiflex-fact-declarations.logic")
                 .executeFile("tamiflex-import.logic")
                 .addBlockFile("tamiflex-post-import.logic")
         }
 
         if (options.MAIN_CLASS.value)
-            lbScript.addBlock("""MainClass(x) <- ClassType(x), Type:Value(x:"${options.MAIN_CLASS.value}").""")
+            connector.queue().addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
-        lbScript
+        connector.queue()
             .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
             .addBlockFile("post-process.logic")
             .commit()
@@ -306,26 +287,26 @@ class Analysis implements Runnable {
                                               toPredicate,Config:DynamicClass,type,inv
                                               """.toString().stripIndent()
 
-                lbScript.wr("import -f $dynImport")
+                connector.queue().eval("import -f $dynImport")
             }
         }
 
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
-        preprocess(this, "${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
+        cpp.preprocess("${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 
-        lbScript
+        connector.queue()
             .echo("-- Basic Analysis --")
             .startTimer()
             .transaction()
             .addBlockFile("basic.logic")
 
         if (options.CFG_ANALYSIS.value) {
-            preprocess(this, "${outDir}/cfg-analysis.logic", "${Doop.addonsPath}/cfg-analysis/analysis.logic",
+            cpp.preprocess("${outDir}/cfg-analysis.logic", "${Doop.addonsPath}/cfg-analysis/analysis.logic",
                              "${Doop.addonsPath}/cfg-analysis/declarations.logic")
-            lbScript.addBlockFile("cfg-analysis.logic")
+            connector.queue().addBlockFile("cfg-analysis.logic")
         }
 
-        lbScript
+        connector.queue()
             .commit()
             .elapsedTime()
     }
@@ -350,38 +331,36 @@ class Analysis implements Runnable {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
-            preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
+            cpp.preprocess("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${mainPath}/context-sensitivity-declarations.logic")
-            preprocess(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
-            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
-            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
+            cpp.preprocess("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
+            cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
                              commonMacros, "${mainPath}/main-delta.logic")
-            preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
+            cpp.preprocess("${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
                              commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
-            preprocess(this, "${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
-            preprocessIfExists(this, "${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
-            preprocessIfExists(this, "${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
-            preprocessIfExists(this, "${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
-            preprocess(this, "${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
+            cpp.preprocess("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
+            cpp.preprocessIfExists("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
+            cpp.preprocessIfExists("${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
+            cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
+            cpp.preprocess("${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
         }
 
-        lbScript
+        connector.queue()
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
             .addBlockFile("${safename}-declarations.logic")
             .addBlockFile("prologue.logic")
-            .addBlockFile("${safename}-prologue.logic")
             .commit()
             .transaction()
             .executeFile("${safename}-delta.logic")
 
         if (options.ENABLE_REFLECTION.value) {
-            preprocess(this, "${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
+            cpp.preprocess("${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
-            lbScript
+            connector.queue()
                 .commit()
                 .transaction()
                 .executeFile("reflection-delta.logic")
@@ -400,12 +379,12 @@ class Analysis implements Runnable {
         FileUtils.touch(addons)
 
         if (options.INFORMATION_FLOW.value) {
-            preprocess(this, "${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
-            preprocess(this, "${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
-            preprocess(this, "${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
-            includeAtStart(this, "${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
+            cpp.preprocess("${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
+            cpp.preprocess("${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
+            cpp.preprocess("${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
+            cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
 
-            lbScript
+            connector.queue()
                 .addBlockFile("information-flow-declarations.logic")
                 .commit()
                 .transaction()
@@ -415,30 +394,30 @@ class Analysis implements Runnable {
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic", commonMacros)
+            cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/dacapo/rules.logic", commonMacros)
 
         if (options.TAMIFLEX.value) {
-            preprocess(this, "${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
-            preprocess(this, "${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic", commonMacros)
+            cpp.preprocess("${outDir}/tamiflex-declarations.logic", "${Doop.addonsPath}/tamiflex/declarations.logic")
+            cpp.preprocess("${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
+            cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic", commonMacros)
 
-            lbScript
+            connector.queue()
                 .addBlockFile("tamiflex-declarations.logic")
                 .executeFile("tamiflex-delta.logic")
         }
 
         if (options.SANITY.value)
-            includeAtStart(this, "${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
+            cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
 
-        includeAtStart(this, "${outDir}/${safename}.logic", "${outDir}/addons.logic")
+        cpp.includeAtStart("${outDir}/${safename}.logic", "${outDir}/addons.logic")
 
-        lbScript
+        connector.queue()
             .commit()
             .elapsedTime()
 
         if (isRefineStep) importRefinement()
 
-        lbScript
+        connector.queue()
             .echo("-- Main Analysis --")
             .startTimer()
             .transaction()
@@ -447,10 +426,10 @@ class Analysis implements Runnable {
             .elapsedTime()
 
         if (options.MUST.value) {
-            preprocess(this, "${outDir}/must-point-to-may-pre-analysis.logic", "${Doop.analysesPath}/must-point-to/may-pre-analysis.logic")
-            preprocess(this, "${outDir}/must-point-to.logic", "${Doop.analysesPath}/must-point-to/analysis-simple.logic")
+            cpp.preprocess("${outDir}/must-point-to-may-pre-analysis.logic", "${Doop.analysesPath}/must-point-to/may-pre-analysis.logic")
+            cpp.preprocess("${outDir}/must-point-to.logic", "${Doop.analysesPath}/must-point-to/analysis-simple.logic")
 
-            lbScript
+            connector.queue()
                 .echo("-- Pre Analysis (for Must) --")
                 .startTimer()
                 .transaction()
@@ -471,11 +450,11 @@ class Analysis implements Runnable {
      * Reanalyze.
      */
     protected void reanalyze() {
-        preprocess(this, "${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
-        preprocess(this, "${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
-        preprocess(this, "${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
+        cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
+        cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
+        cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
 
-        lbScript
+        connector.queue()
             .echo("++++ Refinement ++++")
             .echo("-- Export --")
             .startTimer()
@@ -494,7 +473,7 @@ class Analysis implements Runnable {
     }
 
     void importRefinement() {
-        lbScript
+        connector.queue()
             .echo("-- Import --")
             .startTimer()
             .transaction()
@@ -504,8 +483,8 @@ class Analysis implements Runnable {
     }
 
     protected void runTransformInput() {
-        preprocess(this, "${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
-        lbScript
+        cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
+        connector.queue()
             .echo("-- Transforming Facts --")
             .startTimer()
             .transaction()
@@ -513,38 +492,38 @@ class Analysis implements Runnable {
             .commit()
 
         2.times { int i ->
-            lbScript
+            connector.queue()
                 .echo(""" "-- Transformation (step $i) --" """)
                 .transaction()
                 .executeFile("${Doop.addonsPath}/transform/delta.logic")
                 .commit()
         }
-        lbScript.elapsedTime()
+        connector.queue().elapsedTime()
     }
 
     protected void produceStats() {
         if (options.X_STATS_NONE.value) return;
 
         if (options.X_STATS_AROUND.value) {
-            lbScript.include(options.X_STATS_AROUND.value as String)
+            connector.queue().include(options.X_STATS_AROUND.value as String)
             return
         }
 
         def statsPath = "${Doop.addonsPath}/statistics"
-        preprocess(this, "${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic")
+        cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic")
 
-        lbScript
+        connector.queue()
             .echo("-- Statistics --")
             .startTimer()
             .transaction()
             .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
-            preprocess(this, "${outDir}/statistics.logic", "${statsPath}/statistics.logic")
-            lbScript.addBlockFile("statistics.logic")
+            cpp.preprocess("${outDir}/statistics.logic", "${statsPath}/statistics.logic")
+            connector.queue().addBlockFile("statistics.logic")
         }
 
-        lbScript
+        connector.queue()
             .commit()
             .elapsedTime()
     }
@@ -597,7 +576,9 @@ class Analysis implements Runnable {
                 params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
-                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", options.PLATFORMS_LIB.value.toString() + separator + "Android" + separator + "Sdk" + separator + "platforms"]
+                def androidPlatform = options.PLATFORMS_LIB.value.toString() +
+                                      File.separator + "Android" + File.separator + "Sdk" + File.separator + "platforms"
+                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", androidPlatform]
                 break
             default:
                 throw new RuntimeException("Unsupported platform")
@@ -741,10 +722,6 @@ class Analysis implements Runnable {
 
         String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
         return "$path/rt.jar"
-    }
-
-    private void bloxbatch(File database, String params) {
-        executor.execute("${options.BLOXBATCH.value} -db $database $params")
     }
 
     private long timing(Closure c) {

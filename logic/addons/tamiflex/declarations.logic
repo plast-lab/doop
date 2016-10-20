@@ -1,13 +1,11 @@
-DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
+Tamiflex:Class:NewInstance(?invocation, ?heap) ->
+   MethodInvocation(?invocation), HeapAllocation(?heap).
 
-Tamiflex:Class:NewInstance(?invocation, ?obj) ->
-   MethodInvocation(?invocation), HeapAllocation(?obj).
+Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap) ->
+   MethodInvocation(?invocation), Method(?constructor), HeapAllocation(?heap).
 
-Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj) ->
-   MethodInvocation(?invocation), Method(?constructor), HeapAllocation(?obj).
-
-Tamiflex:Array:NewInstance(?invocation, ?obj) ->
-   MethodInvocation(?invocation), HeapAllocation(?obj).
+Tamiflex:Array:NewInstance(?invocation, ?heap) ->
+   MethodInvocation(?invocation), HeapAllocation(?heap).
 
 Tamiflex:Invoke(?callerCtx, ?invocation, ?method) ->
    Context(?callerCtx), MethodInvocation(?invocation), Method(?method).

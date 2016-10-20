@@ -4,18 +4,18 @@ Var(?var) -> Var:Type[?var] = _.
 // Every var in VarPointsTo is reachable
 VarPointsTo(_, _, _, ?var), Var:DeclaringMethod(?var, ?method) -> Reachable(?method).
 
-// Every var in VarPointsTo points to correctly typed heaps
-VarPointsTo(_, ?heap, _, ?var), HeapAllocation:Type[?heap] = ?heapType, Var:Type[?var] = ?varType ->
-   SubtypeOf(?heapType, ?varType).
+// Every var in VarPointsTo points to correctly typed values
+VarPointsTo(_, ?value, _, ?var), Value:Type[value] = ?valueType, Var:Type[?var] = ?varType ->
+   SubtypeOf(?valueType, ?varType).
 
 // No VarPointsTo is ever inferred for objects that should have been
 // merged. Suggests omission in the "Keep" predicate.
-VarPointsTo(_, ?heap, _, _), HeapAllocation:Merge[?heap] = ?heap2 -> ?heap2 = ?heap.
+VarPointsTo(_, ?value, _, _), Value:Heap[?value] = ?heap, HeapAllocation:Merge[?heap] = ?heap2 -> ?heap2 = ?heap.
 
-// Every heap allocation has a type, a construction id and a declaring class
 HeapAllocation(?heap) -> HeapAllocation:Type[?heap] = _.
-HeapAllocation(?heap) -> HeapAllocation:Value[?heap] = _.
-HeapAllocation(?heap) -> DeclaringClass:Allocation[?heap] = _.
+HeapAllocation(?heap) -> HeapAllocation:Id[?heap] = _.
+Value(?value) -> Value:Type[?value] = _.
+Value(?value) -> Value:Id[?value] = _.
 
 
 ClassType(?t) -> !InterfaceType(?t).

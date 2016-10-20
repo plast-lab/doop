@@ -18,16 +18,16 @@ DacapoHarnessClass(?heap)
       string:substring[?benchmark, 1, string:length[?benchmark] - 1] +
       "Harness",
 #endif
-   Type:Value(?type:"java.lang.String").
+   Type:Id(?type:"java.lang.String").
 
 /**
  * Extra logic to handle a specific value read from a configuration file for
  * the DaCapo benchmarks. The value is used afterwards reflectively to create a
  * new object.
  */
-VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to)
+VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to)
 <-
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    MethodInvocation:Signature[?inv] =
 #ifdef DACAPO_BACH
    "<org.dacapo.parser.Config: void setClass(java.lang.String)>",
@@ -38,7 +38,8 @@ VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to)
    Var:DeclaringMethod(?base, ?method),
    ReachableContext(?ctx, ?method),
    ActualParam[0, ?inv] = ?to,
-   DacapoHarnessClass(?classNameHeap).
+   DacapoHarnessClass(?classNameHeap),
+   Value:byHeap[?classNameHeap] = ?classNameValue.
 
 HeapAllocation:Keep(?classNameHeap) <-
    DacapoHarnessClass(?classNameHeap).

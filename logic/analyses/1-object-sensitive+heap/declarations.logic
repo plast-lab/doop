@@ -1,13 +1,13 @@
 // In this analysis, both the real context and the real heap context are
-// HeapAllocations. Keeping mapping functions is the way to handle analyses
+// Values. Keeping mapping functions is the way to handle analyses
 // where HContext = Context (since the language considers them different
 // types).
-ContextFromRealContext[?heap] = ?ctx ->
-  Context(?ctx), HeapAllocation(?heap).
+ContextFromRealContext[?value] = ?ctx ->
+  Context(?ctx), Value(?value).
 lang:constructor(`ContextFromRealContext).
-RealContextFromContext[?ctx] = ?heap ->
-  Context(?ctx), HeapAllocation(?heap).
+RealContextFromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
 
-HContextFromRealHContext[?heap] = ?hctx ->
-  HContext(?hctx), HeapAllocation(?heap).
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
 lang:constructor(`HContextFromRealHContext).

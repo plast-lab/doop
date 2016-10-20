@@ -1,74 +1,74 @@
 // Context-sensitive pointer analysis with context of 1 object and 1 call-site.
 
-RealContext1FromContext[?ctx] = ?heap,
+RealContext1FromContext[?ctx] = ?value,
 RealContext2FromContext[?ctx] = ?invo <-
-  ContextFromRealContext[?heap, ?invo] = ?ctx.
+  ContextFromRealContext[?value, ?invo] = ?ctx.
 
 ImmutableInvValue[] = ?invo <-
   MethodInvocationValue(?invo, "<<immutable-context-2>>").
 
 Context(?ctx),
-ContextFromRealContext[?heap, ?invo] = ?ctx,
-ImmutableContext[] = ?ctx <-
-  HeapAllocation:byValue["<<immutable-context>>"] = ?heap,
+ContextFromRealContext[?value, ?invo] = ?ctx,
+ImmutableContext(?ctx) <-
+  Value:byId["<<immutable-context>>"] = ?value,
   MethodInvocationValue(?invo, "<<immutable-context-2>>").
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
-ImmutableHContext[] = ?hctx.
+ImmutableHContext(?hctx).
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Merge optimization hack
 
 // For this analysis, we only need two of the parameters that may influence the
 // new context object.
-//MyMergeBasis(?heap, ?invocation) <-
-//  MergeBasis(_, _, ?heap, ?invocation).
+//MyMergeBasis(?value, ?invocation) <-
+//  MergeBasis(_, _, ?value, ?invocation).
 
 // We create new context objects sparingly, because of the high cost.  We also
 // cache them, so they can be looked up without a join.
 //Context(?calleeCtx),
-//ContextFromRealContext[?heap, ?invocation] = ?calleeCtx,
-//OptimizeMerge[?heap, ?invocation] = ?calleeCtx <-
-//  MyMergeBasis(?heap, ?invocation).
+//ContextFromRealContext[?value, ?invocation] = ?calleeCtx,
+//OptimizeMerge[?value, ?invocation] = ?calleeCtx <-
+//  MyMergeBasis(?value, ?invocation).
 
 
 // Initially reachable methods
 Context(?ctx),
-ContextFromRealContext[?heap, ?invo] = ?ctx,
+ContextFromRealContext[?value, ?invo] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  HeapAllocation:byValue["<<initial-context>>"] = ?heap,
+  Value:byId["<<initial-context>>"] = ?value,
   MethodInvocationValue(?invo, "<<initial-context-2>>").
 
 Context(?ctx),
-ContextFromRealContext[?heap, ?invo] = ?ctx,
+ContextFromRealContext[?value, ?invo] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
+  Value:byId["<<jvm-startup>>"] = ?value,
   MethodInvocationValue(?invo, "<<jvm-startup-2>>").
 
 Context(?ctx),
-ContextFromRealContext[?heap, ?invo] = ?ctx,
+ContextFromRealContext[?value, ?invo] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  HeapAllocation:byValue["<<class-initialization>>"] = ?heap,
+  Value:byId["<<class-initialization>>"] = ?value,
   MethodInvocationValue(?invo, "<<class-initialization-2>>").

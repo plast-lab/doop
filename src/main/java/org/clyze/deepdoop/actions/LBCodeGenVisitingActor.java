@@ -22,6 +22,7 @@ import org.clyze.deepdoop.datalog.component.DependencyGraph.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
+import org.clyze.deepdoop.system.Result;
 
 public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String> {
 
@@ -32,11 +33,11 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	Component               _unhandledGlobal;
 	Set<String>             _handledAtoms;
 
-	Path                    _workDir;
-	Path                    _bashFile;
+	Path                    _outDir;
 	Path                    _latestFile;
+	List<Result>            _results;
 
-	public LBCodeGenVisitingActor(String workDirStr) {
+	public LBCodeGenVisitingActor(String outDirName) {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
@@ -48,12 +49,15 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 
 		_handledAtoms = new HashSet<>();
 
-		_workDir      = Paths.get(workDirStr);
-		_bashFile     = create("RUN_", ".sh");
-		write(_bashFile, "#!/bin/bash");
+		_results      = new ArrayList<>();
+		_outDir      = Paths.get(outDirName);
 	}
 	public LBCodeGenVisitingActor() {
 		this(".");
+	}
+
+	public List<Result> getResults() {
+		return _results;
 	}
 
 
@@ -233,9 +237,10 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 
 
 	void emit(Program n, Map<IVisitable, String> m, Set<Node> nodes) {
+		_latestFile = create("out_", ".logic");
+		_results.add(new Result(Result.Kind.LOGIC, _latestFile));
+
 		Set<String> currSet = new HashSet<>();
-		_latestFile = create("AUTO_", ".logic");
-		write(_bashFile, "bloxbatch -db DB -addBlock -file " + _latestFile);
 		for (Node node : nodes)
 			if (node instanceof CompNode) {
 				Component c = n.comps.get(node.name);
@@ -263,52 +268,69 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 			assert node instanceof CmdNode;
 			assert _latestFile != null;
 			CmdComponent c = (CmdComponent) n.comps.get(node.name);
+
 			// Write frame rules from previous components
 			for (Rule r : c.rules)
 				write(_latestFile, _codeMap.get(r));
 
-			for (StubAtom export : c.exports)
-				write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name()+" -exportDataDir . -exportDelimiter '\\t'");
+			_latestFile = create("out_", "-export.logic");
+			_results.add(new Result(Result.Kind.EXPORT, _latestFile));
 
-			write(_bashFile, c.eval);
+			for (Rule r : c.rules) {
+				assert r.head.elements.size() == 1;
+				IAtom atom = (IAtom) r.head.elements.iterator().next();
+				emitFilePredicate(atom, null, _latestFile);
+			}
 
-			_latestFile = create("AUTO_", "-delta.logic");
+			//for (StubAtom export : c.exports)
+			//	write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name()+" -exportDataDir . -exportDelimiter '\\t'");
+
+			_results.add(new Result(c.eval));
+
+			_latestFile = create("out_", "-import.logic");
+			_results.add(new Result(Result.Kind.IMPORT, _latestFile));
+
 			for (Declaration d : c.declarations) {
 				assert !(d instanceof RefModeDeclaration);
 				IAtom atom = _acActor.getDeclaringAtoms(d).values().iterator().next();
-				String name = atom.name();
-
-				List<VariableExpr> vars = new ArrayList<>(atom.arity());
-				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
-
-				String head = atom.name() + "(";
-				StringJoiner joiner = new StringJoiner(", ");
-				for (VariableExpr v : vars) joiner.add(v.name);
-				head += joiner + ")";
-
-				String decl = "_" + head + " -> ";
-				joiner = new StringJoiner(", ");
-				for (int i = 0 ; i < atom.arity() ; i++)
-					joiner.add(d.types.get(i).name() + "(" + vars.get(i).name + ")");
-				decl += joiner + ".";
-
-				write(_latestFile, Arrays.asList(
-					"lang:physical:storageModel[`_"+name+"] = \"DelimitedFile\".",
-					"lang:physical:filePath[`_"+name+"] = \""+name+".facts\".",
-					"lang:physical:delimiter[`"+name+"_] = \"\\t\".",
-					"lang:physical:hasColumnNames[`_"+name+"] = false.",
-					decl,
-					"+" + head + " <- _" + head + "."
-				));
+				emitFilePredicate(atom, d, _latestFile);
 			}
-			write(_bashFile, "bloxbatch -db DB -execute -file " + _latestFile);
 		}
+	}
+
+	void emitFilePredicate(IAtom atom, Declaration d, Path file) {
+		String atomName = atom.name();
+
+		List<VariableExpr> vars = new ArrayList<>(atom.arity());
+		for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
+
+		String head = atomName + "(";
+		StringJoiner joiner = new StringJoiner(", ");
+		for (VariableExpr v : vars) joiner.add(v.name);
+		head += joiner + ")";
+
+		String decl = "_" + head + " -> ";
+		joiner = new StringJoiner(", ");
+		for (int i = 0 ; i < atom.arity() ; i++)
+			joiner.add( (d != null ? d.types.get(i).name() : "string") + "(" + vars.get(i).name + ")");
+		decl += joiner + ".";
+
+		String rule = (d != null) ? "+"+head+" <- _"+head+"." : "+_"+head+" <- "+head+".";
+
+		write(file, Arrays.asList(
+			"lang:physical:storageModel[`_"+atomName+"] = \"DelimitedFile\".",
+			"lang:physical:filePath[`_"+atomName+"] = \""+atomName+".facts\".",
+			"lang:physical:delimiter[`"+atomName+"_] = \"\\t\".",
+			"lang:physical:hasColumnNames[`_"+atomName+"] = false.",
+			decl,
+			rule
+		));
 	}
 
 
 	Path create(String prefix, String suffix) {
 		try {
-			return Files.createTempFile(_workDir, prefix, suffix);
+			return Files.createTempFile(_outDir, prefix, suffix);
 		}
 		catch (IOException e) {
 			// TODO

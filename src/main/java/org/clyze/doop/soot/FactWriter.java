@@ -62,7 +62,7 @@ class FactWriter
             col = _db.addEntity(CLASS_TYPE, rep);
         }
 
-        _db.add(CLASS_HEAP, _db.asEntity(_rep.classconstant(c)));
+        _db.add(CLASS_HEAP, _db.asEntity(_rep.classconstant(c)), col);
     }
 
     void writeDirectSuperclass(SootClass sub, SootClass sup)
@@ -413,7 +413,7 @@ class FactWriter
         }
 
         // write heap allocation
-        _db.add(CLASS_HEAP, _db.asEntity(heap));
+        _db.add(CLASS_HEAP, _db.asEntity(heap), _db.asEntity(actualType));
 
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
