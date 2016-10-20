@@ -29,7 +29,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the name of the analysis (short option: a)
         String name = cli.a
 
-        //Get the inputs of the analysis (short option: i)
+        //Get the inputFiles of the analysis (short option: i)
         List<String> inputs = cli.is
 
         //Get the id of the analysis (short option: id)
@@ -49,11 +49,11 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the name of the analysis
         String name = cli.a ?: props.getProperty("analysis")
 
-        //Get the inputs of the analysis. If there are no inputs in the CLI, we get them from the properties.
+        //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
         List<String> inputs = cli.is
         if (!inputs) {
             inputs = props.getProperty("jar").split().collect { String s -> s.trim() }
-            //The inputs, if relative, are being resolved via the propsBaseDir
+            //The inputFiles, if relative, are being resolved via the propsBaseDir
             inputs = inputs.collect { String input ->
                 File f = new File(input)
                 return f.isAbsolute() ? input : new File(propsBaseDir, input).getCanonicalFile().getAbsolutePath()
@@ -96,7 +96,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            i(longOpt: 'inputs', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputs")
+            i(longOpt: 'inputFiles', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputFiles")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')

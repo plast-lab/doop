@@ -31,7 +31,7 @@ class AnalysisFactory {
         Map<String, AnalysisOption> options
         List<String> inputFilePaths
         List<String> platformFilePaths
-        List<File> inputs
+        List<File> inputFiles
         List<File>   platformFiles
 
         @Override
@@ -41,14 +41,14 @@ class AnalysisFactory {
                 options:           options.values().toString(),
                 inputFilePaths:    inputFilePaths.toString(),
                 platformFilePaths: platformFilePaths.toString(),
-                inputFiles:        inputs.toString(),
+                inputFiles:        inputFiles.toString(),
                 platformFiles:     platformFiles.toString()
             ].toString()
         }
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its id, name, options and inputs using
+     * Creates a new analysis, verifying the correctness of its id, name, options and inputFiles using
      * the supplied input resolution mechanism.
      * If the supplied id is empty or null, an id will be generated automatically.
      * Otherwise the id will be validated:
@@ -84,7 +84,7 @@ class AnalysisFactory {
             name,
             options,
             context,
-            vars.inputs,
+            vars.inputFiles,
             vars.platformFiles,
             commandsEnv
         )
@@ -93,7 +93,7 @@ class AnalysisFactory {
     }
 
     /**
-     * Creates a new analysis, verifying the correctness of its name, options and inputs using
+     * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
      * the default input resolution mechanism.
      */
     Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
@@ -149,7 +149,7 @@ class AnalysisFactory {
         Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
-        checksums += vars.inputs.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
         if (vars.options.TAMIFLEX.value)
@@ -415,7 +415,7 @@ class AnalysisFactory {
             options:           options,
             inputFilePaths:    inputFilePaths,
             platformFilePaths: platformFilePaths,
-            inputs:        inputFiles,
+            inputFiles:        inputFiles,
             platformFiles:     platformFiles
         )
         logger.debug vars
@@ -449,7 +449,7 @@ class AnalysisFactory {
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputs[0])
+            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
