@@ -51,7 +51,7 @@ VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   VarIsTaintedFromVar(?toCtx, ?to, ?fromCtx, ?from),
-  TaintedHeapAllocation(?value),
+  TaintedValue(?value),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
@@ -127,7 +127,7 @@ VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base) <-
 VarIsTaintedFromHeap(?hctx, ?value, ?ctx, ?var) -> HContext(?hctx), Value(?value), Context(?ctx), Var(?var).
 VarIsTaintedFromHeap(?basehctx, ?basevalue, ?ctx, ?to) <-
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
-   TaintedHeapAllocation(?basevalue).
+   TaintedValue(?basevalue).
 
 /**
  * Sanitization
@@ -173,7 +173,6 @@ LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?value) <-
   !SanitizedContextValue(?hctx, ?value)),
   LeakingSinkVariable(?invocation, ?ctx, ?var).
 
-
 /**
  * Special Heap allocation on function call
  */
@@ -181,22 +180,14 @@ RecordMacro(?callerCtx, ?value, ?hctx),
 TaintedContextValue(?hctx, ?value),
 VarPointsTo(?hctx, ?value, ?callerCtx, ?to) <-
   CallTaintingMethod(?callerCtx, ?invocation),
-  TaintedHeapAllocation(?value),
+  TaintedValue(?value),
   Value:byId[?invocation] = ?value,
   AssignReturnValue[?invocation] = ?to.
 
-
 MockValueConsMacro(?invocation, ?retType, ?value),
-TaintedHeapAllocation(?value) <-
+TaintedValue(?value) <-
    TaintSourceMethod(?tomethod),
    AnyMethodInvocation(?invocation, ?tomethod),
    Method:ReturnType[?tomethod] = ?retType.
 
-VarBlah(?var, ?heapStr) <- VarPointsTo(_, ?heap, _, ?var), HeapAllocation:byValue[?heapStr] = ?heap, TaintedHeapAllocation(?heap).
-TaintedBlah(?heapStr) <-  TaintedHeapAllocation(?heap),HeapAllocation:byValue[?heapStr] = ?heap.
-
 SupertypeOf(?type, "<<Information type>>") <- Type(?type). //bottom type
-
-
-
-
