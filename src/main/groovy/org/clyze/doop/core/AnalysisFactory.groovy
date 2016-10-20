@@ -31,7 +31,7 @@ class AnalysisFactory {
         Map<String, AnalysisOption> options
         List<String> inputFilePaths
         List<String> platformFilePaths
-        List<File>   inputFiles
+        List<File> inputs
         List<File>   platformFiles
 
         @Override
@@ -41,7 +41,7 @@ class AnalysisFactory {
                 options:           options.values().toString(),
                 inputFilePaths:    inputFilePaths.toString(),
                 platformFilePaths: platformFilePaths.toString(),
-                inputFiles:        inputFiles.toString(),
+                inputFiles:        inputs.toString(),
                 platformFiles:     platformFiles.toString()
             ].toString()
         }
@@ -84,7 +84,7 @@ class AnalysisFactory {
             name,
             options,
             context,
-            vars.inputFiles,
+            vars.inputs,
             vars.platformFiles,
             commandsEnv
         )
@@ -149,7 +149,7 @@ class AnalysisFactory {
         Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
             File file -> CheckSum.checksum(file, HASH_ALGO)
         }
-        checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += vars.inputs.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
         if (vars.options.TAMIFLEX.value)
@@ -415,7 +415,7 @@ class AnalysisFactory {
             options:           options,
             inputFilePaths:    inputFilePaths,
             platformFilePaths: platformFilePaths,
-            inputFiles:        inputFiles,
+            inputs:        inputFiles,
             platformFiles:     platformFiles
         )
         logger.debug vars
@@ -449,7 +449,7 @@ class AnalysisFactory {
 
             Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
             */
-            Set<String> packages = Helper.getPackages(vars.inputFiles[0])
+            Set<String> packages = Helper.getPackages(vars.inputs[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
     }
