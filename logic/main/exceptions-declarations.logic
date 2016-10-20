@@ -3,8 +3,8 @@
  */
 
 /**
- * Represents the heap abstractions of the exceptions a method can throw
+ * Represents the exceptions a method can throw
  */
-ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) ->
-   HContext(?hctx), HeapAllocation(?heap),
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) ->
+   HContext(?hctx), Value(?value),
    Context(?ctx), Method(?method).

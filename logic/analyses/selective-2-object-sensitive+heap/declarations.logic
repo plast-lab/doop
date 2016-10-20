@@ -1,24 +1,24 @@
-// The real context is a pair of HeapAllocation AND a MethodInvocation (for
-// static calls) sometimes.  The real heap context is a single HeapAllocation.
+// The real context is a pair of Value AND a MethodInvocation (for
+// static calls) sometimes.  The real heap context is a single Value.
 // Keeping mapping functions is the way to handle analyses where HContext =
 // Context (since the language considers them different types).
-ContextFromRealContext[?heapComp1, ?heapComp2] = ?ctx ->
-  Context(?ctx), ContextComponent(?heapComp1), ContextComponent(?heapComp2).
+ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx ->
+  Context(?ctx), ContextComponent(?valueComp1), ContextComponent(?valueComp2).
 lang:constructor(`ContextFromRealContext).
 
 // NOTE: Use the following when using both the normal (caller's) context and
 // the invoComp site for static calls.
-SpecialContextFromRealContext[?heapComp1, ?invoComp, ?heapComp2] = ?ctx ->
-  ContextComponent(?heapComp1), ContextComponent(?heapComp2),
+SpecialContextFromRealContext[?valueComp1, ?invoComp, ?valueComp2] = ?ctx ->
+  ContextComponent(?valueComp1), ContextComponent(?valueComp2),
   ContextComponent(?invoComp), Context(?ctx).
 lang:constructor(`SpecialContextFromRealContext).
-RealContext1FromContext[?ctx] = ?heapComp ->
-  Context(?ctx), ContextComponent(?heapComp).
-RealContext2FromContext[?ctx] = ?heapComp ->
-  Context(?ctx), ContextComponent(?heapComp).
+RealContext1FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+RealContext2FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
 
-HContextFromRealHContext[?heapComp] = ?hctx ->
-  HContext(?hctx), ContextComponent(?heapComp).
+HContextFromRealHContext[?valueComp] = ?hctx ->
+  HContext(?hctx), ContextComponent(?valueComp).
 lang:constructor(`HContextFromRealHContext).
-RealHContextFromHContext[?hctx] = ?heapComp ->
-  HContext(?hctx), ContextComponent(?heapComp).
+RealHContextFromHContext[?hctx] = ?valueComp ->
+  HContext(?hctx), ContextComponent(?valueComp).

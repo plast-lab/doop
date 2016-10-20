@@ -4,13 +4,13 @@
  *   public Object newInstance(Object[] initargs)
  *************************************************************/
 
-ReflectiveAssignHeapAllocation(?invocation, ?type, ?ctx, ?to),
+AssignReflectiveAllocation(?invocation, ?type, ?ctx, ?to),
 ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?to),
 ReflectiveBaseVar[?invocation] = ?to,
 ReflectiveActualParams[?invocation] = ?initargs <-
   java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from),
   VarPointsTo(_, ?constructor, ?ctx, ?from),
-  ReifiedConstructor[?signature] = ?constructor,
+  ReifiedConstructor:Value[?signature] = ?constructor,
   Method:DeclaringType[?signature] = ?type,
   ActualParam[0, ?invocation] = ?initargs.
 

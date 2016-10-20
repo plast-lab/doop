@@ -6,33 +6,33 @@ RealContextFromContext[?ctx] = ?type <-
 
 Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
-ImmutableContext[] = ?ctx <-
-  Type:Value(?type, "<<immutable-context>>").
+ImmutableContext(?ctx) <-
+  Type:Id(?type, "<<immutable-context>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
-ImmutableHContext[] = ?hctx <-
-  Type:Value(?type, "<<immutable-hcontext>>").
+ImmutableHContext(?hctx) <-
+  Type:Id(?type, "<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
-  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
-  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Type:Value(?type, "<<jvm-startup>>"),
-  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Initially reachable methods
@@ -40,17 +40,17 @@ Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:Value(?type:"<<initial-context>>").
+  Type:Id(?type:"<<initial-context>>").
 
 Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:Value(?type:"<<jvm-startup>>").
+  Type:Id(?type:"<<jvm-startup>>").
 
 Context(?ctx),
 ContextFromRealContext[?type] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:Value(?type:"<<class-initialization>>").
+  Type:Id(?type:"<<class-initialization>>").

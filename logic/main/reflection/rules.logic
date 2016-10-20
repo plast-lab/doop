@@ -7,7 +7,7 @@
  * here is that the current code does not consider reflective method
  * invocations, only virtual method invocations. For example:
  *      
- *   Method:Value(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
+ *   Method:Id(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
  *   VirtualMethodInvocation:Insn(?invocation),
  *   MethodInvocation:Signature[?invocation] = ?getClass,
  *
@@ -44,29 +44,31 @@ HeapAllocation:Keep(?heap) <-
  * the reflective allocation.  If we are to fix this in the future, it will
  * look like this:
 
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReflectiveHeapAllocation[?invocation, _] = ?heap,
+Value:DeclaringType[?value] = ?type <-
+   ReflectiveAllocation[?invocation, _] = ?heap,
+   Value:byHeap[?heap] = ?value,
    Instruction:Method[?invocation] = ?inmethod,
    Method:DeclaringType[?inmethod] = ?type,
    !StringConstant(?heap).
 */
 
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReflectiveHeapAllocation[_, ?type] = ?heap.
+Value:DeclaringType[?value] = ?type <-
+   ReflectiveAllocation[_, ?type] = ?heap,
+   Value:byHeap[?heap] = ?value.
 
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReifiedConstructor[_] = ?heap,
-   HeapAllocation:Type[?heap] = ?type,
+Value:DeclaringType[?value] = ?type <-
+   ReifiedConstructor:Value[_] = ?value,
+   Value:Type[?value] = ?type,
    ReferenceType(?type).
 
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReifiedMethod[_] = ?heap,
-   HeapAllocation:Type[?heap] = ?type,
+Value:DeclaringType[?value] = ?type <-
+   ReifiedMethod:Value[_] = ?value,
+   Value:Type[?value] = ?type,
    ReferenceType(?type).
 
-DeclaringClass:Allocation[?heap] = ?type <-
-   ReifiedField[_] = ?heap,
-   HeapAllocation:Type[?heap] = ?type,
+Value:DeclaringType[?value] = ?type <-
+   ReifiedField:Value[_] = ?value,
+   Value:Type[?value] = ?type,
    ReferenceType(?type).
 
 
@@ -172,9 +174,9 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) ->
  */
 ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
-  Modifier:Value(?private:"private"),
+  Modifier:Id(?private:"private"),
   Method:Modifier(?private, ?signature),
-  Modifier:Value(?static:"static"),
+  Modifier:Id(?static:"static"),
   ! Method:Modifier(?static, ?signature),
   ReflectiveBaseVar[?invocation] = ?base.
 
@@ -183,7 +185,7 @@ ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
  */
 ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
-  Modifier:Value(?static:"static"),
+  Modifier:Id(?static:"static"),
   Method:Modifier(?static, ?signature).
 
 /**
@@ -191,9 +193,9 @@ ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
  */
 ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) <-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
-  Modifier:Value(?private:"private"),
+  Modifier:Id(?private:"private"),
   ! Method:Modifier(?private, ?signature),
-  Modifier:Value(?static:"static"),
+  Modifier:Id(?static:"static"),
   ! Method:Modifier(?static, ?signature),
   ReflectiveBaseVar[?invocation] = ?base.
 
@@ -219,15 +221,6 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
 ReachableContext(?calleeCtx, ?callee) <-
   ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-#ifndef REFLECTION_CONTEXT_SENSITIVITY
-DummyContextForReflective[] = ?dummyCtx -> Context(?dummyCtx).
-
-// Using the main method's (unique) context as a dummy context.
-DummyContextForReflective[] = ?dummyCtx <-
-  MainMethodDeclaration(?mainMethod),
-  ReachableContext(?dummyCtx, ?mainMethod).
-#endif
-
 /**
  * Static methods
  */
@@ -240,7 +233,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
-  DummyContextForReflective[] = ?calleeCtx,
+  ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
   ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
 #endif
 
@@ -248,26 +241,26 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
  * Special methods
  */
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
-ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  VarPointsTo(?hctx, ?heap,  ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   ThisVar[?callee] = ?this,
-  SupertypeOf(Var:Type[?this], HeapAllocation:Type[?heap]).
+  SupertypeOf(Var:Type[?this], Value:Type[?value]).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  DummyContextForReflective[] = ?calleeCtx,
-  VarPointsTo(?hctx, ?heap,  ?callerCtx, ?base),
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+  VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
   ThisVar[?callee] = ?this,
 // Check if object is an instance of the class declaring the method. It's a
 // special method. Should they be identical types? Probably not. Can use
 // special reflective calls to call private superclass methods.
-  SupertypeOf(Var:Type[?this], HeapAllocation:Type[?heap]).
+  SupertypeOf(Var:Type[?this], Value:Type[?value]).
 #endif
 
 /**
@@ -279,32 +272,32 @@ VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
 
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
-ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?heap, ?calleeCtx),
+ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
-  HeapAllocation:Type[?heap] = ?heaptype,
+  Value:Type[?value] = ?valuetype,
   Method:DeclaringType[?signature] = ?type,
-  SupertypeOf(?type, ?heaptype), // TODO need nicer check
+  SupertypeOf(?type, ?valuetype), // TODO need nicer check
   Method:SimpleName[?signature] = ?simplename,
   Method:Descriptor[?signature] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod,
   ThisVar[?tomethod] = ?this.
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  DummyContextForReflective[] = ?calleeCtx,
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
-  HeapAllocation:Type[?heap] = ?heaptype,
+  Value:Type[?value] = ?valuetype,
   Method:DeclaringType[?signature] = ?type,
-  SupertypeOf(?type, ?heaptype), // TODO need nicer check
+  SupertypeOf(?type, ?valuetype), // TODO need nicer check
   Method:SimpleName[?signature] = ?simplename,
   Method:Descriptor[?signature] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod,
+  MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod,
   ThisVar[?tomethod] = ?this.
 #endif
 
@@ -324,14 +317,14 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
 
 /*************************************************************
  *
- * Reflective heap allocations
+ * Reflective values
  *
  *************************************************************/
 
 // Basically this is only used for special methods and it has very
 // clever logic: we don't have a receiver var when we are calling
 // a constructor reflectively. So, instead, we remember in the
-// ReflectiveAssignHeapAllocation predicate the variable that the
+// AssignReflectiveAllocation predicate the variable that the
 // result of the reflective construction will be assigned to! Then
 // we pretend the reflectively allocated object is already assigned
 // to that local variable and use that local variable to initialize
@@ -340,44 +333,48 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
 // receiver object. It took me hours to thorougly convince myself this
 // works. (YS)
 
-ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var) ->
+AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var) ->
   Context(?ctx), Var(?var), Type(?type), Instruction(?instruction).
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
-ReflectiveRecordMacro(?ctx, ?heap, ?hctx),
+ReflectiveRecordMacro(?ctx, ?value, ?hctx),
 InitializedClass(?type),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
-  ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+  ReflectiveAllocation[?instruction, ?type]  = ?heap,
+  Value:byHeap[?heap] = ?value,
   Var:Type[?var] = ?vartype,
   SubtypeOf(?type, ?vartype).
 #else
 InitializedClass(?type),
-VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
-  ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
-  ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
+  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+  ReflectiveAllocation[?instruction, ?type]  = ?heap,
+  Value:byHeap[?heap] = ?value,
   Var:Type[?var] = ?vartype,
   SubtypeOf(?type, ?vartype).
 #endif
 
 
-//// There are hundreds of thousands of ReflectiveHeapAllocation facts typically. 
+//// There are hundreds of thousands of ReflectiveAllocation facts typically. 
 //// I don't think it *ever* makes sense to treat them context-sensitively.(YS)
 //InitializedClass(?type),
-//RecordMacro(?ctx, ?heap, ?hctx),
-//VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-//  ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
-//  ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
-//  ObjectShouldNotBeRefined(?heap).
+//RecordMacro(?ctx, ?value, ?hctx),
+//VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+//  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+//  ReflectiveAllocation[?instruction, ?type]  = ?heap,
+//  Value:byHeap[?heap] = ?value,
+//  ObjectShouldNotBeRefined(?value).
 //
 //#ifdef RecordRefinedMacro
 //InitializedClass(?type),
-//RecordRefinedMacro(?ctx, ?heap, ?hctx),
-//VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-//  ReflectiveAssignHeapAllocation(?instruction, ?type, ?ctx, ?var), // recursive
-//  ReflectiveHeapAllocation[?instruction, ?type]  = ?heap,
-//  ObjectShouldBeRefined(?heap).
+//RecordRefinedMacro(?ctx, ?value, ?hctx),
+//VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+//  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+//  ReflectiveAllocation[?instruction, ?type]  = ?heap,
+//  Value:byHeap[?heap] = ?value,
+//  ObjectShouldBeRefined(?value).
 //#endif
 
 /*************************************************************
@@ -409,10 +406,10 @@ InitializedClass(?type) <-
 /**
  * TODO This doesn't make any sense without a 'to' variable.
  */
-VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
-  ReifiedClass[?type] = ?heap,
+  ReifiedClass:Value[?type] = ?value,
   AssignReturnValue[?invocation] = ?return.
 
 /*************************************************************
@@ -432,22 +429,22 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base) ->
  * But it's not identical because there are type casts performed silently
  * when the array is just passing arguments to a reflective method call
  */
-LoadReflectiveHeapArrayIndex(?calleeCtx, ?to, ?basehctx, ?baseheap) <-
+LoadReflectiveValueArrayIndex(?calleeCtx, ?to, ?basehctx, ?basevalue) <-
   InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base),
-  VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?base).
+  VarPointsTo(?basehctx, ?basevalue, ?callerCtx, ?base).
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  LoadReflectiveHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
-  ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  LoadReflectiveValueArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
   Var:Type[?to] = ?type,
-  HeapAllocation:Type[?heap] = ?heaptype,
-  SupertypeOf(?type, ?heaptype).
+  Value:Type[?value] = ?valuetype,
+  SupertypeOf(?type, ?valuetype).
 
 /// This is unnecessary. It's already done by ArrayIndexPointsTo.
 //  // Additional type filtering based on array covariance
-//  HeapAllocation:Type[?baseheap] = ?arraytype,
+//  Value:Type[?basevalue] = ?arraytype,
 //  ComponentType[?arraytype] = ?componenttype,
-//  SupertypeOf(?componenttype, ?heaptype).
+//  SupertypeOf(?componenttype, ?valuetype).
 
 /*************************************************************
  *
@@ -460,12 +457,12 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 ReflectiveLoadStaticField(?ctx, ?to, ?signature) ->
   Field(?signature), Context(?ctx), Var(?to).
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ReflectiveLoadStaticField(?ctx, ?to, ?signature),
-  StaticFieldPointsTo(?hctx, ?heap, ?signature),
-  HeapAllocation:Type[?heap] = ?heaptype,
+  StaticFieldPointsTo(?hctx, ?value, ?signature),
+  Value:Type[?value] = ?valuetype,
   Var:Type[?to] = ?vartype, 
-  SupertypeOf(?vartype, ?heaptype).
+  SupertypeOf(?vartype, ?valuetype).
 
 /*************************************************************
  *
@@ -478,12 +475,12 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 ReflectiveStoreStaticField(?signature, ?ctx, ?from) ->
   Field(?signature), Context(?ctx), Var(?from).
 
-StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   ReflectiveStoreStaticField(?signature, ?ctx, ?from),
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
-  HeapAllocation:Type[?heap] = ?heaptype,
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype, 
-  SupertypeOf(?fieldtype, ?heaptype).
+  SupertypeOf(?fieldtype, ?valuetype).
 
 /*************************************************************
  *
@@ -494,26 +491,26 @@ StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
 ReflectiveLoadInstanceField(?toCtx, ?to, ?signature, ?baseCtx, ?base) ->
   Context(?baseCtx), Var(?base), Field(?signature),
   Context(?toCtx), Var(?to).
-ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?signature, ?basehctx, ?baseheap) ->
-  HContext(?basehctx), HeapAllocation(?baseheap), Field(?signature),
+ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?signature, ?basehctx, ?basevalue) ->
+  HContext(?basehctx), Value(?basevalue), Field(?signature),
   Context(?toCtx), Var(?to).
 
-ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?baseheap) <-
+ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) <-
   ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
-  HeapAllocation:Type[?baseheap] = ?baseheaptype,
+  Value:Type[?basevalue] = ?basevaluetype,
   Field:DeclaringType[?sig] = ?declaringClass,
-  SupertypeOf(?declaringClass, ?baseheaptype),
-  VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).
+  SupertypeOf(?declaringClass, ?basevaluetype),
+  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base).
 
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
-// normal heap loads) to filter type-incorrect values.
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
-  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap),
-  HeapAllocation:Type[?heap] = ?heaptype,
+// normal value loads) to filter type-incorrect values.
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  Value:Type[?value] = ?valuetype,
   Var:Type[?to] = ?vartype,
-  SupertypeOf(?vartype, ?heaptype).
+  SupertypeOf(?vartype, ?valuetype).
 
 
 /*************************************************************
@@ -525,28 +522,29 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 ReflectiveStoreInstanceField(?fromCtx, ?from, ?signature, ?baseCtx, ?base) ->
   Context(?fromCtx), Var(?from), Context(?baseCtx), Var(?base),
   Field(?signature).
-ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?fromCtx, ?from) ->
-  Context(?fromCtx), Var(?from), HeapAllocation(?baseheap), HContext(?basehctx),
+ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?fromCtx, ?from) ->
+  Context(?fromCtx), Var(?from), Value(?basevalue), HContext(?basehctx),
   Field(?signature).
 
-ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?baseheap, ?fromCtx, ?from) <-
+ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) <-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
-  HeapAllocation:Type[?baseheap] = ?baseheaptype,
+  Value:Type[?basevalue] = ?basevaluetype,
   Field:DeclaringType[?sig] = ?declaringClass,
-  SupertypeOf(?declaringClass, ?baseheaptype),
-  VarPointsTo(?basehctx, ?baseheap, ?baseCtx, ?base).
+  SupertypeOf(?declaringClass, ?basevaluetype),
+  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base).
 
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
-// normal heap loads) to filter type-incorrect values.
-InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
-  ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from),
-  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
-  HeapAllocation:Null[] != ?baseheap,
+// normal value loads) to filter type-incorrect values.
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
+  ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value:Heap[?value] = ?heap,
+  Value:Null[] != ?basevalue,
   !SpecialObject(?heap),
-  HeapAllocation:Type[?heap] = ?heaptype,
+  Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype,
-  SupertypeOf(?fieldtype, ?heaptype).
+  SupertypeOf(?fieldtype, ?valuetype).
 
 #if defined(REFLECTION_USE_BASED_ANALYSIS) || defined(REFLECTION_INVENT_UNKNOWN_OBJECTS)
 
@@ -564,9 +562,10 @@ NumberOfSubtypes[?type] = ?count <-
  * These may flow to casts, so we'll get useful info back.
  */
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   SpecialMissingForNameHeap[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
   Instruction:Method[?invocation] = ?inmethod,
   ReachableContext(?ctx, ?inmethod).
@@ -575,45 +574,53 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
 // Class.newInstance. At every newInstance to which an unknown object
 // created by forName flows, we return a new unknown object 
 // (of type Object and not Class) that remembers the forName site.
-VarPointsTo(?hctx, ?specialheap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
-  OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclass), 
-  SpecialMissingNewInstanceHeap[?forNameInvocation] = ?specialheap.
+  Value:Heap[?specialclass] = ?specialclassHeap,
+  OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclassHeap), 
+  SpecialMissingNewInstanceHeap[?forNameInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue.
 
 // Similar flow of special object through get[Declared]Constructor
-VarPointsTo(?hctx, ?specialConstructor, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   (java:lang:Class:getConstructor(?to, ?var);
    java:lang:Class:getDeclaredConstructor(?to, ?var)),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
-  OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclass), 
-  SpecialMissingGetConstructorHeap[?forNameInvocation] = ?specialConstructor.
+  Value:Heap[?specialclass] = ?specialclassHeap,
+  OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclassHeap), 
+  SpecialMissingGetConstructorHeap[?forNameInvocation] = ?specialConstructorHeap,
+  Value:byHeap[?specialConstructorHeap] = ?specialConstructorValue.
 
 // Pretty similar for get[Declared]Constructors. The array that the
 // return var points to (established by forward logic) is populated
 // with the special Constructor object the call returns.
-ArrayIndexPointsTo(?immCtx, ?specialConstructor, ?hctx, ?arrayHeap) <-
-  ImmutableHContext[] = ?immCtx,
+ArrayIndexPointsTo(?immCtx, ?specialConstructorValue, ?hctx, ?arrayValue) <-
+  ImmutableHContextFromContext[?ctx] = ?immCtx,
   OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to),
-  VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to),
-  SpecialMissingGetConstructorHeap[?forNameInvocation] = ?specialConstructor.
+  VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to),
+  SpecialMissingGetConstructorHeap[?forNameInvocation] = ?specialConstructorHeap,
+  Value:byHeap[?specialConstructorHeap] = ?specialConstructorValue.
 
 OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) <-
   (java:lang:Class:getConstructors(_, ?to, ?var);
    java:lang:Class:getDeclaredConstructors(_, ?to, ?var)),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
-  OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclass).
+  Value:Heap[?specialclass] = ?specialclassHeap,
+  OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclassHeap).
 
 // Even though there was one more step in the special object propagation,
 // in the end Constructor.newInstance is handled similarly to Class.newInstance.
-VarPointsTo(?hctx, ?specialheap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Constructor:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
-  OptSpecialMissingGetConstructorHeap(?forNameInvocation, ?specialConstructor),
-  SpecialMissingNewInstanceHeap[?forNameInvocation] = ?specialheap.
+  Value:Heap[?specialConstructor] = ?specialConstructorHeap,
+  OptSpecialMissingGetConstructorHeap(?forNameInvocation, ?specialConstructorHeap),
+  SpecialMissingNewInstanceHeap[?forNameInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue.
 
 
 // some auxiliary stuff
@@ -654,7 +661,8 @@ UnresolvedForNameInvocation(?ctx, ?invocation) <-
   !ResolvedForNameInvocation(?invocation),
   ActualParam[0, ?invocation] = ?param,
   VarPointsTo(_, ?nonstring, ?ctx, ?param),
-  !ClassNameMatchingStringConstant(?nonstring).
+  Value:Heap[?nonstring] = ?nonstringHeap,
+  !ClassNameMatchingStringConstant(?nonstringHeap).
 
 // ... and next comes the logic to tie it all together. This is amazingly nice!
 // If a special unknown object o that got created from a newInstance
@@ -662,15 +670,16 @@ UnresolvedForNameInvocation(?ctx, ?invocation) <-
 // gets cast to T, then go back to the forName and make all subtypes
 // of T be possible returned types (their reified objects, anyway).
 
-OptUnresolvedForNameInvocationHeap(?forNameCtx, ?forNameInvocation, ?specialheap) <-
+OptUnresolvedForNameInvocationHeap(?forNameCtx, ?forNameInvocation, ?specialvalue) <-
   SpecialMissingNewInstanceHeap[?forNameInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue,
   UnresolvedForNameInvocation(?forNameCtx, ?forNameInvocation).
 
 BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   InferredType:AssignCast(?type, ?from),
   //  ReachableContext(?ctx, ?inmethod), // implied by VPT
-  VarPointsTo(_, ?specialheap, _, ?from),
-  OptUnresolvedForNameInvocationHeap(?forNameCtx, ?forNameInvocation, ?specialheap).
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  OptUnresolvedForNameInvocationHeap(?forNameCtx, ?forNameInvocation, ?specialvalue).
 
 //// Introduces recursion through negation
 //  !ForwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, _).
@@ -702,14 +711,15 @@ InferredType:AssignCast(?subtype, ?from) <-
 // forName must have returned.
 
 TypeMatchingMethod(?type, ?constant) ->
-  Type(?type), HeapAllocation(?constant).
+  Type(?type), Value(?constant).
 TypeMatchingMethod(?subtype, ?constant) <-
-  MethodNameMatchingStringConstant:Signature(?signature, ?constant),
+  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap),
+  Value:byHeap[?constantHeap] = ?constant,
   Method:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingMethod[?constant] = ?n ->
-  HeapAllocation(?constant), int[64](?n).
+  Value(?constant), int[64](?n).
 NumberOfTypesMatchingMethod[?constant] = ?n <-
   agg<<?n = count()>>(TypeMatchingMethod(_,?constant)).
 
@@ -722,7 +732,8 @@ FairlyInformativeMethodName(?constant) <-
 BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   (java:lang:Class:getDeclaredMethod(_, ?param, ?from) ;
    java:lang:Class:getMethod(_, ?param, ?from)),
-  VarPointsTo(_, ?specialheap, ?ctx, ?from),
+  VarPointsTo(_, ?specialvalue, ?ctx, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingForNameHeap(?forNameInvocation, ?specialheap),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   FairlyInformativeMethodName(?constant),
@@ -730,14 +741,15 @@ BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   UnresolvedForNameInvocation(?forNameCtx, ?forNameInvocation).
 
 TypeMatchingFieldName(?type, ?constant) ->
-  Type(?type), HeapAllocation(?constant).
+  Type(?type), Value(?constant).
 TypeMatchingFieldName(?subtype, ?constant) <-
-  FieldNameMatchingStringConstant:Signature(?signature, ?constant),
+  FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap),
+  Value:byHeap[?constantHeap] = ?constant,
   Field:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingFieldName[?constant] = ?n ->
-  HeapAllocation(?constant), int[64](?n).
+  Value(?constant), int[64](?n).
 NumberOfTypesMatchingFieldName[?constant] = ?n <-
   agg<<?n = count()>>(TypeMatchingFieldName(_,?constant)).
 
@@ -747,7 +759,8 @@ FairlyInformativeFieldName(?constant) <-
 BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   (java:lang:Class:getDeclaredField(_, ?param, ?from) ;
    java:lang:Class:getField(_, ?param, ?from)),
-  VarPointsTo(_, ?specialheap, ?ctx, ?from),
+  VarPointsTo(_, ?specialvalue, ?ctx, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingForNameHeap(?forNameInvocation, ?specialheap),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   FairlyInformativeFieldName(?constant),
@@ -770,48 +783,51 @@ OptSpecialMissingInvokeHeapFromGetMethods(?invokeInvocation, ?specialheap) <-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Method object the call returns.
-ArrayIndexPointsTo(?immCtx, ?heap, ?hctx, ?arrayHeap) <-
-  ImmutableHContext[] = ?immCtx,
+ArrayIndexPointsTo(?immCtx, ?value, ?hctx, ?arrayValue) <-
+  ImmutableHContextFromContext[?ctx] = ?immCtx,
   SpecialMissingGetMethodsHeap[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
-  VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?return), 
+  VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return), 
   Context(?ctx). // hack to avoid warning
 
-OptReifiedClass(?type, ?classHeap) ->
-  Type(?type), HeapAllocation(?classHeap).
-OptReifiedClass(?type, ?classHeap) <-
-  ReifiedClass[?type] = ?classHeap.
+OptReifiedClass(?type, ?classValue) ->
+  Type(?type), Value(?classValue).
+OptReifiedClass(?type, ?classValue) <-
+  ReifiedClass:Value[?type] = ?classValue.
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
 OptGetMethodsClass(?type, ?getMethodsInvocation) <-
   (java:lang:Class:getMethods(?getMethodsInvocation, _, ?from);
    java:lang:Class:getDeclaredMethods(?getMethodsInvocation, _, ?from)),
-  VarPointsTo(_, ?classHeap, _, ?from),
-  OptReifiedClass(?type, ?classHeap).
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?type, ?classValue).
 
 
 
 OptInvokeOnSpecialMissingGetMethodsHeap(?getMethodsInvocation , ?ctx, ?invocation) <-
   java:lang:reflect:Method:invoke(?invocation, ?methodVar),
-  VarPointsTo(_, ?specialMethodHeap, ?ctx, ?methodVar),
+  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
+  Value:Heap[?specialMethodValue] = ?specialMethodHeap,
   OptSpecialMissingGetMethodsHeap(?getMethodsInvocation, ?specialMethodHeap).
 
 
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on.
-VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   OptInvokeOnSpecialMissingGetMethodsHeap(?getMethodsInvocation , ?ctx, ?invocation),
   SpecialMissingInvokeHeapFromGetMethods[?getMethodsInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue,
   AssignReturnValue[?invocation] = ?var.
 //// Does nothing but incur cost: filtering to ensure that the base of
 //// the reflective invocation is compatible with what we know about
 //// the class the reflective method came from.
 //  ActualParam[0, ?invocation] = ?base,
-//  VarPointsTo(_, ?heap, ?ctx, ?base),
+//  VarPointsTo(_, ?value, ?ctx, ?base),
 //  OptGetMethodsClass(?type, ?getMethodsInvocation),
-//  HeapAllocation:Type[?heap] = ?heapType,
-//  SupertypeOf(?type, ?heapType).
+//  Value:Type[?value] = ?valueType,
+//  SupertypeOf(?type, ?valueType).
 
 OptMethodType(?signature, ?classtype) ->
   Method(?signature), Type(?classtype).
@@ -825,21 +841,22 @@ OptMethodType(?signature, ?classtype) <-
 
 OptSpecialInvokeHeapCast(?type, ?getMethodsInvocation) <-
   OptAssignCast(?type, _, ?from),
-  VarPointsTo(_, ?specialheap, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingInvokeHeapFromGetMethods(?getMethodsInvocation, ?specialheap).
 
-OptMethodObjectFromInvoke(?methodHeap, ?return) <-
+OptMethodObjectFromInvoke(?methodValue, ?return) <-
   OptSpecialInvokeHeapCast(?type, ?getMethodsInvocation),
   OptGetMethodsClass(?classtype, ?getMethodsInvocation),
   OptMethodType(?signature, ?classtype),
   Method:ReturnType[?signature] = ?type,
   AssignReturnValue[?getMethodsInvocation] = ?return,
-  ReifiedMethod[?signature] = ?methodHeap.
+  ReifiedMethod:Value[?signature] = ?methodValue.
 
 // REVIEW: why reuse the hctx? Just for lack of anything better?
-ArrayIndexPointsTo(?hctx, ?methodHeap, ?hctx, ?arrayHeap) <-
-  OptMethodObjectFromInvoke(?methodHeap, ?return),
-  VarPointsTo(?hctx, ?arrayHeap, _, ?return).
+ArrayIndexPointsTo(?hctx, ?methodValue, ?hctx, ?arrayValue) <-
+  OptMethodObjectFromInvoke(?methodValue, ?return),
+  VarPointsTo(?hctx, ?arrayValue, _, ?return).
 
 
 /**
@@ -852,26 +869,30 @@ OptSpecialMissingGetMethodHeap(?getMethodInvocation, ?specialmethod) <-
 OptSpecialMissingInvokeHeapFromGetMethod(?invokeInvocation, ?specialheap) <-
   SpecialMissingInvokeHeapFromGetMethod[?invokeInvocation] = ?specialheap.
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   SpecialMissingGetMethodHeap[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
   Instruction:Method[?invocation] = ?inmethod,
   ReachableContext(?ctx, ?inmethod).
 
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on. See similar handling of getMethods.
-VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-  
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-  
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Method:invoke(?invocation, ?methodVar),
-  VarPointsTo(_, ?specialMethodHeap, ?ctx, ?methodVar),
+  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
+  Value:Heap[?specialMethodValue] = ?specialMethodHeap,
   OptSpecialMissingGetMethodHeap(?getMethodInvocation, ?specialMethodHeap),
   SpecialMissingInvokeHeapFromGetMethod[?getMethodInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue,
   AssignReturnValue[?invocation] = ?var.
 
 Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation) <-
   OptAssignCast(?type, _, ?from),
-  VarPointsTo(_, ?specialheap, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingInvokeHeapFromGetMethod(?getMethodInvocation, ?specialheap).
 
 UnresolvedGetMethodInvocation(?ctx, ?invocation) ->
@@ -886,22 +907,23 @@ UnresolvedGetMethodInvocation(?ctx, ?invocation) <-
     "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>"),
    ActualParam[0, ?invocation] = ?param,
    VarPointsTo(_, ?nonstring, ?ctx, ?param),
-   !ClassNameMatchingStringConstant(?nonstring).
+   Value:Heap[?nonstring] = ?nonstringHeap,
+   !ClassNameMatchingStringConstant(?nonstringHeap).
 
 OptGetMethodClass(?type, ?ctx, ?getMethodInvocation) <-
   UnresolvedGetMethodInvocation(?ctx, ?getMethodInvocation),
   VirtualMethodInvocation:Base[?getMethodInvocation] = ?from,
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  OptReifiedClass(?type, ?classHeap).
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  OptReifiedClass(?type, ?classValue).
 
-VarPointsTo(?hctx, ?methodHeap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?methodValue, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation),
   OptGetMethodClass(?classtype, ?ctx, ?getMethodInvocation),
   OptMethodType(?signature, ?classtype),
   AssignReturnValue[?getMethodInvocation] = ?return,
   Method:ReturnType[?signature] = ?type,
-  ReifiedMethod[?signature] = ?methodHeap.
+  ReifiedMethod:Value[?signature] = ?methodValue.
 
 
 /**
@@ -916,43 +938,46 @@ OptSpecialMissingGetHeapFromGetFields(?getInvocation, ?specialheap) <-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
-ArrayIndexPointsTo(?immCtx, ?heap, ?hctx, ?arrayHeap) <-
-  ImmutableHContext[] = ?immCtx,
+ArrayIndexPointsTo(?immCtx, ?value, ?hctx, ?arrayValue) <-
+  ImmutableHContextFromContext[?ctx] = ?immCtx,
   SpecialMissingGetFieldsHeap[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
-  VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?return), 
+  VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return), 
   Context(?ctx). // hack to avoid warning
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
 OptGetFieldsClass(?type, ?getFieldsInvocation) <-
   (java:lang:Class:getFields(?getFieldsInvocation, _, ?from);
    java:lang:Class:getDeclaredFields(?getFieldsInvocation, _, ?from)),
-  VarPointsTo(_, ?classHeap, _, ?from),
-  OptReifiedClass(?type, ?classHeap).
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?type, ?classValue).
 
 
 
 OptGetOnSpecialMissingGetFieldsHeap(?getFieldsInvocation , ?ctx, ?invocation) <-
   java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
-  VarPointsTo(_, ?specialFieldHeap, ?ctx, ?fieldVar),
+  VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
+  Value:Heap[?specialFieldValue] = ?specialFieldHeap,
   OptSpecialMissingGetFieldsHeap(?getFieldsInvocation, ?specialFieldHeap).
 
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
-VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   OptGetOnSpecialMissingGetFieldsHeap(?getFieldsInvocation , ?ctx, ?invocation),
   SpecialMissingGetHeapFromGetFields[?getFieldsInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue,
   AssignReturnValue[?invocation] = ?var.
 //// Does nothing but incur cost: filtering to ensure that the base of
 //// the reflective invocation is compatible with what we know about
 //// the class the reflective field came from.
 //  ActualParam[0, ?invocation] = ?base,
-//  VarPointsTo(_, ?heap, ?ctx, ?base),
+//  VarPointsTo(_, ?value, ?ctx, ?base),
 //  OptGetFieldsClass(?type, ?getFieldsInvocation),
-//  HeapAllocation:Type[?heap] = ?heapType,
-//  SupertypeOf(?type, ?heapType).
+//  Value:Type[?value] = ?valueType,
+//  SupertypeOf(?type, ?valueType).
 
 OptFieldType(?type, ?signature, ?declaringClassType) ->
    Field(?signature), Type(?declaringClassType), Type(?type).
@@ -967,21 +992,22 @@ OptFieldType(?type, ?signature, ?declaringClassType) <-
 
 OptSpecialGetHeapCast(?type, ?getFieldsInvocation) <-
   OptAssignCast(?type, _, ?from),
-  VarPointsTo(_, ?specialheap, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingGetHeapFromGetFields(?getFieldsInvocation, ?specialheap).
 
-OptFieldObjectFromGet(?fieldHeap, ?return) <-
+OptFieldObjectFromGet(?fieldValue, ?return) <-
   OptSpecialGetHeapCast(?type, ?getFieldsInvocation),
   OptGetFieldsClass(?classtype, ?getFieldsInvocation),
   OptFieldType(?type, ?signature, ?classtype),
   // REVIEW: the real test shouldn't be for type identity
   AssignReturnValue[?getFieldsInvocation] = ?return,
-  ReifiedField[?signature] = ?fieldHeap.
+  ReifiedField:Value[?signature] = ?fieldValue.
 
 // REVIEW: why reuse the hctx? Just for lack of anything better?
-ArrayIndexPointsTo(?hctx, ?fieldHeap, ?hctx, ?arrayHeap) <-
-  OptFieldObjectFromGet(?fieldHeap, ?return),
-  VarPointsTo(?hctx, ?arrayHeap, _, ?return).
+ArrayIndexPointsTo(?hctx, ?fieldValue, ?hctx, ?arrayValue) <-
+  OptFieldObjectFromGet(?fieldValue, ?return),
+  VarPointsTo(?hctx, ?arrayValue, _, ?return).
   
 
 /**
@@ -994,26 +1020,30 @@ OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialfield) <-
 OptSpecialMissingGetHeapFromGetField(?getInvocation, ?specialheap) <-
   SpecialMissingGetHeapFromGetField[?getInvocation] = ?specialheap.
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   SpecialMissingGetFieldHeap[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value,
   AssignReturnValue[?invocation] = ?return,
   Instruction:Method[?invocation] = ?inmethod,
   ReachableContext(?ctx, ?inmethod).
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on. See similar handling of getFields.
-VarPointsTo(?hctx, ?specialheap, ?ctx, ?var) <-  
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) <-  
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
-  VarPointsTo(_, ?specialFieldHeap, ?ctx, ?fieldVar),
+  VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
+  Value:Heap[?specialFieldValue] = ?specialFieldHeap,
   OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialFieldHeap),
   SpecialMissingGetHeapFromGetField[?getFieldInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue,
   AssignReturnValue[?invocation] = ?var.
 
 Opt2SpecialGetHeapCast(?type, ?getFieldInvocation) <-
   OptAssignCast(?type, _, ?from),
-  VarPointsTo(_, ?specialheap, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingGetHeapFromGetField(?getFieldInvocation, ?specialheap).
 
 UnresolvedGetFieldInvocation(?ctx, ?invocation) ->
@@ -1028,29 +1058,30 @@ UnresolvedGetFieldInvocation(?ctx, ?invocation) <-
     "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>"),
    ActualParam[0, ?invocation] = ?param,
    VarPointsTo(_, ?nonstring, ?ctx, ?param),
-   !ClassNameMatchingStringConstant(?nonstring).
+   Value:Heap[?nonstring] = ?nonstringHeap,
+   !ClassNameMatchingStringConstant(?nonstringHeap).
 
 OptGetFieldClass(?type, ?ctx, ?getFieldInvocation) <-
   UnresolvedGetFieldInvocation(?ctx, ?getFieldInvocation),
   VirtualMethodInvocation:Base[?getFieldInvocation] = ?from,
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  OptReifiedClass(?type, ?classHeap).
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  OptReifiedClass(?type, ?classValue).
 
-VarPointsTo(?hctx, ?fieldHeap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?fieldValue, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   Opt2SpecialGetHeapCast(?type, ?getFieldInvocation),
   OptGetFieldClass(?classtype, ?ctx, ?getFieldInvocation),
   OptFieldType(?type, ?signature, ?classtype),
   AssignReturnValue[?getFieldInvocation] = ?return,
-  ReifiedField[?signature] = ?fieldHeap.
+  ReifiedField:Value[?signature] = ?fieldValue.
 
 #endif // REFLECTION_USE_BASED_ANALYSIS
 
 #ifdef REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 // Propagate the marker object everywhere
-VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   VirtualMethodInvocation:Insn(?invocation),
   (MethodInvocation:Signature[?invocation] = "<java.lang.Class: java.lang.Object newInstance()>" ;
    MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>" ;
@@ -1059,20 +1090,16 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?return) <-
   Instruction:Method[?invocation] = ?inmethod,
   ReachableContext(?ctx, ?inmethod),
   AssignReturnValue[?invocation] = ?return,
-  MarkerReflectiveObject[?invocation] = ?heap.
+  MarkerReflectiveObject[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value.
 
 Opt2AssignCast(?inmethod, ?type, ?to, ?from) ->
   Method(?inmethod), Var(?from), Var(?to), Type(?type).
 Opt2AssignCast(?inmethod, ?supertype, ?to, ?from) <-
   AssignCast(?supertype, ?from, ?to, ?inmethod).
 
-OptSpecialObjectOfTypeObject(?specialheap) <-
-  SpecialObject(?specialheap),
-  HeapAllocation:Type[?specialheap] = ?specialtype,
-  Type:Value(?specialtype:"java.lang.Object").
-
 OptMarkerReflectiveObject(?invocation, ?heap) ->
-  HeapAllocation(?heap), MethodInvocation(?invocation).
+  MethodInvocation(?invocation), HeapAllocation(?heap).
 OptMarkerReflectiveObject(?invocation, ?heap) <-
   MarkerReflectiveObject[?invocation] = ?heap.
 
@@ -1080,11 +1107,13 @@ OptMarkerReflectiveObject(?invocation, ?heap) <-
 // flow to it, we invent a new object (with the cast's type) and let if flow
 // from the cast!
 // REVIEW: the reuse of hctx is arbitrary
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-  
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-  
   Opt2AssignCast(_, ?type, ?to, ?from),
-  VarPointsTo(?hctx, ?markerheap, ?ctx, ?from),
+  VarPointsTo(?hctx, ?markervalue, ?ctx, ?from),
+  Value:Heap[?markervalue] = ?markerheap,
   OptMarkerReflectiveObject(?invocation, ?markerheap),
-  UnknownReflectiveObject[?type, ?invocation] = ?heap.
+  UnknownReflectiveObject[?type, ?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value.
 
 //// Not sure this pays off. Even worse, it is too slow to generate
 //// all possible unknown objects via delta logic.
@@ -1107,10 +1136,12 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 #endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 
+ReflectiveValue(?value) <- TempHeap(?heap), Value:byHeap[?heap] = ?value.
+
 #define TempDelta(invocation, classType, heapType, heapStr) \
-   MockupHeapConsMacro(heapStr, heapType, heap), \
-   ReflectiveHeap(heap), \
-   ReflectiveHeapAllocation[invocation, classType] = heap
+   MockHeapConsMacro(heapStr, heapType, heap), \
+   TempHeap(heap), \
+   ReflectiveAllocation[invocation, classType] = heap
 
 OptMethodInvocation:Signature(?invocation, ?sig) <-
    MethodInvocation:Signature[?invocation] = ?sig.
@@ -1119,7 +1150,7 @@ OptMethodInvocation:Signature(?invocation, ?sig) <-
  * NOTE "?sig" is reserved for this macro
  */
 #define VirtualMethodMacro(invocation, to, from, sigStr) \
-   Method:Value(sig:sigStr), \
+   Method:Id(sig:sigStr), \
    OptMethodInvocation:Signature(invocation, sig), \
    AssignReturnValue[invocation] = to, \
    VirtualMethodInvocation:Base[invocation] = from
@@ -1128,24 +1159,24 @@ OptMethodInvocation:Signature(?invocation, ?sig) <-
  * We assume that the array is allocated inside the method, before being returned.
  * NOTE "?invocationStr" and "?typeStr" are reserved for this macro
  */
-#define ReflectiveArrayMacro(invocation, type, arrayType, arrayHeapStr, arrayTypeStr) \
-   Instruction:Value(invocation:?invocationStr), \
-   Type:Value(type:?typeStr), \
-   ArrayType(arrayType), Type:Value(arrayType:arrayTypeStr), \
-   arrayHeapStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
+#define ReflectiveArrayMacro(invocation, type, arrayType, arrayValueStr, arrayTypeStr) \
+   Instruction:Id(invocation:?invocationStr), \
+   Type:Id(type:?typeStr), \
+   ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
+   arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
 
-#define ReflectiveKnownArrayMacro(invocation, arrayType, arrayHeapStr, arrayTypeStr) \
-   Instruction:Value(invocation:?invocationStr), \
-   ArrayType(arrayType), Type:Value(arrayType:arrayTypeStr), \
-   arrayHeapStr = "<reflective "+ ?invocationStr +"/new "+ arrayTypeStr +">"
+#define ReflectiveKnownArrayMacro(invocation, arrayType, arrayValueStr, arrayTypeStr) \
+   Instruction:Id(invocation:?invocationStr), \
+   ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
+   arrayValueStr = "<reflective "+ ?invocationStr +"/new "+ arrayTypeStr +">"
 
 
 java:lang:Object:getClass(?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Object: java.lang.Class getClass()>").
 
 java:lang:Class:forName(?invocation, ?inmethod) <-
-  ( Method:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    Method:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+  ( Method:Id(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Id(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
 
 java:lang:Class:getName(?to, ?from) <-
@@ -1227,9 +1258,9 @@ java:lang:Class:getDeclaredField(?to, ?param, ?from) <-
 TempDelta(?invocation, ?type, ?type, ?heapStr),
 java:lang:Class:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
-  ClassType(?type), Type:Value(?type:?typeStr),
+  ClassType(?type), Type:Id(?type:?typeStr),
 #ifdef REFLECTION_REFINED_OBJECTS
-  Instruction:Value@prev(?invocation:?invocationStr),
+  Instruction:Id@prev(?invocation:?invocationStr),
   ?heapStr = "<reflective Class.newInstance/" + ?invocationStr + ?typeStr + ">".
 #else
 // REVIEW: Does this merging lose precision?
@@ -1239,16 +1270,16 @@ java:lang:Class:newInstance(?invocation, ?to, ?from) <-
 TempDelta(?invocation, ?type, ?type, ?heapStr),
 java:lang:Class:getClassLoader(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.ClassLoader getClassLoader()>"),
-  // Use a single dummy heap object for any ClassLoader
-  Type:Value(?type:"java.lang.ClassLoader"),
+  // Use a single dummy value for any ClassLoader
+  Type:Id(?type:"java.lang.ClassLoader"),
   ReferenceType(?type),
   ?heapStr = "<reflective dummy ClassLoader>".
 
 TempDelta(?invocation, ?type, ?type, ?heapStr),
 java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.ClassLoader: java.net.URL getResource(java.lang.String)>"),
-  // Use a single dummy heap object for any URL resource
-  Type:Value(?type:"java.net.URL"),
+  // Use a single dummy value for any URL resource
+  Type:Id(?type:"java.net.URL"),
   ReferenceType(?type),
   ?heapStr = "<reflective dummy URL resource>".
 
@@ -1257,7 +1288,7 @@ java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
  */
 TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
 java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
-  Method:Value(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
+  Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   MethodInvocation:Signature[?invocation] = ?sig,
   StaticMethodInvocation:Insn(?invocation),
   AssignReturnValue[?invocation] = ?to,
@@ -1269,9 +1300,9 @@ java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
 TempDelta(?invocation, ?type, ?type, ?heapStr),
 java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
-  ClassType(?type), Type:Value(?type:?typeStr),
+  ClassType(?type), Type:Id(?type:?typeStr),
 #ifdef REFLECTION_REFINED_OBJECTS
-  Instruction:Value(?invocation:?invocationStr),
+  Instruction:Id(?invocation:?invocationStr),
   ?heapStr = "<reflective Constructor.newInstance/" + ?invocationStr + ?typeStr + ">".
 #else
 // REVIEW: Does this merging lose precision?
@@ -1287,28 +1318,28 @@ java:lang:reflect:Field:get:base[?invocation] = ?base <-
   ActualParam[0, ?invocation] = ?base.
 
 java:lang:reflect:Field:set(?invocation, ?from, ?field) <-
-  Method:Value(?signature:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+  Method:Id(?signature:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
   MethodInvocation:Signature[?invocation] = ?signature,
   VirtualMethodInvocation:Base[?invocation] = ?field,
   ActualParam[1, ?invocation] = ?from.
 
 java:lang:reflect:Field:set:base[?invocation] = ?base <-
-  Method:Value(?signature:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+  Method:Id(?signature:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
   MethodInvocation:Signature[?invocation] = ?signature,
   VirtualMethodInvocation:Insn(?invocation),
   ActualParam[0, ?invocation] = ?base.
 
 java:lang:reflect:Method:invoke(?invocation, ?method) <-
-  Method:Value(?signature:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+  Method:Id(?signature:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   MethodInvocation:Signature[?invocation] = ?signature,
   VirtualMethodInvocation:Base[?invocation] = ?method.
 
 
 
 /*************************************************************
- * We use a distinct heap abstraction for every java.lang.Class, i.e., for
+ * We use a distinct value abstraction for every java.lang.Class, i.e., for
  * every class type that appears in the bytecode, for example '<class
- * java.lang.String>'. The predicate ReifiedClass is used to look up the heap
+ * java.lang.String>'. The predicate ReifiedClass is used to look up the value
  * abstraction for a given type.
  *
  * Objects created by newInstance invocations are represented by a generated
@@ -1316,175 +1347,188 @@ java:lang:reflect:Method:invoke(?invocation, ?method) <-
  * type of the allocated object.
  *************************************************************/
 
-ClassHeapConsMacro(?classHeapId, ?javaLangClass, ?classHeap),
-ReifiedClass[?type] = ?classHeap
+ClassHeapConsMacro(?classValueId, ?javaLangClass, ?classValue),
+ReifiedClass[?type] = ?classValue
 <-
   ReferenceType(?type),
-  Type:Value(?type:?typeStr),
-  ?classHeapId = "<class " + ?typeStr + ">",
-  Type:Value(?javaLangClass:"java.lang.Class").
+  Type:Id(?type:?typeStr),
+  ?classValueId = "<class " + ?typeStr + ">",
+  Type:Id(?javaLangClass:"java.lang.Class").
 
 /**
  * Heap allocations for reified constructors (java.lang.reflect.Constructor)
  */
-MockupHeapConsMacro(?id, ?type, ?heap),
-ReifiedConstructor[?signature] = ?heap
+MockHeapConsMacro(?id, ?type, ?value),
+ReifiedConstructor[?signature] = ?value
 <-
    Method:SimpleName[?signature] = "<init>",
-   Method:Value(?signature:?strSignature),
+   Method:Id(?signature:?strSignature),
    ?id = "<<reified constructor " + ?strSignature + ">>",
-   Type:Value(?type:"java.lang.reflect.Constructor").
+   Type:Id(?type:"java.lang.reflect.Constructor").
 
 /**
  * Heap allocations for reified methods (java.lang.reflect.Method).
  */
-MockupHeapConsMacro(?id, ?type, ?heap),
-ReifiedMethod[?signature] = ?heap
+MockHeapConsMacro(?id, ?type, ?value),
+ReifiedMethod[?signature] = ?value
 <-
    Method:SimpleName[?signature] = ?simplename,
    ?simplename != "<init>", ?simplename != "<clinit>",
-   Method:Value(?signature:?strSignature),
+   Method:Id(?signature:?strSignature),
    ?id = "<<reified method " + ?strSignature + ">>",
-   Type:Value(?type:"java.lang.reflect.Method").
+   Type:Id(?type:"java.lang.reflect.Method").
 
 /**
  * Heap allocations for reified fields (java.lang.reflect.Field).
  */
-MockupHeapConsMacro(?id, ?type, ?heap),
-ReifiedField[?fld] = ?heap
+MockHeapConsMacro(?id, ?type, ?value),
+ReifiedField[?fld] = ?value
 <-
-   Field:Value(?fld:?signature),
+   Field:Id(?fld:?signature),
    ?id = "<<reified field " + ?signature + ">>",
-   Type:Value(?type:"java.lang.reflect.Field").
+   Type:Id(?type:"java.lang.reflect.Field").
+
+ReifiedClass:Value[?type] = ?value <-
+   ReifiedClass[?type] = ?heap,
+   Value:byHeap[?heap] = ?value.
+ReifiedConstructor:Value[?sig] = ?value <-
+   ReifiedConstructor[?sig] = ?heap,
+   Value:byHeap[?heap] = ?value.
+ReifiedMethod:Value[?sig] = ?value <-
+   ReifiedMethod[?sig] = ?heap,
+   Value:byHeap[?heap] = ?value.
+ReifiedField:Value[?fld] = ?value <-
+   ReifiedField[?fld] = ?heap,
+   Value:byHeap[?heap] = ?value.
 
 
 
 #ifdef REFLECTION_USE_BASED_ANALYSIS
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingForNameHeap[?invocation] = ?heap
 <-
-   (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   (Method:Id(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Id(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
    StaticMethodInvocation(?invocation, ?forName, _),
-   Type:Value(?type:"java.lang.Class"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Class"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing forName values " + ?strInvocation + ">".
 
 // Note how the return type is that of newInstance (Object), although the relation remembers the forName
 // call that produced the Class on which newInstance got called.
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingNewInstanceHeap[?invocation] = ?heap
 <-
-   (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   (Method:Id(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Id(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
    StaticMethodInvocation(?invocation, ?forName, _),
-   Type:Value(?type:"java.lang.Object"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Object"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing newInstance values " + ?strInvocation + ">".
 
-// Special heap value that propagates through all constructor calls and remembers the original forName 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+// Special value value that propagates through all constructor calls and remembers the original forName 
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetConstructorHeap[?invocation] = ?heap
 <-
-   (Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
-    Method:Value(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
+   (Method:Id(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    Method:Id(?forName:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>")),
    StaticMethodInvocation(?invocation, ?forName, _),
-   Type:Value(?type:"java.lang.reflect.Constructor"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.reflect.Constructor"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Constructor[s] values " + ?strInvocation + ">".
 
 // getMethods and getDeclaredMethods are handled the same in terms of detecting
 // where their unknown result flows to. Note how the return type is a single Method
 // and not an array. The array is always there, the special value just gets added to
 // its contents to represent all unknown methods collectively.
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetMethodsHeap[?invocation] = ?heap
 <-
-   (Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-    Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
+   (Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
    MethodInvocation:Signature[?invocation] = ?getMethods,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.reflect.Method"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.reflect.Method"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Methods values " + ?strInvocation + ">".
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap
 <-
-   (Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-    Method:Value(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
+   (Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
+    Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
    MethodInvocation:Signature[?invocation] = ?getMethods,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.Object"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Object"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetMethodHeap[?invocation] = ?heap
 <-
-   (Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
-    Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
+   (Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
+    Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
    MethodInvocation:Signature[?invocation] = ?getMethod,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.reflect.Method"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.reflect.Method"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Method values " + ?strInvocation + ">".
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap
 <-
-   (Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
-    Method:Value(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
+   (Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
+    Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
    MethodInvocation:Signature[?invocation] = ?getMethod,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.Object"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Object"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
 
 // Special objects for get[Declared]Field[s]. Very similar to methods.
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetFieldsHeap[?invocation] = ?heap
 <-
-   (Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-    Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
+   (Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
    MethodInvocation:Signature[?invocation] = ?getFields,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.reflect.Field"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.reflect.Field"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Fields values " + ?strInvocation + ">".
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetHeapFromGetFields[?invocation] = ?heap
 <-
-   (Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-    Method:Value(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
+   (Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
+    Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
    MethodInvocation:Signature[?invocation] = ?getFields,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.Object"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Object"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetFieldHeap[?invocation] = ?heap
 <-
-   (Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
-    Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
+   (Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
+    Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
    MethodInvocation:Signature[?invocation] = ?getField,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.reflect.Field"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.reflect.Field"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get[Declared]Field values " + ?strInvocation + ">".
 
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetHeapFromGetField[?invocation] = ?heap
 <-
-   (Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
-    Method:Value(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
+   (Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
+    Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
    MethodInvocation:Signature[?invocation] = ?getField,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.Object"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Object"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
 
 #endif // REFLECTION_USE_BASED_ANALYSIS
@@ -1494,34 +1538,34 @@ SpecialMissingGetHeapFromGetField[?invocation] = ?heap
 
 // This is the representative of an unknown reflective object, after it has been cast. 
 // Has a real type. We pre-generate for all types and casts in the universe.
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 UnknownReflectiveObject[?type, ?invocation] = ?heap
 <-
    AssignCast(?type, _, _, _),
    ClassType(?type),
-   Type:Value(?type:?strType),
-   (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-    Method:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-    Method:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-    Method:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   Type:Id(?type:?strType),
+   (Method:Id(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    Method:Id(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    Method:Id(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    Method:Id(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
    MethodInvocation:Signature[?invocation] = ?method,
    VirtualMethodInvocation:Insn(?invocation),
-   Instruction:Value(?invocation:?strInvocation),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">>".
 
 // This is the representative of an unknown reflective object that flows from the reflection
 // operation to a cast.
-MockupHeapConsMacro(?strHeap, ?type, ?heap),
+MockHeapConsMacro(?strHeap, ?type, ?heap),
 MarkerReflectiveObject[?invocation] = ?heap
 <-
-   (Method:Value(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-    Method:Value(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-    Method:Value(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-    Method:Value(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
+   (Method:Id(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
+    Method:Id(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
+    Method:Id(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
+    Method:Id(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
    MethodInvocation:Signature[?invocation] = ?method,
    VirtualMethodInvocation:Insn(?invocation),
-   Type:Value(?type:"java.lang.Object"),
-   Instruction:Value(?invocation:?strInvocation),
+   Type:Id(?type:"java.lang.Object"),
+   Instruction:Id(?invocation:?strInvocation),
    ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
 
 #endif // REFLECTION_INVENT_UNKNOWN_OBJECTS

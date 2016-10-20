@@ -13,12 +13,12 @@
 /**
  * Evaluate Object.getClass
  */
-VarPointsTo(?hctx, ?classHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Object:getClass(?to, ?from),
-  VarPointsTo(_, ?heap, ?ctx, ?from),
-  HeapAllocation:Type[?heap] = ?type,
-  ReifiedClass[?type] = ?classHeap.
+  VarPointsTo(_, ?value, ?ctx, ?from),
+  Value:Type[?value] = ?type,
+  ReifiedClass:Value[?type] = ?classValue.
 
 
 /*************************************************************
@@ -50,7 +50,8 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   ReachableContext(?ctx, ?inmethod),
   ActualParam[0, ?invocation] = ?param,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  ClassNameMatchingStringConstant:Type(?type, ?constant).
+  Value:Heap[?constant] = ?constantHeap,
+  ClassNameMatchingStringConstant:Type(?type, ?constantHeap).
 
 /**
  * Class.forName invocations with user-configured dynamic classes
@@ -67,15 +68,15 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
  *   public String getName()
  *************************************************************/
 
-VarPointsTo(?hctx, ?classNameHeap, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getName(?to, ?from),
-  VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
-  HeapAllocation:Value[?classHeap] = ?str,
-  // ?str is of the form "<class TYPE>" ; we want TYPE
-  string:substring[?str, 7, string:length[?str] - 8] = ?className,
-  HeapAllocation:byValue[?className] = ?classNameHeap,
-  StringConstant(?classNameHeap).
+  VarPointsTo(_, ?classValue, ?callerCtx, ?from),
+  ClassHeap:InstanceType[Value:Heap[?classValue]] = ?instanceType,
+  Type:Id(?instanceType:?className),
+  HeapAllocation:byId[?className] = ?classNameHeap,
+  StringConstant(?classNameHeap),
+  Value:byHeap[?classNameHeap] = ?classNameValue.
 
 
 /*************************************************************
@@ -84,13 +85,13 @@ VarPointsTo(?hctx, ?classNameHeap, ?callerCtx, ?to) <-
  *   public Class<?> getComponentType()
  *************************************************************/
 
-VarPointsTo(?hctx, ?componentClassHeap, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) <-
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getComponentType(?to, ?from),
-  VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
-  ReifiedClass[?type] = ?classHeap,
+  VarPointsTo(_, ?classValue, ?callerCtx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
   ArrayType(?type), ComponentType[?type] = ?componentType,
-  ReifiedClass[?componentType] = ?componentClassHeap.
+  ReifiedClass:Value[?componentType] = ?componentClassValue.
 
 
 /*************************************************************
@@ -104,21 +105,21 @@ VarPointsTo(?hctx, ?componentClassHeap, ?callerCtx, ?to) <-
  * TODO should (can?) we handle null (for NullPointerException)?
  *************************************************************/
 
-VarPointsTo(?hctx, ?superClassHeap, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
-  VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
-  ReifiedClass[?type] = ?classHeap,
+  VarPointsTo(_, ?classValue, ?callerCtx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
   ClassType(?type), DirectSuperclass[?type] = ?superType,
-  ReifiedClass[?superType] = ?superClassHeap.
+  ReifiedClass:Value[?superType] = ?superClassValue.
 
-VarPointsTo(?hctx, ?superClassHeap, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
-  VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
-  ReifiedClass[?type] = ?classHeap,
-  ArrayType(?type), Type:Value(?superType:"java.lang.Object"),
-  ReifiedClass[?superType] = ?superClassHeap.
+  VarPointsTo(_, ?classValue, ?callerCtx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
+  ArrayType(?type), Type:Id(?superType:"java.lang.Object"),
+  ReifiedClass:Value[?superType] = ?superClassValue.
 
 
 /*************************************************************
@@ -127,18 +128,19 @@ VarPointsTo(?hctx, ?superClassHeap, ?callerCtx, ?to) <-
  *   public Class<?>[] getInterfaces()
  *************************************************************/
 
-ArrayIndexPointsTo(?hctx, ?superInterfaceHeap, ?hctx, ?arrayHeap) <-
-  FillArray:Interfaces(?hctx, ?arrayHeap, ?type),
+ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) <-
+  FillArray:Interfaces(?hctx, ?arrayValue, ?type),
   DirectSuperinterface(?type, ?superInterface),
-  ReifiedClass[?superInterface] = ?superInterfaceHeap.
+  ReifiedClass:Value[?superInterface] = ?superInterfaceValue.
 
-FillArray:Interfaces(?hctx, ?arrayHeap, ?type),
-VarPointsTo(?hctx, ?arrayHeap, ?callerCtx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:Interfaces(?hctx, ?arrayValue, ?type),
+VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) <-
+  ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getInterfaces(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?callerCtx, ?from),
-  ReifiedClass[?type] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?callerCtx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
+  ReflectiveAllocation[?invocation, ?type] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
 
 /*************************************************************
@@ -152,65 +154,69 @@ VarPointsTo(?hctx, ?arrayHeap, ?callerCtx, ?to) <-
 
 /*
 //VERSION-A
-ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
-  FillArray:PublicMethods(?hctx, ?arrayHeap, ?type),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
+  FillArray:PublicMethods(?hctx, ?arrayValue, ?type),
   Method:DeclaringType[?signature] = ?type,
   Method:Modifier("public", ?signature),
-  ReifiedMethod[?signature] = ?heap,
+  ReifiedMethod:Value[?signature] = ?value,
   MethodNameMatchingStringConstant:Signature(?signature, _).
 // we assume the returned methods will be filtered by some string
 */
 
-FillArray:PublicMethods(?hctx, ?arrayHeap, ?type),
-VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:PublicMethods(?hctx, ?arrayValue, ?type),
+VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getMethods(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
+  ReflectiveAllocation[?invocation, ?type] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
 // NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
 // TODO Merge common parts
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getMethod(?to, ?param, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
   Method:DeclaringType[?signature] = ?type,
   Method:Modifier("public", ?signature),
-  ReifiedMethod[?signature] = ?heap,
+  ReifiedMethod:Value[?signature] = ?value,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  MethodNameMatchingStringConstant:Signature(?signature, ?constant).
+  Value:Heap[?constant] = ?constantHeap,
+  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap).
 
 /*
 //VERSION-A
 // REVIEW: why reuse the hctx? Just for lack of anything better? Also later.
-ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
-  FillArray:Methods(?hctx, ?arrayHeap, ?type),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
+  FillArray:Methods(?hctx, ?arrayValue, ?type),
   Method:DeclaringType[?signature] = ?type,
-  ReifiedMethod[?signature] = ?heap,
+  ReifiedMethod:Value[?signature] = ?value,
   MethodNameMatchingStringConstant:Signature(?signature, _).
 */
 
-FillArray:Methods(?hctx, ?arrayHeap, ?type),
-VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:Methods(?hctx, ?arrayValue, ?type),
+VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredMethods(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
+  ReflectiveAllocation[?invocation, ?type] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredMethod(?to, ?param, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
   Method:DeclaringType[?signature] = ?type,
-  ReifiedMethod[?signature] = ?heap,
+  ReifiedMethod:Value[?signature] = ?value,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  MethodNameMatchingStringConstant:Signature(?signature, ?constant).
+  Value:Heap[?constant] = ?constantHeap,
+  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap).
 
 
 /*************************************************************
@@ -224,55 +230,57 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 
 /*
 //VERSION-A
-ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
-  FillArray:PublicConstructors(?hctx, ?arrayHeap, ?classHeap),
-  OptClassToConstructor(?constructor, ?classHeap),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
+  FillArray:PublicConstructors(?hctx, ?arrayValue, ?classValue),
+  OptClassToConstructor(?constructor, ?classValue),
   Method:Modifier("public", ?constructor),
-  ReifiedConstructor[?constructor] = ?heap.
+  ReifiedConstructor:Value[?constructor] = ?value.
 */
 
-FillArray:PublicConstructors(?hctx, ?arrayHeap, ?classHeap),
-VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:PublicConstructors(?hctx, ?arrayValue, ?classValue),
+VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getConstructors(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?class] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?class] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?class] = ?classValue,
+  ReflectiveAllocation[?invocation, ?class] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getConstructor(?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  OptClassToConstructor(?constructor, ?classHeap),
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  OptClassToConstructor(?constructor, ?classValue),
   Method:Modifier("public", ?constructor),
-  ReifiedConstructor[?constructor] = ?heap.
+  ReifiedConstructor:Value[?constructor] = ?value.
 
 /*
 //VERSION-A
-ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
-  FillArray:Constructors(?hctx, ?arrayHeap, ?classHeap),
-  OptClassToConstructor(?constructor, ?classHeap),
-  ReifiedConstructor[?constructor] = ?heap.
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
+  FillArray:Constructors(?hctx, ?arrayValue, ?classValue),
+  OptClassToConstructor(?constructor, ?classValue),
+  ReifiedConstructor:Value[?constructor] = ?value.
 */
 
-FillArray:Constructors(?hctx, ?arrayHeap, ?classHeap),
-VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:Constructors(?hctx, ?arrayValue, ?classValue),
+VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?class] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?class] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?class] = ?classValue,
+  ReflectiveAllocation[?invocation, ?class] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredConstructor(?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  OptClassToConstructor(?constructor, ?classHeap),
-  ReifiedConstructor[?constructor] = ?heap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  OptClassToConstructor(?constructor, ?classValue),
+  ReifiedConstructor:Value[?constructor] = ?value.
 
 
 /*************************************************************
@@ -295,64 +303,68 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
 
 /*
 //VERSION-A
-ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
-  FillArray:PublicFields(?hctx, ?arrayHeap, ?type),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
+  FillArray:PublicFields(?hctx, ?arrayValue, ?type),
   SupertypeOf(?superClass, ?type),
   Field:DeclaringType[?fld] = ?superClass,
   Field:Modifier("public", ?fld),
-  ReifiedField[?fld] = ?heap,
+  ReifiedField:Value[?fld] = ?value,
   FieldNameMatchingStringConstant:Signature(?fld, _).
 */
 
-FillArray:PublicFields(?hctx, ?arrayHeap, ?type),
-VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:PublicFields(?hctx, ?arrayValue, ?type),
+VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getFields(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
+  ReflectiveAllocation[?invocation, ?type] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
 // NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getField(?to, ?param, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  FieldNameMatchingStringConstant:Signature(?fld, ?constant),
+  Value:Heap[?constant] = ?constantHeap,
+  FieldNameMatchingStringConstant:Signature(?fld, ?constantHeap),
   SupertypeOf(?superClass, ?type),
   Field:DeclaringType[?fld] = ?superClass,
   Field:Modifier("public", ?fld),
-  ReifiedField[?fld] = ?heap.
+  ReifiedField:Value[?fld] = ?value.
 
 /*
 //VERSION-A
-ArrayIndexPointsTo(?hctx, ?heap, ?hctx, ?arrayHeap) <-
-  FillArray:Fields(?hctx, ?arrayHeap, ?class),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
+  FillArray:Fields(?hctx, ?arrayValue, ?class),
   Field:DeclaringType[?fld] = ?class,
-  ReifiedField[?fld] = ?heap,
+  ReifiedField:Value[?fld] = ?value,
   FieldNameMatchingStringConstant:Signature(?fld, _).
 */
 
-FillArray:Fields(?hctx, ?arrayHeap, ?type),
-VarPointsTo(?hctx, ?arrayHeap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+FillArray:Fields(?hctx, ?arrayValue, ?type),
+VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredFields(?invocation, ?to, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
-  ReflectiveHeapAllocation[?invocation, ?type] = ?arrayHeap.
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
+  ReflectiveAllocation[?invocation, ?type] = ?arrayHeap,
+  Value:byHeap[?arrayHeap] = ?arrayValue.
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredField(?to, ?param, ?from),
-  VarPointsTo(_, ?classHeap, ?ctx, ?from),
-  ReifiedClass[?type] = ?classHeap,
+  VarPointsTo(_, ?classValue, ?ctx, ?from),
+  ReifiedClass:Value[?type] = ?classValue,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  FieldNameMatchingStringConstant:Signature(?fld, ?constant),
+  Value:Heap[?constant] = ?constantHeap,
+  FieldNameMatchingStringConstant:Signature(?fld, ?constantHeap),
   Field:DeclaringType[?fld] = ?type,
-  ReifiedField[?fld] = ?heap.
+  ReifiedField:Value[?fld] = ?value.
 
 
 /*************************************************************
@@ -375,12 +387,12 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
  *************************************************************/
 
 // Simple optimization predicate. It matters.
-OptClassToConstructor(?constructor, ?classHeap) <-
-  ReifiedClass[?type] = ?classHeap,
+OptClassToConstructor(?constructor, ?classValue) <-
+  ReifiedClass:Value[?type] = ?classValue,
   Method:DeclaringType[?constructor] = ?type,
   Method:SimpleName[?constructor] = "<init>".
 
-ReflectiveAssignHeapAllocation(?invocation, ?type, ?ctx, ?to),
+AssignReflectiveAllocation(?invocation, ?type, ?ctx, ?to),
 ReflectiveSpecialMethodInvocation(?invocation, ?constructor, ?ctx, ?to),
 ReflectiveBaseVar[?invocation] = ?to <-
   java:lang:Class:newInstance(?invocation, ?to, ?from),
@@ -395,15 +407,16 @@ ReflectiveBaseVar[?invocation] = ?to <-
  *   public ClassLoader getClassLoader()
  *
  * NOTE  
- * We just create a dummy heap object to represent the ClassLoader returned.
+ * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getClassLoader(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
-  Type:Value(?type:"java.lang.ClassLoader"),
-  ReflectiveHeapAllocation[?invocation, ?type] = ?heap.
+  Type:Id(?type:"java.lang.ClassLoader"),
+  ReflectiveAllocation[?invocation, ?type] = ?heap,
+  Value:byHeap[?heap] = ?value.
   
 /*************************************************************
  * java.lang.ClassLoader.getResource
@@ -411,12 +424,13 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
  *   public URL getResource(java.lang.String)
  *
  * NOTE  
- * We just create a dummy heap object to represent the URL resource returned.
+ * We just create a dummy value to represent the URL resource returned.
  *************************************************************/
-VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
-  ImmutableHContext[] = ?hctx,
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
-  Type:Value(?type:"java.net.URL"),
-  ReflectiveHeapAllocation[?invocation, ?type] = ?heap.
+  Type:Id(?type:"java.net.URL"),
+  ReflectiveAllocation[?invocation, ?type] = ?heap,
+  Value:byHeap[?heap] = ?value.

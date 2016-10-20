@@ -36,7 +36,7 @@ RealHContext2FromHContext[?hctx] = ?heap2 <-
 
 HContext(?hctx),
 HContextFromRealHContext[?immutable, ?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
+ImmutableHContext(?hctx) <-
   // Special immutable heap allocation constant
   HeapAllocationValue(?immutable, "<<immutable>>").
 

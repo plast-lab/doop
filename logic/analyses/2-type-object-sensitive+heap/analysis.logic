@@ -1,76 +1,76 @@
 RealContext1FromContext[?ctx] = ?type,
-RealContext2FromContext[?ctx] = ?heap <-
-  ContextFromRealContext[?type, ?heap] = ?ctx.
+RealContext2FromContext[?ctx] = ?value <-
+  ContextFromRealContext[?type, ?value] = ?ctx.
 
-RealHContextFromHContext[?hctx] = ?heap <-
-  HContextFromRealHContext[?heap] = ?hctx.
+RealHContextFromHContext[?hctx] = ?value <-
+  HContextFromRealHContext[?value] = ?hctx.
 
 Context(?ctx),
-ContextFromRealContext[?type, ?heap] = ?ctx,
-ImmutableContext[] = ?ctx <-
+ContextFromRealContext[?type, ?value] = ?ctx,
+ImmutableContext(?ctx) <-
   ClassTypeValue(?type, "java.lang.String"),
-  HeapAllocation:byValue["<<immutable-context>>"] = ?heap.
+  Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
-HContextFromRealHContext[?heap] = ?hctx,
-ImmutableHContext[] = ?hctx <-
-  HeapAllocation:byValue["<<immutable>>"] = ?heap.
+HContextFromRealHContext[?value] = ?hctx,
+ImmutableHContext(?hctx) <-
+  Value:byId["<<immutable>>"] = ?value.
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
-HContextFromRealHContext[?heap] = ?hctx,
+HContextFromRealHContext[?value] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
-  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
-HContextFromRealHContext[?heap] = ?hctx,
+HContextFromRealHContext[?value] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
-  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
-HContextFromRealHContext[?heap] = ?hctx,
+HContextFromRealHContext[?value] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap,
-  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+  Value:byId["<<jvm-startup>>"] = ?value,
+  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Merge optimization hack
 
 // For this analysis, we only need two of the parameters that may influence the
 // new context object.
-MyMergeBasis(?hctx, ?heap) <-
-  MergeBasis(_, _, ?hctx, ?heap).
+MyMergeBasis(?hctx, ?value) <-
+  MergeBasis(_, _, ?hctx, ?value).
 
 // We create new context objects sparingly, because of the high cost.  We also
 // cache them, so they can be looked up without a join.
 Context(?calleeCtx),
-ContextFromRealContext[DeclaringClass:Allocation[RealHContextFromHContext[?hctx]], ?heap] = ?calleeCtx,
-OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
-  MyMergeBasis(?hctx, ?heap).
+ContextFromRealContext[Value:DeclaringType[RealHContextFromHContext[?hctx]], ?value] = ?calleeCtx,
+OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value).
 
 
 // Initially reachable methods
 Context(?ctx),
-ContextFromRealContext[?type, ?heap] = ?ctx,
+ContextFromRealContext[?type, ?value] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?type, "java.lang.String"),
-  HeapAllocation:byValue["<<initial-context>>"] = ?heap.
+  Value:byId["<<initial-context>>"] = ?value.
 
 Context(?ctx),
-ContextFromRealContext[?type, ?heap] = ?ctx,
+ContextFromRealContext[?type, ?value] = ?ctx,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   ClassTypeValue(?type, "java.lang.String"),
-  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap.
+  Value:byId["<<jvm-startup>>"] = ?value.
 
 Context(?ctx),
-ContextFromRealContext[?type, ?heap] = ?ctx,
+ContextFromRealContext[?type, ?value] = ?ctx,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?type, "java.lang.String"),
-  HeapAllocation:byValue["<<class-initialization>>"] = ?heap.
+  Value:byId["<<class-initialization>>"] = ?value.

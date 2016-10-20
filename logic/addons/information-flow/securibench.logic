@@ -1,6 +1,6 @@
-#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Value(method:value), string:like(value, pattern)
+#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Id(method:value), string:like(value, pattern)
 
-#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Value(method:value), string:like(value, pattern)
+#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Id(method:value), string:like(value, pattern)
                                                                                                                                                                                                                                   
 TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletContext: % get%(%)>").

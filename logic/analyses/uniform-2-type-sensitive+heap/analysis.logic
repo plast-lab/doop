@@ -22,49 +22,49 @@ ImmutableInvValue[] = ?immInv <-
 
 Context(?ctx),
 ContextFromRealContext[?instr, ?invo, ?instr] = ?ctx,
-ImmutableContext[] = ?ctx <-
-  Instruction:Value(?instr, "<<immutable-context>>"),
+ImmutableContext(?ctx) <-
+  Instruction:Id(?instr, "<<immutable-context>>"),
   MethodInvocationValue(?invo, "<<immutable-context-2>>").
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
-ImmutableHContext[] = ?hctx <-
-  Instruction:Value(?instr:"<<immutable-hcontext>>").
+ImmutableHContext(?hctx) <-
+  Instruction:Id(?instr:"<<immutable-hcontext>>").
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  Instruction:Value(?instr:"<<jvm-startup>>"),
-  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+  Instruction:Id(?instr:"<<jvm-startup>>"),
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  Instruction:Value(?instr:"<<jvm-startup>>"),
-  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+  Instruction:Id(?instr:"<<jvm-startup>>"),
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[?instr] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  Instruction:Value(?instr:"<<jvm-startup>>"),
-  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+  Instruction:Id(?instr:"<<jvm-startup>>"),
+  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Merge optimization hack
 
 // For this analysis, we only need two of the parameters that may influence the
 // new context object.
-MyMergeBasis(?hctx, ?invocation, ?heap) <-
-  MergeBasis(_, ?hctx, ?invocation, ?heap).
+MyMergeBasis(?hctx, ?invocation, ?value) <-
+  MergeBasis(_, ?hctx, ?invocation, ?value).
 
 // We create new context objects sparingly, because of the high cost.  We also
 // cache them, so they can be looked up without a join.
 Context(?calleeCtx),
-ContextFromRealContext[RealHContextFromHContext[?hctx], ?invocation, ClassToInstr[DeclaringClass:Allocation[?heap]]] = ?calleeCtx,
-OptimizeMerge[?hctx, ?invocation, ?heap] = ?calleeCtx <-
-  MyMergeBasis(?hctx, ?invocation, ?heap).
+ContextFromRealContext[RealHContextFromHContext[?hctx], ?invocation, ClassToInstr[Value:DeclaringType[?value]]] = ?calleeCtx,
+OptimizeMerge[?hctx, ?invocation, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?invocation, ?value).
 
 
 // Initially reachable methods
@@ -74,7 +74,7 @@ ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?class1, "java.lang.String"),
   ClassToInstr[?class1] = ?type1,
-  Instruction:Value(?type2:"<<initial-context>>"),
+  Instruction:Id(?type2:"<<initial-context>>"),
   MethodInvocationValue(?invocation, "<<initial-context-2>>").
 
 Context(?ctx),
@@ -83,7 +83,7 @@ ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   ClassTypeValue(?class1, "java.lang.String"),
   ClassToInstr[?class1] = ?type1,
-  Instruction:Value(?type2:"<<jvm-startup>>"),
+  Instruction:Id(?type2:"<<jvm-startup>>"),
   MethodInvocationValue(?invocation, "<<jvm-startup-2>>").
 
 Context(?ctx),
@@ -93,5 +93,5 @@ ReachableContext(?ctx, ?clinit) <-
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?class1, "java.lang.String"),
   ClassToInstr[?class1] = ?type1,
-  Instruction:Value(?type2:"<<class-initialization>>"),
+  Instruction:Id(?type2:"<<class-initialization>>"),
   MethodInvocationValue(?invocation, "<<class-initialization-2>>").

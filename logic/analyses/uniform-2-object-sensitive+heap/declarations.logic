@@ -1,15 +1,15 @@
-ContextFromRealContext[?heap1, ?invo, ?heap2] = ?ctx ->
-  Context(?ctx), HeapAllocation(?heap1), MethodInvocation(?invo), HeapAllocation(?heap2).
+ContextFromRealContext[?value1, ?invo, ?value2] = ?ctx ->
+  Context(?ctx), Value(?value1), MethodInvocation(?invo), Value(?value2).
 lang:constructor(`ContextFromRealContext).
-RealContext1FromContext[?ctx] = ?heap ->
-  Context(?ctx), HeapAllocation(?heap).
+RealContext1FromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
 RealContext2FromContext[?ctx] = ?invo ->
   Context(?ctx), MethodInvocation(?invo).
-RealContext3FromContext[?ctx] = ?heap ->
-  Context(?ctx), HeapAllocation(?heap).
+RealContext3FromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
 
-HContextFromRealHContext[?heap] = ?hctx ->
-  HContext(?hctx), HeapAllocation(?heap).
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
 lang:constructor(`HContextFromRealHContext).
-RealHContextFromHContext[?hctx] = ?heap ->
-  HContext(?hctx), HeapAllocation(?heap).
+RealHContextFromHContext[?hctx] = ?value ->
+  HContext(?hctx), Value(?value).

@@ -11,18 +11,18 @@
  * the exeception handler (VarPointsTo rule).
  */
 
-ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) <-
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) <-
    Throw(?ref, ?var),
-   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
-   HeapAllocation:Type[?heap] = ?heaptype,
-   !(ExceptionHandler:At[?heaptype, ?ref]=_),
+   VarPointsTo(?hctx, ?value, ?ctx, ?var),
+   Value:Type[?value] = ?valuetype,
+   !(ExceptionHandler:At[?valuetype, ?ref] = _),
    Instruction:Method[?ref] = ?method.
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
+VarPointsTo(?hctx, ?value, ?ctx, ?param) <-
    Throw(?ref, ?var),
-   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
-   HeapAllocation:Type[?heap] = ?heaptype,
-   ExceptionHandler:At[?heaptype, ?ref] = ?handler,
+   VarPointsTo(?hctx, ?value, ?ctx, ?var),
+   Value:Type[?value] = ?valuetype,
+   ExceptionHandler:At[?valuetype, ?ref] = ?handler,
    ExceptionHandler:FormalParam[?handler] = ?param.
 
 /*****************************************************************************
@@ -39,16 +39,16 @@ VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
  * to the formal parameter of the exception handler (VarPointsTo rule).
  */
 
-ThrowPointsTo(?hctx, ?heap, ?callerCtx, ?callerMethod) <-
+ThrowPointsTo(?hctx, ?value, ?callerCtx, ?callerMethod) <-
    CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-   ThrowPointsTo(?hctx, ?heap, ?calleeCtx, ?tomethod),
-   HeapAllocation:Type[?heap] = ?heaptype,
-   !(ExceptionHandler:At[?heaptype,?invocation]=_),
+   ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
+   Value:Type[?value] = ?valuetype,
+   !(ExceptionHandler:At[?valuetype, ?invocation] = _),
    Instruction:Method[?invocation] = ?callerMethod.
 
-VarPointsTo(?hctx, ?heap, ?callerCtx, ?param) <-
+VarPointsTo(?hctx, ?value, ?callerCtx, ?param) <-
    CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-   ThrowPointsTo(?hctx, ?heap, ?calleeCtx, ?tomethod),
-   HeapAllocation:Type[?heap] = ?heaptype,
-   ExceptionHandler:At[?heaptype,?invocation] = ?handler,
+   ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
+   Value:Type[?value] = ?valuetype,
+   ExceptionHandler:At[?valuetype,?invocation] = ?handler,
    ExceptionHandler:FormalParam[?handler] = ?param.

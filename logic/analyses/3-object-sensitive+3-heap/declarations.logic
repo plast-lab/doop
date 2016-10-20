@@ -1,23 +1,23 @@
 // In this analysis, both the real context and the real heap context are
-// triplets of HeapAllocations. Keeping mapping functions is the way to handle
+// triplets of Values. Keeping mapping functions is the way to handle
 // analyses where HContext = Context (since the language considers them
 // different types).
-ContextFromRealContext[?heap1, ?heap2, ?heap3] = ?ctx ->
-  Context(?ctx), HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?heap3).
+ContextFromRealContext[?value1, ?value2, ?value3] = ?ctx ->
+  Context(?ctx), Value(?value1), Value(?value2), Value(?value3).
 lang:constructor(`ContextFromRealContext).
-RealContext1FromContext[?ctx] = ?heap ->
-  Context(?ctx), HeapAllocation(?heap).
-RealContext2FromContext[?ctx] = ?heap ->
-  Context(?ctx), HeapAllocation(?heap).
-RealContext3FromContext[?ctx] = ?heap ->
-  Context(?ctx), HeapAllocation(?heap).
+RealContext1FromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
+RealContext2FromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
+RealContext3FromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
 
-HContextFromRealHContext[?heap1, ?heap2, ?heap3] = ?hctx ->
-  HContext(?hctx), HeapAllocation(?heap1), HeapAllocation(?heap2), HeapAllocation(?heap3).
+HContextFromRealHContext[?value1, ?value2, ?value3] = ?hctx ->
+  HContext(?hctx), Value(?value1), Value(?value2), Value(?value3).
 lang:constructor(`HContextFromRealHContext).
-RealHContext1FromHContext[?hctx] = ?heap ->
-  HContext(?hctx), HeapAllocation(?heap).
-RealHContext2FromHContext[?hctx] = ?heap ->
-  HContext(?hctx), HeapAllocation(?heap).
-RealHContext3FromHContext[?hctx] = ?heap ->
-  HContext(?hctx), HeapAllocation(?heap).
+RealHContext1FromHContext[?hctx] = ?value ->
+  HContext(?hctx), Value(?value).
+RealHContext2FromHContext[?hctx] = ?value ->
+  HContext(?hctx), Value(?value).
+RealHContext3FromHContext[?hctx] = ?value ->
+  HContext(?hctx), Value(?value).

@@ -8,7 +8,7 @@ lang:physical:hasColumnNames[`_ClassType] = false.
 _ClassType(?param1) ->
   string(?param1).
 
-+Type:Value(?t:?param1),
++Type:Id(?t:?param1),
 +ClassType(?t) <-
   _ClassType(?param1).
 
@@ -23,7 +23,7 @@ lang:physical:hasColumnNames[`_ArrayType] = false.
 _ArrayType(?param1) ->
   string(?param1).
 
-+Type:Value(?t:?param1),
++Type:Id(?t:?param1),
 +ArrayType(?t) <-
   _ArrayType(?param1).
 
@@ -38,7 +38,7 @@ lang:physical:hasColumnNames[`_InterfaceType] = false.
 _InterfaceType(?param1) ->
   string(?param1).
 
-+Type:Value(?t:?param1),
++Type:Id(?t:?param1),
 +InterfaceType(?t) <-
   _InterfaceType(?param1).
 
@@ -54,9 +54,9 @@ _ComponentType(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:Value(?arrayType:?param1),
++Type:Id(?arrayType:?param1),
 +ArrayType(?arrayType),
-+Type:Value(?componentType:?param2),
++Type:Id(?componentType:?param2),
 +Type(?componentType),
 +ComponentType[?arrayType] = ?componentType <-
   _ComponentType(?param1, ?param2).
@@ -74,9 +74,9 @@ _ActualParam(?param1, ?param2, ?param3) ->
   string(?param2),
   string(?param3).
 
-+Instruction:Value(?invocation:?param2),
++Instruction:Id(?invocation:?param2),
 +MethodInvocation(?invocation),
-+Var:Value(?var:?param3),
++Var:Id(?var:?param3),
 +Var(?var),
 +ActualParam[?index, ?invocation] = ?var <-
   _ActualParam(?index, ?param2, ?param3).
@@ -93,9 +93,9 @@ _DirectSuperinterface(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:Value(?class:?param1),
++Type:Id(?class:?param1),
 +ReferenceType(?class),
-+Type:Value(?interface:?param2),
++Type:Id(?interface:?param2),
 +InterfaceType(?interface),
 +DirectSuperinterface(?class, ?interface) <-
   _DirectSuperinterface(?param1, ?param2).
@@ -112,9 +112,9 @@ _DirectSuperclass(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:Value(?class:?param1),
++Type:Id(?class:?param1),
 +ClassType(?class),
-+Type:Value(?superclass:?param2),
++Type:Id(?superclass:?param2),
 +ClassType(?superclass),
 +DirectSuperclass[?class] = ?superclass <-
   _DirectSuperclass(?param1, ?param2).
@@ -131,9 +131,9 @@ _Field:Modifier(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Modifier:Value(?modifier:?param1),
++Modifier:Id(?modifier:?param1),
 +Modifier(?modifier),
-+Field:Value(?field:?param2),
++Field:Id(?field:?param2),
 +Field(?field),
 +Field:Modifier(?modifier, ?field) <-
   _Field:Modifier(?param1, ?param2).
@@ -163,9 +163,9 @@ _FormalParam(?param1, ?param2, ?param3) ->
   string(?param2),
   string(?param3).
 
-+Method:Value(?method:?param2),
++Method:Id(?method:?param2),
 +Method(?method),
-+Var:Value(?var:?param3),
++Var:Id(?var:?param3),
 +Var(?var),
 +FormalParam[?index, ?method] = ?var <-
   _FormalParam(?index, ?param2, ?param3).
@@ -182,9 +182,9 @@ _Method:DeclaresException(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Type:Value(?exceptionType:?param1),
++Type:Id(?exceptionType:?param1),
 +ReferenceType(?exceptionType),
-+Method:Value(?method:?param2),
++Method:Id(?method:?param2),
 +Method(?method),
 +Method:DeclaresException(?exceptionType, ?method) <-
   _Method:DeclaresException(?param1, ?param2).
@@ -201,9 +201,9 @@ _Method:Modifier(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Modifier:Value(?mod:?param1),
++Modifier:Id(?mod:?param1),
 +Modifier(?mod),
-+Method:Value(?method:?param2),
++Method:Id(?method:?param2),
 +Method(?method),
 +Method:Modifier(?mod, ?method) <-
   _Method:Modifier(?param1, ?param2).
@@ -220,9 +220,9 @@ _NativeReturnVar(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Var:Value(?var:?param1),
++Var:Id(?var:?param1),
 +Var(?var),
-+Method:Value(?method:?param2),
++Method:Id(?method:?param2),
 +Method(?method),
 +NativeReturnVar(?var, ?method) <-
   _NativeReturnVar(?param1, ?param2).
@@ -239,9 +239,9 @@ _Var:Type(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Var:Value(?ref:?param1),
++Var:Id(?ref:?param1),
 +Var(?ref),
-+Type:Value(?type:?param2),
++Type:Id(?type:?param2),
 +Type(?type),
 +Var:Type[?ref] = ?type <-
   _Var:Type(?param1, ?param2).
@@ -258,9 +258,9 @@ _Var:DeclaringMethod(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Var:Value(?ref:?param1),
++Var:Id(?ref:?param1),
 +Var(?ref),
-+Method:Value(?method:?param2),
++Method:Id(?method:?param2),
 +Method(?method),
 +Var:DeclaringMethod(?ref, ?method) <-
   _Var:DeclaringMethod(?param1, ?param2).
@@ -276,7 +276,7 @@ lang:physical:hasColumnNames[`_ApplicationClass] = false.
 _ApplicationClass(?param1) ->
   string(?param1).
 
-+Type:Value(?ref:?param1),
++Type:Id(?ref:?param1),
 +ReferenceType(?ref),
 +ApplicationClass(?ref) <-
   _ApplicationClass(?param1).
@@ -293,9 +293,9 @@ _ThisVar(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Method:Value(?method:?param1),
++Method:Id(?method:?param1),
 +Method(?method),
-+Var:Value(?var:?param2),
++Var:Id(?var:?param2),
 +Var(?var),
 +ThisVar[?method] = ?var <-
   _ThisVar(?param1, ?param2).
@@ -312,9 +312,9 @@ _ExceptionHandler:Previous(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+ExceptionHandler:Value(?handler:?param1),
++ExceptionHandler:Id(?handler:?param1),
 +ExceptionHandler(?handler),
-+ExceptionHandler:Value(?previous:?param2),
++ExceptionHandler:Id(?previous:?param2),
 +ExceptionHandler(?previous),
 +ExceptionHandler:Previous[?handler] = ?previous <-
   _ExceptionHandler:Previous(?param1, ?param2).
@@ -331,9 +331,9 @@ _AssignReturnValue(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+Instruction:Value(?invocation:?param1),
++Instruction:Id(?invocation:?param1),
 +MethodInvocation(?invocation),
-+Var:Value(?to:?param2),
++Var:Id(?to:?param2),
 +Var(?to),
 +AssignReturnValue[?invocation] = ?to <-
   _AssignReturnValue(?param1, ?param2).
@@ -351,11 +351,11 @@ _Properties(?param1, ?param2, ?param3) ->
   string(?param2),
   string(?param3).
 
-//+Instruction:Value(?path:?param1),
+//+Instruction:Id(?path:?param1),
 //+StringConstant(?path),
-//+Instruction:Value(?key:?param2),
+//+Instruction:Id(?key:?param2),
 //+StringConstant(?key),
-//+Instruction:Value(?value:?param3),
+//+Instruction:Id(?value:?param3),
 //+StringConstant(?value),
 //+Properties[?path, ?key] = ?value <-
 //  _Properties(?param1, ?param2, ?param3).

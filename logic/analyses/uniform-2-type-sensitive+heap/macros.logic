@@ -1,7 +1,7 @@
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling
 // context of the allocator method.
-#define RecordMacro(ctx, heap, hctx) \
+#define RecordMacro(ctx, value, hctx) \
   HContext(hctx), \
   HContextFromRealHContext[RealContext3FromContext[ctx]] = hctx
 
@@ -10,16 +10,16 @@
 // declaring classes of the receiver object and the receiver object of the
 // caller and the call-site.
 // Again, this may trigger creation of a new object.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], invocation, \
-						ClassToInstr[DeclaringClass:Allocation[heap]]] = calleeCtx
+						ClassToInstr[Value:DeclaringType[value]]] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
-  MergeBasis(callerCtx, hctx, invocation, heap)
+#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+  MergeBasis(callerCtx, hctx, invocation, value)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-  OptimizeMerge[hctx, invocation, heap] = calleeCtx
+#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  OptimizeMerge[hctx, invocation, value] = calleeCtx
 
 // For this analysis, static calls use the invocation site and
 // the declaring class of the receiver object of the caller as a context.
@@ -30,13 +30,13 @@
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
-#define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], RealContext2FromContext[callerCtx], ClassToInstr[DeclaringClass:Allocation[heap]]] = newCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], RealContext2FromContext[callerCtx], ClassToInstr[Value:DeclaringType[value]]] = newCtx
 
-#define MergeStartupMacro(hctx, heap, calleeCtx) \
+#define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], ImmutableInvValue[], ClassToInstr[DeclaringClass:Allocation[heap]]] = calleeCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], ImmutableInvValue[], ClassToInstr[Value:DeclaringType[value]]] = calleeCtx
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -47,6 +47,6 @@
 // for its inverse functions (RealHContextFromHContext), so the rule will never
 // fire if done naively. The signature of the macro (which does not accept a
 // hctx) is a hint for avoiding this problem.
-#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealContext1FromContext[callerCtx], RealContext2FromContext[callerCtx], ClassToInstr[DeclaringClass:Allocation[heap]]] = newCtx
+  ContextFromRealContext[RealContext1FromContext[callerCtx], RealContext2FromContext[callerCtx], ClassToInstr[Value:DeclaringType[value]]] = newCtx

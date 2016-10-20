@@ -5,11 +5,11 @@
 Tamiflex:ReflectionMap(?mapped, ?invocation) <-
    Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?line),
 
-   Type:Value(?class:?classStr), ClassType(?class),
+   Type:Id(?class:?classStr), ClassType(?class),
    Method:SimpleName[?method] = ?methodStr,
    Method:DeclaringType[?method] = ?class,
 
-   Type:Value(?inClass:?inClassStr), ClassType(?inClass),
+   Type:Id(?inClass:?inClassStr), ClassType(?inClass),
    Method:SimpleName[?inMethod] = ?inMethodStr,
    Method:DeclaringType[?inMethod] = ?inClass,
 

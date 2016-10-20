@@ -1,13 +1,13 @@
 // We need to *pretend* we are creating new contexts, since the
 // product of the macro goes to the head of a rule.
-#define RecordMacro(ctx, heap, hctx) \
+#define RecordMacro(ctx, value, hctx) \
   HContext(hctx), \
   HContextFromRealHContext[] = hctx
 
 
 // For this analysis the context of a method call corresponds to the
 // invocation site of the method.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[invocation] = calleeCtx
 
@@ -15,14 +15,14 @@
   Context(calleeCtx), \
   ContextFromRealContext[invocation] = calleeCtx
 
-#define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[RealContextFromContext[callerCtx]] = newCtx
 
-#define MergeStartupMacro(hctx, heap, calleeCtx) \
+#define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[StartupInvocation[]] = calleeCtx
 
-#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[FakeInvocation:RegisterFinalize[heap]] = newCtx
+  ContextFromRealContext[FakeInvocation:RegisterFinalize[value]] = newCtx

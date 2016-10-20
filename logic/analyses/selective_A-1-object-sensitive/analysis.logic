@@ -2,56 +2,56 @@
 // (OR for static calls 1 call-site).
 
 Context(?ctx),
-ContextFromRealContext[?heapComp] = ?ctx,
-ContextComponent(?heapComp),
-ContextComponent:HeapAllocation[?heap] = ?heapComp,
-ImmutableContext[] = ?ctx <-
-  HeapAllocation:byValue["<<immutable-context>>"] = ?heap.
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
+ImmutableContext(?ctx) <-
+  Value:byId["<<immutable-context>>"] = ?value.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
-ImmutableHContext[] = ?hctx.
+ImmutableHContext(?hctx).
 
 
 // Create initial objects with their heap contexts
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<system-thread-group>>"] = ?alloc.
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<main-thread-group>>"] = ?alloc.
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
 HContext(?hctx),
 HContextFromRealHContext[] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  HeapAllocation:byValue["<<main-thread>>"] = ?alloc.
+  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Initially reachable methods
 Context(?ctx),
-ContextFromRealContext[?heapComp] = ?ctx,
-ContextComponent(?heapComp),
-ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
 ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  HeapAllocation:byValue["<<initial-context>>"] = ?heap.
+  Value:byId["<<initial-context>>"] = ?value.
 
 Context(?ctx),
-ContextFromRealContext[?heapComp] = ?ctx,
-ContextComponent(?heapComp),
-ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
 ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  HeapAllocation:byValue["<<jvm-startup>>"] = ?heap.
+  Value:byId["<<jvm-startup>>"] = ?value.
 
 Context(?ctx),
-ContextFromRealContext[?heapComp] = ?ctx,
-ContextComponent(?heapComp),
-ContextComponent:HeapAllocation[?heap] = ?heapComp,
+ContextFromRealContext[?valueComp] = ?ctx,
+ContextComponent(?valueComp),
+ContextComponent:Value[?value] = ?valueComp,
 ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  HeapAllocation:byValue["<<class-initialization>>"] = ?heap.
+  Value:byId["<<class-initialization>>"] = ?value.
