@@ -80,17 +80,14 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
  */
 MergeStartupMacro(?hctx, ?value, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) <-
    Method:Id(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
    ThisVar[?sig] = ?this,
-   MainThreadGroup(?hctx, ?value).
-
-MergeStartupMacro(?groupCtx, ?group, ?calleeCtx),
-ReachableContext(?calleeCtx, ?sig),
-VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
-   Method:Id(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   MainThreadGroup(?hctx, ?value),
    FormalParam[0, ?sig] = ?groupParam,
-   SystemThreadGroup(?groupCtx, ?group).
+   SystemThreadGroup(?groupHCtx, ?group),
+   CompatibleHContextsMacro(?hctx, ?groupHCtx).
 
 /**
  * Initialization of the main thread
@@ -103,16 +100,13 @@ VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
  */
 MergeStartupMacro(?hctx, ?value, ?calleeCtx),
 ReachableContext(?calleeCtx, ?sig),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) <-
    Method:Id(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
    ThisVar[?sig] = ?this,
-   MainThread(?hctx, ?value).
-
-MergeStartupMacro(?groupCtx, ?group, ?calleeCtx),
-ReachableContext(?calleeCtx, ?sig),
-VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
-   Method:Id(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   MainThread(?hctx, ?value),
    FormalParam[0, ?sig] = ?groupParam,
-   MainThreadGroup(?groupCtx, ?group).
+   MainThreadGroup(?groupHCtx, ?group),
+   CompatibleHContextsMacro(?hctx, ?groupHCtx).
 
 #endif
