@@ -97,7 +97,7 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
 
 
     public void processQuery(String logiqlString, String printOpt, Closure outputLineProcessor) {
-        exec("$_bloxbatch -db $_workspace -query '$logiqlString' $printOpt $_bloxOpts", outputLineProcessor)
+        exec("$_bloxbatch -db $_workspace -query '$logiqlString' $printOpt", outputLineProcessor)
     }
     public void processQuery(String logiqlString, Closure outputLineProcessor) {
         processQuery(logiqlString, "", outputLineProcessor)
