@@ -329,6 +329,13 @@ class Doop {
 			webUI: true,
 			forCacheID: true
         ),
+        new AnalysisOption<Boolean>(
+             id:"FACT_GENERATION_CLASSIC",
+             name:"fact-gen-classic",
+             description:"Flag to enable the original sequential fact generation",
+             value:false,
+             webUI:true
+         ),
 
         /* Start of non-standard flags */
         new AnalysisOption<Boolean>(

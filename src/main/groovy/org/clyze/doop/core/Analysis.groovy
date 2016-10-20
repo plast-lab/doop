@@ -584,6 +584,10 @@ class Analysis implements Runnable {
                 throw new RuntimeException("Unsupported platform")
         }
 
+        if (options.FACT_GENERATION_CLASSIC.value) {
+            params = params + ["--sequential"]
+        }
+
         if (options.SSA.value) {
             params = params + ["--ssa"]
         }

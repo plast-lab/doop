@@ -19,6 +19,7 @@ public class Main {
     private static List<String> _libraries = new ArrayList<>();
     private static String _outputDir = null;
     private static String _main = null;
+    private static boolean _classicFactGen = false;
     private static boolean _ssa = false;
     private static boolean _android = false;
     private static String _androidJars = null;
@@ -129,6 +130,9 @@ public class Main {
                         break;
                     case "--stdout":
                         _toStdout = true;
+                        break;
+                    case "--sequential":
+                        _classicFactGen = true;
                         break;
                     case "-h":
                     case "--help":
@@ -359,7 +363,7 @@ public class Main {
             Database db = new CSVDatabase(new File(_outputDir));
             FactWriter writer = new FactWriter(db);
             ThreadFactory factory = new ThreadFactory(writer, _ssa);
-            //Driver driver = new Driver(factory, _ssa, classes.size());
+            Driver driver = new Driver(factory, _ssa, classes.size());
 
             classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
@@ -380,8 +384,12 @@ public class Main {
             if (_android)
                 Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
-                Driver.doInSequentialOrder(classes, writer, _ssa);
-
+                if (_classicFactGen)
+                    Driver.doInSequentialOrder(classes, writer, _ssa);
+                else
+                    Driver.doInSequentialOrder(classes, writer, _ssa);
+                    /* TODO: Reintroduce parallel soot jar */
+                     //driver.doInParallel(classes);
             db.close();
         }
     }
