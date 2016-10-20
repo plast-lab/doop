@@ -1,0 +1,58 @@
+#include "../../commonMacros.logic"
+ 
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) <-
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+ConcreteImplementations[?staticType] = ?class <-
+   agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
+
+AnyConcreteImplementations(?class, ?staticType) <-
+   ConcreteImplementations[?staticType] = ?class.
+
+ServletClass(?class) <-
+   AllConcreteImplementations(?class, ?staticType),
+   ClassType(?class),
+   Type:Value(?staticType:"javax.servlet.http.HttpServlet").
+
+// Servlet service methods
+MockEntryPoint(?class, ?entry) <-
+   ServletClass(?class),
+   Type:Value(?class:?classStr),
+   ServletEntryMethodName(?serviceMethodName),
+   Method:Value(?entry:methodSigStr),
+   // TODO: try removing initializer
+   (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
+   ServletEntryMethodName(?serviceMethodName).
+
+ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
+
+
+// The following two rules were separated to stratify negation
+VarPointsTo(?hctx, ?heap, ?ctx, ?receiver) <-
+   ImmutableHContext[] = ?hctx,
+   HeapForReceiverInContext(?ctx, ?receiver, ?heap).
+
+
+MockObject(?heap, ?type) -> HeapAllocation(?heap), Type(?type).
+
+HeapAllocation(?heap),
+MockupHeapConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?heap),
+MockObject(?heap, ?class)
+<-
+   MockEntryPoint(?class, _),
+   Type:Value(?class:?classStr).
+
+HeapForReceiverInContext(?ctx, ?receiver, ?heap) <-
+   ReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?receiver,
+   Method:DeclaringType[?method] = ?class,
+   MockObject(?heap, ?class).
