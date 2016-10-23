@@ -15,68 +15,89 @@ import org.clyze.doop.system.*
  * For supporting invocations over the web, the statistic step is broken into
  * two parts: (a) produce statistics and (b) print statistics.
  *
- * The run() method is the only public method exposed by this class: no other methods should be called directly
- * by other classes.
+ * The run() method is the entry point. No other methods should be called directly by other classes.
  */
 @TypeChecked
 class Analysis implements Runnable {
 
+    /**
+     * Used for logging various messages
+     */
     protected Log logger = LogFactory.getLog(getClass())
 
     /**
      * The unique identifier of the analysis (that determines the caching)
      */
-    String id
+    public String id
 
     /**
      * The name of the analysis (that determines the logic)
      */
-    String name
+    protected String name
 
     /**
      * The name of the analysis stripped of directory separators
      */
-    String safename
+    public String safename
 
     /**
      * The output dir for the analysis
      */
-    String outDir
+    protected File outDir
+
+    /**
+     * The facts dir for the input facts
+     */
+    protected File factsDir
 
     /**
      * The cache dir for the input facts
      */
-    String cacheDir
+    protected File cacheDir
+
+    /**
+     * The underlying workspace
+     */
+    protected File database
 
     /**
      * The options of the analysis
      */
-    Map<String, AnalysisOption> options
+    public Map<String, AnalysisOption> options
 
     /**
      * The analysis input resolution mechanism
      */
-    InputResolutionContext ctx
+    protected InputResolutionContext ctx
 
     /**
      * The input files/dependencies of the analysis
      */
-    List<File> inputs
+    public List<File> inputs
 
     /**
      * The jre library jars for soot
      */
-    List<File> platformLibs
+    protected List<File> platformLibs
+
+    /**
+     * Used for invoking external commnands
+     */
+    protected Executor executor
+
+    /**
+     * Used for invoking the C preprocessor
+     */
+    protected CPreprocessor cpp
+
+    /**
+     * Interface with the underlying workspace
+     */
+    protected LBWorkspaceConnector connector
+
+    File averroesDir
 
     boolean isRefineStep
-
-    Executor executor
-
-    CPreprocessor cpp
-
-    File facts, cacheFacts, database, averroesDir
-
-    LBWorkspaceConnector connector
 
     long sootTime
 
@@ -85,8 +106,8 @@ class Analysis implements Runnable {
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
      */
     protected Analysis(String id,
-                       String outDir,
-                       String cacheDir,
+                       String outDirPath,
+                       String cacheDirPath,
                        String name,
                        Map<String, AnalysisOption> options,
                        InputResolutionContext ctx,
@@ -94,8 +115,6 @@ class Analysis implements Runnable {
                        List<File> platformLibs,
                        Map<String, String> commandsEnvironment) {
         this.id = id
-        this.outDir = outDir
-        this.cacheDir = cacheDir
         this.name = name
         this.safename = name.replace(File.separator, "-")
         this.options = options
@@ -103,25 +122,31 @@ class Analysis implements Runnable {
         this.inputs = inputs
         this.platformLibs = platformLibs
 
-        executor = new Executor(commandsEnvironment)
-
-        cpp = new CPreprocessor(this, executor)
-
-        new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
-
-        facts       = new File(outDir, "facts")
-        cacheFacts  = new File(cacheDir)
+        outDir      = new File(outDirPath)
+        factsDir    = new File(outDir, "facts")
+        cacheDir    = new File(cacheDirPath)
         database    = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")
+
+        executor = new Executor(commandsEnvironment)
+        cpp      = new CPreprocessor(this, executor)
+
+        new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
+    }
+
+    String toString() {
+        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+               "\n" +
+               options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
 
     @Override
     void run() {
         //Initialize the instance here and not in the constructor, in order to allow an analysis to be re-runnable.
-        connector = new LBWorkspaceConnector(new File(outDir),
-                                              options.BLOXBATCH.value as String,
-                                              (options.BLOX_OPTS.value ?: '') as String,
-                                              executor, cpp)
+        connector = new LBWorkspaceConnector(outDir,
+                                             options.BLOXBATCH.value as String,
+                                             (options.BLOX_OPTS.value ?: '') as String,
+                                             executor, cpp)
 
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
@@ -132,7 +157,7 @@ class Analysis implements Runnable {
             basicAnalysis()
             if (!options.X_STOP_AT_BASIC.value) {
 
-                mainAnalysis()
+                pointerAnalysis()
 
                 try {
                     FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
@@ -157,23 +182,13 @@ class Analysis implements Runnable {
     }
 
 
-    /**
-     * @return A string representation of the analysis
-     */
-    String toString() {
-        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
-               "\n" +
-               options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
-    }
-
     protected void generateFacts() {
+        FileUtils.deleteQuietly(factsDir)
+        factsDir.mkdirs()
 
-        FileUtils.deleteQuietly(facts)
-        facts.mkdirs()
-
-        if (cacheFacts.exists() && options.CACHE.value) {
-            logger.info "Using cached facts from $cacheFacts"
-            FileOps.copyDirContents(cacheFacts, facts)
+        if (cacheDir.exists() && options.CACHE.value) {
+            logger.info "Using cached facts from $cacheDir"
+            FileOps.copyDirContents(cacheDir, factsDir)
         }
         else {
             logger.info "-- Fact Generation --"
@@ -188,13 +203,13 @@ class Analysis implements Runnable {
 
             runSoot()
 
-            FileUtils.touch(new File(facts, "ApplicationClass.facts"))
-            FileUtils.touch(new File(facts, "Properties.facts"))
+            FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
+            FileUtils.touch(new File(factsDir, "Properties.facts"))
 
             if (options.TAMIFLEX.value) {
                 File origTamFile  = new File(options.TAMIFLEX.value.toString())
 
-                new File(facts, "Tamiflex.facts").withWriter { w ->
+                new File(factsDir, "Tamiflex.facts").withWriter { w ->
                     origTamFile.eachLine { line ->
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
@@ -204,24 +219,12 @@ class Analysis implements Runnable {
                 }
             }
 
-            logger.info "Caching facts in $cacheFacts"
-            FileUtils.deleteQuietly(cacheFacts)
-            cacheFacts.mkdirs()
-            FileOps.copyDirContents(facts, cacheFacts)
-            new File(cacheFacts, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+            logger.info "Caching facts in $cacheDir"
+            FileUtils.deleteQuietly(cacheDir)
+            cacheDir.mkdirs()
+            FileOps.copyDirContents(factsDir, cacheDir)
+            new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
         }
-    }
-
-    private String cacheMeta() {
-        Collection<String> inputJars = inputs.collect {
-            File file -> file.toString()
-        }
-        Collection<String> cacheOptions = options.values().findAll {
-            it.forCacheID
-        }.collect {
-            AnalysisOption option -> option.toString()
-        }.sort()
-        return (inputJars + cacheOptions).join("\n")
     }
 
     protected void initDatabase() {
@@ -311,10 +314,7 @@ class Analysis implements Runnable {
             .elapsedTime()
     }
 
-    /**
-     * Performs the main part of the analysis.
-     */
-    protected void mainAnalysis() {
+    protected void pointerAnalysis() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
         def mainPath     = "${Doop.logicPath}/main"
@@ -418,7 +418,7 @@ class Analysis implements Runnable {
         if (isRefineStep) importRefinement()
 
         connector.queue()
-            .echo("-- Main Analysis --")
+            .echo("-- Pointer Analysis --")
             .startTimer()
             .transaction()
             .addBlockFile("${safename}.logic")
@@ -446,61 +446,6 @@ class Analysis implements Runnable {
         }
     }
 
-    /**
-     * Reanalyze.
-     */
-    protected void reanalyze() {
-        cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
-        cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
-        cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
-
-        connector.queue()
-            .echo("++++ Refinement ++++")
-            .echo("-- Export --")
-            .startTimer()
-            .transaction()
-            .executeFile("refinement-delta.logic")
-            .commit()
-            .transaction()
-            .executeFile("export-refinement.logic")
-            .commit()
-            .elapsedTime()
-
-        isRefineStep = true
-        initDatabase()
-        basicAnalysis()
-        mainAnalysis()
-    }
-
-    void importRefinement() {
-        connector.queue()
-            .echo("-- Import --")
-            .startTimer()
-            .transaction()
-            .executeFile("import-refinement.logic")
-            .commit()
-            .elapsedTime()
-    }
-
-    protected void runTransformInput() {
-        cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
-        connector.queue()
-            .echo("-- Transforming Facts --")
-            .startTimer()
-            .transaction()
-            .addBlockFile("${outDir}/transform.logic")
-            .commit()
-
-        2.times { int i ->
-            connector.queue()
-                .echo(""" "-- Transformation (step $i) --" """)
-                .transaction()
-                .executeFile("${Doop.addonsPath}/transform/delta.logic")
-                .commit()
-        }
-        connector.queue().elapsedTime()
-    }
-
     protected void produceStats() {
         if (options.X_STATS_NONE.value) return;
 
@@ -526,31 +471,6 @@ class Analysis implements Runnable {
         connector.queue()
             .commit()
             .elapsedTime()
-    }
-
-    protected void runJPhantom(){
-        logger.info "-- Running jphantom to generate complement jar --"
-
-        String jar = inputs[0].toString()
-        String jarName = FilenameUtils.getBaseName(jar)
-        String jarExt = FilenameUtils.getExtension(jar)
-        String newJar = "${jarName}-complemented.${jarExt}"
-        String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
-        logger.debug "Params of jphantom: ${params.join(' ')}"
-
-        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
-        ClassLoader loader = phantomClassLoader()
-        Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
-
-        //set the jar of the analysis to the complemented one
-        inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
-    }
-
-    protected void runAverroes() {
-        logger.info "-- Running averroes --"
-
-        ClassLoader loader = averroesClassLoader()
-        Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
     }
 
     protected void runSoot() {
@@ -604,7 +524,7 @@ class Analysis implements Runnable {
             params = params + ["--only-application-classes-fact-gen"]
         }
 
-        params = params + ["-d", facts.toString(), inputs[0].toString()]
+        params = params + ["-d", factsDir.toString(), inputs[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -619,6 +539,97 @@ class Analysis implements Runnable {
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
         }
+    }
+
+    protected void runTransformInput() {
+        cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
+        connector.queue()
+            .echo("-- Transforming Facts --")
+            .startTimer()
+            .transaction()
+            .addBlockFile("${outDir}/transform.logic")
+            .commit()
+
+        2.times { int i ->
+            connector.queue()
+                .echo(""" "-- Transformation (step $i) --" """)
+                .transaction()
+                .executeFile("${Doop.addonsPath}/transform/delta.logic")
+                .commit()
+        }
+        connector.queue().elapsedTime()
+    }
+
+    protected void runJPhantom(){
+        logger.info "-- Running jphantom to generate complement jar --"
+
+        String jar = inputs[0].toString()
+        String jarName = FilenameUtils.getBaseName(jar)
+        String jarExt = FilenameUtils.getExtension(jar)
+        String newJar = "${jarName}-complemented.${jarExt}"
+        String[] params = [jar, "-o", "${outDir}/$newJar", "-d", "${outDir}/phantoms", "-v", "0"]
+        logger.debug "Params of jphantom: ${params.join(' ')}"
+
+        //we invoke the main method reflectively to avoid adding jphantom as a compile-time dependency
+        ClassLoader loader = phantomClassLoader()
+        Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
+
+        //set the jar of the analysis to the complemented one
+        inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
+    }
+
+    protected void runAverroes() {
+        logger.info "-- Running averroes --"
+
+        ClassLoader loader = averroesClassLoader()
+        Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
+    }
+
+
+    void reanalyze() {
+        cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
+        cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
+        cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
+
+        connector.queue()
+            .echo("++++ Refinement ++++")
+            .echo("-- Export --")
+            .startTimer()
+            .transaction()
+            .executeFile("refinement-delta.logic")
+            .commit()
+            .transaction()
+            .executeFile("export-refinement.logic")
+            .commit()
+            .elapsedTime()
+
+        isRefineStep = true
+        initDatabase()
+        basicAnalysis()
+        pointerAnalysis()
+    }
+
+    void importRefinement() {
+        connector.queue()
+            .echo("-- Import --")
+            .startTimer()
+            .transaction()
+            .executeFile("import-refinement.logic")
+            .commit()
+            .elapsedTime()
+    }
+
+
+    String cacheMeta() {
+        Collection<String> inputJars = inputs.collect {
+            File file -> file.toString()
+        }
+        Collection<String> cacheOptions = options.values().findAll {
+            it.forCacheID
+        }.collect {
+            AnalysisOption option -> option.toString()
+        }.sort()
+        return (inputJars + cacheOptions).join("\n")
     }
 
     /**

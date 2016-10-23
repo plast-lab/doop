@@ -108,7 +108,7 @@ class Main {
                 executorService.submit(new Runnable() {
                     @Override
                     void run() {
-                        logger.info "Starting ${analysis.name} analysis on ${analysis.inputs[0]} - id: $analysis.id"
+                        logger.info "Starting ${analysis.safename} analysis on ${analysis.inputs[0]} - id: $analysis.id"
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()
