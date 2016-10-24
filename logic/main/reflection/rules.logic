@@ -539,9 +539,8 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) <
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  Value:Heap[?value] = ?heap,
   Value:Null[] != ?basevalue,
-  !SpecialObject(?heap),
+  !SpecialValue(?value),
   Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype,
   SupertypeOf(?fieldtype, ?valuetype).
