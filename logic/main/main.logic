@@ -33,6 +33,11 @@ Value:Type[?value] = ?type <-
    HeapAllocation(?heap),
    HeapAllocation:Type[?heap] = ?type.
 
+Value:isHeap(?value) <-
+   Value:Heap:Cons[_] = ?value.
+Value:isNonHeap(?value) <-
+   Value:Mock:Cons[_] = ?value.
+
 Value:Null[] = ?nullValue <-
    HeapAllocation:Null[] = ?nullHeap,
    Value:byHeap[?nullHeap] = ?nullValue.

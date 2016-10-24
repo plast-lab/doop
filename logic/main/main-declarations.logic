@@ -32,6 +32,9 @@ Value:byHeap[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
 Value:Id[?value] = ?id -> Value(?value), string(?id).
 Value:byId[?id] = ?value -> string(?id), Value(?value).
 
+Value:isHeap(?value) -> Value(?value).
+Value:isNonHeap(?value) -> Value(?value).
+
 Value:Type[?value] = ?type -> Value(?value), Type(?type).
 Value:DeclaringType[?value] = ?type -> Value(?value), Type(?type).
 

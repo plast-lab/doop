@@ -16,6 +16,7 @@ HeapAllocation(?heap) -> HeapAllocation:Type[?heap] = _.
 HeapAllocation(?heap) -> HeapAllocation:Id[?heap] = _.
 Value(?value) -> Value:Type[?value] = _.
 Value(?value) -> Value:Id[?value] = _.
+Value(?value) -> Value:isHeap(?value) ; Value:isNonHeap(?value).
 
 
 ClassType(?t) -> !InterfaceType(?t).
