@@ -1,0 +1,9 @@
+#include "exceptions-declarations.logic"
+#include "finalization-declarations.logic"
+#include "method-resolution-declarations.logic"
+#include "subclass-declarations.logic"
+#include "superinterface-declarations.logic"
+#include "type-hierarchy-declarations.logic"
+
+MainMethodDeclaration(?method) ->
+   Method(?method).

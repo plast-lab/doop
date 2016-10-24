@@ -1,12 +1,14 @@
-#include "../../core/context-sensitivity-declarations.logic"
+// In this analysis, both the real context and the real heap context are Types.
+// Keeping mapping functions is the way to handle analyses where HContext =
+// Context (since the language considers them different types).  The type is
+// not always a class type, because of arrays currently being a non-class
+// subtype of Object
+ContextFromRealContext[?type] = ?ctx ->
+  Context(?ctx), Type(?type).
+lang:constructor(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
 
-// For this analysis, contexts are types, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?type, ?alloc) ->
-  Type(?type), HeapAllocation(?alloc).
-
-MyMainThreadGroup(?type, ?alloc) ->
-  Type(?type), HeapAllocation(?alloc).
-
-MyMainThread(?type, ?alloc) ->
-  Type(?type), HeapAllocation(?alloc).
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Type(?type).
+lang:constructor(`HContextFromRealHContext).

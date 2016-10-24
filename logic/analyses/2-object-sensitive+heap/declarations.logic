@@ -1,12 +1,11 @@
-#include "../../core/context-sensitivity-declarations.logic"
+// In this analysis, the real context is a pair of Values and the real
+// heap context a single Value. Keeping mapping functions is the way
+// to handle analyses where HContext = Context (since the language considers
+// them different types).
+ContextFromRealContext[?value1, ?value2] = ?ctx ->
+  Context(?ctx), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
 
-// For this analysis, contexts are heap objects, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?heap, ?alloc) ->
-  HeapAllocation(?heap), HeapAllocation(?alloc).
-
-MyMainThreadGroup(?heap, ?alloc) ->
-  HeapAllocation(?heap), HeapAllocation(?alloc).
-
-MyMainThread(?heap, ?alloc) ->
-  HeapAllocation(?heap), HeapAllocation(?alloc).
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromRealHContext).

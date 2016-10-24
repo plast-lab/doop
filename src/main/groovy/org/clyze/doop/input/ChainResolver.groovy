@@ -3,10 +3,6 @@ package org.clyze.doop.input
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
-/**
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
- */
 class ChainResolver implements InputResolver {
 
     private final List<InputResolver> resolvers
@@ -31,7 +27,7 @@ class ChainResolver implements InputResolver {
                 return
             }
             catch(e) {
-                logger.warn e.getMessage()
+                logger.debug e.getMessage()
                 //logger.warn Helper.stackTraceToString(e)
             }
         }

@@ -1,11 +1,16 @@
-TaintSourceMethod(?method) -> MethodSignature(?method).
+/**
+ * Definitions of sources and sinks
+ */
+TaintSourceMethod(?method) -> Method(?method).
+
+LeakingSinkMethod(?index, ?method) -> Method(?method), int[32](?index).
 
 LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
   MethodInvocation(?tomethod), Var(?var), Context(?ctx).
 
-LeakingTaintedInformation(?ctx, ?tomethod, ?hctx, ?obj)->
+LeakingTaintedInformation(?ctx, ?tomethod, ?hctx, ?value)->
   Context(?ctx), MethodInvocation(?tomethod),
-  HContext(?hctx), HeapAllocation(?obj).
+  HContext(?hctx), Value(?value).
 
 VarDef(?var, ?inst) -> Instruction(?inst), Var(?var).
 VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
@@ -13,3 +18,15 @@ VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
 VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from) ->
   Context(?toCtx), Var(?to),
   Context(?fromCtx), Var(?from).
+
+SanitizationMethod(?index, ?method) -> Method(?method), int[32](?index).
+
+SanitizedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
+
+TaintedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
+
+AnyMethodInvocation(?invocation, ?tomethod)
+ <- (StaticMethodInvocation(?invocation, ?tomethod, _);
+     VirtualMethodInvocation(?invocation, ?tomethod, _)).
+
+TaintedValue(?value) -> Value(?value).

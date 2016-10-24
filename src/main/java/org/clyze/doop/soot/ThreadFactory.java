@@ -8,14 +8,14 @@ import java.util.List;
 
 public class ThreadFactory {
 
-    boolean _makeClassGenerator;
+    private boolean _makeClassGenerator;
 
     FactWriter _factWriter;
 
-    boolean _ssa;
-    boolean _toStdout;
-    String _outputDir;
-    PrintWriter _printWriter;
+    private boolean _ssa;
+    private boolean _toStdout;
+    private String _outputDir;
+    private PrintWriter _printWriter;
 
     ThreadFactory(FactWriter writer, boolean ssa) {
         _makeClassGenerator = true;
@@ -38,7 +38,7 @@ public class ThreadFactory {
 
     Runnable newRunnable(List<SootClass> sootClasses) {
         if (_makeClassGenerator)
-            return new FactGenerator(_factWriter, _ssa, sootClasses);
+            return new RunnableFactGenerator(_factWriter, _ssa, sootClasses);
         else
             return new FactPrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
     }

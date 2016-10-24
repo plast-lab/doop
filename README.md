@@ -4,32 +4,30 @@ This document contains instructions for invoking the main driver of Doop. For an
 
 ## Getting Started
 
-At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically *LogiQL*, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). As such, a core dependency is the commercial LogicBlox Datalog engine. You can [request an academic license for the LogicBlox engine](http://www.logicblox.com/learn/academic-license-request-form/). Currently, Doop supports versions 3.9 and 3.10.
+At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). You can use **PA-Datalog**, an open-source porting of the LogicBlox engine, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html).
 
 For trouble-free configuration:
 
-* The `LOGICBLOX_HOME` environment variable should point to the `logicblox` directory of the engine.
-* The `DOOP_HOME` environment variable should point to the top-level directory of Doop.
-* The `LB_PAGER_FORCE_START` environment variable should be set to true. (You will likely get an engine error about this, which becomes a warning with the flag. To eliminate, also set `LB_MEM_NOWARN` to true.)
-* The `DOOP_JRE_LIB` environment variable should point to your JRE lib directory (see below--can be overridden with the `--jre-lib` option). JRE 6 or higher.
+* The `LOGICBLOX_HOME` environment variable **should** point to the `logicblox` directory of the engine.
+* The `DOOP_HOME` environment variable **should** point to the top-level directory of Doop.
+* The `DOOP_PLATFORMS_LIB` environment variable could point to your PLATFORM lib directory (optional, see below).
 * The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `$DOOP_HOME/out`).
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `$DOOP_HOME/cache`).
 
 You can change [environment.sh](bin/environment.sh) accordingly for your system, and then source it (`source ./bin/environment.sh`).
 
 
-## Benchmarks & JRE Lib
+## Benchmarks & Platform Lib
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
 
-One important directory in that repository is `JREs`. It can be used for the `DOOP_JRE_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom JRE lib directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`.
-
+One important directory in that repository is `JREs`. It can be used for the `PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/. Use the `--platform-lib` option to overwrite the default behavior.
 
 ## Running Doop
 
 Doop only supports invocations from its home directory. The main options when running Doop are the analysis and the jar(s) options. For example, for a context-insensitive analysis on a jar file we issue:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar
+    $ ./doop --platform java_7 -a context-insensitive -i com.example.some.jar
 
 ### Common command line options
 To see the list of available options (and valid argument values in certain cases), issue:
@@ -47,15 +45,15 @@ Example:
 
     $ ./doop -a context-insensitive
 
-#### Jar files  (-j, --jar)
-Mandatory. The jar file(s) to analyse.
+#### Input files  (-i, --inputs)
+Mandatory. The input file(s) to analyse.
 
-The jar option accepts multiple values and/or can be repeated multiple times.
+The inputs option accepts multiple values and/or can be repeated multiple times.
 
-The value of the Jar file can be specified in the following manners:
+The value of the input file can be specified in the following manners:
 
-* provide the relative or absolute path to a local Jar file.
-* provide the URL of a remote Jar file.
+* provide the relative or absolute path to a local input file.
+* provide the URL of a remote input file.
 * provide the relative or absolute path to a local directory and all its \*.jar files will be included.
 * provide a maven-style expression to indicate a Jar file from the Maven central repository.
 
@@ -63,33 +61,34 @@ Example:
 
 ```
 #!bash
-$ ./doop -j ./lib/asm-debug-all-4.1.jar      [local file]
-		 -j org.apache.ivy:ivy:2.3.0         [maven descriptor]
-		 -j ./lib                            [local directory]
-		 -j http://www.example.com/some.jar  [remote file]
-		 -j one.jar other.jar                [multiple files separated with a space]
+$ ./doop -i ./lib/asm-debug-all-4.1.jar      [local file]
+		 -i org.apache.ivy:ivy:2.3.0         [maven descriptor]
+		 -i ./lib                            [local directory]
+		 -i http://www.example.com/some.jar  [remote file]
+		 -i one.jar other.jar                [multiple files separated with a space]
 ```
 
-#### JRE version (--jre)
-The JRE version to use for the analysis. If *system* is used as the version, it shouldn't resolve to JRE 8.
+#### PLATFORM (--platform)
+The platform to use for the analysis. The possible java options are java_N where N is the java version (3, 4, 5, 6, 7 etc.). Java 8 is currently not supported. The android options are android_N where n is the android version (20, 21, 22, 23, 24 etc.)
 
 Example:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar --jre 1.4
+    $ ./doop -a context-insensitive -i com.example.some.jar --platform java_4
+    $ ./doop -a context-insensitive -i some-app.apk --platform android_24
 
 #### Main class (--main)
 The main class to use as the entry point. This class must declare a method with signature `public static void main(String [])`. If not specified, Doop will try to infer this information from the manifest file of the provided jar file(s).
 
 Example:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar --main com.example.some.Main
+    $ ./doop -a context-insensitive -i com.example.some.jar --main com.example.some.Main
 
 #### Timeout (-t, --timeout)
 Specify the analysis execution timeout in minutes.
 
 Example:
 
-    $ ./doop -a context-insensitive -j com.example.some.jar -t 120
+    $ ./doop -a context-insensitive -i com.example.some.jar -t 120
 
 The above analysis will run for a maximum of 2 hours (120 minutes).
 
@@ -118,10 +117,12 @@ to process this file, as follows:
 
 You can also override the options from a properties file with options from the command line. For example:
 
-    $ ./doop -p /path/to/file.properties -a context-insensitive --jre 1.6
-
-Please consult the [doop.properties](doop.properties) template file for more information.
+    $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_6
 
 
 ## License
 MIT license (see [LICENSE](LICENSE)).
+
+
+## Doop Coding Guidelines
+If you intend to develop code for the Doop framework, please consult the [Doop Coding Guidelines](docs/guide.md) document.

@@ -1,15 +1,19 @@
-#include "../../core/context-sensitivity-declarations.logic"
+// In this analysis, the real context and the real heap context are pairs of
+// MethodInvocations. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+ContextFromRealContext[?invocation1, ?invocation2] = ?ctx ->
+  Context(?ctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?invocation ->
+  Context(?ctx), MethodInvocation(?invocation).
+RealContext2FromContext[?ctx] = ?invocation ->
+  Context(?ctx), MethodInvocation(?invocation).
 
-// For this analysis, contexts are pairs of method invocations, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?invo1, ?invo2, ?alloc) ->
-  MethodInvocation(?invo1), MethodInvocation(?invo2),
-  HeapAllocation(?alloc).
-
-MyMainThreadGroup(?invo1, ?invo2, ?alloc) ->
-  MethodInvocation(?invo1), MethodInvocation(?invo2),
-  HeapAllocation(?alloc).
-
-MyMainThread(?invo1, ?invo2, ?alloc) ->
-  MethodInvocation(?invo1), MethodInvocation(?invo2),
-  HeapAllocation(?alloc).
+HContextFromRealHContext[?invocation1, ?invocation2] = ?hctx ->
+  HContext(?hctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
+lang:constructor(`HContextFromRealHContext).
+RealHContext1FromHContext[?hctx] = ?invocation ->
+  HContext(?hctx), MethodInvocation(?invocation).
+RealHContext2FromHContext[?hctx] = ?invocation ->
+  HContext(?hctx), MethodInvocation(?invocation).

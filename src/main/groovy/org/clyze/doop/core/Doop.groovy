@@ -1,23 +1,22 @@
 package org.clyze.doop.core
 
 import org.apache.log4j.Logger
+import org.clyze.doop.system.FileOps
 
 /**
  * Doop initialization and supported options.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 9/7/2014
  */
 class Doop {
 
     static final String SOOT_CHECKSUM_KEY = "soot"
+    static final String ARTIFACTORY_PLATFORMS_URL = "http://centauri.di.uoa.gr:8081/artifactory/Platforms"
 
     static final List<AnalysisOption> ANALYSIS_OPTIONS = [
         //LogicBlox related options (supporting different LogicBlox instance per analysis)
         new AnalysisOption<String>(
             id:"LOGICBLOX_HOME",
             value:System.getenv("LOGICBLOX_HOME"),
-            cli:false 
+            cli:false
         ),
         new AnalysisOption<String>(
             id:"LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
@@ -50,7 +49,8 @@ class Doop {
             isFile:true,
             description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
             value:[],
-            webUI:true
+            cli:false,
+            isAdvanced:true,
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
@@ -63,11 +63,6 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"AUXILIARY_HEAP",
-            value:false,
-            cli:false
-        ),
-        new AnalysisOption<String>(
             id:"CFG_ANALYSIS",
             name:"cfg",
             description:"Run a control flow graph analysis.",
@@ -76,7 +71,7 @@ class Doop {
         new AnalysisOption<String>(
             id:"MUST",
             name:"must",
-            description:"Run the must analysis.",
+            description:"Run the must-alias analysis.",
             webUI:true
         ),
         new AnalysisOption<Boolean>(
@@ -88,89 +83,65 @@ class Doop {
 
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_ALL_STRING_CONSTANTS",
-            name:"toggle-distinguish-all-string-constants",
+            id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
+            name:"distinguish-reflection-only-string-constants",
+            description:"Merge all string constants except those useful for reflection",
             value:false,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
+            forPreprocessor: true,
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_NO_STRING_CONSTANTS",
-            name:"toggle-distinguish-no-string-constants",
-            value:true,
+            id:"DISTINGUISH_ALL_STRING_CONSTANTS",
+            name:"distinguish-all-string-constants",
+            description:"Treat string constants as regular objects",
+            value:false,
             webUI:true,
             forPreprocessor: true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
+            isAdvanced:true
         ),
         /* End of preprocessor constant flags */
 
         /* Start of preprocessor normal flags */
         new AnalysisOption<Boolean>(
-            id:"MERGE_STRING_BUFFERS",
-            name:"disable-merge-string-buffers",
-            value:true, //enabled by default in run script
+            id:"DISTINGUISH_ALL_STRING_BUFFERS",
+            name:"distinguish-all-string-buffers",
+            value:false,
             webUI:true,
             forPreprocessor: true,
             isAdvanced:true
         ),
-        new AnalysisOption<String>(
-            id:"INCLUDE_IMPLICITLY_REACHABLE_CODE",
+        new AnalysisOption<Boolean>(
+            id:"DISTINGUISH_STRING_BUFFERS_PER_METHOD",
+            name:"distinguish-string-buffers-per-method",
+            value:false,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"EXCLUDE_IMPLICITLY_REACHABLE_CODE",
             name:"exclude-implicitly-reachable-code",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"MERGE_LIBRARY_OBJECTS_PER_METHOD",
+            name:"disable-merge-library-objects",
+            description:"Disable default policy of merging library (non-collection) objects of the same type per-method.",
             value:true,
             webUI:true,
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"PADDLE_COMPAT",
-            name:"paddle-compat",
+            id:"CONTEXT_SENSITIVE_LIBRARY_ANALYSIS",
+            name:"enable-cs-library",
+            description:"Enable context-sensitive analysis for internal library objects.",
             value:false,
             webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
+            forPreprocessor:true
         ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_FILTER",
-            name:"enable-exceptions-filter",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_ORDER",
-            name:"enable-exceptions-order",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_RANGE",
-            name:"enable-exceptions-range",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_CS",
-            name:"enable-exceptions-cs",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"FU_EXCEPTION_FLOW",
-            name:"enable-fu-exception-flow",
-            value:false,
-            webUI:true,
-            isAdvanced:true
-        ),
-
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION",
             name:"enable-reflection",
@@ -185,31 +156,6 @@ class Doop {
             description:"Enable (classic subset of) logic for handling Java reflection.",
             value:false,
             webUI:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
-            name:"toggle-distinguish-reflection-only-string-constants",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.CONSTANT_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_MERGE_MEMBER_CONSTANTS",
-            name:"enable-reflection-merge-member-constants",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"REFLECTION_STRING_FLOW_ANALYSIS",
-            name:"enable-reflection-string-flow-analysis",
-            value:false,
-            webUI:true,
-            forPreprocessor: true,
-            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_SUBSTRING_ANALYSIS",
@@ -262,58 +208,13 @@ class Doop {
         ),
         /* End of preprocessor normal flags */
 
-        /* Start of preprocessor exception flags */
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_PRECISE",
-            value:true,
-            cli:false,
-            forPreprocessor:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_IMPRECISE",
-            name:"enable-imprecise-exceptions",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
         new AnalysisOption<Boolean>(
             id:"SEPARATE_EXCEPTION_OBJECTS",
-            value:false,
-            cli:false,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        new AnalysisOption<Boolean>(
-            id:"EXCEPTIONS_EXPERIMENTAL",
-            name:"enable-exceptions-experimental",
-            value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
-            flagType:PreprocessorFlag.EXCEPTION_FLAG
-        ),
-        /* End of preprocessor exception flags */
-
-        //other options/flags
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_PRECISE_EXCEPTIONS",
-            name:"disable-precise-exceptions",
-            value:false,
-            webUI:true,
-            forPreprocessor:false,
-            isAdvanced:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"DISABLE_MERGE_EXCEPTIONS",
             name:"disable-merge-exceptions",
             value:false,
             webUI:true,
-            forPreprocessor:false,
-            isAdvanced:true
+            forPreprocessor:true,
+            isAdvanced:true,
         ),
         new AnalysisOption<Boolean>(
             id:"REFINE",
@@ -403,37 +304,38 @@ class Doop {
             forCacheID:true,
             webUI:true
         ),
-        new AnalysisOption<String>( //Generates the properly named JRE option at runtime
-            id:"JRE",
-            name:"jre",
-            argName:"VERSION",
-            description:"One of 1.3, 1.4, 1.5, 1.6, 1.7, system (default: system).",
-            value:"system",
-            forCacheID:true,
-            webUI:true
-        ),
-        new AnalysisOption<OS>(
-            id:"OS",
-            value:OS.OS_UNIX,
-            cli:false
-        ),
         new AnalysisOption<String>(
             id:"APP_REGEX",
             name:"regex",
             argName:"regex-expression",
-            description:"A regex expression for the Java package names to be analyzed.",
+            description:"A regex expression for the Java package names of the analyzed application.",
             value:null,
             forCacheID:true,
             webUI:true
         ),
         new AnalysisOption<String>(
-            id:"JRE_LIB",
-            name:"jre-lib",
-            description:"The path to the JRE lib directory (containing different JRE versions).",
-            value:System.getenv("DOOP_JRE_LIB"),
-            webUI:false,
-            isAdvanced:true
+			id:"PLATFORMS_LIB",
+			name:"platforms-lib",
+			description:"The path to the platform libs directory.",
+			value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL,
+			isAdvanced:true
         ),
+        new AnalysisOption<String>(
+			id:"PLATFORM",
+			name:"platform",
+			argName: "platform",
+			description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
+			value: "java_7",
+			webUI: true,
+			forCacheID: true
+        ),
+        new AnalysisOption<Boolean>(
+             id:"FACT_GENERATION_CLASSIC",
+             name:"fact-gen-classic",
+             description:"Flag to enable the original sequential fact generation",
+             value:false,
+             webUI:true
+         ),
 
         /* Start of non-standard flags */
         new AnalysisOption<Boolean>(
@@ -460,14 +362,28 @@ class Doop {
             nonStandard:true
         ),
         new AnalysisOption<String>(
-            id:"X_ONLY_FACTS",
-            name:"Xonly-facts",
-            argName:"FACTS_DIR",
+            id:"X_STOP_AT_FACTS",
+            name:"XstopAt:facts",
+            argName:"OUT_DIR",
             isFile:true,
-            description:"Only generate facts and exit.",
+            description:"Only generate facts and exit. Link result to OUT_DIR",
             value:false,
             nonStandard:true
-        )
+        ),
+        new AnalysisOption<String>(
+            id:"X_STOP_AT_INIT",
+            name:"XstopAt:init",
+            description:"Initialize database with facts and exit.",
+            value:false,
+            nonStandard:true
+        ),
+        new AnalysisOption<String>(
+            id:"X_STOP_AT_BASIC",
+            name:"XstopAt:basic",
+            description:"Run the basic analysis and exit.",
+            value:false,
+            nonStandard:true
+        ),
         /* End of non-standard flags */
     ]
 
@@ -476,16 +392,18 @@ class Doop {
         "LD_LIBRARY_PATH",
         "BLOXBATCH",
         "BLOX_OPTS",
-        "OS",
         "CACHE",
-        "JRE_LIB"
+        "PLATFORMS_LIB"
     ]
 
     // Not the best pattern, but limits the source code size :)
     static String doopHome
-    static String doopLogic
     static String doopOut
     static String doopCache
+    static String logicPath
+    static String factsPath
+    static String addonsPath
+    static String analysesPath
 
     /**
      * Initializes Doop.
@@ -498,19 +416,22 @@ class Doop {
 
         doopHome = homePath
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
-        Helper.checkDirectoryOrThrowException(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
+        FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
-        doopLogic = "$doopHome/logic"
-        doopOut   = outPath ?: "$doopHome/out"
-        doopCache = cachePath ?: "$doopHome/cache"
+        doopOut      = outPath ?: "$doopHome/out"
+        doopCache    = cachePath ?: "$doopHome/cache"
+        logicPath    = "$doopHome/logic"
+        factsPath    = "$logicPath/facts"
+        addonsPath   = "$logicPath/addons"
+        analysesPath = "$logicPath/analyses"
 
         //create all necessary files/folders
         File f = new File(doopOut)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create ouput directory: $doopOut")
+        FileOps.findDirOrThrow(f, "Could not create ouput directory: $doopOut")
         f = new File(doopCache)
         f.mkdirs()
-        Helper.checkDirectoryOrThrowException(f, "Could not create cache directory: $doopCache")
+        FileOps.findDirOrThrow(f, "Could not create cache directory: $doopCache")
     }
 
     /**
@@ -593,7 +514,7 @@ class Doop {
         } else if (option.argName) {
             option.value = property
         } else {
-            option.value = Boolean.parseBoolean(property)
+            option.value = property.toBoolean()
         }
     }
 

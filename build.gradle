@@ -1,24 +1,22 @@
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     dependencies {
         classpath 'commons-io:commons-io:2.4'
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.0"
     }
 }
 
-apply plugin: 'groovy'
+apply plugin: 'antlr'
 apply plugin: 'application'
-apply from  : 'DaCapo.gradle'
-apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
+apply plugin: 'groovy'
+
+apply from  : 'benchmarks.gradle'
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
-//sourceCompatibility = "1.6"
-//targetCompatibility = "1.6"
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 group = 'org.clyze'
 version = '1.0-SNAPSHOT'
@@ -28,7 +26,7 @@ mainClassName = 'org.clyze.doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.14'
+    gradleVersion = '3.1'
 }
 
 repositories {
@@ -45,12 +43,20 @@ dependencies {
             'org.anarres:jcpp:1.4.5',                           // C preprocessor in Java
             'commons-io:commons-io:2.4',                        // File Utils
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
-            'org.ow2.asm:asm-debug-all:5.0.3'                   // Java Bytecode library
+            'org.ow2.asm:asm-debug-all:5.1'                     // Java Bytecode library
 
-    compile files(sootClassesJar)                               // Soot is a compile time dependency
+    // Soot is a compile time dependency
+    // compile files(sootClassesJar)                               // Soot is a compile time dependency
+    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/AXMLPrinter2.jar', 'lib/dexlib2-2.1.3-a5d82813.jar')
 
-    runtime 'org.clyze:jphantom:1.2'                            // JPhantom is a runtime dependency
-    runtime files('lib/averroes-no-properties.jar', 'lib/dexlib2-2.0.7-dev.jar' , 'lib/util-2.0.7-dev.jar')
+    // JPhantom is a runtime dependency
+    runtime 'org.clyze:jphantom:1.2'
+    runtime files('lib/averroes-no-properties.jar', 'lib/herosclasses-trunk.jar' , 'lib/util-2.1.3-a5d82813.jar', 'lib/axml-2.0.jar')
+
+    // DeepDoop
+    antlr "org.antlr:antlr4:4.5.1-1"
+    compile "org.antlr:antlr4-runtime:4.5.1-1"
+    testCompile "junit:junit:4.12"
 }
 
 task generateFiles(type: JavaExec) {
@@ -70,7 +76,7 @@ task bytecode2jimple(type: JavaExec) {
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') || project.property('args').isEmpty()) {
-        args "--bytecode2jimpleHelp"
+        args "--bytecode2jimpleHelp -allow-phantom-refs"
     } else {
         args = ["--bytecode2jimple"] + project.property('args').tokenize()
     }
@@ -94,40 +100,57 @@ run {
     }
 }
 
+task deepdoop(type: JavaExec) {
+    description 'Run DeepDoop'
+    group = 'Other'
+    main = 'org.clyze.deepdoop.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    enableAssertions = true
+    if(project.hasProperty("args")) {
+        args project.property("args").split()
+    }
+}
+
 startScripts {
     dependsOn generateFiles
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
+compileJava {
+    options.compilerArgs << '-Xlint:unchecked'
 }
-
-artifactory {
-    contextUrl = "${artifactory_contextUrl}"
-    publish {
-        repository {
-            repoKey = 'libs-snapshot-local'
-            username = "${artifactory_user}"
-            password = "${artifactory_password}"
-            maven = true
-
-        }
-        defaults {
-            publications 'mavenJava'
-        }
-    }
-}
-
 
 import org.apache.commons.io.FileUtils
 
 clean.doFirst {
-    file('logs'   ).list().each { f -> delete "logs/${f}" }
-    file('out'    ).list().each { f -> delete "out/${f}" }
-    file('results').list().each { f -> delete "results/${f}" }
+    def out = System.getenv('DOOP_OUT')
+    file(out      ).list().each { f -> delete "$out/$f" }
+    file('logs'   ).list().each { f -> delete "logs/$f" }
+    file('results').list().each { f -> delete "results/$f" }
     FileUtils.deleteQuietly(new File('last-analysis'))
+}
+
+if (project.hasProperty('artifactory_user')) {
+
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+
+        repositories {
+            maven {
+                credentials {
+                    username artifactory_user
+                    password artifactory_password
+                }
+
+                url version.endsWith("-SNAPSHOT") ?
+                        "${artifactory_contextUrl}/libs-snapshot-local" :
+                        "${artifactory_contextUrl}/libs-release-local"
+            }
+        }
+    }
 }

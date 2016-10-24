@@ -5,8 +5,6 @@ import org.apache.commons.io.FilenameUtils
 
 /**
  * Resolves the input as a URL.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class URLResolver implements InputResolver{
 
@@ -19,7 +17,7 @@ class URLResolver implements InputResolver{
     void resolve(String input, InputResolutionContext ctx) {
         try {
             URL url = new URL(input)
-            File tmpFile = File.createTempFile(FilenameUtils.getBaseName(input), FilenameUtils.getExtension(input))
+            File tmpFile = File.createTempFile(FilenameUtils.getBaseName(input) + "_", "." + FilenameUtils.getExtension(input))
             FileUtils.copyURLToFile(url, tmpFile)
             tmpFile.deleteOnExit()
             ctx.set(input, tmpFile)
