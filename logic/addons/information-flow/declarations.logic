@@ -25,8 +25,4 @@ SanitizedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
 
 TaintedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
 
-AnyMethodInvocation(?invocation, ?tomethod)
- <- (StaticMethodInvocation(?invocation, ?tomethod, _);
-     VirtualMethodInvocation(?invocation, ?tomethod, _)).
-
 TaintedValue(?value) -> Value(?value).

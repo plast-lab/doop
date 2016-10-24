@@ -277,6 +277,30 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
+            id:"ANDROID_SOURCES_AND_SINKS",
+            name:"android-sources-and-sinks",
+            description:"Load Android sources and sinks.",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"WEBAPPS_SOURCES_AND_SINKS",
+            name:"webapps-sources-and-sinks",
+            description:"Load webapps (Servlets) sources and sinks.",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"OPEN_PROGRAMS_SERVLETS",
+            name:"open-programs-servlets",
+            description:"Create analysis entry points and environment to analyse servlet applications.",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
             id:"DACAPO_BACH",
             name:"dacapo-bach",
             description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
