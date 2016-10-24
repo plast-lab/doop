@@ -39,6 +39,14 @@ VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
+SpecialMethodInvocation:SimpleName[?invocation] = ?simplename,
+SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   SpecialMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   Method:SimpleName[?signature] = ?simplename,
+   Method:Descriptor[?signature] = ?descriptor.
+
+
 
 // Encodes a CHA callgraph, effectively. 
 ResolveInvocation[?type, ?invocation] = ?tomethod ->

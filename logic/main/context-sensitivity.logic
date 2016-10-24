@@ -192,9 +192,10 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  Value:Heap[?value] = ?heap,
   Value:Null[] != ?basevalue,
-  !SpecialObject(?heap).
+  !SpecialValue(?value).
+
+SpecialValue(?value) <- Value:Heap[?value] = ?heap, SpecialObject(?heap).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
@@ -236,12 +237,13 @@ ReachableStoreStaticFieldFrom(?from) <-
   StoreStaticField(?from, _, ?inmethod),
   Reachable(?inmethod).
 
+
+
 /**
  * Load array index
  */
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-   Value:Heap[?basevalue] = ?baseheap,
-   !HeapAllocation:EmptyArray(?baseheap),
+   !Value:EmptyArray(?basevalue),
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
    ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
    // this used to be necessary when this rule also handled the
@@ -250,6 +252,13 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
    // Var:Type[?to] = ?type,
    // ComponentType[?baseheaptype] = ?basecomponenttype,
    // SupertypeOf(?type, ?basecomponenttype).
+
+
+Value:EmptyArray(?basevalue) -> Value(?basevalue).
+
+Value:EmptyArray(?basevalue) <-
+   Value:Heap[?basevalue] = ?baseheap,
+   HeapAllocation:EmptyArray(?baseheap).
 
 /* YANNIS: used to be the much less precise:
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -276,10 +285,8 @@ ReachableLoadArrayIndexBase(?base) <-
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  Value:Heap[?value] = ?heap,
-  !SpecialObject(?heap),
-  Value:Heap[?basevalue] = ?baseheap,
-  !HeapAllocation:EmptyArray(?baseheap),
+  !SpecialValue(?value),
+  !Value:EmptyArray(?basevalue),
   Value:Type[?value] = ?valuetype,
   Value:Type[?basevalue] = ?basevaluetype,
   ComponentType[?basevaluetype] = ?componenttype,

@@ -148,6 +148,7 @@ abstract class Analysis implements Runnable {
     abstract protected void runAverroes()
 
 
+
     public static long timing(Closure c) {
         long now = System.currentTimeMillis()
         try {
