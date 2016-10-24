@@ -1,5 +1,6 @@
 package org.clyze.doop.core
 
+import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -17,6 +18,7 @@ import org.clyze.doop.system.*
  *
  * The run() method is the entry point. No other methods should be called directly by other classes.
  */
+@CompileStatic
 @TypeChecked
 class ClassicAnalysis extends Analysis {
 
@@ -24,10 +26,6 @@ class ClassicAnalysis extends Analysis {
 
     long sootTime
 
-    /*
-     * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
-     * in order to ensure that internal state is initialized at one point and the init method is no longer required.
-     */
     protected ClassicAnalysis(String id,
                        String outDirPath,
                        String cacheDirPath,
@@ -503,7 +501,7 @@ class ClassicAnalysis extends Analysis {
     }
 
 
-    void reanalyze() {
+    private void reanalyze() {
         cpp.preprocess("${outDir}/refinement-delta.logic", "${Doop.analysesPath}/${name}/refinement-delta.logic")
         cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
         cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
@@ -526,7 +524,7 @@ class ClassicAnalysis extends Analysis {
         pointerAnalysis()
     }
 
-    void importRefinement() {
+    private void importRefinement() {
         connector.queue()
             .echo("-- Import --")
             .startTimer()
@@ -537,7 +535,7 @@ class ClassicAnalysis extends Analysis {
     }
 
 
-    String cacheMeta() {
+    private String cacheMeta() {
         Collection<String> inputJars = inputs.collect {
             File file -> file.toString()
         }

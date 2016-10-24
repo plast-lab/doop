@@ -77,7 +77,9 @@ class AnalysisFactory {
 
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
-        Analysis analysis = new ClassicAnalysis(
+        Analysis analysis
+        if (name != "sound-may-point-to")
+            analysis = new ClassicAnalysis(
                 analysisId,
                 outDir.toString(),
                 cacheDir.toString(),
@@ -86,8 +88,18 @@ class AnalysisFactory {
                 context,
                 vars.inputFiles,
                 vars.platformFiles,
-                commandsEnv
-        )
+                commandsEnv)
+        else
+            analysis = new SoundMayAnalysis(
+                analysisId,
+                outDir.toString(),
+                cacheDir.toString(),
+                name,
+                options,
+                context,
+                vars.inputFiles,
+                vars.platformFiles,
+                commandsEnv)
         logger.debug "Created new analysis"
         return analysis
     }
