@@ -77,7 +77,7 @@ class AnalysisFactory {
 
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
-        Analysis analysis = new Analysis(
+        Analysis analysis = new ClassicAnalysis(
                 analysisId,
                 outDir.toString(),
                 cacheDir.toString(),

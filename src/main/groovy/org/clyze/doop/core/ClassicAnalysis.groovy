@@ -10,7 +10,7 @@ import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
 
 /**
- * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
+ * A classic (may, unsound) DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  *
  * For supporting invocations over the web, the statistic step is broken into
  * two parts: (a) produce statistics and (b) print statistics.
@@ -18,84 +18,7 @@ import org.clyze.doop.system.*
  * The run() method is the entry point. No other methods should be called directly by other classes.
  */
 @TypeChecked
-class Analysis implements Runnable {
-
-    /**
-     * Used for logging various messages
-     */
-    protected Log logger = LogFactory.getLog(getClass())
-
-    /**
-     * The unique identifier of the analysis (that determines the caching)
-     */
-    public String id
-
-    /**
-     * The name of the analysis (that determines the logic)
-     */
-    protected String name
-
-    /**
-     * The name of the analysis stripped of directory separators
-     */
-    public String safename
-
-    /**
-     * The output dir for the analysis
-     */
-    protected File outDir
-
-    /**
-     * The facts dir for the input facts
-     */
-    protected File factsDir
-
-    /**
-     * The cache dir for the input facts
-     */
-    protected File cacheDir
-
-    /**
-     * The underlying workspace
-     */
-    protected File database
-
-    /**
-     * The options of the analysis
-     */
-    public Map<String, AnalysisOption> options
-
-    /**
-     * The analysis input resolution mechanism
-     */
-    protected InputResolutionContext ctx
-
-    /**
-     * The input files/dependencies of the analysis
-     */
-    public List<File> inputs
-
-    /**
-     * The jre library jars for soot
-     */
-    protected List<File> platformLibs
-
-    /**
-     * Used for invoking external commnands
-     */
-    protected Executor executor
-
-    /**
-     * Used for invoking the C preprocessor
-     */
-    protected CPreprocessor cpp
-
-    /**
-     * Interface with the underlying workspace
-     */
-    protected LBWorkspaceConnector connector
-
-    File averroesDir
+class ClassicAnalysis extends Analysis {
 
     boolean isRefineStep
 
@@ -105,7 +28,7 @@ class Analysis implements Runnable {
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
      */
-    protected Analysis(String id,
+    protected ClassicAnalysis(String id,
                        String outDirPath,
                        String cacheDirPath,
                        String name,
@@ -114,22 +37,7 @@ class Analysis implements Runnable {
                        List<File> inputs,
                        List<File> platformLibs,
                        Map<String, String> commandsEnvironment) {
-        this.id = id
-        this.name = name
-        this.safename = name.replace(File.separator, "-")
-        this.options = options
-        this.ctx = ctx
-        this.inputs = inputs
-        this.platformLibs = platformLibs
-
-        outDir      = new File(outDirPath)
-        factsDir    = new File(outDir, "facts")
-        cacheDir    = new File(cacheDirPath)
-        database    = new File(outDir, "database")
-        averroesDir = new File(outDir, "averroes")
-
-        executor = new Executor(commandsEnvironment)
-        cpp      = new CPreprocessor(this, executor)
+        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
@@ -182,6 +90,7 @@ class Analysis implements Runnable {
     }
 
 
+    @Override
     protected void generateFacts() {
         FileUtils.deleteQuietly(factsDir)
         factsDir.mkdirs()
@@ -227,6 +136,7 @@ class Analysis implements Runnable {
         }
     }
 
+    @Override
     protected void initDatabase() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
 
@@ -276,6 +186,7 @@ class Analysis implements Runnable {
             runTransformInput()
     }
 
+    @Override
     protected void basicAnalysis() {
         if (options.DYNAMIC.value) {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
@@ -314,6 +225,7 @@ class Analysis implements Runnable {
             .elapsedTime()
     }
 
+    @Override
     protected void pointerAnalysis() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
@@ -446,6 +358,7 @@ class Analysis implements Runnable {
         }
     }
 
+    @Override
     protected void produceStats() {
         if (options.X_STATS_NONE.value) return;
 
@@ -473,6 +386,7 @@ class Analysis implements Runnable {
             .elapsedTime()
     }
 
+    @Override
     protected void runSoot() {
         Collection<String> depArgs
 
@@ -541,6 +455,7 @@ class Analysis implements Runnable {
         }
     }
 
+    @Override
     protected void runTransformInput() {
         cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
         connector.queue()
@@ -560,6 +475,7 @@ class Analysis implements Runnable {
         connector.queue().elapsedTime()
     }
 
+    @Override
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
@@ -578,6 +494,7 @@ class Analysis implements Runnable {
         inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
+    @Override
     protected void runAverroes() {
         logger.info "-- Running averroes --"
 
@@ -737,17 +654,5 @@ class Analysis implements Runnable {
 
         String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
         return "$path/rt.jar"
-    }
-
-    private long timing(Closure c) {
-        long now = System.currentTimeMillis()
-        try {
-            c.call()
-        }
-        catch(e) {
-            throw e
-        }
-        //we measure the time only in error-free cases
-        return ((System.currentTimeMillis() - now) / 1000).longValue()
     }
 }
