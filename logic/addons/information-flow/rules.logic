@@ -55,7 +55,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
-   VarIsTaintedFromHeap(?hctx, ?value, ?toCtx, ?to).
+   VarIsTaintedFromValue(?hctx, ?value, ?toCtx, ?to).
 
 CallTaintingMethod(?ctx, ?invocation) <-
    TaintSourceMethod(?tomethod),
@@ -124,8 +124,8 @@ VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base) <-
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   AssignReturnValue[?invocation] = ?ret.
 
-VarIsTaintedFromHeap(?hctx, ?value, ?ctx, ?var) -> HContext(?hctx), Value(?value), Context(?ctx), Var(?var).
-VarIsTaintedFromHeap(?basehctx, ?basevalue, ?ctx, ?to) <-
+VarIsTaintedFromValue(?hctx, ?value, ?ctx, ?var) -> HContext(?hctx), Value(?value), Context(?ctx), Var(?var).
+VarIsTaintedFromValue(?basehctx, ?basevalue, ?ctx, ?to) <-
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
    TaintedValue(?basevalue).
 
@@ -184,10 +184,11 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?to) <-
   Value:byId[?invocation] = ?value,
   AssignReturnValue[?invocation] = ?to.
 
-MockValueConsMacro(?invocation, ?retType, ?value),
-TaintedValue(?value) <-
+MockValueConsMacro(?invocation, "<<Information type>>", ?value),
+TaintedValue(?value),
+Value(?value) <-
    TaintSourceMethod(?tomethod),
-   AnyMethodInvocation(?invocation, ?tomethod),
-   Method:ReturnType[?tomethod] = ?retType.
+   AnyMethodInvocation(?invocation, ?tomethod).
+//   Method:ReturnType[?tomethod] = ?retType.
 
 SupertypeOf(?type, "<<Information type>>") <- Type(?type). //bottom type

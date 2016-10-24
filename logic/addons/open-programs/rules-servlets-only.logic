@@ -21,38 +21,38 @@ AnyConcreteImplementations(?class, ?staticType) <-
 ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
    ClassType(?class),
-   Type:Value(?staticType:"javax.servlet.http.HttpServlet").
+   Type:Id(?staticType:"javax.servlet.http.HttpServlet").
 
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
-   Type:Value(?class:?classStr),
+   Type:Id(?class:?classStr),
    ServletEntryMethodName(?serviceMethodName),
-   Method:Value(?entry:methodSigStr),
-   // TODO: try removing initializer
+   Method:Id(?entry:methodSigStr),
    (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
    ServletEntryMethodName(?serviceMethodName).
 
 ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
 
-// The following two rules were separated to stratify negation
-VarPointsTo(?hctx, ?heap, ?ctx, ?receiver) <-
-   ImmutableHContext[] = ?hctx,
-   HeapForReceiverInContext(?ctx, ?receiver, ?heap).
+// The following two rules were originally separated to stratify negation (no longer needed)
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver) <-
+   ImmutableHContext(?hctx),
+   ValueForReceiverInContext(?ctx, ?receiver, ?value).
 
 
-MockObject(?heap, ?type) -> HeapAllocation(?heap), Type(?type).
+MockObject(?value, ?type) -> Value(?value), Type(?type).
 
-HeapAllocation(?heap),
-MockupHeapConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?heap),
-MockObject(?heap, ?class)
+Value(?value),
+MockValueConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?value),
+//MockHeapConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?heap),
+MockObject(?value, ?class)
 <-
    MockEntryPoint(?class, _),
-   Type:Value(?class:?classStr).
+   Type:Id(?class:?classStr).
 
-HeapForReceiverInContext(?ctx, ?receiver, ?heap) <-
+ValueForReceiverInContext(?ctx, ?receiver, ?value) <-
    ReachableContext(?ctx, ?method),
    ThisVar[?method] = ?receiver,
    Method:DeclaringType[?method] = ?class,
-   MockObject(?heap, ?class).
+   MockObject(?value, ?class).
