@@ -1,0 +1,11 @@
+// In this analysis, the real context is a pair of Values and the real
+// heap context a single Value. Keeping mapping functions is the way
+// to handle analyses where HContext = Context (since the language considers
+// them different types).
+ContextFromRealContext[?partitionId, ?value1, ?value2] = ?ctx ->
+  Context(?ctx), Type(?partitionId), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
+
+HContextFromRealHContext[?partitionId, ?value] = ?hctx ->
+  HContext(?hctx), Type(?partitionId), Value(?value).
+lang:constructor(`HContextFromRealHContext).

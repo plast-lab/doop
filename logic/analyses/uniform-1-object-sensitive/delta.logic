@@ -1,0 +1,4 @@
+PlusMethodInvocation(?invo, "<<initial-context-2>>").
+PlusMethodInvocation(?invo, "<<jvm-startup-2>>").
+PlusMethodInvocation(?invo, "<<class-initialization-2>>").
+PlusMethodInvocation(?invo, "<<immutable-context-2>>").
