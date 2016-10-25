@@ -135,7 +135,7 @@ abstract class Analysis implements Runnable {
 
     abstract protected void basicAnalysis()
 
-    abstract protected void pointerAnalysis()
+    abstract protected void mainAnalysis()
 
     abstract protected void produceStats()
 
