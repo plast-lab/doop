@@ -60,13 +60,12 @@ dependencies {
 }
 
 task generateFiles(type: JavaExec) {
-    description 'Generate the doop.properties & checksums.properties files'
+    description 'Generate the doop.properties file'
     group = 'Other'
     main = 'org.clyze.doop.FileGenerator'
     classpath = sourceSets.main.runtimeClasspath
     args = [
-        projectDir,
-        sootClassesJar
+        projectDir
     ]
 }
 
@@ -87,12 +86,11 @@ applicationDistribution.from(file("$projectDir/logic")) {
 }
 
 applicationDistribution.from(projectDir) {
-    include 'doop.properties', 'checksums.properties', 'LICENSE'
+    include 'doop.properties', 'LICENSE'
 }
 
 
 run {
-    dependsOn generateFiles
     //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
@@ -133,10 +131,19 @@ if (project.hasProperty('artifactory_user')) {
 
     apply plugin: 'maven-publish'
 
+    //Generate a jar with the logic files
+    task logicJar(type:Jar) {
+        from "$projectDir/logic"
+    }
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
+
+                artifact logicJar {
+                    classifier "logic"
+                }
             }
         }
 
