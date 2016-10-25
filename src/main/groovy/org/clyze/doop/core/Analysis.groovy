@@ -36,7 +36,7 @@ abstract class Analysis implements Runnable {
     /**
      * The output dir for the analysis
      */
-    protected File outDir
+    File outDir
 
     /**
      * The facts dir for the input facts
