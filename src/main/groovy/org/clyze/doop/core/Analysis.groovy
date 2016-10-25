@@ -21,17 +21,17 @@ abstract class Analysis implements Runnable {
     /**
      * The unique identifier of the analysis (that determines the caching)
      */
-    public String id
+    String id
 
     /**
      * The name of the analysis (that determines the logic)
      */
-    protected String name
+    String name
 
     /**
      * The name of the analysis stripped of directory separators
      */
-    public String safename
+    String safename
 
     /**
      * The output dir for the analysis
@@ -61,17 +61,17 @@ abstract class Analysis implements Runnable {
     /**
      * The options of the analysis
      */
-    public Map<String, AnalysisOption> options
+    Map<String, AnalysisOption> options
 
     /**
      * The analysis input resolution mechanism
      */
-    protected InputResolutionContext ctx
+    InputResolutionContext ctx
 
     /**
      * The input files/dependencies of the analysis
      */
-    public List<File> inputs
+    List<File> inputs
 
     /**
      * The jre library jars for soot
@@ -91,7 +91,7 @@ abstract class Analysis implements Runnable {
     /**
      * Interface with the underlying workspace
      */
-    protected LBWorkspaceConnector connector
+    LBWorkspaceConnector connector
 
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
