@@ -63,7 +63,7 @@ class ClassicAnalysis extends Analysis {
             basicAnalysis()
             if (!options.X_STOP_AT_BASIC.value) {
 
-                pointerAnalysis()
+                mainAnalysis()
 
                 try {
                     FileOps.findFileOrThrow("${Doop.analysesPath}/${name}/refinement-delta.logic", "No refinement-delta.logic for ${name}")
@@ -224,7 +224,7 @@ class ClassicAnalysis extends Analysis {
     }
 
     @Override
-    protected void pointerAnalysis() {
+    protected void mainAnalysis() {
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         def macros       = "${Doop.analysesPath}/${name}/macros.logic"
         def mainPath     = "${Doop.logicPath}/main"
@@ -537,7 +537,7 @@ class ClassicAnalysis extends Analysis {
         isRefineStep = true
         initDatabase()
         basicAnalysis()
-        pointerAnalysis()
+        mainAnalysis()
     }
 
     private void importRefinement() {
