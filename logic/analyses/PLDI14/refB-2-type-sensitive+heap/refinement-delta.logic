@@ -1,0 +1,38 @@
+#include "macros.logic"
+
+_ContextInsensVPT(?value, ?var) -> Var(?var), Value(?value).
++_ContextInsensVPT(?value, ?var) <- VarPointsTo(_, ?value, _, ?var).
+
+_HeapsPerMethodPerVar(?value, ?var, ?method) ->
+  Var(?var), Value(?value), Method(?method).
++_HeapsPerMethodPerVar(?value, ?var, ?method) <-
+  CallGraphEdge(_, _, _, ?method),
+  Var:DeclaringMethod(?var, ?method),
+  _ContextInsensVPT(?value, ?var).
+
+_NumHeapsForMethod[?method] = ?count ->
+  Method(?method), int[64](?count).
++_NumHeapsForMethod[?method] = ?count <-
+  agg<<?count = count()>>(_HeapsPerMethodPerVar(_, _, ?method)).
+
++TempSiteToRefine(?invocation) <-
+  CallGraphEdge(_, ?invocation, _, ?method),
+  _NumHeapsForMethod[?method] > 30000.
+
++TempNegativeSiteFilter[] = true.
+
+// Avoid refining objects with a high total number of field-points-to facts.
+_FieldPointsToPerAllocSite[?alloc] = ?count -> Value(?alloc), int[64](?count).
++_FieldPointsToPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(InstanceFieldPointsTo(_, _, _, _, ?alloc)).
+
+// Avoid refining allocation sites pointed to by more than K vars already. Refine all the rest.
+_VarsPerAllocSite[?alloc] = ?count -> Value(?alloc), int[64](?count).
++_VarsPerAllocSite[?alloc] = ?count <-
+  agg<<?count = count()>>(VarPointsTo(_, ?alloc, _, _)).
+
+// The real metric is the product of the two.
++TempValueToRefine(?alloc) <-
+  _FieldPointsToPerAllocSite[?alloc] * _VarsPerAllocSite[?alloc] > 200000.
+
++TempNegativeObjectFilter[] = true.

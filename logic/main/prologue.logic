@@ -1,0 +1,78 @@
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
+   ?type = "java.io.UnixFileSystem".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "java.io.UnixFileSystem.list/new java.lang.String[]",
+   ?type = "java.lang.String[]".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "java.io.UnixFileSystem.list/new java.lang.String",
+   ?type = "java.lang.String".
+
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   (?id = "<<string-constant>>";
+    ?id = "<<reflection-string-constant>>"),
+   ?type = "java.lang.String".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<string-buffer>>",
+   ?type = "java.lang.StringBuffer".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<string-builder>>",
+   ?type = "java.lang.StringBuilder".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   (?id = "<<system-thread-group>>";
+    ?id = "<<main-thread-group>>"),
+   ?type = "java.lang.ThreadGroup".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<main-thread>>",
+   ?type = "java.lang.Thread".
+
+// Special heaps for contexts
+// Note: the type is necessary (java.lang.Object), but never used. It could be
+// anything. It also needs to be an existing type, otherwise the sanity checks
+// will barf.
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<initial-context>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<jvm-startup>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<class-initialization>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<immutable-context>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<immutable-hcontext>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<immutable>>",
+   ?type = "java.lang.Object".
+
+
+Value:DeclaringType[?value] = "java.lang.System" <-
+   Value:byId["<<string-constant>>"] = ?value ;
+   Value:byId["<<reflection-string-constant>>"] = ?value ;
+   Value:byId["<<string-buffer>>"] = ?value ;
+   Value:byId["<<string-builder>>"] = ?value ;
+   Value:byId["<<initial-context>>"] = ?value ;
+   Value:byId["<<jvm-startup>>"] = ?value ;
+   Value:byId["<<class-initialization>>"] = ?value ;
+   Value:byId["<<system-thread-group>>"] = ?value ;
+   Value:byId["<<main-thread-group>>"] = ?value ;
+   Value:byId["<<main-thread>>"] = ?value ;
+   Value:byId["<<immutable-context>>"] = ?value ;
+   Value:byId["<<immutable-hcontext>>"] = ?value ;
+   Value:byId["<<immutable>>"] = ?value.

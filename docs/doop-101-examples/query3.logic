@@ -1,0 +1,8 @@
+_Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Reachable(?inmethod), AssignCast(?type, ?from, ?to, ?inmethod).
+
+_Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
+    _Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
+    Stats:Simple:InsensVarPointsTo(?heap, ?from),
+    HeapAllocation:Type[?heap] = ?heaptype,
+    ! AssignCompatible(?type, ?heaptype).
