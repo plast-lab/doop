@@ -76,9 +76,6 @@ ReachableMethodUnderMustContext(?ctx, ?meth) <-
    SingleAllContext[] = ?ctx,
    RootMethodForMustAnalysis(?meth).
 
-RootMethodForMustAnalysis(?meth) <-
-   Method(?meth).
-
 ReachableMethodUnderMustContext(?ctx, ?meth) <-
    MustCallGraphEdge:Context[_, ?invo] = ?ctx,
    MustCallGraphEdge:ToMethod[?invo] = ?meth.
@@ -150,7 +147,6 @@ MustInterprocAssign(?callerCtx, ?base, ?calleeCtx, ?this) <-
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this.
-
 
 // Access paths with local vars as bases. Propagated through arguments
 // of the call.
@@ -771,7 +767,7 @@ StrongerContext(?ctx, ?strongerCtx) <-
 
 // TODO: Make MaxDepth configurable.
 MaxContextDepth[] = ?num -> int[32](?num).
-MaxContextDepth[] = 1 <- .
+MaxContextDepth[] = 2 <- .
 
 //// END context management
 
