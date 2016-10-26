@@ -1,0 +1,95 @@
+// Just for baseline comparisons. Should be very cheap to compute.
+
+// to be provided by other components
+MayReachableMethodUnderMayContext(ctx, inMethod) ->
+  MayContext(ctx), Method(inMethod).
+
+// intermediate relations to compute
+AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method) ->
+  MayHeapContext(hctx), HeapAllocation(heap), Var(Var), Method(Method).
+IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, insn) ->
+  MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Instruction(insn).
+
+// output relations
+IntraproceduralMustPointTo(hctx, heap, ctx, var) ->
+  MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Var(var).
+IntraproceduralCertainMethodBase(hctx, heap, ctx, invo) ->
+  MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), MethodInvocation(invo).
+AppAllCtxIntraproceduralMustPointTo(hctx, heap, var) ->
+  MayHeapContext(hctx), HeapAllocation(heap), Var(Var).
+
+
+IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+  AssignNormalHeapAllocation(heap, var, inMethod),
+  MayReachableMethodUnderMayContext(ctx, inMethod),
+  EmptyHeapContext(hctx).
+
+// strings and others
+IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+  AssignContextInsensitiveHeapAllocation(heap, var, inMethod),
+  !HeapAllocation_Merge(heap, _),
+  EmptyHeapContext(hctx),
+  MayReachableMethodUnderMayContext(ctx, inMethod).
+
+IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+  AssignContextInsensitiveHeapAllocation(heap, var, inMethod),
+  HeapAllocation_Merge(heap, heap),
+  EmptyHeapContext(hctx),
+  MayReachableMethodUnderMayContext(ctx, inMethod).
+
+// null assignments
+ 
+//RecordMacroMay(ctx, heap, hctx),
+IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+  AssignNull_Insn(insn),
+  AssignInstruction_To(insn, var),
+  HeapAllocation_Null(heap),
+  Instruction_Method(insn, inMethod),
+  MayReachableMethodUnderMayContext(ctx, inMethod),
+  EmptyHeapContext(hctx).
+
+IntraproceduralMustPointTo(hctx, heap, ctx, to) <-
+  IntraproceduralMustPointTo(hctx, heap, ctx, from),
+  AssignLocal_From(insn, from),
+  !PhiNodeHead(insn, _),
+  AssignInstruction_To(insn, to).
+
+IntraproceduralMustPointTo(hctx, heap, ctx, to) <-
+  AssignCast_From(insn, from),
+  IntraproceduralMustPointTo(hctx, heap, ctx, from),
+  AssignInstruction_To(insn, to).
+
+IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+  IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, lastInsn),
+  !NextInSamePhiNode(lastInsn, _),
+  AssignInstruction_To(lastInsn, var).
+
+IntraproceduralCertainMethodBase(hctx, heap, ctx, invo) <-
+  (SpecialMethodInvocation_Base(invo, base);
+   VirtualMethodInvocation_Base(invo, base)),
+  IntraproceduralMustPointTo(hctx, heap, ctx, base).
+
+AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method) <-
+  InitialMayContext(initCtx),
+  IntraproceduralMustPointTo(hctx, heap, initCtx, var),
+  Var_DeclaringMethod(var, method).
+
+IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+  MayReachableMethodUnderMayContext(ctx, method),
+  AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method).
+
+IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, headInsn) <-
+  PhiNodeHead(_, headInsn),
+  AssignLocal_From(headInsn, from),
+  IntraproceduralMustPointTo(hctx, heap, ctx, from).
+
+IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, nextInsn) <-
+  IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, insn),
+  NextInSamePhiNode(insn, nextInsn),
+  AssignLocal_From(nextInsn, from),
+  IntraproceduralMustPointTo(hctx, heap, ctx, from).
+
+// for final stats
+AppAllCtxIntraproceduralMustPointTo(hctx, heap, var) <-
+  AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method),
+  MethodSignature_DeclaringType(method, class), ApplicationClass(class).
