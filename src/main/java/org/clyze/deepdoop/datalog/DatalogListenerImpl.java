@@ -198,7 +198,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 				str = str.substring(1);
 				base = 8;
 			}
-			_expr.put(ctx, new ConstantExpr(Integer.parseInt(str, base)));
+			_expr.put(ctx, new ConstantExpr(Long.parseLong(str, base)));
 		}
 		else if (ctx.REAL() != null)    _expr.put(ctx, new ConstantExpr(Double.parseDouble(ctx.REAL().getText())));
 		else if (ctx.BOOLEAN() != null) _expr.put(ctx, new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText())));
