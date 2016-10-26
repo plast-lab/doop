@@ -1367,10 +1367,12 @@ ReifiedConstructor[?signature] = ?value
 
 /**
  * Heap allocations for reified methods (java.lang.reflect.Method).
+ * TODO: contains temporary solution against huge method signatures.
  */
 MockHeapConsMacro(?id, ?type, ?value),
 ReifiedMethod[?signature] = ?value
 <-
+   string:length[?strSignature] < 4000,
    Method:SimpleName[?signature] = ?simplename,
    ?simplename != "<init>", ?simplename != "<clinit>",
    Method:Id(?signature:?strSignature),

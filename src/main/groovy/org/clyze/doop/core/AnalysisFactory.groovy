@@ -167,10 +167,6 @@ class AnalysisFactory {
         if (vars.options.TAMIFLEX.value)
             checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
 
-        def checksumsFile = FileOps.findFileOrThrow("${Doop.doopHome}/checksums.properties", "Invalid checksums")
-        def props = FileOps.loadProperties(checksumsFile)
-        checksums += [props.getProperty(Doop.SOOT_CHECKSUM_KEY)]
-
         idComponents = checksums + idComponents
 
         logger.debug("Cache ID components: $idComponents")

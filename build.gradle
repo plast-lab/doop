@@ -31,9 +31,10 @@ task wrapper(type: Wrapper) {
 
 repositories {
     mavenCentral()
+    maven {
+        url "http://centauri.di.uoa.gr:8081/artifactory/ext-snapshot-local"
+    }
 }
-
-def sootClassesJar = file('lib/sootclasses-trunk.jar')
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
@@ -46,12 +47,18 @@ dependencies {
             'org.ow2.asm:asm-debug-all:5.1'                     // Java Bytecode library
 
     // Soot is a compile time dependency
-    // compile files(sootClassesJar)                               // Soot is a compile time dependency
-    compile files(sootClassesJar, 'lib/soot-infoflow.jar', 'lib/soot-infoflow-android.jar', 'lib/AXMLPrinter2.jar', 'lib/dexlib2-2.1.3-a5d82813.jar')
+    compile 'ext:sootclasses-trunk:1.0-SNAPSHOT',
+            'ext:soot-infoflow:1.0-SNAPSHOT',
+            'ext:soot-infoflow-android:1.0-SNAPSHOT',
+            'ext:AXMLPrinter2:1.0-SNAPSHOT',
+            'ext:dexlib2-2.1.3-a5d82813:1.0-SNAPSHOT'
 
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'
-    runtime files('lib/averroes-no-properties.jar', 'lib/herosclasses-trunk.jar' , 'lib/util-2.1.3-a5d82813.jar', 'lib/axml-2.0.jar')
+    runtime 'ext:averroes-no-properties:1.0-SNAPSHOT',
+            'ext:herosclasses-trunk:1.0-SNAPSHOT',
+            'ext:util-2.1.3-a5d82813:1.0-SNAPSHOT',
+            'ext:axml-2.0:1.0-SNAPSHOT'
 
     // DeepDoop
     antlr "org.antlr:antlr4:4.5.1-1"
@@ -60,13 +67,12 @@ dependencies {
 }
 
 task generateFiles(type: JavaExec) {
-    description 'Generate the doop.properties & checksums.properties files'
+    description 'Generate the doop.properties file'
     group = 'Other'
     main = 'org.clyze.doop.FileGenerator'
     classpath = sourceSets.main.runtimeClasspath
     args = [
-        projectDir,
-        sootClassesJar
+        projectDir
     ]
 }
 
@@ -87,12 +93,11 @@ applicationDistribution.from(file("$projectDir/logic")) {
 }
 
 applicationDistribution.from(projectDir) {
-    include 'doop.properties', 'checksums.properties', 'LICENSE'
+    include 'doop.properties', 'LICENSE'
 }
 
 
 run {
-    dependsOn generateFiles
     //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
@@ -122,7 +127,7 @@ compileJava {
 import org.apache.commons.io.FileUtils
 
 clean.doFirst {
-    def out = System.getenv('DOOP_OUT')
+    def out = System.getenv('DOOP_OUT') ?: "${projectDir}/out"
     file(out      ).list().each { f -> delete "$out/$f" }
     file('logs'   ).list().each { f -> delete "logs/$f" }
     file('results').list().each { f -> delete "results/$f" }
@@ -133,10 +138,19 @@ if (project.hasProperty('artifactory_user')) {
 
     apply plugin: 'maven-publish'
 
+    //Generate a jar with the logic files
+    task logicJar(type:Jar) {
+        from "$projectDir/logic"
+    }
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
+
+                artifact logicJar {
+                    classifier "logic"
+                }
             }
         }
 

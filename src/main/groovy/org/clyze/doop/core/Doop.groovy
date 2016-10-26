@@ -8,7 +8,6 @@ import org.clyze.doop.system.FileOps
  */
 class Doop {
 
-    static final String SOOT_CHECKSUM_KEY = "soot"
     static final String ARTIFACTORY_PLATFORMS_URL = "http://centauri.di.uoa.gr:8081/artifactory/Platforms"
 
     static final List<AnalysisOption> ANALYSIS_OPTIONS = [
