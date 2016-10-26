@@ -1,8 +1,6 @@
-#include "../../facts/macros.logic"
-
 // We need to *pretend* we are creating new contexts, since the
 // product of the macro goes to the head of a rule.
-#define RecordMacro(ctx, heap, hctx) \
+#define RecordMacro(ctx, value, hctx) \
   HContext(hctx), \
   HContextFromRealHContext[] = hctx
 
@@ -10,32 +8,32 @@
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the call-site.
 // Again, this may trigger creation of a new object.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invo, hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[heap, invocation] = calleeCtx
+  ContextFromRealContext[value, invo] = calleeCtx
 
-//#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
-//  MergeBasis(hctx, callerCtx, heap, invocation)
+//#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+//  MergeBasis(hctx, callerCtx, value, invocation)
 
-//#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-//  OptimizeMerge[heap, invocation] = calleeCtx
+//#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+//  OptimizeMerge[value, invocation] = calleeCtx
 
 // For this analysis, static calls use the invocation site and
 // the receiver object of the caller as a context.
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealContext1FromContext[callerCtx], invocation] = calleeCtx
+  ContextFromRealContext[RealContext1FromContext[callerCtx], invo] = calleeCtx
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
-#define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[heap, RealContext2FromContext[callerCtx]] = newCtx
+  ContextFromRealContext[value, RealContext2FromContext[callerCtx]] = newCtx
 
-#define MergeStartupMacro(hctx, heap, calleeCtx) \
+#define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[heap, ImmutableInvValue[]] = calleeCtx
+  ContextFromRealContext[value, ImmutableInvValue[]] = calleeCtx
 
-#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[heap, RealContext2FromContext[callerCtx]] = newCtx
+  ContextFromRealContext[value, RealContext2FromContext[callerCtx]] = newCtx

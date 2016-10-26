@@ -1,12 +1,15 @@
-#include "../../core/context-sensitivity-declarations.logic"
+ContextFromRealContext[?type1, ?invocation, ?type2] = ?ctx ->
+  Instruction(?type1), Instruction(?invocation), Instruction(?type2), Context(?ctx).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?type ->
+  Context(?ctx), Instruction(?type).
+RealContext2FromContext[?ctx] = ?invocation ->
+  Context(?ctx), Instruction(?invocation).
+RealContext3FromContext[?ctx] = ?type ->
+  Context(?ctx), Instruction(?type).
 
-// For this analysis, contexts are heap objects, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?heap, ?alloc) ->
-  Instruction(?heap), HeapAllocation(?alloc).
-
-MyMainThreadGroup(?heap, ?alloc) ->
-  Instruction(?heap), HeapAllocation(?alloc).
-
-MyMainThread(?heap, ?alloc) ->
-  Instruction(?heap), HeapAllocation(?alloc).
+HContextFromRealHContext[?type] = ?hctx ->
+  HContext(?hctx), Instruction(?type).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?type ->
+  HContext(?hctx), Instruction(?type).

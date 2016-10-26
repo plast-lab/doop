@@ -1,6 +1,5 @@
 #include "../2-object-sensitive+heap/delta.logic"
 
-
 // Dependency source instructions
 // +DependencySourceInstruction("java.lang.Object.equals/return/instruction9").
 +DependencySourceInstruction("gr.uoa.di.sigmod15.ParserWorker.defineSchema/new java.util.concurrent.Semaphore/0").

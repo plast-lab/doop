@@ -116,9 +116,11 @@ To list all the available options run Doop without any parameters (or with the -
 The main command line options are described in the `README` file:
 
 * -a, --analysis: The name of the analysis.
-* -j, --jar: The jar file(s) to analyse.
-* --jre: The version of the JRE to use. Doop checks for the JRE-specific files in the `$DOOP_JRE_LIB`
-         directory, while an alternate location can be provided through the `--jre-lib` option. 
+* -i, --input: The jar file(s) to analyse.
+* --platform: The platform and version to use. Doop checks for the JRE-specific or Android-specific files in the `$DOOP_PLATFORMS_LIB`
+         directory, while an alternate location can be provided through the `--doop-platform-libs` option. For instance,
+          java_7 specifies the Java platform and the JRE 1.7 will be used to resolve library calls, while android_26 specifies the Android platform
+          and the Android library version 26 (Marshmallow) will be used to resolve calls to the Android library).
 * --main: The name of the Java main class.
 * -t, --timeout: The analysis execution timeout in minutes.
 * -id, --identifier: The human-friendly identifier of the analysis (if not specified, Doop will generate one automatically).
@@ -132,11 +134,11 @@ more information on how to acquire those benchmarks.
 
 For example, in order to analyze a DaCapo 2006 benchmark we could issue the following:
 
-    $ ./doop -a context-insensitive -j benchmarks/dacapo-2006/antlr.jar --dacapo
+    $ ./doop -a context-insensitive -i benchmarks/dacapo-2006/antlr.jar --dacapo
 
 Respectively, for a DaCapo Bach benchmark we could issue the following:
 
-    $ ./doop -a context-insensitive -j benchmarks/dacapo-bach/avrora/avrora.jar --dacapo-bach
+    $ ./doop -a context-insensitive -i benchmarks/dacapo-bach/avrora/avrora.jar --dacapo-bach
 
 
 ## Design and Implementation {#design}
@@ -196,8 +198,6 @@ A class that models an analysis option. Each option contains the following attri
 * *description*: The description of the option (which is also presented to the end-user).
 * *value*: The value of the option.
 * *forPreprocessor*: Boolean flag indicating that the option is used by the preprocessor.
-* *flagType*: Enum value indicating the type of the preprocessor option: `NORMAL_FLAG`, `EXCEPTION_FLAG`, or `CONSTANT_FLAG`. 
-              See the `PreprocessorFlag` class. This value is ignored when the `forPreprocessor` option is false.
 * *cli*: Boolean flag indicating whether the option should be included in the CLI.
 * *webUI* - Boolean flag indicating whether the option should be included in the Web UI.
 * *argName* - The description of the option's value which will be displayed to the end-user. All String options should
@@ -262,10 +262,6 @@ argName of the option.
 * implement the validation/checks required for the new option (if any) in the `AnalysisFactory`,
 * update the implementation of `Analysis` to take into account the new option during the execution of the analysis phases.
 
-
-#### Other classes
-The Java/Groovy part of Doop contains some additional helper classes including the `OS`, `JRE`,
-`PreprocessorFlag` Enums and the `org.clyze.doop.preprocess.*` package which offers a Java-only C preprocessor.
 
 ### The classes of the Doop CLI {#design.cli}
 

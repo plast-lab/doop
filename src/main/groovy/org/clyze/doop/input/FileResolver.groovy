@@ -1,11 +1,9 @@
 package org.clyze.doop.input
 
-import org.clyze.doop.core.Helper
+import org.clyze.doop.system.FileOps
 
 /**
  * Resolves the input as a local file.
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 23/3/2015
  */
 class FileResolver implements InputResolver {
 
@@ -16,7 +14,7 @@ class FileResolver implements InputResolver {
 
     @Override
     void resolve(String input, InputResolutionContext ctx) {
-        File file = Helper.checkFileOrThrowException(input, "Not a file input: $input")
+        def file = FileOps.findFileOrThrow(input, "Not a file input: $input")
         ctx.set(input, file)
     }
 }

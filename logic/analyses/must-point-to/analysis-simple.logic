@@ -21,14 +21,14 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
 // At instruction ?insn, whenever (if) it is reached under context
 // ?ctx, access path ?ap points to the most recently allocated object
-// at site ?heap. That is, ?heap is concrete but ?ap is the analogue
+// at site ?value. That is, ?value is concrete but ?ap is the analogue
 // of a summary object. At Store instructions, this can be a weaker
 // predicate than InstanceFieldMustPointTo (strictly weaker for access
 // paths of the form "var.fld"), so it's easier to establish.
 // However, it is harder to establish as carried from one instruction
 // to the next.
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
-   HeapAllocation(?heap), AccessPath(?ap), MustContext(?ctx), 
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value ->
+   Value(?value), AccessPath(?ap), MustContext(?ctx), 
    Instruction(?insn).
 
 // Must-Alias relation between access paths, i.e., v(.fi)*
@@ -36,27 +36,27 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
 MustAlias(?ap1, ?ap2, ?ctx, ?insn) ->
    AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn), MustContext(?ctx).
 
-RootMethodForMustAnalysis(?meth) -> MethodSignature(?meth).
+RootMethodForMustAnalysis(?meth) -> Method(?meth).
 
 //// ====================================
 //// BEGIN Auxiliary relations
 
 // Meaning: variable ?var points to the most recently allocated object
-// at ?heap, provided that the caller of the method of ?var is
+// at ?value, provided that the caller of the method of ?var is
 // uniquely determined by ?callCtx (though ?callCtx can have an
-// all-contexts value). Thus, ?heap can be treated as a non-summary
+// all-contexts value). Thus, ?value can be treated as a non-summary
 // object.
-MustPointTo[?var, ?callCtx, ?insn] = ?heap ->
-   HeapAllocation(?heap), MustContext(?callCtx), Var(?var), Instruction(?insn).
+MustPointTo[?var, ?callCtx, ?insn] = ?value ->
+   Value(?value), MustContext(?callCtx), Var(?var), Instruction(?insn).
 
 // At (i.e., right after) instruction ?insn, if it is reached and
 // executed under context ?ctx, field ?fld of the most recently
-// allocated object at site ?baseHeap points to the most recently
-// allocated object at site ?heap.  That is, BOTH objects are concrete
+// allocated object at site ?baseValue points to the most recently
+// allocated object at site ?value.  That is, BOTH objects are concrete
 // (non-summary).
-InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
-   HeapAllocation(?heap), HeapAllocation(?baseHeap), 
-   MustContext(?ctx), Instruction(?insn), FieldSignature(?fld).
+InstanceFieldMustPointTo[?fld, ?baseValue, ?ctx, ?insn] = ?value ->
+   Value(?value), Value(?baseValue), 
+   MustContext(?ctx), Instruction(?insn), Field(?fld).
 
 // NOTE: MustPointTo and InstanceFieldMustPointTo relations are
 // derived only from the AccessPathMustPointTo relation. We use them for
@@ -70,20 +70,20 @@ InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap ->
 // Need to identify relevant (i.e., reachable) methods for the must
 // analysis, instead of blindly applying it to all available code.
 ReachableMethodUnderMustContext(?ctx, ?meth) ->
-   MustContext(?ctx), MethodSignature(?meth).
+   MustContext(?ctx), Method(?meth).
 
 ReachableMethodUnderMustContext(?ctx, ?meth) <-
    SingleAllContext[] = ?ctx,
    RootMethodForMustAnalysis(?meth).
 
 RootMethodForMustAnalysis(?meth) <-
-   MethodSignature(?meth).
+   Method(?meth).
 
 ReachableMethodUnderMustContext(?ctx, ?meth) <-
    MustCallGraphEdge:Context[_, ?invo] = ?ctx,
    MustCallGraphEdge:ToMethod[?invo] = ?meth.
 
-MustReachable(?meth) -> MethodSignature(?meth).
+MustReachable(?meth) -> Method(?meth).
 MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 
 // For some caller context, the call at ?invocation will get
@@ -91,10 +91,10 @@ MustReachable(?meth) <- ReachableMethodUnderMustContext(_, ?meth).
 // ?invocation. In this way, information can be passed to the callee,
 // but only qualified by ?calleeCtx.
 MustCallGraphEdge:ToMethod[?invocation] = ?toMethod ->
-   CallGraphEdgeSource(?invocation), 
-   MethodSignature(?toMethod).
+   MethodInvocation(?invocation), 
+   Method(?toMethod).
 MustCallGraphEdge:Context[?ctx, ?invocation] = ?calleeCtx ->
-   CallGraphEdgeSource(?invocation), 
+   MethodInvocation(?invocation), 
    MustContext(?calleeCtx), MustContext(?ctx).
 
 // static or special method invocation without "this" value
@@ -121,12 +121,12 @@ MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    MustContextDepth[?ctx] < MaxContextDepth[],
    VirtualMethodInvocation:Base[?invo] = ?base,
    TypeResolvedVar(?base),
-   VPTTypeForVarModNull(?heaptype, ?base),
+   VPTTypeForVarModNull(?valuetype, ?base),
    // REVIEW: the predicates below introduce dependency to
    // method-resolution.logic.
    VirtualMethodInvocation:SimpleName[?invo] = ?simplename,
    VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
-   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?toMethod.
+   MethodLookup[?simplename, ?descriptor, ?valuetype] = ?toMethod.
 #endif
  
 // to has deeper context than from
@@ -230,22 +230,24 @@ AccessPathRebasedForReturn[?ap, ?invo] = ?newAp <-
 
 // Root of all MustPointTo inferences.
 // REVIEW: This introduces dependency on string-constants.logic
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
    AccessPath:ByVar[?var] = ?ap,
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
    AssignHeapAllocation:VarInv(?insn, ?var),
+   Value:byHeap[?heap] = ?value,
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
 
 AssignHeapAllocation:VarInv(?insn, ?var) <-
    AssignHeapAllocation:Insn(?insn),
    AssignInstruction:To[?insn] = ?var.
    
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
    AccessPath:ByVar[?var] = ?ap,
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
    (!(HeapAllocation:Merge[?heap] = _);
     HeapAllocation:Merge[?heap] = ?heap),
    AssignHeapAllocation:VarInv(?insn, ?var),
+   Value:byHeap[?heap] = ?value,
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
 
 // Also propagate heap models when making calls!
@@ -254,20 +256,20 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 // predecessors. Bug warning: the information holds *before* first
 // instruction, not after. Thankfully we have the concept to express
 // precisely that: AllPredecessors:AccessPathMustPointTo !
-AllPredecessors:AccessPathMustPointTo[?calleeAp, ?calleeCtx, ?firstInsn] = ?heap <-
+AllPredecessors:AccessPathMustPointTo[?calleeAp, ?calleeCtx, ?firstInsn] = ?value <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
    !IsJumpTarget(?firstInsn),
-   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?invo] = ?heap,
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?invo] = ?value,
    AccessPathRebasedForCall(?calleeAp, ?ap, ?invo).
 
 // Similarly for returns, propagate back.
-AccessPathMustPointTo[?callerAp, ?ctx, ?invo] = ?heap <-
+AccessPathMustPointTo[?callerAp, ?ctx, ?invo] = ?value <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
-   (AllReturn:AccessPathMustPointTo[?ap, ?calleeCtx, ?toMethod] = ?heap;
-    AllReturn:AccessPathMustPointTo[?ap, SingleAllContext[], ?toMethod] = ?heap),
+   (AllReturn:AccessPathMustPointTo[?ap, ?calleeCtx, ?toMethod] = ?value;
+    AllReturn:AccessPathMustPointTo[?ap, SingleAllContext[], ?toMethod] = ?value),
    AccessPathRebasedForReturn[?ap, ?invo] = ?callerAp.
 
 /*
@@ -275,21 +277,21 @@ AccessPathMustPointTo[?callerAp, ?ctx, ?invo] = ?heap <-
 // Final static fields that must point to an object, at the end of a
 // class initializer, cannot change in the future; thus, we can assume
 // that every field load on these fields will fetch this exact object.
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
    StaticFieldLoad(?to, ?fld, ?insn),
-   StaticFinalFieldMustPointTo[?fld] = ?heap,
+   StaticFinalFieldMustPointTo[?fld] = ?value,
    AccessPath:ByVar[?to] = ?ap,
    Instruction:Method[?insn] = ?inmethod,
    SingleAllContext[] = ?ctx,
    MustReachable(?inmethod).
 
-StaticFinalFieldMustPointTo[?fld] = ?heap <-
+StaticFinalFieldMustPointTo[?fld] = ?value <-
    Modifier:final[] = ?final,
-   FieldModifier(?final, ?fld),
+   Field:Modifier(?final, ?fld),
    SingleAllContext[] = ?ctx,
-   AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap,
+   AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?value,
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
-   MethodSignature:SimpleName[?method] = "<clinit>".
+   Method:SimpleName[?method] = "<clinit>".
 */
 
 // Frame rules
@@ -297,14 +299,15 @@ StaticFinalFieldMustPointTo[?fld] = ?heap <-
 // Original version of frame rules, without "dominated predecessor 
 // does not invalidate" logic. At the end of the file, there is an
 // addition that allows more inferences.
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value,
    FieldInstruction:Signature[?insn] = ?fld,
    !AccessPath:ContainsField(?fld, ?ap),
    !(AccessPath:ContainsStaticField[?ap] = ?fld).
 
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
+   AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value,
+   Value:Heap[?value] = ?heap,
    !StoreInstanceField:Insn(?insn),
    !StoreStaticField:Insn(?insn),
    !(AssignHeapAllocation:Heap[?insn] = ?heap),
@@ -313,35 +316,35 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
 
 // Fill MustPointTo and InstanceFieldMustPointTo relations.
 
-MustPointTo[?var, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+MustPointTo[?var, ?ctx, ?insn] = ?value <-
+   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value,
    AccessPath:ByVarInv[?ap] = ?var.
 
 //// CHANGED FOR SIMPLE ANALYSIS!
-InstanceFieldMustPointTo[?fld, ?baseHeap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap,
+InstanceFieldMustPointTo[?fld, ?baseValue, ?ctx, ?insn] = ?value <-
+   AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value,
    AccessPath:Base[?ap] = ?baseAp,
    AccessPath:LastField[?ap] = ?fld,
-   AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseHeap,
-   ?baseHeap != HeapAllocation:Null[].
+   AccessPathMustPointTo[?baseAp, ?ctx, ?insn] = ?baseValue,
+   ?baseValue != Value:Null[].
 
 // MustAlias relations are a major source of MustPointTo inferences.
 //// CHANGED FOR SIMPLE ANALYSIS!
-AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
+AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?value <-
    MustAlias(?ap2, ?ap1, ?ctx, ?insn),
    ?ap2 != NullAccessPath[],
-   AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
+   AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?value.
 
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
-AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
    MustAlias(NullAccessPath[], ?ap, ?ctx, ?insn),
-   HeapAllocation:Null[] = ?heap.
+   Value:Null[] = ?value.
 */
 
-AllPredecessors:AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?heap <-
+AllPredecessors:AccessPathMustPointTo[?ap2, ?ctx, ?insn] = ?value <-
    AllPredecessors:MustAlias(?ap2, ?ap1, ?ctx, ?insn),
-   AllPredecessors:AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?heap.
+   AllPredecessors:AccessPathMustPointTo[?ap1, ?ctx, ?insn] = ?value.
 
 //// END AccessPathMustPointTo code
 //// ====================================
@@ -711,12 +714,12 @@ lang:physical:storageModel[`MustContext]="ScalableSparse".
 lang:physical:capacity[`MustContext] = 33554432.
 
 EmptyContext[] = ?ctx -> MustContext(?ctx).
-lang:skolem(`EmptyContext).
+lang:constructor(`EmptyContext).
 EmptyContext[] = ?ctx, MustContext(?ctx)  <- .
 
 PushAllOntoContext[?ctx] = ?pushedCtx -> 
    MustContext(?ctx), MustContext(?pushedCtx).
-lang:skolem(`PushAllOntoContext).
+lang:constructor(`PushAllOntoContext).
 
 SingleAllContext[] = ?ctx -> MustContext(?ctx).
 SingleAllContext[] = ?ctx,
@@ -725,8 +728,8 @@ MustContext(?ctx) <-
    EmptyContext[] = ?emptyCtx.
 
 PushMustContext[?invo, ?ctx] = ?pushedCtx ->
-   MustContext(?pushedCtx), MustContext(?ctx), CallGraphEdgeSource(?invo).
-lang:skolem(`PushMustContext).
+   MustContext(?pushedCtx), MustContext(?ctx), MethodInvocation(?invo).
+lang:constructor(`PushMustContext).
 PopMustContext[?ctx] = ?poppedCtx ->
    MustContext(?poppedCtx), MustContext(?ctx).
 PopMustContext[?ctx] = ?poppedCtx <-
@@ -738,7 +741,7 @@ PopMustContext[?ctx] = ?poppedCtx <-
 //    PushAllOntoContext[?poppedCtx] = ?ctx.
 
 InvoFromContext[?ctx] = ?invocation ->
-   MustContext(?ctx), CallGraphEdgeSource(?invocation).
+   MustContext(?ctx), MethodInvocation(?invocation).
 InvoFromContext[?ctx] = ?invocation <- 
    PushMustContext[?invocation, _] = ?ctx.
 
@@ -784,14 +787,14 @@ lang:physical:storageModel[`AccessPath] = "ScalableSparse".
 lang:physical:capacity[`AccessPath] = 8388608.
 
 NullAccessPath[] = ?nullAp -> AccessPath(?nullAp).
-lang:skolem(`NullAccessPath).
+lang:constructor(`NullAccessPath).
 
 NullAccessPath[] = ?nullAp, AccessPath(?nullAp) <- .
 
 // Constructor from variable.
 AccessPath:ByVar[?var] = ?ap ->
    Var(?var), AccessPath(?ap).
-lang:skolem(`AccessPath:ByVar).
+lang:constructor(`AccessPath:ByVar).
 
 AccessPath:ByVarInv[?ap] = ?var ->
    AccessPath(?ap), Var(?var).
@@ -804,15 +807,15 @@ IsVariable(?ap) <-
 
 // Constructor from static field
 AccessPath:ByStaticField[?fld] = ?ap ->
-   FieldSignature(?fld), AccessPath(?ap).
-lang:skolem(`AccessPath:ByStaticField).
+   Field(?fld), AccessPath(?ap).
+lang:constructor(`AccessPath:ByStaticField).
 
 AccessPath:ByStaticFieldInv[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
 
 AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2 ->
-   FieldSignature(?fld), AccessPath(?ap1), AccessPath(?ap2).
-lang:skolem(`AccessPath:ByFieldAccess).
+   Field(?fld), AccessPath(?ap1), AccessPath(?ap2).
+lang:constructor(`AccessPath:ByFieldAccess).
 
 AccessPath:ByFieldAccessInv[?ap1, ?fld] = ?ap2 <- 
    AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2.
@@ -834,7 +837,7 @@ AccessPath:LastFieldInv(?ap, ?fld) <-
 
 // Fields in access path
 AccessPath:ContainsField(?fld, ?ap) ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 
 AccessPath:ContainsField(?fld, ?ap) <-
    AccessPath:LastField[?ap] = ?fld.
@@ -845,7 +848,7 @@ AccessPath:ContainsField(?fld, ?ap) <-
 
 // Access path has static field as base
 AccessPath:ContainsStaticField[?ap] = ?fld ->
-   FieldSignature(?fld), AccessPath(?ap).
+   Field(?fld), AccessPath(?ap).
 
 AccessPath:ContainsStaticField[?ap] = ?fld <-
    AccessPath:ByStaticField[?fld] = ?ap.
@@ -865,7 +868,7 @@ AccessPath:Length[?ap] = ?len ->
    AccessPath(?ap), int[32](?len).
 
 TypeContainsField(?fld, ?type) <-
-   FieldSignature:DeclaringClass[?fld] = ?type.
+   Field:DeclaringType[?fld] = ?type.
 
 TypeContainsField(?fld, ?type) <-
    Subclass(?superType, ?type),
@@ -876,7 +879,7 @@ AccessPath:Type[?ap] = ?type ->
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:ByStaticFieldInv[?ap] = ?fld,
-   FieldSignature:Type[?fld] = ?type.
+   Field:Type[?fld] = ?type.
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:ByVarInv[?ap] = ?var,
@@ -884,7 +887,7 @@ AccessPath:Type[?ap] = ?type <-
 
 AccessPath:Type[?ap] = ?type <-
    AccessPath:LastField[?ap] = ?fld,
-   FieldSignature:Type[?fld] = ?type.
+   Field:Type[?fld] = ?type.
 
 AccessPath:MaxLength[] = ?maxLen ->
    int[32](?maxLen).
@@ -925,25 +928,25 @@ NameFromRefMode[?ref] = ?name ->
    string(?ref), string(?name).
 
 NameFromRefMode[?ref] = ?varName <-
-   Var:Value(_:?ref),
+   Var:Id(_:?ref),
    VarRefModeLastTokenIndex[?ref] = ?maxIdx,
    string:split[?ref, "/", ?maxIdx] = ?varName.
 lang:derivationType[`NameFromRefMode] = "Derived".
 
 NameFromRefMode[?ref] = ?varName <-
-   FieldSignature:Value(_:?ref),
+   Field:Id(_:?ref),
    FieldRefModeLastTokenIndex[?ref] = ?maxIdx,
    string:split[?ref, "/", ?maxIdx] = ?varName.
 lang:derivationType[`NameFromRefMode] = "Derived".
 
 VarRefModeLastTokenIndex[?ref] = ?maxIdx <-
    agg<<?maxIdx = max(?idx)>>
-   Var:Value(_:?ref),
+   Var:Id(_:?ref),
    string:split[?ref, "/", ?idx] = _.
 
 FieldRefModeLastTokenIndex[?ref] = ?maxIdx <-
    agg<<?maxIdx = max(?idx)>>
-   FieldSignature:Value(_:?ref),
+   Field:Id(_:?ref),
    string:split[?ref, "/", ?idx] = _.
 
 
@@ -993,7 +996,7 @@ AccessPath:Length[?ap] = 2 <-
    Reachable(?meth),
 #endif
    AccessPath:ByVar[?base] = ?baseAp,
-   ReferenceType(FieldSignature:Type[?fld]).
+   ReferenceType(Field:Type[?fld]).
 
 AccessPath(?ap),
 AccessPath:ByStaticField[?fld] = ?ap,
@@ -1004,7 +1007,7 @@ AccessPath:Length[?ap] = 1 <-
 #ifdef MUST_AFTER_MAY
    Reachable(?meth),
 #endif
-   ReferenceType(FieldSignature:Type[?fld]).
+   ReferenceType(Field:Type[?fld]).
 
 
 //// END access path creation
@@ -1146,71 +1149,71 @@ AccessPathsMustAliasUpToPredecessor(?ap1, ?ap2, ?ctx, ?insn, ?pred) <-
 
 
 // For all predecessors of instruction, access path expression must point to...
-AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap ->
-   HeapAllocation(?heap), AccessPath(?ap),
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?value ->
+   Value(?value), AccessPath(?ap),
    MustContext(?ctx), Instruction(?insn), Instruction(?pred).
 
-AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?value <-
    MaySuccessorBBModuloThrow(?insn, ?pred),
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?pred,
-   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap,
+   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?value,
    !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
 
-OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap <-
-   AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?prevPred] = ?heap,
+OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?value <-
+   AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?prevPred] = ?value,
    NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
 
-OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?head] = ?heap <-
+OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?head] = ?value <-
    BasicBlockEnd(?tail),
    BasicBlockHead[?tail] = ?head,  
-   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?heap.
+   AccessPathMustPointTo[?ap, ?ctx, ?tail] = ?value.
 
 //// CHANGED FOR SIMPLE ANALYSIS!
-AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap <-
-   OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?heap,
-   OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?pred] = ?heap. 
+AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?value <-
+   OptAccessPathMustPointToUpToPreviousPredecessor[?insn, ?ap, ?ctx, ?pred] = ?value,
+   OptAccessPathMustPointToAtBBTail[?ap, ?ctx, ?pred] = ?value. 
 
-AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap ->
-   HeapAllocation(?heap), AccessPath(?ap),
+AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value ->
+   Value(?value), AccessPath(?ap),
    MustContext(?ctx), Instruction(?insn).
 
-AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
-   AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?heap,
+AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
+   AccessPathMustPointToUpToPredecessor[?ap, ?ctx, ?insn, ?pred] = ?value,
    !(NextPredecessorToSameBB[?insn, ?pred] = _),
    !ExceptionHandlerFirstInstruction(?insn).
 
-AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?heap <-
+AllPredecessors:AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
    PrevInSameBasicBlock[?insn] = ?prev,
-   AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?heap.
+   AccessPathMustPointTo[?ap, ?ctx, ?prev] = ?value.
 
 
 
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
 // for all returns of a method, access path must point to..
-UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap <-
+UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?value <-
    ReturnInstruction(?return),
    !ExistsPreviousReturn(?return),
-   AccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap.
+   AccessPathMustPointTo[?ap, ?ctx, ?return] = ?value.
 
-UpToReturnAccessPathMustPointTo[?ap, MeetContexts[?ctx1,?ctx2], ?return] = ?heap <-
-   UpToReturnAccessPathMustPointTo[?ap, ?ctx1, ?prevReturn] = ?heap,
+UpToReturnAccessPathMustPointTo[?ap, MeetContexts[?ctx1,?ctx2], ?return] = ?value <-
+   UpToReturnAccessPathMustPointTo[?ap, ?ctx1, ?prevReturn] = ?value,
    NextReturn[?prevReturn] = ?return,
-   AccessPathMustPointTo[?ap, ?ctx2, ?return] = ?heap.
+   AccessPathMustPointTo[?ap, ?ctx2, ?return] = ?value.
 
-AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
-   UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap,
+AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?value <-
+   UpToReturnAccessPathMustPointTo[?ap, ?ctx, ?return] = ?value,
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method.
 */
 //// ADDED FOR SIMPLE ANALYSIS!
-AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?heap <-
+AllReturn:AccessPathMustPointTo[?ap, ?ctx, ?method] = ?value <-
    ReturnInstruction(?return),
    !ExistsPreviousReturn(?return),
    !(NextReturn[?return] = _),
    Instruction:Method[?return] = ?method,
-   AccessPathMustPointTo[?ap, ?ctx, ?return] = ?heap.
+   AccessPathMustPointTo[?ap, ?ctx, ?return] = ?value.
 //// Done with addition for simple analysis
 
 OptAccessPath:ContainsField(?ap, ?fld) <-

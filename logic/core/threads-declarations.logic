@@ -1,8 +1,0 @@
-/**
- * Thread allocations that might be running
- */
-RunningThread(?hctx, ?heap) ->
-   HContext(?hctx), HeapAllocation(?heap).
-
-ReachableCurrentThreadInvocation(?callerCtx, ?local) ->
-   Context(?callerCtx), Var(?local).

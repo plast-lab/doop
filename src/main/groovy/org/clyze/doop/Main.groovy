@@ -1,22 +1,19 @@
 package org.clyze.doop
 
 import groovy.transform.CompileStatic
+import java.util.concurrent.*
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.clyze.doop.core.Analysis
-import org.clyze.doop.core.Doop
-import org.clyze.doop.core.Helper
-
-import java.util.concurrent.*
+import org.clyze.doop.core.*
+import org.clyze.doop.system.FileOps
 
 /**
  * The entry point for the standalone doop app.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
  */
-@CompileStatic class Main {
+@CompileStatic
+class Main {
 
     private static final Log logger = LogFactory.getLog(Main)
     private static final int DEFAULT_TIMEOUT = 180 // 3 hours
@@ -41,27 +38,29 @@ import java.util.concurrent.*
             }
 
             def argsToParse
-            String bloxOptions
-
-            //Check for bloxbath options
-            int len = args.length
-            int index = len
-            while (--index >= 0)
-                if (args[index] == "--")
-                    break
-
+            def bloxOptions
+            def index = args.findIndexOf { arg -> arg == "--" }
             if (index == -1) {
                 argsToParse = args
                 bloxOptions = null
             }
             else {
-                argsToParse = args[0..index-1]
-                bloxOptions = args[index+1..len-1].join(' ')
+                argsToParse = args[0..(index-1)]
+                bloxOptions = args[(index+1)..(args.length-1)].join(' ')
             }
 
             OptionAccessor cli = builder.parse(argsToParse)
 
-            if (!cli || cli['h']) {
+            if (!cli) {
+                usageBuilder.usage()
+                return
+            }
+            else if (cli.arguments().size() != 0) {
+                println "Invalid argument specified: " + cli.arguments()[0]
+                usageBuilder.usage()
+                return
+            }
+            else if (cli['h']) {
                 usageBuilder.usage()
                 return
             }
@@ -75,20 +74,9 @@ import java.util.concurrent.*
             if (cli['p']) {
                 //create analysis from the properties file & the cli options
                 String file = cli['p'] as String
-                File f = Helper.checkFileOrThrowException(file, "Not a valid file: $file")
+                File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
                 File propsBaseDir = f.getParentFile()
-                Properties props = Helper.loadProperties(f)
-
-                //There are no mandatory properties since the name and jars can be overridden too.
-                /*
-                try {
-                    Helper.checkMandatoryProps(props)
-                }
-                catch(e) {
-                    println e.getMessage()
-                    return
-                }
-                */
+                Properties props = FileOps.loadProperties(f)
 
                 changeLogLevel(cli['l'] ?: props.getProperty("level"))
 
@@ -115,12 +103,12 @@ import java.util.concurrent.*
             }
 
             int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
-            ExecutorService executor = Executors.newSingleThreadExecutor()
+            ExecutorService executorService = Executors.newSingleThreadExecutor()
             try {
-                executor.submit(new Runnable() {
+                executorService.submit(new Runnable() {
                     @Override
                     void run() {
-                        logger.info "Starting ${analysis.name} analysis on ${analysis.inputJarFiles[0]} - id: $analysis.id"
+                        logger.info "Starting ${analysis.safename} analysis on ${analysis.inputs[0]} - id: $analysis.id"
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()
@@ -129,10 +117,11 @@ import java.util.concurrent.*
                 }).get(timeout, TimeUnit.MINUTES)
             }
             catch (TimeoutException te) {
-               logger.error("Timeout has expired ($timeout min).")
-               System.exit(-1)
+                logger.error "Timeout has expired ($timeout min)."
+                executorService.shutdownNow()
+                System.exit(-1)
             }
-            executor.shutdown()
+            executorService.shutdownNow()
 
         } catch (e) {
             if (logger.debugEnabled)

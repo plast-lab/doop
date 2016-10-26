@@ -1,3 +1,2 @@
-MustPointTo[?v, SingleAllContext[], _] = ?h,
- ?h != HeapAllocation:Null[] ->
-   VarPointsTo(_, ?h, _, ?v).
+MustPointTo[?v, SingleAllContext[], _] = ?val ->
+   VarPointsTo(_, ?val, _, ?v).

@@ -1,0 +1,13 @@
+// For this analysis, contexts are pairs of method invocations, so this is
+// what the initial system objects should have.
+MySystemThreadGroup(?hctx1, ?hctx2, ?heap) ->
+  MethodInvocation(?hctx1), MethodInvocation(?hctx2),
+  HeapAllocation(?heap).
+
+MyMainThreadGroup(?hctx1, ?hctx2, ?heap) ->
+  MethodInvocation(?hctx1), MethodInvocation(?hctx2),
+  HeapAllocation(?heap).
+
+MyMainThread(?hctx1, ?hctx2, ?heap) ->
+  MethodInvocation(?hctx1), MethodInvocation(?hctx2),
+  HeapAllocation(?heap).

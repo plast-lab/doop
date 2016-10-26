@@ -9,23 +9,24 @@ import java.io.Writer;
 
 enum PredicateFile
 {
+    ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     CLASS_TYPE("ClassType"),
+    CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
     INTERFACE_TYPE("InterfaceType"),
     COMPONENT_TYPE("ComponentType"),
     ACTUAL_PARAMETER("ActualParam"),
     DIRECT_SUPER_IFACE("DirectSuperinterface"),
     DIRECT_SUPER_CLASS("DirectSuperclass"),
-    FIELD_MODIFIER("FieldModifier"),
+    FIELD_MODIFIER("Field-Modifier"),
     FORMAL_PARAM("FormalParam"),
     METHOD_DECL_EXCEPTION("Method-DeclaresException"),
-    METHOD_MODIFIER("MethodModifier"),
+    METHOD_MODIFIER("Method-Modifier"),
     NATIVE_RETURN_VAR("NativeReturnVar"),
     VAR_TYPE("Var-Type"),
     VAR_DECLARING_METHOD("Var-DeclaringMethod"),
     APP_CLASS("ApplicationClass"),
     THIS_VAR("ThisVar"),
-    SIMPLE_EXCEPTION_HANDLER("SimpleExceptionHandler"),
     EXCEPT_HANDLER_PREV("ExceptionHandler-Previous"),
     ASSIGN_RETURN_VALUE("AssignReturnValue"),
     PROPERTIES("Properties"),
@@ -34,18 +35,18 @@ enum PredicateFile
     ASSIGN_CAST_NUM_CONST("AssignCastNumConstant"),
     ASSIGN_CAST_NULL("AssignCastNull"),
     ASSIGN_HEAP_ALLOC("AssignHeapAllocation"),
-    ASSIGN_MULT_ARRY_ALLOC("AssignMultiArrayAllocation"),
     ASSIGN_NUM_CONST("AssignNumConstant"),
     ASSIGN_NULL("AssignNull"),
     ASSIGN_INSTANCE_OF("AssignInstanceOf"),
-    NORMAL_OBJ("NormalObject"),
+    NORMAL_HEAP("NormalHeap"),
     EMPTY_ARRAY("EmptyArray"),
-    CLASS_OBJ("ClassObject"),
+    CLASS_HEAP("ClassHeap"),
     STRING_CONST("StringConstant"),
-    FIELD_SIGNATURE("FieldSignature"),
+    STRING_RAW("StringRaw"),
+    FIELD_SIGNATURE("Field"),
     ENTER_MONITOR("EnterMonitor"),
     EXIT_MONITOR("ExitMonitor"),
-    METHOD_INV_LINENUM("MethodInvocation-LineNumber"),
+    METHOD_INV_LINE("MethodInvocation-Line"),
     STATIC_METHOD_INV("StaticMethodInvocation"),
     ASSIGN_BINOP("AssignBinop"),
     ASSIGN_UNOP("AssignUnop"),
@@ -57,7 +58,7 @@ enum PredicateFile
     THROW("Throw"),
     THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),
-    METHOD_SIGNATURE("MethodSignature"),
+    METHOD_SIGNATURE("Method"),
     STORE_INST_FIELD("StoreInstanceField"),
     LOAD_INST_FIELD("LoadInstanceField"),
     STORE_STATIC_FIELD("StoreStaticField"),
@@ -82,19 +83,16 @@ enum PredicateFile
 
     private final String name;
 
-    PredicateFile(String name)
-    {
+    PredicateFile(String name) {
         this.name = name;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return  name;
     }
 
-    public Writer getWriter(File directory, String suffix) throws IOException
-    {
+    public Writer getWriter(File directory, String suffix) throws IOException {
         File factsFile = new File(directory, name + suffix);
         FileUtils.touch(factsFile);
         return new FileWriter(factsFile);
