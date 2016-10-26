@@ -1,11 +1,9 @@
-#include "../../facts/macros.logic"
-
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling
 // context of the allocator method.
 // Subtle point: this may need to be created because even though it
 // exists as a Context it may not exist as an HContext.
-#define RecordMacro(ctx, heap, hctx) \
+#define RecordMacro(ctx, value, hctx) \
   HContext(hctx), \
   HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
 
@@ -13,16 +11,16 @@
 // For this analysis the context of a method call corresponds to the
 // declaring classes of the receiver object and the receiver object
 // of the caller. Again, this may trigger creation of a new object.
-#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], \
-                         DeclaringClass:Allocation[heap]] = calleeCtx
+                         Value:DeclaringType[value]] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
-  MergeBasis(callerCtx, invocation, hctx, heap)
+#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+  MergeBasis(callerCtx, invocation, hctx, value)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-  OptimizeMerge[hctx, heap] = calleeCtx
+#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  OptimizeMerge[hctx, value] = calleeCtx
 
 // For this analysis, static calls just keep the same context as the
 // caller. *Not* creating a new one, but pretending to, nonetheless,
@@ -34,32 +32,32 @@
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
-#define MergeThreadStartMacro(hctx, heap, callerCtx, newCtx) \
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], \
-                         DeclaringClass:Allocation[heap]] = newCtx
+                         Value:DeclaringType[value]] = newCtx
 
-#define MergeStartupMacro(hctx, heap, calleeCtx) \
+#define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], \
-                         DeclaringClass:Allocation[heap]] = calleeCtx
+                         Value:DeclaringType[value]] = calleeCtx
 
-#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, heap, newCtx) \
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[RealContext2FromContext[callerCtx], \
-                         DeclaringClass:Allocation[heap]] = newCtx
+                         Value:DeclaringType[value]] = newCtx
 
 
 //// ---- Leftovers from experiment below ----
-//// What if we had context-sensitive reflective calls but separated from 
+//// What if we had context-sensitive reflective calls but separated from
 //// regular ones (with unique context constructors)
-//#define ReflectiveRecordMacro(ctx, heap, hctx) \
+//#define ReflectiveRecordMacro(ctx, value, hctx) \
 //  HContext(hctx), \
 //  ReflectiveHContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
-//#define ReflectiveMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+//#define ReflectiveMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
 //  Context(calleeCtx), \
 //  ReflectiveContextFromRealContext[RealHContextFromHContext[hctx], \
-//                         DeclaringClass:Allocation[heap]] = calleeCtx
+//                         Value:DeclaringType[value]] = calleeCtx
 //#define ReflectiveMergeStaticMacro(callerCtx, invocation, calleeCtx) \
 //  Context(calleeCtx), \
 //  ReflectiveContextFromRealContext[RealContext1FromContext[callerCtx], \

@@ -1,0 +1,16 @@
+#include "basic-declarations.logic"
+
+#include "exceptions.logic"
+#include "finalization.logic"
+#include "method-resolution.logic"
+#include "subclass.logic"
+#include "superinterface.logic"
+#include "type-hierarchy.logic"
+
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   Method:DeclaringType[?method] = ?type,
+   Method:SimpleName[?method] = "main",
+   Method:Descriptor[?method] = "void(java.lang.String[])",
+   Method:Modifier("public", ?method),
+   Method:Modifier("static", ?method).

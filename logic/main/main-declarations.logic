@@ -1,0 +1,42 @@
+#include "class-initialization-declarations.logic"
+#include "exceptions-declarations.logic"
+#include "implicit-reachable-declarations.logic"
+#include "string-constants-declarations.logic"
+#include "threads-declarations.logic"
+
+#if defined(ENABLE_REFLECTION)
+#include "reflection/declarations.logic" 
+#endif
+
+FakeInvocation:RegisterFinalize[?heap] = ?invo ->
+   HeapAllocation(?heap), MethodInvocation(?invo).
+
+//-----------------------------------------------------------------------------
+// [Value - artificially created]
+//-----------------------------------------------------------------------------
+
+Value(?value) -> .
+lang:entity(`Value).
+lang:physical:storageModel[`Value] = "ScalableSparse".
+lang:physical:capacity[`Value] = 4194304.
+
+Value:Heap:Cons[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
+Value:Mock:Cons[?id]   = ?value -> string(?id), Value(?value).
+
+lang:constructor(`Value:Heap:Cons).
+lang:constructor(`Value:Mock:Cons).
+
+Value:Heap[?value] = ?heap -> Value(?value), HeapAllocation(?heap).
+Value:byHeap[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
+
+Value:Id[?value] = ?id -> Value(?value), string(?id).
+Value:byId[?id] = ?value -> string(?id), Value(?value).
+
+Value:isHeap(?value) -> Value(?value).
+Value:isNonHeap(?value) -> Value(?value).
+
+Value:Type[?value] = ?type -> Value(?value), Type(?type).
+Value:DeclaringType[?value] = ?type -> Value(?value), Type(?type).
+
+// [Miscellaneous]
+Value:Null[] = ?null -> Value(?null).

@@ -1,40 +1,38 @@
 #include "../2-object-sensitive+heap/declarations.logic"
-#include "../../addons/cfg-analysis/declarations.logic"
-
 
 /* Methods for instruction-by-instruction analysis */
 
 
 /**
- * AllCtxDependentStoreHeapFld(?fld, ?heap)
+ * AllCtxDependentStoreHeapFld(?fld, ?value)
  * Dependent instruction stores to object field
  * Provides optimization for TaintedLoad
  *
  * ?fld         The field that gets stored to
- * ?hctx        The heap object context
- * ?heap        The heap object containing the field
+ * ?hctx        The heap context
+ * ?value       The value containing the field
  */
-AllCtxDependentStoreHeapFld(?fld, ?hctx, ?heap) ->
-    FieldSignature(?fld),
+AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) ->
+    Field(?fld),
     HContext(?hctx),
-    HeapAllocation(?heap).
+    Value(?value).
 
 
 /**
- * LoadArrayHeapInsn(?ctx, ?insn, ?heap)
+ * LoadArrayHeapInsn(?ctx, ?insn, ?value)
  * Instruction loads heap
  * Provides optimization for TaintedLoad
  *
  * ?ctx         The calling context in which the load happens
  * ?insn        The load instruction
- * ?hctx        The heap object context
- * ?heap        The heap object that can be loaded
+ * ?hctx        The heap context
+ * ?value       The value that can be loaded
  */
-LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?heap) ->
+LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) ->
     Context(?ctx),
     Instruction(?insn),
     HContext(?hctx),
-    HeapAllocation(?heap).
+    Value(?value).
 
 /**
  * Load instruction that loads dependent data
@@ -92,7 +90,7 @@ SecureInstruction(?insn) ->
  * ?meth        The secure method
  */
  SecureMethod(?meth) ->
-    MethodSignature(?meth).
+    Method(?meth).
 
 
 /**
@@ -104,7 +102,7 @@ SecureInstruction(?insn) ->
  */
 StoreFldTo(?base, ?fld, ?insn) ->
     Var(?base),
-    FieldSignature(?fld),
+    Field(?fld),
     StoreInstanceField:Insn(?insn).
 
 /**
@@ -117,7 +115,7 @@ StoreFldTo(?base, ?fld, ?insn) ->
 LoadFldFrom(?insn, ?base, ?fld) ->
     LoadInstanceField:Insn(?insn),
     Var(?base),
-    FieldSignature(?fld).
+    Field(?fld).
 
 
 /**
@@ -150,7 +148,7 @@ InstructionDefinesVar(?instruction, ?var) ->
  */
 CFGLeaf(?headInsn, ?method) ->
     Instruction(?headInsn),
-    MethodSignature(?method).
+    Method(?method).
 
 /**
  * A basic block does not dominate another one

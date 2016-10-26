@@ -1,1 +1,12 @@
-// This file contains useful queries for taint analysis results  
+// This file contains useful queries for taint analysis results
+
+VarPointsToOpt(?ctx, ?var, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  VarPointsToOpt(?ctx, ?var, ?hctx, ?value),
+  TaintedContextValue(?hctx, ?value).
+
+UnTaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  VarPointsToOpt(?ctx, ?var, ?hctx, ?value),
+  !TaintedContextValue(?hctx, ?value).

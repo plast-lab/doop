@@ -1,115 +1,82 @@
-#include "macros.logic"
-#include "../../core/context-sensitivity.logic"
-
-/**
- * Context-sensitive pointer analysis with context of 3 types and a
- * context-sensitive heap abstraction.
- *
- * @author George Kastrinis
- */
-
-// In this analysis, the real context is a triplet of Types
-// and the real heap context a pair of Types. Keeping mapping 
-// functions is the way to handle analyses where HContext = Context 
-// (since the language considers them different types).
-// The type is not always a class type, because of arrays currently being
-// a non-class subtype of Object
-ContextFromRealContext[?type1, ?type2, ?type3] = ?ctx ->
-  Context(?ctx), Type(?type1), Type(?type2), Type(?type3).
-lang:skolem(`ContextFromRealContext).
-RealContext1FromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
-RealContext2FromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
-RealContext3FromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
+// Context-sensitive pointer analysis with context of 3 types and a
+// context-sensitive heap abstraction.
 
 RealContext1FromContext[?ctx] = ?type1,
 RealContext2FromContext[?ctx] = ?type2,
-RealContext3FromContext[?ctx] = ?type3 <- 
+RealContext3FromContext[?ctx] = ?type3 <-
   ContextFromRealContext[?type1, ?type2, ?type3] = ?ctx.
-
-HContextFromRealHContext[?type1, ?type2] = ?hctx ->
-  HContext(?hctx), Type(?type1), Type(?type2).
-lang:skolem(`HContextFromRealHContext).
-RealHContext1FromHContext[?hctx] = ?type -> 
-  HContext(?hctx), Type(?type).
-RealHContext2FromHContext[?hctx] = ?type -> 
-  HContext(?hctx), Type(?type).
 
 RealHContext1FromHContext[?hctx] = ?type1,
 RealHContext2FromHContext[?hctx] = ?type2 <-
   HContextFromRealHContext[?type1, ?type2] = ?hctx.
 
+Context(?ctx),
+ContextFromRealContext[?type, ?type, ?type] = ?ctx,
+ImmutableContext(?ctx) <-
+  Type:Id(?type, "<<immutable-context>>").
+
 HContext(?hctx),
-HContextFromRealHContext[?immutable, ?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
-  // Special immutable constant
-  Type:fqn(?immutable:"<<immutable>>").
+HContextFromRealHContext[?type, ?type] = ?hctx,
+ImmutableHContext(?hctx) <-
+  Type:Id(?type, "<<immutable-hcontext>>").
 
 
-// Create initial objects with their heapcontexts.
-HContextFromRealHContext[?type1, ?type2] = ?hctx,
+// Create initial objects with their heap contexts
 HContext(?hctx),
+HContextFromRealHContext[?type, ?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?type1, ?type2, ?alloc).
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[?type1, ?type2] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[?type, ?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?type1, ?type2, ?alloc).
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[?type1, ?type2] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[?type, ?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  MyMainThread(?type1, ?type2, ?alloc).
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread>>"] = ?alloc.
 
-/**
- * Merge optimization hack
- */
 
-// For this analysis, we only need two of the parameters that may 
-// influence the new context object.
-MyMergeBasis(?hctx, ?heap) <-
-  MergeBasis(_, _, ?hctx, ?heap).
+// Merge optimization hack
 
-// We create new context objects sparingly, because of the high cost.
-// We also cache them, so they can be looked up without a join.
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?hctx, ?value) <-
+  MergeBasis(_, _, ?hctx, ?value).
+
+// We create new context objects sparingly, because of the high cost.  We also
+// cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[RealHContext1FromHContext[?hctx],
                        RealHContext2FromHContext[?hctx],
-                       DeclaringClass:Allocation[?heap]] = ?calleeCtx,
-OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
-  MyMergeBasis(?hctx, ?heap).
+                       Value:DeclaringType[?value]] = ?calleeCtx,
+OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value).
 
 
-/**
- * Reachable
- */
-ReachableContext(?ctx, ?method),
-ContextFromRealContext[?type1, ?type2, ?type3] = ?ctx,
-Context(?ctx)
- <-
+// Initially reachable methods
+Context(?ctx),
+ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
+ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
-  Type:fqn(?type1:"<<initial-context>>"),
-  Type:fqn(?type2:"<<initial-context>>"),
+  Type:Id(?type12:"<<initial-context>>"),
   ClassTypeValue(?type3, "java.lang.String").
 
-ReachableContext(?ctx, ?method),
-ContextFromRealContext[?type1, ?type2, ?type3] = ?ctx,
-Context(?ctx)
- <-
+Context(?ctx),
+ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
+ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
-  Type:fqn(?type1:"<<jvm-startup>>"),
-  Type:fqn(?type2:"<<jvm-startup>>"),
+  Type:Id(?type12:"<<jvm-startup>>"),
   ClassTypeValue(?type3, "java.lang.String").
 
-ReachableContext(?ctx, ?clinit),
-ContextFromRealContext[?type1, ?type2, ?type3] = ?ctx,
-Context(?ctx)
- <-
+Context(?ctx),
+ContextFromRealContext[?type12, ?type12, ?type3] = ?ctx,
+ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
-  Type:fqn(?type1:"<<class-initialization>>"),
-  Type:fqn(?type2:"<<class-initialization>>"),
+  Type:Id(?type12:"<<class-initialization>>"),
   ClassTypeValue(?type3, "java.lang.String").

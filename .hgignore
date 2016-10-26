@@ -11,6 +11,8 @@ doop.properties
 #gradle dirs
 ^.gradle
 ^build
+^deepdoop/.gradle
+^deepdoop/build
 
 #doop dist/runtime files
 ^cache

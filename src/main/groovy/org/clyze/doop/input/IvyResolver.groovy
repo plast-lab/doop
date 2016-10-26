@@ -11,9 +11,6 @@ import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorWriter
 import org.apache.ivy.util.filter.FilterHelper
 /**
  * Resolves the input as an Apache Ivy module descriptor that is downloaded using the default ivy settings.
- *
- * @author: Kostas Saidis (saiko@di.uoa.gr)
- * Date: 26/10/2014
  */
 class IvyResolver implements InputResolver {
 

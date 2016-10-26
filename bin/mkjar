@@ -13,7 +13,7 @@ tmpDir=$(mktemp -d)
 # If we need to use a specific jre version do the following (instead of the
 # previous javac command). But is it needed since we will use a specific jre
 # to analyze anyway?
-jreDir=$DOOP_JRE_LIB
+jreDir=$DOOP_PLATFORMS_LIB/JREs
 jre="1.7"
 javac $filenameJava -d $tmpDir -g -bootclasspath ${jreDir}/jre${jre}/lib/rt.jar -source $jre -target $jre
 

@@ -1,9 +1,20 @@
-#include "../../core/context-sensitivity-declarations.logic"
+// In this analysis, the real context is a Value. Keeping mapping
+// functions is the way to handle analyses where HContext = Context
+// (since the language considers them different types).
+ContextFromRealContext[?value] = ?ctx ->
+  Context(?ctx), Value(?value).
+lang:constructor(`ContextFromRealContext).
+RealContextFromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
 
-// For this analysis, there are no heap contexts, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?alloc) -> HeapAllocation(?alloc).
+// This analysis has no context for heap objects.  This is emulated by creating
+// a single HContext object, which is used everywhere.
+HContextFromRealHContext[] = ?hctx ->
+  HContext(?hctx).
+lang:constructor(`HContextFromRealHContext).
 
-MyMainThreadGroup(?alloc) -> HeapAllocation(?alloc).
-
-MyMainThread(?alloc) -> HeapAllocation(?alloc).
+// No need to unwrap anything. Only used for arrays, never to produce regular
+// contexts of called methods.
+HContextFromContext[?ctx] = ?hctx ->
+  Context(?ctx), HContext(?hctx).
+lang:constructor(`HContextFromContext).

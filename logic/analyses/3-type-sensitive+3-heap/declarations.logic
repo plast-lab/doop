@@ -1,12 +1,24 @@
-#include "../../core/context-sensitivity-declarations.logic"
+// In this analysis, the real context and the real heap context is a triplet of
+// Types. Keeping mapping functions is the way to handle analyses where
+// HContext = Context (since the language considers them different types).  The
+// type is not always a class type, because of arrays currently being a
+// non-class subtype of Object
+ContextFromRealContext[?type1, ?type2, ?type3] = ?ctx ->
+  Context(?ctx), Type(?type1), Type(?type2), Type(?type3).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
+RealContext2FromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
+RealContext3FromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
 
-// For this analysis, contexts are types, so this is
-// what the initial system objects should have.
-MySystemThreadGroup(?type1, ?type2, ?type3, ?heap) ->
-  Type(?type1), Type(?type2), Type(?type3), HeapAllocation(?heap).
-
-MyMainThreadGroup(?type1, ?type2, ?type3, ?heap) ->
-  Type(?type1), Type(?type2), Type(?type3), HeapAllocation(?heap).
-
-MyMainThread(?type1, ?type2, ?type3, ?heap) ->
-  Type(?type1), Type(?type2), Type(?type3), HeapAllocation(?heap).
+HContextFromRealHContext[?type1, ?type2, ?type3] = ?hctx ->
+  HContext(?hctx), Type(?type1), Type(?type2), Type(?type3).
+lang:constructor(`HContextFromRealHContext).
+RealHContext1FromHContext[?hctx] = ?type ->
+  HContext(?hctx), Type(?type).
+RealHContext2FromHContext[?hctx] = ?type ->
+  HContext(?hctx), Type(?type).
+RealHContext3FromHContext[?hctx] = ?type ->
+  HContext(?hctx), Type(?type).

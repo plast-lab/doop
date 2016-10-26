@@ -4,6 +4,7 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
+import soot.util.backend.ASMBackendUtils;
 import soot.tagkit.LineNumberTag;
 
 import java.util.HashMap;
@@ -14,9 +15,6 @@ import static org.clyze.doop.soot.PredicateFile.*;
 /**
  * FactWriter determines the format of a fact and adds it to a
  * database. No traversal code here (see FactGenerator for that).
- *
- * @author Martin Bravenboer
- * @license MIT
  */
 class FactWriter
 {
@@ -32,12 +30,17 @@ class FactWriter
         _varTypeMap = new HashMap<>();
     }
 
+    void writeAndroidEntryPoint(SootMethod m) {
+        _db.add(ANDROID_ENTRY_POINT,
+                _db.asEntity(_rep.signature(m)));
+    }
+
     void writeProperty(String path, String key, String value)
     {
         // Add heap allocations for string constants
-        _db.add(STRING_CONST, _db.asEntity(path), _db.asEntity("java.lang.String"));
-        _db.add(STRING_CONST, _db.asEntity(key), _db.asEntity("java.lang.String"));
-        _db.add(STRING_CONST, _db.asEntity(value), _db.asEntity("java.lang.String"));
+        _db.add(STRING_CONST, _db.asEntity(path));
+        _db.add(STRING_CONST, _db.asEntity(key));
+        _db.add(STRING_CONST, _db.asEntity(value));
 
         _db.add(PROPERTIES,
                 _db.asEntity(path),
@@ -59,10 +62,7 @@ class FactWriter
             col = _db.addEntity(CLASS_TYPE, rep);
         }
 
-        _db.add(CLASS_OBJ,
-                _db.asEntity(_rep.classconstant(c)),
-                _db.addEntity(CLASS_TYPE, "java.lang.Class"),
-                col);
+        _db.add(CLASS_HEAP, _db.asEntity(_rep.classconstant(c)), col);
     }
 
     void writeDirectSuperclass(SootClass sub, SootClass sup)
@@ -190,7 +190,7 @@ class FactWriter
     {
         String heap = _rep.heapAlloc(m, expr, session);
 
-        _db.add(NORMAL_OBJ,
+        _db.add(NORMAL_HEAP,
                 _db.asEntity(heap),
                 writeType(expr.getType()));
 
@@ -246,7 +246,7 @@ class FactWriter
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add(NORMAL_OBJ,
+        _db.add(NORMAL_HEAP,
                 _db.asEntity(heap),
                 writeType(arrayType));
 
@@ -323,7 +323,7 @@ class FactWriter
                 _db.asEntity(heap),
                 _db.asIntColumn(String.valueOf(dimensions)),
                 _db.asEntity(assignTo),
-                _db.asEntity("MethodSignature", _rep.method(m)));
+                _db.asEntity("Method", _rep.method(m)));
 
     // idea: do generate the heap allocations, but not the assignments
     // (to array indices). Do store the type of those heap allocations
@@ -332,14 +332,17 @@ class FactWriter
 
     void writeAssignStringConstant(SootMethod m, Stmt stmt, Local l, StringConstant s, Session session)
     {
-        String heap = _rep.stringconstant(m, s);
+        String heap    = _rep.stringConstant(m, s);
+        String heapRaw = _rep.stringConstantRaw(m, s);
 
         // statement
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
+        _db.add(STRING_RAW, _db.asEntity(heap), _db.asEntity(heapRaw));
+
         // write heap allocation
-        _db.add(STRING_CONST, _db.asEntity(heap), writeType(s.getType()));
+        _db.add(STRING_CONST, _db.asEntity(heap));
 
         _db.add(ASSIGN_HEAP_ALLOC,
                 _db.asEntity(rep),
@@ -410,10 +413,7 @@ class FactWriter
         }
 
         // write heap allocation
-        _db.add(CLASS_OBJ,
-                _db.asEntity(heap),
-                _db.addEntity(CLASS_TYPE, "java.lang.Class"),
-                _db.asEntity(actualType));
+        _db.add(CLASS_HEAP, _db.asEntity(heap), _db.asEntity(actualType));
 
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
@@ -566,7 +566,7 @@ class FactWriter
                 writeType(application));
     }
 
-    void writeFieldSignature(SootField f)
+    void writeField(SootField f)
     {
         _db.add(FIELD_SIGNATURE,
                 _db.asEntity(_rep.signature(f)),
@@ -582,14 +582,23 @@ class FactWriter
                 _db.asEntity(FIELD_SIGNATURE, _rep.signature(f)));
     }
 
-    void writeMethodSignature(SootMethod m)
+    void writeClassModifier(SootClass f, String modifier)
+    {
+        _db.add(CLASS_MODIFIER,
+                _db.asEntity(_rep.modifier(modifier)),
+                _db.asEntity(CLASS_TYPE, _rep.type(f)));
+    }
+
+
+    void writeMethod(SootMethod m)
     {
         _db.add(METHOD_SIGNATURE,
                 _db.asEntity(_rep.signature(m)),
                 _db.asEntity(_rep.simpleName(m)),
                 _db.asEntity(_rep.descriptor(m)),
                 writeType(m.getDeclaringClass()),
-                writeType(m.getReturnType()));
+                writeType(m.getReturnType()),
+		_db.asEntity(ASMBackendUtils.toTypeDesc(m.makeRef())));
     }
 
     void writeMethodModifier(SootMethod m, String modifier)
@@ -645,9 +654,11 @@ class FactWriter
     void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session)
     {
         // index was already computed earlier
+        session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
 
         // index was already computed earlier
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
 
         String rep = _rep.instruction(m, stmt, session, index);
@@ -671,6 +682,7 @@ class FactWriter
         int index = session.getUnitNumber(stmt);
 
         // index was already computed earlier
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
 
         String rep = _rep.instruction(m, stmt, session, index);
@@ -683,7 +695,7 @@ class FactWriter
                 _db.asIntColumn(String.valueOf(indexTo)),
                 // method
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-        
+
         Value condStmt = ((IfStmt) stmt).getCondition();
         if (condStmt instanceof ConditionExpr) {
             ConditionExpr condition = (ConditionExpr) condStmt;
@@ -723,6 +735,7 @@ class FactWriter
 
         for(int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++)
         {
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(TABLE_SWITCH_TARGET,
@@ -731,6 +744,7 @@ class FactWriter
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(TABLE_SWITCH_DEFAULT,
@@ -760,6 +774,7 @@ class FactWriter
         for(int i = 0, end = stmt.getTargetCount(); i < end; i++)
         {
             int tgIndex = stmt.getLookupValue(i);
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(LOOKUP_SWITCH_TARGET,
@@ -770,6 +785,7 @@ class FactWriter
                     _db.asIntColumn(String.valueOf(indexTo)));
         }
 
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(LOOKUP_SWITCH_DEFAULT,
@@ -848,18 +864,9 @@ class FactWriter
             }
         }
 
-        /* simple fact for Paddle compatibility mode. Makes no sense
-           to have this be flow sensitive (i.e., add instruction
-           information), when it doesn't store instruction begin/end
-           indices. The expectation is that this predicate will only
-           be used for flow-insensitive analyses.
-        */
-        _db.add(SIMPLE_EXCEPTION_HANDLER,
-                _db.asEntity(_rep.type(exc)),
-                _db.asEntity(_rep.local(m, caught)),
-                _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-
         String rep = _rep.handler(m, handler, session);
+        session.calcUnitNumber(handler.getBeginUnit());
+        session.calcUnitNumber(handler.getEndUnit());
         _db.add(EXCEPTION_HANDLER,
                 _db.asEntity(rep),
                 // method
@@ -871,6 +878,7 @@ class FactWriter
                 // formal param
                 _db.asEntity(_rep.local(m, caught)),
                 // begin
+
                 _db.asIntColumn(String.valueOf(session.getUnitNumber(handler.getBeginUnit()))),
                 // end
                 _db.asIntColumn(String.valueOf(session.getUnitNumber(handler.getEndUnit()))));
@@ -1033,7 +1041,7 @@ class FactWriter
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         if(tag != null)
         {
-            _db.add(METHOD_INV_LINENUM,
+            _db.add(METHOD_INV_LINE,
                     _db.asEntity(rep),
                     _db.asIntColumn(String.valueOf(tag.getLineNumber())));
         }

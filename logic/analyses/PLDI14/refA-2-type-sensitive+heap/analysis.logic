@@ -1,96 +1,63 @@
-#include "macros.logic"
-#include "../../../core/context-sensitivity.logic"
-
-/**
- *
- * @author Yannis Smaragdakis
- * @author George Kastrinis
- */
-
-// In this analysis, the real context is a pair of Types
-// and the real heap context a single Type. Keeping mapping 
-// functions is the way to handle analyses where HContext = Context 
-// (since the language considers them different types).
-// The type is not always a class type, because of arrays currently being
-// a non-class subtype of Object
-
-ContextFromRealContext[?type1, ?type2] = ?ctx ->
-  Context(?ctx), Type(?type1), Type(?type2).
-lang:skolem(`ContextFromRealContext).
-
-RealContext1FromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
-RealContext2FromContext[?ctx] = ?type -> 
-  Context(?ctx), Type(?type).
-
 RealContext1FromContext[?ctx] = ?type1,
-RealContext2FromContext[?ctx] = ?type2 <- 
+RealContext2FromContext[?ctx] = ?type2 <-
   ContextFromRealContext[?type1, ?type2] = ?ctx.
-
-HContextFromRealHContext[?type] = ?hctx ->
-  HContext(?hctx), Type(?type).
-lang:skolem(`HContextFromRealHContext).
-
-RealHContextFromHContext[?hctx] = ?type -> 
-  HContext(?hctx), Type(?type).
 
 RealHContextFromHContext[?hctx] = ?type <-
   HContextFromRealHContext[?type] = ?hctx.
 
-
-HContext(?hctx),
-HContextFromRealHContext[?immutable] = ?hctx,
-ImmutableHContext[] = ?hctx <-
-  // Special immutable constant
-  Type:fqn(?immutable:"<<immutable>>").
-
-// and initial type constant
 InitialTypeValue[] = ?initType <-
-  Type:fqn(?initType:"<<initial-context>>").
+  Type:Id(?initType:"<<initial-context>>").
 
-// Create initial objects with their heapcontexts.
-HContextFromRealHContext[?type] = ?hctx,
+Context(?ctx),
+ContextFromRealContext[?type, ?type] = ?ctx,
+ImmutableContext(?ctx) <-
+  Type:Id(?type, "<<immutable-context>>").
+
 HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
+ImmutableHContext(?hctx) <-
+  Type:Id(?type, "<<immutable-hcontext>>").
+
+
+// Create initial objects with their heap contexts
+HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
 SystemThreadGroup(?hctx, ?alloc) <-
-  MySystemThreadGroup(?type, ?alloc).
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<system-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[?type] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
 MainThreadGroup(?hctx, ?alloc) <-
-  MyMainThreadGroup(?type, ?alloc).
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread-group>>"] = ?alloc.
 
-HContextFromRealHContext[?type] = ?hctx,
 HContext(?hctx),
+HContextFromRealHContext[?type] = ?hctx,
 MainThread(?hctx, ?alloc) <-
-  MyMainThread(?type, ?alloc).
+  Type:Id(?type, "<<jvm-startup>>"),
+  Value:byId["<<main-thread>>"] = ?alloc.
 
 
-/**
- * Reachable
- */
-ReachableContext(?ctx, ?method),
+// Initially reachable methods
+Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   MainMethodDeclaration(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<initial-context>>").
+  Type:Id(?type2:"<<initial-context>>").
 
-ReachableContext(?ctx, ?method),
+Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?method) <-
   ImplicitReachable(?method),
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<jvm-startup>>").
+  Type:Id(?type2:"<<jvm-startup>>").
 
-ReachableContext(?ctx, ?clinit),
+Context(?ctx),
 ContextFromRealContext[?type1, ?type2] = ?ctx,
-Context(?ctx)
- <-
+ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class),
   ClassInitializer[?class] = ?clinit,
   ClassTypeValue(?type1, "java.lang.String"),
-  Type:fqn(?type2:"<<class-initialization>>").
-
-
+  Type:Id(?type2:"<<class-initialization>>").
