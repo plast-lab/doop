@@ -17,7 +17,8 @@ public class DeepDoopException extends RuntimeException {
 		DEP_CYCLE,
 		DEP_GLOBAL,
 		ID_IN_USE,
-		NO_DECL
+		NO_DECL,
+		DECL_UNKNOWN_VAR
 	}
 
 	static Map<Error, String> _msgMap;
@@ -33,6 +34,7 @@ public class DeepDoopException extends RuntimeException {
 		_msgMap.put(Error.DEP_GLOBAL, "Reintroducing predicate `{0}` to global space");
 		_msgMap.put(Error.ID_IN_USE, "Id `{0}` already used to initialize a component");
 		_msgMap.put(Error.NO_DECL, "Predicate `{0}` used but not declared");
+		_msgMap.put(Error.DECL_UNKNOWN_VAR, "Unknown var `{0}` appears in declaration");
 	}
 	static String idToMsg(Error errorId, Object[] values) {
 		return "ERROR: " + MessageFormat.format(_msgMap.get(errorId), values);

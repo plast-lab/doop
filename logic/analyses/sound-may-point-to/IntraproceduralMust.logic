@@ -6,7 +6,7 @@ MayReachableMethodUnderMayContext(ctx, inMethod) ->
 
 // intermediate relations to compute
 AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method) ->
-  MayHeapContext(hctx), HeapAllocation(heap), Var(Var), Method(Method).
+  MayHeapContext(hctx), HeapAllocation(heap), Var(var), Method(method).
 IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, insn) ->
   MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Instruction(insn).
 
@@ -16,7 +16,7 @@ IntraproceduralMustPointTo(hctx, heap, ctx, var) ->
 IntraproceduralCertainMethodBase(hctx, heap, ctx, invo) ->
   MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), MethodInvocation(invo).
 AppAllCtxIntraproceduralMustPointTo(hctx, heap, var) ->
-  MayHeapContext(hctx), HeapAllocation(heap), Var(Var).
+  MayHeapContext(hctx), HeapAllocation(heap), Var(var).
 
 
 IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
