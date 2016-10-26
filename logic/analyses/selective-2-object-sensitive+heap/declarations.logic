@@ -1,0 +1,24 @@
+// The real context is a pair of Value AND a MethodInvocation (for
+// static calls) sometimes.  The real heap context is a single Value.
+// Keeping mapping functions is the way to handle analyses where HContext =
+// Context (since the language considers them different types).
+ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx ->
+  Context(?ctx), ContextComponent(?valueComp1), ContextComponent(?valueComp2).
+lang:constructor(`ContextFromRealContext).
+
+// NOTE: Use the following when using both the normal (caller's) context and
+// the invoComp site for static calls.
+SpecialContextFromRealContext[?valueComp1, ?invoComp, ?valueComp2] = ?ctx ->
+  ContextComponent(?valueComp1), ContextComponent(?valueComp2),
+  ContextComponent(?invoComp), Context(?ctx).
+lang:constructor(`SpecialContextFromRealContext).
+RealContext1FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+RealContext2FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+
+HContextFromRealHContext[?valueComp] = ?hctx ->
+  HContext(?hctx), ContextComponent(?valueComp).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?valueComp ->
+  HContext(?hctx), ContextComponent(?valueComp).

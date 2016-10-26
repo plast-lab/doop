@@ -1,0 +1,47 @@
+// Context-insensitive pointer analysis with on-the-fly call graph discovery
+
+Context(?ctx),
+ContextFromRealContext[] = ?ctx,
+UniqueContext[] = ?ctx.
+
+HContext(?hctx),
+HContextFromRealHContext[] = ?hctx,
+UniqueHContext[] = ?hctx.
+
+ImmutableContext(?ctx)  <-
+  UniqueContext[] = ?ctx.
+
+ImmutableHContext(?hctx) <-
+  UniqueHContext[] = ?hctx.
+
+
+// Create initial objects with their heap contexts
+SystemThreadGroup(?hctx, ?alloc) <-
+  UniqueHContext[] = ?hctx,
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+MainThreadGroup(?hctx, ?alloc) <-
+  UniqueHContext[] = ?hctx,
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+MainThread(?hctx, ?alloc) <-
+  UniqueHContext[] = ?hctx,
+  Value:byId["<<main-thread>>"] = ?alloc.
+
+
+// The main method is reachable
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method),
+  UniqueContext[] = ?ctx.
+
+// Implicitly reachable methods are invoked by the JVM on startup.
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method),
+  UniqueContext[] = ?ctx.
+
+// If a class needs to be initialized, then its class initializer is invoked
+// Note: InitializedClass already deals with superclasses that need initialization
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit,
+  UniqueContext[] = ?ctx.

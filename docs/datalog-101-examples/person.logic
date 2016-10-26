@@ -1,0 +1,7 @@
+// Declarations
+Person(x) -> .
+Person:cons[name, age] = p -> string(name), int[32](age), Person(p).
+
+lang:physical:storageModel[`Person] = "ScalableSparse".
+lang:entity(`Person).
+lang:constructor(`Person:cons).
