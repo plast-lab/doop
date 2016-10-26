@@ -1,0 +1,15 @@
+#include "../../commonMacros.logic"
+
++LoadArrayIndex(?array, ?value, ?inmethod)/*,
++java:lang:reflect:Array:get(?invocation)*/ <-
+  Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+  ActualParam@previous[0, ?invocation] = ?array,
+  AssignReturnValue[?invocation] = ?value.
+
++StoreArrayIndex(?value, ?array, ?inmethod)/*,
++java:lang:reflect:Array:set(?invocation)*/ <-
+  Method:Id(?sig:"<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>"),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+  ActualParam@previous[0, ?invocation] = ?array,
+  ActualParam@previous[2, ?invocation] = ?value.
