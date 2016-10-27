@@ -1,0 +1,58 @@
+#include "../../commonMacros.logic"
+ 
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) <-
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+ConcreteImplementations[?staticType] = ?class <-
+   agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
+
+AnyConcreteImplementations(?class, ?staticType) <-
+   ConcreteImplementations[?staticType] = ?class.
+
+ServletClass(?class) <-
+   AllConcreteImplementations(?class, ?staticType),
+   ClassType(?class),
+   Type:Id(?staticType:"javax.servlet.http.HttpServlet").
+
+// Servlet service methods
+MockEntryPoint(?class, ?entry) <-
+   ServletClass(?class),
+   Type:Id(?class:?classStr),
+   ServletEntryMethodName(?serviceMethodName),
+   Method:Id(?entry:methodSigStr),
+   (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
+   ServletEntryMethodName(?serviceMethodName).
+
+ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
+
+
+// The following two rules were originally separated to stratify negation (no longer needed)
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver) <-
+   ImmutableHContext(?hctx),
+   ValueForReceiverInContext(?ctx, ?receiver, ?value).
+
+
+MockObject(?value, ?type) -> Value(?value), Type(?type).
+
+Value(?value),
+MockValueConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?value),
+//MockHeapConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?heap),
+MockObject(?value, ?class)
+<-
+   MockEntryPoint(?class, _),
+   Type:Id(?class:?classStr).
+
+ValueForReceiverInContext(?ctx, ?receiver, ?value) <-
+   ReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?receiver,
+   Method:DeclaringType[?method] = ?class,
+   MockObject(?value, ?class).

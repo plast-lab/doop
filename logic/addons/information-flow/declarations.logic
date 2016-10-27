@@ -1,0 +1,24 @@
+/**
+ * Definitions of sources and sinks
+ */
+TaintSourceMethod(?method) -> Method(?method).
+
+LeakingSinkMethod(?index, ?method) -> Method(?method), int[32](?index).
+
+LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
+  MethodInvocation(?tomethod), Var(?var), Context(?ctx).
+
+LeakingTaintedInformation(?ctx, ?tomethod, ?hctx, ?value)->
+  Context(?ctx), MethodInvocation(?tomethod),
+  HContext(?hctx), string(?value).
+
+VarDef(?var, ?inst) -> Instruction(?inst), Var(?var).
+VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
+
+SanitizationMethod(?method) -> Method(?method).
+
+SanitizedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
+
+TaintedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
+
+TaintedValue(?value) -> Value(?value).

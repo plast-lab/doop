@@ -1,0 +1,25 @@
+#define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Id(method:value), string:like(value, pattern)
+
+#define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Id(method:value), string:like(value, pattern)
+                                                                                                                                                                                                                                  
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.ServletContext: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.http.Cookie: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpSession: % get%(%)>").
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine()>").
+TaintSourceMethod("<java.net.URLEncoder: java.lang.String decode(java.lang.String,java.lang.String)>").
+LeakingSinkMethodPattern(0, "<java.io.Print%: void println(%)>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: % execute%(%)>").
+LeakingSinkMethodPattern(0, "<javax.servlet.http.HttpServletResponse: void sendRedirect(%)>").
+LeakingSinkMethodPattern(0, "<java.io.File: void <init>(%)>").
+LeakingSinkMethodPattern(0, "<java.io.File%er: void <init>(%)>").
+LeakingSinkMethodPattern(0, "<java.io.File%Stream: void <init>(%)>").
+LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement(%)>").
+
+SanitizationMethod("<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>").
+SanitizationMethod("<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
+SanitizationMethod("<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
+SanitizationMethod("<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>").

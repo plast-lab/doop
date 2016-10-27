@@ -1,0 +1,810 @@
+ClassInitializer[?type] = ?method <-
+   MethodDescriptor:Value(?descriptor:"void()"),
+   MethodImplemented["<clinit>", ?descriptor, ?type] = ?method.
+InitializedClass(?superclass) <-
+   InitializedClass(?classOrInterface),
+   DirectSuperclass[?classOrInterface] = ?superclass.
+InitializedClass(?class) <-
+   MainMethodDeclaration(?method),
+   MethodSignature:DeclaringType[?method] = ?class.
+InitializedClass(?class) <-
+   Reachable(?inmethod),
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   HeapAllocation:Type[?heap] = ?class.
+InitializedClass(?class) <-
+   Reachable(?inmethod),
+   Instruction:Method[?invocation] = ?inmethod,
+   StaticMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodSignature:DeclaringType[?signature] = ?class.
+InitializedClass(?classOrInterface) <-
+   Reachable(?inmethod),
+   StoreStaticField(_, ?signature, ?inmethod),
+   FieldSignature:DeclaringClass[?signature] = ?classOrInterface.
+InitializedClass(?classOrInterface) <-
+   Reachable(?inmethod),
+   LoadStaticField(?signature, _, ?inmethod),
+   FieldSignature:DeclaringClass[?signature] = ?classOrInterface.
+DeclaringClass:Allocation[?heap] = ?type <-
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   MethodSignature:DeclaringType[?inmethod] = ?type,
+   !StringConstant(?heap),
+   !ClassConstant(?heap).
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReflectiveHeapAllocation[_, ?type] = ?heap.
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedConstructor[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedMethod[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+DeclaringClass:Allocation[?heap] = ?type <-
+   ReifiedField[_] = ?heap,
+   HeapAllocation:Type[?heap] = ?type.
+DeclaringClass:Allocation[?heap] = ?type <-
+   ClassConstant(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   StringConstant(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<string-constant>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<reflection-string-constant>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<string-buffer>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<string-builder>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<initial-context>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<jvm-startup>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<class-initialization>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<immutable>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<no-context>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<system-thread-group>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<main-thread-group>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+DeclaringClass:Allocation[?heap] = ?type <-
+   Instruction:Value(?heap:"<<main-thread>>"), HeapAllocation(?heap),
+   Type:fqn(?type:"java.lang.String"), ClassType(?type).
+ObjectSupportsFinalize(?heap, ?inmethod) <-
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   HeapAllocation:Type[?heap] = ?class,
+   OverridesFinalize(?class).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+CallGraphEdge(?callerCtx, ?heap, ?calleeCtx, ?register),
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
+   ReachableContext(?callerCtx, ?inmethod),
+   FinalizerRegisterInfo(?register, ?formal),
+   ObjectSupportsFinalize(?heap, ?inmethod),
+   ((NegativeObjectFilter("true"), ObjectToRefine(?heap)); (!NegativeObjectFilter("true"), !ObjectToRefine(?heap))).
+FinalizerRegisterInfo(?register, ?formal) <-
+   MethodSignature:Value(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
+   FormalParam[0, ?register] = ?formal.
+OverridesFinalize(?class) <-
+   MethodLookup["finalize", "void()", ?class] = ?method,
+   MethodSignature:Value(?finalizeInObject:"<java.lang.Object: void finalize()>"),
+   ?finalizeInObject != ?method.
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.System: void initializeSystemClass()>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ThreadGroup: void <init>()>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.Thread: void exit()>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ThreadGroup: void uncaughtException(java.lang.Thread,java.lang.Throwable)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ClassLoader: void <init>()>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ClassLoader: java.lang.Class loadClassInternal(java.lang.String)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ClassLoader: void checkPackageAccess(java.lang.Class,java.security.ProtectionDomain)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ClassLoader: void addClass(java.lang.Class)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.lang.ClassLoader: long findNative(java.lang.ClassLoader,java.lang.String)>").
+ImplicitReachable(sig) <-
+   MethodSignature:Value(sig:"<java.security.PrivilegedActionException: void <init>(java.lang.Exception)>").
+MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
+   MethodImplemented[?simplename, ?descriptor, ?type] = ?method.
+MethodLookup[?simplename, ?descriptor, ?type] = ?method <-
+   DirectSuperclass[?type] = ?supertype,
+   MethodLookup[?simplename, ?descriptor, ?supertype] = ?method,
+   !(MethodImplemented[?simplename, ?descriptor, ?type]=_).
+MethodLookup[?simplename, ?descriptor, ?arraytype] = ?method <-
+   ArrayType(?arraytype),
+   Type:fqn(?object:"java.lang.Object"),
+   MethodImplemented[?simplename, ?descriptor, ?object] = ?method.
+MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
+   MethodSignature:SimpleName[?method] = ?simplename,
+   MethodSignature:Descriptor[?method] = ?descriptor,
+   MethodSignature:DeclaringType[?method] = ?type,
+   ! MethodModifier("abstract", ?method).
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
+   VirtualMethodInvocation:Insn(?invocation),
+   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodSignature:SimpleName[?signature] = ?simplename,
+   MethodSignature:Descriptor[?signature] = ?descriptor.
+ResolveInvocation(?invocation, ?heaptype, ?tomethod) ->
+   MethodInvocation(?invocation), Type(?heaptype), MethodSignature(?tomethod).
+lang:derivationType[`ResolveInvocation] = "Derived".
+ResolveInvocation(?invocation, ?heaptype, ?tomethod) <-
+   VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+   VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
+   MethodLookup[?simplename, ?descriptor, ?heaptype] = ?tomethod.
+ReachableContext(?calleeCtx, ?method) <-
+   NativeCallGraphEdge(_, _, ?calleeCtx, ?method).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?argsArray, ?ctx, ?args),
+ArrayIndexPointsTo(?hctx, ?argHeap, ?hctx, ?argsArray) <-
+   MainClass(?mainClass),
+   MethodSignature:DeclaringType[?mainMethod] = ?mainClass,
+   ReachableContext(?ctx, ?mainMethod),
+   MethodSignature:Descriptor[?mainMethod] = "void(java.lang.String[])",
+   FormalParam[0, ?mainMethod] = ?args,
+   MainMethodArgsArray(?argsArray),
+   MainMethodArgHeap(?argHeap).
+StaticFieldPointsTo(?hctx, ?heap, ?pending) <-
+   FieldSignature:Value(?pending:"<java.lang.ref.Reference: java.lang.ref.Reference pending>"),
+   Var:Value(?this:"<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this"),
+   VarPointsTo(?hctx, ?heap, _, ?this).
+HeapAllocation:Special(?heap) -> HeapAllocation(?heap).
+HeapAllocation:ContextInsensitive(?heap) ->
+  HeapAllocation(?heap).
+HeapAllocation:Special(?heap) <-
+  HeapAllocation:ContextInsensitive(?heap).
+HeapAllocation:Merge[?heap] = ?mergeHeap ->
+  HeapAllocation(?heap),
+  HeapAllocation(?mergeHeap).
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) <-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  ! HeapAllocation:Special(?heap).
+HeapAllocation:Special(?heap) <-
+  HeapAllocation:Merge[?heap] = _.
+AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) <-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  HeapAllocation:Merge[?heap] = ?mergeHeap.
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) <-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  HeapAllocation:ContextInsensitive(?heap).
+ReflectionObject(?heap) -> HeapAllocation(?heap).
+ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
+HeapAllocation:Merge[?heap] = ?constant <-
+  StringConstant(?heap),
+  Instruction:Value(?constant:"<<string-constant>>"), HeapAllocation(?constant).
+NonTrivialStringConstant(?heap) <-
+  StringConstant(?heap),
+  Instruction:Value(?heap:?string),
+  string:length[?string] >= 6.
+ClassNameStringConstant(?heap) -> HeapAllocation(?heap).
+ClassNameStringConstant:Type(?type, ?heap) ->
+  HeapAllocation(?heap), Type(?type).
+ClassNameStringConstantExact:Type(?type, ?heap) ->
+  HeapAllocation(?heap), Type(?type).
+ClassNameStringConstantInexact:Type(?type, ?heap) ->
+  HeapAllocation(?heap), Type(?type).
+ClassNameStringConstant(?heap),
+ClassNameStringConstant:Type(?type, ?heap),
+ClassNameStringConstantExact:Type(?type, ?heap)
+  <-
+  StringConstant(?heap),
+  Instruction:Value(?heap:?string),
+  ReferenceType(?type),
+  (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
+  Type:fqn(?type:?string).
+MethodNameStringConstant(?heap) -> HeapAllocation(?heap).
+MethodNameStringConstant:Signature(?sig, ?heap) ->
+  HeapAllocation(?heap), MethodSignature(?sig).
+MethodNameStringConstantExact:Signature(?sig, ?heap) ->
+  HeapAllocation(?heap), MethodSignature(?sig).
+MethodNameStringConstantInexact:Signature(?sig, ?heap) ->
+  HeapAllocation(?heap), MethodSignature(?sig).
+MethodNameStringConstant(?heap),
+MethodNameStringConstant:Signature(?sig, ?heap),
+MethodNameStringConstantExact:Signature(?sig, ?heap)
+  <-
+  StringConstant(?heap),
+  Instruction:Value(?heap:?string),
+  MethodSignature:DeclaringType[?sig] = ?type,
+  (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
+  MethodSignature:SimpleName[?sig] = ?string.
+FieldNameStringConstant(?heap) -> HeapAllocation(?heap).
+FieldNameStringConstant:Signature(?sig, ?heap) ->
+  HeapAllocation(?heap), FieldSignature(?sig).
+FieldNameStringConstantExact:Signature(?sig, ?heap) ->
+  HeapAllocation(?heap), FieldSignature(?sig).
+FieldNameStringConstantInexact:Signature(?sig, ?heap) ->
+  HeapAllocation(?heap), FieldSignature(?sig).
+FieldNameStringConstant(?heap),
+FieldNameStringConstant:Signature(?sig, ?heap),
+FieldNameStringConstantExact:Signature(?sig, ?heap)
+  <-
+  StringConstant(?heap),
+  Instruction:Value(?heap:?string),
+  FieldSignature:DeclaringClass[?sig] = ?declaringClass,
+  (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
+  FieldSignature:SimpleName[?sig] = ?string.
+HeapAllocation:ContextInsensitive(?heap) <-
+  ClassConstant(?heap).
+HeapAllocation:Merge[?heap] = ?mergeHeap <-
+  HeapAllocation:Type[?heap] = ?type,
+  Type:fqn(?type:"java.lang.StringBuffer"),
+  Instruction:Value(?mergeHeap:"<<string-buffer>>"), HeapAllocation(?mergeHeap).
+HeapAllocation:Merge[?heap] = ?mergeHeap <-
+  HeapAllocation:Type[?heap] = ?type,
+  Type:fqn(?type:"java.lang.StringBuilder"),
+  Instruction:Value(?mergeHeap:"<<string-builder>>"), HeapAllocation(?mergeHeap).
+HeapAllocation:Merge[?heap] = ?mergeHeap <-
+  HeapRepresentative[?heap] = ?mergeHeap.
+AllocationMergeThreshold[] = 50.
+ExceptionType(?heaptype) <-
+  Type:fqn(?throw:"java.lang.Throwable"),
+  SubtypeOf(?heaptype, ?throw).
+OptAssignHeapAllocation(?inmethod, ?heap) <-
+  AssignHeapAllocation(?heap, _, ?inmethod).
+ObjectAllocatedMultiply(?heap) <-
+  OptAssignHeapAllocation(?inmethod1, ?heap),
+  OptAssignHeapAllocation(?inmethod2, ?heap),
+  ?inmethod1 != ?inmethod2.
+MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
+  AssignHeapAllocation(?heap, _, ?meth),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  !ExceptionType(?heaptype),
+  !StringConstant(?heap),
+  !Type:fqn(?heaptype:"java.lang.StringBuffer"),
+  !Type:fqn(?heaptype:"java.lang.StringBuilder"),
+  !ObjectAllocatedMultiply(?heap).
+AllocationsPerMethodAndType[?type, ?meth] = ?n <-
+  agg<<?n=count()>> MethodAndTypeToHeap(_, ?type, ?meth).
+AllocationShouldBeMerged(?heaptype, ?meth) <-
+  AllocationsPerMethodAndType[?heaptype, ?meth] > AllocationMergeThreshold[].
+TypeToMergedHeap(?heap, ?heaptype, ?meth) <-
+  AllocationShouldBeMerged(?heaptype, ?meth),
+  MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
+MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?heap)>>(TypeToMergedHeap(?heap, ?type, ?meth)).
+HeapRepresentative[?heap] = ?representativeHeap <-
+  MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
+  TypeToMergedHeap(?heap, ?type, ?meth).
+TypeToHeap(?heap, ?heaptype) <-
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ExceptionType(?heaptype).
+ExceptionHeapRepresentative[?heap] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?otherHeap)>>(TypeToHeap(?otherHeap, HeapAllocation:Type[?heap])).
+HeapRepresentative[?heap] = ?representativeHeap <-
+  ExceptionHeapRepresentative[?heap] = ?representativeHeap.
+HeapAllocation:ContextInsensitive(?heap) <-
+  HeapAllocation:Type[?heap] = ?type,
+  ArrayType(?type),
+  ComponentType[?type] = ?componentType,
+  PrimitiveType(?componentType).
+DirectSubclass[?a] = ?c <-
+   DirectSuperclass[?a] = ?c.
+Subclass(?c, ?a) <-
+   DirectSubclass[?a] = ?c.
+Subclass(?c, ?a) <-
+   Subclass(?b, ?a),
+   DirectSubclass[?b] = ?c.
+Superclass(?c, ?a) <-
+   Subclass(?a, ?c).
+Superinterface(?k, ?c) <-
+   DirectSuperinterface(?c, ?k).
+Superinterface(?k, ?c) <-
+   DirectSuperinterface(?c, ?j),
+   Superinterface(?k, ?j).
+Superinterface(?k, ?c) <-
+   DirectSuperclass[?c] = ?super,
+   Superinterface(?k, ?super).
+RunningThread(?hctx, ?heap) <-
+   MainThread(?hctx, ?heap).
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+NativeCallGraphEdge(?callerCtx, ?start, ?calleeCtx, ?run),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?runThis),
+RunningThread(?hctx, ?heap)
+<-
+   MethodSignature:Value(?start:"<java.lang.Thread: void start0()>"),
+   ThisVar[?start] = ?startThis,
+   VarPointsTo(?hctx, ?heap, ?callerCtx, ?startThis),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   MethodLookup["run", "void()", ?heaptype] = ?run,
+   ThisVar[?run] = ?runThis.
+VarPointsTo(?hctx, ?heap, ?callerCtx, ?local) <-
+   ReachableCurrentThreadInvocation(?callerCtx, ?local),
+   RunningThread(?hctx, ?heap).
+ReachableCurrentThreadInvocation(?callerCtx, ?local) <-
+   ReachableContext(?callerCtx, ?inmethod),
+   MethodSignature:Value(?signature:"<java.lang.Thread: java.lang.Thread currentThread()>"),
+   StaticMethodInvocation(?invocation, ?signature, ?inmethod),
+   AssignReturnValue[?invocation] = ?local.
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+   MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>()>"),
+   ThisVar[?sig] = ?this,
+   SystemThreadGroup(?hctx, ?heap).
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
+VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
+   MethodSignature:Value(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   ThisVar[?sig] = ?this,
+   FormalParam[0, ?sig] = ?groupParam,
+   MainThreadGroup(?hctx, ?heap),
+   SystemThreadGroup(?groupCtx, ?group).
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this),
+VarPointsTo(?groupCtx, ?group, ?calleeCtx, ?groupParam) <-
+   MethodSignature:Value(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   ThisVar[?sig] = ?this,
+   FormalParam[0, ?sig] = ?groupParam,
+   MainThread(?hctx, ?heap),
+   MainThreadGroup(?groupCtx, ?group).
+SubtypeOf(?s, ?s),
+SupertypeOf(?s, ?s) <-
+   ClassType(?s).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   Subclass(?t, ?s).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   ClassType(?s),
+   Superinterface(?t, ?s).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   InterfaceType(?s),
+   Type:fqn(?t:"java.lang.Object").
+SubtypeOf(?s, ?s),
+SupertypeOf(?s, ?s) <-
+   InterfaceType(?s).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   InterfaceType(?s),
+   Superinterface(?t, ?s).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   ArrayType(?s),
+   Type:fqn(?t:"java.lang.Object").
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   ArrayType(?s),
+   ArrayType(?t),
+   ComponentType[?s] = ?sc,
+   ComponentType[?t] = ?sc,
+   PrimitiveType(?sc).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   ComponentType[?s] = ?sc,
+   ComponentType[?t] = ?tc,
+   ReferenceType(?sc),
+   ReferenceType(?tc),
+   SubtypeOf(?sc, ?tc).
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   ArrayType(?s),
+   InterfaceType(?t),
+   Type:fqn(?t:"java.lang.Cloneable").
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   ArrayType(?s),
+   InterfaceType(?t),
+   Type:fqn(?t:"java.io.Serializable").
+SubtypeOf(?s, ?t),
+SupertypeOf(?t, ?s) <-
+   Type:null[] = ?s,
+   ReferenceType(?t),
+   ?t != ?s.
+SubtypeOf(Type:float[], Type:double[]).
+SubtypeOf(Type:long[], Type:float[]).
+SubtypeOf(Type:int[], Type:long[]).
+SubtypeOf(Type:char[], Type:int[]).
+SubtypeOf(Type:short[], Type:int[]).
+SubtypeOf(Type:byte[], Type:short[]).
+SupertypeOf(Type:double[], Type:float[]).
+SupertypeOf(Type:float[], Type:long[]).
+SupertypeOf(Type:long[], Type:int[]).
+SupertypeOf(Type:int[], Type:char[]).
+SupertypeOf(Type:int[], Type:short[]).
+SupertypeOf(Type:short[], Type:byte[]).
+SubtypeOf(?t, ?t), SupertypeOf(?t, ?t) <- Type(?t).
+ThrowPointsTo(?hctx, ?heap, ?ctx, ?method) <-
+   Throw(?ref, ?var),
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !(ExceptionHandler:At[?heaptype, ?ref]=_),
+   Instruction:Method[?ref] = ?method.
+VarPointsTo(?hctx, ?heap, ?ctx, ?param) <-
+   Throw(?ref, ?var),
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ExceptionHandler:At[?heaptype, ?ref] = ?handler,
+   ExceptionHandler:FormalParam[?handler] = ?param.
+ThrowPointsTo(?hctx, ?heap, ?callerCtx, ?callerMethod) <-
+   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+   ThrowPointsTo(?hctx, ?heap, ?calleeCtx, ?tomethod),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !(ExceptionHandler:At[?heaptype,?invocation]=_),
+   Instruction:Method[?invocation] = ?callerMethod.
+VarPointsTo(?hctx, ?heap, ?callerCtx, ?param) <-
+   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+   ThrowPointsTo(?hctx, ?heap, ?calleeCtx, ?tomethod),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ExceptionHandler:At[?heaptype,?invocation] = ?handler,
+   ExceptionHandler:FormalParam[?handler] = ?param.
+ExceptionHandler:At[?type, ?instruction] = ?handler <-
+   PossibleExceptionHandler(?handler, ?type, ?instruction),
+   !ImpossibleExceptionHandler(?handler, ?type, ?instruction).
+ImpossibleExceptionHandler(?handler, ?type, ?instruction) <-
+   PossibleExceptionHandler(?handler, ?type, ?instruction),
+   ExceptionHandler:Before(?previous, ?handler),
+   PossibleExceptionHandler(?previous, ?type, ?instruction).
+PossibleExceptionHandler(?handler, ?type, ?instruction) <-
+   ExceptionHandler:InRange(?handler, ?instruction),
+   ExceptionHandler:Type[?handler] = ?type.
+PossibleExceptionHandler(?handler, ?subtype, ?instruction) <-
+   ExceptionHandler:InRange(?handler, ?instruction),
+   ExceptionHandler:Type[?handler] = ?type,
+   Superclass(?subtype, ?type).
+ExceptionHandler:InRange(?handler, ?instruction) <-
+   Instruction:Method[?instruction] = ?method,
+   ExceptionHandler:Method[?handler] = ?method,
+   Instruction:Index[?instruction] = ?index,
+   ExceptionHandler:Begin[?handler] = ?begin,
+   ?begin <= ?index,
+   ExceptionHandler:End[?handler] = ?end,
+   ?index < ?end.
+ExceptionHandler:Before(?previous, ?handler) <-
+   ExceptionHandler:Previous[?handler] = ?previous.
+ExceptionHandler:Before(?before, ?handler) <-
+   ExceptionHandler:Before(?middle, ?handler),
+   ExceptionHandler:Previous[?middle] = ?before.
+InRangeOfExceptionHandler(?instruction) <-
+   ExceptionHandler:InRange(_, ?instruction).
+MainMethodDeclaration(?method) <-
+   MainClass(?type),
+   MethodDescriptor:Value(?descriptor:"void(java.lang.String[])"),
+   Modifier:Value(?public:"public"),
+   Modifier:Value(?static:"static"),
+   MethodSignature:DeclaringType[?method] = ?type,
+   MethodSignature:SimpleName[?method] = "main",
+   MethodSignature:Descriptor[?method] = ?descriptor,
+   MethodModifier(?public, ?method),
+   MethodModifier(?static, ?method).
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
+AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
+  HeapAllocation(?heap), Context(?ctx), Var(?var).
+AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  ((NegativeObjectFilter("true"), ObjectToRefine(?heap)); (!NegativeObjectFilter("true"), !ObjectToRefine(?heap))).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  AssignNormalHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
+AssignAuxiliaryHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
+  HeapAllocation(?heap), Context(?ctx), Var(?var).
+AssignAuxiliaryHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
+  AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  AssignAuxiliaryHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
+AssignContextInsensitiveHeapAllocationSkolemOpt(?heap, ?ctx, ?var) ->
+  HeapAllocation(?heap), Context(?ctx), Var(?var).
+AssignContextInsensitiveHeapAllocationSkolemOpt(?heap, ?ctx, ?var) <-
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+HContext(?immCtx), HContextFromRealHContext[] = ?immCtx,
+VarPointsTo(?immCtx, ?heap, ?ctx, ?var) <-
+  AssignContextInsensitiveHeapAllocationSkolemOpt(?heap, ?ctx, ?var).
+VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
+  Assign(?type, ?toCtx, ?to, ?fromCtx, ?from),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  SupertypeOf(?type, ?heaptype).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?nullobject, ?toCtx, ?to) <-
+   AssignNull(?to, ?inmethod),
+   HeapAllocation:Null[] = ?nullobject,
+   ReachableContext(?toCtx, ?inmethod).
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  OptAssignLocal(?to, ?from).
+OptAssignLocal(?to, ?from) -> Var(?to), Var(?from).
+OptAssignLocal(?to, ?from) <-
+  Reachable(?inmethod),
+  AssignLocal(?from, ?to, ?inmethod).
+Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
+  AssignCast(?type, ?from, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
+  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  Var:Type[?to] = ?vartype,
+  SupertypeOf(?vartype, ?heaptype).
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) <-
+  ReachableLoadInstanceFieldBase(?base),
+  OptLoadInstanceField(?to, ?sig, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+ReachableLoadInstanceFieldBase(?base) -> Var(?base).
+ReachableLoadInstanceFieldBase(?base) <-
+  LoadInstanceField(?base, _, _, ?inmethod),
+  Reachable(?inmethod).
+OptLoadInstanceField(?to, ?sig, ?base) <-
+  LoadInstanceField(?base, ?sig, ?to, _).
+SpecialObject(?heap) -> HeapAllocation(?heap).
+SpecialObject(?heap) <-
+  SpecialMissingForNameHeap[_] = ?heap;
+  SpecialMissingNewInstanceHeap[_] = ?heap;
+  SpecialMissingGetConstructorHeap[_] = ?heap;
+  SpecialMissingGetMethodHeap[_] = ?heap;
+  SpecialMissingGetMethodsHeap[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethod[_] = ?heap;
+  SpecialMissingInvokeHeapFromGetMethods[_] = ?heap;
+  SpecialMissingGetFieldHeap[_] = ?heap;
+  SpecialMissingGetFieldsHeap[_] = ?heap;
+  SpecialMissingGetHeapFromGetField[_] = ?heap;
+  SpecialMissingGetHeapFromGetFields[_] = ?heap.
+InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap) <-
+  StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  HeapAllocation:Null[] != ?baseheap,
+  !SpecialObject(?heap),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  FieldSignature:Type[?signature] = ?fieldtype,
+  SupertypeOf(?fieldtype, ?heaptype).
+StoreHeapInstanceField(?signature, ?basehctx, ?baseheap, ?ctx, ?from) <-
+  ReachableStoreInstanceFieldBase(?base),
+  OptStoreInstanceField(?from, ?signature, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+ReachableStoreInstanceFieldBase(?base) -> Var(?base).
+ReachableStoreInstanceFieldBase(?base) <-
+  StoreInstanceField(_, ?base, _, ?inmethod),
+  Reachable(?inmethod).
+OptStoreInstanceField(?from, ?signature, ?base) <-
+  StoreInstanceField(?from, ?base, ?signature, _).
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+  OptLoadStaticField(?ctx, ?to, ?sig),
+  StaticFieldPointsTo(?hctx, ?heap, ?sig).
+OptLoadStaticField(?ctx, ?to, ?sig) <-
+  LoadStaticField(?sig, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+StaticFieldPointsTo(?hctx, ?heap, ?signature) <-
+  ReachableStoreStaticFieldFrom(?from),
+  OptStoreStaticField(?signature, ?from),
+  VarPointsTo(?hctx, ?heap, _, ?from).
+OptStoreStaticField(?signature, ?from) <-
+  StoreStaticField(?from, ?signature, _).
+ReachableStoreStaticFieldFrom(?from) -> Var(?from).
+ReachableStoreStaticFieldFrom(?from) <-
+  StoreStaticField(?from, _, ?inmethod),
+  Reachable(?inmethod).
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) <-
+   !EmptyArray(?baseheap),
+   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap),
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap).
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?baseheap) <-
+  ReachableLoadArrayIndexBase(?base),
+  OptLoadArrayIndex(?to, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+OptLoadArrayIndex(?to, ?base) <-
+  LoadArrayIndex(?base, ?to, _).
+ReachableLoadArrayIndexBase(?base) -> Var(?base).
+ReachableLoadArrayIndexBase(?base) <-
+  LoadArrayIndex(?base, _, ?inmethod),
+  Reachable(?inmethod).
+ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap) <-
+  StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from),
+  VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  !SpecialObject(?heap),
+  !EmptyArray(?baseheap),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  HeapAllocation:Type[?baseheap] = ?baseheaptype,
+  ComponentType[?baseheaptype] = ?componenttype,
+  SupertypeOf(?componenttype, ?heaptype).
+StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) <-
+  ReachableStoreArrayIndexBase(?base),
+  OptStoreArrayIndex(?from, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+ReachableStoreArrayIndexBase(?base) -> Var(?base).
+ReachableStoreArrayIndexBase(?base) <-
+  StoreArrayIndex(_, ?base, ?inmethod),
+  Reachable(?inmethod).
+OptStoreArrayIndex(?from, ?base) <-
+  StoreArrayIndex(?from, ?base, _).
+OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from) ->
+  Context(?toCtx), Var(?to), Context(?fromCtx), Var(?from).
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual)
+  <-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  FormalParam[?index, ?method] = ?formal,
+  ActualParam[?index, ?invocation] = ?actual.
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
+  <-
+  ReturnVar(?return, ?method),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  AssignReturnValue[?invocation] = ?local.
+VarPointsTo(?hctx, ?heap, ?toCtx, ?to) <-
+  VarPointsTo(?hctx, ?heap, ?fromCtx, ?from),
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
+StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod) ->
+  Context(?callerCtx), CallGraphEdgeSource(?invocation),
+  MethodSignature(?tomethod).
+StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod) <-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  StaticMethodInvocationSkolemOpt(?callerCtx, ?invocation, ?tomethod).
+OptVirtualMethodInvocationBase(?invocation, ?base) ->
+  Var(?base), MethodInvocation(?invocation).
+OptVirtualMethodInvocationBase(?invocation, ?base) <-
+  Reachable(?inmethod),
+  Instruction:Method[?invocation] = ?inmethod,
+  VirtualMethodInvocation:Base[?invocation] = ?base.
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+ <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  HeapAllocation:Type[?heap] = ?heaptype,
+  ResolveInvocation(?invocation, ?heaptype, ?tomethod),
+  ThisVar[?tomethod] = ?this,
+  ((!NegativeSiteFilter("true"), !SiteToRefine(?invocation)); (NegativeSiteFilter("true"), SiteToRefine(?invocation))).
+OptSpecialMethodInvocationBase(?invocation, ?base) ->
+  Var(?base), MethodInvocation(?invocation).
+OptSpecialMethodInvocationBase(?invocation, ?base) <-
+  Reachable(?inmethod),
+  Instruction:Method[?invocation] = ?inmethod,
+  SpecialMethodInvocation:Base[?invocation] = ?base.
+Context(?calleeCtx), ContextFromRealContext[] = ?calleeCtx,
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  MethodInvocation:Signature[?invocation] = ?tomethod,
+  SpecialMethodInvocation:Insn(?invocation),
+  ThisVar[?tomethod] = ?this,
+  ((!NegativeSiteFilter("true"), !SiteToRefine(?invocation)); (NegativeSiteFilter("true"), SiteToRefine(?invocation))).
+ReachableContext(?ctx, ?method) <-
+  CallGraphEdge(_, _, ?ctx, ?method).
+Reachable(?method) <-
+  ReachableContext(_, ?method).
+UniqueContext[] = ?ctx,
+ContextFromRealContext[] = ?ctx,
+Context(?ctx)
+  <- .
+UniqueHContext[] = ?hctx,
+HContextFromRealHContext[] = ?hctx,
+HContext(?hctx)
+  <- .
+SystemThreadGroup(?hctx, ?alloc) <-
+  MySystemThreadGroup(?alloc), UniqueHContext[] = ?hctx.
+MainThreadGroup(?hctx, ?alloc) <-
+  MyMainThreadGroup(?alloc), UniqueHContext[] = ?hctx.
+MainThread(?hctx, ?alloc) <-
+  MyMainThread(?alloc), UniqueHContext[] = ?hctx.
+ReachableContext(?ctx, ?method) <-
+  MainMethodDeclaration(?method), UniqueContext[] = ?ctx.
+ReachableContext(?ctx, ?method) <-
+  ImplicitReachable(?method), UniqueContext[] = ?ctx.
+ReachableContext(?ctx, ?clinit) <-
+  InitializedClass(?class), ClassInitializer[?class] = ?clinit, UniqueContext[] = ?ctx.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) <-
+   MethodInvocation:Signature[?inv] =
+   "<org.dacapo.parser.Config: void setClass(java.lang.String)>",
+   VirtualMethodInvocation:Base[?inv] = ?base,
+   Var:DeclaringMethod(?base, ?method),
+   ReachableContext(?ctx, ?method),
+   ActualParam[0, ?inv] = ?to,
+   DacapoHarnessClass(?classNameHeap).
+DummyContextForReflective[] = ?dummyCtx
+<-
+   MainMethodDeclaration(?mainMethod),
+   ReachableContext(?dummyCtx, ?mainMethod).
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return)
+<-
+   (MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String)>") ;
+    MethodSignature:Value(?sig:"<java.lang.Class: java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>") ),
+   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
+   Tamiflex:ReflectionMap(?classStr, ?invocation),
+   ?classObjStr = "<class " + ?classStr + ">",
+   Instruction:Value(?classObj:?classObjStr),
+   HeapAllocation(?classObj),
+   HeapAllocation:Type[?classObj] = "java.lang.Class",
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?obj, ?ctx, ?return)
+<-
+   (Tamiflex:Class:NewInstance(?invocation, ?obj) ;
+    Tamiflex:Array:NewInstance(?invocation, ?obj) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?obj, ?callerCtx, ?return),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
+VarPointsTo(?hctx, ?obj, ?calleeCtx, ?this)
+<-
+   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?obj),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return,
+   ThisVar[?constructor] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
+<-
+   MethodSignature:Value(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+   VirtualMethodInvocation(?invocation, ?sig, _),
+   Tamiflex:ReflectionMap(?methodStr, ?invocation),
+   MethodSignature:Value(?method:?methodStr),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?callerCtx, ?inmethod).
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ! MethodModifier("static", ?callee),
+   ActualParam[0, ?invocation] = ?base,
+   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
+   ThisVar[?callee] = ?this,
+   DummyContextForReflective[] = ?calleeCtx.
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   MethodModifier("static", ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+Assign(?type, ?callerCtx, ?local, ?calleeCtx, ?return)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   AssignReturnValue[?invocation] = ?local,
+   Var:Type[?local] = ?type,
+   ReturnVar(?return, ?callee),
+   DummyContextForReflective[] = ?calleeCtx.
+VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal)
+<-
+   Tamiflex:Invoke(?callerCtx, ?invocation, ?callee),
+   ActualParam[1, ?invocation] = ?argsParam,
+   FormalParam[_, ?callee] = ?formal,
+   VarPointsTo(?basehctx, ?baseheap, ?callerCtx, ?argsParam),
+   ArrayIndexPointsTo(?hctx, ?heap, ?basehctx, ?baseheap),
+   Var:Type[?formal] = ?type,
+   HeapAllocation:Type[?heap] = ?heaptype,
+   SupertypeOf(?type, ?heaptype),
+   DummyContextForReflective[] = ?calleeCtx.
+HContext(?hctx), HContextFromRealHContext[] = ?hctx,
+VarPointsTo(?hctx, ?heap, ?ctx, ?return)
+<-
+   (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;
+    Tamiflex:ReifiedMethodArray(_, ?heap, ?invocation) ),
+   Instruction:Method[?invocation] = ?inmethod,
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue[?invocation] = ?return.

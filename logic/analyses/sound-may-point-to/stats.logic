@@ -1,0 +1,195 @@
+Stats:SoundMay:AppMayPointTo(?heap, ?var) <-
+   MayPointTo(_, ?heap, _, ?var),
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppAllCtxMayPointTo(?heap, ?var) <-
+   MayPointTo(_, ?heap, InitialMayContext[], ?var),
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppVarWithMayPointTo(?var) <-
+   Stats:SoundMay:AppMayPointTo(_, ?var).
+
+Stats:SoundMay:AppVarWithAllCtxMayPointTo(?var) <-
+   Stats:SoundMay:AppAllCtxMayPointTo(_, ?var).
+
+Stats:InstanceFieldMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   $analysis:_AccessPath:IsVariable($analysis:_AccessPath:Base[?ap]).
+
+Stats:StaticFieldMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   $analysis:_AccessPath:ByStaticFieldInv[?ap] = _.
+
+Stats:CollectionMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) <-
+   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+   $analysis:_AccessPath:ByCollectionVarInv[?ap] = _.
+
+Stats:SoundMay:AppMustPointTo(?heap, ?var) <-
+   IntraproceduralMustPointTo:Object[_, ?var] = ?heap,
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+// Meaningless? It's by definition intra-procedural, hence context-insensitive.
+Stats:SoundMay:AppAllCtxMustPointTo[?var] = ?heap <-
+   IntraproceduralMustPointTo:Object[InitialMayContext[], ?var] = ?heap,
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppVarWithMustPointTo(?var) <-
+   Stats:SoundMay:AppMustPointTo(_, ?var).
+
+Stats:SoundMay:AppVarWithAllCtxMustPointTo(?var) <-
+   Stats:SoundMay:AppAllCtxMustPointTo[?var] = _.
+
+
+// These are really VarPointsTo stats, but we don't want to rely on
+// what was computed earlier.
+Stats:SoundMay:AppVarPointsTo(?heap, ?var) <-
+   VarPointsTo(_, ?heap, _, ?var),
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppVarWithVarPointsTo(?var) <-
+   Stats:SoundMay:AppVarPointsTo(_, ?var).
+
+
+Stats:SoundMay:AppVarsWithBothMayAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithMayPointTo(?var),
+   Stats:SoundMay:AppVarWithVarPointsTo(?var).
+
+Stats:SoundMay:AppVarsWithBothAllCtxMayAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithAllCtxMayPointTo(?var),
+   Stats:SoundMay:AppVarWithVarPointsTo(?var).
+
+Stats:SoundMay:AppVarsWithBothMustAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithMustPointTo(?var),
+   Stats:SoundMay:AppVarWithVarPointsTo(?var).
+
+Stats:SoundMay:AppVarsWithBothAllCtxMustAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithAllCtxMustPointTo(?var),
+   Stats:SoundMay:AppVarWithVarPointsTo(?var).
+
+
+// Restrict to non-null vars
+Stats:SoundMay:AppMayPointToNonNull(?heap, ?var) <-
+   Stats:SoundMay:AppMayPointTo(?heap, ?var),
+   HeapAllocation:Null[] != ?heap.
+
+Stats:SoundMay:AppAllCtxMayPointToNonNull(?heap, ?var) <-
+   Stats:SoundMay:AppAllCtxMayPointTo(?heap, ?var),
+   HeapAllocation:Null[] != ?heap.
+
+Stats:SoundMay:AppVarWithMayPointToNonNull(?var) <-
+   Stats:SoundMay:AppMayPointToNonNull(_, ?var).
+
+Stats:SoundMay:AppVarWithAllCtxMayPointToNonNull(?var) <-
+   Stats:SoundMay:AppAllCtxMayPointToNonNull(_, ?var).
+
+Stats:SoundMay:AppVarPointsToNonNull(?heap, ?var) <-
+   Stats:SoundMay:AppVarPointsTo(?heap, ?var),
+   HeapAllocation:Null[] != ?heap.
+
+Stats:SoundMay:AppVarWithVarPointsToNonNull(?var) <-
+   Stats:SoundMay:AppVarPointsToNonNull(_, ?var).
+
+Stats:SoundMay:AppVarsWithBothNonNullMayAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithMayPointToNonNull(?var),
+   Stats:SoundMay:AppVarWithVarPointsToNonNull(?var).
+
+Stats:SoundMay:AppVarsWithBothNonNullAllCtxMayAndVPT(?var) <-
+   Stats:SoundMay:AppVarWithAllCtxMayPointToNonNull(?var),
+   Stats:SoundMay:AppVarWithVarPointsToNonNull(?var).
+
+// sizes of points-to sets for common vars
+Stats:SoundMay:AppMayPointToNonNullOnCommonVars(?heap, ?var) <-
+   Stats:SoundMay:AppMayPointToNonNull(?heap, ?var),
+   Stats:SoundMay:AppVarWithVarPointsToNonNull(?var).
+
+Stats:SoundMay:AppAllCtxMayPointToNonNullOnCommonVars(?heap, ?var) <-
+   Stats:SoundMay:AppAllCtxMayPointToNonNull(?heap, ?var),
+   Stats:SoundMay:AppVarWithVarPointsToNonNull(?var).
+
+Stats:SoundMay:AppVarPointsToNonNullOnCommonVars(?heap, ?var) <-
+   Stats:SoundMay:AppVarPointsToNonNull(?heap, ?var),
+   Stats:SoundMay:AppVarWithMayPointToNonNull(?var).
+
+Stats:SoundMay:AppAllCtxVarPointsToNonNullOnCommonVars(?heap, ?var) <-
+   Stats:SoundMay:AppVarPointsToNonNull(?heap, ?var),
+   Stats:SoundMay:AppVarWithAllCtxMayPointToNonNull(?var).
+
+
+// Polymorphic casts. Note that identical casts are not distinguished.
+
+Stats:SoundMay:AppReachableCast(?inmethod, ?type, ?to, ?from) <-
+   Reachable(?inmethod),
+   AssignCast(?type, ?from, ?to, ?inmethod),
+   ApplicationClass(MethodSignature:DeclaringType[?inmethod]).
+
+Stats:SoundMay:PotentiallyFailingAppCastPerVPT(?from, ?to) <-
+   Stats:SoundMay:AppReachableCast(_, ?type, ?to, ?from),
+   Stats:SoundMay:AppVarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !SupertypeOf(?type, ?heaptype).
+
+Stats:SoundMay:PotentiallyFailingAppCastPerMPT(?from, ?to) <-
+   Stats:SoundMay:AppReachableCast(_, ?type, ?to, ?from),
+   Stats:SoundMay:AppMayPointTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   !SupertypeOf(?type, ?heaptype).
+
+Stats:SoundMay:PotentiallyFailingAppCastPerMPT(?from, ?to) <-
+   Stats:SoundMay:AppReachableCast(_, _, ?to, ?from),
+   !Stats:SoundMay:AppVarWithMayPointTo(?from).
+//   !Stats:SoundMay:AppVarWithAllCtxMayPointTo(?from).
+
+
+// Virtual method resolution
+Stats:SoundMay:AppReachableVirtualCall(?invocation) <-
+   Reachable(?method),
+   VirtualMethodInvocation:Insn(?invocation),
+   Instruction:Method[?invocation] = ?method,
+   ApplicationClass(MethodSignature:DeclaringType[?method]).
+
+Stats:SoundMay:AppVirtualCallPerVPT(?to, ?invocation) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invocation),
+   Stats:Simple:InsensCallGraphEdge(?invocation, ?to).
+
+Stats:SoundMay:AppVirtualCallPerMPT(?to, ?invocation) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invocation),
+   MayCallGraphEdge:ToMethod(?to, _, ?invocation).
+
+Stats:SoundMay:AppVirtualCallPerAllCtxMPT(?to, ?invocation) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invocation),
+   MayCallGraphEdge:ToMethod(?to, InitialMayContext[], ?invocation).
+
+Stats:SoundMay:AppVirtualTargetsPerVPT[?invo] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerVPT(_, ?invo)).
+
+Stats:SoundMay:AppVirtualTargetsPerMPT[?invo] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerMPT(_, ?invo)).
+
+Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?invo] = ?c <-
+   agg<<?c = count()>>(Stats:SoundMay:AppVirtualCallPerAllCtxMPT(_, ?invo)).
+
+Stats:SoundMay:MonomorphicCallSitePerVPT(?invo) <-
+   Stats:SoundMay:AppVirtualTargetsPerVPT[?invo] = 1.
+
+Stats:SoundMay:MonomorphicCallSitePerMPT(?invo) <-
+   Stats:SoundMay:AppVirtualTargetsPerMPT[?invo] = 1.
+// If it's equal to zero, that may indicate unsoundness in VPT. I
+// don't think we should count it. Needs thought.
+
+Stats:SoundMay:MonomorphicCallSitePerMust(?invo) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invo),
+   IntraproceduralCertainMethodBase(_, _, _, ?invo).
+
+Stats:SoundMay:MonomorphicCallSitePerAllCtxMPT(?invo) <-
+   Stats:SoundMay:AppVirtualTargetsPerAllCtxMPT[?invo] = 1.
+
+Stats:SoundMay:MonomorphicCallSitePerAllCtxMust(?invo) <-
+   Stats:SoundMay:AppReachableVirtualCall(?invo),
+   IntraproceduralCertainMethodBase(_, _, InitialMayContext[], ?invo).
+
+Stats:SoundMay:Metrics(?attr, ?value) -> string(?attr), float[64](?value).
