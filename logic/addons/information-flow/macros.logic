@@ -1,0 +1,17 @@
+#include "../../commonMacros.logic"
+
+SourceFromTaintedValue[?value] = ?id -> string(?id), Value(?value).
+
+#define TaintedValueIntroduced(id, type, value) \
+   Value:Mock:Cons[(id) + ": " + (Type:Id[(type)])] = value, \
+   Value:Type[value] = type, \
+   Value(value), \
+   TaintedValue(value), \
+   SourceFromTaintedValue[value] = id
+
+#define TaintedValueTransferred(oldvalue, type, value) \
+   Value:Mock:Cons[SourceFromTaintedValue[(oldvalue)] + ": " + (Type:Id[(type)])] = value, \
+   Value(value), \
+   TaintedValue(value), \
+   Value:Type[value] = type, \
+   SourceFromTaintedValue[value] = SourceFromTaintedValue[oldvalue]
