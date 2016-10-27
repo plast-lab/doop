@@ -172,6 +172,8 @@ SiteToRefine(?invocation) -> MethodInvocation(?invocation).
 TempSiteToRefine(?invocation) -> MethodInvocation(?invocation).
 
 ValueToRefine(?value) -> Value(?value).
+ValueToRefine(?v) <- ValueToRefine(?v).
+
 TempValueToRefine(?value) -> Value(?value).
 
 // Is the SiteToRefine the real list of objects needing
