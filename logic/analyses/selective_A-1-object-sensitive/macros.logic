@@ -1,0 +1,42 @@
+// We need to *pretend* we are creating new contexts, since the
+// product of the macro goes to the head of a rule.
+#define RecordMacro(ctx, value, hctx) \
+  HContext(hctx), \
+  HContextFromRealHContext[] = hctx
+
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object. Again, this may trigger creation of
+// a new object.
+#define MergeMacro(callerCtx, invo, hctx, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
+
+// For this analysis, static calls use the invocation site as a context.
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[invoComp] = calleeCtx, \
+  ContextComponent(invoComp), \
+  ContextComponent:MethodInvocation[invo] = invoComp
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[valueComp] = newCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[valueComp] = newCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp

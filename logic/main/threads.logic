@@ -1,0 +1,112 @@
+#ifndef EXCLUDE_IMPLICITLY_REACHABLE_CODE
+
+/**
+ * The main thread is never explicitly started, which would make it a
+ * RunningThread. Therefore, we make it a running thread explicitly.
+ */
+RunningThread(?hctx, ?value) <-
+   MainThread(?hctx, ?value).
+
+/**
+ * Calls to Thread.start() get redirected to Thread.run
+ *
+ * TODO: generalize to a redirect virtual method invocation. This takes too
+ * much code.
+ *
+ * In JRE 1.3 and JRE 1.4 the Thread.start() method itself is native. In JRE
+ * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
+ * start0.
+ */
+MergeThreadStartMacro(?hctx, ?value, ?callerCtx, ?calleeCtx),
+ReachableContext(?calleeCtx, ?run),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
+RunningThread(?hctx, ?value) 
+<-
+#if defined(JRE13) || defined(JRE14)
+   Method:Id(?start:"<java.lang.Thread: void start()>"),
+#else
+   Method:Id(?start:"<java.lang.Thread: void start0()>"),
+#endif
+   ThisVar[?start] = ?startThis,
+   VarPointsTo(?hctx, ?value, ?callerCtx, ?startThis),
+   Value:Type[?value] = ?valuetype,
+   MethodLookup["run", "void()", ?valuetype] = ?run,
+   ThisVar[?run] = ?runThis,
+   ?callerCtx = ?callerCtx. // Just to ignore "only used once" message (depends on the macro)
+
+/**
+ * Thread.currentThread() return running threads
+ *
+ * TODO In a thread sensitive analysis, we can return exactly one thread here,
+ * namely the context thread. It would be great if this rule would support
+ * that.
+ * TODO It seems more elegant to have a return variable for native methods and
+ * assign the running threads to this return variable.
+ */
+VarPointsTo(?hctx, ?value, ?callerCtx, ?local) <-
+   ReachableCurrentThreadInvocation(?callerCtx, ?local),
+   RunningThread(?hctx, ?value),
+   CompatibleContextAndHContextMacro(?callerCtx, ?hctx).
+
+ReachableCurrentThreadInvocation(?callerCtx, ?local) <-
+   ReachableContext(?callerCtx, ?inmethod),
+   Method:Id(?signature:"<java.lang.Thread: java.lang.Thread currentThread()>"),
+   StaticMethodInvocation(?invocation, ?signature, ?inmethod),
+   AssignReturnValue[?invocation] = ?local.
+
+/**
+ * Initialization of the system thread group
+ *
+ * The JVM creates an initial system thread group and initializes it by
+ * invoking the private ThreadGroup() constructor (openjdk:
+ * create_initial_thread_group).
+ */
+MergeStartupMacro(?hctx, ?value, ?calleeCtx),
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+   Method:Id(?sig:"<java.lang.ThreadGroup: void <init>()>"),
+   ThisVar[?sig] = ?this,
+   SystemThreadGroup(?hctx, ?value).
+
+/**
+ * Initialization of the main thread group
+ *
+ * The JVM creates a main thread group, which is a child of the system thread
+ * group (openjdk: create_initial_thread_group). It is initialized using the
+ * constructor ThreadGroup(ThreadGroup, String), with as the first argument the
+ * system thread group, and as the second argument the string "main".
+ *
+ * TODO: set the "main" argument.
+ */
+MergeStartupMacro(?hctx, ?value, ?calleeCtx),
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) <-
+   Method:Id(?sig:"<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   ThisVar[?sig] = ?this,
+   MainThreadGroup(?hctx, ?value),
+   FormalParam[0, ?sig] = ?groupParam,
+   SystemThreadGroup(?groupHCtx, ?group),
+   CompatibleHContextsMacro(?hctx, ?groupHCtx).
+
+/**
+ * Initialization of the main thread
+ *
+ * The JVM creates a main thread and initializes it using the constructor
+ * Thread(ThreadGroup, String), with as the first argument the main thread
+ * group, and as the second argument the string "main".
+ *
+ * TODO: set the "main" argument.
+ */
+MergeStartupMacro(?hctx, ?value, ?calleeCtx),
+ReachableContext(?calleeCtx, ?sig),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) <-
+   Method:Id(?sig:"<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>"),
+   ThisVar[?sig] = ?this,
+   MainThread(?hctx, ?value),
+   FormalParam[0, ?sig] = ?groupParam,
+   MainThreadGroup(?groupHCtx, ?group),
+   CompatibleHContextsMacro(?hctx, ?groupHCtx).
+
+#endif

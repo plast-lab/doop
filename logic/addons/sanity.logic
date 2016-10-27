@@ -1,0 +1,82 @@
+// Every var has a type
+Var(?var) -> Var:Type[?var] = _.
+
+// Every var in VarPointsTo is reachable
+VarPointsTo(_, _, _, ?var), Var:DeclaringMethod(?var, ?method) -> Reachable(?method).
+
+// Every var in VarPointsTo points to correctly typed values
+VarPointsTo(_, ?value, _, ?var), Value:Type[value] = ?valueType, Var:Type[?var] = ?varType ->
+   SubtypeOf(?valueType, ?varType).
+
+// No VarPointsTo is ever inferred for objects that should have been
+// merged. Suggests omission in the "Keep" predicate.
+VarPointsTo(_, ?value, _, _), Value:Heap[?value] = ?heap, HeapAllocation:Merge[?heap] = ?heap2 -> ?heap2 = ?heap.
+
+HeapAllocation(?heap) -> HeapAllocation:Type[?heap] = _.
+HeapAllocation(?heap) -> HeapAllocation:Id[?heap] = _.
+Value(?value) -> Value:Type[?value] = _.
+Value(?value) -> Value:Id[?value] = _.
+Value(?value) -> Value:isHeap(?value) ; Value:isNonHeap(?value).
+
+
+ClassType(?t) -> !InterfaceType(?t).
+InterfaceType(?t) -> !ClassType(?t).
+PrimitiveType(?t) -> !ReferenceType(?t).
+ReferenceType(?t) -> !PrimitiveType(?t).
+
+/*
+// These currently fail
+
+// Needed only because of implicit creations through refmodes
+// Every type is a concrete type
+Type(?t) ->
+   InterfaceType(?t) ;
+   ClassType(?t) ;
+   ArrayType(?t) ;
+   PrimitiveType(?t) ;
+   NullType(?t).
+*/
+
+// Every instruction is a concrete instruction
+Instruction(?insn) ->
+   Throw:Insn(?insn) ;
+   ThrowNull:Insn(?insn) ;
+   Goto:Insn(?insn) ;
+   If:Insn(?insn) ;
+   Switch:Insn(?insn) ;
+   TableSwitch:Insn(?insn) ;
+   LookupSwitch:Insn(?insn) ;
+   MonitorInstruction(?insn) ;
+   EnterMonitor:Insn(?insn) ;
+   ExitMonitor:Insn(?insn) ;
+   FieldInstruction(?insn) ;
+   LoadInstanceField:Insn(?insn) ;
+   StoreInstanceField:Insn(?insn) ;
+   LoadStaticField:Insn(?insn) ;
+   StoreStaticField:Insn(?insn) ;
+   ArrayInstruction(?insn) ;
+   LoadArrayIndex:Insn(?insn) ;
+   StoreArrayIndex:Insn(?insn) ;
+   AssignInstruction(?insn) ;
+   AssignOper:Insn(?insn) ;
+   AssignBinop:Insn(?insn) ;
+   AssignUnop:Insn(?insn) ;
+   AssignLocal:Insn(?insn) ;
+   AssignInstanceOf:Insn(?insn) ;
+   AssignNull:Insn(?insn) ;
+   AssignNumConstant:Insn(?insn) ;
+   AssignCast:Insn(?insn) ;
+   AssignCastNull:Insn(?insn) ;
+   AssignCastNumConstant:Insn(?insn) ;
+   AssignHeapAllocation:Insn(?insn) ;
+   ReturnInstruction(?insn) ;
+   ReturnVoid:Insn(?insn) ;
+   ReturnNonvoid:Insn(?insn) ;
+   MethodInvocation(?insn) ;
+   VirtualMethodInvocation:Insn(?insn) ;
+   SpecialMethodInvocation:Insn(?insn) ;
+   StaticMethodInvocation:Insn(?insn) ;
+   UnsupportedInstruction(?insn) ;
+   AssignPhantomInvoke(?insn) ;
+   PhantomInvoke(?insn) ;
+   BreakpointStmt(?insn).

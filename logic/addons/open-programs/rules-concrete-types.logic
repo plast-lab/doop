@@ -1,0 +1,147 @@
+FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
+
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) <-
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?type, ?type) <-
+   ArrayType(?type).
+
+ConcreteImplementations[?staticType] = ?class <-
+   agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
+
+AnyConcreteImplementations(?class, ?staticType) <-
+   ConcreteImplementations[?staticType] = ?class.
+   
+ServletClass(?class) <-
+   AllConcreteImplementations(?class, ?staticType),
+   ClassType(?class),
+   Type:Id(?staticType:"javax.servlet.http.HttpServlet").
+
+ClassToMock(?class) <-
+   MockEntryPoint(?class, _).
+
+ClassToMock(?fieldType) <-
+   FieldInformationOpt(_, _, ?fieldType),
+   !ClassModifier("abstract", ?fieldType),
+   ReferenceType(?fieldType).
+
+MockObject(?classHeap, ?class) <-
+   ClassToMock(?class),
+   !ClassModifier("abstract", ?class),
+   Type:Id(?class:?classStr),
+   ?classHeap = "<Mock allocation for " + ?classStr + ">".
+
+ClassToMock(?class) <-
+   MockObject(_, ?type),
+   ArrayType(?type),
+   ComponentType[?type] = ?componentType,
+   AnyConcreteImplementations(?class, ?componentType).
+                 
+FieldInformation(?signature, ?fieldtype, ?class) ->
+   Field(?signature), Type(?fieldtype), Type(?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   Field:Type[?signature] = ?fieldtype,
+   Field:DeclaringType[?signature] = ?class,
+   MockObject(_, ?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   FieldInformation(?signature, ?fieldtype, ?staticType),
+   AllConcreteImplementations(?class, ?staticType),
+   MockObject(_, ?class).
+
+FieldInformation(?signature, ?fieldConcreteType, ?class) <-
+   FieldInformationOpt(?signature, ?class, ?fieldStaticType),
+   AnyConcreteImplementations(?fieldConcreteType, ?fieldStaticType).
+
+FieldInformationOpt(?signature, ?class, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class).
+   
+MockHeapForField(?signature, ?baseheap, ?fieldtype) ->
+   Field(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
+
+MockHeapForField(?signature, ?baseheap, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class),
+   MockObjectHeap(?baseheap, ?class).
+
+MockObjectHeap(?heap, ?fieldtype) -> HeapAllocation(?heap), Type(?fieldtype).
+
+MockObjectOpt(?fieldtype, ?heap) <- MockObject(?heap, ?fieldtype).
+
+MockObjectHeap(?heap, ?fieldtype) <-
+   MockObjectOpt(?fieldtype, ?heapStr),
+   Instruction:Id(?heap:?heapStr), 
+   HeapAllocation(?heap).
+
+Blah(?heap, ?signature, ?baseheap),
+InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?hctx, ?baseheap) <-
+   ImmutableHContext(?hctx),
+   MockHeapForField(?signature, ?baseheap, ?fieldtype),
+   MockObjectHeap(?heap, ?fieldtype).
+
+
+Blah2(?hctx, ?componentHeap, ?hctx, ?arrayHeap),
+ArrayIndexPointsTo(?hctx, ?componentHeap, ?hctx, ?arrayHeap) <-
+   MockObjectHeap(?arrayHeap, ?arrayType),
+   ArrayType(?arrayType),
+   ComponentType[?arrayType] = ?componentType,
+   AnyConcreteImplementations(?class, ?componentType),
+   MockObjectHeap(?componentHeap, ?class),
+   ImmutableHContext(?hctx).
+
+ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
+
+MockObject(?description, ?subtype),
+MocksForFormals(?description, ?subtype, ?index, ?method) <-
+   FormalParam[?index, ?method] = ?formal,
+   Var:Type[?formal] = ?staticType,
+   AnyConcreteImplementations(?subtype, ?staticType),
+   Method:Id(?method:?methodStr),
+   MockEntryPoint(_, ?method),
+   Type:Id(?subtype:?subtypeStr), 
+   ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
+
+// Servlet service methods
+MockEntryPoint(?class, ?entry) <-
+   ServletClass(?class),
+   Type:Id(?class:?classStr),
+   ServletEntryMethodName(?serviceMethodName),
+   Method:Id(?entry:methodSigStr),
+   // TODO: try removing initializer
+   (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
+   ServletEntryMethodName(?serviceMethodName).
+
+// bind mock objects to formals
+
+HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
+   MocksForFormals(?heapStr, _, ?index, ?method),
+   ReachableContext(?ctx, ?method),
+   FormalParam[?index, ?method] = ?formal.
+
+VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
+ <-
+   HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
+   Instruction:Id(?heap:?heapStr), 
+   ImmutableHContextFromContext[?ctx] = ?hctx,
+   HeapAllocation(?heap).
+
+// bind mock objects to receivers
+HeapForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
+   ReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?receiver,
+   Method:DeclaringType[?method] = ?class,
+   MockObjectHeap(?heapStr, ?class).
+   
+VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
+ <-
+   ImmutableHContextFromContext[?ctx] = ?hctx,
+   HeapForReceiverInContext(?ctx, ?receiver, ?heap).
