@@ -1,120 +1,57 @@
-//// ====================================
-//// BEGIN type definitions
+#include "declarations.logic"
 
-MayContext(ctx) -> .
-lang:entity(`MayContext).
-lang:physical:storageModel[`MayContext]="ScalableSparse".
-lang:physical:capacity[`MayContext] = 4294967296.
+cons:MayContext:Initial[] = ctx, MayContext(ctx).
+cons:HeapContext:Empty[] = hctx, MayHeapContext(hctx).
 
-InitialMayContext[] = ctx -> MayContext(ctx).
-lang:skolem(`InitialMayContext).
-InitialMayContext[] = ctx, MayContext(ctx).
-
-PushMayContext[invo, ctx] = pushedCtx ->
-  MethodInvocation(invo), MayContext(ctx), MayContext(pushedCtx).
-lang:skolem(`PushMayContext).
-
-
-MayHeapContext(hctx) -> .
-lang:entity(`MayHeapContext).
-lang:physical:storageModel[`MayHeapContext]="ScalableSparse".
-lang:physical:capacity[`MayHeapContext] = 8388608.
-
-EmptyHeapContext[] = hctx -> MayHeapContext(hctx).
-lang:skolem(`EmptyHeapContext).
-
-EmptyHeapContext[] = hctx, MayHeapContext(hctx).
-
-//// END type definitions
-//// ====================================
-
-
-InitialRootMethodForMayAnalysis(method) -> Method(method).
-EmptyHeapContext(hctx) -> MayHeapContext(hctx).
-InitialMayContext(ctx) -> MayContext(ctx).
-MaxMayContextDepth(num) -> int(num).
-AccessPath_MaxLength(maxLen) -> int(maxLen).
-FirstInstructionOfMethod(method, firstInsn) -> Method(method), Instruction(firstInsn).
-
-component IntraproceduralMust {
-#include "IntraproceduralMust.logic"
-}
-
-//component SoundMay {
-//#include "SoundMay.logic"
-//}
-
-
-LibraryCollectionRoot(type) -> Type(type).
-LibraryCollectionType(type) -> Type(type).
-
-LibraryCollectionRoot(type) <-
-  type = "java.util.AbstractCollection";
-  type = "java.util.AbstractMap".
 LibraryCollectionType(type) <-
-  SubtypeOf(type, collRoot),
-  LibraryCollectionRoot(collRoot).
+  (root = "java.util.AbstractCollection" ;
+   root = "java.util.AbstractMap"),
+  SubtypeOf(type, root).
 
-//// TODO: model iterators
-LibraryCollectionStoreOperation(invo) -> MethodInvocation(invo).
-LibraryCollectionLoadOperation(invo) -> MethodInvocation(invo).
-
+// TODO: Should these use LibraryCollectionType?
 LibraryCollectionStoreOperation(invo) <-
-  VirtualMethodInvocation_SimpleName(invo, "add");
-  VirtualMethodInvocation_SimpleName(invo, "push");
-  VirtualMethodInvocation_SimpleName(invo, "set");
-  VirtualMethodInvocation_SimpleName(invo, "put").
+  VirtualMethodInvocation:SimpleName[invo] = "add";
+  VirtualMethodInvocation:SimpleName[invo] = "push";
+  VirtualMethodInvocation:SimpleName[invo] = "set";
+  VirtualMethodInvocation:SimpleName[invo] = "put".
 LibraryCollectionLoadOperation(invo) <-
-  VirtualMethodInvocation_SimpleName(invo, "peek"),
-  VirtualMethodInvocation_SimpleName(invo, "pop"),
-  VirtualMethodInvocation_SimpleName(invo, "elementAt"),
-  VirtualMethodInvocation_SimpleName(invo, "firstElement"),
-  VirtualMethodInvocation_SimpleName(invo, "lastElement"),
-  VirtualMethodInvocation_SimpleName(invo, "remove"),
-  VirtualMethodInvocation_SimpleName(invo, "get"). // TODO: better match in future
+  VirtualMethodInvocation:SimpleName[invo] = "peek";
+  VirtualMethodInvocation:SimpleName[invo] = "pop";
+  VirtualMethodInvocation:SimpleName[invo] = "elementAt";
+  VirtualMethodInvocation:SimpleName[invo] = "firstElement";
+  VirtualMethodInvocation:SimpleName[invo] = "lastElement";
+  VirtualMethodInvocation:SimpleName[invo] = "remove";
+  VirtualMethodInvocation:SimpleName[invo] = "get". // TODO: better match in future
 
-StoreCollection_From(insn, from) -> Instruction(insn), Var(from).
-StoreCollection_From(insn, from) <-
-  StoreArrayIndex_From(insn, from).
-StoreCollection_From(invo, from) <-
+StoreCollection:From(insn, from) <-
+  StoreArrayIndex:From[insn] = from.
+StoreCollection:From(invo, from) <-
   LibraryCollectionStoreOperation(invo),
-  (ActualParam(1, invo, from);
-   ActualParam(2, invo, from)).
+  (ActualParam[1, invo] = from;
+   ActualParam[2, invo] = from).
 
-StoreCollection_Base(insn, from) -> Instruction(insn), Var(from).
-StoreCollection_Base(insn, var) <-
-  StoreArrayIndex_Base(insn, var).
-StoreCollection_Base(invo, var) <-
+StoreCollection:Base[insn] = base <-
+  StoreArrayIndex:Base[insn] = base.
+StoreCollection:Base[invo] = base <-
   LibraryCollectionStoreOperation(invo),
-  VirtualMethodInvocation_Base(invo, var).
+  VirtualMethodInvocation:Base[invo] = base.
 
-// now loads
-LoadCollection_Base(insn, to) -> Instruction(insn), Var(to).
-LoadCollection_To(insn, to) -> Instruction(insn), Var(to).
-
-LoadCollection_To(insn, to) <-
-  LoadArrayIndex_To(insn, to).
-LoadCollection_To(invo, to) <-
+LoadCollection:To[insn] = to <-
+  LoadArrayIndex:To[insn] = to.
+LoadCollection_To[invo] = to <-
   LibraryCollectionLoadOperation(invo),
-  AssignReturnValue(invo, to).
+  AssignReturnValue[invo] = to.
 
-LoadCollection_Base(insn, var) <-
-  LoadArrayIndex_Base(insn, var).
-LoadCollection_Base(invo, var) <-
+LoadCollection:Base[insn] = base <-
+  LoadArrayIndex:Base[insn] = base.
+LoadCollection:Base[invo] = base <-
   LibraryCollectionLoadOperation(invo),
-  VirtualMethodInvocation_Base(invo, var).
+  VirtualMethodInvocation:Base[invo] = base.
 
 
-//// POINT2---IgnorableMethodInvocation to go here
-
-//// ====================================
-//// BEGIN configuration
-//// Different ways to kick-start the analysis.
-
-MaxMayContextDepth(4).
-
-AccessPath_MaxLength(3).
-
+//component IntraproceduralMust {
+//#include "IntraproceduralMust.logic"
+//}
 
 
 
@@ -122,6 +59,7 @@ AccessPath_MaxLength(3).
 //// ====================================
 //// BEGIN utilities
 
+/*
 // Try to discover hidden "main" heuristically
 AppMainMethod(mainMethod) -> Method(mainMethod).
 AppMainMethod(mainMethod) <-
@@ -130,7 +68,7 @@ AppMainMethod(mainMethod) <-
   ApplicationClass(class).
 
 // Heuristic: if you can reach it in the analysis and it's a static
-// initializer, start a new search (with zero context depth) from it.
+// initializer, start a cons search (with zero context depth) from it.
 // There are lots of static final fields in the library that see heavy
 // use.
 ClinitMethodOfClass(method, class) -> Method(method), Type(class).
@@ -188,13 +126,36 @@ InitialComputedAccessPath(ap) -> AccessPath(ap).
 
 // The rules below create access paths from all variables
 // and all access fields in the program.
-//InitialComputedAccessPath([var, nil]) <-
-//  Var_Type(var, type),
-//  ReferenceType(type).
+cons:AccessPath:byVar[var] = ap, AccessPath(ap),
+InitialComputedAccessPath(ap) <-
+  Var:Type[var] = type,
+  ReferenceType(type).
+
+// Invariant: all computed access paths are type safe: the fields
+// exist in the static type of the prefix. REVIEW: This may (rarely)
+// prevent detection of valid aliasing.
+cons:AccessPath:byField[fld, ap1] = ap2, AccessPath(ap2),
+InitialComputedAccessPath(ap2) <-
+  (LoadInstanceField_Base(insn, base) ;
+   StoreInstanceField_Base(insn, base)),
+  cons:AccessPath:byVar[base] = ap1,
+  FieldInstruction_Signature(insn, fld),
+  FieldSignature_Type(fld, type),
+  ReferenceType(type).
+
+cons:AccessPath:byStaticField[fld] = ap, AccessPath(ap),
+InitialComputedAccessPath(ap) <-
+  (LoadStaticField_To(insn, _) ;
+   StoreStaticField_From(insn, _)),
+  FieldInstruction_Signature(insn, fld),
+  FieldSignature_Type(fld, type),
+  ReferenceType(type).
+*/
 
 //// END utilities
 
 
+/*
 // Friendly API for access path display
 AccessPath_ToString(ap, str) ->
    AccessPath(ap), string(str).
@@ -249,11 +210,12 @@ _FieldRefModeLastTokenIndex(ref, maxIdx) <-
    agg<<maxIdx = max(idx)>>
    FieldSignature_Value(_:ref),
    string_split[ref, "/", idx] = _.
+*/
 
 
 /*
   ///// POINT1--unchanged access paths code
-  
+
   //// Dealing with unchanged access paths (below) hasn't proven
   //// worthwhile. It's not surprising. The callee has no name for
   //// this access path. The only hope is that it will survive through
@@ -275,7 +237,7 @@ _FieldRefModeLastTokenIndex(ref, maxIdx) <-
   //   !May_MustCallGraphEdge_ToMethod(callerCtx, invo, toMethod),
   //   MayCallGraphEdge_Context(callerCtx, invo, calleeCtx),
   //   Before_AccessPathMayPointTo(hctx, heap, ap, callerCtx, invo).
-  
+
   // Before_AccessPathMayPointTo(hctx, heap, ap, calleeCtx, firstInsn) <_
   //    OptPotentialAccessPathMayPointToPropagation(hctx, heap, invo, calleeCtx, toMethod, ap),
   //    AccessPath_BaseVar(ap, baseVar),
@@ -297,7 +259,7 @@ _FieldRefModeLastTokenIndex(ref, maxIdx) <-
 */
 
 
-//// Enter at POINT2---IgnorableMethodInvocation 
+//// Enter at POINT2---IgnorableMethodInvocation
 //// ====================================
 //// BEGIN configuration of ignorable method calls
 
@@ -307,6 +269,7 @@ _FieldRefModeLastTokenIndex(ref, maxIdx) <-
 // not ignored, no image of the heap propagates anywhere.
 // TODO: do a better match (on full sig) than just on SimpleName.
 
+/*
 IgnorableMethodInvocation(invo) <-
    VirtualMethodInvocation_SimpleName(invo, "fillInStackTrace"); // Throwable
    VirtualMethodInvocation_SimpleName(invo, "equals");  // Object
@@ -317,31 +280,31 @@ IgnorableMethodInvocation(invo) <-
    VirtualMethodInvocation_SimpleName(invo, "endsWith"); // String
    StaticMethodInvocation_SimpleName(invo, "floatToRawIntBits"); // Float
    // these are used in the HashMap "put" method!
-   StaticMethodInvocation_SimpleName(invo, "intBitsToFloat"); 
+   StaticMethodInvocation_SimpleName(invo, "intBitsToFloat");
    // From this point on, it's just a test to see if these natives matter.
    StaticMethodInvocation_SimpleName(invo, "encoding"); // Console
-   StaticMethodInvocation_SimpleName(invo, "echo"); 
-   StaticMethodInvocation_SimpleName(invo, "istty"); 
+   StaticMethodInvocation_SimpleName(invo, "echo");
+   StaticMethodInvocation_SimpleName(invo, "istty");
    VirtualMethodInvocation_SimpleName(invo, "sync"); // FileDescriptor
-   StaticMethodInvocation_SimpleName(invo, "initIDs"); 
+   StaticMethodInvocation_SimpleName(invo, "initIDs");
    VirtualMethodInvocation_SimpleName(invo, "open"); // FileInputStream
-   VirtualMethodInvocation_SimpleName(invo, "read0"); 
-   VirtualMethodInvocation_SimpleName(invo, "readBytes"); 
-   VirtualMethodInvocation_SimpleName(invo, "skip"); 
-   VirtualMethodInvocation_SimpleName(invo, "available"); 
-   VirtualMethodInvocation_SimpleName(invo, "close0"); 
+   VirtualMethodInvocation_SimpleName(invo, "read0");
+   VirtualMethodInvocation_SimpleName(invo, "readBytes");
+   VirtualMethodInvocation_SimpleName(invo, "skip");
+   VirtualMethodInvocation_SimpleName(invo, "available");
+   VirtualMethodInvocation_SimpleName(invo, "close0");
    VirtualMethodInvocation_SimpleName(invo, "write"); // FileOutputStream
-   VirtualMethodInvocation_SimpleName(invo, "writeBytes"); 
+   VirtualMethodInvocation_SimpleName(invo, "writeBytes");
    VirtualMethodInvocation_SimpleName(invo, "availableProcessors"); // Runtime
-   VirtualMethodInvocation_SimpleName(invo, "freeMemory"); 
-   VirtualMethodInvocation_SimpleName(invo, "totalMemory"); 
-   VirtualMethodInvocation_SimpleName(invo, "maxMemory"); 
-   VirtualMethodInvocation_SimpleName(invo, "gc"); 
-   StaticMethodInvocation_SimpleName(invo, "runFinalization0"); 
+   VirtualMethodInvocation_SimpleName(invo, "freeMemory");
+   VirtualMethodInvocation_SimpleName(invo, "totalMemory");
+   VirtualMethodInvocation_SimpleName(invo, "maxMemory");
+   VirtualMethodInvocation_SimpleName(invo, "gc");
+   StaticMethodInvocation_SimpleName(invo, "runFinalization0");
    StaticMethodInvocation_SimpleName(invo, "sin"); // StrictMath
-   StaticMethodInvocation_SimpleName(invo, "cos"); 
-   StaticMethodInvocation_SimpleName(invo, "tan"); 
-   StaticMethodInvocation_SimpleName(invo, "log"); 
+   StaticMethodInvocation_SimpleName(invo, "cos");
+   StaticMethodInvocation_SimpleName(invo, "tan");
+   StaticMethodInvocation_SimpleName(invo, "log");
    StaticMethodInvocation_SimpleName(invo, "pow");
    StaticMethodInvocation_SimpleName(invo, "currentThread"); // Thread
    StaticMethodInvocation_SimpleName(invo, "yield");
@@ -359,7 +322,7 @@ IgnorableMethodInvocation(invo) <-
    VirtualMethodInvocation_SimpleName(invo, "interrupt0");
    VirtualMethodInvocation_SimpleName(invo, "isAlive");
    VirtualMethodInvocation_SimpleName(invo, "getStackTraceDepth"); // Throwable
-   VirtualMethodInvocation_SimpleName(invo, "getStackTraceElement"); 
+   VirtualMethodInvocation_SimpleName(invo, "getStackTraceElement");
    VirtualMethodInvocation_SimpleName(invo, "forkAndExec");  // UnixProcess
    VirtualMethodInvocation_SimpleName(invo, "wait"); // Object
    VirtualMethodInvocation_SimpleName(invo, "notify");
@@ -370,7 +333,7 @@ IgnorableForStaticsMethodInvocation(invo) <-
    VirtualMethodInvocation_SimpleName(invo, "clone"); // Object
    VirtualMethodInvocation_SimpleName(invo, "append"). // StringBuilder
 
-// *Collections*
+// Collections
 IgnorableForNonCollectionsMethodInvocation(invo) <-
   LibraryCollectionStoreOperation(invo);
   LibraryCollectionLoadOperation(invo).
@@ -380,13 +343,14 @@ StaticMethodInvocation_SimpleName(invo, simplename) <-
    MethodInvocation_Signature(invo, signature),
    StaticMethodInvocation_Insn(invo),
    MethodSignature_SimpleName(signature, simplename).
+*/
 
 //// END configuration of ignorable method calls
 
 
 /*
 //// POINT4 code
-// //// Commented out for now. Does not make that much difference. 
+// //// Commented out for now. Does not make that much difference.
 // //// InstanceFieldMayPointTo inferences rarely get stopped because of
 // //// library calls.
 // //// ------------------------------
@@ -407,13 +371,13 @@ StaticMethodInvocation_SimpleName(invo, simplename) <-
 
 // _Opt2MethodInvocation_Signature(invo, inMeth, toMeth) <-
 //    (StaticMethodInvocation_Insn(invo);
-//     SpecialMethodInvocation_Insn(invo)), 
+//     SpecialMethodInvocation_Insn(invo)),
 //    MethodInvocation_Signature(invo, toMeth),
 //    Instruction_Method(invo, inMeth).
 
 // // exact resolution for static/special
 // MethodCallsReflection(inMeth) <-
-//    _Opt2MethodInvocation_Signature(_, inMeth, toMeth), 
+//    _Opt2MethodInvocation_Signature(_, inMeth, toMeth),
 //    MethodCallsReflection(toMeth).
 
 // // underapproximation of virtual method resolution, as if static
