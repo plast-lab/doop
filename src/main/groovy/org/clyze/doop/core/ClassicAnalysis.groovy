@@ -384,8 +384,9 @@ class ClassicAnalysis extends Analysis {
             return
         }
 
+        def macros    = "${Doop.analysesPath}/${name}/macros.logic"
         def statsPath = "${Doop.addonsPath}/statistics"
-        cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic")
+        cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic", macros)
 
         connector.queue()
             .echo("-- Statistics --")
@@ -394,7 +395,7 @@ class ClassicAnalysis extends Analysis {
             .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
-            cpp.preprocess("${outDir}/statistics.logic", "${statsPath}/statistics.logic")
+            cpp.preprocess("${outDir}/statistics.logic", "${statsPath}/statistics.logic", macros)
             connector.queue().addBlockFile("statistics.logic")
         }
 

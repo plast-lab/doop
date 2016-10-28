@@ -1,4 +1,4 @@
-#define MULTIPLE_IMMUTABLE_CONTEXTS 
+#define MULTIPLE_SEGREGATED_ANALYSES 
 
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling
@@ -15,7 +15,10 @@
 
 #define CompatibleContextAndHContextMacro(ctx, hctx) \
   PartitionFromContext[ctx] = PartitionFromHContext[hctx]
-  
+
+#define CompatibleHContextsMacro(hctx1, hctx2) \
+  PartitionFromHContext[hctx1] = PartitionFromHContext[hctx2]
+
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
 // Again, this may trigger creation of a new object.

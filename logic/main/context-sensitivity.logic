@@ -19,7 +19,7 @@
  * analyses, provide default definitions for the common cases.
  */
 
-#ifndef MULTIPLE_IMMUTABLE_CONTEXTS
+#ifndef MULTIPLE_SEGREGATED_ANALYSES
 ImmutableContextFromHContext[?hctx] = ?ctx <-
   ImmutableContext(?ctx), HContext(?hctx).
 
@@ -28,7 +28,7 @@ ImmutableHContextFromContext[?ctx] = ?hctx <-
 
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
   ImmutableContext(?ctx2), Context(?ctx1).
-#endif // MULTIPLE_IMMUTABLE_CONTEXTS
+#endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #ifndef CompatibleContextAndHContextMacro
 #define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
