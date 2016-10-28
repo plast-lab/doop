@@ -136,12 +136,12 @@ MustPointTo[?var2, ?ctx, ?insn] = ?value <-
    MustPointTo[?var1, ?ctx, ?insn] = ?value.
 */
 
-MustPointTo(?value, ?var, ?ctx) <-
+MustPointTo[?var, ?ctx] = ?value <-
    AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
    Value:byHeap[?heap] = ?value,
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
 
-MustPointTo(?value, ?var, ?ctx) <-
+MustPointTo[?var, ?ctx] = ?value <-
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
    (!(HeapAllocation:Merge[?heap] = _);
     HeapAllocation:Merge[?heap] = ?heap),
@@ -151,16 +151,16 @@ MustPointTo(?value, ?var, ?ctx) <-
 InstructionInsensitiveMustAlias(?ap1, ?ap2, ?ctx) <-
    MustAlias(?ap1, ?ap2, ?ctx, _).
 
-MustPointTo(?value, ?var2, ?ctx) <-
-   MustPointTo(?value, ?var1, ?ctx),
+MustPointTo[?var2, ?ctx] = ?value <-
+   MustPointTo[?var1, ?ctx] = ?value,
    InstructionInsensitiveMustAlias(?ap1, ?ap2, ?ctx),
    AccessPath:ByVarInv[?ap1] = ?var1,
    AccessPath:ByVarInv[?ap2] = ?var2.
 
-MustPointTo(?value, ?var2, ?ctx2) <-
-   MustPointTo(?value, ?var1, ?ctx1),
+MustPointTo[?var2, ?ctx2] = ?value <-
+   MustPointTo[?var1, ?ctx1] = ?value,
    MustAlias(?ap1, ?ap2, ?ctx2, _),
-   AccessPath:ByVarInv[?ap1] = ?var1,
+   AccessPath:ByVarInv[AccessPath:Unprime[?ap1]] = ?var1,
    AccessPath:ByVarInv[?ap2] = ?var2,
    PopMustContext[?ctx2] = ?ctx1.
 
@@ -336,7 +336,7 @@ PhiNodeSource(?var, ?insn) <-
 //// Inter-procedural propagation of MustAlias information
 // First, calls.
 
-AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
+AllPredecessors:MustAlias(AccessPath:Prime[?ap1], AccessPath:Prime[?ap2], ?calleeCtx, ?firstInsn) <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
@@ -348,14 +348,14 @@ AccessPathsAliasedForInvocation(?ap1, ?ap2, ?invo) <-
    FormalParam[?index, ?toMethod] = ?formal,
    ActualParam[?index, ?invo] = ?actual,
    AccessPath:ByVar[?formal] = ?ap1,
-   AccessPath:ByVar[?actual] = ?ap2.
+   AccessPath:Prime[AccessPath:ByVar[?actual]] = ?ap2.
 
 AccessPathsAliasedForInvocation(?ap1, ?ap2, ?invo) <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    (VirtualMethodInvocation:Base[?invo] = ?base;
     SpecialMethodInvocation:Base[?invo] = ?base),
    ThisVar[?toMethod] = ?this,
-   AccessPath:ByVar[?base] = ?ap1,
+   AccessPath:Prime[AccessPath:ByVar[?base]] = ?ap1,
    AccessPath:ByVar[?this] = ?ap2.
 
 AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
@@ -366,15 +366,13 @@ AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
    AccessPathsAliasedForInvocation(?ap1, ?ap2, ?invo).
 
 // Now returns
-MustAliasBase(?calleeAp1, ?calleeAp2, ?ctx, ?invo) <-
+MustAliasBase(?ap1, ?ap2, ?ctx, ?invo) <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    (AllReturn:MustAlias(?calleeAp1, ?calleeAp2, ?calleeCtx, ?toMethod);
     AllReturn:MustAlias(?calleeAp1, ?calleeAp2, SingleAllContext[], ?toMethod)),
-   AccessPath:BaseVar[?calleeAp1] = ?var1,
-   AccessPath:BaseVar[?calleeAp2] = ?var2,
-   !Var:DeclaringMethod(?var1, ?toMethod),
-   !Var:DeclaringMethod(?var2, ?toMethod).
+   AccessPath:Unprime[?calleeAp1] = ?ap1,
+   AccessPath:Unprime[?calleeAp2] = ?ap2.
 
 // Frame Rules.
 
@@ -384,15 +382,6 @@ OptMethodFromVar(?method, ?var) <-
 OptInvocationInMethod(?insn, ?method) <-
    MethodInvocation(?insn),
    Instruction:Method[?insn] = ?method.
-
-AccessPathRelevantAtInvocation(?insn, ?ap) <-
-   AccessPath:BaseVar[?ap] = ?var,
-   OptMethodFromVar(?method, ?var),
-   OptInvocationInMethod(?insn, ?method).
-
-AccessPathFieldRelevantAtInvocation(?ap, ?fld, ?insn) <-
-   AccessPathRelevantAtInvocation(?insn, ?ap),
-   AccessPath:ContainsField(?fld, ?ap).
 
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
@@ -504,7 +493,7 @@ MaxContextDepth[] = 2 <- .
 AccessPath(?ap) -> .
 lang:entity(`AccessPath).
 lang:physical:storageModel[`AccessPath] = "ScalableSparse".
-lang:physical:capacity[`AccessPath] = 8388608.
+lang:physical:capacity[`AccessPath] = 33554432.
 
 NullAccessPath[] = ?nullAp -> AccessPath(?nullAp).
 lang:constructor(`NullAccessPath).
@@ -539,6 +528,38 @@ lang:constructor(`AccessPath:ByFieldAccess).
 
 AccessPath:ByFieldAccessInv[?ap1, ?fld] = ?ap2 <- 
    AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap2.
+
+// DoPrime is the constructor, applies to the base of the access path
+// only (a var or another result of priming).
+AccessPath:DoPrime[?originalAp] = ?primedAp ->
+   AccessPath(?originalAp), AccessPath(?primedAp).
+lang:constructor(`AccessPath:DoPrime).
+
+AccessPath(?primeAp),
+AccessPath:DoPrime[?ap] = ?primeAp, 
+AccessPath:Prime[?ap] = ?primeAp,
+AccessPath:PrimeDepth[?primeAp] = 1 <-
+   AccessPath:ByVar[_] = ?ap.
+
+AccessPath(?primeAp),
+AccessPath:DoPrime[?ap] = ?primeAp, 
+AccessPath:Prime[?ap] = ?primeAp,
+AccessPath:PrimeDepth[?primeAp] = ?depth + 1 <-
+   AccessPath:DoPrime[_] = ?ap,
+   AccessPath:PrimeDepth[?ap] = ?depth,
+   ?depth < MaxContextDepth[].
+
+AccessPath:Prime[?ap] = ?ap <-
+   AccessPath:ByStaticField[_] = ?ap.
+
+AccessPath(?primeAp),
+AccessPath:ByFieldAccess[?fld, ?primeAp0] = ?primeAp,
+AccessPath:Prime[?ap] = ?primeAp <-
+   AccessPath:ByFieldAccess[?fld, ?ap0] = ?ap,
+   AccessPath:Prime[?ap0] = ?primeAp0.
+
+AccessPath:Unprime[?primedAp] = ?originalAp <-
+   AccessPath:Prime[?originalAp] = ?primedAp.
 
 AccessPath:Base[?ap] = ?base ->
    AccessPath(?ap), AccessPath(?base).
@@ -587,6 +608,10 @@ IsCompositeAccessPath(?ap) <-
 AccessPath:Length[?ap] = ?len ->
    AccessPath(?ap), int[32](?len).
 
+AccessPath:Length[?primedAp] = ?len <-
+   AccessPath:Length[?ap] = ?len,
+   AccessPath:Prime[?ap] = ?primedAp.
+
 TypeContainsField(?fld, ?type) <-
    Field:DeclaringType[?fld] = ?type.
 
@@ -609,11 +634,16 @@ AccessPath:Type[?ap] = ?type <-
    AccessPath:LastField[?ap] = ?fld,
    Field:Type[?fld] = ?type.
 
+AccessPath:Type[?primedAp] = ?type <-
+   AccessPath:Type[?ap] = ?type,
+   AccessPath:Prime[?ap] = ?primedAp.
+   
 AccessPath:MaxLength[] = ?maxLen ->
    int[32](?maxLen).
 
 AccessPath:MaxLength[] = 3 <- .
 
+// note: primed access paths do not have a var as a base!
 AccessPath:BaseVar[?ap] = ?var ->
    AccessPath(?ap), Var(?var).
 
@@ -631,6 +661,11 @@ AccessPath:ToString[?ap] = ?str ->
 AccessPath:ToString[?ap] = ?str <-
    AccessPath:ByVarInv[?ap] = ?v,
    NameFromRefMode[?v] = ?str.
+
+AccessPath:ToString[?primedAp] = ?str <-
+   AccessPath:DoPrime[?apOriginal] = ?primedAp,
+   AccessPath:ToString[?apOriginal] = ?strOriginal,
+   ?str = "[" + ?strOriginal + "]".
 
 AccessPath:ToString[?ap] = ?str <-
    AccessPath:ByStaticFieldInv[?ap] = ?f,
