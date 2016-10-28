@@ -154,18 +154,3 @@ PartitionWithMaxCountOfTypes(?idType) <-
 //   ClassType(?type2).
 // */
 
-// MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
-//   ResolveInvocation[?type, ?invocation] = ?tomethod.
-
-// MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
-//   SpecialMethodInvocation:Base[?invocation] = ?base,
-//   Var:Type[?base] = ?basetype,
-//   MethodInvocation:Signature[?invocation] = ?tomethod,
-//   SubtypeOf(?type, ?basetype).
-
-// InvocationInSamePartition(?invocation, ?heaptype) <-
-//   MatchingMethodForInvocationAndType[?heaptype, ?invocation] = ?tomethod,
-//   Instruction:Method[?invocation] = ?inmethod,
-//   Method:DeclaringType[?inmethod] = ?inclass,
-//   Method:DeclaringType[?tomethod] = ?toclass,
-//   ClassesInSamePartition(?inclass, ?toclass).

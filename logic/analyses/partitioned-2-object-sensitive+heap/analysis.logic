@@ -67,48 +67,112 @@ MainThread(?hctx, ?alloc) <-
 MyMergeBasis(?invo, ?hctx, ?value) <-
   MergeBasis(_, ?invo, ?hctx, ?value).
 
-// We create new context objects sparingly, because of the high cost.  We also
-// cache them, so they can be looked up without a join.
+MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
+  ResolveInvocation[?type, ?invocation] = ?tomethod.
+
+MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
+  SpecialMethodInvocation:Base[?invocation] = ?base,
+  Var:Type[?base] = ?basetype,
+  MethodInvocation:Signature[?invocation] = ?tomethod,
+  SubtypeOf(?type, ?basetype).
+
+PartitionForValue[?value] = ?partitionId <-
+  Value:DeclaringType[?value] = ?valueClass,
+  TypeToPartitionId[?valueClass] = ?partitionId.
+
+ValueInAllPartitions(?value) <-
+  Value:DeclaringType[?value] = ?valueClass,
+  TypeInAllPartitions(?valueClass).
+
+TypeInAllPartitions(?type) <-
+  Type:Id(?type:?typeName),
+  string:substring[?typeName, 0, _] = "java.util".
+
+PartitionForInvocation[?invo] = ?partitionId <-
+  Instruction:Method[?invo] = ?inmethod,
+  Method:DeclaringType[?inmethod] = ?inClass,
+  TypeToPartitionId[?inClass] = ?partitionId.
+
+PartitionForResolvedInvocation[?type, ?invo] = ?partitionId <-
+  MatchingMethodForInvocationAndType[?type, ?invo] = ?tomethod,
+  Method:DeclaringType[?tomethod] = ?toclass,
+  TypeToPartitionId[?toclass] = ?partitionId.
+  
+
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
 OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value).
 
 /*
+/// Base the decision on the partition of the target method
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
 OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   Value:Type[?value] = ?valuetype,
-  InvocationInSamePartition(?invo, ?valuetype).
+  (PartitionForResolvedInvocation[?valuetype, ?invo] = PartitionForInvocation[?invo];
+   TypeInAllPartitions(?valuetype)).
 
 OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   Value:Type[?value] = ?valuetype,
-  !InvocationInSamePartition(?invo, ?valuetype),
-  ImmutableContext(?calleeCtx).
+  !(PartitionForResolvedInvocation[?valuetype, ?invo] = _),
+  !TypeInAllPartitions(?valuetype),
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx.
+
+OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?hctx, ?value),
+  Value:Type[?value] = ?valuetype,
+  PartitionForResolvedInvocation[?valuetype, ?invo] = ?partId,
+  (?partId != PartitionForInvocation[?invo];
+   !(PartitionForInvocation[?invo] = _)),
+  !TypeInAllPartitions(?valuetype),
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx.
+*/
+
+/*
+/// Base the decision on the partition that allocated the receiver object
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
+OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?hctx, ?value),
+  (PartitionForInvocation[?invo] = PartitionForValue[?value];
+   ValueInAllPartitions(?value)).
+
+OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?hctx, ?value),
+  !(PartitionForValue[?value] = _),
+  !ValueInAllPartitions(?value),
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx.
+
+OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?hctx, ?value),
+  PartitionForValue[?value] = ?partId,
+  (?partId != PartitionForInvocation[?invo];
+   !(PartitionForInvocation[?invo] = _)),
+  !ValueInAllPartitions(?value),
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 */
 
 // What are the necessary parameters for this analysis?
 MyRecordBasis(?ctx, ?value) <-
   RecordBasis(_, ?ctx, ?value).
 
-PartitionForHeap[?value] = ?partitionId <-
-  Value:DeclaringType[?value] = ?valueClass,
-  TypeToPartitionId[?valueClass] = ?partitionId.
-
 RecordMacro(?ctx, ?value, ?hctx),
 OptimizeRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
-  PartitionFromContext[?ctx] = PartitionForHeap[?value].
+  (PartitionFromContext[?ctx] = PartitionForValue[?value];
+   ValueInAllPartitions(?value)).
 
 OptimizeRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
-  !(PartitionForHeap[?value] = _),
+  !(PartitionForValue[?value] = _),
+  !ValueInAllPartitions(?value),
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
 OptimizeRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
-  PartitionForHeap[?value] = ?partId,
+  PartitionForValue[?value] = ?partId,
   ?partId != PartitionFromContext[?ctx],
+  !ValueInAllPartitions(?value),
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
 // Initially reachable methods
@@ -133,3 +197,15 @@ ReachableContext(?ctx, ?clinit) <-
   ClassInitializer[?class] = ?clinit,
   Value:byId["<<class-initialization>>"] = ?value,
   PartitionId(?partitionId).
+
+
+// Post-processing
+_OptVarToMethod[?var] = ?meth <-
+  Var:DeclaringMethod(?var,?meth).
+  
+CollapsedVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+  VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+  _OptVarToMethod[?var] = ?meth,
+  Method:DeclaringType[?meth] = ?intype,
+  (!(TypeToPartitionId[?intype] = _);
+   TypeToPartitionId[?intype] = PartitionFromContext[?ctx]).
