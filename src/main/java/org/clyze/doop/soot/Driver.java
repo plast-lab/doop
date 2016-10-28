@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 class Driver {
     private ThreadFactory _factory;
@@ -46,21 +47,22 @@ class Driver {
         }
     }
 
-    static void doInSequentialOrder(Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
-        sootClasses.forEach(sequentialFactGenerator::generate);
+    void doInSequentialOrder(Set<SootClass> sootClasses) {
+        if(_factory.getMakeClassGenerator()) {
+            SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(_factory.get_factWriter(), _factory.getSsa());
+            sootClasses.forEach(sequentialFactGenerator::generate);
+        }
+        else {
+            SequentialFactPrinter sequentialFactPrinter = new SequentialFactPrinter(_ssa, _factory.getToStdout(), _factory.getOutputDir(), _factory.getPrintWriter(), sootClasses.stream().collect(Collectors.toList()));
+            sequentialFactPrinter.run();
+        }
     }
 
-    static void doInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+    void doInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
         SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
         sequentialFactGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
         sootClasses.forEach(sequentialFactGenerator::generate);
-    }
-
-    void generateDummyMainMethod(SootMethod dummyMain) {
-        SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(_factory._factWriter, _ssa);
-        sequentialFactGenerator.generate(dummyMain, new Session());
     }
 
     private void generate(SootClass _sootClass) {

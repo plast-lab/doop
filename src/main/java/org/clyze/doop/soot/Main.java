@@ -357,7 +357,7 @@ public class Main {
             ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);
             Driver driver = new Driver(factory, _ssa, classes.size());
 
-            driver.doInParallel(classes);
+            driver.doInSequentialOrder(classes);
         }
         else {
             Database db = new CSVDatabase(new File(_outputDir));
@@ -382,12 +382,12 @@ public class Main {
             db.flush();
 
             if (_android)
-                Driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
+                driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
                 if (_classicFactGen)
-                    Driver.doInSequentialOrder(classes, writer, _ssa);
+                    driver.doInSequentialOrder(classes);
                 else
-                    Driver.doInSequentialOrder(classes, writer, _ssa);
+                    driver.doInSequentialOrder(classes);
                     /* TODO: Reintroduce parallel soot jar */
                      //driver.doInParallel(classes);
             db.close();

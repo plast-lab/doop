@@ -10,16 +10,12 @@ LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
 
 LeakingTaintedInformation(?ctx, ?tomethod, ?hctx, ?value)->
   Context(?ctx), MethodInvocation(?tomethod),
-  HContext(?hctx), Value(?value).
+  HContext(?hctx), string(?value).
 
 VarDef(?var, ?inst) -> Instruction(?inst), Var(?var).
 VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
 
-VarIsTaintedFrom(?toCtx, ?to, ?fromCtx, ?from) ->
-  Context(?toCtx), Var(?to),
-  Context(?fromCtx), Var(?from).
-
-SanitizationMethod(?index, ?method) -> Method(?method), int[32](?index).
+SanitizationMethod(?method) -> Method(?method).
 
 SanitizedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
 

@@ -7,12 +7,14 @@ import java.io.PrintWriter;
 import java.util.List;
 
 public class ThreadFactory {
-
-    private boolean _makeClassGenerator;
+   private boolean _makeClassGenerator;
 
     FactWriter _factWriter;
 
     private boolean _ssa;
+
+
+
     private boolean _toStdout;
     private String _outputDir;
     private PrintWriter _printWriter;
@@ -42,4 +44,30 @@ public class ThreadFactory {
         else
             return new FactPrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
     }
+
+    public FactWriter get_factWriter() {
+        return _factWriter;
+    }
+
+    public boolean getSsa() {
+        return _ssa;
+    }
+
+    public boolean getMakeClassGenerator() {
+        return _makeClassGenerator;
+    }
+
+    public boolean getToStdout() {
+        return _toStdout;
+    }
+
+    public String getOutputDir() {
+        return _outputDir;
+    }
+
+    public PrintWriter getPrintWriter() {
+        return _printWriter;
+    }
+
+
 }

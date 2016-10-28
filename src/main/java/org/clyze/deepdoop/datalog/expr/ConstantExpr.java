@@ -9,9 +9,9 @@ public class ConstantExpr implements IExpr {
 	public final Type   type;
 	public final Object value;
 
-	public ConstantExpr(Integer i) {
+	public ConstantExpr(Long l) {
 		type  = Type.INTEGER;
-		value = i;
+		value = l;
 	}
 	public ConstantExpr(Double r) {
 		type  = Type.REAL;

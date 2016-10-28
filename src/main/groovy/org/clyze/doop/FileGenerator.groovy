@@ -1,7 +1,6 @@
 package org.clyze.doop
 
-import org.clyze.doop.core.Doop
-import org.clyze.doop.system.*
+import org.clyze.doop.system.FileOps
 
 /**
  * A helper class for generating the doop skeleton properties file and the checksums file.
@@ -12,7 +11,7 @@ class FileGenerator {
      * Accepts a single argument, the directory to write files to.
      */
     static void main(String[] args) {
-        if (args && args.length == 2) {
+        if (args && args.length == 1) {
             try {
                 def dir = FileOps.findDirOrThrow(args[0], "Invalid directory: ${args[0]}")
                 def properties = new File(dir, "doop.properties")

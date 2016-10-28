@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
+import org.clyze.deepdoop.system.*
 
 @CompileStatic
 @TypeChecked
@@ -41,6 +42,10 @@ class SoundMayAnalysis extends ClassicAnalysis {
         if (!options.X_STOP_AT_INIT.value) {
 
             basicAnalysis()
+            if (!options.X_STOP_AT_BASIC.value) {
+
+                mainAnalysis()
+            }
         }
 
         logger.info "\nAnalysis START"
@@ -51,5 +56,25 @@ class SoundMayAnalysis extends ClassicAnalysis {
             .connect(database.toString())
             .addBlock("""Stats:Runtime("script wall-clock time (sec)", $t).
                          Stats:Runtime("disk footprint (KB)", $dbSize).""")
+    }
+
+    @Override
+    protected void mainAnalysis() {
+        def analysisPath = "${Doop.analysesPath}/${name}"
+        def outFile = "${outDir}/sound.logic"
+
+        connector.queue()
+            .echo("-- Sound May Pointer Analysis --")
+
+        cpp.preprocess(outFile, "${analysisPath}/analysis.logic")
+        Compiler.compile(outDir.toString(), outFile).each { result ->
+            if (result.kind == Result.Kind.LOGIC)
+                connector.queue()
+                    .startTimer()
+                    .transaction()
+                    .addBlockFile(result.file.toString())
+                    .commit()
+                    .elapsedTime()
+        }
     }
 }

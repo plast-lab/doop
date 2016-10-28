@@ -288,7 +288,10 @@ class ClassicAnalysis extends Analysis {
         FileUtils.deleteQuietly(addons)
         FileUtils.touch(addons)
 
+        String echo_analysis = "Pointer Analysis"
+        
         if (options.INFORMATION_FLOW.value) {
+            echo_analysis = "Pointer and Information-flow Analysis"
             cpp.preprocess("${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
             cpp.preprocess("${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
             cpp.preprocess("${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
@@ -344,7 +347,7 @@ class ClassicAnalysis extends Analysis {
         if (isRefineStep) importRefinement()
 
         connector.queue()
-            .echo("-- Pointer Analysis --")
+            .echo("-- " + echo_analysis + " --")
             .startTimer()
             .transaction()
             .addBlockFile("${safename}.logic")

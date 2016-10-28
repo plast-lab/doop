@@ -18,12 +18,10 @@
    HeapAllocation(heap), \
    HeapAllocation:Type[heap] = type
 
-
 #define MockValueConsMacro(id, type, value) \
    Value:Mock:Cons[id] = value, \
    Value(value), \
    Value:Type[value] = type
-
 
 #define PlusVar(x,method,string,type) \
    +Var(x), \

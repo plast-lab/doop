@@ -193,9 +193,9 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value:Null[] != ?basevalue,
-  !SpecialValue(?value).
+  NotSpecialValue(?value).
 
-SpecialValue(?value) <- Value:Heap[?value] = ?heap, SpecialObject(?heap).
+NotSpecialValue(?value) <- (Value:Heap[?value] = ?heap, !SpecialObject(?heap)) ; Value:isNonHeap(?value).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
@@ -243,7 +243,7 @@ ReachableStoreStaticFieldFrom(?from) <-
  * Load array index
  */
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-   !Value:EmptyArray(?basevalue),
+   NotEmptyArrayValue(?basevalue),
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
    ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
    // this used to be necessary when this rule also handled the
@@ -254,11 +254,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
    // SupertypeOf(?type, ?basecomponenttype).
 
 
-Value:EmptyArray(?basevalue) -> Value(?basevalue).
+NotEmptyArrayValue(?value) -> Value(?value).
 
-Value:EmptyArray(?basevalue) <-
-   Value:Heap[?basevalue] = ?baseheap,
-   HeapAllocation:EmptyArray(?baseheap).
+NotEmptyArrayValue(?value) <-
+   (Value:Heap[?value] = ?heap,
+    !HeapAllocation:EmptyArray(?heap)) ;
+   Value:isNonHeap(?value).
 
 /* YANNIS: used to be the much less precise:
   HeapAllocation:Type[?heap] = ?heaptype,
@@ -285,8 +286,8 @@ ReachableLoadArrayIndexBase(?base) <-
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  !SpecialValue(?value),
-  !Value:EmptyArray(?basevalue),
+  NotSpecialValue(?value),
+  NotEmptyArrayValue(?basevalue),
   Value:Type[?value] = ?valuetype,
   Value:Type[?basevalue] = ?basevaluetype,
   ComponentType[?basevaluetype] = ?componenttype,
@@ -324,6 +325,7 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
   ReturnVar(?return, ?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   AssignReturnValue[?invocation] = ?local.
+//  !SanitizationMethod(?method). // Neville (todo)
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),

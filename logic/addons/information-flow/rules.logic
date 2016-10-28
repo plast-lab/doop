@@ -1,5 +1,5 @@
-#include "../../commonMacros.logic"
- 
+#include "macros.logic"
+
 /**
  * Information flow through primitive operations
 */
@@ -49,18 +49,24 @@ LeakingSinkMethod(?n, ?overriddenMethod) <-
 
 VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
-  VarIsTaintedFromVar(?toCtx, ?to, ?fromCtx, ?from),
-  TaintedValue(?value),
-  VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
+TaintedVarTaintedFromVar(?toCtx, ?to, ?hctx, ?value, ?type) <-
+   VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
+   TaintedVarPointsTo(?hctx, ?value, ?fromCtx, ?from).
 
-VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
-   VarIsTaintedFromValue(?hctx, ?value, ?toCtx, ?to).
+TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedContextValue(?hctx, ?newvalue),
+VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
+  TaintedVarTaintedFromVar(?toCtx, ?to, ?hctx, ?value, ?type).
+
+TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedContextValue(?hctx, ?newvalue),
+VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
+   VarIsTaintedFromValue(?type, ?hctx, ?value, ?toCtx, ?to).
+   
 
 CallTaintingMethod(?ctx, ?invocation) <-
    TaintSourceMethod(?tomethod),
    MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
-   
 
 /**
  * Information flow through complex relations
@@ -78,22 +84,27 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var),
   StringFactoryVar(?var).
 
-Iaminterested(?ctx, ?base, ?ctx, ?param),
-VarIsTaintedFromVar(?ctx, ?base, ?ctx, ?param) <-
+Iaminterested4(?type, ?ctx, ?base, ?ctx, ?param),
+VarIsTaintedFromVar(?type, ?ctx, ?base, ?ctx, ?param) <-
+  Var:Type[?base] = ?type,
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   ActualParam[0, ?invocation] = ?param.
 
-Iaminterested2(?ctx, ?base, ?ctx, ?param),
-VarIsTaintedFromVar(?ctx, ?base, ?ctx, ?param) <-
+Iaminterested5(?type, ?ctx, ?base, ?ctx, ?param),
+VarIsTaintedFromVar(?type, ?ctx, ?base, ?ctx, ?param) <-
+   Var:Type[?base] = ?type,
    SpecialMethodInvocation:SimpleName[?invocation] = "<init>",
    SpecialMethodInvocation:Base[?invocation] = ?base,
    StringFactoryVarPointsTo(_, _, ?ctx, ?base),
    ActualParam[0, ?invocation] = ?param.
 
-VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base),
-VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?param) <-
+Iaminterested10(?type, ?ctx, ?ret, ?ctx, ?base),
+Iaminterested6(?type, ?ctx, ?ret, ?ctx, ?param),
+VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base),
+VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?param) <-
+  Var:Type[?ret] = ?type,
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
@@ -101,11 +112,6 @@ VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?param) <-
   AssignReturnValue[?invocation] = ?ret.
 
 // Enums
-Iaminterested3(?ctx, ?ret, ?ctx, ?base),
-VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base) <-
-  MethodInvocationInContext(?ctx, ?invocation, "<java.util.Enumeration: java.lang.Object nextElement()>"),
-  VirtualMethodInvocation:Base[?invocation] = ?base,
-  AssignReturnValue[?invocation] = ?ret.
 
 MethodReturningStringFactory(?tomethod) <-
   Method:ReturnType[?tomethod] = ?stringFactoryType,
@@ -117,28 +123,37 @@ VirtualMethodInvocationOpt(?invocation, ?tomethod) <-
 StringFactoryReturnInvocation(?invocation) <-
    VirtualMethodInvocationOpt(?invocation, ?tomethod),
    MethodReturningStringFactory(?tomethod).
-  
-VarIsTaintedFromVar(?ctx, ?ret, ?ctx, ?base) <-
+
+VarIsTaintedFromVar(?type, ?ctx, ?var, ?ctx, ?var) -> Type(?type), Context(?ctx), Var(?var).
+
+Iaminterested8(?type, ?ctx, ?ret, ?ctx, ?base),
+VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
+  Var:Type[?ret] = ?type,
   StringFactoryReturnInvocation(?invocation),
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   AssignReturnValue[?invocation] = ?ret.
 
-VarIsTaintedFromValue(?hctx, ?value, ?ctx, ?var) -> HContext(?hctx), Value(?value), Context(?ctx), Var(?var).
-VarIsTaintedFromValue(?basehctx, ?basevalue, ?ctx, ?to) <-
+VarIsTaintedFromValue(?type, ?hctx, ?value, ?ctx, ?var) -> Type(?type), HContext(?hctx), Value(?value), Context(?ctx), Var(?var).
+
+Iaminterested(?componentType, ?basehctx, ?basevalue, ?ctx, ?to),
+VarIsTaintedFromValue(?componentType, ?basehctx, ?basevalue, ?ctx, ?to) <-
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
-   TaintedValue(?basevalue).
+   Value:Type[?basevalue] = ?arrayType,
+   ComponentType[?arrayType] = ?componentType,
+   TaintedContextValue(?basehctx, ?basevalue).
+
+Iaminterested7(?type, ?ctx, ?ret, ?ctx, ?base),
+VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
+  MethodInvocationInContext(?ctx, ?invocation, "<java.util.Enumeration: java.lang.Object nextElement()>"),
+  VirtualMethodInvocation:Base[?invocation] = ?base,
+  AssignReturnValue[?invocation] = ?ret,
+  OptAssignCast(?type, _, ?ret).
+
 
 /**
- * Sanitization
+ * Sanitization TODO
  */
-
-SanitizedContextValue(?hctx, ?value) <-
-  SanitizationMethod(?index, ?tomethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
-  ActualParam[?index, ?invocation] = ?var,
-  VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  TaintedContextValue(?hctx, ?value).
 
 
 MethodInvocationInContext(?ctx, ?invocation, ?tomethod) -> Context(?ctx), MethodInvocation(?invocation), Method(?tomethod).
@@ -167,28 +182,26 @@ LeakingSinkVariable(?invocation, ?ctx, ?var) <-
   LeakingSinkMethod(?index, ?tomethod),
   ActualParam[?index, ?invocation] = ?var.
 
-LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?value) <-
-  VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  (TaintedContextValue(?hctx, ?value),
-  !SanitizedContextValue(?hctx, ?value)),
-  LeakingSinkVariable(?invocation, ?ctx, ?var).
+LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?source) <-
+  TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var),
+  LeakingSinkVariable(?invocation, ?ctx, ?var),
+  SourceFromTaintedValue[?value] = ?source.
 
 /**
  * Special Heap allocation on function call
  */
-RecordMacro(?callerCtx, ?value, ?hctx),
+RecordMacro(?ctx, ?value, ?hctx),
 TaintedContextValue(?hctx, ?value),
-VarPointsTo(?hctx, ?value, ?callerCtx, ?to) <-
-  CallTaintingMethod(?callerCtx, ?invocation),
-  TaintedValue(?value),
-  Value:byId[?invocation] = ?value,
-  AssignReturnValue[?invocation] = ?to.
+TaintedValueIntroduced(?invocation, ?retType, ?value),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  TaintSourceMethod(?tomethod),
+  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
+  AssignReturnValue[?invocation] = ?to,
+  Method:ReturnType[?tomethod] = ?retType.
 
-MockValueConsMacro(?invocation, "<<Information type>>", ?value),
-TaintedValue(?value),
-Value(?value) <-
-   TaintSourceMethod(?tomethod),
-   AnyMethodInvocation(?invocation, ?tomethod).
-//   Method:ReturnType[?tomethod] = ?retType.
+TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  VarPointsToOpt(?ctx, ?var, ?hctx, ?value),
+  TaintedContextValue(?hctx, ?value).
 
-SupertypeOf(?type, "<<Information type>>") <- Type(?type). //bottom type
+VarPointsToOpt(?ctx, ?var, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
