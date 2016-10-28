@@ -1,0 +1,4 @@
+Method:FirstInstruction[method2] = insn <-
+  Instruction:Index[insn] = 1,
+  !IsJumpTarget(insn),
+  Instruction:Method[insn] = method2.

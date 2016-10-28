@@ -93,6 +93,10 @@ public class DatalogTest {
 		test("/t8.logic");
 	}
 	@Test
+	public void testT9() throws IOException {
+		test("/t9.logic");
+	}
+	@Test
 	public void testSample() throws IOException {
 		test("/sample.logic");
 	}
