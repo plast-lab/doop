@@ -1,3 +1,5 @@
+#include "common-transfer-methods.logic"
+ 
 TaintSourceMethod("<android.location.Location: double getLatitude()>").
 TaintSourceMethod("<android.location.Location: double getLongitude()>").
 TaintSourceMethod("<android.telephony.TelephonyManager: java.lang.String getDeviceId()>").

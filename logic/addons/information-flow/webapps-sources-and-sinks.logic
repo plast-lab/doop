@@ -1,3 +1,5 @@
+#include "common-transfer-methods.logic"
+
 #define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Id(method:value), string:like(value, pattern)
 
 #define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Id(method:value), string:like(value, pattern)
@@ -23,3 +25,4 @@ SanitizationMethod("<securibench.micro.sanitizers.Sanitizers1: java.lang.String 
 SanitizationMethod("<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
 SanitizationMethod("<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>").
 SanitizationMethod("<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>").
+

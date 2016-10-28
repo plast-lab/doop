@@ -84,22 +84,6 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var),
   StringFactoryVar(?var).
 
-Iaminterested4(?type, ?ctx, ?base, ?ctx, ?param),
-VarIsTaintedFromVar(?type, ?ctx, ?base, ?ctx, ?param) <-
-  Var:Type[?base] = ?type,
-  VirtualMethodInvocation:SimpleName[?invocation] = "append",
-  VirtualMethodInvocation:Base[?invocation] = ?base,
-  StringFactoryVarPointsTo(_, _, ?ctx, ?base),
-  ActualParam[0, ?invocation] = ?param.
-
-Iaminterested5(?type, ?ctx, ?base, ?ctx, ?param),
-VarIsTaintedFromVar(?type, ?ctx, ?base, ?ctx, ?param) <-
-   Var:Type[?base] = ?type,
-   SpecialMethodInvocation:SimpleName[?invocation] = "<init>",
-   SpecialMethodInvocation:Base[?invocation] = ?base,
-   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
-   ActualParam[0, ?invocation] = ?param.
-
 Iaminterested10(?type, ?ctx, ?ret, ?ctx, ?base),
 Iaminterested6(?type, ?ctx, ?ret, ?ctx, ?param),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base),
@@ -150,11 +134,41 @@ VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
   AssignReturnValue[?invocation] = ?ret,
   OptAssignCast(?type, _, ?ret).
 
+ValueTaintedFromValue(?newvalue, ?hctx, ?baseObj) <- 
+   BaseValueTaintedFromParamValue(?newvalue, ?hctx, ?baseObj).
+
+Iamveryinterested(?hctx, ?newvalue, ?ctx, ?var),
+VarPointsTo(?hctx, ?newvalue, ?ctx, ?var)
+ <- 
+   VarPointsToOpt(?ctx, ?var, ?hctx, ?existingvalue),
+   ValueTaintedFromValue(?newvalue, ?hctx, ?existingvalue).
+
+
+TaintTransferMethodInvocationInContext(?index, ?ctx, ?invocation) <-
+  MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
+  ParamToBaseTaintTransferMethod(?index, ?taintTransferMethod).
+
+ParamTaintTransferredToBase(?param, ?ctx, ?base) <-
+  TaintTransferMethodInvocationInContext(?index, ?ctx, ?invocation),
+  ActualParam[?index, ?invocation] = ?param,
+  (VirtualMethodInvocation:Base[?invocation] = ?base ;
+   SpecialMethodInvocation:Base[?invocation] = ?base).
+
+XYZ(?hctx, ?existingvalue, ?ctx, ?param) <-
+  ParamTaintTransferredToBase(?param, ?ctx, ?base),
+  VarPointsTo(?hctx, ?existingvalue, ?ctx, ?base).
+
+TaintedValueTransferred(?value, ?type, ?newvalue),
+BaseValueTaintedFromParamValue(?newvalue, ?existinghctx, ?existingvalue),
+TaintedContextValue(?existinghctx, ?newvalue) <-
+  Value:Type[?existingvalue] = ?type,
+  TaintedVarPointsTo(_, ?value, ?ctx, ?param),
+  XYZ(?existinghctx, ?existingvalue, ?ctx, ?param).
+
 
 /**
  * Sanitization TODO
  */
-
 
 MethodInvocationInContext(?ctx, ?invocation, ?tomethod) -> Context(?ctx), MethodInvocation(?invocation), Method(?tomethod).
 
