@@ -148,13 +148,21 @@ MustPointTo(?value, ?var, ?ctx) <-
    Value:byHeap[?heap] = ?value,
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
 
+InstructionInsensitiveMustAlias(?ap1, ?ap2, ?ctx) <-
+   MustAlias(?ap1, ?ap2, ?ctx, _).
+
+MustPointTo(?value, ?var2, ?ctx) <-
+   MustPointTo(?value, ?var1, ?ctx),
+   InstructionInsensitiveMustAlias(?ap1, ?ap2, ?ctx),
+   AccessPath:ByVarInv[?ap1] = ?var1,
+   AccessPath:ByVarInv[?ap2] = ?var2.
+
 MustPointTo(?value, ?var2, ?ctx2) <-
    MustPointTo(?value, ?var1, ?ctx1),
    MustAlias(?ap1, ?ap2, ?ctx2, _),
    AccessPath:ByVarInv[?ap1] = ?var1,
    AccessPath:ByVarInv[?ap2] = ?var2,
-   (PopMustContext[?ctx2] = ?ctx1;
-    ?ctx1 = ?ctx2).
+   PopMustContext[?ctx2] = ?ctx1.
 
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
@@ -170,10 +178,12 @@ AccessPathMustPointTo[?ap, ?ctx, ?insn] = ?value <-
 //// ====================================
 //// BEGIN Must-Alias code
 
-/*
-// This relation calculates all the alias pairs that can be inferred
-// immediately from Jimple statements, e.g., assignment, field loads,
-// etc. This is the base of transitive computations.
+// This is the base of transitive computations. It makes for a more
+// efficient transitive closure computation.
+// INVARIANT: MustAlias is *never* directly inferred, except by the
+// two rules below. Instead, MustAliasBase is inferred whenever
+// MustAlias would be. The rules below then do the symmetric,
+// transitive closure.
 MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) ->
    AccessPath(?ap1), AccessPath(?ap2), Instruction(?insn), MustContext(?ctx).
 
@@ -194,26 +204,13 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
    MustAlias(?ap1, ?ap3, ?ctx, ?insn),
    MustAliasSymmetric(?ap2, ?ap3, ?ctx, ?insn),
    ?ap2 != ?ap1.
-
-
+   
 // The above looks like a fairly traditional symmetric, transitive
 // closure: MustAliasBase, then closed symmetrically, then closed
 // transitively to produce the final MustAlias. Only it's not. The
 // definition of MustAliasBase is only over MustReachable methods,
-// which are determined by MustAlias!  MustAlias itself also has other
-// rules feeding into it (e.g., key rule 1, rebasing rules).
-*/
+// which are determined by MustAlias!
 
-// Let's try something straightforward for the symmetric, transitive closure
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   MustAliasBase(?ap1, ?ap2, ?ctx, ?insn).
-
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   MustAlias(?ap2, ?ap1, ?ctx, ?insn).
-
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
-   MustAlias(?ap1, ?ap3, ?ctx, ?insn),
-   MustAlias(?ap3, ?ap2, ?ctx, ?insn).
 
 // Main rules to calculate the MustAlias relation.
 
@@ -320,8 +317,7 @@ MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
 AccessPath(?ap4),
 AccessPath:ByFieldAccess[?fld, ?ap1] = ?ap4,
 AccessPath:Length[?ap4] = ?len + 1,
-MustAlias(?ap3, ?ap4, ?ctx, ?insn),
-MustAlias(?ap4, ?ap3, ?ctx, ?insn) <-
+MustAliasBase(?ap3, ?ap4, ?ctx, ?insn) <-
    MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    AccessPath:Length[?ap1] = ?len,
    ?len < AccessPath:MaxLength[],
@@ -370,7 +366,7 @@ AllPredecessors:MustAlias(?ap1, ?ap2, ?calleeCtx, ?firstInsn) <-
    AccessPathsAliasedForInvocation(?ap1, ?ap2, ?invo).
 
 // Now returns
-MustAlias(?calleeAp1, ?calleeAp2, ?ctx, ?invo) <-
+MustAliasBase(?calleeAp1, ?calleeAp2, ?ctx, ?invo) <-
    MustCallGraphEdge:ToMethod[?invo] = ?toMethod,
    MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
    (AllReturn:MustAlias(?calleeAp1, ?calleeAp2, ?calleeCtx, ?toMethod);
@@ -401,14 +397,14 @@ AccessPathFieldRelevantAtInvocation(?ap, ?fld, ?insn) <-
 /*
 //// REMOVED FOR SIMPLE ANALYSIS!
 // Fails due to recursion through negation
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    FieldStore(_, ?fld, _, ?insn),
    !AccessPath:ContainsField(?fld, ?ap1),
    !AccessPath:ContainsField(?fld, ?ap2).
 */
 
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    MethodInvocation(?insn),
    IsVariable(?ap1),
@@ -417,7 +413,7 @@ MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
 // Note: all sorts of loads and assignments do not invalidate
 // aliases. We assume SSA input, so the assignments cannot be
 // to a var we are already using.
-MustAlias(?ap1, ?ap2, ?ctx, ?insn) <-
+MustAliasBase(?ap1, ?ap2, ?ctx, ?insn) <-
    AllPredecessors:MustAlias(?ap1, ?ap2, ?ctx, ?insn),
    !StoreInstanceField:Insn(?insn),
    !StoreStaticField:Insn(?insn),
