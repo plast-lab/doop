@@ -1,8 +1,11 @@
 #include "declarations.logic"
 
+// Ignore verification of calculation in head (for toString)
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
+
+
 cons:MayContext:Initial[] = ctx, MayContext(ctx).
 cons:HeapContext:Empty[] = hctx, MayHeapContext(hctx).
-
 
 // The rules below create access paths from all variables
 // and all access fields in the program.
@@ -30,6 +33,21 @@ InitialComputedAccessPath(ap) <-
   FieldInstruction:Signature[insn] = fld,
   Field:Type[fld] =type,
   ReferenceType(type).
+
+AccessPath:toString[ap] = str <-
+  cons:AccessPath:byVar[var] = ap,
+  Var:Id(var:str).
+
+AccessPath:toString[ap] = str <-
+  cons:AccessPath:byStaticField[fld] = ap,
+  Field:Id(fld:str). 
+
+AccessPath:toString[ap2] = str2 <-
+  cons:AccessPath:byField[fld, ap1] = ap2,
+  Field:Id(fld:fldStr),
+  AccessPath:toString[ap1] = str1,
+  str2 = str1 + "." + fldStr.
+
 
 //component IntraproceduralMust {
 //#include "IntraproceduralMust.logic"
@@ -114,63 +132,91 @@ SomePathFromFirstInstructionContainsCall(blockHead) <-
   BBHeadIsFirstInstruction(firstInsn),
   SomePathBetweenBasicBlocksContainsCall(firstInsn, blockHead).
 
+StaticMethodInvocation:SimpleName[invo] = simplename <-
+   MethodInvocation:Signature[invo] = signature,
+   StaticMethodInvocation:Insn(invo),
+   Method:SimpleName[signature] = simplename.
 
-/*
-// Friendly API for access path display
-AccessPath_ToString(ap, str) ->
-   AccessPath(ap), string(str).
 
-// loses lots of information, which may be confusing during debugging.
-AccessPath_ToString(ap, str) <-
-   AccessPath_ByVarInv(ap, v),
-   _NameFromRefMode(v, str).
-//   Var_Value(v,vs),
-//   OptVar_DeclaringMethod(m,v),
-//   MethodSignature_Value(m_ms),
-//   str = vs + ms.
+//// Enter at POINT2---IgnorableMethodInvocation
+//// ====================================
+//// BEGIN configuration of ignorable method calls
 
-AccessPath_ToString(ap, str) <-
-   AccessPath_ByStaticFieldInv(ap, f),
-   _NameFromRefMode(f, str).
+// Some calls to native or otherwise complex methods need to be
+// modeled, i.e., ignored. E.g., fillInStackTrace is a native method
+// called in the constructor of a (ubiquitous) java.lang.Throwable. If
+// not ignored, no image of the heap propagates anywhere.
+// TODO: do a better match (on full sig) than just on SimpleName.
 
-AccessPath_ToString(ap, str2) <-
-   AccessPath_ByCollectionVarInv(ap, v),
-   _NameFromRefMode(v, str),
-   str2 = "collection on " + str.
+IgnorableMethodInvocation(invo) <-
+   VirtualMethodInvocation:SimpleName[invo] = "fillInStackTrace"; // Throwable
+   VirtualMethodInvocation:SimpleName[invo] = "equals";  // Object
+   VirtualMethodInvocation:SimpleName[invo] = "hashCode";
+   VirtualMethodInvocation:SimpleName[invo] = "toString";
+   VirtualMethodInvocation:SimpleName[invo] = "println"; // PrintStream
+   StaticMethodInvocation:SimpleName[invo] = "parseInt"; // Integer
+   VirtualMethodInvocation:SimpleName[invo] = "endsWith"; // String
+   StaticMethodInvocation:SimpleName[invo] = "floatToRawIntBits"; // Float
+   // Used in the HashMap "put" method!
+   StaticMethodInvocation:SimpleName[invo] = "intBitsToFloat";
+   // From this point on, it's just a test to see if these natives matter.
+   StaticMethodInvocation:SimpleName[invo] = "encoding"; // Console
+   StaticMethodInvocation:SimpleName[invo] = "echo";
+   StaticMethodInvocation:SimpleName[invo] = "istty";
+   VirtualMethodInvocation:SimpleName[invo] = "sync"; // FileDescriptor
+   StaticMethodInvocation:SimpleName[invo] = "initIDs";
+   VirtualMethodInvocation:SimpleName[invo] = "open"; // FileInputStream
+   VirtualMethodInvocation:SimpleName[invo] = "read0";
+   VirtualMethodInvocation:SimpleName[invo] = "readBytes";
+   VirtualMethodInvocation:SimpleName[invo] = "skip";
+   VirtualMethodInvocation:SimpleName[invo] = "available";
+   VirtualMethodInvocation:SimpleName[invo] = "close0";
+   VirtualMethodInvocation:SimpleName[invo] = "write"; // FileOutputStream
+   VirtualMethodInvocation:SimpleName[invo] = "writeBytes";
+   VirtualMethodInvocation:SimpleName[invo] = "availableProcessors"; // Runtime
+   VirtualMethodInvocation:SimpleName[invo] = "freeMemory";
+   VirtualMethodInvocation:SimpleName[invo] = "totalMemory";
+   VirtualMethodInvocation:SimpleName[invo] = "maxMemory";
+   VirtualMethodInvocation:SimpleName[invo] = "gc";
+   StaticMethodInvocation:SimpleName[invo] = "runFinalization0";
+   StaticMethodInvocation:SimpleName[invo] = "sin"; // StrictMath
+   StaticMethodInvocation:SimpleName[invo] = "cos";
+   StaticMethodInvocation:SimpleName[invo] = "tan";
+   StaticMethodInvocation:SimpleName[invo] = "log";
+   StaticMethodInvocation:SimpleName[invo] = "pow";
+   StaticMethodInvocation:SimpleName[invo] = "currentThread"; // Thread
+   StaticMethodInvocation:SimpleName[invo] = "yield";
+   StaticMethodInvocation:SimpleName[invo] = "sleep";
+   VirtualMethodInvocation:SimpleName[invo] = "start0";
+   VirtualMethodInvocation:SimpleName[invo] = "isInterrupted";
+   VirtualMethodInvocation:SimpleName[invo] = "isAlive";
+   StaticMethodInvocation:SimpleName[invo] = "holdsLock";
+   StaticMethodInvocation:SimpleName[invo] = "getThreads";
+   StaticMethodInvocation:SimpleName[invo] = "dumpThreads";
+   VirtualMethodInvocation:SimpleName[invo] = "setPriority";
+   VirtualMethodInvocation:SimpleName[invo] = "stop0";
+   VirtualMethodInvocation:SimpleName[invo] = "suspend0";
+   VirtualMethodInvocation:SimpleName[invo] = "resume0";
+   VirtualMethodInvocation:SimpleName[invo] = "interrupt0";
+   VirtualMethodInvocation:SimpleName[invo] = "isAlive";
+   VirtualMethodInvocation:SimpleName[invo] = "getStackTraceDepth"; // Throwable
+   VirtualMethodInvocation:SimpleName[invo] = "getStackTraceElement";
+   VirtualMethodInvocation:SimpleName[invo] = "forkAndExec";  // UnixProcess
+   VirtualMethodInvocation:SimpleName[invo] = "wait"; // Object
+   VirtualMethodInvocation:SimpleName[invo] = "notify";
+   VirtualMethodInvocation:SimpleName[invo] = "notifyAll".
 
-AccessPath_ToString(ap, str) <-
-   AccessPath_Base(ap, base),
-   AccessPath_LastField(ap, fld),
-   AccessPath_ToString(base, strBase),
-   _NameFromRefMode(fld, fldName),
-   baseDot = strBase + ".",
-   str = baseDot + fldName.
+IgnorableForStaticsMethodInvocation(invo) <-
+   VirtualMethodInvocation:SimpleName[invo] = "intern"; // String
+   VirtualMethodInvocation:SimpleName[invo] = "clone"; // Object
+   VirtualMethodInvocation:SimpleName[invo] = "append". // StringBuilder
 
-_NameFromRefMode(ref, name) ->
-   string(ref), string(name).
+// Collections
+IgnorableForNonCollectionsMethodInvocation(invo) <-
+  LibraryCollectionStoreOperation(invo);
+  LibraryCollectionLoadOperation(invo).
 
-_NameFromRefMode(ref, varName) <-
-   Var_Value(_:ref),
-   _VarRefModeLastTokenIndex(ref, maxIdx),
-   string_split[ref, "/", maxIdx] = varName.
-lang:derivationType[`_NameFromRefMode] = "Derived".
-
-_NameFromRefMode(ref, varName) <-
-   FieldSignature_Value(_:ref),
-   _FieldRefModeLastTokenIndex(ref, maxIdx),
-   string_split[ref, "/", maxIdx] = varName.
-lang:derivationType[`_NameFromRefMode] = "Derived".
-
-_VarRefModeLastTokenIndex(ref, maxIdx) <-
-   agg<<maxIdx = max(idx)>>
-   Var_Value(_:ref),
-   string_split[ref, "/", idx] = _.
-
-_FieldRefModeLastTokenIndex(ref, maxIdx) <-
-   agg<<maxIdx = max(idx)>>
-   FieldSignature_Value(_:ref),
-   string_split[ref, "/", idx] = _.
-*/
+//// END configuration of ignorable method calls
 
 
 /*
@@ -218,97 +264,6 @@ _FieldRefModeLastTokenIndex(ref, maxIdx) <-
   //    FirstInstructionOfMethod(toMethod, firstInsn).
 */
 
-
-//// Enter at POINT2---IgnorableMethodInvocation
-//// ====================================
-//// BEGIN configuration of ignorable method calls
-
-// Some calls to native or otherwise complex methods need to be
-// modeled, i.e., ignored. E.g., fillInStackTrace is a native method
-// called in the constructor of a (ubiquitous) java.lang.Throwable. If
-// not ignored, no image of the heap propagates anywhere.
-// TODO: do a better match (on full sig) than just on SimpleName.
-
-/*
-IgnorableForNonCollectionsMethodInvocation(invo) -> MethodInvocation(invo).
-IgnorableForStaticsMethodInvocation(invo) -> MethodInvocation(invo).
-
-IgnorableMethodInvocation(invo) <-
-   VirtualMethodInvocation_SimpleName(invo, "fillInStackTrace"); // Throwable
-   VirtualMethodInvocation_SimpleName(invo, "equals");  // Object
-   VirtualMethodInvocation_SimpleName(invo, "hashCode");
-   VirtualMethodInvocation_SimpleName(invo, "toString");
-   VirtualMethodInvocation_SimpleName(invo, "println"); // PrintStream
-   StaticMethodInvocation_SimpleName(invo, "parseInt"); // Integer
-   VirtualMethodInvocation_SimpleName(invo, "endsWith"); // String
-   StaticMethodInvocation_SimpleName(invo, "floatToRawIntBits"); // Float
-   // these are used in the HashMap "put" method!
-   StaticMethodInvocation_SimpleName(invo, "intBitsToFloat");
-   // From this point on, it's just a test to see if these natives matter.
-   StaticMethodInvocation_SimpleName(invo, "encoding"); // Console
-   StaticMethodInvocation_SimpleName(invo, "echo");
-   StaticMethodInvocation_SimpleName(invo, "istty");
-   VirtualMethodInvocation_SimpleName(invo, "sync"); // FileDescriptor
-   StaticMethodInvocation_SimpleName(invo, "initIDs");
-   VirtualMethodInvocation_SimpleName(invo, "open"); // FileInputStream
-   VirtualMethodInvocation_SimpleName(invo, "read0");
-   VirtualMethodInvocation_SimpleName(invo, "readBytes");
-   VirtualMethodInvocation_SimpleName(invo, "skip");
-   VirtualMethodInvocation_SimpleName(invo, "available");
-   VirtualMethodInvocation_SimpleName(invo, "close0");
-   VirtualMethodInvocation_SimpleName(invo, "write"); // FileOutputStream
-   VirtualMethodInvocation_SimpleName(invo, "writeBytes");
-   VirtualMethodInvocation_SimpleName(invo, "availableProcessors"); // Runtime
-   VirtualMethodInvocation_SimpleName(invo, "freeMemory");
-   VirtualMethodInvocation_SimpleName(invo, "totalMemory");
-   VirtualMethodInvocation_SimpleName(invo, "maxMemory");
-   VirtualMethodInvocation_SimpleName(invo, "gc");
-   StaticMethodInvocation_SimpleName(invo, "runFinalization0");
-   StaticMethodInvocation_SimpleName(invo, "sin"); // StrictMath
-   StaticMethodInvocation_SimpleName(invo, "cos");
-   StaticMethodInvocation_SimpleName(invo, "tan");
-   StaticMethodInvocation_SimpleName(invo, "log");
-   StaticMethodInvocation_SimpleName(invo, "pow");
-   StaticMethodInvocation_SimpleName(invo, "currentThread"); // Thread
-   StaticMethodInvocation_SimpleName(invo, "yield");
-   StaticMethodInvocation_SimpleName(invo, "sleep");
-   VirtualMethodInvocation_SimpleName(invo, "start0");
-   VirtualMethodInvocation_SimpleName(invo, "isInterrupted");
-   VirtualMethodInvocation_SimpleName(invo, "isAlive");
-   StaticMethodInvocation_SimpleName(invo, "holdsLock");
-   StaticMethodInvocation_SimpleName(invo, "getThreads");
-   StaticMethodInvocation_SimpleName(invo, "dumpThreads");
-   VirtualMethodInvocation_SimpleName(invo, "setPriority");
-   VirtualMethodInvocation_SimpleName(invo, "stop0");
-   VirtualMethodInvocation_SimpleName(invo, "suspend0");
-   VirtualMethodInvocation_SimpleName(invo, "resume0");
-   VirtualMethodInvocation_SimpleName(invo, "interrupt0");
-   VirtualMethodInvocation_SimpleName(invo, "isAlive");
-   VirtualMethodInvocation_SimpleName(invo, "getStackTraceDepth"); // Throwable
-   VirtualMethodInvocation_SimpleName(invo, "getStackTraceElement");
-   VirtualMethodInvocation_SimpleName(invo, "forkAndExec");  // UnixProcess
-   VirtualMethodInvocation_SimpleName(invo, "wait"); // Object
-   VirtualMethodInvocation_SimpleName(invo, "notify");
-   VirtualMethodInvocation_SimpleName(invo, "notifyAll").
-
-IgnorableForStaticsMethodInvocation(invo) <-
-   VirtualMethodInvocation_SimpleName(invo, "intern"); // String
-   VirtualMethodInvocation_SimpleName(invo, "clone"); // Object
-   VirtualMethodInvocation_SimpleName(invo, "append"). // StringBuilder
-
-// Collections
-IgnorableForNonCollectionsMethodInvocation(invo) <-
-  LibraryCollectionStoreOperation(invo);
-  LibraryCollectionLoadOperation(invo).
-
-StaticMethodInvocation_SimpleName(invo, simplename) -> MethodInvocation(invo), string(simplename).
-StaticMethodInvocation_SimpleName(invo, simplename) <-
-   MethodInvocation_Signature(invo, signature),
-   StaticMethodInvocation_Insn(invo),
-   MethodSignature_SimpleName(signature, simplename).
-*/
-
-//// END configuration of ignorable method calls
 
 
 /*

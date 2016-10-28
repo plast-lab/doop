@@ -37,6 +37,8 @@ lang:constructor(`cons:AccessPath:byStaticField).
 cons:AccessPath:byField[fld, ap1] = ap2 -> Field(fld), AccessPath(ap1), AccessPath(ap2).
 lang:constructor(`cons:AccessPath:byField).
 
+AccessPath:toString[ap] = str -> AccessPath(ap), string(str).
+
 // Initial computed access paths. Faster than doing the same thing all over
 InitialComputedAccessPath(ap) -> AccessPath(ap).
 
@@ -63,9 +65,14 @@ BasicBlockContainsCall(headInsn) -> Instruction(headInsn).
 SomePathBetweenBasicBlocksContainsCall(prev, next) -> Instruction(prev), Instruction(next).
 SomePathFromFirstInstructionContainsCall(blockHead) -> Instruction(blockHead).
 
+StaticMethodInvocation:SimpleName[invo] = simplename -> MethodInvocation(invo), SimpleName(simplename).
+
+
+IgnorableMethodInvocation(invo) -> MethodInvocation(invo).
+IgnorableForStaticsMethodInvocation(invo) -> MethodInvocation(invo).
+IgnorableForNonCollectionsMethodInvocation(invo) -> MethodInvocation(invo).
 
 
 InitialRootMethodForMayAnalysis(method) -> Method(method).
 MaxMayContextDepth(num) -> int(num).
 AccessPath_MaxLength(maxLen) -> int(maxLen).
-IgnorableMethodInvocation(invo) -> MethodInvocation(invo).
