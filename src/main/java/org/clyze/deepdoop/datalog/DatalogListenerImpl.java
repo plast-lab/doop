@@ -153,21 +153,27 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitRuleBody(RuleBodyContext ctx) {
-		String token = getToken(ctx, 0);
-		if (ctx.predicate() != null) {
-			_elem.put(ctx, get(_elem, ctx.predicate()));
-		} else if (ctx.comparison() != null) {
-			_elem.put(ctx, get(_elem, ctx.comparison()));
-		} else if (token.equals("(")) {
-			_elem.put(ctx, new GroupElement(get(_elem, ctx.ruleBody(0))));
-		} else if (token.equals(",") || token.equals(";")) {
+		IElement result;
+
+		if (ctx.comparison() != null)
+			result = get(_elem, ctx.comparison());
+		else if (ctx.predicate() != null)
+			result = get(_elem, ctx.predicate());
+		else if (ctx.ruleBody(1) == null)
+			result = new GroupElement(get(_elem, ctx.ruleBody(0)));
+		else {
+			String token = getToken(ctx, 0);
 			List<IElement> list = Arrays.asList(
 				get(_elem, ctx.ruleBody(0)),
 				get(_elem, ctx.ruleBody(1)));
-			_elem.put(ctx, new LogicalElement(token.equals(",") ? LogicType.AND : LogicType.OR, list));
-		} else if (token.equals("!")) {
-			_elem.put(ctx, new NegationElement(get(_elem, ctx.ruleBody(0))));
+			result = new LogicalElement(token.equals(",") ? LogicType.AND : LogicType.OR, list);
 		}
+
+		String token = getToken(ctx, 0);
+		if (token != null && token.equals("!"))
+			result = new NegationElement(result);
+
+		_elem.put(ctx, result);
 	}
 	public void exitAggregation(AggregationContext ctx) {
 		VariableExpr variable = new VariableExpr(ctx.IDENTIFIER().getText());

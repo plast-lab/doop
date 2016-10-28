@@ -53,12 +53,11 @@ refmode
 	: predicateName AT_STAGE? '(' IDENTIFIER ':' expr ')' ;
 
 ruleBody
-	: predicate
-	| comparison
-	| '(' ruleBody ')'
+	: comparison
+	| '!'? predicate
+	| '!'? '(' ruleBody ')'
 	| ruleBody ',' ruleBody
 	| ruleBody ';' ruleBody
-	| '!' ruleBody
 	;
 
 aggregation
