@@ -21,8 +21,8 @@ lang:entity(`MayHeapContext).
 lang:physical:storageModel[`MayHeapContext]="ScalableSparse".
 lang:physical:capacity[`MayHeapContext] = 8388608.
 
-cons:HeapContext:Empty[] = hctx -> MayHeapContext(hctx).
-lang:constructor(`cons:HeapContext:Empty).
+cons:MayHeapContext:Empty[] = hctx -> MayHeapContext(hctx).
+lang:constructor(`cons:MayHeapContext:Empty).
 
 
 AccessPath(ap) -> .
@@ -41,6 +41,11 @@ AccessPath:toString[ap] = str -> AccessPath(ap), string(str).
 
 // Initial computed access paths. Faster than doing the same thing all over
 InitialComputedAccessPath(ap) -> AccessPath(ap).
+
+MayContext:MaxDepth[] = maxDepth -> int(maxDepth).
+AccessPath:MaxLength[] = maxLength -> int(maxLength).
+InitialRootMethodForMayAnalysis(method) -> Method(method).
+
 
 
 LibraryCollectionType(type) -> Type(type).
@@ -67,12 +72,6 @@ SomePathFromFirstInstructionContainsCall(blockHead) -> Instruction(blockHead).
 
 StaticMethodInvocation:SimpleName[invo] = simplename -> MethodInvocation(invo), SimpleName(simplename).
 
-
 IgnorableMethodInvocation(invo) -> MethodInvocation(invo).
 IgnorableForStaticsMethodInvocation(invo) -> MethodInvocation(invo).
 IgnorableForNonCollectionsMethodInvocation(invo) -> MethodInvocation(invo).
-
-
-InitialRootMethodForMayAnalysis(method) -> Method(method).
-MaxMayContextDepth(num) -> int(num).
-AccessPath_MaxLength(maxLen) -> int(maxLen).

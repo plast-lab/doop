@@ -5,7 +5,7 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 
 
 cons:MayContext:Initial[] = ctx, MayContext(ctx).
-cons:HeapContext:Empty[] = hctx, MayHeapContext(hctx).
+cons:MayHeapContext:Empty[] = hctx, MayHeapContext(hctx).
 
 // The rules below create access paths from all variables
 // and all access fields in the program.
@@ -49,9 +49,80 @@ AccessPath:toString[ap2] = str2 <-
   str2 = str1 + "." + fldStr.
 
 
-//component IntraproceduralMust {
-//#include "IntraproceduralMust.logic"
-//}
+component IntraproceduralMust {
+#include "IntraproceduralMust.logic"
+}
+
+//// ====================================
+//// BEGIN configuration
+//// Different ways to kick-start the analysis.
+
+MayContext:MaxDepth[] = 4.
+AccessPath:MaxLength[] = 3.
+
+//.init SoundMayPhase1 = SoundMay<DummyMustPointTo>
+//.init SoundMayPhase2 = SoundMay<DummyMustPointTo>
+//SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+//  SoundMayPhase1.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+//SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+//  SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
+//
+//.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
+//SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+//  SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+//SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+//  SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+/*
+.init SoundMayPhase4 = SoundMay<SoundMustPointTo>
+SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase4.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase3.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+.init SoundMayPhase5 = SoundMay<SoundMustPointTo>
+SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase4.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+.init SoundMayPhase6 = SoundMay<SoundMustPointTo>
+SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase6.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase5.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+.init SoundMayPhase7 = SoundMay<SoundMustPointTo>
+SoundMayPhase7.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase6.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase7.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase6.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+.init SoundMayPhase8 = SoundMay<SoundMustPointTo>
+SoundMayPhase8.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase7.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase8.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase7.MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+.init SoundMayPhase9 = SoundMay<SoundMustPointTo>
+SoundMayPhase9.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
+  SoundMayPhase8.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
+SoundMayPhase9.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
+  SoundMayPhase8.MayReachableMethodUnderMayContext(?ctx, ?meth).
+*/
+
+IntraproceduralMustForStats = new IntraproceduralMust
+
+//IntraproceduralMustForStats:MayReachableMethodUnderMayContext(ctx, method) <-
+//  SoundMayPhase1:MayReachableMethodUnderMayContext(?ctx, ?meth).
+
+InitialRootMethodForMayAnalysis(method) <-
+  Reachable(method), // just for benchmarking against unsound VPT analysis
+  Method:DeclaringType[method] = class,
+  ApplicationClass(class).
+
+//// END configuration
+
 
 
 LibraryCollectionType(type) <-
@@ -220,6 +291,7 @@ IgnorableForNonCollectionsMethodInvocation(invo) <-
 
 
 /*
+  // TODO not updated for LB
   ///// POINT1--unchanged access paths code
 
   //// Dealing with unchanged access paths (below) hasn't proven
@@ -234,9 +306,9 @@ IgnorableForNonCollectionsMethodInvocation(invo) <-
   // to propagate the information right over the method call in many
   // cases (and we ignore the rest for now).
   // ChangedBaseAtInvocation(var, invo) <-
-  //   ActualParam(_, invo, var);
-  //   VirtualMethodInvocation_Base(invo, var);
-  //   SpecialMethodInvocation_Base(invo, var).
+  //   ActualParam[_, invo] = var;
+  //   VirtualMethodInvocation:Base[invo] = var;
+  //   SpecialMethodInvocation:Base[invo] = var.
 
   // OptPotentialAccessPathMayPointToPropagation(hctx, heap, invo, calleeCtx, toMethod, ap) <-
   //   MayCallGraphEdge_ToMethod(toMethod, callerCtx, invo),
@@ -265,8 +337,8 @@ IgnorableForNonCollectionsMethodInvocation(invo) <-
 */
 
 
-
 /*
+// TODO not updated for LB
 //// POINT4 code
 // //// Commented out for now. Does not make that much difference.
 // //// InstanceFieldMayPointTo inferences rarely get stopped because of
@@ -333,8 +405,8 @@ IgnorableForNonCollectionsMethodInvocation(invo) <-
 // // TODO: also extend to collections
 */
 
-
 /*
+// TODO not updated for LB
 //// POINT5: DominatedPathMayInvalidateFieldPointsTo
 // // TODO: currently has no impact. Comment out and re-check when non-invalidating
 // //       method calls are added
