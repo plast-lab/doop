@@ -203,11 +203,6 @@ SomePathFromFirstInstructionContainsCall(blockHead) <-
   BBHeadIsFirstInstruction(firstInsn),
   SomePathBetweenBasicBlocksContainsCall(firstInsn, blockHead).
 
-StaticMethodInvocation:SimpleName[invo] = simplename <-
-   MethodInvocation:Signature[invo] = signature,
-   StaticMethodInvocation:Insn(invo),
-   Method:SimpleName[signature] = simplename.
-
 
 //// Enter at POINT2---IgnorableMethodInvocation
 //// ====================================
@@ -349,10 +344,6 @@ IgnorableForNonCollectionsMethodInvocation(invo) <-
 // ApplicationField(fld) <-
 //    FieldSignature_DeclaringClass(fld, class),
 //    ApplicationClass(class).
-
-// ApplicationMethod(meth) <-
-//    MethodSignature_DeclaringType(meth, declaringType),
-//    ApplicationClass(declaringType).
 
 // MethodCallsReflection(meth) <-
 //    Instruction_Method(invo, meth),

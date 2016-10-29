@@ -32,22 +32,6 @@ MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
    ! Method:Modifier("abstract", ?method).
 
 
-VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
-VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
-   VirtualMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
-   Method:SimpleName[?signature] = ?simplename,
-   Method:Descriptor[?signature] = ?descriptor.
-
-SpecialMethodInvocation:SimpleName[?invocation] = ?simplename,
-SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
-   SpecialMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
-   Method:SimpleName[?signature] = ?simplename,
-   Method:Descriptor[?signature] = ?descriptor.
-
-
-
 // Encodes a CHA callgraph, effectively. 
 ResolveInvocation[?type, ?invocation] = ?tomethod ->
    Type(?type), MethodInvocation(?invocation), Method(?tomethod).

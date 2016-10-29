@@ -3,7 +3,7 @@
  ***************************************************/
 Stats:Application:VarPointsTo(?heap, ?var) <-
    VarPointsTo(?heap, ?var),
-   Var:DeclaringMethod(?var, ?meth), Stats:ApplicationMethod(?meth).
+   Var:DeclaringMethod(?var, ?meth), ApplicationMethod(?meth).
 
 Stats:ReachableVar(?var) <-
    Reachable(?method), Var:DeclaringMethod(?var, ?method).
@@ -13,14 +13,14 @@ Stats:ReachableVar(?var) <-
  ***************************************************/
 Stats:Application:ArrayIndexPointsTo(?heap, ?baseheap) <-
    ArrayIndexPointsTo(?heap, ?baseheap),
-   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:ApplicationMethod(?meth).
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), ApplicationMethod(?meth).
 
 /***************************************************
  * Fields
  ***************************************************/
 Stats:Application:InstanceFieldPointsTo(?heap, ?sig, ?baseheap) <-
    InstanceFieldPointsTo(?heap, ?sig, ?baseheap),
-   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:ApplicationMethod(?meth).
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), ApplicationMethod(?meth).
 
 /***************************************************
  * Call graph edges
@@ -32,16 +32,12 @@ Stats:VirtualCallGraphEdge(?from, ?to) <-
 /***************************************************
  * Application methods
  ***************************************************/
-Stats:ApplicationMethod(?method) <-
-	 ApplicationClass(?class),
-	 Method:DeclaringType[?method] = ?class.
-
 Stats:ReachableApplicationMethod(?method) <-
 	 Reachable(?method),
-	 Stats:ApplicationMethod(?method).
+	 ApplicationMethod(?method).
 
 Stats:ApplicationConcreteMethod(?method) <-
-   Stats:ApplicationMethod(?method),
+   ApplicationMethod(?method),
    ! Method:Modifier(?abstract, ?method),
    Modifier:Id(?abstract:"abstract").
 
@@ -79,7 +75,7 @@ Stats:EmptyVirtualMethodInvocation(?invocation) <-
    !(VarPointsTo(_, ?base)).
 
 Stats:Application:VirtualMethodInvocation(?invocation) <-
-   Stats:ApplicationMethod(?method),
+   ApplicationMethod(?method),
    VirtualMethodInvocation:Insn(?invocation),
    Instruction:Method[?invocation] = ?method.
 
@@ -110,11 +106,11 @@ Stats:PotentiallyFailingCast(?type, ?from, ?to) <-
    !SupertypeOf(?type, ?heaptype).
 
 Stats:Application:Cast(?type, ?from, ?to, ?inmethod) <-
-   AssignCast(?type, ?from, ?to, ?inmethod), Stats:ApplicationMethod(?inmethod).
+   AssignCast(?type, ?from, ?to, ?inmethod), ApplicationMethod(?inmethod).
 
 Stats:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
    Stats:ReachableCast(?inmethod, ?type, ?to, ?from),
-   Stats:ApplicationMethod(?inmethod).
+   ApplicationMethod(?inmethod).
 
 Stats:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
    Stats:Application:ReachableCast(_, ?type, ?to, ?from),

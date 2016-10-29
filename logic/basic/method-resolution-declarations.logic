@@ -17,15 +17,3 @@ MethodImplemented[?simplename, ?descriptor, ?type] = ?method ->
    MethodDescriptor(?descriptor),
    Type(?type),
    Method(?method).
-
-
-/**
- * Joins of input facts, useful for performance reasons
- */
-VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
-   MethodInvocation(?invocation),
-   SimpleName(?simplename).
-
-VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
-   MethodInvocation(?invocation),
-   MethodDescriptor(?descriptor).

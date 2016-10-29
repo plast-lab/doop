@@ -3,9 +3,9 @@
  ***************************************************************/
 
 Stats:ReflectiveHeap(?heap) <- ReflectiveHeapAllocation[_, _] = ?heap.
-Stats:ApplicationHeap(?heap) <- AssignNormalHeapAllocation(?heap, _, ?method), Stats:Simple:ApplicationMethod(?method).
-Stats:ApplicationHeap(?heap) <- AssignContextInsensitiveHeapAllocation(?heap, _, ?method), Stats:Simple:ApplicationMethod(?method).
-Stats:ApplicationHeap(?heap) <- ReflectiveHeapAllocation[?instr, _] = ?heap, Instruction:Method[?instr] = ?method, Stats:Simple:ApplicationMethod(?method).
+Stats:ApplicationHeap(?heap) <- AssignNormalHeapAllocation(?heap, _, ?method), ApplicationMethod(?method).
+Stats:ApplicationHeap(?heap) <- AssignContextInsensitiveHeapAllocation(?heap, _, ?method), ApplicationMethod(?method).
+Stats:ApplicationHeap(?heap) <- ReflectiveHeapAllocation[?instr, _] = ?heap, Instruction:Method[?instr] = ?method, ApplicationMethod(?method).
 /*
 Stats:ReachableValue(?value),
 Stats:ReachableValueWithContext(?hctx, ?value) <- VarPointsTo(?hctx, ?value, _, _).
@@ -32,7 +32,7 @@ Stats:ThrowablesInAppMethod(?valuetype, ?method),
 Stats:InsensAppMethThrowableValuesOnMethodBoundaries(?value, ?var),
 Stats:AppMethThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var) <-
 	Stats:ThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var), Value:Type[?value] = ?valuetype,
-	Var:DeclaringMethod(?var, ?method), Stats:Simple:ApplicationMethod(?method).
+	Var:DeclaringMethod(?var, ?method), ApplicationMethod(?method).
 */
 
 /****************************************************************

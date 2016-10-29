@@ -14,7 +14,7 @@ Stats:Simple:InsensVarPointsTo(?value, ?var) <- VarPointsTo(_, ?value, _, ?var).
 Stats:Simple:Application:InsensVarPointsTo(?value, ?var),
 Stats:Simple:Application:VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
    VarPointsTo(?hctx, ?value, ?ctx, ?var),
-   Var:DeclaringMethod(?var, ?meth), Stats:Simple:ApplicationMethod(?meth).
+   Var:DeclaringMethod(?var, ?meth), ApplicationMethod(?meth).
 
 Stats:Simple:InsensReachableVar(?var),
 Stats:Simple:ReachableVar(?ctx, ?var) <-
@@ -36,7 +36,7 @@ Stats:Simple:InsensArrayIndexPointsTo(?value, ?basevalue) <-
 Stats:Simple:Application:InsensArrayIndexPointsTo(?value, ?basevalue),
 Stats:Simple:Application:ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue) <-
    ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue),
-   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:Simple:ApplicationMethod(?meth),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), ApplicationMethod(?meth),
    Value:byHeap[?baseheap] = ?basevalue.
 
 /***************************************************
@@ -51,7 +51,7 @@ Stats:Simple:InsensStaticFieldPointsTo(?value, ?sig) <-
 Stats:Simple:Application:InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue),
 Stats:Simple:Application:InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue) <-
    InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue),
-   AssignNormalHeapAllocation(?baseheap, _, ?meth), Stats:Simple:ApplicationMethod(?meth),
+   AssignNormalHeapAllocation(?baseheap, _, ?meth), ApplicationMethod(?meth),
    Value:byHeap[?baseheap] = ?basevalue.
 
 /***************************************************
@@ -68,17 +68,13 @@ Stats:Simple:VirtualCallGraphEdge(?from, ?to) <-
 /***************************************************
  * Application methods
  ***************************************************/
-Stats:Simple:ApplicationMethod(?method) <-
-	 ApplicationClass(?class),
-	 Method:DeclaringType[?method] = ?class.
-
 Stats:Simple:InsensReachableApplicationMethod(?method),
 Stats:Simple:ReachableApplicationMethod(?ctx, ?method) <-
 	 ReachableContext(?ctx, ?method),
-	 Stats:Simple:ApplicationMethod(?method).
+	 ApplicationMethod(?method).
 
 Stats:Simple:ApplicationConcreteMethod(?method) <-
-   Stats:Simple:ApplicationMethod(?method),
+   ApplicationMethod(?method),
    ! Method:Modifier(?abstract, ?method),
    Modifier:Id(?abstract:"abstract").
 
@@ -116,7 +112,7 @@ Stats:Simple:EmptyVirtualMethodInvocation(?invocation) <-
    !(Stats:Simple:InsensVarPointsTo(_, ?base)).
 
 Stats:Simple:Application:VirtualMethodInvocation(?invocation) <-
-   Stats:Simple:ApplicationMethod(?method),
+   ApplicationMethod(?method),
    VirtualMethodInvocation:Insn(?invocation),
    Instruction:Method[?invocation] = ?method.
 
@@ -147,11 +143,11 @@ Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
    !SupertypeOf(?type, ?valuetype).
 
 Stats:Simple:Application:Cast(?type, ?from, ?to, ?inmethod) <-
-   AssignCast(?type, ?from, ?to, ?inmethod), Stats:Simple:ApplicationMethod(?inmethod).
+   AssignCast(?type, ?from, ?to, ?inmethod), ApplicationMethod(?inmethod).
 
 Stats:Simple:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
    Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from),
-   Stats:Simple:ApplicationMethod(?inmethod).
+   ApplicationMethod(?inmethod).
 
 Stats:Simple:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
    Stats:Simple:Application:ReachableCast(_, ?type, ?to, ?from),

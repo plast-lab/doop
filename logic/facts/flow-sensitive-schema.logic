@@ -434,6 +434,8 @@ MethodInvocation:Line[?invocation] = ?line ->
 MethodInvocation:Signature[?invocation] = ?signature ->
    MethodInvocation(?invocation), Method(?signature).
 
+ApplicationMethod(?method) -> Method(?method).
+
 // The (call-site) variable that holds the result of the invocation
 AssignReturnValue[?invocation] = ?to ->
    MethodInvocation(?invocation), Var(?to).
@@ -447,9 +449,28 @@ ActualParam[?index, ?invocation] = ?var ->
 VirtualMethodInvocation:Base[?invocation] = ?base ->
    VirtualMethodInvocation:Insn(?invocation), Var(?base).
 
+VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
+   MethodInvocation(?invocation), SimpleName(?simplename).
+
+VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
+   MethodInvocation(?invocation), MethodDescriptor(?descriptor).
+
+// Static Method Invocation
+StaticMethodInvocation:SimpleName[?invocation] = ?simplename ->
+   MethodInvocation(?invocation), SimpleName(?simplename).
+
+StaticMethodInvocation:Descriptor[?invocation] = ?descriptor ->
+   MethodInvocation(?invocation), MethodDescriptor(?descriptor).
+
 // Special Method Invocation
 SpecialMethodInvocation:Base[?invocation] = ?base ->
    SpecialMethodInvocation:Insn(?invocation), Var(?base).
+
+SpecialMethodInvocation:SimpleName[?invocation] = ?simplename ->
+   MethodInvocation(?invocation), SimpleName(?simplename).
+
+SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor ->
+   MethodInvocation(?invocation), MethodDescriptor(?descriptor).
 
 
 //-----------------------------------------------------------------------------
