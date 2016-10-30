@@ -710,15 +710,14 @@ InferredType:AssignCast(?subtype, ?from) <-
 // forName must have returned.
 
 TypeMatchingMethod(?type, ?constant) ->
-  Type(?type), Value(?constant).
+  Type(?type), HeapAllocation(?constant).
 TypeMatchingMethod(?subtype, ?constant) <-
-  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap),
-  Value:byHeap[?constantHeap] = ?constant,
+  MethodNameMatchingStringConstant:Signature(?signature, ?constant),
   Method:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingMethod[?constant] = ?n ->
-  Value(?constant), int[64](?n).
+  HeapAllocation(?constant), int[64](?n).
 NumberOfTypesMatchingMethod[?constant] = ?n <-
   agg<<?n = count()>>(TypeMatchingMethod(_,?constant)).
 
@@ -735,20 +734,20 @@ BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingForNameHeap(?forNameInvocation, ?specialheap),
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  FairlyInformativeMethodName(?constant),
-  TypeMatchingMethod(?type, ?constant),
+  Value:Heap[?constant] = ?constantHeap,
+  FairlyInformativeMethodName(?constantHeap),
+  TypeMatchingMethod(?type, ?constantHeap),
   UnresolvedForNameInvocation(?forNameCtx, ?forNameInvocation).
 
 TypeMatchingFieldName(?type, ?constant) ->
-  Type(?type), Value(?constant).
+  Type(?type), HeapAllocation(?constant).
 TypeMatchingFieldName(?subtype, ?constant) <-
-  FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap),
-  Value:byHeap[?constantHeap] = ?constant,
+  FieldNameMatchingStringConstant:Signature(?signature, ?constant),
   Field:DeclaringType[?signature] = ?type,
   SubtypeOf(?subtype, ?type).
 
 NumberOfTypesMatchingFieldName[?constant] = ?n ->
-  Value(?constant), int[64](?n).
+  HeapAllocation(?constant), int[64](?n).
 NumberOfTypesMatchingFieldName[?constant] = ?n <-
   agg<<?n = count()>>(TypeMatchingFieldName(_,?constant)).
 
@@ -762,8 +761,9 @@ BackwardReflectiveAssignClassConstant(?forNameCtx, ?forNameInvocation, ?type) <-
   Value:Heap[?specialvalue] = ?specialheap,
   OptSpecialMissingForNameHeap(?forNameInvocation, ?specialheap),
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  FairlyInformativeFieldName(?constant),
-  TypeMatchingFieldName(?type, ?constant),
+  Value:Heap[?constant] = ?constantHeap,
+  FairlyInformativeFieldName(?constantHeap),
+  TypeMatchingFieldName(?type, ?constantHeap),
   UnresolvedForNameInvocation(?forNameCtx, ?forNameInvocation).
 
 
