@@ -1,0 +1,20 @@
+.gradle
+build
+cache
+logs
+out
+results
+last-analysis
+checksums.properties
+doop.properties
+
+#intellij idea files
+.idea
+doop-nexgen.iml
+
+#eclipse files
+.classpath
+.project
+
+#netbeans files
+.nb-gradle
