@@ -272,9 +272,7 @@ class Doop {
             name:"information-flow",
             argName:"application-platform",
             description:"Load additional logic to perform information flow analysis.",
-            value:true,
-            webUI:true,
-            forPreprocessor:true
+            value:false
         ),
         new AnalysisOption<Boolean>(
             id:"OPEN_PROGRAMS_SERVLETS",
