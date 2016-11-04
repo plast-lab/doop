@@ -8,8 +8,10 @@
 #include "reflection/declarations.logic" 
 #endif
 
-FakeInvocation:RegisterFinalize[?heap] = ?invo ->
-   HeapAllocation(?heap), MethodInvocation(?invo).
+FakeInvocation:RegisterFinalize[?value] = ?invo ->
+   Value(?value), MethodInvocation(?invo).
+
+FakeInvocation:RegisterFinalize[?value] = ?invo <- FakeInvocation:RegisterFinalize[?value] = ?invo.
 
 //-----------------------------------------------------------------------------
 // [Value - artificially created]

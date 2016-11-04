@@ -1,8 +1,9 @@
 #include "native-delta.logic"
 
-+FakeInvocation:RegisterFinalize[?heap] = ?invo,
++FakeInvocation:RegisterFinalize[?value] = ?invo,
 PlusMethodInvocation(?invo, ?str) <-
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
+   Value:byHeap[?heap] = ?value,
    Method:Id@prev(?inmethod:?val1),
    HeapAllocation:Id@prev[?heap] = ?val2,
    ?str = "<register-finalize " + ?val1 + "/" + ?val2 +"  >".
