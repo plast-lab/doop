@@ -11,6 +11,10 @@
 #include "reflection/rules.logic" 
 #endif
 
+FakeInvocation:RegisterFinalize[?value] = ?invo <-
+   FakeInvocation:RegisterFinalize0[?heap] = ?invo,
+   Value:byHeap[?heap] = ?value.
+
 
 // NOTE: should be separate rules so the engine can treat them as alternative
 // indexes

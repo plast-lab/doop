@@ -18,7 +18,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
 
 #ifdef RecordRefinedMacro
 RecordRefinedMacro(?callerCtx, ?value, ?hctx),
-CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?heap], ?calleeCtx, ?register),
+CallGraphEdge(?callerCtx, FakeInvocation:RegisterFinalize[?value], ?calleeCtx, ?register),
 MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?calleeCtx),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
    ReachableContext(?callerCtx, ?inmethod),
