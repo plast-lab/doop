@@ -267,27 +267,12 @@ class Doop {
             webUI:true,
             forPreprocessor:true
         ),
-        new AnalysisOption<Boolean>(
+        new AnalysisOption<String>(
             id:"INFORMATION_FLOW",
             name:"information-flow",
+            argName:"application-platform",
             description:"Load additional logic to perform information flow analysis.",
-            value:false,
-            webUI:true,
-            forPreprocessor:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"ANDROID_SOURCES_AND_SINKS",
-            name:"android-sources-and-sinks",
-            description:"Load Android sources and sinks.",
-            value:false,
-            webUI:true,
-            forPreprocessor:true
-        ),
-        new AnalysisOption<Boolean>(
-            id:"WEBAPPS_SOURCES_AND_SINKS",
-            name:"webapps-sources-and-sinks",
-            description:"Load webapps (Servlets) sources and sinks.",
-            value:false,
+            value:true,
             webUI:true,
             forPreprocessor:true
         ),

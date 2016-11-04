@@ -1,0 +1,5 @@
+#include "common-transfer-methods.logic"
+
+TaintSourceMethod("<java.io.BufferedReader: java.lang.String readLine()>").
+
+LeakingSinkMethod(0, "<java.io.PrintWriter: void println(java.lang.String)>").

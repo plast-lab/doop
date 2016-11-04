@@ -297,16 +297,8 @@ class ClassicAnalysis extends Analysis {
             cpp.preprocess("${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
 
-            if (options.WEBAPPS_SOURCES_AND_SINKS) {
-                cpp.preprocess("${outDir}/webapps-sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/webapps-sources-and-sinks.logic", macros)
-                cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/webapps-sources-and-sinks.logic")
-            }
-
-            if (options.ANDROID_SOURCES_AND_SINKS) {
-                cpp.preprocess("${outDir}/android-sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/android-sources-and-sinks.logic", macros)
-                cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/android-sources-and-sinks.logic")
-            }
-
+            cpp.preprocess("${outDir}/sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/${options.INFORMATION_FLOW.value}-sources-and-sinks.logic", macros)
+                cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/sources-and-sinks.logic")
 
             connector.queue()
                 .addBlockFile("information-flow-declarations.logic")
@@ -320,6 +312,7 @@ class ClassicAnalysis extends Analysis {
         if (options.OPEN_PROGRAMS_SERVLETS.value) {
             cpp.preprocess("${outDir}/open-programs-servlets.logic", "${Doop.addonsPath}/open-programs/rules-servlets-only.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs-servlets.logic")
+
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)

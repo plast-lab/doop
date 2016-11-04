@@ -12,3 +12,5 @@ ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuff
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(long)>").
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(float)>").
 ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(double)>").
+
+BaseToRetTaintTransferMethod("<java.util.Enumeration: java.lang.Object nextElement()>").
