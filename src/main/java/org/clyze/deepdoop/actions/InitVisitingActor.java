@@ -18,11 +18,12 @@ import org.clyze.deepdoop.datalog.expr.*;
 
 public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable> {
 
-	String      _oldId;
-	String      _id;
-	Set<String> _globalAtoms;
+	AtomCollectingActor _acActor;
+	String              _oldId;
+	String              _id;
+	Set<String>         _ignoreAtoms;
 
-	public InitVisitingActor(String oldId, String id, Set<String> globalAtoms) {
+	public InitVisitingActor(String oldId, String id, Set<String> ignoreAtoms) {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
@@ -31,16 +32,15 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 		_oldId       = oldId;
 		_id          = id;
-		_globalAtoms = globalAtoms;
+		_ignoreAtoms = ignoreAtoms;
 	}
 	public InitVisitingActor() {
 		this(null, null, null);
 	}
 
 	String name(String name, String stage) {
-		// *In* global space
-		if (_globalAtoms.contains(name)) {
-			assert !"@past".equals(stage);
+		// atom is external so should remain unaltered
+		if (_ignoreAtoms.contains(name)) {
 			return name;
 		}
 		// Propagate *to* global space
@@ -67,12 +67,15 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 
 
+	// Need to be overriden because a component might have to be visited
+	// multiple times (if initialized multiple times)
 	@Override
 	public IVisitable visit(Program n) {
-		AtomCollectingActor acActor = new AtomCollectingActor();
-		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(acActor);
+		_acActor = new AtomCollectingActor();
+		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(_acActor);
 		n.accept(acVisitor);
-		_globalAtoms = acActor.getDeclaringAtoms(n.globalComp).keySet();
+
+		_ignoreAtoms = _acActor.getUsedAtoms(n.globalComp).keySet();
 
 		Program initP = Program.from(n.globalComp, new HashMap<>(), null, new HashSet<>());
 		for (Entry<String, String> entry : n.inits.entrySet()) {
@@ -88,7 +91,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			_id                          = prop.fromId;
 			Component fromComp           = initP.comps.get(prop.fromId);
 			Component toComp             = (prop.toId == null ? initP.globalComp : initP.comps.get(prop.toId));
-			Map<String, IAtom> declAtoms = acActor.getDeclaringAtoms(fromComp);
+			Map<String, IAtom> declAtoms = _acActor.getDeclaringAtoms(fromComp);
 			Set<IAtom> newPreds          = new HashSet<>();
 
 			// Preprocess predicates for propagation
@@ -108,11 +111,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
 
 				// Propagate to global scope
-				if (prop.toId == null && _globalAtoms.contains(atom.name()))
+				if (prop.toId == null && _ignoreAtoms.contains(atom.name()))
 					throw new DeepDoopException(Error.DEP_GLOBAL, atom.name());
 
 				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
-					accept(new InitVisitingActor(prop.fromId, prop.toId, _globalAtoms));
+					accept(new InitVisitingActor(prop.fromId, prop.toId, _ignoreAtoms));
 				IElement body = (IAtom) atom.instantiate(null, vars);
 				toComp.addRule(new Rule(new LogicalElement(head), body));
 			}
@@ -133,6 +136,14 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		Set<StubAtom> newExports = new HashSet<>();
 		for (StubAtom p : n.exports) newExports.add((StubAtom) m.get(p));
 		return new CmdComponent(_id, newDeclarations, n.eval, newImports, newExports);
+	}
+	@Override
+	public void enter(Component n) {
+		Set<String> declAtoms = _acActor.getDeclaringAtoms(n).keySet();
+		Set<String> usedAtoms = _acActor.getUsedAtoms(n).keySet();
+		// Atoms that are used but not declared in the component, are external
+		_ignoreAtoms = new HashSet<>(usedAtoms);
+		_ignoreAtoms.removeAll(declAtoms);
 	}
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
