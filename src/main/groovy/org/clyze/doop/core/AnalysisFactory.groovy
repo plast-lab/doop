@@ -90,6 +90,7 @@ class AnalysisFactory {
                 vars.platformFiles,
                 commandsEnv)
         else
+            options.CFG_ANALYSIS.value = true
             analysis = new SoundMayAnalysis(
                 analysisId,
                 outDir.toString(),
