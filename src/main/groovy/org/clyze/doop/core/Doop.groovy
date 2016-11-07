@@ -320,20 +320,20 @@ class Doop {
             webUI:true
         ),
         new AnalysisOption<String>(
-			id:"PLATFORMS_LIB",
-			name:"platforms-lib",
-			description:"The path to the platform libs directory.",
-			value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL,
-			isAdvanced:true
+            id:"PLATFORMS_LIB",
+            name:"platforms-lib",
+            description:"The path to the platform libs directory.",
+            value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL,
+            isAdvanced:true
         ),
         new AnalysisOption<String>(
-			id:"PLATFORM",
-			name:"platform",
-			argName: "platform",
-			description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
-			value: "java_7",
-			webUI: true,
-			forCacheID: true
+            id:"PLATFORM",
+            name:"platform",
+            argName: "platform",
+            description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
+            value: "java_7",
+            webUI: true,
+            forCacheID: true
         ),
         new AnalysisOption<Boolean>(
              id:"FACT_GENERATION_CLASSIC",
