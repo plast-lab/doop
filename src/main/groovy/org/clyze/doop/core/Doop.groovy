@@ -272,7 +272,15 @@ class Doop {
             name:"information-flow",
             argName:"application-platform",
             description:"Load additional logic to perform information flow analysis.",
-            value:false
+            value:null,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"INFORMATION_FLOW_PRECISE_SOURCES_AND_SINKS",
+            name:"information-flow-precise-sources-and-sinks",
+            description:"Use precise call graph for identifying sources and sinks.",
+            value:false,
+            forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
             id:"OPEN_PROGRAMS_SERVLETS",

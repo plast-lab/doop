@@ -324,8 +324,11 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
   <-
   ReturnVar(?return, ?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+#ifdef INFORMATION_FLOW
+ !SanitizationMethod(?method),
+#endif
   AssignReturnValue[?invocation] = ?local.
-//  !SanitizationMethod(?method). // Neville (todo)
+
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),

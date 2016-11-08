@@ -3,8 +3,7 @@
 #define TaintSourceMethodPattern(pattern) TaintSourceMethod(method) <- Method:Id(method:value), string:like(value, pattern)
 
 #define LeakingSinkMethodPattern(n, pattern) LeakingSinkMethod(n, method) <- Method:Id(method:value), string:like(value, pattern)
-                                                                                                                                                                                                                                  
-TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
+                                                                                                                    TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletContext: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletConfig: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.http.Cookie: % get%(%)>").
@@ -12,7 +11,9 @@ TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.http.HttpSession: % get%(%)>").
 TaintSourceMethodPattern("<javax.servlet.ServletRequest: % get%(%)>").
 TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine()>").
-TaintSourceMethod("<java.net.URLEncoder: java.lang.String decode(java.lang.String,java.lang.String)>").
+TaintSourceMethod("<java.net.URLDecoder: java.lang.String decode(java.lang.String,java.lang.String)>").
+TaintSourceMethod("<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter(java.lang.String)>").
+TaintSourceMethod("<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter()>").
 LeakingSinkMethodPattern(0, "<java.io.Print%: void println(%)>").
 LeakingSinkMethodPattern(0, "<java.sql.Statement: % execute%(%)>").
 LeakingSinkMethodPattern(0, "<javax.servlet.http.HttpServletResponse: void sendRedirect(%)>").
@@ -20,6 +21,29 @@ LeakingSinkMethodPattern(0, "<java.io.File: void <init>(%)>").
 LeakingSinkMethodPattern(0, "<java.io.File%er: void <init>(%)>").
 LeakingSinkMethodPattern(0, "<java.io.File%Stream: void <init>(%)>").
 LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement(%)>").
+
+TaintSourceMethod(?overriddenMethod) <-
+   TaintSourceMethod(?method),
+   Method:DeclaringType[?method] = ?superclass,
+   Method:SimpleName[?method] = ?name,
+   Method:Descriptor[?method] = ?descriptor,
+   SubtypeOf(?class, ?superclass),
+   ClassType(?class),
+   Method:DeclaringType[?overriddenMethod] = ?class,
+   Method:SimpleName[?overriddenMethod] = ?name,
+   Method:Descriptor[?overriddenMethod] = ?descriptor.
+
+LeakingSinkMethod(?n, ?overriddenMethod) <-
+   LeakingSinkMethod(?n, ?method),
+   Method:DeclaringType[?method] = ?superclass,
+   Method:SimpleName[?method] = ?name,
+   Method:Descriptor[?method] = ?descriptor,
+   SubtypeOf(?class, ?superclass),
+   ClassType(?class),
+   Method:DeclaringType[?overriddenMethod] = ?class,
+   Method:SimpleName[?overriddenMethod] = ?name,
+   Method:Descriptor[?overriddenMethod] = ?descriptor.
+
 
 SanitizationMethod("<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>").
 SanitizationMethod("<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>").
