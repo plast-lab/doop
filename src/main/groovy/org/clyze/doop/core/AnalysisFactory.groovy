@@ -89,7 +89,8 @@ class AnalysisFactory {
                 vars.inputFiles,
                 vars.platformFiles,
                 commandsEnv)
-        else
+        else {
+            options.CFG_ANALYSIS.value = true
             analysis = new SoundMayAnalysis(
                 analysisId,
                 outDir.toString(),
@@ -100,6 +101,7 @@ class AnalysisFactory {
                 vars.inputFiles,
                 vars.platformFiles,
                 commandsEnv)
+        }
         logger.debug "Created new analysis"
         return analysis
     }

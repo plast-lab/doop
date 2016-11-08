@@ -103,7 +103,8 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 				}
 			}
 			if (!declFound)
-				throw new DeepDoopException(Error.NO_DECL, usedPred);
+				System.err.println("WARN: Predicate `" + usedPred + "` not found in current file");
+				//throw new DeepDoopException(Error.NO_DECL, usedPred);
 		}
 
 		// Compute dependency graph for components (and global predicates)
