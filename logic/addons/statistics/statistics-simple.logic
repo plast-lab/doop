@@ -27,6 +27,8 @@ Stats:Simple:InsensVarPointsTo(?value, ?var) <-
    VarPointsTo(_, ?value, _, ?var2), DupCopies(?var, ?var2).
 #endif
 
+
+
 /***************************************************
  * Arrays
  ***************************************************/
@@ -305,6 +307,9 @@ _t41[] = ?c <- (__t41[] = ?c) ; (!__t41[] = _, ?c = 0).
 _t49[] = ?c <- (__t49[] = ?c) ; (!__t49[] = _, ?c = 0).
 _t50[] = ?c <- (__t50[] = ?c) ; (!__t50[] = _, ?c = 0).
 
+
+
+
 Stats:Metrics("01a@ var points-to (INS)", _t1[]).
 Stats:Metrics("01b@ var points-to (SENS)", _t2[]).
 Stats:Metrics("05a@ app var points-to (INS)", _t3[]).
@@ -348,5 +353,37 @@ Stats:Metrics("23@ app casts (statically)", _t39[]).
 Stats:Metrics("24@ app reachable casts", _t40[]).
 Stats:Metrics("25@ app reachable casts that may fail", _t41[]).
 
+#ifdef INFORMATION_FLOW
+Stats:Simple:InsensTaintedVarPointsTo(?value, ?var) <- TaintedVarPointsTo(_, ?value, _, ?var).
+
+Stats:Simple:Application:InsensTaintedVarPointsTo(?value, ?var),
+Stats:Simple:Application:TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+   TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var),
+   Var:DeclaringMethod(?var, ?meth), ApplicationMethod(?meth).
+
+Stats:Simple:OriginalTaintedValue(?id) <- SourceFromTaintedValue[_] = ?id.
+
+__t60[] = ?c <- agg<<?c = count()>> Stats:Simple:InsensTaintedVarPointsTo(_, _).
+__t61[] = ?c <- agg<<?c = count()>> TaintedVarPointsTo(_, _, _, _).
+__t62[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:InsensTaintedVarPointsTo(_, _).
+__t63[] = ?c <- agg<<?c = count()>> Stats:Simple:Application:TaintedVarPointsTo(_, _, _, _).
+__t64[] = ?c <- agg<<?c = count()>> TaintedValue(_).
+__t65[] = ?c <- agg<<?c = count()>> Stats:Simple:OriginalTaintedValue(_).
+
+_t60[] = ?c <- (__t60[] = ?c) ; (!__t60[] = _, ?c = 0).
+_t61[] = ?c <- (__t61[] = ?c) ; (!__t61[] = _, ?c = 0).
+_t62[] = ?c <- (__t62[] = ?c) ; (!__t62[] = _, ?c = 0).
+_t63[] = ?c <- (__t63[] = ?c) ; (!__t63[] = _, ?c = 0).
+_t64[] = ?c <- (__t64[] = ?c) ; (!__t64[] = _, ?c = 0).
+_t65[] = ?c <- (__t65[] = ?c) ; (!__t65[] = _, ?c = 0).
+
+Stats:Metrics("26@ tainted flows-to (INS)", _t60[]).
+Stats:Metrics("27@ tainted flows-to (SENS)", _t61[]).
+Stats:Metrics("28@ app tainted flows-to (INS)", _t62[]).
+Stats:Metrics("29@ app tainted flows-to (SENS)", _t63[]).
+
+Stats:Metrics("30@ total tainted values", _t64[]).
+Stats:Metrics("30@ original tainted values", _t65[]).
+#endif
 //Stats:Metrics("40@ call sites that did (not) get refined", _t47[]).
 //Stats:Metrics("41@ allocation sites that did (not) get refined", _t48[]).
