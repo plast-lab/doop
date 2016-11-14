@@ -195,10 +195,12 @@ LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?source) <-
  * Special Heap allocation on function call
  */
 RecordMacro(?ctx, ?value, ?hctx),
-TaintedValueIntroduced(?invocation, ?type, ?value),
+TaintedValueIntroduced(?declaringType, ?invocation, ?type, ?value),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
    CallTaintingMethod(?ctx, ?invocation),
-   TypeForReturnValue(?type, ?to, ?invocation).
+   TypeForReturnValue(?type, ?to, ?invocation),
+   Method:DeclaringType[Instruction:Method[?invocation]] = ?declaringType.
+
 
 TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   VarPointsToOpt(?ctx, ?var, ?hctx, ?value),

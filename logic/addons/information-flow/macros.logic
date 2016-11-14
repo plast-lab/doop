@@ -2,16 +2,18 @@
 
 SourceFromTaintedValue[?value] = ?id -> string(?id), Value(?value).
 
-#define TaintedValueIntroduced(id, type, value) \
+#define TaintedValueIntroduced(declaringType, id, type, value) \
    Value:Mock:Cons[(id) + ": " + (Type:Id[(type)])] = value, \
    Value:Type[value] = type, \
    Value(value), \
    TaintedValue(value), \
-   SourceFromTaintedValue[value] = id
+   SourceFromTaintedValue[value] = id, \
+   Value:DeclaringType[value] = declaringType
 
 #define TaintedValueTransferred(oldvalue, type, value) \
    Value:Mock:Cons[SourceFromTaintedValue[(oldvalue)] + ": " + (Type:Id[(type)])] = value, \
    Value(value), \
    TaintedValue(value), \
    Value:Type[value] = type, \
-   SourceFromTaintedValue[value] = SourceFromTaintedValue[oldvalue]
+   SourceFromTaintedValue[value] = SourceFromTaintedValue[oldvalue], \
+   Value:DeclaringType[value] = Value:DeclaringType[oldvalue]
