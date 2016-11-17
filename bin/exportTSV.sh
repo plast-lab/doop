@@ -1,5 +1,31 @@
 #!/bin/bash
-./export.sh ActualParam ApplicationClass ArrayType AssignCast:From \
+
+export() {
+	outDir=$1
+	shift 1
+
+	echo ">>> $outDir"
+
+	for rel in $*
+	do
+	   # do translation of relation names into Souffle convetional format
+	   relName=`echo $rel | tr : _ `
+
+	   echo $relName
+
+	   rm -f $outDir/$relName.csv
+	   bloxbatch -db last-analysis -keepDerivedPreds -exportCsv $rel -exportDataDir $outDir -exportDelimiter '\t'
+	   if [ -e $outDir/$relName.csv ]
+	   then
+		 tail -n +2 $outDir/$relName.csv > $outDir/$relName.facts
+		 rm $outDir/$relName.csv
+	   else
+		 echo $rel not exported!
+	   fi
+	done
+}
+
+export foo ActualParam ApplicationClass ArrayType AssignCast:From \
 AssignCast:Insn AssignContextInsensitiveHeapAllocation \
 AssignHeapAllocation AssignLocal:From AssignLocal:Insn  \
 AssignNormalHeapAllocation AssignInstruction:To AssignNull:Insn \
@@ -10,7 +36,7 @@ FieldInstruction:Signature FieldModifier \
 FieldSignature:DeclaringClass FieldSignature:Type FormalParam HeapAllocation:Merge \
 HeapAllocation:Null \
 HeapAllocation:Type Instruction:Index Instruction:Method IsJumpTarget \
-LoadArrayIndex:Base LoadArrayIndex:To LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \ 			
+LoadArrayIndex:Base LoadArrayIndex:To LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \
 MainClass MainMethodArgHeap  \
 MainMethodArgsArray MayPredecessorBBModuloThrow MaySuccessorBBModuloThrow \
 MethodInvocation MethodInvocation:Signature MethodLookup \
@@ -20,19 +46,7 @@ NextInSamePhiNode NextPredecessorToSameBB NextReturn PhiNodeHead PrevInSameBasic
 ReferenceType ReturnInstruction ReturnNonvoid:Var ReturnVar SpecialMethodInvocation:Base \
 SpecialMethodInvocation:Insn StaticMethodInvocation:Insn \
 StoreArrayIndex:Base StoreArrayIndex:From \
-StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \ 			
+StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \
 SubtypeOf ThisVar \
 Var:DeclaringMethod Var:Type VirtualMethodInvocation:Base \
-VirtualMethodInvocation:Descriptor VirtualMethodInvocation:SimpleName 
-#./export2.sh 1 Reachable
-#./export2.sh 2 VirtualMethodInvocation:SimpleName
-#./export2.sh 2 VirtualMethodInvocation:Descriptor
-#./export2.sh 2 SubtypeOf
-#./export2.sh 2 HeapAllocation:Merge
-#./export2.sh 2 PhiNodeHead
-#./export2.sh 2 NextInSamePhiNode
-#./export2.sh 3 AssignContextInsensitiveHeapAllocation
-#./export2.sh 3 AssignNormalHeapAllocation
-#./export2.sh 4 MethodLookup
-
-
+VirtualMethodInvocation:Descriptor VirtualMethodInvocation:SimpleName
