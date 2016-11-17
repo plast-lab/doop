@@ -21,7 +21,7 @@ class Main {
     static void main(String[] args) {
 
         Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
-        Helper.initLogging("INFO", "${Doop.doopHome}/logs", true)
+        Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
 
         try {
 
