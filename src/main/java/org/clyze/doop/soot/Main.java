@@ -374,7 +374,6 @@ public class Main {
 
                 for (String propertyName : properties.stringPropertyNames()) {
                     String propertyValue = properties.getProperty(propertyName);
-
                     writer.writeProperty(path, propertyName, propertyValue);
                 }
             }

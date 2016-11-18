@@ -265,21 +265,28 @@ public class Representation
 
     String stringConstant(SootMethod inMethod, StringConstant constant) {
         String content = stringConstantRaw(inMethod, constant);
-
-        if(content.length() <= 256)
-            return content;
-        else
-            return "<<HASH:" + content.hashCode() + ">>";
+        return stringValue(content);
     }
 
     String stringConstantRaw(SootMethod inMethod, StringConstant constant) {
         String s = constant.toString();
         String content = s.substring(1, s.length() - 1);
+        return stringValueRaw(content);
+    }
 
-        if(content.trim().equals(content) && content.length() > 0)
-            return content;
+    String stringValue(String s) {
+        String raw = stringValueRaw(s);
+
+        if(raw.length() <= 256)
+            return raw;
         else
-            return "<<\"" + content + "\">>";
+            return "<<HASH:" + raw.hashCode() + ">>";
+    }
+    String stringValueRaw(String s) {
+        if(s.trim().equals(s) && s.length() > 0)
+            return s;
+        else
+            return "<<\"" + s + "\">>";
     }
 
     String numconstant(SootMethod inMethod, NumericConstant constant)
