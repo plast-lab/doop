@@ -6,8 +6,6 @@ if [ "$DOOP_HOME" = "" ]
 then
     echo "Environment variable DOOP_HOME is empty."
 else
-    # Set jimple output directory to current working directory.
-    OUT="-d $(pwd)"
-    eval '$DOOP_HOME/gradlew -p $DOOP_HOME bytecode2jimple -Pargs="'$OUT' '$@'"'
+    eval '$DOOP_HOME/gradlew -p $DOOP_HOME bytecode2jimple -Pargs="'$@'"'
 fi
 
