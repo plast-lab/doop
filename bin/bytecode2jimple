@@ -1,3 +1,13 @@
 #!/bin/bash
-[ "$(pwd)" != $(readlink -f "$DOOP_HOME") ] && { echo "Must be invoked from $DOOP_HOME" ; exit 1 ; }
-eval '$DOOP_HOME/gradlew bytecode2jimple -Pargs="'$@'"'
+# If this script is run from outside the DOOP_HOME directory, file
+# arguments should be full paths (i.e. /home/user/jars/Example.jar
+# instead of ./Example.jar).
+if [ "$DOOP_HOME" = "" ]
+then
+    echo "Environment variable DOOP_HOME is empty."
+else
+    # Set jimple output directory to current working directory.
+    OUT="-d $(pwd)"
+    eval '$DOOP_HOME/gradlew -p $DOOP_HOME bytecode2jimple -Pargs="'$OUT' '$@'"'
+fi
+
