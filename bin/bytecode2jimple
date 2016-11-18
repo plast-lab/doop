@@ -2,10 +2,6 @@
 # If this script is run from outside the DOOP_HOME directory, file
 # arguments should be full paths (i.e. /home/user/jars/Example.jar
 # instead of ./Example.jar).
-if [ "$DOOP_HOME" = "" ]
-then
-    echo "Environment variable DOOP_HOME is empty."
-else
-    eval '$DOOP_HOME/gradlew -p $DOOP_HOME bytecode2jimple -Pargs="'$@'"'
-fi
+[ "x$DOOP_HOME" = "x" ] && { echo "Environment variable DOOP_HOME is not set" ; exit 1 ; }
 
+eval '$DOOP_HOME/gradlew -p $DOOP_HOME bytecode2jimple -Pargs="'$@'"'
