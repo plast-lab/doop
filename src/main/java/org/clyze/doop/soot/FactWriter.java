@@ -37,10 +37,13 @@ class FactWriter
 
     void writeProperty(String path, String key, String value)
     {
-        // Add heap allocations for string constants
         _db.add(STRING_CONST, _db.asEntity(path));
         _db.add(STRING_CONST, _db.asEntity(key));
-        _db.add(STRING_CONST, _db.asEntity(value));
+
+        String strValue = _rep.stringValue(value);
+        String strValueRaw = _rep.stringValueRaw(value);
+        _db.add(STRING_RAW, _db.asEntity(strValue), _db.asEntity(strValueRaw));
+        _db.add(STRING_CONST, _db.asEntity(strValue));
 
         _db.add(PROPERTIES,
                 _db.asEntity(path),
@@ -256,7 +259,7 @@ class FactWriter
                 _db.asEntity(heap),
                 _db.asEntity(assignTo),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
-        
+
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
             String childAssignTo = _rep.newLocalIntermediate(m, l, session);
@@ -339,9 +342,8 @@ class FactWriter
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add(STRING_RAW, _db.asEntity(heap), _db.asEntity(heapRaw));
-
         // write heap allocation
+        _db.add(STRING_RAW, _db.asEntity(heap), _db.asEntity(heapRaw));
         _db.add(STRING_CONST, _db.asEntity(heap));
 
         _db.add(ASSIGN_HEAP_ALLOC,
@@ -440,7 +442,7 @@ class FactWriter
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
-    
+
     void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session)
     {
         int index = session.calcUnitNumber(stmt);
@@ -454,7 +456,7 @@ class FactWriter
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
-    
+
     void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session)
     {
         int index = session.calcUnitNumber(stmt);
@@ -820,7 +822,7 @@ class FactWriter
                 _db.asEntity(_rep.local(m, l)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
-    
+
     /**
      * Throw null
      */
@@ -1170,7 +1172,7 @@ class FactWriter
                 writeType(t),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
-    
+
     void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
@@ -1180,7 +1182,7 @@ class FactWriter
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
-    
+
     void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
@@ -1190,7 +1192,7 @@ class FactWriter
                 _db.asIntColumn(String.valueOf(index)),
                 _db.asEntity(METHOD_SIGNATURE, _rep.method(m)));
     }
-    
+
     void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
