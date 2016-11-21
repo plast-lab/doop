@@ -2,8 +2,7 @@ package org.clyze.doop.soot;
 
 import soot.ClassProvider;
 import soot.ClassSource;
-import soot.CoffiClassSource;
-import soot.coffi.ClassFile;
+import soot.asm.AsmClassSource;
 
 import java.io.*;
 import java.util.*;
@@ -67,20 +66,30 @@ class NoSearchingClassProvider implements ClassProvider {
      * Adds a class file from a resource.
      */
     private String addClass(String path, Resource resource) throws IOException {
-        ClassFile c = new ClassFile(path);
+        AsmClassSource c = null;
+        String className = path.replace('/', '.');
+
+        int suffixIdx = className.lastIndexOf('.');
+        // AsmClassSource automatically adds a '.class' extension, so
+        // remove it if it exists.
+        if (suffixIdx != -1) {
+            String suffix = className.substring(suffixIdx, className.length());
+            if (suffix.equals(".class"))
+                className = className.substring(0, suffixIdx);
+            else
+                throw new RuntimeException("Class file does not end in .class: " + className);
+        }
 
         InputStream stream = null;
         try {
             stream = resource.open();
-            c.loadClassFile(stream);
+            c = new AsmClassSource(path, stream);
         }
         finally {
             if(stream != null) {
                 stream.close();
             }
         }
-
-        String className = c.toString().replace('/', '.');
 
         if(_classes.containsKey(className)) {
             throw new RuntimeException(
@@ -175,7 +184,9 @@ class NoSearchingClassProvider implements ClassProvider {
                 //return new CoffiClassSource(className, stream);
                 //// (YS) We may need the change below for future Soot versions
                 //// (found out by trying a nightly build of Soot).
-                return new CoffiClassSource(className, stream, null, null);
+                // return new CoffiClassSource(className, stream, null, null);
+                // (gfour) Use the ASM-equivalent of CoffiClassSource.
+                return new AsmClassSource(className, stream);
             }
             catch(IOException exc) {
                 throw new RuntimeException(exc);
