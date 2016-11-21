@@ -1,7 +1,10 @@
 #!/bin/bash
+
+[ "x$DOOP_HOME" = "x" ] && { echo "Environment variable DOOP_HOME is not set" ; exit 1 ; }
+
 # If this script is run from outside the DOOP_HOME directory, file
 # arguments should be full paths (i.e. /home/user/jars/Example.jar
 # instead of ./Example.jar).
-[ "x$DOOP_HOME" = "x" ] && { echo "Environment variable DOOP_HOME is not set" ; exit 1 ; }
+[ "$(pwd)" != $(readlink -f "$DOOP_HOME") ] && { echo "WARNING: bytecode2jimple called outside $DOOP_HOME, all file parameters should be full paths." ; }
 
 eval '$DOOP_HOME/gradlew -p $DOOP_HOME bytecode2jimple -Pargs="'$@'"'
