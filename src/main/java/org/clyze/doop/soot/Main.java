@@ -360,7 +360,7 @@ public class Main {
             driver.doInSequentialOrder(classes);
         }
         else {
-            Database db = new CSVDatabase(new File(_outputDir));
+            Database db = new Database(new File(_outputDir));
             FactWriter writer = new FactWriter(db);
             ThreadFactory factory = new ThreadFactory(writer, _ssa);
             Driver driver = new Driver(factory, _ssa, classes.size());

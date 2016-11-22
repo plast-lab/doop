@@ -1,13 +1,11 @@
 package org.clyze.doop.soot;
 
+import java.util.HashMap;
+import java.util.Map;
 import soot.*;
 import soot.jimple.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class Representation
-{
+public class Representation {
     private Map<SootMethod, String> _methodRepr = new HashMap<>();
     private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
     private Map<Trap, String> _trapRepr = new HashMap<>();
@@ -22,24 +20,17 @@ public class Representation
         return t.toString();
     }
 
-    /*
-       public String classconstant(Type t)
-       {
-       return "<class " + type(t) + ">";
-       }
-       */
-
-    String classconstant(SootClass c)
+    String classConstant(SootClass c)
     {
         return "<class " + type(c) + ">";
     }
 
-    String classconstant(Type t)
+    String classConstant(Type t)
     {
         return "<class " + type(t) + ">";
     }
 
-    synchronized String signature(SootMethod m)
+    public synchronized String signature(SootMethod m)
     {
         String result = _methodSigRepr.get(m);
 
@@ -65,11 +56,6 @@ public class Representation
     String simpleName(SootField m)
     {
         return m.getName();
-    }
-
-    String modifier(String m)
-    {
-        return m;
     }
 
     String descriptor(SootMethod m)
@@ -142,11 +128,6 @@ public class Representation
     {
         String name = "throw " + l.getName();
         return compactMethod(m) + "/" + name + "/" + session.nextNumber(name);
-    }
-
-    public String method(SootMethod m)
-    {
-        return signature(m);
     }
 
     /**
@@ -263,33 +244,7 @@ public class Representation
         return compactMethod(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
     }
 
-    String stringConstant(SootMethod inMethod, StringConstant constant) {
-        String content = stringConstantRaw(inMethod, constant);
-        return stringValue(content);
-    }
-
-    String stringConstantRaw(SootMethod inMethod, StringConstant constant) {
-        String s = constant.toString();
-        String content = s.substring(1, s.length() - 1);
-        return stringValueRaw(content);
-    }
-
-    String stringValue(String s) {
-        String raw = stringValueRaw(s);
-
-        if(raw.length() <= 256)
-            return raw;
-        else
-            return "<<HASH:" + raw.hashCode() + ">>";
-    }
-    String stringValueRaw(String s) {
-        if(s.trim().equals(s) && s.length() > 0)
-            return s;
-        else
-            return "<<\"" + s + "\">>";
-    }
-
-    String numconstant(SootMethod inMethod, NumericConstant constant)
+    String numConstant(SootMethod inMethod, NumericConstant constant)
     {
         return constant.toString();
     }
