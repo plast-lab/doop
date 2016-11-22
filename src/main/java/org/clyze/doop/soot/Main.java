@@ -280,6 +280,7 @@ public class Main {
 
         if (_useOriginalNames) {
             soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
+            soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         }
 
         if (_keepLineNumber) {
