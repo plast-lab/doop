@@ -26,6 +26,7 @@ ReifiedField:Value[?field] = ?value ->
 
 ReflectiveValue(?value) -> Value(?value).
 
+// A new object of this type is allocated via reflection actions at the instruction
 ReflectiveAllocation[?instruction, ?type] = ?heap ->
   Instruction(?instruction), ReferenceType(?type), HeapAllocation(?heap).
 
@@ -154,6 +155,3 @@ java:lang:Class:getClassLoader(?invocation, ?to, ?from) ->
 java:lang:ClassLoader:getResource(?invocation, ?to, ?from) ->
   MethodInvocation(?invocation), Var(?to), Var(?from).
 
-
-//TempDelta(?invocation, ?classType, ?heapType, ?heapStr) ->
-//  MethodInvocation(?invocation), ReferenceType(?classType), Type(?heapType), string(?heapStr).
