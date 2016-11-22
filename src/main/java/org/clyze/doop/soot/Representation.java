@@ -10,28 +10,15 @@ public class Representation {
     private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
     private Map<Trap, String> _trapRepr = new HashMap<>();
 
-    String type(SootClass c)
-    {
-        return c.getName();
+    String classConstant(SootClass c) {
+        return "<class " + c.getName() + ">";
     }
 
-    String type(Type t)
-    {
-        return t.toString();
+    String classConstant(Type t) {
+        return "<class " + t + ">";
     }
 
-    String classConstant(SootClass c)
-    {
-        return "<class " + type(c) + ">";
-    }
-
-    String classConstant(Type t)
-    {
-        return "<class " + type(t) + ">";
-    }
-
-    public synchronized String signature(SootMethod m)
-    {
+    public synchronized String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
 
         if(result == null)
@@ -43,18 +30,15 @@ public class Representation {
         return result;
     }
 
-    String signature(SootField f)
-    {
+    String signature(SootField f) {
         return f.getSignature();
     }
 
-    String simpleName(SootMethod m)
-    {
+    String simpleName(SootMethod m) {
         return m.getName();
     }
 
-    String simpleName(SootField m)
-    {
+    String simpleName(SootField m) {
         return m.getName();
     }
 
@@ -93,11 +77,6 @@ public class Representation {
         return compactMethod(m) + "/@param" + i;
     }
 
-    String index(int i)
-    {
-        return "" + i;
-    }
-
     String local(SootMethod m, Local l)
     {
         return compactMethod(m) + "/" + l.getName();
@@ -115,7 +94,7 @@ public class Representation {
 
         if(result == null)
         {
-            String name = "catch " + type(trap.getException());
+            String name = "catch " + trap.getException().getName();
             result = compactMethod(m) + "/" + name + "/" + session.nextNumber(name);
 
             _trapRepr.put(trap, result);
@@ -242,10 +221,5 @@ public class Representation {
     {
         String s = type.toString();
         return compactMethod(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
-    }
-
-    String numConstant(SootMethod inMethod, NumericConstant constant)
-    {
-        return constant.toString();
     }
 }

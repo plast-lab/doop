@@ -302,7 +302,7 @@ class FactWriter {
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_NUM_CONST, insn, str(index), _rep.numConstant(m, constant), _rep.local(m, l), methodId);
+        _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
@@ -319,7 +319,7 @@ class FactWriter {
             Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
 
             heap = _rep.classConstant(t);
-            actualType = _rep.type(t);
+            actualType = t.toString();
         }
         else {
             SootClass c = soot.Scene.v().getSootClass(s);
@@ -328,7 +328,7 @@ class FactWriter {
             }
 
             heap =  _rep.classConstant(c);
-            actualType = _rep.type(c);
+            actualType = c.getName();
         }
 
         _db.add(CLASS_HEAP, heap, actualType);
@@ -354,7 +354,7 @@ class FactWriter {
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), _rep.numConstant(m, constant), _rep.local(m, to), writeType(t), methodId);
+        _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, to), writeType(t), methodId);
     }
 
     void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session) {
@@ -438,8 +438,8 @@ class FactWriter {
         _db.add(FIELD_MODIFIER, modifier, fieldId);
     }
 
-    void writeClassModifier(SootClass f, String modifier) {
-        String type = _rep.type(f);
+    void writeClassModifier(SootClass c, String modifier) {
+        String type = c.getName();
         _db.add(CLASS_TYPE, type);
         _db.add(CLASS_MODIFIER, modifier, type);
     }
@@ -627,7 +627,7 @@ class FactWriter {
         int handlerIndex = session.getUnitNumber(handler.getHandlerUnit());
         int beginIndex = session.getUnitNumber(handler.getBeginUnit());
         int endIndex =session.getUnitNumber(handler.getEndUnit());
-        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), _rep.type(exc), _rep.local(m, caught), str(beginIndex), str(endIndex));
+        _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName(), _rep.local(m, caught), str(beginIndex), str(endIndex));
     }
 
     void writeThisVar(SootMethod m) {
@@ -645,7 +645,7 @@ class FactWriter {
     void writeFormalParam(SootMethod m, int i) {
         String methodId = writeMethod(m);
         String var = _rep.param(m, i);
-        _db.add(FORMAL_PARAM, _rep.index(i), methodId, var);
+        _db.add(FORMAL_PARAM, str(i), methodId, var);
         _db.add(VAR_TYPE, var, writeType(m.getParameterType(i)));
         _db.add(VAR_DECLARING_METHOD, var, methodId);
     }
@@ -724,7 +724,7 @@ class FactWriter {
 
             if (v instanceof Local) {
                 Local l = (Local) v;
-                _db.add(ACTUAL_PARAMETER, _rep.index(i), invokeExprRepr, _rep.local(inMethod, l));
+                _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
             }
             else {
                 throw new RuntimeException("Unknown actual parameter: " + v + " " + v.getClass());
