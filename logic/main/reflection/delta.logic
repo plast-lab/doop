@@ -1,5 +1,3 @@
-#include "../../commonMacros.logic"
-
 +LoadArrayIndex(?array, ?value, ?inmethod)/*,
 +java:lang:reflect:Array:get(?invocation)*/ <-
   Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
@@ -13,3 +11,126 @@
   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
   ActualParam@previous[0, ?invocation] = ?array,
   ActualParam@previous[2, ?invocation] = ?value.
+
+/* == Proxy handling ==
+
+   Java proxies are handled in two steps:
+
+   1. For every interface, we create a dummy proxy class that will
+      represent the type of objects returned by
+      Proxy.newProxyInstance(). This proxy class is concrete and
+      contains entry points for all methods declared in the interface
+      it implements. All such methods are implemented as calls to the
+      invoke() method of an InvocationHandler (which is passed to the
+      constructor and stored in a local field).
+
+   2. For every call to Proxy.newProxyInstance, such as this:
+
+        Object obj = Proxy.newProxyInstance(cl, is, h);   // e.g. instr. #4
+
+      we generate facts as if we had seen the following code:
+
+       // special proxy constructor variable
+       Constructor c$interface$forName/#4;
+       Object obj = c$interface$forName/#4.newInstance(h);
+
+      Explanation: for every call to Proxy.newProxyInstance(), we
+      generate a new constructor variable 'c'. This special variable
+      is connected by an extra analysis rule to the interfaces
+      argument of newProxyInstance() via the VarPointsTo relation:
+      whenever the interfaces argument can contain the class object of
+      some interface I, then 'c' is the constructor of the proxy class
+      of I, e.g. 'Proxy$for$I' and this the result of
+      'c.newInstance(h)' will be an object belonging to
+      'Proxy$for$I'. */
+
+/* 1. Dummy proxy class generation. */
+
+// Create declaration of proxy class.
++Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
++DirectSuperinterface(?proxyClass, ?interface),
+// Create constructor method.
++Method:Id(?constructor:?constructorId), +Method(?constructor),
++Method:DeclaringType[?constructor] = ?proxyClass,
++Method:SimpleName[?constructor] = "<init>",
++Method:ReturnType[?constructor] = Type:void@previous[],
++Method:Descriptor[?constructor] = "void(java.lang.reflect.InvocationHandler)",
++Method:JVMDescriptor[?constructor] = "(Ljava/lang/reflect/InvocationHandler;)V",
+// Create field.
++Field:Id(?fieldIHandler:?fieldIHandlerId), +Field(?fieldIHandler),
++Field:DeclaringType[?fieldIHandler] = ?proxyClass,
++Field:SimpleName[?fieldIHandler] = "h",
++Field:Type[?fieldIHandler] = ?invocationHandlerType,
++Field:Modifier(?private, ?fieldIHandler)
+ <-
+   InterfaceType@previous(?interface),
+   Type:Id@previous(?interface:?interfaceId),
+   ?proxyClassId = "Proxy$for$" + ?interfaceId,
+   // Constructor.
+   ?constructorId = "<" + ?proxyClassId + ": void <init>(java.lang.reflect.InvocationHandler)>",
+   // Field.
+   Type:Id@previous(?invocationHandlerType:"java.lang.reflect.InvocationHandler"),
+   ?fieldIHandlerId = ?proxyClassId + "$h",
+   Modifier:Id@previous(?private:"private").
+
+// For each proxy class of interface G, generate a Method field that
+// points to the object representing a method from G.
++Field:Id(?methodField:?methodFieldId), +Field(?methodField),
++Field:DeclaringType[?methodField] = ?proxyClass,
++Field:SimpleName[?methodField] = ?fieldSimpleName,
++Field:Type[?methodField] = ?methodType,
++Field:Modifier(?private, ?methodField)
+ <-
+   ProxyClass(?proxyClass), DirectSuperinterface(?proxyClass, ?interface),
+   Type:Id(?proxyClass, ?proxyClassId),
+   Method:DeclaringType@previous[?m] = ?interface,
+   Method:JVMDescriptor@previous[?m] = ?desc,
+   Method:SimpleName@previous[?m] = ?simple,
+   ?methodFieldId = "_" + ?proxyClassId + "$" + ?simple + "$" + ?desc,
+   ?fieldSimpleName = "method$" + ?simple + "$" + ?desc,
+   Type:Id(?methodType:"java.lang.reflect.Method"),
+   Modifier:Id(?private:"private").
+
+// For each proxy class of interface G, for every method m of G,
+// generate a public method with the same signature and return type in
+// the proxy class.
++Method:Id(?method:?methodId), +Method(?method),
++Method:DeclaringType[?method] = ?proxyClass,
++Method:ReturnType[?method] = ?retType,
++Method:Descriptor[?method] = ?desc,
++Method:SimpleName[?method] = ?simple,
++Method:JVMDescriptor[?m] = ?jvmDesc
+ <-
+   ProxyClass(?proxyClass), DirectSuperinterface(?proxyClass, ?interface),
+   Type:Id(?proxyClass, ?proxyClassId),
+   Method:DeclaringType@previous[?m] = ?interface,
+   Method:ReturnType@previous[?m] = ?retType,
+   Method:Descriptor@previous[?m] = ?desc,
+   Method:SimpleName@previous[?m] = ?simple,
+   Method:JVMDescriptor@previous[?m] = ?jvmDesc,
+   ?methodId = ?proxyClassId + "$" + ?simple + "$" + ?desc.
+
+// TODO: method bodies are not yet created.
+
+// Step 2. Transformation of Proxy.newProxyInstance(). This step
+// generates the new constructor variable and records information for
+// the reflection analysis to connect the dots.
+
+// Generate the new constructor variable 'c'.
++Var(?c), +Var:Id(?c:?cId), +Var:Type[?c] = ?constructorType,
+// Record the connection of the special string ?s to ?interfaces.
++ProxiedInterfaceForName(?i, ?c, ?interfaces, ?obj)
+ <-
+   // This identifies the call to Proxy.newProxyInstance(), to
+   // populate the ProxiedInterfaceForName relation.
+   StaticMethodInvocation:SimpleName@previous[?i] = "newProxyInstance",
+   StaticMethodInvocation@previous(?i, ?sig, _),
+   ?sig = "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>",
+   Instruction:Id@previous(?i:?id),
+   ?s = "interface$forName/" + ?id,
+   ActualParam@previous[1, ?i] = ?interfaces,
+   AssignReturnValue@previous[?i] = ?obj,
+   // Constructor.
+   ?cId = ?s + "/C",
+   Type:Id@previous(?constructorType:"java.lang.Constructor")
+.
