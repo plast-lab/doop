@@ -58,7 +58,7 @@ enum PredicateFile
     THROW("Throw"),
     THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),
-    METHOD_SIGNATURE("Method"),
+    METHOD("Method"),
     STORE_INST_FIELD("StoreInstanceField"),
     LOAD_INST_FIELD("LoadInstanceField"),
     STORE_STATIC_FIELD("StoreStaticField"),
