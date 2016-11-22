@@ -1372,7 +1372,6 @@ ReifiedConstructor[?signature] = ?value
 MockHeapConsMacro(?id, ?type, ?value),
 ReifiedMethod[?signature] = ?value
 <-
-   string:length[?strSignature] < 4000,
    Method:SimpleName[?signature] = ?simplename,
    ?simplename != "<init>", ?simplename != "<clinit>",
    Method:Id(?signature:?strSignature),
