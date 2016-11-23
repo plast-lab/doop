@@ -70,7 +70,7 @@ class NoSearchingClassProvider implements ClassProvider {
     private String addClass(String path, Resource resource) throws IOException
     {
         try ( InputStream stream = resource.open() ) {
-            // Get class name after by reading class contents
+            // Get class name by reading class contents
             ClassReader classReader = new ClassReader(stream);
             String className = classReader.getClassName().replace("/", ".");
 
@@ -80,6 +80,7 @@ class NoSearchingClassProvider implements ClassProvider {
                     "Class " + className + " has already been added to this class provider");
             }
 
+            // Store class resource
             _classes.put(className, resource);
             return className;
         }
