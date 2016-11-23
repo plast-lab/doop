@@ -2,6 +2,8 @@ package org.clyze.doop.soot;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -23,7 +25,7 @@ class FactWriter {
     FactWriter(Database db) {
         _db = db;
         _rep = new Representation();
-        _varTypeMap = new HashMap<>();
+        _varTypeMap = new ConcurrentHashMap<>();
     }
 
 	String str(int i) {
@@ -329,6 +331,14 @@ class FactWriter {
 
             heap =  _rep.classConstant(c);
             actualType = c.getName();
+//              if (!actualType.equals(s))
+//                  System.out.println("hallelujah!\n\n\n\n");
+//            // The code above should be functionally equivalent with the simple code below,
+//            // but the above causes a concurrent modification exception due to a Soot
+//            // bug that adds a phantom class to the Scene's hierarchy, although
+//            // (based on their own comments) it shouldn't.
+//            heap = _rep.classConstant(s);
+//            actualType = s;
         }
 
         _db.add(CLASS_HEAP, heap, actualType);

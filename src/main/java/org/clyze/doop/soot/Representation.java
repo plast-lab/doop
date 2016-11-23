@@ -14,6 +14,10 @@ public class Representation {
         return "<class " + c.getName() + ">";
     }
 
+    String classConstant(String className) {
+        return "<class " + className + ">";
+    }
+
     String classConstant(Type t) {
         return "<class " + t + ">";
     }
