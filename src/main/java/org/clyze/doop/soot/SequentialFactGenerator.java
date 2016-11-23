@@ -190,6 +190,7 @@ public class SequentialFactGenerator
                 b = Shimple.v().newBody(b);
                 m.setActiveBody(b);
             }
+            DoopRenamer.transform(b);
             generate(m, b, session);
 
             m.releaseActiveBody();

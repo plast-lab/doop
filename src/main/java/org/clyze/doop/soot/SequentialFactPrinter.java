@@ -50,6 +50,7 @@ public class SequentialFactPrinter {
                                 b = Shimple.v().newBody(b);
                                 m.setActiveBody(b);
                             }
+                            DoopRenamer.transform(m.getActiveBody());
                         }
                     }
 
