@@ -1,5 +1,7 @@
 package org.clyze.doop.soot;
 
+import org.objectweb.asm.ClassReader;
+
 import soot.ClassProvider;
 import soot.ClassSource;
 import soot.asm.AsmClassSource;
@@ -67,29 +69,20 @@ class NoSearchingClassProvider implements ClassProvider {
      */
     private String addClass(String path, Resource resource) throws IOException
     {
-        String className = path.replace('/', '.');
-        int suffixIdx = className.lastIndexOf('.');
+        try ( InputStream stream = resource.open() ) {
+            // Get class name after by reading class contents
+            ClassReader classReader = new ClassReader(stream);
+            String className = classReader.getClassName();
 
-        // AsmClassSource automatically adds a '.class' extension, so
-        // remove it if it exists.
-        if (suffixIdx != -1) {
-            String suffix = className.substring(suffixIdx, className.length());
-
-            if (!suffix.equals(".class")) {
-                throw new IllegalArgumentException("Class file does not end in .class: " + className);
+            // Sanity check
+            if (_classes.containsKey(className)) {
+                throw new IllegalStateException(
+                    "Class " + className + " has already been added to this class provider");
             }
 
-            className = className.substring(0, suffixIdx);
+            _classes.put(className, resource);
+            return className;
         }
-
-        if (_classes.containsKey(className)) {
-            throw new IllegalStateException(
-                "Class " + className + " has already been added to this class provider");
-        }
-
-        _classes.put(className, resource);
-
-        return className;
     }
 
     /**
