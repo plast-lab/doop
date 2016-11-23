@@ -65,39 +65,29 @@ class NoSearchingClassProvider implements ClassProvider {
     /**
      * Adds a class file from a resource.
      */
-    private String addClass(String path, Resource resource) throws IOException {
-        AsmClassSource c = null;
+    private String addClass(String path, Resource resource) throws IOException
+    {
         String className = path.replace('/', '.');
-
         int suffixIdx = className.lastIndexOf('.');
+
         // AsmClassSource automatically adds a '.class' extension, so
         // remove it if it exists.
         if (suffixIdx != -1) {
             String suffix = className.substring(suffixIdx, className.length());
-            if (suffix.equals(".class"))
-                className = className.substring(0, suffixIdx);
-            else
-                throw new RuntimeException("Class file does not end in .class: " + className);
-        }
 
-        InputStream stream = null;
-        try {
-            stream = resource.open();
-            c = new AsmClassSource(path, stream);
-        }
-        finally {
-            if(stream != null) {
-                stream.close();
+            if (!suffix.equals(".class")) {
+                throw new IllegalArgumentException("Class file does not end in .class: " + className);
             }
+
+            className = className.substring(0, suffixIdx);
         }
 
-        if(_classes.containsKey(className)) {
-            throw new RuntimeException(
-                "class " + className + " has already been added to this class provider");
+        if (_classes.containsKey(className)) {
+            throw new IllegalStateException(
+                "Class " + className + " has already been added to this class provider");
         }
-        else {
-            _classes.put(className, resource);
-        }
+
+        _classes.put(className, resource);
 
         return className;
     }
