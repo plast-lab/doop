@@ -72,7 +72,7 @@ class NoSearchingClassProvider implements ClassProvider {
         try ( InputStream stream = resource.open() ) {
             // Get class name after by reading class contents
             ClassReader classReader = new ClassReader(stream);
-            String className = classReader.getClassName();
+            String className = classReader.getClassName().replace("/", ".");
 
             // Sanity check
             if (_classes.containsKey(className)) {
