@@ -18,7 +18,7 @@ class Driver {
 
     private ExecutorService _executor;
     private int _classCounter;
-    private List<SootClass> _sootClasses;
+    private List<SootClass> _tmpClassGroup;
     private int _totalClasses;
     private int _cores;
     private int _classSplit = 3;
@@ -27,7 +27,7 @@ class Driver {
         _factory = factory;
         _ssa = ssa;
         _classCounter = 0;
-        _sootClasses = new ArrayList<>();
+        _tmpClassGroup = new ArrayList<>();
         _totalClasses = totalClasses;
         _cores = Runtime.getRuntime().availableProcessors();
         if (_cores > 2) {
@@ -37,8 +37,8 @@ class Driver {
         }
     }
 
-    void doInParallel(Set<SootClass> sootClasses) {
-        sootClasses.forEach(this::generate);
+    void doInParallel(Set<SootClass> classesToProcess) {
+        classesToProcess.forEach(this::generate);
         _executor.shutdown();
         try {
             _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -65,14 +65,14 @@ class Driver {
         sootClasses.forEach(sequentialFactGenerator::generate);
     }
 
-    private void generate(SootClass _sootClass) {
+    private void generate(SootClass curClass) {
         _classCounter++;
-        _sootClasses.add(_sootClass);
+        _tmpClassGroup.add(curClass);
 
         if ((_classCounter % _classSplit == 0) || (_classCounter + 1 == _totalClasses)) {
-            Runnable runnable = _factory.newRunnable(_sootClasses);
+            Runnable runnable = _factory.newRunnable(_tmpClassGroup);
             _executor.execute(runnable);
-            _sootClasses = new ArrayList<>();
+            _tmpClassGroup = new ArrayList<>();
         }
     }
 }
