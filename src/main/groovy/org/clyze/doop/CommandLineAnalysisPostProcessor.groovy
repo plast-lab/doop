@@ -48,7 +48,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         if (analysis.options.X_STOP_AT_FACTS.value) {
             def facts = new File(analysis.options.X_STOP_AT_FACTS.value)
             logger.info "Making facts available at $facts"
-            analysis.executor.execute("ln -s -f ${analysis.facts} \"$facts\"")
+            analysis.executor.execute("ln -s -f ${analysis.factsDir} \"$facts\"")
             return
         }
 
