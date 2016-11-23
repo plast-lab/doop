@@ -60,9 +60,9 @@ dependencies {
             'ext:axml-2.0:1.0-SNAPSHOT'
 
     // DeepDoop
-    antlr "org.antlr:antlr4:4.5.1-1"
-    compile "org.antlr:antlr4-runtime:4.5.1-1"
-    testCompile "junit:junit:4.12"
+    antlr   'org.antlr:antlr4:4.5.1-1'
+    compile 'org.antlr:antlr4-runtime:4.5.1-1'
+    testCompile 'junit:junit:4.12'
 }
 
 task generateFiles(type: JavaExec) {

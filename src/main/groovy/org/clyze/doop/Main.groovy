@@ -75,7 +75,7 @@ class Main {
                 //create analysis from the properties file & the cli options
                 String file = cli['p'] as String
                 File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
-                File propsBaseDir = f.getParentFile()
+                File propsBaseDir = f.getAbsoluteFile().getParentFile()
                 Properties props = FileOps.loadProperties(f)
 
                 changeLogLevel(cli['l'] ?: props.getProperty("level"))
