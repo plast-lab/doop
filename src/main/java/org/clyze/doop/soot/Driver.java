@@ -20,7 +20,7 @@ class Driver {
     private Set<SootClass> _tmpClassGroup;
     private int _totalClasses;
     private int _cores;
-    private int _classSplit = 30;
+    private int _classSplit = 5;
 
     Driver(ThreadFactory factory, boolean ssa, int totalClasses) {
         _factory = factory;

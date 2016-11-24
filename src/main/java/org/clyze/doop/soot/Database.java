@@ -36,7 +36,8 @@ class Database implements Closeable, Flushable {
 
 
     private String addColumn(String column) throws IOException {
-        // Quote some special characters
+        // Quote some special characters.
+        // TODO: is this worth optimizing?
         String data = column
             .replaceAll("\"", "\\\\\"")
             .replaceAll("\n", "\\\\n")
@@ -47,13 +48,15 @@ class Database implements Closeable, Flushable {
 
     public void add(PredicateFile predicateFile, String arg, String... args) {
         try {
-            String line = addColumn(arg);
-            for (String col : args)
-                line = line + SEP + addColumn(col);
-            line = line + EOL;
+            StringBuilder line = new StringBuilder(addColumn(arg));
+            for (String col : args) {
+                line.append(SEP);
+                line.append(addColumn(col));
+            }
+            line.append(EOL);
             Writer writer = _writers.get(predicateFile);
             synchronized(predicateFile) {
-                writer.write(line);
+                writer.write(line.toString());
             }
         } catch(IOException exc) {
             throw new RuntimeException(exc);
