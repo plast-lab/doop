@@ -178,7 +178,7 @@ public class Main {
                 _outputDir = System.getProperty("user.dir");
             }
 
-            run();
+            produceFacts();
         }
         catch(Exception exc) {
             exc.printStackTrace();
@@ -186,7 +186,7 @@ public class Main {
         }
     }
 
-    private static void run() throws Exception {
+    private static void produceFacts() throws Exception {
         NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
@@ -296,7 +296,7 @@ public class Main {
         if (!_android) {
             /*
              * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
-             * to 1 (HIERARCHY) before calling run(). The following line is necessary to avoid
+             * to 1 (HIERARCHY) before calling produceFacts(). The following line is necessary to avoid
              * a runtime exception when running soot with java 1.8, however it leads to different
              * input fact generation thus leading to different analysis results
              */
@@ -363,11 +363,17 @@ public class Main {
             db.flush();
 
             if (_android)
-                driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
+                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
-                /* TODO: Reintroduce parallel soot jar */
-                //driver.doInParallel(classes);
-                driver.doInSequentialOrder(classes);
+                if (_classicFactGen)
+                    driver.doInSequentialOrder(classes);
+                else {
+                    scene.getOrMakeFastHierarchy();
+                    // avoids a later concurrent modification exception, since we may
+                    // later be asking soot to add phantom classes to the scene's hierarchy
+                    driver.doInSequentialOrder(classes);
+//                    driver.doInParallel(classes);
+                }
             db.close();
         }
     }

@@ -2,16 +2,22 @@ package org.clyze.doop.soot;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import soot.*;
 import soot.jimple.*;
 
 public class Representation {
-    private Map<SootMethod, String> _methodRepr = new HashMap<>();
-    private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
-    private Map<Trap, String> _trapRepr = new HashMap<>();
+    private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
+    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
     String classConstant(SootClass c) {
         return "<class " + c.getName() + ">";
+    }
+
+    String classConstant(String className) {
+        return "<class " + className + ">";
     }
 
     String classConstant(Type t) {
