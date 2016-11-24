@@ -11,7 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.List;
 
-class FactPrinter implements Runnable {
+class JimpleCodePrinter implements Runnable {
 
     private boolean _ssa;
     private boolean _toStdout;
@@ -20,7 +20,7 @@ class FactPrinter implements Runnable {
     private final String _suffix;
     private List<SootClass> _sootClasses;
 
-    FactPrinter(boolean ssa, boolean toStdout, String outputDir, PrintWriter writer, List<SootClass> sootClasses) {
+    JimpleCodePrinter(boolean ssa, boolean toStdout, String outputDir, PrintWriter writer, List<SootClass> sootClasses) {
         _ssa = ssa;
         _toStdout = toStdout;
         _outputDir = outputDir;
@@ -52,14 +52,14 @@ class FactPrinter implements Runnable {
                 }
 
                 if ( _toStdout ) {
-                    synchronized (_writer) {
+                    synchronized (c.getName().intern()) {
                         Printer.v().printTo(c, _writer);
                         _writer.flush();
                     }
                 }
                 else {
-                    _writer = new PrintWriter(new File(_outputDir, c.getName() + _suffix));
-                    synchronized (_writer) {
+                    synchronized (c.getName().intern()) {
+                        _writer = new PrintWriter(new File(_outputDir, c.getName() + _suffix));
                         Printer.v().printTo(c, _writer);
                         _writer.close();
                     }

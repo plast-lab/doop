@@ -15,7 +15,7 @@ import static org.clyze.doop.soot.PredicateFile.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
- * database. No traversal code here (see FactPrinter for that).
+ * database.
  */
 class FactWriter {
     private Database _db;

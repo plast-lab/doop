@@ -42,7 +42,7 @@ public class ThreadFactory {
         if (_makeClassGenerator)
             return new RunnableFactGenerator(_factWriter, _ssa, sootClasses);
         else
-            return new FactPrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
+            return new JimpleCodePrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
     }
 
     public FactWriter get_factWriter() {
