@@ -127,15 +127,15 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"MERGE_LIBRARY_OBJECTS_PER_METHOD",
-            name:"disable-merge-library-objects",
-            description:"Disable default policy of merging library (non-collection) objects of the same type per-method.",
+            name:"no-merge-library-objects",
+            description:"Disable the default policy of merging library (non-collection) objects of the same type per-method.",
             value:true,
             webUI:true,
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
             id:"CONTEXT_SENSITIVE_LIBRARY_ANALYSIS",
-            name:"enable-cs-library",
+            name:"cs-library",
             description:"Enable context-sensitive analysis for internal library objects.",
             value:false,
             webUI:true,
@@ -143,7 +143,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION",
-            name:"enable-reflection",
+            name:"reflection",
             description:"Enable logic for handling Java reflection.",
             value:false,
             webUI:true,
@@ -151,14 +151,14 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"ENABLE_REFLECTION_CLASSIC",
-            name:"enable-reflection-classic",
+            name:"reflection-classic",
             description:"Enable (classic subset of) logic for handling Java reflection.",
             value:false,
             webUI:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_SUBSTRING_ANALYSIS",
-            name:"enable-reflection-substring-analysis",
+            name:"reflection-substring-analysis",
             value:false,
             webUI:true,
             forPreprocessor: true,
@@ -166,7 +166,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_CONTEXT_SENSITIVITY",
-            name:"enable-reflection-context-sensitivity",
+            name:"reflection-context-sensitivity",
             value:false,
             webUI:true,
             forPreprocessor:true,
@@ -174,7 +174,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_USE_BASED_ANALYSIS",
-            name:"enable-reflection-use-based-analysis",
+            name:"reflection-use-based-analysis",
             value:false,
             webUI:true,
             forPreprocessor: true,
@@ -182,7 +182,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_INVENT_UNKNOWN_OBJECTS",
-            name:"enable-reflection-invent-unknown-objects",
+            name:"reflection-invent-unknown-objects",
             value:false,
             webUI:true,
             forPreprocessor:true,
@@ -190,7 +190,7 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"REFLECTION_REFINED_OBJECTS",
-            name:"enable-reflection-refined-objects",
+            name:"reflection-refined-objects",
             value:false,
             webUI:true,
             forPreprocessor:true,
@@ -222,9 +222,9 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"SSA",
-            name:"ssa",
-            description:"Use ssa transformation for input.",
-            value:false,
+            name:"no-ssa",
+            description:"Disable the default policy of using ssa transformation on input.",
+            value:true,
             forCacheID:true,
             webUI:true
         ),
@@ -405,6 +405,8 @@ class Doop {
     static String addonsPath
     static String analysesPath
 
+    static Map<String, AnalysisOption> defaultOptionsMap
+
     /**
      * Initializes Doop.
      * @param homePath   The doop home directory (sets the doopHome variable, required).
@@ -439,8 +441,10 @@ class Doop {
      * @return Map<String, AnalysisOptions>.
      */
     static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
+        defaultOptionsMap = [:]
         Map<String, AnalysisOption> options = [:]
         ANALYSIS_OPTIONS.each { AnalysisOption option ->
+            defaultOptionsMap.put(option.id, option)
             options.put(option.id, AnalysisOption.newInstance(option))
         }
         return options
@@ -552,7 +556,8 @@ class Doop {
         } else {
             // If the cl option has no arg and it's a boolean flag. Toggle the
             // default value of the respective analysis option
-            option.value = !option.value
+            def defaultOption = defaultOptionsMap.get(option.id)
+            option.value = !defaultOption.value
         }
     }
 }
