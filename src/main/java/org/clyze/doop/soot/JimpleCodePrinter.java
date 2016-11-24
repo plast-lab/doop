@@ -9,7 +9,7 @@ import soot.shimple.Shimple;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.Set;
 
 class JimpleCodePrinter implements Runnable {
 
@@ -18,9 +18,9 @@ class JimpleCodePrinter implements Runnable {
     private String _outputDir;
     private  PrintWriter _writer;
     private final String _suffix;
-    private List<SootClass> _sootClasses;
+    private Set<SootClass> _sootClasses;
 
-    JimpleCodePrinter(boolean ssa, boolean toStdout, String outputDir, PrintWriter writer, List<SootClass> sootClasses) {
+    JimpleCodePrinter(boolean ssa, boolean toStdout, String outputDir, PrintWriter writer, Set<SootClass> sootClasses) {
         _ssa = ssa;
         _toStdout = toStdout;
         _outputDir = outputDir;
@@ -48,6 +48,8 @@ class JimpleCodePrinter implements Runnable {
                             b = Shimple.v().newBody(b);
                             m.setActiveBody(b);
                         }
+
+                        DoopRenamer.transform(m.getActiveBody());
                     }
                 }
 

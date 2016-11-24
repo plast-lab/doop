@@ -382,7 +382,7 @@ public class Main {
             db.flush();
 
             if (_android)
-                driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
+                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
                 if (_classicFactGen)
                     driver.doInSequentialOrder(classes);
