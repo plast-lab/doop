@@ -24,7 +24,7 @@ class FactWriter {
 
     FactWriter(Database db) {
         _db = db;
-        _rep = new Representation();
+        _rep = Representation.getRepresentation();
         _varTypeMap = new ConcurrentHashMap<>();
     }
 

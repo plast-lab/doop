@@ -12,6 +12,16 @@ public class Representation {
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
+    // Make it a trivial singleton.
+    private static Representation _repr;
+    private Representation() {}
+
+    public static Representation getRepresentation() {
+        if (_repr == null)
+            _repr = new Representation();
+        return _repr;
+    }
+
     String classConstant(SootClass c) {
         return "<class " + c.getName() + ">";
     }
