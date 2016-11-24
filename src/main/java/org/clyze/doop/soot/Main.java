@@ -19,6 +19,7 @@ public class Main {
     private static List<String> _libraries = new ArrayList<>();
     private static String _outputDir = null;
     private static String _main = null;
+    private static boolean _classicFactGen = false;
     private static boolean _ssa = false;
     private static boolean _android = false;
     private static String _androidJars = null;
@@ -121,6 +122,9 @@ public class Main {
                         break;
                     case "--stdout":
                         _toStdout = true;
+                        break;
+                    case "--sequential":
+                        _classicFactGen = true;
                         break;
                     case "-h":
                     case "--help":
