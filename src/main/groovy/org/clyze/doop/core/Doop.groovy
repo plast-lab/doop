@@ -461,8 +461,42 @@ class Doop {
     }
 
     /**
-     * Overrides the values of the map (the options values) with the values contained in the properties.
-     * An option is set only if filtered (the supplied filter returns true for the option).
+     * Creates the analysis options by overriding the default options with the
+     * ones contained in the given CLI options. An option is set only if
+     * filtered (the supplied filter returns true for the option).
+     * @param cli - the CLI option accessor.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the CLI option accessor.
+     */
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        overrideOptionsWithCLI(options, cli, filter)
+        return options
+    }
+
+    /**
+     * Creates the analysis options by overriding the default options with the
+     * ones contained in the given properties and CLI options. A CLI option
+     * superseeds a property one. An option is set only if filtered (the
+     * supplied filter returns true for the option).
+     * @param props - the properties.
+     * @param cli - the CLI option accessor.
+     * @param filter - optional filter to apply before setting the option.
+     * @return the default analysis options overridden by the values contained in the properties.
+     */
+    static Map<String, AnalysisOption> overrideDefaultOptionsWithPropertiesAndCLI(Properties properties,
+                                                                                  OptionAccessor cli,
+                                                                                  Closure<Boolean> filter) {
+        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
+        overrideOptionsWithProperties(options, properties, filter)
+        overrideOptionsWithCLI(options, cli, filter)
+        return options
+    }
+
+    /**
+     * Overrides the values of the map (the options values) with the values
+     * contained in the properties. An option is set only if filtered (the
+     * supplied filter returns true for the option).
      * @param options - the options to override.
      * @param properties - the properties to use.
      * @param filter - the filter to apply.
@@ -472,12 +506,12 @@ class Doop {
                                               Properties properties,
                                               Closure<Boolean> filter) {
         if (properties && properties.size() > 0) {
-            properties.each { Map.Entry<String, String> entry->
-                AnalysisOption option = options.get(entry.key.toUpperCase())
-                if (option && entry.value && entry.value.trim().length() > 0) {
+            properties.each { key, value ->
+                AnalysisOption option = options.get(key.toUpperCase())
+                if (option && value && value.trim().length() > 0) {
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
-                        setOptionFromProperty(option, entry.value)
+                        setOptionFromProperty(option, value)
                     }
                 }
             }
@@ -485,56 +519,9 @@ class Doop {
     }
 
     /**
-     * Creates the analysis options by overriding the default options with the ones contained in the given properties.
-     * An option is set only if filtered (the supplied filter returns true for the option).
-     * @param props - the properties.
-     * @param filter - optional filter to apply before setting the option.
-     * @return the default analysis options overridden by the values contained in the properties.
-     */
-    static Map<String, AnalysisOption> overrideDefaultOptionsWithProperties(Properties properties, Closure<Boolean> filter) {
-        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
-        overrideOptionsWithProperties(options, properties, filter)
-        return options
-    }
-
-    /**
-     * Creates the analysis options by processing the given properties.
-     * An option is created only if filtered (the supplied filter returns true for the option).
-     * @param props - the properties.
-     * @param filter - optional filter to apply before setting the option.
-     * @return the analysis options constructed by the values contained in the properties.
-     */
-    static Map<String, AnalysisOption> createOptionsFromProperties(Properties properties, Closure<Boolean> filter) {
-        Map<String, AnalysisOption> options = [:]
-        if (properties && properties.size() > 0) {
-            ANALYSIS_OPTIONS.each { AnalysisOption option ->
-                String property = properties.getProperty(option.id.toLowerCase())?.trim()
-                if (property) {
-                    boolean filtered = filter ? filter.call(option) : true
-                    if (filtered) {
-                        AnalysisOption o = AnalysisOption.newInstance(option)
-                        setOptionFromProperty(o, property)
-                        options.put(o.id, o)
-                    }
-                }
-            }
-        }
-        return options
-    }
-
-    static void setOptionFromProperty(AnalysisOption option, String property) {
-        if (option.id == "DYNAMIC") {
-            option.value = property.split().collect { String s -> s.trim() }
-        } else if (option.argName) {
-            option.value = property
-        } else {
-            option.value = property.toBoolean()
-        }
-    }
-
-    /**
-     * Overrides the values of the map (the options values) with the values contained in the CLI options.
-     * An option is set only if filtered (the supplied filter returns true for the option).
+     * Overrides the values of the map (the options values) with the values
+     * contained in the CLI options. An option is set only if filtered (the
+     * supplied filter returns true for the option).
      * @param options - the options to override.
      * @param properties - the properties to use.
      * @param filter - the filter to apply.
@@ -556,51 +543,29 @@ class Doop {
         }
     }
 
-    /**
-     * Creates the analysis options by overriding the default options with the ones contained in the given CLI options.
-     * An option is set only if filtered (the supplied filter returns true for the option).
-     * @param cli - the CLI option accessor.
-     * @param filter - optional filter to apply before setting the option.
-     * @return the default analysis options overridden by the values contained in the CLI option accessor.
-     */
-    static Map<String, AnalysisOption> overrideDefaultOptionsWithCLI(OptionAccessor cli, Closure<Boolean> filter) {
-        Map<String, AnalysisOption> options = createDefaultAnalysisOptions()
-        overrideOptionsWithCLI(options, cli, filter)
-        return options
-    }
-
-    static Map<String, AnalysisOption> createOptionsFromCLI(OptionAccessor cli, Closure<Boolean> filter) {
-        Map<String, AnalysisOption> options = [:]
-        ANALYSIS_OPTIONS.each { AnalysisOption option ->
-            String optionName = option.name
-            if (option.name) {
-                def optionValue = cli.getProperty(optionName)
-                if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
-                    boolean filtered = filter ? filter.call(option) : true
-                    if (filtered) {
-                        AnalysisOption o = AnalysisOption.newInstance(option)
-                        setOptionFromCLI(o, cli)
-                        options.put(o.id, o)
-                    }
-                }
-            }
+    static void setOptionFromProperty(AnalysisOption option, String property) {
+        if (option.id == "DYNAMIC") {
+            option.value = property.split().collect { String s -> s.trim() }
+        } else if (option.argName) {
+            option.value = property
+        } else {
+            option.value = property.toBoolean()
         }
-        return options
     }
 
     static void setOptionFromCLI(AnalysisOption option, OptionAccessor cli) {
-        //Obscure cli builder feature: to get the value of a cl option as a List, you need to append an s to its short name
+        // NOTE: Obscure cli builder feature: to get the value of a cl option
+        // as a List, you need to append an s to its short name
         if (option.id == "DYNAMIC") {
-            //the short name of the DYNAMIC option is d, so we invoke ds
             option.value = cli.ds
         }
         else if (option.argName) {
-            //if the cl option has an arg, the value of this arg defines the value of the respective
-            // analysis option
+            // If the cl option has an arg, its value defines the value of the
+            // respective analysis option
             option.value = cli[(option.name)]
         } else {
-            //the cl option has no arg and thus it is a boolean flag, toggling the default value of
-            // the respective analysis option
+            // If the cl option has no arg and it's a boolean flag. Toggle the
+            // default value of the respective analysis option
             option.value = !option.value
         }
     }
