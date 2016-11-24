@@ -20,7 +20,7 @@ class Driver {
     private Set<SootClass> _tmpClassGroup;
     private int _totalClasses;
     private int _cores;
-    private int _classSplit = 3;
+    private int _classSplit = 30;
 
     Driver(ThreadFactory factory, boolean ssa, int totalClasses) {
         _factory = factory;
@@ -68,7 +68,7 @@ class Driver {
         _classCounter++;
         _tmpClassGroup.add(curClass);
 
-        if ((_classCounter % _classSplit == 0) || (_classCounter + 1 == _totalClasses)) {
+        if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
             Runnable runnable = _factory.newRunnable(_tmpClassGroup);
             _executor.execute(runnable);
             _tmpClassGroup = new HashSet<>();

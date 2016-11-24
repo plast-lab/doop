@@ -13,7 +13,7 @@ class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
 
-    private Map<PredicateFile, Writer> _writers;
+    private final Map<PredicateFile, Writer> _writers;
 
     Database(File directory) throws IOException {
         this._writers = new EnumMap<>(PredicateFile.class);
@@ -35,26 +35,25 @@ class Database implements Closeable, Flushable {
     }
 
 
-    private void addColumn(Writer writer, String column) throws IOException {
+    private String addColumn(String column) throws IOException {
         // Quote some special characters
         String data = column
             .replaceAll("\"", "\\\\\"")
             .replaceAll("\n", "\\\\n")
             .replaceAll("\t", "\\\\t");
-
-        writer.write(data);
+        return data;
     }
 
 
     public void add(PredicateFile predicateFile, String arg, String... args) {
         try {
+            String line = addColumn(arg);
+            for (String col : args)
+                line = line + SEP + addColumn(col);
+            line = line + EOL;
+            Writer writer = _writers.get(predicateFile);
             synchronized(predicateFile) {
-                Writer writer = _writers.get(predicateFile);
-                addColumn(writer, arg);
-                for (String col : args)
-                    addColumn(writer.append(SEP), col);
-
-                writer.write(EOL);
+                writer.write(line);
             }
         } catch(IOException exc) {
             throw new RuntimeException(exc);
