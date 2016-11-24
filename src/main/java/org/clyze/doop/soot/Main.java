@@ -373,9 +373,8 @@ public class Main {
                     driver.doInSequentialOrder(classes);
                 else {
                     scene.getOrMakeFastHierarchy();
-                    // avoids a later concurrent modification exception, since we may
+                    // avoids a concurrent modification exception, since we may
                     // later be asking soot to add phantom classes to the scene's hierarchy
-//                    driver.doInSequentialOrder(classes);
                     driver.doInParallel(classes);
                 }
             db.close();

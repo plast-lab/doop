@@ -13,26 +13,24 @@ class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
 
-    private File directory;
-    private Map<PredicateFile, Writer> writers;
+    private Map<PredicateFile, Writer> _writers;
 
     Database(File directory) throws IOException {
-        this.directory = directory;
-        this.writers = new EnumMap<>(PredicateFile.class);
+        this._writers = new EnumMap<>(PredicateFile.class);
 
         for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
-            writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
+            _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
     }
 
     @Override
     public void close() throws IOException {
-        for(Writer w: writers.values())
+        for(Writer w: _writers.values())
             w.close();
     }
 
     @Override
     public void flush() throws IOException {
-        for(Writer w: writers.values())
+        for(Writer w: _writers.values())
             w.flush();
     }
 
@@ -51,7 +49,7 @@ class Database implements Closeable, Flushable {
     public void add(PredicateFile predicateFile, String arg, String... args) {
         try {
             synchronized(predicateFile) {
-                Writer writer = writers.get(predicateFile);
+                Writer writer = _writers.get(predicateFile);
                 addColumn(writer, arg);
                 for (String col : args)
                     addColumn(writer.append(SEP), col);

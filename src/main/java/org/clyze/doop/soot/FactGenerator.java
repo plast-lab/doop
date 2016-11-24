@@ -205,7 +205,7 @@ class FactGenerator implements Runnable {
                 b = Shimple.v().newBody(b);
                 m.setActiveBody(b);
             }
-            
+
             DoopRenamer.transform(b);
             generate(m, b, session);
 

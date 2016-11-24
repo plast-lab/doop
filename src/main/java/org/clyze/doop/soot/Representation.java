@@ -8,9 +8,9 @@ import soot.*;
 import soot.jimple.*;
 
 public class Representation {
-    private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
-    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
-    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
+    private Map<SootMethod, String> _methodRepr = new HashMap<>();
+    private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
+    private Map<Trap, String> _trapRepr = new HashMap<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;
