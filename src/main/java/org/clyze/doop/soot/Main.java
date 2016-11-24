@@ -19,13 +19,10 @@ public class Main {
     private static List<String> _libraries = new ArrayList<>();
     private static String _outputDir = null;
     private static String _main = null;
-    private static boolean _classicFactGen = false;
     private static boolean _ssa = false;
     private static boolean _android = false;
     private static String _androidJars = null;
     private static boolean _allowPhantom = false;
-    private static boolean _useOriginalNames = false;
-    private static boolean _keepLineNumber = false;
     private static boolean _onlyApplicationClassesFactGen = false;
     private static ClassFilter applicationClassFilter;
     private static String appRegex = "**";
@@ -116,23 +113,14 @@ public class Main {
                     case "--allow-phantom":
                         _allowPhantom = true;
                         break;
-                    case "--use-original-names":
-                        _useOriginalNames = true;
-                        break;
                     case "--only-application-classes-fact-gen":
                         _onlyApplicationClassesFactGen = true;
-                        break;
-                    case "--keep-line-number":
-                        _keepLineNumber = true;
                         break;
                     case "--bytecode2jimple":
                         _bytecode2jimple = true;
                         break;
                     case "--stdout":
                         _toStdout = true;
-                        break;
-                    case "--sequential":
-                        _classicFactGen = true;
                         break;
                     case "-h":
                     case "--help":
@@ -146,9 +134,7 @@ public class Main {
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
                         System.err.println("  -lsystem                              Find classes in default system classes.");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
-                        System.err.println("  --use-original-names                  Use original (source code) local variable names");
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
-                        System.err.println("  --keep-line-number                    Keep line number information for statements");
 
                         System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
@@ -278,14 +264,9 @@ public class Main {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
-        if (_useOriginalNames) {
-            soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
-            soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
-        }
-
-        if (_keepLineNumber) {
-            soot.options.Options.v().set_keep_line_number(true);
-        }
+        soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
+        soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
+        soot.options.Options.v().set_keep_line_number(true);
 
         if (_android) {
             assert androidClasses != null;
@@ -384,12 +365,9 @@ public class Main {
             if (_android)
                 driver.doInSequentialOrder(dummyMain, classes, writer, _ssa);
             else
-                if (_classicFactGen)
-                    driver.doInSequentialOrder(classes);
-                else
-                    driver.doInSequentialOrder(classes);
-                    /* TODO: Reintroduce parallel soot jar */
-                     //driver.doInParallel(classes);
+                /* TODO: Reintroduce parallel soot jar */
+                //driver.doInParallel(classes);
+                driver.doInSequentialOrder(classes);
             db.close();
         }
     }

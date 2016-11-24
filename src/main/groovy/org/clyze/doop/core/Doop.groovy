@@ -305,13 +305,6 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"USE_ORIGINAL_NAMES",
-            name:"use-original-names",
-            value:false,
-            forCacheID:true,
-            webUI:true
-        ),
-        new AnalysisOption<Boolean>(
             id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
             name:"only-application-classes-fact-gen",
             value:false,
@@ -343,13 +336,6 @@ class Doop {
             webUI: true,
             forCacheID: true
         ),
-        new AnalysisOption<Boolean>(
-             id:"FACT_GENERATION_CLASSIC",
-             name:"fact-gen-classic",
-             description:"Flag to enable the original sequential fact generation",
-             value:false,
-             webUI:true
-         ),
 
         /* Start of non-standard flags */
         new AnalysisOption<Boolean>(
