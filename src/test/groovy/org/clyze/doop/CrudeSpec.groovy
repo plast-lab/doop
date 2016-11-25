@@ -26,7 +26,7 @@ class CrudeSpec extends Specification {
 		scenario                                  | expVPT   | expFPT | expCGE | expPolyCalls | expFailCasts
 		"antlr-insensitive-tamiflex.properties"   | 2558501  | 272062 | 58659  | 1993         | 1139
 		"antlr-1call-tamiflex.properties"         | 2065468  | 195205 | 56576  | 1914         | 891
-		"antlr-1obj+H-tamiflex.properties"        | 1384593  | 108610 | 55054  | 1806         | 847
+		"antlr-1objH-tamiflex.properties"         | 1384593  | 108610 | 55054  | 1806         | 847
 		"antlr-insensitive-reflection.properties" | 11409446 | 908842 | 64454  | 2083         | 1295
 	}
 
