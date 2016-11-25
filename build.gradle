@@ -82,9 +82,7 @@ task generateFiles(type: JavaExec) {
     group = 'Other'
     main = 'org.clyze.doop.FileGenerator'
     classpath = sourceSets.main.runtimeClasspath
-    args = [
-        projectDir
-    ]
+    args = [ projectDir ]
 }
 
 task bytecode2jimple(type: JavaExec) {
@@ -104,7 +102,7 @@ applicationDistribution.from(file("$projectDir/logic")) {
 }
 
 applicationDistribution.from(projectDir) {
-    include 'doop.properties', 'LICENSE'
+    include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
 
 
@@ -122,13 +120,9 @@ task deepdoop(type: JavaExec) {
     main = 'org.clyze.deepdoop.Main'
     classpath = sourceSets.main.runtimeClasspath
     enableAssertions = true
-    if(project.hasProperty("args")) {
+    if (project.hasProperty("args")) {
         args project.property("args").split()
     }
-}
-
-startScripts {
-    dependsOn generateFiles
 }
 
 compileJava {
