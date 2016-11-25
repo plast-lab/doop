@@ -40,7 +40,7 @@
       argument of newProxyInstance() via the VarPointsTo relation:
       whenever the interfaces argument can contain the class object of
       some interface I, then 'c' is the constructor of the proxy class
-      of I, e.g. 'Proxy$for$I' and this the result of
+      of I, e.g. 'Proxy$for$I' and thus the result of
       'c.newInstance(h)' will be an object belonging to
       'Proxy$for$I'. */
 
