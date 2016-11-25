@@ -74,7 +74,8 @@ dependencies {
     // DeepDoop
     antlr   'org.antlr:antlr4:4.5.1-1'
     compile 'org.antlr:antlr4-runtime:4.5.1-1'
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12',
+                'org.spockframework:spock-core:1.0-groovy-2.4'
 }
 
 task generateFiles(type: JavaExec) {

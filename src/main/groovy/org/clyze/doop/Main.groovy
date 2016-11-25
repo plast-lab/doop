@@ -18,6 +18,9 @@ class Main {
     private static final Log logger = LogFactory.getLog(Main)
     private static final int DEFAULT_TIMEOUT = 180 // 3 hours
 
+    // Allow access to the analysis object from external code
+    static Analysis analysis
+
     static void main(String[] args) {
 
         Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
@@ -70,7 +73,7 @@ class Main {
             }
 
             String userTimeout
-            Analysis analysis
+            analysis
             if (cli['p']) {
                 //create analysis from the properties file & the cli options
                 String file = cli['p'] as String
