@@ -123,14 +123,11 @@ TypeForReturnValue(?type, ?ret, ?invocation) <-
    MethodInvocationInfo(?invocation, ?type, ?ret),
    !VarIsCast(?ret).
 
-ValueTaintedFromValue(?newvalue, ?hctx, ?baseObj) <- 
-   BaseValueTaintedFromParamValue(?newvalue, ?hctx, ?baseObj),
-   ?newvalue != ?baseObj.
+// Taint transfer through aliasing
 
-VarPointsTo(?hctx, ?newvalue, ?ctx, ?var)
- <- 
-   VarPointsToOpt(?ctx, ?var, ?hctx, ?existingvalue),
-   ValueTaintedFromValue(?newvalue, ?hctx, ?existingvalue).
+MethodInvocation:Base[?invocation] = ?base <-
+  VirtualMethodInvocation:Base[?invocation] = ?base ;
+  SpecialMethodInvocation:Base[?invocation] = ?base.
 
 TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) <-
   MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
@@ -142,13 +139,21 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) <-
   MethodInvocation:Base[?invocation] = ?base,
   !AssignReturnValue[?invocation] = _.
 
-MethodInvocation:Base[?invocation] = ?base <-
-  VirtualMethodInvocation:Base[?invocation] = ?base ;
-  SpecialMethodInvocation:Base[?invocation] = ?base.
+
+#ifdef ALIASING_BY_TAINTED_VALUES
+ValueTaintedFromValue(?newvalue, ?hctx, ?baseObj) <- 
+   BaseValueTaintedFromParamValue(?newvalue, ?hctx, ?baseObj),
+   ?newvalue != ?baseObj.
+
+VarPointsTo(?hctx, ?newvalue, ?ctx, ?var)
+ <- 
+   VarPointsToOpt(?ctx, ?var, ?hctx, ?existingvalue),
+   ValueTaintedFromValue(?newvalue, ?hctx, ?existingvalue).
 
 XYZ(?hctx, ?existingvalue, ?ctx, ?param) <-
   ParamTaintTransferredToBase(?param, ?ctx, ?base),
   VarPointsTo(?hctx, ?existingvalue, ?ctx, ?base).
+
 
 TaintedValueTransferred(?value, ?type, ?newvalue),
 BaseValueTaintedFromParamValue(?newvalue, ?existinghctx, ?existingvalue),
@@ -157,6 +162,20 @@ TaintedContextValue(?existinghctx, ?newvalue) <-
   TaintedVarPointsTo(_, ?value, ?ctx, ?param),
   XYZ(?existinghctx, ?existingvalue, ?ctx, ?param).
 
+#else
+XYZ2(?type, ?hctx, ?heap, ?ctx, ?param) <-
+  ParamTaintTransferredToBase(?param, ?ctx, ?base),
+  VarPointsTo(?hctx, ?value, ?ctx, ?base),
+  Value:Heap[?value] = ?heap,
+  Value:Type[?value] = ?type.
+
+TaintedValueTransferred(?value, ?type, ?newvalue),
+VarPointsTo(?hctx, ?newvalue, ?ctx, ?var),
+TaintedContextValue(?hctx, ?newvalue) <-
+   XYZ2(?type, ?oldhctx, ?oldvalue, ?ctx, ?from),
+   TaintedVarPointsTo(?hctx, ?value, ?ctx, ?from),
+   AssignNormalHeapAllocation(?oldvalue, ?var, _).
+#endif
 
 /**
  * Sanitization TODO
