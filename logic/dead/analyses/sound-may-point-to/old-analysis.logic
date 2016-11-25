@@ -992,12 +992,12 @@ LibraryCollectionStoreOperation(?invo) <-
    VirtualMethodInvocation:SimpleName[?invo] = "set"; 
    VirtualMethodInvocation:SimpleName[?invo] = "put".
 LibraryCollectionLoadOperation(?invo) <-
-   VirtualMethodInvocation:SimpleName[?invo] = "peek",
-   VirtualMethodInvocation:SimpleName[?invo] = "pop",
-   VirtualMethodInvocation:SimpleName[?invo] = "elementAt",
-   VirtualMethodInvocation:SimpleName[?invo] = "firstElement",
-   VirtualMethodInvocation:SimpleName[?invo] = "lastElement",
-   VirtualMethodInvocation:SimpleName[?invo] = "remove",
+   VirtualMethodInvocation:SimpleName[?invo] = "peek";
+   VirtualMethodInvocation:SimpleName[?invo] = "pop";
+   VirtualMethodInvocation:SimpleName[?invo] = "elementAt";
+   VirtualMethodInvocation:SimpleName[?invo] = "firstElement";
+   VirtualMethodInvocation:SimpleName[?invo] = "lastElement";
+   VirtualMethodInvocation:SimpleName[?invo] = "remove";
    VirtualMethodInvocation:SimpleName[?invo] = "get". // TODO: better match in future
 
 StoreCollection:From(?insn, ?from) <-
@@ -2137,7 +2137,7 @@ _ConvertMustToMayContext[?mustCtx] = ?ctx <-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth[] = 4 <- .
+MaxMayContextDepth[] = 5 <- .
 
 InitialRootMethodForMayAnalysis(?meth) <-
    Reachable(?meth), // just for benchmarking against unsound VPT analysis
