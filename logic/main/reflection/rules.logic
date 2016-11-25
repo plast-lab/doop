@@ -1135,12 +1135,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
 #endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
 
 
-ReflectiveValue(?value) <- TempHeap(?heap), Value:byHeap[?heap] = ?value.
+ReflectiveValue(?value) <- TempReflectiveHeap(?heap), Value:byHeap[?heap] = ?value.
 
-#define TempDelta(invocation, classType, heapType, heapStr) \
-   MockHeapConsMacro(heapStr, heapType, heap), \
-   TempHeap(heap), \
-   ReflectiveAllocation[invocation, classType] = heap
+#define CreateReflectiveAllocationMacro(invocation, heapType, heapStr) \
+   MockHeapConsMacro(heapStr, heapType, ?heap), \
+   TempReflectiveHeap(?heap), \
+   ReflectiveAllocation[invocation, heapType] = ?heap
 
 OptMethodInvocation:Signature(?invocation, ?sig) <-
    MethodInvocation:Signature[?invocation] = ?sig.
@@ -1149,8 +1149,8 @@ OptMethodInvocation:Signature(?invocation, ?sig) <-
  * NOTE "?sig" is reserved for this macro
  */
 #define VirtualMethodMacro(invocation, to, from, sigStr) \
-   Method:Id(sig:sigStr), \
-   OptMethodInvocation:Signature(invocation, sig), \
+   Method:Id(?sig:sigStr), \
+   OptMethodInvocation:Signature(invocation, ?sig), \
    AssignReturnValue[invocation] = to, \
    VirtualMethodInvocation:Base[invocation] = from
 
@@ -1190,18 +1190,18 @@ java:lang:Class:getSuperclass(?to, ?from) <-
 // (YS) Old style: Makes no sense to me. The type should not be there. This is just
 // allocating too many useless arrays. Changed it throughout.
 /*
-TempDelta(?invocation, ?type, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getInterfaces(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class[] getInterfaces()>"),
   ReferenceType(?type),
   ReflectiveArrayMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr, "java.lang.Class[]").
 */
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getInterfaces(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class[] getInterfaces()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.Class[]").
 
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getMethods(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method[] getMethods()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.reflect.Method[]").
@@ -1210,7 +1210,7 @@ java:lang:Class:getMethod(?to, ?param, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>"),
   ActualParam[0, ?invocation] = ?param.
 
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getDeclaredMethods(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.reflect.Method[]").
@@ -1219,7 +1219,7 @@ java:lang:Class:getDeclaredMethod(?to, ?param, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>"),
   ActualParam[0, ?invocation] = ?param.
 
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getConstructors(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getConstructors()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.reflect.Constructor[]").
@@ -1227,7 +1227,7 @@ java:lang:Class:getConstructors(?invocation, ?to, ?from) <-
 java:lang:Class:getConstructor(?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor getConstructor(java.lang.Class[])>").
 
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.reflect.Constructor[]").
@@ -1235,7 +1235,7 @@ java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from) <-
 java:lang:Class:getDeclaredConstructor(?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>").
 
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getFields(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field[] getFields()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.reflect.Field[]").
@@ -1244,7 +1244,7 @@ java:lang:Class:getField(?to, ?param, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>"),
   ActualParam[0, ?invocation] = ?param.
 
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:Class:getDeclaredFields(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayHeapStr, "java.lang.reflect.Field[]").
@@ -1254,7 +1254,7 @@ java:lang:Class:getDeclaredField(?to, ?param, ?from) <-
   ActualParam[0, ?invocation] = ?param.
 
 // TODO Better filtering of class types
-TempDelta(?invocation, ?type, ?type, ?heapStr),
+CreateReflectiveAllocationMacro(?invocation, ?type, ?heapStr),
 java:lang:Class:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
   ClassType(?type), Type:Id(?type:?typeStr),
@@ -1266,7 +1266,7 @@ java:lang:Class:newInstance(?invocation, ?to, ?from) <-
   ?heapStr = "<reflective Class.newInstance/" + ?typeStr + ">".
 #endif
 
-TempDelta(?invocation, ?type, ?type, ?heapStr),
+CreateReflectiveAllocationMacro(?invocation, ?type, ?heapStr),
 java:lang:Class:getClassLoader(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.ClassLoader getClassLoader()>"),
   // Use a single dummy value for any ClassLoader
@@ -1274,7 +1274,7 @@ java:lang:Class:getClassLoader(?invocation, ?to, ?from) <-
   ReferenceType(?type),
   ?heapStr = "<reflective dummy ClassLoader>".
 
-TempDelta(?invocation, ?type, ?type, ?heapStr),
+CreateReflectiveAllocationMacro(?invocation, ?type, ?heapStr),
 java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.ClassLoader: java.net.URL getResource(java.lang.String)>"),
   // Use a single dummy value for any URL resource
@@ -1285,7 +1285,7 @@ java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
 /**
  * TODO Handle version for multiarray? If yes, add to ReifiedClass as well
  */
-TempDelta(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
   Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   MethodInvocation:Signature[?invocation] = ?sig,
@@ -1296,7 +1296,7 @@ java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
   ReflectiveArrayMacro(?invocation, ?arrayType, ?arrayType, ?arrayHeapStr, "").
 
 // TODO Better filtering of class types
-TempDelta(?invocation, ?type, ?type, ?heapStr),
+CreateReflectiveAllocationMacro(?invocation, ?type, ?heapStr),
 java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
   ClassType(?type), Type:Id(?type:?typeStr),
@@ -1372,7 +1372,6 @@ ReifiedConstructor[?signature] = ?value
 MockHeapConsMacro(?id, ?type, ?value),
 ReifiedMethod[?signature] = ?value
 <-
-   string:length[?strSignature] < 4000,
    Method:SimpleName[?signature] = ?simplename,
    ?simplename != "<init>", ?simplename != "<clinit>",
    Method:Id(?signature:?strSignature),

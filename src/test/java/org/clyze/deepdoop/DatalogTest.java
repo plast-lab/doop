@@ -32,6 +32,7 @@ public class DatalogTest {
 		test(filename, null);
 	}
 	public void test(String filename, Error expectedErrorId) throws IOException {
+		filename = "/deepdoop/" + filename;
 		try {
 			ParseTree tree = open(filename).program();
 			_walker.walk(_listener, tree);
@@ -62,117 +63,117 @@ public class DatalogTest {
 
 	@Test
 	public void testT1() throws IOException {
-		test("/t1.logic");
+		test("t1.logic");
 	}
 	@Test
 	public void testT2() throws IOException {
-		test("/t2.logic");
+		test("t2.logic");
 	}
 	@Test
 	public void testT3() throws IOException {
-		test("/t3.logic");
+		test("t3.logic");
 	}
 	@Test
 	public void testT4() throws IOException {
-		test("/t4.logic");
+		test("t4.logic");
 	}
 	@Test
 	public void testT5() throws IOException {
-		test("/t5.logic");
+		test("t5.logic");
 	}
 	@Test
 	public void testT6() throws IOException {
-		test("/t6.logic");
+		test("t6.logic");
 	}
 	@Test
 	public void testT7() throws IOException {
-		test("/t7.logic");
+		test("t7.logic");
 	}
 	@Test
 	public void testT8() throws IOException {
-		test("/t8.logic");
+		test("t8.logic");
 	}
 	@Test
 	public void testT9() throws IOException {
-		test("/t9.logic");
+		test("t9.logic");
 	}
 	@Test
 	public void testSample() throws IOException {
-		test("/sample.logic");
+		test("sample.logic");
 	}
 
 	@Test
 	public void test_Fail1() throws IOException {
-		test("/fail1.logic", Error.DEP_CYCLE);
+		test("fail1.logic", Error.DEP_CYCLE);
 	}
 	@Test
 	public void test_Fail2() throws IOException {
-		test("/fail2.logic", Error.DEP_GLOBAL);
+		test("fail2.logic", Error.DEP_GLOBAL);
 	}
 	@Test
 	public void test_Fail3() throws IOException {
-		test("/fail3.logic", Error.NO_DECL);
+		test("fail3.logic", Error.NO_DECL);
 	}
 	@Test
 	public void test_Fail4() throws IOException {
-		test("/fail4.logic", Error.NO_DECL);
+		test("fail4.logic", Error.NO_DECL);
 	}
 	@Test
 	public void test_Fail5() throws IOException {
-		test("/fail5.logic", Error.CMD_RULE);
+		test("fail5.logic", Error.CMD_RULE);
 	}
 	@Test
 	public void test_Fail6() throws IOException {
-		test("/fail6.logic", Error.CMD_CONSTRAINT);
+		test("fail6.logic", Error.CMD_CONSTRAINT);
 	}
 	@Test
 	public void test_Fail7() throws IOException {
-		test("/fail7.logic", Error.CMD_DIRECTIVE);
+		test("fail7.logic", Error.CMD_DIRECTIVE);
 	}
 	@Test
 	public void test_Fail8() throws IOException {
-		test("/fail8.logic", Error.CMD_NO_DECL);
+		test("fail8.logic", Error.CMD_NO_DECL);
 	}
 	@Test
 	public void test_Fail9() throws IOException {
-		test("/fail9.logic", Error.CMD_NO_IMPORT);
+		test("fail9.logic", Error.CMD_NO_IMPORT);
 	}
 
 
 	@Test
 	public void testA01() throws IOException {
-		test("/analysis/cfg-tests.logic");
+		test("analysis/cfg-tests.logic");
 	}
 	@Test
 	public void testA02() throws IOException {
-		test("/analysis/context-insensitive-declarations.logic");
+		test("analysis/context-insensitive-declarations.logic");
 	}
 	@Test
 	public void testA03() throws IOException {
-		test("/analysis/context-insensitive.logic");
+		test("analysis/context-insensitive.logic");
 	}
 	@Test
 	public void testA04() throws IOException {
-		test("/analysis/facts-declarations.logic");
+		test("analysis/facts-declarations.logic");
 	}
 	@Test
 	public void testA05() throws IOException {
-		test("/analysis/flow-insensitivity-declarations.logic");
+		test("analysis/flow-insensitivity-declarations.logic");
 	}
 	@Test
 	public void testA06() throws IOException {
-		test("/analysis/statistics-simple.logic");
+		test("analysis/statistics-simple.logic");
 	}
 	@Test
 	public void testA07() throws IOException {
-		test("/analysis/tamiflex-declarations.logic");
+		test("analysis/tamiflex-declarations.logic");
 	}
 	@Test
 	public void testA08() throws IOException {
-		test("/analysis/tamiflex-fact-declarations.logic");
+		test("analysis/tamiflex-fact-declarations.logic");
 	}
 	@Test
 	public void testA09() throws IOException {
-		test("/analysis/tamiflex.logic");
+		test("analysis/tamiflex.logic");
 	}
 }

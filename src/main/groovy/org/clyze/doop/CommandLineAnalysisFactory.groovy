@@ -10,8 +10,8 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'
-    static final String INPUTS           = 'The jar files to analyze. Separate multiple jars with a space. ' +
-                                           ' If the argument is a directory, all its *.jar files will be included.'
+    static final String INPUTS           = 'The input files to analyze. Separate multiple files with a space. ' +
+                                           'If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
     static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
@@ -50,15 +50,23 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         String name = cli.a ?: props.getProperty("analysis")
 
         //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
-        List<String> inputs = cli.is
-        if (!inputs) {
-            inputs = props.getProperty("jar").split().collect { String s -> s.trim() }
-            //The inputFiles, if relative, are being resolved via the propsBaseDir
+        List<String> inputs
+        if (!cli.is) {
+            inputs = props.getProperty("inputFiles").split().collect { String s -> s.trim() }
+            // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
             inputs = inputs.collect { String input ->
+                try {
+                    // If it is not a valid URL an exception is thrown
+                    URL url = new URL(input)
+                    return input
+                }
+                catch (e) {}
                 File f = new File(input)
                 return f.isAbsolute() ? input : new File(propsBaseDir, input).getCanonicalFile().getAbsolutePath()
             }
         }
+        else
+            inputs = cli.is
 
         //Get the optional id of the analysis
         String id = cli.id ?: props.getProperty("id")
@@ -158,10 +166,10 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                     id =
 
                     #
-                    #jar (file)
+                    #inputFiles (file(s))
                     #$INPUTS
                     #
-                    jar =
+                    inputFiles =
 
                     #
                     #level (string)
