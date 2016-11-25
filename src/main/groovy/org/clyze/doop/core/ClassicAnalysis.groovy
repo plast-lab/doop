@@ -267,7 +267,7 @@ class ClassicAnalysis extends Analysis {
             .transaction()
             .executeFile("${safename}-delta.logic")
 
-        if (options.ENABLE_REFLECTION.value) {
+        if (options.REFLECTION.value) {
             cpp.preprocess("${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
             connector.queue()

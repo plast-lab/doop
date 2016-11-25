@@ -142,7 +142,7 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"ENABLE_REFLECTION",
+            id:"REFLECTION",
             name:"reflection",
             description:"Enable logic for handling Java reflection.",
             value:false,
@@ -150,7 +150,7 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"ENABLE_REFLECTION_CLASSIC",
+            id:"REFLECTION_CLASSIC",
             name:"reflection-classic",
             description:"Enable (classic subset of) logic for handling Java reflection.",
             value:false,

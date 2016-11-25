@@ -7,7 +7,7 @@
 #include "string-constants.logic"
 #include "threads.logic"
 
-#if defined(ENABLE_REFLECTION)
+#if defined(REFLECTION)
 #include "reflection/rules.logic" 
 #endif
 

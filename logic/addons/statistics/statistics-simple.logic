@@ -160,7 +160,7 @@ Stats:Simple:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
 /***************************************************
  * Reflection
  ***************************************************/
-#if defined(ENABLE_REFLECTION)
+#if defined(REFLECTION)
 Stats:Simple:Reflection:InsensArrayIndexPointsTo(?value, ?basevalue),
 Stats:Simple:Reflection:ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue) <-
    ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue),
