@@ -19,10 +19,12 @@ TaintedVarTaintedFromVar(?toCtx, ?to, ?hctx, ?value, ?type) <-
    TaintedVarPointsTo(?hctx, ?value, ?fromCtx, ?from).
 
 TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedContextValue(?hctx, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
   TaintedVarTaintedFromVar(?toCtx, ?to, ?hctx, ?value, ?type).
 
 TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedContextValue(?hctx, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
    VarIsTaintedFromValue(?type, ?hctx, ?value, ?toCtx, ?to).
    
@@ -96,7 +98,7 @@ VarIsTaintedFromValue(?componentType, ?basehctx, ?basevalue, ?ctx, ?to) <-
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
    Value:Type[?basevalue] = ?arrayType,
    ComponentType[?arrayType] = ?componentType,
-   TaintedValue(?basevalue).
+   TaintedContextValue(?basehctx, ?basevalue).
 
 Iaminterested7(?type, ?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
@@ -149,7 +151,8 @@ XYZ(?hctx, ?existingvalue, ?ctx, ?param) <-
   VarPointsTo(?hctx, ?existingvalue, ?ctx, ?base).
 
 TaintedValueTransferred(?value, ?type, ?newvalue),
-BaseValueTaintedFromParamValue(?newvalue, ?existinghctx, ?existingvalue) <-
+BaseValueTaintedFromParamValue(?newvalue, ?existinghctx, ?existingvalue),
+TaintedContextValue(?existinghctx, ?newvalue) <-
   Value:Type[?existingvalue] = ?type,
   TaintedVarPointsTo(_, ?value, ?ctx, ?param),
   XYZ(?existinghctx, ?existingvalue, ?ctx, ?param).
@@ -196,6 +199,7 @@ LeakingTaintedInformation(?ctx, ?invocation, ?hctx, ?source) <-
  */
 RecordMacro(?ctx, ?value, ?hctx),
 TaintedValueIntroduced(?declaringType, ?invocation, ?type, ?value),
+TaintedContextValue(?hctx, ?value),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
    CallTaintingMethod(?ctx, ?invocation),
    TypeForReturnValue(?type, ?to, ?invocation),
@@ -204,7 +208,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
 
 TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   VarPointsToOpt(?ctx, ?var, ?hctx, ?value),
-  TaintedValue(?value).
+  TaintedContextValue(?hctx, ?value).
 
 VarPointsToOpt(?ctx, ?var, ?hctx, ?value) <-
   VarPointsTo(?hctx, ?value, ?ctx, ?var).
