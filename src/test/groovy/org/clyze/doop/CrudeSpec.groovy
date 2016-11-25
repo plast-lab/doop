@@ -16,7 +16,7 @@ class CrudeSpec extends Specification {
 		analysis = Main.analysis
 
 		then:
-		equals("01a@ var points-to (INS)", expVPT)
+		equals("01b@ var points-to (SENS)", expVPT)
 		equals("03a@ instance field points-to (INS)", expFPT)
 		equals("08a@ call graph edges (INS)", expCGE)
 		equals("14@ polymorphic virtual call sites", expPolyCalls)
@@ -25,8 +25,8 @@ class CrudeSpec extends Specification {
 		where:
 		scenario                                  | expVPT   | expFPT | expCGE | expPolyCalls | expFailCasts
 		"antlr-insensitive-tamiflex.properties"   | 2558501  | 272062 | 58659  | 1993         | 1139
-		"antlr-1call-tamiflex.properties"         | 2065468  | 195205 | 56576  | 1914         | 891
-		"antlr-1objH-tamiflex.properties"         | 1384593  | 108610 | 55054  | 1806         | 847
+		"antlr-1call-tamiflex.properties"         | 10606448 | 195205 | 56576  | 1914         | 891
+		"antlr-1objH-tamiflex.properties"         | 6499003  | 108610 | 55054  | 1806         | 847
 		"antlr-insensitive-reflection.properties" | 11409446 | 908842 | 64454  | 2083         | 1295
 	}
 
