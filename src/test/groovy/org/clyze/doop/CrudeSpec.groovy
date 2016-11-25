@@ -16,11 +16,11 @@ class CrudeSpec extends Specification {
 		analysis = Main.analysis
 
 		then:
-		equals("01b@ var points-to (SENS)", expVPT)
-		equals("03a@ instance field points-to (INS)", expFPT)
-		equals("08a@ call graph edges (INS)", expCGE)
-		equals("14@ polymorphic virtual call sites", expPolyCalls)
-		equals("22@ reachable casts that may fail", expFailCasts)
+		equals("var points-to (SENS)", expVPT)
+		equals("instance field points-to (INS)", expFPT)
+		equals("call graph edges (INS)", expCGE)
+		equals("polymorphic virtual call sites", expPolyCalls)
+		equals("reachable casts that may fail", expFailCasts)
 
 		where:
 		scenario                                  | expVPT   | expFPT | expCGE | expPolyCalls | expFailCasts
@@ -32,7 +32,7 @@ class CrudeSpec extends Specification {
 
 	void equals(String metric, int expectedVal) {
 		int actualVal
-		analysis.connector.processQuery("_(v) <- Stats:Metrics(\"$metric\", v).")
+		analysis.connector.processQuery("_(v) <- Stats:Metrics(_, \"$metric\", v).")
 										{ line -> actualVal = line as int }
 		assert actualVal == expectedVal
 	}

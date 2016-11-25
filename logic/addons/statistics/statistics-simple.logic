@@ -207,15 +207,15 @@ _t42[] = ?c <- (__t42[] = ?c) ; (!__t42[] = _, ?c = 0).
 _t43[] = ?c <- (__t43[] = ?c) ; (!__t43[] = _, ?c = 0).
 _t44[] = ?c <- (__t44[] = ?c) ; (!__t44[] = _, ?c = 0).
 
-Stats:Metrics("30a@ var points-to (to a reflective value) (INS)", _t5[]).
-Stats:Metrics("30b@ var points-to (to a reflective value) (SENS)", _t6[]).
-Stats:Metrics("31a@ array index points-to (to a reflective value) (INS)", _t13[]).
-Stats:Metrics("31b@ array index points-to (to a reflective value) (SENS)", _t14[]).
-Stats:Metrics("32a@ instance field points-to (to a reflective value) (INS)", _t21[]).
-Stats:Metrics("32b@ instance field points-to (to a reflective value) (SENS)", _t22[]).
-Stats:Metrics("35@ reachable 'forName' (INS)", _t42[]).
-Stats:Metrics("36@ reachable 'Class.newInstance' (INS)", _t43[]).
-Stats:Metrics("37@ reachable 'Constructor.newInstance' (INS)", _t44[]).
+Stats:Metrics(30.0, "var points-to (to a reflective value) (INS)", _t5[]).
+Stats:Metrics(30.5, "var points-to (to a reflective value) (SENS)", _t6[]).
+Stats:Metrics(31.0, "array index points-to (to a reflective value) (INS)", _t13[]).
+Stats:Metrics(31.5, "array index points-to (to a reflective value) (SENS)", _t14[]).
+Stats:Metrics(32.0, "instance field points-to (to a reflective value) (INS)", _t21[]).
+Stats:Metrics(32.5, "instance field points-to (to a reflective value) (SENS)", _t22[]).
+Stats:Metrics(35.0, "reachable 'forName' (INS)", _t42[]).
+Stats:Metrics(36.0, "reachable 'Class.newInstance' (INS)", _t43[]).
+Stats:Metrics(37.0, "reachable 'Constructor.newInstance' (INS)", _t44[]).
 
 #endif
 
@@ -310,48 +310,48 @@ _t50[] = ?c <- (__t50[] = ?c) ; (!__t50[] = _, ?c = 0).
 
 
 
-Stats:Metrics("01a@ var points-to (INS)", _t1[]).
-Stats:Metrics("01b@ var points-to (SENS)", _t2[]).
-Stats:Metrics("05a@ app var points-to (INS)", _t3[]).
-Stats:Metrics("05b@ app var points-to (SENS)", _t4[]).
-Stats:Metrics("10a@ reachable variables (INS)", _t7[]).
-Stats:Metrics("10b@ reachable variables (SENS)", _t8[]).
+Stats:Metrics( 1.0, "var points-to (INS)", _t1[]).
+Stats:Metrics( 1.5, "var points-to (SENS)", _t2[]).
+Stats:Metrics( 5.0, "app var points-to (INS)", _t3[]).
+Stats:Metrics( 5.5, "app var points-to (SENS)", _t4[]).
+Stats:Metrics(10.0, "reachable variables (INS)", _t7[]).
+Stats:Metrics(10.5, "reachable variables (SENS)", _t8[]).
 
-Stats:Metrics("02a@ array index points-to (INS)", _t9[]).
-Stats:Metrics("02b@ array index points-to (SENS)", _t10[]).
-Stats:Metrics("06a@ app array index points-to (INS)", _t11[]).
-Stats:Metrics("06b@ app array index points-to (SENS)", _t12[]).
+Stats:Metrics( 2.0, "array index points-to (INS)", _t9[]).
+Stats:Metrics( 2.5, "array index points-to (SENS)", _t10[]).
+Stats:Metrics( 6.0, "app array index points-to (INS)", _t11[]).
+Stats:Metrics( 6.5, "app array index points-to (SENS)", _t12[]).
 
-Stats:Metrics("03a@ instance field points-to (INS)", _t15[]).
-Stats:Metrics("03b@ instance field points-to (SENS)", _t16[]).
-Stats:Metrics("04a@ static field points-to (INS)", _t17[]).
-Stats:Metrics("04b@ static field points-to (SENS)", _t18[]).
-Stats:Metrics("07a@ app instance field points-to (INS)", _t19[]).
-Stats:Metrics("07b@ app instance field points-to (SENS)", _t20[]).
+Stats:Metrics( 3.0, "instance field points-to (INS)", _t15[]).
+Stats:Metrics( 3.5, "instance field points-to (SENS)", _t16[]).
+Stats:Metrics( 4.0, "static field points-to (INS)", _t17[]).
+Stats:Metrics( 4.5, "static field points-to (SENS)", _t18[]).
+Stats:Metrics( 7.0, "app instance field points-to (INS)", _t19[]).
+Stats:Metrics( 7.5, "app instance field points-to (SENS)", _t20[]).
 
-Stats:Metrics("08a@ call graph edges (INS)", _t23[]).
-Stats:Metrics("08b@ call graph edges (SENS)", _t24[]).
-Stats:Metrics("09@ non-reachable app concrete methods", _t25[]).
-Stats:Metrics("11a@ reachable methods (INS)", _t26[]).
-Stats:Metrics("11a@ reachable methods (SENS)", _t27[]).
+Stats:Metrics( 8.0, "call graph edges (INS)", _t23[]).
+Stats:Metrics( 8.5, "call graph edges (SENS)", _t24[]).
+Stats:Metrics( 9.0, "non-reachable app concrete methods", _t25[]).
+Stats:Metrics(11.0, "reachable methods (INS)", _t26[]).
+Stats:Metrics(11.5, "reachable methods (SENS)", _t27[]).
 
-Stats:Metrics("12@ virtual call sites (statically)", _t28[]).
-Stats:Metrics("13@ reachable virtual call sites", _t29[]).
-Stats:Metrics("14@ polymorphic virtual call sites", _t30[]).
-Stats:Metrics("15a@ null virtual call sites", _t49[]).
-Stats:Metrics("15b@ empty virtual call sites", _t31[]).
-Stats:Metrics("16@ app virtual call sites (statically)", _t32[]).
-Stats:Metrics("17@ app reachable virtual call sites", _t33[]).
-Stats:Metrics("18@ app polymorphic virtual call sites", _t34[]).
-Stats:Metrics("19a@ app null virtual call sites", _t50[]).
-Stats:Metrics("19b@ app empty virtual call sites", _t35[]).
+Stats:Metrics(12.0, "virtual call sites (statically)", _t28[]).
+Stats:Metrics(13.0, "reachable virtual call sites", _t29[]).
+Stats:Metrics(14.0, "polymorphic virtual call sites", _t30[]).
+Stats:Metrics(15.0, "null virtual call sites", _t49[]).
+Stats:Metrics(15.5, "empty virtual call sites", _t31[]).
+Stats:Metrics(16.0, "app virtual call sites (statically)", _t32[]).
+Stats:Metrics(17.0, "app reachable virtual call sites", _t33[]).
+Stats:Metrics(18.0, "app polymorphic virtual call sites", _t34[]).
+Stats:Metrics(19.0, "app null virtual call sites", _t50[]).
+Stats:Metrics(19.5, "app empty virtual call sites", _t35[]).
 
-Stats:Metrics("20@ casts (statically)", _t36[]).
-Stats:Metrics("21@ reachable casts", _t37[]).
-Stats:Metrics("22@ reachable casts that may fail", _t38[]).
-Stats:Metrics("23@ app casts (statically)", _t39[]).
-Stats:Metrics("24@ app reachable casts", _t40[]).
-Stats:Metrics("25@ app reachable casts that may fail", _t41[]).
+Stats:Metrics(20.0, "casts (statically)", _t36[]).
+Stats:Metrics(21.0, "reachable casts", _t37[]).
+Stats:Metrics(22.0, "reachable casts that may fail", _t38[]).
+Stats:Metrics(23.0, "app casts (statically)", _t39[]).
+Stats:Metrics(24.0, "app reachable casts", _t40[]).
+Stats:Metrics(25.0, "app reachable casts that may fail", _t41[]).
 
 #ifdef INFORMATION_FLOW
 Stats:Simple:InsensTaintedVarPointsTo(?value, ?var) <- TaintedVarPointsTo(_, ?value, _, ?var).
@@ -377,13 +377,12 @@ _t63[] = ?c <- (__t63[] = ?c) ; (!__t63[] = _, ?c = 0).
 _t64[] = ?c <- (__t64[] = ?c) ; (!__t64[] = _, ?c = 0).
 _t65[] = ?c <- (__t65[] = ?c) ; (!__t65[] = _, ?c = 0).
 
-Stats:Metrics("26@ tainted flows-to (INS)", _t60[]).
-Stats:Metrics("27@ tainted flows-to (SENS)", _t61[]).
-Stats:Metrics("28@ app tainted flows-to (INS)", _t62[]).
-Stats:Metrics("29@ app tainted flows-to (SENS)", _t63[]).
-
-Stats:Metrics("30@ total tainted values", _t64[]).
-Stats:Metrics("30@ original tainted values", _t65[]).
+Stats:Metrics(40.0, "tainted flows-to (INS)", _t60[]).
+Stats:Metrics(40.5, "tainted flows-to (SENS)", _t61[]).
+Stats:Metrics(41.0, "app tainted flows-to (INS)", _t62[]).
+Stats:Metrics(41.5, "app tainted flows-to (SENS)", _t63[]).
+Stats:Metrics(42.0, "total tainted values", _t64[]).
+Stats:Metrics(43.0, "original tainted values", _t65[]).
 #endif
-//Stats:Metrics("40@ call sites that did (not) get refined", _t47[]).
-//Stats:Metrics("41@ allocation sites that did (not) get refined", _t48[]).
+//Stats:Metrics(50.0, "call sites that did (not) get refined", _t47[]).
+//Stats:Metrics(51.0, "allocation sites that did (not) get refined", _t48[]).

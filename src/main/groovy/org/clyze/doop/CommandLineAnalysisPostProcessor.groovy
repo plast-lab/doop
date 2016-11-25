@@ -34,12 +34,9 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
                 lines.add(line)
             }
 
-            // We have to first sort (numerically) by the 1st column and
-            // then erase it
-
             logger.info "-- Statistics --"
-            lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
-                printf("%-80s %,d\n", it[0], it[1] as int)
+            lines.sort()*.split(", ").each {
+                printf("%-80s %,d\n", it[1], it[2] as int)
             }
         }
     }
