@@ -71,10 +71,9 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         //Get the optional id of the analysis
         String id = cli.id ?: props.getProperty("id")
 
-        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithProperties(props) { AnalysisOption option ->
+        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        Doop.overrideOptionsWithCLI(options, cli) { AnalysisOption option -> option.cli }
         return newAnalysis(id, name, options, inputs)
     }
 

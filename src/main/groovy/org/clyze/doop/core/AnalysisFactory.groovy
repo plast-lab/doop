@@ -318,10 +318,10 @@ class AnalysisFactory {
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = true
         }
 
-        if (options.ENABLE_REFLECTION_CLASSIC.value) {
+        if (options.REFLECTION_CLASSIC.value) {
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
-            options.ENABLE_REFLECTION.value = true
+            options.REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
             options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value = true
         }
@@ -332,7 +332,7 @@ class AnalysisFactory {
             if (!inputFilePaths.contains(deps))
                 inputFilePaths.add(deps)
 
-            if (!options.ENABLE_REFLECTION.value)
+            if (!options.REFLECTION.value)
                 options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
@@ -349,7 +349,7 @@ class AnalysisFactory {
                     inputFilePaths.add(depsFile.toString())
             }
 
-            if (!options.ENABLE_REFLECTION.value)
+            if (!options.REFLECTION.value)
                 options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
@@ -358,7 +358,7 @@ class AnalysisFactory {
         }
 
         if (options.TAMIFLEX.value) {
-            options.ENABLE_REFLECTION.value = false
+            options.REFLECTION.value = false
         }
 
         if (options.MUST.value) {
@@ -404,7 +404,7 @@ class AnalysisFactory {
             FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }
 
-        if (!options.ENABLE_REFLECTION.value) {
+        if (!options.REFLECTION.value) {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
                     options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                     options.REFLECTION_CONTEXT_SENSITIVITY.value ||

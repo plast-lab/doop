@@ -267,7 +267,7 @@ class ClassicAnalysis extends Analysis {
             .transaction()
             .executeFile("${safename}-delta.logic")
 
-        if (options.ENABLE_REFLECTION.value) {
+        if (options.REFLECTION.value) {
             cpp.preprocess("${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
             connector.queue()
@@ -418,19 +418,15 @@ class ClassicAnalysis extends Analysis {
 
         switch(platform) {
             case "java":
-                params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
                 def androidPlatform = options.PLATFORMS_LIB.value.toString() +
                                       File.separator + "Android" + File.separator + "Sdk" + File.separator + "platforms"
-                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", androidPlatform]
+                params = ["--full"] + depArgs + ["--android-jars", androidPlatform]
                 break
             default:
                 throw new RuntimeException("Unsupported platform")
-        }
-
-        if (options.FACT_GENERATION_CLASSIC.value) {
-            params = params + ["--sequential"]
         }
 
         if (options.SSA.value) {
@@ -439,10 +435,6 @@ class ClassicAnalysis extends Analysis {
 
         if (!options.RUN_JPHANTOM.value) {
             params = params + ["--allow-phantom"]
-        }
-
-        if (options.USE_ORIGINAL_NAMES.value) {
-            params = params + ["--use-original-names"]
         }
 
         if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {

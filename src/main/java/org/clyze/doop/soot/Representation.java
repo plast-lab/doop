@@ -2,6 +2,8 @@ package org.clyze.doop.soot;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import soot.*;
 import soot.jimple.*;
 
@@ -10,8 +12,22 @@ public class Representation {
     private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
     private Map<Trap, String> _trapRepr = new HashMap<>();
 
+    // Make it a trivial singleton.
+    private static Representation _repr;
+    private Representation() {}
+
+    public static Representation getRepresentation() {
+        if (_repr == null)
+            _repr = new Representation();
+        return _repr;
+    }
+
     String classConstant(SootClass c) {
         return "<class " + c.getName() + ">";
+    }
+
+    String classConstant(String className) {
+        return "<class " + className + ">";
     }
 
     String classConstant(Type t) {

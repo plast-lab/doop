@@ -13,50 +13,50 @@ class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
 
-    private File directory;
-    private Map<PredicateFile, Writer> writers;
+    private final Map<PredicateFile, Writer> _writers;
 
     Database(File directory) throws IOException {
-        this.directory = directory;
-        this.writers = new EnumMap<>(PredicateFile.class);
+        this._writers = new EnumMap<>(PredicateFile.class);
 
         for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
-            writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
+            _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
     }
 
     @Override
     public void close() throws IOException {
-        for(Writer w: writers.values())
+        for(Writer w: _writers.values())
             w.close();
     }
 
     @Override
     public void flush() throws IOException {
-        for(Writer w: writers.values())
+        for(Writer w: _writers.values())
             w.flush();
     }
 
 
-    private void addColumn(Writer writer, String column) throws IOException {
-        // Quote some special characters
+    private String addColumn(String column) throws IOException {
+        // Quote some special characters.
+        // TODO: is this worth optimizing?
         String data = column
             .replaceAll("\"", "\\\\\"")
             .replaceAll("\n", "\\\\n")
             .replaceAll("\t", "\\\\t");
-
-        writer.write(data);
+        return data;
     }
 
 
     public void add(PredicateFile predicateFile, String arg, String... args) {
         try {
+            StringBuilder line = new StringBuilder(addColumn(arg));
+            for (String col : args) {
+                line.append(SEP);
+                line.append(addColumn(col));
+            }
+            line.append(EOL);
+            Writer writer = _writers.get(predicateFile);
             synchronized(predicateFile) {
-                Writer writer = writers.get(predicateFile);
-                addColumn(writer, arg);
-                for (String col : args)
-                    addColumn(writer.append(SEP), col);
-
-                writer.write(EOL);
+                writer.write(line.toString());
             }
         } catch(IOException exc) {
             throw new RuntimeException(exc);

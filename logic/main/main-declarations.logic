@@ -4,7 +4,7 @@
 #include "string-constants-declarations.logic"
 #include "threads-declarations.logic"
 
-#if defined(ENABLE_REFLECTION)
+#if defined(REFLECTION)
 #include "reflection/declarations.logic" 
 #endif
 

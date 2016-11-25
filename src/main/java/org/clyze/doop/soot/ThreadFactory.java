@@ -4,10 +4,10 @@ import soot.SootClass;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.Set;
 
 public class ThreadFactory {
-   private boolean _makeClassGenerator;
+   private boolean _factGenerationMode;  // used for fact generation, or just Jimple code output?
 
     FactWriter _factWriter;
 
@@ -20,13 +20,13 @@ public class ThreadFactory {
     private PrintWriter _printWriter;
 
     ThreadFactory(FactWriter writer, boolean ssa) {
-        _makeClassGenerator = true;
+        _factGenerationMode = true;
         _factWriter = writer;
         _ssa = ssa;
     }
 
     ThreadFactory(boolean ssa, boolean toStdout, String outputDir) {
-        _makeClassGenerator = false;
+        _factGenerationMode = false;
         _ssa = ssa;
         _toStdout = toStdout;
         _outputDir = outputDir;
@@ -38,11 +38,11 @@ public class ThreadFactory {
         }
     }
 
-    Runnable newRunnable(List<SootClass> sootClasses) {
-        if (_makeClassGenerator)
-            return new RunnableFactGenerator(_factWriter, _ssa, sootClasses);
+    Runnable newRunnable(Set<SootClass> sootClasses) {
+        if (_factGenerationMode)
+            return new FactGenerator(_factWriter, _ssa, sootClasses);
         else
-            return new FactPrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
+            return new JimpleCodePrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
     }
 
     public FactWriter get_factWriter() {
@@ -53,8 +53,8 @@ public class ThreadFactory {
         return _ssa;
     }
 
-    public boolean getMakeClassGenerator() {
-        return _makeClassGenerator;
+    public boolean inFactGenerationMode() {
+        return _factGenerationMode;
     }
 
     public boolean getToStdout() {
