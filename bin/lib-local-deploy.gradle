@@ -1,0 +1,40 @@
+/*
+Deploy the contents of the lib directory to the ext-snapshot-local repo @ artifactory.
+
+Each local jar is made available as a dependency using the pattern:
+groupId: 'ext', artifactId: jarWithoutExtension, version:'1.0-SNAPSHOT'
+
+For example, lib/sootclasses-trunk.jar turns into ext:sootclasses-trunk:1.0-SNAPSHOT.
+
+Invoke this file using: ./gradlew -b lib-local-deploy.gradle publish
+*/
+
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        def libDir = file("${projectDir}/lib")
+        libDir.eachFile { File f ->
+            def name = f.getName() - ".jar"
+            create(name, MavenPublication) {
+                groupId 'ext'
+                artifactId name
+                version '1.0-SNAPSHOT'
+
+                artifact f
+            }
+        }
+
+    }
+
+    repositories {
+        maven {
+            credentials {
+                username artifactory_user
+                password artifactory_password
+            }
+
+            url "${artifactory_contextUrl}/ext-snapshot-local"
+        }
+    }
+}
