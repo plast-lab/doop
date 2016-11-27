@@ -294,7 +294,6 @@ public class Main {
             scene.loadClass(className, SootClass.SIGNATURES);
             classes.add(scene.loadClass(className, SootClass.BODIES));
         }
-        System.out.println("Total number of classes discovered (application + library): " + scene.getClasses().size());
 
 
         if (!_android) {
@@ -338,7 +337,6 @@ public class Main {
             classes = new HashSet<>(scene.getClasses());
         }
 
-        System.out.println("Generating facts for " + classes.size() + " classes.");
         if (_bytecode2jimple) {
             ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);
             Driver driver = new Driver(factory, _ssa, classes.size());
