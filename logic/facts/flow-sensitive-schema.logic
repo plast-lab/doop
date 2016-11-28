@@ -38,6 +38,15 @@ ProxyClass(?t)    -> ClassType(?t).
 ProxiedInterfaceForName(?i, ?c, ?interfaces, ?obj) ->
    MethodInvocation(?i), Var(?c), Var(?interfaces), Var(?obj).
 
+// Special information for proxied methods. For every proxy class,
+// each method ?proxied (calling some ?original method) contains a
+// special variable ?mVar that points to its reified representation of
+// type Method. The method also contains an ?invoke instruction that
+// calls ?original via Method.invoke().
+ProxyMethod(?proxied, ?original, ?mVar, ?argsVar, ?argsNewId, ?invoke) ->
+   Method(?proxied), Method(?original), Var(?mVar), Var(?argsVar),
+   string(?argsNewId), StaticMethodInvocation:Insn(?invoke).
+
 lang:entity(`PrimitiveType).
 lang:entity(`ReferenceType).
 lang:entity(`NullType).

@@ -1308,6 +1308,46 @@ java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
   ?heapStr = "<reflective Constructor.newInstance/" + ?typeStr + ">".
 #endif
 
+// Make the special "method" variables inside proxy invocation
+// handlers point to the appropriate Method objects that have been
+// built at this point.
+VarPointsTo(?hctx, ?reifiedMethodVal, ?ctx, ?methodVar),
+// Also make the special "args" variables point to their values
+// (Object[] arrays). We use values here instead of heaps; for a
+// simple benchmark, using values makes Doop terminate in a few
+// minutes while heaps needs 2 hours and 13 mins.
+VarPointsTo(?hctx, ?argsNewVal, ?ctx, ?argsVar),
+ArrayIndexPointsTo(?hctx, ?arg, ?hctx2, ?argsNewVal)
+ <-
+  ImmutableHContextFromContext[?ctx] = ?hctx2,
+  OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method),
+  AnyFormalPointsTo(?hctx, ?arg, ?ctx, ?method),
+  ReifiedMethod[?method] = ?reifiedMethod,
+  Value:byHeap[?reifiedMethod] = ?reifiedMethodVal,
+  HeapAllocation:byId[?argsNewId] = ?argsNew,
+  Value:byHeap[?argsNew] = ?argsNewVal
+.
+
+AnyFormalPointsTo(?hctx, ?arg, ?ctx, ?method) <-
+  OptFormalParam(?method, ?formal),
+  VarPointsTo(?hctx, ?arg, ?ctx, ?formal).
+
+OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method) <-
+  ProxyMethod(?method, _, ?methodVar, ?argsVar, ?argsNewId, _).
+OptFormalParam(?method, ?formal) <-
+  FormalParam[_, ?method] = ?formal.
+
+/*
+// Make the special "arguments" variable inside a proxy method point
+// to the arguments of the method.
+ArrayIndexPointsTo(?hctx, ?actual, ?ctx, ?argsVar) <-
+  ProxyMethod(?method, _, _, ?argsVar, _, _),
+  UniqueContext[] = ?ctx,
+  // UniqueHContext[] = ?hctx,
+  ImmutableHContextFromContext[?ctx] = ?hctx,
+  VarPointsTo(?hctx, ?val, ?ctx, ?formal)
+*/
+
 /* This doesn't work due to recursion through negation.
 
 // This rule fills in the appropriate relations, so that calls to
