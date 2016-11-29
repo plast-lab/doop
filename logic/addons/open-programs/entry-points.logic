@@ -1,0 +1,4 @@
+EntryPoint(?method) -> Method(?method).
+
+
+EntryPoint(?method) <- Method(?method), Method:Modifier("public", ?method).

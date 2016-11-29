@@ -1,7 +1,7 @@
-FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
+#include "macros.logic"
+#include "entry-points.logic"
 
-ServletEntryMethodName("doGet").
-ServletEntryMethodName("doPost").
+FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
 
 AllConcreteImplementations(?class, ?staticType) <-
    SubtypeOf(?class, ?staticType),
@@ -20,32 +20,32 @@ ConcreteImplementations[?staticType] = ?class <-
 
 AnyConcreteImplementations(?class, ?staticType) <-
    ConcreteImplementations[?staticType] = ?class.
-   
-ServletClass(?class) <-
-   AllConcreteImplementations(?class, ?staticType),
-   ClassType(?class),
-   Type:Id(?staticType:"javax.servlet.http.HttpServlet").
 
-ClassToMock(?class) <-
-   MockEntryPoint(?class, _).
+MockObjectIntroduced(?class, ?value) <- ObjToMock(?class).
 
-ClassToMock(?fieldType) <-
+ObjToMock(?class) -> ReferenceType(?class).
+
+// invariant: this should always be a type class
+MockObjFromEntryPoint(?class),
+ObjToMock(?class) <-
+   EntryPoint(?method),
+   Method:DeclaringType[?method] = ?class,
+   !ClassModifier("abstract", ?class),
+   ReferenceType(?class).
+
+MockObjFromField(?fieldType),
+ObjToMock(?fieldType) <-
    FieldInformationOpt(_, _, ?fieldType),
    !ClassModifier("abstract", ?fieldType),
    ReferenceType(?fieldType).
 
-MockObject(?classHeap, ?class) <-
-   ClassToMock(?class),
-   !ClassModifier("abstract", ?class),
-   Type:Id(?class:?classStr),
-   ?classHeap = "<Mock allocation for " + ?classStr + ">".
-
-ClassToMock(?class) <-
+MockObjFromArray(?class),
+ObjToMock(?class) <-
    MockObject(_, ?type),
    ArrayType(?type),
    ComponentType[?type] = ?componentType,
    AnyConcreteImplementations(?class, ?componentType).
-                 
+
 FieldInformation(?signature, ?fieldtype, ?class) ->
    Field(?signature), Type(?fieldtype), Type(?class).
 
@@ -66,82 +66,84 @@ FieldInformation(?signature, ?fieldConcreteType, ?class) <-
 FieldInformationOpt(?signature, ?class, ?fieldtype) <-
    FieldInformation(?signature, ?fieldtype, ?class).
    
-MockHeapForField(?signature, ?baseheap, ?fieldtype) ->
-   Field(?signature), Type(?fieldtype), HeapAllocation(?baseheap).
+MockValueForField(?signature, ?basevalue, ?fieldtype) ->
+   Field(?signature), Type(?fieldtype), Value(?basevalue).
 
-MockHeapForField(?signature, ?baseheap, ?fieldtype) <-
+MockValueForField(?signature, ?basevalue, ?fieldtype) <-
    FieldInformation(?signature, ?fieldtype, ?class),
-   MockObjectHeap(?baseheap, ?class).
+   MockObject(?basevalue, ?class).
 
-MockObjectHeap(?heap, ?fieldtype) -> HeapAllocation(?heap), Type(?fieldtype).
+MockObjectOpt(?fieldtype, ?value) <- MockObject(?value, ?fieldtype).
 
-MockObjectOpt(?fieldtype, ?heap) <- MockObject(?heap, ?fieldtype).
-
-MockObjectHeap(?heap, ?fieldtype) <-
-   MockObjectOpt(?fieldtype, ?heapStr),
-   Instruction:Id(?heap:?heapStr), 
-   HeapAllocation(?heap).
-
-Blah(?heap, ?signature, ?baseheap),
-InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?hctx, ?baseheap) <-
+#include "entry-points.logic"
+ 
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
    ImmutableHContext(?hctx),
-   MockHeapForField(?signature, ?baseheap, ?fieldtype),
-   MockObjectHeap(?heap, ?fieldtype).
+   MockValueForField(?signature, ?basevalue, ?fieldtype),
+   MockObject(?value, ?fieldtype).
 
-
-Blah2(?hctx, ?componentHeap, ?hctx, ?arrayHeap),
-ArrayIndexPointsTo(?hctx, ?componentHeap, ?hctx, ?arrayHeap) <-
-   MockObjectHeap(?arrayHeap, ?arrayType),
+ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
+   MockObject(?arrayValue, ?arrayType),
    ArrayType(?arrayType),
    ComponentType[?arrayType] = ?componentType,
    AnyConcreteImplementations(?class, ?componentType),
-   MockObjectHeap(?componentHeap, ?class),
+   MockObject(?componentValue, ?class),
    ImmutableHContext(?hctx).
 
-ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
-
-MockObject(?description, ?subtype),
-MocksForFormals(?description, ?subtype, ?index, ?method) <-
+TypeForFormals(?type, ?index, ?method) -> ReferenceType(?type), int[32](?index), Method(?method).
+   
+ObjToMock(?subtype),
+TypeForFormals(?subtype, ?index, ?method) <-
    FormalParam[?index, ?method] = ?formal,
    Var:Type[?formal] = ?staticType,
    AnyConcreteImplementations(?subtype, ?staticType),
-   Method:Id(?method:?methodStr),
-   MockEntryPoint(_, ?method),
-   Type:Id(?subtype:?subtypeStr), 
-   ?description = "<Mock " + ?methodStr + ": " + ?subtypeStr + ">".
-
-// Servlet service methods
-MockEntryPoint(?class, ?entry) <-
-   ServletClass(?class),
-   Type:Id(?class:?classStr),
-   ServletEntryMethodName(?serviceMethodName),
-   Method:Id(?entry:methodSigStr),
-   // TODO: try removing initializer
-   (methodSigStr = "<" + ?classStr +": void <init>()>" ; methodSigStr = "<" + ?classStr + ": void " + ?serviceMethodName +"(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>"),
-   ServletEntryMethodName(?serviceMethodName).
+   EntryPoint(?method).
 
 // bind mock objects to formals
-
-HeapIdForFormalInContext(?ctx, ?formal, ?heapStr) <-
-   MocksForFormals(?heapStr, _, ?index, ?method),
+ValueForFormalInContext(?ctx, ?formal, ?value) <-
+   TypeForFormals(?class, ?index, ?method),
+   MockObject(?value, ?class),
    ReachableContext(?ctx, ?method),
    FormalParam[?index, ?method] = ?formal.
 
-VarPointsTo(?hctx, ?heap, ?ctx, ?formal)
+VarPointsTo(?hctx, ?value, ?ctx, ?formal)
  <-
-   HeapIdForFormalInContext(?ctx, ?formal, ?heapStr),
-   Instruction:Id(?heap:?heapStr), 
-   ImmutableHContextFromContext[?ctx] = ?hctx,
-   HeapAllocation(?heap).
+   ValueForFormalInContext(?ctx, ?formal, ?value),
+   //   ImmutableHContextFromContext[?ctx] = ?hctx. // TODO multiple strategies for this
+   ImmutableHContext(?hctx).
 
-// bind mock objects to receivers
-HeapForReceiverInContext(?ctx, ?receiver, ?heapStr) <-
-   ReachableContext(?ctx, ?method),
+// receivers for entry points
+MergeStartupMacro(?hctx, ?value, ?calleeCtx),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver),
+ReachableContext(?calleeCtx, ?method),
+MockReachableContext(?calleeCtx, ?method)
+ <-
    ThisVar[?method] = ?receiver,
    Method:DeclaringType[?method] = ?class,
-   MockObjectHeap(?heapStr, ?class).
-   
-VarPointsTo(?hctx, ?heap, ?ctx, ?receiver)
+   MockObject(?value, ?class),
+   EntryPoint(?method),
+   ImmutableHContext(?hctx).
+
+CallGraphEdgeOpt(?calleeCtx, ?method, ?callerCtx, ?invocation)
+ <- CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method).
+
+MethodCallGraphEdge(?calleeCtx, ?method, ?callerCtx, ?inmethod) <-
+   CallGraphEdgeOpt(?calleeCtx, ?method, ?callerCtx, ?invocation),
+   Instruction:Method[?invocation] = ?inmethod.
+
+MockReachableContext(?calleeCtx, ?method) <-
+   MethodCallGraphEdge(?calleeCtx, ?method, ?callerCtx, ?inmethod),
+   MockReachableContext(?callerCtx, ?inmethod).
+
+// bind mock objects to receivers
+ValueForReceiverInContext(?ctx, ?receiver, ?value) <-
+   MockReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?receiver,
+   Method:DeclaringType[?method] = ?class,
+   MockObject(?value, ?class).
+
+// all other receivers
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver)
  <-
-   ImmutableHContextFromContext[?ctx] = ?hctx,
-   HeapForReceiverInContext(?ctx, ?receiver, ?heap).
+   ValueForReceiverInContext(?ctx, ?receiver, ?value),
+   ImmutableHContext(?hctx).
