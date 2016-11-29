@@ -450,7 +450,12 @@ class FactWriter {
 
     void writeClassModifier(SootClass c, String modifier) {
         String type = c.getName();
-        _db.add(CLASS_TYPE, type);
+        if (c.isInterface()) {
+            _db.add(INTERFACE_TYPE, type);
+        }
+        else {
+            _db.add(CLASS_TYPE, type);
+        }
         _db.add(CLASS_MODIFIER, modifier, type);
     }
 
