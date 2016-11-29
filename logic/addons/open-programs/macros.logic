@@ -1,0 +1,10 @@
+#include "../../commonMacros.logic"
+
+MockObject(?value, ?class) -> Value(?value), ReferenceType(?class).
+
+#define MockObjectIntroduced(class, value) \
+   MockObject(value, class), \
+   Value:Mock:Cons[(Type:Id[(class)]) + " (Mock)"] = value, \
+   Value:Type[value] = class, \
+   Value(value), \
+   Value:DeclaringType[value] = class

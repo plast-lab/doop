@@ -309,9 +309,9 @@ class ClassicAnalysis extends Analysis {
                 .transaction()
         }
 
-        if (options.OPEN_PROGRAMS_SERVLETS.value) {
-            cpp.preprocess("${outDir}/open-programs-servlets.logic", "${Doop.addonsPath}/open-programs/rules-servlets-only.logic", macros)
-            cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs-servlets.logic")
+        if (options.OPEN_PROGRAMS.value) {
+            cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
+            cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
 
         }
 
