@@ -49,14 +49,16 @@ ObjToMock(?class) <-
 FieldInformation(?signature, ?fieldtype, ?class) ->
    Field(?signature), Type(?fieldtype), Type(?class).
 
-FieldInformation(?signature, ?fieldtype, ?class) <-
+FieldInformation0(?signature, ?fieldtype, ?class) <-
    Field:Type[?signature] = ?fieldtype,
-   Field:DeclaringType[?signature] = ?class,
-   MockObject(_, ?class).
+   Field:DeclaringType[?signature] = ?class.
+
+FieldInformation0(?signature, ?fieldtype, ?class) <-
+   FieldInformation(?signature, ?fieldtype, ?staticType),
+   AllConcreteImplementations(?class, ?staticType).
 
 FieldInformation(?signature, ?fieldtype, ?class) <-
-   FieldInformation(?signature, ?fieldtype, ?staticType),
-   AllConcreteImplementations(?class, ?staticType),
+   FieldInformation0(?signature, ?fieldtype, ?class),
    MockObject(_, ?class).
 
 FieldInformation(?signature, ?fieldConcreteType, ?class) <-
@@ -75,48 +77,51 @@ MockValueForField(?signature, ?basevalue, ?fieldtype) <-
 
 MockObjectOpt(?fieldtype, ?value) <- MockObject(?value, ?fieldtype).
 
-#include "entry-points.logic"
- 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
    ImmutableHContext(?hctx),
    MockValueForField(?signature, ?basevalue, ?fieldtype),
    MockObject(?value, ?fieldtype).
 
-ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
+AnyConcreteImplementationsOpt(?staticType, ?class) <- AnyConcreteImplementations(?class, ?staticType).
+
+
+MockObjectForType(?value, ?staticType) <-
+   MockObject(?value, ?class),
+   AnyConcreteImplementationsOpt(?staticType, ?class).
+
+ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <- // TODO
    MockObject(?arrayValue, ?arrayType),
    ArrayType(?arrayType),
    ComponentType[?arrayType] = ?componentType,
-   AnyConcreteImplementations(?class, ?componentType),
-   MockObject(?componentValue, ?class),
+   MockObjectForType(?componentValue, ?componentType),
    ImmutableHContext(?hctx).
 
-TypeForFormals(?type, ?index, ?method) -> ReferenceType(?type), int[32](?index), Method(?method).
-   
-ObjToMock(?subtype),
-TypeForFormals(?subtype, ?index, ?method) <-
-   FormalParam[?index, ?method] = ?formal,
-   Var:Type[?formal] = ?staticType,
-   AnyConcreteImplementations(?subtype, ?staticType),
+FormalsForEntryPoints(?method, ?formal) <-
+   FormalParam[_, ?method] = ?formal,
    EntryPoint(?method).
 
-// bind mock objects to formals
-ValueForFormalInContext(?ctx, ?formal, ?value) <-
-   TypeForFormals(?class, ?index, ?method),
-   MockObject(?value, ?class),
-   ReachableContext(?ctx, ?method),
-   FormalParam[?index, ?method] = ?formal.
+MockObjFromFormal(?subtype),
+ObjToMock(?subtype),
+TypeForFormals(?formal, ?method, ?subtype) <-
+   FormalsForEntryPoints(?method, ?formal),
+   Var:Type[?formal] = ?staticType,
+   AnyConcreteImplementations(?subtype, ?staticType).
 
+MockForFormal(?value, ?formal, ?method) <-
+   TypeForFormals(?formal, ?method, ?class),
+   MockObject(?value, ?class).
+
+// bind mock objects to formals
 VarPointsTo(?hctx, ?value, ?ctx, ?formal)
  <-
-   ValueForFormalInContext(?ctx, ?formal, ?value),
-   //   ImmutableHContextFromContext[?ctx] = ?hctx. // TODO multiple strategies for this
+   ContextForEntryPoint(?ctx, ?method),
+   MockForFormal(?value, ?formal, ?method),
    ImmutableHContext(?hctx).
 
 // receivers for entry points
 MergeStartupMacro(?hctx, ?value, ?calleeCtx),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver),
-ReachableContext(?calleeCtx, ?method),
-MockReachableContext(?calleeCtx, ?method)
+ContextForEntryPoint(?calleeCtx, ?method)
  <-
    ThisVar[?method] = ?receiver,
    Method:DeclaringType[?method] = ?class,
@@ -131,19 +136,24 @@ MethodCallGraphEdge(?calleeCtx, ?method, ?callerCtx, ?inmethod) <-
    CallGraphEdgeOpt(?calleeCtx, ?method, ?callerCtx, ?invocation),
    Instruction:Method[?invocation] = ?inmethod.
 
+
+ReachableContext(?ctx, ?method),
+MockReachableContext(?ctx, ?method) <-
+   ContextForEntryPoint(?ctx, ?method).
+
 MockReachableContext(?calleeCtx, ?method) <-
    MethodCallGraphEdge(?calleeCtx, ?method, ?callerCtx, ?inmethod),
    MockReachableContext(?callerCtx, ?inmethod).
 
 // bind mock objects to receivers
-ValueForReceiverInContext(?ctx, ?receiver, ?value) <-
+TypeForReceiverInContext(?ctx, ?receiver, ?class) <-
    MockReachableContext(?ctx, ?method),
    ThisVar[?method] = ?receiver,
-   Method:DeclaringType[?method] = ?class,
-   MockObject(?value, ?class).
+   Method:DeclaringType[?method] = ?class.
 
 // all other receivers
 VarPointsTo(?hctx, ?value, ?ctx, ?receiver)
  <-
-   ValueForReceiverInContext(?ctx, ?receiver, ?value),
+   TypeForReceiverInContext(?ctx, ?receiver, ?class),
+   MockObject(?value, ?class),
    ImmutableHContext(?hctx).
