@@ -5,6 +5,7 @@
 #ifdef MULTIPLE_SEGREGATED_ANALYSES
 #define VarPointsTo(hctx, heap, ctx, var) CollapsedVarPointsTo(hctx, heap, ctx, var)
 #endif // MULTIPLE_SEGREGATED_ANALYSES
+#include "macros.logic"
 
 /***************************************************
  * Variables
@@ -383,6 +384,22 @@ Stats:Metrics(41.0, "app tainted flows-to (INS)", _t62[]).
 Stats:Metrics(41.5, "app tainted flows-to (SENS)", _t63[]).
 Stats:Metrics(42.0, "total tainted values", _t64[]).
 Stats:Metrics(43.0, "original tainted values", _t65[]).
+#endif
+
+#ifdef OPEN_PROGRAMS
+
+NewMetric(_t70, EntryPoint(_)).
+NewMetric(_t71, MockObject(_, _)).
+NewMetric(_t72, MockObjFromEntryPoint(_)).
+NewMetric(_t73, MockObjFromField(_)).
+NewMetric(_t74, MockObjFromArray(_)).
+
+Stats:Metrics(50.0, "Entry Points", _t70[]).
+Stats:Metrics(51.0, "Mock Objects", _t71[]).
+Stats:Metrics(51.1, "Mock Objects From Receivers", _t72[]).
+Stats:Metrics(51.2, "Mock Objects From Fields", _t73[]).
+Stats:Metrics(51.3, "Mock Objects From Arrays", _t74[]).
+
 #endif
 //Stats:Metrics(50.0, "call sites that did (not) get refined", _t47[]).
 //Stats:Metrics(51.0, "allocation sites that did (not) get refined", _t48[]).
