@@ -24,9 +24,6 @@ InterfaceType(?t) -> !ClassType(?t).
 PrimitiveType(?t) -> !ReferenceType(?t).
 ReferenceType(?t) -> !PrimitiveType(?t).
 
-/*
-// These currently fail
-
 // Needed only because of implicit creations through refmodes
 // Every type is a concrete type
 Type(?t) ->
@@ -35,7 +32,6 @@ Type(?t) ->
    ArrayType(?t) ;
    PrimitiveType(?t) ;
    NullType(?t).
-*/
 
 // Every instruction is a concrete instruction
 Instruction(?insn) ->
