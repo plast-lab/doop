@@ -394,11 +394,11 @@ NewMetric(_t72, MockObjFromEntryPoint(_)).
 NewMetric(_t73, MockObjFromField(_)).
 NewMetric(_t74, MockObjFromArray(_)).
 
-Stats:Metrics(50.0, "Entry Points", _t70[]).
-Stats:Metrics(51.0, "Mock Objects", _t71[]).
-Stats:Metrics(51.1, "Mock Objects From Receivers", _t72[]).
-Stats:Metrics(51.2, "Mock Objects From Fields", _t73[]).
-Stats:Metrics(51.3, "Mock Objects From Arrays", _t74[]).
+Stats:Metrics(60.0, "Entry Points", _t70[]).
+Stats:Metrics(61.0, "Mock Objects", _t71[]).
+Stats:Metrics(61.1, "Mock Objects From Receivers", _t72[]).
+Stats:Metrics(61.2, "Mock Objects From Fields", _t73[]).
+Stats:Metrics(61.3, "Mock Objects From Arrays", _t74[]).
 
 #endif
 //Stats:Metrics(50.0, "call sites that did (not) get refined", _t47[]).
