@@ -1,0 +1,4 @@
+
+#define NewMetric(n, rel) \
+  _##n[] = ?c <- agg<<?c = count()>> rel. \
+  n[] = ?c <- (_##n[] = ?c) ; (!_##n[] = _, ?c = 0)
