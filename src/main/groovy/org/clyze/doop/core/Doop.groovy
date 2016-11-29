@@ -282,12 +282,12 @@ class Doop {
             value:false,
             forPreprocessor:true
         ),
-        new AnalysisOption<Boolean>(
-            id:"OPEN_PROGRAMS_SERVLETS",
-            name:"open-programs-servlets",
-            description:"Create analysis entry points and environment to analyse servlet applications.",
-            value:false,
-            webUI:true,
+        new AnalysisOption<String>(
+            id:"OPEN_PROGRAMS",
+            name:"open-programs",
+            description:"Create analysis entry points and environment using various strategies: servlets-only, concrete-types, or oracle.",
+            value:null,
+            argName:"strategy",
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
