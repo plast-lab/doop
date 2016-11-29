@@ -11,27 +11,25 @@ public class DoopRenamer {
     static protected void transform(Body body) {
         Set<Local> transformedLocals = new HashSet<Local>();
         int linenumber = 0;
-        boolean inPhis = false;
 
         // For all statements, see whether they def a var.
         for (Unit u : body.getUnits()) {
             int potentialNextLineNumber = u.getJavaSourceStartLineNumber();
-            if (potentialNextLineNumber > 0) {
+            if (potentialNextLineNumber > linenumber) {
                 linenumber = potentialNextLineNumber;
-            } else if (Shimple.isPhiNode(u)) {
-                if (!inPhis) {
-                    ++linenumber; // hack to compensate for lack of source for phi
-                    inPhis = true;
-                }
-            } else inPhis = false;
+            }
+            int linenumberToRegister = linenumber;
+            if (Shimple.isPhiNode(u)) {
+                linenumberToRegister = linenumber + 1; // hack to compensate for lack of source for phi
+            }
             if (u instanceof DefinitionStmt) {
                 DefinitionStmt def = (DefinitionStmt) u;
                 Value assignee = def.getLeftOp();
                 if (assignee instanceof Local) {
                     Local var = (Local) assignee;
-                    if (!(var.getName().startsWith("$")) && !(transformedLocals.contains(var)) && linenumber > 0) {
+                    if (!(var.getName().startsWith("$")) && !(transformedLocals.contains(var))) {
                         transformedLocals.add(var);
-                        var.setName(var.getName() + "#_" + linenumber);
+                        var.setName(var.getName() + "#_" + linenumberToRegister);
                     }
                 }
             }
