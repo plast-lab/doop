@@ -89,11 +89,17 @@ MockObjectForType(?value, ?staticType) <-
    MockObject(?value, ?class),
    AnyConcreteImplementationsOpt(?staticType, ?class).
 
-ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <- // TODO
+ComponentTypeOpt(?arrayType, ?componentType) <-
+   ComponentType[?arrayType] = ?componentType.
+
+MockObjectForComponentType(?value, ?arrayType) <-
+   ComponentTypeOpt(?arrayType, ?componentType),
+   MockObjectForType(?value, ?componentType).
+
+ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
    MockObject(?arrayValue, ?arrayType),
    ArrayType(?arrayType),
-   ComponentType[?arrayType] = ?componentType,
-   MockObjectForType(?componentValue, ?componentType),
+   MockObjectForComponentType(?componentValue, ?arrayType),
    ImmutableHContext(?hctx).
 
 FormalsForEntryPoints(?method, ?formal) <-
@@ -146,14 +152,14 @@ MockReachableContext(?calleeCtx, ?method) <-
    MockReachableContext(?callerCtx, ?inmethod).
 
 // bind mock objects to receivers
-TypeForReceiverInContext(?ctx, ?receiver, ?class) <-
-   MockReachableContext(?ctx, ?method),
-   ThisVar[?method] = ?receiver,
-   Method:DeclaringType[?method] = ?class.
+//TypeForReceiverInContext(?ctx, ?receiver, ?class) <-
+//   MockReachableContext(?ctx, ?method),
+//   ThisVar[?method] = ?receiver,
+//   Method:DeclaringType[?method] = ?class.
 
 // all other receivers
-VarPointsTo(?hctx, ?value, ?ctx, ?receiver)
- <-
-   TypeForReceiverInContext(?ctx, ?receiver, ?class),
-   MockObject(?value, ?class),
-   ImmutableHContext(?hctx).
+//VarPointsTo(?hctx, ?value, ?ctx, ?receiver)
+// <-
+//   TypeForReceiverInContext(?ctx, ?receiver, ?class),
+//   MockObject(?value, ?class),
+//   ImmutableHContext(?hctx).

@@ -387,6 +387,7 @@ Stats:Metrics(43.0, "original tainted values", _t65[]).
 #endif
 
 #ifdef OPEN_PROGRAMS
+Stats:Simple:ReachableFromEntryPoint(?method) <- MockReachableContext(_, ?method).
 
 NewMetric(_t70, EntryPoint(_)).
 NewMetric(_t71, MockObject(_, _)).
@@ -394,6 +395,8 @@ NewMetric(_t72, MockObjFromEntryPoint(_)).
 NewMetric(_t73, MockObjFromField(_)).
 NewMetric(_t74, MockObjFromArray(_)).
 NewMetric(_t75, MockObjFromFormal(_)).
+NewMetric(_t76, MockReachableContext(_,_)).
+NewMetric(_t77, Stats:Simple:ReachableFromEntryPoint(_)).
 
 Stats:Metrics(60.0, "Entry Points", _t70[]).
 Stats:Metrics(61.0, "Mock Objects", _t71[]).
@@ -401,6 +404,9 @@ Stats:Metrics(61.1, "Mock Objects for Receivers", _t72[]).
 Stats:Metrics(61.2, "Mock Objects for Fields", _t73[]).
 Stats:Metrics(61.3, "Mock Objects for Arrays", _t74[]).
 Stats:Metrics(61.4, "Mock Objects for Formals", _t75[]).
+Stats:Metrics(62, "Methods Reachable from open entry points (SENS)", _t76[]).
+Stats:Metrics(62.5, "Methods Reachable from open entry points (INS)", _t77[]).
+
 
 #endif
 //Stats:Metrics(50.0, "call sites that did (not) get refined", _t47[]).
