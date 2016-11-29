@@ -5,7 +5,7 @@ Var(?var) -> Var:Type[?var] = _.
 VarPointsTo(_, _, _, ?var), Var:DeclaringMethod(?var, ?method) -> Reachable(?method).
 
 // Every var in VarPointsTo points to correctly typed values
-VarPointsTo(_, ?value, _, ?var), Value:Type[value] = ?valueType, Var:Type[?var] = ?varType ->
+VarPointsTo(_, ?value, _, ?var), Value:Type[?value] = ?valueType, Var:Type[?var] = ?varType ->
    SubtypeOf(?valueType, ?varType).
 
 // No VarPointsTo is ever inferred for objects that should have been
