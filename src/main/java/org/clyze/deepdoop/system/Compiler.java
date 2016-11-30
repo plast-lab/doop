@@ -5,6 +5,8 @@ import java.util.List;
 import org.antlr.v4.runtime.ANTLRFileStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.DatalogLexer;
 import org.clyze.deepdoop.datalog.DatalogListenerImpl;
@@ -15,6 +17,8 @@ import org.clyze.deepdoop.datalog.component.Component;
 public class Compiler {
 
 	public static List<Result> compile(String outDir, String filename) {
+		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: " + filename);
+
 		List<Result> results = null;
 		try {
 			DatalogParser parser = new DatalogParser(
