@@ -48,8 +48,7 @@ class Doop {
             isFile:true,
             description:"File with tab-separated data for Config:DynamicClass. Separate multiple files with a space.",
             value:[],
-            cli:false,
-            isAdvanced:true,
+            cli:false
         ),
         new AnalysisOption<String>(
             id:"TAMIFLEX",
@@ -123,7 +122,8 @@ class Doop {
             name:"exclude-implicitly-reachable-code",
             value:false,
             webUI:true,
-            forPreprocessor:true
+            forPreprocessor:true,
+            isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
             id:"MERGE_LIBRARY_OBJECTS_PER_METHOD",
@@ -211,9 +211,7 @@ class Doop {
             id:"SEPARATE_EXCEPTION_OBJECTS",
             name:"disable-merge-exceptions",
             value:false,
-            webUI:true,
-            forPreprocessor:true,
-            isAdvanced:true,
+            forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
             id:"REFINE",
@@ -225,15 +223,13 @@ class Doop {
             name:"no-ssa",
             description:"Disable the default policy of using ssa transformation on input.",
             value:true,
-            forCacheID:true,
-            webUI:true
+            forCacheID:true
         ),
         new AnalysisOption<Boolean>(
             id:"CACHE",
             name:"cache",
             description:"The analysis will use the cached facts, if they exist.",
-            value:false,
-            webUI:true
+            value:false
         ),
         new AnalysisOption<Boolean>(
             id:"SANITY",
@@ -247,17 +243,14 @@ class Doop {
             name:"run-jphantom",
             description:"Run jphantom for non-existent referenced jars.",
             value:false,
-            forCacheID:true,
-            webUI:true
+            forCacheID:true
         ),
         new AnalysisOption<Boolean>(
             id:"RUN_AVERROES",
             name:"run-averroes",
             description:"Run averroes to create a placeholder library.",
             value:false,
-            forCacheID:true,
-            webUI:true,
-            isAdvanced:true,
+            forCacheID:true
         ),
         new AnalysisOption<Boolean>(
             id:"DACAPO",
@@ -265,6 +258,20 @@ class Doop {
             description:"Load additional logic for DaCapo (2006) benchmarks properties.",
             value:false,
             webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"DACAPO_BACH",
+            name:"dacapo-bach",
+            description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<String>(
+            id:"DACAPO_BENCHMARK",
+            value:null,
+            cli:false,
             forPreprocessor:true
         ),
         new AnalysisOption<String>(
@@ -291,20 +298,6 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DACAPO_BACH",
-            name:"dacapo-bach",
-            description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
-            value:false,
-            webUI:true,
-            forPreprocessor:true
-        ),
-        new AnalysisOption<String>(
-            id:"DACAPO_BENCHMARK",
-            value:null,
-            cli:false,
-            forPreprocessor:true
-        ),
-        new AnalysisOption<Boolean>(
             id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
             name:"only-application-classes-fact-gen",
             value:false,
@@ -324,8 +317,7 @@ class Doop {
             id:"PLATFORMS_LIB",
             name:"platforms-lib",
             description:"The path to the platform libs directory.",
-            value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL,
-            isAdvanced:true
+            value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL
         ),
         new AnalysisOption<String>(
             id:"PLATFORM",
