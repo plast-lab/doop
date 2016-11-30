@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.clyze.Helper;
 import org.clyze.deepdoop.datalog.*;
 import org.clyze.deepdoop.datalog.DeepDoopException.Error;
 import org.clyze.deepdoop.datalog.clause.*;
@@ -26,6 +29,7 @@ import org.clyze.deepdoop.system.Result;
 
 public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String> {
 
+	Log                     _logger;
 	AtomCollectingActor     _acActor;
 	Set<String>             _globalAtoms;
 	Map<IVisitable, String> _codeMap;
@@ -43,6 +47,8 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		// returned
 		super(null);
 		_actor        = this;
+
+		_logger       = LogFactory.getLog(getClass());
 
 		_acActor      = new AtomCollectingActor();
 		_codeMap      = new HashMap<>();
@@ -103,7 +109,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 				}
 			}
 			if (!declFound)
-				System.err.println("WARN: Predicate `" + usedPred + "` not found in current file");
+				_logger.warn("\nWARNING: Predicate `" + usedPred + "` not found in current file\n");
 				//throw new DeepDoopException(Error.NO_DECL, usedPred);
 		}
 
