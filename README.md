@@ -14,8 +14,6 @@ For trouble-free configuration:
 * The `DOOP_OUT` environment variable could point to the output files directory (optional, defaults to `$DOOP_HOME/out`).
 * The `DOOP_CACHE` environment variable could point to the cached facts directory (optional, defaults to `$DOOP_HOME/cache`).
 
-You can change [environment.sh](bin/environment.sh) accordingly for your system, and then source it (`source ./bin/environment.sh`).
-
 
 ## Benchmarks & Platform Lib
 
