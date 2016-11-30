@@ -25,7 +25,7 @@ export() {
 	done
 }
 
-export foo ActualParam ApplicationClass ArrayType AssignCast:From \
+export ActualParam ApplicationClass ArrayType AssignCast:From \
 AssignCast:Insn AssignContextInsensitiveHeapAllocation \
 AssignHeapAllocation AssignLocal:From AssignLocal:Insn  \
 AssignNormalHeapAllocation AssignInstruction:To AssignNull:Insn \

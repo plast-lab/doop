@@ -252,18 +252,18 @@ $ ls jimple-dir
 Animal.jimple  Cat.jimple  Dog.jimple  Example.jimple
 ```
 
-### LogAnalyzer
+### Log Analyzer
 Using additional runtime flags, you can emit extra debug information related to
 the evaluation process of the Datalog engine. Explaining what kind of
 information is collected, is out of the scope of this tutorial, but this can be
-fed to `bin/LogAnalyzer.py` which will then emit profile information for each
+fed to `bin/log-analyzer.py` which will then emit profile information for each
 Datalog rule.
 
 Example:
 ```
 #!bash
 $ ./doop -a context-insensitive -i Example.jar -- -logLevel debugDetail@factbus > log.txt
-$ ./bin/LogAnalyzer.py log.txt 
+$ ./bin/log-analyzer.py log.txt 
  ImpossibleExceptionHandler(?handler :: ExceptionHandler, ?type :: Type, ?instruction :: Instruction) <-
    PossibleExceptionHandler(?handler :: ExceptionHandler, ?type :: Type, ?instruction :: Instruction),
    ExceptionHandler:Before(?previous :: ExceptionHandler, ?handler :: ExceptionHandler),
