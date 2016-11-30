@@ -21,20 +21,7 @@ class Helper {
      * @param console - indicates whether log statements should be also written to the standard output.
      */
     static void initLogging(String logLevel, String logDir, boolean console) {
-        File dir = new File(logDir)
-        if (!dir.exists()) dir.mkdir()
-
-        String logFile =  "${logDir}/doop.log"
-
-        PatternLayout layout = new PatternLayout("%d [%t] %-5p %c - %m%n")
-        Logger root = Logger.getRootLogger()
-        root.setLevel(Level.toLevel(logLevel, Level.WARN))
-        DailyRollingFileAppender appender = new DailyRollingFileAppender(layout, logFile, "'.'yyyy-MM-dd")
-        root.addAppender(appender)
-
-        if (console) {
-            root.addAppender(new ConsoleAppender(new PatternLayout("%m%n")))
-        }
+        org.clyze.Helper.initLogging(logLevel, logDir, console)
     }
 
     /**
@@ -43,9 +30,7 @@ class Helper {
      * @param logLevel - the log level to use
      */
     static void initConsoleLogging(String logLevel){
-        Logger root = Logger.getRootLogger()
-        root.setLevel(Level.toLevel(logLevel, Level.WARN))
-        root.addAppender(new ConsoleAppender(new PatternLayout("%m%n")))
+        org.clyze.Helper.initConsoleLogging(logLevel)
     }
 
     /**
