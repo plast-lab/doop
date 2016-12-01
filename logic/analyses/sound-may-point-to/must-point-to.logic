@@ -1,0 +1,27 @@
+MustAbstractObject(heap) -> .
+lang:entity(`MustAbstractObject).
+lang:physical:storageModel[`MustAbstractObject]="ScalableSparse".
+lang:physical:capacity[`MustAbstractObject] = 8388608.
+
+cons:MustAbstractObject[var, label] = heap -> Var(var), string(label), MustAbstractObject(heap).
+lang:constructor(`cons:MustAbstractObject).
+
+
+// For use when we don't want to incur the cost
+component DummyMustPointTo {
+  MustPointTo(hctx, heap, ctx, var) ->
+    MayHeapContext(hctx), MustAbstractObject(heap), MayContext(ctx), Var(var).
+  FieldMustPointTo(baseHCtx, baseheap, fld, hctx, heap, ctx, inst) ->
+    MayHeapContext(baseHCtx), MustAbstractObject(baseheap), Field(fld),
+    MayHeapContext(hctx), MustAbstractObject(heap), MayContext(ctx), Instruction(insn).
+  Before:FieldMustPointTo(baseHCtx, baseheap, fld, hctx, heap, ctx, inst) ->
+    MayHeapContext(baseHCtx), MustAbstractObject(baseheap), Field(fld),
+    MayHeapContext(hctx), MustAbstractObject(heap), MayContext(ctx), Instruction(insn).
+  VarMustAlias(var1, var2, ctx) -> Var(var1), Var(var2), MayContext(ctx).
+  VarMustAliasThis(var) -> Var(var).
+  VarMustAliasAP(var, ap, ctx, insn) -> Var(var), AccessPath(ap), MayContext(ctx), Instruction(insn).
+}
+
+component SoundMustPointTo {
+
+}

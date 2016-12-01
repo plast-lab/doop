@@ -40,7 +40,7 @@ AccessPath:toString[ap] = str <-
 
 AccessPath:toString[ap] = str <-
   cons:AccessPath:byStaticField[fld] = ap,
-  Field:Id(fld:str). 
+  Field:Id(fld:str).
 
 AccessPath:toString[ap2] = str2 <-
   cons:AccessPath:byField[fld, ap1] = ap2,
@@ -49,9 +49,8 @@ AccessPath:toString[ap2] = str2 <-
   str2 = str1 + "." + fldStr.
 
 
-component IntraproceduralMust {
-#include "IntraproceduralMust.logic"
-}
+#include "intraprocedural-must.logic"
+#include "must-point-to.logic"
 
 //// ====================================
 //// BEGIN configuration
@@ -117,7 +116,8 @@ IntraproceduralMustForStats = new IntraproceduralMust
 //  SoundMayPhase1:MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 InitialRootMethodForMayAnalysis(method) <-
-  Reachable(method), // just for benchmarking against unsound VPT analysis
+  //Reachable(method), // just for benchmarking against unsound VPT analysis
+  ApplicationMethod(method),
   Method:DeclaringType[method] = class,
   ApplicationClass(class).
 

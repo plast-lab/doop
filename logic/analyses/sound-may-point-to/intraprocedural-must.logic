@@ -1,0 +1,98 @@
+component IntraproceduralMust {
+  // Just for baseline comparisons. Should be very cheap to compute.
+
+  // to be provided by other components
+  MayReachableMethodUnderMayContext(ctx, inMethod) ->
+    MayContext(ctx), Method(inMethod).
+
+  // intermediate relations to compute
+  AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method) ->
+    MayHeapContext(hctx), HeapAllocation(heap), Var(var), Method(method).
+  IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, insn) ->
+    MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Instruction(insn).
+
+  // output relations
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) ->
+    MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Var(var).
+  IntraproceduralCertainMethodBase(hctx, heap, ctx, invo) ->
+    MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), MethodInvocation(invo).
+  AppAllCtxIntraproceduralMustPointTo(hctx, heap, var) ->
+    MayHeapContext(hctx), HeapAllocation(heap), Var(var).
+
+
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+    AssignNormalHeapAllocation(heap, var, inMethod),
+    MayReachableMethodUnderMayContext(ctx, inMethod),
+    cons:MayHeapContext:Empty[] = hctx.
+
+  // strings and others
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+    AssignContextInsensitiveHeapAllocation(heap, var, inMethod),
+    !HeapAllocation:Merge[heap] = _, // TODO this is not present
+    cons:MayHeapContext:Empty[] = hctx,
+    MayReachableMethodUnderMayContext(ctx, inMethod).
+
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+    AssignContextInsensitiveHeapAllocation(heap, var, inMethod),
+    HeapAllocation:Merge[heap] = heap,
+    cons:MayHeapContext:Empty[] = hctx,
+    MayReachableMethodUnderMayContext(ctx, inMethod).
+
+  // null assignments
+
+  //RecordMacroMay(ctx, heap, hctx),
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+    AssignNull:Insn(insn),
+    AssignInstruction:To[insn] = var,
+    HeapAllocation:Null[] = heap,
+    Instruction:Method[insn] = inMethod,
+    MayReachableMethodUnderMayContext(ctx, inMethod),
+    cons:MayHeapContext:Empty[] = hctx.
+
+  IntraproceduralMustPointTo(hctx, heap, ctx, to) <-
+    IntraproceduralMustPointTo(hctx, heap, ctx, from),
+    AssignLocal:From[insn] = from,
+    !PhiNodeHead(insn, _),
+    AssignInstruction:To[insn] = to.
+
+  IntraproceduralMustPointTo(hctx, heap, ctx, to) <-
+    AssignCast:From[insn] = from,
+    IntraproceduralMustPointTo(hctx, heap, ctx, from),
+    AssignInstruction:To[insn] = to.
+
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+    IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, lastInsn),
+    !NextInSamePhiNode(lastInsn, _),
+    AssignInstruction:To[lastInsn] = var.
+
+  IntraproceduralCertainMethodBase(hctx, heap, ctx, invo) <-
+    (SpecialMethodInvocation:Base[invo] = base;
+     VirtualMethodInvocation:Base[invo] = base),
+    IntraproceduralMustPointTo(hctx, heap, ctx, base).
+
+  AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method) <-
+    cons:MayContext:Initial[] = initCtx,
+    IntraproceduralMustPointTo(hctx, heap, initCtx, var),
+    Var:DeclaringMethod[var] = method.
+
+  IntraproceduralMustPointTo(hctx, heap, ctx, var) <-
+    MayReachableMethodUnderMayContext(ctx, method),
+    AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method).
+
+  IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, headInsn) <-
+    PhiNodeHead(_, headInsn),
+    AssignLocal:From[headInsn] = from,
+    IntraproceduralMustPointTo(hctx, heap, ctx, from).
+
+  IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, nextInsn) <-
+    IntraproceduralMustPointToUpToPhiInstruction(hctx, heap, ctx, insn),
+    NextInSamePhiNode(insn, nextInsn),
+    AssignLocal:From[nextInsn] = from,
+    IntraproceduralMustPointTo(hctx, heap, ctx, from).
+
+  // for final stats
+  AppAllCtxIntraproceduralMustPointTo(hctx, heap, var) <-
+    AllCtxIntraproceduralMustPointToInMethod(hctx, heap, var, method),
+    Method:DeclaringType[method] = class,
+    ApplicationClass(class).
+}
