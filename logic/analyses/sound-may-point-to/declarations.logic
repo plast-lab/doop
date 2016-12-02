@@ -5,8 +5,8 @@
 
 MayContext(ctx) -> .
 lang:entity(`MayContext).
-lang:physical:storageModel[`MayContext]="ScalableSparse".
-lang:physical:capacity[`MayContext] = 4294967296.
+lang:physical:storageModel[`MayContext] = "ScalableSparse".
+lang:physical:capacity[`MayContext] = 2^32.
 
 cons:MayContext:Initial[] = ctx -> MayContext(ctx).
 lang:constructor(`cons:MayContext:Initial).
@@ -18,8 +18,8 @@ lang:constructor(`PushMayContext).
 
 MayHeapContext(hctx) -> .
 lang:entity(`MayHeapContext).
-lang:physical:storageModel[`MayHeapContext]="ScalableSparse".
-lang:physical:capacity[`MayHeapContext] = 8388608.
+lang:physical:storageModel[`MayHeapContext] = "ScalableSparse".
+lang:physical:capacity[`MayHeapContext] = 2^23.
 
 cons:MayHeapContext:Empty[] = hctx -> MayHeapContext(hctx).
 lang:constructor(`cons:MayHeapContext:Empty).
@@ -28,7 +28,7 @@ lang:constructor(`cons:MayHeapContext:Empty).
 AccessPath(ap) -> .
 lang:entity(`AccessPath).
 lang:physical:storageModel[`AccessPath] = "ScalableSparse".
-lang:physical:capacity[`AccessPath] = 8388608.
+lang:physical:capacity[`AccessPath] = 2^23.
 
 cons:AccessPath:byVar[var] = ap -> Var(var), AccessPath(ap).
 lang:constructor(`cons:AccessPath:byVar).
