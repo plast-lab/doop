@@ -377,6 +377,14 @@ class ClassicAnalysis extends Analysis {
             connector.queue().include(options.X_STATS_AROUND.value as String)
             return
         }
+        // Special case of X_STATS_AROUND (detected automatically)
+        def specialStats       = new File("${Doop.analysesPath}/${name}/statistics.logic")
+        def specialStatsScript = new File("${Doop.analysesPath}/${name}/statistics.part.lb")
+        if (specialStats.exists() && specialStatsScript.exists()) {
+            cpp.preprocess("${outDir}/statistics.logic", specialStats.toString())
+            connector.queue().include(specialStatsScript.toString())
+            return
+        }
 
         def macros    = "${Doop.analysesPath}/${name}/macros.logic"
         def statsPath = "${Doop.addonsPath}/statistics"
