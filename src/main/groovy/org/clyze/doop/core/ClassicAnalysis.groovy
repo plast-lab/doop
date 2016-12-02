@@ -131,6 +131,7 @@ class ClassicAnalysis extends Analysis {
             cacheDir.mkdirs()
             FileOps.copyDirContents(factsDir, cacheDir)
             new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+            logger.info "----"
         }
     }
 
