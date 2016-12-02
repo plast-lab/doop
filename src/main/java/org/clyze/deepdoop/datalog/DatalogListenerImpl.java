@@ -196,15 +196,24 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	public void exitConstant(ConstantContext ctx) {
 		if (ctx.INTEGER() != null) {
 			String str = ctx.INTEGER().getText();
-			int base = 10;
+			Long constant;
 			if (str.startsWith("0x") || str.startsWith("0X")) {
 				str = str.substring(2);
-				base = 16;
-			} else if (str.startsWith("0") && str.length() > 1) {
-				str = str.substring(1);
-				base = 8;
+				constant = Long.parseLong(str, 16);
 			}
-			_expr.put(ctx, new ConstantExpr(Long.parseLong(str, base)));
+			else if (str.startsWith("0") && str.length() > 1) {
+				str = str.substring(1);
+				constant = Long.parseLong(str, 8);
+			}
+			else if (str.startsWith("2^")) {
+				str = str.substring(2);
+				int shiftAmount = Integer.parseInt(str);
+				constant = 1L << shiftAmount;
+			}
+			else {
+				constant = Long.parseLong(str, 10);
+			}
+			_expr.put(ctx, new ConstantExpr(constant));
 		}
 		else if (ctx.REAL() != null)    _expr.put(ctx, new ConstantExpr(Double.parseDouble(ctx.REAL().getText())));
 		else if (ctx.BOOLEAN() != null) _expr.put(ctx, new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText())));
