@@ -524,7 +524,7 @@ Config:DynamicClass(?class, ?invocation) ->
   ReferenceType(?class), MethodInvocation(?invocation).
 
 // Predicates to store runtime metrics and statistics
-Stats:Runtime(?attr, ?value) -> string(?attr), decimal[64](?value).
+Stats:Runtime(?attr, ?value) -> string(?attr), uint[64](?value).
 Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint[64](?value).
 
 

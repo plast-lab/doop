@@ -283,9 +283,12 @@ ReachableLoadArrayIndexBase(?base) <-
  * Store array index
  */
 
-ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
+OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) <-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
-  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from).
+
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
+  OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),     
   NotSpecialValue(?value),
   NotEmptyArrayValue(?basevalue),
   Value:Type[?value] = ?valuetype,
