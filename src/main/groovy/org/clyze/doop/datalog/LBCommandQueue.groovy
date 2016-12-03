@@ -78,7 +78,7 @@ class LBCommandQueue implements IWorkspaceAPI {
             if (matcher.matches()) {
                 def inFile  = matcher[0][2]
                 def outFile = inFile.replaceAll(File.separator, "-")
-                FileUtils.copyFile(new File(inDir, inFile), new File(_outDir, outFile))
+                _cpp.preprocess(new File(_outDir, outFile).toString(), new File(inDir, inFile).toString())
             }
             eval(line)
         }
