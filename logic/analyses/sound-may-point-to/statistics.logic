@@ -1,7 +1,4 @@
-#define NewMetricMacro(msg, order, tmpPred, body) \
-  tmpPred[] = ?c <- agg<<?c = count()>> body. \
-  lang:defaultValue[`tmpPred] = 0. \
-  Stats:Metrics(order, msg, tmpPred[]).
+#include "../../addons/statistics/macros.logic"
 
 //Stats:SoundMay:AppMayPointTo(?heap, ?var) <-
 //   MayPointTo(_, ?heap, _, ?var),

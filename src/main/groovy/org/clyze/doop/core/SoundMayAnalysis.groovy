@@ -45,6 +45,8 @@ class SoundMayAnalysis extends ClassicAnalysis {
             if (!options.X_STOP_AT_BASIC.value) {
 
                 mainAnalysis()
+
+                produceStats()
             }
         }
 
