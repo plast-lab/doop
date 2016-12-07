@@ -5,8 +5,7 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -61,6 +60,16 @@ class FactGenerator implements Runnable {
                 try {
                     generate(m, session);
                 } catch (RuntimeException exc) {
+                    // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                    // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+                    //     Thread key = i.next();
+                    //     System.err.println("Thread " + key.getName());
+                    //     StackTraceElement[] trace = liveThreads.get(key);
+                    //     for (int j = 0; j < trace.length; j++) {
+                    //         System.err.println("\tat " + trace[j]);
+                    //     }
+                    // }
+
                     System.err.println("Error while processing method: " + m);
                     throw exc;
                 }
@@ -193,10 +202,10 @@ class FactGenerator implements Runnable {
             if(!m.hasActiveBody())
             {
                 // This instruction is the bottleneck of
-                // soot-fact-generation. It accounts for more than 80%
-                // of its total execution time. However, it is soot
-                // internal so we'll need a profiler to optimize it.
-                m.retrieveActiveBody();
+                // soot-fact-generation.
+                synchronized(Scene.v()) {
+                    m.retrieveActiveBody();
+                } // synchronizing so broadly = giving up on Soot's races
             }
 
             Body b = m.getActiveBody();
