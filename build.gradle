@@ -41,7 +41,7 @@ def sootClassesJar = file('lib/sootclasses-trunk.jar')
 def sootInfoflowJar = file('lib/soot-infoflow.jar')
 def sootInfoflowAndroidJar = file('lib/soot-infoflow-android.jar')
 [[sootClassesJar, "ext:sootclasses-trunk:1.1-SNAPSHOT"],
- [sootInfoflowJar, "ext:soot-infoflow-android:1.0-SNAPSHOT"],
+ [sootInfoflowJar, "ext:soot-infoflow:1.0-SNAPSHOT"],
  [sootInfoflowAndroidJar, "ext:soot-infoflow-android:1.0-SNAPSHOT"]].each{ p->
    if (p[0].exists()) {
       dependencies {
