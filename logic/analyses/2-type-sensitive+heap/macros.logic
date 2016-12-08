@@ -42,6 +42,10 @@
   ContextFromRealContext[RealHContextFromHContext[hctx], \
                          Value:DeclaringType[value]] = calleeCtx
 
+#define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[Value:DeclaringType[value], Value:DeclaringType[value]] = calleeCtx
+
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[RealContext2FromContext[callerCtx], \

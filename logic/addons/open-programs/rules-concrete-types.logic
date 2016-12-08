@@ -1,157 +1,19 @@
 #include "macros.logic"
+#include "common.logic"
 #include "entry-points.logic"
-
-FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
-
-AllConcreteImplementations(?class, ?staticType) <-
-   SubtypeOf(?class, ?staticType),
-   ClassType(?class),
-   !ClassModifier("abstract", ?class).
-
-AllConcreteImplementations(?class, ?class) <-
-   ClassType(?class),
-   !ClassModifier("abstract", ?class).
-
-AllConcreteImplementations(?type, ?type) <-
-   ArrayType(?type).
 
 ConcreteImplementations[?staticType] = ?class <-
    agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
 
-AnyConcreteImplementations(?class, ?staticType) <-
-   ConcreteImplementations[?staticType] = ?class.
+StaticToActualType(?class, ?staticType) <-
+   ConcreteImplementations[?staticType] = ?class,
+   !ConcreteType(?staticType).
+
+StaticToActualType(?type, ?type) <-
+   ConcreteType(?type).
 
 MockObjectIntroduced(?class, ?value) <- ObjToMock(?class).
 
-ObjToMock(?class) -> ReferenceType(?class).
-
-// invariant: this should always be a type class
-MockObjFromEntryPoint(?class),
-ObjToMock(?class) <-
-   EntryPoint(?method),
-   Method:DeclaringType[?method] = ?class,
-   !ClassModifier("abstract", ?class),
-   !Method:Modifier("static", ?method),
-   ReferenceType(?class).
-
-MockObjFromArray(?class),
-ObjToMock(?class) <-
-   ObjToMock(?type),
-   ArrayType(?type),
-   ComponentType[?type] = ?componentType,
-   AnyConcreteImplementations(?class, ?componentType).
-
-
-MockObjFromField(?fieldType) -> ReferenceType(?fieldType).
-
-#ifdef MOCK_OBJECTS_FOR_FIELDS
-MockObjFromField(?fieldType),
-ObjToMock(?fieldType) <-
-   FieldInformationOpt(_, ?class, ?fieldType),
-   !ClassModifier("abstract", ?fieldType),
-   ReferenceType(?fieldType),
-   ObjToMock(?class).
- 
-FieldInformation(?signature, ?fieldtype, ?class) ->
-   Field(?signature), Type(?fieldtype), Type(?class).
-
-FieldInformation(?signature, ?fieldtype, ?class) <-
-   Field:Type[?signature] = ?fieldtype,
-   Field:DeclaringType[?signature] = ?class.
-
-FieldInformation(?signature, ?fieldtype, ?class) <-
-   FieldInformation(?signature, ?fieldtype, ?staticType),
-   AllConcreteImplementations(?class, ?staticType).
-
-FieldInformation(?signature, ?fieldConcreteType, ?class) <-
-   FieldInformationOpt(?signature, ?class, ?fieldStaticType),
-   AnyConcreteImplementations(?fieldConcreteType, ?fieldStaticType).
-
-FieldInformationOpt(?signature, ?class, ?fieldtype) <-
-   FieldInformation(?signature, ?fieldtype, ?class).
-   
-FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) ->
-   Field(?signature), Type(?fieldtype), Value(?basevalue).
-
-FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) <-
-   FieldInformation(?signature, ?fieldtype, ?class),
-   MockObject(?basevalue, ?class).
-
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
-   ImmutableHContext(?hctx), //TODO: hctx 
-   FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
-   MockObjectForType(?value, ?fieldtype).
-#endif
-
-AnyConcreteImplementationsOpt(?staticType, ?class) <- AnyConcreteImplementations(?class, ?staticType).
-
-MockObjectForType(?value, ?staticType) <-
-   MockObject(?value, ?class),
-   AnyConcreteImplementationsOpt(?staticType, ?class).
-
-ComponentTypeOpt(?arrayType, ?componentType) <-
-   ComponentType[?arrayType] = ?componentType.
-
-MockObjectForComponentType(?value, ?arrayType) <-
-   ComponentTypeOpt(?arrayType, ?componentType),
-   MockObjectForType(?value, ?componentType).
-
-ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
-   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
-   ArrayType(?arrayType),
-   MockObjectForComponentType(?componentValue, ?arrayType).
-
-FormalsForEntryPoints(?method, ?formal) <-
-   FormalParam[_, ?method] = ?formal,
-   EntryPoint(?method).
-
-MockObjFromFormal(?subtype),
-ObjToMock(?subtype),
-TypeForFormals(?formal, ?method, ?subtype) <-
-   FormalsForEntryPoints(?method, ?formal),
-   Var:Type[?formal] = ?staticType,
-   AnyConcreteImplementations(?subtype, ?staticType).
-
-MockForFormal(?value, ?formal, ?class, ?method) <-
-   TypeForFormals(?formal, ?method, ?class),
-   MockObject(?value, ?class).
-
-// bind mock objects to formals
-MockObjectContext(?hctx, ?value, ?class),
-VarPointsTo(?hctx, ?value, ?ctx, ?formal)
- <-
-   ContextForEntryPoint(?ctx, ?method),
-   HContextForEntryPoint(?hctx, ?method),
-   MockForFormal(?value, ?formal, ?class, ?method).
-
-// receivers for entry points
-
-HContextForEntryPoint(?hctx, ?method),
-#ifndef OPEN_PROGRAMS_IMMUTABLE_HCTX
-RecordMacro(?calleeCtx, ?value, ?hctx),
-#endif
-MockObjectContext(?hctx, ?value, ?class),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) <-
-#ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
-   ImmutableHContext(?hctx),
-#endif
-   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
-
-
-ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
-#ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
-MergeStartupMacro(?immutablehctx, ?value, ?calleeCtx),
-#endif
-ContextForEntryPoint(?calleeCtx, ?method)
- <-
-   ThisVar[?method] = ?receiver,
-   Method:DeclaringType[?method] = ?class,
-   MockObjectForType(?value, ?class),
-   EntryPoint(?method),
-#ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
-   ImmutableContext(?calleeCtx),
-#endif
-   ImmutableHContext(?immutablehctx).
 
 CallGraphEdgeOpt(?calleeCtx, ?method, ?callerCtx, ?invocation)
  <- CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method).
@@ -160,24 +22,9 @@ MethodCallGraphEdge(?calleeCtx, ?method, ?callerCtx, ?inmethod) <-
    CallGraphEdgeOpt(?calleeCtx, ?method, ?callerCtx, ?invocation),
    Instruction:Method[?invocation] = ?inmethod.
 
-
-ReachableContext(?ctx, ?method),
-MockReachableContext(?ctx, ?method) <-
-   ContextForEntryPoint(?ctx, ?method).
+MockReachableContext(?ctx, ?method) <-  ContextForEntryPoint(?ctx, ?method).
 
 MockReachableContext(?calleeCtx, ?method) <-
    MethodCallGraphEdge(?calleeCtx, ?method, ?callerCtx, ?inmethod),
    MockReachableContext(?callerCtx, ?inmethod).
 
-// bind mock objects to receivers
-//TypeForReceiverInContext(?ctx, ?receiver, ?class) <-
-//   MockReachableContext(?ctx, ?method),
-//   ThisVar[?method] = ?receiver,
-//   Method:DeclaringType[?method] = ?class.
-
-// all other receivers
-//VarPointsTo(?hctx, ?value, ?ctx, ?receiver)
-// <-
-//   TypeForReceiverInContext(?ctx, ?receiver, ?class),
-//   MockObject(?value, ?class),
-//   ImmutableHContext(?hctx).

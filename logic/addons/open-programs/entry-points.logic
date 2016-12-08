@@ -1,8 +1,14 @@
+#include "partitioning.logic"
+
 EntryPoint(?method) -> Method(?method).
 
 
 EntryPoint(?method) <-
    Method:Modifier("public", ?method),
+   !Method:Modifier("static", ?method),
+   !ClassModifier("private", ?class),
    FormalParam[_, ?method] = ?formal,
    Var:Type[?formal] = ?type,
+   Method:DeclaringType[?method] = ?class,
+   Class:PackageHack[?class] = "java.util",
    ReferenceType(?type).
