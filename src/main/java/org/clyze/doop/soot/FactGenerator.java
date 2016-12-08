@@ -211,7 +211,9 @@ class FactGenerator implements Runnable {
             Body b = m.getActiveBody();
             if(_ssa)
             {
-                b = Shimple.v().newBody(b);
+                synchronized(Scene.v()) {
+                    b = Shimple.v().newBody(b);
+                }
                 m.setActiveBody(b);
             }
 
