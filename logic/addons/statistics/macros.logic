@@ -1,4 +1,4 @@
-
-#define NewMetric(n, rel) \
-  _##n[] = ?c <- agg<<?c = count()>> rel. \
-  n[] = ?c <- (_##n[] = ?c) ; (!_##n[] = _, ?c = 0)
+#define NewMetricMacro(order, tmpPred, msg, body) \
+  tmpPred[] = ?c <- agg<<?c = count()>> body. \
+  lang:defaultValue[`tmpPred] = 0. \
+  Stats:Metrics(order, msg, tmpPred[])

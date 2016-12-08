@@ -25,7 +25,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
         logger.info "-- Runtime metrics --"
         lines.sort()*.split(", ").each {
-            printf("%-80s %,.2f\n", it[0], it[1] as float)
+            printf("%-80s %,d\n", it[0], it[1] as int)
         }
 
         if (!analysis.options.X_STATS_NONE.value) {

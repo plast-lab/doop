@@ -1,5 +1,6 @@
 package org.clyze.doop.datalog
 
+import org.apache.commons.io.FileUtils
 import org.clyze.doop.system.CPreprocessor
 
 class LBCommandQueue implements IWorkspaceAPI {
@@ -71,13 +72,13 @@ class LBCommandQueue implements IWorkspaceAPI {
     public IWorkspaceAPI include(String filePath) {
         def inDir  = new File(filePath).getParentFile()
         def tmpFile = File.createTempFile("tmp", ".lb", _outDir)
-        _cpp.preprocess(tmpFile, filePath)
+        _cpp.preprocess(tmpFile.toString(), filePath)
         tmpFile.eachLine { line ->
             def matcher = (line =~ /^(addBlock|exec)[ \t]+-[a-zA-Z][ \t]+(.*\.logic)$/)
             if (matcher.matches()) {
                 def inFile  = matcher[0][2]
                 def outFile = inFile.replaceAll(File.separator, "-")
-                FileUtils.copyFile(new File(inDir, inFile), new File(_outDir, outFile))
+                _cpp.preprocess(new File(_outDir, outFile).toString(), new File(inDir, inFile).toString())
             }
             eval(line)
         }
