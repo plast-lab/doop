@@ -66,13 +66,13 @@ dependencies {
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter2:1.0-SNAPSHOT',
-            'ext:dexlib2-2.1.3-a5d82813:1.0-SNAPSHOT'
+            'ext:dexlib2-2.2b4-adb12356:1.0-SNAPSHOT'
 
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'
     runtime 'ext:averroes-no-properties:1.0-SNAPSHOT',
             'ext:herosclasses-trunk:1.0-SNAPSHOT',
-            'ext:util-2.1.3-a5d82813:1.0-SNAPSHOT',
+            'ext:util-2.2b4-adb12356:1.0-SNAPSHOT',
             'ext:axml-2.0:1.0-SNAPSHOT'
 
     // DeepDoop
