@@ -204,7 +204,7 @@ public class Main {
             soot.options.Options.v().set_verbose(false);
             soot.options.Options.v().set_unfriendly_mode(false);
 
-            //app.setLibraries(_libraries);
+            app.setLibraries(_libraries);
             app.getConfig().setCallbackAnalyzer(Fast);
             app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
             dummyMain = app.getDummyMainMethod();
