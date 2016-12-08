@@ -38,15 +38,21 @@ repositories {
 
 // Temporary (?) hack to allow testing with local version of a soot jar
 def sootClassesJar = file('lib/sootclasses-trunk.jar')
-if (sootClassesJar.exists()) {
-    dependencies {
-        compile files(sootClassesJar)
-    }
-}
-else {
-    dependencies {
-        compile 'ext:sootclasses-trunk:1.1-SNAPSHOT'
-    }
+def sootInfoflowJar = file('lib/soot-infoflow.jar')
+def sootInfoflowAndroidJar = file('lib/soot-infoflow-android.jar')
+[[sootClassesJar, "ext:sootclasses-trunk:1.1-SNAPSHOT"],
+ [sootInfoflowJar, "ext:soot-infoflow-android:1.0-SNAPSHOT"],
+ [sootInfoflowAndroidJar, "ext:soot-infoflow-android:1.0-SNAPSHOT"]].each{ p->
+   if (p[0].exists()) {
+      dependencies {
+          compile files(p[0])
+      }
+   }
+   else {
+      dependencies {
+          compile p[1]
+      }
+   }
 }
 
 dependencies {
