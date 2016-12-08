@@ -54,29 +54,36 @@ class FactGenerator implements Runnable {
 
             _sootClass.getFields().forEach(this::generate);
 
-            for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                Session session = new Session();
-
+            boolean success;
+            do {
+                success = true;
                 try {
-                    generate(m, session);
-                } catch (RuntimeException exc) {
-                    // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
-                    // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-                    //     Thread key = i.next();
-                    //     System.err.println("Thread " + key.getName());
-                    //     StackTraceElement[] trace = liveThreads.get(key);
-                    //     for (int j = 0; j < trace.length; j++) {
-                    //         System.err.println("\tat " + trace[j]);
-                    //     }
-                    // }
-
-                    System.err.println("Error while processing method: " + m);
-                    throw exc;
+                    for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                        Session session = new Session();
+                        try {
+                            generate(m, session);
+                        }
+                        catch (Exception exc) {
+                            // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                            // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+                            //     Thread key = i.next();
+                            //     System.err.println("Thread " + key.getName());
+                            //     StackTraceElement[] trace = liveThreads.get(key);
+                            //     for (int j = 0; j < trace.length; j++) {
+                            //         System.err.println("\tat " + trace[j]);
+                            //     }
+                            // }
+                    
+                            System.err.println("Error while processing method: " + m);
+                            throw exc;
+                        }
+                    }                 
+                } catch (Exception exc) {
+                    System.err.println("\n\nRETRYING\n\n");
+                    success = false;
                 }
-            }
-
+            } while (!success);
         }
-
     }
 
     private void generate(SootField f)
@@ -203,17 +210,17 @@ class FactGenerator implements Runnable {
             {
                 // This instruction is the bottleneck of
                 // soot-fact-generation.
-                synchronized(Scene.v()) {
-                    m.retrieveActiveBody();
-                } // synchronizing so broadly = giving up on Soot's races
+                //                synchronized(Scene.v()) {
+                m.retrieveActiveBody();
+                //                } // synchronizing so broadly = giving up on Soot's races
             }
 
             Body b = m.getActiveBody();
             if(_ssa)
             {
-                synchronized(Scene.v()) {
-                    b = Shimple.v().newBody(b);
-                }
+                //                synchronized(Scene.v()) {
+                b = Shimple.v().newBody(b);
+                //                }
                 m.setActiveBody(b);
             }
 
