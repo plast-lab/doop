@@ -4,12 +4,15 @@ import org.objectweb.asm.ClassReader;
 
 import soot.ClassProvider;
 import soot.ClassSource;
+import soot.SourceLocator;
 import soot.asm.AsmClassSource;
 
 import java.io.*;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import static soot.SourceLocator.*;
 
 /**
  * This class provider allows the specification of specific .class
@@ -24,13 +27,13 @@ import java.util.zip.ZipFile;
  */
 class NoSearchingClassProvider implements ClassProvider {
 
-    private Map<String, Resource> _classes;
-    private List<ZipFile> _archives;
+    private Map<String, FoundFile> _classes;
+    private Map<String, ZipFile> _archives;
     private Map<String, Properties> _properties;
 
     NoSearchingClassProvider() {
         _classes = new HashMap<>();
-        _archives = new ArrayList<>();
+        _archives = new HashMap<>();
         _properties = new HashMap<>();
     }
 
@@ -47,29 +50,15 @@ class NoSearchingClassProvider implements ClassProvider {
      * added.
      */
     String addClass(File f) throws IOException {
-        return addClass(f.getPath(), new FileResource(f));
-    }
-
-    /**
-     * Adds a class file in a zip/jar archive. Returns the class name of
-     * the class that was added.
-     */
-    private String addClass(ZipFile archive, ZipEntry entry) throws IOException {
-        return addClass(entry.getName(), new ZipEntryResource(archive, entry));
-    }
-
-    /** Adds a properties file in a zip/jar archive. */
-    private void addProperties(ZipFile archive, ZipEntry entry) throws IOException
-    {
-        addProperties(entry.getName(), new ZipEntryResource(archive, entry));
+        return addClass(new FoundFile(f));
     }
 
     /**
      * Adds a class file from a resource.
      */
-    private String addClass(String path, Resource resource) throws IOException
+    private String addClass(FoundFile foundFile) throws IOException
     {
-        try ( InputStream stream = resource.open() ) {
+        try ( InputStream stream = foundFile.inputStream() ) {
             // Get class name by reading class contents
             ClassReader classReader = new ClassReader(stream);
             String className = classReader.getClassName().replace("/", ".");
@@ -81,7 +70,7 @@ class NoSearchingClassProvider implements ClassProvider {
             }
 
             // Store class resource
-            _classes.put(className, resource);
+            _classes.put(className, foundFile);
             return className;
         }
     }
@@ -89,11 +78,11 @@ class NoSearchingClassProvider implements ClassProvider {
     /**
      * Adds a properties file from a resource.
      */
-    private void addProperties(String path, Resource resource)
+    private void addProperties(FoundFile foundFile)
         throws IOException
     {
         Properties properties = new Properties();
-        InputStream stream = resource.open();
+        InputStream stream = foundFile.inputStream();
 
         try {
             properties.load(stream);
@@ -107,7 +96,7 @@ class NoSearchingClassProvider implements ClassProvider {
                 stream.close();
         }
 
-        _properties.put(path, properties);
+        _properties.put(foundFile.getFilePath(), properties);
     }
 
     /**
@@ -121,12 +110,12 @@ class NoSearchingClassProvider implements ClassProvider {
         while(entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             if(entry.getName().endsWith(".class")) {
-                String className = addClass(archive, entry);
+                String className = addClass(new FoundFile(f.getPath(), entry.getName()));
                 result.add(className);
             }
 
             if(entry.getName().endsWith(".properties"))
-                addProperties(archive, entry);
+                addProperties(new FoundFile(f.getPath(), entry.getName()));
         }
 
         return result;
@@ -136,7 +125,7 @@ class NoSearchingClassProvider implements ClassProvider {
      * Adds a library archive to the class provider.
      */
     void addArchiveForResolving(File f) throws IOException {
-        _archives.add(new ZipFile(f));
+        _archives.put(f.getPath(), new ZipFile(f));
     }
 
     /**
@@ -144,102 +133,27 @@ class NoSearchingClassProvider implements ClassProvider {
      * by the Soot SourceLocator.
      */
     public ClassSource find(String className) {
-        Resource resource = _classes.get(className);
 
-        if(resource == null) {
+        FoundFile foundFile = _classes.get(className);
+
+        if(foundFile == null) {
             String fileName = className.replace('.', '/') + ".class";
 
-            for(ZipFile archive : _archives) {
+            for(String path : _archives.keySet()) {
+                ZipFile archive = _archives.get(path);
                 ZipEntry entry = archive.getEntry(fileName);
                 if(entry != null) {
-                    resource = new ZipEntryResource(archive, entry);
+                    foundFile = new FoundFile(path, entry.getName());
                     break;
                 }
             }
         }
 
-        if(resource == null) {
+        if(foundFile == null) {
             return null;
         }
         else {
-
-            try {
-                InputStream stream = resource.open();
-                //return new CoffiClassSource(className, stream);
-                //// (YS) We may need the change below for future Soot versions
-                //// (found out by trying a nightly build of Soot).
-                // return new CoffiClassSource(className, stream, null, null);
-                // (gfour) Use the ASM-equivalent of CoffiClassSource.
-                return new AsmClassSource(className, stream);
-            }
-            catch(IOException exc) {
-                throw new RuntimeException(exc);
-            }
-        }
-    }
-
-    /**
-     * A resource is something to which we can open an InputStream 1 or
-     * more times.
-     *
-     * Similar to FoundFile in SourceLocator, which is not accessible.
-     */
-    public static interface Resource {
-        public InputStream open() throws IOException;
-    }
-
-    /**
-     * File.
-     */
-    private static class FileResource implements Resource {
-        private File _file;
-
-        FileResource(File file) {
-            super();
-            _file = file;
-        }
-
-        public InputStream open() throws IOException {
-            return new FileInputStream(_file);
-        }
-    }
-
-    /**
-     * Zip file.
-     */
-    private static class ZipEntryResource implements Resource {
-        private ZipFile _archive;
-        private ZipEntry _entry;
-
-        ZipEntryResource(ZipFile archive, ZipEntry entry) {
-            super();
-            _archive = archive;
-            _entry = entry;
-        }
-
-        public InputStream open() throws IOException {
-            return doJDKBugWorkaround(_archive.getInputStream(_entry), _entry.getSize());
-        }
-
-        /**
-         * Copied from SourceLocator because FoundFile is not accessible
-         * outside the soot package.
-         */
-        private static InputStream doJDKBugWorkaround(InputStream is, long size)
-            throws IOException
-        {
-            int sz = (int) size;
-            byte[] buf = new byte[sz];
-
-            final int N = 1024;
-            int ln = 0;
-            int count = 0;
-            while (sz > 0 && (ln = is.read(buf, count, Math.min(N, sz))) != -1)
-            {
-                count += ln;
-                sz -= ln;
-            }
-            return  new ByteArrayInputStream(buf);
+            return new AsmClassSource(className, foundFile);
         }
     }
 }
