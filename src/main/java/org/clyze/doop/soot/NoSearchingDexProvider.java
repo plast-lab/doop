@@ -4,10 +4,7 @@ import org.apache.commons.io.IOUtils;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.iface.ClassDef;
-import soot.ClassProvider;
-import soot.ClassSource;
-import soot.DexClassProvider;
-import soot.DexClassSource;
+import soot.*;
 import soot.dexpler.Util;
 
 import java.io.*;
@@ -71,7 +68,7 @@ class NoSearchingDexProvider extends DexClassProvider implements ClassProvider {
         fos.close();
         fis.close();
 
-        DexBackedDexFile d = DexFileFactory.loadDexFile(tempFile, 1, false);
+        DexBackedDexFile d = DexFileFactory.loadDexFile(tempFile, org.jf.dexlib2.Opcodes.forApi(Scene.v().getAndroidAPIVersion()));
         List<String> result = new ArrayList<>();
 
         for (ClassDef c : d.getClasses()) {

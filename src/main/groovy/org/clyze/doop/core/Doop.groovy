@@ -331,7 +331,8 @@ class Doop {
             id:"PLATFORMS_LIB",
             name:"platforms-lib",
             description:"The path to the platform libs directory.",
-            value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL
+            value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL,
+            cli: false
         ),
         new AnalysisOption<String>(
             id:"PLATFORM",
