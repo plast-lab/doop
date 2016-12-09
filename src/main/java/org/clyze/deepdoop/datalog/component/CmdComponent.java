@@ -3,11 +3,11 @@ package org.clyze.deepdoop.datalog.component;
 import java.util.HashSet;
 import java.util.Set;
 import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.DeepDoopException;
-import org.clyze.deepdoop.datalog.DeepDoopException.Error;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.element.atom.Directive;
 import org.clyze.deepdoop.datalog.element.atom.StubAtom;
+import org.clyze.deepdoop.system.Error;
+import org.clyze.deepdoop.system.ErrorManager;
 
 public class CmdComponent extends Component {
 
@@ -31,7 +31,7 @@ public class CmdComponent extends Component {
 	}
 	@Override
 	public void addCons(Constraint c) {
-		throw new DeepDoopException(Error.CMD_CONSTRAINT);
+		ErrorManager.v().error(Error.CMD_CONSTRAINT);
 	}
 	@Override
 	public void addRule(Rule r) {
@@ -43,14 +43,14 @@ public class CmdComponent extends Component {
 		Directive d = r.getDirective();
 		switch (d.name) {
 			case "lang:cmd:EVAL"  :
-					   if (eval != null) throw new DeepDoopException(Error.CMD_EVAL, name);
+					   if (eval != null) ErrorManager.v().error(Error.CMD_EVAL, name);
 					   eval = ((String) d.constant.value).replaceAll("^\"|\"$", ""); break;
 			case "lang:cmd:export":
 					   exports.add(new StubAtom(d.backtick.name + ":past")); break;
 			case "lang:cmd:import":
 					   imports.add(new StubAtom(d.backtick.name)); break;
 			default               :
-					   throw new DeepDoopException(Error.CMD_DIRECTIVE, name);
+					   ErrorManager.v().error(Error.CMD_DIRECTIVE, name);
 		}
 	}
 	@Override

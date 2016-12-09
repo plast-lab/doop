@@ -9,12 +9,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.clyze.deepdoop.datalog.*;
-import org.clyze.deepdoop.datalog.DeepDoopException.Error;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
+import org.clyze.deepdoop.system.Error;
+import org.clyze.deepdoop.system.ErrorManager;
 
 public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable> {
 
@@ -112,7 +113,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 				// Propagate to global scope
 				if (prop.toId == null && _ignoreAtoms.contains(atom.name()))
-					throw new DeepDoopException(Error.DEP_GLOBAL, atom.name());
+					ErrorManager.v().error(Error.DEP_GLOBAL, atom.name());
 
 				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
 					accept(new InitVisitingActor(prop.fromId, prop.toId, _ignoreAtoms));
@@ -127,7 +128,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	@Override
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
 		if (!n.rules.isEmpty())
-			throw new DeepDoopException(Error.CMD_RULE);
+			ErrorManager.v().error(Error.CMD_RULE);
 
 		Set<Declaration> newDeclarations = new HashSet<>();
 		for (Declaration d : n.declarations) newDeclarations.add((Declaration) m.get(d));

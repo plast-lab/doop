@@ -18,13 +18,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.Helper;
 import org.clyze.deepdoop.datalog.*;
-import org.clyze.deepdoop.datalog.DeepDoopException.Error;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.component.DependencyGraph.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
+import org.clyze.deepdoop.system.Error;
+import org.clyze.deepdoop.system.ErrorManager;
 import org.clyze.deepdoop.system.Result;
 
 public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String> {
@@ -110,7 +111,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 			}
 			if (!declFound)
 				_logger.warn("[DD] WARNING: Predicate `" + usedPred + "` not found in current file");
-				//throw new DeepDoopException(Error.NO_DECL, usedPred);
+				//ErrorManager.v().error(Error.NO_DECL, usedPred); // TODO uncomment
 		}
 
 		// Compute dependency graph for components (and global predicates)

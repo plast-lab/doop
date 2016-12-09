@@ -17,6 +17,7 @@ import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.LogicalElement.LogicType;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
+import org.clyze.deepdoop.system.ErrorManager;
 
 public class DatalogListenerImpl extends DatalogBaseListener {
 
@@ -46,6 +47,13 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 
 	public Program getProgram() {
 		return _program;
+	}
+
+	public void enterLineMarker(LineMarkerContext ctx) {
+		int markerLine = Integer.parseInt(ctx.INTEGER(0).getText());
+		int markerActualLine = ctx.start.getLine();
+		String sourceFile = ctx.STRING().getText();
+		ErrorManager.v().newLineMarker(markerLine, markerActualLine, sourceFile);
 	}
 
 	public void enterComp(CompContext ctx) {

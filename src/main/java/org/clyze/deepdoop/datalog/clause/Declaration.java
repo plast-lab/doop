@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Set;
 import org.clyze.deepdoop.actions.IVisitable;
 import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.DeepDoopException;
-import org.clyze.deepdoop.datalog.DeepDoopException.Error;
 import org.clyze.deepdoop.datalog.element.atom.IAtom;
 import org.clyze.deepdoop.datalog.expr.VariableExpr;
+import org.clyze.deepdoop.system.Error;
+import org.clyze.deepdoop.system.ErrorManager;
 
 public class Declaration implements IVisitable {
 
@@ -27,7 +27,7 @@ public class Declaration implements IVisitable {
 			count++;
 			int index = varsInHead.indexOf(vars.get(0));
 			if (index == -1)
-				throw new DeepDoopException(Error.DECL_UNKNOWN_VAR, vars.get(0).name);
+				ErrorManager.v().error(Error.DECL_UNKNOWN_VAR, vars.get(0).name);
 			ordered[index] = t;
 		}
 		assert (count == 0 || varsInHead.size() == count);
