@@ -33,7 +33,7 @@ publishing {
                 namePart = initName
                 versionPart = '1.' + new Date().getTime()
             }
-            create(name, MavenPublication) {
+            create(initName, MavenPublication) {
                 groupId 'ext'
                 artifactId namePart
                 version versionPart
