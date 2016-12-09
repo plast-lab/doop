@@ -68,7 +68,10 @@ class SoundMayAnalysis extends ClassicAnalysis {
         connector.queue()
             .echo("-- Sound May Pointer Analysis --")
 
-        cpp.preprocess(outFile, "${analysisPath}/analysis.logic")
+        cpp
+            .enableLineMarkers()
+            .preprocess(outFile, "${analysisPath}/analysis.logic")
+            .disableLineMarkers()
         Compiler.compile(outDir.toString(), outFile).each { result ->
             if (result.kind == Result.Kind.LOGIC)
                 connector.queue()

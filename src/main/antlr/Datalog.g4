@@ -8,6 +8,9 @@ program
 	: (comp | init_ | propagate | cmd | datalog)* ;
 
 
+lineMarker
+	: '#' INTEGER STRING INTEGER* ;
+
 comp
 	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ;
 
@@ -27,7 +30,7 @@ cmd
 
 
 datalog
-	: declaration | constraint | rule_ ;
+	: declaration | constraint | rule_ | lineMarker ;
 
 declaration
 	: predicate '->' predicateList? '.'
