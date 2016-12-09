@@ -4,7 +4,8 @@ Deploy the contents of the lib directory to the ext-snapshot-local repo @ artifa
 Each local jar has to follow the pattern:
 <NAME>-<VERSION_PART>.jar
 It is made available as a dependency using the pattern:
-groupId: 'ext', artifactId:<NAME>, version:<VERSION-PART>
+groupId: 'ext', artifactId:<NAME>, version:<VERSION_PART>
+If the <VERSION_PART> doesn't exist it defaults to '1.<current time in milliseconds>'
 
 For example, DIR_NAME/sootclasses-trunk-1.0.jar turns into ext:sootclasses-trunk:1.0.
 
@@ -23,8 +24,15 @@ publishing {
         libDir.eachFile { File f ->
             def initName = f.getName() - '.jar'
             def index = initName.lastIndexOf('-')
-            def namePart = initName.substring(0, index)
-            def versionPart = initName.substring(index+1, initName.length())
+            String namePart, versionPart
+            if (index != -1) {
+                namePart = initName.substring(0, index)
+                versionPart = initName.substring(index+1, initName.length())
+            }
+            else {
+                namePart = initName
+                versionPart = '1.' + new Date().getTime()
+            }
             create(name, MavenPublication) {
                 groupId 'ext'
                 artifactId namePart
