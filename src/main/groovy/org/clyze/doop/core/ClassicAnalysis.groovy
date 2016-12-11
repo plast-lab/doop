@@ -131,6 +131,7 @@ class ClassicAnalysis extends Analysis {
             cacheDir.mkdirs()
             FileOps.copyDirContents(factsDir, cacheDir)
             new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
+            logger.info "----"
         }
     }
 
@@ -309,9 +310,9 @@ class ClassicAnalysis extends Analysis {
                 .transaction()
         }
 
-        if (options.OPEN_PROGRAMS_SERVLETS.value) {
-            cpp.preprocess("${outDir}/open-programs-servlets.logic", "${Doop.addonsPath}/open-programs/rules-servlets-only.logic", macros)
-            cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs-servlets.logic")
+        if (options.OPEN_PROGRAMS.value) {
+            cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
+            cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
 
         }
 
@@ -374,6 +375,14 @@ class ClassicAnalysis extends Analysis {
 
         if (options.X_STATS_AROUND.value) {
             connector.queue().include(options.X_STATS_AROUND.value as String)
+            return
+        }
+        // Special case of X_STATS_AROUND (detected automatically)
+        def specialStats       = new File("${Doop.analysesPath}/${name}/statistics.logic")
+        def specialStatsScript = new File("${Doop.analysesPath}/${name}/statistics.part.lb")
+        if (specialStats.exists() && specialStatsScript.exists()) {
+            cpp.preprocess("${outDir}/statistics.logic", specialStats.toString())
+            connector.queue().include(specialStatsScript.toString())
             return
         }
 

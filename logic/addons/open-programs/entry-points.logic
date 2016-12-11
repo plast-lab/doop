@@ -1,0 +1,8 @@
+EntryPoint(?method) -> Method(?method).
+
+
+EntryPoint(?method) <-
+   Method:Modifier("public", ?method),
+   FormalParam[_, ?method] = ?formal,
+   Var:Type[?formal] = ?type,
+   ReferenceType(?type).

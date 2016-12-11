@@ -5,8 +5,7 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
-import java.util.ArrayList;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -19,6 +18,7 @@ class FactGenerator implements Runnable {
     private FactWriter _writer;
     private boolean _ssa;
     private Set<SootClass> _sootClasses;
+    private final int maxRetries = 10;
 
     FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {
@@ -55,19 +55,44 @@ class FactGenerator implements Runnable {
 
             _sootClass.getFields().forEach(this::generate);
 
-            for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                Session session = new Session();
-
+            boolean success;
+            int numRetries = 0;
+            do {
+                success = true;
                 try {
-                    generate(m, session);
-                } catch (RuntimeException exc) {
-                    System.err.println("Error while processing method: " + m);
-                    throw exc;
+                    for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                        Session session = new Session();
+                        try {
+                            generate(m, session);
+                        }
+                        catch (Exception exc) {
+                            // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                            // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+                            //     Thread key = i.next();
+                            //     System.err.println("Thread " + key.getName());
+                            //     StackTraceElement[] trace = liveThreads.get(key);
+                            //     for (int j = 0; j < trace.length; j++) {
+                            //         System.err.println("\tat " + trace[j]);
+                            //     }
+                            // }
+                    
+                            System.err.println("Error while processing method: " + m);
+                            throw exc;
+                        }
+                    }                 
+                } catch (Exception exc) {
+                    numRetries++;
+                    if (numRetries > maxRetries) {
+                        System.err.println("\nGiving up...\n");
+                        throw exc;
+                    }
+                    else {
+                        System.err.println("\nRETRYING\n");
+                    }
+                    success = false;
                 }
-            }
-
+            } while (!success);
         }
-
     }
 
     private void generate(SootField f)
@@ -193,16 +218,18 @@ class FactGenerator implements Runnable {
             if(!m.hasActiveBody())
             {
                 // This instruction is the bottleneck of
-                // soot-fact-generation. It accounts for more than 80%
-                // of its total execution time. However, it is soot
-                // internal so we'll need a profiler to optimize it.
+                // soot-fact-generation.
+                //                synchronized(Scene.v()) {
                 m.retrieveActiveBody();
+                //                } // synchronizing so broadly = giving up on Soot's races
             }
 
             Body b = m.getActiveBody();
             if(_ssa)
             {
+                //                synchronized(Scene.v()) {
                 b = Shimple.v().newBody(b);
+                //                }
                 m.setActiveBody(b);
             }
 
