@@ -4,6 +4,9 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.axml.AXmlNode;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.*;
 
 import java.io.File;
 import java.util.*;
@@ -199,13 +202,36 @@ public class Main {
 
 
         if (_android) {
-            SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+            String apkLocation = _inputs.get(0);
+            SetupApplication app = new SetupApplication(_androidJars, apkLocation);
             soot.options.Options.v().set_process_multiple_dex(true);
 
             apkClasses = new HashSet<>();
-            apkClasses.addAll(SourceLocator.v().getClassesUnder(_inputs.get(0)));
+            apkClasses.addAll(SourceLocator.v().getClassesUnder(apkLocation));
 
-            System.out.println("Classes found  in apk: " + apkClasses.size()); //this finds only the classes.dex
+            System.out.println("Classes found  in apk: " + apkClasses.size());
+
+            //// Commented out for now. Gets us the info from XML files with no Soot analysis.
+//            ProcessManifest processMan = new ProcessManifest(apkLocation);
+//            String appPackageName = processMan.getPackageName();
+//            ARSCFileParser resParser = new ARSCFileParser();
+//            resParser.parse(apkLocation);
+//            List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
+//            DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
+//            lfp.parseLayoutFileDirect(apkLocation);
+//
+//            // now collect the facts we need
+//            Set<String> appEntrypoints = processMan.getEntryPointClasses();
+//            List<AXmlNode> appServices = processMan.getServices();
+//            List<AXmlNode> appActivities = processMan.getActivities();
+//            List<AXmlNode> appContentProviders = processMan.getProviders();
+//            List<AXmlNode> appCallbackReceivers = processMan.getReceivers();
+//            Map<String, Set<String>> appCallbackMethods = lfp.getCallbackMethods();
+//            Map<String, Set<PossibleLayoutControl>> appUserControls = lfp.getUserControls();
+//
+//            System.out.println("All entry points:\n" + appEntrypoints);
+//            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appCallbackReceivers);
+//            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
 
             app.getConfig().setCallbackAnalyzer(Fast);
             app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
