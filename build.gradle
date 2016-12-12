@@ -37,16 +37,22 @@ repositories {
 }
 
 // Temporary (?) hack to allow testing with local version of a soot jar
-def sootClassesJar = file('lib/sootclasses-trunk.jar')
-if (sootClassesJar.exists()) {
-    dependencies {
-        compile files(sootClassesJar)
-    }
-}
-else {
-    dependencies {
-        compile 'ext:sootclasses-trunk:1.1-SNAPSHOT'
-    }
+def sootClassesJar = file('lib/sootclasses-1.1.jar')
+def sootInfoflowJar = file('lib/soot-infoflow-1.1.jar')
+def sootInfoflowAndroidJar = file('lib/soot-infoflow-android-1.1.jar')
+[[sootClassesJar, "ext:sootclasses:1.1"],
+ [sootInfoflowJar, "ext:soot-infoflow:1.1"],
+ [sootInfoflowAndroidJar, "ext:soot-infoflow-android:1.1"]].each{ p->
+   if (p[0].exists()) {
+      dependencies {
+          compile files(p[0])
+      }
+   }
+   else {
+      dependencies {
+          compile p[1]
+      }
+   }
 }
 
 dependencies {
@@ -59,17 +65,15 @@ dependencies {
             'org.ow2.asm:asm-debug-all:5.1'                     // Java Bytecode library
 
     // Soot is a compile time dependency
-    compile 'ext:soot-infoflow:1.0-SNAPSHOT',
-            'ext:soot-infoflow-android:1.0-SNAPSHOT',
-            'ext:AXMLPrinter2:1.0-SNAPSHOT',
-            'ext:dexlib2-2.1.3-a5d82813:1.0-SNAPSHOT'
+    compile 'ext:AXMLPrinter2:1.0-SNAPSHOT',
+            'ext:dexlib2:2.2b4'
 
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'
     runtime 'ext:averroes-no-properties:1.0-SNAPSHOT',
-            'ext:herosclasses-trunk:1.0-SNAPSHOT',
-            'ext:util-2.1.3-a5d82813:1.0-SNAPSHOT',
-            'ext:axml-2.0:1.0-SNAPSHOT'
+            'ext:herosclasses:1.1',
+            'ext:util:2.2b4',
+            'ext:axml:2.0'
 
     // DeepDoop
     antlr   'org.antlr:antlr4:4.5.1-1'

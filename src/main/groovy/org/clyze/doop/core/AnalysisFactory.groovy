@@ -270,6 +270,7 @@ class AnalysisFactory {
                                      "${path}/uiautomator.jar"]
                             break
                         case 24:
+                        case 25:
                             files = ["${path}/android.jar",
                                      "${path}/android-stubs-src.jar",
                                      "${path}/optional/org.apache.http.legacy.jar",

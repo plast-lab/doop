@@ -4,7 +4,6 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.options.Options;
 
 import java.io.File;
 import java.util.*;
@@ -194,38 +193,26 @@ public class Main {
         NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
         DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
-        Set<String> androidClasses = null;
+        Set<String> apkClasses = null;
 
         Set<SootClass> classes = new HashSet<>();
 
+
         if (_android) {
             SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
-            soot.options.Options.v().set_debug(false);
-            soot.options.Options.v().set_verbose(false);
-            soot.options.Options.v().set_unfriendly_mode(false);
+            soot.options.Options.v().set_process_multiple_dex(true);
 
-            app.setLibraries(_libraries);
+            apkClasses = new HashSet<>();
+            apkClasses.addAll(SourceLocator.v().getClassesUnder(_inputs.get(0)));
+
+            System.out.println("Classes found  in apk: " + apkClasses.size()); //this finds only the classes.dex
+
             app.getConfig().setCallbackAnalyzer(Fast);
             app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
             dummyMain = app.getDummyMainMethod();
             if (dummyMain == null) {
                 throw new RuntimeException("Dummy main null");
             }
-
-            soot.G.reset();
-            soot.options.Options.v().set_src_prec(Options.src_prec_apk);
-            soot.options.Options.v().set_android_jars(_androidJars);
-            soot.options.Options.v().set_ignore_resolution_errors(true);
-            soot.options.Options.v().set_whole_program(true);
-            soot.options.Options.v().set_process_dir(_inputs);
-            soot.options.Options.v().set_allow_phantom_refs(true);
-            soot.options.Options.v().set_process_multiple_dex(true);
-
-            androidClasses = new HashSet<>();
-            for (String arg : _inputs) {
-                androidClasses.addAll(DexClassProvider.classesOfDex(new File(arg)));
-            }
-            System.out.println("Android classes discovered from classesOfDex on apk: " + androidClasses.size()); //this finds only the classes.dex
         }
         else {
             for (String arg : _inputs) {
@@ -252,7 +239,9 @@ public class Main {
         }
 
         List<ClassProvider> providersList = new ArrayList<>();
-        providersList.add(dexClassProvider);
+
+        if (_android)
+            providersList.add(dexClassProvider);
         providersList.add(classProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 
@@ -268,23 +257,21 @@ public class Main {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
+        soot.options.Options.v().set_process_multiple_dex(true);
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         soot.options.Options.v().set_keep_line_number(true);
 
-        if (_android) {
-            assert androidClasses != null;
-            for (String className : androidClasses) {
-                scene.addBasicClass(className, SootClass.BODIES);
-                SootClass c = scene.forceResolve(className, SootClass.BODIES);
-                if (c != null) {
-                    c.setApplicationClass();
-                }
-                classes.add(c);
-            }
-            androidClasses = SourceLocator.v().dexClassIndex().keySet();
 
-            for (String className : androidClasses) {
+        if (_android) {
+            String libraryClassPath = "";
+            for(String library : _libraries) {
+                libraryClassPath += File.pathSeparator + library;
+            }
+            scene.setSootClassPath(_inputs.get(0) + libraryClassPath);
+
+            for (String className : apkClasses) {
+                SourceLocator.v().getClassSource(className);
                 scene.addBasicClass(className, SootClass.BODIES);
                 classes.add(scene.forceResolve(className, SootClass.BODIES));
             }
@@ -294,7 +281,6 @@ public class Main {
             scene.loadClass(className, SootClass.SIGNATURES);
             classes.add(scene.loadClass(className, SootClass.BODIES));
         }
-
 
         if (!_android) {
             /*
@@ -336,6 +322,8 @@ public class Main {
         if(_mode == Mode.FULL && !_onlyApplicationClassesFactGen) {
             classes = new HashSet<>(scene.getClasses());
         }
+
+        System.out.println("Total classes in Scene: " + classes.size());
 
         if (_bytecode2jimple) {
             ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);

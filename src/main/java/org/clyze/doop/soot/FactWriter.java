@@ -640,8 +640,10 @@ class FactWriter {
 
         String insn = _rep.handler(m, handler, session);
         int handlerIndex = session.getUnitNumber(handler.getHandlerUnit());
+        session.calcUnitNumber(handler.getBeginUnit());
         int beginIndex = session.getUnitNumber(handler.getBeginUnit());
-        int endIndex =session.getUnitNumber(handler.getEndUnit());
+        session.calcUnitNumber(handler.getEndUnit());
+        int endIndex = session.getUnitNumber(handler.getEndUnit());
         _db.add(EXCEPTION_HANDLER, insn, _rep.signature(m), str(handlerIndex), exc.getName(), _rep.local(m, caught), str(beginIndex), str(endIndex));
     }
 
