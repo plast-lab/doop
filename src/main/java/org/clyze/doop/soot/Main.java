@@ -197,6 +197,7 @@ public class Main {
 
         Set<SootClass> classes = new HashSet<>();
 
+
         if (_android) {
             SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
             soot.options.Options.v().set_process_multiple_dex(true);
@@ -238,7 +239,9 @@ public class Main {
         }
 
         List<ClassProvider> providersList = new ArrayList<>();
-        providersList.add(dexClassProvider);
+
+        if (_android)
+            providersList.add(dexClassProvider);
         providersList.add(classProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 
@@ -254,12 +257,21 @@ public class Main {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
+        soot.options.Options.v().set_process_multiple_dex(true);
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         soot.options.Options.v().set_keep_line_number(true);
 
+
         if (_android) {
+            String libraryClassPath = "";
+            for(String library : _libraries) {
+                libraryClassPath += File.pathSeparator + library;
+            }
+            scene.setSootClassPath(_inputs.get(0) + libraryClassPath);
+
             for (String className : apkClasses) {
+                SourceLocator.v().getClassSource(className);
                 scene.addBasicClass(className, SootClass.BODIES);
                 classes.add(scene.forceResolve(className, SootClass.BODIES));
             }
