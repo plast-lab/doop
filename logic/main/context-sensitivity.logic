@@ -314,49 +314,27 @@ OptStoreArrayIndex(?from, ?base) <-
  * Assignments for method invocations
  */
 
-OptActualParam(?index, ?invocation, ?actual) <-
-   ActualParam[?index, ?invocation] = ?actual.
+OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from) ->
+  Context(?toCtx), Var(?to), Context(?fromCtx), Var(?from).
 
-ActualParamPointsTo(?hctx, ?value, ?index, ?ctx, ?invocation) <-
-   VarPointsTo(?hctx, ?value, ?ctx, ?actual),
-   OptActualParam(?index, ?invocation, ?actual).
-//   Var:Type[?actual] = ?vt,
-//   Value:Type[?value] = ?ht,
-//   CheckCast(?ht, ?vt).
-   
-OptInvocationWithFormal(?formal, ?calleeCtx, ?index, ?callerCtx, ?invocation) <-
-   FormalParam[?index, ?method] = ?formal,
-#ifdef INFORMATION_FLOW  
-   !SanitizationMethod(?method),
-#endif
-   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method).
-
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
-   ActualParamPointsTo(?hctx, ?value, ?index, ?callerCtx, ?invocation),
-   OptInvocationWithFormal(?formal, ?calleeCtx, ?index, ?callerCtx, ?invocation).
-                   
-OptReturnVar(?method, ?return) <-
-  ReturnVar(?return, ?method).
-
-ReturnVarPointsTo(?hctx, ?value, ?calleeCtx, ?method) <-
-  OptReturnVar(?method, ?return),
-  VarPointsTo(?hctx, ?value, ?calleeCtx, ?return).
-//  Var:Type[?return] = ?vt,
-//  Value:Type[?value] = ?ht,
-//  CheckCast(?ht, ?vt).
-
-VarPointsTo(?hctx, ?heap, ?callerCtx, ?local) <-
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual)
+  <-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  AssignReturnValue[?invocation] = ?local,
-  ReturnVarPointsTo(?hctx, ?heap, ?calleeCtx, ?method).
+  FormalParam[?index, ?method] = ?formal,
+  ActualParam[?index, ?invocation] = ?actual.
 
-//VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
-//  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-//  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
-//  Var:Type[?to] = ?vt,
-//  Value:Type[?value] = ?ht,
-//  CheckCast(?ht, ?vt).
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
+  <-
+  ReturnVar(?return, ?method),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+#ifdef INFORMATION_FLOW
+ !SanitizationMethod(?method),
+#endif
+  AssignReturnValue[?invocation] = ?local.
 
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
 
 /**
  * Static method invocations
