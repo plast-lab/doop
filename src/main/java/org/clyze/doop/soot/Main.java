@@ -180,6 +180,11 @@ public class Main {
                 System.err.println("error: --stdout and -d options are not compatible");
                 System.exit(2);
             }
+            else if ((_inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
+                     (!_android)) {
+                System.err.println("error: the --platform parameter is mandatory for .apk inputs");
+                System.exit(3);
+            }
             else if (!_toStdout && _outputDir == null) {
                 _outputDir = System.getProperty("user.dir");
             }
