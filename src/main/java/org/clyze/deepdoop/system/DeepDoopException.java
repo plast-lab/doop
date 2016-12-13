@@ -4,8 +4,8 @@ public class DeepDoopException extends RuntimeException {
 
 	public final Error errorId;
 
-	public DeepDoopException(Error errorId, Object... values) {
-		super("[DD] " + Error.idToMsg(errorId, values));
+	public DeepDoopException(String msg, Error errorId, Object... values) {
+		super("\n" + msg);
 		this.errorId = errorId;
 	}
 
