@@ -78,8 +78,9 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 
 OptAssignCast3(?to, ?from, ?castType) <- OptAssignCast(?castType, ?to, ?from).
 
-OptCheckCast(?type, ?castType) <- CheckCast(?castType, ?type).
-
+// (REVIEW) YS: I'm not sure this is the correct direction of the
+// subtyping check, but it's currently dead code. I'll let its author
+// revise if needed.
 CompatibleAssignCast(?to, ?from, ?type) <-
    OptAssignCast3(?to, ?from, ?castType),
-   OptCheckCast(?type, ?castType).
+   SupertypeOf(?type, ?castType). 
