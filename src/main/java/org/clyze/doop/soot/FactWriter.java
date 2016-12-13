@@ -1,15 +1,14 @@
 package org.clyze.doop.soot;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
-import soot.util.backend.ASMBackendUtils;
 import soot.tagkit.LineNumberTag;
+import soot.util.backend.ASMBackendUtils;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.soot.PredicateFile.*;
 
@@ -64,7 +63,6 @@ class FactWriter {
 
         return result;
     }
-
 
     void writeAndroidEntryPoint(SootMethod m) {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
@@ -496,7 +494,7 @@ class FactWriter {
     void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session) {
 		session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
-		session.calcUnitNumber(stmt);
+		session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -861,5 +859,29 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
+    }
+
+    void writeActivity(String activity) {
+        _db.add(ACTIVITY, activity);
+    }
+
+    void writeService(String service) {
+        _db.add(SERVICE, service);
+    }
+
+    void writeContentProvider(String contentProvider) {
+        _db.add(CONTENT_PROVIDER, contentProvider);
+    }
+
+    void writeBroadcastReceiver(String broadcastReceiver) {
+        _db.add(BROADCAST_RECEIVER, broadcastReceiver);
+    }
+
+    void writeCallbackMethod(String callbackMethod) {
+        _db.add(CALLBACK_METHOD, callbackMethod);
+    }
+
+    void writeLayoutControl(Integer id, String layoutControl) {
+        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl);
     }
 }

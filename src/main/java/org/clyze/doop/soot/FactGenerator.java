@@ -225,16 +225,16 @@ class FactGenerator implements Runnable {
             }
 
             Body b = m.getActiveBody();
-            if(_ssa)
-            {
-                //                synchronized(Scene.v()) {
-                b = Shimple.v().newBody(b);
-                //                }
-                m.setActiveBody(b);
+            if (b != null) {
+                if (_ssa) {
+                    //                synchronized(Scene.v()) {
+                    b = Shimple.v().newBody(b);
+                    //                }
+                    m.setActiveBody(b);
+                }
+                DoopRenamer.transform(b);
+                generate(m, b, session);
             }
-
-            DoopRenamer.transform(b);
-            generate(m, b, session);
 
             m.releaseActiveBody();
         }

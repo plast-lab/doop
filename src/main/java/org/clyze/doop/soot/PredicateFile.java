@@ -10,6 +10,12 @@ import java.io.Writer;
 enum PredicateFile
 {
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
+    ACTIVITY("Activity"),
+    SERVICE("Service"),
+    CONTENT_PROVIDER("ContentProvider"),
+    BROADCAST_RECEIVER("BroadcastReceiver"),
+    CALLBACK_METHOD("CallbackMethod"),
+    LAYOUT_CONTROL("LayoutControl"),
     CLASS_TYPE("ClassType"),
     CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),
