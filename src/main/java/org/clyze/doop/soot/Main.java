@@ -6,7 +6,9 @@ import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
-import soot.jimple.infoflow.android.resources.*;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.File;
 import java.util.*;
@@ -204,7 +206,12 @@ public class Main {
         Set<String> apkClasses = null;
 
         Set<SootClass> classes = new HashSet<>();
-
+        List<AXmlNode> appServices = null;
+        List<AXmlNode> appActivities = null;
+        List<AXmlNode> appContentProviders = null;
+        List<AXmlNode> appBroadcastReceivers = null;
+        Map<String, Set<String>> appCallbackMethods = null;
+        Map<String, Set<PossibleLayoutControl>> appUserControls = null;
 
         if (_android) {
             String apkLocation = _inputs.get(0);
@@ -217,25 +224,25 @@ public class Main {
             System.out.println("Classes found  in apk: " + apkClasses.size());
 
             //// Commented out for now. Gets us the info from XML files with no Soot analysis.
-//            ProcessManifest processMan = new ProcessManifest(apkLocation);
-//            String appPackageName = processMan.getPackageName();
-//            ARSCFileParser resParser = new ARSCFileParser();
-//            resParser.parse(apkLocation);
-//            List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
-//            DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
-//            lfp.parseLayoutFileDirect(apkLocation);
-//
-//            // now collect the facts we need
-//            Set<String> appEntrypoints = processMan.getEntryPointClasses();
-//            List<AXmlNode> appServices = processMan.getServices();
-//            List<AXmlNode> appActivities = processMan.getActivities();
-//            List<AXmlNode> appContentProviders = processMan.getProviders();
-//            List<AXmlNode> appCallbackReceivers = processMan.getReceivers();
-//            Map<String, Set<String>> appCallbackMethods = lfp.getCallbackMethods();
-//            Map<String, Set<PossibleLayoutControl>> appUserControls = lfp.getUserControls();
-//
+            ProcessManifest processMan = new ProcessManifest(apkLocation);
+            String appPackageName = processMan.getPackageName();
+            ARSCFileParser resParser = new ARSCFileParser();
+            resParser.parse(apkLocation);
+            List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
+            DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
+            lfp.parseLayoutFileDirect(apkLocation);
+
+            // now collect the facts we need
+            Set<String> appEntrypoints = processMan.getEntryPointClasses();
+            appServices = processMan.getServices();
+            appActivities = processMan.getActivities();
+            appContentProviders = processMan.getProviders();
+            appBroadcastReceivers = processMan.getReceivers();
+            appCallbackMethods = lfp.getCallbackMethods();
+            appUserControls = lfp.getUserControls();
+
 //            System.out.println("All entry points:\n" + appEntrypoints);
-//            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appCallbackReceivers);
+//            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
 //            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
 
             app.getConfig().setCallbackAnalyzer(Fast);
@@ -244,6 +251,7 @@ public class Main {
             if (dummyMain == null) {
                 throw new RuntimeException("Dummy main null");
             }
+
         }
         else {
             for (String arg : _inputs) {
@@ -383,8 +391,36 @@ public class Main {
 
             db.flush();
 
-            if (_android)
+            if (_android) {
                 driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
+                for (AXmlNode node: appActivities) {
+                    writer.writeActivity(node.getAttribute("name").getValue().toString());
+                }
+
+                for (AXmlNode node: appServices) {
+                    writer.writeService(node.getAttribute("name").getValue().toString());
+                }
+
+                for (AXmlNode node: appContentProviders) {
+                    writer.writeContentProvider(node.getAttribute("name").getValue().toString());
+                }
+
+                for (AXmlNode node: appBroadcastReceivers) {
+                    writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                }
+
+                for (Set<String> callBackMethods: appCallbackMethods.values()) {
+                    for (String callbackMethod : callBackMethods) {
+                        writer.writeCallbackMethod(callbackMethod);
+                    }
+                }
+
+                for (Set<PossibleLayoutControl> possibleLayoutControls: appUserControls.values()) {
+                    for (PossibleLayoutControl possibleLayoutControl: possibleLayoutControls) {
+                        writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName());
+                    }
+                }
+            }
             else
                 if (_classicFactGen)
                     driver.doInSequentialOrder(classes);
