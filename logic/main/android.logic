@@ -28,5 +28,28 @@ PublicMethodOfAndroidApp(?meth) <-
   AndroidAppComponent(?type),
   Method:Modifier("public", ?meth).
 
-ImplicitReachable(?meth) <-
-  PublicMethodOfAndroidApp(?meth).
+ProtectedMethodOfAndroidApp(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  AndroidAppComponent(?type),
+  Method:Modifier("protected", ?meth).
+
+// The protected method overrides one in a library type, hence it's
+// callable from the library.
+OverridingProtectedMethodOfAndroidApp(?meth) <-
+  ProtectedMethodOfAndroidApp(?meth),
+  Method:DeclaringType[?meth] = ?componentType,
+  // should be just args, since ret-type can be covariant?
+  Method:Descriptor[?meth] = ?descriptor,
+  Method:SimpleName[?meth] = ?simplename,
+  SubtypeOf(?componentType, ?libraryType),
+  AndroidLibraryType(?libraryType),
+  MethodLookup[?simplename, ?descriptor, ?libraryType] = _.
+
+ReachableContext(?ctx, ?meth) <-
+  (PublicMethodOfAndroidApp(?meth);
+   OverridingProtectedMethodOfAndroidApp(?meth)),
+  ImmutableContext(?ctx).
+
+
+
+  
