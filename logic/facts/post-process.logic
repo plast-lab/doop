@@ -69,3 +69,7 @@ SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    MethodInvocation:Signature[?invocation] = ?signature,
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
+
+LayoutControl(?id, ?type) <-
+   LayoutControl0(?id, ?typename),
+   Type:Id(?type:?typename).
