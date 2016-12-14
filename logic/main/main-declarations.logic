@@ -23,13 +23,18 @@ lang:physical:storageModel[`Value] = "ScalableSparse".
 lang:physical:capacity[`Value] = 4194304.
 
 Value:Heap:Cons[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
+Value:Num:Cons[?const] = ?value -> NumConstant(?const), Value(?value).
 Value:Mock:Cons[?id]   = ?value -> string(?id), Value(?value).
 
 lang:constructor(`Value:Heap:Cons).
+lang:constructor(`Value:Num:Cons).
 lang:constructor(`Value:Mock:Cons).
 
 Value:Heap[?value] = ?heap -> Value(?value), HeapAllocation(?heap).
 Value:byHeap[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
+
+Value:Num[?value] = ?const -> Value(?value), NumConstant(?const).
+Value:byNum[?const] = ?value -> NumConstant(?const), Value(?value).
 
 Value:Id[?value] = ?id -> Value(?value), string(?id).
 Value:byId[?id] = ?value -> string(?id), Value(?value).

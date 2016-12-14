@@ -18,6 +18,7 @@ class FactGenerator implements Runnable {
     private FactWriter _writer;
     private boolean _ssa;
     private Set<SootClass> _sootClasses;
+    private final int maxRetries = 10;
 
     FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {
@@ -55,6 +56,7 @@ class FactGenerator implements Runnable {
             _sootClass.getFields().forEach(this::generate);
 
             boolean success;
+            int numRetries = 0;
             do {
                 success = true;
                 try {
@@ -79,7 +81,14 @@ class FactGenerator implements Runnable {
                         }
                     }                 
                 } catch (Exception exc) {
-                    System.err.println("\n\nRETRYING\n\n");
+                    numRetries++;
+                    if (numRetries > maxRetries) {
+                        System.err.println("\nGiving up...\n");
+                        throw exc;
+                    }
+                    else {
+                        System.err.println("\nRETRYING\n");
+                    }
                     success = false;
                 }
             } while (!success);
@@ -89,6 +98,7 @@ class FactGenerator implements Runnable {
     private void generate(SootField f)
     {
         _writer.writeField(f);
+        _writer.writeFieldInitialValue(f);
 
         int modifiers = f.getModifiers();
         if(Modifier.isAbstract(modifiers))
@@ -216,16 +226,16 @@ class FactGenerator implements Runnable {
             }
 
             Body b = m.getActiveBody();
-            if(_ssa)
-            {
-                //                synchronized(Scene.v()) {
-                b = Shimple.v().newBody(b);
-                //                }
-                m.setActiveBody(b);
+            if (b != null) {
+                if (_ssa) {
+                    //                synchronized(Scene.v()) {
+                    b = Shimple.v().newBody(b);
+                    //                }
+                    m.setActiveBody(b);
+                }
+                DoopRenamer.transform(b);
+                generate(m, b, session);
             }
-
-            DoopRenamer.transform(b);
-            generate(m, b, session);
 
             m.releaseActiveBody();
         }

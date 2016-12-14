@@ -213,7 +213,9 @@ class AnalysisFactory {
                 options[(jreOption.id)] = jreOption
                 break
             case "android":
-                String path = "${options.PLATFORMS_LIB.value}/Android/Sdk/platforms/android-${version}"
+                String androidLibFlavor = "stubs"
+                String path = "${options.PLATFORMS_LIB.value}/Android/" + androidLibFlavor +
+		              "/Android/Sdk/platforms/android-${version}"
                 // The following flag controls whether doop uses a single
                 // android.jar (found in its usual place) instead of the JARs
                 // found in the /platforms/android-XY directories of standard
@@ -277,6 +279,7 @@ class AnalysisFactory {
                                      "${path}/uiautomator.jar"]
                             break
                         case 24:
+                        case 25:
                             files = ["${path}/android.jar",
                                      "${path}/android-stubs-src.jar",
                                      "${path}/optional/org.apache.http.legacy.jar",
@@ -290,6 +293,10 @@ class AnalysisFactory {
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
+            // FIXME: When "full" JARs are used, pick only the first
+            // one (assumed to be android.jar) or XML parsing fails.
+            if (androidLibFlavor.equals("full"))
+                files = [ files[0] ]
         }
         return files
     }

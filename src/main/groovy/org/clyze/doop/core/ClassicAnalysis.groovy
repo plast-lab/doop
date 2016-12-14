@@ -430,10 +430,12 @@ class ClassicAnalysis extends Analysis {
                 params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
-                def androidPlatform = options.PLATFORMS_LIB.value.toString() +
-                                      File.separator + "Android" + File.separator + "Sdk" + File.separator + "platforms"
-                params = ["--full"] + depArgs + ["--android-jars", androidPlatform]
-                break
+	        // This uses all platformLibs.
+	        // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+	        // This uses just platformLibs[0], assumed to be android.jar.
+	        params = ["--full"] + depArgs + ["--android-jars"] +
+		         [platformLibs[0].getAbsolutePath()]
+		break
             default:
                 throw new RuntimeException("Unsupported platform")
         }
