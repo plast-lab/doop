@@ -16,6 +16,7 @@ enum PredicateFile
     BROADCAST_RECEIVER("BroadcastReceiver"),
     CALLBACK_METHOD("CallbackMethod"),
     LAYOUT_CONTROL("LayoutControl"),
+    FIELD_INITIAL_VALUE("FieldInitialValue"),
     CLASS_TYPE("ClassType"),
     CLASS_MODIFIER("ClassModifier"),
     ARRAY_TYPE("ArrayType"),

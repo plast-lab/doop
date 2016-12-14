@@ -884,4 +884,10 @@ class FactWriter {
     void writeLayoutControl(Integer id, String layoutControl) {
         _db.add(LAYOUT_CONTROL, id.toString(), layoutControl);
     }
+
+    void writeFieldInitialValue(SootField f) {
+        String fieldId = _rep.signature(f);
+        if (f.getInitialValueString() != null && !f.getInitialValueString().equals(""))
+            _db.add(FIELD_INITIAL_VALUE, fieldId, f.getInitialValueString());
+    }
 }
