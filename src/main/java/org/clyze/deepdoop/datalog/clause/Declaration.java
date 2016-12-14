@@ -10,13 +10,22 @@ import org.clyze.deepdoop.datalog.element.atom.IAtom;
 import org.clyze.deepdoop.datalog.expr.VariableExpr;
 import org.clyze.deepdoop.system.Error;
 import org.clyze.deepdoop.system.ErrorManager;
+import org.clyze.deepdoop.system.ISourceItem;
+import org.clyze.deepdoop.system.SourceLocation;
 
-public class Declaration implements IVisitable {
+public class Declaration implements IVisitable, ISourceItem {
 
 	public final IAtom       atom;
 	public final List<IAtom> types;
+	SourceLocation           _loc;
 
 	public Declaration(IAtom atom, Set<IAtom> types) {
+		this(atom, types, null);
+	}
+	public Declaration(IAtom atom, Set<IAtom> types, SourceLocation loc) {
+		this.atom  = atom;
+		this._loc  = loc;
+
 		List<VariableExpr> varsInHead = atom.getVars();
 
 		int count = 0;
@@ -27,12 +36,11 @@ public class Declaration implements IVisitable {
 			count++;
 			int index = varsInHead.indexOf(vars.get(0));
 			if (index == -1)
-				ErrorManager.v().error(Error.DECL_UNKNOWN_VAR, vars.get(0).name);
+				ErrorManager.error(location(), Error.DECL_UNKNOWN_VAR, vars.get(0).name);
 			ordered[index] = t;
 		}
 		assert (count == 0 || varsInHead.size() == count);
 
-		this.atom  = atom;
 		this.types = new ArrayList<>(Arrays.asList(ordered));
 	}
 
@@ -40,5 +48,9 @@ public class Declaration implements IVisitable {
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+	@Override
+	public SourceLocation location() {
+		return _loc;
 	}
 }

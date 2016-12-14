@@ -113,7 +113,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 				// Propagate to global scope
 				if (prop.toId == null && _ignoreAtoms.contains(atom.name()))
-					ErrorManager.v().error(Error.DEP_GLOBAL, atom.name());
+					ErrorManager.error(Error.DEP_GLOBAL, atom.name());
 
 				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
 					accept(new InitVisitingActor(prop.fromId, prop.toId, _ignoreAtoms));
@@ -128,7 +128,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	@Override
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
 		if (!n.rules.isEmpty())
-			ErrorManager.v().error(Error.CMD_RULE);
+			ErrorManager.error(Error.CMD_RULE);
 
 		Set<Declaration> newDeclarations = new HashSet<>();
 		for (Declaration d : n.declarations) newDeclarations.add((Declaration) m.get(d));

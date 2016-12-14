@@ -3,20 +3,31 @@ package org.clyze.deepdoop.datalog.clause;
 import org.clyze.deepdoop.actions.IVisitable;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.element.IElement;
+import org.clyze.deepdoop.system.ISourceItem;
+import org.clyze.deepdoop.system.SourceLocation;
 
-public class Constraint implements IVisitable {
+public class Constraint implements IVisitable, ISourceItem {
 
 	public final IElement head;
 	public final IElement body;
+	SourceLocation        _loc;
 
 	public Constraint(IElement head, IElement body) {
+		this(head, body, null);
+	}
+	public Constraint(IElement head, IElement body, SourceLocation loc) {
 		this.head = head;
 		this.body = body;
+		this._loc = loc;
 	}
 
 
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+	@Override
+	public SourceLocation location() {
+		return _loc;
 	}
 }

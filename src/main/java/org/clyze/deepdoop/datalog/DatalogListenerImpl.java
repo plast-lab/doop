@@ -18,6 +18,8 @@ import org.clyze.deepdoop.datalog.element.LogicalElement.LogicType;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
 import org.clyze.deepdoop.system.ErrorManager;
+import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.SourceManager;
 
 public class DatalogListenerImpl extends DatalogBaseListener {
 
@@ -67,11 +69,11 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		int t = (ctx.INTEGER(1) != null ? Integer.parseInt(ctx.INTEGER(1).getText()) : 0);
 		// 1 - Start of a new file
 		if (t == 0 || t == 1) {
-			ErrorManager.v().lineMarkerStart(markerLine, markerActualLine, sourceFile);
+			SourceManager.v().lineMarkerStart(markerLine, markerActualLine, sourceFile);
 		}
 		// 2 - Returning to previous file
 		else if (t == 2) {
-			ErrorManager.v().lineMarkerEnd();
+			SourceManager.v().lineMarkerEnd();
 		}
 		// 3 - Following text comes from a system header file (#include <> vs #include "")
 		// 4 - Following text should be treated as being wrapped in an implicit extern "C" block.
@@ -85,16 +87,13 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		_program.addComponent(_currComp);
 		_currComp = _program.globalComp;
 	}
 	public void exitInit_(Init_Context ctx) {
-		ErrorManager.v().newContext(ctx);
 		_program.addInit(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPropagate(PropagateContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		Set<String> predNames = (ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())));
 		Set<IAtom>  preds = new HashSet<>();
 		for (String predName : predNames) preds.add(new StubAtom(predName));
@@ -104,7 +103,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 				ctx.GLOBAL() != null ? null : ctx.IDENTIFIER(1).getText());
 	}
 	public void exitPredicateNameList(PredicateNameListContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		String predName = get(_name, ctx.predicateName());
 		List<String> list = get(_names, ctx.predicateNameList(), predName);
 		_names.put(ctx, list);
@@ -113,7 +111,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
 	}
 	public void exitCmd(CmdContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		_program.addComponent(_currComp);
 		_currComp = _program.globalComp;
 	}
@@ -121,7 +118,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_inDecl = true;
 	}
 	public void exitDeclaration(DeclarationContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		_inDecl = false;
 
 		if (ctx.refmode() == null) {
@@ -143,11 +139,9 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitConstraint(ConstraintContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		_currComp.addCons(new Constraint(get(_elem, ctx.ruleBody(0)), get(_elem, ctx.ruleBody(1))));
 	}
 	public void exitRule_(Rule_Context ctx) {
-		ErrorManager.v().newContext(ctx);
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(LogicType.AND, new HashSet<>(get(_atoms, ctx.predicateList())));
 			IElement body = get(_elem, ctx.ruleBody());
@@ -159,7 +153,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitPredicate(PredicateContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		assert (_inDecl && ctx.AT_STAGE() == null && ctx.BACKTICK() == null) || (!_inDecl && ctx.CAPACITY() == null);
 
 		String      name     = get(_name, ctx.predicateName(0));
@@ -195,7 +188,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitRuleBody(RuleBodyContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		IElement result;
 
 		if (ctx.comparison() != null)
@@ -219,20 +211,17 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_elem.put(ctx, result);
 	}
 	public void exitAggregation(AggregationContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		VariableExpr variable = new VariableExpr(ctx.IDENTIFIER().getText());
 		Predicate predicate = (Predicate) get(_elem, ctx.predicate());
 		IElement body = get(_elem, ctx.ruleBody());
 		_elem.put(ctx, new AggregationElement(variable, predicate, body));
 	}
 	public void exitRefmode(RefmodeContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		String name  = get(_name, ctx.predicateName());
 		String stage = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText());
 		_elem.put(ctx, new RefMode(name, stage, new VariableExpr(ctx.IDENTIFIER().getText()), get(_expr, ctx.expr())));
 	}
 	public void exitPredicateName(PredicateNameContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		PredicateNameContext child = ctx.predicateName();
 		String name = ctx.IDENTIFIER().getText();
 		if (child != null)
@@ -240,7 +229,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_name.put(ctx, name);
 	}
 	public void exitConstant(ConstantContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		if (ctx.INTEGER() != null) {
 			String str = ctx.INTEGER().getText();
 			Long constant;
@@ -267,7 +255,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		else if (ctx.STRING() != null)  _expr.put(ctx, new ConstantExpr(ctx.STRING().getText()));
 	}
 	public void exitExpr(ExprContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		IExpr e;
 		if (ctx.IDENTIFIER() != null)
 			e = new VariableExpr(ctx.IDENTIFIER().getText());
@@ -300,7 +287,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_expr.put(ctx, e);
 	}
 	public void exitComparison(ComparisonContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		String token = getToken(ctx, 0);
 		IExpr left = get(_expr, ctx.expr(0));
 		IExpr right = get(_expr, ctx.expr(1));
@@ -317,13 +303,11 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_elem.put(ctx, new ComparisonElement(left, op, right));
 	}
 	public void exitPredicateList(PredicateListContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		IAtom atom = (IAtom) get(_elem, ctx.predicate());
 		List<IAtom> list = get(_atoms, ctx.predicateList(), atom);
 		_atoms.put(ctx, list);
 	}
 	public void exitExprList(ExprListContext ctx) {
-		ErrorManager.v().newContext(ctx);
 		IExpr p = get(_expr, ctx.expr());
 		List<IExpr> list = get(_exprs, ctx.exprList(), p);
 		_exprs.put(ctx, list);
@@ -389,5 +373,8 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 			bodyCount += vars.size();
 		}
 		return (atom.arity() != bodyCount);
+	}
+	static SourceLocation loc(ParserRuleContext ctx) {
+		return SourceManager.v().getLoc(ctx.start.getLine());
 	}
 }

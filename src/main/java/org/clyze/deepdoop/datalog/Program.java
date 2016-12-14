@@ -33,7 +33,7 @@ public class Program implements IVisitable {
 	}
 	public void addInit(String id, String comp) {
 		if (inits.get(id) != null)
-			ErrorManager.v().error(Error.ID_IN_USE, id);
+			ErrorManager.error(Error.ID_IN_USE, id);
 		inits.put(id, comp);
 	}
 	public void addPropagation(String fromId, Set<IAtom> preds, String toId) {

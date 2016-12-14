@@ -31,7 +31,7 @@ public class CmdComponent extends Component {
 	}
 	@Override
 	public void addCons(Constraint c) {
-		ErrorManager.v().error(Error.CMD_CONSTRAINT);
+		ErrorManager.error(Error.CMD_CONSTRAINT);
 	}
 	@Override
 	public void addRule(Rule r) {
@@ -43,14 +43,14 @@ public class CmdComponent extends Component {
 		Directive d = r.getDirective();
 		switch (d.name) {
 			case "lang:cmd:EVAL"  :
-					   if (eval != null) ErrorManager.v().error(Error.CMD_EVAL, name);
+					   if (eval != null) ErrorManager.error(Error.CMD_EVAL, name);
 					   eval = ((String) d.constant.value).replaceAll("^\"|\"$", ""); break;
 			case "lang:cmd:export":
 					   exports.add(new StubAtom(d.backtick.name + ":past")); break;
 			case "lang:cmd:import":
 					   imports.add(new StubAtom(d.backtick.name)); break;
 			default               :
-					   ErrorManager.v().error(Error.CMD_DIRECTIVE, name);
+					   ErrorManager.error(Error.CMD_DIRECTIVE, name);
 		}
 	}
 	@Override

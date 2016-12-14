@@ -111,7 +111,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 			}
 			if (!declFound)
 				_logger.warn("[DD] WARNING: Predicate `" + usedPred + "` not found in current file");
-				//ErrorManager.v().error(Error.NO_DECL, usedPred); // TODO uncomment
+				//ErrorManager.error(Error.NO_DECL, usedPred); // TODO uncomment
 		}
 
 		// Compute dependency graph for components (and global predicates)

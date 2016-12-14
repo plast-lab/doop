@@ -86,7 +86,7 @@ public class DependencyGraph {
 				}
 			}
 			if (newZeroInNodes.isEmpty() && successorsExist)
-				ErrorManager.v().error(Error.DEP_CYCLE);
+				ErrorManager.error(Error.DEP_CYCLE);
 			zeroInNodes = newZeroInNodes;
 			curLayer++;
 		}

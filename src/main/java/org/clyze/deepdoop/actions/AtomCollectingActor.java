@@ -60,11 +60,11 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 			String pName = p.name();
 			importPreds.add(pName);
 			if (declMap.get(pName) == null)
-				ErrorManager.v().error(Error.CMD_NO_DECL, pName);
+				ErrorManager.error(Error.CMD_NO_DECL, pName);
 		}
 		for (String declName : declMap.keySet())
 			if (!importPreds.contains(declName))
-				ErrorManager.v().error(Error.CMD_NO_IMPORT, declName);
+				ErrorManager.error(Error.CMD_NO_IMPORT, declName);
 
 		Map<String, IAtom> usedMap = new HashMap<>();
 		for (StubAtom p : n.exports) usedMap.put(p.name, p);

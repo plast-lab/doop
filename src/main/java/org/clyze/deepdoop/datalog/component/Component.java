@@ -5,14 +5,17 @@ import java.util.Set;
 import org.clyze.deepdoop.actions.IVisitable;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.clause.*;
+import org.clyze.deepdoop.system.ISourceItem;
+import org.clyze.deepdoop.system.SourceLocation;
 
-public class Component implements IVisitable {
+public class Component implements IVisitable, ISourceItem {
 
 	public final String           name;
 	public final String           superComp;
 	public final Set<Declaration> declarations;
 	public final Set<Constraint>  constraints;
 	public final Set<Rule>        rules;
+	SourceLocation                _loc;
 
 	public Component(Component other) {
 		this.name         = other.name;
@@ -20,7 +23,9 @@ public class Component implements IVisitable {
 		this.declarations = new HashSet<>(other.declarations);
 		this.constraints  = new HashSet<>(other.constraints);
 		this.rules        = new HashSet<>(other.rules);
+		this._loc         = other._loc;
 	}
+
 	public Component(String name, String superComp, Set<Declaration> declarations, Set<Constraint> constraints, Set<Rule> rules) {
 		this.name         = name;
 		this.superComp    = superComp;
@@ -36,6 +41,11 @@ public class Component implements IVisitable {
 	}
 	public Component() {
 		this(null, null, new HashSet<>(), new HashSet<>(), new HashSet<>());
+	}
+
+	// Ugly, but otherwise we would need to have four additional constructors
+	public void setLocation(SourceLocation loc) {
+		this._loc = loc;
 	}
 
 	public void addDecl(Declaration d) {
@@ -57,5 +67,9 @@ public class Component implements IVisitable {
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+	@Override
+	public SourceLocation location() {
+		return _loc;
 	}
 }
