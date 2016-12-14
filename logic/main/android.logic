@@ -2,6 +2,12 @@ AndroidLibraryType(?type) <-
   Type:Id(?type:?name),
   string:substring[?name, 0, 7] = "android".
 
+// REVIEW: why is this needed? Why do application classes inlcude
+// android.support classes? What are these?
+AndroidApplicationClass(?class) <-
+  ApplicationClass(?class),
+  !AndroidLibraryType(?class).
+  
 AndroidViewType(?type) <-
   SubtypeOf(?type, ?supertype),
   (Type:Id(?supertype:"android.view.View");
@@ -19,37 +25,89 @@ AndroidLibraryListenerType(?type) <-
   (string:substring[?name, _, _] = "Listener";
    string:substring[?name, _, _] = "Callback").
 
-AndroidListenerType(?type) <-
-  SubtypeOf(?type, ?supertype),
+AndroidApplicationListenerClass(?class) <-
+  AndroidApplicationClass(?class),
+  SubtypeOf(?class, ?supertype),
   AndroidLibraryListenerType(?supertype).
 
-PublicMethodOfAndroidApp(?meth) <-
+PublicMethodOfComponent(?meth) <-
   Method:DeclaringType[?meth] = ?type,
   AndroidAppComponent(?type),
   Method:Modifier("public", ?meth).
 
-ProtectedMethodOfAndroidApp(?meth) <-
+ProtectedMethodOfComponent(?meth) <-
   Method:DeclaringType[?meth] = ?type,
   AndroidAppComponent(?type),
   Method:Modifier("protected", ?meth).
 
-// The protected method overrides one in a library type, hence it's
-// callable from the library.
-OverridingProtectedMethodOfAndroidApp(?meth) <-
-  ProtectedMethodOfAndroidApp(?meth),
-  Method:DeclaringType[?meth] = ?componentType,
+AppMethodOverridesAndroidLibraryMethod(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  AndroidApplicationClass(?type),
   // should be just args, since ret-type can be covariant?
   Method:Descriptor[?meth] = ?descriptor,
   Method:SimpleName[?meth] = ?simplename,
-  SubtypeOf(?componentType, ?libraryType),
+  SupertypeOf(?libraryType, ?type),
   AndroidLibraryType(?libraryType),
   MethodLookup[?simplename, ?descriptor, ?libraryType] = _.
 
+// The protected method overrides one in a library type, hence it's
+// callable from the library.
+OverridingProtectedMethodOfComponent(?meth) <-
+  ProtectedMethodOfComponent(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth).
+
 ReachableContext(?ctx, ?meth) <-
-  (PublicMethodOfAndroidApp(?meth);
-   OverridingProtectedMethodOfAndroidApp(?meth)),
+  (PublicMethodOfComponent(?meth);
+   OverridingProtectedMethodOfComponent(?meth);
+   CallbackMethod(?meth)),
+  ImmutableContext(?ctx).
+
+// Handle library-callable "on*" methods of layout controls
+PublicOnMethodOfLayoutControl(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  LayoutControl(_, ?type),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("public", ?meth).
+
+ProtectedOnMethodOfLayoutControl(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  LayoutControl(_, ?type),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("protected", ?meth).
+
+OverridingProtectedOnMethodOfLayoutControl(?meth) <-
+  ProtectedOnMethodOfLayoutControl(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth).
+
+ReachableContext(?ctx, ?meth) <-
+  (PublicOnMethodOfLayoutControl(?meth);
+   OverridingProtectedOnMethodOfLayoutControl(?meth)),
   ImmutableContext(?ctx).
 
 
+// Handle library-callable "on*" methods of listeners/callbacks
+PublicOnMethodOfListener(?meth) <-
+  Method:DeclaringType[?meth] = ?class,
+  AndroidApplicationListenerClass(?class),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("public", ?meth).
 
-  
+ProtectedOnMethodOfListener(?meth) <-
+  Method:DeclaringType[?meth] = ?class,
+  AndroidApplicationListenerClass(?class),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("protected", ?meth).
+
+OverridingProtectedOnMethodOfListener(?meth) <-
+  ProtectedOnMethodOfListener(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth).
+
+ReachableContext(?ctx, ?meth) <-
+  (PublicOnMethodOfListener(?meth);
+   OverridingProtectedOnMethodOfListener(?meth)),
+  ImmutableContext(?ctx).
+
