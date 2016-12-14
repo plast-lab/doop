@@ -98,6 +98,7 @@ class FactGenerator implements Runnable {
     private void generate(SootField f)
     {
         _writer.writeField(f);
+        _writer.writeFieldInitialValue(f);
 
         int modifiers = f.getModifiers();
         if(Modifier.isAbstract(modifiers))
