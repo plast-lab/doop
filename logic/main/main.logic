@@ -1,6 +1,7 @@
 #include "class-initialization.logic"
 #include "exceptions.logic"
 #include "finalization.logic"
+#include "android.logic"
 #include "implicit-reachable.logic"
 #include "native.logic"
 #include "reference.logic"

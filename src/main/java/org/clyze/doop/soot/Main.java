@@ -245,12 +245,13 @@ public class Main {
 //            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
 //            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
 
-            app.getConfig().setCallbackAnalyzer(Fast);
-            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
-            dummyMain = app.getDummyMainMethod();
-            if (dummyMain == null) {
-                throw new RuntimeException("Dummy main null");
-            }
+            //// Old handling, using FlowDroid-generated main method
+//            app.getConfig().setCallbackAnalyzer(Fast);
+//            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+//            dummyMain = app.getDummyMainMethod();
+//            if (dummyMain == null) {
+//                throw new RuntimeException("Dummy main null");
+//            }
 
         }
         else {
@@ -392,7 +393,8 @@ public class Main {
             db.flush();
 
             if (_android) {
-                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
+                //// Old handling, using FlowDroid-generated main method
+                //                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
                 for (AXmlNode node: appActivities) {
                     writer.writeActivity(node.getAttribute("name").getValue().toString());
                 }
@@ -421,15 +423,16 @@ public class Main {
                     }
                 }
             }
-            else
-                if (_classicFactGen)
-                    driver.doInSequentialOrder(classes);
-                else {
-                    scene.getOrMakeFastHierarchy();
-                    // avoids a concurrent modification exception, since we may
-                    // later be asking soot to add phantom classes to the scene's hierarchy
-                    driver.doInParallel(classes);
-                }
+            //// Old handling, using FlowDroid-generated main method
+            // else
+            if (_classicFactGen)
+                driver.doInSequentialOrder(classes);
+            else {
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
+            }
             db.close();
         }
     }

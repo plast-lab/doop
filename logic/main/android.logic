@@ -1,0 +1,32 @@
+AndroidLibraryType(?type) <-
+  Type:Id(?type:?name),
+  string:substring[?name, 0, 7] = "android".
+
+AndroidViewType(?type) <-
+  SubtypeOf(?type, ?supertype),
+  (Type:Id(?supertype:"android.view.View");
+   Type:Id(?supertype:"android.view.ViewGroup")).
+
+AndroidAppComponent(?type) <-
+  Activity(?type);
+  Service(?type);
+  BroadcastReceiver(?type);
+  ContentProvider(?type).
+
+AndroidLibraryListenerType(?type) <-
+  AndroidLibraryType(?type),
+  Type:Id(?type:?name),
+  (string:substring[?name, _, _] = "Listener";
+   string:substring[?name, _, _] = "Callback").
+
+AndroidListenerType(?type) <-
+  SubtypeOf(?type, ?supertype),
+  AndroidLibraryListenerType(?supertype).
+
+PublicMethodOfAndroidApp(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  AndroidAppComponent(?type),
+  Method:Modifier("public", ?meth).
+
+ImplicitReachable(?meth) <-
+  PublicMethodOfAndroidApp(?meth).
