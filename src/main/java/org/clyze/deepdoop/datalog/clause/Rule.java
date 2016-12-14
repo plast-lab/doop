@@ -1,12 +1,9 @@
 package org.clyze.deepdoop.datalog.clause;
 
-import org.clyze.deepdoop.actions.IVisitable;
-import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.element.IElement;
-import org.clyze.deepdoop.datalog.element.LogicalElement;
-import org.clyze.deepdoop.datalog.element.atom.Directive;
-import org.clyze.deepdoop.system.ISourceItem;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.actions.*;
+import org.clyze.deepdoop.datalog.element.*;
+import org.clyze.deepdoop.datalog.element.atom.*;
+import org.clyze.deepdoop.system.*;
 
 public class Rule implements IVisitable, ISourceItem {
 

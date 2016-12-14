@@ -11,8 +11,7 @@ import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
-import org.clyze.deepdoop.system.Error;
-import org.clyze.deepdoop.system.ErrorManager;
+import org.clyze.deepdoop.system.*;
 
 public class AtomCollectingActor implements IActor<IVisitable> {
 
@@ -60,11 +59,11 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 			String pName = p.name();
 			importPreds.add(pName);
 			if (declMap.get(pName) == null)
-				ErrorManager.error(Error.CMD_NO_DECL, pName);
+				ErrorManager.error(ErrorId.CMD_NO_DECL, pName);
 		}
 		for (String declName : declMap.keySet())
 			if (!importPreds.contains(declName))
-				ErrorManager.error(Error.CMD_NO_IMPORT, declName);
+				ErrorManager.error(ErrorId.CMD_NO_IMPORT, declName);
 
 		Map<String, IAtom> usedMap = new HashMap<>();
 		for (StubAtom p : n.exports) usedMap.put(p.name, p);

@@ -9,8 +9,7 @@ import java.util.Set;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.Program;
 import org.clyze.deepdoop.datalog.element.atom.IAtom;
-import org.clyze.deepdoop.system.Error;
-import org.clyze.deepdoop.system.ErrorManager;
+import org.clyze.deepdoop.system.*;
 
 public class DependencyGraph {
 
@@ -86,7 +85,7 @@ public class DependencyGraph {
 				}
 			}
 			if (newZeroInNodes.isEmpty() && successorsExist)
-				ErrorManager.error(Error.DEP_CYCLE);
+				ErrorManager.error(ErrorId.DEP_CYCLE);
 			zeroInNodes = newZeroInNodes;
 			curLayer++;
 		}

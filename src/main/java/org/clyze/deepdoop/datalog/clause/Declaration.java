@@ -4,14 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import org.clyze.deepdoop.actions.IVisitable;
-import org.clyze.deepdoop.actions.IVisitor;
+import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.element.atom.IAtom;
-import org.clyze.deepdoop.datalog.expr.VariableExpr;
-import org.clyze.deepdoop.system.Error;
-import org.clyze.deepdoop.system.ErrorManager;
-import org.clyze.deepdoop.system.ISourceItem;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.datalog.expr.*;
+import org.clyze.deepdoop.system.*;
 
 public class Declaration implements IVisitable, ISourceItem {
 
@@ -36,7 +32,7 @@ public class Declaration implements IVisitable, ISourceItem {
 			count++;
 			int index = varsInHead.indexOf(vars.get(0));
 			if (index == -1)
-				ErrorManager.error(location(), Error.DECL_UNKNOWN_VAR, vars.get(0).name);
+				ErrorManager.error(location(), ErrorId.DECL_UNKNOWN_VAR, vars.get(0).name);
 			ordered[index] = t;
 		}
 		assert (count == 0 || varsInHead.size() == count);

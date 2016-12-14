@@ -10,16 +10,14 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import static org.clyze.deepdoop.datalog.DatalogParser.*;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.LogicalElement.LogicType;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
-import org.clyze.deepdoop.system.ErrorManager;
-import org.clyze.deepdoop.system.SourceLocation;
-import org.clyze.deepdoop.system.SourceManager;
+import org.clyze.deepdoop.system.*;
+import static org.clyze.deepdoop.datalog.DatalogParser.*;
 
 public class DatalogListenerImpl extends DatalogBaseListener {
 

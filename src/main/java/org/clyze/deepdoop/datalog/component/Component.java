@@ -2,11 +2,9 @@ package org.clyze.deepdoop.datalog.component;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.clyze.deepdoop.actions.IVisitable;
-import org.clyze.deepdoop.actions.IVisitor;
+import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.clause.*;
-import org.clyze.deepdoop.system.ISourceItem;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class Component implements IVisitable, ISourceItem {
 

@@ -4,12 +4,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.clyze.deepdoop.actions.IVisitable;
-import org.clyze.deepdoop.actions.IVisitor;
+import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.atom.IAtom;
-import org.clyze.deepdoop.system.Error;
-import org.clyze.deepdoop.system.ErrorManager;
+import org.clyze.deepdoop.system.*;
 
 public class Program implements IVisitable {
 
@@ -33,7 +31,7 @@ public class Program implements IVisitable {
 	}
 	public void addInit(String id, String comp) {
 		if (inits.get(id) != null)
-			ErrorManager.error(Error.ID_IN_USE, id);
+			ErrorManager.error(ErrorId.ID_IN_USE, id);
 		inits.put(id, comp);
 	}
 	public void addPropagation(String fromId, Set<IAtom> preds, String toId) {

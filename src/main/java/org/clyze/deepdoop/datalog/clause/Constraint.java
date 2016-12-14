@@ -1,10 +1,8 @@
 package org.clyze.deepdoop.datalog.clause;
 
-import org.clyze.deepdoop.actions.IVisitable;
-import org.clyze.deepdoop.actions.IVisitor;
+import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.element.IElement;
-import org.clyze.deepdoop.system.ISourceItem;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class Constraint implements IVisitable, ISourceItem {
 

@@ -2,9 +2,9 @@ package org.clyze.deepdoop.system;
 
 public class DeepDoopException extends RuntimeException {
 
-	public final Error errorId;
+	public final ErrorId errorId;
 
-	public DeepDoopException(String msg, Error errorId) {
+	public DeepDoopException(String msg, ErrorId errorId) {
 		super("\n" + msg);
 		this.errorId = errorId;
 	}

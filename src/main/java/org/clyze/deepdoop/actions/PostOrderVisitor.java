@@ -1,13 +1,13 @@
 package org.clyze.deepdoop.actions;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.clyze.deepdoop.datalog.*;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class PostOrderVisitor<T> implements IVisitor<T> {
 

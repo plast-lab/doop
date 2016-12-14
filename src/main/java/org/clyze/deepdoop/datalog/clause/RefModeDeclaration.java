@@ -2,9 +2,9 @@ package org.clyze.deepdoop.datalog.clause;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import org.clyze.deepdoop.actions.IVisitor;
+import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class RefModeDeclaration extends Declaration {
 

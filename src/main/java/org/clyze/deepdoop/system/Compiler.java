@@ -8,10 +8,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.clyze.deepdoop.actions.*;
-import org.clyze.deepdoop.datalog.DatalogLexer;
-import org.clyze.deepdoop.datalog.DatalogListenerImpl;
-import org.clyze.deepdoop.datalog.DatalogParser;
-import org.clyze.deepdoop.datalog.Program;
+import org.clyze.deepdoop.datalog.*;
 import org.clyze.deepdoop.datalog.component.Component;
 
 public class Compiler {

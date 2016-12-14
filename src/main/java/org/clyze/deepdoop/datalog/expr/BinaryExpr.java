@@ -1,7 +1,7 @@
 package org.clyze.deepdoop.datalog.expr;
 
-import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.BinOperator;
+import org.clyze.deepdoop.actions.*;
+import org.clyze.deepdoop.datalog.*;
 
 public class BinaryExpr implements IExpr {
 
