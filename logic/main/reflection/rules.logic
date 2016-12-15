@@ -1335,17 +1335,6 @@ OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method) <-
 OptFormalParam(?method, ?formal) <-
   FormalParam[_, ?method] = ?formal.
 
-/*
-// Make the special "arguments" variable inside a proxy method point
-// to the arguments of the method.
-ArrayIndexPointsTo(?hctx, ?actual, ?ctx, ?argsVar) <-
-  ProxyMethod(?method, _, _, ?argsVar, _, _),
-  UniqueContext[] = ?ctx,
-  // UniqueHContext[] = ?hctx,
-  ImmutableHContextFromContext[?ctx] = ?hctx,
-  VarPointsTo(?hctx, ?val, ?ctx, ?formal)
-*/
-
 /* This doesn't work due to recursion through negation.
 
 // This rule fills in the appropriate relations, so that calls to
