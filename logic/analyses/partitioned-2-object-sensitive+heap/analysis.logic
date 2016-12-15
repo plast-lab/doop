@@ -98,12 +98,12 @@ PartitionForResolvedInvocation[?type, ?invo] = ?partitionId <-
   Method:DeclaringType[?tomethod] = ?toclass,
   TypeToPartitionId[?toclass] = ?partitionId.
   
-
+/*
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
 OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value).
+*/
 
-/*
 /// Base the decision on the partition of the target method
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
 OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
@@ -127,7 +127,7 @@ OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
    !(PartitionForInvocation[?invo] = _)),
   !TypeInAllPartitions(?valuetype),
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
-*/
+
 
 /*
 /// Base the decision on the partition that allocated the receiver object
@@ -200,12 +200,15 @@ ReachableContext(?ctx, ?clinit) <-
 
 
 // Post-processing
-_OptVarToMethod[?var] = ?meth <-
-  Var:DeclaringMethod(?var,?meth).
-  
-CollapsedVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-  VarPointsTo(?hctx, ?heap, ?ctx, ?var),
-  _OptVarToMethod[?var] = ?meth,
+_ValidCtxVar(?ctx, ?var)
+  <-
+  ReachableContext(?ctx, ?meth),
   Method:DeclaringType[?meth] = ?intype,
+  Var:DeclaringMethod(?var,?meth),
   (!(TypeToPartitionId[?intype] = _);
    TypeToPartitionId[?intype] = PartitionFromContext[?ctx]).
+
+CollapsedVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?heap, ?ctx, ?var),
+   _ValidCtxVar(?ctx, ?var).
+  
