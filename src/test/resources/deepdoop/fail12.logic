@@ -1,9 +1,8 @@
 P(x) -> string(x).
-P("hello").
 
 component Foo {
-	P1(x) <- P0(x).
-	Z(x) <- P1(x).
+	P1(x) <- P(x).
+	P1(x) -> string(x1).
 }
 
 S1 = new Foo

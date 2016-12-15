@@ -112,14 +112,6 @@ public class DatalogTest {
 		test("fail2.logic", Error.DEP_GLOBAL);
 	}
 	@Test
-	public void test_Fail3() throws IOException {
-		test("fail3.logic", Error.NO_DECL);
-	}
-	@Test
-	public void test_Fail4() throws IOException {
-		test("fail4.logic", Error.NO_DECL);
-	}
-	@Test
 	public void test_Fail5() throws IOException {
 		test("fail5.logic", Error.CMD_RULE);
 	}
@@ -138,6 +130,22 @@ public class DatalogTest {
 	@Test
 	public void test_Fail9() throws IOException {
 		test("fail9.logic", Error.CMD_NO_IMPORT);
+	}
+	@Test
+	public void test_Fail10() throws IOException {
+		test("fail10.logic", Error.CMD_EVAL);
+	}
+	@Test
+	public void test_Fail11() throws IOException {
+		test("fail11.logic", Error.ID_IN_USE);
+	}
+	@Test
+	public void test_Fail12() throws IOException {
+		test("fail12.logic", Error.DECL_UNKNOWN_VAR);
+	}
+	@Test
+	public void test_Fail13() throws IOException {
+		test("fail13.logic", Error.DECL_UNKNOWN_VAR);
 	}
 
 

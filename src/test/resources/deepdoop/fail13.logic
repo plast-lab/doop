@@ -1,0 +1,10 @@
+P(x) -> string(x).
+
+component Foo {
+	P1(x) <- P(x1).
+	P1(x) -> string(x).
+}
+
+S1 = new Foo
+
+S1 { * } copyto .global
