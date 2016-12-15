@@ -98,6 +98,7 @@ class FactGenerator implements Runnable {
     private void generate(SootField f)
     {
         _writer.writeField(f);
+        _writer.writeFieldInitialValue(f);
 
         int modifiers = f.getModifiers();
         if(Modifier.isAbstract(modifiers))
@@ -225,16 +226,16 @@ class FactGenerator implements Runnable {
             }
 
             Body b = m.getActiveBody();
-            if(_ssa)
-            {
-                //                synchronized(Scene.v()) {
-                b = Shimple.v().newBody(b);
-                //                }
-                m.setActiveBody(b);
+            if (b != null) {
+                if (_ssa) {
+                    //                synchronized(Scene.v()) {
+                    b = Shimple.v().newBody(b);
+                    //                }
+                    m.setActiveBody(b);
+                }
+                DoopRenamer.transform(b);
+                generate(m, b, session);
             }
-
-            DoopRenamer.transform(b);
-            generate(m, b, session);
 
             m.releaseActiveBody();
         }

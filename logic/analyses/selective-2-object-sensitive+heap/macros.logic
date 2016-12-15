@@ -5,8 +5,6 @@
   HContext(hctx), \
   HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
 
-
-
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
 // Again, this may trigger creation of a new object.
@@ -43,6 +41,12 @@
   ContextFromRealContext[RealHContextFromHContext[hctx], valueComp] = calleeCtx, \
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
+
+#define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[valueComp, valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp                                   
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the

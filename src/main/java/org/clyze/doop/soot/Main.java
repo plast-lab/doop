@@ -4,6 +4,11 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.axml.AXmlNode;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.File;
 import java.util.*;
@@ -177,6 +182,11 @@ public class Main {
                 System.err.println("error: --stdout and -d options are not compatible");
                 System.exit(2);
             }
+            else if ((_inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
+                     (!_android)) {
+                System.err.println("error: the --platform parameter is mandatory for .apk inputs");
+                System.exit(3);
+            }
             else if (!_toStdout && _outputDir == null) {
                 _outputDir = System.getProperty("user.dir");
             }
@@ -196,22 +206,53 @@ public class Main {
         Set<String> apkClasses = null;
 
         Set<SootClass> classes = new HashSet<>();
+        List<AXmlNode> appServices = null;
+        List<AXmlNode> appActivities = null;
+        List<AXmlNode> appContentProviders = null;
+        List<AXmlNode> appBroadcastReceivers = null;
+        Map<String, Set<String>> appCallbackMethods = null;
+        Map<String, Set<PossibleLayoutControl>> appUserControls = null;
 
         if (_android) {
-            SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+            String apkLocation = _inputs.get(0);
+            SetupApplication app = new SetupApplication(_androidJars, apkLocation);
             soot.options.Options.v().set_process_multiple_dex(true);
 
             apkClasses = new HashSet<>();
-            apkClasses.addAll(SourceLocator.v().getClassesUnder(_inputs.get(0)));
+            apkClasses.addAll(SourceLocator.v().getClassesUnder(apkLocation));
 
-            System.out.println("Classes found  in apk: " + apkClasses.size()); //this finds only the classes.dex
+            System.out.println("Classes found  in apk: " + apkClasses.size());
 
-            app.getConfig().setCallbackAnalyzer(Fast);
-            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
-            dummyMain = app.getDummyMainMethod();
-            if (dummyMain == null) {
-                throw new RuntimeException("Dummy main null");
-            }
+            //// Commented out for now. Gets us the info from XML files with no Soot analysis.
+            ProcessManifest processMan = new ProcessManifest(apkLocation);
+            String appPackageName = processMan.getPackageName();
+            ARSCFileParser resParser = new ARSCFileParser();
+            resParser.parse(apkLocation);
+            List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
+            DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
+            lfp.parseLayoutFileDirect(apkLocation);
+
+            // now collect the facts we need
+            Set<String> appEntrypoints = processMan.getEntryPointClasses();
+            appServices = processMan.getServices();
+            appActivities = processMan.getActivities();
+            appContentProviders = processMan.getProviders();
+            appBroadcastReceivers = processMan.getReceivers();
+            appCallbackMethods = lfp.getCallbackMethods();
+            appUserControls = lfp.getUserControls();
+
+//            System.out.println("All entry points:\n" + appEntrypoints);
+//            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
+//            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
+
+            //// Old handling, using FlowDroid-generated main method
+//            app.getConfig().setCallbackAnalyzer(Fast);
+//            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+//            dummyMain = app.getDummyMainMethod();
+//            if (dummyMain == null) {
+//                throw new RuntimeException("Dummy main null");
+//            }
+
         }
         else {
             for (String arg : _inputs) {
@@ -238,7 +279,9 @@ public class Main {
         }
 
         List<ClassProvider> providersList = new ArrayList<>();
-        providersList.add(dexClassProvider);
+
+        if (_android)
+            providersList.add(dexClassProvider);
         providersList.add(classProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 
@@ -254,12 +297,21 @@ public class Main {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
+        soot.options.Options.v().set_process_multiple_dex(true);
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         soot.options.Options.v().set_keep_line_number(true);
 
+
         if (_android) {
+            String libraryClassPath = "";
+            for(String library : _libraries) {
+                libraryClassPath += File.pathSeparator + library;
+            }
+            scene.setSootClassPath(_inputs.get(0) + libraryClassPath);
+
             for (String className : apkClasses) {
+                SourceLocator.v().getClassSource(className);
                 scene.addBasicClass(className, SootClass.BODIES);
                 classes.add(scene.forceResolve(className, SootClass.BODIES));
             }
@@ -340,17 +392,47 @@ public class Main {
 
             db.flush();
 
-            if (_android)
-                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
-            else
-                if (_classicFactGen)
-                    driver.doInSequentialOrder(classes);
-                else {
-                    scene.getOrMakeFastHierarchy();
-                    // avoids a concurrent modification exception, since we may
-                    // later be asking soot to add phantom classes to the scene's hierarchy
-                    driver.doInParallel(classes);
+            if (_android) {
+                //// Old handling, using FlowDroid-generated main method
+                //                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
+                for (AXmlNode node: appActivities) {
+                    writer.writeActivity(node.getAttribute("name").getValue().toString());
                 }
+
+                for (AXmlNode node: appServices) {
+                    writer.writeService(node.getAttribute("name").getValue().toString());
+                }
+
+                for (AXmlNode node: appContentProviders) {
+                    writer.writeContentProvider(node.getAttribute("name").getValue().toString());
+                }
+
+                for (AXmlNode node: appBroadcastReceivers) {
+                    writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                }
+
+                for (Set<String> callBackMethods: appCallbackMethods.values()) {
+                    for (String callbackMethod : callBackMethods) {
+                        writer.writeCallbackMethod(callbackMethod);
+                    }
+                }
+
+                for (Set<PossibleLayoutControl> possibleLayoutControls: appUserControls.values()) {
+                    for (PossibleLayoutControl possibleLayoutControl: possibleLayoutControls) {
+                        writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName());
+                    }
+                }
+            }
+            //// Old handling, using FlowDroid-generated main method
+            // else
+            if (_classicFactGen)
+                driver.doInSequentialOrder(classes);
+            else {
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
+            }
             db.close();
         }
     }

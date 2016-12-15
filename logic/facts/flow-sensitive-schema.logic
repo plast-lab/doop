@@ -543,6 +543,19 @@ Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint
 
 
 //-----------------------------------------------------------------------------
+// [Android-related]
+//-----------------------------------------------------------------------------
+
+Activity(?x) -> Type(?x).
+Service(?x) -> Type(?x).
+ContentProvider(?x) -> Type(?x).
+BroadcastReceiver(?x) -> Type(?x).
+CallbackMethod(?x) -> Method(?x).
+LayoutControl(?id, ?type) -> int[32](?id), Type(?type).
+LayoutControl0(?id, ?typename) -> int[32](?id), string(?typename).
+
+
+//-----------------------------------------------------------------------------
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 

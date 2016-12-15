@@ -38,6 +38,7 @@ ResolveInvocation[?type, ?invocation] = ?tomethod ->
 
 ResolveInvocation[?type, ?invocation] = ?tomethod <-
    VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
+   // should be just args, since ret-type can be covariant?
    VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor,
    VirtualMethodInvocation:Base[?invocation] = ?base,
    Var:Type[?base] = ?basetype,

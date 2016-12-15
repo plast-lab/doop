@@ -266,7 +266,7 @@ NewMetricMacro(43.0, _t65, "original tainted values", Stats:Simple:OriginalTaint
 #endif
 
 #ifdef OPEN_PROGRAMS
-Stats:Simple:ReachableFromEntryPoint(?method) <- MockReachableContext(_, ?method).
+//Stats:Simple:ReachableFromEntryPoint(?method) <- MockReachableContext(_, ?method).
 
 NewMetricMacro(60.0, _t70, "Entry Points", EntryPoint(_)).
 NewMetricMacro(61.0, _t71, "Mock Objects", MockObject(_, _)).
@@ -274,6 +274,6 @@ NewMetricMacro(61.1, _t72, "Mock Objects for Receivers", MockObjFromEntryPoint(_
 NewMetricMacro(61.2, _t73, "Mock Objects for Fields", MockObjFromField(_)).
 NewMetricMacro(61.3, _t74, "Mock Objects for Arrays", MockObjFromArray(_)).
 NewMetricMacro(61.4, _t75, "Mock Objects for Formals", MockObjFromFormal(_)).
-NewMetricMacro(62.0, _t76, "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
-NewMetricMacro(62.5, _t77, "Methods Reachable from open entry points (INS)", Stats:Simple:ReachableFromEntryPoint(_)).
+//NewMetricMacro(62.0, _t76, "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
+//NewMetricMacro(62.5, _t77, "Methods Reachable from open entry points (INS)", Stats:Simple:ReachableFromEntryPoint(_)).
 #endif

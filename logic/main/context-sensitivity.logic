@@ -134,6 +134,25 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
    ReachableContext(?toCtx, ?inmethod).
 
 /**
+ * Assignment of numeric constant. Currently context-insensitive and
+ * only used for android analyses, hence the ad hoc logic to match
+ * a specific host class (R).
+ */
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
+   AssignNumConstant:Id[?insn] = ?const,
+   AssignInstruction:To[?insn] = ?to,
+   Value:byNum[?const] = ?value,
+   Instruction:Method[?insn] = ?inmethod,
+   ReachableContext(?toCtx, ?inmethod),
+   ImmutableHContextFromContext[?toCtx] = ?hctx.
+
+//// TODO: also handle:
+//AssignCastNumConstant:Id[?insn] = ?const
+//AssignCast:Type[?insn] = ?type ->
+
+
+/**
  * Local assignments
 Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
   AssignLocal(?from, ?to, ?inmethod),
@@ -332,11 +351,9 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
 #endif
   AssignReturnValue[?invocation] = ?local.
 
-
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
-
 
 /**
  * Static method invocations

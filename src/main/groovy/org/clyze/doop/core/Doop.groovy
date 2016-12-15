@@ -298,6 +298,20 @@ class Doop {
             forPreprocessor:true
         ),
         new AnalysisOption<Boolean>(
+            id:"OPEN_PROGRAMS_IMMUTABLE_CTX",
+            name:"open-programs-context-insensitive-entrypoints",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"OPEN_PROGRAMS_IMMUTABLE_HCTX",
+            name:"open-programs-heap-context-insensitive-entrypoints",
+            value:false,
+            webUI:true,
+            forPreprocessor:true
+        ),
+        new AnalysisOption<Boolean>(
             id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
             name:"only-application-classes-fact-gen",
             value:false,

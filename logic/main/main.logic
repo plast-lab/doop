@@ -1,6 +1,7 @@
 #include "class-initialization.logic"
 #include "exceptions.logic"
 #include "finalization.logic"
+#include "android.logic"
 #include "implicit-reachable.logic"
 #include "native.logic"
 #include "reference.logic"
@@ -23,6 +24,11 @@ Value:byHeap[?heap] = ?value <-
 Value:Heap[?value] = ?heap <-
    Value:byHeap[?heap] = ?value.
 
+Value:byNum[?const] = ?value <-
+   Value:Num:Cons[?const] = ?value.
+Value:Num[?value] = ?const <-
+   Value:byNum[?const] = ?value.
+
 Value:byId[?id] = ?value <-
    Value:Mock:Cons[?id] = ?value.
 Value:byId[?id] = ?value <-
@@ -37,10 +43,27 @@ Value:Type[?value] = ?type <-
    HeapAllocation(?heap),
    HeapAllocation:Type[?heap] = ?type.
 
+// Only create values for numeric constants in a static initializer
+// inside a class whose name contains ".R$". We are trying to capture
+// just the constants in Android "R" nested classes. REVIEW to
+// generalize.
+Value:Num:Cons[?const] = ?value,
+Value(?value),
+Value:Type[?value] = ?type <-
+//   NumConstant(?const),
+   AssignNumConstant:Id[?insn] = ?const,
+   Instruction:Method[?insn] = ?meth,
+   Method:SimpleName[?meth] = "<clinit>",
+   Method:DeclaringType[?meth] = ?class,
+   Type:Id(?class:?className),
+   string:substring[?className, _, 3] = ".R$",
+   ?type = Type:int[].
+
 Value:isHeap(?value) <-
    Value:Heap:Cons[_] = ?value.
 Value:isNonHeap(?value) <-
-   Value:Mock:Cons[_] = ?value.
+   Value:Mock:Cons[_] = ?value;
+   Value:Num:Cons[_] = ?value.
 
 Value:Null[] = ?nullValue <-
    HeapAllocation:Null[] = ?nullHeap,

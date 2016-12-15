@@ -1,0 +1,150 @@
+/**
+// Original blueprint for modeling of android events. This comment should
+// probably be kept even when the code gets far more sophisticated. It
+// will show the original thinking, which will be a good starting point
+// for understanding.
+
+// -Every application-level activity/service/content provider/broadcast
+//  receiver class instantiated with a new object. All public methods of
+//  these objects deemed reachable. (REVIEW: with what arguments?) Also
+//  protected methods that override library methods.
+
+// -Layout/View class: transitive subtype of android.view.ViewGroup or
+//  android.view.View
+//   * Every layout control (application-level or not) that appears in
+//     the XML (with resource id) is instantiated (REVIEW: with what
+//     links to other controls? Call constructors with some arguments,
+//     perhaps?)
+//   * Every layout control instantiated (in any way) has its public
+//     methods whose name starts with "on" be reachable (REVIEW: with
+//     what arguments?)
+//   * Refinement: certainly we need a mock LayoutInflater object passed
+//     to a fragment's "onCreateView", to allow calling "inflate" on it.
+//   * Refinement: return right view for findViewById, (Receiver is
+//     parent view, but we assume it's correct.)
+//   * View.inflate called with an id should return the appropriate view
+
+// -A class is a listener or a callback if it's a subtype of a class or
+//  interface with "Callback" or "Listener" in its name
+//   * Every instantiated listener or callback object (opt.: that flows
+//     to a library method that accepts a listener interface) has its
+//     public methods whose name starts with "on" be reachable (REVIEW:
+//     with what arguments?)
+**/
+
+AndroidLibraryType(?type) <-
+  Type:Id(?type:?name),
+  string:substring[?name, 0, 7] = "android".
+
+// REVIEW: why is this needed? Why do application classes inlcude
+// android.support classes? What are these?
+AndroidApplicationClass(?class) <-
+  ApplicationClass(?class),
+  !AndroidLibraryType(?class).
+  
+AndroidViewType(?type) <-
+  SubtypeOf(?type, ?supertype),
+  (Type:Id(?supertype:"android.view.View");
+   Type:Id(?supertype:"android.view.ViewGroup")).
+
+AndroidAppComponent(?type) <-
+  Activity(?type);
+  Service(?type);
+  BroadcastReceiver(?type);
+  ContentProvider(?type).
+
+AndroidLibraryListenerType(?type) <-
+  AndroidLibraryType(?type),
+  Type:Id(?type:?name),
+  (string:substring[?name, _, _] = "Listener";
+   string:substring[?name, _, _] = "Callback").
+
+AndroidApplicationListenerClass(?class) <-
+  AndroidApplicationClass(?class),
+  SubtypeOf(?class, ?supertype),
+  AndroidLibraryListenerType(?supertype).
+
+PublicMethodOfComponent(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  AndroidAppComponent(?type),
+  Method:Modifier("public", ?meth).
+
+ProtectedMethodOfComponent(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  AndroidAppComponent(?type),
+  Method:Modifier("protected", ?meth).
+
+AppMethodOverridesAndroidLibraryMethod(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  AndroidApplicationClass(?type),
+  // should be just args, since ret-type can be covariant?
+  Method:Descriptor[?meth] = ?descriptor,
+  Method:SimpleName[?meth] = ?simplename,
+  SupertypeOf(?libraryType, ?type),
+  AndroidLibraryType(?libraryType),
+  MethodLookup[?simplename, ?descriptor, ?libraryType] = _.
+
+// The protected method overrides one in a library type, hence it's
+// callable from the library.
+OverridingProtectedMethodOfComponent(?meth) <-
+  ProtectedMethodOfComponent(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth).
+
+ReachableContext(?ctx, ?meth) <-
+  (PublicMethodOfComponent(?meth);
+   OverridingProtectedMethodOfComponent(?meth);
+   CallbackMethod(?meth)),
+  ImmutableContext(?ctx).
+
+// Handle library-callable "on*" methods of layout controls
+PublicOnMethodOfLayoutControl(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  LayoutControl(_, ?type),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("public", ?meth).
+
+ProtectedOnMethodOfLayoutControl(?meth) <-
+  Method:DeclaringType[?meth] = ?type,
+  LayoutControl(_, ?type),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("protected", ?meth).
+
+OverridingProtectedOnMethodOfLayoutControl(?meth) <-
+  ProtectedOnMethodOfLayoutControl(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth).
+
+ReachableContext(?ctx, ?meth) <-
+  (PublicOnMethodOfLayoutControl(?meth);
+   OverridingProtectedOnMethodOfLayoutControl(?meth)),
+  ImmutableContext(?ctx).
+
+
+// Handle library-callable "on*" methods of listeners/callbacks
+// REVIEW: this is currently liberal. It checks that the app class
+// subtypes a library listener and that it has an "on*" method,
+// but that doesn't mean that method overrides one of the listener.
+PublicOnMethodOfListener(?meth) <-
+  Method:DeclaringType[?meth] = ?class,
+  AndroidApplicationListenerClass(?class),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("public", ?meth).
+
+ProtectedOnMethodOfListener(?meth) <-
+  Method:DeclaringType[?meth] = ?class,
+  AndroidApplicationListenerClass(?class),
+  Method:SimpleName[?meth] = ?simplename,
+  string:substring[?simplename, 0, 2] = "on",
+  Method:Modifier("protected", ?meth).
+
+OverridingProtectedOnMethodOfListener(?meth) <-
+  ProtectedOnMethodOfListener(?meth),
+  AppMethodOverridesAndroidLibraryMethod(?meth).
+
+ReachableContext(?ctx, ?meth) <-
+  (PublicOnMethodOfListener(?meth);
+   OverridingProtectedOnMethodOfListener(?meth)),
+  ImmutableContext(?ctx).
+
