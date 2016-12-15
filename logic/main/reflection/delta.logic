@@ -122,7 +122,7 @@
 +Method:Descriptor[?constructor] = "void(java.lang.reflect.InvocationHandler)",
 +Method:JVMDescriptor[?constructor] = "(Ljava/lang/reflect/InvocationHandler;)V",
 +Method:Modifier(?public, ?constructor),
-// Create Invocation Handler field.
+// Create invocation handler field.
 +Field:Id(?fieldIHandler:?fieldIHandlerId), +Field(?fieldIHandler),
 +Field:DeclaringType[?fieldIHandler] = ?proxyClass,
 +Field:SimpleName[?fieldIHandler] = "h",
@@ -130,9 +130,9 @@
 +Field:Modifier(?private, ?fieldIHandler)
  <-
    ProxiedInterfaceMacro(?interface, ?interfaceId, ?proxyClassId),
-   // Constructor.
+   // Proxy class constructor.
    ?constructorId = "<" + ?proxyClassId + ": void <init>(java.lang.reflect.InvocationHandler)>",
-   // Field.
+   // Field containing an InvocationHandler.
    Type:Id@previous(?invocationHandlerType:"java.lang.reflect.InvocationHandler"),
    ?fieldIHandlerId = ?proxyClassId + "$h",
    Modifier:Id@previous(?public:"public"),
@@ -161,25 +161,14 @@
 +Var:Type[?thisVar] = ?proxyClass,
 +ThisVar[?method] = ?thisVar,
 // Create instruction 'Object[] args = new Object[]'.
-// DISABLED: Not needed.
-// +Instruction:Id(?createArgs:?createArgsId), +Instruction(?createArgs),
-// +AssignHeapAllocation:Insn(?createArgs),
++Instruction:Id(?createArgs:?createArgsId), +AssignHeapAllocation:Insn(?createArgs),
 // Create heap object for Object[] arguments.
-// +HeapAllocation0:Normal(?argsNewId, ?argsType),
-// +HeapAllocation:Normal:Cons[?argsNewId] = ?argsNew,
-// +_NormalHeap(?argsNewId, ?argsType),
-// // +HeapAllocation(?argsNew),
-// +HeapAllocation:Id[?argsNew] = ?argsNewId,
-// +HeapAllocation:Type[?argsNew] = ?argsType,
-+AssignHeapAllocation(?argsNew, ?argsVar, ?method),
++HeapAllocation0:Normal(?argsNewId, ?argsType),
++AssignHeapAllocation0(?createArgs, ?argsNewId),
 // Create the call to InvocationHandler.invoke().
-+StaticMethodInvocation:Insn(?invoke),
-+Instruction:Id(?invoke:?invokeId),
-// +Instruction(?invoke),
-+Instruction:Index[?invoke] = 4,
-+Instruction:Method[?invoke] = ?method,
++StaticMethodInvocation:Insn(?invoke), +Instruction:Id(?invoke:?invokeId),
++Instruction:Index[?invoke] = 4, +Instruction:Method[?invoke] = ?method,
 +MethodInvocation:Signature[?invoke] = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
-// +StaticMethodInvocation(?invoke, "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>", ?method),
 +ActualParam[0, ?invoke] = ?thisVar,
 +ActualParam[1, ?invoke] = ?methodVar,
 +ActualParam[2, ?invoke] = ?argsVar,
@@ -200,9 +189,8 @@
    Type:Id@previous(?argsType:"java.lang.Object[]"),
    ProxyMethodMacro(?methodId, ?proxyClassId, ?methodVarId, ?invokeId, ?retInstrId),
    ?argsNewId = ?methodId + "/args",
-   HeapAllocation:Normal:Cons[?argsNewId] = ?argsNew,
-   ?thisVarId = ?methodId + "/this"
-   // ?createArgsId = ?argsVarId + "/create"
+   ?thisVarId = ?methodId + "/this",
+   ?createArgsId = ?argsVarId + "/create"
 .
 
 // For proxied methods that have a non-void return type, we also
@@ -224,7 +212,8 @@
    Method:ReturnType@previous[?m] = ?retType,
    Method:SimpleName@previous[?m] = ?simple,
    Method:Descriptor@previous[?m] = ?desc,
-   ?voidType = Type:void@previous[], Type:Id@previous(?voidType:?voidTypeId),
+   ?voidType = Type:void@previous[],
+   Type:Id@previous(?voidType:?voidTypeId),
    ?retType != ?voidTypeId,
    CalcMethodId(?proxyClassId, ?retType, ?simple, ?desc, ?methodId),
    ?retVarId = ?methodId + "/returnValue",
@@ -243,8 +232,9 @@
    Method:ReturnType@previous[?m] = ?retType,
    Method:SimpleName@previous[?m] = ?simple,
    Method:Descriptor@previous[?m] = ?desc,
-   ?voidType = Type:void@previous[], Type:Id@previous(?voidType:?voidTypeId),
-   ?retType != ?voidTypeId,
+   ?voidType = Type:void@previous[],
+   Type:Id@previous(?voidType:?voidTypeId),
+   ?retType = ?voidTypeId,
    CalcMethodId(?proxyClassId, ?retType, ?simple, ?desc, ?methodId),
    ProxyMethodMacro(?methodId, ?proxyClassId, ?methodVarId, ?invokeId, ?retInstrId)
 .
