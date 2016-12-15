@@ -1313,9 +1313,7 @@ java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
 // built at this point.
 VarPointsTo(?hctx, ?reifiedMethodVal, ?ctx, ?methodVar),
 // Also make the special "args" variables point to their values
-// (Object[] arrays). We use values here instead of heaps; for a
-// simple benchmark, using values makes Doop terminate in a few
-// minutes while heaps needs 2 hours and 13 mins.
+// (Object[] arrays).
 VarPointsTo(?hctx, ?argsNewVal, ?ctx, ?argsVar),
 ArrayIndexPointsTo(?hctx, ?arg, ?hctx2, ?argsNewVal)
  <-
