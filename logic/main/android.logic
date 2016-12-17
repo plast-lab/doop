@@ -32,12 +32,25 @@
 //     with what arguments?)
 **/
 
+// Preliminary: create a new heap object per control object declared in layout
+// (XML) resources. (REVIEW) These are normal heap objects.
+HeapAllocation:Normal:Cons[?id] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?type,
+ReifiedLayoutControl[?type] = ?heap
+<-
+  LayoutControl(_, ?type),
+  Type:Id(?type:?typeStr),
+  ?id = "<layout control object " + ?typeStr + ">".
+
+// Main logic
 AndroidLibraryType(?type) <-
   Type:Id(?type:?name),
   string:substring[?name, 0, 7] = "android".
 
-// REVIEW: why is this needed? Why do application classes inlcude
-// android.support classes? What are these?
+// REVIEW: is this needed? android.support classes are included in the
+// application for compatibility with older Android versions. We
+// currently consider them library, not app.
 AndroidApplicationClass(?class) <-
   ApplicationClass(?class),
   !AndroidLibraryType(?class).

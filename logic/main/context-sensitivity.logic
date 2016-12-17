@@ -140,16 +140,13 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
  */
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
-   AssignNumConstant:Id[?insn] = ?const,
+   (AssignNumConstant:Id[?insn] = ?const;
+    AssignCastNumConstant:Id[?insn] = ?const), // TODO: check the cast?
    AssignInstruction:To[?insn] = ?to,
    Value:byNum[?const] = ?value,
    Instruction:Method[?insn] = ?inmethod,
    ReachableContext(?toCtx, ?inmethod),
    ImmutableHContextFromContext[?toCtx] = ?hctx.
-
-//// TODO: also handle:
-//AssignCastNumConstant:Id[?insn] = ?const
-//AssignCast:Type[?insn] = ?type ->
 
 
 /**
