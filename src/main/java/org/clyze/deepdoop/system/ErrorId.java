@@ -15,7 +15,7 @@ public enum ErrorId {
 	DEP_GLOBAL,
 	ID_IN_USE,
 	NO_DECL,
-	DECL_UNKNOWN_VAR;
+	UNKNOWN_VAR;
 
 	static Map<ErrorId, String> _msgMap;
 	static {
@@ -30,7 +30,7 @@ public enum ErrorId {
 		_msgMap.put(ErrorId.DEP_GLOBAL, "Reintroducing predicate `{0}` to global space");
 		_msgMap.put(ErrorId.ID_IN_USE, "Id `{0}` already used to initialize a component");
 		_msgMap.put(ErrorId.NO_DECL, "Predicate `{0}` used but not declared");
-		_msgMap.put(ErrorId.DECL_UNKNOWN_VAR, "Unknown var `{0}` appears in declaration");
+		_msgMap.put(ErrorId.UNKNOWN_VAR, "Unknown var `{0}`");
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {

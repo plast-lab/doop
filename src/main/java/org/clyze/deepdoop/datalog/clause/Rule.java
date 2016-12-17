@@ -1,8 +1,11 @@
 package org.clyze.deepdoop.datalog.clause;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.element.*;
 import org.clyze.deepdoop.datalog.element.atom.*;
+import org.clyze.deepdoop.datalog.expr.*;
 import org.clyze.deepdoop.system.*;
 
 public class Rule implements IVisitable, ISourceItem {
@@ -24,6 +27,13 @@ public class Rule implements IVisitable, ISourceItem {
 				head.elements.size() == 1 &&
 				head.elements.iterator().next() instanceof Directive);
 		this._loc = loc;
+
+		List<VariableExpr> varsInHead = head.getVars();
+		List<VariableExpr> varsInBody = body.getVars();
+		for (VariableExpr v : varsInHead) {
+			if (!varsInBody.contains(v))
+				ErrorManager.error(location(), ErrorId.UNKNOWN_VAR, v.name);
+		}
 	}
 
 	public Directive getDirective() {

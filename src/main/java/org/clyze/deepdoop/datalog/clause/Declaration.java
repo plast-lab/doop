@@ -24,18 +24,17 @@ public class Declaration implements IVisitable, ISourceItem {
 
 		List<VariableExpr> varsInHead = atom.getVars();
 
-		int count = 0;
-		IAtom[] ordered = new IAtom[types.size()];
+		int typesCount = types.size();
+		IAtom[] ordered = new IAtom[typesCount];
 		for (IAtom t : types) {
 			List<VariableExpr> vars = t.getVars();
 			assert vars.size() == 1;
-			count++;
 			int index = varsInHead.indexOf(vars.get(0));
 			if (index == -1)
-				ErrorManager.error(location(), ErrorId.DECL_UNKNOWN_VAR, vars.get(0).name);
+				ErrorManager.error(location(), ErrorId.UNKNOWN_VAR, vars.get(0).name);
 			ordered[index] = t;
 		}
-		assert (count == 0 || varsInHead.size() == count);
+		assert (typesCount == 0 || typesCount == varsInHead.size());
 
 		this.types = new ArrayList<>(Arrays.asList(ordered));
 	}

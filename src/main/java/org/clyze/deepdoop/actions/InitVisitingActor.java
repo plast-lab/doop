@@ -77,6 +77,9 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 		_ignoreAtoms = _acActor.getUsedAtoms(n.globalComp).keySet();
 
+		Set<String> globalAtoms = new HashSet<>(_acActor.getUsedAtoms(n.globalComp).keySet());
+		globalAtoms.addAll(_acActor.getDeclaringAtoms(n.globalComp).keySet());
+
 		Program initP = Program.from(n.globalComp, new HashMap<>(), null, new HashSet<>());
 		for (Entry<String, String> entry : n.inits.entrySet()) {
 			String initName = entry.getKey();
@@ -111,11 +114,14 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
 
 				// Propagate to global scope
-				if (prop.toId == null && _ignoreAtoms.contains(atom.name()))
-					ErrorManager.error(ErrorId.DEP_GLOBAL, atom.name());
+				if (prop.toId == null) {
+					String name = new InitVisitingActor(prop.fromId, prop.toId, globalAtoms).name(atom.name());
+					if (globalAtoms.contains(name))
+						ErrorManager.error(ErrorId.DEP_GLOBAL, atom.name());
+				}
 
-				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars).
-					accept(new InitVisitingActor(prop.fromId, prop.toId, _ignoreAtoms));
+				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars)
+				                            .accept(new InitVisitingActor(prop.fromId, prop.toId, _ignoreAtoms));
 				IElement body = (IAtom) atom.instantiate(null, vars);
 				toComp.addRule(new Rule(new LogicalElement(head), body));
 			}
