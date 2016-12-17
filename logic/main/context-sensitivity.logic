@@ -254,6 +254,15 @@ ReachableStoreStaticFieldFrom(?from) <-
   Reachable(?inmethod).
 
 
+/**
+ * Store default value in static field (android-only!)
+ *
+ */
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+  FieldInitialValue[?signature] = ?const,
+  Value:byNum[?const] = ?value,
+  ImmutableHContext(?hctx).
+
 
 /**
  * Load array index
