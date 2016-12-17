@@ -1,8 +1,10 @@
 package org.clyze.deepdoop.datalog.element;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.element.atom.Predicate;
-import org.clyze.deepdoop.datalog.expr.VariableExpr;
+import org.clyze.deepdoop.datalog.expr.*;
 import org.clyze.deepdoop.system.SourceLocation;
 
 public class AggregationElement implements IElement {
@@ -23,6 +25,12 @@ public class AggregationElement implements IElement {
 	}
 
 
+	@Override
+	public List<VariableExpr> getVars() {
+		List<VariableExpr> list = new ArrayList<>(body.getVars());
+		list.add(var);
+		return list;
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

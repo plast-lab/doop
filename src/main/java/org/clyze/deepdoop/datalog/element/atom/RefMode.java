@@ -1,10 +1,9 @@
 package org.clyze.deepdoop.datalog.element.atom;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.expr.IExpr;
-import org.clyze.deepdoop.datalog.expr.VariableExpr;
+import org.clyze.deepdoop.datalog.expr.*;
 
 public class RefMode implements IAtom {
 
@@ -28,16 +27,16 @@ public class RefMode implements IAtom {
 	@Override
 	public int arity() { return 2; }
 	@Override
-	public List<VariableExpr> getVars() {
-		return Arrays.asList(entityVar, (valueExpr instanceof VariableExpr ? (VariableExpr) valueExpr : null));
-	}
-	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size();
 		return new RefMode(name, stage, vars.get(0), vars.get(1));
 	}
-
-
+	@Override
+	public List<VariableExpr> getVars() {
+		List<VariableExpr> list = new ArrayList<>(valueExpr.getVars());
+		list.add(entityVar);
+		return list;
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

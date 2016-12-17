@@ -1,9 +1,9 @@
 package org.clyze.deepdoop.datalog.element.atom;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.expr.VariableExpr;
+import org.clyze.deepdoop.datalog.expr.*;
 
 public class Primitive implements IAtom {
 
@@ -24,16 +24,14 @@ public class Primitive implements IAtom {
 	@Override
 	public int arity() { return 1; }
 	@Override
-	public List<VariableExpr> getVars() {
-		return Collections.singletonList(var);
-	}
-	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size();
 		return this;
 	}
-
-
+	@Override
+	public List<VariableExpr> getVars() {
+		return Arrays.asList(var);
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

@@ -1,5 +1,7 @@
 package org.clyze.deepdoop.datalog.expr;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 
 public class ConstantExpr implements IExpr {
@@ -27,6 +29,10 @@ public class ConstantExpr implements IExpr {
 	}
 
 
+	@Override
+	public List<VariableExpr> getVars() {
+		return new ArrayList<>();
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

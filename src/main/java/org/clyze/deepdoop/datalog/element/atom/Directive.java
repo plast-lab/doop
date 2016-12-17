@@ -1,10 +1,9 @@
 package org.clyze.deepdoop.datalog.element.atom;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.expr.ConstantExpr;
-import org.clyze.deepdoop.datalog.expr.VariableExpr;
+import org.clyze.deepdoop.datalog.expr.*;
 
 public class Directive implements IAtom {
 
@@ -12,7 +11,6 @@ public class Directive implements IAtom {
 	public final StubAtom     backtick;
 	public final ConstantExpr constant;
 	public final boolean      isPredicate;
-
 	int                       _arity;
 
 	public Directive(String name, StubAtom backtick) {
@@ -38,16 +36,14 @@ public class Directive implements IAtom {
 	@Override
 	public int arity() { return _arity; }
 	@Override
-	public List<VariableExpr> getVars() {
-		return (_arity == 1 ? Arrays.asList((VariableExpr[])null) : Arrays.asList(null, null));
-	}
-	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size();
 		return this;
 	}
-
-
+	@Override
+	public List<VariableExpr> getVars() {
+		return new ArrayList<>();
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

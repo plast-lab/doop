@@ -3,8 +3,7 @@ package org.clyze.deepdoop.datalog.element.atom;
 import java.util.ArrayList;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
-import org.clyze.deepdoop.datalog.expr.IExpr;
-import org.clyze.deepdoop.datalog.expr.VariableExpr;
+import org.clyze.deepdoop.datalog.expr.*;
 
 public class Predicate implements IAtom {
 
@@ -28,18 +27,16 @@ public class Predicate implements IAtom {
 	@Override
 	public int arity() { return exprs.size(); }
 	@Override
-	public List<VariableExpr> getVars() {
-		List<VariableExpr> list = new ArrayList<>();
-		for (IExpr e : exprs) list.add((e instanceof VariableExpr ? (VariableExpr) e : null));
-		return list;
-	}
-	@Override
 	public IAtom instantiate(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size();
 		return new Predicate(name, stage, new ArrayList<>(vars));
 	}
-
-
+	@Override
+	public List<VariableExpr> getVars() {
+		List<VariableExpr> list = new ArrayList<>();
+		for (IExpr e : exprs) list.addAll(e.getVars());
+		return list;
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

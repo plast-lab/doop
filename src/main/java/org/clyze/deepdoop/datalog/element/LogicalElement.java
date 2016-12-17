@@ -1,10 +1,12 @@
 package org.clyze.deepdoop.datalog.element;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.clyze.deepdoop.actions.IVisitor;
+import org.clyze.deepdoop.datalog.expr.*;
 import org.clyze.deepdoop.system.SourceLocation;
 
 public class LogicalElement implements IElement {
@@ -33,6 +35,12 @@ public class LogicalElement implements IElement {
 	}
 
 
+	@Override
+	public List<VariableExpr> getVars() {
+		List<VariableExpr> list = new ArrayList<>();
+		for (IElement element : elements) list.addAll(element.getVars());
+		return list;
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

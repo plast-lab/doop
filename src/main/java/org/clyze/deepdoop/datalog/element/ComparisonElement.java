@@ -1,9 +1,10 @@
 package org.clyze.deepdoop.datalog.element;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.BinOperator;
-import org.clyze.deepdoop.datalog.expr.BinaryExpr;
-import org.clyze.deepdoop.datalog.expr.IExpr;
+import org.clyze.deepdoop.datalog.expr.*;
 import org.clyze.deepdoop.system.SourceLocation;
 
 public class ComparisonElement implements IElement {
@@ -27,6 +28,10 @@ public class ComparisonElement implements IElement {
 	}
 
 
+	@Override
+	public List<VariableExpr> getVars() {
+		return new ArrayList<>(expr.getVars());
+	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);

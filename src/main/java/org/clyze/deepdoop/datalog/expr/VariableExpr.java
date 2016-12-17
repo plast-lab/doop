@@ -1,5 +1,7 @@
 package org.clyze.deepdoop.datalog.expr;
 
+import java.util.Arrays;
+import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 
 public class VariableExpr implements IExpr {
@@ -13,18 +15,19 @@ public class VariableExpr implements IExpr {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		return (o instanceof VariableExpr) && ((VariableExpr)o).name.equals(name);
+	public List<VariableExpr> getVars() {
+		return Arrays.asList(this);
 	}
-
-	@Override
-	public int hashCode() {
-		return name.hashCode();
-	}
-
-
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+	@Override
+	public boolean equals(Object o) {
+		return (o instanceof VariableExpr) && ((VariableExpr)o).name.equals(name);
+	}
+	@Override
+	public int hashCode() {
+		return name.hashCode();
 	}
 }
