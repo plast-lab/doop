@@ -32,16 +32,37 @@
 //     with what arguments?)
 **/
 
-// Preliminary: create a new heap object per control object declared in layout
+AndroidAppComponent(?type) <-
+  Activity(?type);
+  Service(?type);
+  BroadcastReceiver(?type);
+  ContentProvider(?type).
+
+ReifiedComponent[?type] = ?heap -> Type(?type), HeapAllocation(?heap).
+ReifiedLayoutControl[?type,?id] = ?heap -> int[32](?id), Type(?type), HeapAllocation(?heap).
+
+// Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
 HeapAllocation:Normal:Cons[?id] = ?heap,
 NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?type,
-ReifiedLayoutControl[?type] = ?heap
+ReifiedComponent[?type] = ?heap
 <-
-  LayoutControl(_, ?type),
+  AndroidAppComponent(?type),
   Type:Id(?type:?typeStr),
-  ?id = "<layout control object " + ?typeStr + ">".
+  ?id = "<android component object " + ?typeStr + ">".
+
+// Create a new heap object per control object declared in layout
+// (XML) resources. (REVIEW) These are normal heap objects.
+HeapAllocation:Normal:Cons[?heapId] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?type,
+ReifiedLayoutControl[?type,?id] = ?heap
+<-
+  LayoutControl(?id, ?type),
+  Type:Id(?type:?typeStr),
+  ?heapId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
+
 
 // Main logic
 AndroidLibraryType(?type) <-
@@ -59,12 +80,6 @@ AndroidViewType(?type) <-
   SubtypeOf(?type, ?supertype),
   (Type:Id(?supertype:"android.view.View");
    Type:Id(?supertype:"android.view.ViewGroup")).
-
-AndroidAppComponent(?type) <-
-  Activity(?type);
-  Service(?type);
-  BroadcastReceiver(?type);
-  ContentProvider(?type).
 
 AndroidLibraryListenerType(?type) <-
   AndroidLibraryType(?type),
@@ -161,3 +176,37 @@ ReachableContext(?ctx, ?meth) <-
    OverridingProtectedOnMethodOfListener(?meth)),
   ImmutableContext(?ctx).
 
+
+// Support view retrieval by id. If a call to an appropriate method is
+// found, we short-circuit it and return the right view object.
+ViewRetrievalByArg0MethodInvocation(?invo) <-
+  MethodInvocation:Signature[?invo] = ?signature,
+  (Method:Id(?signature:"<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>");
+   Method:Id(?signature:"<android.widget.Adapter: android.view.View getView(int,android.view.View,android.view.ViewGroup)>");
+   Method:Id(?signature:"<android.view.View: android.view.View findViewById(int)>")
+  ).
+
+// the variables holding the view id and the retrieved view at one of
+// these invocations.
+VarsAtInvocationRetrievingView(?ret, ?var) <-
+  ViewRetrievalByArg0MethodInvocation(?invo),
+  AssignReturnValue[?invo] = ?ret,
+  ActualParam[0, ?invo] = ?var.
+
+ViewObjectValueFromId(?viewValue, ?numId) <-
+  LayoutControl(?numId, ?type),
+  ReifiedLayoutControl[?type, ?numId] = ?heap,
+  Value:byHeap[?heap] = ?viewValue.
+
+// ... and the clincher: given an id for a view object, at one of the
+// invocation sites of methods retrieving views, return the
+// appropriate view object. REVIEW: the ?hctx is a hack, which
+// currently doesn't matter since it's the immutable hctx anyway.
+// I can't see why we'd need to RecordMacro-create a new hctxt, since
+// these layout objects are unique.
+VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) <-
+  VarsAtInvocationRetrievingView(?ret, ?var),
+  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  Value:Num[?value] = ?numString,
+  string:int32:convert[?numString] = ?numId,
+  ViewObjectValueFromId(?viewValue, ?numId).
