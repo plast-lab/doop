@@ -35,7 +35,7 @@ public class Functional implements IAtom {
 	public List<VariableExpr> getVars() {
 		List<VariableExpr> list = new ArrayList<>();
 		for (IExpr e : keyExprs) list.addAll(e.getVars());
-		list.addAll(valueExpr.getVars());
+		if (valueExpr != null) list.addAll(valueExpr.getVars());
 		return list;
 	}
 	@Override

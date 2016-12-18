@@ -8,6 +8,7 @@ import org.clyze.deepdoop.datalog.*;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.*;
+import org.clyze.deepdoop.datalog.element.atom.*;
 import org.clyze.deepdoop.datalog.expr.*;
 
 public class FlatteningActor implements IActor<IVisitable> {
@@ -16,9 +17,6 @@ public class FlatteningActor implements IActor<IVisitable> {
 
 	public FlatteningActor(Map<String, Component> allComps) {
 		_allComps = allComps;
-	}
-	public FlatteningActor() {
-		this(null);
 	}
 
 
@@ -33,6 +31,7 @@ public class FlatteningActor implements IActor<IVisitable> {
 	public CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
 		return n;
 	}
+	// Flatten components that extend other components
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
 		Component currComp = n;
@@ -64,14 +63,14 @@ public class FlatteningActor implements IActor<IVisitable> {
 	}
 	@Override
 	public ComparisonElement exit(ComparisonElement n, Map<IVisitable, IVisitable> m) {
-		BinaryExpr e = (BinaryExpr) m.get(n.expr);
-		return (e == n.expr ? n : new ComparisonElement(e));
+		return n;
 	}
 	@Override
 	public GroupElement exit(GroupElement n, Map<IVisitable, IVisitable> m) {
 		IElement e = (IElement) m.get(n.element);
 		return (e == n.element ? n : new GroupElement(e));
 	}
+	// Flatten LogicalElement "trees"
 	@Override
 	public LogicalElement exit(LogicalElement n, Map<IVisitable, IVisitable> m) {
 		Set<IElement> newElements = new HashSet<>();
@@ -89,4 +88,15 @@ public class FlatteningActor implements IActor<IVisitable> {
 		IElement e = (IElement) m.get(n.element);
 		return (e == n.element ? n : new NegationElement(e));
 	}
+
+	@Override
+	public Directive exit(Directive n, Map<IVisitable, IVisitable> m) { return n; }
+	@Override
+	public Functional exit(Functional n, Map<IVisitable, IVisitable> m) { return n; }
+	@Override
+	public Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) { return n; }
+	@Override
+	public Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) { return n; }
+	@Override
+	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) { return n; }
 }

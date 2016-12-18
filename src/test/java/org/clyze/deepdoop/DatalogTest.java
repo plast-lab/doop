@@ -7,8 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.*;
-import org.clyze.deepdoop.system.DeepDoopException;
-import org.clyze.deepdoop.system.Error;
+import org.clyze.deepdoop.system.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +31,7 @@ public class DatalogTest {
 	public void test(String filename) throws IOException {
 		test(filename, null);
 	}
-	public void test(String filename, Error expectedErrorId) throws IOException {
+	public void test(String filename, ErrorId expectedErrorId) throws IOException {
 		filename = "/deepdoop/" + filename;
 		try {
 			ParseTree tree = open(filename).program();
@@ -105,47 +104,47 @@ public class DatalogTest {
 
 	@Test
 	public void test_Fail1() throws IOException {
-		test("fail1.logic", Error.DEP_CYCLE);
+		test("fail1.logic", ErrorId.DEP_CYCLE);
 	}
 	@Test
 	public void test_Fail2() throws IOException {
-		test("fail2.logic", Error.DEP_GLOBAL);
+		test("fail2.logic", ErrorId.DEP_GLOBAL);
 	}
 	@Test
 	public void test_Fail5() throws IOException {
-		test("fail5.logic", Error.CMD_RULE);
+		test("fail5.logic", ErrorId.CMD_RULE);
 	}
 	@Test
 	public void test_Fail6() throws IOException {
-		test("fail6.logic", Error.CMD_CONSTRAINT);
+		test("fail6.logic", ErrorId.CMD_CONSTRAINT);
 	}
 	@Test
 	public void test_Fail7() throws IOException {
-		test("fail7.logic", Error.CMD_DIRECTIVE);
+		test("fail7.logic", ErrorId.CMD_DIRECTIVE);
 	}
 	@Test
 	public void test_Fail8() throws IOException {
-		test("fail8.logic", Error.CMD_NO_DECL);
+		test("fail8.logic", ErrorId.CMD_NO_DECL);
 	}
 	@Test
 	public void test_Fail9() throws IOException {
-		test("fail9.logic", Error.CMD_NO_IMPORT);
+		test("fail9.logic", ErrorId.CMD_NO_IMPORT);
 	}
 	@Test
 	public void test_Fail10() throws IOException {
-		test("fail10.logic", Error.CMD_EVAL);
+		test("fail10.logic", ErrorId.CMD_EVAL);
 	}
 	@Test
 	public void test_Fail11() throws IOException {
-		test("fail11.logic", Error.ID_IN_USE);
+		test("fail11.logic", ErrorId.ID_IN_USE);
 	}
 	@Test
 	public void test_Fail12() throws IOException {
-		test("fail12.logic", Error.DECL_UNKNOWN_VAR);
+		test("fail12.logic", ErrorId.UNKNOWN_VAR);
 	}
 	@Test
 	public void test_Fail13() throws IOException {
-		test("fail13.logic", Error.DECL_UNKNOWN_VAR);
+		test("fail13.logic", ErrorId.UNKNOWN_VAR);
 	}
 
 
