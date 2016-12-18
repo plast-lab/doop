@@ -29,10 +29,12 @@ public class Rule implements IVisitable, ISourceItem {
 		this._loc = loc;
 
 		List<VariableExpr> varsInHead = head.getVars();
-		List<VariableExpr> varsInBody = body.getVars();
-		for (VariableExpr v : varsInHead) {
-			if (!varsInBody.contains(v))
-				ErrorManager.error(location(), ErrorId.UNKNOWN_VAR, v.name);
+		if (body != null) {
+			List<VariableExpr> varsInBody = body.getVars();
+			for (VariableExpr v : varsInHead) {
+				if (!varsInBody.contains(v))
+					ErrorManager.error(location(), ErrorId.UNKNOWN_VAR, v.name);
+			}
 		}
 	}
 
