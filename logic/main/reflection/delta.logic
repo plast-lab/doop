@@ -45,9 +45,10 @@
 
    For more details on each step, see below.
 
-   Step 1. Dummy proxy class generation: To see how the methods of the
-   proxy class are implemented, assume that the proxy is for an
-   interface I:
+   == Step 1: Dummy proxy class generation ==
+
+   To see how the methods of the proxy class are implemented, assume
+   that the proxy is for an interface I:
 
      interface I {
        void report(String c);
@@ -239,14 +240,49 @@
    ProxyMethodMacro(?methodId, ?proxyClassId, ?methodVarId, ?invokeId, ?retInstrId)
 .
 
-// Step 2. Transformation of Proxy.newProxyInstance(): This step
-// generates the new constructor variable and records information for
-// the reflection analysis to connect the dots.
+/* == Step 2: Transformation of Proxy.newProxyInstance() ==
+
+   This step generates the new constructor variable and records
+   information for the reflection analysis to connect the dots.
+
+   Notes:
+
+   - In Java, java.lang.reflect.Constructor.newInstance() takes
+     varargs (Object... ); these are implemented as Object[] arrays in
+     Jimple. Thus, this code:
+
+       Object obj = c.newInstance(h);
+
+     should be expressed as:
+
+       Object cArgs = new Object[];
+       cArgs[0] = h;
+       Object obj = c.newInstance(cArgs);
+
+     The above contains two variables and a heap allocation (that are
+     to be created in this delta) and an assignment that is filled in
+     later by the analysis.
+
+*/
 
 // Generate the new constructor variable 'c'.
 +Var(?c), +Var:Id(?c:?cId), +Var:Type[?c] = ?constructorType,
-// Record the connection of the special string ?s to ?interfaces.
-+ProxiedInterfaceForName(?i, ?c, ?interfaces, ?obj)
+// Generate the new constructor arguments 'cArgs'.
++Var(?cArgs), +Var:Id(?cArgs:?cArgsId), +Var:Type[?cArgs] = ?cArgsType,
+// +java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c),
+// The heap allocation of 'cArgs'.
++Instruction:Id(?cArgsInstr:?cArgsInstrId),
++AssignHeapAllocation:Insn(?cArgsInstr),
++HeapAllocation0:Normal(?cArgsNewId, ?cArgsType),
++AssignHeapAllocation0(?cArgsInstr, ?cArgsNewId),
+// The 'c.newInstance(cArgs)' instruction.
++Instruction:Id(?newInstanceInstr:?newInstanceInstrId),
++VirtualMethodInvocation:Insn(?newInstanceInstr),
++VirtualMethodInvocation:Base[?newInstanceInstr] = ?c,
++VirtualMethodInvocation:SimpleName[?newInstanceInstr] = "newInstance",
++VirtualMethodInvocation:Descriptor[?newInstanceInstr] = "java.lang.Object(java.lang.Object[])",
+// Record the new facts about the Proxy.newProxyInstance() call.
++ProxiedInterfaceForName(?i, ?c, ?cArgs, ?interfaces, ?h, ?obj)
  <-
    // This identifies the call to Proxy.newProxyInstance(), to
    // populate the ProxiedInterfaceForName relation.
@@ -256,8 +292,14 @@
    Instruction:Id@previous(?i:?id),
    ?s = "interface$forName/" + ?id,
    ActualParam@previous[1, ?i] = ?interfaces,
+   ActualParam@previous[2, ?i] = ?h,
    AssignReturnValue@previous[?i] = ?obj,
-   // Constructor.
-   ?cId = ?s + "/C",
-   Type:Id@previous(?constructorType:"java.lang.Constructor")
+   // Constructor variable and instruction.
+   ?cId = ?s + "/c",
+   ?cArgsId = ?s + "/cArgs",
+   ?cArgsNewId = ?s + "/cArgsNew",
+   ?cArgsInstrId = ?s + "/cArgsInstr",
+   ?newInstanceInstrId = ?cId + "/instr",
+   Type:Id@previous(?cArgsType:"java.lang.Object[]"),
+   Type:Id@previous(?constructorType:"java.lang.reflect.Constructor")
 .
