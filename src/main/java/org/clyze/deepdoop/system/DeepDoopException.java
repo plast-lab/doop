@@ -5,7 +5,7 @@ public class DeepDoopException extends RuntimeException {
 	public final ErrorId errorId;
 
 	public DeepDoopException(String msg, ErrorId errorId) {
-		super("\n" + msg);
+		super(msg);
 		this.errorId = errorId;
 	}
 

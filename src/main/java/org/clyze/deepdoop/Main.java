@@ -9,6 +9,10 @@ public class Main {
 		String doopHome = System.getenv("DOOP_HOME");
 		Helper.initLogging("INFO", doopHome + "/build/logs", true);
 
-		System.out.println(Compiler.compile("build", args[0]));
+		try {
+			System.out.println(Compiler.compile("build", args[0]));
+		} catch (RuntimeException e) {
+			System.err.println(e.getMessage());
+		}
 	}
 }
