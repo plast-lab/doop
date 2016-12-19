@@ -1368,28 +1368,6 @@ VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
    ?constrSig = ConstrIdMacro(?proxyClassId),
    ReifiedConstructor:Value[?constrSig] = ?constructor.
 
-/* This doesn't work due to recursion through negation.
-
-// This rule fills in the appropriate relations, so that calls to
-// Proxy.newProxyInstance() look like calls to c.newInstance() for
-// some special constructor c.
-CreateReflectiveAllocationMacro(?invocation, ?proxyClass, ?heapStr),
-java:lang:reflect:Constructor:newInstance(?invocation, ?obj, ?c),
-VarPointsTo(?hctx, Value:byHeap[?proxyClassConstructor], ?ctx, ?c) <-
-   ProxiedInterfaceForName(?invocation, ?c, ?interfaces, ?obj),
-   VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
-   ArrayIndexPointsTo(_, ?C_val, _, ?interfacesVal),
-   ClassHeap:InstanceType[Value:Heap[?C_val]] = ?interface,
-   // InterfaceType(?interface),
-   Type:Id(?interface:?interfaceId),
-   ?proxyClassId = ("Proxy$for$" + ?interfaceId),
-   ProxyClass(?proxyClass),
-   Type:Id(?proxyClass:?proxyClassId),
-   ?heapStr = "<reflective Constructor.newInstance/" + ?proxyClassId + ">",
-   ?constrSig = ("<" + ?proxyClassId + ": void <init>(java.lang.reflect.InvocationHandler)>"),
-   ReifiedConstructor[?constrSig] = ?proxyClassConstructor.
-*/
-
 // NOTE At this point, we cannot distinguish static from instance fields
 java:lang:reflect:Field:get(?invocation, ?to, ?field) <-
   VirtualMethodMacro(?invocation, ?to, ?field, "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>").
