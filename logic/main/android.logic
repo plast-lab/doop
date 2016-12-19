@@ -63,6 +63,20 @@ ReifiedLayoutControl[?type,?id] = ?heap
   Type:Id(?type:?typeStr),
   ?heapId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
 
+// Also instantiate implicitly some library objects
+ImplicitlyInstantiatedLibraryType(?type) <-
+  Type:Id(?type:"android.content.Intent");
+  Type:Id(?type:"android.os.Bundle").
+
+HeapAllocation:Normal:Cons[?id] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?type,
+ReifiedLibraryObject[?type] = ?heap
+<-
+  ImplicitlyInstantiatedLibraryType(?type),
+  Type:Id(?type:?typeStr),
+  ?id = "<android library object " + ?typeStr + ">".
+
 
 // Main logic
 AndroidLibraryType(?type) <-
@@ -179,12 +193,14 @@ ReachableContext(?ctx, ?meth) <-
    OverridingProtectedOnMethodOfListener(?meth)),
   ImmutableContext(?ctx).
 
+
 // For all the above forced reachable methods, supply a
 // receiver object of the appropriate type
 
 ReifiedAndroidObjectValue(?value, ?type) <-
   (ReifiedComponent[?type] = ?heap;
-   ReifiedLayoutControl[?type,_] = ?heap),
+   ReifiedLayoutControl[?type,_] = ?heap;
+   ReifiedLibraryObject[?type] = ?heap),
   Value:byHeap[?heap] = ?value.
 
 VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
@@ -194,6 +210,19 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ThisVar[?meth] = ?this,
   ImmutableHContext(?hctx).
 
+// ... and do the same for argument objects.
+// REVIEW: this is imprecise. It assigns any argument to a
+// type-compatible value, regardless of the hierarchy of actual
+// graphical components. One could also perhaps distinguish
+// objects initialized by different constructors.
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
+  ForcedReachableAndroidContext(?ctx, ?meth),
+  FormalParam[_, ?meth] = ?formal,
+  Var:Type[?formal] = ?formalType,
+  SubtypeOf(?type, ?formalType),
+  ReifiedAndroidObjectValue(?value, ?type),
+  ImmutableHContext(?hctx).
+  
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 ViewRetrievalByArg0MethodInvocation(?invo) <-
