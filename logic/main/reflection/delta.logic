@@ -112,6 +112,8 @@
    invokeId = proxyClassId + "/" + methodVarId + "/0", \
    retInstrId = invokeId + "/return/0"
 
+#include "proxyMacros.logic"
+
 // Create declaration of proxy class.
 +Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
 +DirectSuperinterface(?proxyClass, ?interface),
@@ -132,7 +134,7 @@
  <-
    ProxiedInterfaceMacro(?interface, ?interfaceId, ?proxyClassId),
    // Proxy class constructor.
-   ?constructorId = "<" + ?proxyClassId + ": void <init>(java.lang.reflect.InvocationHandler)>",
+   ?constructorId = ConstrIdMacro(?proxyClassId),
    // Field containing an InvocationHandler.
    Type:Id@previous(?invocationHandlerType:"java.lang.reflect.InvocationHandler"),
    ?fieldIHandlerId = ?proxyClassId + "$h",

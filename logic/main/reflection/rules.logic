@@ -1347,6 +1347,24 @@ ArrayIndexPointsTo(?ctx1, ?hVal, ?hctx2, ?cArgsVal)
 java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
    ProxiedInterfaceForName(_, ?newInstanceInstr, ?c, _, _, _, ?obj).
 
+#include "proxyMacros.logic"
+
+/* For (a) every c.newInstance() instruction that models an
+   instruction Proxy.newProxyInstance(..., interfaces, ...) of the
+   original program and (b) for every I in interfaces, variable c
+   should point to the Constructor object for the proxy class of I. */
+
+VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
+   ProxiedInterfaceForName(?origInstr, ?modelInstr, ?c, _, _, _, _),
+   ActualParam[1, ?origInstr] = ?interfaces,
+   VarPointsTo(?hctx1, ?interfacesVal, ?ctx2, ?interfaces),
+   ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
+   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?interface,
+   DirectSuperinterface(?proxyClass, ?interface),
+   ProxyClass(?proxyClass), Type:Id(?proxyClass:?proxyClassId),
+   ?constrSig = ConstrIdMacro(?proxyClassId),
+   ReifiedConstructor:Value[?constrSig] = ?constructor.
+
 /* This doesn't work due to recursion through negation.
 
 // This rule fills in the appropriate relations, so that calls to
