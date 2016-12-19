@@ -1351,11 +1351,12 @@ java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
 
 /* For (a) every c.newInstance() instruction that models an
    instruction Proxy.newProxyInstance(..., interfaces, ...) of the
-   original program and (b) for every I in interfaces, variable c
-   should point to the Constructor object for the proxy class of I. */
+   original program and (b) for every I that the interfaces point to,
+   variable c should point to the Constructor object for the proxy
+   class of I. */
 
 VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
-   ProxiedInterfaceForName(?origInstr, ?modelInstr, ?c, _, _, _, _),
+   ProxiedInterfaceForName(?origInstr, _, ?c, _, _, _, _),
    ActualParam[1, ?origInstr] = ?interfaces,
    VarPointsTo(?hctx1, ?interfacesVal, ?ctx2, ?interfaces),
    ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
