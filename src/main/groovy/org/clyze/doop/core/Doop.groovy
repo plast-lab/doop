@@ -246,6 +246,13 @@ class Doop {
             forCacheID:true
         ),
         new AnalysisOption<Boolean>(
+                id:"RUN_FLOWDROID",
+                name:"run-flowdroid",
+                description:"Run soot-infoflow-android to generate dummy main method.",
+                value:false,
+                forCacheID:true
+        ),
+        new AnalysisOption<Boolean>(
             id:"RUN_AVERROES",
             name:"run-averroes",
             description:"Run averroes to create a placeholder library.",
