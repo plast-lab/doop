@@ -401,6 +401,8 @@ public class Main {
             if (_android) {
                 if (_runFlowdroid) {
                     driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
+                    db.close();
+                    return;
                 }
                 else {
                     for (AXmlNode node : appActivities) {
@@ -432,15 +434,13 @@ public class Main {
                     }
                 }
             }
+            if (_classicFactGen)
+                driver.doInSequentialOrder(classes);
             else {
-                if (_classicFactGen)
-                    driver.doInSequentialOrder(classes);
-                else {
-                    scene.getOrMakeFastHierarchy();
-                    // avoids a concurrent modification exception, since we may
-                    // later be asking soot to add phantom classes to the scene's hierarchy
-                    driver.doInParallel(classes);
-                }
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
             }
             db.close();
         }
