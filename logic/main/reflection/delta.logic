@@ -289,6 +289,7 @@
 +VirtualMethodInvocation:SimpleName[?newInstanceInstr] = ?newInstanceSimple,
 +VirtualMethodInvocation:Descriptor[?newInstanceInstr] = "java.lang.Object(java.lang.Object[])",
 +AssignReturnValue[?newInstanceInstr] = ?obj,
++ActualParam[0, ?newInstanceInstr] = ?cArgs,
 // Record the new facts about the Proxy.newProxyInstance() call.
 +ProxiedInterfaceForName(?i, ?newInstanceInstr, ?c, ?cArgs, ?interfaces, ?h, ?obj)
  <-
