@@ -1368,6 +1368,24 @@ VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
    ?constrSig = ConstrIdMacro(?proxyClassId),
    ReifiedConstructor:Value[?constrSig] = ?constructor.
 
+#ifdef MOCK_HEAP_CONS_MACRO_RECURSION
+/* Make every variable obj receiving a dynamically generated proxy,
+   point to an allocation of that proxy. Thus, method calls on the
+   object call the proxy's methods. */
+MockHeapConsMacro(?heapStr, ?proxyClass, ?heap) <-
+   // - These are copies of the conditions of the rule above. -
+   DynamicProxy(?origInstr, ?i, _, _, _, _, _),
+   ActualParam[1, ?origInstr] = ?interfaces,
+   VarPointsTo(_, ?interfacesVal, _, ?interfaces),
+   ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
+   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?interface,
+   DirectSuperinterface(?proxyClass, ?interface),
+   ProxyClass(?proxyClass), Type:Id(?proxyClass:?proxyClassId),
+   // ---------------------------------------------------------
+   Instruction:Id(?i:?iId),
+   ?heapStr = "<reflective Class.newInstance/" + ?iId + "/" + ?proxyClassId + ">".
+#endif
+
 // NOTE At this point, we cannot distinguish static from instance fields
 java:lang:reflect:Field:get(?invocation, ?to, ?field) <-
   VirtualMethodMacro(?invocation, ?to, ?field, "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>").
