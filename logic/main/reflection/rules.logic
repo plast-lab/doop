@@ -1339,7 +1339,7 @@ OptFormalParam(?method, ?formal) <-
 // through our handling of dynamic proxying, simulate 'cArgs[0] = h'.
 ArrayIndexPointsTo(?ctx1, ?hVal, ?hctx2, ?cArgsVal)
  <-
-   ProxiedInterfaceForName(_, _, ?cArgs, _, ?h, _),
+   ProxiedInterfaceForName(_, _, _, ?cArgs, _, ?h, _),
    VarPointsTo(?ctx1, ?cArgsVal, ?ctx2, ?cArgs),
    VarPointsTo(?ctx1, ?hVal, ?ctx2, ?h),
    ImmutableHContextFromContext[?ctx2] = ?hctx2.

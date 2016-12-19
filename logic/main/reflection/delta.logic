@@ -279,13 +279,18 @@
 +HeapAllocation0:Normal(?cArgsNewId, ?cArgsType),
 +AssignHeapAllocation0(?cArgsInstr, ?cArgsNewId),
 // The 'c.newInstance(cArgs)' instruction.
-+Instruction:Id(?newInstanceInstr:?newInstanceInstrId),
 +VirtualMethodInvocation:Insn(?newInstanceInstr),
++Instruction:Id(?newInstanceInstr:?newInstanceInstrId),
++Instruction:Index[?newInstanceInstr] = ?idx,
++Instruction:Method[?newInstanceInstr] = ?m,
 +VirtualMethodInvocation:Base[?newInstanceInstr] = ?c,
-+VirtualMethodInvocation:SimpleName[?newInstanceInstr] = "newInstance",
++MethodInvocation:Signature[?newInstanceInstr] = ?newInstanceSig,
++VirtualMethodInvocation(?newInstanceInstr, ?newInstanceSig, ?m),
++VirtualMethodInvocation:SimpleName[?newInstanceInstr] = ?newInstanceSimple,
 +VirtualMethodInvocation:Descriptor[?newInstanceInstr] = "java.lang.Object(java.lang.Object[])",
++AssignReturnValue[?newInstanceInstr] = ?obj,
 // Record the new facts about the Proxy.newProxyInstance() call.
-+ProxiedInterfaceForName(?i, ?c, ?cArgs, ?interfaces, ?h, ?obj)
++ProxiedInterfaceForName(?i, ?newInstanceInstr, ?c, ?cArgs, ?interfaces, ?h, ?obj)
  <-
    // This identifies the call to Proxy.newProxyInstance(), to
    // populate the ProxiedInterfaceForName relation.
@@ -293,6 +298,8 @@
    StaticMethodInvocation@previous(?i, ?sig, _),
    ?sig = "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>",
    Instruction:Id@previous(?i:?id),
+   Instruction:Index@previous[?i] = ?idx,
+   Instruction:Method@previous[?i] = ?m,
    ?s = "interface$forName/" + ?id,
    ActualParam@previous[1, ?i] = ?interfaces,
    ActualParam@previous[2, ?i] = ?h,
@@ -303,6 +310,8 @@
    ?cArgsNewId = ?s + "/cArgsNew",
    ?cArgsInstrId = ?s + "/cArgsInstr",
    ?newInstanceInstrId = ?cId + "/instr",
+   ?newInstanceSig = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>",
+   SimpleName:Id@previous(?newInstanceSimple:"newInstance"),
    Type:Id@previous(?cArgsType:"java.lang.Object[]"),
    Type:Id@previous(?constructorType:"java.lang.reflect.Constructor")
 .
