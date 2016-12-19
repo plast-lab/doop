@@ -35,7 +35,7 @@ InterfaceType(?t) -> ReferenceType(?t).
 ProxyClass(?t)    -> ClassType(?t).
 
 // Special information for proxied interfaces.
-ProxiedInterfaceForName(?i, ?newInstance, ?c, ?cArgs, ?interfaces, ?h, ?obj) ->
+DynamicProxy(?i, ?newInstance, ?c, ?cArgs, ?interfaces, ?h, ?obj) ->
    MethodInvocation(?i), MethodInvocation(?newInstance),
    Var(?c), Var(?cArgs), Var(?interfaces), Var(?h), Var(?obj).
 

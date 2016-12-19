@@ -1339,13 +1339,13 @@ OptFormalParam(?method, ?formal) <-
 // through our handling of dynamic proxying, simulate 'cArgs[0] = h'.
 ArrayIndexPointsTo(?ctx1, ?hVal, ?hctx2, ?cArgsVal)
  <-
-   ProxiedInterfaceForName(_, _, _, ?cArgs, _, ?h, _),
+   DynamicProxy(_, _, _, ?cArgs, _, ?h, _),
    VarPointsTo(?ctx1, ?cArgsVal, ?ctx2, ?cArgs),
    VarPointsTo(?ctx1, ?hVal, ?ctx2, ?h),
    ImmutableHContextFromContext[?ctx2] = ?hctx2.
 
 java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
-   ProxiedInterfaceForName(_, ?newInstanceInstr, ?c, _, _, _, ?obj).
+   DynamicProxy(_, ?newInstanceInstr, ?c, _, _, _, ?obj).
 
 #include "proxyMacros.logic"
 
@@ -1358,7 +1358,7 @@ java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
 InitializedClass(?proxyClass),
 Reachable(?constrSig),
 VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
-   ProxiedInterfaceForName(?origInstr, _, ?c, _, _, _, _),
+   DynamicProxy(?origInstr, _, ?c, _, _, _, _),
    ActualParam[1, ?origInstr] = ?interfaces,
    VarPointsTo(?hctx1, ?interfacesVal, ?ctx2, ?interfaces),
    ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),

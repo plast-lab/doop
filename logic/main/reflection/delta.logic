@@ -303,10 +303,8 @@
 +AssignReturnValue[?newInstanceInstr] = ?obj,
 +ActualParam[0, ?newInstanceInstr] = ?cArgs,
 // Record the new facts about the Proxy.newProxyInstance() call.
-+ProxiedInterfaceForName(?i, ?newInstanceInstr, ?c, ?cArgs, ?interfaces, ?h, ?obj)
++DynamicProxy(?i, ?newInstanceInstr, ?c, ?cArgs, ?interfaces, ?h, ?obj)
  <-
-   // This identifies the call to Proxy.newProxyInstance(), to
-   // populate the ProxiedInterfaceForName relation.
    StaticMethodInvocation:SimpleName@previous[?i] = "newProxyInstance",
    StaticMethodInvocation@previous(?i, ?sig, _),
    ?sig = "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>",
