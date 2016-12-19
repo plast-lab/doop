@@ -1358,7 +1358,7 @@ java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
 InitializedClass(?proxyClass),
 Reachable(?constrSig),
 VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
-   ProxiedInterfaceForName(?origInstr, ?modelInstr, ?c, _, _, _, ?obj),
+   ProxiedInterfaceForName(?origInstr, _, ?c, _, _, _, _),
    ActualParam[1, ?origInstr] = ?interfaces,
    VarPointsTo(?hctx1, ?interfacesVal, ?ctx2, ?interfaces),
    ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
