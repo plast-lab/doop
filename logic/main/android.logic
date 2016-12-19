@@ -180,11 +180,18 @@ ReachableContext(?ctx, ?meth) <-
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 ViewRetrievalByArg0MethodInvocation(?invo) <-
-  MethodInvocation:Signature[?invo] = ?signature,
-  (Method:Id(?signature:"<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>");
-   Method:Id(?signature:"<android.widget.Adapter: android.view.View getView(int,android.view.View,android.view.ViewGroup)>");
-   Method:Id(?signature:"<android.view.View: android.view.View findViewById(int)>")
-  ).
+  MethodInvocation:Signature[?invo] = ?method,
+  Method:SimpleName[?method] = ?calleeName,
+  (SimpleName:Id(?calleeName:"inflate");
+   SimpleName:Id(?calleeName:"getView");
+   SimpleName:Id(?calleeName:"findViewById")),
+  Method:ReturnType[?method] = ?retType,   
+  Type:Id(?retType:"android.view.View").
+// Lots of wrapper methods. Let's do more liberal matching.
+  // (Method:Id(?signature:"<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>");
+  //  Method:Id(?signature:"<android.widget.Adapter: android.view.View getView(int,android.view.View,android.view.ViewGroup)>");
+  //  Method:Id(?signature:"<android.view.View: android.view.View findViewById(int)>")
+  // ).
 
 // the variables holding the view id and the retrieved view at one of
 // these invocations.
