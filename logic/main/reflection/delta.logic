@@ -163,12 +163,15 @@
 +ThisVar[?method] = ?thisVar,
 // Create instruction 'Object[] args = new Object[]'.
 +Instruction:Id(?createArgs:?createArgsId), +AssignHeapAllocation:Insn(?createArgs),
++Instruction:Index[?createArgs] = 3, +Instruction:Method[?createArgs] = ?method,
 // Create heap object for Object[] arguments.
 +HeapAllocation0:Normal(?argsNewId, ?argsType),
 +AssignHeapAllocation0(?createArgs, ?argsNewId),
 // Create the call to InvocationHandler.invoke().
 +StaticMethodInvocation:Insn(?invoke), +Instruction:Id(?invoke:?invokeId),
 +Instruction:Index[?invoke] = 4, +Instruction:Method[?invoke] = ?method,
++StaticMethodInvocation:SimpleName[?invoke] = "invoke",
++StaticMethodInvocation:Descriptor[?invoke] = "java.lang.Object(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])",
 +MethodInvocation:Signature[?invoke] = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
 +ActualParam[0, ?invoke] = ?thisVar,
 +ActualParam[1, ?invoke] = ?methodVar,
