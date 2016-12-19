@@ -194,9 +194,10 @@ ReachableContext(?ctx, ?meth) <-
   ImmutableContext(?ctx).
 
 
-// For all the above forced reachable methods, supply a
-// receiver object of the appropriate type
+// For all the above forced reachable methods, supply a receiver
+// object of the appropriate type
 
+// First, for objects implicitly registered (XML or library).
 ReifiedAndroidObjectValue(?value, ?type) <-
   (ReifiedComponent[?type] = ?heap;
    ReifiedLayoutControl[?type,_] = ?heap;
@@ -210,6 +211,26 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ThisVar[?meth] = ?this,
   ImmutableHContext(?hctx).
 
+// Then, for application objects (mainly listeners) that flow into
+// library code.
+_OptMethodFromVar[?var] = ?meth <-
+  Var:DeclaringMethod(?var, ?meth).
+
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) <-
+  VarPointsTo(?hctx, ?value, _, ?var),
+  _OptMethodFromVar[?var] = ?meth,
+  Method:DeclaringType[?meth] = ?containingType,
+  !ApplicationClass(?containingType),
+  Value:Heap[?value] = ?heap,
+  HeapAllocation:Type[?heap] = ?ofType,
+  ApplicationClass(?ofType).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
+  ForcedReachableAndroidContext(?ctx, ?meth),
+  Method:DeclaringType[?meth] = ?ofType,
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
+  ThisVar[?meth] = ?this.
+
 // ... and do the same for argument objects.
 // REVIEW: this is imprecise. It assigns any argument to a
 // type-compatible value, regardless of the hierarchy of actual
@@ -222,7 +243,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
   SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type),
   ImmutableHContext(?hctx).
-  
+
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
+  ForcedReachableAndroidContext(?ctx, ?meth),
+  FormalParam[_, ?meth] = ?formal,
+  Var:Type[?formal] = ?formalType,
+  SubtypeOf(ofType, ?formalType),
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType).
+
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 ViewRetrievalByArg0MethodInvocation(?invo) <-
