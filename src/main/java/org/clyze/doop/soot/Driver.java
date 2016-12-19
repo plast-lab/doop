@@ -56,13 +56,12 @@ class Driver {
         }
     }
 
-//////     Old handling, using FlowDroid-generated main method
-//    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-//        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
-//        factGenerator.generate(dummyMain, new Session());
-//        writer.writeAndroidEntryPoint(dummyMain);
-//        factGenerator.run();
-//    }
+    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
+        factGenerator.generate(dummyMain, new Session());
+        writer.writeAndroidEntryPoint(dummyMain);
+        factGenerator.run();
+    }
 
     private void generate(SootClass curClass) {
         _classCounter++;

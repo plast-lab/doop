@@ -423,7 +423,7 @@ class ClassicAnalysis extends Analysis {
             depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
         }
 
-        Collection<String> params = null;
+        Collection<String> params = null
 
         switch(platform) {
             case "java":
@@ -446,6 +446,10 @@ class ClassicAnalysis extends Analysis {
 
         if (!options.RUN_JPHANTOM.value) {
             params = params + ["--allow-phantom"]
+        }
+
+        if (options.RUN_FLOWDROID.value) {
+            params = params + ["--run-flowdroid"]
         }
 
         if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
