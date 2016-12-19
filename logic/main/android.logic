@@ -118,6 +118,7 @@ OverridingProtectedMethodOfComponent(?meth) <-
   ProtectedMethodOfComponent(?meth),
   AppMethodOverridesAndroidLibraryMethod(?meth).
 
+ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicMethodOfComponent(?meth);
    OverridingProtectedMethodOfComponent(?meth);
@@ -143,6 +144,7 @@ OverridingProtectedOnMethodOfLayoutControl(?meth) <-
   ProtectedOnMethodOfLayoutControl(?meth),
   AppMethodOverridesAndroidLibraryMethod(?meth).
 
+ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
@@ -171,11 +173,26 @@ OverridingProtectedOnMethodOfListener(?meth) <-
   ProtectedOnMethodOfListener(?meth),
   AppMethodOverridesAndroidLibraryMethod(?meth).
 
+ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfListener(?meth);
    OverridingProtectedOnMethodOfListener(?meth)),
   ImmutableContext(?ctx).
 
+// For all the above forced reachable methods, supply a
+// receiver object of the appropriate type
+
+ReifiedAndroidObjectValue(?value, ?type) <-
+  (ReifiedComponent[?type] = ?heap;
+   ReifiedLayoutControl[?type,_] = ?heap),
+  Value:byHeap[?heap] = ?value.
+
+VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
+  ForcedReachableAndroidContext(?ctx, ?meth),
+  Method:DeclaringType[?meth] = ?class,
+  ReifiedAndroidObjectValue(?value, ?class),
+  ThisVar[?meth] = ?this,
+  ImmutableHContext(?hctx).
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
