@@ -5,23 +5,19 @@ import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.element.atom.Predicate;
 import org.clyze.deepdoop.datalog.expr.*;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class AggregationElement implements IElement {
 
 	public final VariableExpr var;
 	public final Predicate    predicate;
 	public final IElement     body;
-	SourceLocation            _loc;
 
 	public AggregationElement(VariableExpr var, Predicate predicate, IElement body) {
-		this(var, predicate, body, null);
-	}
-	public AggregationElement(VariableExpr var, Predicate predicate, IElement body, SourceLocation loc) {
 		this.var       = var;
 		this.predicate = predicate;
 		this.body      = body;
-		this._loc      = loc;
+		this._loc      = SourceManager.v().getLastLoc();
 	}
 
 
@@ -35,8 +31,8 @@ public class AggregationElement implements IElement {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

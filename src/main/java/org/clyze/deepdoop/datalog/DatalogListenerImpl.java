@@ -82,6 +82,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	}
 
 	public void enterComp(CompContext ctx) {
+		recLoc(ctx);
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
@@ -106,9 +107,11 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_names.put(ctx, list);
 	}
 	public void enterCmd(CmdContext ctx) {
+		recLoc(ctx);
 		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
 	}
 	public void exitCmd(CmdContext ctx) {
+		recLoc(ctx);
 		_program.addComponent(_currComp);
 		_currComp = _program.globalComp;
 	}
@@ -116,6 +119,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_inDecl = true;
 	}
 	public void exitDeclaration(DeclarationContext ctx) {
+		recLoc(ctx);
 		_inDecl = false;
 
 		if (ctx.refmode() == null) {
@@ -137,9 +141,11 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitConstraint(ConstraintContext ctx) {
+		recLoc(ctx);
 		_currComp.addCons(new Constraint(get(_elem, ctx.ruleBody(0)), get(_elem, ctx.ruleBody(1))));
 	}
 	public void exitRule_(Rule_Context ctx) {
+		recLoc(ctx);
 		if (ctx.predicateList() != null) {
 			LogicalElement head = new LogicalElement(LogicType.AND, new HashSet<>(get(_atoms, ctx.predicateList())));
 			IElement body = get(_elem, ctx.ruleBody());
@@ -151,6 +157,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitPredicate(PredicateContext ctx) {
+		recLoc(ctx);
 		assert (_inDecl && ctx.AT_STAGE() == null && ctx.BACKTICK() == null) || (!_inDecl && ctx.CAPACITY() == null);
 
 		String      name     = get(_name, ctx.predicateName(0));
@@ -186,6 +193,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitRuleBody(RuleBodyContext ctx) {
+		recLoc(ctx);
 		IElement result;
 
 		if (ctx.comparison() != null)
@@ -209,17 +217,20 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_elem.put(ctx, result);
 	}
 	public void exitAggregation(AggregationContext ctx) {
+		recLoc(ctx);
 		VariableExpr variable = new VariableExpr(ctx.IDENTIFIER().getText());
 		Predicate predicate = (Predicate) get(_elem, ctx.predicate());
 		IElement body = get(_elem, ctx.ruleBody());
 		_elem.put(ctx, new AggregationElement(variable, predicate, body));
 	}
 	public void exitRefmode(RefmodeContext ctx) {
+		recLoc(ctx);
 		String name  = get(_name, ctx.predicateName());
 		String stage = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText());
 		_elem.put(ctx, new RefMode(name, stage, new VariableExpr(ctx.IDENTIFIER().getText()), get(_expr, ctx.expr())));
 	}
 	public void exitPredicateName(PredicateNameContext ctx) {
+		recLoc(ctx);
 		PredicateNameContext child = ctx.predicateName();
 		String name = ctx.IDENTIFIER().getText();
 		if (child != null)
@@ -372,7 +383,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 		return (atom.arity() != bodyCount);
 	}
-	static SourceLocation loc(ParserRuleContext ctx) {
-		return SourceManager.v().getLoc(ctx.start.getLine());
+	static void recLoc(ParserRuleContext ctx) {
+		SourceManager.v().recLoc(ctx.start.getLine());
 	}
 }

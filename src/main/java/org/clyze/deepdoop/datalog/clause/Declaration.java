@@ -13,14 +13,10 @@ public class Declaration implements IVisitable, ISourceItem {
 
 	public final IAtom       atom;
 	public final List<IAtom> types;
-	SourceLocation           _loc;
 
 	public Declaration(IAtom atom, Set<IAtom> types) {
-		this(atom, types, null);
-	}
-	public Declaration(IAtom atom, Set<IAtom> types, SourceLocation loc) {
 		this.atom  = atom;
-		this._loc  = loc;
+		this._loc = SourceManager.v().getLastLoc();
 
 		List<VariableExpr> varsInHead = atom.getVars();
 
@@ -44,8 +40,8 @@ public class Declaration implements IVisitable, ISourceItem {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

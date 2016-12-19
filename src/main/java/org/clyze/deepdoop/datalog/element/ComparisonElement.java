@@ -5,26 +5,19 @@ import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.BinOperator;
 import org.clyze.deepdoop.datalog.expr.*;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class ComparisonElement implements IElement {
 
 	public final BinaryExpr expr;
-	SourceLocation          _loc;
 
 	public ComparisonElement(IExpr left, BinOperator op, IExpr right) {
-		this(left, op, right, null);
-	}
-	public ComparisonElement(IExpr left, BinOperator op, IExpr right, SourceLocation loc) {
 		this.expr = new BinaryExpr(left, op, right);
-		this._loc = loc;
+		this._loc = SourceManager.v().getLastLoc();
 	}
 	public ComparisonElement(BinaryExpr expr) {
-		this(expr, null);
-	}
-	public ComparisonElement(BinaryExpr expr, SourceLocation loc) {
 		this.expr = expr;
-		this._loc = loc;
+		this._loc = SourceManager.v().getLastLoc();
 	}
 
 
@@ -36,8 +29,8 @@ public class ComparisonElement implements IElement {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

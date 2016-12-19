@@ -13,7 +13,6 @@ public class Component implements IVisitable, ISourceItem {
 	public final Set<Declaration> declarations;
 	public final Set<Constraint>  constraints;
 	public final Set<Rule>        rules;
-	SourceLocation                _loc;
 
 	public Component(Component other) {
 		this.name         = other.name;
@@ -21,7 +20,7 @@ public class Component implements IVisitable, ISourceItem {
 		this.declarations = new HashSet<>(other.declarations);
 		this.constraints  = new HashSet<>(other.constraints);
 		this.rules        = new HashSet<>(other.rules);
-		this._loc         = other._loc;
+		this._loc         = SourceManager.v().getLastLoc();
 	}
 
 	public Component(String name, String superComp, Set<Declaration> declarations, Set<Constraint> constraints, Set<Rule> rules) {
@@ -30,6 +29,7 @@ public class Component implements IVisitable, ISourceItem {
 		this.declarations = declarations;
 		this.constraints  = constraints;
 		this.rules        = rules;
+		this._loc         = SourceManager.v().getLastLoc();
 	}
 	public Component(String name, String superComp) {
 		this(name, superComp, new HashSet<>(), new HashSet<>(), new HashSet<>());
@@ -39,11 +39,6 @@ public class Component implements IVisitable, ISourceItem {
 	}
 	public Component() {
 		this(null, null, new HashSet<>(), new HashSet<>(), new HashSet<>());
-	}
-
-	// Ugly, but otherwise we would need to have four additional constructors
-	public void setLocation(SourceLocation loc) {
-		this._loc = loc;
 	}
 
 	public void addDecl(Declaration d) {
@@ -66,8 +61,8 @@ public class Component implements IVisitable, ISourceItem {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

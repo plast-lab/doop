@@ -4,19 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.expr.*;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class NegationElement implements IElement {
 
 	public final IElement element;
-	SourceLocation        _loc;
 
 	public NegationElement(IElement element) {
-		this(element, null);
-	}
-	public NegationElement(IElement element, SourceLocation loc) {
 		this.element = element;
-		this._loc    = loc;
+		this._loc    = SourceManager.v().getLastLoc();
 	}
 
 
@@ -28,8 +24,8 @@ public class NegationElement implements IElement {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

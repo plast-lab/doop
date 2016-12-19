@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.expr.*;
-import org.clyze.deepdoop.system.SourceLocation;
+import org.clyze.deepdoop.system.*;
 
 public class LogicalElement implements IElement {
 
@@ -15,23 +15,20 @@ public class LogicalElement implements IElement {
 
 	public final LogicType               type;
 	public final Set<? extends IElement> elements;
-	SourceLocation                       _loc;
 
 	public LogicalElement(LogicType type, List<? extends IElement> elements) {
 		this(type, new HashSet<>(elements));
+		this._loc = SourceManager.v().getLastLoc();
 	}
 	public LogicalElement(LogicType type, Set<? extends IElement> elements) {
 		this.type     = type;
 		this.elements = elements;
+		this._loc     = SourceManager.v().getLastLoc();
 	}
 	public LogicalElement(IElement element) {
 		this.type     = LogicType.AND;
 		this.elements = Collections.singleton(element);
-	}
-
-	// Ugly, but otherwise we would need to have four additional constructors
-	public void setLocation(SourceLocation loc) {
-		this._loc = loc;
+		this._loc     = SourceManager.v().getLastLoc();
 	}
 
 
@@ -45,8 +42,8 @@ public class LogicalElement implements IElement {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

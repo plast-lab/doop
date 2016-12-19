@@ -13,20 +13,15 @@ public class Rule implements IVisitable, ISourceItem {
 	public final LogicalElement head;
 	public final IElement       body;
 	public final boolean        isDirective;
-	SourceLocation              _loc;
 
 	public Rule(LogicalElement head, IElement body) {
-		this(head, body, null);
-	}
-	public Rule(LogicalElement head, IElement body, SourceLocation loc) {
 		this.head = head;
 		this.body = body;
-
 		this.isDirective = (
 				body == null &&
 				head.elements.size() == 1 &&
 				head.elements.iterator().next() instanceof Directive);
-		this._loc = loc;
+		this._loc = SourceManager.v().getLastLoc();
 
 		List<VariableExpr> varsInHead = head.getVars();
 		if (body != null) {
@@ -47,8 +42,8 @@ public class Rule implements IVisitable, ISourceItem {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

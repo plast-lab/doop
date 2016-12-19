@@ -8,15 +8,11 @@ public class Constraint implements IVisitable, ISourceItem {
 
 	public final IElement head;
 	public final IElement body;
-	SourceLocation        _loc;
 
 	public Constraint(IElement head, IElement body) {
-		this(head, body, null);
-	}
-	public Constraint(IElement head, IElement body, SourceLocation loc) {
 		this.head = head;
 		this.body = body;
-		this._loc = loc;
+		this._loc = SourceManager.v().getLastLoc();
 	}
 
 
@@ -24,8 +20,8 @@ public class Constraint implements IVisitable, ISourceItem {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+	SourceLocation _loc;
 	@Override
-	public SourceLocation location() {
-		return _loc;
-	}
+	public SourceLocation location() { return _loc; }
 }

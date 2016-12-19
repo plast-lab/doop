@@ -18,11 +18,13 @@ public class SourceManager {
 	}
 
 	Stack<LineMarker>            _markers;
+	Stack<SourceLocation>        _locations;
 
 	// Singleton
 	private static SourceManager _instance;
 	private SourceManager() {
 		_markers = new Stack<>();
+		_locations = new Stack<>();
 	}
 	public static SourceManager v() {
 		if (_instance == null)
@@ -37,7 +39,14 @@ public class SourceManager {
 		_markers.pop();
 	}
 
-	public SourceLocation getLoc(int outputLine) {
+	public void recLoc(int outputLine) {
+		_locations.push(location(outputLine));
+	}
+	public SourceLocation getLastLoc() {
+		return _locations.empty() ? null : _locations.pop();
+	}
+
+	SourceLocation location(int outputLine) {
 		SourceLocation.Line[] lines = new SourceLocation.Line[_markers.size()];
 		int actualLine = outputLine;
 		// Iterate in reverse order, because the top of the stack is at the "end"
