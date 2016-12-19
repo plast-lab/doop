@@ -1344,6 +1344,9 @@ ArrayIndexPointsTo(?ctx1, ?hVal, ?hctx2, ?cArgsVal)
    VarPointsTo(?ctx1, ?hVal, ?ctx2, ?h),
    ImmutableHContextFromContext[?ctx2] = ?hctx2.
 
+java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
+   ProxiedInterfaceForName(_, ?newInstanceInstr, ?c, _, _, _, ?obj).
+
 /* This doesn't work due to recursion through negation.
 
 // This rule fills in the appropriate relations, so that calls to
