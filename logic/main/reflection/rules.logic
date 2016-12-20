@@ -1308,83 +1308,84 @@ java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
   ?heapStr = "<reflective Constructor.newInstance/" + ?typeStr + ">".
 #endif
 
-// Make the special "method" variables inside proxy invocation
-// handlers point to the appropriate Method objects that have been
-// built at this point.
-VarPointsTo(?hctx, ?reifiedMethodVal, ?ctx, ?methodVar),
-// Also make the special "args" variables point to their values
-// (Object[] arrays).
-VarPointsTo(?hctx, ?argsNewVal, ?ctx, ?argsVar),
-ArrayIndexPointsTo(?hctx, ?arg, ?hctx2, ?argsNewVal)
- <-
-  ImmutableHContextFromContext[?ctx] = ?hctx2,
-  OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method),
-  AnyFormalPointsTo(?hctx, ?arg, ?ctx, ?method),
-  ReifiedMethod[?method] = ?reifiedMethod,
-  Value:byHeap[?reifiedMethod] = ?reifiedMethodVal,
-  HeapAllocation:byId[?argsNewId] = ?argsNew,
-  Value:byHeap[?argsNew] = ?argsNewVal
-.
+#include "dynamic-proxies.logic" 
+// // Make the special "method" variables inside proxy invocation
+// // handlers point to the appropriate Method objects that have been
+// // built at this point.
+// VarPointsTo(?hctx, ?reifiedMethodVal, ?ctx, ?methodVar),
+// // Also make the special "args" variables point to their values
+// // (Object[] arrays).
+// VarPointsTo(?hctx, ?argsNewVal, ?ctx, ?argsVar),
+// ArrayIndexPointsTo(?hctx, ?arg, ?hctx2, ?argsNewVal)
+//  <-
+//   ImmutableHContextFromContext[?ctx] = ?hctx2,
+//   OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method),
+//   AnyFormalPointsTo(?hctx, ?arg, ?ctx, ?method),
+//   ReifiedMethod[?method] = ?reifiedMethod,
+//   Value:byHeap[?reifiedMethod] = ?reifiedMethodVal,
+//   HeapAllocation:byId[?argsNewId] = ?argsNew,
+//   Value:byHeap[?argsNew] = ?argsNewVal
+// .
 
-AnyFormalPointsTo(?hctx, ?arg, ?ctx, ?method) <-
-  OptFormalParam(?method, ?formal),
-  VarPointsTo(?hctx, ?arg, ?ctx, ?formal).
+// AnyFormalPointsTo(?hctx, ?arg, ?ctx, ?method) <-
+//   OptFormalParam(?method, ?formal),
+//   VarPointsTo(?hctx, ?arg, ?ctx, ?formal).
 
-OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method) <-
-  ProxyMethod(?method, _, ?methodVar, ?argsVar, ?argsNewId, _).
-OptFormalParam(?method, ?formal) <-
-  FormalParam[_, ?method] = ?formal.
+// OptProxyMethod(?methodVar, ?argsVar, ?argsNewId, ?method) <-
+//   ProxyMethod(?method, _, ?methodVar, ?argsVar, ?argsNewId, _).
+// OptFormalParam(?method, ?formal) <-
+//   FormalParam[_, ?method] = ?formal.
 
-// For every 'c.newInstance(cArgs)' and InvocationHandler 'h' that go
-// through our handling of dynamic proxying, simulate 'cArgs[0] = h'.
-ArrayIndexPointsTo(?ctx1, ?hVal, ?hctx2, ?cArgsVal)
- <-
-   DynamicProxy(_, _, _, ?cArgs, _, ?h, _),
-   VarPointsTo(?ctx1, ?cArgsVal, ?ctx2, ?cArgs),
-   VarPointsTo(?ctx1, ?hVal, ?ctx2, ?h),
-   ImmutableHContextFromContext[?ctx2] = ?hctx2.
+// // For every 'c.newInstance(cArgs)' and InvocationHandler 'h' that go
+// // through our handling of dynamic proxying, simulate 'cArgs[0] = h'.
+// ArrayIndexPointsTo(?ctx1, ?hVal, ?hctx2, ?cArgsVal)
+//  <-
+//    DynamicProxy(_, _, _, ?cArgs, _, ?h, _),
+//    VarPointsTo(?ctx1, ?cArgsVal, ?ctx2, ?cArgs),
+//    VarPointsTo(?ctx1, ?hVal, ?ctx2, ?h),
+//    ImmutableHContextFromContext[?ctx2] = ?hctx2.
 
-java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
-   DynamicProxy(_, ?newInstanceInstr, ?c, _, _, _, ?obj).
+// java:lang:reflect:Constructor:newInstance(?newInstanceInstr, ?obj, ?c) <-
+//    DynamicProxy(_, ?newInstanceInstr, ?c, _, _, _, ?obj).
 
-#include "proxyMacros.logic"
+// #include "proxyMacros.logic"
 
-/* For (a) every c.newInstance() instruction that models an
-   instruction Proxy.newProxyInstance(..., interfaces, ...) and (b)
-   for every I that the interfaces point to, variable c should point
-   to the Constructor object for the proxy class of I. Also, the proxy
-   class should be initialized (since it is generated at this point in
-   the program) and its constructor becomes reachable. */
-InitializedClass(?proxyClass),
-Reachable(?constrSig),
-VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
-   DynamicProxy(?origInstr, _, ?c, _, _, _, _),
-   ActualParam[1, ?origInstr] = ?interfaces,
-   VarPointsTo(?hctx1, ?interfacesVal, ?ctx2, ?interfaces),
-   ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
-   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?interface,
-   DirectSuperinterface(?proxyClass, ?interface),
-   ProxyClass(?proxyClass), Type:Id(?proxyClass:?proxyClassId),
-   ?constrSig = ConstrIdMacro(?proxyClassId),
-   ReifiedConstructor:Value[?constrSig] = ?constructor.
+// /* For (a) every c.newInstance() instruction that models an
+//    instruction Proxy.newProxyInstance(..., interfaces, ...) and (b)
+//    for every I that the interfaces point to, variable c should point
+//    to the Constructor object for the proxy class of I. Also, the proxy
+//    class should be initialized (since it is generated at this point in
+//    the program) and its constructor becomes reachable. */
+// InitializedClass(?proxyClass),
+// Reachable(?constrSig),
+// VarPointsTo(?hctx1, ?constructor, ?ctx2, ?c) <-
+//    DynamicProxy(?origInstr, _, ?c, _, _, _, _),
+//    ActualParam[1, ?origInstr] = ?interfaces,
+//    VarPointsTo(?hctx1, ?interfacesVal, ?ctx2, ?interfaces),
+//    ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
+//    ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?interface,
+//    DirectSuperinterface(?proxyClass, ?interface),
+//    ProxyClass(?proxyClass), Type:Id(?proxyClass:?proxyClassId),
+//    ?constrSig = ConstrIdMacro(?proxyClassId),
+//    ReifiedConstructor:Value[?constrSig] = ?constructor.
 
-#ifdef MOCK_HEAP_CONS_MACRO_RECURSION
-/* Make every variable obj receiving a dynamically generated proxy,
-   point to an allocation of that proxy. Thus, method calls on the
-   object call the proxy's methods. */
-MockHeapConsMacro(?heapStr, ?proxyClass, ?heap) <-
-   // - These are copies of the conditions of the rule above. -
-   DynamicProxy(?origInstr, ?i, _, _, _, _, _),
-   ActualParam[1, ?origInstr] = ?interfaces,
-   VarPointsTo(_, ?interfacesVal, _, ?interfaces),
-   ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
-   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?interface,
-   DirectSuperinterface(?proxyClass, ?interface),
-   ProxyClass(?proxyClass), Type:Id(?proxyClass:?proxyClassId),
-   // ---------------------------------------------------------
-   Instruction:Id(?i:?iId),
-   ?heapStr = "<reflective Class.newInstance/" + ?iId + "/" + ?proxyClassId + ">".
-#endif
+// #ifdef MOCK_HEAP_CONS_MACRO_RECURSION
+// /* Make every variable obj receiving a dynamically generated proxy,
+//    point to an allocation of that proxy. Thus, method calls on the
+//    object call the proxy's methods. */
+// MockHeapConsMacro(?heapStr, ?proxyClass, ?heap) <-
+//    // - These are copies of the conditions of the rule above. -
+//    DynamicProxy(?origInstr, ?i, _, _, _, _, _),
+//    ActualParam[1, ?origInstr] = ?interfaces,
+//    VarPointsTo(_, ?interfacesVal, _, ?interfaces),
+//    ArrayIndexPointsTo(_, ?interfaceVal, _, ?interfacesVal),
+//    ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?interface,
+//    DirectSuperinterface(?proxyClass, ?interface),
+//    ProxyClass(?proxyClass), Type:Id(?proxyClass:?proxyClassId),
+//    // ---------------------------------------------------------
+//    Instruction:Id(?i:?iId),
+//    ?heapStr = "<reflective Class.newInstance/" + ?iId + "/" + ?proxyClassId + ">".
+// #endif
 
 // NOTE At this point, we cannot distinguish static from instance fields
 java:lang:reflect:Field:get(?invocation, ?to, ?field) <-

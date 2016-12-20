@@ -12,6 +12,13 @@
   ActualParam@previous[0, ?invocation] = ?array,
   ActualParam@previous[2, ?invocation] = ?value.
 
++Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
++DirectSuperinterface(?proxyClass, ?interface) <-
+  InterfaceType@previous(?interface),
+  Type:Id@previous(?interface:?interfaceId),
+  ?proxyClassId = "Proxy$for$" + ?interfaceId.
+  
+
 /* == Dynamic proxy handling ==
 
    Java dynamic proxies are handled in two steps:
@@ -86,6 +93,7 @@
 
 */
 
+/*
 // For each 'interface' (with ID = 'interfaceId'), generate a
 // 'proxyClassId'.
 #define ProxiedInterfaceMacro(interface, interfaceId, proxyClassId) \
@@ -252,6 +260,7 @@
    CalcMethodId(?proxyClassId, ?retType, ?simple, ?desc, ?methodId),
    ProxyMethodMacro(?methodId, ?proxyClassId, ?methodVarId, ?invokeId, ?retInstrId)
 .
+*/
 
 /* == Step 2: Transformation of Proxy.newProxyInstance() ==
 
@@ -278,6 +287,7 @@
 
 */
 
+/*
 // Generate the new constructor variable 'c'.
 +Var(?c), +Var:Id(?c:?cId), +Var:Type[?c] = ?constructorType,
 // Generate the new constructor arguments 'cArgs'.
@@ -324,3 +334,4 @@
    Type:Id@previous(?cArgsType:"java.lang.Object[]"),
    Type:Id@previous(?constructorType:"java.lang.reflect.Constructor")
 .
+*/
