@@ -209,26 +209,23 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   Method:DeclaringType[?meth] = ?class,
   ReifiedAndroidObjectValue(?value, ?class),
   ThisVar[?meth] = ?this,
-  ImmutableHContext(?hctx).
+  ImmutableHContextFromContext[?ctx] = ?hctx.
 
-// Then, for application objects (mainly listeners) that flow into
-// library code.
 _OptMethodFromVar[?var] = ?meth <-
   Var:DeclaringMethod(?var, ?meth).
 
-ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) <-
-  VarPointsTo(?hctx, ?value, _, ?var),
-  _OptMethodFromVar[?var] = ?meth,
-  Method:DeclaringType[?meth] = ?containingType,
-  !ApplicationClass(?containingType),
+// ... then for all analysis-reachable objects
+ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) <-
+  VarPointsTo(?hctx, ?value, _, _),
   Value:Heap[?value] = ?heap,
   HeapAllocation:Type[?heap] = ?ofType,
   ApplicationClass(?ofType).
 
+// a reachable object can always be the receiver for its own methods
 VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
   Method:DeclaringType[?meth] = ?ofType,
-  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
+  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
   ThisVar[?meth] = ?this.
 
 // ... and do the same for argument objects.
@@ -242,7 +239,20 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
   Var:Type[?formal] = ?formalType,
   SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type),
-  ImmutableHContext(?hctx).
+  ImmutableHContextFromContext[?ctx] = ?hctx.
+
+// Do the same (use as arguments everywhere applicable) for application
+// objects (mainly listeners) that flow into library code.
+// Currently, library code = some variable in an android.app class
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) <-
+  VarPointsTo(?hctx, ?value, _, ?var),
+  _OptMethodFromVar[?var] = ?meth,
+  Method:DeclaringType[?meth] = ?containingType,
+  Type:Id(?containingType:?typeId),
+  string:substring[?typeId, 0, 11] = "android.app",
+  Value:Heap[?value] = ?heap,
+  HeapAllocation:Type[?heap] = ?ofType,
+  ApplicationClass(?ofType).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
@@ -250,6 +260,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
   Var:Type[?formal] = ?formalType,
   SubtypeOf(?ofType, ?formalType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType).
+
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
