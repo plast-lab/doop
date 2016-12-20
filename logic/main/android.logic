@@ -248,7 +248,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
   FormalParam[_, ?meth] = ?formal,
   Var:Type[?formal] = ?formalType,
-  SubtypeOf(ofType, ?formalType),
+  SubtypeOf(?ofType, ?formalType),
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType).
 
 // Support view retrieval by id. If a call to an appropriate method is
