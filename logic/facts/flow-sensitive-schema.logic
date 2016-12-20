@@ -32,21 +32,6 @@ NullType(?t)      -> ReferenceType(?t).
 ArrayType(?t)     -> ReferenceType(?t).
 ClassType(?t)     -> ReferenceType(?t).
 InterfaceType(?t) -> ReferenceType(?t).
-ProxyClass(?t)    -> ClassType(?t).
-
-// Special information for proxied interfaces.
-DynamicProxy(?i, ?newInstance, ?c, ?cArgs, ?interfaces, ?h, ?obj) ->
-   MethodInvocation(?i), MethodInvocation(?newInstance),
-   Var(?c), Var(?cArgs), Var(?interfaces), Var(?h), Var(?obj).
-
-// Special information for proxied methods. For every proxy class,
-// each method ?proxied (calling some ?original method) contains a
-// special variable ?mVar that points to its reified representation of
-// type Method. The method also contains an ?invoke instruction that
-// calls ?original via Method.invoke().
-ProxyMethod(?proxied, ?original, ?mVar, ?argsVar, ?argsNewId, ?invoke) ->
-   Method(?proxied), Method(?original), Var(?mVar), Var(?argsVar),
-   string(?argsNewId), StaticMethodInvocation:Insn(?invoke).
 
 lang:entity(`PrimitiveType).
 lang:entity(`ReferenceType).
@@ -54,7 +39,6 @@ lang:entity(`NullType).
 lang:entity(`ArrayType).
 lang:entity(`ClassType).
 lang:entity(`InterfaceType).
-lang:entity(`ProxyClass).
 
 // Inheritance and Subtyping
 
@@ -631,7 +615,6 @@ lang:physical:capacity[`NullType]            = 131072.
 lang:physical:capacity[`ArrayType]           = 131072.
 lang:physical:capacity[`ClassType]           = 131072.
 lang:physical:capacity[`InterfaceType]       = 131072.
-lang:physical:capacity[`ProxyClass]          = 131072.
 
 lang:physical:capacity[`HeapAllocation]      = 4194304.
 lang:physical:capacity[`NormalHeap]          = 4194304.

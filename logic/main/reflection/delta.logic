@@ -12,9 +12,9 @@
   ActualParam@previous[0, ?invocation] = ?array,
   ActualParam@previous[2, ?invocation] = ?value.
 
-/* == Proxy handling ==
+/* == Dynamic proxy handling ==
 
-   Java proxies are handled in two steps:
+   Java dynamic proxies are handled in two steps:
 
    1. For every interface, we create a dummy proxy class that will
       represent the type of objects returned by
@@ -30,18 +30,18 @@
 
       we generate facts as if we had seen the following code:
 
-       // special proxy constructor variable
-       Constructor c$interface$forName/#4;
-       Object obj = c$interface$forName/#4.newInstance(h);
-
-      Explanation: for every call to Proxy.newProxyInstance(), we
-      generate a new constructor variable c. This special variable is
-      connected by the analysis to the interfaces argument of
-      newProxyInstance() via the VarPointsTo relation: whenever the
-      interfaces argument can contain the class object of some
-      interface I, then c is the constructor of the proxy class of I,
-      e.g. 'Proxy$for$I' and thus the result of 'c.newInstance(h)'
-      will be an object belonging to 'Proxy$for$I'.
+        // special proxy constructor variable
+        Constructor c;
+        Object obj = c.newInstance(h);
+ 
+      Explanation: our handling of "newInstance" on
+      java.lang.reflect.Constructor already takes care of the
+      delegation pattern for "invoke". So we appeal to that. The
+      values flowing into generated constructor var "c" will be
+      inferred by analysis rules, depending on the values of "is":
+      whenever the "is" argument can contain the class object of
+      some interface I, then c is the constructor of the proxy class
+      of I.
 
    For more details on each step, see below.
 
@@ -55,18 +55,21 @@
        int count();
      }
 
-   Then, the following method bodies will have to be generated:
-
-     public void report(String msg) {
+   Then, we generate a proxy class for I, with the following method
+   bodies:
+     class G_I {
+       ... // reference ih to actual handler and constructor
+       public void report(String msg) {
          Method interfaceMethod = I$V$report$Ljava$lang$String;
          Object[] args = new Object[] {msg};
          ih.invoke(this, interfaceMethod, args);
-     }
+       }
 
-     public int count() {
+       public int count() {
          Method interfaceMethod = I$I$count$V;
          Object[] args = new Object[] { };
          return (Integer)ih.invoke(this, interfaceMethod, args);
+       }
      }
 
    Notes about the code above:
@@ -77,14 +80,9 @@
 
      - The Method variables are supposed to be initialized with
        special values. In practice, our logic records the existence of
-       these Method variables here and later (during reflection
+       these Method variables here, and it later (during reflection
        analysis) makes them point to the appropriate reified method
        objects.
-
-     - In this delta, we do not create "return" instructions. We must
-       model them directly in the reflection analysis ("the result of
-       invoke() must flow into the return value of the proxied
-       method").
 
 */
 
