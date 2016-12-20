@@ -21,6 +21,7 @@ public class DatalogTest {
 	ParseTreeWalker     _walker;
 
 	DatalogParser open(String filename) throws IOException {
+		_listener = new DatalogListenerImpl(filename);
 		return new DatalogParser(
 				new CommonTokenStream(
 					new DatalogLexer(
@@ -48,16 +49,18 @@ public class DatalogTest {
 			if (expectedErrorId == null || e.errorId != expectedErrorId)
 				Assert.fail(e.errorId + e.getMessage() + " on " + filename);
 			System.err.println("Expected failure on " + filename);
+			return;
 		}
 		catch (Exception e) {
 			Assert.fail(e.getMessage() + " on " + filename);
 		}
+		if (expectedErrorId != null)
+			Assert.fail("Test on " + filename + " did not fail (as expected)");
 	}
 
 	// This method is run before each method annotated with @Test
 	@Before
 	public void setup() throws IOException {
-		_listener = new DatalogListenerImpl();
 		_walker   = new ParseTreeWalker();
 	}
 

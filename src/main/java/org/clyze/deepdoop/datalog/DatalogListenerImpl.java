@@ -1,5 +1,6 @@
 package org.clyze.deepdoop.datalog;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,7 +34,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	Component                          _currComp;
 	Program                            _program;
 
-	public DatalogListenerImpl() {
+	public DatalogListenerImpl(String filename) {
 		_name       = new ParseTreeProperty<>();
 		_names      = new ParseTreeProperty<>();
 		_elem       = new ParseTreeProperty<>();
@@ -43,6 +44,8 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_exprs      = new ParseTreeProperty<>();
 		_program    = new Program();
 		_currComp   = _program.globalComp;
+
+		SourceManager.v().setOutputFile(new File(filename).getAbsolutePath());
 	}
 
 	public Program getProgram() {

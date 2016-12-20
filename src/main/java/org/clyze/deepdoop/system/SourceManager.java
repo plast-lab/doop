@@ -19,6 +19,7 @@ public class SourceManager {
 
 	Stack<LineMarker>            _markers;
 	Stack<SourceLocation>        _locations;
+	String                       _outputFile;
 
 	// Singleton
 	private static SourceManager _instance;
@@ -30,6 +31,10 @@ public class SourceManager {
 		if (_instance == null)
 			_instance = new SourceManager();
 		return _instance;
+	}
+
+	public void setOutputFile(String outputFile) {
+		_outputFile = outputFile;
 	}
 
 	public void lineMarkerStart(int markerLine, int markerActualLine, String sourceFile) {
@@ -47,14 +52,20 @@ public class SourceManager {
 	}
 
 	SourceLocation location(int outputLine) {
-		SourceLocation.Line[] lines = new SourceLocation.Line[_markers.size()];
-		int actualLine = outputLine;
-		// Iterate in reverse order, because the top of the stack is at the "end"
-		for (int i = _markers.size()-1 ; i >= 0 ; --i) {
-			LineMarker lm = _markers.get(i);
-			int sourceLine = (lm.markerLine + actualLine - (lm.markerActualLine+1));
-			lines[i] = new SourceLocation.Line(lm.sourceFile, sourceLine);
-			actualLine = lm.markerActualLine;
+		SourceLocation.Line[] lines;
+		if (_markers.empty()) {
+			lines = { new SourceLocation.Line(_outputFile, outputLine) };
+		}
+		else {
+			lines = new SourceLocation.Line[_markers.size()];
+			int actualLine = outputLine;
+			// Iterate in reverse order, because the top of the stack is at the "end"
+			for (int i = _markers.size()-1 ; i >= 0 ; --i) {
+				LineMarker lm = _markers.get(i);
+				int sourceLine = (lm.markerLine + actualLine - (lm.markerActualLine+1));
+				lines[i] = new SourceLocation.Line(lm.sourceFile, sourceLine);
+				actualLine = lm.markerActualLine;
+			}
 		}
 		return new SourceLocation(lines);
 	}

@@ -22,7 +22,7 @@ public class Compiler {
 					new CommonTokenStream(
 						new DatalogLexer(
 							new ANTLRFileStream(filename))));
-			DatalogListenerImpl listener = new DatalogListenerImpl();
+			DatalogListenerImpl listener = new DatalogListenerImpl(filename);
 			ParseTreeWalker.DEFAULT.walk(listener, parser.program());
 
 			Program p = listener.getProgram();
