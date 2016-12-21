@@ -54,7 +54,8 @@ public class SourceManager {
 	SourceLocation location(int outputLine) {
 		SourceLocation.Line[] lines;
 		if (_markers.empty()) {
-			lines = { new SourceLocation.Line(_outputFile, outputLine) };
+			SourceLocation.Line[] t = { new SourceLocation.Line(_outputFile, outputLine) };
+			lines = t;
 		}
 		else {
 			lines = new SourceLocation.Line[_markers.size()];
