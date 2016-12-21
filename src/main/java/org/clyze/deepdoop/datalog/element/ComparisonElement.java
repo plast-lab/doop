@@ -1,6 +1,5 @@
 package org.clyze.deepdoop.datalog.element;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.BinOperator;
@@ -23,7 +22,7 @@ public class ComparisonElement implements IElement {
 
 	@Override
 	public List<VariableExpr> getVars() {
-		return new ArrayList<>(expr.getVars());
+		return expr.getVars();
 	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {

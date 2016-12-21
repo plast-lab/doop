@@ -1,6 +1,5 @@
 package org.clyze.deepdoop.datalog.expr;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.element.atom.Functional;
@@ -20,7 +19,7 @@ public class FunctionalHeadExpr implements IExpr {
 
 	@Override
 	public List<VariableExpr> getVars() {
-		return new ArrayList<>(functional.getVars());
+		return functional.getVars();
 	}
 	@Override
 	public <T> T accept(IVisitor<T> v) {
