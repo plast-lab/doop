@@ -35,7 +35,7 @@ public class LogicalElement implements IElement {
 	@Override
 	public List<VariableExpr> getVars() {
 		List<VariableExpr> list = new ArrayList<>();
-		for (IElement element : elements) list.addAll(element.getVars());
+		elements.forEach(e -> list.addAll(e.getVars()));
 		return list;
 	}
 	@Override

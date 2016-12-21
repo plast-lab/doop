@@ -34,7 +34,7 @@ public class Predicate implements IAtom {
 	@Override
 	public List<VariableExpr> getVars() {
 		List<VariableExpr> list = new ArrayList<>();
-		for (IExpr e : exprs) list.addAll(e.getVars());
+		exprs.forEach(e -> list.addAll(e.getVars()));
 		return list;
 	}
 	@Override

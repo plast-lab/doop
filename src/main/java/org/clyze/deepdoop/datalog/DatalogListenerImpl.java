@@ -98,7 +98,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	public void exitPropagate(PropagateContext ctx) {
 		Set<String> predNames = (ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())));
 		Set<IAtom>  preds = new HashSet<>();
-		for (String predName : predNames) preds.add(new StubAtom(predName));
+		predNames.forEach(predName -> preds.add(new StubAtom(predName)));
 		_program.addPropagation(
 				ctx.IDENTIFIER(0).getText(),
 				preds,
@@ -370,20 +370,21 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	static boolean isConstraint(IAtom atom, Set<IAtom> types) {
-		for (VariableExpr v : atom.getVars())
-			if (v.isDontCare)
-				return true;
+		if (atom.getVars().stream().anyMatch(v -> v.isDontCare)) return true;
 
 		// Entities declaration
 		if (types.isEmpty()) return false;
 
-		int bodyCount = 0;
-		for (IAtom t : types) {
-			List<VariableExpr> vars = t.getVars();
-			if (vars.size() != 1 || vars.get(0).isDontCare)
-				return true;
-			bodyCount += vars.size();
-		}
+		if (types.stream().anyMatch(t -> {
+				List<VariableExpr> vars = t.getVars();
+				return vars.size() != 1 || vars.get(0).isDontCare;
+			})) return true;
+
+		int bodyCount =
+			types.stream()
+			     .map(t -> t.getVars().size())
+			     .reduce(0, Integer::sum);
+
 		return (atom.arity() != bodyCount);
 	}
 	static void recLoc(ParserRuleContext ctx) {

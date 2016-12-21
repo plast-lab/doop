@@ -22,14 +22,14 @@ public class Declaration implements IVisitable, ISourceItem {
 
 		int typesCount = types.size();
 		IAtom[] ordered = new IAtom[typesCount];
-		for (IAtom t : types) {
+		types.forEach(t -> {
 			List<VariableExpr> vars = t.getVars();
 			assert vars.size() == 1;
 			int index = varsInHead.indexOf(vars.get(0));
 			if (index == -1)
 				ErrorManager.error(location(), ErrorId.UNKNOWN_VAR, vars.get(0).name);
 			ordered[index] = t;
-		}
+		});
 		assert (typesCount == 0 || typesCount == varsInHead.size());
 
 		this.types = new ArrayList<>(Arrays.asList(ordered));

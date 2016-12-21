@@ -27,12 +27,11 @@ public class Rule implements IVisitable, ISourceItem {
 		if (body != null) {
 			List<VariableExpr> varsInHead = head.getVars();
 			List<VariableExpr> varsInBody = body.getVars();
-			for (VariableExpr v : varsInBody) {
-				if (v.isDontCare) continue;
-				int occurrences = Collections.frequency(varsInBody, v);
-				if (occurrences == 1 && !varsInHead.contains(v))
-					ErrorManager.warn(ErrorId.UNUSED_VAR, v.name);
-			}
+			varsInBody.stream()
+			          .filter(v -> !v.isDontCare)
+			          .filter(v -> !varsInHead.contains(v))
+			          .filter(v -> Collections.frequency(varsInBody, v) == 1)
+			          .forEach(v -> ErrorManager.warn(ErrorId.UNUSED_VAR, v.name));
 		}
 	}
 
