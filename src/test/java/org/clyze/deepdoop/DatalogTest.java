@@ -145,10 +145,6 @@ public class DatalogTest {
 	public void test_Fail12() throws IOException {
 		test("fail12.logic", ErrorId.UNKNOWN_VAR);
 	}
-	@Test
-	public void test_Fail13() throws IOException {
-		test("fail13.logic", ErrorId.UNKNOWN_VAR);
-	}
 
 
 	@Test
