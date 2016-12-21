@@ -31,7 +31,7 @@ public class Rule implements IVisitable, ISourceItem {
 				if (v.isDontCare) continue;
 				int occurrences = Collections.frequency(varsInBody, v);
 				if (occurrences == 1 && !varsInHead.contains(v))
-					ErrorManager.warn(this, ErrorId.UNUSED_VAR, v.name);
+					ErrorManager.warn(ErrorId.UNUSED_VAR, v.name);
 			}
 		}
 	}

@@ -103,7 +103,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 				}
 			}
 			if (!declFound)
-				ErrorManager.warn(this, ErrorId.NO_DECL, usedPred);
+				ErrorManager.warn(ErrorId.NO_DECL, usedPred);
 		}
 
 		// Compute dependency graph for components (and global predicates)

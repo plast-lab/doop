@@ -5,9 +5,9 @@ import org.apache.commons.logging.LogFactory;
 
 public class ErrorManager {
 
-	public static void warn(Object klass, ErrorId errorId, Object... values) {
+	public static void warn(ErrorId errorId, Object... values) {
 		String msg = "[DD] WARNING: " + ErrorId.idToMsg(errorId, values);
-		LogFactory.getLog(klass.getClass()).warn(msg);
+		LogFactory.getLog(ErrorManager.class).warn(msg);
 	}
 
 	public static void error(ErrorId errorId, Object... values) {
