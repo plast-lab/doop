@@ -24,6 +24,7 @@ public class AggregationElement implements IElement {
 	@Override
 	public List<VariableExpr> getVars() {
 		List<VariableExpr> list = new ArrayList<>(body.getVars());
+		list.addAll(predicate.getVars());
 		list.add(var);
 		return list;
 	}
