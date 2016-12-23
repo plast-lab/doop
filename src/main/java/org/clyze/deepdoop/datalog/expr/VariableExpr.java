@@ -1,7 +1,9 @@
 package org.clyze.deepdoop.datalog.expr;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.clyze.deepdoop.actions.IVisitor;
 
 public class VariableExpr implements IExpr {
@@ -29,5 +31,12 @@ public class VariableExpr implements IExpr {
 	@Override
 	public int hashCode() {
 		return name.hashCode();
+	}
+
+
+	public static List<VariableExpr> genTempVars(int n) {
+		List<VariableExpr> vars = new ArrayList<>(n);
+		IntStream.range(0, n).forEach(i -> vars.add(new VariableExpr("var" + i)));
+		return vars;
 	}
 }
