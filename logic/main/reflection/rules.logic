@@ -102,7 +102,7 @@ SpecialObject(?heap) <-
  *
  * Test:
  *   - static initialization
- *   - context-sensivitity
+ *   - context-sensitivity
  *   - virtual method lookup
  *   - method declared in class of objParam
  *
@@ -270,14 +270,19 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
  *      method (only overapproximation)
  */
 
+// It is horrible that I have to materialize this relation. But in ultra-heavy
+// analyses, the engine does not perform this join first, thus getting the
+// analysis stuck forever.
+WTFReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base).
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  WTFReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
   Value:Type[?value] = ?valuetype,
   Method:DeclaringType[?signature] = ?type,
   SupertypeOf(?type, ?valuetype), // TODO need nicer check
@@ -290,8 +295,7 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
   ImmutableContextFromHContext[?hctx] = ?calleeCtx,
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  WTFReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
   Value:Type[?value] = ?valuetype,
   Method:DeclaringType[?signature] = ?type,
   SupertypeOf(?type, ?valuetype), // TODO need nicer check
