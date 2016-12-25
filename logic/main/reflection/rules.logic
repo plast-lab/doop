@@ -911,7 +911,7 @@ UnresolvedGetMethodInvocation(?ctx, ?invocation) <-
    ActualParam[0, ?invocation] = ?param,
    VarPointsTo(_, ?nonstring, ?ctx, ?param),
    Value:Heap[?nonstring] = ?nonstringHeap,
-   !ClassNameMatchingStringConstant(?nonstringHeap).
+   !MethodNameMatchingStringConstant(?nonstringHeap).
 
 OptGetMethodClass(?type, ?ctx, ?getMethodInvocation) <-
   UnresolvedGetMethodInvocation(?ctx, ?getMethodInvocation),
@@ -1062,7 +1062,7 @@ UnresolvedGetFieldInvocation(?ctx, ?invocation) <-
    ActualParam[0, ?invocation] = ?param,
    VarPointsTo(_, ?nonstring, ?ctx, ?param),
    Value:Heap[?nonstring] = ?nonstringHeap,
-   !ClassNameMatchingStringConstant(?nonstringHeap).
+   !FieldNameMatchingStringConstant(?nonstringHeap).
 
 OptGetFieldClass(?type, ?ctx, ?getFieldInvocation) <-
   UnresolvedGetFieldInvocation(?ctx, ?getFieldInvocation),
