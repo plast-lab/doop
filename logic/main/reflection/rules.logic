@@ -2,7 +2,7 @@
  * Reflection analysis
  *************************************************************
  * Implementation of points-to propagation for concrete actions that
- * have been discovered using reflection. Basically, the rest of the
+ * have been discovered using reflection. Most often, the rest of the
  * reflection logic sets things up, and the logic in this file actually
  * does the invocations, field set/gets, etc. that affect points-to info.
  *************************************************************
@@ -822,10 +822,8 @@ SpecialMissingGetConstructorHeap[?invocation] = ?heap
 MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetMethodsHeap[?invocation] = ?heap
 <-
-  (Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-   Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
-  MethodInvocation:Signature[?invocation] = ?getMethods,
-  VirtualMethodInvocation:Insn(?invocation),
+  (java:lang:Class:getMethods(?invocation, _, _);
+   java:lang:Class:getDeclaredMethods(?invocation, _, _)),
   Type:Id(?type:"java.lang.reflect.Method"),
   Instruction:Id(?invocation:?strInvocation),
   ?strHeap = "<special object for missing get[Declared]Methods values " + ?strInvocation + ">".
@@ -833,10 +831,8 @@ SpecialMissingGetMethodsHeap[?invocation] = ?heap
 MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap
 <-
-  (Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
-   Method:Id(?getMethods:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>")),
-  MethodInvocation:Signature[?invocation] = ?getMethods,
-  VirtualMethodInvocation:Insn(?invocation),
+  (java:lang:Class:getMethods(?invocation, _, _);
+   java:lang:Class:getDeclaredMethods(?invocation, _, _)),
   Type:Id(?type:"java.lang.Object"),
   Instruction:Id(?invocation:?strInvocation),
   ?strHeap = "<special object for missing invoke() values " + ?strInvocation + ">".
@@ -867,10 +863,8 @@ SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap
 MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetFieldsHeap[?invocation] = ?heap
 <-
-  (Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-   Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
-  MethodInvocation:Signature[?invocation] = ?getFields,
-  VirtualMethodInvocation:Insn(?invocation),
+  (java:lang:Class:getDeclaredFields(?invocation, _, _);
+   java:lang:Class:getFields(?invocation, _, _)),
   Type:Id(?type:"java.lang.reflect.Field"),
   Instruction:Id(?invocation:?strInvocation),
   ?strHeap = "<special object for missing get[Declared]Fields values " + ?strInvocation + ">".
@@ -878,10 +872,8 @@ SpecialMissingGetFieldsHeap[?invocation] = ?heap
 MockHeapConsMacro(?strHeap, ?type, ?heap),
 SpecialMissingGetHeapFromGetFields[?invocation] = ?heap
 <-
-  (Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
-   Method:Id(?getFields:"<java.lang.Class: java.lang.reflect.Field[] getFields()>")),
-  MethodInvocation:Signature[?invocation] = ?getFields,
-  VirtualMethodInvocation:Insn(?invocation),
+  (java:lang:Class:getDeclaredFields(?invocation, _, _);
+   java:lang:Class:getFields(?invocation, _, _)),
   Type:Id(?type:"java.lang.Object"),
   Instruction:Id(?invocation:?strInvocation),
   ?strHeap = "<special object for missing get() values " + ?strInvocation + ">".
@@ -1447,12 +1439,10 @@ UnknownReflectiveObject[?type, ?invocation] = ?heap
   AssignCast(?type, _, _, _),
   ClassType(?type),
   Type:Id(?type:?strType),
-  (Method:Id(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-   Method:Id(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-   Method:Id(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-   Method:Id(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
-  MethodInvocation:Signature[?invocation] = ?method,
-  VirtualMethodInvocation:Insn(?invocation),
+  (java:lang:Class:newInstance(?invocation, _, _);
+   java:lang:reflect:Constructor:newInstance(?invocation, _, _);
+   java:lang:reflect:Method:invoke(?invocation, _);
+   java:lang:reflect:Field:get(?invocation, _, _)),
   Instruction:Id(?invocation:?strInvocation),
   ?strHeap = "<<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">>".
 
@@ -1461,12 +1451,10 @@ UnknownReflectiveObject[?type, ?invocation] = ?heap
 MockHeapConsMacro(?strHeap, ?type, ?heap),
 MarkerReflectiveObject[?invocation] = ?heap
 <-
-  (Method:Id(?method:"<java.lang.Class: java.lang.Object newInstance()>") ;
-   Method:Id(?method:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>") ;
-   Method:Id(?method:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>") ;
-   Method:Id(?method:"<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>")),
-  MethodInvocation:Signature[?invocation] = ?method,
-  VirtualMethodInvocation:Insn(?invocation),
+  (java:lang:Class:newInstance(?invocation, _, _);
+   java:lang:reflect:Constructor:newInstance(?invocation, _, _);
+   java:lang:reflect:Method:invoke(?invocation, _);
+   java:lang:reflect:Field:get(?invocation, _, _)),
   Type:Id(?type:"java.lang.Object"),
   Instruction:Id(?invocation:?strInvocation),
   ?strHeap = "<special object for missing reflective values " + ?strInvocation + ">".
@@ -1477,11 +1465,10 @@ MarkerReflectiveObject[?invocation] = ?heap
 // Propagate the marker object everywhere
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
-  VirtualMethodInvocation:Insn(?invocation),
-  (MethodInvocation:Signature[?invocation] = "<java.lang.Class: java.lang.Object newInstance()>" ;
-   MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>" ;
-   MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>" ;
-   MethodInvocation:Signature[?invocation] = "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+  (java:lang:Class:newInstance(?invocation, _, _);
+   java:lang:reflect:Constructor:newInstance(?invocation, _, _);
+   java:lang:reflect:Method:invoke(?invocation, _);
+   java:lang:reflect:Field:get(?invocation, _, _)),
   Instruction:Method[?invocation] = ?inmethod,
   ReachableContext(?ctx, ?inmethod),
   AssignReturnValue[?invocation] = ?return,
