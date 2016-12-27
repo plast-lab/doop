@@ -100,7 +100,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
 NonTrivialStringConstant(?heap) <-
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
-  string:length[?string] >= 6.
+  string:length[?string] >= 7.
 
 /**
  * String constants that (may) refer to class, method, and field names
@@ -123,9 +123,10 @@ ClassNameMatchingStringConstantExact:Type(?type, ?heap)
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
   ReferenceType(?type),
-  (ApplicationClass(?type) ; NonTrivialStringConstant(?heap)),
+  ApplicationClass(?type),
      // library classes are known and in known packages. Makes no sense
      // to access them via .getClass
+  NonTrivialStringConstant(?heap),
   Type:Id(?type:?string).
 
 MethodNameMatchingStringConstant(?heap) -> HeapAllocation(?heap).
@@ -142,12 +143,13 @@ MethodNameMatchingStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
-  Method:DeclaringType[?sig] = ?type, 
-  (ApplicationClass(?type); NonTrivialStringConstant(?heap)),
+  //  Method:DeclaringType[?sig] = ?type, 
+  //  ApplicationClass(?type),
      // there is some possibility of accessing methods and fields
      // reflectively, even in system classes. Maybe one needs to 
      // circumvent access control, or maybe one wants to treat all
      // fields uniformly and some are inherited from a system superclass.
+  NonTrivialStringConstant(?heap),
   Method:SimpleName[?sig] = ?string,
   ?string != "<init>",
   ?string != "<clinit>". // common, yet not methods callable via reflection
@@ -166,8 +168,9 @@ FieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
   <-
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
-  Field:DeclaringType[?sig] = ?declaringClass,
-  (ApplicationClass(?declaringClass); NonTrivialStringConstant(?heap)),
+  // Field:DeclaringType[?sig] = ?declaringClass,
+  // ApplicationClass(?declaringClass);
+  NonTrivialStringConstant(?heap),
   Field:SimpleName[?sig] = ?string.
 
 #ifdef REFLECTION_SUBSTRING_ANALYSIS
@@ -208,14 +211,24 @@ FieldNameMatchingStringConstantInexact:Signature(?sig, ?heap)
    FieldNamePrefix(?string, ?sig)).
 
 ClassIterationTrick(?length) <-
-  ?length = 6; ?length = 7; ?length = 8; ?length = 9; ?length = 10; 
-  ?length = 11; ?length = 12; ?length = 13; ?length = 14, ?length = 15.
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26.
 MemberPrefixIterationTrick(?length) <-
-  ?length = 3; ?length = 4; ?length = 5; ?length = 6; ?length = 7; ?length = 8; ?length = 9;
-  ?length = 10; ?length = 11; ?length = 12; ?length = 13; ?length = 14.
+//?length = 3; ?length = 4; ?length = 5; ?length = 6;
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31.
 MemberSuffixIterationTrick(?length) <-
-  ?length = 5; ?length = 6; ?length = 7; ?length = 8; ?length = 9;
-  ?length = 10; ?length = 11; ?length = 12; ?length = 13; ?length = 14.
+//?length = 5; ?length = 6;
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31.
 
 // Precompute proper suffixes. Crucial for efficiency.
 ClassNameSuffix(?suffix, ?type) <-
