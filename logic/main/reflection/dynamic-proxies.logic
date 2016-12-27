@@ -119,7 +119,8 @@ VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg)
    Value:byHeap[?heap] = ?proxyValue,
    MethodInvocation:Signature[?invo] = ?methSig,
    ReifiedMethod:Value[?methSig] = ?methValue,
-   ArgArrayOfProxyMethod[?methSig, ProxyObject:Invocation[?heap]] = ?argsArrValue.
+   ArgArrayOfProxyMethod[?methSig, ProxyObject:Invocation[?heap]] = ?argsArrHeap,
+   Value:byHeap[?argsArrHeap] = ?argsArrValue.
 
 ReachableContext(?calleeCtx, ?callee) <-
   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
