@@ -55,6 +55,40 @@ ArgArrayOfProxyMethod[?meth, ?invo] = ?arrHeap
    Method:Id(?meth:?methName),
    ?heapId = "<argument array for proxied method " + ?methName + " at " + ?invoId + ">".
 
+// JLS 5.1.7 (Java 8).
+// TODO Misses null-to-null boxing (is it useful for proxies?).
+PrimitiveType:Boxed["boolean"] = "java.lang.Boolean".
+PrimitiveType:Boxed["byte"   ] = "java.lang.Byte".
+PrimitiveType:Boxed["short"  ] = "java.lang.Short".
+PrimitiveType:Boxed["char"   ] = "java.lang.Character".
+PrimitiveType:Boxed["int"    ] = "java.lang.Integer".
+PrimitiveType:Boxed["long"   ] = "java.lang.Long".
+PrimitiveType:Boxed["float"  ] = "java.lang.Float".
+PrimitiveType:Boxed["double" ] = "java.lang.Double".
+
+PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId) <-
+   MethodOfInterface(?meth, _),
+   FormalParam[_, ?meth] = ?formal,
+   Var:Type[?formal] = ?formalType,
+   PrimitiveType(?formalType),
+   Method:Id(?meth:?methName),
+   Type:Id(?formalType:?formalTypeId).
+
+// Primitive values passed as arguments to proxied methods, are boxed
+// to be passed to the args array. Thus, for every primitive argument
+// of a proxied method, we create a new heap allocation to show where
+// boxing occurs in the method. REVIEW: contexts (as above)?
+HeapAllocation:Normal:Cons[?heapId] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?boxType,
+BoxAllocationOfPrimitiveFormal[?formal] = ?heap
+ <-
+   PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId),
+   PrimitiveType:Boxed[?formalTypeId] = ?boxTypeId,
+   Var:Id(?formal:?formalId),
+   Type:Id(?boxType:?boxTypeId),
+   ?heapId = "<boxed " + ?boxTypeId + " argument for proxied method " + ?methName + " and formal " + ?formalId + ">".
+
 // Return var of newProxyInstance should point to the appropriate
 // dynamic proxy object.
 //// REVIEW: as above, have a real heap context instead of immutable?
@@ -125,7 +159,29 @@ VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg)
 ReachableContext(?calleeCtx, ?callee) <-
   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
+ArgArrayForFormal(?arrValue, ?formal) <-
+   ArgArrayOfProxyMethod[?meth, _] = ?arrHeap,
+   Value:byHeap[?arrHeap] = ?arrValue,
+   FormalParam[_, ?meth] = ?formal.
+
+// Populate args array:
+// (a) Reference-type arguments go in directly.
+ArrayIndexPointsTo(?hctx2, ?formalVal, ?hctx, ?arrValue) <-
+   ArgArrayForFormal(?arrValue, ?formal),
+   VarPointsTo(?hctx, ?formalVal, ?ctx, ?formal),
+   Var:Type[?formal] = ?formalType,
+   ReferenceType(?formalType),
+   ImmutableHContextFromContext[?ctx] = ?hctx2.
+// (b) Primitive arguments are boxed first.
+ArrayIndexPointsTo(?hctx2, ?formalVal, ?hctx, ?arrValue) <-
+   ArgArrayForFormal(?arrValue, ?formal),
+   VarPointsTo(?hctx, ?formalVal, ?ctx, ?formal),
+   BoxAllocationOfPrimitiveFormal[?formal] = ?heap,
+   Value:byHeap[?heap] = ?formalVal,
+   ImmutableHContextFromContext[?ctx] = ?hctx2.
+// REVIEW: contexts.
+
+
 //// TODO:
 ////  - handle return values 
-////  - populate args array parameter
 ////  - think about boxing/unboxing needs
