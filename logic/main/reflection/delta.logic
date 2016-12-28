@@ -20,7 +20,7 @@
   Type:Id@previous(?interface:?interfaceId),
   Type:Id@previous(?proxySuperclass:"java.lang.reflect.Proxy"),
   ClassType@previous(?proxySuperclass),
-  ?proxyClassId = "Proxy$for$" + ?interfaceId.
+  ?proxyClassId = "$Proxy$for$" + ?interfaceId.
   
 
 /* == Dynamic proxy handling ==
@@ -103,7 +103,7 @@
 #define ProxiedInterfaceMacro(interface, interfaceId, proxyClassId) \
   InterfaceType@previous(interface), \
   Type:Id@previous(interface:interfaceId), \
-  proxyClassId = "Proxy$for$" + interfaceId
+  proxyClassId = "$Proxy$for$" + interfaceId
 
 // For a method named 'simple', with descriptor 'desc' and return type
 // 'retType', generate a 'methodId' for a method to be declared inside
