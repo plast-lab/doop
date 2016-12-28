@@ -185,7 +185,7 @@ ArrayIndexPointsTo(?hctx2, ?formalVal, ?hctx, ?arrValue) <-
 // methods such as Proxy.getInvocationHandler()).
 // TODO The handler is != null (Proxy constructor assertion).
 InstanceFieldPointsTo(?hctx2, ?handlerObj, ?sig, ?hctx, ?proxyVal) <- 
-   VarPointsTo(?hctx, ?proxyVal, ?ctx, ?proxyObjVar),
+   VarPointsTo(?hctx, ?proxyVal, ?ctx, _),
    Value:Heap[?proxyVal] = ?proxyHeap,
    ProxyObject:Handler[?proxyHeap] = ?handlerObj,
    ImmutableHContextFromContext[?ctx] = ?hctx2,
