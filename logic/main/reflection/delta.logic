@@ -13,9 +13,13 @@
   ActualParam@previous[2, ?invocation] = ?value.
 
 +Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
++ClassModifier("public", ?proxyClass), +ClassModifier("final", ?proxyClass),
++DirectSuperclass[?proxyClass] = ?proxySuperclass,
 +DirectSuperinterface(?proxyClass, ?interface) <-
   InterfaceType@previous(?interface),
   Type:Id@previous(?interface:?interfaceId),
+  Type:Id@previous(?proxySuperclass:"java.lang.reflect.Proxy"),
+  ClassType@previous(?proxySuperclass),
   ?proxyClassId = "Proxy$for$" + ?interfaceId.
   
 
