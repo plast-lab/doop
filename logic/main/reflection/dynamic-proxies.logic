@@ -1,3 +1,27 @@
+/* Models the dynamic proxies of Java. Compared to the spec, we have
+   the following restrictions:
+
+   (a) We create a single proxy per interface; if the user passes many
+   interfaces, the analysis generates all possible single-interface
+   proxies as a result.
+
+   (b) We don't distinguish between different positions in the
+   interface array and thus we don't use these Proxy properties
+   (http://docs.oracle.com/javase/8/docs/api/java/lang/reflect/Proxy.html):
+
+     - "No two elements in the interfaces array may refer to identical
+       Class objects."
+
+     - "the order of the specified proxy interfaces is significant:
+       two requests for a proxy class with the same combination of
+       interfaces but in a different order will result in two distinct
+       proxy classes"
+
+     - Resolution of duplicate methods in interfaces according to the
+       order of values in the interfaces array.
+
+*/
+
 ProxyClassOfInterface[?iface] = ?class <-
    DirectSuperinterface(?class, ?iface),
    ProxyClass(?class).
