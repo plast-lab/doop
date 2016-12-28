@@ -12,8 +12,10 @@
   ActualParam@previous[0, ?invocation] = ?array,
   ActualParam@previous[2, ?invocation] = ?value.
 
+// TODO Proxy classes are public only if all their interfaces are
+// public, otherwise they are non-public (i.e. no modifier).
 +Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
-+ClassModifier("public", ?proxyClass), +ClassModifier("final", ?proxyClass),
++ClassModifier("final", ?proxyClass),
 +DirectSuperclass[?proxyClass] = ?proxySuperclass,
 +DirectSuperinterface(?proxyClass, ?interface) <-
   InterfaceType@previous(?interface),
