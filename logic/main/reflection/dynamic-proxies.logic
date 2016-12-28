@@ -181,6 +181,16 @@ ArrayIndexPointsTo(?hctx2, ?formalVal, ?hctx, ?arrValue) <-
    ImmutableHContextFromContext[?ctx] = ?hctx2.
 // REVIEW: contexts.
 
+// Model the InvocationHandler field of proxies (enables analysis of
+// methods such as Proxy.getInvocationHandler()).
+// TODO The handler is != null (Proxy constructor assertion).
+InstanceFieldPointsTo(?hctx2, ?handlerObj, ?sig, ?hctx, ?proxyVal) <- 
+   VarPointsTo(?hctx, ?proxyVal, ?ctx, ?proxyObjVar),
+   Value:Heap[?proxyVal] = ?proxyHeap,
+   ProxyObject:Handler[?proxyHeap] = ?handlerObj,
+   ImmutableHContextFromContext[?ctx] = ?hctx2,
+   ?sig = "<java.lang.reflect.Proxy: java.lang.reflect.InvocationHandler h>".
+
 
 //// TODO:
 ////  - handle return values 
