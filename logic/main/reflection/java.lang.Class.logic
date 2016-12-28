@@ -45,7 +45,8 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
 // TODO Do we need this flag at all?
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to the ?param.
-ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap) <-
   java:lang:Class:forName(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ActualParam[0, ?invocation] = ?param,
@@ -53,9 +54,16 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   Value:Heap[?constant] = ?constantHeap,
   ClassNameMatchingStringConstant:Type(?type, ?constantHeap).
 
+// If it is a local string, consider it a high-confidence inference
+ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
+  Instruction:Method[?invocation] = ?inmethod,
+  AssignHeapAllocation(?constantHeap, _, ?inmethod).
+
 /**
  * Class.forName invocations with user-configured dynamic classes
  */
+ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
 ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   java:lang:Class:forName(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
@@ -191,8 +199,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   Method:Modifier("public", ?signature),
   ReifiedMethod:Value[?signature] = ?value,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  Value:Heap[?constant] = ?constantHeap,
-  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap).
+  MethodNameMatchingStringConstant:Signature(?signature, Value:Heap[?constant]).
 
 /*
 //VERSION-A
@@ -221,8 +228,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   Method:DeclaringType[?signature] = ?type,
   ReifiedMethod:Value[?signature] = ?value,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  Value:Heap[?constant] = ?constantHeap,
-  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap).
+  MethodNameMatchingStringConstant:Signature(?signature, Value:Heap[?constant]).
 
 
 /*************************************************************
@@ -335,8 +341,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  Value:Heap[?constant] = ?constantHeap,
-  FieldNameMatchingStringConstant:Signature(?fld, ?constantHeap),
+  FieldNameMatchingStringConstant:Signature(?fld, Value:Heap[?constant]),
   SupertypeOf(?superClass, ?type),
   Field:DeclaringType[?fld] = ?superClass,
   Field:Modifier("public", ?fld),
@@ -366,8 +371,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass:Value[?type] = ?classValue,
   VarPointsTo(_, ?constant, ?ctx, ?param),
-  Value:Heap[?constant] = ?constantHeap,
-  FieldNameMatchingStringConstant:Signature(?fld, ?constantHeap),
+  FieldNameMatchingStringConstant:Signature(?fld, Value:Heap[?constant]),
   Field:DeclaringType[?fld] = ?type,
   ReifiedField:Value[?fld] = ?value.
 

@@ -416,7 +416,7 @@ class AnalysisFactory {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
                     options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                     options.REFLECTION_CONTEXT_SENSITIVITY.value ||
-                    options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                    options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
                     options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
                     options.REFLECTION_REFINED_OBJECTS.value) {
                 logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"

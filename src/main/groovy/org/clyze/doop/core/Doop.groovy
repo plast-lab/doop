@@ -173,8 +173,8 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"REFLECTION_USE_BASED_ANALYSIS",
-            name:"reflection-use-based-analysis",
+            id:"REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS",
+            name:"reflection-speculative-use-based-analysis",
             value:false,
             webUI:true,
             forPreprocessor: true,
