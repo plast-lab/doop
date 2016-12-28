@@ -39,6 +39,23 @@ ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) <-
    ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?iface,
    InterfaceType(?iface).
 
+// Proxy.getProxyClass() is simpler than Proxy.newProxyInstance(): it
+// does not allocate a proxy instance and takes no handler.
+java:lang:reflect:Proxy:getProxyClass(?invo, ?ret, ?interfaces) <-
+   StaticMethodInvocation:SimpleName[?invo] = "getProxyClass",
+   MethodInvocation:Signature[?invo] = ?meth,
+   Method:Id(?meth:"<java.lang.reflect.Proxy: java.lang.Class getProxyClass(java.lang.ClassLoader,java.lang.Class[])>"),
+   ActualParam[1, ?invo] = ?interfaces,
+   AssignReturnValue[?invo] = ?ret.
+
+VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) <-
+   java:lang:reflect:Proxy:getProxyClass(_, ?ret, ?interfaces),
+   VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
+   ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
+   ProxyClassOfInterface[?iface] = ?proxyClass,
+   ReifiedClass:Value[?proxyClass] = ?proxyClassObj,
+   ImmutableHContextFromContext[?ctx] = ?hctxImmutable.
+
 // _OptVarPointsToForArray(?ctx, ?interfaces, ?hctx, ?interfacesValue) <-
 //    VarPointsTo(?hctx, ?arrayObj, ?ctx, ?arrayVar),
 //    Value:Heap[?arrayObj] = ?arrayHeap,
