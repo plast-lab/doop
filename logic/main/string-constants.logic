@@ -338,6 +338,8 @@ ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   Value:Heap[?value] = ?heap,
   ReflectionSubstringObject(?heap).
+//// heuristic, but probably reasonable.
+//  ReflectionStringConstant(?heap).
 
 OptVarMethod(?method, ?var) <-
   Var:DeclaringMethod(?var, ?method).
@@ -484,8 +486,8 @@ StringFactoryValue(?value) <-
 #ifdef DISTINGUISH_STRING_BUFFERS_PER_CLASS
 // all string buffers (and builders) in the same class are merged
 AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
-   AllocationsPerClassAndType[?heaptype, ?class] > 1,
-   StringFactoryType(?heaptype).
+  AllocationsPerClassAndType[?heaptype, ?class] > 1,
+  StringFactoryType(?heaptype).
 
 //// Used to be per-method:
 // AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
