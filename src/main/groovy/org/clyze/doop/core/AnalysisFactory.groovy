@@ -307,7 +307,7 @@ class AnalysisFactory {
 
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
-                options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
+                options.DISTINGUISH_STRING_BUFFERS_PER_CLASS.value) {
             logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
         }
 
@@ -331,7 +331,7 @@ class AnalysisFactory {
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
-            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value = true
+            options.DISTINGUISH_STRING_BUFFERS_PER_CLASS.value = true
         }
 
         if (options.DACAPO.value) {

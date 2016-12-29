@@ -1002,11 +1002,11 @@ ClassSubtype(?subtype, ?type) <-
 NumberOfClassSubtypes[?type] = ?count <-
   agg<<?count = count()>>(ClassSubtype(_, ?type)).
 
-_OptMethodWithVarCast(?type, ?inMethod, ?from) <- 
+_OptMethodWithVarCast(?subtype, ?inMethod, ?from) <- 
   AssignCast(?type, ?from, _, ?inMethod),
   ClassSubtype(?subtype, ?type).
 
-SpecialMissingNewInstanceHeapFlowsToCast(?forNameInvocation, ?type, inMethod) <-
+SpecialMissingNewInstanceHeapFlowsToCast(?forNameInvocation, ?type, ?inMethod) <-
   _OptMethodWithVarCast(?type, ?inMethod, ?from),
   VarPointsTo(_, ?specialvalue, _, ?from),
   OptSpecialMissingNewInstanceHeap(?forNameInvocation, ?specialvalue).
@@ -1017,7 +1017,7 @@ BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) <-
 // If it is a local (same method) and informative (low number of
 // potential class types) cast, consider it a high-confidence inference.
 BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type) <-
-  SpecialMissingNewInstanceHeapFlowsToCast(?forNameInvocation, ?type, inMethod),
+  SpecialMissingNewInstanceHeapFlowsToCast(?forNameInvocation, ?type, ?inMethod),
   Instruction:Method[?forNameInvocation] = ?inMethod,
   NumberOfClassSubtypes[?type] <= InferredTypesPrecisionThreshold[].
   

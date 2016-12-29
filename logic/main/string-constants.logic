@@ -376,11 +376,13 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
 
 
 /*************************************************************
- * Heuristic: merge allocation sites for method that allocates
+ * Merging allocation sites per method or per class.
+ *************************************************************
+ * Sample heuristic: merge allocation sites for method that allocates
  * many objects of same type. Doesn't apply to exceptions.
  *************************************************************/
 
-AllocationMergeThreshold[] = 50.
+MethodAllocationMergeThreshold[] = 50.
 
 ExceptionType(?type) <-
   Type:Id(?throw:"java.lang.Throwable"),
@@ -406,20 +408,45 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
 AllocationsPerMethodAndType[?type, ?meth] = ?n <-
   agg<<?n=count()>> MethodAndTypeToHeap(_, ?type, ?meth).
 
-AllocationShouldBeMerged(?heaptype, ?meth) <-
-  AllocationsPerMethodAndType[?heaptype, ?meth] > AllocationMergeThreshold[],
+AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
+  AllocationsPerMethodAndType[?heaptype, ?meth] > MethodAllocationMergeThreshold[],
   !StringFactoryType(?heaptype).
 
-TypeToMergedHeap(?heap, ?heaptype, ?meth) <-
-  AllocationShouldBeMerged(?heaptype, ?meth),
+MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) <-
+  AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
 
 MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap <-
-  agg<<?representativeHeap = min(?heap)>>(TypeToMergedHeap(?heap, ?type, ?meth)).
+  agg<<?representativeHeap = min(?heap)>>(MethodAndTypeToMergedHeap(?heap, ?type, ?meth)).
   
 HeapRepresentative[?heap] = ?representativeHeap <-
   MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
-  TypeToMergedHeap(?heap, ?type, ?meth).
+  MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+
+// Now, per-class merging. This is more rare and should be
+// requested explicitly.
+ClassAndTypeToHeap(?heap, ?heaptype, ?class) <-
+  AssignHeapAllocation(?heap, _, ?meth),
+  Method:DeclaringType[?meth] = ?class,
+  HeapAllocation:Type[?heap] = ?heaptype,
+  !ExceptionType(?heaptype),
+  !StringConstant(?heap),
+  !ObjectMultipleAllocated(?heap).
+
+AllocationsPerClassAndType[?type, ?class] = ?n <-
+  agg<<?n=count()>> ClassAndTypeToHeap(_, ?type, ?class).
+
+ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) <-
+  AllocationShouldBeMergedPerClass(?heaptype, ?class),
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class).
+
+ClassAndTypeToRepresentative[?type, ?class] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?heap)>>(ClassAndTypeToMergedHeap(?heap, ?type, ?class)).
+
+HeapRepresentative[?heap] = ?representativeHeap <-
+  ClassAndTypeToRepresentative[?type, ?class] = ?representativeHeap,
+  ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+
 
 /*************************************************************
  * Library class that should be treated specially
@@ -432,7 +459,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
   !(HeapAllocation:Merge[?heap] = _).
 
 #ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
-AllocationShouldBeMerged(?heaptype, ?meth) <-
+AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
   Method:DeclaringType[?meth] = ?class,
   !StringFactoryType(?heaptype),
@@ -454,12 +481,17 @@ StringFactoryValue(?value) <-
   StringFactoryType(?valuetype).
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
-#ifdef DISTINGUISH_STRING_BUFFERS_PER_METHOD
-// all string buffers (and builders) in the same method are merged
-AllocationShouldBeMerged(?heaptype, ?meth) <-
-  AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
-  StringFactoryType(?heaptype).
-#else // not DISTINGUISH_STRING_BUFFERS_PER_METHOD
+#ifdef DISTINGUISH_STRING_BUFFERS_PER_CLASS
+// all string buffers (and builders) in the same class are merged
+AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
+   AllocationsPerClassAndType[?heaptype, ?class] > 1,
+   StringFactoryType(?heaptype).
+
+//// Used to be per-method:
+// AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
+//   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
+//   StringFactoryType(?heaptype).
+#else // not DISTINGUISH_STRING_BUFFERS_PER_CLASS
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Id(?type:"java.lang.StringBuffer"),
