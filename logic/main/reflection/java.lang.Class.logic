@@ -382,8 +382,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value:Heap[?constant] = ?constantHeap,
   FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap),
-  Field:DeclaringType[?signature] = ?type,
-  ReifiedField:Value[?signature] = ?value.
+  Field:DeclaringType[?signature] = ?type.
 
 
 /*************************************************************

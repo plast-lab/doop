@@ -852,7 +852,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
 
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
-  Var:DeclaringField(?to, ?inmethod),
+  Var:DeclaringMethod(?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature).
 
@@ -1181,6 +1181,16 @@ OptSpecialMissingGetMethodHeap(?getMethodInvocation, ?specialmethod) <-
 OptSpecialMissingInvokeHeapFromGetMethod(?getMethodInvocation, ?specialheap) <-
   SpecialMissingInvokeHeapFromGetMethod[?getMethodInvocation] = ?specialheap.
 
+OptReifiedClass(?type, ?classValue) ->
+  Type(?type), Value(?classValue).
+OptReifiedClass(?type, ?classValue) <-
+  ReifiedClass:Value[?type] = ?classValue.
+
+OptMethodType(?signature, ?classtype) ->
+  Method(?signature), Type(?classtype).
+OptMethodType(?signature, ?classtype) <-
+  Method:DeclaringType[?signature] = ?classtype.
+
 // A getMethod returns a special heap that marks where it came from, so
 // we can track all uses of results returned by that getMethod invocation
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
@@ -1218,77 +1228,70 @@ Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation) <-
 //   in forward)
 
 BackwardReflectiveAssignMethodConstant(?return, ?signature) <-
-  Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation),
+  Opt2SpecialInvokeHeapCast(?castType, ?getMethodInvocation),
   VirtualMethodInvocation:Base[?getMethodInvocation] = ?from,
-  VarPointsTo(_, ?classValue, ?ctx, ?from),
-  OptReifiedClass(?classtype, ?classValue).
-  OptMethodType(?signature, ?classtype),
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?classType, ?classValue),
+  OptMethodType(?signature, ?classType),
   AssignReturnValue[?getMethodInvocation] = ?return,
   Method:ReturnType[?signature] = ?retType,
-  SubtypeOf(?retType, ?type).
+  (SubtypeOf(?retType, ?castType); SupertypeOf(?retType, ?castType)). 
+  // REVIEW: strictly speaking, the return type should merely be
+  // possibly-compatible with the cast type. But practically, they
+  // are often the same.
 
 
-// /**
-//  * Handling of getField/getDeclaredField
-//  **/
+/**
+ * Handling of getField/getDeclaredField. Similar to getMethod/getDeclaredMethod
+ **/
 
-// OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialfield) <-
-//   SpecialMissingGetFieldHeap[?getFieldInvocation] = ?specialfield.
+OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialfield) <-
+  SpecialMissingGetFieldHeap[?getFieldInvocation] = ?specialfield.
 
-// OptSpecialMissingGetHeapFromGetField(?getInvocation, ?specialheap) <-
-//   SpecialMissingGetHeapFromGetField[?getInvocation] = ?specialheap.
+OptSpecialMissingGetHeapFromGetField(?getInvocation, ?specialheap) <-
+  SpecialMissingGetHeapFromGetField[?getInvocation] = ?specialheap.
 
-// VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
-//   SpecialMissingGetFieldHeap[?invocation] = ?heap,
-//   Value:byHeap[?heap] = ?value,
-//   AssignReturnValue[?invocation] = ?return,
-//   Instruction:Method[?invocation] = ?inmethod,
-//   ReachableContext(?ctx, ?inmethod).
+OptFieldType(?type, ?signature, ?declaringClassType) ->
+   Field(?signature), Type(?declaringClassType), Type(?type).
+OptFieldType(?type, ?signature, ?declaringClassType) <-
+   Field:DeclaringType[?signature] = ?declaringClassType,
+   Field:Type[?signature] = ?type.
 
-// // Make a get return a special object that remembers the field it's
-// // supposed to be called on. See similar handling of getFields.
-// VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
-//   java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
-//   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
-//   Value:Heap[?specialFieldValue] = ?specialFieldHeap,
-//   OptSpecialMissingGetFieldHeap(?getFieldInvocation, ?specialFieldHeap),
-//   SpecialMissingGetHeapFromGetField[?getFieldInvocation] = ?specialheap,
-//   Value:byHeap[?specialheap] = ?specialvalue,
-//   AssignReturnValue[?invocation] = ?var.
+// special value returned by a getField
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
+  SpecialMissingGetFieldHeap[?invocation] = ?heap,
+  Value:byHeap[?heap] = ?value,
+  AssignReturnValue[?invocation] = ?return,
+  Instruction:Method[?invocation] = ?inmethod,
+  ReachableContext(?ctx, ?inmethod).
 
-// Opt2SpecialGetHeapCast(?type, ?getFieldInvocation) <-
-//   OptAssignCast(?type, _, ?from),
-//   VarPointsTo(_, ?specialvalue, _, ?from),
-//   Value:Heap[?specialvalue] = ?specialheap,
-//   OptSpecialMissingGetHeapFromGetField(?getFieldInvocation, ?specialheap).
+// Make a "get" call over a special field (which knows its getField origin)
+// return a special object that also remembers the original getField call.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
+  java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
+  VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
+  OptSpecialMissingGetFieldHeap(?getFieldInvocation, Value:Heap[?specialFieldValue]),
+  SpecialMissingGetHeapFromGetField[?getFieldInvocation] = ?specialheap,
+  Value:byHeap[?specialheap] = ?specialvalue,
+  AssignReturnValue[?invocation] = ?var.
 
-// UnresolvedGetFieldInvocation(?ctx, ?invocation) ->
-//   MethodInvocation(?invocation), Context(?ctx).
+// a cast gets the special value returned from a "get". The value marks
+// the original getField
+Opt2SpecialGetHeapCast(?type, ?getFieldInvocation) <-
+  OptAssignCast(?type, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  Value:Heap[?specialvalue] = ?specialheap,
+  OptSpecialMissingGetHeapFromGetField(?getFieldInvocation, ?specialheap).
 
-// // unresolved if var points to *any* non-constant. Basically pointless. Near always true.
-// UnresolvedGetFieldInvocation(?ctx, ?invocation) <-
-//    VirtualMethodInvocation:Insn(?invocation),
-//    (MethodInvocation:Signature[?invocation] = 
-//     "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>";
-//     MethodInvocation:Signature[?invocation] = 
-//     "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>"),
-//    ActualParam[0, ?invocation] = ?param,
-//    VarPointsTo(_, ?nonstring, ?ctx, ?param),
-//    Value:Heap[?nonstring] = ?nonstringHeap,
-//    !FieldNameMatchingStringConstant(?nonstringHeap).
-
-// OptGetFieldClass(?type, ?ctx, ?getFieldInvocation) <-
-//   UnresolvedGetFieldInvocation(?ctx, ?getFieldInvocation),
-//   VirtualMethodInvocation:Base[?getFieldInvocation] = ?from,
-//   VarPointsTo(_, ?classValue, ?ctx, ?from),
-//   OptReifiedClass(?type, ?classValue).
-
-// VarPointsTo(ImmutableHContextFromContext[?ctx], ?fieldValue, ?ctx, ?return) <-
-//   Opt2SpecialGetHeapCast(?type, ?getFieldInvocation),
-//   OptGetFieldClass(?classtype, ?ctx, ?getFieldInvocation),
-//   OptFieldType(?type, ?signature, ?classtype),
-//   AssignReturnValue[?getFieldInvocation] = ?return,
-//   ReifiedField:Value[?signature] = ?fieldValue.
+BackwardReflectiveAssignFieldConstant(?return, ?signature) <-
+  Opt2SpecialGetHeapCast(?castType, ?getFieldInvocation),
+  VirtualMethodInvocation:Base[?getFieldInvocation] = ?from,
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?classType, ?classValue),
+  OptFieldType(?fieldType, ?signature, ?classType),
+  (SubtypeOf(?fieldType, ?castType); SupertypeOf(?fieldType, ?castType)),
+  // REVIEW. Could be ?fieldType = ?castType. Precision/soundness tradeoff.
+  AssignReturnValue[?getFieldInvocation] = ?return.
 
 
 /*************************************************************
@@ -1317,11 +1320,6 @@ ArrayIndexPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?hctx, ?arrayValu
   AssignReturnValue[?invocation] = ?return,
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return), 
   Context(?ctx). // hack to avoid warning
-
-OptReifiedClass(?type, ?classValue) ->
-  Type(?type), Value(?classValue).
-OptReifiedClass(?type, ?classValue) <-
-  ReifiedClass:Value[?type] = ?classValue.
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
 OptGetMethodsClass(?type, ?getMethodsInvocation) <-
@@ -1353,11 +1351,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
 //  OptGetMethodsClass(?type, ?getMethodsInvocation),
 //  Value:Type[?value] = ?valueType,
 //  SupertypeOf(?type, ?valueType).
-
-OptMethodType(?signature, ?classtype) ->
-  Method(?signature), Type(?classtype).
-OptMethodType(?signature, ?classtype) <-
-  Method:DeclaringType[?signature] = ?classtype.
 
 // The clincher: if we see the cast of a result that came
 // from an invoke, over a method that came from a getMethods, match
@@ -1431,12 +1424,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
 //  OptGetFieldsClass(?type, ?getFieldsInvocation),
 //  Value:Type[?value] = ?valueType,
 //  SupertypeOf(?type, ?valueType).
-
-OptFieldType(?type, ?signature, ?declaringClassType) ->
-   Field(?signature), Type(?declaringClassType), Type(?type).
-OptFieldType(?type, ?signature, ?declaringClassType) <-
-   Field:DeclaringType[?signature] = ?declaringClassType,
-   Field:Type[?signature] = ?type.
 
 // The clincher: if we see the cast of a result that came
 // from a get, over a field that came from a getFields, match
