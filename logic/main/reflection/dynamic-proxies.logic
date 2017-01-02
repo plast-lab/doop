@@ -1,5 +1,13 @@
-/* Models the dynamic proxies of Java. Compared to the spec, we have
-   the following restrictions:
+/* Models the dynamic proxies of Java.
+
+   There are two ways to create a dynamic proxy instance:
+
+   (1) G obj = (G)Proxy.newProxyInstance(c, i, h);
+   (2) G obj = (G)Proxy.getProxyClass(c, i)
+                       .getConstructor(InvocationHandler.class)
+                       .newInstance(h);
+
+   Compared to the spec, we have the following restrictions:
 
    (a) We create a single proxy per interface; if the user passes many
    interfaces, the analysis generates all possible single-interface
@@ -238,7 +246,3 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret)
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
    AssignReturnValue[?invo] = ?ret.
-
-//// TODO:
-////  - handle return values 
-////  - think about boxing/unboxing needs
