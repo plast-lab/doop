@@ -232,6 +232,19 @@ InstanceFieldPointsTo(?hctx2, ?handlerObj, ?sig, ?hctx, ?proxyVal) <-
    ImmutableHContextFromContext[?ctx] = ?hctx2,
    ?sig = "<java.lang.reflect.Proxy: java.lang.reflect.InvocationHandler h>".
 
+// Handle return values: connect the return value of handler.invoke()
+// to the return value of the wrapped method.
+//
+// TODO Exceptions from spec: (a) the resulting value must be able to
+// be succesfully cast to the correct type (or a ClassCastException is
+// raised) and (b) if invoke() returns a null and the intended result
+// is a primitive, then NullPointerException is raised.
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret)
+<-
+   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
+   ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
+   AssignReturnValue[?invo] = ?ret.
 
 //// TODO:
 ////  - handle return values 
