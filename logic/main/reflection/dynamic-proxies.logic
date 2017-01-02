@@ -181,6 +181,9 @@ VarPointsTo(ProxyObject:HandlerHctx[?heap], ProxyObject:Handler[?heap], ?calleeC
    MethodLookup[?invokeMethName, ?invokeMethDescriptor, ?handlerType] = ?handlerInvokeMeth,
    ThisVar[?handlerInvokeMeth] = ?this.
 
+//// TODO From spec: if method has same name/signature as Object's
+//// hashCode(), equals(), or toString(), then the reified Method
+//// always comes from Object.
 VarPointsTo(?hctx, ?proxyValue, ?calleeCtx, ?proxyArg),
 VarPointsTo(?hctx, ?methValue, ?calleeCtx, ?methArg),
 VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg)
