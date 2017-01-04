@@ -12,6 +12,7 @@
   ActualParam@previous[0, ?invocation] = ?array,
   ActualParam@previous[2, ?invocation] = ?value.
 
+#ifdef DYNAMIC_PROXIES
 // TODO Proxy classes are public only if all their interfaces are
 // public, otherwise they are non-public (i.e. no modifier).
 +Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
@@ -23,7 +24,7 @@
   Type:Id@previous(?proxySuperclass:"java.lang.reflect.Proxy"),
   ClassType@previous(?proxySuperclass),
   ?proxyClassId = "$Proxy$for$" + ?interfaceId.
-  
+#endif
 
 /* == Dynamic proxy handling ==
 

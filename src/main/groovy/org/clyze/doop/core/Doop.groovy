@@ -196,6 +196,15 @@ class Doop {
             forPreprocessor:true,
             isAdvanced:true
         ),
+        new AnalysisOption<Boolean>(
+            id:"DYNAMIC_PROXIES",
+            name:"dynamic-proxies",
+            description:"Enable handling of the Java dynamic proxy API.",
+            value:false,
+            webUI:true,
+            forPreprocessor:true,
+            isAdvanced:true
+        ),
 
         new AnalysisOption<Boolean>(
             id:"TRANSFORM_INPUT",

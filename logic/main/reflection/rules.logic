@@ -1308,7 +1308,9 @@ java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from) <-
   ?heapStr = "<reflective Constructor.newInstance/" + ?typeStr + ">".
 #endif
 
-#include "dynamic-proxies.logic" 
+#ifdef DYNAMIC_PROXIES
+#include "dynamic-proxies.logic"
+#endif
 // // Make the special "method" variables inside proxy invocation
 // // handlers point to the appropriate Method objects that have been
 // // built at this point.
