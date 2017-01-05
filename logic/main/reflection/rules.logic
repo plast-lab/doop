@@ -1330,7 +1330,10 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) <-
  *************************************************************/
 
 /**
- * Handling of getMethods/getDeclaredMethods
+ * Handling of getMethods/getDeclaredMethods. Basically this obviates
+ * the need for forward analysis of getMethods/getDeclaredMethods: the
+ * subset of the methods that will be useful are inferred from the
+ * later uses. The forward analysis yields no extra information.
  **/
 OptSpecialMissingGetMethodsHeap(?getMethodsInvocation, ?specialmethod) <-
   SpecialMissingGetMethodsHeap[?getMethodsInvocation] = ?specialmethod.
