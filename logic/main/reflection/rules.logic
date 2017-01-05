@@ -836,7 +836,7 @@ ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
 
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
-  Var:DeclaringMethod(?to, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignMethodConstant(?to, ?signature).
 
@@ -849,7 +849,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
 
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
-  Var:DeclaringMethod(?to, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature).
 
@@ -866,14 +866,14 @@ ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
-  Var:DeclaringMethod(?to, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
   ReachableContext(?ctx, ?inmethod),
   BackwardReflectiveAssignMethodConstant(?to, ?signature).
 
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
-  Var:DeclaringMethod(?to, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
   ReachableContext(?ctx, ?inmethod),
   BackwardReflectiveAssignFieldConstant(?to, ?signature).
 #endif   // REFLECTION_HIGH_SOUNDNESS_MODE
@@ -1068,6 +1068,9 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
 
 
 // some auxiliary stuff
+_OptVarToMethod[?var] = ?method <-
+  Var:DeclaringMethod(?var, ?method).
+  
 OptSpecialMissingForNameHeap(?forNameInvocation, ?specialclass) <-
   SpecialMissingForNameHeap[?forNameInvocation] = ?specialclass.
 
@@ -1134,9 +1137,6 @@ NumberOfTypesMatchingMethod[?constant] = ?n <-
 FairlyInformativeMethodName(?constant) <-
   NumberOfTypesMatchingMethod[?constant] <= InferredTypesPrecisionThreshold[].  
 
-_OptVarToMethod[?var] = ?method <-
-  Var:DeclaringMethod(?var, ?method).
-  
 SpecialMissingForNameHeapFlowsToGetMethod(?forNameInvocation, ?type, ?constantHeap, ?inMethod) <-
   (java:lang:Class:getDeclaredMethod(_, ?param, ?from) ;
    java:lang:Class:getMethod(_, ?param, ?from)),
