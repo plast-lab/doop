@@ -566,9 +566,6 @@ ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) ->
 InitializedClass(?type) <-
   ReflectiveAssignClassConstant(_, _, ?type).
 
-/**
- * TODO This doesn't make any sense without a 'to' variable.
- */
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   ReifiedClass:Value[?type] = ?value,
@@ -576,7 +573,7 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
 
 /**
  * ReflectiveAssignMethodConstant(?ctx, ?to, ?sig): A
- * getMethod/getDeclaredMethod invocation, assigning its retult to
+ * getMethod/getDeclaredMethod invocation, assigning its result to
  * ?to, under the given context, is inferred to possibly return a
  * meta-object for the method with the given signature.
  */
@@ -1172,7 +1169,11 @@ BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  
 
 
 /**
- * Handling of getMethod/getDeclaredMethod
+ * Handling of getMethod/getDeclaredMethod. These also accept strings, which
+ * can be highly imprecise. See if we can verify what these strings might
+ * have been, by checking where the result of the call is used. Namely,
+ * if a method is invoked and it returns a value whose type is cast, we
+ * know it must have been a method returing a compatible type.
  **/
 
 OptSpecialMissingGetMethodHeap(?getMethodInvocation, ?specialmethod) <-
@@ -1220,8 +1221,7 @@ Opt2SpecialInvokeHeapCast(?type, ?getMethodInvocation) <-
   OptSpecialMissingInvokeHeapFromGetMethod(?getMethodInvocation, ?specialheap).
 
 // REVIEW this!
-//  -is this the best way to get the list of candidate methods?
-//  -refine to also get a high-confidence version
+//  -refine to also get a high-confidence version?
 //  -indexing is horrible. Does it matter?
 //  -we are not taking into account the different semantics of
 //   getMethod vs. getDeclaredMethod in backward analysis (we do
@@ -1294,14 +1294,14 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) <-
   AssignReturnValue[?getFieldInvocation] = ?return.
 
 
+#ifdef REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS
+
 /*************************************************************
  * Backward reflection analysis also has a speculative part, which
  * only helps enhance soundness when the forward inference is missing.
  * (Much like the "invent unknown objects" functionality, in this
  * aspect.)
  *************************************************************/
-
-#ifdef REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS
 
 /**
  * Handling of getMethods/getDeclaredMethods
