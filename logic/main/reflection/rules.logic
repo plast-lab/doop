@@ -865,17 +865,19 @@ ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
 
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
-ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
-  _OptVarToMethod[?to] = ?inmethod,
-  ReachableContext(?ctx, ?inmethod),
-  BackwardReflectiveAssignMethodConstant(?to, ?signature).
+//// This may be a bit extreme, even for high-soundness mode.
+// ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+//   _OptVarToMethod[?to] = ?inmethod,
+//   ReachableContext(?ctx, ?inmethod),
+//   BackwardReflectiveAssignMethodConstant(?to, ?signature).
 
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
-ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
-  _OptVarToMethod[?to] = ?inmethod,
-  ReachableContext(?ctx, ?inmethod),
-  BackwardReflectiveAssignFieldConstant(?to, ?signature).
+//// This may be a bit extreme, even for high-soundness mode.
+// ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+//   _OptVarToMethod[?to] = ?inmethod,
+//   ReachableContext(?ctx, ?inmethod),
+//   BackwardReflectiveAssignFieldConstant(?to, ?signature).
 #endif   // REFLECTION_HIGH_SOUNDNESS_MODE
 
 /*************************************************************
