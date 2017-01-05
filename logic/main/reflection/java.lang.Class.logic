@@ -20,7 +20,6 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
   Value:Type[?value] = ?type,
   ReifiedClass:Value[?type] = ?classValue.
 
-
 /*************************************************************
  * java.lang.Class.forName
  *
@@ -54,11 +53,12 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
   Value:Heap[?constant] = ?constantHeap,
   ClassNameMatchingStringConstant:Type(?type, ?constantHeap).
 
-// If it is a local string, consider it a high-confidence inference
+// If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction:Method[?invocation] = ?inmethod,
-  AssignHeapAllocation(?constantHeap, _, ?inmethod).
+  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  NumberOfClassesMatchingConstant[?constantHeap] < StringPrecisionThreshold[].
 
 /**
  * Class.forName invocations with user-configured dynamic classes
@@ -199,11 +199,12 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
   Method:DeclaringType[?signature] = ?superClass,
   Method:Modifier("public", ?signature).
 
-// If it is a local string, consider it a high-confidence inference
+// If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
   Var:DeclaringMethod(?to, ?inmethod),
-  AssignHeapAllocation(?constantHeap, _, ?inmethod).
+  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[].
 
 /*
 //VERSION-A
@@ -351,11 +352,12 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
   Field:DeclaringType[?signature] = ?superClass,
   Field:Modifier("public", ?signature).
 
-// If it is a local string, consider it a high-confidence inference
+// If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
   Var:DeclaringMethod(?to, ?inmethod),
-  AssignHeapAllocation(?constantHeap, _, ?inmethod).
+  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[].
 
 /*
 //VERSION-A
@@ -452,3 +454,16 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   Type:Id(?type:"java.net.URL"),
   ReflectiveAllocation[?invocation, ?type] = ?heap,
   Value:byHeap[?heap] = ?value.
+
+
+/*************************************************************
+ * Auxiliaries
+ *************************************************************/
+NumberOfClassesMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(ClassNameMatchingStringConstant:Type(_, ?constant)).
+NumberOfMethodsMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(MethodNameMatchingStringConstant:Signature(_, ?constant)).
+NumberOfFieldsMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(FieldNameMatchingStringConstant:Signature(_, ?constant)).
+
+StringPrecisionThreshold[] = 10.
