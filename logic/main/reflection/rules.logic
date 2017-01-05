@@ -853,6 +853,30 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature).
 
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+// If in high-soundness mode, don't require agreement or high-confidence
+// for inference.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type).
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  Instruction:Method[?invocation] = ?inmethod,
+  ReachableContext(?ctx, ?inmethod),
+  BackwardReflectiveAssignClassConstant(?invocation, ?type).
+
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  Var:DeclaringMethod(?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  BackwardReflectiveAssignMethodConstant(?to, ?signature).
+
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  Var:DeclaringMethod(?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  BackwardReflectiveAssignFieldConstant(?to, ?signature).
+#endif REFLECTION_HIGH_SOUNDNESS_MODE
 
 /*************************************************************
  * END tying together forward and backward reflection logic
