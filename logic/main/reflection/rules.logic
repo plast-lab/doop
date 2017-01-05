@@ -876,7 +876,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   Var:DeclaringMethod(?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   BackwardReflectiveAssignFieldConstant(?to, ?signature).
-#endif REFLECTION_HIGH_SOUNDNESS_MODE
+#endif   // REFLECTION_HIGH_SOUNDNESS_MODE
 
 /*************************************************************
  * END tying together forward and backward reflection logic
