@@ -3,7 +3,7 @@
 # Benchmark suite for dynamic proxies.
 
 function runDoopFor {
-    CMD="./doop -i $1 -a context-insensitive -id $2 --cache -reflection-classic -reflection-substring-analysis -reflection-use-based-analysis -reflection-invent-unknown-objects -reflection-refined-objects $3 $4 |& tee doop-facts-$2.txt"
+    CMD="./doop -i $1 -a context-insensitive -id $2 --reflection --reflection-classic --reflection-substring-analysis --reflection-use-based-analysis --reflection-invent-unknown-objects --reflection-refined-objects $3 $4 |& tee doop-facts-$2.txt"
     echo ${CMD}
     eval ${CMD}
 }
