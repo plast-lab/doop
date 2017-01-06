@@ -478,6 +478,7 @@ ClassAndTypeToHeap(?heap, ?heaptype, ?class) <-
 AllocationsPerClassAndType[?type, ?class] = ?n <-
   agg<<?n=count()>> ClassAndTypeToHeap(_, ?type, ?class).
 
+AllocationShouldBeMergedPerClass(?heaptype, ?class) -> Type(?heaptype), ClassType(?class).
 ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) <-
   AllocationShouldBeMergedPerClass(?heaptype, ?class),
   ClassAndTypeToHeap(?heap, ?heaptype, ?class).
