@@ -110,8 +110,8 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_STRING_BUFFERS_PER_CLASS",
-            name:"distinguish-string-buffers-per-class",
+            id:"DISTINGUISH_STRING_BUFFERS_PER_PACKAGE",
+            name:"distinguish-string-buffers-per-package",
             value:false,
             webUI:true,
             forPreprocessor: true,

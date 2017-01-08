@@ -478,7 +478,9 @@ ClassAndTypeToHeap(?heap, ?heaptype, ?class) <-
 AllocationsPerClassAndType[?type, ?class] = ?n <-
   agg<<?n=count()>> ClassAndTypeToHeap(_, ?type, ?class).
 
+// This is explicitly set for types that want it.
 AllocationShouldBeMergedPerClass(?heaptype, ?class) -> Type(?heaptype), Type(?class).
+
 ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) <-
   AllocationShouldBeMergedPerClass(?heaptype, ?class),
   ClassAndTypeToHeap(?heap, ?heaptype, ?class).
@@ -519,28 +521,43 @@ StringFactoryType(?type) <-
   Type:Id(?type:"java.lang.StringBuffer") ;
   Type:Id(?type:"java.lang.StringBuilder").
 
-StringFactoryValue(?value) <-
-  Value:Type[?value] = ?valuetype,
-  StringFactoryType(?valuetype).
+StringFactoryHeap(?heap) <-
+  HeapAllocation:Type[?heap] = ?heaptype,
+  StringFactoryType(?heaptype).
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
-#ifdef DISTINGUISH_STRING_BUFFERS_PER_CLASS
-// all string buffers (and builders) in the same class are merged
-AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
-  AllocationsPerClassAndType[?heaptype, ?class] > 1,
-  StringFactoryType(?heaptype).
+#ifdef DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
+
+#include "package-heuristic.logic"
+PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) <-
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class),
+  Class:PackageHack[?class] = ?packageName.
+
+PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?heap)>>(PackageAndTypeToHeap(?heap, ?type, ?packageName)).
+
+// current policy: all string builders merged per-package
+HeapRepresentative[?heap] = ?representativeHeap <-
+  PackageAndTypeToHeap(?heap, ?type, ?packageName),
+  PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap,
+  StringFactoryHeap(?heap).
+
+//// Used to be all are merged per-class:
+// // all string buffers (and builders) in the same class are merged
+// AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
+//   AllocationsPerClassAndType[?heaptype, ?class] > 1,
+//   StringFactoryType(?heaptype).
 
 //// Used to be per-method:
 // AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
 //   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
 //   StringFactoryType(?heaptype).
-#else // not DISTINGUISH_STRING_BUFFERS_PER_CLASS
+#else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Id(?type:"java.lang.StringBuffer"),
   HeapAllocation:byId["<<string-buffer>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
-
 
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
