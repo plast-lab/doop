@@ -1585,7 +1585,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
  * END invention of objects
  *************************************************************/
 
-#ifdef DYNAMIC_PROXIES
+#ifdef REFLECTION_DYNAMIC_PROXIES
 #include "dynamic-proxies.logic"
 #endif
 

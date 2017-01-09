@@ -205,8 +205,8 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DYNAMIC_PROXIES",
-            name:"dynamic-proxies",
+            id:"REFLECTION_DYNAMIC_PROXIES",
+            name:"reflection-dynamic-proxies",
             description:"Enable handling of the Java dynamic proxy API.",
             value:false,
             webUI:true,
