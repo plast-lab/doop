@@ -1,5 +1,5 @@
 #define NewMetricMacro(order, tmpPred, msg, body) \
-  tmpPred[] = ?c -> uint[64](?c).
+  tmpPred[] = ?c -> uint[64](?c). \
   tmpPred[] = ?c <- agg<<?c = count()>> body. \
   lang:defaultValue[`tmpPred] = 0. \
   Stats:Metrics(order, msg, tmpPred[])
