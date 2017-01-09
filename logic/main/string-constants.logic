@@ -552,7 +552,7 @@ HeapRepresentative[?heap] = ?representativeHeap <-
 // AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
 //   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
 //   StringFactoryType(?heaptype).
-#else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
+#else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE, i.e., merge them all
 HeapAllocation:Merge[?heap] = ?mergeHeap <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Id(?type:"java.lang.StringBuffer"),
