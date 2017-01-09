@@ -8,11 +8,6 @@
  * way is beneficial.
  *************************************************************/
 
-// REVIEW: The current major decision is to only access application-level
-// classes and methods reflectively. This makes sense, but it may be
-// worthwhile to make it flag-controllable later. For now we have way too
-// many configuration flags for reflection already.
-
 /**
  * Objects that should not be allocated as normal.
  */
