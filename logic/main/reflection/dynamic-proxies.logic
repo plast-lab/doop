@@ -171,7 +171,8 @@ CallToMethodOfProxyObject(?heap, ?ctx, ?invo) <-
    VirtualMethodInvocation:Insn(?invo),
    VirtualMethodInvocation:Base[?invo] = ?base,
    VarPointsTo(_, ?value, ?ctx, ?base),
-   Value:Heap[?value] = ?heap.
+   Value:Heap[?value] = ?heap,
+   ProxyObject:Invocation[?heap] = _.
 
 
 //// REVIEW
@@ -182,6 +183,7 @@ VarPointsTo(ProxyObject:HandlerHctx[?heap], ProxyObject:Handler[?heap], ?calleeC
 <-
    ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
    CallToMethodOfProxyObject(?heap, ?callerCtx, ?invo),
+   ProxyObject:Handler[?heap] = ?handlerObj,
    Value:Type[?handlerObj] = ?handlerType,
    Method:Id(?invoke:"<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>"),
    Method:SimpleName[?invoke] = ?invokeMethName,
