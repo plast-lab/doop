@@ -55,23 +55,3 @@ Value:Null[] = ?null -> Value(?null).
 ProxyClass(?t) -> ClassType(?t).
 lang:entity(`ProxyClass).
 lang:physical:capacity[`ProxyClass] = 131072.
-
-// Special information for proxied interfaces. Encodes that in the original code we had:
-//   <?result> = Proxy.newProxyInstance(classLoader, <?interfaces>, <?handler>);
-// and we generate:
-//   Constructor <?constr>; // to be populated by other rules
-//   <?cArgs> = new Object[] {<?handler>};
-//   <?result> = <?constr>.newInstance(<?cArgs>);
-
-DynamicProxy(?originalInvo, ?newInstance, ?constr, ?cArgs, ?interfaces, ?handler, ?result) ->
-   MethodInvocation(?originalInvo), MethodInvocation(?newInstance),
-   Var(?constr), Var(?cArgs), Var(?interfaces), Var(?handler), Var(?result).
-
-// Special information for proxied methods. For every proxy class,
-// each method ?proxied (calling some ?original method) contains a
-// special variable ?mVar that points to its reified representation of
-// type Method. The method also contains an ?invoke instruction that
-// calls ?original via Method.invoke().
-ProxyMethod(?proxied, ?original, ?mVar, ?argsVar, ?argsNewId, ?invoke) ->
-   Method(?proxied), Method(?original), Var(?mVar), Var(?argsVar),
-   string(?argsNewId), StaticMethodInvocation:Insn(?invoke).
