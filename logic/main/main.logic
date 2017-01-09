@@ -44,9 +44,9 @@ Value:Type[?value] = ?type <-
    HeapAllocation:Type[?heap] = ?type.
 
 // Only create values for numeric constants in a static initializer
-// inside a class whose name contains ".R$". We are trying to capture
-// just the constants in Android "R" nested classes. REVIEW to
-// generalize.
+// (or initial field value) inside a class whose name contains
+// ".R$". We are trying to capture just the constants in Android "R"
+// nested classes. REVIEW to generalize.
 Value:Num:Cons[?const] = ?value,
 Value(?value),
 Value:Type[?value] = ?type <-
@@ -55,6 +55,16 @@ Value:Type[?value] = ?type <-
    Instruction:Method[?insn] = ?meth,
    Method:SimpleName[?meth] = "<clinit>",
    Method:DeclaringType[?meth] = ?class,
+   Type:Id(?class:?className),
+   string:substring[?className, _, 3] = ".R$",
+   ?type = Type:int[].
+
+Value:Num:Cons[?const] = ?value,
+Value(?value),
+Value:Type[?value] = ?type <-
+//   NumConstant(?const),
+   FieldInitialValue[?fld] = ?const,
+   Field:DeclaringType[?fld] = ?class,
    Type:Id(?class:?className),
    string:substring[?className, _, 3] = ".R$",
    ?type = Type:int[].

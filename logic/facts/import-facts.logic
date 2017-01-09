@@ -1081,6 +1081,18 @@ _LayoutControl(?param1, ?param2) ->
 +LayoutControl0(?id, ?typename) <-
    _LayoutControl(?id, ?typename).
 
+// FieldInitialValue
+lang:physical:storageModel[`_FieldInitialValue] = "DelimitedFile".
+lang:physical:filePath[`_FieldInitialValue] = "facts/FieldInitialValue.facts".
+lang:physical:delimiter[`_FieldInitialValue] = "\t".
+lang:physical:hasColumnNames[`_FieldInitialValue] = false.
+_FieldInitialValue(?param1, ?param2) ->
+  string(?param1),
+  string(?param2).
+
++FieldInitialValue[?fld] = ?valueString <-
+   _FieldInitialValue(?fld, ?valueString).
+
 
 // Access Modifiers
 

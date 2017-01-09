@@ -538,7 +538,7 @@ BroadcastReceiver(?x) -> Type(?x).
 CallbackMethod(?x) -> Method(?x).
 LayoutControl(?id, ?type) -> int[32](?id), Type(?type).
 LayoutControl0(?id, ?typename) -> int[32](?id), string(?typename).
-
+FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
@@ -600,9 +600,9 @@ String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 lang:physical:capacity[`Field]               = 524288.
 lang:physical:capacity[`Method]              = 1048576. /* 2 ^ 20 */
 lang:physical:capacity[`MethodDescriptor]    = 1048576.
-lang:physical:capacity[`Instruction]         = 8388608. /* 2^23 */
-lang:physical:capacity[`Throw:Insn]          = 8388608. /* = instruction */
-lang:physical:capacity[`MethodInvocation]    = 8388608. /* = instruction */
+lang:physical:capacity[`Instruction]         = 134217728. /* 2^27 */
+lang:physical:capacity[`Throw:Insn]          = 134217728. /* = instruction */
+lang:physical:capacity[`MethodInvocation]    = 134217728. /* = instruction */
 lang:physical:capacity[`JVMDescriptor]       = 524288.
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 524288.

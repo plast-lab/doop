@@ -70,6 +70,9 @@ SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
+// Note that this is more than a straightforward import of generated
+// facts into a DB relation. It filters out the guessed control
+// types that do not correspond to existing types.
 LayoutControl(?id, ?type) <-
    LayoutControl0(?id, ?typename),
    Type:Id(?type:?typename).
