@@ -6,7 +6,7 @@ DEBUG="-- -logLevel debugDetail@factbus"
 
 OKDIR="${DOOP_BENCHMARKS}/proxies/okhttp"
 GDIR="${DOOP_BENCHMARKS}/proxies/guice"
-OPENJDK_DIR="${DOOP_BENCHMARKS}/openjdk/jconsole"
+OPENJDK_DIR="${DOOP_BENCHMARKS}/proxies/openjdk"
 
 # Runs Doop for a benchmark. Arguments:
 #   $1 - benchmark JAR
