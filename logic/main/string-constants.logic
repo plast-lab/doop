@@ -146,7 +146,6 @@ MethodNameMatchingStringConstantExact:Signature(?sig, ?heap)
      // reflectively, even in system classes. Maybe one needs to 
      // circumvent access control, or maybe one wants to treat all
      // fields uniformly and some are inherited from a system superclass.
-  NonTrivialStringConstant(?heap),
   Method:SimpleName[?sig] = ?string,
   ?string != "<init>",
   ?string != "<clinit>". // common, yet not methods callable via reflection
@@ -167,7 +166,9 @@ FieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
   HeapAllocation:Id[?heap] = ?string,
   // Field:DeclaringType[?sig] = ?declaringClass,
   // ApplicationClass(?declaringClass);
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE  
   NonTrivialStringConstant(?heap),
+#endif
   Field:SimpleName[?sig] = ?string.
 
 #ifdef REFLECTION_SUBSTRING_ANALYSIS
