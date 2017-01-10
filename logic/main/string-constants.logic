@@ -246,7 +246,11 @@ StringChangesCaseAfterPosition(?pos, ?str) <-
   ((string:upper[?char] = ?char, string:upper[?nextChar] != ?nextChar);
    (string:upper[?char] != ?char, string:upper[?nextChar] = ?nextChar);
    (?nextChar = "_", ?char = ?char);
-   (?nextChar = ".", ?char = ?char)).
+   (?nextChar = ".", ?char = ?char);
+   (?nextChar = "$", ?char = ?char);
+   (?char = "_", ?nextChar = ?nextChar);
+   (?char = ".", ?nextChar = ?nextChar);
+   (?char = "$", ?nextChar = ?nextChar)).
 
 lang:derivationType[`StringChangesCaseBeforePosition] = "Derived".
 StringChangesCaseBeforePosition(?pos, ?string) -> string(?string), int[32](?pos).
@@ -256,7 +260,11 @@ StringChangesCaseBeforePosition(?pos, ?str) <-
   ((string:upper[?char] = ?char, string:upper[?prevChar] != ?prevChar);
    (string:upper[?char] != ?char, string:upper[?prevChar] = ?prevChar);
    (?prevChar = "_", ?char = ?char);
-   (?prevChar = ".", ?char = ?char)).
+   (?prevChar = ".", ?char = ?char);
+   (?prevChar = "$", ?char = ?char);
+   (?char = "_", ?prevChar = ?prevChar);
+   (?char = ".", ?prevChar = ?prevChar);
+   (?char = "$", ?prevChar = ?prevChar)).
 
 // Precompute proper suffixes. Crucial for efficiency.
 ClassNameSuffix(?suffix, ?type) <-
