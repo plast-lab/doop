@@ -100,7 +100,23 @@ task bytecode2jimple(type: JavaExec) {
         project.property('args').contains("-h")) {
         args = ["--bytecode2jimpleHelp"]
     } else {
-        args = ["--bytecode2jimple", "--allow-phantom"] + project.property('args').tokenize()
+        def gradleInvocationDir = System.getProperty('user.dir')
+        def givenArgs = project.property('args').tokenize()
+        def index = givenArgs.indexOf("-d")
+        if (index != -1) {
+            def outDir = givenArgs[index+1]
+            if (!outDir.startsWith("/"))
+                givenArgs[index+1] = gradleInvocationDir + "/" + outDir
+        }
+        else {
+            givenArgs = ["-d", gradleInvocationDir] + givenArgs
+        }
+        def lastIndex = givenArgs.size()-1
+        def inputFile = givenArgs[lastIndex]
+        if (!inputFile.startsWith("/"))
+            givenArgs[lastIndex] = gradleInvocationDir + "/" + inputFile
+
+        args = ["--bytecode2jimple", "--allow-phantom"] + givenArgs
     }
 }
 
