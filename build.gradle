@@ -95,10 +95,12 @@ task bytecode2jimple(type: JavaExec) {
     group = 'Other'
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
-    if (!project.hasProperty('args') || project.property('args').isEmpty()) {
-        args "--bytecode2jimpleHelp -allow-phantom-refs"
+    if (!project.hasProperty('args') ||
+        project.property('args').isEmpty() ||
+        project.property('args').contains("-h")) {
+        args = ["--bytecode2jimpleHelp"]
     } else {
-        args = ["--bytecode2jimple"] + project.property('args').tokenize()
+        args = ["--bytecode2jimple", "--allow-phantom"] + project.property('args').tokenize()
     }
 }
 

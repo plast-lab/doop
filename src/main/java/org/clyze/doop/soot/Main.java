@@ -137,7 +137,7 @@ public class Main {
                     case "-h":
                     case "--help":
                     case "-help":
-                        System.err.println("usage: [options] file");
+                        System.err.println("\nusage: [options] file");
                         System.err.println("options:");
                         System.err.println("  --main <class>                        Specify the main name of the main class");
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
@@ -154,7 +154,7 @@ public class Main {
                         System.err.println("  -h, -help                             Print this help message.");
                         System.exit(0);
                     case "--bytecode2jimpleHelp":
-                        System.err.println("usage: [options] file");
+                        System.err.println("\nusage: [options] file");
                         System.err.println("options:");
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
                         System.err.println("  --full                                Generate facts by full transitive resolution");
