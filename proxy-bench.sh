@@ -13,10 +13,18 @@ OPENJDK_DIR="${DOOP_BENCHMARKS}/proxies/openjdk"
 #   $2 - extra arguments (e.g. -platform java_6 or the DEBUG switch)
 function runDoopFor {
     ID="${BENCH}${PROXY_SWITCH}"
-    CMD="./doop -i $1 -a context-insensitive --reflection-classic --reflection-substring-analysis -id ${ID} ${PROXY_SWITCH} $2 -timeout 500 |& tee doop-facts-${ID}.txt"
-    # CMD="./doop -i $1 -a context-insensitive -id ${ID} --reflection --reflection-classic --reflection-substring-analysis --reflection-speculative-use-based-analysis --reflection-invent-unknown-objects --reflection-refined-objects ${PROXY_SWITCH} $2 |& tee doop-facts-${ID}.txt"
-    # CMD="./doop -i $1 -a context-insensitive --reflection-classic --reflection-substring-analysis --reflection-high-soundness-mode -id ${ID} ${PROXY_SWITCH} $2 -timeout 500 |& tee doop-facts-${ID}.txt"
-    # CMD="./doop -i $1 -a context-insensitive -id ${ID} ${PROXY_SWITCH} $2 -timeout 500 |& tee doop-facts-${ID}.txt"
+    # No reflection (turns off dynamic proxy support).
+    # CMD="./doop -i $1 -a context-insensitive -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
+    # Just reflection.
+    CMD="./doop -i $1 -a context-insensitive --reflection -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
+    # Classic reflection.
+    # CMD="./doop -i $1 -a context-insensitive --reflection-classic -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
+    # Classic reflection + speculative use-based analysis.
+    # CMD="./doop -i $1 -a context-insensitive --reflection-classic --reflection-speculative-use-based-analysis -id ${ID} ${PROXY_SWITCH} $2 |& tee doop-facts-${ID}.txt"
+    # More reflection features turned on.
+    # CMD="./doop -i $1 -a context-insensitive --reflection-classic --reflection-speculative-use-based-analysis -id ${ID} --reflection-invent-unknown-objects --reflection-refined-objects ${PROXY_SWITCH} $2 |& tee doop-facts-${ID}.txt"
+    # Classic reflection in high soundness mode.
+    # CMD="./doop -i $1 -a context-insensitive --reflection-classic --reflection-high-soundness-mode -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
     echo ${CMD}
     eval ${CMD}
 }
