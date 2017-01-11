@@ -150,8 +150,6 @@ public class Main {
 
                         System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-
-                        System.err.println("  -h, -help                             Print this help message");
                         System.exit(0);
                     case "--bytecode2jimpleHelp":
                         System.err.println("\nusage: [options] file");
@@ -162,7 +160,7 @@ public class Main {
                         System.err.println("  -d <directory>                        Specify where to generate files");
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
-                        System.err.println("  -h, -help                             Print this help message");
+                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
                         System.exit(0);
                     default:
                         if (args[i].charAt(0) == '-') {
