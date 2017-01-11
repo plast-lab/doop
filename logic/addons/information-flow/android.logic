@@ -1,0 +1,20 @@
+#include "macros.logic"
+
+RecordMacro(?ctx, ?value, ?hctx),
+TaintedValueIntroduced(?declaringType, ?invocation, "java.lang.String", ?value),
+TaintedContextValue(?hctx, ?value),  
+VarPointsTo(?hctx, ?value, ?ctx, ?to)
+ <-
+  PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base),
+  Method:DeclaringType[Instruction:Method[?invocation]] = ?declaringType,
+    VarPointsTo(_, Value:byHeap[?layoutControlHeap], ?ctx, ?base),
+  SensitiveLayoutControlHeap(?layoutControlHeap).
+
+
+PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) <-
+  AndroidViewType(Var:Type[?base]),
+  MethodInvocationInContext(?ctx, ?invocation, _),
+  VirtualMethodInvocation:Base[?invocation] = ?base,
+  VirtualMethodInvocation:SimpleName[?invocation] = "getText",
+  AssignReturnValue[?invocation] = ?to.
+  
