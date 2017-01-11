@@ -141,9 +141,7 @@ BoxAllocationOfPrimitiveFormal[?formal] = ?heap
 // Return var of newProxyInstance should point to the appropriate
 // dynamic proxy object.
 //// REVIEW: as above, have a real heap context instead of immutable?
-VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret),
-ProxyObjectAtInvocation[?iface, ?invo] = ?heap
-<-
+VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) <-
    java:lang:reflect:Proxy:newProxyInstance(?invo, ?ret, _, ?interfaces),
    VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces), 
    ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
@@ -161,7 +159,7 @@ ProxyObject:Interface[?heap] = ?iface
 <-
    Opt2java:lang:reflect:Proxy:newProxyInstance(_, _, ?invo, ?handler),
    VarPointsTo(?hctxHandler, ?handlerObj, _, ?handler), 
-   ProxyObjectAtInvocation[?iface, ?invo] = ?heap.
+   ProxyClassInstance[?iface, ?invo] = ?heap.
 
 
 // And the clincher: if a method gets invoked on a proxy object, simulate
@@ -179,7 +177,7 @@ CallToMethodOfProxyObject(?heap, ?ctx, ?invo) <-
 // #ifdef REFLECTION_CONTEXT_SENSITIVITY
 // ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx), ...
 ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-VarPointsTo(ProxyObject:HandlerHctx[?heap], ProxyObject:Handler[?heap], ?calleeCtx, ?this)
+VarPointsTo(ProxyObject:HandlerHctx[?heap], ?handlerObj, ?calleeCtx, ?this)
 <-
    ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
    CallToMethodOfProxyObject(?heap, ?callerCtx, ?invo),
@@ -196,8 +194,8 @@ VarPointsTo(ProxyObject:HandlerHctx[?heap], ProxyObject:Handler[?heap], ?calleeC
 //// always comes from Object.
 VarPointsTo(?hctx, ?proxyValue, ?calleeCtx, ?proxyArg),
 VarPointsTo(?hctx, ?methValue, ?calleeCtx, ?methArg),
-VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg)
-<-
+VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
+ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) <-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
    CallToMethodOfProxyObject(?heap, ?callerCtx, ?invo),
    FormalParam[0, ?handlerInvokeMeth] = ?proxyArg,
@@ -213,25 +211,25 @@ VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg)
 ReachableContext(?calleeCtx, ?callee) <-
   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-ArgArrayForFormal(?arrValue, ?formal) <-
-   ArgArrayOfProxyMethod[?meth, _] = ?arrHeap,
-   Value:byHeap[?arrHeap] = ?arrValue,
-   FormalParam[_, ?meth] = ?formal.
+ArgArrayAndActualArg(?argsArrValue, ?methSig, ?index, ?actual) <-
+   ProxyCallArgArray(?invo, ?methSig, ?argsArrValue),
+   ActualParam[?index, ?invo] = ?actual.
 
 // Populate args array:
 // (a) Reference-type arguments go in directly.
-ArrayIndexPointsTo(?hctx2, ?formalVal, ?hctx, ?arrValue) <-
-   ArgArrayForFormal(?arrValue, ?formal),
-   VarPointsTo(?hctx, ?formalVal, ?ctx, ?formal),
-   Var:Type[?formal] = ?formalType,
-   ReferenceType(?formalType),
+ArrayIndexPointsTo(?hctx2, ?actualVal, ?hctx, ?arrValue) <-
+   ArgArrayAndActualArg(?arrValue, _, _, ?actual),
+   VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
+   Var:Type[?actual] = ?actualType,
+   ReferenceType(?actualType),
    ImmutableHContextFromContext[?ctx] = ?hctx2.
 // (b) Primitive arguments are boxed first.
-ArrayIndexPointsTo(?hctx2, ?formalVal, ?hctx, ?arrValue) <-
-   ArgArrayForFormal(?arrValue, ?formal),
-   VarPointsTo(?hctx, ?formalVal, ?ctx, ?formal),
+ArrayIndexPointsTo(?hctx2, ?actualVal, ?hctx, ?arrValue) <-
+   ArgArrayAndActualArg(?arrValue, ?methSig, ?index, ?actual),
+   VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
+   FormalParam[?index, ?methSig] = ?formal,
    BoxAllocationOfPrimitiveFormal[?formal] = ?heap,
-   Value:byHeap[?heap] = ?formalVal,
+   Value:byHeap[?heap] = ?actualVal,
    ImmutableHContextFromContext[?ctx] = ?hctx2.
 // REVIEW: contexts.
 
