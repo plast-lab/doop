@@ -98,3 +98,7 @@ MethodInvocation:SimpleName[?invocation] = ?simplename <-
 LayoutControl(?id, ?type, ?parent) <-
    LayoutControl0(?id, ?typename, ?parent),
    Type:Id(?type:?typename).
+
+SensitiveLayoutControl(?id, ?type, ?parent) <-
+   SensitiveLayoutControl0(?id, ?typename, ?parent),
+   Type:Id(?type:?typename).

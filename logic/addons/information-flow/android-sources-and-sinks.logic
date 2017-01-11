@@ -1,4 +1,5 @@
 #include "common-transfer-methods.logic"
+#include "android.logic"
 
 LeakingSinkMethodArg(?label, ?index, ?method) <- LeakingSinkMethod(?label, ?method), FormalParam[?index, ?method] = _.
 
@@ -231,3 +232,5 @@ TaintSourceMethod("Personal", "<android.database.Cursor: java.lang.String getStr
 TaintSourceMethod("Personal", "<android.database.sqlite.SQLiteDatabase: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>").
 TaintSourceMethod("Personal", "<android.database.sqlite.SQLiteDatabase: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String,android.os.CancellationSignal)>").
 LeakingSinkMethod("IPC", "<java.lang.ProcessBuilder: java.lang.Process start()>").
+
+ 

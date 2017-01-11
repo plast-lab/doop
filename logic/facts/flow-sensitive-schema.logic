@@ -569,6 +569,8 @@ BroadcastReceiver(?x) -> Type(?x).
 CallbackMethod(?x) -> Method(?x).
 LayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
 LayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
+SensitiveLayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
+SensitiveLayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
 FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 
 //-----------------------------------------------------------------------------
