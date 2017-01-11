@@ -60,7 +60,7 @@ do
 	    ;;
 	okhttp-mockwebserver)
 	    # OkHttp benchmark: mockwebserver.
-	    runDoopFor "${OKDIR}/mockwebserver.jar" ""
+	    runDoopFor "${OKDIR}/mockwebserver.jar" "--reflection-classic -platform java_8"
 	    ;;
 	guice-jndi)
 	    # Google Guice JNDI test.
