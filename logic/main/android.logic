@@ -63,6 +63,10 @@ ReifiedLayoutControl[?type,?id] = ?heap
   Type:Id(?type:?typeStr),
   ?heapId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
 
+SensitiveLayoutControlHeap(?heap) <-
+   ReifiedLayoutControl[?type, ?id] = ?heap,
+   SensitiveLayoutControl(?id, ?type).                        
+
 // Also instantiate implicitly some library objects
 ImplicitlyInstantiatedLibraryType(?type) <-
   Type:Id(?type:"android.content.Intent");

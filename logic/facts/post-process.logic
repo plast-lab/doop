@@ -76,3 +76,7 @@ SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
 LayoutControl(?id, ?type) <-
    LayoutControl0(?id, ?typename),
    Type:Id(?type:?typename).
+
+SensitiveLayoutControl(?id, ?type) <-
+   SensitiveLayoutControl0(?id, ?typename),
+   Type:Id(?type:?typename).
