@@ -16,9 +16,9 @@ function runDoopFor {
     # No reflection (turns off dynamic proxy support).
     # CMD="./doop -i $1 -a context-insensitive -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
     # Just reflection.
-    CMD="./doop -i $1 -a context-insensitive --reflection -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
+    # CMD="./doop -i $1 -a context-insensitive --reflection -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
     # Classic reflection.
-    # CMD="./doop -i $1 -a context-insensitive --reflection-classic -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
+    CMD="./doop -i $1 -a context-insensitive --reflection-classic -id ${ID} ${PROXY_SWITCH} --timeout 500 $2 |& tee doop-facts-${ID}.txt"
     # Classic reflection + speculative use-based analysis.
     # CMD="./doop -i $1 -a context-insensitive --reflection-classic --reflection-speculative-use-based-analysis -id ${ID} ${PROXY_SWITCH} $2 |& tee doop-facts-${ID}.txt"
     # More reflection features turned on.
