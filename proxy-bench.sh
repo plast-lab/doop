@@ -87,7 +87,7 @@ do
 	dacapo-bach-jython)
 	    # The dacapo-bach/jython benchmark.
 	    # runDoopFor "${DOOP_BENCHMARKS}/dacapo-2006/jython.jar" "-dacapo -platform java_6"
-	    runDoopFor "${DOOP_BENCHMARKS}/dacapo-bach/jython/jython.jar" "-dacapo-bach -platform java_6"
+	    runDoopFor "${DOOP_BENCHMARKS}/dacapo-bach/jython.jar" "-dacapo-bach -platform java_6"
 	    ;;
     esac
 
