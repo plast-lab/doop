@@ -32,7 +32,7 @@ StaticMethodInvocation:SimpleName[?invo] = "newProxyInstance"
 
 echo '== Are invocation handler methods made reachable? =='
 
-echo 'Without proxy support:'
+echo "Without proxy support (${DB1}):"
 bloxbatch -db ${DB1} -query '_(?m) <-
 Type:Id(?invocationHandlerType:"java.lang.reflect.InvocationHandler"),
 SubtypeOf(?customInvocationHandlerType, ?invocationHandlerType),
@@ -40,7 +40,7 @@ Method:DeclaringType[?m] = ?customInvocationHandlerType,
 Reachable(?m)
 .'
 
-echo 'With proxy support:'
+echo "With proxy support (${DB2}):"
 bloxbatch -db ${DB2} -query '_(?m) <-
 Type:Id(?invocationHandlerType:"java.lang.reflect.InvocationHandler"),
 SubtypeOf(?customInvocationHandlerType, ?invocationHandlerType),
