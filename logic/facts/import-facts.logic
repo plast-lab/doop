@@ -1081,19 +1081,6 @@ _LayoutControl(?param1, ?param2) ->
 +LayoutControl0(?id, ?typename) <-
    _LayoutControl(?id, ?typename).
 
-
-// SensitiveLayoutControl
-lang:physical:storageModel[`_SensitiveLayoutControl] = "DelimitedFile".
-lang:physical:filePath[`_SensitiveLayoutControl] = "facts/LayoutControl.facts".
-lang:physical:delimiter[`_SensitiveLayoutControl] = "\t".
-lang:physical:hasColumnNames[`_SensitiveLayoutControl] = false.
-_SensitiveLayoutControl(?param1, ?param2) ->
-  int[32](?param1),
-  string(?param2).
-
-+SensitiveLayoutControl0(?id, ?typename) <-
-   _SensitiveLayoutControl(?id, ?typename).
-
 // FieldInitialValue
 lang:physical:storageModel[`_FieldInitialValue] = "DelimitedFile".
 lang:physical:filePath[`_FieldInitialValue] = "facts/FieldInitialValue.facts".

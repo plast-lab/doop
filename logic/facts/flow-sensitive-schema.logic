@@ -144,6 +144,8 @@ Var:Type[?var] = ?type ->
 Var:DeclaringMethod(?var, ?method) ->
    Var(?var), Method(?method).
 
+ApplicationVar(?var) -> Var(?var).
+
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
@@ -539,8 +541,6 @@ BroadcastReceiver(?x) -> Type(?x).
 CallbackMethod(?x) -> Method(?x).
 LayoutControl(?id, ?type) -> int[32](?id), Type(?type).
 LayoutControl0(?id, ?typename) -> int[32](?id), string(?typename).
-SensitiveLayoutControl(?id, ?type) -> int[32](?id), Type(?type).
-SensitiveLayoutControl0(?id, ?typename) -> int[32](?id), string(?typename).
 FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 
 //-----------------------------------------------------------------------------
