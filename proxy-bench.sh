@@ -58,6 +58,10 @@ do
 	    # From "Challenges ..." corpus.
 	    runDoopFor "${DOOP_BENCHMARKS}/challenges-corpus/aopTest-0.0.1-SNAPSHOT.jar" "--main creative.fire.aop.proxy.TaskProxy"
 	    ;;
+	olingo-app)
+	    OLINGODIR="${DOOP_BENCHMARKS}/proxies/olingo-odata4"
+	    runDoopFor "${OLINGODIR}/olingo-sample-app.jar ${OLINGODIR}/libs" "--main org.apache.olingo.samples.client.OlingoSampleApp"
+	    ;;
 	okhttp-mockwebserver)
 	    # OkHttp benchmark: mockwebserver.
 	    runDoopFor "${OKDIR}/mockwebserver.jar" "--reflection-classic -platform java_8"
