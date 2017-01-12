@@ -73,7 +73,7 @@ do
 	    ;;
 	guice-jndi)
 	    # Google Guice JNDI test.
-	    runDoopFor "${GDIR}/core/target/guice-4.1.0-tests.jar ${GDIR}/core/target/guice-4.1.0-jar-with-dependencies.jar ${GDIR}/libs" "--main com.google.inject.example.JndiProviderClient"
+	    runDoopFor "${GDIR}/guice-4.1.0-tests.jar ${GDIR}/libs" "--main com.google.inject.example.JndiProviderClient"
 	    ;;
 	jconsole)
 	    # OpenJDK benchmark: JConsole.
