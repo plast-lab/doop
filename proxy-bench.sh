@@ -75,10 +75,29 @@ do
 	    # Google Guice JNDI test.
 	    runDoopFor "${GDIR}/guice-4.1.0-tests.jar ${GDIR}/libs" "--main com.google.inject.example.JndiProviderClient"
 	    ;;
+	apache-accumulo)
+	    # Apache Accumulo.
+	    ACCUMULO_DIR="${DOOP_BENCHMARKS}/proxies/accumulo"
+	    runDoopFor "${ACCUMULO_DIR}/accumulo-start-1.4.1-SNAPSHOT.jar ${ACCUMULO_DIR}/libs" ""
+	    ;;
 	cafebahn)
 	    CAFEBAHN_LIB="${DOOP_BENCHMARKS}/proxies/cafebahn"
 	    runDoopFor "${CAFEBAHN_LIB}/rgzm.jar ${CAFEBAHN_LIB}/libs" "--main tochterUhr.gui.Digitaluhr"
 	    ;;
+	# junit)
+	#     # JUnit, many entry points.
+	#     for MAIN_CLASS in org.junit.tests.running.core.SystemExitTest junit.tests.framework.AllTests junit.tests.AllTests junit.tests.runner.AllTests junit.tests.runner.TextFeedbackTest junit.tests.extensions.AllTests junit.samples.money.MoneyTest org.junit.runner.JUnitCore org.junit.runner.notification.RunListener junit.runner.Version junit.textui.TestRunner
+	#     do
+	# 	TMP="${BENCH}"
+	# 	BENCH="${BENCH}-${MAIN_CLASS}"
+	# 	runDoopFor "/usr/data/gfour/corpus/contents/213-JUnit/junit/junit4.11-SNAPSHOT/junit-4.11-SNAPSHOT.jar" "--main ${MAIN_CLASS}"
+	# 	BENCH="${TMP}"
+	#     done
+	#     ;;
+	# jsonrpc4j)
+	#     # Jsonrpc4j test (assumes test method has been made implicit reachable in Doop).
+	#     runDoopFor "/home/gfour/Downloads/proxy-benchmarks/jsonrpc4j/build/libs/jsonrpc4j-1.4.6.jar ${DOOP_BENCHMARKS}/proxies/jsonrpc4j/libs" ""
+	#     ;;
 	jconsole)
 	    # OpenJDK benchmark: JConsole.
 	    runDoopFor "${OPENJDK_DIR}/jconsole/jconsole.jar ${OPENJDK_DIR}/jconsole/tools.jar" "-platform java_8 ${DEBUG}"
