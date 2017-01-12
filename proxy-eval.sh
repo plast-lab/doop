@@ -53,3 +53,6 @@ echo 'Without proxy support:'
 bloxbatch -db ${DB1} -popCount | grep Proxy
 echo 'With proxy support:'
 bloxbatch -db ${DB2} -popCount | grep Proxy
+
+echo '== We find proxied calls to these methods: =='
+bloxbatch -db ${DB2} -query '_(?m) <- ProxyCallGraphEdge(_, ?i, _, _), VirtualMethodInvocation:SimpleName[?i] = ?m.'
