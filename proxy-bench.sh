@@ -62,6 +62,11 @@ do
 	    # OkHttp benchmark: mockwebserver.
 	    runDoopFor "${OKDIR}/mockwebserver.jar" "--reflection-classic -platform java_8"
 	    ;;
+	terracotta)
+	    TDIR="${DOOP_BENCHMARKS}/proxies/terracotta"
+	    # runDoopFor "${TDIR}/dso-l2-5.2-SNAPSHOT.jar ${TDIR}/libs" "--main com.tc.cli.CommandLineMain"
+	    runDoopFor "${TDIR}/dso-l2-5.2-SNAPSHOT.jar ${TDIR}/libs" "--main com.tc.server.TCServerMain"
+	    ;;
 	guice-jndi)
 	    # Google Guice JNDI test.
 	    runDoopFor "${GDIR}/core/target/guice-4.1.0-tests.jar ${GDIR}/core/target/guice-4.1.0-jar-with-dependencies.jar" "--main com.google.inject.example.JndiProviderClient"
