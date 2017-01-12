@@ -24,7 +24,6 @@ sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
 group = 'org.clyze'
-version = '1.0-SNAPSHOT'
 
 //For the doop app
 mainClassName = 'org.clyze.doop.Main'
