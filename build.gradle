@@ -8,9 +8,14 @@ buildscript {
     }
 }
 
-apply plugin: 'antlr'
-apply plugin: 'application'
-apply plugin: 'groovy'
+plugins {
+    id 'antlr'
+    id 'application'
+    id 'groovy'
+    id 'maven-publish'
+    //see https://github.com/researchgate/gradle-release
+    id 'net.researchgate.release' version '2.4.0' 
+}
 
 apply from  : 'benchmarks.gradle'
 
@@ -164,8 +169,6 @@ clean.doFirst {
 
 if (project.hasProperty('artifactory_user')) {
 
-    apply plugin: 'maven-publish'
-
     //Generate a jar with the logic files
     task logicJar(type:Jar) {
         from "$projectDir/logic"
@@ -195,4 +198,13 @@ if (project.hasProperty('artifactory_user')) {
             }
         }
     }
+
+    /* publish before releasing
+    release {
+        buildTasks =['build', 'publish']
+    }
+    */
+
+    /* publish after releasing */
+    afterReleaseBuild.dependsOn publish
 }
