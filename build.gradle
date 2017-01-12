@@ -199,12 +199,14 @@ if (project.hasProperty('artifactory_user')) {
         }
     }
 
-    /* publish before releasing
     release {
-        buildTasks =['build', 'publish']
-    }
-    */
+    
+        failOnSnapshotDependencies = false
 
-    /* publish after releasing */
+        /* publish before releasing
+        buildTasks =['build', 'publish']
+        */
+    }
+
     afterReleaseBuild.dependsOn publish
 }
