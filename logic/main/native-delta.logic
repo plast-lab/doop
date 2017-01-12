@@ -152,6 +152,35 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
 
 /**********************************************************************************
  *
+ * sun.misc.Unsafe
+ *
+ **********************************************************************************/
+// For now handle these as array operations, not as field operations
++StoreArrayIndex(?from, ?base, ?inmethod) <-
+      Method:Id(?casObject:"<sun.misc.Unsafe: boolean compareAndSwapObject(java.lang.Object,long,java.lang.Object,java.lang.Object)>"),
+      VirtualMethodInvocation(?invocation, ?casObject, ?inmethod),
+      ActualParam@previous[0, ?invocation] = ?base,
+      ActualParam@previous[3, ?invocation] = ?from.
+
++StoreArrayIndex(?from, ?base, ?inmethod) <-
+      (Method:Id(?putObj:"<sun.misc.Unsafe: void putObject(java.lang.Object,long,java.lang.Object)>");
+       Method:Id(?putObj:"<sun.misc.Unsafe: void putObject(java.lang.Object,int,java.lang.Object)>");
+       Method:Id(?putObj:"<sun.misc.Unsafe: void putObjectVolatile(java.lang.Object,long,java.lang.Object)>");
+       Method:Id(?putObj:"<sun.misc.Unsafe: void putOrderedObject(java.lang.Object,long,java.lang.Object)>")),
+      VirtualMethodInvocation(?invocation, ?putObj, ?inmethod),
+      ActualParam@previous[0, ?invocation] = ?base,
+      ActualParam@previous[2, ?invocation] = ?from.
+
++LoadArrayIndex(?base, ?to, ?inmethod) <-
+      (Method:Id(?getObj:"<sun.misc.Unsafe: java.lang.Object getObjectVolatile(java.lang.Object,long)>");
+       Method:Id(?getObj:"<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,long)>");
+       Method:Id(?getObj:"<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,int)>")),
+      VirtualMethodInvocation(?invocation, ?getObj, ?inmethod),
+      ActualParam@previous[0, ?invocation] = ?base,
+      AssignReturnValue@previous[?invocation] = ?to.
+
+/**********************************************************************************
+ *
  * java.io.FileSystem
  *
  **********************************************************************************/
