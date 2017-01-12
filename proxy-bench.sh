@@ -75,6 +75,10 @@ do
 	    # Google Guice JNDI test.
 	    runDoopFor "${GDIR}/guice-4.1.0-tests.jar ${GDIR}/libs" "--main com.google.inject.example.JndiProviderClient"
 	    ;;
+	cafebahn)
+	    CAFEBAHN_LIB="${DOOP_BENCHMARKS}/proxies/cafebahn"
+	    runDoopFor "${CAFEBAHN_LIB}/rgzm.jar ${CAFEBAHN_LIB}/libs" "--main tochterUhr.gui.Digitaluhr"
+	    ;;
 	jconsole)
 	    # OpenJDK benchmark: JConsole.
 	    runDoopFor "${OPENJDK_DIR}/jconsole/jconsole.jar ${OPENJDK_DIR}/jconsole/tools.jar" "-platform java_8 ${DEBUG}"
