@@ -85,6 +85,18 @@ do
 	    CAFEBAHN_LIB="${DOOP_BENCHMARKS}/proxies/cafebahn"
 	    runDoopFor "${CAFEBAHN_LIB}/rgzm.jar ${CAFEBAHN_LIB}/libs" "--main tochterUhr.gui.Digitaluhr"
 	    ;;
+	cafebahn-svn)
+	    CAFEBAHN_LIB="${DOOP_BENCHMARKS}/proxies/cafebahn-svn"
+	    runDoopFor "${CAFEBAHN_LIB}/rgzm.jar ${CAFEBAHN_LIB}/libs" "--main tochterUhr.gui.Digitaluhr"
+	    ;;
+	xmlblaster)
+	    XMLBLASTER_LIB="${DOOP_BENCHMARKS}/proxies/xmlblaster"
+	    runDoopFor "${XMLBLASTER_LIB}/xmlBlaster.jar ${XMLBLASTER_LIB}/libs" ""
+	    ;;
+	eclipse-nebula)
+	    NEBULA_LIB="${DOOP_BENCHMARKS}/proxies/eclipse-nebula"
+	    runDoopFor "${NEBULA_LIB}/org.eclipse.nebula.widgets.calendarcombo-1.0.0-SNAPSHOT.jar ${NEBULA_LIB}/libs" "--main src.org.eclipse.nebula.widgets.calendarcombo.Tester"
+	    ;;
 	# junit)
 	#     # JUnit, many entry points.
 	#     for MAIN_CLASS in org.junit.tests.running.core.SystemExitTest junit.tests.framework.AllTests junit.tests.AllTests junit.tests.runner.AllTests junit.tests.runner.TextFeedbackTest junit.tests.extensions.AllTests junit.samples.money.MoneyTest org.junit.runner.JUnitCore org.junit.runner.notification.RunListener junit.runner.Version junit.textui.TestRunner
