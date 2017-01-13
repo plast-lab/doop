@@ -56,7 +56,7 @@ do
 	    ;;
 	challenges-rvtests)
 	    # From "Challenges ..." corpus.
-	    runDoopFor "${DOOP_BENCHMARKS}/challenges-corpus/aopTest-0.0.1-SNAPSHOT.jar" "--main creative.fire.aop.proxy.TaskProxy"
+	    runDoopFor "${DOOP_BENCHMARKS}/proxies/challenges-corpus/aopTest-0.0.1-SNAPSHOT.jar" "--main creative.fire.aop.proxy.TaskProxy -platform java_8"
 	    ;;
 	olingo-app)
 	    OLINGODIR="${DOOP_BENCHMARKS}/proxies/olingo-odata4"
