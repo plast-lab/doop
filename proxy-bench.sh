@@ -78,7 +78,8 @@ do
 	apache-accumulo)
 	    # Apache Accumulo.
 	    ACCUMULO_DIR="${DOOP_BENCHMARKS}/proxies/accumulo"
-	    runDoopFor "${ACCUMULO_DIR}/accumulo-start-1.4.1-SNAPSHOT.jar ${ACCUMULO_DIR}/libs" ""
+	    runDoopFor "${ACCUMULO_DIR}/accumulo-start-1.4.1-SNAPSHOT.jar ${ACCUMULO_DIR}/libs" "--main org.apache.accumulo.start.Main"
+	    # runDoopFor "${ACCUMULO_DIR}/accumulo.jar" "--main org.apache.accumulo.start.Main"
 	    ;;
 	cafebahn)
 	    CAFEBAHN_LIB="${DOOP_BENCHMARKS}/proxies/cafebahn"
