@@ -211,26 +211,25 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) <-
 ReachableContext(?calleeCtx, ?callee) <-
   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
-ArgArrayAndActualArg(?argsArrValue, ?methSig, ?index, ?actual) <-
+ArgArrayAndActualArg(?argsArrValue, ?methSig, ?actual) <-
    ProxyCallArgArray(?invo, ?methSig, ?argsArrValue),
-   ActualParam[?index, ?invo] = ?actual.
+   ActualParam[_, ?invo] = ?actual.
 
 // Populate args array:
 // (a) Reference-type arguments go in directly.
-ArrayIndexPointsTo(?hctx2, ?actualVal, ?hctx, ?arrValue) <-
-   ArgArrayAndActualArg(?arrValue, _, _, ?actual),
+ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx2, ?arrValue) <-
+   ArgArrayAndActualArg(?arrValue, _, ?actual),
    VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
    Var:Type[?actual] = ?actualType,
    ReferenceType(?actualType),
    ImmutableHContextFromContext[?ctx] = ?hctx2.
 // (b) Primitive arguments are boxed first.
-ArrayIndexPointsTo(?hctx2, ?actualVal, ?hctx, ?arrValue) <-
-   ArgArrayAndActualArg(?arrValue, ?methSig, ?index, ?actual),
-   VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
-   FormalParam[?index, ?methSig] = ?formal,
+ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) <-
+   ArgArrayAndActualArg(?arrValue, ?methSig, _),
+   FormalParam[_, ?methSig] = ?formal,
    BoxAllocationOfPrimitiveFormal[?formal] = ?heap,
    Value:byHeap[?heap] = ?actualVal,
-   ImmutableHContextFromContext[?ctx] = ?hctx2.
+   ImmutableHContext(?hctx).
 // REVIEW: contexts.
 
 // Handle return values: connect the return value of handler.invoke()
