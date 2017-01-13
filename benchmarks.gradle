@@ -1,6 +1,6 @@
 import org.apache.tools.ant.util.TeeOutputStream
 
-def defaultCommonArgs = ['--timeout', '90', '--ssa', ,'--platform', 'java_7', '--cache']
+def defaultCommonArgs = ['--timeout', '90', '--platform', 'java_7', '--cache']
 def defaultOutDir     = '.'
 def defaultPrefix     = ''
 def defaultAnalyses   = ['context-insensitive', '1-object-sensitive', '2-type-sensitive+heap']
@@ -16,7 +16,7 @@ def DaCapoBach        = (project.hasProperty('DaCapoBach') ? project.property('D
 
 def repoInfo
 task collectRepoInfo (type: Exec) {
-    commandLine 'hg id -i -b -t'.split()
+    commandLine 'git rev-parse --short HEAD'.split()
     standardOutput = new ByteArrayOutputStream()
     doLast {
         repoInfo = standardOutput.toString().replace(' ', '-').trim()
