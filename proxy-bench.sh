@@ -69,7 +69,7 @@ do
 	terracotta)
 	    TDIR="${DOOP_BENCHMARKS}/proxies/terracotta"
 	    # runDoopFor "${TDIR}/dso-l2-5.2-SNAPSHOT.jar ${TDIR}/libs" "--main com.tc.cli.CommandLineMain"
-	    runDoopFor "${TDIR}/dso-l2-5.2-SNAPSHOT.jar ${TDIR}/libs" "--main com.tc.server.TCServerMain"
+	    runDoopFor "${TDIR}/dso-l2-5.2-SNAPSHOT.jar ${TDIR}/libs" "--main com.tc.server.TCServerMain -platform java_8"
 	    ;;
 	guice-jndi)
 	    # Google Guice JNDI test.
