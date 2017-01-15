@@ -456,7 +456,7 @@ _StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
 +Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
 
 
@@ -479,7 +479,7 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +SpecialMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
@@ -502,7 +502,7 @@ _VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +VirtualMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 

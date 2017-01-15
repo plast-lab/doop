@@ -156,7 +156,7 @@ VarPointsTo(?heap, ?this) <-
    Instruction:Method[?invocation] = ?inmethod,
    SpecialMethodInvocation:Base[?invocation] = ?base,
    VarPointsTo(?heap, ?base),
-   MethodInvocation:Signature[?invocation] = ?tomethod,
+   MethodInvocation:Method[?invocation] = ?tomethod,
    ThisVar[?tomethod] = ?this.
 
 /**

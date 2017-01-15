@@ -81,7 +81,7 @@ _Reachable(?tomethod)
 <-
    Instruction:Method[?invocation] = ?inmethod,
    SpecialMethodInvocation:Base[?invocation] = ?base,
-   MethodInvocation:Signature[?invocation] = ?tomethod,
+   MethodInvocation:Method[?invocation] = ?tomethod,
    _Reachable(?inmethod),
    ThisVar[?tomethod] = ?this.
 

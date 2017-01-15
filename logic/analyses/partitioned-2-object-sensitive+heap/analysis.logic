@@ -48,7 +48,7 @@ MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
 MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
   SpecialMethodInvocation:Base[?invocation] = ?base,
   Var:Type[?base] = ?basetype,
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SubtypeOf(?type, ?basetype).
 
 PartitionForValue[?value] = ?partitionId <-

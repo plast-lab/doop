@@ -60,7 +60,7 @@ InitializedClass(?class) <-
    Reachable(?inmethod),
    Instruction:Method[?invocation] = ?inmethod,
    StaticMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    Method:DeclaringType[?signature] = ?class.
 
 /**

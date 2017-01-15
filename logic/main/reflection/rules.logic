@@ -15,7 +15,7 @@
  *      
  *   Method:Id(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
  *   VirtualMethodInvocation:Insn(?invocation),
- *   MethodInvocation:Signature[?invocation] = ?getClass,
+ *   MethodInvocation:Method[?invocation] = ?getClass,
  *
  * Only checks for invocations of getClass in source code, not in method
  * invocations discovered during reflection analysis.
@@ -85,14 +85,14 @@ ReflectiveValue(?value) <- TempReflectiveHeap(?heap), Value:byHeap[?heap] = ?val
   TempReflectiveHeap(?heap), \
   ReflectiveAllocation[invocation, heapType] = ?heap
 
-OptMethodInvocation:Signature(?invocation, ?sig) <-
-  MethodInvocation:Signature[?invocation] = ?sig.
+OptMethodInvocation:Method(?invocation, ?sig) <-
+  MethodInvocation:Method[?invocation] = ?sig.
 
 
 // NOTE "?sig" is reserved for this macro
 #define VirtualMethodMacro(invocation, to, from, sigStr) \
   Method:Id(?sig:sigStr), \
-  OptMethodInvocation:Signature(invocation, ?sig), \
+  OptMethodInvocation:Method(invocation, ?sig), \
   AssignReturnValue[invocation] = to, \
   VirtualMethodInvocation:Base[invocation] = from
 
@@ -226,7 +226,7 @@ java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
 CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayHeapStr),
 java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
   Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
-  MethodInvocation:Signature[?invocation] = ?sig,
+  MethodInvocation:Method[?invocation] = ?sig,
   StaticMethodInvocation:Insn(?invocation),
   AssignReturnValue[?invocation] = ?to,
   ActualParam[0, ?invocation] = ?param,
@@ -256,19 +256,19 @@ java:lang:reflect:Field:get:base[?invocation] = ?base <-
 
 java:lang:reflect:Field:set(?invocation, ?from, ?field) <-
   Method:Id(?signature:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Method[?invocation] = ?signature,
   VirtualMethodInvocation:Base[?invocation] = ?field,
   ActualParam[1, ?invocation] = ?from.
 
 java:lang:reflect:Field:set:base[?invocation] = ?base <-
   Method:Id(?signature:"<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Method[?invocation] = ?signature,
   VirtualMethodInvocation:Insn(?invocation),
   ActualParam[0, ?invocation] = ?base.
 
 java:lang:reflect:Method:invoke(?invocation, ?method) <-
   Method:Id(?signature:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
-  MethodInvocation:Signature[?invocation] = ?signature,
+  MethodInvocation:Method[?invocation] = ?signature,
   VirtualMethodInvocation:Base[?invocation] = ?method.
 
 
@@ -948,7 +948,7 @@ SpecialMissingGetMethodHeap[?invocation] = ?heap
 <-
   (Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
    Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
-  MethodInvocation:Signature[?invocation] = ?getMethod,
+  MethodInvocation:Method[?invocation] = ?getMethod,
   VirtualMethodInvocation:Insn(?invocation),
   Type:Id(?type:"java.lang.reflect.Method"),
   Instruction:Id(?invocation:?strInvocation),
@@ -959,7 +959,7 @@ SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap
 <-
   (Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
    Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>")),
-  MethodInvocation:Signature[?invocation] = ?getMethod,
+  MethodInvocation:Method[?invocation] = ?getMethod,
   VirtualMethodInvocation:Insn(?invocation),
   Type:Id(?type:"java.lang.Object"),
   Instruction:Id(?invocation:?strInvocation),
@@ -989,7 +989,7 @@ SpecialMissingGetFieldHeap[?invocation] = ?heap
 <-
   (Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
    Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
-  MethodInvocation:Signature[?invocation] = ?getField,
+  MethodInvocation:Method[?invocation] = ?getField,
   VirtualMethodInvocation:Insn(?invocation),
   Type:Id(?type:"java.lang.reflect.Field"),
   Instruction:Id(?invocation:?strInvocation),
@@ -1000,7 +1000,7 @@ SpecialMissingGetHeapFromGetField[?invocation] = ?heap
 <-
   (Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
    Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>")),
-  MethodInvocation:Signature[?invocation] = ?getField,
+  MethodInvocation:Method[?invocation] = ?getField,
   VirtualMethodInvocation:Insn(?invocation),
   Type:Id(?type:"java.lang.Object"),
   Instruction:Id(?invocation:?strInvocation),

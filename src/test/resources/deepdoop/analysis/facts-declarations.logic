@@ -548,7 +548,7 @@ MethodInvocation:LineNumber[?invocation] = ?lineNumber ->
    MethodInvocation(?invocation), int[64](?lineNumber).
 
 // The signature of the method being called
-MethodInvocation:Signature[?invocation] = ?signature ->
+MethodInvocation:Method[?invocation] = ?signature ->
    MethodInvocation(?invocation), MethodSignature(?signature).
 
 // The (call-site) variable that holds the result of the invocation

@@ -303,7 +303,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 ViewRetrievalByArg0MethodInvocation(?invo) <-
-  MethodInvocation:Signature[?invo] = ?method,
+  MethodInvocation:Method[?invo] = ?method,
   Method:SimpleName[?method] = ?calleeName,
   (SimpleName:Id(?calleeName:"inflate");
    SimpleName:Id(?calleeName:"getView");

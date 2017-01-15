@@ -433,7 +433,7 @@ MethodInvocation:Line[?invocation] = ?line ->
    MethodInvocation(?invocation), int[64](?line).
 
 // The signature of the method being called
-MethodInvocation:Signature[?invocation] = ?signature ->
+MethodInvocation:Method[?invocation] = ?signature ->
    MethodInvocation(?invocation), Method(?signature).
 
 ApplicationMethod(?method) -> Method(?method).
