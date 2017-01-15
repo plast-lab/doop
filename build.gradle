@@ -101,7 +101,8 @@ task bytecode2jimple(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') ||
         project.property('args').isEmpty() ||
-        project.property('args').contains("-h")) {
+        project.property('args') == '-h' ||
+        project.property('args') == '--help') {
         args = ["--bytecode2jimpleHelp"]
     } else {
         def gradleInvocationDir = System.getProperty('user.dir')
