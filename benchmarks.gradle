@@ -7,12 +7,12 @@ def defaultAnalyses   = ['context-insensitive', '1-object-sensitive', '2-type-se
 def defaultDaCapo2006 = ['antlr', 'bloat', 'chart', 'eclipse', 'fop', 'hsqldb', 'jython', 'luindex', 'lusearch', 'pmd', 'xalan']
 def defaultDaCapoBach = ['avrora', 'batik', 'eclipse', 'h2', 'jython', 'luindex', 'lusearch', 'pmd', 'sunflow', 'xalan']
 
-def commonArgs        = (project.hasProperty('commonArgs') ? project.property('commonArgs').split() : defaultCommonArgs)
-def outDir            = (project.hasProperty('outDir') ? project.property('outDir') : defaultOutDir)
-def suffix            = (project.hasProperty('suffix') ? project.property('suffix') : defaultPrefix)
-def analyses          = (project.hasProperty('analyses') ? project.property('analyses').split() : defaultAnalyses)
-def DaCapo2006        = (project.hasProperty('DaCapo2006') ? project.property('DaCapo2006').split() : defaultDaCapo2006)
-def DaCapoBach        = (project.hasProperty('DaCapoBach') ? project.property('DaCapoBach').split() : defaultDaCapoBach)
+def commonArgs        = (project.hasProperty('commonArgs') ? project.property('commonArgs').split() as List : defaultCommonArgs)
+def outDir            = (project.hasProperty('outDir')     ? project.property('outDir')                     : defaultOutDir)
+def suffix            = (project.hasProperty('suffix')     ? project.property('suffix')                     : defaultPrefix)
+def analyses          = (project.hasProperty('analyses')   ? project.property('analyses').split()           : defaultAnalyses)
+def DaCapo2006        = (project.hasProperty('DaCapo2006') ? project.property('DaCapo2006').split()         : defaultDaCapo2006)
+def DaCapoBach        = (project.hasProperty('DaCapoBach') ? project.property('DaCapoBach').split()         : defaultDaCapoBach)
 
 def repoInfo
 task collectRepoInfo (type: Exec) {
