@@ -52,3 +52,12 @@
   ContextFromRealContext[RealContext2FromContext[callerCtx], \
                          RealContext3FromContext[callerCtx], \
                          Value:DeclaringType[value]] = newCtx
+
+
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[value12, value12, value3] = ctx, \
+  predName[] = ctx <- Type:Id(value12, valueId), ClassTypeValue(value3, "java.lang.String")
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[value, value] = hctx, \
+  predName[] = hctx <- Type:Id(value, valueId)

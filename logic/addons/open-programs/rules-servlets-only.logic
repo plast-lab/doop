@@ -37,7 +37,7 @@ ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
 // The following two rules were originally separated to stratify negation (no longer needed)
 VarPointsTo(?hctx, ?value, ?ctx, ?receiver) <-
-   ImmutableHContext(?hctx),
+   ImmutableHContext[] = ?hctx,
    ValueForReceiverInContext(?ctx, ?receiver, ?value).
 
 

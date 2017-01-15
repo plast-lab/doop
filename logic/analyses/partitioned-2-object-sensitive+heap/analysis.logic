@@ -3,62 +3,37 @@
 // Context-sensitive pointer analysis with context of 1 object and a
 // context-sensitive heap abstraction.
 
+// In this analysis, the real context is a pair of Values and the real
+// heap context a single Value. Keeping mapping functions is the way
+// to handle analyses where HContext = Context (since the language considers
+// them different types).
+ContextFromRealContext[?partitionId, ?value1, ?value2] = ?ctx ->
+  Context(?ctx), Type(?partitionId), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
 // Some basics, for encoding-decoding
 RealContext1FromContext[?ctx] = ?value1,
 RealContext2FromContext[?ctx] = ?value2,
 PartitionFromContext[?ctx] = ?partitionId <-
   ContextFromRealContext[?partitionId, ?value1, ?value2] = ?ctx.
 
+HContextFromRealHContext[?partitionId, ?value] = ?hctx ->
+  HContext(?hctx), Type(?partitionId), Value(?value).
+lang:constructor(`HContextFromRealHContext).
 RealHContextFromHContext[?hctx] = ?value,
 PartitionFromHContext[?hctx] = ?partitionId <-
   HContextFromRealHContext[?partitionId, ?value] = ?hctx.
 
-// Default contexts
-Context(?ctx),
-ContextFromRealContext[?partitionId, ?value, ?value] = ?ctx,
-ImmutableContext(?ctx) <-
-  Value:byId["<<immutable-context>>"] = ?value,
-  PartitionId(?partitionId).
-
-HContext(?hctx),
-HContextFromRealHContext[?partitionId, ?value] = ?hctx,
-ImmutableHContext(?hctx) <-
-  Value:byId["<<immutable-hcontext>>"] = ?value,
-  PartitionId(?partitionId).
 
 // horrible indexing, but there will only be a handful of such contexts
 ImmutableContextFromHContext[?hctx] = ?ctx <-
-  ImmutableContext(?ctx),
+  ImmutableContext[] = ?ctx,
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
-  ImmutableContext(?ctx2),
+  ImmutableContext[] = ?ctx2,
   PartitionFromContext[?ctx1] = PartitionFromContext[?ctx2].
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext(?hctx),
+  ImmutableHContext[] = ?hctx,
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
-
-// Create initial objects with their heap contexts
-HContext(?hctx),
-HContextFromRealHContext[?partitionId, ?value] = ?hctx,
-SystemThreadGroup(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<system-thread-group>>"] = ?alloc,
-  PartitionId(?partitionId).
-
-HContext(?hctx),
-HContextFromRealHContext[?partitionId, ?value] = ?hctx,
-MainThreadGroup(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<main-thread-group>>"] = ?alloc,
-  PartitionId(?partitionId).
-
-HContext(?hctx),
-HContextFromRealHContext[?partitionId, ?value] = ?hctx,
-MainThread(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<main-thread>>"] = ?alloc,
-  PartitionId(?partitionId).
-
 
 // Merge optimization hack
 
@@ -175,29 +150,6 @@ OptimizeRecord[?ctx, ?value] = ?hctx <-
   !ValueInAllPartitions(?value),
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
-// Initially reachable methods
-Context(?ctx),
-ContextFromRealContext[?partitionId, ?value, ?value] = ?ctx,
-ReachableContext(?ctx, ?method) <-
-  MainMethodDeclaration(?method),
-  Value:byId["<<initial-context>>"] = ?value,
-  PartitionId(?partitionId).
-
-Context(?ctx),
-ContextFromRealContext[?partitionId, ?value, ?value] = ?ctx,
-ReachableContext(?ctx, ?method) <-
-  ImplicitReachable(?method),
-  Value:byId["<<jvm-startup>>"] = ?value,
-  PartitionId(?partitionId).
-
-Context(?ctx),
-ContextFromRealContext[?partitionId, ?value, ?value] = ?ctx,
-ReachableContext(?ctx, ?clinit) <-
-  InitializedClass(?class),
-  ClassInitializer[?class] = ?clinit,
-  Value:byId["<<class-initialization>>"] = ?value,
-  PartitionId(?partitionId).
-
 
 // Post-processing
 _ValidCtxVar(?ctx, ?var)
@@ -211,4 +163,3 @@ _ValidCtxVar(?ctx, ?var)
 CollapsedVarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
    VarPointsTo(?hctx, ?heap, ?ctx, ?var),
    _ValidCtxVar(?ctx, ?var).
-  

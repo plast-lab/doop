@@ -52,6 +52,15 @@
                          Value:DeclaringType[value]] = newCtx
 
 
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[value, value] = ctx, \
+  predName[] = ctx <- Type:Id(value, valueId)
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx, \
+  predName[] = hctx <- Type:Id(value, valueId)
+
+
 //// ---- Leftovers from experiment below ----
 //// What if we had context-sensitive reflective calls but separated from
 //// regular ones (with unique context constructors)

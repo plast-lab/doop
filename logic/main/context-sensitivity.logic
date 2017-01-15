@@ -21,13 +21,13 @@
 
 #ifndef MULTIPLE_SEGREGATED_ANALYSES
 ImmutableContextFromHContext[?hctx] = ?ctx <-
-  ImmutableContext(?ctx), HContext(?hctx).
+  ImmutableContext[] = ?ctx, HContext(?hctx).
 
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext(?hctx), Context(?ctx).
+  ImmutableHContext[] = ?hctx, Context(?ctx).
 
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
-  ImmutableContext(?ctx2), Context(?ctx1).
+  ImmutableContext[] = ?ctx2, Context(?ctx1).
 #endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #ifndef CompatibleContextAndHContextMacro
@@ -261,7 +261,7 @@ ReachableStoreStaticFieldFrom(?from) <-
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   FieldInitialValue[?signature] = ?const,
   Value:byNum[?const] = ?value,
-  ImmutableHContext(?hctx).
+  ImmutableHContext[] = ?hctx.
 
 
 /**
