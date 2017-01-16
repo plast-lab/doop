@@ -73,6 +73,6 @@ SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
 // Note that this is more than a straightforward import of generated
 // facts into a DB relation. It filters out the guessed control
 // types that do not correspond to existing types.
-LayoutControl(?id, ?type) <-
-   LayoutControl0(?id, ?typename),
+LayoutControl(?id, ?type, ?parent) <-
+   LayoutControl0(?id, ?typename, ?parent),
    Type:Id(?type:?typename).

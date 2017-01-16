@@ -243,6 +243,7 @@ public class Main {
                 resParser.parse(apkLocation);
                 List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
                 DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
+                lfp.registerLayoutFilesDirect(apkLocation);
                 lfp.parseLayoutFileDirect(apkLocation);
 
                 // now collect the facts we need
@@ -429,7 +430,7 @@ public class Main {
 
                     for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
                         for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
-                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName());
+                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                         }
                     }
                 }

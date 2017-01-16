@@ -881,8 +881,8 @@ class FactWriter {
         _db.add(CALLBACK_METHOD, callbackMethod);
     }
 
-    void writeLayoutControl(Integer id, String layoutControl) {
-        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl);
+    void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
+        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
     void writeFieldInitialValue(SootField f) {

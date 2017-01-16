@@ -59,7 +59,7 @@ NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?type,
 ReifiedLayoutControl[?type,?id] = ?heap
 <-
-  LayoutControl(?id, ?type),
+  LayoutControl(?id, ?type, _),
   Type:Id(?type:?typeStr),
   ?heapId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
 
@@ -142,14 +142,14 @@ ReachableContext(?ctx, ?meth) <-
 // Handle library-callable "on*" methods of layout controls
 PublicOnMethodOfLayoutControl(?meth) <-
   Method:DeclaringType[?meth] = ?type,
-  LayoutControl(_, ?type),
+  LayoutControl(_, ?type, _),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) <-
   Method:DeclaringType[?meth] = ?type,
-  LayoutControl(_, ?type),
+  LayoutControl(_, ?type, _),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("protected", ?meth).
@@ -286,7 +286,7 @@ VarsAtInvocationRetrievingView(?ret, ?var) <-
   ActualParam[0, ?invo] = ?var.
 
 ViewObjectValueFromId(?viewValue, ?numId) <-
-  LayoutControl(?numId, ?type),
+  LayoutControl(?numId, ?type, _),
   ReifiedLayoutControl[?type, ?numId] = ?heap,
   Value:byHeap[?heap] = ?viewValue.
 
