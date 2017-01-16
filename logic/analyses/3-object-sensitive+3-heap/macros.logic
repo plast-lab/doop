@@ -62,3 +62,12 @@
   ContextFromRealContext[RealContext2FromContext[callerCtx], \
                          RealContext3FromContext[callerCtx], \
                          value] = newCtx
+
+
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[value, value, value] = ctx, \
+  predName[] = ctx <- Value:byId[valueId] = value
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[value, value, value] = hctx, \
+  predName[] = hctx <- Value:byId[valueId] = value

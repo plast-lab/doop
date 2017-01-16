@@ -21,13 +21,13 @@
 
 #ifndef MULTIPLE_SEGREGATED_ANALYSES
 ImmutableContextFromHContext[?hctx] = ?ctx <-
-  ImmutableContext(?ctx), HContext(?hctx).
+  ImmutableContext[] = ?ctx, HContext(?hctx).
 
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext(?hctx), Context(?ctx).
+  ImmutableHContext[] = ?hctx, Context(?ctx).
 
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
-  ImmutableContext(?ctx2), Context(?ctx1).
+  ImmutableContext[] = ?ctx2, Context(?ctx1).
 #endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #ifndef CompatibleContextAndHContextMacro
@@ -261,7 +261,7 @@ ReachableStoreStaticFieldFrom(?from) <-
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   FieldInitialValue[?signature] = ?const,
   Value:byNum[?const] = ?value,
-  ImmutableHContext(?hctx).
+  ImmutableHContext[] = ?hctx.
 
 
 /**
@@ -512,7 +512,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
@@ -527,7 +527,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
@@ -541,7 +541,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
@@ -556,7 +556,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).

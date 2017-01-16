@@ -110,8 +110,8 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"DISTINGUISH_STRING_BUFFERS_PER_METHOD",
-            name:"distinguish-string-buffers-per-method",
+            id:"DISTINGUISH_STRING_BUFFERS_PER_PACKAGE",
+            name:"distinguish-string-buffers-per-package",
             value:false,
             webUI:true,
             forPreprocessor: true,
@@ -173,8 +173,16 @@ class Doop {
             isAdvanced:true
         ),
         new AnalysisOption<Boolean>(
-            id:"REFLECTION_USE_BASED_ANALYSIS",
-            name:"reflection-use-based-analysis",
+            id:"REFLECTION_HIGH_SOUNDNESS_MODE",
+            name:"reflection-high-soundness-mode",
+            value:false,
+            webUI:true,
+            forPreprocessor: true,
+            isAdvanced:true
+        ),
+        new AnalysisOption<Boolean>(
+            id:"REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS",
+            name:"reflection-speculative-use-based-analysis",
             value:false,
             webUI:true,
             forPreprocessor: true,

@@ -25,7 +25,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
         logger.info "-- Runtime metrics --"
         lines.sort()*.split(", ").each {
-            printf("%-80s %,d\n", it[0], it[1] as int)
+            printf("%-80s %,d\n", it[0], it[1] as long)
         }
 
         if (!analysis.options.X_STATS_NONE.value) {
@@ -36,7 +36,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
             logger.info "-- Statistics --"
             lines.sort()*.split(", ").each {
-                printf("%-80s %,d\n", it[1], it[2] as int)
+                printf("%-80s %,d\n", it[1], it[2] as long)
             }
         }
     }

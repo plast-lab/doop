@@ -101,18 +101,34 @@ AndroidLibraryListenerType(?type) <-
   (string:substring[?name, _, _] = "Listener";
    string:substring[?name, _, _] = "Callback").
 
+ListenerType(?type) <-
+  SubtypeOf(?type, ?listenerType),
+  AndroidLibraryListenerType(?listenerType).
+
 AndroidApplicationListenerClass(?class) <-
   AndroidApplicationClass(?class),
-  SubtypeOf(?class, ?supertype),
-  AndroidLibraryListenerType(?supertype).
+  ListenerType(?class).
+
+MethodDeclaredOrInherited(?meth, ?class) <-
+  Method:DeclaringType[?meth] = ?class,
+  ClassType(?class).
+
+// This keeps the signature of the method in the superclass, if
+// lookup returns that method (and not an overriding one).
+MethodDeclaredOrInherited(?meth, ?class) <-
+  DirectSuperclass[?class] = ?superClass,
+  MethodDeclaredOrInherited(?meth, ?superClass),
+  Method:Descriptor[?meth] = ?descriptor,
+  Method:SimpleName[?meth] = ?simplename,
+  MethodLookup[?simplename, ?descriptor, ?class] = ?meth.
 
 PublicMethodOfComponent(?meth) <-
-  Method:DeclaringType[?meth] = ?type,
+  MethodDeclaredOrInherited(?meth, ?type),
   AndroidAppComponent(?type),
   Method:Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) <-
-  Method:DeclaringType[?meth] = ?type,
+  MethodDeclaredOrInherited(?meth, ?type),
   AndroidAppComponent(?type),
   Method:Modifier("protected", ?meth).
 
@@ -137,18 +153,19 @@ ReachableContext(?ctx, ?meth) <-
   (PublicMethodOfComponent(?meth);
    OverridingProtectedMethodOfComponent(?meth);
    CallbackMethod(?meth)),
-  ImmutableContext(?ctx).
+  ImmutableContext[] = ?ctx.
 
 // Handle library-callable "on*" methods of layout controls
 PublicOnMethodOfLayoutControl(?meth) <-
-  Method:DeclaringType[?meth] = ?type,
+
+  MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) <-
-  Method:DeclaringType[?meth] = ?type,
+  MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
@@ -162,36 +179,74 @@ ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
-  ImmutableContext(?ctx).
+  ImmutableContext[] = ?ctx.
 
 
 // Handle library-callable "on*" methods of listeners/callbacks
 // REVIEW: this is currently liberal. It checks that the app class
 // subtypes a library listener and that it has an "on*" method,
 // but that doesn't mean that method overrides one of the listener.
-PublicOnMethodOfListener(?meth) <-
-  Method:DeclaringType[?meth] = ?class,
-  AndroidApplicationListenerClass(?class),
+
+// Currently, library code = an android.app class
+_OptMethodFromVar[?var] = ?meth <-
+  Var:DeclaringMethod(?var, ?meth).
+
+// ... all analysis-reachable objects
+ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) <-
+  VarPointsTo(?hctx, ?value, _, _),
+  Value:Type[?value] = ?ofType,
+  ApplicationClass(?ofType).
+
+// Be liberal: if an object is a listener, and it is instantiated
+// in the application, then consider it to flow to the library.
+ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
+LibraryReachableAppListenerType(?type) <-
+  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
+  AndroidApplicationListenerClass(?type).
+
+//// Currently this is too conservative. We need to model more of
+//// the environment, such as "getActivity", "getSystemService", for
+//// this to work well.
+// LibraryMethodArgAcceptingListeners(?formal) <-
+//   Method:DeclaringType[?meth] = ?type,
+//   AndroidLibraryType(?type),
+//   FormalParam[_, ?meth] = ?formal,
+//   Var:Type[?formal] = ?formalType,
+//   ListenerType(?formalType).
+
+// ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) <-
+//   VarPointsTo(?hctx, ?value, _, ?formal),
+//   LibraryMethodArgAcceptingListeners(?formal),
+//   Value:Type[?value] = ?ofType,
+//   AndroidApplicationListenerClass(?ofType).
+
+// LibraryReachableAppListenerType(?type) <-
+//   ApplicationObjectFlowingToLibrary(_, _, ?type),
+//   AndroidApplicationListenerClass(?type).
+
+PublicOnMethodOfReachableListener(?meth) <-
+  MethodDeclaredOrInherited(?meth, ?class),
+  LibraryReachableAppListenerType(?class),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("public", ?meth).
 
-ProtectedOnMethodOfListener(?meth) <-
-  Method:DeclaringType[?meth] = ?class,
-  AndroidApplicationListenerClass(?class),
+ProtectedOnMethodOfReachableListener(?meth) <-
+  MethodDeclaredOrInherited(?meth, ?class),
+  LibraryReachableAppListenerType(?class),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("protected", ?meth).
 
-OverridingProtectedOnMethodOfListener(?meth) <-
-  ProtectedOnMethodOfListener(?meth),
+OverridingProtectedOnMethodOfReachableListener(?meth) <-
+  ProtectedOnMethodOfReachableListener(?meth),
   AppMethodOverridesAndroidLibraryMethod(?meth).
 
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
-  (PublicOnMethodOfListener(?meth);
-   OverridingProtectedOnMethodOfListener(?meth)),
-  ImmutableContext(?ctx).
+  (PublicOnMethodOfReachableListener(?meth);
+   OverridingProtectedOnMethodOfReachableListener(?meth)),
+  ImmutableContext[] = ?ctx.
 
 
 // For all the above forced reachable methods, supply a receiver
@@ -211,21 +266,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ThisVar[?meth] = ?this,
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
-_OptMethodFromVar[?var] = ?meth <-
-  Var:DeclaringMethod(?var, ?meth).
-
-// ... then for all analysis-reachable objects
-ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) <-
-  VarPointsTo(?hctx, ?value, _, _),
-  Value:Heap[?value] = ?heap,
-  HeapAllocation:Type[?heap] = ?ofType,
-  ApplicationClass(?ofType).
-
 // a reachable object can always be the receiver for its own methods
 VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
   Method:DeclaringType[?meth] = ?ofType,
-  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
+//  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
   ThisVar[?meth] = ?this.
 
 // ... and do the same for argument objects.
@@ -233,39 +279,32 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
 // type-compatible value, regardless of the hierarchy of actual
 // graphical components. One could also perhaps distinguish
 // objects initialized by different constructors.
-VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
+FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
   FormalParam[_, ?meth] = ?formal,
-  Var:Type[?formal] = ?formalType,
+  Var:Type[?formal] = ?formalType.
+
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
+  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   SubtypeOf(?type, ?formalType),
   ReifiedAndroidObjectValue(?value, ?type),
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
 // Do the same (use as arguments everywhere applicable) for application
-// objects (mainly listeners) that flow into library code.
-// Currently, library code = some variable in an android.app class
-ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType) <-
-  VarPointsTo(?hctx, ?value, _, ?var),
-  _OptMethodFromVar[?var] = ?meth,
-  Method:DeclaringType[?meth] = ?containingType,
-  Type:Id(?containingType:?typeId),
-  string:substring[?typeId, 0, 11] = "android.app",
-  Value:Heap[?value] = ?heap,
-  HeapAllocation:Type[?heap] = ?ofType,
-  ApplicationClass(?ofType).
+// listeners that flow into library code.
+ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?possibleType) <-
+  SupertypeOf(?possibleType, ?ofType),
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
-  ForcedReachableAndroidContext(?ctx, ?meth),
-  FormalParam[_, ?meth] = ?formal,
-  Var:Type[?formal] = ?formalType,
-  SubtypeOf(?ofType, ?formalType),
-  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType).
+  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?formalType).
 
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 ViewRetrievalByArg0MethodInvocation(?invo) <-
-  MethodInvocation:Signature[?invo] = ?method,
+  MethodInvocation:Method[?invo] = ?method,
   Method:SimpleName[?method] = ?calleeName,
   (SimpleName:Id(?calleeName:"inflate");
    SimpleName:Id(?calleeName:"getView");

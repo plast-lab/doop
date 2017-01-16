@@ -8,9 +8,14 @@ buildscript {
     }
 }
 
-apply plugin: 'antlr'
-apply plugin: 'application'
-apply plugin: 'groovy'
+plugins {
+    id 'antlr'
+    id 'application'
+    id 'groovy'
+    id 'maven-publish'
+    //see https://github.com/researchgate/gradle-release
+    id 'net.researchgate.release' version '2.4.0' 
+}
 
 apply from  : 'benchmarks.gradle'
 
@@ -19,7 +24,6 @@ sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
 group = 'org.clyze'
-version = '1.0-SNAPSHOT'
 
 //For the doop app
 mainClassName = 'org.clyze.doop.Main'
@@ -95,10 +99,29 @@ task bytecode2jimple(type: JavaExec) {
     group = 'Other'
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
-    if (!project.hasProperty('args') || project.property('args').isEmpty()) {
-        args "--bytecode2jimpleHelp -allow-phantom-refs"
+    if (!project.hasProperty('args') ||
+        project.property('args').isEmpty() ||
+        project.property('args') == '-h' ||
+        project.property('args') == '--help') {
+        args = ["--bytecode2jimpleHelp"]
     } else {
-        args = ["--bytecode2jimple"] + project.property('args').tokenize()
+        def gradleInvocationDir = System.getProperty('user.dir')
+        def givenArgs = project.property('args').tokenize()
+        def index = givenArgs.indexOf("-d")
+        if (index != -1) {
+            def outDir = givenArgs[index+1]
+            if (!outDir.startsWith("/"))
+                givenArgs[index+1] = gradleInvocationDir + "/" + outDir
+        }
+        else {
+            givenArgs = ["-d", gradleInvocationDir] + givenArgs
+        }
+        def lastIndex = givenArgs.size()-1
+        def inputFile = givenArgs[lastIndex]
+        if (!inputFile.startsWith("/"))
+            givenArgs[lastIndex] = gradleInvocationDir + "/" + inputFile
+
+        args = ["--bytecode2jimple", "--allow-phantom"] + givenArgs
     }
 }
 
@@ -146,8 +169,6 @@ clean.doFirst {
 
 if (project.hasProperty('artifactory_user')) {
 
-    apply plugin: 'maven-publish'
-
     //Generate a jar with the logic files
     task logicJar(type:Jar) {
         from "$projectDir/logic"
@@ -177,4 +198,16 @@ if (project.hasProperty('artifactory_user')) {
             }
         }
     }
+
+    release {
+    
+        failOnSnapshotDependencies = false
+
+        /* publish before releasing
+           buildTasks =['build', 'publish']
+         */
+    }
+
+    afterReleaseBuild.dependsOn publish
+
 }

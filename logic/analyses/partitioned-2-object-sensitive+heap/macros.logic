@@ -67,3 +67,12 @@
   Context(newCtx), \
   ContextFromRealContext[PartitionFromContext[callerCtx], \
                          RealContext2FromContext[callerCtx], value] = newCtx
+
+
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[partitionId, value, value] = ctx, \
+  predName[] = ctx <- Value:byId[valueId] = value, PartitionId(partitionId)
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[partitionId, value] = hctx, \
+  predName[] = hctx <- Value:byId[valueId] = value, PartitionId(partitionId)

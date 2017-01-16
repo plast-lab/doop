@@ -291,6 +291,10 @@ class AnalysisFactory {
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
+            // FIXME: When "full" JARs are used, pick only the first
+            // one (assumed to be android.jar) or XML parsing fails.
+            if (androidLibFlavor.equals("full"))
+                files = [ files[0] ]
         }
         return files
     }
@@ -307,7 +311,7 @@ class AnalysisFactory {
 
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
-                options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value) {
+                options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
             logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
         }
 
@@ -331,7 +335,7 @@ class AnalysisFactory {
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
-            options.DISTINGUISH_STRING_BUFFERS_PER_METHOD.value = true
+            options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
         }
 
         if (options.DACAPO.value) {
@@ -416,7 +420,8 @@ class AnalysisFactory {
             if (options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value ||
                     options.REFLECTION_SUBSTRING_ANALYSIS.value ||
                     options.REFLECTION_CONTEXT_SENSITIVITY.value ||
-                    options.REFLECTION_USE_BASED_ANALYSIS.value ||
+                    options.REFLECTION_HIGH_SOUNDNESS_MODE.value ||
+                    options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
                     options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
                     options.REFLECTION_REFINED_OBJECTS.value) {
                 logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"

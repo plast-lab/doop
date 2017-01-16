@@ -242,7 +242,7 @@ class ClassicAnalysis extends Analysis {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
-            cpp.preprocess("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
+            cpp.preprocessIfExists("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${mainPath}/context-sensitivity-declarations.logic")
             cpp.preprocess("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
             cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",

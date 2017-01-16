@@ -48,25 +48,28 @@ AssignHeapAllocation:Heap[?instr] = ?heap <-
 ApplicationMethod(?method) <-
    Method:DeclaringType[?method] = ?class,
    ApplicationClass(?class).
+ApplicationVar(?var) <-
+   Var:DeclaringMethod(?var, ?method),
+   ApplicationMethod(?method).
 
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    VirtualMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename,
 StaticMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    StaticMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
 SpecialMethodInvocation:SimpleName[?invocation] = ?simplename,
 SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    SpecialMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 

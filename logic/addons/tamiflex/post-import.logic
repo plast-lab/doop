@@ -22,5 +22,5 @@ Tamiflex:ReflectionMap(?mapped, ?invocation) <-
      // invocation inside ?inMethod matching ?method.
      ?line = 0
    ),
-   MethodInvocation:Signature[?invocation] = ?method,
+   MethodInvocation:Method[?invocation] = ?method,
    Instruction:Method[?invocation] = ?inMethod.

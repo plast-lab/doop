@@ -2,6 +2,7 @@
  * Special calling contexts
  */
 PlusMethodInvocation(?invo, "<<initial-context>>").
-PlusMethodInvocation(?invo, "<<jvm-startup>>").
-PlusMethodInvocation(?invo, "<<class-initialization>>").
+PlusMethodInvocation(?invo, "<<jvm-startup-context>>").
+PlusMethodInvocation(?invo, "<<jvm-startup-hcontext>>").
+PlusMethodInvocation(?invo, "<<clinit-context>>").
 PlusMethodInvocation(?invo, "<<immutable-context>>").

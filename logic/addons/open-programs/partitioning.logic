@@ -13,7 +13,7 @@ TypeRefersToOther(?typeFrom, ?typeTo) <-
 
 TypeRefersToOther(?typeFrom, ?typeTo) <-
   PartitionedType(?typeFrom), PartitionedType(?typeTo),
-  MethodInvocation:Signature[?invo] = ?method,
+  MethodInvocation:Method[?invo] = ?method,
   Instruction:Method[?invo] = ?fromMethod,
   Method:DeclaringType[?method] = ?typeTo,
   Method:DeclaringType[?fromMethod] = ?typeFrom.
