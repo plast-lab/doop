@@ -1,9 +1,8 @@
 package org.clyze.doop.soot;
 
-import soot.Body;
-import soot.Printer;
-import soot.SootClass;
-import soot.SootMethod;
+import soot.*;
+import soot.jimple.*;
+import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
 import java.io.File;
@@ -34,12 +33,15 @@ class JimpleCodePrinter implements Runnable {
         try {
             for (SootClass c : _sootClasses) {
                 for (SootMethod m : c.getMethods()) {
+                    if (FactGenerator.phantomBased(m))
+                        continue;
+
                     if (!(m.isAbstract() || m.isNative())) {
                         if (!m.hasActiveBody()) {
-							// This instruction is the main bottleneck of. It
-							// accounts for more than 80% of its total
-							// execution time. However, it is soot internal so
-							// we'll need a profiler to optimize it.
+                            // This instruction is the main bottleneck of. It
+                            // accounts for more than 80% of its total
+                            // execution time. However, it is soot internal so
+                            // we'll need a profiler to optimize it.
                             m.retrieveActiveBody();
                         }
 
