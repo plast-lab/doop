@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.common.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
@@ -20,7 +21,7 @@ import org.clyze.doop.system.*
  */
 @CompileStatic
 @TypeChecked
-class ClassicAnalysis extends Analysis {
+class ClassicAnalysis extends DoopAnalysis {
 
     boolean isRefineStep
 
@@ -41,7 +42,7 @@ class ClassicAnalysis extends Analysis {
     }
 
     String toString() {
-        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -234,7 +235,7 @@ class ClassicAnalysis extends Analysis {
         // By default, assume we run a context-sensitive analysis
         boolean isContextSensitive = true
         try {
-            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${safename}")
+            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
             Properties props = FileOps.loadProperties(file)
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
@@ -242,31 +243,31 @@ class ClassicAnalysis extends Analysis {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
-            cpp.preprocessIfExists("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
+            cpp.preprocessIfExists("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${mainPath}/context-sensitivity-declarations.logic")
             cpp.preprocess("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
-            cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
+            cpp.preprocessIfExists("${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic",
                              commonMacros, "${mainPath}/main-delta.logic")
-            cpp.preprocess("${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
+            cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic",
                              commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
-            cpp.preprocess("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
+            cpp.preprocess("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic")
             cpp.preprocessIfExists("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
-            cpp.preprocessIfExists("${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
-            cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
-            cpp.preprocess("${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
+            cpp.preprocessIfExists("${outDir}/${name}-prologue.logic", "${analysisPath}/prologue.logic")
+            cpp.preprocessIfExists("${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic")
+            cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic")
         }
 
         connector.queue()
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
-            .addBlockFile("${safename}-declarations.logic")
+            .addBlockFile("${name}-declarations.logic")
             .addBlockFile("prologue.logic")
             .commit()
             .transaction()
-            .executeFile("${safename}-delta.logic")
+            .executeFile("${name}-delta.logic")
 
         if (options.REFLECTION.value) {
             cpp.preprocess("${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
@@ -332,7 +333,7 @@ class ClassicAnalysis extends Analysis {
         if (options.SANITY.value)
             cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
 
-        cpp.includeAtStart("${outDir}/${safename}.logic", "${outDir}/addons.logic")
+        cpp.includeAtStart("${outDir}/${name}.logic", "${outDir}/addons.logic")
 
         connector.queue()
             .commit()
@@ -344,7 +345,7 @@ class ClassicAnalysis extends Analysis {
             .echo("-- " + echo_analysis + " --")
             .startTimer()
             .transaction()
-            .addBlockFile("${safename}.logic")
+            .addBlockFile("${name}.logic")
             .commit()
             .elapsedTime()
 
@@ -673,4 +674,6 @@ class ClassicAnalysis extends Analysis {
         String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
         return "$path/rt.jar"
     }
+
+	Iterable<AnalysisPhase> phases() { return null }
 }

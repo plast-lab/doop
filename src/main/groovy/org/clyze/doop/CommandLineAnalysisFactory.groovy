@@ -2,11 +2,12 @@ package org.clyze.doop
 
 import org.apache.commons.cli.Option
 import org.clyze.doop.core.*
+import org.clyze.common.*
 
 /**
  * A factory for creating Analysis objects from the command line.
  */
-class CommandLineAnalysisFactory extends AnalysisFactory {
+class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'

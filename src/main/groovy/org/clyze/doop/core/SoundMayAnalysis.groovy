@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.common.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*

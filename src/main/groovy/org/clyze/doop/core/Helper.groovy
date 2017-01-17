@@ -6,6 +6,7 @@ import java.util.zip.ZipFile
 import org.apache.commons.cli.Option
 import org.apache.log4j.*
 import org.apache.commons.io.FilenameUtils
+import org.clyze.common.*
 
 /**
  * Various helper methods.
