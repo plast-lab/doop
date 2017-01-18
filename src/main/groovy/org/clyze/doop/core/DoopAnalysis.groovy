@@ -20,11 +20,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     protected Log logger
 
     /**
-     * The output dir for the analysis
-     */
-    File outDir
-
-    /**
      * The facts dir for the input facts
      */
     protected File factsDir
@@ -74,22 +69,21 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
      */
     protected DoopAnalysis(String id,
-                           String outDirPath,
-                           String cacheDirPath,
                            String name,
                            Map<String, AnalysisOption> options,
                            InputResolutionContext ctx,
+                           File outDir,
+                           File cacheDir,
                            List<File> inputFiles,
                            List<File> platformLibs,
                            Map<String, String> commandsEnvironment) {
-        super(AnalysisFamily.DOOP, id, name.replace(File.separator, "-"), options, inputFiles)
+        super(AnalysisFamily.DOOP, id, name, options, outDir, inputFiles)
         this.ctx = ctx
+		this.cacheDir = cacheDir
         this.platformLibs = platformLibs
 
         logger      = LogFactory.getLog(getClass())
 
-        outDir      = new File(outDirPath)
-        cacheDir    = new File(cacheDirPath)
         factsDir    = new File(outDir, "facts")
         database    = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")

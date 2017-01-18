@@ -17,15 +17,15 @@ import org.clyze.deepdoop.system.*
 class SoundMayAnalysis extends ClassicAnalysis {
 
     protected SoundMayAnalysis(String id,
-                       String outDirPath,
-                       String cacheDirPath,
-                       String name,
-                       Map<String, AnalysisOption> options,
-                       InputResolutionContext ctx,
-                       List<File> inputFiles,
-                       List<File> platformLibs,
-                       Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputFiles, platformLibs, commandsEnvironment)
+                               String name,
+                               Map<String, AnalysisOption> options,
+                               InputResolutionContext ctx,
+                               File outDir,
+                               File cacheDir,
+                               List<File> inputFiles,
+                               List<File> platformLibs,
+                               Map<String, String> commandsEnvironment) {
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
     }
 
     @Override

@@ -28,15 +28,15 @@ class ClassicAnalysis extends DoopAnalysis {
     long sootTime
 
     protected ClassicAnalysis(String id,
-                       String outDirPath,
-                       String cacheDirPath,
-                       String name,
-                       Map<String, AnalysisOption> options,
-                       InputResolutionContext ctx,
-                       List<File> inputFiles,
-                       List<File> platformLibs,
-                       Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputFiles, platformLibs, commandsEnvironment)
+                              String name,
+                              Map<String, AnalysisOption> options,
+                              InputResolutionContext ctx,
+                              File outDir,
+                              File cacheDir,
+                              List<File> inputFiles,
+                              List<File> platformLibs,
+                              Map<String, String> commandsEnvironment) {
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }

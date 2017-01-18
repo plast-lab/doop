@@ -82,11 +82,11 @@ class DoopAnalysisFactory implements AnalysisFactory {
         if (name != "sound-may-point-to")
             analysis = new ClassicAnalysis(
                 analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
+                name.replace(File.separator, "-"),
                 options,
                 context,
+                outDir,
+                cacheDir,
                 vars.inputFiles,
                 vars.platformFiles,
                 commandsEnv)
@@ -94,11 +94,11 @@ class DoopAnalysisFactory implements AnalysisFactory {
             options.CFG_ANALYSIS.value = true
             analysis = new SoundMayAnalysis(
                 analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
+                name.replace(File.separator, "-"),
                 options,
                 context,
+                outDir,
+                cacheDir,
                 vars.inputFiles,
                 vars.platformFiles,
                 commandsEnv)
