@@ -33,16 +33,16 @@ class ClassicAnalysis extends DoopAnalysis {
                        String name,
                        Map<String, AnalysisOption> options,
                        InputResolutionContext ctx,
-                       List<File> inputs,
+                       List<File> inputFiles,
                        List<File> platformLibs,
                        Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
+        super(id, outDirPath, cacheDirPath, name, options, ctx, inputFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
 
     String toString() {
-        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputFiles:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -416,11 +416,11 @@ class ClassicAnalysis extends DoopAnalysis {
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            inputs[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            Collection<String> deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
         }
 
@@ -457,7 +457,7 @@ class ClassicAnalysis extends DoopAnalysis {
             params = params + ["--only-application-classes-fact-gen"]
         }
 
-        params = params + ["-d", factsDir.toString(), inputs[0].toString()]
+        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -498,7 +498,7 @@ class ClassicAnalysis extends DoopAnalysis {
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = inputs[0].toString()
+        String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -510,7 +510,7 @@ class ClassicAnalysis extends DoopAnalysis {
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
+        inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
     @Override
@@ -557,7 +557,7 @@ class ClassicAnalysis extends DoopAnalysis {
 
 
     private String cacheMeta() {
-        Collection<String> inputJars = inputs.collect {
+        Collection<String> inputJars = inputFiles.collect {
             File file -> file.toString()
         }
         Collection<String> cacheOptions = options.values().findAll {
@@ -597,13 +597,13 @@ class ClassicAnalysis extends DoopAnalysis {
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        Collection<String> libraryJars = inputs.drop(1).collect { it.toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = inputFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
 
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", inputs[0].toString())
+        props.setProperty("input_jar_files", inputFiles[0].toString())
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files

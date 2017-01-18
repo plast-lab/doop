@@ -22,10 +22,10 @@ class SoundMayAnalysis extends ClassicAnalysis {
                        String name,
                        Map<String, AnalysisOption> options,
                        InputResolutionContext ctx,
-                       List<File> inputs,
+                       List<File> inputFiles,
                        List<File> platformLibs,
                        Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
+        super(id, outDirPath, cacheDirPath, name, options, ctx, inputFiles, platformLibs, commandsEnvironment)
     }
 
     @Override

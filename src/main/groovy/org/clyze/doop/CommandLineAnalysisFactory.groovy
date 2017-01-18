@@ -39,7 +39,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(id, name, options, inputs)
+        return newAnalysis(AnalysisFamily.DOOP, id, name, options, inputs)
     }
 
     /**
@@ -75,7 +75,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(id, name, options, inputs)
+        return newAnalysis(AnalysisFamily.DOOP, id, name, options, inputs)
     }
 
     /**
@@ -84,7 +84,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
      */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+        List<AnalysisOption> cliOptions = AnalysisFamily.DOOP.supportedOptions().findAll { AnalysisOption option ->
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
@@ -120,7 +120,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
      */
     static CliBuilder createNonStandardCliBuilder() {
 
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+        List<AnalysisOption> cliOptions = AnalysisFamily.DOOP.supportedOptions().findAll { AnalysisOption option ->
             option.nonStandard //all options with nonStandard property
         }
 
@@ -186,7 +186,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                     """.stripIndent()
 
             //Find all cli options and sort them by id
-            List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+            List<AnalysisOption> cliOptions = AnalysisFamily.DOOP.supportedOptions().findAll { AnalysisOption option ->
                 option.cli
             }.sort{ AnalysisOption option ->
                 option.id

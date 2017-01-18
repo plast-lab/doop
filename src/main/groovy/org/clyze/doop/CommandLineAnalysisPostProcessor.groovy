@@ -51,7 +51,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         }
 
         def platform = analysis.options.PLATFORM.value
-        def inputName = FilenameUtils.getBaseName(analysis.inputs[0].toString())
+        def inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()
