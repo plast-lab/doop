@@ -22,7 +22,7 @@ class Helper {
      * @param console - indicates whether log statements should be also written to the standard output.
      */
     static void initLogging(String logLevel, String logDir, boolean console) {
-        org.clyze.Helper.initLogging(logLevel, logDir, console)
+        org.clyze.common.Helper.initLogging(logLevel, logDir, console)
     }
 
     /**
@@ -31,7 +31,7 @@ class Helper {
      * @param logLevel - the log level to use
      */
     static void initConsoleLogging(String logLevel){
-        org.clyze.Helper.initConsoleLogging(logLevel)
+        org.clyze.common.Helper.initConsoleLogging(logLevel)
     }
 
     /**

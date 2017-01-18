@@ -126,7 +126,13 @@ class Doop {
                 if (option && value && value.trim().length() > 0) {
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
-                        setOptionFromProperty(option, value)
+                        if (option.id == "DYNAMIC") {
+                            option.value = value.split().collect { String s -> s.trim() }
+                        } else if (option.argName) {
+                            option.value = value
+                        } else {
+                            option.value = value.toBoolean()
+                        }
                     }
                 }
             }
@@ -151,38 +157,25 @@ class Doop {
                 if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
-                        setOptionFromCLI(option, cli)
+                        // NOTE: Obscure cli builder feature: to get the value of a cl option
+                        // as a List, you need to append an s to its short name
+                        if (option.id == "DYNAMIC") {
+                            option.value = cli.ds
+                        }
+                        // If the cl option has an arg, its value defines the value of the
+                        // respective analysis option
+                        else if (option.argName) {
+                            option.value = cli[(option.name)]
+                        }
+                        // If the cl option has no arg and it's a boolean flag. Toggle the
+                        // default value of the respective analysis option
+                        else {
+                            def defaultOption = defaultOptionsMap.get(option.id)
+                            option.value = !defaultOption.value
+                        }
                     }
                 }
             }
-        }
-    }
-
-    static void setOptionFromProperty(AnalysisOption option, String property) {
-        if (option.id == "DYNAMIC") {
-            option.value = property.split().collect { String s -> s.trim() }
-        } else if (option.argName) {
-            option.value = property
-        } else {
-            option.value = property.toBoolean()
-        }
-    }
-
-    static void setOptionFromCLI(AnalysisOption option, OptionAccessor cli) {
-        // NOTE: Obscure cli builder feature: to get the value of a cl option
-        // as a List, you need to append an s to its short name
-        if (option.id == "DYNAMIC") {
-            option.value = cli.ds
-        }
-        else if (option.argName) {
-            // If the cl option has an arg, its value defines the value of the
-            // respective analysis option
-            option.value = cli[(option.name)]
-        } else {
-            // If the cl option has no arg and it's a boolean flag. Toggle the
-            // default value of the respective analysis option
-            def defaultOption = defaultOptionsMap.get(option.id)
-            option.value = !defaultOption.value
         }
     }
 }
