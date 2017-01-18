@@ -1,0 +1,196 @@
+.type Type
+.type Var 
+.type MethodInvocation
+.type MethodSignature
+.type HeapAllocation
+.type FieldSignature
+.type Int
+.type SimpleName
+.type MethodDescriptor
+
+.type Instruction = MethodInvocation
+
+// This part is specific to 2objH. 
+.type Simple_Context = [ fst:HeapAllocation, snd:HeapAllocation]
+.type Simple_HContext = HeapAllocation
+
+#define RecordMacro(ctx, heap, hctx) \
+   ctx=[fstsadfasd,sndaewrv], hctx = sndaewrv, fstsadfasd = fstsadfasd 
+// last part is to avoid warning about var used once. Cannot be
+// underscore here, sadly.
+#define MergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+   calleeCtx = [hctx,heap], callerCtx = callerCtx
+// again, avoid warning
+#define Simple_InitialContext(ctx) \
+   ctx = ["<<initial-context>>","<<initial-context>>"]
+
+
+/////////
+// EDB //
+/////////
+
+.decl AssignLocal(?from:Var, ?to:Var, ?meth:MethodSignature) input
+.decl FormalParam(?index:Int, ?containingMethod:MethodSignature, ?variable:Var)  input
+.decl ActualParam(?index:Int, ?callsite:MethodInvocation, ?actualVariable:Var)  input
+.decl ReturnVar(?return:Var, ?toMethod:MethodSignature)  input 
+.decl AssignReturnValue(?callsite:MethodInvocation, ?variableAssignedTo:Var)  input
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMethod:MethodSignature) input 
+.decl Reachable(?inMethod:MethodSignature) input 
+.decl StoreInstanceField(?from:Var, ?base:Var, ?fld:FieldSignature, ?inMethod:MethodSignature) input
+.decl LoadInstanceField(?base:Var, ?fld:FieldSignature, ?to:Var, ?inMethod:MethodSignature) input
+.decl VirtualMethodInvocation_Base(?callsite:MethodInvocation, ?instanceVariable:Var)  input
+.decl ThisVar(?method:MethodSignature, ?thisVariable:Var)  input
+.decl HeapAllocation_Type(?heapAllocation:HeapAllocation, ?heaptype:Type)  input
+.decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName) input
+.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor) input
+.decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, 
+      ?heaptype:Type, ?tomethod:MethodSignature) input 
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?meth:MethodSignature) input
+.decl StoreStaticField(?from:Var, ?fld:FieldSignature, ?inMethod:MethodSignature) input
+.decl LoadStaticField(?fld:FieldSignature, ?to:Var, ?inMethod:MethodSignature) input
+.decl StaticMethodInvocation(?invocation:MethodInvocation, 
+	  ?toMethod:MethodSignature, ?inMethod:MethodSignature) input
+.decl MethodInvocation_Signature(?invocation:MethodInvocation, ?toMethod:MethodSignature) input
+.decl SpecialMethodInvocation_Base(?invocation:MethodInvocation, ?base:Var) input
+.decl Var_Type(?var:Var, ?type:Type) input
+.decl SubtypeOf(?sub:Type, ?super:Type) input
+
+/////////
+// IDB //
+/////////
+
+// Declarations
+.decl Simple_LocalAssign(?to:Var, ?from:Var) 
+.decl Simple_Assign(?ctxTo:Simple_Context, ?to:Var, ?ctxFrom:Simple_Context, ?from:Var) 
+.decl Simple_VarPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, 
+                         ?ctx:Simple_Context, ?var:Var) output
+.decl Simple_FieldPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, ?fld:FieldSignature,
+                         ?baseHctx:Simple_HContext, ?baseheap:HeapAllocation)
+.decl Simple_StaticFieldPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, ?fld:FieldSignature)
+.decl Simple_CallGraphEdge(?ctxInvo:Simple_Context, ?invocation:MethodInvocation, 
+                         ?ctxMeth:Simple_Context, ?meth:MethodSignature) output
+.decl Simple_ReachableContext(?ctx:Simple_Context, ?meth:MethodSignature) output
+// also try without the two below
+.decl Simple_StoreHeapInstanceField(?fld:FieldSignature, ?basehctx:Simple_HContext,
+                         ?baseheap:HeapAllocation, ?ctx:Simple_Context, ?from:Var)
+.decl Simple_LoadHeapInstanceField(?ctx: Simple_Context, ?to: Var, ?fld:FieldSignature, 
+                         ?basehctx:Simple_HContext, ?baseheap:HeapAllocation) 
+
+
+// Rules
+
+// Intra-procedural assignment
+Simple_LocalAssign(?to, ?from) :-
+  AssignLocal(?from, ?to, _).
+
+Simple_LocalAssign(?to, ?from) :-
+  AssignCast(_, ?from, ?to, _).
+
+Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?to) :-
+  Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?from),
+  Simple_LocalAssign(?to, ?from),
+  HeapAllocation_Type(?heap, ?heaptype),
+  Var_Type(?to, ?vartype),
+  SubtypeOf(?heaptype, ?vartype).
+
+
+// Inter-procedural assignment
+Simple_Assign(?ctxMeth, ?formal, ?ctxInvo, ?actual) :-
+  Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod),
+  FormalParam(?index, ?toMethod, ?formal),
+  ActualParam(?index, ?invocation, ?actual).
+
+Simple_Assign(?ctxInvo, ?local, ?ctxMeth, ?return) :-
+  Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod),
+  ReturnVar(?return, ?toMethod),
+  AssignReturnValue(?invocation, ?local).
+
+Simple_VarPointsTo(?hctx, ?heap, ?toCtx, ?to) :-
+  Simple_Assign(?toCtx, ?to, ?fromCtx, ?from),
+  Simple_VarPointsTo(?hctx, ?heap, ?fromCtx, ?from).
+
+
+// New object allocation
+Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
+  AssignHeapAllocation(?heap, ?var, ?inMethod),
+  Simple_ReachableContext(?ctx, ?inMethod),
+  RecordMacro(?ctx,?heap,?hctx).
+
+// Heap: instance fields
+Simple_StoreHeapInstanceField(?fld, ?basehctx, ?baseheap, ?ctx, ?from) :-
+  StoreInstanceField(?from, ?base, ?fld, _),
+  Simple_VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+Simple_FieldPointsTo(?hctx, ?heap, ?fld, ?basehctx, ?baseheap) :-
+  Simple_StoreHeapInstanceField(?fld, ?basehctx, ?baseheap, ?ctx, ?from),
+  Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?from).
+
+Simple_LoadHeapInstanceField(?ctx, ?to, ?fld, ?basehctx, ?baseheap) :-
+  LoadInstanceField(?base, ?fld, ?to, _),
+  Simple_VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?to) :-
+  Simple_FieldPointsTo(?hctx, ?heap, ?fld, ?basehctx, ?baseheap),
+  Simple_LoadHeapInstanceField(?ctx, ?to, ?fld, ?basehctx, ?baseheap).
+
+
+// Heap: static fields
+Simple_StaticFieldPointsTo(?hctx, ?heap, ?fld) :-
+  StoreStaticField(?from, ?fld, _),
+  Simple_VarPointsTo(?hctx, ?heap, _, ?from).
+
+Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?to) :-
+  LoadStaticField(?fld, ?to, ?inmethod),
+  Simple_ReachableContext(?ctx, ?inmethod),
+  Simple_StaticFieldPointsTo(?hctx, ?heap, ?fld).
+
+
+// Method calls
+// Virtual:
+Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod)  :-
+  Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
+  HeapAllocation_Type(?heap, ?heaptype),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
+  MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth).
+Simple_VarPointsTo(?hctx, ?heap, ?ctxMeth, ?this) :-
+  Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
+  HeapAllocation_Type(?heap, ?heaptype),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
+  MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth),
+  ThisVar(?toMethod, ?this).
+
+// Static:
+Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxInvo, ?toMethod) :-
+  Simple_ReachableContext(?ctxInvo, ?inMethod),
+  StaticMethodInvocation(?invocation, ?toMethod, ?inMethod).
+
+// Special:
+Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod) :-
+  MethodInvocation_Signature(?invocation, ?toMethod),
+  SpecialMethodInvocation_Base(?invocation, ?base),
+  Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
+  MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth).
+Simple_VarPointsTo(?hctx, ?heap, ?ctxMeth, ?this) :-
+  MethodInvocation_Signature(?invocation, ?toMethod),
+  SpecialMethodInvocation_Base(?invocation, ?base),
+  Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
+  MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth),
+  ThisVar(?toMethod, ?this).
+
+
+// Reachable contexts
+Simple_ReachableContext(?ctx, ?method) :-
+  Simple_CallGraphEdge(_, _, ?ctx, ?method).
+
+// Context hack. Starts at initial on every method previously found
+// reachable by regular VPT.
+Simple_ReachableContext(?ctx, ?method) :-
+  Reachable(?method),
+  Simple_InitialContext(?ctx).

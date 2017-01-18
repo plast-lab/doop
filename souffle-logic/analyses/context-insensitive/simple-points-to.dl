@@ -1,0 +1,95 @@
+.type Type
+.type Var 
+.type MethodInvocation
+.type MethodSignature
+.type HeapAllocation
+.type FieldSignature
+.type Int
+.type SimpleName
+.type MethodDescriptor
+
+.type Instruction = MethodInvocation
+
+/////////
+// EDB //
+/////////
+
+.decl AssignLocal(?from:Var, ?to:Var, ?meth:MethodSignature) input
+.decl FormalParam(?index:Int, ?containingMethod:MethodSignature, ?variable:Var)  input
+.decl ActualParam(?index:Int, ?callsite:MethodInvocation, ?actualVariable:Var)  input
+.decl ReturnVar(?return:Var, ?toMethod:MethodSignature)  input 
+.decl AssignReturnValue(?callsite:MethodInvocation, ?variableAssignedTo:Var)  input
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMethod:MethodSignature) input 
+.decl Reachable(?inMethod:MethodSignature) input 
+.decl StoreInstanceField(?from:Var, ?base:Var, ?fld:FieldSignature, ?inMethod:MethodSignature) input
+.decl LoadInstanceField(?base:Var, ?fld:FieldSignature, ?to:Var, ?inMethod:MethodSignature) input
+.decl VirtualMethodInvocation_Base(?callsite:MethodInvocation, ?instanceVariable:Var)  input
+.decl ThisVar(?method:MethodSignature, ?thisVariable:Var)  input
+.decl HeapAllocation_Type(?heapAllocation:HeapAllocation, ?heaptype:Type)  input
+.decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName) input
+.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor) input
+.decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, 
+                   ?heaptype:Type, ?tomethod:MethodSignature) input 
+
+
+/////////
+// IDB //
+/////////
+
+.decl Simple_Assign(?to:Var, ?from:Var) 
+.decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) 
+.decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:FieldSignature, ?baseheap:HeapAllocation)
+.decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:MethodSignature) output
+
+Simple_Assign(?to, ?from) :-
+  AssignLocal(?from, ?to, _).
+
+Simple_Assign(?formal, ?actual) :-
+  Simple_CallGraphEdge(?invocation, ?toMethod),
+  FormalParam(?index, ?toMethod, ?formal),
+  ActualParam(?index, ?invocation, ?actual).
+
+Simple_Assign(?local, ?return) :-
+  Simple_CallGraphEdge(?invocation, ?toMethod),
+  ReturnVar(?return, ?toMethod),
+  AssignReturnValue(?invocation, ?local).
+
+Simple_VarPointsTo(?heap, ?var) :-
+  AssignHeapAllocation(?heap, ?var, ?inMethod),
+  Reachable(?inMethod).
+
+Simple_VarPointsTo(?heap, ?to) :-
+  Simple_Assign(?to, ?from),
+  Simple_VarPointsTo(?heap, ?from).
+
+Simple_FieldPointsTo(?heap, ?fld, ?baseheap) :-
+  StoreInstanceField(?from, ?base, ?fld, _),
+  Simple_VarPointsTo(?baseheap, ?base),
+  Simple_VarPointsTo(?heap, ?from).
+
+Simple_VarPointsTo(?heap, ?to) :-
+  LoadInstanceField(?base, ?fld, ?to, _),
+  Simple_VarPointsTo(?baseheap, ?base),
+  Simple_FieldPointsTo(?heap, ?fld, ?baseheap).
+
+Simple_VarPointsTo(?heap, ?this) :-
+  Reachable(?inMethod),
+  Instruction_Method(?invocation, ?inMethod),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  Simple_VarPointsTo(?heap, ?base),
+  HeapAllocation_Type(?heap, ?heaptype),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
+  ThisVar(?toMethod, ?this).
+
+Simple_CallGraphEdge(?invocation, ?toMethod) :-
+  Reachable(?inMethod),
+  Instruction_Method(?invocation, ?inMethod),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  Simple_VarPointsTo(?heap, ?base),
+  HeapAllocation_Type(?heap, ?heaptype),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
