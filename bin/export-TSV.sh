@@ -53,7 +53,7 @@ exportByQuery() {
 
 export ActualParam ApplicationClass ArrayType \
 AssignCast:From AssignCast:Insn \
-AssignLocal:From AssignLocal:Insn \
+AssignLocal AssignLocal:From AssignLocal:Insn \
 AssignInstruction:To AssignNull:Insn \
 AssignReturnValue \
 BasicBlockBegin BasicBlockHead BasicBlockEnd ExceptionHandlerFirstInstruction \
@@ -61,7 +61,8 @@ ExistsPreviousPredecessorToSameBB ExistsPreviousReturn \
 FieldInstruction:Signature FieldModifier \
 FieldSignature:DeclaringClass FieldSignature:Type FormalParam \
 Instruction:Index Instruction:Method IsJumpTarget \
-LoadArrayIndex:Base LoadArrayIndex:To LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \
+LoadArrayIndex:Base LoadArrayIndex:To \
+LoadInstanceField LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \
 MainClass MainMethodArgHeap \
 MainMethodArgsArray MayPredecessorBBModuloThrow MaySuccessorBBModuloThrow \
 MethodInvocation MethodInvocation:Method MethodLookup \
@@ -71,7 +72,7 @@ NextInSamePhiNode NextPredecessorToSameBB NextReturn PhiNodeHead PrevInSameBasic
 ReferenceType ReturnInstruction ReturnNonvoid:Var ReturnVar SpecialMethodInvocation:Base \
 SpecialMethodInvocation:Insn StaticMethodInvocation:Insn \
 StoreArrayIndex:Base StoreArrayIndex:From \
-StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \
+StoreInstanceField StoreInstanceField:Base StoreInstanceField:From StoreStaticField:From \
 SubtypeOf ThisVar \
 Var:DeclaringMethod Var:Type \
 VirtualMethodInvocation:Base VirtualMethodInvocation:Descriptor VirtualMethodInvocation:SimpleName
