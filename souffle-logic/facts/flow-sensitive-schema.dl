@@ -1,0 +1,422 @@
+.number_type ParamIndex
+.type SimpleName
+
+.type NumConstant
+.type Modifier
+
+.decl Modifier_abstract(?mod:Modifier)
+.decl Modifier_final(?mod:Modifier)
+.decl Modifier_public(?mod:Modifier)
+.decl Modifier_private(?mod:Modifier)
+.decl Modifier_static(?mod:Modifier)
+
+// Java Type Hierarchy
+
+.type Type
+
+.type PrimitiveType = Type
+.type ReferenceType = Type
+.type NullType = ReferenceType
+.type ArrayType = ReferenceType
+.type ClassType = ReferenceType
+.type InterfaceType = ReferenceType
+
+
+// Inheritance and Subtyping
+
+.decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)
+.decl DirectSuperinterface(?ref:ReferenceType, ?interface:InterfaceType)
+
+
+// Important class subsets
+
+.type ApplicationClass = ReferenceType
+.type MainClass = ClassType
+
+
+// Common type selectors
+
+.decl Type_boolean(?t:PrimitiveType)
+.decl Type_byte(?t:PrimitiveType)
+.decl Type_char(?t:PrimitiveType)
+.decl Type_short(?t:PrimitiveType)
+.decl Type_int(?t:PrimitiveType)
+.decl Type_long(?t:PrimitiveType)
+.decl Type_float(?t:PrimitiveType)
+.decl Type_double(?t:PrimitiveType)
+.decl Type_void(?t:PrimitiveType)
+.decl Type_null(?t:PrimitiveType)
+.decl Type_object(?t:PrimitiveType)
+
+.decl ClassModifier(?mod:Modifier, ?class:ReferenceType)
+
+//-----------------------------------------------------------------------------
+
+.type Field
+
+.decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
+.decl Field_SimpleName(?field:Field, ?simpleName:SimpleName)
+.decl Field_Type(?field:Field, ?type:Type)
+.decl Field_Modifier(?mod:Modifier, ?field:Field)
+
+//-----------------------------------------------------------------------------
+
+// Represents the return type and the argument types of a method
+.type MethodDescriptor
+
+.type Method
+
+.decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
+.decl Method_ReturnType(?method:Method, ?returnType:Type)
+.decl Method_SimpleName(?method:Method, ?simpleName:SimpleName)
+.decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
+
+.type JVMDescriptor
+
+// JVM method descriptor
+.decl Method_JVMDescriptor(?method:Method, ?descriptor:JVMDescriptor)
+
+.decl Method_Modifier(?mod:Modifier, ?method:Method)
+
+// Method ?method declares to throw exception ?exceptionType.
+// This predicate corresponds to Java's throws clause, or the
+// Exceptions clause in Java bytecode.
+.decl Method_DeclaresException(?exceptionType:ReferenceType, ?method:Method)
+
+.decl FormalParam(?index:ParamIndex, ?method:Method, ?var:Var)
+
+.decl ThisVar(?method:Method, ?var:Var)
+
+//-----------------------------------------------------------------------------
+
+.type Var
+
+.decl Var_Type(?var:Var, ?type:Type)
+.decl Var_DeclaringMethod(?var:Var, ?method:Method)
+
+.decl ApplicationVar(?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Bytecode Instructions]
+//-----------------------------------------------------------------------------
+
+.type Instruction
+
+.decl Instruction_Index(?insn:Instruction, ?index:number)
+.decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
+
+.type Throw_Insn                      = Instruction
+.type ThrowNull_Insn                  = Throw_Insn
+.type Goto_Insn                       = Instruction
+.type If_Insn                         = Instruction
+.type Switch_Insn                     = Instruction
+.type TableSwitch_Insn                = Switch_Insn
+.type LookupSwitch_Insn               = Switch_Insn
+.type MonitorInstruction              = Instruction
+.type EnterMonitor_Insn               = MonitorInstruction
+.type ExitMonitor_Insn                = MonitorInstruction
+.type FieldInstruction                = Instruction
+.type LoadInstanceField_Insn          = FieldInstruction
+.type StoreInstanceField_Insn         = FieldInstruction
+.type LoadStaticField_Insn            = FieldInstruction
+.type StoreStaticField_Insn           = FieldInstruction
+.type ArrayInstruction                = Instruction
+.type LoadArrayIndex_Insn             = ArrayInstruction
+.type StoreArrayIndex_Insn            = ArrayInstruction
+
+.type AssignInstruction               = Instruction
+.type AssignOper_Insn                 = AssignInstruction
+.type AssignBinop_Insn                = AssignOper_Insn
+.type AssignUnop_Insn                 = AssignOper_Insn
+.type AssignLocal_Insn                = AssignOper_Insn
+.type AssignInstanceOf_Insn           = AssignInstruction
+.type AssignNull_Insn                 = AssignInstruction
+.type AssignNumConstant_Insn          = AssignInstruction
+.type AssignCast_Insn                 = AssignInstruction
+.type AssignCastNull_Insn             = AssignCast_Insn
+.type AssignCastNumConstant_Insn      = AssignCast_Insn
+.type AssignHeapAllocation_Insn       = AssignInstruction
+.type ReturnInstruction               = Instruction
+.type ReturnVoid_Insn                 = ReturnInstruction
+.type ReturnNonvoid_Insn              = ReturnInstruction
+
+.type MethodInvocation                = Instruction
+.type VirtualMethodInvocation_Insn    = MethodInvocation
+.type SpecialMethodInvocation_Insn    = MethodInvocation
+.type StaticMethodInvocation_Insn     = MethodInvocation
+
+.type UnsupportedInstruction          = Instruction
+.type AssignPhantomInvoke             = UnsupportedInstruction
+.type PhantomInvoke                   = UnsupportedInstruction
+.type BreakpointStmt                  = UnsupportedInstruction
+
+//-----------------------------------------------------------------------------
+
+.decl If_Var(?insn:If_Insn, ?var:Var)
+.decl Throw_Var(?insn:Throw_Insn, ?var:Var)
+.decl Goto_Target(?insn:Goto_Insn, ?index:number)
+.decl If_Target(?insn:If_Insn, ?index:number)
+.decl Switch_Key(?insn:Switch_Insn, ?key:Var)
+.decl Switch_Target(?insn:Switch_Insn, ?value:number, ?index:number)
+.decl Switch_DefaultTarget(?insn:Switch_Insn, ?index:number)
+.decl EnterMonitor_Var(?insn:EnterMonitor_Insn, ?var:Var)
+.decl ExitMonitor_Var(?insn:ExitMonitor_Insn, ?var:Var)
+
+//-----------------------------------------------------------------------------
+// [Field Instructions]
+//-----------------------------------------------------------------------------
+
+// The associated *field* of this instruction. It applies to
+// all types of field instuctions.
+
+.decl FieldInstruction_Signature(?insn:FieldInstruction, ?sign:Field)
+
+//------------------------------------------------
+// A LoadInstanceField instruction has the form:
+// x = y.f
+//
+// Its three components are:
+//   1. Base (y)
+//   2. Field (f)
+//   3. To (x)
+//------------------------------------------------
+
+.decl LoadInstanceField_Base(?insn:LoadInstanceField_Insn, ?var:Var)
+.decl LoadInstanceField_To(?insn:LoadInstanceField_Insn, ?var:Var)
+
+//------------------------------------------------
+// A StoreInstanceField instruction has the form:
+// x.f = y
+//
+// Its three components are:
+//   1. Base (x)
+//   2. Field (f)
+//   3. From (y)
+//------------------------------------------------
+
+.decl StoreInstanceField_From(?insn:StoreInstanceField_Insn, ?var:Var)
+.decl StoreInstanceField_Base(?insn:StoreInstanceField_Insn, ?var:Var)
+
+//------------------------------------------------
+
+//------------------------------------------------
+// A LoadStaticField instruction has the form:
+// x = Y.f
+//
+// Its two components are:
+//   1. Field (Y.f)
+//   2. To (x)
+//------------------------------------------------
+
+.decl LoadStaticField_To(?insn:LoadStaticField_Insn, ?var:Var)
+
+//------------------------------------------------
+// A StoreStaticField instruction has the form:
+// X.f = y
+//
+// Its two components are:
+//   1. Field (X.f)
+//   2. From (y)
+//------------------------------------------------
+
+.decl StoreStaticField_From(?insn:StoreStaticField_Insn, ?var:Var)
+
+//-----------------------------------------------------------------------------
+// [Array Instructions]
+//-----------------------------------------------------------------------------
+
+.decl ArrayInsnIndex(?insn:Instruction, ?index:Var)
+
+.decl ComponentType(?arrayType:ArrayType, ?componentType:Type)
+
+// TODO: replace LoadArrayIndex:Base, StoreArrayIndex:Base with ArrayInstruction:Base
+.decl LoadArrayIndex_Base(?insn:LoadArrayIndex_Insn, ?var:Var)
+.decl LoadArrayIndex_To(?insn:LoadArrayIndex_Insn, var:Var)
+
+.decl StoreArrayIndex_From(?insn:StoreArrayIndex_Insn, ?var:Var)
+.decl StoreArrayIndex_Base(?insn:StoreArrayIndex_Insn, ?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Assign Instructions]
+//-----------------------------------------------------------------------------
+
+// The target of all assignment instructions
+.decl AssignInstruction_To(?insn:AssignInstruction, ?to:Var)
+
+// Assign numeric constant instruction
+.decl AssignNumConstant_Id(?insn:AssignNumConstant_Insn, ?const:NumConstant)
+
+// Assign cast instruction
+.decl AssignCast_From(?insn:AssignCast_Insn, ?from:Var)
+
+.decl AssignCast_Type(?insn:AssignCast_Insn, ?type:Type)
+
+// Assign numeric constant casting instruction
+.decl AssignCastNumConstant_Id(?insn:AssignCastNumConstant_Insn, ?const:NumConstant)
+
+// Assign local instruction
+.decl AssignLocal_From(?insn:AssignLocal_Insn, ?from:Var)
+
+// Assign instanceof expression
+.decl AssignInstanceOf_From(?insn:AssignInstanceOf_Insn, ?from:Var)
+
+.decl AssignInstanceOf_Type(?insn:AssignInstanceOf_Insn, ?type:Type)
+
+// Assign expression vars
+.decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
+
+.decl AssignOper_Type(?insn:AssignOper_Insn, ?type:symbol
+
+// Assign Heap Allocation
+.decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)
+
+
+//-----------------------------------------------------------------------------
+// [Return Instructions]
+//-----------------------------------------------------------------------------
+
+.decl ReturnNonvoid_Var(?return:ReturnNonvoid_Insn, ?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Invocation Instructions]
+//-----------------------------------------------------------------------------
+
+// The line number of a method invocation
+.decl MethodInvocation_Line(?invocation:MethodInvocation, ?line:number)
+
+// The signature of the method being called
+.decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
+
+.decl ApplicationMethod(?method:Method)
+
+// The (call-site) variable that holds the result of the invocation
+.decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
+
+// The actual parameters of the invocation. Note: this does not
+// contain the receiver object (see MethodInvocation:Base predicates).
+.decl ActualParam(?index:ParamIndex, ?invocation:MethodInvocation, ?var:Var)
+
+// Virtual Method Invocation
+.decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName)
+.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+
+// Static Method Invocation
+.decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName)
+.decl StaticMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+
+// Special Method Invocation
+.decl SpecialMethodInvocation_Base(?invocation:SpecialMethodInvocation_Insn, ?base:Var)
+.decl SpecialMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName)
+.decl SpecialMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+
+
+//-----------------------------------------------------------------------------
+// [Exception Handlers]
+//-----------------------------------------------------------------------------
+
+.type ExceptionHandler
+
+.decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)
+
+// Instruction index of handling code
+.decl ExceptionHandler_Index(?handler:ExceptionHandler, ?index:number)
+.decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)
+
+// Variable to which caught exceptions are assigned
+.decl ExceptionHandler_FormalParam(?handler:ExceptionHandler, ?var:Var)
+
+// First index of the bytecodes covered by this handler
+.decl ExceptionHandler_Begin(?handler:ExceptionHandler, ?index:number)
+
+// Last index (excluding this index) of the bytecodes covered by this
+// handler
+.decl ExceptionHandler_End(?handler:ExceptionHandler, ?index:number)
+
+// Previous exception handler (handlers are ordered inside a method)
+.decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)
+
+
+//-----------------------------------------------------------------------------
+// [Miscellaneous]
+//-----------------------------------------------------------------------------
+
+// Contents of properties files
+.decl Properties(?path:StringConstant, ?key:StringConstant, ?value:StringConstant)
+
+// Return variables of native methods (no instructions exist)
+.decl NativeReturnVar(?var:Var, ?method:Method)
+
+// Types potentially returned by a specific Class.forName invocation
+.decl Config:DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
+
+// Predicates to store runtime metrics and statistics
+.decl Stats_Runtime(?attr:symbol, ?value:number)
+//.decl Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint[64](?value).
+
+
+//-----------------------------------------------------------------------------
+// [Android-related]
+
+.decl Activity(?x:Type)
+.decl Service(?x:Type)
+.decl ContentProvider(?x:Type)
+.decl BroadcastReceiver(?x:Type)
+.decl CallbackMethod(?x:Method)
+.decl LayoutControl(?id:number, ?type:Type, ?parent:symbol)
+.decl LayoutControl0(?id:number, ?typename:symbol, ?parent:symbol)
+.decl FieldInitialValue(?fld:Field, ?valueString:symbol)
+
+//-----------------------------------------------------------------------------
+// [Heap Allocation]
+//-----------------------------------------------------------------------------
+
+.decl HeapAllocation0_Normal(?repr:symbol, ?type:Type)
+.decl HeapAllocation0_String(?repr:symbol)
+.decl HeapAllocation0_Class(?repr:symbol, ?instanceType:Type)
+.decl HeapAllocation0_EmptyArray(?repr:symbol)
+.decl AssignHeapAllocation0(?instr:AssignHeapAllocation_Insn, ?heapId:symbol)
+
+
+.type HeapAllocation
+.type NormalHeap     = HeapAllocation
+.type StringConstant = HeapAllocation
+.type ClassHeap      = HeapAllocation
+
+HeapAllocation:Normal:Cons[?id] = ?heap -> string(?id), NormalHeap(?heap).
+HeapAllocation:String:Cons[?id] = ?heap -> string(?id), StringConstant(?heap).
+HeapAllocation:Class:Cons[?id]  = ?heap -> string(?id), ClassHeap(?heap).
+HeapAllocation:Mock:Cons[?id]   = ?heap -> string(?id), HeapAllocation(?heap).
+
+lang:constructor(`HeapAllocation:Normal:Cons).
+lang:constructor(`HeapAllocation:String:Cons).
+lang:constructor(`HeapAllocation:Class:Cons).
+lang:constructor(`HeapAllocation:Mock:Cons).
+
+HeapAllocation:Id[?heap] = ?id -> HeapAllocation(?heap), string(?id).
+HeapAllocation:byId[?id] = ?heap -> string(?id), HeapAllocation(?heap).
+
+HeapAllocation:Type[?heap] = ?type   -> HeapAllocation(?heap), Type(?type).
+
+// [Miscellaneous]
+HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
+HeapAllocation:Null[] = ?null -> HeapAllocation(?null).
+MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
+MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
+
+ClassHeap:InstanceType[?classHeap] = ?instanceType ->
+   ClassHeap(?classHeap), Type(?instanceType).
+
+// Use an entity to represent raw strings since the engine is having problems
+// with huge strings as keys.
+StringRaw(?x), StringRaw:Id(?x:?id) -> string(?id).
+String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
+
+//-----------------------------------------------------------------------------
+// [Android]
+//-----------------------------------------------------------------------------
+
+.decl AndroidEntryPoint(?m:Method)
