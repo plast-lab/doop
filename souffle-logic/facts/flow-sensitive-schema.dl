@@ -2,7 +2,10 @@
 .type SimpleName
 
 .type NumConstant
+.decl isNumConstant(?n:NumConstant)
+
 .type Modifier
+.decl isModifier(?m:Modifier)
 
 .decl Modifier_abstract(?mod:Modifier)
 .decl Modifier_final(?mod:Modifier)
@@ -13,14 +16,21 @@
 // Java Type Hierarchy
 
 .type Type
+.decl isType(?t:Type)
 
 .type PrimitiveType = Type
 .type ReferenceType = Type
-.type NullType = ReferenceType
-.type ArrayType = ReferenceType
-.type ClassType = ReferenceType
+.type NullType      = ReferenceType
+.type ArrayType     = ReferenceType
+.type ClassType     = ReferenceType
 .type InterfaceType = ReferenceType
 
+.decl isPrimitiveType(?t:PrimitiveType)
+.decl isReferenceType(?t:ReferenceType)
+.decl isNullType(?t:NullType)
+.decl isArrayType(?t:ArrayType)
+.decl isClassType(?t:ClassType)
+.decl isInterfaceType(?t:InterfaceType)
 
 // Inheritance and Subtyping
 
@@ -30,8 +40,8 @@
 
 // Important class subsets
 
-.type ApplicationClass = ReferenceType
-.type MainClass = ClassType
+.decl ApplicationClass(?ref:ReferenceType)
+.decl MainClass(?class:ClassType)
 
 
 // Common type selectors
@@ -63,8 +73,10 @@
 
 // Represents the return type and the argument types of a method
 .type MethodDescriptor
+.decl isMethodDescriptor(?md:MethodDescriptor)
 
 .type Method
+.decl isMethod(?m:Method)
 
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
@@ -72,6 +84,7 @@
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
 
 .type JVMDescriptor
+.decl isJVMDescriptor(?jvmd:JVMDescriptor)
 
 // JVM method descriptor
 .decl Method_JVMDescriptor(?method:Method, ?descriptor:JVMDescriptor)
@@ -90,11 +103,51 @@
 //-----------------------------------------------------------------------------
 
 .type Var
+.decl isVar(v:Var)
 
 .decl Var_Type(?var:Var, ?type:Type)
 .decl Var_DeclaringMethod(?var:Var, ?method:Method)
 
 .decl ApplicationVar(?var:Var)
+
+
+//-----------------------------------------------------------------------------
+// [Heap Allocation]
+//-----------------------------------------------------------------------------
+
+.decl HeapAllocation0_Normal(?repr:symbol, ?type:Type)
+.decl HeapAllocation0_String(?repr:symbol)
+.decl HeapAllocation0_Class(?repr:symbol, ?instanceType:Type)
+.decl HeapAllocation0_EmptyArray(?repr:symbol)
+.decl AssignHeapAllocation0(?instr:AssignHeapAllocation_Insn, ?heapId:symbol)
+
+
+.type HeapAllocation
+.decl isHeapAllocation(?h:HeapAllocation)
+
+.type NormalHeap     = HeapAllocation
+.type StringConstant = HeapAllocation
+.type ClassHeap      = HeapAllocation
+
+.decl isNormalHeap(?h:NormalHeap)
+.decl isStringConstant(?h:StringConstant)
+.decl isClassHeap(?h:ClassHeap)
+
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+
+// [Miscellaneous]
+//HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
+//HeapAllocation:Null[] = ?null -> HeapAllocation(?null).
+//MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
+//MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
+
+//ClassHeap:InstanceType[?classHeap] = ?instanceType ->
+//   ClassHeap(?classHeap), Type(?instanceType).
+
+// Use an entity to represent raw strings since the engine is having problems
+// with huge strings as keys.
+//StringRaw(?x), StringRaw:Id(?x:?id) -> string(?id).
+//String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 
 
 //-----------------------------------------------------------------------------
@@ -267,7 +320,7 @@
 // Assign expression vars
 .decl AssignOper_From(?insn:AssignOper_Insn, ?from:Var)
 
-.decl AssignOper_Type(?insn:AssignOper_Insn, ?type:symbol
+.decl AssignOper_Type(?insn:AssignOper_Insn, ?type:symbol)
 
 // Assign Heap Allocation
 .decl AssignHeapAllocation_Heap(?insn:AssignHeapAllocation_Insn, ?heap:HeapAllocation)
@@ -351,7 +404,7 @@
 .decl NativeReturnVar(?var:Var, ?method:Method)
 
 // Types potentially returned by a specific Class.forName invocation
-.decl Config:DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
+.decl Config_DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
 
 // Predicates to store runtime metrics and statistics
 .decl Stats_Runtime(?attr:symbol, ?value:number)
@@ -360,6 +413,7 @@
 
 //-----------------------------------------------------------------------------
 // [Android-related]
+//-----------------------------------------------------------------------------
 
 .decl Activity(?x:Type)
 .decl Service(?x:Type)
@@ -369,51 +423,6 @@
 .decl LayoutControl(?id:number, ?type:Type, ?parent:symbol)
 .decl LayoutControl0(?id:number, ?typename:symbol, ?parent:symbol)
 .decl FieldInitialValue(?fld:Field, ?valueString:symbol)
-
-//-----------------------------------------------------------------------------
-// [Heap Allocation]
-//-----------------------------------------------------------------------------
-
-.decl HeapAllocation0_Normal(?repr:symbol, ?type:Type)
-.decl HeapAllocation0_String(?repr:symbol)
-.decl HeapAllocation0_Class(?repr:symbol, ?instanceType:Type)
-.decl HeapAllocation0_EmptyArray(?repr:symbol)
-.decl AssignHeapAllocation0(?instr:AssignHeapAllocation_Insn, ?heapId:symbol)
-
-
-.type HeapAllocation
-.type NormalHeap     = HeapAllocation
-.type StringConstant = HeapAllocation
-.type ClassHeap      = HeapAllocation
-
-HeapAllocation:Normal:Cons[?id] = ?heap -> string(?id), NormalHeap(?heap).
-HeapAllocation:String:Cons[?id] = ?heap -> string(?id), StringConstant(?heap).
-HeapAllocation:Class:Cons[?id]  = ?heap -> string(?id), ClassHeap(?heap).
-HeapAllocation:Mock:Cons[?id]   = ?heap -> string(?id), HeapAllocation(?heap).
-
-lang:constructor(`HeapAllocation:Normal:Cons).
-lang:constructor(`HeapAllocation:String:Cons).
-lang:constructor(`HeapAllocation:Class:Cons).
-lang:constructor(`HeapAllocation:Mock:Cons).
-
-HeapAllocation:Id[?heap] = ?id -> HeapAllocation(?heap), string(?id).
-HeapAllocation:byId[?id] = ?heap -> string(?id), HeapAllocation(?heap).
-
-HeapAllocation:Type[?heap] = ?type   -> HeapAllocation(?heap), Type(?type).
-
-// [Miscellaneous]
-HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
-HeapAllocation:Null[] = ?null -> HeapAllocation(?null).
-MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
-MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
-
-ClassHeap:InstanceType[?classHeap] = ?instanceType ->
-   ClassHeap(?classHeap), Type(?instanceType).
-
-// Use an entity to represent raw strings since the engine is having problems
-// with huge strings as keys.
-StringRaw(?x), StringRaw:Id(?x:?id) -> string(?id).
-String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 
 //-----------------------------------------------------------------------------
 // [Android]
