@@ -458,10 +458,9 @@ HeapAllocation:ContextInsensitive(?heap) <-
  *************************************************************/
 
 // Per-method merging: auto-merge allocation sites for method that
-// allocates many objects of same type. Doesn't apply to exceptions
-// and strings. Also, enable other rules to explicitly ask for
-// per-method merging, beyond the above heuristic (by setting
-// "...ShouldBeMerged...").
+// allocates many objects of same type. Also, enable other rules to
+// explicitly ask for per-method merging, beyond the above heuristic
+// (by setting "...ShouldBeMerged...").
 
 MethodAllocationMergeThreshold[] = 50.
 
@@ -482,6 +481,8 @@ ObjectMultipleAllocated(?heap) <-
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   AssignHeapAllocation(?heap, _, ?meth),
   HeapAllocation:Type[?heap] = ?heaptype,
+  !StringConstant(?heap),
+  !StringFactoryHeap(?heap),
   !HeapAllocation:EmptyArray(?heap),
   !ObjectMultipleAllocated(?heap),
   !HeapAllocation:Keep(?heap).
@@ -490,8 +491,7 @@ AllocationsPerMethodAndType[?type, ?meth] = ?n <-
   agg<<?n=count()>> MethodAndTypeToHeap(_, ?type, ?meth).
 
 AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
-  AllocationsPerMethodAndType[?heaptype, ?meth] > MethodAllocationMergeThreshold[],
-  !StringFactoryType(?heaptype).
+  AllocationsPerMethodAndType[?heaptype, ?meth] > MethodAllocationMergeThreshold[].
 
 MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) <-
   AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
@@ -556,7 +556,7 @@ HeapRepresentative(?representativeHeap, ?heap) <-
 /*************************************************************
  * Coarse-grained allocation policy
  *************************************************************/
-#define COARSE_GRAINED_ALLOCATION
+
 #ifdef COARSE_GRAINED_ALLOCATION
 // // Very coarse-grained allocation policy
 // AllocationShouldBeMergedPerPackage(?type, ?packageName) <-
@@ -582,7 +582,6 @@ HeapAllocation:ContextInsensitive(?heap) <-
 AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
   Method:DeclaringType[?meth] = ?class,
-  !StringFactoryType(?heaptype),
   SpecialLibraryClass(?class).
 #endif
 #endif
