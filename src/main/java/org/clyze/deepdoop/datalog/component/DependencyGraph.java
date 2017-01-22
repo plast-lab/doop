@@ -38,7 +38,8 @@ public class DependencyGraph {
 			// Propagate to global space
 			else
 				prop.preds.forEach(pred -> {
-					IAtom newPred = (IAtom) pred.accept(new InitVisitingActor(prop.fromId, null, new HashSet<>()));
+					IAtom newPred = (IAtom) pred.accept(new InitVisitingActor());
+					//IAtom newPred = (IAtom) pred.accept(new InitVisitingActor(prop.fromId, null, new HashSet<>()));
 					fromNode.addEdgeTo(getNode(newPred.name()));
 					handledGlobalAtoms.add(newPred.name());
 				});

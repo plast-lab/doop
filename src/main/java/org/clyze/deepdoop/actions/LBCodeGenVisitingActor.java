@@ -94,7 +94,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 			allUsedAtoms.addAll(_acActor.getUsedAtoms(c).keySet());
 		}
 		for (String usedPred : allUsedAtoms) {
-			Set<String> potentialDeclPreds = InitVisitingActor.revert(usedPred, n.comps.keySet(), reversePropagations);
+			Set<String> potentialDeclPreds = Renamer.revert(usedPred, n.comps.keySet(), reversePropagations);
 			boolean declFound = false;
 			for (String potentialDeclPred : potentialDeclPreds) {
 				if (allDeclAtoms.contains(potentialDeclPred)) {
@@ -301,8 +301,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	void emitFilePredicate(IAtom atom, Declaration d, Path file) {
 		String atomName = atom.name();
 
-		List<VariableExpr> vars = new ArrayList<>(atom.arity());
-		for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
+		List<VariableExpr> vars = VariableExpr.genTempVars(atom.arity());
 
 		String head = atomName + "(";
 		StringJoiner joiner = new StringJoiner(", ");

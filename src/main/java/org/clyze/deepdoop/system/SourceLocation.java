@@ -1,5 +1,6 @@
 package org.clyze.deepdoop.system;
 
+import java.util.stream.Stream;
 import java.util.StringJoiner;
 
 // A "stack" of source lines (due to #include)
@@ -25,8 +26,7 @@ public class SourceLocation {
 	@Override
 	public String toString() {
 		StringJoiner joiner = new StringJoiner("\n");
-		for (Line line : lines)
-			joiner.add("\tat " + line.file + ":" + line.num);
+		Stream.of(lines).forEach(line -> joiner.add("\tat " + line.file + ":" + line.num));
 		return joiner.toString();
 	}
 }

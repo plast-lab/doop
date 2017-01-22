@@ -14,9 +14,4 @@ public class Propagation {
 		this.preds  = preds;
 		this.toId   = toId;
 	}
-
-	@Override
-	public String toString() {
-		return fromId + " -- " + preds + " --> " + toId;
-	}
 }

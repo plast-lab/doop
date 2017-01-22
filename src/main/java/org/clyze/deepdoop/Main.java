@@ -12,7 +12,7 @@ public class Main {
 		try {
 			System.out.println(Compiler.compile("build", args[0]));
 		} catch (RuntimeException e) {
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 }

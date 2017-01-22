@@ -1,7 +1,6 @@
 package org.clyze.deepdoop.actions;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,52 +17,17 @@ import org.clyze.deepdoop.system.*;
 
 public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable> {
 
+	Renamer             _r;
 	AtomCollectingActor _acActor;
-	String              _oldId;
-	String              _id;
-	Set<String>         _ignoreAtoms;
 
-	public InitVisitingActor(String oldId, String id, Set<String> ignoreAtoms) {
+	public InitVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
 		super(null);
-		_actor       = this;
+		_actor = this;
 
-		_oldId       = oldId;
-		_id          = id;
-		_ignoreAtoms = ignoreAtoms;
-	}
-	public InitVisitingActor() {
-		this(null, null, null);
-	}
-
-	String name(String name, String stage) {
-		// atom is external so should remain unaltered
-		if (_ignoreAtoms.contains(name)) {
-			return name;
-		}
-		// Propagate *to* global space
-		else if (_id == null) {
-			assert _oldId != null;
-			assert name.startsWith(_oldId + ":");
-			return name.replaceFirst(_oldId + ":", "");
-		}
-		// Propagate between components
-		else {
-			if (_oldId != null) {
-				assert _oldId != null;
-				assert name.startsWith(_oldId + ":");
-				name = name.replaceFirst(_oldId + ":", "");
-			}
-			return _id + ":" + name + ("@past".equals(stage) ? ":past" : "");
-		}
-	}
-	String name(String name) {
-		return name(name, null);
-	}
-	String stage(String stage) {
-		return ("@past".equals(stage) ? null : stage);
+		_r = new Renamer(null, null, null);
 	}
 
 
@@ -75,53 +39,64 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(_acActor);
 		n.accept(acVisitor);
 
-		_ignoreAtoms = _acActor.getUsedAtoms(n.globalComp).keySet();
+		Set<String> globalDeclAtoms = new HashSet<>(_acActor.getDeclaringAtoms(n.globalComp).keySet());
+		Set<String> globalAtoms     = new HashSet<>(globalDeclAtoms);
+		globalAtoms.addAll(_acActor.getUsedAtoms(n.globalComp).keySet());
 
-		Set<String> globalAtoms = new HashSet<>(_acActor.getUsedAtoms(n.globalComp).keySet());
-		globalAtoms.addAll(_acActor.getDeclaringAtoms(n.globalComp).keySet());
+		// Global Component
+		Component newGlobal = (Component) n.globalComp.accept(this);
 
-		Program initP = Program.from(n.globalComp, new HashMap<>(), null, new HashSet<>());
-		for (Entry<String, String> entry : n.inits.entrySet()) {
-			String initName = entry.getKey();
-			String compName = entry.getValue();
-			Component c     = n.comps.get(compName);
-			_id             = initName;
-			initP.addComponent((Component) c.accept(this));
-		}
+		// Initializations
+		final Program initP = Program.from(newGlobal, new HashMap<>(), null, new HashSet<>());
+		n.inits.forEach( (initName, compName) -> {
+			Component comp = n.comps.get(compName);
+			_r.reset(null, initName, externalAtoms(comp));
+			initP.addComponent((Component) comp.accept(this));
+		});
 		initP.accept(acVisitor);
 
+		// Propagations
 		for (Propagation prop : n.props) {
-			_id                          = prop.fromId;
-			Component fromComp           = initP.comps.get(prop.fromId);
-			Component toComp             = (prop.toId == null ? initP.globalComp : initP.comps.get(prop.toId));
+			String from                  = prop.fromId;
+			String to                    = prop.toId;
+			Component fromComp           = initP.comps.get(from);
+			Component toComp             = (to == null ? initP.globalComp : initP.comps.get(to));
 			Map<String, IAtom> declAtoms = _acActor.getDeclaringAtoms(fromComp);
 			Set<IAtom> newPreds          = new HashSet<>();
 
-			// Preprocess predicates for propagation
+			_r.reset(null, from, externalAtoms(fromComp));
+			// empty means "*" => propagate everything
 			if (prop.preds.isEmpty())
 				newPreds.addAll(declAtoms.values());
 			else
-				for (IAtom pred : prop.preds)
-					newPreds.add(declAtoms.get(name(pred.name())));
+				prop.preds.forEach(pred -> {
+					String newName = _r.rename(pred.name());
+					newPreds.add(declAtoms.get(newName));
+				});
+			initP.addPropagation(from, newPreds, to);
 
-			initP.addPropagation(prop.fromId, newPreds, prop.toId);
-
+			_r.reset(from, to, null);
 			// Generate frame rules
 			for (IAtom atom : newPreds) {
 				if (atom instanceof Directive) continue;
 
-				List<VariableExpr> vars = new ArrayList<>(atom.arity());
-				for (int i = 0 ; i < atom.arity() ; i++) vars.add(new VariableExpr("var" + i));
+				List<VariableExpr> vars = VariableExpr.genTempVars(atom.arity());
 
 				// Propagate to global scope
-				if (prop.toId == null) {
-					String name = new InitVisitingActor(prop.fromId, prop.toId, globalAtoms).name(atom.name());
-					if (globalAtoms.contains(name))
-						ErrorManager.error(ErrorId.DEP_GLOBAL, atom.name());
+				if (to == null) {
+					String newName = _r.rename(atom.name());
+					// Declared in global space
+					if (globalDeclAtoms.contains(newName))
+						ErrorManager.error(ErrorId.DEP_GLOBAL, newName);
+					// Used in global space (but not declared there)
+					// * might be declared inside a component and then propagated to global
+					// * might be declared in a different (previous) file
+					else if (globalAtoms.contains(newName))
+						ErrorManager.warn(ErrorId.DEP_GLOBAL, newName);
 				}
 
-				IElement head = (IAtom) atom.instantiate((prop.toId == null ? null : "@past"), vars)
-				                            .accept(new InitVisitingActor(prop.fromId, prop.toId, _ignoreAtoms));
+				String stage = (to == null ? null : "@past");
+				IElement head = (IAtom) atom.instantiate(stage, vars).accept(this);
 				IElement body = (IAtom) atom.instantiate(null, vars);
 				toComp.addRule(new Rule(new LogicalElement(head), body));
 			}
@@ -141,19 +116,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		for (StubAtom p : n.imports) newImports.add((StubAtom) m.get(p));
 		Set<StubAtom> newExports = new HashSet<>();
 		for (StubAtom p : n.exports) newExports.add((StubAtom) m.get(p));
-		return new CmdComponent(_id, newDeclarations, n.eval, newImports, newExports);
-	}
-	@Override
-	public void enter(Component n) {
-		Set<String> declAtoms = _acActor.getDeclaringAtoms(n).keySet();
-		Set<String> usedAtoms = _acActor.getUsedAtoms(n).keySet();
-		// Atoms that are used but not declared in the component, are external
-		_ignoreAtoms = new HashSet<>(usedAtoms);
-		_ignoreAtoms.removeAll(declAtoms);
+		return new CmdComponent(_r.addId(), newDeclarations, n.eval, newImports, newExports);
 	}
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
-		Component newComp = new Component(_id);
+		Component newComp = new Component(_r.addId());
 		for (Declaration d : n.declarations) newComp.declarations.add((Declaration) m.get(d));
 		for (Constraint c : n.constraints)   newComp.constraints.add((Constraint) m.get(c));
 		for (Rule r : n.rules)               newComp.rules.add((Rule) m.get(r));
@@ -172,6 +139,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 	@Override
 	public RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
+		System.out.println(n.types);
 		return new RefModeDeclaration((RefMode) m.get(n.atom), (Predicate) m.get(n.types.get(0)), (Primitive) m.get(n.types.get(1)));
 	}
 	@Override
@@ -213,13 +181,13 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	public Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
 		List<IExpr> newKeyExprs = new ArrayList<>();
 		for (IExpr e : n.keyExprs) newKeyExprs.add((IExpr) m.get(e));
-		return new Functional(name(n.name, n.stage), stage(n.stage), newKeyExprs, (IExpr) m.get(n.valueExpr));
+		return new Functional(_r.rename(n.name, n.stage), _r.restage(n.stage), newKeyExprs, (IExpr) m.get(n.valueExpr));
 	}
 	@Override
 	public Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
 		List<IExpr> newExprs = new ArrayList<>();
 		for (IExpr e : n.exprs) newExprs.add((IExpr) m.get(e));
-		return new Predicate(name(n.name, n.stage), stage(n.stage), newExprs);
+		return new Predicate(_r.rename(n.name, n.stage), _r.restage(n.stage), newExprs);
 	}
 	@Override
 	public Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) {
@@ -227,11 +195,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 	@Override
 	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) {
-		return new RefMode(name(n.name), stage(n.stage), (VariableExpr) m.get(n.entityVar), (IExpr) m.get(n.valueExpr));
+		return new RefMode(_r.rename(n.name), _r.restage(n.stage), (VariableExpr) m.get(n.entityVar), (IExpr) m.get(n.valueExpr));
 	}
 	@Override
 	public StubAtom exit(StubAtom n, Map<IVisitable, IVisitable> m) {
-		return new StubAtom(name(n.name));
+		return new StubAtom(_r.rename(n.name));
 	}
 
 
@@ -257,28 +225,12 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 
 
-	// P0 -> P0
-	// S1:P1 -> S1:P1
-	// S3:P2:past -> S1:P2, S2:P2 when S1 and S2 propagate to S3
-	public static Set<String> revert(String name, Set<String> initIds, Map<String, Set<String>> reversePropagations) {
-		if (!name.endsWith(":past")) return Collections.singleton(name);
-
-		int i = name.indexOf(':');
-		if (i == -1) return Collections.singleton(name);
-
-		String id = name.substring(0, i);
-		String subName = name.substring(i+1, name.length());
-
-		if (reversePropagations.get(id) != null) {
-			subName = subName.substring(0, subName.lastIndexOf(":past"));
-			Set<String> fromSet = reversePropagations.get(id);
-			Set<String> result = new HashSet<>();
-			for (String fromId : fromSet) {
-				result.add(fromId + ":" + subName);
-			}
-			return result;
-		}
-		else
-			return Collections.singleton(subName);
+	Set<String> externalAtoms(Component n) {
+		Set<String> declAtoms = _acActor.getDeclaringAtoms(n).keySet();
+		Set<String> usedAtoms = _acActor.getUsedAtoms(n).keySet();
+		// Atoms that are used but not declared in the component, are external
+		Set<String> externals = new HashSet<>(usedAtoms);
+		externals.removeAll(declAtoms);
+		return externals;
 	}
 }
