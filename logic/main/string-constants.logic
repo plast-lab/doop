@@ -217,7 +217,11 @@ ClassIterationTrick(?length) <-
   ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
   ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
   ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
-  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26.
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
 MemberPrefixIterationTrick(?length) <-
 #ifdef REFLECTION_HIGH_SOUNDNESS_MODE  
   ?length = 3; ?length = 4; ?length = 5; ?length = 6;
@@ -226,7 +230,10 @@ MemberPrefixIterationTrick(?length) <-
   ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
   ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
   ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
-  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31.
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
 MemberSuffixIterationTrick(?length) <-
 #ifdef REFLECTION_HIGH_SOUNDNESS_MODE  
   ?length = 5; ?length = 6;
@@ -235,7 +242,10 @@ MemberSuffixIterationTrick(?length) <-
   ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
   ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
   ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
-  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31.
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
 
 // Exploit camel-case convention
 lang:derivationType[`StringChangesCaseAfterPosition] = "Derived".
@@ -413,11 +423,14 @@ HeapAllocation:Merge[?heap] = ?mergeHeap <-
 
 
 /*************************************************************
- * Merging allocation sites per method or per class.
- *************************************************************
- * Sample heuristic: merge allocation sites for method that allocates
- * many objects of same type. Doesn't apply to exceptions.
+ * Merging allocation sites per method, per class, or per package.
  *************************************************************/
+
+// Per-method merging: auto-merge allocation sites for method that
+// allocates many objects of same type. Doesn't apply to exceptions
+// and strings. Also, enable other rules to explicitly ask for
+// per-method merging, beyond the above heuristic (by setting
+// "...ShouldBeMerged...").
 
 MethodAllocationMergeThreshold[] = 50.
 
@@ -440,7 +453,10 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) <-
   HeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
   !StringConstant(?heap),
-  !ObjectMultipleAllocated(?heap).
+  !HeapAllocation:EmptyArray(?heap),
+  !SpecialObject(?heap),
+  !ObjectMultipleAllocated(?heap),
+  !HeapAllocation:Keep(?heap).
 
 AllocationsPerMethodAndType[?type, ?meth] = ?n <-
   agg<<?n=count()>> MethodAndTypeToHeap(_, ?type, ?meth).
@@ -456,19 +472,26 @@ MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) <-
 MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap <-
   agg<<?representativeHeap = min(?heap)>>(MethodAndTypeToMergedHeap(?heap, ?type, ?meth)).
   
+/*
 HeapRepresentative[?heap] = ?representativeHeap <-
   MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
   MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+*/
 
-// Now, per-class merging. This is more rare and should be
-// requested explicitly.
+// Now, per-class merging. This is more rare and should be requested
+// explicitly for a given type. Again, does not apply to types with
+// special merging policies.
 ClassAndTypeToHeap(?heap, ?heaptype, ?class) <-
   AssignHeapAllocation(?heap, _, ?meth),
   Method:DeclaringType[?meth] = ?class,
   HeapAllocation:Type[?heap] = ?heaptype,
   !ExceptionType(?heaptype),
+  !StringFactoryType(?heaptype),
   !StringConstant(?heap),
-  !ObjectMultipleAllocated(?heap).
+  !HeapAllocation:EmptyArray(?heap),
+  !SpecialObject(?heap),
+  !ObjectMultipleAllocated(?heap),
+  !HeapAllocation:Keep(?heap).
 
 AllocationsPerClassAndType[?type, ?class] = ?n <-
   agg<<?n=count()>> ClassAndTypeToHeap(_, ?type, ?class).
@@ -487,6 +510,36 @@ HeapRepresentative[?heap] = ?representativeHeap <-
   ClassAndTypeToRepresentative[?type, ?class] = ?representativeHeap,
   ClassAndTypeToMergedHeap(?heap, ?type, ?class).
 
+// Same for per-package merging.
+#include "package-heuristic.logic"
+PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) <-
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class),
+  Class:PackageHack[?class] = ?packageName.
+
+AllocationsPerPackageAndType[?type, ?packageName] = ?n <-
+  agg<<?n=count()>> PackageAndTypeToHeap(_, ?type, ?packageName).
+
+// This is explicitly set for types that want it.
+AllocationShouldBeMergedPerPackage(?heaptype, ?packageName) -> Type(?heaptype), string(?packageName).
+
+PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) <-
+  AllocationShouldBeMergedPerPackage(?heaptype, ?packageName),
+  PackageAndTypeToHeap(?heap, ?heaptype, ?packageName).
+
+PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?heap)>>(PackageAndTypeToMergedHeap(?heap, ?type, ?packageName)).
+
+HeapRepresentative[?heap] = ?representativeHeap <-
+  PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap,
+  PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+
+// // Very coarse-grained allocation policy
+// AllocationShouldBeMergedPerPackage(?type, ?packageName) <-
+//   AllocationsPerPackageAndType[?type, ?packageName] > 1.
+
+// Coarse-grained allocation policy
+AllocationShouldBeMergedPerClass(?type, ?class) <-
+  AllocationsPerClassAndType[?type, ?class] > 1.
 
 /*************************************************************
  * Library class that should be treated specially
@@ -523,19 +576,20 @@ StringFactoryHeap(?heap) <-
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifdef DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
 
-#include "package-heuristic.logic"
-PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) <-
-  ClassAndTypeToHeap(?heap, ?heaptype, ?class),
+PackageAndTypeToStringFactoryHeap(?heap, ?heaptype, ?packageName) <-
+  AssignHeapAllocation(?heap, _, ?meth),
+  Method:DeclaringType[?meth] = ?class,
+  HeapAllocation:Type[?heap] = ?heaptype,
+  StringFactoryType(?heaptype),
   Class:PackageHack[?class] = ?packageName.
 
-PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap <-
-  agg<<?representativeHeap = min(?heap)>>(PackageAndTypeToHeap(?heap, ?type, ?packageName)).
+PackageAndTypeToStringFactoryRepresentative[?type, ?packageName] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?heap)>>(PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName)).
 
 // current policy: all string builders merged per-package
 HeapRepresentative[?heap] = ?representativeHeap <-
-  PackageAndTypeToHeap(?heap, ?type, ?packageName),
-  PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap,
-  StringFactoryHeap(?heap).
+  PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName),
+  PackageAndTypeToStringFactoryRepresentative[?type, ?packageName] = ?representativeHeap.
 
 //// Used to be all are merged per-class:
 // // all string buffers (and builders) in the same class are merged
@@ -589,15 +643,16 @@ HeapAllocation:ContextInsensitive(?heap) <-
 //  SubtypeOf(?heaptype, ?handlertype).
 
 TypeToHeap(?heap, ?heaptype) <-
+  AssignHeapAllocation(?heap, _, _),
   HeapAllocation:Type[?heap] = ?heaptype,
   ExceptionType(?heaptype).
 
-// Quadratic but so local that it shouldn't matter, ever.
-ExceptionHeapRepresentative[?heap] = ?representativeHeap <-
-  agg<<?representativeHeap = min(?otherHeap)>>(TypeToHeap(?otherHeap, HeapAllocation:Type[?heap])).
+ExceptionHeapTypeRepresentative[?type] = ?representativeHeap <-
+  agg<<?representativeHeap = min(?otherHeap)>>(TypeToHeap(?otherHeap, ?type)).
 
 HeapRepresentative[?heap] = ?representativeHeap <-
-  ExceptionHeapRepresentative[?heap] = ?representativeHeap.
+  TypeToHeap(?heap, ?heaptype),
+  ExceptionHeapTypeRepresentative[?heaptype] = ?representativeHeap.
 
 #endif // SEPARATE_EXCEPTION_OBJECTS
 /*

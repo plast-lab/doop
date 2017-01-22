@@ -34,7 +34,9 @@ HeapAllocation:Keep(?heap) <-
   ReifiedClass[_] = ?heap;
   ReifiedConstructor[_] = ?heap;
   ReifiedMethod[_] = ?heap;
-  ReifiedField[_] = ?heap.
+  ReifiedField[_] = ?heap;
+  SpecialObject(?heap);
+  ReflectiveAllocation[_, _] = ?heap.
 
 /*************************************************************
  * Give an arbitrary containing type for every reflection object,

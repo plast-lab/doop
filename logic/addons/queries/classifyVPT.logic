@@ -12,7 +12,7 @@ VPTNormal(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _NormalHeap(h).
 
 // All objects with explicit allocations somewhere. There are also objects that
 // don't have explicit allocations. E.g., class constants that appear in the code,
-// strings representing type names that are computed programmatically, etc.
+// strings representing type names that are computed reflectively (getName), etc.
 VPTAllocated(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _AllocatedHeap(h).
 
 VPTCI(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _CIHeap(h).
@@ -42,6 +42,6 @@ VPTCIandNum(v,o) <- VPTCI(v,o), VPTNum(v,o).
 VPTMockVal(v,o) <- _VPTOpt(v,o), _MockValue(o).
 VPTCIandMockVal(v,o) <- VPTCI(v,o), VPTMockVal(v,o).
 
-// All others: merged string constants, layout control objects
+// All others: merged string constants that still arise reflectively, layout control objects
 VPTOther(v,o) <- _VPTOpt(v,o), !VPTNormal(v,o), !VPTCI(v,o), !VPTNum(v,o), !VPTMerged(v,o), !VPTMockVal(v,o), !VPTMockHeap(v,o), !VPTClassHeap(v,o).
 
