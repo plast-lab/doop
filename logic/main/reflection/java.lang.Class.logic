@@ -86,6 +86,9 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
   StringConstant(?classNameHeap),
   Value:byHeap[?classNameHeap] = ?classNameValue.
 
+// REVIEW: when getName returns a string, but our normal reflection
+// logic would have merged that string with others, should the result
+// be the string itself or its HeapAllocation:Merge?
 
 /*************************************************************
  * java.lang.Class.getComponentType
