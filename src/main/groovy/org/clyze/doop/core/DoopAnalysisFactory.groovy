@@ -5,6 +5,7 @@ import java.util.jar.JarFile
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.common.*
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*
@@ -17,7 +18,7 @@ import org.clyze.doop.system.*
  * protected instance methods to allow descendants to customize all possible
  * aspects of Analysis creation.
  */
-class AnalysisFactory {
+class DoopAnalysisFactory implements AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
@@ -81,11 +82,11 @@ class AnalysisFactory {
         if (name != "sound-may-point-to")
             analysis = new ClassicAnalysis(
                 analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
+                name.replace(File.separator, "-"),
                 options,
                 context,
+                outDir,
+                cacheDir,
                 vars.inputFiles,
                 vars.platformFiles,
                 commandsEnv)
@@ -93,11 +94,11 @@ class AnalysisFactory {
             options.CFG_ANALYSIS.value = true
             analysis = new SoundMayAnalysis(
                 analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
+                name.replace(File.separator, "-"),
                 options,
                 context,
+                outDir,
+                cacheDir,
                 vars.inputFiles,
                 vars.platformFiles,
                 commandsEnv)
@@ -110,7 +111,8 @@ class AnalysisFactory {
      * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
      * the default input resolution mechanism.
      */
-    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
+    @Override
+    Analysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
         context.add(inputFilePaths)
         return newAnalysis(id, name, options, context)

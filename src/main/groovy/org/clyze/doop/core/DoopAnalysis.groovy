@@ -3,40 +3,21 @@ package org.clyze.doop.core
 import groovy.transform.TypeChecked
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.doop.input.InputResolutionContext
+import org.clyze.common.*
 import org.clyze.doop.datalog.*
+import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  */
 @TypeChecked
-abstract class Analysis implements Runnable {
+abstract class DoopAnalysis extends Analysis implements Runnable {
 
     /**
      * Used for logging various messages
      */
     protected Log logger
-
-    /**
-     * The unique identifier of the analysis (that determines the caching)
-     */
-    String id
-
-    /**
-     * The name of the analysis (that determines the logic)
-     */
-    String name
-
-    /**
-     * The name of the analysis stripped of directory separators
-     */
-    String safename
-
-    /**
-     * The output dir for the analysis
-     */
-    File outDir
 
     /**
      * The facts dir for the input facts
@@ -59,19 +40,9 @@ abstract class Analysis implements Runnable {
     protected File averroesDir
 
     /**
-     * The options of the analysis
-     */
-    Map<String, AnalysisOption> options
-
-    /**
      * The analysis input resolution mechanism
      */
     InputResolutionContext ctx
-
-    /**
-     * The input files/dependencies of the analysis
-     */
-    List<File> inputs
 
     /**
      * The jre library jars for soot
@@ -97,27 +68,22 @@ abstract class Analysis implements Runnable {
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
      */
-    protected Analysis(String id,
-                       String outDirPath,
-                       String cacheDirPath,
-                       String name,
-                       Map<String, AnalysisOption> options,
-                       InputResolutionContext ctx,
-                       List<File> inputs,
-                       List<File> platformLibs,
-                       Map<String, String> commandsEnvironment) {
-        this.id = id
-        this.name = name
-        this.safename = name.replace(File.separator, "-")
-        this.options = options
+    protected DoopAnalysis(String id,
+                           String name,
+                           Map<String, AnalysisOption> options,
+                           InputResolutionContext ctx,
+                           File outDir,
+                           File cacheDir,
+                           List<File> inputFiles,
+                           List<File> platformLibs,
+                           Map<String, String> commandsEnvironment) {
+        super(AnalysisFamily.DOOP, id, name, options, outDir, inputFiles)
         this.ctx = ctx
-        this.inputs = inputs
+		this.cacheDir = cacheDir
         this.platformLibs = platformLibs
 
         logger      = LogFactory.getLog(getClass())
 
-        outDir      = new File(outDirPath)
-        cacheDir    = new File(cacheDirPath)
         factsDir    = new File(outDir, "facts")
         database    = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")

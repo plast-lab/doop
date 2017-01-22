@@ -34,9 +34,18 @@ task wrapper(type: Wrapper) {
 }
 
 repositories {
+
+    mavenLocal()
+
     mavenCentral()
+
     maven {
-        url "http://centauri.di.uoa.gr:8081/artifactory/ext-snapshot-local"
+        credentials {
+            username artifactory_user
+            password artifactory_password
+        }
+
+        url "${artifactory_contextUrl}/plast"
     }
 }
 
@@ -59,6 +68,11 @@ def sootInfoflowAndroidJar = file('lib/soot-infoflow-android-1.1.jar')
    }
 }
 
+//This is required only for the SNAPSHOT dependencies
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
             'commons-logging:commons-logging:1.1',              // Logging wrapper
@@ -71,6 +85,8 @@ dependencies {
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter2:1.0-SNAPSHOT',
             'ext:dexlib2:2.2b4'
+
+    compile 'org.clyze:clue-common:1.0-SNAPSHOT'
 
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'

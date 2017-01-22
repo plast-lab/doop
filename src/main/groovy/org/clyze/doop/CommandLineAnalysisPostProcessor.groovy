@@ -3,6 +3,7 @@ package org.clyze.doop
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.common.*
 import org.clyze.doop.core.*
 
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
@@ -50,7 +51,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         }
 
         def platform = analysis.options.PLATFORM.value
-        def inputName = FilenameUtils.getBaseName(analysis.inputs[0].toString())
+        def inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()
