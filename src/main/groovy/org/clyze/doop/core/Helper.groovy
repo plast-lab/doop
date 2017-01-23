@@ -6,7 +6,7 @@ import java.util.zip.ZipFile
 import org.apache.commons.cli.Option
 import org.apache.log4j.*
 import org.apache.commons.io.FilenameUtils
-import org.clyze.common.*
+import org.clyze.analysis.*
 
 /**
  * Various helper methods.
@@ -22,7 +22,7 @@ class Helper {
      * @param console - indicates whether log statements should be also written to the standard output.
      */
     static void initLogging(String logLevel, String logDir, boolean console) {
-        org.clyze.common.Helper.initLogging(logLevel, logDir, console)
+        org.clyze.analysis.Helper.initLogging(logLevel, logDir, console)
     }
 
     /**
@@ -31,7 +31,7 @@ class Helper {
      * @param logLevel - the log level to use
      */
     static void initConsoleLogging(String logLevel){
-        org.clyze.common.Helper.initConsoleLogging(logLevel)
+        org.clyze.analysis.Helper.initConsoleLogging(logLevel)
     }
 
     /**

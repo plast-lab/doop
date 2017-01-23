@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.clyze.common.Helper;
+import org.clyze.analysis.Helper;
 import org.clyze.deepdoop.datalog.*;
 import org.clyze.deepdoop.datalog.DeepDoopException.Error;
 import org.clyze.deepdoop.datalog.clause.*;

@@ -3,7 +3,7 @@ package org.clyze.doop.core
 import groovy.transform.TypeChecked
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.common.*
+import org.clyze.analysis.*
 import org.clyze.doop.datalog.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*
