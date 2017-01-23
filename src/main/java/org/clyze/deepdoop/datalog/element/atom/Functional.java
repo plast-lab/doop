@@ -49,6 +49,6 @@ public class Functional implements IAtom {
 	public String toString() {
 		StringJoiner joiner = new StringJoiner(", ");
 		keyExprs.forEach(e -> joiner.add(e.toString()));
-		return name + "[" + joiner + "] = " + valueExpr;
+		return name + "[" + joiner + "]" + (valueExpr == null ? "" : " = " + valueExpr);
 	}
 }

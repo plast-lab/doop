@@ -39,4 +39,10 @@ public class VariableExpr implements IExpr {
 		IntStream.range(0, n).forEach(i -> vars.add(new VariableExpr("var" + i)));
 		return vars;
 	}
+
+
+	@Override
+	public String toString() {
+		return name;
+	}
 }

@@ -37,4 +37,10 @@ public class ConstantExpr implements IExpr {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+
+	@Override
+	public String toString() {
+		return value.toString();
+	}
 }
