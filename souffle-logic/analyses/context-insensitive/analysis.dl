@@ -1,50 +1,17 @@
 #include "../../facts/flow-insensitive-schema.dl"
 #include "../../facts/flow-sensitive-schema.dl"
 #include "../../facts/to-flow-sensitive.dl"
-
-.type Type
-.type Var 
-.type MethodInvocation
-.type MethodSignature
-.type HeapAllocation
-.type FieldSignature
-.type Int
-.type SimpleName
-.type MethodDescriptor
-
-.type Instruction = MethodInvocation
-
-/////////
-// EDB //
-/////////
-
-.decl AssignLocal(?from:Var, ?to:Var, ?meth:MethodSignature) input
-.decl FormalParam(?index:Int, ?containingMethod:MethodSignature, ?variable:Var)  input
-.decl ActualParam(?index:Int, ?callsite:MethodInvocation, ?actualVariable:Var)  input
-.decl ReturnVar(?return:Var, ?toMethod:MethodSignature)  input 
-.decl AssignReturnValue(?callsite:MethodInvocation, ?variableAssignedTo:Var)  input
-.decl AssignHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMethod:MethodSignature) input 
-.decl Reachable(?inMethod:MethodSignature) input 
-.decl StoreInstanceField(?from:Var, ?base:Var, ?fld:FieldSignature, ?inMethod:MethodSignature) input
-.decl LoadInstanceField(?base:Var, ?fld:FieldSignature, ?to:Var, ?inMethod:MethodSignature) input
-.decl VirtualMethodInvocation_Base(?callsite:MethodInvocation, ?instanceVariable:Var)  input
-.decl ThisVar(?method:MethodSignature, ?thisVariable:Var)  input
-.decl HeapAllocation_Type(?heapAllocation:HeapAllocation, ?heaptype:Type)  input
-.decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
-.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName) input
-.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor) input
-.decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, 
-                   ?heaptype:Type, ?tomethod:MethodSignature) input 
-
+#include "../../facts/import-facts.dl"
 
 /////////
 // IDB //
 /////////
 
-.decl Simple_Assign(?to:Var, ?from:Var) 
+.decl Simple_Assign(?to:Var, ?from:Var)
 .decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) 
 .decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:FieldSignature, ?baseheap:HeapAllocation)
-.decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:MethodSignature) output
+.decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
+
 
 Simple_Assign(?to, ?from) :-
   AssignLocal(?from, ?to, _).

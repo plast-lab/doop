@@ -1,0 +1,31 @@
+// NormalHeap
+.decl _NormalHeap(?id:symbol, ?type:symbol)
+
+isNormalHeap(?id),
+HeapAllocation_Type(?id, ?type) :-
+    _NormalHeap(?id, ?type).
+
+// TODO: Why is this here?
+isClassType("java.lang.String").
+
+// StringConstant
+.decl iStringConstant(?id:symbol) input
+
+isStringConstant(?id),
+HeapAllocation_Type(?id, "java.lang.String") :-
+    iStringConstant(?id).
+
+// StringRaw
+.decl _StringRaw(?id:symbol, ?rawId:symbol) input
+.decl String_toRaw(?id:symbol, ?rawId:symbol)
+
+isStringRaw(?id),
+String_toRaw(?id, ?rawId) :-
+    _StringRaw(?id, ?rawId).
+
+// ClassHeap
+.decl _ClassHeap(?id:symbol, ?instanceType:symbol) input
+
+isClassHeap(?id),
+HeapAllocation_Type(?id, "java.lang.Class") :-
+    _ClassHeap(?id, ?instanceType).
