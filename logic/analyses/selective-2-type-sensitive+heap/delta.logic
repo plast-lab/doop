@@ -2,7 +2,8 @@
  * Special calling contexts
  */
 +Instruction(?instr), +Instruction:Id(?instr, "<<initial-context>>").
-+Instruction(?instr), +Instruction:Id(?instr, "<<jvm-startup>>").
-+Instruction(?instr), +Instruction:Id(?instr, "<<class-initialization>>").
++Instruction(?instr), +Instruction:Id(?instr, "<<jvm-startup-context>>").
++Instruction(?instr), +Instruction:Id(?instr, "<<jvm-startup-hcontext>>").
++Instruction(?instr), +Instruction:Id(?instr, "<<clinit-context>>").
 +Instruction(?instr), +Instruction:Id(?instr, "<<immutable-context>>").
 +Instruction(?instr), +Instruction:Id(?instr, "<<immutable-hcontext>>").

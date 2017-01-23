@@ -1,40 +1,25 @@
+// In this analysis, the real context is a Type and a Value and the
+// real heap context a single Value. Keeping mapping functions is the
+// way to handle analyses where HContext = Context (since the language
+// considers them different types).
+ContextFromRealContext[?type, ?value] = ?ctx ->
+  Context(?ctx), Type(?type), Value(?value).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?type ->
+  Context(?ctx), Type(?type).
+RealContext2FromContext[?ctx] = ?value ->
+  Context(?ctx), Value(?value).
 RealContext1FromContext[?ctx] = ?type,
 RealContext2FromContext[?ctx] = ?value <-
   ContextFromRealContext[?type, ?value] = ?ctx.
 
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?value ->
+  HContext(?hctx), Value(?value).
 RealHContextFromHContext[?hctx] = ?value <-
   HContextFromRealHContext[?value] = ?hctx.
-
-Context(?ctx),
-ContextFromRealContext[?type, ?value] = ?ctx,
-ImmutableContext(?ctx) <-
-  ClassTypeValue(?type, "java.lang.String"),
-  Value:byId["<<immutable-context>>"] = ?value.
-
-HContext(?hctx),
-HContextFromRealHContext[?value] = ?hctx,
-ImmutableHContext(?hctx) <-
-  Value:byId["<<immutable>>"] = ?value.
-
-
-// Create initial objects with their heap contexts
-HContext(?hctx),
-HContextFromRealHContext[?value] = ?hctx,
-SystemThreadGroup(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<system-thread-group>>"] = ?alloc.
-
-HContext(?hctx),
-HContextFromRealHContext[?value] = ?hctx,
-MainThreadGroup(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<main-thread-group>>"] = ?alloc.
-
-HContext(?hctx),
-HContextFromRealHContext[?value] = ?hctx,
-MainThread(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Merge optimization hack
@@ -50,27 +35,3 @@ Context(?calleeCtx),
 ContextFromRealContext[Value:DeclaringType[RealHContextFromHContext[?hctx]], ?value] = ?calleeCtx,
 OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?value).
-
-
-// Initially reachable methods
-Context(?ctx),
-ContextFromRealContext[?type, ?value] = ?ctx,
-ReachableContext(?ctx, ?method) <-
-  MainMethodDeclaration(?method),
-  ClassTypeValue(?type, "java.lang.String"),
-  Value:byId["<<initial-context>>"] = ?value.
-
-Context(?ctx),
-ContextFromRealContext[?type, ?value] = ?ctx,
-ReachableContext(?ctx, ?method) <-
-  ImplicitReachable(?method),
-  ClassTypeValue(?type, "java.lang.String"),
-  Value:byId["<<jvm-startup>>"] = ?value.
-
-Context(?ctx),
-ContextFromRealContext[?type, ?value] = ?ctx,
-ReachableContext(?ctx, ?clinit) <-
-  InitializedClass(?class),
-  ClassInitializer[?class] = ?clinit,
-  ClassTypeValue(?type, "java.lang.String"),
-  Value:byId["<<class-initialization>>"] = ?value.

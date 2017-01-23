@@ -151,17 +151,17 @@ _OptCertainMethodBase(?hctx, ?heap, ?ctx, ?invo) <-
    _MustPointTo:Object[?ctx, ?base] = ?heap,
    _MustPointTo:Hctx[?ctx, ?base] = ?hctx.
 
-_OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth) <-
+_OptMethodInvocation:Method(?toMeth, ?invo, ?inMeth) <-
    (StaticMethodInvocation:Insn(?invo);
     SpecialMethodInvocation:Insn(?invo)), 
-   MethodInvocation:Signature[?invo] = ?toMeth,
+   MethodInvocation:Method[?invo] = ?toMeth,
    Instruction:Method[?invo] = ?inMeth.
 
 _PushMustContext[?invo,?ctx] = ?calleeCtx, _MustContext(?calleeCtx),
 _MustCallGraphEdge:ToMethod[?ctx, ?invo] = ?toMeth,
 _MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx,
 _MustContextDepth[?calleeCtx] = ?depth + 1 <-
-   _OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth),
+   _OptMethodInvocation:Method(?toMeth, ?invo, ?inMeth),
    _MustReachableMethodUnderMustContext(?ctx, ?inMeth),
    _MustContextDepth[?ctx] = ?depth,
    ?depth < MaxMayContextDepth[].
@@ -511,7 +511,7 @@ AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?lastInsn) <-
 PushMayContext[?invo,?ctx] = ?calleeCtx, MayContext(?calleeCtx),
 MayCallGraphEdge:ToMethod(?toMeth, ?ctx, ?invo),
 MayCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
-   _OptMethodInvocation:Signature(?toMeth, ?invo, ?inMeth),
+   _OptMethodInvocation:Method(?toMeth, ?invo, ?inMeth),
    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
    MayContextDepth[?ctx] < MaxMayContextDepth[].
 
@@ -1469,24 +1469,24 @@ ApplicationMethod(?meth) <-
 
 MethodCallsReflection(?meth) <-
    Instruction:Method[?invo] = ?meth,
-   MethodInvocation:Signature[?invo] = ?sig,
+   MethodInvocation:Method[?invo] = ?sig,
    string:substring[?sig, 0, _] = "<java.lang.reflect".
 
-_Opt2MethodInvocation:Signature(?invo, ?inMeth, ?toMeth) <-
+_Opt2MethodInvocation:Method(?invo, ?inMeth, ?toMeth) <-
    (StaticMethodInvocation:Insn(?invo);
     SpecialMethodInvocation:Insn(?invo)), 
-   MethodInvocation:Signature[?invo] = ?toMeth,
+   MethodInvocation:Method[?invo] = ?toMeth,
    Instruction:Method[?invo] = ?inMeth.
 
 // exact resolution for static/special
 MethodCallsReflection(?inMeth) <-
-   _Opt2MethodInvocation:Signature(_, ?inMeth, ?toMeth), 
+   _Opt2MethodInvocation:Method(_, ?inMeth, ?toMeth), 
    MethodCallsReflection(?toMeth).
 
 // underapproximation of virtual method resolution, as if static
-_Opt2MethodInvocation:Signature(?invo, ?inMeth, ?toMeth) <-
+_Opt2MethodInvocation:Method(?invo, ?inMeth, ?toMeth) <-
    VirtualMethodInvocation:Insn(?invo),
-   MethodInvocation:Signature[?invo] = ?toMeth,
+   MethodInvocation:Method[?invo] = ?toMeth,
    Instruction:Method[?invo] = ?inMeth.
 
 // Naive virtual method resolution, based on name. REVIEW: too conservative?
@@ -1501,7 +1501,7 @@ MethodCallsReflection(?inMeth) <-
 
 InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <-
    AllPredecessors:InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn),
-   MethodInvocation:Signature[?insn] = ?calledMethod, // underapproximate
+   MethodInvocation:Method[?insn] = ?calledMethod, // underapproximate
 //   string:substring[?calledMethod, 0, string:length[?str]] != ?str, ?str = "<java.lang.reflect",
    !MethodCallsReflection(?calledMethod),
    ApplicationField(?fld),
@@ -1509,7 +1509,7 @@ InstanceFieldMayPointTo(?hctx, ?heap, ?fld, ?hctxBase, ?baseHeap, ?ctx, ?insn) <
 
 StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn) <-
    AllPredecessors:StaticFieldMayPointTo(?hctx, ?heap, ?fld, ?ctx, ?insn),
-   MethodInvocation:Signature[?insn] = ?calledMethod,
+   MethodInvocation:Method[?insn] = ?calledMethod,
 //   string:substring[?calledMethod, 0, string:length[?str]] != ?str, ?str = "<java.lang.reflect",
    !MethodCallsReflection(?calledMethod),
    ApplicationField(?fld),
@@ -1723,7 +1723,7 @@ IgnorableForNonCollectionsMethodInvocation(?invo) <-
 
 
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename <-
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    StaticMethodInvocation:Insn(?invocation),
    MethodSignature:SimpleName[?signature] = ?simplename.
 

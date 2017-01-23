@@ -15,7 +15,7 @@ Stats:Simple:InsensVarPointsTo(?value, ?var) <- VarPointsTo(_, ?value, _, ?var).
 Stats:Simple:Application:InsensVarPointsTo(?value, ?var),
 Stats:Simple:Application:VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
    VarPointsTo(?hctx, ?value, ?ctx, ?var),
-   Var:DeclaringMethod(?var, ?meth), ApplicationMethod(?meth).
+   ApplicationVar(?var).
 
 Stats:Simple:InsensReachableVar(?var),
 Stats:Simple:ReachableVar(?ctx, ?var) <-

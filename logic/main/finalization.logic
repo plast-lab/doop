@@ -12,7 +12,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
    Method:Id(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal,
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
-   !(HeapAllocation:Merge[?heap] = _),  // the object retains its identity
+   (!(HeapAllocation:Merge[?heap] = _); HeapAllocation:Merge[?heap] = ?heap),  // the object retains its identity
    Value:byHeap[?heap] = ?value,
    ObjectShouldNotBeRefined(?value).
 
@@ -25,7 +25,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
    Method:Id(?register:"<java.lang.ref.Finalizer: void register(java.lang.Object)>"),
    FormalParam[0, ?register] = ?formal,
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
-   !(HeapAllocation:Merge[?heap] = _),  // the object retains its identity
+   (!(HeapAllocation:Merge[?heap] = _); HeapAllocation:Merge[?heap] = ?heap),  // the object retains its identity
    Value:byHeap[?heap] = ?value,
    ObjectShouldBeRefined(?value).
 #endif

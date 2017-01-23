@@ -7,7 +7,7 @@ AnyMethodInvocation(?invocation, ?tomethod) <-
    VirtualMethodInvocation(?invocation, ?tomethod, _).
 
 AnyMethodInvocation(?invocation, ?tomethod) <-
-   MethodInvocation:Signature[?invocation] = ?tomethod,
+   MethodInvocation:Method[?invocation] = ?tomethod,
    SpecialMethodInvocation:Insn(?invocation).
 
 AnyMethodInvocationOpt(?tomethod, ?invocation) <- AnyMethodInvocation(?invocation, ?tomethod).

@@ -39,7 +39,7 @@ HeapAllocation:Type Instruction:Index Instruction:Method IsJumpTarget \
 LoadArrayIndex:Base LoadArrayIndex:To LoadInstanceField:Base LoadInstanceField:To LoadStaticField:To \
 MainClass MainMethodArgHeap  \
 MainMethodArgsArray MayPredecessorBBModuloThrow MaySuccessorBBModuloThrow \
-MethodInvocation MethodInvocation:Signature MethodLookup \
+MethodInvocation MethodInvocation:Method MethodLookup \
 MethodSignature:DeclaringType MethodSignature:Descriptor \
 MethodSignature:SimpleName Modifier:final Modifier:static MonitorInstruction \
 NextInSamePhiNode NextPredecessorToSameBB NextReturn PhiNodeHead PrevInSameBasicBlock Reachable \

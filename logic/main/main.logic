@@ -99,3 +99,38 @@ Value:DeclaringType[?value] = "java.lang.Object" <-
    Value:Null[] = ?value ;
    Value:byHeap[MainMethodArgArray[]] = ?value ;
    Value:byHeap[MainMethodArgArrayContent[]] = ?value.
+
+
+
+InitContext(ImmutableContext, "<<immutable-context>>").
+InitContext(InitialContext, "<<initial-context>>").
+InitContext(JVMStartupContext, "<<jvm-startup-context>>").
+InitContext(ClinitContext, "<<clinit-context>>").
+
+// The main method is reachable
+ReachableContext(InitialContext[], ?method) <-
+  MainMethodDeclaration(?method).
+
+// Implicitly reachable methods are invoked by the JVM on startup.
+ReachableContext(JVMStartupContext[], ?method) <-
+  ImplicitReachable(?method).
+
+// If a class needs to be initialized, then its class initializer is invoked
+// Note: InitializedClass already deals with superclasses that need initialization
+ReachableContext(ClinitContext[], ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit.
+
+
+InitHContext(ImmutableHContext, "<<immutable-hcontext>>").
+InitHContext(JVMStartupHContext, "<<jvm-startup-hcontext>>").
+
+// Create initial objects with their heap contexts
+SystemThreadGroup(JVMStartupHContext[], ?alloc) <-
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+MainThreadGroup(JVMStartupHContext[], ?alloc) <-
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+MainThread(JVMStartupHContext[], ?alloc) <-
+  Value:byId["<<main-thread>>"] = ?alloc.

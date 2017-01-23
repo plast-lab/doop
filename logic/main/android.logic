@@ -59,7 +59,7 @@ NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?type,
 ReifiedLayoutControl[?type,?id] = ?heap
 <-
-  LayoutControl(?id, ?type),
+  LayoutControl(?id, ?type, _),
   Type:Id(?type:?typeStr),
   ?heapId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
 
@@ -153,19 +153,20 @@ ReachableContext(?ctx, ?meth) <-
   (PublicMethodOfComponent(?meth);
    OverridingProtectedMethodOfComponent(?meth);
    CallbackMethod(?meth)),
-  ImmutableContext(?ctx).
+  ImmutableContext[] = ?ctx.
 
 // Handle library-callable "on*" methods of layout controls
 PublicOnMethodOfLayoutControl(?meth) <-
+
   MethodDeclaredOrInherited(?meth, ?type),
-  LayoutControl(_, ?type),
+  LayoutControl(_, ?type, _),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) <-
   MethodDeclaredOrInherited(?meth, ?type),
-  LayoutControl(_, ?type),
+  LayoutControl(_, ?type, _),
   Method:SimpleName[?meth] = ?simplename,
   string:substring[?simplename, 0, 2] = "on",
   Method:Modifier("protected", ?meth).
@@ -178,7 +179,7 @@ ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
-  ImmutableContext(?ctx).
+  ImmutableContext[] = ?ctx.
 
 
 // Handle library-callable "on*" methods of listeners/callbacks
@@ -245,7 +246,7 @@ ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfReachableListener(?meth);
    OverridingProtectedOnMethodOfReachableListener(?meth)),
-  ImmutableContext(?ctx).
+  ImmutableContext[] = ?ctx.
 
 
 // For all the above forced reachable methods, supply a receiver
@@ -303,7 +304,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) <-
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 ViewRetrievalByArg0MethodInvocation(?invo) <-
-  MethodInvocation:Signature[?invo] = ?method,
+  MethodInvocation:Method[?invo] = ?method,
   Method:SimpleName[?method] = ?calleeName,
   (SimpleName:Id(?calleeName:"inflate");
    SimpleName:Id(?calleeName:"getView");
@@ -324,7 +325,7 @@ VarsAtInvocationRetrievingView(?ret, ?var) <-
   ActualParam[0, ?invo] = ?var.
 
 ViewObjectValueFromId(?viewValue, ?numId) <-
-  LayoutControl(?numId, ?type),
+  LayoutControl(?numId, ?type, _),
   ReifiedLayoutControl[?type, ?numId] = ?heap,
   Value:byHeap[?heap] = ?viewValue.
 

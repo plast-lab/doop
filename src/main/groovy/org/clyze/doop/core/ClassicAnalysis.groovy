@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
@@ -20,28 +21,28 @@ import org.clyze.doop.system.*
  */
 @CompileStatic
 @TypeChecked
-class ClassicAnalysis extends Analysis {
+class ClassicAnalysis extends DoopAnalysis {
 
     boolean isRefineStep
 
     long sootTime
 
     protected ClassicAnalysis(String id,
-                       String outDirPath,
-                       String cacheDirPath,
-                       String name,
-                       Map<String, AnalysisOption> options,
-                       InputResolutionContext ctx,
-                       List<File> inputs,
-                       List<File> platformLibs,
-                       Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
+                              String name,
+                              Map<String, AnalysisOption> options,
+                              InputResolutionContext ctx,
+                              File outDir,
+                              File cacheDir,
+                              List<File> inputFiles,
+                              List<File> platformLibs,
+                              Map<String, String> commandsEnvironment) {
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
 
     String toString() {
-        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputFiles:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                "\n" +
                options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -234,7 +235,7 @@ class ClassicAnalysis extends Analysis {
         // By default, assume we run a context-sensitive analysis
         boolean isContextSensitive = true
         try {
-            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${safename}")
+            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
             Properties props = FileOps.loadProperties(file)
             isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
         }
@@ -242,31 +243,31 @@ class ClassicAnalysis extends Analysis {
             logger.debug e.getMessage()
         }
         if (isContextSensitive) {
-            cpp.preprocess("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic",
+            cpp.preprocessIfExists("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic",
                              "${mainPath}/context-sensitivity-declarations.logic")
             cpp.preprocess("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
-            cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic",
+            cpp.preprocessIfExists("${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic",
                              commonMacros, "${mainPath}/main-delta.logic")
-            cpp.preprocess("${outDir}/${safename}.logic", "${analysisPath}/analysis.logic",
+            cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic",
                              commonMacros, macros, "${mainPath}/context-sensitivity.logic")
         }
         else {
-            cpp.preprocess("${outDir}/${safename}-declarations.logic", "${analysisPath}/declarations.logic")
+            cpp.preprocess("${outDir}/${name}-declarations.logic", "${analysisPath}/declarations.logic")
             cpp.preprocessIfExists("${outDir}/prologue.logic", "${mainPath}/prologue.logic", commonMacros)
-            cpp.preprocessIfExists("${outDir}/${safename}-prologue.logic", "${analysisPath}/prologue.logic")
-            cpp.preprocessIfExists("${outDir}/${safename}-delta.logic", "${analysisPath}/delta.logic")
-            cpp.preprocess("${outDir}/${safename}.logic", "${analysisPath}/analysis.logic")
+            cpp.preprocessIfExists("${outDir}/${name}-prologue.logic", "${analysisPath}/prologue.logic")
+            cpp.preprocessIfExists("${outDir}/${name}-delta.logic", "${analysisPath}/delta.logic")
+            cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic")
         }
 
         connector.queue()
             .echo("-- Prologue --")
             .startTimer()
             .transaction()
-            .addBlockFile("${safename}-declarations.logic")
+            .addBlockFile("${name}-declarations.logic")
             .addBlockFile("prologue.logic")
             .commit()
             .transaction()
-            .executeFile("${safename}-delta.logic")
+            .executeFile("${name}-delta.logic")
 
         if (options.REFLECTION.value) {
             cpp.preprocess("${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
@@ -332,7 +333,7 @@ class ClassicAnalysis extends Analysis {
         if (options.SANITY.value)
             cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/sanity.logic")
 
-        cpp.includeAtStart("${outDir}/${safename}.logic", "${outDir}/addons.logic")
+        cpp.includeAtStart("${outDir}/${name}.logic", "${outDir}/addons.logic")
 
         connector.queue()
             .commit()
@@ -344,7 +345,7 @@ class ClassicAnalysis extends Analysis {
             .echo("-- " + echo_analysis + " --")
             .startTimer()
             .transaction()
-            .addBlockFile("${safename}.logic")
+            .addBlockFile("${name}.logic")
             .commit()
             .elapsedTime()
 
@@ -415,11 +416,11 @@ class ClassicAnalysis extends Analysis {
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            inputs[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            Collection<String> deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
         }
 
@@ -456,7 +457,7 @@ class ClassicAnalysis extends Analysis {
             params = params + ["--only-application-classes-fact-gen"]
         }
 
-        params = params + ["-d", factsDir.toString(), inputs[0].toString()]
+        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -497,7 +498,7 @@ class ClassicAnalysis extends Analysis {
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = inputs[0].toString()
+        String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -509,7 +510,7 @@ class ClassicAnalysis extends Analysis {
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
+        inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
     @Override
@@ -556,7 +557,7 @@ class ClassicAnalysis extends Analysis {
 
 
     private String cacheMeta() {
-        Collection<String> inputJars = inputs.collect {
+        Collection<String> inputJars = inputFiles.collect {
             File file -> file.toString()
         }
         Collection<String> cacheOptions = options.values().findAll {
@@ -596,13 +597,13 @@ class ClassicAnalysis extends Analysis {
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        Collection<String> libraryJars = inputs.drop(1).collect { it.toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = inputFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
 
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", inputs[0].toString())
+        props.setProperty("input_jar_files", inputFiles[0].toString())
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
@@ -673,4 +674,6 @@ class ClassicAnalysis extends Analysis {
         String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
         return "$path/rt.jar"
     }
+
+	Iterable<AnalysisPhase> phases() { return null }
 }

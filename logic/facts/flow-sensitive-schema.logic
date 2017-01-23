@@ -144,6 +144,8 @@ Var:Type[?var] = ?type ->
 Var:DeclaringMethod(?var, ?method) ->
    Var(?var), Method(?method).
 
+ApplicationVar(?var) -> Var(?var).
+
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
@@ -431,7 +433,7 @@ MethodInvocation:Line[?invocation] = ?line ->
    MethodInvocation(?invocation), int[64](?line).
 
 // The signature of the method being called
-MethodInvocation:Signature[?invocation] = ?signature ->
+MethodInvocation:Method[?invocation] = ?signature ->
    MethodInvocation(?invocation), Method(?signature).
 
 ApplicationMethod(?method) -> Method(?method).
@@ -537,8 +539,8 @@ Service(?x) -> Type(?x).
 ContentProvider(?x) -> Type(?x).
 BroadcastReceiver(?x) -> Type(?x).
 CallbackMethod(?x) -> Method(?x).
-LayoutControl(?id, ?type) -> int[32](?id), Type(?type).
-LayoutControl0(?id, ?typename) -> int[32](?id), string(?typename).
+LayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
+LayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
 FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 
 //-----------------------------------------------------------------------------

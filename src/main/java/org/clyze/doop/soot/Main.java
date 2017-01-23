@@ -137,31 +137,30 @@ public class Main {
                     case "-h":
                     case "--help":
                     case "-help":
-                        System.err.println("usage: [options] file");
+                        System.err.println("\nusage: [options] file");
                         System.err.println("options:");
                         System.err.println("  --main <class>                        Specify the main name of the main class");
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
                         System.err.println("  --full                                Generate facts by full transitive resolution");
-                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.err.println("  -d <directory>                        Specify where to generate csv fact files");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+                        System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
 
                         System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-
-                        System.err.println("  -h, -help                             Print this help message.");
                         System.exit(0);
                     case "--bytecode2jimpleHelp":
-                        System.err.println("usage: [options] file");
+                        System.err.println("\nusage: [options] file");
                         System.err.println("options:");
-                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                        System.err.println("  --full                                Generate facts by full transitive resolution");
+                        System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
+                        System.err.println("  --full                                Generate Jimple/Shimple files by full transitive resolution");
                         System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.err.println("  -d <directory>                        Specify where to generate files");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+                        System.err.println("  -lsystem                              Find classes in default system classes");
+                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
                         System.exit(0);
                     default:
                         if (args[i].charAt(0) == '-') {
@@ -243,6 +242,7 @@ public class Main {
                 resParser.parse(apkLocation);
                 List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
                 DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
+                lfp.registerLayoutFilesDirect(apkLocation);
                 lfp.parseLayoutFileDirect(apkLocation);
 
                 // now collect the facts we need
@@ -429,7 +429,7 @@ public class Main {
 
                     for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
                         for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
-                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName());
+                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                         }
                     }
                 }

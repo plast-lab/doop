@@ -21,13 +21,13 @@
 
 #ifndef MULTIPLE_SEGREGATED_ANALYSES
 ImmutableContextFromHContext[?hctx] = ?ctx <-
-  ImmutableContext(?ctx), HContext(?hctx).
+  ImmutableContext[] = ?ctx, HContext(?hctx).
 
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext(?hctx), Context(?ctx).
+  ImmutableHContext[] = ?hctx, Context(?ctx).
 
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
-  ImmutableContext(?ctx2), Context(?ctx1).
+  ImmutableContext[] = ?ctx2, Context(?ctx1).
 #endif // MULTIPLE_SEGREGATED_ANALYSES
 
 #ifndef CompatibleContextAndHContextMacro
@@ -261,35 +261,30 @@ ReachableStoreStaticFieldFrom(?from) <-
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   FieldInitialValue[?signature] = ?const,
   Value:byNum[?const] = ?value,
-  ImmutableHContext(?hctx).
+  ImmutableHContext[] = ?hctx.
 
 
 /**
  * Load array index
  */
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-   NotEmptyArrayValue(?basevalue),
-   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
-   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
-   // this used to be necessary when this rule also handled the
-   // arguments of Method.invoke() etc:
-   // HeapAllocation:Type[?baseheap] = ?baseheaptype,
-   // Var:Type[?to] = ?type,
-   // ComponentType[?baseheaptype] = ?basecomponenttype,
-   // SupertypeOf(?type, ?basecomponenttype).
+  NotEmptyArrayValue(?basevalue),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
+  // this is necessary to handle untyped array operations, e.g., the
+  // simulation of arrayCopy calls as Load/Stores
+  Value:Type[?basevalue] = ?basevaluetype,
+  Var:Type[?to] = ?type,
+  ComponentType[?basevaluetype] = ?basecomponenttype,
+  SupertypeOf(?type, ?basecomponenttype).
 
 
 NotEmptyArrayValue(?value) -> Value(?value).
 
 NotEmptyArrayValue(?value) <-
-   (Value:Heap[?value] = ?heap,
-    !HeapAllocation:EmptyArray(?heap)) ;
-   Value:isNonHeap(?value).
-
-/* YANNIS: used to be the much less precise:
-  HeapAllocation:Type[?heap] = ?heaptype,
-  SupertypeOf(?type, ?heaptype).
-*/
+  (Value:Heap[?value] = ?heap,
+   !HeapAllocation:EmptyArray(?heap)) ;
+  Value:isNonHeap(?value).
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) <-
   ReachableLoadArrayIndexBase(?base),
@@ -512,7 +507,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
@@ -527,7 +522,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
@@ -541,7 +536,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
@@ -556,7 +551,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).

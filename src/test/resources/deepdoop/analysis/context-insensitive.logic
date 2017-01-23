@@ -15,7 +15,7 @@ InitializedClass(?class) <-
    Reachable(?inmethod),
    Instruction:Method[?invocation] = ?inmethod,
    StaticMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    MethodSignature:DeclaringType[?signature] = ?class.
 InitializedClass(?classOrInterface) <-
    Reachable(?inmethod),
@@ -144,7 +144,7 @@ MethodImplemented[?simplename, ?descriptor, ?type] = ?method <-
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    VirtualMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    MethodSignature:SimpleName[?signature] = ?simplename,
    MethodSignature:Descriptor[?signature] = ?descriptor.
 ResolveInvocation(?invocation, ?heaptype, ?tomethod) ->
@@ -685,7 +685,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?heap, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?heap, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   ((!NegativeSiteFilter("true"), !SiteToRefine(?invocation)); (NegativeSiteFilter("true"), SiteToRefine(?invocation))).
@@ -715,7 +715,7 @@ ReachableContext(?ctx, ?clinit) <-
   InitializedClass(?class), ClassInitializer[?class] = ?clinit, UniqueContext[] = ?ctx.
 HContext(?hctx), HContextFromRealHContext[] = ?hctx,
 VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) <-
-   MethodInvocation:Signature[?inv] =
+   MethodInvocation:Method[?inv] =
    "<org.dacapo.parser.Config: void setClass(java.lang.String)>",
    VirtualMethodInvocation:Base[?inv] = ?base,
    Var:DeclaringMethod(?base, ?method),

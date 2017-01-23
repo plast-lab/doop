@@ -456,7 +456,7 @@ _StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
 +Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
 
 
@@ -479,7 +479,7 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +SpecialMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
@@ -502,7 +502,7 @@ _VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +VirtualMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
@@ -1074,12 +1074,13 @@ lang:physical:storageModel[`_LayoutControl] = "DelimitedFile".
 lang:physical:filePath[`_LayoutControl] = "facts/LayoutControl.facts".
 lang:physical:delimiter[`_LayoutControl] = "\t".
 lang:physical:hasColumnNames[`_LayoutControl] = false.
-_LayoutControl(?param1, ?param2) ->
+_LayoutControl(?param1, ?param2, ?param3) ->
   int[32](?param1),
-  string(?param2).
+  string(?param2),
+  string(?param3).
 
-+LayoutControl0(?id, ?typename) <-
-   _LayoutControl(?id, ?typename).
++LayoutControl0(?id, ?typename, ?parent) <-
+   _LayoutControl(?id, ?typename, ?parent).
 
 // FieldInitialValue
 lang:physical:storageModel[`_FieldInitialValue] = "DelimitedFile".

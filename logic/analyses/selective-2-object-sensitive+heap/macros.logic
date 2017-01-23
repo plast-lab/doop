@@ -62,3 +62,14 @@
   ContextFromRealContext[RealContext2FromContext[callerCtx], valueComp] = newCtx, \
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
+
+
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[valueComp, valueComp] = ctx, \
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp, \
+  predName[] = ctx <- Value:byId[valueId] = value
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[valueComp] = hctx, \
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp, \
+  predName[] = hctx <- Value:byId[valueId] = value

@@ -42,3 +42,13 @@
   Context(newCtx), \
   ContextFromRealContext[RealContext2FromContext[callerCtx], \
                          ClassToInstr[Value:DeclaringType[value]]] = newCtx
+
+
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[value1, value2] = ctx, \
+  predName[] = ctx <- Instruction:Id(value2, valueId), \
+  ClassTypeValue(class1, "java.lang.String"), ClassToInstr[class1] = value1
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx, \
+  predName[] = hctx <- Instruction:Id(value:valueId)

@@ -42,11 +42,15 @@ MockHeapConsMacro(?id, ?type, ?heap) <-
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?id, ?type, ?heap) <-
-   ?id = "<<jvm-startup>>",
+   ?id = "<<jvm-startup-context>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?id, ?type, ?heap) <-
-   ?id = "<<class-initialization>>",
+   ?id = "<<jvm-startup-hcontext>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?id, ?type, ?heap) <-
+   ?id = "<<clinit-context>>",
    ?type = "java.lang.Object".
 
 MockHeapConsMacro(?id, ?type, ?heap) <-
@@ -68,8 +72,9 @@ Value:DeclaringType[?value] = "java.lang.System" <-
    Value:byId["<<string-buffer>>"] = ?value ;
    Value:byId["<<string-builder>>"] = ?value ;
    Value:byId["<<initial-context>>"] = ?value ;
-   Value:byId["<<jvm-startup>>"] = ?value ;
-   Value:byId["<<class-initialization>>"] = ?value ;
+   Value:byId["<<jvm-startup-context>>"] = ?value ;
+   Value:byId["<<jvm-startup-hcontext>>"] = ?value ;
+   Value:byId["<<clinit-context>>"] = ?value ;
    Value:byId["<<system-thread-group>>"] = ?value ;
    Value:byId["<<main-thread-group>>"] = ?value ;
    Value:byId["<<main-thread>>"] = ?value ;
