@@ -1,7 +1,7 @@
 // ClassType
 
 lang:physical:storageModel[`_ClassType] = "DelimitedFile".
-lang:physical:filePath[`_ClassType] = "facts/ClassType.facts".
+lang:physical:filePath[`_ClassType] = "facts/_ClassType.facts".
 lang:physical:delimiter[`_ClassType] = "\t".
 lang:physical:hasColumnNames[`_ClassType] = false.
 
@@ -16,7 +16,7 @@ _ClassType(?param1) ->
 // ArrayType
 
 lang:physical:storageModel[`_ArrayType] = "DelimitedFile".
-lang:physical:filePath[`_ArrayType] = "facts/ArrayType.facts".
+lang:physical:filePath[`_ArrayType] = "facts/_ArrayType.facts".
 lang:physical:delimiter[`_ArrayType] = "\t".
 lang:physical:hasColumnNames[`_ArrayType] = false.
 
@@ -31,7 +31,7 @@ _ArrayType(?param1) ->
 // InterfaceType
 
 lang:physical:storageModel[`_InterfaceType] = "DelimitedFile".
-lang:physical:filePath[`_InterfaceType] = "facts/InterfaceType.facts".
+lang:physical:filePath[`_InterfaceType] = "facts/_InterfaceType.facts".
 lang:physical:delimiter[`_InterfaceType] = "\t".
 lang:physical:hasColumnNames[`_InterfaceType] = false.
 
@@ -46,7 +46,7 @@ _InterfaceType(?param1) ->
 // ComponentType
 
 lang:physical:storageModel[`_ComponentType] = "DelimitedFile".
-lang:physical:filePath[`_ComponentType] = "facts/ComponentType.facts".
+lang:physical:filePath[`_ComponentType] = "facts/_ComponentType.facts".
 lang:physical:delimiter[`_ComponentType] = "\t".
 lang:physical:hasColumnNames[`_ComponentType] = false.
 
@@ -65,7 +65,7 @@ _ComponentType(?param1, ?param2) ->
 // ActualParam
 
 lang:physical:storageModel[`_ActualParam] = "DelimitedFile".
-lang:physical:filePath[`_ActualParam] = "facts/ActualParam.facts".
+lang:physical:filePath[`_ActualParam] = "facts/_ActualParam.facts".
 lang:physical:delimiter[`_ActualParam] = "\t".
 lang:physical:hasColumnNames[`_ActualParam] = false.
 
@@ -85,7 +85,7 @@ _ActualParam(?param1, ?param2, ?param3) ->
 // DirectSuperinterface
 
 lang:physical:storageModel[`_DirectSuperinterface] = "DelimitedFile".
-lang:physical:filePath[`_DirectSuperinterface] = "facts/DirectSuperinterface.facts".
+lang:physical:filePath[`_DirectSuperinterface] = "facts/_DirectSuperinterface.facts".
 lang:physical:delimiter[`_DirectSuperinterface] = "\t".
 lang:physical:hasColumnNames[`_DirectSuperinterface] = false.
 
@@ -104,7 +104,7 @@ _DirectSuperinterface(?param1, ?param2) ->
 // DirectSuperclass
 
 lang:physical:storageModel[`_DirectSuperclass] = "DelimitedFile".
-lang:physical:filePath[`_DirectSuperclass] = "facts/DirectSuperclass.facts".
+lang:physical:filePath[`_DirectSuperclass] = "facts/_DirectSuperclass.facts".
 lang:physical:delimiter[`_DirectSuperclass] = "\t".
 lang:physical:hasColumnNames[`_DirectSuperclass] = false.
 
@@ -123,7 +123,7 @@ _DirectSuperclass(?param1, ?param2) ->
 // Field:Modifier
 
 lang:physical:storageModel[`_Field:Modifier] = "DelimitedFile".
-lang:physical:filePath[`_Field:Modifier] = "facts/Field-Modifier.facts".
+lang:physical:filePath[`_Field:Modifier] = "facts/_Field-Modifier.facts".
 lang:physical:delimiter[`_Field:Modifier] = "\t".
 lang:physical:hasColumnNames[`_Field:Modifier] = false.
 
@@ -140,7 +140,7 @@ _Field:Modifier(?param1, ?param2) ->
 
 
 lang:physical:storageModel[`_ClassModifier] = "DelimitedFile".
-lang:physical:filePath[`_ClassModifier] = "facts/ClassModifier.facts".
+lang:physical:filePath[`_ClassModifier] = "facts/_ClassModifier.facts".
 lang:physical:delimiter[`_ClassModifier] = "\t".
 lang:physical:hasColumnNames[`_ClassModifier] = false.
 
@@ -154,7 +154,7 @@ _ClassModifier(?param1, ?param2) ->
 // FormalParam
 
 lang:physical:storageModel[`_FormalParam] = "DelimitedFile".
-lang:physical:filePath[`_FormalParam] = "facts/FormalParam.facts".
+lang:physical:filePath[`_FormalParam] = "facts/_FormalParam.facts".
 lang:physical:delimiter[`_FormalParam] = "\t".
 lang:physical:hasColumnNames[`_FormalParam] = false.
 
@@ -174,7 +174,7 @@ _FormalParam(?param1, ?param2, ?param3) ->
 // Method:DeclaresException
 
 lang:physical:storageModel[`_Method:DeclaresException] = "DelimitedFile".
-lang:physical:filePath[`_Method:DeclaresException] = "facts/Method-DeclaresException.facts".
+lang:physical:filePath[`_Method:DeclaresException] = "facts/_Method-DeclaresException.facts".
 lang:physical:delimiter[`_Method:DeclaresException] = "\t".
 lang:physical:hasColumnNames[`_Method:DeclaresException] = false.
 
@@ -193,7 +193,7 @@ _Method:DeclaresException(?param1, ?param2) ->
 // Method:Modifier
 
 lang:physical:storageModel[`_Method:Modifier] = "DelimitedFile".
-lang:physical:filePath[`_Method:Modifier] = "facts/Method-Modifier.facts".
+lang:physical:filePath[`_Method:Modifier] = "facts/_Method-Modifier.facts".
 lang:physical:delimiter[`_Method:Modifier] = "\t".
 lang:physical:hasColumnNames[`_Method:Modifier] = false.
 
@@ -212,7 +212,7 @@ _Method:Modifier(?param1, ?param2) ->
 // NativeReturnVar
 
 lang:physical:storageModel[`_NativeReturnVar] = "DelimitedFile".
-lang:physical:filePath[`_NativeReturnVar] = "facts/NativeReturnVar.facts".
+lang:physical:filePath[`_NativeReturnVar] = "facts/_NativeReturnVar.facts".
 lang:physical:delimiter[`_NativeReturnVar] = "\t".
 lang:physical:hasColumnNames[`_NativeReturnVar] = false.
 
@@ -231,7 +231,7 @@ _NativeReturnVar(?param1, ?param2) ->
 // Var:Type
 
 lang:physical:storageModel[`_Var:Type] = "DelimitedFile".
-lang:physical:filePath[`_Var:Type] = "facts/Var-Type.facts".
+lang:physical:filePath[`_Var:Type] = "facts/_Var-Type.facts".
 lang:physical:delimiter[`_Var:Type] = "\t".
 lang:physical:hasColumnNames[`_Var:Type] = false.
 
@@ -250,7 +250,7 @@ _Var:Type(?param1, ?param2) ->
 // Var:DeclaringMethod
 
 lang:physical:storageModel[`_Var:DeclaringMethod] = "DelimitedFile".
-lang:physical:filePath[`_Var:DeclaringMethod] = "facts/Var-DeclaringMethod.facts".
+lang:physical:filePath[`_Var:DeclaringMethod] = "facts/_Var-DeclaringMethod.facts".
 lang:physical:delimiter[`_Var:DeclaringMethod] = "\t".
 lang:physical:hasColumnNames[`_Var:DeclaringMethod] = false.
 
@@ -269,7 +269,7 @@ _Var:DeclaringMethod(?param1, ?param2) ->
 // ApplicationClass
 
 lang:physical:storageModel[`_ApplicationClass] = "DelimitedFile".
-lang:physical:filePath[`_ApplicationClass] = "facts/ApplicationClass.facts".
+lang:physical:filePath[`_ApplicationClass] = "facts/_ApplicationClass.facts".
 lang:physical:delimiter[`_ApplicationClass] = "\t".
 lang:physical:hasColumnNames[`_ApplicationClass] = false.
 
@@ -285,7 +285,7 @@ _ApplicationClass(?param1) ->
 // ThisVar
 
 lang:physical:storageModel[`_ThisVar] = "DelimitedFile".
-lang:physical:filePath[`_ThisVar] = "facts/ThisVar.facts".
+lang:physical:filePath[`_ThisVar] = "facts/_ThisVar.facts".
 lang:physical:delimiter[`_ThisVar] = "\t".
 lang:physical:hasColumnNames[`_ThisVar] = false.
 
@@ -304,7 +304,7 @@ _ThisVar(?param1, ?param2) ->
 // ExceptionHandler:Previous
 
 lang:physical:storageModel[`_ExceptionHandler:Previous] = "DelimitedFile".
-lang:physical:filePath[`_ExceptionHandler:Previous] = "facts/ExceptionHandler-Previous.facts".
+lang:physical:filePath[`_ExceptionHandler:Previous] = "facts/_ExceptionHandler-Previous.facts".
 lang:physical:delimiter[`_ExceptionHandler:Previous] = "\t".
 lang:physical:hasColumnNames[`_ExceptionHandler:Previous] = false.
 
@@ -323,7 +323,7 @@ _ExceptionHandler:Previous(?param1, ?param2) ->
 // AssignReturnValue
 
 lang:physical:storageModel[`_AssignReturnValue] = "DelimitedFile".
-lang:physical:filePath[`_AssignReturnValue] = "facts/AssignReturnValue.facts".
+lang:physical:filePath[`_AssignReturnValue] = "facts/_AssignReturnValue.facts".
 lang:physical:delimiter[`_AssignReturnValue] = "\t".
 lang:physical:hasColumnNames[`_AssignReturnValue] = false.
 
@@ -342,7 +342,7 @@ _AssignReturnValue(?param1, ?param2) ->
 // Properties
 
 lang:physical:storageModel[`_Properties] = "DelimitedFile".
-lang:physical:filePath[`_Properties] = "facts/Properties.facts".
+lang:physical:filePath[`_Properties] = "facts/_Properties.facts".
 lang:physical:delimiter[`_Properties] = "\t".
 lang:physical:hasColumnNames[`_Properties] = false.
 
