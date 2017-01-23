@@ -63,6 +63,7 @@
 //-----------------------------------------------------------------------------
 
 .type Field
+.decl isField(?field:Field)
 
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
 .decl Field_SimpleName(?field:Field, ?simpleName:SimpleName)
@@ -136,13 +137,12 @@
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 
 // [Miscellaneous]
-//HeapAllocation:EmptyArray(?heap) -> HeapAllocation(?heap).
-//HeapAllocation:Null[] = ?null -> HeapAllocation(?null).
-//MainMethodArgArray[] = ?heap -> HeapAllocation(?heap).
-//MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
+.decl HeapAllocation_EmptyArray(?heap:HeapAllocation)
+.decl HeapAllocation_Null(?null:HeapAllocation)
+.decl MainMethodArgArray(?heap:HeapAllocation)
+.decl MainMethodArgArrayContent(?heap:HeapAllocation)
 
-//ClassHeap:InstanceType[?classHeap] = ?instanceType ->
-//   ClassHeap(?classHeap), Type(?instanceType).
+.decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)
 
 // Use an entity to represent raw strings since the engine is having problems
 // with huge strings as keys.
@@ -155,6 +155,7 @@
 //-----------------------------------------------------------------------------
 
 .type Instruction
+.decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
@@ -178,6 +179,25 @@
 .type LoadArrayIndex_Insn             = ArrayInstruction
 .type StoreArrayIndex_Insn            = ArrayInstruction
 
+.decl isThrow_Insn(?insn:Throw_Insn)
+.decl isThrowNull_Insn(?insn:ThrowNull_Insn)
+.decl isGoto_Insn(?insn:Goto_Insn)
+.decl isIf_Insn(?insn:If_Insn)
+.decl isSwitch_Insn(?insn:Switch_Insn)
+.decl isTableSwitch_Insn(?insn:TableSwitch_Insn)
+.decl isLookupSwitch_Insn(?insn:LookupSwitch_Insn)
+.decl isMonitorInstruction(?insn:MonitorInstruction)
+.decl isEnterMonitor_Insn(?insn:EnterMonitor_Insn)
+.decl isExitMonitor_Insn(?insn:ExitMonitor_Insn)
+.decl isFieldInstruction(?insn:FieldInstruction)
+.decl isLoadInstanceField_Insn(?insn:LoadInstanceField_Insn)
+.decl isStoreInstanceField_Insn(?insn:StoreInstanceField_Insn)
+.decl isLoadStaticField_Insn(?insn:LoadStaticField_Insn)
+.decl isStoreStaticField_Insn(?insn:StoreStaticField_Insn)
+.decl isArrayInstruction(?insn:ArrayInstruction)
+.decl isLoadArrayIndex_Insn(?insn:LoadArrayIndex_Insn)
+.decl isStoreArrayIndex_Insn(?insn:StoreArrayIndex_Insn)
+
 .type AssignInstruction               = Instruction
 .type AssignOper_Insn                 = AssignInstruction
 .type AssignBinop_Insn                = AssignOper_Insn
@@ -194,15 +214,41 @@
 .type ReturnVoid_Insn                 = ReturnInstruction
 .type ReturnNonvoid_Insn              = ReturnInstruction
 
+.decl isAssignInstruction(?insn:AssignInstruction)
+.decl isAssignOper_Insn(?insn:AssignOper_Insn)
+.decl isAssignBinop_Insn(?insn:AssignBinop_Insn)
+.decl isAssignUnop_Insn(?insn:AssignUnop_Insn)
+.decl isAssignLocal_Insn(?insn:AssignLocal_Insn)
+.decl isAssignInstanceOf_Insn(?insn:AssignInstanceOf_Insn)
+.decl isAssignNull_Insn(?insn:AssignNull_Insn)
+.decl isAssignNumConstant_Insn(?insn:AssignNumConstant_Insn)
+.decl isAssignCast_Insn(?insn:AssignCast_Insn)
+.decl isAssignCastNull_Insn(?insn:AssignCastNull_Insn)
+.decl isAssignCastNumConstant_Insn(?insn:AssignCastNumConstant_Insn)
+.decl isAssignHeapAllocation_Insn(?insn:AssignHeapAllocation_Insn)
+.decl isReturnInstruction(?insn:ReturnInstruction)
+.decl isReturnVoid_Insn(?insn:ReturnVoid_Insn)
+.decl isReturnNonvoid_Insn(?insn:ReturnNonvoid_Insn)
+
 .type MethodInvocation                = Instruction
 .type VirtualMethodInvocation_Insn    = MethodInvocation
 .type SpecialMethodInvocation_Insn    = MethodInvocation
 .type StaticMethodInvocation_Insn     = MethodInvocation
 
+.decl isMethodInvocation(?insn:MethodInvocation)
+.decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)
+.decl isSpecialMethodInvocation_Insn(?insn:SpecialMethodInvocation_Insn)
+.decl isStaticMethodInvocation_Insn(?insn:StaticMethodInvocation_Insn)
+
 .type UnsupportedInstruction          = Instruction
 .type AssignPhantomInvoke             = UnsupportedInstruction
 .type PhantomInvoke                   = UnsupportedInstruction
 .type BreakpointStmt                  = UnsupportedInstruction
+
+.decl isUnsupportedInstruction(?insn:UnsupportedInstruction)
+.decl isAssignPhantomInvoke(?insn:AssignPhantomInvoke)
+.decl isPhantomInvoke(?insn:PhantomInvoke)
+.decl isBreakpointStmt(?insn:BreakpointStmt)
 
 //-----------------------------------------------------------------------------
 
@@ -372,6 +418,7 @@
 //-----------------------------------------------------------------------------
 
 .type ExceptionHandler
+.decl isExceptionHandler(?handler:ExceptionHandler)
 
 .decl ExceptionHandler_Method(?handler:ExceptionHandler, ?inmethod:Method)
 
