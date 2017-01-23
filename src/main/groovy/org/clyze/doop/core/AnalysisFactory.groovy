@@ -59,7 +59,7 @@ class AnalysisFactory {
 
         def vars = processOptions(name, options, context)
 
-        checkAnalysis(name)
+//        checkAnalysis(name)
 
         checkLogicBlox(vars)
 
@@ -78,29 +78,44 @@ class AnalysisFactory {
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         Analysis analysis
-        if (name != "sound-may-point-to")
-            analysis = new ClassicAnalysis(
-                analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
-                options,
-                context,
-                vars.inputFiles,
-                vars.platformFiles,
-                commandsEnv)
+
+        if (options.SOUFFLE.value == true) {
+            analysis = new SouffleAnalysis(
+                    analysisId,
+                    outDir.toString(),
+                    cacheDir.toString(),
+                    name,
+                    options,
+                    context,
+                    vars.inputFiles,
+                    vars.platformFiles,
+                    commandsEnv)
+        }
         else {
-            options.CFG_ANALYSIS.value = true
-            analysis = new SoundMayAnalysis(
-                analysisId,
-                outDir.toString(),
-                cacheDir.toString(),
-                name,
-                options,
-                context,
-                vars.inputFiles,
-                vars.platformFiles,
-                commandsEnv)
+            if (name != "sound-may-point-to")
+                analysis = new ClassicAnalysis(
+                        analysisId,
+                        outDir.toString(),
+                        cacheDir.toString(),
+                        name,
+                        options,
+                        context,
+                        vars.inputFiles,
+                        vars.platformFiles,
+                        commandsEnv)
+            else {
+                options.CFG_ANALYSIS.value = true
+                analysis = new SoundMayAnalysis(
+                        analysisId,
+                        outDir.toString(),
+                        cacheDir.toString(),
+                        name,
+                        options,
+                        context,
+                        vars.inputFiles,
+                        vars.platformFiles,
+                        commandsEnv)
+            }
         }
         logger.debug "Created new analysis"
         return analysis

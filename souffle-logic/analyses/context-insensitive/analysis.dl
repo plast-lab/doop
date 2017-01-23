@@ -1,3 +1,7 @@
+#include "../../facts/flow-insensitive-schema.dl"
+#include "../../facts/flow-sensitive-schema.dl"
+#include "../../facts/to-flow-sensitive.dl"
+
 .type Type
 .type Var 
 .type MethodInvocation

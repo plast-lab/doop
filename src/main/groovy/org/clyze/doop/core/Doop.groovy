@@ -80,8 +80,18 @@ class Doop {
         ),
         new AnalysisOption<Boolean>(
             id:"SOUFFLE",
+            name:"souffle",
             value:false,
-            cli:false,
+            cli:true,
+            webUI:false
+        ),
+        /* Souffle related options */
+        new AnalysisOption<String>(
+            id:"JOBS",
+            name:"jobs",
+            argName:"jobNumer",
+            value:false,
+            cli:true,
             webUI:false
         ),
 
@@ -429,6 +439,7 @@ class Doop {
     static String doopOut
     static String doopCache
     static String logicPath
+    static String souffleLogicPath
     static String factsPath
     static String addonsPath
     static String analysesPath
@@ -448,12 +459,13 @@ class Doop {
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
         FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
-        doopOut      = outPath ?: "$doopHome/out"
-        doopCache    = cachePath ?: "$doopHome/cache"
-        logicPath    = "$doopHome/logic"
-        factsPath    = "$logicPath/facts"
-        addonsPath   = "$logicPath/addons"
-        analysesPath = "$logicPath/analyses"
+        doopOut             = outPath ?: "$doopHome/out"
+        doopCache           = cachePath ?: "$doopHome/cache"
+        logicPath           = "$doopHome/logic"
+        souffleLogicPath    = "$doopHome/souffle-logic"
+        factsPath           = "$logicPath/facts"
+        addonsPath          = "$logicPath/addons"
+        analysesPath        = "$logicPath/analyses"
 
         //create all necessary files/folders
         File f = new File(doopOut)

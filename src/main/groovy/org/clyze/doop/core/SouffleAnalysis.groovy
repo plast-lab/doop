@@ -41,7 +41,10 @@ class SouffleAnalysis extends Analysis {
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
 
-        //runSouffle
+        runSouffle(Integer.parseInt(options.JOBS.value.toString()),
+                                    super.factsDir,
+                                    super.outDir,
+                Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
 
 
     }
@@ -114,8 +117,9 @@ class SouffleAnalysis extends Analysis {
 
     }
 
-    private void runSouffle(int jobs, String factsDir, String outDir) {
-        executor.execute("souffle -j$jobs -F$factsDir -D$outDir")
+    private void runSouffle(int jobs, File factsDir, File outDir, String analysisFile) {
+
+        executor.execute("souffle -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
     }
 
     @Override
