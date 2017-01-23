@@ -52,7 +52,12 @@
 #define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[PartitionFromHContext[hctx], \
-                         RealHContextFromHContext[hctx], value] = calleeCtx
+  RealHContextFromHContext[hctx], value] = calleeCtx
+
+
+#define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[PartitionForValue[value], value, value] = calleeCtx
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the

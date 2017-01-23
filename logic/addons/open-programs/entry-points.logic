@@ -1,4 +1,3 @@
-#include "partitioning.logic"
 
 EntryPoint(?method) -> Method(?method).
 
@@ -10,5 +9,7 @@ EntryPoint(?method) <-
    FormalParam[_, ?method] = ?formal,
    Var:Type[?formal] = ?type,
    Method:DeclaringType[?method] = ?class,
-   Class:PackageHack[?class] = "java.util",
-   ReferenceType(?type).
+   Type:Id(?class:?typename),
+   string:substring[?typename, 0, 4] = "java".
+
+
