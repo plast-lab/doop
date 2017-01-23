@@ -1,7 +1,7 @@
 package org.clyze.doop.core
 
 import org.apache.log4j.Logger
-import org.clyze.common.*
+import org.clyze.analysis.*
 import org.clyze.doop.system.FileOps
 
 /**

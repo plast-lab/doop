@@ -5,7 +5,7 @@ import java.util.jar.JarFile
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.common.*
+import org.clyze.analysis.*
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*

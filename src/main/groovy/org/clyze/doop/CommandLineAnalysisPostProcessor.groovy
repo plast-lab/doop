@@ -3,7 +3,7 @@ package org.clyze.doop
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.common.*
+import org.clyze.analysis.*
 import org.clyze.doop.core.*
 
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {

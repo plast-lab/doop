@@ -6,7 +6,7 @@ import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.clyze.common.Analysis
+import org.clyze.analysis.Analysis
 import org.clyze.doop.core.*
 import org.clyze.doop.system.FileOps
 
