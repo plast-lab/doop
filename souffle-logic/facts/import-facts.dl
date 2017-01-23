@@ -1,4 +1,5 @@
 // NormalHeap
+
 .decl _NormalHeap(?id:symbol, ?type:symbol) input output
 
 isType(?type),
@@ -7,10 +8,13 @@ isNormalHeap(?id),
 HeapAllocation_Type(?id, ?type) :-
     _NormalHeap(?id, ?type).
 
+
 // TODO: Why is this here?
 isClassType("java.lang.String").
 
+
 // StringConstant
+
 .decl _StringConstant(?id:symbol) input output
 
 isHeapAllocation(?id),
@@ -18,7 +22,9 @@ isStringConstant(?id),
 HeapAllocation_Type(?id, "java.lang.String") :-
     _StringConstant(?id).
 
+
 // StringRaw
+
 .decl _StringRaw(?id:symbol, ?rawId:symbol) input output
 .decl String_toRaw(?id:symbol, ?rawId:symbol)
 
@@ -26,7 +32,9 @@ isStringRaw(?id),
 String_toRaw(?id, ?rawId) :-
     _StringRaw(?id, ?rawId).
 
+
 // ClassHeap
+
 .decl _ClassHeap(?id:symbol, ?instanceType:symbol) input output
 
 isType(?instanceType),
@@ -35,21 +43,110 @@ isClassHeap(?id),
 HeapAllocation_Type(?id, "java.lang.Class") :-
     _ClassHeap(?id, ?instanceType).
 
+
 // EmptyArray
+
 .decl _EmptyArray(?id:symbol) input
 
 HeapAllocation_EmptyArray(?id) :-
     _EmptyArray(?id).
 
+
 // AssignHeapAllocation
+
 .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol) input
 
-isAssignHeapAllocation_Insn(?instr),
-/** Not needed, right?
- * Instruction_Id(?instr, ?instrId),
- **/
-Instruction_Index(?instr, ?index),
-Instruction_Method(?instr, ?method),
-AssignInstruction_To(?instr, ?to),
-AssignHeapAllocation_Heap(?instr, ?heap) :-
-    _AssignHeapAllocation(?instr, ?index, ?heap, ?to, ?method).
+isAssignHeapAllocation_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to),
+AssignHeapAllocation_Heap(?instruction, ?heap) :-
+    _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method).
+
+
+// AndroidEntryPoint
+
+.decl _AndroidEntryPoint(?method:symbol) input
+
+AndroidEntryPoint(?method) :-
+    _AndroidEntryPoint(?method).
+
+
+// AssignLocal
+
+.decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol) input
+
+isAssignLocal_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+Instruction_Method(?instruction, ?method),
+AssignLocal_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+    _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
+
+
+// AssignBinop
+
+.decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol) input
+
+isAssignBinop_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to) :-
+    _AssignBinop(?instruction, ?index, ?to, ?method).
+
+
+// AssignUnop
+
+.decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol) input
+
+isAssignUnop_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignInstruction_To(?instruction, ?to) :-
+    _AssignUnop(?instruction, ?index, ?to, ?method).
+
+
+// AssignOperFrom
+
+.decl _AssignOperFrom(?instruction:symbol, ?from:symbol) input
+
+// TODO: Recheck this rule
+isAssignOper_Insn(?instruction),
+AssignOper_From(?instruction, ?from) :-
+    _AssignOperFrom(?instruction, ?from).
+
+
+// AssignOperType
+
+.decl _AssignOperType(?instruction:symbol, ?type:symbol) input
+
+// TODO: Recheck this rule
+isAssignOper_Insn(?instruction),
+AssignOper_Type(?instruction, ?type) :-
+    _AssignOperType(?instruction, ?type).
+
+
+// IfVar
+
+.decl _IfVar(?instruction:symbol, ?var:symbol) input
+
+isIf_Insn(?instruction),
+If_Var(?instruction, ?var) :-
+    _IfVar(?instruction, ?var).
+
+
+// AssignCast
+
+.decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol) input
+
+isAssignCast_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+AssignCast_Type(?instruction, ?type),
+AssignCast_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+    _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?method).
+
+
+// AssignCastNumConstant

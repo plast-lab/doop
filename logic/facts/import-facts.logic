@@ -90,7 +90,7 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
    _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
 
 
-// AndroidEntryPoints
+// AndroidEntryPoint
 
 lang:physical:storageModel[`_AndroidEntryPoint] = "DelimitedFile".
 lang:physical:filePath[`_AndroidEntryPoint] = "facts/_AndroidEntryPoint.facts".
