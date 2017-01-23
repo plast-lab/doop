@@ -16,4 +16,10 @@ public class RefModeDeclaration extends Declaration {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+
+	@Override
+	public String toString() {
+		return types.get(0) + ", " + atom + " -> " + types.get(1);
+	}
 }

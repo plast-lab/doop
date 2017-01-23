@@ -27,4 +27,10 @@ public class GroupElement implements IElement {
 	SourceLocation _loc;
 	@Override
 	public SourceLocation location() { return _loc; }
+
+
+	@Override
+	public String toString() {
+		return "(" + element + ")";
+	}
 }

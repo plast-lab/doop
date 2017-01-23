@@ -48,4 +48,10 @@ public class Rule implements IVisitable, ISourceItem {
 	SourceLocation _loc;
 	@Override
 	public SourceLocation location() { return _loc; }
+
+
+	@Override
+	public String toString() {
+		return head + " <- " + body + ".";
+	}
 }

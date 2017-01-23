@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.component.*;
 import org.clyze.deepdoop.datalog.element.atom.IAtom;
@@ -52,5 +53,16 @@ public class Program implements IVisitable {
 				inits      == null ? null : new HashMap<>(inits),
 				props      == null ? null : new HashSet<>(props)
 				);
+	}
+
+
+	@Override
+	public String toString() {
+		StringJoiner joiner = new StringJoiner("\n");
+		joiner.add(globalComp.toString());
+		comps.forEach((k, v) -> joiner.add(v.toString()));
+		inits.forEach((k, v) -> joiner.add(k + " = new " + v));
+		props.forEach(p -> joiner.add(p.toString()));
+		return joiner.toString();
 	}
 }

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.expr.*;
 import org.clyze.deepdoop.system.*;
@@ -46,4 +47,12 @@ public class LogicalElement implements IElement {
 	SourceLocation _loc;
 	@Override
 	public SourceLocation location() { return _loc; }
+
+
+	@Override
+	public String toString() {
+		StringJoiner joiner = new StringJoiner(type == LogicType.AND ? ", " : "; ");
+		elements.forEach(e -> joiner.add(e.toString()));
+		return joiner.toString();
+	}
 }

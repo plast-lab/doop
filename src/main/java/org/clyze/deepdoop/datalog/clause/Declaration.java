@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.element.atom.IAtom;
 import org.clyze.deepdoop.datalog.expr.*;
@@ -44,4 +45,12 @@ public class Declaration implements IVisitable, ISourceItem {
 	SourceLocation _loc;
 	@Override
 	public SourceLocation location() { return _loc; }
+
+
+	@Override
+	public String toString() {
+		StringJoiner joiner = new StringJoiner(",");
+		types.forEach(t -> joiner.add(t.toString()));
+		return atom + " -> " + joiner.toString() + ".";
+	}
 }

@@ -14,7 +14,7 @@ public class Primitive implements IAtom {
 	public Primitive(String name, String cap, VariableExpr var) {
 		this.capacity = normalize(name, cap);
 		this.name     = name + (this.capacity != 0 ? "[" + this.capacity + "]" : "");
-		this.var = var;
+		this.var      = var;
 	}
 
 	@Override
@@ -35,6 +35,12 @@ public class Primitive implements IAtom {
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+
+
+	@Override
+	public String toString() {
+		return name + "(" + var + ")";
 	}
 
 

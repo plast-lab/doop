@@ -2,6 +2,7 @@ package org.clyze.deepdoop.datalog.component;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.clyze.deepdoop.actions.*;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.system.*;
@@ -65,4 +66,15 @@ public class Component implements IVisitable, ISourceItem {
 	SourceLocation _loc;
 	@Override
 	public SourceLocation location() { return _loc; }
+
+
+	@Override
+	public String toString() {
+		StringJoiner joiner = new StringJoiner("\n");
+		joiner.add("---------" + name + "---------");
+		declarations.forEach(d -> joiner.add(d.toString()));
+		constraints.forEach(c -> joiner.add(c.toString()));
+		rules.forEach(r -> joiner.add(r.toString()));
+		return joiner.toString();
+	}
 }

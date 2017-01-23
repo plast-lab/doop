@@ -32,4 +32,10 @@ public class ComparisonElement implements IElement {
 	SourceLocation _loc;
 	@Override
 	public SourceLocation location() { return _loc; }
+
+
+	@Override
+	public String toString() {
+		return expr.toString();
+	}
 }

@@ -41,4 +41,10 @@ public class RefMode implements IAtom {
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
 	}
+
+
+	@Override
+	public String toString() {
+		return name + "(" + entityVar + ":" + valueExpr + ")";
+	}
 }

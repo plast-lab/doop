@@ -2,6 +2,7 @@ package org.clyze.deepdoop.datalog.element.atom;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import org.clyze.deepdoop.actions.IVisitor;
 import org.clyze.deepdoop.datalog.expr.*;
 
@@ -40,5 +41,13 @@ public class Predicate implements IAtom {
 	@Override
 	public <T> T accept(IVisitor<T> v) {
 		return v.visit(this);
+	}
+
+
+	@Override
+	public String toString() {
+		StringJoiner joiner = new StringJoiner(", ");
+		exprs.forEach(e -> joiner.add(e.toString()));
+		return name + "(" + joiner + ")";
 	}
 }
