@@ -1,0 +1,212 @@
+// ClassType
+
+.decl _ClassType(?t:symbol) input
+
+isType(?t),
+isReferenceType(?t),
+isClassType(?t) :-
+  _ClassType(?t).
+
+
+// ArrayType
+
+.decl _ArrayType(?t:symbol) input
+
+isType(?t),
+isReferenceType(?t),
+isArrayType(?t) :-
+  _ArrayType(?t).
+
+
+// InterfaceType
+
+.decl _InterfaceType(?t:symbol) input
+
+isType(?t),
+isReferenceType(?t),
+isInterfaceType(?t) :-
+  _InterfaceType(?t).
+
+
+// ComponentType
+
+.decl _ComponentType(?arrayType:symbol, ?componentType:symbol) input
+
+isType(?arrayType),
+isReferenceType(?arrayType),
+isArrayType(?arrayType),
+isType(?componentType),
+ComponentType(?arrayType, ?componentType) :-
+  _ComponentType(?arrayType, ?componentType).
+
+
+// ActualParam
+
+.decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol) input
+
+isInstruction(?invocation),
+isMethodInvocation(?invocation),
+isVar(?var),
+ActualParam(?index, ?invocation, ?var) :-
+  _ActualParam(?index, ?invocation, ?var).
+
+
+// DirectSuperinterface
+
+.decl _DirectSuperinterface(?class:symbol, ?interface:symbol) input
+
+isType(?class),
+isReferenceType(?class),
+isType(?interface),
+isReferenceType(?interface),
+isInterfaceType(?interface),
+DirectSuperinterface(?class, ?interface) :-
+  _DirectSuperinterface(?class, ?interface).
+
+
+// DirectSuperclass
+
+.decl _DirectSuperclass(?class:symbol, ?superclass:symbol) input
+
+isType(?class),
+isReferenceType(?class),
+isClassType(?class),
+isType(?superclass),
+isReferenceType(?superclass),
+isClassType(?superclass),
+DirectSuperclass(?class, ?superclass) :-
+  _DirectSuperclass(?class, ?superclass).
+
+
+// Field:Modifier
+
+.decl _Field_Modifier(?modifier:symbol, ?field:symbol) input
+
+isModifier(?modifier),
+isField(?field),
+Field_Modifier(?modifier, ?field) :-
+  _Field_Modifier(?modifier, ?field).
+
+
+// ClassModifier
+
+.decl _ClassModifier(?class:symbol, ?modifier:symbol) input
+
+ClassModifier(?class, ?modifier) :-
+  _ClassModifier(?class, ?modifier).
+
+
+// FormalParam
+
+.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol) input
+
+isMethod(?method),
+isVar(?var),
+FormalParam(?index, ?method, ?var) :-
+  _FormalParam(?index, ?method, ?var).
+
+
+// Method:DeclaresException
+
+.decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol) input
+
+isType(?exceptionType),
+isReferenceType(?exceptionType),
+isMethod(?method),
+Method_DeclaresException(?exceptionType, ?method) :-
+  _Method_DeclaresException(?exceptionType, ?method).
+
+
+// Method:Modifier
+
+.decl _Method_Modifier(?mod:symbol, ?method:symbol) input
+
+isModifier(?mod),
+isMethod(?method),
+Method_Modifier(?mod, ?method) :-
+  _Method_Modifier(?mod, ?method).
+
+
+// NativeReturnVar
+
+.decl _NativeReturnVar(?var:symbol, ?method:symbol) input
+
+isVar(?var),
+isMethod(?method),
+NativeReturnVar(?var, ?method) :-
+  _NativeReturnVar(?var, ?method).
+
+
+// Var:Type
+
+.decl _Var_Type(?ref:symbol, ?type:symbol) input
+
+isVar(?ref),
+isType(?type),
+Var_Type(?ref, ?type) :-
+  _Var_Type(?ref, ?type).
+
+
+// Var:DeclaringMethod
+
+.decl _Var_DeclaringMethod(?ref:symbol, ?method:symbol) input
+
+isVar(?ref),
+isMethod(?method),
+Var_DeclaringMethod(?ref, ?method) :-
+  _Var_DeclaringMethod(?ref, ?method).
+
+
+// ApplicationClass
+
+.decl _ApplicationClass(?ref:symbol) input
+
+isType(?ref),
+isReferenceType(?ref),
+ApplicationClass(?ref) :-
+  _ApplicationClass(?ref).
+
+
+// ThisVar
+
+.decl _ThisVar(?method:symbol, ?var:symbol) input
+
+isMethod(?method),
+isVar(?var),
+ThisVar(?method, ?var) :-
+  _ThisVar(?method, ?var).
+
+
+// ExceptionHandler:Previous
+
+.decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol) input
+
+isExceptionHandler(?handler),
+isExceptionHandler(?previous),
+ExceptionHandler_Previous(?handler, ?previous) :-
+  _ExceptionHandler_Previous(?handler, ?previous).
+
+
+// AssignReturnValue
+
+.decl _AssignReturnValue(?invocation:symbol, ?to:symbol) input
+
+isInstruction(?invocation),
+isMethodInvocation(?invocation),
+isVar(?to),
+AssignReturnValue(?invocation, ?to) :-
+  _AssignReturnValue(?invocation, ?to).
+
+
+// Properties
+
+.decl _Properties(?path:symbol, ?key:symbol, ?value:symbol) input
+
+//+Instruction:Id(?path:?param1),
+//+StringConstant(?path),
+//+Instruction:Id(?key:?param2),
+//+StringConstant(?key),
+//+Instruction:Id(?value:?param3),
+//+StringConstant(?value),
+//+Properties[?path, ?key] = ?value <-
+//  _Properties(?param1, ?param2, ?param3).
