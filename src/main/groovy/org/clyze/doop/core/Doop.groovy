@@ -78,6 +78,12 @@ class Doop {
             cli:false,
             forPreprocessor:true
         ),
+        new AnalysisOption<Boolean>(
+            id:"SOUFFLE",
+            value:false,
+            cli:false,
+            webUI:false
+        ),
 
         /* Start of preprocessor constant flags */
         new AnalysisOption<Boolean>(
