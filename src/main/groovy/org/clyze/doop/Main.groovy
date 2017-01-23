@@ -115,7 +115,10 @@ class Main {
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()
-                        new CommandLineAnalysisPostProcessor().process(analysis)
+
+                        // TODO: This probably is a temporary solution
+                        if (!analysis.options.SOUFFLE.value)
+                            new CommandLineAnalysisPostProcessor().process(analysis)
                     }
                 }).get(timeout, TimeUnit.MINUTES)
             }
