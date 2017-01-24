@@ -19,17 +19,20 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		int id
 	}
 
-	String    _filename
-	List<Var> _vars
-	String    _klass
-	String    _method
-	boolean   _inDecl
+	String              _filename
+	List<Var>           _vars
+	Map<String, String> _types
+	List<Var>           _pending
+	String              _klass
+	String              _method
+	boolean             _inDecl
 
-	String    json
+	String              json
 
 	public JimpleListenerImpl(String filename) {
 		_filename = filename
 		_vars     = []
+		_types    = [:]
 	}
 
 
@@ -61,10 +64,16 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 
 	public void enterDeclarationStmt(DeclarationStmtContext ctx) {
 		_inDecl = true
+		_pending = []
 	}
 
 	public void exitDeclarationStmt(DeclarationStmtContext ctx) {
 		_inDecl = false
+		def type = ctx.IDENTIFIER().getText()
+		_pending.each { v ->
+			v.type = type
+			_types[v.doopName] = type
+		}
 	}
 
 	public void exitAssignmentStmt(AssignmentStmtContext ctx) {
@@ -125,6 +134,10 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 				endColumn: startCol + name.length() - 1
 			])
 		v.id = v.hashCode()
+		if (_types[v.doopName])
+			v.type = _types[v.doopName]
+		else
+			_pending.push(v)
 		return v
 	}
 }
