@@ -232,7 +232,15 @@ AssignInstruction_To(?instruction, ?to) :-
     _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
 
 
+// Field
 
+.decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol) input
+
+isField(?signature),
+Field_DeclaringType(?signature, ?declaringType),
+Field_SimpleName(?signature, ?simplename),
+Field_Type(?signature, ?type) :-
+    _Field(?signature, ?declaringType, ?simplename, ?type).
 
 
 

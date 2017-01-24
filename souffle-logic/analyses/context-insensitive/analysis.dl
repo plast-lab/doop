@@ -10,10 +10,10 @@
 /////////
 // IDB //
 /////////
-/*
-.decl Simple_Assign(?to:Var, ?from:Var)
-.decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) 
-.decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:FieldSignature, ?baseheap:HeapAllocation)
+
+.decl Simple_Assign(?to:Var, ?from:Var) output
+.decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) output
+.decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
 .decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
 
 Simple_Assign(?to, ?from) :-
@@ -29,9 +29,11 @@ Simple_Assign(?local, ?return) :-
   ReturnVar(?return, ?toMethod),
   AssignReturnValue(?invocation, ?local).
 
+/*
 Simple_VarPointsTo(?heap, ?var) :-
   AssignHeapAllocation(?heap, ?var, ?inMethod),
   Reachable(?inMethod).
+*/
 
 Simple_VarPointsTo(?heap, ?to) :-
   Simple_Assign(?to, ?from),
@@ -46,7 +48,7 @@ Simple_VarPointsTo(?heap, ?to) :-
   LoadInstanceField(?base, ?fld, ?to, _),
   Simple_VarPointsTo(?baseheap, ?base),
   Simple_FieldPointsTo(?heap, ?fld, ?baseheap).
-
+/*
 Simple_VarPointsTo(?heap, ?this) :-
   Reachable(?inMethod),
   Instruction_Method(?invocation, ?inMethod),
