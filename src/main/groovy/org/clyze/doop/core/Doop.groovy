@@ -89,7 +89,7 @@ class Doop {
         new AnalysisOption<String>(
             id:"JOBS",
             name:"jobs",
-            argName:"jobNumer",
+            argName:"jobNumber",
             value:false,
             cli:true,
             webUI:false
