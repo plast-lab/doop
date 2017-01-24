@@ -49,6 +49,8 @@ assignmentStmt
 	: IDENTIFIER ':=' IDENTIFIER ':' IDENTIFIER
 	| IDENTIFIER '=' value
 	| IDENTIFIER '=' value OP value
+	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
+	| (IDENTIFIER '.')? fieldSig '=' value
 	;
 
 returnStmt
@@ -64,6 +66,9 @@ allocationStmt
 
 methodSig
 	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList* ')' '>' ;
+
+fieldSig
+	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '>' ;
 
 value
 	: IDENTIFIER

@@ -68,17 +68,15 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	public void exitAssignmentStmt(AssignmentStmtContext ctx) {
-		_vars.push(var(ctx.IDENTIFIER(0), true))
-
-		if (ctx.IDENTIFIER(2) != null) {
-			def name = ctx.IDENTIFIER(1).getText()
-			_vars.push(var(ctx.IDENTIFIER(1), name.startsWith("@parameter")))
-		}
-		else {
-			(0..1).each {
-				if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
-					_vars.push(var(ctx.value(it).IDENTIFIER(), true))
+		(0..1).each {
+			if (ctx.IDENTIFIER(it) != null) {
+				def name = ctx.IDENTIFIER(it).getText()
+				_vars.push(var(ctx.IDENTIFIER(it), name.startsWith("@parameter")))
 			}
+		}
+		(0..1).each {
+			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
+				_vars.push(var(ctx.value(it).IDENTIFIER(), true))
 		}
 	}
 
