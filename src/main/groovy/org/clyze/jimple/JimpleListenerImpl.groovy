@@ -19,18 +19,16 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		int id
 	}
 
-	String                       _filename
-	ParseTreeProperty<List<Var>> _ids
-	List<Var>                    _vars
-	String                       _klass
-	String                       _method
-	boolean                      _inDecl
+	String    _filename
+	List<Var> _vars
+	String    _klass
+	String    _method
+	boolean   _inDecl
 
-	String                       json
+	String    json
 
 	public JimpleListenerImpl(String filename) {
 		_filename = filename
-		_ids      = new ParseTreeProperty<>()
 		_vars     = []
 	}
 
@@ -54,8 +52,6 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 
 	public void enterMethod(MethodContext ctx) {
 		_method = ctx.IDENTIFIER(1).getText()
-		if (ctx.TAG_L() != null && ctx.TAG_R() != null)
-			_method = ctx.TAG_L().getText() + _method + ctx.TAG_R().getText()
 	}
 
 	public void exitIdentifierList(IdentifierListContext ctx) {
@@ -105,6 +101,13 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 			_vars.push(var(ctx.value().IDENTIFIER(), true))
 	}
 
+	public void exitJumpStmt(JumpStmtContext ctx) {
+		(0..1).each {
+			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
+				_vars.push(var(ctx.value(it).IDENTIFIER(), true))
+		}
+	}
+
 	public void visitErrorNode(ErrorNode node) {
 		throw new RuntimeException("Parsing error");
 	}
@@ -127,15 +130,5 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 			])
 		v.id = v.hashCode()
 		return v
-	}
-
-	static <T> void put(ParseTreeProperty<T> values, ParseTree node, T value) {
-		values.put(node, value);
-	}
-
-	static <T> T get(ParseTreeProperty<T> values, ParseTree node) {
-		T t = values.get(node)
-		values.removeFrom(node)
-		return t
 	}
 }

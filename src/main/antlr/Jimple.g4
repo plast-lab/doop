@@ -23,7 +23,7 @@ field
 	: modifier* IDENTIFIER IDENTIFIER ';' ;
 
 method
-	: modifier* IDENTIFIER TAG_L? IDENTIFIER TAG_R? '(' identifierList? ')' '{' methodBody '}' ;
+	: modifier* IDENTIFIER IDENTIFIER '(' identifierList? ')' '{' methodBody '}' ;
 
 identifierList
 	: IDENTIFIER
@@ -31,7 +31,7 @@ identifierList
 	;
 
 methodBody
-	: (statement ';')+ ;
+	: (statement ';' | IDENTIFIER ':')+ ;
 
 statement
 	: declarationStmt
@@ -39,6 +39,7 @@ statement
 	| returnStmt
 	| invokeStmt
 	| allocationStmt
+	| jumpStmt
 	;
 
 declarationStmt
@@ -62,7 +63,7 @@ allocationStmt
 	: IDENTIFIER '=' 'new' IDENTIFIER ;
 
 methodSig
-	: TAG_L IDENTIFIER ':' IDENTIFIER TAG_L? IDENTIFIER TAG_R? '(' identifierList* ')' TAG_R ;
+	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList* ')' '>' ;
 
 value
 	: IDENTIFIER
@@ -74,6 +75,9 @@ valueList
 	: value
 	| valueList ',' value
 	;
+
+jumpStmt
+	: ('if' value ('==' | '!=' | '<' | '<=' | '>' | '>=') value)? 'goto' IDENTIFIER ;
 
 
 // Lexer
@@ -109,13 +113,9 @@ IDENTIFIER_SUF
 	: '#_' [0-9]+ ;
 
 IDENTIFIER
-	: [$@]? IDENTIFIER_BASE ('.' IDENTIFIER_BASE)* IDENTIFIER_SUF? '[]'? ;
-
-TAG_L
-	: '<' ;
-
-TAG_R
-	: '>' ;
+	: [$@]? IDENTIFIER_BASE ('.' IDENTIFIER_BASE)* IDENTIFIER_SUF? '[]'?
+	| '<' IDENTIFIER_BASE '>'
+	;
 
 OP
 	: '+' | '-' | '*' | '/' ;
