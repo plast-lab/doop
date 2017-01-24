@@ -110,6 +110,23 @@ task generateFiles(type: JavaExec) {
     args = [ projectDir ]
 }
 
+applicationDistribution.from(file("$projectDir/logic")) {
+    into 'logic'
+}
+
+applicationDistribution.from(projectDir) {
+    include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
+}
+
+
+run {
+    //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
+    environment.DOOP_HOME = projectDir
+    if (project.hasProperty('args')) {
+        args project.property('args').split()
+    }
+}
+
 task bytecode2jimple(type: JavaExec) {
     description 'Generate Jimple/Shimple'
     group = 'Other'
@@ -141,20 +158,13 @@ task bytecode2jimple(type: JavaExec) {
     }
 }
 
-applicationDistribution.from(file("$projectDir/logic")) {
-    into 'logic'
-}
-
-applicationDistribution.from(projectDir) {
-    include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
-}
-
-
-run {
-    //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
-    environment.DOOP_HOME = projectDir
-    if (project.hasProperty('args')) {
-        args project.property('args').split()
+task jimple2json(type: JavaExec) {
+    description 'Run JSON files from Jimple'
+    group = 'Other'
+    main = 'org.clyze.jimple.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args")) {
+        args project.property("args").split()
     }
 }
 
