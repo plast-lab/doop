@@ -9,7 +9,7 @@ program
 
 
 klass
-	: modifier* 'class' IDENTIFIER 'extends' IDENTIFIER '{' (field|method)*'}' ;
+	: modifier* ('class'|'interface') IDENTIFIER 'extends' IDENTIFIER ('implements' identifierList)? '{' (field|method)*'}' ;
 
 modifier
 	: 'public'
@@ -17,6 +17,7 @@ modifier
 	| 'private'
 	| 'static'
 	| 'abstract'
+	| 'final'
 	;
 
 field
