@@ -30,8 +30,8 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 
 	public JimpleListenerImpl(String filename) {
 		_filename = filename
-		_ids = new ParseTreeProperty<>()
-		_vars = []
+		_ids      = new ParseTreeProperty<>()
+		_vars     = []
 	}
 
 
@@ -68,10 +68,11 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 	public void exitIdentifierList(IdentifierListContext ctx) {
 		if (!_inBody) return
 
-		def v = varInfo(ctx.IDENTIFIER())
 		def l = []
 		if (ctx.identifierList() != null)
 			l = get(_ids, ctx.identifierList())
+
+		def v = varInfo(ctx.IDENTIFIER())
 		put(_ids, ctx, l + [ v ])
 	}
 
@@ -93,18 +94,20 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		v1.isParameter = false
 		_vars.push(v1)
 
-		def v2 = varInfo(ctx.IDENTIFIER(1))
 		if (ctx.IDENTIFIER(2) != null) {
+			def v2 = varInfo(ctx.IDENTIFIER(1))
 			v2.type = ctx.IDENTIFIER(2).getText()
 			v2.isLocal = v2.name.startsWith("@parameter")
 			v2.isParameter = !v2.isLocal
+			_vars.push(v2)
 		}
-		else {
+		else if (ctx.value() != null && ctx.value().IDENTIFIER() != null) {
+			def v2 = varInfo(ctx.value().IDENTIFIER())
 			//v2.type = ?
 			v2.isLocal = true
 			v2.isParameter = false
+			_vars.push(v2)
 		}
-		_vars.push(v2)
 	}
 
 	public void exitReturnStmt(ReturnStmtContext ctx) {
@@ -117,21 +120,43 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	public void exitInvokeStmt(InvokeStmtContext ctx) {
-		def baseV = varInfo(ctx.IDENTIFIER(0))
-		//baseV.type = ?
-		baseV.isLocal = true
-		baseV.isParameter = false
-		_vars.push(baseV)
-
-		// TODO
-	}
-
 	public void exitAllocationStmt(AllocationStmtContext ctx) {
 		def v = varInfo(ctx.IDENTIFIER(0))
 		//v.type = ?
 		v.isLocal = true
 		v.isParameter = false
+	}
+
+	public void exitInvokeStmt(InvokeStmtContext ctx) {
+		if (ctx.IDENTIFIER() != null) {
+			def baseV = varInfo(ctx.IDENTIFIER())
+			//baseV.type = ?
+			baseV.isLocal = true
+			baseV.isParameter = false
+			_vars.push(baseV)
+		}
+
+		def l = get(_ids, ctx.valueList())
+		l.each { v ->
+			//v.type = ?
+			v.isLocal = true
+			v.isParameter = false
+			_vars.push(v)
+		}
+	}
+
+	public void exitValueList(ValueListContext ctx) {
+		def l = []
+		if (ctx.valueList() != null)
+			l = get(_ids, ctx.valueList())
+
+		if (ctx.value().IDENTIFIER() != null) {
+			def v = varInfo(ctx.value().IDENTIFIER())
+			v.isLocal = true
+			v.isParameter = false
+			l = l + [ v ]
+		}
+		put(_ids, ctx, l)
 	}
 
 	public void visitErrorNode(ErrorNode node) {
