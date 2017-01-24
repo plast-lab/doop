@@ -10,7 +10,7 @@
 /////////
 // IDB //
 /////////
-
+/*
 .decl Simple_Assign(?to:Var, ?from:Var)
 .decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) 
 .decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:FieldSignature, ?baseheap:HeapAllocation)
@@ -67,4 +67,4 @@ Simple_CallGraphEdge(?invocation, ?toMethod) :-
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
   MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
-
+*/

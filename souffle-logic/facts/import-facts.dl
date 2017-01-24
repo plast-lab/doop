@@ -735,84 +735,86 @@ AssignInstruction_To(?instruction, ?to) :-
 
 
 
+// UnsupportedInstruction
+.decl _UnsupportedInstruction(?ref:symbol, ?index:number, ?method:symbol) input
 
+isUnsupportedInstruction(?ref),
+isInstruction(?ref),
+Instruction_Index(?ref, ?index),
+Instruction_Method(?ref, ?method) :-
+    _UnsupportedInstruction(?ref, ?index, ?method).
 
 
+// Activity
+.decl _Activity(?id:symbol) input
 
+Activity(?id) :-
+    _Activity(?id).
 
 
+// Service
+.decl _Service(?id:symbol) input
 
+Service(?id) :-
+    _Service(?id).
 
 
+// ContentProvider
+.decl _ContentProvider(?id:symbol) input
 
+ContentProvider(?id) :-
+    _ContentProvider(?id).
 
 
+// BroadcastReceiver
+.decl _BroadcastReceiver(?id:symbol) input
 
+BroadcastReceiver(?id) :-
+    _BroadcastReceiver(?id).
 
 
+// CallbackMethod
+.decl _CallbackMethod(?id:symbol) input
 
+CallbackMethod(?id) :-
+    _CallbackMethod(?id).
 
 
+// LayoutControl
+.decl _LayoutControl(?id:number, ?typename:symbol, ?parent:symbol) input
 
+LayoutControl(?id, ?typename, ?parent) :-
+    _LayoutControl(?id, ?typename, ?parent).
 
 
+// FieldInitialValue
+.decl _FieldInitialValue(?fld:symbol, ?valueString:symbol) input
 
+FieldInitialValue(?fld, ?valueString) :-
+    _FieldInitialValue(?fld, ?valueString).
 
 
+// Access Modifiers
 
+isModifier(?x), Modifier_abstract(?x) :- ?x = "abstract".
+isModifier(?x), Modifier_public(?x)   :- ?x = "public".
+isModifier(?x), Modifier_private(?x)  :- ?x = "private".
+isModifier(?x), Modifier_final(?x)    :- ?x = "final".
+isModifier(?x), Modifier_static(?x)   :- ?x = "static".
 
 
+// Basic Types as nullary functional-predicates
 
+isType(?t), isPrimitiveType(?t), Type_boolean(?t) :- ?t = "boolean".
+isType(?t), isPrimitiveType(?t), Type_byte(?t)    :- ?t = "byte".
+isType(?t), isPrimitiveType(?t), Type_char(?t)    :- ?t = "char".
+isType(?t), isPrimitiveType(?t), Type_short(?t)   :- ?t = "short".
+isType(?t), isPrimitiveType(?t), Type_int(?t)     :- ?t = "int".
+isType(?t), isPrimitiveType(?t), Type_long(?t)    :- ?t = "long".
+isType(?t), isPrimitiveType(?t), Type_float(?t)   :- ?t = "float".
+isType(?t), isPrimitiveType(?t), Type_double(?t)  :- ?t = "double".
+isType(?t), isPrimitiveType(?t), Type_void(?t)    :- ?t = "void".
 
+isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_type".
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
