@@ -108,10 +108,6 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	public void visitErrorNode(ErrorNode node) {
-		throw new RuntimeException("Parsing error");
-	}
-
 	Var var(TerminalNode id, boolean isLocal) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1

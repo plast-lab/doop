@@ -18,13 +18,15 @@ modifier
 	| 'static'
 	| 'abstract'
 	| 'final'
+	| 'transient'
+	| 'synchronized'
 	;
 
 field
 	: modifier* IDENTIFIER '[]'? IDENTIFIER ';' ;
 
 method
-	: modifier* IDENTIFIER IDENTIFIER '(' identifierList? ')' '{' methodBody '}' ;
+	: modifier* IDENTIFIER IDENTIFIER '(' identifierList? ')' ('throws' identifierList)? (methodBody | ';') ;
 
 identifierList
 	: IDENTIFIER
@@ -32,7 +34,7 @@ identifierList
 	;
 
 methodBody
-	: (statement ';' | IDENTIFIER ':')+ ;
+	: '{' (statement ';' | IDENTIFIER ':')+ '}' ;
 
 statement
 	: declarationStmt
@@ -51,10 +53,12 @@ declarationStmt
 assignmentStmt
 	: IDENTIFIER ':=' IDENTIFIER ':' IDENTIFIER
 	| IDENTIFIER ':=' '@caughtexception'
-	| IDENTIFIER '=' ('(' IDENTIFIER ')')? value
+	| IDENTIFIER '=' value
+	| IDENTIFIER '=' '(' IDENTIFIER ')' value
+	| IDENTIFIER '=' 'lengthof' value
 	| IDENTIFIER '=' value '[' value ']'
 	| IDENTIFIER '[' value ']' '=' value ('[' value ']')?
-	| IDENTIFIER '=' value (OP|'cmp') value
+	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'instanceof') value
 	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
 	| (IDENTIFIER '.')? fieldSig '=' value
 	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
@@ -64,7 +68,7 @@ returnStmt
 	: 'return' value? ;
 
 invokeStmt
-	: (IDENTIFIER '=')? ('specialinvoke'|'virtualinvoke') IDENTIFIER '.' methodSig '(' valueList? ')'
+	: (IDENTIFIER '=')? ('specialinvoke'|'virtualinvoke'|'interfaceinvoke') IDENTIFIER '.' methodSig '(' valueList? ')'
 	| (IDENTIFIER '=')? 'staticinvoke' methodSig '(' valueList? ')'
 	;
 
@@ -124,7 +128,13 @@ BOOLEAN
 	: 'true' | 'false' ;
 
 STRING
-	: '"' ~["]* '"' ;
+    : '"' STRING_CHAR* '"' ;
+
+fragment
+STRING_CHAR
+    : ~["\\]
+    | '\\' [btnfr"'\\]
+    ;
 
 fragment
 IDENTIFIER_BASE
@@ -135,12 +145,13 @@ IDENTIFIER_SUF
 	: '#_' [0-9]+ ;
 
 IDENTIFIER
-	: IDENTIFIER_BASE ('.' IDENTIFIER_BASE)* IDENTIFIER_SUF? '[]'?
+	: IDENTIFIER_BASE ('.' IDENTIFIER_BASE)* IDENTIFIER_SUF? '[]'*
 	| '<' IDENTIFIER_BASE '>'
+	| '\'' IDENTIFIER_BASE '\''
 	;
 
 OP
-	: '+' | '-' | '*' | '/' | '&' | '<<' | '>>' ;
+	: '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '<<' | '>>' | '>>>' ;
 
 
 WHITE_SPACE
