@@ -24,7 +24,7 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 	List<Var>                    _vars
 	String                       _klass
 	String                       _method
-	boolean                      _inBody
+	boolean                      _inDecl
 
 	String                       json
 
@@ -58,118 +58,66 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 			_method = ctx.TAG_L().getText() + _method + ctx.TAG_R().getText()
 	}
 
-	public void enterMethodBody(MethodBodyContext ctx) {
-		_inBody = true
-	}
-	public void exitMethodBody(MethodBodyContext ctx) {
-		_inBody = false
-	}
-
 	public void exitIdentifierList(IdentifierListContext ctx) {
-		if (!_inBody) return
+		if (_inDecl)
+			_vars.push(var(ctx.IDENTIFIER(), true))
+	}
 
-		def l = []
-		if (ctx.identifierList() != null)
-			l = get(_ids, ctx.identifierList())
-
-		def v = varInfo(ctx.IDENTIFIER())
-		put(_ids, ctx, l + [ v ])
+	public void enterDeclarationStmt(DeclarationStmtContext ctx) {
+		_inDecl = true
 	}
 
 	public void exitDeclarationStmt(DeclarationStmtContext ctx) {
-		def type = ctx.IDENTIFIER()
-		def l = get(_ids, ctx.identifierList())
-		l.each { v ->
-			v.type = type
-			v.isLocal = true
-			v.isParameter = false
-			_vars.push(v)
-		}
+		_inDecl = false
 	}
 
 	public void exitAssignmentStmt(AssignmentStmtContext ctx) {
-		def v1 = varInfo(ctx.IDENTIFIER(0))
-		//v1.type = ?
-		v1.isLocal = true
-		v1.isParameter = false
-		_vars.push(v1)
+		_vars.push(var(ctx.IDENTIFIER(0), true))
 
 		if (ctx.IDENTIFIER(2) != null) {
-			def v2 = varInfo(ctx.IDENTIFIER(1))
-			v2.type = ctx.IDENTIFIER(2).getText()
-			v2.isLocal = v2.name.startsWith("@parameter")
-			v2.isParameter = !v2.isLocal
-			_vars.push(v2)
+			def name = ctx.IDENTIFIER(1).getText()
+			_vars.push(var(ctx.IDENTIFIER(1), name.startsWith("@parameter")))
 		}
-		else if (ctx.value() != null && ctx.value().IDENTIFIER() != null) {
-			def v2 = varInfo(ctx.value().IDENTIFIER())
-			//v2.type = ?
-			v2.isLocal = true
-			v2.isParameter = false
-			_vars.push(v2)
+		else {
+			(0..1).each {
+				if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
+					_vars.push(var(ctx.value(it).IDENTIFIER(), true))
+			}
 		}
 	}
 
 	public void exitReturnStmt(ReturnStmtContext ctx) {
-		if (ctx.IDENTIFIER() != null) {
-			def v = varInfo(ctx.IDENTIFIER())
-			//v.type = ?
-			v.isLocal = true
-			v.isParameter = false
-			_vars.push(v)
-		}
+		if (ctx.IDENTIFIER() != null)
+			_vars.push(var(ctx.IDENTIFIER(), true))
 	}
 
 	public void exitAllocationStmt(AllocationStmtContext ctx) {
-		def v = varInfo(ctx.IDENTIFIER(0))
-		//v.type = ?
-		v.isLocal = true
-		v.isParameter = false
+		_vars.push(var(ctx.IDENTIFIER(0), true))
 	}
 
 	public void exitInvokeStmt(InvokeStmtContext ctx) {
-		if (ctx.IDENTIFIER() != null) {
-			def baseV = varInfo(ctx.IDENTIFIER())
-			//baseV.type = ?
-			baseV.isLocal = true
-			baseV.isParameter = false
-			_vars.push(baseV)
-		}
-
-		def l = get(_ids, ctx.valueList())
-		l.each { v ->
-			//v.type = ?
-			v.isLocal = true
-			v.isParameter = false
-			_vars.push(v)
-		}
+		if (ctx.IDENTIFIER() != null)
+			_vars.push(var(ctx.IDENTIFIER(), true))
 	}
 
 	public void exitValueList(ValueListContext ctx) {
-		def l = []
-		if (ctx.valueList() != null)
-			l = get(_ids, ctx.valueList())
-
-		if (ctx.value().IDENTIFIER() != null) {
-			def v = varInfo(ctx.value().IDENTIFIER())
-			v.isLocal = true
-			v.isParameter = false
-			l = l + [ v ]
-		}
-		put(_ids, ctx, l)
+		if (ctx.value().IDENTIFIER() != null)
+			_vars.push(var(ctx.value().IDENTIFIER(), true))
 	}
 
 	public void visitErrorNode(ErrorNode node) {
 		throw new RuntimeException("Parsing error");
 	}
 
-	Var varInfo(TerminalNode id) {
+	Var var(TerminalNode id, boolean isLocal) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
 		def v = new Var(
 			name: name,
 			doopName: _klass+"/"+_method+"/"+name,
+			isLocal: isLocal,
+			isParameter: !isLocal,
 			sourceFileName: _filename,
 			position: [
 				startLine: line,

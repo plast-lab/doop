@@ -47,6 +47,7 @@ declarationStmt
 assignmentStmt
 	: IDENTIFIER ':=' IDENTIFIER ':' IDENTIFIER
 	| IDENTIFIER '=' value
+	| IDENTIFIER '=' value OP value
 	;
 
 returnStmt
@@ -115,6 +116,9 @@ TAG_L
 
 TAG_R
 	: '>' ;
+
+OP
+	: '+' | '-' | '*' | '/' ;
 
 
 WHITE_SPACE
