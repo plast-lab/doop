@@ -81,8 +81,8 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	public void exitReturnStmt(ReturnStmtContext ctx) {
-		if (ctx.IDENTIFIER() != null)
-			_vars.push(var(ctx.IDENTIFIER(), true))
+		if (ctx.value() != null && ctx.value().IDENTIFIER() != null)
+			_vars.push(var(ctx.value().IDENTIFIER(), true))
 	}
 
 	public void exitAllocationStmt(AllocationStmtContext ctx) {
@@ -90,8 +90,10 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	public void exitInvokeStmt(InvokeStmtContext ctx) {
-		if (ctx.IDENTIFIER() != null)
-			_vars.push(var(ctx.IDENTIFIER(), true))
+		(0..1).each {
+			if (ctx.IDENTIFIER(it) != null)
+				_vars.push(var(ctx.IDENTIFIER(it), true))
+		}
 	}
 
 	public void exitValueList(ValueListContext ctx) {
