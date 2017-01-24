@@ -1,6 +1,6 @@
 package org.clyze.doop
 
-import org.clyze.doop.core.Analysis
+import org.clyze.analysis.Analysis
 import spock.lang.Specification
 import spock.lang.Unroll
 
