@@ -131,7 +131,7 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 				startLine: line,
 				startColumn: startCol,
 				endLine: line,
-				endColumn: startCol + name.length() - 1
+				endColumn: startCol + name.length()
 			])
 		v.id = v.hashCode()
 		if (_types[v.doopName])

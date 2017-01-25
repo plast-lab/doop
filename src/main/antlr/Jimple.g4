@@ -20,6 +20,10 @@ modifier
 	| 'final'
 	| 'transient'
 	| 'synchronized'
+	| 'volatile'
+	| 'native'
+	| 'enum'
+	| 'annotation'
 	;
 
 field
@@ -45,6 +49,7 @@ statement
 	| jumpStmt
 	| switchStmt
 	| catchStmt
+	| monitorStmt
 	;
 
 declarationStmt
@@ -55,13 +60,14 @@ assignmentStmt
 	| IDENTIFIER ':=' '@caughtexception'
 	| IDENTIFIER '=' value
 	| IDENTIFIER '=' '(' IDENTIFIER ')' value
-	| IDENTIFIER '=' ('lengthof'|'class') value
-	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'instanceof') value
+	| IDENTIFIER '=' ('lengthof'|'class'|'neg') value
+	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'cmpg'|'instanceof') value
 	| IDENTIFIER '=' value '[' value ']'
 	| IDENTIFIER '[' value ']' '=' value ('[' value ']')?
 	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
 	| (IDENTIFIER '.')? fieldSig '=' value
 	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
+	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+
 	;
 
 returnStmt
@@ -70,13 +76,16 @@ returnStmt
 invokeStmt
 	: (IDENTIFIER '=')? ('specialinvoke'|'virtualinvoke'|'interfaceinvoke') IDENTIFIER '.' methodSig '(' valueList? ')'
 	| (IDENTIFIER '=')? 'staticinvoke' methodSig '(' valueList? ')'
+	| (IDENTIFIER '=')? 'dynamicinvoke' STRING methodSig '(' valueList? ')' methodSig '(' valueList? ')'
 	;
 
 allocationStmt
 	: IDENTIFIER '=' 'new' IDENTIFIER ;
 
 methodSig
-	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList* ')' '>' ;
+	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList? ')' '>'
+	| '<' IDENTIFIER '(' identifierList? ')' '>'
+	;
 
 fieldSig
 	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '>' ;
@@ -86,6 +95,8 @@ value
 	| INTEGER
 	| REAL
 	| STRING
+	| 'class' STRING
+	| 'handle:' methodSig
 	;
 
 valueList
@@ -105,6 +116,12 @@ caseStmt
 catchStmt
 	: 'catch' IDENTIFIER 'from' IDENTIFIER 'to' IDENTIFIER 'with' IDENTIFIER ;
 
+monitorStmt
+	: 'entermonitor' 'class' STRING
+	| 'entermonitor' IDENTIFIER
+	| 'exitmonitor' IDENTIFIER
+	;
+
 
 // Lexer
 
@@ -122,6 +139,12 @@ REAL
 	: INTEGER EXPONENT
 	| INTEGER EXPONENT? [fF]
 	| (INTEGER)? '.' INTEGER EXPONENT? [fF]?
+	| '#Infinity'
+	| '#-Infinity'
+	| '#InfinityF'
+	| '#-InfinityF'
+	| '#NaN'
+	| '#NaNF'
 	;
 
 BOOLEAN
@@ -138,7 +161,9 @@ STRING_CHAR
 
 fragment
 IDENTIFIER_BASE
-	: [$@a-zA-Z_][$@a-zA-Z0-9_]* ;
+	: [$@a-zA-Z_][$@a-zA-Z0-9_]*
+	| '\'annotation\''
+	;
 
 fragment
 IDENTIFIER_SUF
