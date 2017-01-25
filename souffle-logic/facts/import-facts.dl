@@ -493,49 +493,52 @@ Switch_Key(?instruction, ?key) :-
 
 
 // Targets
+
 .decl _TableSwitch_Target(?ref:symbol, ?value:number, ?target:number) input
 
-isTableSwitch_Insn(?ref),
-isSwitch_Insn(?ref),
 isInstruction(?ref),
+isSwitch_Insn(?ref),
+isTableSwitch_Insn(?ref),
 Switch_Target(?ref, ?value, ?target) :-
     _TableSwitch_Target(?ref, ?value, ?target).
 
 
 .decl _LookupSwitch_Target(?ref:symbol, ?value:number, ?target:number) input
 
-isLookupSwitch_Insn(?ref),
-isSwitch_Insn(?ref),
 isInstruction(?ref),
+isSwitch_Insn(?ref),
+isLookupSwitch_Insn(?ref),
 Switch_Target(?ref, ?value, ?target) :-
     _LookupSwitch_Target(?ref, ?value, ?target).
 
 
 // Default target
+
 .decl _TableSwitch_DefaultTarget(?ref:symbol, ?target:number) input
 
-isTableSwitch_Insn(?ref),
-isSwitch_Insn(?ref),
 isInstruction(?ref),
+isSwitch_Insn(?ref),
+isTableSwitch_Insn(?ref),
 Switch_DefaultTarget(?ref, ?target) :-
     _TableSwitch_DefaultTarget(?ref, ?target).
 
 
 .decl _LookupSwitch_DefaultTarget(?ref:symbol, ?target:number) input
 
-isLookupSwitch_Insn(?ref),
-isSwitch_Insn(?ref),
 isInstruction(?ref),
+isSwitch_Insn(?ref),
+isLookupSwitch_Insn(?ref),
 Switch_DefaultTarget(?ref, ?target) :-
     _LookupSwitch_DefaultTarget(?ref, ?target).
 
 
 // ReturnNonvoid
+
 .decl _Return(?ref:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
-isReturnNonvoid_Insn(?ref),
-isReturnInstruction(?ref),
 isInstruction(?ref),
+isReturnInstruction(?ref),
+isReturnNonvoid_Insn(?ref),
 Instruction_Index(?ref, ?index),
 Instruction_Method(?ref, ?method),
 ReturnNonvoid_Var(?ref, ?var) :-
@@ -543,60 +546,66 @@ ReturnNonvoid_Var(?ref, ?var) :-
 
 
 // ReturnVoid
+
 .decl _ReturnVoid(?ref:symbol, ?index:number, ?method:symbol) input
 
-isReturnVoid_Insn(?ref),
-isReturnInstruction(?ref),
 isInstruction(?ref),
+isReturnInstruction(?ref),
+isReturnVoid_Insn(?ref),
 Instruction_Index(?ref, ?index),
 Instruction_Method(?ref, ?method) :-
     _ReturnVoid(?ref, ?index, ?method).
 
 
 // AssignPhantomInvoke
+
 .decl _AssignPhantomInvoke(?ref:symbol, ?index:number, ?method:symbol) input
 
-isAssignPhantomInvoke(?ref),
-isUnsupportedInstruction(?ref),
 isInstruction(?ref),
+isUnsupportedInstruction(?ref),
+isAssignPhantomInvoke(?ref),
 Instruction_Index(?ref, ?index),
 Instruction_Method(?ref, ?method) :-
     _AssignPhantomInvoke(?ref, ?index, ?method).
 
 
 // PhantomInvoke
+
 .decl _PhantomInvoke(?ref:symbol, ?index:number, ?method:symbol) input
 
-isPhantomInvoke(?ref),
-isUnsupportedInstruction(?ref),
 isInstruction(?ref),
+isUnsupportedInstruction(?ref),
+isPhantomInvoke(?ref),
 Instruction_Index(?ref, ?index),
 Instruction_Method(?ref, ?method) :-
     _PhantomInvoke(?ref, ?index, ?method).
 
 
 // BreakPointStmt
+
 .decl _BreakpointStmt(?ref:symbol, ?index:number, ?method:symbol) input
 
-isBreakpointStmt(?ref),
-isUnsupportedInstruction(?ref),
 isInstruction(?ref),
+isUnsupportedInstruction(?ref),
+isBreakpointStmt(?ref),
 Instruction_Index(?ref, ?index),
 Instruction_Method(?ref, ?method) :-
     _BreakpointStmt(?ref, ?index, ?method).
 
 
 // UnsupportedInstruction
+
 .decl _UnsupportedInstruction(?ref:symbol, ?index:number, ?method:symbol) input
 
-isUnsupportedInstruction(?ref),
 isInstruction(?ref),
+isUnsupportedInstruction(?ref),
 Instruction_Index(?ref, ?index),
 Instruction_Method(?ref, ?method) :-
     _UnsupportedInstruction(?ref, ?index, ?method).
 
 
 // Activity
+
 .decl _Activity(?id:symbol) input
 
 Activity(?id) :-
@@ -604,6 +613,7 @@ Activity(?id) :-
 
 
 // Service
+
 .decl _Service(?id:symbol) input
 
 Service(?id) :-
@@ -611,6 +621,7 @@ Service(?id) :-
 
 
 // ContentProvider
+
 .decl _ContentProvider(?id:symbol) input
 
 ContentProvider(?id) :-
@@ -618,6 +629,7 @@ ContentProvider(?id) :-
 
 
 // BroadcastReceiver
+
 .decl _BroadcastReceiver(?id:symbol) input
 
 BroadcastReceiver(?id) :-
@@ -625,6 +637,7 @@ BroadcastReceiver(?id) :-
 
 
 // CallbackMethod
+
 .decl _CallbackMethod(?id:symbol) input
 
 CallbackMethod(?id) :-
@@ -632,6 +645,7 @@ CallbackMethod(?id) :-
 
 
 // LayoutControl
+
 .decl _LayoutControl(?id:number, ?typename:symbol, ?parent:symbol) input
 
 LayoutControl(?id, ?typename, ?parent) :-
@@ -639,6 +653,7 @@ LayoutControl(?id, ?typename, ?parent) :-
 
 
 // FieldInitialValue
+
 .decl _FieldInitialValue(?fld:symbol, ?valueString:symbol) input
 
 FieldInitialValue(?fld, ?valueString) :-
