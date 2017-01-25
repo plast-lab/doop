@@ -55,10 +55,10 @@ assignmentStmt
 	| IDENTIFIER ':=' '@caughtexception'
 	| IDENTIFIER '=' value
 	| IDENTIFIER '=' '(' IDENTIFIER ')' value
-	| IDENTIFIER '=' 'lengthof' value
+	| IDENTIFIER '=' ('lengthof'|'class') value
+	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'instanceof') value
 	| IDENTIFIER '=' value '[' value ']'
 	| IDENTIFIER '[' value ']' '=' value ('[' value ']')?
-	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'instanceof') value
 	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
 	| (IDENTIFIER '.')? fieldSig '=' value
 	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
@@ -133,7 +133,7 @@ STRING
 fragment
 STRING_CHAR
     : ~["\\]
-    | '\\' [btnfr"'\\]
+    | '\\' [ubtnfr"'\\]
     ;
 
 fragment
