@@ -9,72 +9,203 @@
 #include "../../basic/subclass.dl"
 #include "../../basic/superinterface.dl"
 #include "../../basic/type-hierarchy.dl"
+#include "../../main/implicit-reachable.dl"
 #include "declarations.dl"
 
 /////////
 // IDB //
 /////////
 
-.decl Simple_Assign(?to:Var, ?from:Var) output
-.decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) output
-.decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
-.decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
-.decl Reachable(?method:Method) output
+.decl Assign(?type:Type, ?to:Var, ?from:Var) output
+.decl VarPointsTo(?heap:HeapAllocation, ?var:Var) output
+.decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
+.decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field) output
+.decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
+.decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation) output
+.decl Reachable(?method:Method)
+
+Reachable(?method) :-
+    ImplicitReachable(?method).
 
 Reachable(?method) :-
    MainMethodDeclaration(?method).
 
-Simple_Assign(?to, ?from) :-
-  AssignLocal(?from, ?to, _).
+/**
+ * Cast assignments
+ */
 
-Simple_Assign(?formal, ?actual) :-
-  Simple_CallGraphEdge(?invocation, ?toMethod),
-  FormalParam(?index, ?toMethod, ?formal),
-  ActualParam(?index, ?invocation, ?actual).
+Assign(?type, ?from, ?to) :-
+   Reachable(?inmethod),
+   AssignCast(?type, ?from, ?to, ?inmethod).
 
-Simple_Assign(?local, ?return) :-
-  Simple_CallGraphEdge(?invocation, ?toMethod),
-  ReturnVar(?return, ?toMethod),
-  AssignReturnValue(?invocation, ?local).
+/**
+ * Invocation assignments
+ */
 
-Simple_VarPointsTo(?heap, ?var) :-
+Assign(?type, ?actual, ?formal) :-
+   FormalParam(?index, ?method, ?formal),
+   ActualParam(?index, ?invocation, ?actual),
+   Var_Type(?formal, ?type),
+   CallGraphEdge(?invocation, ?method).
+
+Assign(?type, ?return, ?local) :-
+   ReturnVar(?return, ?method),
+   CallGraphEdge(?invocation, ?method),
+   Var_Type(?local, ?type),
+   AssignReturnValue(?invocation, ?local).
+
+
+VarPointsTo(?heap, ?var) :-
   AssignHeapAllocation(?heap, ?var, ?inMethod),
   Reachable(?inMethod).
 
-Simple_VarPointsTo(?heap, ?to) :-
-  Simple_Assign(?to, ?from),
-  Simple_VarPointsTo(?heap, ?from).
+/**
+ *  Variable points to heap object
+ */
 
-Simple_FieldPointsTo(?heap, ?fld, ?baseheap) :-
-  StoreInstanceField(?from, ?base, ?fld, _),
-  Simple_VarPointsTo(?baseheap, ?base),
-  Simple_VarPointsTo(?heap, ?from).
+VarPointsTo(?heap, ?to) :-
+   VarPointsTo(?heap, ?from),
+   Assign(?type, ?from, ?to),
+   HeapAllocation_Type(?heap, ?heaptype),
+   SupertypeOf(?type, ?heaptype).
 
-Simple_VarPointsTo(?heap, ?to) :-
-  LoadInstanceField(?base, ?fld, ?to, _),
-  Simple_VarPointsTo(?baseheap, ?base),
-  Simple_FieldPointsTo(?heap, ?fld, ?baseheap).
+/**
+ *  Local Assignments
+ */
 
-Simple_VarPointsTo(?heap, ?this) :-
+VarPointsTo(?heap, ?to) :-
+   Reachable(?inmethod),
+   AssignLocal(?from, ?to, ?inmethod),
+   VarPointsTo(?heap, ?from).
+
+/**
+ * Arrays
+ *
+ */
+
+ArrayIndexPointsTo(?baseheap, ?heap) :-
+   Reachable(?inmethod),
+   StoreArrayIndex(?from, ?base, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   VarPointsTo(?heap, ?from),
+   HeapAllocation_Type(?heap, ?heaptype),
+   HeapAllocation_Type(?baseheap, ?baseheaptype),
+   ComponentType(?baseheaptype, ?componenttype),
+   SupertypeOf(?componenttype, ?heaptype).
+
+VarPointsTo(?heap, ?to) :-
+   Reachable(?inmethod),
+   LoadArrayIndex(?base, ?to, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   ArrayIndexPointsTo(?baseheap, ?heap),
+   Var_Type(?to, ?type),
+   HeapAllocation_Type(?baseheap, ?baseheaptype),
+   ComponentType(?baseheaptype, ?basecomponenttype),
+   SupertypeOf(?type, ?basecomponenttype).
+
+/**
+ * Load instance fields
+ *
+ */
+
+VarPointsTo(?heap, ?to) :-
+   Reachable(?inmethod),
+   LoadInstanceField(?base, ?signature, ?to, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   InstanceFieldPointsTo(?heap, ?signature, ?baseheap).
+
+/**
+ * Store instance fields
+ */
+
+InstanceFieldPointsTo(?heap, ?fld, ?baseheap) :-
+  Reachable(?inmethod),
+  StoreInstanceField(?from, ?base, ?fld, ?inmethod),
+  VarPointsTo(?heap, ?from),
+  VarPointsTo(?baseheap, ?base).
+
+/**
+ * Load static fields
+ */
+
+VarPointsTo(?heap, ?to) :-
+  Reachable(?inmethod),
+  LoadStaticField(?fld, ?to, ?inmethod),
+  StaticFieldPointsTo(?heap, ?fld).
+
+/**
+ * Store static fields
+ */
+
+StaticFieldPointsTo(?heap, ?fld) :-
+    Reachable(?inmethod),
+    StoreStaticField(?from, ?fld, ?inmethod),
+    VarPointsTo(?heap, ?from).
+
+
+VarPointsTo(?heap, ?this) :-
   Reachable(?inMethod),
   Instruction_Method(?invocation, ?inMethod),
   VirtualMethodInvocation_Base(?invocation, ?base),
-  Simple_VarPointsTo(?heap, ?base),
+  VarPointsTo(?heap, ?base),
   HeapAllocation_Type(?heap, ?heaptype),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
   MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
   ThisVar(?toMethod, ?this).
 
+/**
+ *   Call graph creation
+ **/
+
+
 Reachable(?toMethod),
-Simple_CallGraphEdge(?invocation, ?toMethod) :-
+CallGraphEdge(?invocation, ?toMethod) :-
   Reachable(?inMethod),
   Instruction_Method(?invocation, ?inMethod),
   VirtualMethodInvocation_Base(?invocation, ?base),
-  Simple_VarPointsTo(?heap, ?base),
+  VarPointsTo(?heap, ?base),
   HeapAllocation_Type(?heap, ?heaptype),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).MainClass("Main").
 
+Reachable(?tomethod),
+CallGraphEdge(?invocation, ?tomethod) :-
+   Reachable(?inmethod),
+   StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+
+Reachable(?tomethod),
+CallGraphEdge(?invocation, ?tomethod),
+VarPointsTo(?heap, ?this) :-
+   Reachable(?inmethod),
+   Instruction_Method(?invocation, ?inmethod),
+   SpecialMethodInvocation_Base(?invocation, ?base),
+   VarPointsTo(?heap, ?base),
+   MethodInvocation_Method(?invocation, ?tomethod),
+   ThisVar(?tomethod, ?this).
+
+
+
+// MiniJavac Main Class
+MainClass("Main").
+
+// Dacapo Main Class
 MainClass("Harness").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
