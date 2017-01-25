@@ -397,7 +397,7 @@
 
 // The actual parameters of the invocation. Note: this does not
 // contain the receiver object (see MethodInvocation:Base predicates).
-.decl ActualParam(?index:ParamIndex, ?invocation:MethodInvocation, ?var:Var)
+.decl ActualParam(?index:ParamIndex, ?invocation:MethodInvocation, ?var:Var) output
 
 // Virtual Method Invocation
 .decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
