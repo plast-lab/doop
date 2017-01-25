@@ -1,12 +1,12 @@
 #include "method-resolution-declarations.dl"
 
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
-   MethodImplemented(?simplename, ?descriptor, ?type, ?method).
+    MethodImplemented(?simplename, ?descriptor, ?type, ?method).
 
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
-   DirectSuperclass(?type, ?supertype),
-   MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
-   ! MethodImplemented(?simplename, ?descriptor, ?type, _).
+    DirectSuperclass(?type, ?supertype),
+    MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
+    ! MethodImplemented(?simplename, ?descriptor, ?type, _).
 
 /**
  * Arrays
@@ -23,41 +23,41 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
  *      anyway.
  */
 MethodLookup(?simplename, ?descriptor, ?arraytype, ?method) :-
-   isArrayType(?arraytype),
-   isType(?objectType),
-   MethodImplemented(?simplename, ?descriptor, ?objectType, ?method),
-   ?objectType = "java.lang.Object".
+    isArrayType(?arraytype),
+    isType(?objectType),
+    MethodImplemented(?simplename, ?descriptor, ?objectType, ?method),
+    ?objectType = "java.lang.Object".
 
 MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
-   Method_SimpleName(?method, ?simplename),
-   Method_Descriptor(?method, ?descriptor),
-   Method_DeclaringType(?method, ?type),
-   ! Method_Modifier("abstract", ?method).
+    Method_SimpleName(?method, ?simplename),
+    Method_Descriptor(?method, ?descriptor),
+    Method_DeclaringType(?method, ?type),
+    ! Method_Modifier("abstract", ?method).
 
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
-   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
-   // should be just args, since ret-type can be covariant?
-   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
-   VirtualMethodInvocation_Base(?invocation, ?base),
-   Var_Type(?base, ?basetype),
-   SubtypeOf(?type, ?basetype),
-   MethodLookup(?simplename, ?descriptor, ?type, ?tomethod).
+    VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+    // should be just args, since ret-type can be covariant?
+    VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+    VirtualMethodInvocation_Base(?invocation, ?base),
+    Var_Type(?base, ?basetype),
+    SubtypeOf(?type, ?basetype),
+    MethodLookup(?simplename, ?descriptor, ?type, ?tomethod).
 
 OverridableMethod(?type, ?method) :-
-   MethodLookup(_, _, ?type, ?method),
-   ! Method_Modifier("static", ?method),
-   ! Method_Modifier("final", ?method),
-   Method_Modifier("public", ?method),
-   Subclassable(?type).
+    MethodLookup(_, _, ?type, ?method),
+    ! Method_Modifier("static", ?method),
+    ! Method_Modifier("final", ?method),
+    Method_Modifier("public", ?method),
+    Subclassable(?type).
 
 OverridableMethod(?type, ?method) :-
-   MethodLookup(_, _, ?type, ?method),
-   ! Method_Modifier("static", ?method),
-   ! Method_Modifier("final", ?method),
-   Method_Modifier("protected", ?method),
-   Subclassable(?type).
+    MethodLookup(_, _, ?type, ?method),
+    ! Method_Modifier("static", ?method),
+    ! Method_Modifier("final", ?method),
+    Method_Modifier("protected", ?method),
+    Subclassable(?type).
 
 ClassConstructor(method, type) :-
-   MethodLookup(_, _, type, method),
-   isMethod(method),
-   match(".*<init>.*", method).
+    MethodLookup(_, _, type, method),
+    isMethod(method),
+    match(".*<init>.*", method).
