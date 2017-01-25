@@ -102,14 +102,6 @@ dependencies {
                 'org.spockframework:spock-core:1.0-groovy-2.4'
 }
 
-task generateFiles(type: JavaExec) {
-    description 'Generate the doop.properties file'
-    group = 'Other'
-    main = 'org.clyze.doop.FileGenerator'
-    classpath = sourceSets.main.runtimeClasspath
-    args = [ projectDir ]
-}
-
 applicationDistribution.from(file("$projectDir/logic")) {
     into 'logic'
 }
