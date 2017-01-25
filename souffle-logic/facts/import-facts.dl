@@ -40,6 +40,7 @@ String_toRaw(?id, ?rawId) :-
 isType(?instanceType),
 isHeapAllocation(?id),
 isClassHeap(?id),
+ClassHeap_InstanceType(?id, ?instanceType),
 HeapAllocation_Type(?id, "java.lang.Class") :-
     _ClassHeap(?id, ?instanceType).
 
@@ -648,7 +649,7 @@ CallbackMethod(?id) :-
 
 .decl _LayoutControl(?id:number, ?typename:symbol, ?parent:symbol) input
 
-LayoutControl(?id, ?typename, ?parent) :-
+LayoutControl0(?id, ?typename, ?parent) :-
     _LayoutControl(?id, ?typename, ?parent).
 
 
