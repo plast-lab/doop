@@ -934,61 +934,98 @@ Switch_Key(?instruction, ?key) :-
 
 
 
+// Targets
+.decl _TableSwitch_Target(?ref:symbol, ?value:number, ?target:number) input
+
+isTableSwitch_Insn(?ref),
+isSwitch_Insn(?ref),
+isInstruction(?ref),
+Switch_Target(?ref, ?value, ?target) :-
+    _TableSwitch_Target(?ref, ?value, ?target).
 
 
+.decl _LookupSwitch_Target(?ref:symbol, ?value:number, ?target:number) input
+
+isLookupSwitch_Insn(?ref),
+isSwitch_Insn(?ref),
+isInstruction(?ref),
+Switch_Target(?ref, ?value, ?target) :-
+    _LookupSwitch_Target(?ref, ?value, ?target).
 
 
+// Default target
+.decl _TableSwitch_DefaultTarget(?ref:symbol, ?target:number) input
+
+isTableSwitch_Insn(?ref),
+isSwitch_Insn(?ref),
+isInstruction(?ref),
+Switch_DefaultTarget(?ref, ?target) :-
+    _TableSwitch_DefaultTarget(?ref, ?target).
 
 
+.decl _LookupSwitch_DefaultTarget(?ref:symbol, ?target:number) input
+
+isLookupSwitch_Insn(?ref),
+isSwitch_Insn(?ref),
+isInstruction(?ref),
+Switch_DefaultTarget(?ref, ?target) :-
+    _LookupSwitch_DefaultTarget(?ref, ?target).
 
 
+// ReturnNonvoid
+.decl _Return(?ref:symbol, ?index:number, ?var:symbol, ?method:symbol) input
+
+isReturnNonvoid_Insn(?ref),
+isReturnInstruction(?ref),
+isInstruction(?ref),
+Instruction_Index(?ref, ?index),
+Instruction_Method(?ref, ?method),
+ReturnNonvoid_Var(?ref, ?var) :-
+    _Return(?ref, ?index, ?var, ?method).
 
 
+// ReturnVoid
+.decl _ReturnVoid(?ref:symbol, ?index:number, ?method:symbol) input
+
+isReturnVoid_Insn(?ref),
+isReturnInstruction(?ref),
+isInstruction(?ref),
+Instruction_Index(?ref, ?index),
+Instruction_Method(?ref, ?method) :-
+    _ReturnVoid(?ref, ?index, ?method).
 
 
+// AssignPhantomInvoke
+.decl _AssignPhantomInvoke(?ref:symbol, ?index:number, ?method:symbol) input
+
+isAssignPhantomInvoke(?ref),
+isUnsupportedInstruction(?ref),
+isInstruction(?ref),
+Instruction_Index(?ref, ?index),
+Instruction_Method(?ref, ?method) :-
+    _AssignPhantomInvoke(?ref, ?index, ?method).
 
 
+// PhantomInvoke
+.decl _PhantomInvoke(?ref:symbol, ?index:number, ?method:symbol) input
+
+isPhantomInvoke(?ref),
+isUnsupportedInstruction(?ref),
+isInstruction(?ref),
+Instruction_Index(?ref, ?index),
+Instruction_Method(?ref, ?method) :-
+    _PhantomInvoke(?ref, ?index, ?method).
 
 
+// BreakPointStmt
+.decl _BreakpointStmt(?ref:symbol, ?index:number, ?method:symbol) input
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+isBreakpointStmt(?ref),
+isUnsupportedInstruction(?ref),
+isInstruction(?ref),
+Instruction_Index(?ref, ?index),
+Instruction_Method(?ref, ?method) :-
+    _BreakpointStmt(?ref, ?index, ?method).
 
 
 // UnsupportedInstruction
