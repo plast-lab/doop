@@ -1,7 +1,0 @@
-
-
-.decl _StringConstant(?heap:HeapAllocation)
-
-_StringConstant(?heap),
-HeapAllocation_Type(?heap, ?type) :-
-    HeapAllocation0_String(?)

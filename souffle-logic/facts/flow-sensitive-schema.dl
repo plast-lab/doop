@@ -116,12 +116,12 @@
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
-.decl HeapAllocation0_Normal(?repr:symbol, ?type:Type)
+/*.decl HeapAllocation0_Normal(?repr:symbol, ?type:Type)
 .decl HeapAllocation0_String(?repr:symbol)
 .decl HeapAllocation0_Class(?repr:symbol, ?instanceType:Type)
 .decl HeapAllocation0_EmptyArray(?repr:symbol)
 .decl AssignHeapAllocation0(?instr:AssignHeapAllocation_Insn, ?heapId:symbol)
-
+*/
 
 .type HeapAllocation
 .decl isHeapAllocation(?h:HeapAllocation)

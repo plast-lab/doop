@@ -185,6 +185,7 @@ AssignInstruction_To(?instruction, ?to) :-
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignCastNull_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 AssignCast_Type(?instruction, ?type),
@@ -196,8 +197,10 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol) input
 
+isNumConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignNumConstant_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 AssignNumConstant_Id(?instruction, ?const),
@@ -228,6 +231,7 @@ isAssignInstanceOf_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 AssignInstanceOf_From(?instruction, ?from),
+AssignInstanceOf_Type(?instruction, ?type),
 AssignInstruction_To(?instruction, ?to) :-
     _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?method).
 
@@ -247,6 +251,7 @@ Field_Type(?signature, ?type) :-
 .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
 isInstruction(?instruction),
+isMonitorInstruction(?instruction),
 isEnterMonitor_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -259,6 +264,7 @@ EnterMonitor_Var(?instruction, ?var) :-
 .decl _ExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
 isInstruction(?instruction),
+isMonitorInstruction(?instruction),
 isExitMonitor_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -355,6 +361,8 @@ ExceptionHandler_End(?ref, ?end) :-
 .decl _Method(?ref:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol) input
 
 isMethod(?ref),
+isMethodDescriptor(?descriptor),
+isJVMDescriptor(?jvmDescriptor),
 Method_SimpleName(?ref, ?simplename),
 Method_Descriptor(?ref, ?descriptor),
 Method_DeclaringType(?ref, ?declaringType),
@@ -454,6 +462,18 @@ LoadArrayIndex_To(?instruction, ?to) :-
 
 ArrayInsnIndex(?instruction, ?index) :-
     _ArrayInsnIndex(?instruction, ?index).
+
+
+// Goto
+
+.decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol) input
+
+isInstruction(?instruction),
+isGoto_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+Goto_Target(?instruction, ?to) :-
+    _Goto(?instruction, ?index, ?to, ?method).
 
 
 // If
