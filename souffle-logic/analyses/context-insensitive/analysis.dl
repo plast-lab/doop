@@ -17,6 +17,7 @@
 .decl Simple_VarPointsTo(?heap:HeapAllocation, ?var:Var) output
 .decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
 .decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
+.decl Reachable(?method:Method) output
 
 Simple_Assign(?to, ?from) :-
   AssignLocal(?from, ?to, _).
@@ -31,11 +32,9 @@ Simple_Assign(?local, ?return) :-
   ReturnVar(?return, ?toMethod),
   AssignReturnValue(?invocation, ?local).
 
-/*
 Simple_VarPointsTo(?heap, ?var) :-
   AssignHeapAllocation(?heap, ?var, ?inMethod),
   Reachable(?inMethod).
-*/
 
 Simple_VarPointsTo(?heap, ?to) :-
   Simple_Assign(?to, ?from),
@@ -50,7 +49,7 @@ Simple_VarPointsTo(?heap, ?to) :-
   LoadInstanceField(?base, ?fld, ?to, _),
   Simple_VarPointsTo(?baseheap, ?base),
   Simple_FieldPointsTo(?heap, ?fld, ?baseheap).
-/*
+
 Simple_VarPointsTo(?heap, ?this) :-
   Reachable(?inMethod),
   Instruction_Method(?invocation, ?inMethod),
@@ -62,6 +61,7 @@ Simple_VarPointsTo(?heap, ?this) :-
   MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
   ThisVar(?toMethod, ?this).
 
+Reachable(?toMethod),
 Simple_CallGraphEdge(?invocation, ?toMethod) :-
   Reachable(?inMethod),
   Instruction_Method(?invocation, ?inMethod),
@@ -71,4 +71,4 @@ Simple_CallGraphEdge(?invocation, ?toMethod) :-
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
   MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
-*/
+
