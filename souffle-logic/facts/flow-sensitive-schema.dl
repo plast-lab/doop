@@ -106,8 +106,8 @@
 .type Var
 .decl isVar(v:Var)
 
-.decl Var_Type(?var:Var, ?type:Type)
-.decl Var_DeclaringMethod(?var:Var, ?method:Method)
+.decl Var_Type(?var:Var, ?type:Type) output
+.decl Var_DeclaringMethod(?var:Var, ?method:Method) output
 
 .decl ApplicationVar(?var:Var)
 
@@ -135,7 +135,7 @@
 .decl isClassHeap(?h:ClassHeap)
 .decl isStringRaw(?id:symbol)
 
-.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type) output
 
 // [Miscellaneous]
 .decl HeapAllocation_EmptyArray(?heap:HeapAllocation)

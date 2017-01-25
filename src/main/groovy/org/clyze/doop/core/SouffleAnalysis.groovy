@@ -54,6 +54,14 @@ class SouffleAnalysis extends Analysis {
         FileUtils.deleteQuietly(factsDir)
         factsDir.mkdirs()
 
+        /*if (options.MAIN_CLASS.value) {
+            def analysisFile = new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
+            analysisFile.append("""MainClass("${options.MAIN_CLASS.value}")\n""")
+        }
+        else {
+            System.out.println("NO MAIN CLASS")
+        }*/
+
         if (cacheDir.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheDir"
             FileOps.copyDirContents(cacheDir, factsDir)
@@ -87,10 +95,7 @@ class SouffleAnalysis extends Analysis {
                 }
             }
 
-            if (options.MAIN_CLASS.value) {
-                def analysisFile = new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
-                analysisFile.append("""MainClass(x) :- ClassType("${options.MAIN_CLASS.value}").""")
-            }
+
 
             logger.info "Caching facts in $cacheDir"
             FileUtils.deleteQuietly(cacheDir)
