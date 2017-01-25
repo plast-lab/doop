@@ -9,7 +9,7 @@ program
 
 
 klass
-	: modifier* ('class'|'interface') IDENTIFIER 'extends' IDENTIFIER ('implements' identifierList)? '{' (field|method)*'}' ;
+	: modifier* ('class'|'interface') IDENTIFIER ('extends' IDENTIFIER)? ('implements' identifierList)? '{' (field|method)* '}' ;
 
 modifier
 	: 'public'
@@ -24,6 +24,7 @@ modifier
 	| 'native'
 	| 'enum'
 	| 'annotation'
+	| 'strictfp'
 	;
 
 field
@@ -67,7 +68,7 @@ assignmentStmt
 	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
 	| (IDENTIFIER '.')? fieldSig '=' value
 	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
-	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+
+	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+ '[]'?
 	;
 
 returnStmt
