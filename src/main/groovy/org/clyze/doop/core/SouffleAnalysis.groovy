@@ -128,8 +128,8 @@ class SouffleAnalysis extends Analysis {
     }
 
     private void runSouffle(int jobs, File factsDir, File outDir, String analysisFile) {
-        System.out.println("souffle -j$jobs -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
-        executor.execute("souffle -j$jobs -c -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
+        System.out.println("souffle -c -j$jobs -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
+        executor.execute("souffle -c -j$jobs -c -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
     }
 
     @Override
