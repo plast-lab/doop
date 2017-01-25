@@ -6,18 +6,18 @@
  * - K is a direct superinterface of C
  */
 Superinterface(?k, ?c) :-
-   DirectSuperinterface(?c, ?k).
+    DirectSuperinterface(?c, ?k).
 
 /**
  * - C has a direct superinterface J that has K as a superinterface
  */
 Superinterface(?k, ?c) :-
-   DirectSuperinterface(?c, ?j),
-   Superinterface(?k, ?j).
+    DirectSuperinterface(?c, ?j),
+    Superinterface(?k, ?j).
 
 /**
  * - K is a superinterface of the direct superclass of C
  */
 Superinterface(?k, ?c) :-
-   DirectSuperclass(?c, ?super),
-   Superinterface(?k, ?super).
+    DirectSuperclass(?c, ?super),
+    Superinterface(?k, ?super).

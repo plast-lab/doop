@@ -1,23 +1,23 @@
 #include "subclass-declarations.dl"
 
 DirectSubclass(?a, ?c) :-
-   DirectSuperclass(?a, ?c).
+    DirectSuperclass(?a, ?c).
 
 /**
  * A class A is a subclass of a class C if A is a direct subclass of C
  */
 Subclass(?c, ?a) :-
-   DirectSubclass(?a, ?c).
+    DirectSubclass(?a, ?c).
 
 /**
  * A class A is a subclass of a class C if there is a direct subclass B of C and class A is a subclass of B
  */
 Subclass(?c, ?a) :-
-   Subclass(?b, ?a),
-   DirectSubclass(?b, ?c).
+    Subclass(?b, ?a),
+    DirectSubclass(?b, ?c).
 
 /**
  * A Class A is a superclass of class C whenever C is a subclass of A
  */
 Superclass(?c, ?a) :-
-   Subclass(?a, ?c).
+    Subclass(?a, ?c).

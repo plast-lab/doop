@@ -5,7 +5,7 @@
 isType(?t),
 isReferenceType(?t),
 isClassType(?t) :-
-  _ClassType(?t).
+    _ClassType(?t).
 
 
 // ArrayType
@@ -15,7 +15,7 @@ isClassType(?t) :-
 isType(?t),
 isReferenceType(?t),
 isArrayType(?t) :-
-  _ArrayType(?t).
+    _ArrayType(?t).
 
 
 // InterfaceType
@@ -25,7 +25,7 @@ isArrayType(?t) :-
 isType(?t),
 isReferenceType(?t),
 isInterfaceType(?t) :-
-  _InterfaceType(?t).
+    _InterfaceType(?t).
 
 
 // ComponentType
@@ -37,7 +37,7 @@ isReferenceType(?arrayType),
 isArrayType(?arrayType),
 isType(?componentType),
 ComponentType(?arrayType, ?componentType) :-
-  _ComponentType(?arrayType, ?componentType).
+    _ComponentType(?arrayType, ?componentType).
 
 
 // ActualParam
@@ -48,7 +48,7 @@ isInstruction(?invocation),
 isMethodInvocation(?invocation),
 isVar(?var),
 ActualParam(?index, ?invocation, ?var) :-
-  _ActualParam(?index, ?invocation, ?var).
+    _ActualParam(?index, ?invocation, ?var).
 
 
 // DirectSuperinterface
@@ -61,7 +61,7 @@ isType(?interface),
 isReferenceType(?interface),
 isInterfaceType(?interface),
 DirectSuperinterface(?class, ?interface) :-
-  _DirectSuperinterface(?class, ?interface).
+    _DirectSuperinterface(?class, ?interface).
 
 
 // DirectSuperclass
@@ -75,7 +75,7 @@ isType(?superclass),
 isReferenceType(?superclass),
 isClassType(?superclass),
 DirectSuperclass(?class, ?superclass) :-
-  _DirectSuperclass(?class, ?superclass).
+    _DirectSuperclass(?class, ?superclass).
 
 
 // Field:Modifier
@@ -85,7 +85,7 @@ DirectSuperclass(?class, ?superclass) :-
 isModifier(?modifier),
 isField(?field),
 Field_Modifier(?modifier, ?field) :-
-  _Field_Modifier(?modifier, ?field).
+    _Field_Modifier(?modifier, ?field).
 
 
 // ClassModifier
@@ -93,7 +93,7 @@ Field_Modifier(?modifier, ?field) :-
 .decl _ClassModifier(?class:symbol, ?modifier:symbol) input
 
 ClassModifier(?class, ?modifier) :-
-  _ClassModifier(?class, ?modifier).
+    _ClassModifier(?class, ?modifier).
 
 
 // FormalParam
@@ -103,7 +103,7 @@ ClassModifier(?class, ?modifier) :-
 isMethod(?method),
 isVar(?var),
 FormalParam(?index, ?method, ?var) :-
-  _FormalParam(?index, ?method, ?var).
+    _FormalParam(?index, ?method, ?var).
 
 
 // Method:DeclaresException
@@ -114,7 +114,7 @@ isType(?exceptionType),
 isReferenceType(?exceptionType),
 isMethod(?method),
 Method_DeclaresException(?exceptionType, ?method) :-
-  _Method_DeclaresException(?exceptionType, ?method).
+    _Method_DeclaresException(?exceptionType, ?method).
 
 
 // Method:Modifier
@@ -124,7 +124,7 @@ Method_DeclaresException(?exceptionType, ?method) :-
 isModifier(?mod),
 isMethod(?method),
 Method_Modifier(?mod, ?method) :-
-  _Method_Modifier(?mod, ?method).
+    _Method_Modifier(?mod, ?method).
 
 
 // NativeReturnVar
@@ -134,7 +134,7 @@ Method_Modifier(?mod, ?method) :-
 isVar(?var),
 isMethod(?method),
 NativeReturnVar(?var, ?method) :-
-  _NativeReturnVar(?var, ?method).
+    _NativeReturnVar(?var, ?method).
 
 
 // Var:Type
@@ -144,7 +144,7 @@ NativeReturnVar(?var, ?method) :-
 isVar(?ref),
 isType(?type),
 Var_Type(?ref, ?type) :-
-  _Var_Type(?ref, ?type).
+    _Var_Type(?ref, ?type).
 
 
 // Var:DeclaringMethod
@@ -154,7 +154,7 @@ Var_Type(?ref, ?type) :-
 isVar(?ref),
 isMethod(?method),
 Var_DeclaringMethod(?ref, ?method) :-
-  _Var_DeclaringMethod(?ref, ?method).
+    _Var_DeclaringMethod(?ref, ?method).
 
 
 // ApplicationClass
@@ -164,7 +164,7 @@ Var_DeclaringMethod(?ref, ?method) :-
 isType(?ref),
 isReferenceType(?ref),
 ApplicationClass(?ref) :-
-  _ApplicationClass(?ref).
+    _ApplicationClass(?ref).
 
 
 // ThisVar
@@ -174,7 +174,7 @@ ApplicationClass(?ref) :-
 isMethod(?method),
 isVar(?var),
 ThisVar(?method, ?var) :-
-  _ThisVar(?method, ?var).
+    _ThisVar(?method, ?var).
 
 
 // ExceptionHandler:Previous
@@ -184,7 +184,7 @@ ThisVar(?method, ?var) :-
 isExceptionHandler(?handler),
 isExceptionHandler(?previous),
 ExceptionHandler_Previous(?handler, ?previous) :-
-  _ExceptionHandler_Previous(?handler, ?previous).
+    _ExceptionHandler_Previous(?handler, ?previous).
 
 
 // AssignReturnValue
@@ -195,7 +195,7 @@ isInstruction(?invocation),
 isMethodInvocation(?invocation),
 isVar(?to),
 AssignReturnValue(?invocation, ?to) :-
-  _AssignReturnValue(?invocation, ?to).
+    _AssignReturnValue(?invocation, ?to).
 
 
 // Properties
