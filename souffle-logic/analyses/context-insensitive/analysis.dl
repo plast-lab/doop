@@ -10,6 +10,7 @@
 #include "../../basic/superinterface.dl"
 #include "../../basic/type-hierarchy.dl"
 #include "../../main/implicit-reachable.dl"
+#include "../../main/class-initialization.dl"
 #include "declarations.dl"
 
 /////////
@@ -43,14 +44,14 @@ Assign(?type, ?from, ?to) :-
  */
 
 Assign(?type, ?actual, ?formal) :-
+   CallGraphEdge(?invocation, ?method),
    FormalParam(?index, ?method, ?formal),
    ActualParam(?index, ?invocation, ?actual),
-   Var_Type(?formal, ?type),
-   CallGraphEdge(?invocation, ?method).
+   Var_Type(?formal, ?type).
 
 Assign(?type, ?return, ?local) :-
-   ReturnVar(?return, ?method),
    CallGraphEdge(?invocation, ?method),
+   ReturnVar(?return, ?method),
    Var_Type(?local, ?type),
    AssignReturnValue(?invocation, ?local).
 
@@ -192,6 +193,10 @@ MainClass("Main").
 
 // Dacapo Main Class
 MainClass("Harness").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
+MainClass("Main").
 MainClass("Main").
 MainClass("Main").
 MainClass("Main").

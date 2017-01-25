@@ -50,7 +50,7 @@ InitializedClass(?superclass) :-
  */
 InitializedClass(?class) :-
    MainMethodDeclaration(?method),
-   Method:DeclaringType(?method, ?class).
+   Method_DeclaringType(?method, ?class).
 
 /**
  * T is a class and an instance of T is created
@@ -60,7 +60,7 @@ InitializedClass(?class) :-
 InitializedClass(?class) :-
    Reachable(?inmethod),
    AssignHeapAllocation(?heap, _, ?inmethod),
-   HeapAllocation:Type(?heap, ?class).
+   HeapAllocation_Type(?heap, ?class).
 
 /**
  * T is a class and a static method declared by T is invoked
@@ -68,7 +68,7 @@ InitializedClass(?class) :-
 InitializedClass(?class) :-
    Reachable(?inmethod),
    Instruction_Method(?invocation, ?inmethod),
-   StaticMethodInvocation_Insn(?invocation),
+   isStaticMethodInvocation_Insn(?invocation),
    MethodInvocation_Method(?invocation, ?signature),
    Method_DeclaringType(?signature, ?class).
 
