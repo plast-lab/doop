@@ -25,12 +25,6 @@
 .decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation) output
 .decl Reachable(?method:Method)
 
-Reachable(?method) :-
-    ImplicitReachable(?method).
-
-Reachable(?method) :-
-   MainMethodDeclaration(?method).
-
 /**
  * Cast assignments
  */
@@ -159,7 +153,6 @@ VarPointsTo(?heap, ?this) :-
  *   Call graph creation
  **/
 
-
 Reachable(?toMethod),
 CallGraphEdge(?invocation, ?toMethod) :-
   Reachable(?inMethod),
@@ -187,30 +180,32 @@ VarPointsTo(?heap, ?this) :-
    ThisVar(?tomethod, ?this).
 
 
+/**
+ * Implicitly reachable methods are invoked by the JVM on startup.
+ */
+Reachable(?method) :-
+    ImplicitReachable(?method).
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+Reachable(?method) :-
+   MainMethodDeclaration(?method).
+
+/**
+ * If a class needs to be initialized, then its class initializer is
+ * invoked.
+ *
+ * Note that InitializedClass already deals with superclasses that
+ * needs to be initialized as well, so we don't need to invoke class
+ * initializers of the super class here.
+ */
+Reachable(?clinit) :-
+   InitializedClass(?class),
+   ClassInitializer(?class, ?clinit).
 
 // MiniJavac Main Class
 MainClass("Main").
 
 // Dacapo Main Class
 MainClass("Harness").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
-MainClass("Main").
