@@ -129,7 +129,7 @@ class SouffleAnalysis extends Analysis {
 
     private void runSouffle(int jobs, File factsDir, File outDir, String analysisFile) {
 
-        executor.execute("souffle -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
+        executor.execute("souffle -j$jobs -c -p ./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
     }
 
     @Override

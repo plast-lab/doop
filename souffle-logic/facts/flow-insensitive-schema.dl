@@ -17,29 +17,29 @@
 
 // Note: for OPT inmethod last
 
-.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method) output
+.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)
 
-.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method) output
+.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)
 
-.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method) output
+.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)
 
-.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method) output
+.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)
 
-.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method) output
+.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)
 
-.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method) output
+.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)
 
-.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method) output
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
 
-.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method) output
+.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)
 
-.decl AssignNull(?to:Var, ?inmethod:Method) output
+.decl AssignNull(?to:Var, ?inmethod:Method)
 
-.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method) output
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)
 
 // Note: a Jimple method can have multiple return variables
-.decl ReturnVar(?var:Var, ?method:Method) output
+.decl ReturnVar(?var:Var, ?method:Method)
 
-.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method) output
+.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
 
-.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method) output
+.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
