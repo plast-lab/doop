@@ -3,10 +3,12 @@
 #include "../../facts/to-flow-sensitive.dl"
 #include "../../facts/import-facts.dl"
 #include "../../facts/import-entities.dl"
+#include "../../basic/basic.dl"
 #include "../../basic/method-resolution.dl"
 #include "../../basic/subclass.dl"
 #include "../../basic/superinterface.dl"
 #include "../../basic/type-hierarchy.dl"
+#include "declarations.dl"
 
 /////////
 // IDB //
@@ -17,6 +19,9 @@
 .decl Simple_FieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
 .decl Simple_CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
 .decl Reachable(?method:Method) output
+
+Reachable(?method) :-
+   MainMethodDeclaration(?method).
 
 Simple_Assign(?to, ?from) :-
   AssignLocal(?from, ?to, _).

@@ -41,7 +41,7 @@
 // Important class subsets
 
 .decl ApplicationClass(?ref:ReferenceType)
-.decl MainClass(?class:ClassType)
+.decl MainClass(?class:ClassType) output
 
 
 // Common type selectors

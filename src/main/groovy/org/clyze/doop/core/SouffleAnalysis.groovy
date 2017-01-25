@@ -75,16 +75,21 @@ class SouffleAnalysis extends Analysis {
             FileUtils.touch(new File(factsDir, "Properties.facts"))
 
             if (options.TAMIFLEX.value) {
-                File origTamFile  = new File(options.TAMIFLEX.value.toString())
+                File origTamFile = new File(options.TAMIFLEX.value.toString())
 
                 new File(factsDir, "Tamiflex.facts").withWriter { w ->
                     origTamFile.eachLine { line ->
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
                                 .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
                     }
                 }
+            }
+
+            if (options.MAIN_CLASS.value) {
+                def analysisFile = new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
+                analysisFile.append("""MainClass(x) :- ClassType("${options.MAIN_CLASS.value}").""")
             }
 
             logger.info "Caching facts in $cacheDir"
