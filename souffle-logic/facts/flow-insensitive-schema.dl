@@ -38,8 +38,8 @@
 .decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method) output
 
 // Note: a Jimple method can have multiple return variables
-.decl ReturnVar(?var:Var, ?method:Method)
+.decl ReturnVar(?var:Var, ?method:Method) output
 
-.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method) output
 
-.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method) output

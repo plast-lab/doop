@@ -98,7 +98,7 @@ ClassModifier(?class, ?modifier) :-
 
 // FormalParam
 
-.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol) input
+.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol) input output
 
 isMethod(?method),
 isVar(?var),
