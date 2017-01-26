@@ -81,6 +81,7 @@ AndroidEntryPoint(?method) :-
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignOper_Insn(?instruction),
 isAssignLocal_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -96,6 +97,7 @@ AssignInstruction_To(?instruction, ?to) :-
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignOper_Insn(?instruction),
 isAssignBinop_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -109,6 +111,7 @@ AssignInstruction_To(?instruction, ?to) :-
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignOper_Insn(?instruction),
 isAssignUnop_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -171,6 +174,7 @@ AssignInstruction_To(?instruction, ?to) :-
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignCast_Insn(?instruction),
 isAssignCastNumConstant_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -186,6 +190,7 @@ AssignInstruction_To(?instruction, ?to) :-
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
+isAssignCast_Insn(?instruction),
 isAssignCastNull_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -427,7 +432,7 @@ Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 LoadStaticField_To(?instruction, ?to) :-
-    _StoreStaticField(?instruction, ?index, ?to, ?signature, ?method).
+    _LoadStaticField(?instruction, ?index, ?to, ?signature, ?method).
 
 
 // StoreArrayIndex
