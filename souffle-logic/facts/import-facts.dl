@@ -159,6 +159,7 @@ isAssignInstruction(?instruction),
 isAssignCast_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
+AssignCast(?type, ?from, ?to, ?method),
 AssignCast_Type(?instruction, ?type),
 AssignCast_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-

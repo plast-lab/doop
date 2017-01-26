@@ -17,7 +17,7 @@
 // IDB //
 /////////
 
-.decl Assign(?type:Type, ?to:Var, ?from:Var) output
+.decl Assign(?to:Var, ?from:Var) output
 .decl VarPointsTo(?heap:HeapAllocation, ?var:Var) output
 .decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
 .decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field) output
@@ -26,27 +26,17 @@
 .decl Reachable(?method:Method)
 
 /**
- * Cast assignments
- */
-
-Assign(?type, ?from, ?to) :-
-   Reachable(?inmethod),
-   AssignCast(?type, ?from, ?to, ?inmethod).
-
-/**
  * Invocation assignments
  */
 
-Assign(?type, ?actual, ?formal) :-
+Assign(?actual, ?formal) :-
    CallGraphEdge(?invocation, ?method),
    FormalParam(?index, ?method, ?formal),
-   ActualParam(?index, ?invocation, ?actual),
-   Var_Type(?formal, ?type).
+   ActualParam(?index, ?invocation, ?actual).
 
-Assign(?type, ?return, ?local) :-
+Assign(?return, ?local) :-
    CallGraphEdge(?invocation, ?method),
    ReturnVar(?return, ?method),
-   Var_Type(?local, ?type),
    AssignReturnValue(?invocation, ?local).
 
 
@@ -55,14 +45,12 @@ VarPointsTo(?heap, ?var) :-
   Reachable(?inMethod).
 
 /**
- *  Variable points to heap object
+ *  Variable points to heap object via assignment
  */
 
 VarPointsTo(?heap, ?to) :-
    VarPointsTo(?heap, ?from),
-   Assign(?type, ?from, ?to),
-   HeapAllocation_Type(?heap, ?heaptype),
-   SupertypeOf(?type, ?heaptype).
+   Assign(?from, ?to).
 
 /**
  *  Local Assignments
@@ -72,6 +60,17 @@ VarPointsTo(?heap, ?to) :-
    Reachable(?inmethod),
    AssignLocal(?from, ?to, ?inmethod),
    VarPointsTo(?heap, ?from).
+
+/**
+ * Cast Assignments
+ */
+
+VarPointsTo(?heap, ?to) :-
+    Reachable(?method),
+    VarPointsTo(?heap, ?from),
+    AssignCast(?type, ?from, ?to, ?method),
+    HeapAllocation_Type(?heap, ?heaptype),
+    SupertypeOf(?type, ?heaptype).
 
 /**
  * Arrays
