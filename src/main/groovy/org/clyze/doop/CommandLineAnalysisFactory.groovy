@@ -22,6 +22,8 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
     static final String USAGE            = "doop [OPTION]... -- [BLOXBATCH OPTION]..."
     static final int    WIDTH            = 120
 
+    static final AnalysisFamily FAMILY   = new DoopAnalysisFamily()
+
     /**
      * Processes the cli args and generates a new analysis.
      */
@@ -39,7 +41,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(AnalysisFamily.DOOP, id, name, options, inputs)
+        return newAnalysis(FAMILY, id, name, options, inputs)
     }
 
     /**
@@ -75,7 +77,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(AnalysisFamily.DOOP, id, name, options, inputs)
+        return newAnalysis(FAMILY, id, name, options, inputs)
     }
 
     /**
@@ -84,7 +86,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
      */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
-        List<AnalysisOption> cliOptions = AnalysisFamily.DOOP.supportedOptions().findAll { AnalysisOption option ->
+        List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
@@ -120,7 +122,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
      */
     static CliBuilder createNonStandardCliBuilder() {
 
-        List<AnalysisOption> cliOptions = AnalysisFamily.DOOP.supportedOptions().findAll { AnalysisOption option ->
+        List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
             option.nonStandard //all options with nonStandard property
         }
 
@@ -186,7 +188,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                     """.stripIndent()
 
             //Find all cli options and sort them by id
-            List<AnalysisOption> cliOptions = AnalysisFamily.DOOP.supportedOptions().findAll { AnalysisOption option ->
+            List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
                 option.cli
             }.sort{ AnalysisOption option ->
                 option.id
