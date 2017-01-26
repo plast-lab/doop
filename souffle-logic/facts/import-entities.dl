@@ -45,7 +45,6 @@ ComponentType(?arrayType, ?componentType) :-
 .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol) input
 
 isInstruction(?invocation),
-isMethodInvocation(?invocation),
 isVar(?var),
 ActualParam(?index, ?invocation, ?var) :-
     _ActualParam(?index, ?invocation, ?var).
@@ -192,7 +191,6 @@ ExceptionHandler_Previous(?handler, ?previous) :-
 .decl _AssignReturnValue(?invocation:symbol, ?to:symbol) input
 
 isInstruction(?invocation),
-isMethodInvocation(?invocation),
 isVar(?to),
 AssignReturnValue(?invocation, ?to) :-
     _AssignReturnValue(?invocation, ?to).
