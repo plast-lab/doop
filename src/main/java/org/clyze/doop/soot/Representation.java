@@ -2,7 +2,6 @@ package org.clyze.doop.soot;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import soot.*;
 import soot.jimple.*;
@@ -80,22 +79,22 @@ public class Representation {
 
     String thisVar(SootMethod m)
     {
-        return compactMethod(m) + "/@this";
+        return getMethodSignature(m) + "/@this";
     }
 
     String nativeReturnVar(SootMethod m)
     {
-        return compactMethod(m) + "/@native-return";
+        return getMethodSignature(m) + "/@native-return";
     }
 
     String param(SootMethod m, int i)
     {
-        return compactMethod(m) + "/@param" + i;
+        return getMethodSignature(m) + "/@param" + i;
     }
 
     String local(SootMethod m, Local l)
     {
-        return compactMethod(m) + "/" + l.getName();
+        return getMethodSignature(m) + "/" + l.getName();
     }
 
     String newLocalIntermediate(SootMethod m, Local l, Session session)
@@ -111,7 +110,7 @@ public class Representation {
         if(result == null)
         {
             String name = "catch " + trap.getException().getName();
-            result = compactMethod(m) + "/" + name + "/" + session.nextNumber(name);
+            result = getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
 
             _trapRepr.put(trap, result);
         }
@@ -122,38 +121,12 @@ public class Representation {
     String throwLocal(SootMethod m, Local l, Session session)
     {
         String name = "throw " + l.getName();
-        return compactMethod(m) + "/" + name + "/" + session.nextNumber(name);
+        return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    /**
-     * If there is only one method with the name of m, then returns a
-     * compact name. Otherwise, the signature is returned.
-     */
-    private synchronized String compactMethod(SootMethod m)
+    private synchronized String getMethodSignature(SootMethod m)
     {
-        String result = _methodRepr.get(m);
-
-        if(result == null) {
-            String name = m.getName();
-
-            int count = 0;
-            for(SootMethod other : m.getDeclaringClass().getMethods()) {
-                if(other.getName().equals(name)) {
-                    count++;
-                }
-            }
-
-            if(count > 1) {
-                result = m.getSignature();
-            }
-            else {
-                result = m.getDeclaringClass().getName() + "." + name;
-            }
-
-            _methodRepr.put(m, result);
-        }
-
-        return result;
+        return m.getSignature();
     }
 
     private String getKind(Stmt stmt)
@@ -186,9 +159,9 @@ public class Representation {
         return kind;
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, Session session, int index)
+    String unsupported(SootMethod inMethod, Stmt stmt, int index)
     {
-        return compactMethod(inMethod) +
+        return getMethodSignature(inMethod) +
             "/unsupported " + getKind(stmt) +
             "/" +  stmt.toString() +
             "/instruction" + index;
@@ -197,30 +170,29 @@ public class Representation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(SootMethod inMethod, Stmt stmt, Session session, int index)
+    String instruction(SootMethod inMethod, Stmt stmt, int index)
     {
-        return compactMethod(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
+        return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
     }
 
     String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
     {
         String name = expr.getMethod().getName();
 
-        return compactMethod(inMethod)
+        return getMethodSignature(inMethod)
             + "/" + expr.getMethod().getDeclaringClass() + "." + name
             + "/" + session.nextNumber(name);
     }
 
-    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
+    String heapAlloc(SootMethod inMethod, int index, AnyNewExpr expr)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
         {
-            return heapAlloc(inMethod, expr.getType(), session);
+            return heapAlloc(inMethod, index);
         }
         else if(expr instanceof NewMultiArrayExpr)
         {
-            return heapAlloc(inMethod, expr.getType(), session);
-            //      return compactMethod(inMethod) + "/" + type + "/" +  session.nextNumber(type);
+            return heapAlloc(inMethod, index);
         }
         else
         {
@@ -228,14 +200,13 @@ public class Representation {
         }
     }
 
-    String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
+    String heapMultiArrayAlloc(SootMethod inMethod, int index)
     {
-        return heapAlloc(inMethod, type, session);
+        return heapAlloc(inMethod, index);
     }
 
-    private String heapAlloc(SootMethod inMethod, Type type, Session session)
+    private String heapAlloc(SootMethod inMethod, int index)
     {
-        String s = type.toString();
-        return compactMethod(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return getMethodSignature(inMethod) + "/" + index;
     }
 }
