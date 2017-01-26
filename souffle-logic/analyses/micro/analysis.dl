@@ -49,8 +49,8 @@ VarPointsTo(?heap, ?var) :-
  */
 
 VarPointsTo(?heap, ?to) :-
-   VarPointsTo(?heap, ?from),
-   Assign(?from, ?to).
+   Assign(?from, ?to),
+   VarPointsTo(?heap, ?from).
 
 /**
  *  Local Assignments
@@ -67,10 +67,10 @@ VarPointsTo(?heap, ?to) :-
 
 VarPointsTo(?heap, ?to) :-
     Reachable(?method),
-    VarPointsTo(?heap, ?from),
     AssignCast(?type, ?from, ?to, ?method),
+    SupertypeOf(?type, ?heaptype),
     HeapAllocation_Type(?heap, ?heaptype),
-    SupertypeOf(?type, ?heaptype).
+    VarPointsTo(?heap, ?from).
 
 /**
  * Arrays
@@ -207,4 +207,6 @@ Reachable(?clinit) :-
 MainClass("Main").
 
 // Dacapo Main Class
+MainClass("Harness").
+MainClass("Harness").
 MainClass("Harness").
