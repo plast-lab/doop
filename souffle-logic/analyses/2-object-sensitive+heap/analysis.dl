@@ -1,15 +1,31 @@
-.type Type
+#include "../../facts/flow-insensitive-schema.dl"
+#include "../../facts/flow-sensitive-schema.dl"
+#include "../../facts/to-flow-sensitive.dl"
+#include "../../facts/import-facts.dl"
+#include "../../facts/import-entities.dl"
+#include "../../facts/post-process.dl"
+#include "../../basic/basic.dl"
+#include "../../basic/method-resolution.dl"
+#include "../../basic/subclass.dl"
+#include "../../basic/superinterface.dl"
+#include "../../basic/type-hierarchy.dl"
+#include "../../main/implicit-reachable.dl"
+#include "../../main/class-initialization.dl"
+#include "declarations.dl"
+
+
+/*.type Type
 .type Var 
 .type MethodInvocation
 .type MethodSignature
 .type HeapAllocation
-.type FieldSignature
+.type Field
 .type Int
 .type SimpleName
 .type MethodDescriptor
 
 .type Instruction = MethodInvocation
-
+*/
 // This part is specific to 2objH. 
 .type Simple_Context = [ fst:HeapAllocation, snd:HeapAllocation]
 .type Simple_HContext = HeapAllocation
@@ -24,57 +40,26 @@
 #define Simple_InitialContext(ctx) \
    ctx = ["<<initial-context>>","<<initial-context>>"]
 
-
-/////////
-// EDB //
-/////////
-
-.decl AssignLocal(?from:Var, ?to:Var, ?meth:MethodSignature) input
-.decl FormalParam(?index:Int, ?containingMethod:MethodSignature, ?variable:Var)  input
-.decl ActualParam(?index:Int, ?callsite:MethodInvocation, ?actualVariable:Var)  input
-.decl ReturnVar(?return:Var, ?toMethod:MethodSignature)  input 
-.decl AssignReturnValue(?callsite:MethodInvocation, ?variableAssignedTo:Var)  input
-.decl AssignHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMethod:MethodSignature) input 
-.decl Reachable(?inMethod:MethodSignature) input 
-.decl StoreInstanceField(?from:Var, ?base:Var, ?fld:FieldSignature, ?inMethod:MethodSignature) input
-.decl LoadInstanceField(?base:Var, ?fld:FieldSignature, ?to:Var, ?inMethod:MethodSignature) input
-.decl VirtualMethodInvocation_Base(?callsite:MethodInvocation, ?instanceVariable:Var)  input
-.decl ThisVar(?method:MethodSignature, ?thisVariable:Var)  input
-.decl HeapAllocation_Type(?heapAllocation:HeapAllocation, ?heaptype:Type)  input
-.decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
-.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName) input
-.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor) input
-.decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, 
-      ?heaptype:Type, ?tomethod:MethodSignature) input 
-.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?meth:MethodSignature) input
-.decl StoreStaticField(?from:Var, ?fld:FieldSignature, ?inMethod:MethodSignature) input
-.decl LoadStaticField(?fld:FieldSignature, ?to:Var, ?inMethod:MethodSignature) input
-.decl StaticMethodInvocation(?invocation:MethodInvocation, 
-	  ?toMethod:MethodSignature, ?inMethod:MethodSignature) input
-.decl MethodInvocation_Signature(?invocation:MethodInvocation, ?toMethod:MethodSignature) input
-.decl SpecialMethodInvocation_Base(?invocation:MethodInvocation, ?base:Var) input
-.decl Var_Type(?var:Var, ?type:Type) input
-.decl SubtypeOf(?sub:Type, ?super:Type) input
-
 /////////
 // IDB //
 /////////
 
 // Declarations
+.decl Reachable(?inMethod:Method)
 .decl Simple_LocalAssign(?to:Var, ?from:Var) 
 .decl Simple_Assign(?ctxTo:Simple_Context, ?to:Var, ?ctxFrom:Simple_Context, ?from:Var) 
 .decl Simple_VarPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, 
                          ?ctx:Simple_Context, ?var:Var) output
-.decl Simple_FieldPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, ?fld:FieldSignature,
+.decl Simple_FieldPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, ?fld:Field,
                          ?baseHctx:Simple_HContext, ?baseheap:HeapAllocation)
-.decl Simple_StaticFieldPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, ?fld:FieldSignature)
+.decl Simple_StaticFieldPointsTo(?hctx:Simple_HContext, ?heap:HeapAllocation, ?fld:Field)
 .decl Simple_CallGraphEdge(?ctxInvo:Simple_Context, ?invocation:MethodInvocation, 
-                         ?ctxMeth:Simple_Context, ?meth:MethodSignature) output
-.decl Simple_ReachableContext(?ctx:Simple_Context, ?meth:MethodSignature) output
+                         ?ctxMeth:Simple_Context, ?meth:Method) output
+.decl Simple_ReachableContext(?ctx:Simple_Context, ?meth:Method) output
 // also try without the two below
-.decl Simple_StoreHeapInstanceField(?fld:FieldSignature, ?basehctx:Simple_HContext,
+.decl Simple_StoreHeapInstanceField(?fld:Field, ?basehctx:Simple_HContext,
                          ?baseheap:HeapAllocation, ?ctx:Simple_Context, ?from:Var)
-.decl Simple_LoadHeapInstanceField(?ctx: Simple_Context, ?to: Var, ?fld:FieldSignature, 
+.decl Simple_LoadHeapInstanceField(?ctx: Simple_Context, ?to: Var, ?fld:Field, 
                          ?basehctx:Simple_HContext, ?baseheap:HeapAllocation) 
 
 
@@ -148,6 +133,7 @@ Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?to) :-
 
 // Method calls
 // Virtual:
+Reachable(?inmethod),
 Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod)  :-
   Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
   HeapAllocation_Type(?heap, ?heaptype),
@@ -155,7 +141,9 @@ Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod)  :-
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
   MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
+  Instruction_Method(?invocation, ?inmethod),
   MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth).
+
 Simple_VarPointsTo(?hctx, ?heap, ?ctxMeth, ?this) :-
   Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
   HeapAllocation_Type(?heap, ?heaptype),
@@ -167,18 +155,22 @@ Simple_VarPointsTo(?hctx, ?heap, ?ctxMeth, ?this) :-
   ThisVar(?toMethod, ?this).
 
 // Static:
+Reachable(?inMethod),
 Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxInvo, ?toMethod) :-
   Simple_ReachableContext(?ctxInvo, ?inMethod),
   StaticMethodInvocation(?invocation, ?toMethod, ?inMethod).
 
 // Special:
+Reachable(?inmethod),
 Simple_CallGraphEdge(?ctxInvo, ?invocation, ?ctxMeth, ?toMethod) :-
-  MethodInvocation_Signature(?invocation, ?toMethod),
+  MethodInvocation_Method(?invocation, ?toMethod),
   SpecialMethodInvocation_Base(?invocation, ?base),
   Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
+  Instruction_Method(?invocation, ?inmethod),
   MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth).
+
 Simple_VarPointsTo(?hctx, ?heap, ?ctxMeth, ?this) :-
-  MethodInvocation_Signature(?invocation, ?toMethod),
+  MethodInvocation_Method(?invocation, ?toMethod),
   SpecialMethodInvocation_Base(?invocation, ?base),
   Simple_VarPointsTo(?hctx, ?heap, ?ctxInvo, ?base),
   MergeMacro(?ctxInvo, ?invocation, ?hctx, ?heap, ?ctxMeth),
@@ -194,3 +186,33 @@ Simple_ReachableContext(?ctx, ?method) :-
 Simple_ReachableContext(?ctx, ?method) :-
   Reachable(?method),
   Simple_InitialContext(?ctx).
+
+/**
+ * Implicitly reachable methods are invoked by the JVM on startup.
+ */
+Reachable(?method) :-
+    ImplicitReachable(?method).
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+Reachable(?method) :-
+   MainMethodDeclaration(?method).
+
+/**
+ * If a class needs to be initialized, then its class initializer is
+ * invoked.
+ *
+ * Note that InitializedClass already deals with superclasses that
+ * needs to be initialized as well, so we don't need to invoke class
+ * initializers of the super class here.
+ */
+Reachable(?clinit) :-
+   InitializedClass(?class),
+   ClassInitializer(?class, ?clinit).
+
+// MiniJavac Main Class
+MainClass("Main").
+
+// Dacapo Main Class
+MainClass("Harness").
