@@ -159,7 +159,6 @@ isAssignInstruction(?instruction),
 isAssignCast_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
-AssignCast(?type, ?from, ?to, ?method),
 AssignCast_Type(?instruction, ?type),
 AssignCast_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
@@ -537,22 +536,22 @@ Switch_Target(?ref, ?value, ?target) :-
 
 // Default target
 
-.decl _TableSwitch_DefaultTarget(?ref:symbol, ?target:number) input
+//.decl _TableSwitch_DefaultTarget(?ref:symbol, ?target:number) input
 
-isInstruction(?ref),
-isSwitch_Insn(?ref),
-isTableSwitch_Insn(?ref),
-Switch_DefaultTarget(?ref, ?target) :-
-    _TableSwitch_DefaultTarget(?ref, ?target).
+//isInstruction(?ref),
+//isSwitch_Insn(?ref),
+//isTableSwitch_Insn(?ref),
+//Switch_DefaultTarget(?ref, ?target) :-
+//    _TableSwitch_DefaultTarget(?ref, ?target).
 
 
-.decl _LookupSwitch_DefaultTarget(?ref:symbol, ?target:number) input
+//.decl _LookupSwitch_DefaultTarget(?ref:symbol, ?target:number) input
 
-isInstruction(?ref),
-isSwitch_Insn(?ref),
-isLookupSwitch_Insn(?ref),
-Switch_DefaultTarget(?ref, ?target) :-
-    _LookupSwitch_DefaultTarget(?ref, ?target).
+//isInstruction(?ref),
+//isSwitch_Insn(?ref),
+//isLookupSwitch_Insn(?ref),
+//Switch_DefaultTarget(?ref, ?target) :-
+//    _LookupSwitch_DefaultTarget(?ref, ?target).
 
 
 // ReturnNonvoid
