@@ -425,7 +425,7 @@ _ExitMonitor(?ref, ?index, ?var, ?method) ->
 // Method invocation line numbers
 
 lang:physical:storageModel[`_MethodInvocation:Line] = "DelimitedFile".
-lang:physical:filePath[`_MethodInvocation:Line] = "facts/_MethodInvocation-Line.facts".
+lang:physical:filePath[`_MethodInvocation:Line] = "facts/_MethodInvocation_Line.facts".
 lang:physical:delimiter[`_MethodInvocation:Line] = "\t".
 lang:physical:hasColumnNames[`_MethodInvocation:Line] = false.
 
@@ -835,7 +835,7 @@ _LookupSwitch(?ref, ?index, ?key, ?method) ->
 
 // Targets
 lang:physical:storageModel[`_TableSwitch:Target] = "DelimitedFile".
-lang:physical:filePath[`_TableSwitch:Target] = "facts/_TableSwitch-Target.facts".
+lang:physical:filePath[`_TableSwitch:Target] = "facts/_TableSwitch_Target.facts".
 lang:physical:delimiter[`_TableSwitch:Target] = "\t".
 lang:physical:hasColumnNames[`_TableSwitch:Target] = false.
 
@@ -850,7 +850,7 @@ _TableSwitch:Target(?ref, ?value, ?target) ->
    _TableSwitch:Target(?ref, ?value, ?target).
 
 lang:physical:storageModel[`_LookupSwitch:Target] = "DelimitedFile".
-lang:physical:filePath[`_LookupSwitch:Target] = "facts/_LookupSwitch-Target.facts".
+lang:physical:filePath[`_LookupSwitch:Target] = "facts/_LookupSwitch_Target.facts".
 lang:physical:delimiter[`_LookupSwitch:Target] = "\t".
 lang:physical:hasColumnNames[`_LookupSwitch:Target] = false.
 
@@ -866,7 +866,7 @@ _LookupSwitch:Target(?ref, ?value, ?target) ->
 
 // Default target
 lang:physical:storageModel[`_TableSwitch:DefaultTarget] = "DelimitedFile".
-lang:physical:filePath[`_TableSwitch:DefaultTarget] = "facts/_TableSwitch-Default.facts".
+lang:physical:filePath[`_TableSwitch:DefaultTarget] = "facts/_TableSwitch_Default.facts".
 lang:physical:delimiter[`_TableSwitch:DefaultTarget] = "\t".
 lang:physical:hasColumnNames[`_TableSwitch:DefaultTarget] = false.
 
@@ -880,7 +880,7 @@ _TableSwitch:DefaultTarget(?ref, ?target) ->
    _TableSwitch:DefaultTarget(?ref, ?target).
 
 lang:physical:storageModel[`_LookupSwitch:DefaultTarget] = "DelimitedFile".
-lang:physical:filePath[`_LookupSwitch:DefaultTarget] = "facts/_LookupSwitch-Default.facts".
+lang:physical:filePath[`_LookupSwitch:DefaultTarget] = "facts/_LookupSwitch_Default.facts".
 lang:physical:delimiter[`_LookupSwitch:DefaultTarget] = "\t".
 lang:physical:hasColumnNames[`_LookupSwitch:DefaultTarget] = false.
 
