@@ -205,9 +205,3 @@ Reachable(?method) :-
 Reachable(?clinit) :-
    InitializedClass(?class),
    ClassInitializer(?class, ?clinit).
-
-// MiniJavac Main Class
-MainClass("Main").
-
-// Dacapo Main Class
-MainClass("Harness").
