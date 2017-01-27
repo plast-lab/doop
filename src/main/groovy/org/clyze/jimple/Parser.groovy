@@ -23,11 +23,11 @@ public class Parser {
 		def simplename = FilenameUtils.removeExtension( FilenameUtils.getName(filename) )
 		def i = simplename.lastIndexOf(".")
 		// abc.def
-		def packages = simplename[0..(i-1)]
+		def packages = simplename[0..i]
 		// Foo
 		def classname = simplename[(i+1)..-1]
 		// abc.def.Foo.json
-		new File(dir, simplename + ".json") << listener.json
+		new File(dir, simplename + ".json").withWriter { it << listener.json }
 		// abc/def
 		def path = new File(dir, packages.replaceAll("\\.", "/"))
 
