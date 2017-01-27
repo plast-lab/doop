@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.*
 import static org.clyze.jimple.JimpleParser.*
 
-public class JimpleListenerImpl extends JimpleBaseListener {
+class JimpleListenerImpl extends JimpleBaseListener {
 
 	// JSON representation
 	class Var {
@@ -29,14 +29,14 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 
 	String              json
 
-	public JimpleListenerImpl(String filename) {
+	JimpleListenerImpl(String filename) {
 		_filename = filename
 		_vars     = []
 		_types    = [:]
 	}
 
 
-	public void exitProgram(ProgramContext ctx) {
+	void exitProgram(ProgramContext ctx) {
 		json = JsonOutput.toJson([
 			Field: [],
 			Variable: _vars,
@@ -49,25 +49,26 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		json = JsonOutput.prettyPrint(json)
 	}
 
-	public void enterKlass(KlassContext ctx) {
+	void enterKlass(KlassContext ctx) {
 		_klass = ctx.IDENTIFIER(0).getText()
 	}
 
-	public void enterMethod(MethodContext ctx) {
-		_method = ctx.IDENTIFIER(1).getText()
+	void enterMethod(MethodContext ctx) {
+		def args = gatherIdentifiers(ctx.identifierList(0)).join(",")
+		_method = "<$_klass: ${ctx.IDENTIFIER(0).getText()} ${ctx.IDENTIFIER(1).getText()}($args)>"
 	}
 
-	public void exitIdentifierList(IdentifierListContext ctx) {
+	void exitIdentifierList(IdentifierListContext ctx) {
 		if (_inDecl)
 			_vars.push(var(ctx.IDENTIFIER(), true))
 	}
 
-	public void enterDeclarationStmt(DeclarationStmtContext ctx) {
+	void enterDeclarationStmt(DeclarationStmtContext ctx) {
 		_inDecl = true
 		_pending = []
 	}
 
-	public void exitDeclarationStmt(DeclarationStmtContext ctx) {
+	void exitDeclarationStmt(DeclarationStmtContext ctx) {
 		_inDecl = false
 		def type = ctx.IDENTIFIER().getText()
 		_pending.each { v ->
@@ -76,7 +77,7 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	public void exitAssignmentStmt(AssignmentStmtContext ctx) {
+	void exitAssignmentStmt(AssignmentStmtContext ctx) {
 		(0..1).each {
 			if (ctx.IDENTIFIER(it) != null) {
 				def name = ctx.IDENTIFIER(it).getText()
@@ -89,28 +90,28 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	public void exitReturnStmt(ReturnStmtContext ctx) {
+	void exitReturnStmt(ReturnStmtContext ctx) {
 		if (ctx.value() != null && ctx.value().IDENTIFIER() != null)
 			_vars.push(var(ctx.value().IDENTIFIER(), true))
 	}
 
-	public void exitAllocationStmt(AllocationStmtContext ctx) {
+	void exitAllocationStmt(AllocationStmtContext ctx) {
 		_vars.push(var(ctx.IDENTIFIER(0), true))
 	}
 
-	public void exitInvokeStmt(InvokeStmtContext ctx) {
+	void exitInvokeStmt(InvokeStmtContext ctx) {
 		(0..1).each {
 			if (ctx.IDENTIFIER(it) != null)
 				_vars.push(var(ctx.IDENTIFIER(it), true))
 		}
 	}
 
-	public void exitValueList(ValueListContext ctx) {
+	void exitValueList(ValueListContext ctx) {
 		if (ctx.value().IDENTIFIER() != null)
 			_vars.push(var(ctx.value().IDENTIFIER(), true))
 	}
 
-	public void exitJumpStmt(JumpStmtContext ctx) {
+	void exitJumpStmt(JumpStmtContext ctx) {
 		(0..1).each {
 			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
 				_vars.push(var(ctx.value(it).IDENTIFIER(), true))
@@ -123,7 +124,7 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		def name = id.getText()
 		def v = new Var(
 			name: name,
-			doopName: _klass+"/"+_method+"/"+name,
+			doopName: "$_method/$name",
 			isLocal: isLocal,
 			isParameter: !isLocal,
 			sourceFileName: _filename,
@@ -139,5 +140,10 @@ public class JimpleListenerImpl extends JimpleBaseListener {
 		else
 			_pending.push(v)
 		return v
+	}
+
+	List<String> gatherIdentifiers(IdentifierListContext ctx) {
+		if (ctx == null) return []
+		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER().getText()]
 	}
 }
