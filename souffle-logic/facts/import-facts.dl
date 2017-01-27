@@ -85,7 +85,6 @@ isAssignOper_Insn(?instruction),
 isAssignLocal_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
-Instruction_Method(?instruction, ?method),
 AssignLocal_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
     _AssignLocal(?instruction, ?index, ?from, ?to, ?method).
@@ -252,6 +251,7 @@ Field_SimpleName(?signature, ?simplename),
 Field_Type(?signature, ?type) :-
     _Field(?signature, ?declaringType, ?simplename, ?type).
 
+
 // EnterMonitor
 
 .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
@@ -350,31 +350,31 @@ Instruction_Method(?instruction, ?method) :-
 
 // Exception handler
 
-.decl _ExceptionHandler(?ref:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number) input
+.decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number) input
 
-isExceptionHandler(?ref),
-ExceptionHandler_Method(?ref, ?method),
-ExceptionHandler_Index(?ref, ?index),
-ExceptionHandler_Type(?ref, ?type),
-ExceptionHandler_FormalParam(?ref, ?var),
-ExceptionHandler_Begin(?ref, ?begin),
-ExceptionHandler_End(?ref, ?end) :-
-    _ExceptionHandler(?ref, ?method, ?index, ?type, ?var, ?begin, ?end).
+isExceptionHandler(?handler),
+ExceptionHandler_Method(?handler, ?method),
+ExceptionHandler_Index(?handler, ?index),
+ExceptionHandler_Type(?handler, ?type),
+ExceptionHandler_FormalParam(?handler, ?var),
+ExceptionHandler_Begin(?handler, ?begin),
+ExceptionHandler_End(?handler, ?end) :-
+    _ExceptionHandler(?handler, ?method, ?index, ?type, ?var, ?begin, ?end).
 
 
 // Method
 
-.decl _Method(?ref:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol) input
+.decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol) input
 
-isMethod(?ref),
+isMethod(?method),
 isMethodDescriptor(?descriptor),
 isJVMDescriptor(?jvmDescriptor),
-Method_SimpleName(?ref, ?simplename),
-Method_Descriptor(?ref, ?descriptor),
-Method_DeclaringType(?ref, ?declaringType),
-Method_JVMDescriptor(?ref, ?jvmDescriptor),
-Method_ReturnType(?ref, ?returnType) :-
-    _Method(?ref, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor).
+Method_SimpleName(?method, ?simplename),
+Method_Descriptor(?method, ?descriptor),
+Method_DeclaringType(?method, ?declaringType),
+Method_JVMDescriptor(?method, ?jvmDescriptor),
+Method_ReturnType(?method, ?returnType) :-
+    _Method(?method, ?simplename, ?descriptor, ?declaringType, ?returnType, ?jvmDescriptor).
 
 
 // StoreInstanceField
@@ -521,114 +521,114 @@ Switch_Key(?instruction, ?key) :-
 
 // Targets
 
-.decl _TableSwitch_Target(?ref:symbol, ?value:number, ?target:number) input
+.decl _TableSwitch_Target(?instruction:symbol, ?value:number, ?target:number) input
 
-isInstruction(?ref),
-isSwitch_Insn(?ref),
-isTableSwitch_Insn(?ref),
-Switch_Target(?ref, ?value, ?target) :-
-    _TableSwitch_Target(?ref, ?value, ?target).
+isInstruction(?instruction),
+isSwitch_Insn(?instruction),
+isTableSwitch_Insn(?instruction),
+Switch_Target(?instruction, ?value, ?target) :-
+    _TableSwitch_Target(?instruction, ?value, ?target).
 
 
-.decl _LookupSwitch_Target(?ref:symbol, ?value:number, ?target:number) input
+.decl _LookupSwitch_Target(?instruction:symbol, ?value:number, ?target:number) input
 
-isInstruction(?ref),
-isSwitch_Insn(?ref),
-isLookupSwitch_Insn(?ref),
-Switch_Target(?ref, ?value, ?target) :-
-    _LookupSwitch_Target(?ref, ?value, ?target).
+isInstruction(?instruction),
+isSwitch_Insn(?instruction),
+isLookupSwitch_Insn(?instruction),
+Switch_Target(?instruction, ?value, ?target) :-
+    _LookupSwitch_Target(?instruction, ?value, ?target).
 
 
 // Default target
 
-//.decl _TableSwitch_DefaultTarget(?ref:symbol, ?target:number) input
+//.decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number) input
 
-//isInstruction(?ref),
-//isSwitch_Insn(?ref),
-//isTableSwitch_Insn(?ref),
-//Switch_DefaultTarget(?ref, ?target) :-
-//    _TableSwitch_DefaultTarget(?ref, ?target).
+//isInstruction(?instruction),
+//isSwitch_Insn(?instruction),
+//isTableSwitch_Insn(?instruction),
+//Switch_DefaultTarget(?instruction, ?target) :-
+//    _TableSwitch_DefaultTarget(?instruction, ?target).
 
 
-//.decl _LookupSwitch_DefaultTarget(?ref:symbol, ?target:number) input
+//.decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number) input
 
-//isInstruction(?ref),
-//isSwitch_Insn(?ref),
-//isLookupSwitch_Insn(?ref),
-//Switch_DefaultTarget(?ref, ?target) :-
-//    _LookupSwitch_DefaultTarget(?ref, ?target).
+//isInstruction(?instruction),
+//isSwitch_Insn(?instruction),
+//isLookupSwitch_Insn(?instruction),
+//Switch_DefaultTarget(?instruction, ?target) :-
+//    _LookupSwitch_DefaultTarget(?instruction, ?target).
 
 
 // ReturnNonvoid
 
-.decl _Return(?ref:symbol, ?index:number, ?var:symbol, ?method:symbol) input
+.decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
-isInstruction(?ref),
-isReturnInstruction(?ref),
-isReturnNonvoid_Insn(?ref),
-Instruction_Index(?ref, ?index),
-Instruction_Method(?ref, ?method),
-ReturnNonvoid_Var(?ref, ?var) :-
-    _Return(?ref, ?index, ?var, ?method).
+isInstruction(?instruction),
+isReturnInstruction(?instruction),
+isReturnNonvoid_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+ReturnNonvoid_Var(?instruction, ?var) :-
+    _Return(?instruction, ?index, ?var, ?method).
 
 
 // ReturnVoid
 
-.decl _ReturnVoid(?ref:symbol, ?index:number, ?method:symbol) input
+.decl _ReturnVoid(?instruction:symbol, ?index:number, ?method:symbol) input
 
-isInstruction(?ref),
-isReturnInstruction(?ref),
-isReturnVoid_Insn(?ref),
-Instruction_Index(?ref, ?index),
-Instruction_Method(?ref, ?method) :-
-    _ReturnVoid(?ref, ?index, ?method).
+isInstruction(?instruction),
+isReturnInstruction(?instruction),
+isReturnVoid_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+    _ReturnVoid(?instruction, ?index, ?method).
 
 
 // AssignPhantomInvoke
 
-.decl _AssignPhantomInvoke(?ref:symbol, ?index:number, ?method:symbol) input
+.decl _AssignPhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol) input
 
-isInstruction(?ref),
-isUnsupportedInstruction(?ref),
-isAssignPhantomInvoke(?ref),
-Instruction_Index(?ref, ?index),
-Instruction_Method(?ref, ?method) :-
-    _AssignPhantomInvoke(?ref, ?index, ?method).
+isInstruction(?instruction),
+isUnsupportedInstruction(?instruction),
+isAssignPhantomInvoke(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+    _AssignPhantomInvoke(?instruction, ?index, ?method).
 
 
 // PhantomInvoke
 
-.decl _PhantomInvoke(?ref:symbol, ?index:number, ?method:symbol) input
+.decl _PhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol) input
 
-isInstruction(?ref),
-isUnsupportedInstruction(?ref),
-isPhantomInvoke(?ref),
-Instruction_Index(?ref, ?index),
-Instruction_Method(?ref, ?method) :-
-    _PhantomInvoke(?ref, ?index, ?method).
+isInstruction(?instruction),
+isUnsupportedInstruction(?instruction),
+isPhantomInvoke(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+    _PhantomInvoke(?instruction, ?index, ?method).
 
 
 // BreakPointStmt
 
-.decl _BreakpointStmt(?ref:symbol, ?index:number, ?method:symbol) input
+.decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol) input
 
-isInstruction(?ref),
-isUnsupportedInstruction(?ref),
-isBreakpointStmt(?ref),
-Instruction_Index(?ref, ?index),
-Instruction_Method(?ref, ?method) :-
-    _BreakpointStmt(?ref, ?index, ?method).
+isInstruction(?instruction),
+isUnsupportedInstruction(?instruction),
+isBreakpointStmt(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+    _BreakpointStmt(?instruction, ?index, ?method).
 
 
 // UnsupportedInstruction
 
-.decl _UnsupportedInstruction(?ref:symbol, ?index:number, ?method:symbol) input
+.decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol) input
 
-isInstruction(?ref),
-isUnsupportedInstruction(?ref),
-Instruction_Index(?ref, ?index),
-Instruction_Method(?ref, ?method) :-
-    _UnsupportedInstruction(?ref, ?index, ?method).
+isInstruction(?instruction),
+isUnsupportedInstruction(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method) :-
+    _UnsupportedInstruction(?instruction, ?index, ?method).
 
 
 // Activity

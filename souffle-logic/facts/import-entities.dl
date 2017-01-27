@@ -1,31 +1,31 @@
 // ClassType
 
-.decl _ClassType(?t:symbol) input
+.decl _ClassType(?class:symbol) input
 
-isType(?t),
-isReferenceType(?t),
-isClassType(?t) :-
-    _ClassType(?t).
+isType(?class),
+isReferenceType(?class),
+isClassType(?class) :-
+    _ClassType(?class).
 
 
 // ArrayType
 
-.decl _ArrayType(?t:symbol) input
+.decl _ArrayType(?arrayType:symbol) input
 
-isType(?t),
-isReferenceType(?t),
-isArrayType(?t) :-
-    _ArrayType(?t).
+isType(?arrayType),
+isReferenceType(?arrayType),
+isArrayType(?arrayType) :-
+    _ArrayType(?arrayType).
 
 
 // InterfaceType
 
-.decl _InterfaceType(?t:symbol) input
+.decl _InterfaceType(?interface:symbol) input
 
-isType(?t),
-isReferenceType(?t),
-isInterfaceType(?t) :-
-    _InterfaceType(?t).
+isType(?interface),
+isReferenceType(?interface),
+isInterfaceType(?interface) :-
+    _InterfaceType(?interface).
 
 
 // ComponentType
@@ -45,6 +45,7 @@ ComponentType(?arrayType, ?componentType) :-
 .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol) input
 
 isInstruction(?invocation),
+isMethodInvocation(?invocation),
 isVar(?var),
 ActualParam(?index, ?invocation, ?var) :-
     _ActualParam(?index, ?invocation, ?var).
@@ -97,7 +98,7 @@ ClassModifier(?class, ?modifier) :-
 
 // FormalParam
 
-.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol) input output
+.decl _FormalParam(?index:number, ?method:symbol, ?var:symbol) input
 
 isMethod(?method),
 isVar(?var),
@@ -138,32 +139,32 @@ NativeReturnVar(?var, ?method) :-
 
 // Var:Type
 
-.decl _Var_Type(?ref:symbol, ?type:symbol) input
+.decl _Var_Type(?var:symbol, ?type:symbol) input
 
-isVar(?ref),
+isVar(?var),
 isType(?type),
-Var_Type(?ref, ?type) :-
-    _Var_Type(?ref, ?type).
+Var_Type(?var, ?type) :-
+    _Var_Type(?var, ?type).
 
 
 // Var:DeclaringMethod
 
-.decl _Var_DeclaringMethod(?ref:symbol, ?method:symbol) input
+.decl _Var_DeclaringMethod(?var:symbol, ?method:symbol) input
 
-isVar(?ref),
+isVar(?var),
 isMethod(?method),
-Var_DeclaringMethod(?ref, ?method) :-
-    _Var_DeclaringMethod(?ref, ?method).
+Var_DeclaringMethod(?var, ?method) :-
+    _Var_DeclaringMethod(?var, ?method).
 
 
 // ApplicationClass
 
-.decl _ApplicationClass(?ref:symbol) input
+.decl _ApplicationClass(?type:symbol) input
 
-isType(?ref),
-isReferenceType(?ref),
-ApplicationClass(?ref) :-
-    _ApplicationClass(?ref).
+isType(?type),
+isReferenceType(?type),
+ApplicationClass(?type) :-
+    _ApplicationClass(?type).
 
 
 // ThisVar
@@ -191,6 +192,7 @@ ExceptionHandler_Previous(?handler, ?previous) :-
 .decl _AssignReturnValue(?invocation:symbol, ?to:symbol) input
 
 isInstruction(?invocation),
+isMethodInvocation(?invocation),
 isVar(?to),
 AssignReturnValue(?invocation, ?to) :-
     _AssignReturnValue(?invocation, ?to).

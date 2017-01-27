@@ -1,8 +1,8 @@
 #include "../../facts/flow-insensitive-schema.dl"
 #include "../../facts/flow-sensitive-schema.dl"
 #include "../../facts/to-flow-sensitive.dl"
-#include "../../facts/import-facts.dl"
 #include "../../facts/import-entities.dl"
+#include "../../facts/import-facts.dl"
 #include "../../facts/post-process.dl"
 #include "../../basic/basic.dl"
 #include "../../basic/method-resolution.dl"
@@ -161,7 +161,7 @@ CallGraphEdge(?invocation, ?toMethod) :-
   HeapAllocation_Type(?heap, ?heaptype),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
-  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).MainClass("Main").
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
 
 Reachable(?tomethod),
 CallGraphEdge(?invocation, ?tomethod) :-
