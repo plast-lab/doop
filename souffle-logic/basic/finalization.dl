@@ -1,0 +1,10 @@
+#include "finalization-declarations.dl"
+
+AllocatedObjectSupportsFinalize(?heap, ?inmethod) :-
+    AssignHeapAllocation(?heap, _, ?inmethod),
+    HeapAllocation_Type(?heap, ?class),
+    OverridesFinalize(?class).
+
+OverridesFinalize(?class) :-
+    MethodLookup("finalize", "void()", ?class, ?method),
+    ?method != "<java.lang.Object: void finalize()>".

@@ -1,3 +1,5 @@
+#include "basic-declarations.dl"
+
 MainMethodDeclaration(?method) :-
    MainClass(?type),
    Method_DeclaringType(?method, ?type),

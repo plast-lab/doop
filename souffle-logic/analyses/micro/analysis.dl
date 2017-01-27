@@ -5,6 +5,8 @@
 #include "../../facts/import-facts.dl"
 #include "../../facts/post-process.dl"
 #include "../../basic/basic.dl"
+#include "../../basic/exceptions.dl"
+#include "../../basic/finalization.dl"
 #include "../../basic/method-resolution.dl"
 #include "../../basic/subclass.dl"
 #include "../../basic/superinterface.dl"
@@ -51,6 +53,7 @@ VarPointsTo(?heap, ?var) :-
 VarPointsTo(?heap, ?to) :-
    Assign(?from, ?to),
    VarPointsTo(?heap, ?from).
+   .plan 1:(2,1)
 
 /**
  *  Local Assignments
