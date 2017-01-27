@@ -9,16 +9,11 @@ import org.apache.commons.io.FilenameUtils
 public class Parser {
 
 	public static void parse(String filename) {
-		JimpleParser parser = new JimpleParser(
-				new CommonTokenStream(
-					new JimpleLexer(
-						new ANTLRFileStream(filename))))
-		JimpleListenerImpl listener = new JimpleListenerImpl(filename)
-		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
-
-
+		// XYZ/abc.def.Foo.jimple
 		def origFile = new File(filename)
-		def dir = origFile.getAbsoluteFile().getParentFile()
+		// XYZ
+		def dir = origFile.getParentFile()
+		dir = dir ?: new File(".")
 		// abc.def.Foo
 		def simplename = FilenameUtils.removeExtension( FilenameUtils.getName(filename) )
 		def i = simplename.lastIndexOf(".")
@@ -26,12 +21,27 @@ public class Parser {
 		def packages = simplename[0..i]
 		// Foo
 		def classname = simplename[(i+1)..-1]
-		// abc.def.Foo.json
-		new File(dir, simplename + ".json").withWriter { it << listener.json }
-		// abc/def
-		def path = new File(dir, packages.replaceAll("\\.", "/"))
+		File sourceFile
+		if (i != -1) {
+			// XYZ/abc/def
+			def path = new File(dir, packages.replaceAll("\\.", "/"))
+			path.mkdirs()
+			// XYZ/abc/def/Foo.jimple
+			sourceFile = new File(path, classname + ".jimple")
+			FileUtils.copyFile(origFile, sourceFile)
+		}
+		else
+			sourceFile = origFile
 
-		path.mkdirs()
-		FileUtils.copyFile(origFile, new File(path, classname + ".jimple"))
+
+		JimpleParser parser = new JimpleParser(
+				new CommonTokenStream(
+					new JimpleLexer(
+						new ANTLRFileStream(sourceFile as String))))
+		JimpleListenerImpl listener = new JimpleListenerImpl(sourceFile as String)
+		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+
+		// XYZ/abc.def.Foo.json
+		new File(dir, simplename + ".json").withWriter { it << listener.json }
 	}
 }
