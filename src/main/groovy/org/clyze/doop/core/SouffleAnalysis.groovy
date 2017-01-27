@@ -10,6 +10,8 @@ import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
 
+import static org.apache.commons.io.FileUtils.*
+
 
 @CompileStatic
 @TypeChecked
@@ -41,26 +43,26 @@ class SouffleAnalysis extends Analysis {
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
 
-        runSouffle(Integer.parseInt(options.JOBS.value.toString()),
-                                    super.factsDir,
-                                    super.outDir,
-                Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
+        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + safename), new File(outDir.absolutePath + File.separator + "analyses"))
+        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "facts"), outDir)
+        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "basic"), outDir)
+        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "main"), outDir)
 
-
+        File outAnalysisFile
+        outAnalysisFile = new File(outDir.absolutePath + File.separator + "analyses" + File.separator + safename + File.separator + "analysis.dl")
+        if (options.MAIN_CLASS.value) {
+            outAnalysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
+        }
+        else {
+            logger.warn("No main class specified")
+        }
+        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir, outAnalysisFile)
     }
 
     @Override
     protected void generateFacts() {
-        FileUtils.deleteQuietly(factsDir)
+        deleteQuietly(factsDir)
         factsDir.mkdirs()
-
-        if (options.MAIN_CLASS.value) {
-            def analysisFile = new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
-            analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
-        }
-        else {
-            System.out.println("NO MAIN CLASS")
-        }
 
         if (cacheDir.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheDir"
@@ -79,8 +81,8 @@ class SouffleAnalysis extends Analysis {
 
             runSoot()
 
-            FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
-            FileUtils.touch(new File(factsDir, "Properties.facts"))
+            touch(new File(factsDir, "ApplicationClass.facts"))
+            touch(new File(factsDir, "Properties.facts"))
 
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
@@ -98,7 +100,7 @@ class SouffleAnalysis extends Analysis {
 
 
             logger.info "Caching facts in $cacheDir"
-            FileUtils.deleteQuietly(cacheDir)
+            deleteQuietly(cacheDir)
             cacheDir.mkdirs()
             FileOps.copyDirContents(factsDir, cacheDir)
             new File(cacheDir, "meta").withWriter { BufferedWriter w -> w.write(cacheMeta()) }
@@ -127,9 +129,9 @@ class SouffleAnalysis extends Analysis {
 
     }
 
-    private void runSouffle(int jobs, File factsDir, File outDir, String analysisFile) {
-        System.out.println("souffle -c -j$jobs -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
-        executor.execute("souffle -c -j$jobs -c -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile")
+    private void runSouffle(int jobs, File factsDir, File outDir, File analysisFile) {
+        System.out.println("souffle -c -j$jobs -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath")
+        executor.execute("souffle -c -j$jobs -c -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath")
     }
 
     @Override
