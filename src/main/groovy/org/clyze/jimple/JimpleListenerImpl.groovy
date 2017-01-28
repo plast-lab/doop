@@ -7,22 +7,10 @@ import static org.clyze.jimple.JimpleParser.*
 
 class JimpleListenerImpl extends JimpleBaseListener {
 
-	// JSON representation
-	class Var {
-		String name
-		String doopName
-		String type
-		boolean isLocal
-		boolean isParameter
-		Map position
-		String sourceFileName
-		int id
-	}
-
 	String              _filename
-	List<Var>           _vars
+	List<Map>           _vars
+	List<Map>           _pending
 	Map<String, String> _types
-	List<Var>           _pending
 	String              _klass
 	String              _method
 	boolean             _inDecl
@@ -118,11 +106,11 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	Var var(TerminalNode id, boolean isLocal) {
+	Map var(TerminalNode id, boolean isLocal) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
-		def v = new Var(
+		def v = [
 			name: name,
 			doopName: "$_method/$name",
 			isLocal: isLocal,
@@ -133,7 +121,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				startColumn: startCol,
 				endLine: line,
 				endColumn: startCol + name.length()
-			])
+			]]
 		v.id = v.hashCode()
 		if (_types[v.doopName])
 			v.type = _types[v.doopName]
