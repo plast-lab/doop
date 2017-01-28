@@ -13,7 +13,6 @@
 #include "../../basic/type-hierarchy.dl"
 #include "../../main/implicit-reachable.dl"
 #include "../../main/class-initialization.dl"
-#include "declarations.dl"
 
 /////////
 // IDB //
@@ -53,7 +52,6 @@ VarPointsTo(?heap, ?var) :-
 VarPointsTo(?heap, ?to) :-
    Assign(?from, ?to),
    VarPointsTo(?heap, ?from).
-   .plan 1:(2,1)
 
 /**
  *  Local Assignments
