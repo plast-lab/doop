@@ -170,7 +170,7 @@ class FactWriter {
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String heap = _rep.heapAlloc(m, index, expr);
+        String heap = _rep.heapAlloc(m, expr, session);
 
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
@@ -213,7 +213,7 @@ class FactWriter {
     void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
         int index = session.calcUnitNumber(stmt);
 
-        String heap = _rep.heapMultiArrayAlloc(m, index);
+        String heap = _rep.heapAlloc(m, expr, session);
         String insn = _rep.instruction(m, stmt, index);
         String methodId = writeMethod(m);
 

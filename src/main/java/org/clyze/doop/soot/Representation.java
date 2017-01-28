@@ -184,15 +184,15 @@ public class Representation {
             + "/" + session.nextNumber(name);
     }
 
-    String heapAlloc(SootMethod inMethod, int index, AnyNewExpr expr)
+    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
         {
-            return heapAlloc(inMethod, index);
+            return heapAlloc(inMethod, session.nextNumber(inMethod.getSignature()));
         }
         else if(expr instanceof NewMultiArrayExpr)
         {
-            return heapAlloc(inMethod, index);
+            return heapAlloc(inMethod, session.nextNumber(inMethod.getSignature()));
         }
         else
         {
@@ -200,13 +200,13 @@ public class Representation {
         }
     }
 
-    String heapMultiArrayAlloc(SootMethod inMethod, int index)
-    {
-        return heapAlloc(inMethod, index);
-    }
+//    String heapMultiArrayAlloc(SootMethod inMethod, int numberInSession)
+//    {
+//        return heapAlloc(inMethod, numberInSession);
+//    }
 
-    private String heapAlloc(SootMethod inMethod, int index)
+    private String heapAlloc(SootMethod inMethod, int numberInSession)
     {
-        return getMethodSignature(inMethod) + "/" + index;
+        return getMethodSignature(inMethod) + "/" + numberInSession;
     }
 }
