@@ -8,9 +8,11 @@ import static org.clyze.jimple.JimpleParser.*
 class JimpleListenerImpl extends JimpleBaseListener {
 
 	String              _filename
-	List<Map>           _vars
+	List<Map>           _vars        = []
 	List<Map>           _pending
-	Map<String, String> _types
+	Map<String, String> _types       = [:]
+	List<Map>           _heaps       = []
+	int                 _heapCounter
 	String              _klass
 	String              _method
 	boolean             _inDecl
@@ -19,8 +21,6 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	JimpleListenerImpl(String filename) {
 		_filename = filename
-		_vars     = []
-		_types    = [:]
 	}
 
 
@@ -28,7 +28,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		json = JsonOutput.toJson([
 			Field: [],
 			Variable: _vars,
-			HeapAllocation: [],
+			HeapAllocation: _heaps,
 			Class: [],
 			MethodInvocation: [],
 			Method: [],
@@ -44,6 +44,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	void enterMethod(MethodContext ctx) {
 		def args = gatherIdentifiers(ctx.identifierList(0)).join(",")
 		_method = "<$_klass: ${ctx.IDENTIFIER(0).getText()} ${ctx.IDENTIFIER(1).getText()}($args)>"
+		_heapCounter = 0
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
@@ -85,6 +86,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	void exitAllocationStmt(AllocationStmtContext ctx) {
 		_vars.push(var(ctx.IDENTIFIER(0), true))
+		_heaps.push(heap(ctx.IDENTIFIER(1)))
+		_heapCounter++
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
@@ -128,6 +131,24 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		else
 			_pending.push(v)
 		return v
+	}
+
+	Map heap(TerminalNode id) {
+		def line = id.getSymbol().getLine()
+		def startCol = id.getSymbol().getCharPositionInLine() + 1
+		def type = id.getText()
+		def h = [
+			type: type,
+			doopID: "$_method/$_heapCounter",
+			sourceFileName: _filename,
+			position: [
+				startLine: line,
+				startColumn: startCol,
+				endLine: line,
+				endColumn: startCol + type.length()
+			]]
+		h.id = h.hashCode()
+		return h
 	}
 
 	List<String> gatherIdentifiers(IdentifierListContext ctx) {
