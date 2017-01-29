@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.Database;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -10,7 +11,7 @@ import soot.util.backend.ASMBackendUtils;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.clyze.doop.soot.PredicateFile.*;
+import static org.clyze.doop.common.PredicateFile.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a

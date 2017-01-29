@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.Database;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;

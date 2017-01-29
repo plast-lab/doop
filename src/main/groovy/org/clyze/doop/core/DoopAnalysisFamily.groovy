@@ -311,6 +311,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				value:null,
 				forPreprocessor:true
 			),
+			new AnalysisOption<String>(
+					id:"ANALYZE_MEMORY_DUMP",
+					name:"analyze-memory-dump",
+					argName:"dump-filename",
+					description:"Use dynamic information from memory dump",
+					value:null,
+					forPreprocessor:true
+			),
 			new AnalysisOption<Boolean>(
 				id:"INFORMATION_FLOW_PRECISE_SOURCES_AND_SINKS",
 				name:"information-flow-precise-sources-and-sinks",

@@ -4,9 +4,8 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.*
+import org.clyze.doop.dynamicanalysis.MemoryAnalyser
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
@@ -107,6 +106,10 @@ class ClassicAnalysis extends DoopAnalysis {
 
             if (options.RUN_AVERROES.value) {
                 runAverroes()
+            }
+
+            if (options.ANALYZE_MEMORY_DUMP.value) {
+                analyseMemoryDump(options.ANALYZE_MEMORY_DUMP)
             }
 
             runSoot()
@@ -517,6 +520,13 @@ class ClassicAnalysis extends DoopAnalysis {
 
         ClassLoader loader = averroesClassLoader()
         Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
+    }
+
+    protected void analyseMemoryDump(String filename) {
+        logger.info("-- Analysing Memory Dump --")
+        MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename)
+        memoryAnalyser.factsFromDump()
+
     }
 
 

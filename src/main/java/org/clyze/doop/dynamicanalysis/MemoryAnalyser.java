@@ -8,6 +8,8 @@ import com.sun.jdi.event.*;
 import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.tools.hat.internal.model.*;
+import org.clyze.doop.common.Database;
+import org.clyze.doop.common.PredicateFile;
 
 import java.io.*;
 import java.util.*;
@@ -32,9 +34,10 @@ public class MemoryAnalyser {
 
     private static String filename;
 
-    public MemoryAnalyser() {
+    public MemoryAnalyser(String filename) {
 
-        filename = "/home/neville/Downloads/jetty-distribution-9.4.0.v20161208/java.hprof";
+        this.filename = "/home/neville/Downloads/jetty-distribution-9.4.0.v20161208/java.hprof";
+        this.filename = filename;
     }
 
     public Set<DynamicFact> getFactsFromDump() throws IOException, InterruptedException {
@@ -79,6 +82,12 @@ public class MemoryAnalyser {
         }
         return Sets.union(Sets.union(staticFieldPointsToSet, instanceFieldPointsToSet), arrayIndexPointsToSet);
 
+    }
+
+    public void getAndOutputFactsToDB(String dbFileName) throws IOException, InterruptedException {
+        Database db = new Database(new File(dbFileName));
+        for (DynamicFact fact: getFactsFromDump())
+            fact.write_fact(db);
     }
 
     private String getFieldSignature(JavaField field, JavaClass obj) {

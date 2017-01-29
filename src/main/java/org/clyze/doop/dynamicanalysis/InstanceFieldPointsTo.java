@@ -1,5 +1,8 @@
 package org.clyze.doop.dynamicanalysis;
 
+import org.clyze.doop.common.Database;
+import org.clyze.doop.common.PredicateFile;
+
 /**
  * Created by neville on 25/01/2017.
  */
@@ -42,5 +45,10 @@ public class InstanceFieldPointsTo implements DynamicFact{
                 ", field='" + field + '\'' +
                 ", heap='" + heap + '\'' +
                 '}';
+    }
+
+    @Override
+    public void write_fact(Database db) {
+        db.add(PredicateFile.DYNAMIC_INSTANCE_FIELD_POINTS_TO, baseHeap, field, heap);
     }
 }

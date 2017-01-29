@@ -1,4 +1,4 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.common;
 
 import org.apache.commons.io.FileUtils;
 
@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-enum PredicateFile
+public enum PredicateFile
 {
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     ACTIVITY("Activity"),
@@ -86,7 +86,11 @@ enum PredicateFile
     ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
     PHANTOM_INVOKE("PhantomInvoke"),
     BREAKPOINT_STMT("BreakpointStmt"),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
+    DYNAMIC_STATIC_FIELD_POINTS_TO("DynamicStaticFieldPointsTo"),
+    DYNAMIC_INSTANCE_FIELD_POINTS_TO("DynamicInstanceFieldPointsTo"),
+    DYNAMIC_ARRAY_INDEX_POINTS_TO("DynamicArrayIndexPointsTo"),
+    DYNAMIC_VAR_POINTS_TO("DynamicVarPointsTo");
 
     private final String name;
 
