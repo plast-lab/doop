@@ -215,14 +215,17 @@ class DoopAnalysisFactory implements AnalysisFactory {
                 options[(jreOption.id)] = jreOption
                 break
             case "android":
+                if (platformInfo.size < 3)
+                    throw new RuntimeException("Invalid android platform: $platformInfo")
                 // If the user has given a platform ending in
                 // "_fulljars", then use the "full" subdirectory of
                 // the platforms library, otherwise use the "stubs"
                 // one. This permits use of two Android system JARs
                 // side-by-side: either the stubs provided by the
                 // official Android SDK or a custom Android build.
-                def fullJars = (platformInfo.size() > 2) && (platformInfo[2] == "fulljars")
-                String androidLibFlavor = fullJars ? "full" : "stubs"
+                if (platformInfo[2] != "stubs" && platformInfo[2] != "fulljars" && platformInfo[2] != "fulljars_custom")
+                    throw new RuntimeException("Invalid android platform: $platformInfo")
+                String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
                 String path = "${options.PLATFORMS_LIB.value}/Android/" + androidLibFlavor +
                               "/Android/Sdk/platforms/android-${version}"
                 // The following flag controls whether doop uses
@@ -233,7 +236,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
                 // the directory that these files are read from,
                 // should still contain an android.jar file (that
                 // points to core-libart_intermediates.jar).
-                def customAndroidJars = (platformInfo.size() > 2) && (platformInfo[2] == "fulljars_custom")
+                def customAndroidJars = (platformInfo[2] == "fulljars_custom")
                 if (customAndroidJars) {
                     // The names correspond to the JARs generated when building
                     // Android 4.4 from sources (found in
