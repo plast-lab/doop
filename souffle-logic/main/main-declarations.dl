@@ -1,0 +1,43 @@
+#include "class-initialization-declarations.dl"
+//#include "exceptions-declarations.logic"
+#include "implicit-reachable-declarations.dl"
+//#include "string-constants-declarations.logic"
+//#include "threads-declarations.logic"
+
+#if defined(REFLECTION)
+#include "reflection/declarations.logic" 
+#endif
+
+.decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
+
+.decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)
+
+//-----------------------------------------------------------------------------
+// [Value - artificially created]
+//-----------------------------------------------------------------------------
+
+.type Value
+
+.decl isValue(?value:Value)
+
+.decl Value_Heap_Cons(?heap:HeapAllocation, ?value:Value)
+.decl Value_Num_Cons(?const:NumConstant, ?value:Value)
+.decl Value_Mock_Cons(?id:symbol, ?value:Value)
+
+.decl Value_Heap(?value:Value, ?heap:HeapAllocation)
+.decl Value_byHeap(?heap:HeapAllocation, ?value:Value)
+
+.decl Value_Num(?value:Value, ?const:NumConstant)
+.decl Value_byNum(?const:NumConstant, ?value:Value)
+
+.decl Value_Id(?value:Value, ?id:symbol)
+.decl Value_byId(?id:symbol, ?value:Value)
+
+.decl Value_isHeap(?value:Value)
+.decl Value_isNonHeap(?value:Value)
+
+.decl Value_Type(?value:Value, ?type:Type)
+.decl Value_DeclaringType(?value:Value, ?type:Type)
+
+// [Miscellaneous]
+.decl Value_Null(?null:Value)

@@ -194,12 +194,6 @@ Reachable(?method) :-
     ImplicitReachable(?method).
 
 /**
- * Reachable methods. Main method, for sure.
- */
-Reachable(?method) :-
-   MainMethodDeclaration(?method).
-
-/**
  * If a class needs to be initialized, then its class initializer is
  * invoked.
  *

@@ -1,8 +1,10 @@
 #ifndef EXCLUDE_IMPLICITLY_REACHABLE_CODE
+
 /**
- * These methods are implicitly reachable according to Soot (see soot/EntryPoints.java)
+ * Implicitly reachable methods are invoked by the JVM on startup.
  */
-.decl ImplicitReachable(?sig:Method)
+Reachable(?method) :-
+    ImplicitReachable(?method).
 
 ImplicitReachable(sig) :-
    AndroidEntryPoint(sig).

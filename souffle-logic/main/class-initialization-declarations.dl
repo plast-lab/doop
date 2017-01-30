@@ -1,0 +1,8 @@
+/**
+ * Class initializer ?method of a ?type
+ *
+ * TODO declare this is a ReferenceType (or ClassOrInterfaceType?)
+ */
+.decl ClassInitializer(?type:Type, ?method:Method)
+
+.decl InitializedClass(?classOrInterface:Type)

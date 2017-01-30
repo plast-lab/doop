@@ -1,0 +1,29 @@
+#include "macros.dl"
+#include "../../facts/flow-insensitive-schema.dl"
+#include "../../facts/flow-sensitive-schema.dl"
+#include "../../facts/to-flow-sensitive.dl"
+#include "../../facts/import-facts.dl"
+#include "../../facts/import-entities.dl"
+#include "../../facts/post-process.dl"
+#include "../../basic/basic.dl"
+#include "../../basic/method-resolution.dl"
+#include "../../basic/subclass.dl"
+#include "../../basic/superinterface.dl"
+#include "../../basic/type-hierarchy.dl"
+#include "../../main/context-sensitivity.dl"
+
+
+// Context-insensitive pointer analysis with on-the-fly call graph discovery
+
+// This analysis has no context for either method calls or heap objects.
+// This is emulated by creating a single Context object and a single HContext
+// object, which are used everywhere.
+.decl ContextFromRealContext(?ctx:Context)
+
+.decl HContextFromRealHContext(?hctx:HContext)
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+Reachable(?method) :-
+   MainMethodDeclaration(?method).

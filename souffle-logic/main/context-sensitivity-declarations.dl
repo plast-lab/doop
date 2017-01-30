@@ -1,0 +1,137 @@
+#include "main-declarations.dl"
+
+/**
+ * Generic declarations for context-sensitive pointer analysis.
+ */
+
+.type Context
+.type HContext = HeapAllocation
+.type ImmutableContext = Context
+.type InitialContext = Context
+.type JVMStartupContext = Context
+.type ClinitContext = Context
+.type ImmutableHContext = HContext
+.type JVMStartupHContext = HContext
+
+.decl isContext(?ctx:symbol)
+.decl isHContext(?hctx:symbol)
+
+// These are normally unique, but for partitioned analyses there may be
+// one per partition.
+.decl isImmutableContext(?ctx:Context)
+.decl isInitialContext(?ctx:Context)
+.decl isJVMStartupContext(?ctx:Context)
+.decl isClinitContext(?ctx:Context)
+.decl isImmutableHContext(?hctx:HContext)
+.decl isJVMStartupHContext(?hctx:HContext)
+
+// If we have many, get a compatible one from the other kind of context.
+.decl ImmutableContextFromHContext(?hctx:HContext, ?ctx:Context)
+.decl ImmutableHContextFromContext(?ctx:Context, ?hctx:HContext)
+.decl ImmutableContextFromContext(?ctx1:Context, ?ctx2:Context)
+
+
+// Needed when context consists of different kinds
+.type ContextComponent
+
+.decl isContextComponent(?comp:ContextComponent)
+
+.decl ContextComponent_MethodInvocation(?invo:MethodInvocation, ?comp:ContextComponent)
+
+.decl ContextComponent_Value(?value:Value, ?comp:ContextComponent)
+
+
+// Special heap objects are just artificial ones that we use to find where the
+// result of a reflective call can flow to. We don't want to track them
+// through the heap.
+.decl SpecialObject(?heap:HeapAllocation)
+
+.decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+
+.decl InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
+
+.decl StaticFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field)
+
+// array-element insensitive
+.decl ArrayIndexPointsTo(?hctx:HContext, ?value:Value, ?basehctx:HContext, ?basevalue:Value)
+
+.decl Assign(?type:Type, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+
+/**
+ * Call graph
+ */
+.decl CallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?method:Method)
+
+/**
+ * Reachable
+ */
+.decl Reachable(?method:Method)
+
+.decl ReachableContext(?ctx:Context, ?method:Method)
+
+.decl OptLoadInstanceField(?to:Var, ?signature:Field, ?base:Var)
+
+.decl OptLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
+
+.decl OptStoreStaticField(?signature:Field, ?from:Var)
+
+.decl OptStoreInstanceField(?from:Var, ?signature:Field, ?base:Var)
+
+.decl ReachableSpecialMethodInvocation(?invocation:MethodInvocation, ?base:Var)
+
+.decl ReachableVirtualMethodInvocation(?invocation:MethodInvocation, ?base:Var)
+
+.decl OptLoadArrayIndex(?to:Var, ?base:Var)
+
+.decl OptStoreArrayIndex(?from:Var, ?base:Var)
+
+/**
+ * Optimizations
+ */
+
+.decl LoadHeapInstanceField(?ctx:Context, ?to:Var, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
+
+.decl StoreHeapInstanceField(?sig:Field, ?basehctx:HContext, ?basevalue:Value, ?ctx:Context, ?from:Var)
+
+.decl LoadHeapArrayIndex(?ctx:Context, ?to:Var, ?basehctx:HContext, ?basevalue:Value)
+
+.decl StoreHeapArrayIndex(?basehctx:HContext, ?basevalue:Value, ?ctx:Context, ?from:Var)
+
+.decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+
+.decl AssignAuxiliaryHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+
+.decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+
+/**
+ * Special heap abstractions.
+ */
+.decl SystemThreadGroup(?hctx:HContext, ?value:Value)
+
+.decl MainThreadGroup(?hctx:HContext, ?value:Value)
+
+.decl MainThread(?hctx:HContext, ?value:Value)
+
+.decl TaintedValue(?value:Value)
+
+
+/**
+ * Filter predicate for refinement-based/adaptive analyses
+ */
+.decl SiteToRefine(?invocation:MethodInvocation)
+.decl TempSiteToRefine(?invocation:MethodInvocation)
+
+.decl ValueToRefine(?value:Value)
+ValueToRefine(?v) :- ValueToRefine(?v).
+
+.decl TempValueToRefine(?value:Value)
+
+// Is the SiteToRefine the real list of objects needing
+// refinement or its negation?
+//NegativeSiteFilter[] = ?v -> boolean(?v).
+//TempNegativeSiteFilter[] = ?v -> boolean(?v).
+
+// Is the ValueToRefine the real list of objects needing
+// refinement or its negation?
+//NegativeObjectFilter[] = ?v -> boolean(?v) .
+//TempNegativeObjectFilter[] = ?v -> boolean(?v).
