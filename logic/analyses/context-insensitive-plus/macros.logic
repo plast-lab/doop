@@ -21,7 +21,7 @@
   ContextFromRealContext[] = calleeCtx
 
 #define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
-  MergeBasis(callerCtx, invocation, hctx, value)
+  MergeBasis(callerCtx, hctx, invocation, value)
 
 #define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
   MergeStaticBasis(callerCtx, invocation)
