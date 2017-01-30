@@ -350,15 +350,6 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
 
 /**
- * Static method invocations
- */
-
-MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
-
-/**
  * Virtual Method Invocation
  */
 
@@ -377,9 +368,7 @@ OptVirtualMethodInvocationBase(?invocation, ?base) <-
 
 #ifndef OptimizeMergeMacro
 // This is the "proper" form of the rule. We diverge from it
-// only for reasons of optimization. Skolem object creation
-// is currently very slow and we shouldn't invoke it for
-// all the different combinations that will yield the same object.
+// to enable more advanced merging logic.
 
 MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
@@ -458,7 +447,29 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
 #endif /* #ifdef MergeRefinedMacro */
 
 /**
- * Special method invocations. Optimized much like virtual methods.
+ * Static method invocations
+ */
+
+#ifndef OptimizeMergeStaticMacro
+MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+
+#else
+MergeStaticBasisMacro(?callerCtx, ?invocation) <-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  MergeStaticBasisMacro(?callerCtx, ?invocation),
+  OptimizeMergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod.
+
+#endif /* #ifdef OptimizeMergeStaticMacro */
+
+/**
+ * Special method invocations
  */
 
 OptSpecialMethodInvocationBase(?invocation, ?base) ->
