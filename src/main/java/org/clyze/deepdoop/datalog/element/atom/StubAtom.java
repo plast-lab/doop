@@ -10,15 +10,20 @@ import org.clyze.deepdoop.datalog.expr.*;
 public class StubAtom implements IAtom {
 
 	public final String name;
+	public final String stage;
 
 	public StubAtom(String name) {
-		this.name = name;
+		this(name, null);
+	}
+	public StubAtom(String name, String stage) {
+		this.name  = name;
+		this.stage = stage;
 	}
 
 	@Override
 	public String name() { return name; }
 	@Override
-	public String stage() { return null; }
+	public String stage() { return stage; }
 	@Override
 	public int arity() { throw new UnsupportedOperationException(); }
 	@Override

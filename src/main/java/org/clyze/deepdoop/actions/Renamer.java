@@ -17,12 +17,14 @@ public class Renamer {
 	public void reset(String removeId, String addId, Set<String> ignoreAtoms) {
 		_removeId    = removeId;
 		_addId       = addId;
-		_ignoreAtoms = ignoreAtoms;
+		_ignoreAtoms = (ignoreAtoms != null ? ignoreAtoms : new HashSet<>());
 	}
 
 	public String addId() { return _addId; }
 
 	public String rename(String name, String stage) {
+		// If predicate is used with "@past" assume it is declared in previous components
+		if ("@past".equals(stage)) _ignoreAtoms.remove(name);
 		return handleStage(handleName(name), stage);
 	}
 	public String rename(String name) {
@@ -36,7 +38,7 @@ public class Renamer {
 	// * remove component's prefix (going back to global space)
 	String handleName(String name) {
 		// atom is external => should remain unaltered
-		if (_ignoreAtoms != null && _ignoreAtoms.contains(name)) {
+		if (_ignoreAtoms.contains(name)) {
 			return name;
 		}
 

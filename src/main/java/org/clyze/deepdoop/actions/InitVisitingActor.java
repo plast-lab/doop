@@ -47,7 +47,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		Component newGlobal = (Component) n.globalComp.accept(this);
 
 		// Initializations
-		final Program initP = Program.from(newGlobal, new HashMap<>(), null, new HashSet<>());
+		final Program initP = Program.from(newGlobal, new HashMap<>(), new HashMap<>(), new HashSet<>());
 		n.inits.forEach( (initName, compName) -> {
 			Component comp = n.comps.get(compName);
 			_r.reset(null, initName, externalAtoms(comp));
@@ -198,7 +198,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 	@Override
 	public StubAtom exit(StubAtom n, Map<IVisitable, IVisitable> m) {
-		return new StubAtom(_r.rename(n.name));
+		return new StubAtom(_r.rename(n.name, n.stage));
 	}
 
 

@@ -44,7 +44,7 @@ public class CmdComponent extends Component {
 					   if (eval != null) ErrorManager.error(ErrorId.CMD_EVAL, name);
 					   eval = ((String) d.constant.value).replaceAll("^\"|\"$", ""); break;
 			case "lang:cmd:export":
-					   exports.add(new StubAtom(d.backtick.name + ":past")); break;
+					   exports.add(new StubAtom(d.backtick.name, "@past")); break;
 			case "lang:cmd:import":
 					   imports.add(new StubAtom(d.backtick.name)); break;
 			default               :
