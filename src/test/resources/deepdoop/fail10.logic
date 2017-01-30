@@ -7,7 +7,6 @@ command Bar {
 	A(x, y) -> string(x), string(y).
 	lang:cmd:EVAL[] = "dir2/run2.sh -flag1".
 }
-
-S = new Bar
+as S
 
 S { * } copyto .global

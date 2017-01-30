@@ -5,17 +5,17 @@ package org.clyze.deepdoop.datalog;
 }
 
 program
-	: (comp | init_ | propagate | cmd | datalog)* ;
+	: (comp | propagate | cmd | datalog)* ;
 
 
 lineMarker
 	: '#' INTEGER STRING INTEGER* ;
 
 comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ;
+	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ('as' identifierList)? ;
 
-init_
-	: IDENTIFIER '=' NEW IDENTIFIER ;
+cmd
+	: CMD IDENTIFIER '{' datalog* '}' ('as' identifierList)? ;
 
 propagate
 	: IDENTIFIER '{' (ALL | predicateNameList) '}' PROPAGATE (IDENTIFIER | GLOBAL) ;
@@ -24,10 +24,6 @@ predicateNameList
 	: predicateName
 	| predicateNameList ',' predicateName
 	;
-
-cmd
-	: CMD IDENTIFIER '{' datalog* '}' ;
-
 
 datalog
 	: declaration | constraint | rule_ | lineMarker ;
@@ -99,6 +95,10 @@ exprList
 	| exprList ',' expr
 	;
 
+identifierList
+	: IDENTIFIER
+	| identifierList ',' IDENTIFIER
+	;
 
 
 // Lexer
@@ -131,9 +131,6 @@ COMP
 
 GLOBAL
 	: '.global' ;
-
-NEW
-	: 'new' ;
 
 PROPAGATE
 	: 'copyto' ;

@@ -3,6 +3,7 @@ P(x) -> string(x).
 component Foo {
 	P1(x) <- P(x).
 }
+as S1
 
 command Bar {
 	lang:cmd:EVAL[] = "dir2/run.sh -flag1".
@@ -12,9 +13,7 @@ command Bar {
 	A(x, y) -> string(x), string(y).
 	lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 }
-
-S1 = new Foo
-S2 = new Bar
+as S2
 
 S1 { * } copyto S2
 S2 { * } copyto .global

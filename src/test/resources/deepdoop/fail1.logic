@@ -6,16 +6,15 @@ component Foo {
 	P1(x) <- P(x).
 	P1(x) -> string(x).
 }
+as S1
 component Bar {
 	P2(x) <- P1@past(x).
 }
+as S2
 component Baz {
 	P3(x) <- P2@past(x).
 }
-
-S1 = new Foo
-S2 = new Bar
-S3 = new Baz
+as S3
 
 S1 { * } copyto S2
 S2 { * } copyto S3

@@ -8,7 +8,6 @@ component Foo {
 	Z(y) <- Q(_, y).
 	P(x) <- Q(x, _), !Q(_, x).
 }
-
-S1 = new Foo
+as S1
 
 S1 { P } copyto .global

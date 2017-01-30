@@ -89,11 +89,24 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
 	}
 	public void exitComp(CompContext ctx) {
+		if (ctx.identifierList() != null) {
+			List<String> inits = get(_names, ctx.identifierList());
+			inits.forEach(id -> _program.addInit(id, _currComp.name));
+		}
 		_program.addComponent(_currComp);
 		_currComp = _program.globalComp;
 	}
-	public void exitInit_(Init_Context ctx) {
-		_program.addInit(ctx.IDENTIFIER(0).getText(), ctx.IDENTIFIER(1).getText());
+	public void enterCmd(CmdContext ctx) {
+		recLoc(ctx);
+		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
+	}
+	public void exitCmd(CmdContext ctx) {
+		if (ctx.identifierList() != null) {
+			List<String> inits = get(_names, ctx.identifierList());
+			inits.forEach(id -> _program.addInit(id, _currComp.name));
+		}
+		_program.addComponent(_currComp);
+		_currComp = _program.globalComp;
 	}
 	public void exitPropagate(PropagateContext ctx) {
 		Set<String> predNames = (ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())));
@@ -108,15 +121,6 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		String predName = get(_name, ctx.predicateName());
 		List<String> list = get(_names, ctx.predicateNameList(), predName);
 		_names.put(ctx, list);
-	}
-	public void enterCmd(CmdContext ctx) {
-		recLoc(ctx);
-		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
-	}
-	public void exitCmd(CmdContext ctx) {
-		recLoc(ctx);
-		_program.addComponent(_currComp);
-		_currComp = _program.globalComp;
 	}
 	public void enterDeclaration(DeclarationContext ctx) {
 		_inDecl = true;
@@ -323,6 +327,11 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		IExpr p = get(_expr, ctx.expr());
 		List<IExpr> list = get(_exprs, ctx.exprList(), p);
 		_exprs.put(ctx, list);
+	}
+	public void exitIdentifierList(IdentifierListContext ctx) {
+		String id = ctx.IDENTIFIER().getText();
+		List<String> list = get(_names, ctx.identifierList(), id);
+		_names.put(ctx, list);
 	}
 
 	public void visitErrorNode(ErrorNode node) {
