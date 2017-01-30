@@ -98,7 +98,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				String stage = (to == null ? null : "@past");
 				IElement head = (IAtom) atom.instantiate(stage, vars).accept(this);
 				IElement body = (IAtom) atom.instantiate(null, vars);
-				toComp.addRule(new Rule(new LogicalElement(head), body));
+				toComp.addRule(new Rule(new LogicalElement(head), body, false));
 			}
 		}
 		return initP;
@@ -143,7 +143,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 	@Override
 	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		return new Rule((LogicalElement) m.get(n.head), (IElement) m.get(n.body));
+		return new Rule((LogicalElement) m.get(n.head), (IElement) m.get(n.body), false);
 	}
 
 	@Override

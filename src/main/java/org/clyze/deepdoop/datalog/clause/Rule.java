@@ -16,6 +16,9 @@ public class Rule implements IVisitable, ISourceItem {
 	public final boolean        isDirective;
 
 	public Rule(LogicalElement head, IElement body) {
+		this(head, body, true);
+	}
+	public Rule(LogicalElement head, IElement body, boolean doChecks) {
 		this.head = head;
 		this.body = body;
 		this.isDirective = (
@@ -24,7 +27,7 @@ public class Rule implements IVisitable, ISourceItem {
 				head.elements.iterator().next() instanceof Directive);
 		this._loc = SourceManager.v().getLastLoc();
 
-		if (body != null) {
+		if (doChecks && body != null) {
 			List<VariableExpr> varsInHead = head.getVars();
 			List<VariableExpr> varsInBody = body.getVars();
 			varsInBody.stream()

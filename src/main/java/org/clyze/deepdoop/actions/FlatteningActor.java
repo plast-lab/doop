@@ -53,7 +53,7 @@ public class FlatteningActor implements IActor<IVisitable> {
 	public Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
 		LogicalElement head = (LogicalElement) m.get(n.head);
 		IElement       body = (IElement) m.get(n.body);
-		return (head == n.head && body == n.body ? n : new Rule(head, body));
+		return (head == n.head && body == n.body ? n : new Rule(head, body, false));
 	}
 
 	@Override
