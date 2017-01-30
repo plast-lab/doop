@@ -184,7 +184,7 @@ public class Representation {
             + "/" + session.nextNumber(name);
     }
 
-    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
+    synchronized String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
         {
