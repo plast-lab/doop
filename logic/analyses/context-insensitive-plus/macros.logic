@@ -1,0 +1,54 @@
+/**
+ * Some library modules are generically defined, and need the macro
+ * definitions for the context-sensitive pointer analysis they are
+ * used in. For a context-insensitive pointer analysis we just
+ * generate constant contexts.
+ */
+
+// We need to *pretend* we are creating new contexts, since the
+// product of the macro goes to the head of a rule.
+#define RecordMacro(ctx, value, hctx) \
+  HContext(hctx), \
+  HContextFromRealHContext[] = hctx
+
+
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[] = calleeCtx
+
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[] = calleeCtx
+
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
+  MergeBasis(callerCtx, invocation, hctx, value)
+
+#define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
+  MergeStaticBasis(callerCtx, invocation)
+
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[invocation, value] = calleeCtx
+
+#define CachedMergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  CachedMergeStatic[invocation] = calleeCtx
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[] = newCtx
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[] = calleeCtx
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  Context(newCtx), \
+  ContextFromRealContext[] = newCtx
+
+
+#define InitContext(predName, valueId) \
+  Context(ctx), ContextFromRealContext[] = ctx, predName[] = ctx
+
+#define InitHContext(predName, valueId) \
+  HContext(hctx), HContextFromRealHContext[] = hctx, predName[] = hctx

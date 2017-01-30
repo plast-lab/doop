@@ -39,7 +39,6 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
 
 
 #include "main.logic"
-#include "in-out-flow.logic"
 
 /**
  * Generic context-sensitive pointer analysis
@@ -459,7 +458,7 @@ CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
 #else
 AdvancedMergeStaticBasisMacro(?callerCtx, ?invocation) <-
   ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+  StaticMethodInvocation(?invocation, _, ?inmethod).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
   AdvancedMergeStaticBasisMacro(?callerCtx, ?invocation),

@@ -1,0 +1,66 @@
+// Context-insensitive with an enhancement for low-hanging fruit:
+// methods that have their params flow to their return value get a
+// 1-call treatment.
+
+#include "../../main/in-out-flow.logic"
+
+ContextFromRealContext[] = ?ctx -> Context(?ctx).
+lang:constructor(`ContextFromRealContext).
+
+HContextFromRealHContext[] = ?hctx -> HContext(?hctx).
+lang:constructor(`HContextFromRealHContext).
+
+OneCallContext[?invocation] = ?ctx ->
+  Context(?ctx), MethodInvocation(?invocation).
+lang:constructor(`OneCallContext).
+
+// For this analysis we only need one or two of the parameters that
+// may influence the new context
+MyMergeBasis(?invo, ?value) <-
+  MergeBasis(_, ?invo, _, ?value).
+
+MyMergeStaticBasis(?invo) <-
+  MergeStaticBasis(_, ?invo).
+
+Context(?calleeCtx),
+OneCallContext[?invo] = ?calleeCtx,
+CachedMerge[?invo, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?value),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invo] = ?tomethod,
+  InOutFlowMethod(_, ?tomethod).
+
+MergeMacro(?notused, ?notused, ?notused, ?notused, ?calleeCtx),
+CachedMerge[?invo, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?value),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invo] = ?tomethod,
+  !InOutFlowMethod(_, ?tomethod).
+
+Context(?calleeCtx),
+OneCallContext[?invo] = ?calleeCtx,
+CachedMerge[?invo, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?value),
+  SpecialMethodInvocation:Insn(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  InOutFlowMethod(_, ?tomethod).
+
+MergeMacro(?notused, ?notused, ?notused, ?notused, ?calleeCtx),
+CachedMerge[?invo, ?value] = ?calleeCtx <-
+  MyMergeBasis(?invo, ?value),
+  SpecialMethodInvocation:Insn(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  !InOutFlowMethod(_, ?tomethod).
+
+Context(?calleeCtx),
+OneCallContext[?invo] = ?calleeCtx,
+CachedMergeStatic[?invo] = ?calleeCtx <-
+  MyMergeStaticBasis(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  InOutFlowMethod(_, ?tomethod).
+
+MergeStaticMacro(?notused, ?notused, ?calleeCtx),
+CachedMergeStatic[?invo] = ?calleeCtx <-
+  MyMergeStaticBasis(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  !InOutFlowMethod(_, ?tomethod).
