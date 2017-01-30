@@ -39,6 +39,7 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
 
 
 #include "main.logic"
+#include "in-out-flow.logic"
 
 /**
  * Generic context-sensitive pointer analysis
@@ -79,16 +80,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   !ArrayType(HeapAllocation:Type[?value]),
 #endif
   ObjectShouldNotBeRefined(?value).
-#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifndef OptimizeRecordMacro */
 
-
-// There is scarcely any logical explanation, but breaking up the rule
-// as above results in faster execution!
-//RecordMacro(?ctx, ?heap, ?hctx),
-//VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-//  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-//  ReachableContext(?ctx, ?inmethod),
-//  ObjectShouldNotBeRefined(?heap).
 
 #ifdef RecordArrayMacro
 // This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
@@ -379,26 +372,6 @@ OptVirtualMethodInvocationBase(?invocation, ?base) <-
   Instruction:Method[?invocation] = ?inmethod,
   VirtualMethodInvocation:Base[?invocation] = ?base.
 
-/*
-// Beginnings of something promising. Currently doesn't work
-// because we are implicitly assuming any var points at least to null.
-ViableInvocation0(?callerCtx, ?invocation) <-
-  (!ActualParam[0, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
-  (ActualParam[0, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
-
-ViableInvocation1(?callerCtx, ?invocation) <-
-  (!ActualParam[1, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
-  (ActualParam[1, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
-
-ViableInvocation2(?callerCtx, ?invocation) <-
-  (!ActualParam[2, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
-  (ActualParam[2, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
-
-ViableInvocation(?callerCtx, ?invocation) <-
-  ViableInvocation0(?callerCtx, ?invocation),
-  ViableInvocation1(?callerCtx, ?invocation),
-  ViableInvocation2(?callerCtx, ?invocation).
-*/
 
 // This rule is the default logic for the majority of analyses
 
@@ -417,23 +390,24 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
 
 #else /* there is optimized behavior available */
 
-// The optimization is as follows: the main analysis (this file)
-// first creates all the possible bindings that the Merge logic
-// might need to create a new context. Then each individual analysis
-// creates new context objects carefully by invoking the skolem
-// functions as rarely as possible.
+// The optimization/advanced merge treatment is as follows: the main
+// analysis (this file) first creates all the possible bindings that
+// the Merge logic might need to create a new context. (It uses
+// MergeBasisMacro to communicate these bindings to the individual
+// context-sensitive analysis.) Then each individual analysis creates
+// new context objects by employing arbitrary logic, and communicates
+// back to the main analysis the results of context creation using
+// OptimizeMergeMacro.
 MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
-// Finally, the step of the main analysis that should be creating the
-// new objects is merely looking up the previously created context
-// objects.
+// The main analysis is merely looking up the previously created
+// context objects.
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
@@ -441,7 +415,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */
 
@@ -465,7 +438,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
 
 #else /* there is optimized behavior available */
@@ -481,7 +453,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */
 #endif /* #ifdef MergeRefinedMacro */
@@ -511,7 +482,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
-
 #else /* there is optimized behavior available */
 
 MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
