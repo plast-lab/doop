@@ -16,5 +16,5 @@ command Bar {
 }
 as S2
 
-S1 { * } copyto S2
-S2 { * } copyto .global
+S1 { * } => S2
+S2 { * } => .

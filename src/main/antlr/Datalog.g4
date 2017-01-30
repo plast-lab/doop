@@ -18,7 +18,7 @@ cmd
 	: CMD IDENTIFIER '{' datalog* '}' ('as' identifierList)? ;
 
 propagate
-	: IDENTIFIER '{' (ALL | predicateNameList) '}' PROPAGATE (IDENTIFIER | GLOBAL) ;
+	: IDENTIFIER '{' (ALL | predicateNameList) '}' '=>' (IDENTIFIER | GLOBAL) ;
 
 predicateNameList
 	: predicateName
@@ -130,10 +130,7 @@ COMP
 	: 'component' ;
 
 GLOBAL
-	: '.global' ;
-
-PROPAGATE
-	: 'copyto' ;
+	: '.' ;
 
 INTEGER
 	: [0-9]+

@@ -10,4 +10,4 @@ component Foo {
 }
 as S1
 
-S1 { P } copyto .global
+S1 { P } => .
