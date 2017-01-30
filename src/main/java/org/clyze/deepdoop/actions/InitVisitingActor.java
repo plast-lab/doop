@@ -139,7 +139,6 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 	@Override
 	public RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
-		System.out.println(n.types);
 		return new RefModeDeclaration((RefMode) m.get(n.atom), (Predicate) m.get(n.types.get(0)), (Primitive) m.get(n.types.get(1)));
 	}
 	@Override

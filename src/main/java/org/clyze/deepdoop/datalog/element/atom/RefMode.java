@@ -34,7 +34,7 @@ public class RefMode implements IAtom {
 	@Override
 	public List<VariableExpr> getVars() {
 		List<VariableExpr> list = new ArrayList<>(valueExpr.getVars());
-		list.add(entityVar);
+		list.add(0, entityVar);
 		return list;
 	}
 	@Override
