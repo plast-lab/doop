@@ -50,5 +50,5 @@ Context(?calleeCtx),
 ContextFromRealContext[RealHContextFromHContext[?hctx],?valueComp] = ?calleeCtx,
 ContextComponent(?valueComp),
 ContextComponent:Value[?value] = ?valueComp,
-OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?value).

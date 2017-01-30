@@ -432,10 +432,16 @@ ReflectiveBaseVar[?invocation] = ?to <-
  * NOTE  
  * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
+_OptVarToMethod[?var] = ?method <-
+  Var:DeclaringMethod(?var, ?method).
+  
+_Optjava:lang:Class:getClassLoader(?invocation, ?to, ?method) <-
+  java:lang:Class:getClassLoader(?invocation, ?to, ?from),
+  _OptVarToMethod[?from] = ?method.
+  
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
-  java:lang:Class:getClassLoader(?invocation, ?to, ?from),
-  Var:DeclaringMethod(?from, ?method),
+  _Optjava:lang:Class:getClassLoader(?invocation, ?to, ?method),
   ReachableContext(?ctx, ?method),
   Type:Id(?type:"java.lang.ClassLoader"),
   ReflectiveAllocation[?invocation, ?type] = ?heap,

@@ -29,5 +29,5 @@ ImmutableInvValue[] = ?invo <-
 // cache them, so they can be looked up without a join.
 //Context(?calleeCtx),
 //ContextFromRealContext[?value, ?invocation] = ?calleeCtx,
-//OptimizeMerge[?value, ?invocation] = ?calleeCtx <-
+//CachedMerge[?value, ?invocation] = ?calleeCtx <-
 //  MyMergeBasis(?value, ?invocation).
