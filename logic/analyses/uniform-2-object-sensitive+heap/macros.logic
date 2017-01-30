@@ -14,11 +14,11 @@
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], invo, value] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invo, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invo, hctx, value) \
   MergeBasis(callerCtx, hctx, invo, value)
 
-#define OptimizeMergeMacro(callerCtx, invo, hctx, value, calleeCtx) \
-  OptimizeMerge[hctx, invo, value] = calleeCtx
+#define CachedMergeMacro(callerCtx, invo, hctx, value, calleeCtx) \
+  CachedMerge[hctx, invo, value] = calleeCtx
 
 // For this analysis, static calls use the invocation site and
 // the receiver object of the caller as a context.

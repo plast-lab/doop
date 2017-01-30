@@ -33,5 +33,5 @@ MyMergeBasis(?hctx, ?value) <-
 // cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[Value:DeclaringType[RealHContextFromHContext[?hctx]], ?value] = ?calleeCtx,
-OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?value).

@@ -36,5 +36,5 @@ MyMergeBasis(?callerCtx, ?value) <-
 // cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[RealContext2FromContext[?callerCtx], ?value] = ?calleeCtx,
-OptimizeMerge[?callerCtx, ?value] = ?calleeCtx <-
+CachedMerge[?callerCtx, ?value] = ?calleeCtx <-
   MyMergeBasis(?callerCtx, ?value).
