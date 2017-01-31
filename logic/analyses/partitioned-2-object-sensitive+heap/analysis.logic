@@ -27,7 +27,7 @@ ImmutableContextFromPartition[?partitionId] = ?ctx ->
    Type(?partitionId), Context(?ctx).
 
 ImmutableContextFromPartition[?partitionId] = ?ctx <-
-   ImmutableContext[] = ?ctx,
+   ImmutableContext(?ctx),
    PartitionFromContext[?ctx] = ?partitionId.
 
 // horrible indexing, but there will only be a handful of such contexts
