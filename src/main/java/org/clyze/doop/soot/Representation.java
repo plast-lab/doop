@@ -184,6 +184,7 @@ public class Representation {
             + "/" + session.nextNumber(name);
     }
 
+
     String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
@@ -194,6 +195,7 @@ public class Representation {
         {
             return heapAlloc(inMethod, expr.getType(), session);
             //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
+
         }
         else
         {
@@ -210,5 +212,8 @@ public class Representation {
     {
         String s = type.toString();
         return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+
     }
+
+
 }

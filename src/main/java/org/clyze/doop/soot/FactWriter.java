@@ -171,6 +171,9 @@ class FactWriter {
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
+        int index = session.calcUnitNumber(stmt);
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+
 
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 

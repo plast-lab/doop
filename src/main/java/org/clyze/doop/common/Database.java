@@ -12,14 +12,16 @@ import java.util.Map;
 public class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
+    private File directory = null;
 
     private final Map<PredicateFile, Writer> _writers;
 
     public Database(File directory) throws IOException {
+        this.directory = directory;
         this._writers = new EnumMap<>(PredicateFile.class);
 
         for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
-            _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
+            _writers.put(predicateFile, predicateFile.getWriter(this.directory, ".facts"));
     }
 
     @Override

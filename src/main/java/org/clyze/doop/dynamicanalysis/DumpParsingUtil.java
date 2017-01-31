@@ -90,15 +90,16 @@ public class DumpParsingUtil {
     }
 
     static String getHeapRepresentation(StackTrace trace, JavaClass clazz) {
-        if (trace != null && trace.getFrames().length > 0) {
-            com.sun.tools.hat.internal.model.StackFrame frame = trace.getFrames()[0];
+        if (trace != null && trace.getFrames().length > 1) {
+            com.sun.tools.hat.internal.model.StackFrame frame = trace.getFrames()[1];
             String heapAbstraction = "<" +
                     frame.getClassName() +
                     ": " +
                     convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName()) +
-                     "/ new" +
-                    clazz.getName() +
-                    "/0>";
+                    ">:" +
+                    frame.getLineNumber() +
+                    "/%";
+
             return heapAbstraction;
         }
         return null;

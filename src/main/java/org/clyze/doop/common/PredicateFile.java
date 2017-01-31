@@ -106,6 +106,6 @@ public enum PredicateFile
     public Writer getWriter(File directory, String suffix) throws IOException {
         File factsFile = new File(directory, name + suffix);
         FileUtils.touch(factsFile);
-        return new FileWriter(factsFile);
+        return new FileWriter(factsFile, true);
     }
 }

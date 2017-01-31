@@ -84,10 +84,15 @@ public class MemoryAnalyser {
 
     }
 
-    public void getAndOutputFactsToDB(String dbFileName) throws IOException, InterruptedException {
-        Database db = new Database(new File(dbFileName));
-        for (DynamicFact fact: getFactsFromDump())
+    public int getAndOutputFactsToDB(File factDir) throws IOException, InterruptedException {
+        Database db = new Database(factDir);
+        final Set<DynamicFact> factsFromDump = getFactsFromDump();
+        for (DynamicFact fact: factsFromDump) {
             fact.write_fact(db);
+        }
+        db.flush();
+        db.close();
+        return factsFromDump.size();
     }
 
     private String getFieldSignature(JavaField field, JavaClass obj) {

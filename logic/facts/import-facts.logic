@@ -1094,7 +1094,6 @@ _FieldInitialValue(?param1, ?param2) ->
 +FieldInitialValue[?fld] = ?valueString <-
    _FieldInitialValue(?fld, ?valueString).
 
-
 // Access Modifiers
 
 +Modifier(?x), +Modifier:Id(?x:"abstract"), +Modifier:abstract[] = ?x.

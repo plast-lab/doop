@@ -108,11 +108,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 runAverroes()
             }
 
-            if (options.ANALYZE_MEMORY_DUMP.value) {
-                analyseMemoryDump(options.ANALYZE_MEMORY_DUMP)
-            }
-
-            runSoot()
+             runSoot()
 
             FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
             FileUtils.touch(new File(factsDir, "Properties.facts"))
@@ -128,6 +124,10 @@ class ClassicAnalysis extends DoopAnalysis {
                                 .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
                     }
                 }
+            }
+
+            if (options.ANALYZE_MEMORY_DUMP.value) {
+                analyseMemoryDump(options.ANALYZE_MEMORY_DUMP.value.toString())
             }
 
             logger.info "Caching facts in $cacheDir"
@@ -159,6 +159,7 @@ class ClassicAnalysis extends DoopAnalysis {
             .executeFile("import-entities.logic")
             .executeFile("import-facts.logic")
 
+
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
             cpp.preprocess("${outDir}/tamiflex-fact-declarations.logic", "${tamiflexDir}/fact-declarations.logic")
@@ -186,6 +187,11 @@ class ClassicAnalysis extends DoopAnalysis {
             .executeFile("to-flow-insensitive-delta.logic")
             .commit()
             .elapsedTime()
+
+        if (options.ANALYZE_MEMORY_DUMP.value) {
+            cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
+            connector.queue().transaction().executeFile("import-dynamic-facts.logic").commit()
+        }
 
         if (options.TRANSFORM_INPUT.value)
             runTransformInput()
@@ -525,7 +531,8 @@ class ClassicAnalysis extends DoopAnalysis {
     protected void analyseMemoryDump(String filename) {
         logger.info("-- Analysing Memory Dump --")
         MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename)
-        memoryAnalyser.factsFromDump()
+        int n = memoryAnalyser.getAndOutputFactsToDB(factsDir)
+        logger.info("Generated " + n + " addditional facts from memory dump: "+factsDir)
 
     }
 

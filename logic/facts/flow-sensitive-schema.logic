@@ -545,6 +545,13 @@ LayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), stri
 FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 
 //-----------------------------------------------------------------------------
+// [Dynamic analysis related]
+//-----------------------------------------------------------------------------
+DynamicStaticFieldPointsTo(?heap, ?fld) -> HeapAllocation(?heap), string(?fld).
+DynamicInstanceFieldPointsTo(?baseheap, ?fieldname, ?heap) -> HeapAllocation(?baseheap), string(?fieldname), HeapAllocation(?heap).
+DynamicArrayIndexPointsTo(?heap, ?baseheap) -> HeapAllocation(?heap), HeapAllocation(?baseheap).
+
+//-----------------------------------------------------------------------------
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
