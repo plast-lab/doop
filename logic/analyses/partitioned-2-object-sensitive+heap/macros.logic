@@ -41,6 +41,12 @@
   ContextFromRealContext[PartitionFromContext[callerCtx], \
                          RealContext1FromContext[callerCtx], \
                          RealContext2FromContext[callerCtx]] = calleeCtx
+                                         
+#define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
+  MergeStaticBasis(callerCtx, invocation)
+
+#define CachedMergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  CachedMergeStatic(callerCtx, invocation, calleeCtx)
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
