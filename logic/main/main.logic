@@ -102,10 +102,10 @@ Value:DeclaringType[?value] = "java.lang.Object" <-
 
 
 
-InitContext(ImmutableContext, "<<immutable-context>>").
-InitContext(InitialContext, "<<initial-context>>").
-InitContext(JVMStartupContext, "<<jvm-startup-context>>").
-InitContext(ClinitContext, "<<clinit-context>>").
+ImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
+InitialContext[] = ctx, InitContextMacro("<<initial-context>>").
+JVMStartupContext[] = ctx, InitContextMacro("<<jvm-startup-context>>").
+ClinitContext[] = ctx, InitContextMacro("<<clinit-context>>").
 
 // The main method is reachable
 ReachableContext(InitialContext[], ?method) <-
@@ -122,8 +122,8 @@ ReachableContext(ClinitContext[], ?clinit) <-
   ClassInitializer[?class] = ?clinit.
 
 
-InitHContext(ImmutableHContext, "<<immutable-hcontext>>").
-InitHContext(JVMStartupHContext, "<<jvm-startup-hcontext>>").
+ImmutableHContext(hctx), InitHContextMacro("<<immutable-hcontext>>").
+JVMStartupHContext[] = hctx, InitHContextMacro("<<jvm-startup-hcontext>>").
 
 // Create initial objects with their heap contexts
 SystemThreadGroup(JVMStartupHContext[], ?alloc) <-

@@ -39,9 +39,9 @@
   ContextFromRealContext[value, RealContext2FromContext[callerCtx]] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value, invo] = ctx, \
-  predName[] = ctx <- Value:byId[valueId] = value, MethodInvocationValue(invo, valueId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value, invo] = ctx \
+  <- Value:byId[valueId] = value, MethodInvocationValue(invo, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[] = hctx, predName[] = hctx
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[] = hctx

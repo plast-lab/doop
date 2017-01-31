@@ -67,7 +67,7 @@ FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) <-
    MockObject(?basevalue, ?class).
 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
-   ImmutableHContext[] = ?hctx, //TODO: hctx 
+   ImmutableHContext(?hctx), //TODO: hctx 
    FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
    MockObjectForType(?value, ?fieldtype).
 #endif
@@ -132,11 +132,12 @@ RecordMacro(?calleeCtx, ?value, ?hctx),
 MockObjectContext(?hctx, ?value, ?class),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) <-
 #ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
-   ImmutableHContext[] = ?hctx,
+   ImmutableHContextFromContext[?calleeCtx] = ?hctx,
 #endif
    ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
 
 
+// REVIEW: clean up
 ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
 #ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
 #ifdef MergeOpenProgramEntryPointMacro
@@ -154,7 +155,7 @@ ContextForEntryPoint(?calleeCtx, ?method)
    ImmutableHContext(?immutablehctx),
 #endif
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
-   ImmutableContext[] = ?calleeCtx,
+   ImmutableContext(?calleeCtx),
 #endif
    EntryPoint(?method).
 

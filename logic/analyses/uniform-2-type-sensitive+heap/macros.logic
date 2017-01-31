@@ -52,11 +52,11 @@
   ContextFromRealContext[RealContext1FromContext[callerCtx], RealContext2FromContext[callerCtx], ClassToInstr[Value:DeclaringType[value]]] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value1, invo, value2] = ctx, \
-  predName[] = ctx <- ClassTypeValue(class1, "java.lang.String"), ClassToInstr[class1] = value1, \
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value1, invo, value2] = ctx \
+  <- ClassTypeValue(class1, "java.lang.String"), ClassToInstr[class1] = value1, \
   MethodInvocationValue(invo, valueId), Instruction:Id(value2, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx, \
-  predName[] = hctx <- Instruction:Id(value:valueId)
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx \
+  <- Instruction:Id(value:valueId)

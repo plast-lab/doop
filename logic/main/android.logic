@@ -153,7 +153,7 @@ ReachableContext(?ctx, ?meth) <-
   (PublicMethodOfComponent(?meth);
    OverridingProtectedMethodOfComponent(?meth);
    CallbackMethod(?meth)),
-  ImmutableContext[] = ?ctx.
+  ImmutableContext(?ctx).
 
 // Handle library-callable "on*" methods of layout controls
 PublicOnMethodOfLayoutControl(?meth) <-
@@ -179,7 +179,7 @@ ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfLayoutControl(?meth);
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
-  ImmutableContext[] = ?ctx.
+  ImmutableContext(?ctx).
 
 
 // Handle library-callable "on*" methods of listeners/callbacks
@@ -246,7 +246,7 @@ ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) <-
   (PublicOnMethodOfReachableListener(?meth);
    OverridingProtectedOnMethodOfReachableListener(?meth)),
-  ImmutableContext[] = ?ctx.
+  ImmutableContext(?ctx).
 
 
 // For all the above forced reachable methods, supply a receiver

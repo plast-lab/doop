@@ -26,13 +26,13 @@ PartitionFromHContext[?hctx] = ?partitionId <-
 
 // horrible indexing, but there will only be a handful of such contexts
 ImmutableContextFromHContext[?hctx] = ?ctx <-
-  ImmutableContext[] = ?ctx,
+  ImmutableContext(?ctx),
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
-  ImmutableContext[] = ?ctx2,
+  ImmutableContext(?ctx2),
   PartitionFromContext[?ctx1] = PartitionFromContext[?ctx2].
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContext(?hctx),
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 
 // Merge optimization hack
