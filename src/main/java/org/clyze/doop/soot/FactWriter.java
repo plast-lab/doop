@@ -174,7 +174,6 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
 
-
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
         if (expr instanceof NewArrayExpr) {
@@ -194,7 +193,7 @@ class FactWriter {
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+tag.getLineNumber());
     }
 
     Type getComponentType(ArrayType type) {
@@ -217,6 +216,7 @@ class FactWriter {
         String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
+
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
@@ -350,7 +350,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {

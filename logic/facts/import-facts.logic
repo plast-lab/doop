@@ -79,15 +79,17 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
    int[32](?index),
    string(?heap),
    string(?to),
-   string(?inmethod).
+   string(?inmethod),
+   string(?linenumber).
 
 +AssignHeapAllocation:Insn(?instr),
 +Instruction:Id(?instr:?instrId),
 +Instruction:Index[?instr] = ?index,
 +Instruction:Method[?instr] = ?method,
++Instruction:Line[?instr] = ?linenumber,
 +AssignInstruction:To[?instr] = ?to,
 +AssignHeapAllocation0(?instr, ?heapId) <-
-   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
+   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method, ?linenumber).
 
 
 // AndroidEntryPoints

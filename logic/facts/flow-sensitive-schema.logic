@@ -160,6 +160,10 @@ Instruction:Index[?insn] = ?index ->
 Instruction:Method[?insn] = ?inMethod ->
    Instruction(?insn), Method(?inMethod).
 
+Instruction:Line[?insn] = ?line ->
+   Instruction(?insn), string(?line).
+
+
 lang:entity(`Throw:Insn).
 lang:entity(`ThrowNull:Insn).
 lang:entity(`Goto:Insn).
