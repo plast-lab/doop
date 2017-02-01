@@ -47,8 +47,8 @@
   ContextFromRealContext[] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[] = ctx, predName[] = ctx
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[] = ctx
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[] = hctx, predName[] = hctx
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[] = hctx

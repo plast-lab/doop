@@ -52,13 +52,13 @@
                          Value:DeclaringType[value]] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value, value] = ctx, \
-  predName[] = ctx <- Type:Id(value, valueId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value, value] = ctx \
+  <- Type:Id(value, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx, \
-  predName[] = hctx <- Type:Id(value, valueId)
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx \
+  <- Type:Id(value, valueId)
 
 
 //// ---- Leftovers from experiment below ----

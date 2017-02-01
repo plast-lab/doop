@@ -40,10 +40,10 @@
   ContextFromRealContext[RealContext2FromContext[callerCtx], FakeInvocation:RegisterFinalize[value]] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value, value] = ctx, \
-  predName[] = ctx <- MethodInvocationValue(value, valueId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value, value] = ctx \
+  <- MethodInvocationValue(value, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx, \
-  predName[] = hctx <- MethodInvocationValue(value, valueId)
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx \
+  <- MethodInvocationValue(value, valueId)

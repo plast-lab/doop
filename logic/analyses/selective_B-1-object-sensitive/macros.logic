@@ -42,10 +42,10 @@
   ContextComponent:Value[value] = valueComp
 
 
-#define InitContext(predName, valueId) \
+#define InitContextMacro(valueId) \
   Context(ctx), ContextFromRealContext[valueComp] = ctx, \
-  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp, \
-  predName[] = ctx <- Value:byId[valueId] = value
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp \
+  <- Value:byId[valueId] = value
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[] = hctx, predName[] = hctx
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[] = hctx

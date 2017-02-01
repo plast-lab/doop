@@ -58,10 +58,10 @@
   ContextFromRealContext[Value:DeclaringType[RealContext2FromContext[callerCtx]], value] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[type, value] = ctx, \
-  predName[] = ctx <- ClassTypeValue(type, "java.lang.String"), Value:byId[valueId] = value
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[type, value] = ctx \
+  <- ClassTypeValue(type, "java.lang.String"), Value:byId[valueId] = value
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[type, value] = hctx, \
-  predName[] = hctx <- ClassTypeValue(type, "java.lang.String"), Value:byId[valueId] = value
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[type, value] = hctx \
+  <- ClassTypeValue(type, "java.lang.String"), Value:byId[valueId] = value

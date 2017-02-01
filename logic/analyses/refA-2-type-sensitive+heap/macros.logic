@@ -61,10 +61,10 @@
                          Value:DeclaringType[value]] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value1, value2] = ctx, \
-  predName[] = ctx <- ClassTypeValue(value1, "java.lang.String"), Type:Id(value2, valueId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value1, value2] = ctx \
+  <- ClassTypeValue(value1, "java.lang.String"), Type:Id(value2, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx, \
-  predName[] = hctx <- Type:Id(value, valueId)
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx \
+  <- Type:Id(value, valueId)
