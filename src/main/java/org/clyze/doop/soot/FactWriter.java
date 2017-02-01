@@ -124,7 +124,7 @@ class FactWriter {
 
     void writeEnterMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ENTER_MONITOR, insn, str(index), _rep.local(m, var), methodId);
@@ -132,7 +132,7 @@ class FactWriter {
 
     void writeExitMonitor(SootMethod m, Stmt stmt, Local var, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(EXIT_MONITOR, insn, str(index), _rep.local(m, var), methodId);
@@ -140,7 +140,7 @@ class FactWriter {
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, Local from, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.local(m, from), _rep.local(m, to), methodId);
@@ -148,7 +148,7 @@ class FactWriter {
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ThisRef ref, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.thisVar(m), _rep.local(m, to), methodId);
@@ -156,7 +156,7 @@ class FactWriter {
 
     void writeAssignLocal(SootMethod m, Stmt stmt, Local to, ParameterRef ref, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_LOCAL, insn, str(index), _rep.param(m, ref.getIndex()), _rep.local(m, to), methodId);
@@ -169,7 +169,6 @@ class FactWriter {
     }
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
-        int index = session.calcUnitNumber(stmt);
         String heap = _rep.heapAlloc(m, expr, session);
 
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
@@ -187,8 +186,8 @@ class FactWriter {
         }
 
         // statement
-
-        String insn = _rep.instruction(m, stmt, index);
+        int index = session.calcUnitNumber(stmt);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId);
@@ -211,10 +210,9 @@ class FactWriter {
     }
 
     void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
+        String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
         int index = session.calcUnitNumber(stmt);
-
-        String heap = _rep.heapAlloc(m, expr, session);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
@@ -225,7 +223,7 @@ class FactWriter {
             String childAssignTo = _rep.newLocalIntermediate(m, l, session);
             writeAssignNewMultiArrayExprHelper(m, stmt, l, childAssignTo, expr, (ArrayType) componentType, session);
             int storeInsnIndex = session.calcUnitNumber(stmt);
-            String storeInsn = _rep.instruction(m, stmt, storeInsnIndex);
+            String storeInsn = _rep.instruction(m, stmt, session, storeInsnIndex);
 
             _db.add(STORE_ARRAY_INDEX, storeInsn, str(storeInsnIndex), childAssignTo, assignTo, methodId);
             _db.add(VAR_TYPE, childAssignTo, writeType(componentType));
@@ -264,7 +262,7 @@ class FactWriter {
         Type elementType = type;
 
         int index = session.calcUnitNumber(stmt);
-        String rep = _rep.instruction(m, stmt, index);
+        String rep = _rep.instruction(m, stmt, session, index);
 
         _db.add("AssignMultiArrayAllocation",
                 _db.asEntity(rep),
@@ -285,7 +283,7 @@ class FactWriter {
         String heapId = writeStringConstant(content);
 
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
@@ -293,7 +291,7 @@ class FactWriter {
 
     void writeAssignNull(SootMethod m, Stmt stmt, Local l, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_NULL, insn, str(index), _rep.local(m, l), methodId);
@@ -301,7 +299,7 @@ class FactWriter {
 
     void writeAssignNumConstant(SootMethod m, Stmt stmt, Local l, NumericConstant constant, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
@@ -344,7 +342,7 @@ class FactWriter {
         _db.add(CLASS_HEAP, heap, actualType);
 
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
@@ -353,7 +351,7 @@ class FactWriter {
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_CAST, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
@@ -361,7 +359,7 @@ class FactWriter {
 
     void writeAssignCastNumericConstant(SootMethod m, Stmt stmt, Local to, NumericConstant constant, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_CAST_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, to), writeType(t), methodId);
@@ -369,7 +367,7 @@ class FactWriter {
 
     void writeAssignCastNull(SootMethod m, Stmt stmt, Local to, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_CAST_NULL, insn, str(index), _rep.local(m, to), writeType(t), methodId);
@@ -377,7 +375,7 @@ class FactWriter {
 
     void writeStoreInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local from, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
@@ -386,7 +384,7 @@ class FactWriter {
 
     void writeLoadInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
@@ -395,7 +393,7 @@ class FactWriter {
 
     void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
@@ -404,7 +402,7 @@ class FactWriter {
 
     void writeLoadStaticField(SootMethod m, Stmt stmt, SootField f, Local to, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
@@ -413,7 +411,7 @@ class FactWriter {
 
     void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(LOAD_ARRAY_INDEX, insn, str(index), _rep.local(m, to), _rep.local(m, base), methodId);
@@ -424,7 +422,7 @@ class FactWriter {
 
     void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Local arrIndex, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(STORE_ARRAY_INDEX, insn, str(index), _rep.local(m, from), _rep.local(m, base), methodId);
@@ -466,7 +464,7 @@ class FactWriter {
 
     void writeReturn(SootMethod m, Stmt stmt, Local l, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(RETURN, insn, str(index), _rep.local(m, l), methodId);
@@ -474,7 +472,7 @@ class FactWriter {
 
     void writeReturnVoid(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(RETURN_VOID, insn, str(index), methodId);
@@ -498,7 +496,7 @@ class FactWriter {
         int index = session.getUnitNumber(stmt);
 		session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(GOTO, insn, str(index), str(indexTo), methodId);
@@ -512,7 +510,7 @@ class FactWriter {
         int index = session.getUnitNumber(stmt);
 		session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(IF, insn, str(index), str(indexTo), methodId);
@@ -540,7 +538,7 @@ class FactWriter {
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
         Local l = (Local) v;
-        String insn = _rep.instruction(inMethod, stmt, stmtIndex);
+        String insn = _rep.instruction(inMethod, stmt, session, stmtIndex);
         String methodId = writeMethod(inMethod);
 
         _db.add(TABLE_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
@@ -567,7 +565,7 @@ class FactWriter {
             throw new RuntimeException("Unexpected key for TableSwitch statement " + v + " " + v.getClass());
 
         Local l = (Local) v;
-        String insn = _rep.instruction(inMethod, stmt, stmtIndex);
+        String insn = _rep.instruction(inMethod, stmt, session, stmtIndex);
         String methodId = writeMethod(inMethod);
 
         _db.add(LOOKUP_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
@@ -588,7 +586,7 @@ class FactWriter {
 
     void writeUnsupported(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.unsupported(m, stmt, index);
+        String insn = _rep.unsupported(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
@@ -610,7 +608,7 @@ class FactWriter {
      */
     void writeThrowNull(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(THROW_NULL, insn, str(index), methodId);
@@ -794,7 +792,7 @@ class FactWriter {
 
     void writeAssignBinop(SootMethod m, AssignStmt stmt, Local left, BinopExpr right, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_BINOP, insn, str(index), _rep.local(m, left), methodId);
@@ -813,7 +811,7 @@ class FactWriter {
 
     void writeAssignUnop(SootMethod m, AssignStmt stmt, Local left, UnopExpr right, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, left), methodId);
@@ -833,7 +831,7 @@ class FactWriter {
 
     void writeAssignInstanceOf(SootMethod m, AssignStmt stmt, Local to, Local from, Type t, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_INSTANCE_OF, insn, str(index), _rep.local(m, from), _rep.local(m, to), writeType(t), methodId);
@@ -841,7 +839,7 @@ class FactWriter {
 
     void writeAssignPhantomInvoke(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_PHANTOM_INVOKE, insn, str(index), methodId);
@@ -849,7 +847,7 @@ class FactWriter {
 
     void writePhantomInvoke(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(PHANTOM_INVOKE, insn, str(index), methodId);
@@ -857,7 +855,7 @@ class FactWriter {
 
     void writeBreakpointStmt(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, index);
+        String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);

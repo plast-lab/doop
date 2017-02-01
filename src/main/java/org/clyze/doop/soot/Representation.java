@@ -159,7 +159,7 @@ public class Representation {
         return kind;
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, int index)
+    String unsupported(SootMethod inMethod, Stmt stmt, Session session, int index)
     {
         return getMethodSignature(inMethod) +
             "/unsupported " + getKind(stmt) +
@@ -170,7 +170,7 @@ public class Representation {
     /**
      * Text representation of instruction to be used as refmode.
      */
-    String instruction(SootMethod inMethod, Stmt stmt, int index)
+    String instruction(SootMethod inMethod, Stmt stmt, Session session, int index)
     {
         return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
     }
@@ -184,15 +184,16 @@ public class Representation {
             + "/" + session.nextNumber(name);
     }
 
-    synchronized String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
+    String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
         {
-            return heapAlloc(inMethod, session.nextNumber(inMethod.getSignature()));
+            return heapAlloc(inMethod, expr.getType(), session);
         }
         else if(expr instanceof NewMultiArrayExpr)
         {
-            return heapAlloc(inMethod, session.nextNumber(inMethod.getSignature()));
+            return heapAlloc(inMethod, expr.getType(), session);
+            //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
         }
         else
         {
@@ -200,13 +201,14 @@ public class Representation {
         }
     }
 
-//    String heapMultiArrayAlloc(SootMethod inMethod, int numberInSession)
-//    {
-//        return heapAlloc(inMethod, numberInSession);
-//    }
-
-    private String heapAlloc(SootMethod inMethod, int numberInSession)
+    String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
     {
-        return getMethodSignature(inMethod) + "/" + numberInSession;
+        return heapAlloc(inMethod, type, session);
+    }
+
+    private String heapAlloc(SootMethod inMethod, Type type, Session session)
+    {
+        String s = type.toString();
+        return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
     }
 }
