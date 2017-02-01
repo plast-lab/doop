@@ -23,7 +23,9 @@ component Foo : Base {
 	Z(y) <- Q(_, y).
 	W(x) <- Z@past(x).
 }
-as S2, S3, S4
+as S2, S3
+
+component Foo as S4
 
 S0 { * } => S2
 S1 { * } => .

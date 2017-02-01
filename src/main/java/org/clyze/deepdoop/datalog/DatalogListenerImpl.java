@@ -32,6 +32,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 
 	boolean                            _inDecl;
 	Component                          _currComp;
+	String                             _currCompName;
 	Program                            _program;
 
 	public DatalogListenerImpl(String filename) {
@@ -85,28 +86,38 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	}
 
 	public void enterComp(CompContext ctx) {
-		recLoc(ctx);
-		_currComp = new Component(ctx.IDENTIFIER(0).getText(), (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
+		_currCompName = ctx.IDENTIFIER(0).getText();
+		if (ctx.L_BRACK() != null) {
+			recLoc(ctx);
+			_currComp = new Component(_currCompName, (ctx.IDENTIFIER(1) != null ? ctx.IDENTIFIER(1).getText() : null));
+		}
 	}
 	public void exitComp(CompContext ctx) {
-		if (ctx.identifierList() != null) {
-			List<String> inits = get(_names, ctx.identifierList());
-			inits.forEach(id -> _program.addInit(id, _currComp.name));
+		if (ctx.inits() != null) {
+			List<String> inits = get(_names, ctx.inits().identifierList());
+			inits.forEach(id -> _program.addInit(id, _currCompName));
 		}
-		_program.addComponent(_currComp);
-		_currComp = _program.globalComp;
+		if (ctx.L_BRACK() != null) {
+			_program.addComponent(_currComp);
+			_currComp = _program.globalComp;
+		}
 	}
 	public void enterCmd(CmdContext ctx) {
-		recLoc(ctx);
-		_currComp = new CmdComponent(ctx.IDENTIFIER().getText());
+		_currCompName = ctx.IDENTIFIER().getText();
+		if (ctx.L_BRACK() != null) {
+			recLoc(ctx);
+			_currComp = new CmdComponent(_currCompName);
+		}
 	}
 	public void exitCmd(CmdContext ctx) {
-		if (ctx.identifierList() != null) {
-			List<String> inits = get(_names, ctx.identifierList());
-			inits.forEach(id -> _program.addInit(id, _currComp.name));
+		if (ctx.inits() != null) {
+			List<String> inits = get(_names, ctx.inits().identifierList());
+			inits.forEach(id -> _program.addInit(id, _currCompName));
 		}
-		_program.addComponent(_currComp);
-		_currComp = _program.globalComp;
+		if (ctx.L_BRACK() != null) {
+			_program.addComponent(_currComp);
+			_currComp = _program.globalComp;
+		}
 	}
 	public void exitPropagate(PropagateContext ctx) {
 		Set<String> predNames = (ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())));

@@ -12,10 +12,17 @@ lineMarker
 	: '#' INTEGER STRING INTEGER* ;
 
 comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ('as' identifierList)? ;
+	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK inits?
+	| COMP IDENTIFIER inits
+	;
 
 cmd
-	: CMD IDENTIFIER '{' datalog* '}' ('as' identifierList)? ;
+	: CMD IDENTIFIER L_BRACK datalog* R_BRACK inits?
+	| CMD IDENTIFIER inits
+	;
+
+inits
+	: 'as' identifierList ;
 
 propagate
 	: IDENTIFIER '{' (ALL | predicateNameList) '}' '=>' (IDENTIFIER | GLOBAL) ;
@@ -131,6 +138,12 @@ COMP
 
 GLOBAL
 	: '.' ;
+
+L_BRACK
+	: '{' ;
+
+R_BRACK
+	: '}' ;
 
 INTEGER
 	: [0-9]+
