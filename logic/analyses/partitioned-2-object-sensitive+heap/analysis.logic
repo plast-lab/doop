@@ -23,13 +23,6 @@ RealHContextFromHContext[?hctx] = ?value,
 PartitionFromHContext[?hctx] = ?partitionId <-
   HContextFromRealHContext[?partitionId, ?value] = ?hctx.
 
-ImmutableContextFromPartition[?partitionId] = ?ctx ->
-   Type(?partitionId), Context(?ctx).
-
-ImmutableContextFromPartition[?partitionId] = ?ctx <-
-   ImmutableContext(?ctx),
-   PartitionFromContext[?ctx] = ?partitionId.
-
 // horrible indexing, but there will only be a handful of such contexts
 ImmutableContextFromHContext[?hctx] = ?ctx <-
   ImmutableContext(?ctx),
@@ -38,7 +31,7 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
   ImmutableContext(?ctx2),
   PartitionFromContext[?ctx1] = PartitionFromContext[?ctx2].
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext(?hctx),
+  ImmutableHContext(n?hctx),
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 
 // Merge optimization hack
@@ -119,8 +112,8 @@ CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 // and for static methods
 
-
 CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx -> Context(?callerCtx), Instruction(?invo), Context(?calleeCtx).
+
 
 MergeStaticMacro(?callerCtx, ?invo, ?calleeCtx),
 CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
@@ -129,12 +122,13 @@ CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
    (PartitionForMethod[?tomethod] = PartitionForInvocation[?invo];
     MethodInAllPartitions(?tomethod)).
 
+
 CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
    MergeStaticBasis(?callerCtx, ?invo),
    MethodInvocation:Method[?invo] = ?tomethod,
    !(PartitionForInvocation[?invo] = _),
    !MethodInAllPartitions(?tomethod),
-   ImmutableContextFromPartition[PartitionFromContext[?callerCtx]] = ?calleeCtx.
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
 
 CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
    MergeStaticBasis(?callerCtx, ?invo),
@@ -142,7 +136,7 @@ CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
    (PartitionForMethod[?tomethod] != PartitionForInvocation[?invo];
    !(PartitionForInvocation[?invo] = _)),
    !MethodInAllPartitions(?tomethod),
-   ImmutableContextFromPartition[PartitionFromContext[?callerCtx]] = ?calleeCtx.
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
 
 
 
