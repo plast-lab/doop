@@ -16,96 +16,40 @@ FakeInvocation_RegisterFinalize(?value, ?invo) :-
    FakeInvocation_RegisterFinalize0(?heap, ?invo),
    Value_byHeap(?heap, ?value).
 
-// NOTE_ should be separate rules so the engine can treat them as alternative
-// indexes
-Value_byHeap(?heap, ?value) :-
-   Value_Heap_Cons(?heap, ?value).
-Value_Heap(?value, ?heap) :-
-   Value_byHeap(?heap, ?value).
-
-Value_byNum(?const, ?value) :-
-   Value_Num_Cons(?const, ?value).
-Value_Num(?value, ?const) :-
-   Value_byNum(?const, ?value).
-
-Value_byId(?id, ?value) :-
-   Value_Mock_Cons(?id, ?value).
-
-Value_Heap_Cons(?heap, ?value),
+Value_Heap(?value, ?heap),
 isValue(?value),
 Value_Type(?value, ?type) :-
-   isHeapAllocation(?heap),
-   HeapAllocation_Type(?heap, ?type).
-
-// Only create values for numeric constants in a static initializer
-// (or initial field value) inside a class whose name contains
-// ".R$". We are trying to capture just the constants in Android "R"
-// nested classes. REVIEW to generalize.
-/*Value_Num_Cons(?const, ?value),
-isValue(?value),
-Value_Type(?value, ?type) :-
-//   NumConstant(?const),
-   AssignNumConstant_Id(?insn, ?const),
-   Instruction_Method(?insn, ?meth),
-   Method_SimpleName(?meth] = "<clinit>",
-   Method_DeclaringType[?meth] = ?class,
-   Type_Id(?class_?className),
-   string_substring[?className, _, 3] = ".R$",
-   ?type = Type_int[].
-
-Value_Num_Cons[?const] = ?value,
-isValue(?value),
-Value_Type[?value] = ?type <-
-//   NumConstant(?const),
-   FieldInitialValue[?fld] = ?const,
-   Field_DeclaringType[?fld] = ?class,
-   Type_Id(?class_?className),
-   string_substring[?className, _, 3] = ".R$",
-   ?type = Type_int[].
-*/
-Value_isHeap(?value) :-
-   Value_Heap_Cons(_, ?value).
-Value_isNonHeap(?value) :-
-   Value_Mock_Cons(_, ?value).
-
-Value_isNonHeap(?value) :-
-   Value_Num_Cons(_, ?value).
-
-Value_Null(?nullValue) :-
-   HeapAllocation_Null(?nullHeap),
-   Value_byHeap(?nullHeap, ?nullValue).
-
+    [?heap] = ?value,
+    isHeapAllocation(?heap),
+    HeapAllocation_Type(?heap, ?type).
 
 Value_DeclaringType(?value, ?type) :-
    AssignHeapAllocation(?heap, _, ?inmethod),
    Method_DeclaringType(?inmethod, ?type),
    !isStringConstant(?heap),
    !isClassHeap(?heap),
-   Value_byHeap(?heap, ?value).
+   [?heap] = ?value,
+   Value_Heap(?value, ?heap).
 
 Value_DeclaringType(?value, "java.lang.System") :-
    isClassHeap(?heap),
-   Value_byHeap(?heap, ?value).
+   Value_Heap(?value, ?heap).
 
 Value_DeclaringType(?value, "java.lang.String") :-
    isStringConstant(?heap),
-   Value_byHeap(?heap, ?value).
+   Value_Heap(?value, ?heap).
 
 Value_DeclaringType(?value, "java.lang.Object") :-
-   Value_Null(?value).
-
-Value_DeclaringType(?value, "java.lang.Object") :-
+   Value_Null(?value) ;
    MainMethodArgArray(?heap),
-   Value_byHeap(?heap, ?value) ;
+   Value_Heap(?value, ?heap) ;
    MainMethodArgArrayContent(?heap),
-   Value_byHeap(?heap, ?value).
+   Value_Heap(?value, ?heap).
 
-
-isImmutableContext("<<immutable-context>>").
-isInitialContext("<<initial-context>>").
-isJVMStartupContext("<<jvm-startup-context>>").
-isClinitContext("<<clinit-context>>").
-
+isImmutableContext(ctx), InitContext("<<immutable-context>>")
+isInitialContext(ctx), InitContext("<<initial-context>>")
+isJVMStartupContext(ctx), InitContext("<<jvm-startup-context>>")
+isClinitContext(ctx), InitContext("<<clinit-context>>")
 
 // The main method is reachable
 ReachableContext(?initialContext, ?method) :-
@@ -124,8 +68,8 @@ ReachableContext(?clinitContext, ?clinit) :-
   InitializedClass(?class),
   ClassInitializer(?class, ?clinit).
 
-isImmutableHContext("<<immutable-hcontext>>").
-isJVMStartupHContext("<<jvm-startup-hcontext>>").
+InitHContext("<<immutable-hcontext>>")
+InitHContext("<<jvm-startup-hcontext>>")
 
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) :-

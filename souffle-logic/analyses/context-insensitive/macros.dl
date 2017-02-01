@@ -34,8 +34,7 @@
   ContextFromRealContext(newCtx)
 
 
-#define InitContext(predName, valueId) \
-  isContext(ctx), ContextFromRealContext(ctx), predName(ctx)
-
-#define InitHContext(predName, valueId) \
-  isHContext(hctx), HContextFromRealHContext(hctx), predName(hctx)
+#define InitContext(ictx) \
+  isContext(ctx), ContextFromRealContext(ctx) :- ctx = ictx.
+#define InitHContext(ihctx) \
+  isHContext(hctx), HContextFromRealHContext(hctx) :- hctx = ihctx.

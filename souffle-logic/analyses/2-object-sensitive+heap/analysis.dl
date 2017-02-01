@@ -10,9 +10,9 @@
 #include "../../basic/superinterface.dl"
 #include "../../basic/type-hierarchy.dl"
 #include "../../main/implicit-reachable.dl"
+#include "../../main/implicit-reachable-declarations.dl"
 #include "../../main/class-initialization.dl"
-#include "declarations.dl"
-
+#include "../../main/class-initialization-declarations.dl"
 
 /*.type Type
 .type Var 
@@ -192,6 +192,12 @@ Simple_ReachableContext(?ctx, ?method) :-
  */
 Reachable(?method) :-
     ImplicitReachable(?method).
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+Reachable(?method) :-
+   MainMethodDeclaration(?method).
 
 /**
  * If a class needs to be initialized, then its class initializer is
