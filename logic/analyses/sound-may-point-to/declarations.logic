@@ -34,7 +34,7 @@ cons:AccessPath:byVar[var] = ap -> Var(var), AccessPath(ap).
 lang:constructor(`cons:AccessPath:byVar).
 cons:AccessPath:byStaticField[fld] = ap -> Field(fld), AccessPath(ap).
 lang:constructor(`cons:AccessPath:byStaticField).
-cons:AccessPath:byField[fld, ap1] = ap2 -> Field(fld), AccessPath(ap1), AccessPath(ap2).
+cons:AccessPath:byField[ap1, fld] = ap2 -> AccessPath(ap1), Field(fld), AccessPath(ap2).
 lang:constructor(`cons:AccessPath:byField).
 
 AccessPath:toString[ap] = str -> AccessPath(ap), string(str).

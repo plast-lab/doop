@@ -51,6 +51,16 @@ AccessPath:toString[ap2] = str2 <-
 
 #include "intraprocedural-must.logic"
 #include "must-point-to.logic"
+#include "sound-may.logic"
+
+
+
+
+
+
+
+
+
 
 //// ====================================
 //// BEGIN configuration
@@ -110,7 +120,7 @@ SoundMayPhase9.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase8.MayReachableMethodUnderMayContext(?ctx, ?meth).
 */
 
-IntraproceduralMustForStats = new IntraproceduralMust
+component IntraproceduralMust as IntraproceduralMustForStats
 
 //IntraproceduralMustForStats:MayReachableMethodUnderMayContext(ctx, method) <-
 //  SoundMayPhase1:MayReachableMethodUnderMayContext(?ctx, ?meth).
@@ -123,13 +133,12 @@ InitialRootMethodForMayAnalysis(method) <-
 
 //// END configuration
 
-
-
 LibraryCollectionType(type) <-
   (root = "java.util.AbstractCollection" ;
    root = "java.util.AbstractMap"),
   SubtypeOf(type, root).
 
+// TODO: model iterators
 // TODO: Should these use LibraryCollectionType?
 LibraryCollectionStoreOperation(invo) <-
   VirtualMethodInvocation:SimpleName[invo] = "add";
@@ -169,6 +178,10 @@ LoadCollection:Base[insn] = base <-
 LoadCollection:Base[invo] = base <-
   LibraryCollectionLoadOperation(invo),
   VirtualMethodInvocation:Base[invo] = base.
+
+
+
+
 
 ThisVarOfConstructor[method] = this <-
    Method:SimpleName(method, "<init>"),
