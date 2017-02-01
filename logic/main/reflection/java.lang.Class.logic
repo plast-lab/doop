@@ -20,7 +20,6 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
   Value:Type[?value] = ?type,
   ReifiedClass:Value[?type] = ?classValue.
 
-
 /*************************************************************
  * java.lang.Class.forName
  *
@@ -45,7 +44,8 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
 // TODO Do we need this flag at all?
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to the ?param.
-ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap) <-
   java:lang:Class:forName(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ActualParam[0, ?invocation] = ?param,
@@ -53,9 +53,17 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   Value:Heap[?constant] = ?constantHeap,
   ClassNameMatchingStringConstant:Type(?type, ?constantHeap).
 
+// If it is a local and precise string, consider it a high-confidence inference
+ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
+  Instruction:Method[?invocation] = ?inmethod,
+  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  NumberOfClassesMatchingConstant[?constantHeap] < StringPrecisionThreshold[].
+
 /**
  * Class.forName invocations with user-configured dynamic classes
  */
+ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
 ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   java:lang:Class:forName(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
@@ -78,6 +86,9 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
   StringConstant(?classNameHeap),
   Value:byHeap[?classNameHeap] = ?classNameValue.
 
+// REVIEW: when getName returns a string, but our normal reflection
+// logic would have merged that string with others, should the result
+// be the string itself or its HeapAllocation:Merge?
 
 /*************************************************************
  * java.lang.Class.getComponentType
@@ -133,13 +144,19 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) <-
   DirectSuperinterface(?type, ?superInterface),
   ReifiedClass:Value[?superInterface] = ?superInterfaceValue.
 
+_OptReifiedClass:Value(?type, ?classValue) <-
+  ReifiedClass:Value[?type] = ?classValue.
+
+_OptReflectiveAllocation(?arrayHeap, ?invocation) <-
+  ReflectiveAllocation[?invocation, _] = ?arrayHeap.
+  
 FillArray:Interfaces(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
+  _OptReifiedClass:Value(?type, ?classValue),
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
 
@@ -165,28 +182,32 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 
 FillArray:PublicMethods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
-  Value:byHeap[?arrayHeap] = ?arrayValue.
+  _OptReifiedClass:Value(?type, ?classValue),
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
+  Value:byHeap[?arrayHeap] = ?arrayValue,
+  ImmutableHContextFromContext[?ctx] = ?hctx.
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
-// NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
-// TODO Merge common parts
-VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContextFromContext[?ctx] = ?hctx,
+ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
+ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
   java:lang:Class:getMethod(?to, ?param, ?from),
-  VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  Method:DeclaringType[?signature] = ?type,
-  Method:Modifier("public", ?signature),
-  ReifiedMethod:Value[?signature] = ?value,
+  VarPointsTo(_, ReifiedClass:Value[?type], ?ctx, ?from),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value:Heap[?constant] = ?constantHeap,
-  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap).
+  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap),
+  SupertypeOf(?superClass, ?type),
+  Method:DeclaringType[?signature] = ?superClass,
+  Method:Modifier("public", ?signature).
+
+// If it is a local and precise string, consider it a high-confidence inference
+ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
+  Var:DeclaringMethod(?to, ?inmethod),
+  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[].
 
 /*
 //VERSION-A
@@ -203,20 +224,21 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
+  _OptReifiedClass:Value(?type, ?classValue),
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContextFromContext[?ctx] = ?hctx,
+// getDeclaredMethod has two differences from getMethod: it retrieves
+// all methods, not just public ones, but it does not retrieve inherited
+// methods.
+ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
+ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
   java:lang:Class:getDeclaredMethod(?to, ?param, ?from),
-  VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  Method:DeclaringType[?signature] = ?type,
-  ReifiedMethod:Value[?signature] = ?value,
+  VarPointsTo(_, ReifiedClass:Value[?type], ?ctx, ?from),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value:Heap[?constant] = ?constantHeap,
-  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap).
+  MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap),
+  Method:DeclaringType[?signature] = ?type.
 
 
 /*************************************************************
@@ -242,7 +264,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
@@ -268,8 +290,9 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
   Value:byHeap[?arrayHeap] = ?arrayValue.
+
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
@@ -315,25 +338,29 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
+  _OptReifiedClass:Value(?type, ?classValue),
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
-// NOTE Used to be: Match every method name in the class (i.e. ignore ?param)!
-VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContextFromContext[?ctx] = ?hctx,
+ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
+ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
   java:lang:Class:getField(?to, ?param, ?from),
-  VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
+  VarPointsTo(_, ReifiedClass:Value[?type], ?ctx, ?from),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value:Heap[?constant] = ?constantHeap,
-  FieldNameMatchingStringConstant:Signature(?fld, ?constantHeap),
+  FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap),
   SupertypeOf(?superClass, ?type),
-  Field:DeclaringType[?fld] = ?superClass,
-  Field:Modifier("public", ?fld),
-  ReifiedField:Value[?fld] = ?value.
+  Field:DeclaringType[?signature] = ?superClass,
+  Field:Modifier("public", ?signature).
+
+// If it is a local and precise string, consider it a high-confidence inference
+ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
+  Var:DeclaringMethod(?to, ?inmethod),
+  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[].
 
 /*
 //VERSION-A
@@ -349,20 +376,18 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
-  ReflectiveAllocation[?invocation, _] = ?arrayHeap,
+  _OptReifiedClass:Value(?type, ?classValue),
+  _OptReflectiveAllocation(?arrayHeap, ?invocation),
   Value:byHeap[?arrayHeap] = ?arrayValue.
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-  ImmutableHContextFromContext[?ctx] = ?hctx,
+ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
+ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
   java:lang:Class:getDeclaredField(?to, ?param, ?from),
-  VarPointsTo(_, ?classValue, ?ctx, ?from),
-  ReifiedClass:Value[?type] = ?classValue,
+  VarPointsTo(_, ReifiedClass:Value[?type], ?ctx, ?from),
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value:Heap[?constant] = ?constantHeap,
-  FieldNameMatchingStringConstant:Signature(?fld, ?constantHeap),
-  Field:DeclaringType[?fld] = ?type,
-  ReifiedField:Value[?fld] = ?value.
+  FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap),
+  Field:DeclaringType[?signature] = ?type.
 
 
 /*************************************************************
@@ -407,10 +432,16 @@ ReflectiveBaseVar[?invocation] = ?to <-
  * NOTE  
  * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
+_OptVarToMethod[?var] = ?method <-
+  Var:DeclaringMethod(?var, ?method).
+  
+_Optjava:lang:Class:getClassLoader(?invocation, ?to, ?method) <-
+  java:lang:Class:getClassLoader(?invocation, ?to, ?from),
+  _OptVarToMethod[?from] = ?method.
+  
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
-  java:lang:Class:getClassLoader(?invocation, ?to, ?from),
-  Var:DeclaringMethod(?from, ?method),
+  _Optjava:lang:Class:getClassLoader(?invocation, ?to, ?method),
   ReachableContext(?ctx, ?method),
   Type:Id(?type:"java.lang.ClassLoader"),
   ReflectiveAllocation[?invocation, ?type] = ?heap,
@@ -432,3 +463,16 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   Type:Id(?type:"java.net.URL"),
   ReflectiveAllocation[?invocation, ?type] = ?heap,
   Value:byHeap[?heap] = ?value.
+
+
+/*************************************************************
+ * Auxiliaries
+ *************************************************************/
+NumberOfClassesMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(ClassNameMatchingStringConstant:Type(_, ?constant)).
+NumberOfMethodsMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(MethodNameMatchingStringConstant:Signature(_, ?constant)).
+NumberOfFieldsMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(FieldNameMatchingStringConstant:Signature(_, ?constant)).
+
+StringPrecisionThreshold[] = 10.

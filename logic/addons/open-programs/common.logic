@@ -1,0 +1,163 @@
+FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) <-
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?type, ?type) <-
+   ArrayType(?type).
+
+ConcreteType(?type) <- AllConcreteImplementations(?type, _).
+
+ObjToMock(?class) -> ReferenceType(?class).
+
+MockObjFromEntryPoint(?class),
+ObjToMock(?class) <-
+   EntryPoint(?method),
+   Method:DeclaringType[?method] = ?class,
+   !ClassModifier("abstract", ?class),
+   ReferenceType(?class).
+
+MockObjFromArray(?class),
+ObjToMock(?class) <-
+   ObjToMock(?type),
+   ArrayType(?type),
+   ComponentType[?type] = ?componentType,
+   StaticToActualType(?class, ?componentType).
+
+
+MockObjFromField(?fieldType) -> ReferenceType(?fieldType).
+
+#ifdef MOCK_OBJECTS_FOR_FIELDS
+MockObjFromField(?fieldType),
+ObjToMock(?fieldType) <-
+   FieldInformationOpt(_, ?class, ?fieldType),
+   !ClassModifier("abstract", ?fieldType),
+   ReferenceType(?fieldType),
+   ObjToMock(?class).
+ 
+FieldInformation(?signature, ?fieldtype, ?class) ->
+   Field(?signature), Type(?fieldtype), Type(?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   Field:Type[?signature] = ?fieldtype,
+   Field:DeclaringType[?signature] = ?class.
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   FieldInformation(?signature, ?fieldtype, ?staticType),
+   AllConcreteImplementations(?class, ?staticType).
+
+FieldInformation(?signature, ?fieldConcreteType, ?class) <-
+   FieldInformationOpt(?signature, ?class, ?fieldStaticType),
+   StaticToActualType(?fieldConcreteType, ?fieldStaticType).
+
+FieldInformationOpt(?signature, ?class, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class).
+   
+FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) ->
+   Field(?signature), Type(?fieldtype), Value(?basevalue).
+
+FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class),
+   MockObject(?basevalue, ?class).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
+   ImmutableHContext(?hctx), //TODO: hctx 
+   FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
+   MockObjectForType(?value, ?fieldtype).
+#endif
+
+StaticToActualTypeOpt(?staticType, ?class) <- StaticToActualType(?class, ?staticType).
+
+MockObjectForType(?value, ?staticType) <-
+   MockObject(?value, ?class),
+   StaticToActualTypeOpt(?staticType, ?class).
+
+ComponentTypeOpt(?arrayType, ?componentType) <-
+   ComponentType[?arrayType] = ?componentType.
+
+MockObjectForComponentType(?value, ?arrayType) <-
+   ComponentTypeOpt(?arrayType, ?componentType),
+   MockObjectForType(?value, ?componentType).
+
+// Try no arrayindexpointsto
+//ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
+//   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
+//   ArrayType(?arrayType),
+//   MockObjectForComponentType(?componentValue, ?arrayType).
+
+FormalsForEntryPoints(?method, ?formal) -> Method(?method), Var(?formal).
+
+FormalsForEntryPoints(?method, ?formal) <-
+   FormalParam[_, ?method] = ?formal,
+   EntryPoint(?method).
+
+
+MockObjFromFormal(?subtype),
+ObjToMock(?subtype),
+TypeForFormals(?formal, ?method, ?subtype) <-
+   FormalsForEntryPoints(?method, ?formal),
+   Var:Type[?formal] = ?staticType,
+   StaticToActualType(?subtype, ?staticType).
+
+MockForFormal(?value, ?formal, ?type, ?method) <-
+   TypeForFormals(?formal, ?method, ?type),
+#ifdef MULTIPLE_SEGREGATED_ANALYSES
+   Method:DeclaringType[?method] = ?class,
+   TypeToPartitionId[?class] = TypeToPartitionId[?type],
+#endif
+   MockObject(?value, ?type).
+   
+   
+
+// bind mock objects to formals
+MockObjectContext(?hctx, ?value, ?class),
+VarPointsTo(?hctx, ?value, ?ctx, ?formal)
+ <-
+   ContextForEntryPoint(?ctx, ?method),
+   HContextForEntryPoint(?hctx, ?method),
+   MockForFormal(?value, ?formal, ?class, ?method).
+
+// receivers for entry points
+
+HContextForEntryPoint(?hctx, ?method),
+#ifndef OPEN_PROGRAMS_IMMUTABLE_HCTX
+RecordMacro(?calleeCtx, ?value, ?hctx),
+#endif
+MockObjectContext(?hctx, ?value, ?class),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) <-
+#ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
+   ImmutableHContextFromContext[?calleeCtx] = ?hctx,
+#endif
+   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
+
+
+// REVIEW: clean up
+ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
+#ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
+#ifdef MergeOpenProgramEntryPointMacro
+MergeOpenProgramEntryPointMacro(?method, ?value, ?calleeCtx),
+#else
+MergeStartupMacro(?immutablehctx, ?value, ?calleeCtx),
+#endif
+#endif
+ContextForEntryPoint(?calleeCtx, ?method)
+ <-
+   ThisVar[?method] = ?receiver,
+   Method:DeclaringType[?method] = ?class,
+   MockObjectForType(?value, ?class),
+#ifndef MergeOpenProgramEntryPointMacro
+   ImmutableHContext(?immutablehctx),
+#endif
+#ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
+   ImmutableContext(?calleeCtx),
+#endif
+   EntryPoint(?method).
+
+
+ReachableContext(?ctx, ?method) <-  ContextForEntryPoint(?ctx, ?method).

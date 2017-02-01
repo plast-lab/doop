@@ -36,3 +36,11 @@
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[value] = newCtx
+
+
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value] = ctx \
+  <- Value:byId[valueId] = value
+
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[] = hctx

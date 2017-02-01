@@ -1,6 +1,7 @@
 #include "class-initialization.logic"
 #include "exceptions.logic"
 #include "finalization.logic"
+#include "android.logic"
 #include "implicit-reachable.logic"
 #include "native.logic"
 #include "reference.logic"
@@ -23,6 +24,11 @@ Value:byHeap[?heap] = ?value <-
 Value:Heap[?value] = ?heap <-
    Value:byHeap[?heap] = ?value.
 
+Value:byNum[?const] = ?value <-
+   Value:Num:Cons[?const] = ?value.
+Value:Num[?value] = ?const <-
+   Value:byNum[?const] = ?value.
+
 Value:byId[?id] = ?value <-
    Value:Mock:Cons[?id] = ?value.
 Value:byId[?id] = ?value <-
@@ -37,10 +43,37 @@ Value:Type[?value] = ?type <-
    HeapAllocation(?heap),
    HeapAllocation:Type[?heap] = ?type.
 
+// Only create values for numeric constants in a static initializer
+// (or initial field value) inside a class whose name contains
+// ".R$". We are trying to capture just the constants in Android "R"
+// nested classes. REVIEW to generalize.
+Value:Num:Cons[?const] = ?value,
+Value(?value),
+Value:Type[?value] = ?type <-
+//   NumConstant(?const),
+   AssignNumConstant:Id[?insn] = ?const,
+   Instruction:Method[?insn] = ?meth,
+   Method:SimpleName[?meth] = "<clinit>",
+   Method:DeclaringType[?meth] = ?class,
+   Type:Id(?class:?className),
+   string:substring[?className, _, 3] = ".R$",
+   ?type = Type:int[].
+
+Value:Num:Cons[?const] = ?value,
+Value(?value),
+Value:Type[?value] = ?type <-
+//   NumConstant(?const),
+   FieldInitialValue[?fld] = ?const,
+   Field:DeclaringType[?fld] = ?class,
+   Type:Id(?class:?className),
+   string:substring[?className, _, 3] = ".R$",
+   ?type = Type:int[].
+
 Value:isHeap(?value) <-
    Value:Heap:Cons[_] = ?value.
 Value:isNonHeap(?value) <-
-   Value:Mock:Cons[_] = ?value.
+   Value:Mock:Cons[_] = ?value;
+   Value:Num:Cons[_] = ?value.
 
 Value:Null[] = ?nullValue <-
    HeapAllocation:Null[] = ?nullHeap,
@@ -66,3 +99,38 @@ Value:DeclaringType[?value] = "java.lang.Object" <-
    Value:Null[] = ?value ;
    Value:byHeap[MainMethodArgArray[]] = ?value ;
    Value:byHeap[MainMethodArgArrayContent[]] = ?value.
+
+
+
+ImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
+InitialContext[] = ctx, InitContextMacro("<<initial-context>>").
+JVMStartupContext[] = ctx, InitContextMacro("<<jvm-startup-context>>").
+ClinitContext[] = ctx, InitContextMacro("<<clinit-context>>").
+
+// The main method is reachable
+ReachableContext(InitialContext[], ?method) <-
+  MainMethodDeclaration(?method).
+
+// Implicitly reachable methods are invoked by the JVM on startup.
+ReachableContext(JVMStartupContext[], ?method) <-
+  ImplicitReachable(?method).
+
+// If a class needs to be initialized, then its class initializer is invoked
+// Note: InitializedClass already deals with superclasses that need initialization
+ReachableContext(ClinitContext[], ?clinit) <-
+  InitializedClass(?class),
+  ClassInitializer[?class] = ?clinit.
+
+
+ImmutableHContext(hctx), InitHContextMacro("<<immutable-hcontext>>").
+JVMStartupHContext[] = hctx, InitHContextMacro("<<jvm-startup-hcontext>>").
+
+// Create initial objects with their heap contexts
+SystemThreadGroup(JVMStartupHContext[], ?alloc) <-
+  Value:byId["<<system-thread-group>>"] = ?alloc.
+
+MainThreadGroup(JVMStartupHContext[], ?alloc) <-
+  Value:byId["<<main-thread-group>>"] = ?alloc.
+
+MainThread(JVMStartupHContext[], ?alloc) <-
+  Value:byId["<<main-thread>>"] = ?alloc.

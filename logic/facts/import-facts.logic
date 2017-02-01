@@ -456,7 +456,7 @@ _StaticMethodInvocation(?ref, ?index, ?signature, ?method) ->
 +Instruction:Id(?x:?instruction),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _StaticMethodInvocation(?instruction, ?index, ?signature, ?method).
 
 
@@ -479,7 +479,7 @@ _SpecialMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +SpecialMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
@@ -502,7 +502,7 @@ _VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +VirtualMethodInvocation:Base[?x] = ?base,
-+MethodInvocation:Signature[?x] = ?signature <-
++MethodInvocation:Method[?x] = ?signature <-
    _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
@@ -1007,6 +1007,92 @@ _UnsupportedInstruction(?ref, ?index, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method <-
    _UnsupportedInstruction(?ref, ?index, ?method).
+
+
+// Activity
+lang:physical:storageModel[`_Activity] = "DelimitedFile".
+lang:physical:filePath[`_Activity] = "facts/Activity.facts".
+lang:physical:delimiter[`_Activity] = "\t".
+lang:physical:hasColumnNames[`_Activity] = false.
+_Activity(?id) ->
+   string(?id).
+
++Activity(?id) <-
+   _Activity(?id).
+
+
+// Service
+lang:physical:storageModel[`_Service] = "DelimitedFile".
+lang:physical:filePath[`_Service] = "facts/Service.facts".
+lang:physical:delimiter[`_Service] = "\t".
+lang:physical:hasColumnNames[`_Service] = false.
+_Service(?id) ->
+   string(?id).
+
++Service(?id) <-
+   _Service(?id).
+
+
+// ContentProvider
+lang:physical:storageModel[`_ContentProvider] = "DelimitedFile".
+lang:physical:filePath[`_ContentProvider] = "facts/ContentProvider.facts".
+lang:physical:delimiter[`_ContentProvider] = "\t".
+lang:physical:hasColumnNames[`_ContentProvider] = false.
+_ContentProvider(?id) ->
+   string(?id).
+
++ContentProvider(?id) <-
+   _ContentProvider(?id).
+
+
+// BroadcastReceiver
+lang:physical:storageModel[`_BroadcastReceiver] = "DelimitedFile".
+lang:physical:filePath[`_BroadcastReceiver] = "facts/BroadcastReceiver.facts".
+lang:physical:delimiter[`_BroadcastReceiver] = "\t".
+lang:physical:hasColumnNames[`_BroadcastReceiver] = false.
+_BroadcastReceiver(?id) ->
+   string(?id).
+
++BroadcastReceiver(?id) <-
+   _BroadcastReceiver(?id).
+
+
+// CallbackMethod
+lang:physical:storageModel[`_CallbackMethod] = "DelimitedFile".
+lang:physical:filePath[`_CallbackMethod] = "facts/CallbackMethod.facts".
+lang:physical:delimiter[`_CallbackMethod] = "\t".
+lang:physical:hasColumnNames[`_CallbackMethod] = false.
+_CallbackMethod(?id) ->
+   string(?id).
+
++CallbackMethod(?id) <-
+   _CallbackMethod(?id).
+
+
+// LayoutControl
+lang:physical:storageModel[`_LayoutControl] = "DelimitedFile".
+lang:physical:filePath[`_LayoutControl] = "facts/LayoutControl.facts".
+lang:physical:delimiter[`_LayoutControl] = "\t".
+lang:physical:hasColumnNames[`_LayoutControl] = false.
+_LayoutControl(?param1, ?param2, ?param3) ->
+  int[32](?param1),
+  string(?param2),
+  string(?param3).
+
++LayoutControl0(?id, ?typename, ?parent) <-
+   _LayoutControl(?id, ?typename, ?parent).
+
+// FieldInitialValue
+lang:physical:storageModel[`_FieldInitialValue] = "DelimitedFile".
+lang:physical:filePath[`_FieldInitialValue] = "facts/FieldInitialValue.facts".
+lang:physical:delimiter[`_FieldInitialValue] = "\t".
+lang:physical:hasColumnNames[`_FieldInitialValue] = false.
+_FieldInitialValue(?param1, ?param2) ->
+  string(?param1),
+  string(?param2).
+
++FieldInitialValue[?fld] = ?valueString <-
+   _FieldInitialValue(?fld, ?valueString).
 
 
 // Access Modifiers

@@ -1,8 +1,15 @@
+
 EntryPoint(?method) -> Method(?method).
 
 
 EntryPoint(?method) <-
    Method:Modifier("public", ?method),
+   !Method:Modifier("static", ?method),
+   !ClassModifier("private", ?class),
    FormalParam[_, ?method] = ?formal,
    Var:Type[?formal] = ?type,
-   ReferenceType(?type).
+   Method:DeclaringType[?method] = ?class,
+   Type:Id(?class:?typename),
+   string:substring[?typename, 0, 4] = "java".
+
+

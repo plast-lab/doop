@@ -1,0 +1,47 @@
+_NormalHeap(h) <- AssignNormalHeapAllocation(h,_,_).
+_AllocatedHeap(h) <- AssignHeapAllocation(h,_,_).
+_CIHeap(h) <- AssignContextInsensitiveHeapAllocation(h,_,_).
+_MergedHeap(h) <- HeapAllocation:Merge[_] = h.
+_MockValue(o) <- Value:Mock:Cons[_] = o.
+_MockHeap(h) <- HeapAllocation:Mock:Cons[_] = h.
+_ClassHeap(h) <- HeapAllocation:Class:Cons[_] = h.
+_VPTOpt(v,o) <- VarPointsTo(_,o,_,v).
+
+// Normal objects with allocation instructions
+VPTNormal(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _NormalHeap(h).
+
+// All objects with explicit allocations somewhere. There are also objects that
+// don't have explicit allocations. E.g., class constants that appear in the code,
+// strings representing type names that are computed reflectively (getName), etc.
+VPTAllocated(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _AllocatedHeap(h).
+
+VPTCI(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _CIHeap(h).
+
+VPTStringConstant(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, StringConstant(h).
+VPTCIandStringConstant(v,o) <- VPTCI(v,o), VPTStringConstant(v,o). // typically all
+
+VPTStringFactory(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, StringFactoryHeap(h).
+VPTCIandStringFactory(v,o) <- VPTCI(v,o), VPTStringFactory(v,o). // typically all
+
+VPTMerged(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _MergedHeap(h).
+VPTCIandMerged(v,o) <- VPTCI(v,o), VPTMerged(v,o).
+
+// Mock heap: reflective allocations, reified field/method objects, special initial objects, <<string-constant>>
+VPTMockHeap(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _MockHeap(h).
+VPTCIandMock(v,o) <- VPTCI(v,o), VPTMockHeap(v,o). // <<string-constant>>
+
+// Reified class objects
+VPTClassHeap(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, _ClassHeap(h).
+VPTCIandClass(v,o) <- VPTCI(v,o), VPTClassHeap(v,o).
+
+// Numeric constants
+VPTNum(v,o) <- _VPTOpt(v,o), Value:Num[o] = _.
+VPTCIandNum(v,o) <- VPTCI(v,o), VPTNum(v,o).
+
+// Mock values (not to be confused with mock heaps): taint values, etc.
+VPTMockVal(v,o) <- _VPTOpt(v,o), _MockValue(o).
+VPTCIandMockVal(v,o) <- VPTCI(v,o), VPTMockVal(v,o).
+
+// All others: merged string constants that still arise reflectively, layout control objects
+VPTOther(v,o) <- _VPTOpt(v,o), !VPTNormal(v,o), !VPTCI(v,o), !VPTNum(v,o), !VPTMerged(v,o), !VPTMockVal(v,o), !VPTMockHeap(v,o), !VPTClassHeap(v,o).
+

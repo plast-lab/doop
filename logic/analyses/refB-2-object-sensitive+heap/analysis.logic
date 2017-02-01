@@ -1,0 +1,19 @@
+// In this analysis, the real context is a pair of Values and the real
+// heap context a single Value. Keeping mapping functions is the way
+// to handle analyses where HContext = Context (since the language considers
+// them different types).
+ContextFromRealContext[?value1, ?value2] = ?ctx ->
+  Context(?ctx), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?value1,
+RealContext2FromContext[?ctx] = ?value2 <-
+  ContextFromRealContext[?value1, ?value2] = ?ctx.
+
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?value <-
+  HContextFromRealHContext[?value] = ?hctx.
+
+InitialHeapValue[] = ?initHeap <-
+  Value:byId["<<initial-context>>"] = ?initHeap.

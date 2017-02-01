@@ -1,7 +1,7 @@
 package org.clyze.deepdoop;
 
 import java.io.IOException;
-import org.clyze.Helper;
+import org.clyze.analysis.Helper;
 import org.clyze.deepdoop.system.Compiler;
 
 public class Main {

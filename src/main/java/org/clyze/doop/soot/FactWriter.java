@@ -1,15 +1,14 @@
 package org.clyze.doop.soot;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
-import soot.util.backend.ASMBackendUtils;
 import soot.tagkit.LineNumberTag;
+import soot.util.backend.ASMBackendUtils;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.soot.PredicateFile.*;
 
@@ -64,7 +63,6 @@ class FactWriter {
 
         return result;
     }
-
 
     void writeAndroidEntryPoint(SootMethod m) {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
@@ -496,7 +494,7 @@ class FactWriter {
     void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session) {
 		session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
-		session.calcUnitNumber(stmt);
+		session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -861,5 +859,48 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
+    }
+
+    void writeActivity(String activity) {
+        _db.add(ACTIVITY, activity);
+    }
+
+    void writeService(String service) {
+        _db.add(SERVICE, service);
+    }
+
+    void writeContentProvider(String contentProvider) {
+        _db.add(CONTENT_PROVIDER, contentProvider);
+    }
+
+    void writeBroadcastReceiver(String broadcastReceiver) {
+        _db.add(BROADCAST_RECEIVER, broadcastReceiver);
+    }
+
+    void writeCallbackMethod(String callbackMethod) {
+        _db.add(CALLBACK_METHOD, callbackMethod);
+    }
+
+    void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
+        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
+    }
+
+    void writeFieldInitialValue(SootField f) {
+        String fieldId = _rep.signature(f);
+        String valueString = f.getInitialValueString();
+        if (valueString != null && !valueString.equals("")) {
+            int pos = valueString.indexOf('@');
+            if (pos < 0) 
+                System.err.println("Unexpected format (no @) in initial field value");
+            else {
+                try {
+                    int value = (int) Long.parseLong(valueString.substring(pos+1), 16); // parse hex string, possibly negative int
+                    _db.add(FIELD_INITIAL_VALUE, fieldId, Integer.toString(value));
+                } catch (NumberFormatException e) {
+                    _db.add(FIELD_INITIAL_VALUE, fieldId, valueString.substring(pos+1));
+                    // if we failed to parse the value as a hex int, output it in full
+                }
+            }
+        }
     }
 }

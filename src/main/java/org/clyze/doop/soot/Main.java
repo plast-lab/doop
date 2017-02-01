@@ -4,6 +4,11 @@ import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
 import soot.jimple.infoflow.android.SetupApplication;
+import soot.jimple.infoflow.android.axml.AXmlNode;
+import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.ARSCFileParser;
+import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 import java.io.File;
 import java.util.*;
@@ -26,6 +31,7 @@ public class Main {
     private static boolean _onlyApplicationClassesFactGen = false;
     private static ClassFilter applicationClassFilter;
     private static String appRegex = "**";
+    private static boolean _runFlowdroid = false;
 
     private static boolean _bytecode2jimple = false;
     private static boolean _toStdout = false;
@@ -113,6 +119,9 @@ public class Main {
                     case "--allow-phantom":
                         _allowPhantom = true;
                         break;
+                    case "--run-flowdroid":
+                        _runFlowdroid = true;
+                        break;
                     case "--only-application-classes-fact-gen":
                         _onlyApplicationClassesFactGen = true;
                         break;
@@ -128,31 +137,30 @@ public class Main {
                     case "-h":
                     case "--help":
                     case "-help":
-                        System.err.println("usage: [options] file");
+                        System.err.println("\nusage: [options] file");
                         System.err.println("options:");
                         System.err.println("  --main <class>                        Specify the main name of the main class");
                         System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
                         System.err.println("  --full                                Generate facts by full transitive resolution");
-                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.err.println("  -d <directory>                        Specify where to generate csv fact files");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+                        System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
 
                         System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-
-                        System.err.println("  -h, -help                             Print this help message.");
                         System.exit(0);
                     case "--bytecode2jimpleHelp":
-                        System.err.println("usage: [options] file");
+                        System.err.println("\nusage: [options] file");
                         System.err.println("options:");
-                        System.err.println("  --ssa                                 Generate SSA facts, enabling flow-sensitive analysis");
-                        System.err.println("  --full                                Generate facts by full transitive resolution");
+                        System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
+                        System.err.println("  --full                                Generate Jimple/Shimple files by full transitive resolution");
                         System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
-                        System.err.println("  -d <directory>                        Specify where to generate csv fact files.");
-                        System.err.println("  -l <archive>                          Find classes in jar/zip archive.");
-                        System.err.println("  -lsystem                              Find classes in default system classes.");
+                        System.err.println("  -d <directory>                        Specify where to generate files");
+                        System.err.println("  -l <archive>                          Find classes in jar/zip archive");
+                        System.err.println("  -lsystem                              Find classes in default system classes");
+                        System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
                         System.exit(0);
                     default:
                         if (args[i].charAt(0) == '-') {
@@ -177,6 +185,11 @@ public class Main {
                 System.err.println("error: --stdout and -d options are not compatible");
                 System.exit(2);
             }
+            else if ((_inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
+                    (!_android)) {
+                System.err.println("error: the --platform parameter is mandatory for .apk inputs");
+                System.exit(3);
+            }
             else if (!_toStdout && _outputDir == null) {
                 _outputDir = System.getProperty("user.dir");
             }
@@ -196,23 +209,56 @@ public class Main {
         Set<String> apkClasses = null;
 
         Set<SootClass> classes = new HashSet<>();
-
+        List<AXmlNode> appServices = null;
+        List<AXmlNode> appActivities = null;
+        List<AXmlNode> appContentProviders = null;
+        List<AXmlNode> appBroadcastReceivers = null;
+        Map<String, Set<String>> appCallbackMethods = null;
+        Map<String, Set<PossibleLayoutControl>> appUserControls = null;
 
         if (_android) {
-            SetupApplication app = new SetupApplication(_androidJars, _inputs.get(0));
+            String apkLocation = _inputs.get(0);
+            SetupApplication app = new SetupApplication(_androidJars, apkLocation);
             soot.options.Options.v().set_process_multiple_dex(true);
 
             apkClasses = new HashSet<>();
-            apkClasses.addAll(SourceLocator.v().getClassesUnder(_inputs.get(0)));
+            apkClasses.addAll(SourceLocator.v().getClassesUnder(apkLocation));
 
-            System.out.println("Classes found  in apk: " + apkClasses.size()); //this finds only the classes.dex
+            System.out.println("Classes found  in apk: " + apkClasses.size());
 
-            app.getConfig().setCallbackAnalyzer(Fast);
-            app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
-            dummyMain = app.getDummyMainMethod();
-            if (dummyMain == null) {
-                throw new RuntimeException("Dummy main null");
+
+            if (_runFlowdroid) {
+                app.getConfig().setCallbackAnalyzer(Fast);
+                app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+                dummyMain = app.getDummyMainMethod();
+                if (dummyMain == null) {
+                    throw new RuntimeException("Dummy main null");
+                }
             }
+            else {
+                ProcessManifest processMan = new ProcessManifest(apkLocation);
+                String appPackageName = processMan.getPackageName();
+                ARSCFileParser resParser = new ARSCFileParser();
+                resParser.parse(apkLocation);
+                List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
+                DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
+                lfp.registerLayoutFilesDirect(apkLocation);
+                lfp.parseLayoutFileDirect(apkLocation);
+
+                // now collect the facts we need
+                Set<String> appEntrypoints = processMan.getEntryPointClasses();
+                appServices = processMan.getServices();
+                appActivities = processMan.getActivities();
+                appContentProviders = processMan.getProviders();
+                appBroadcastReceivers = processMan.getReceivers();
+                appCallbackMethods = lfp.getCallbackMethods();
+                appUserControls = lfp.getUserControls();
+
+//            System.out.println("All entry points:\n" + appEntrypoints);
+//            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
+//            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
+            }
+
         }
         else {
             for (String arg : _inputs) {
@@ -352,17 +398,50 @@ public class Main {
 
             db.flush();
 
-            if (_android)
-                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
-            else
-                if (_classicFactGen)
-                    driver.doInSequentialOrder(classes);
-                else {
-                    scene.getOrMakeFastHierarchy();
-                    // avoids a concurrent modification exception, since we may
-                    // later be asking soot to add phantom classes to the scene's hierarchy
-                    driver.doInParallel(classes);
+            if (_android) {
+                if (_runFlowdroid) {
+                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
+                    db.close();
+                    return;
                 }
+                else {
+                    for (AXmlNode node : appActivities) {
+                        writer.writeActivity(node.getAttribute("name").getValue().toString());
+                    }
+
+                    for (AXmlNode node : appServices) {
+                        writer.writeService(node.getAttribute("name").getValue().toString());
+                    }
+
+                    for (AXmlNode node : appContentProviders) {
+                        writer.writeContentProvider(node.getAttribute("name").getValue().toString());
+                    }
+
+                    for (AXmlNode node : appBroadcastReceivers) {
+                        writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                    }
+
+                    for (Set<String> callBackMethods : appCallbackMethods.values()) {
+                        for (String callbackMethod : callBackMethods) {
+                            writer.writeCallbackMethod(callbackMethod);
+                        }
+                    }
+
+                    for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
+                        for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
+                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                        }
+                    }
+                }
+            }
+            if (_classicFactGen)
+                driver.doInSequentialOrder(classes);
+            else {
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
+            }
             db.close();
         }
     }

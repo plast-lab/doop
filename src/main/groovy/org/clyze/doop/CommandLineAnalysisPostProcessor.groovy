@@ -3,6 +3,7 @@ package org.clyze.doop
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.*
 import org.clyze.doop.core.*
 
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
@@ -25,7 +26,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
         logger.info "-- Runtime metrics --"
         lines.sort()*.split(", ").each {
-            printf("%-80s %,d\n", it[0], it[1] as int)
+            printf("%-80s %,d\n", it[0], it[1] as long)
         }
 
         if (!analysis.options.X_STATS_NONE.value) {
@@ -36,7 +37,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
 
             logger.info "-- Statistics --"
             lines.sort()*.split(", ").each {
-                printf("%-80s %,d\n", it[1], it[2] as int)
+                printf("%-80s %,d\n", it[1], it[2] as long)
             }
         }
     }
@@ -50,7 +51,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         }
 
         def platform = analysis.options.PLATFORM.value
-        def inputName = FilenameUtils.getBaseName(analysis.inputs[0].toString())
+        def inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()

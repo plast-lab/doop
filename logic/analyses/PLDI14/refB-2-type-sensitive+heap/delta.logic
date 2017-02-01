@@ -1,8 +1,0 @@
-/**
- * Special calling contexts
- */
-PlusType(?type, "<<initial-context>>").
-PlusType(?type, "<<jvm-startup>>").
-PlusType(?type, "<<class-initialization>>").
-PlusType(?type, "<<immutable-context>>").
-PlusType(?type, "<<immutable-hcontext>>").

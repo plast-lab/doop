@@ -144,6 +144,8 @@ Var:Type[?var] = ?type ->
 Var:DeclaringMethod(?var, ?method) ->
    Var(?var), Method(?method).
 
+ApplicationVar(?var) -> Var(?var).
+
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
@@ -431,7 +433,7 @@ MethodInvocation:Line[?invocation] = ?line ->
    MethodInvocation(?invocation), int[64](?line).
 
 // The signature of the method being called
-MethodInvocation:Signature[?invocation] = ?signature ->
+MethodInvocation:Method[?invocation] = ?signature ->
    MethodInvocation(?invocation), Method(?signature).
 
 ApplicationMethod(?method) -> Method(?method).
@@ -529,6 +531,19 @@ Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint
 
 
 //-----------------------------------------------------------------------------
+// [Android-related]
+//-----------------------------------------------------------------------------
+
+Activity(?x) -> Type(?x).
+Service(?x) -> Type(?x).
+ContentProvider(?x) -> Type(?x).
+BroadcastReceiver(?x) -> Type(?x).
+CallbackMethod(?x) -> Method(?x).
+LayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
+LayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
+FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
+
+//-----------------------------------------------------------------------------
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
@@ -588,9 +603,9 @@ String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 lang:physical:capacity[`Field]               = 524288.
 lang:physical:capacity[`Method]              = 1048576. /* 2 ^ 20 */
 lang:physical:capacity[`MethodDescriptor]    = 1048576.
-lang:physical:capacity[`Instruction]         = 8388608. /* 2^23 */
-lang:physical:capacity[`Throw:Insn]          = 8388608. /* = instruction */
-lang:physical:capacity[`MethodInvocation]    = 8388608. /* = instruction */
+lang:physical:capacity[`Instruction]         = 134217728. /* 2^27 */
+lang:physical:capacity[`Throw:Insn]          = 134217728. /* = instruction */
+lang:physical:capacity[`MethodInvocation]    = 134217728. /* = instruction */
 lang:physical:capacity[`JVMDescriptor]       = 524288.
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 524288.
