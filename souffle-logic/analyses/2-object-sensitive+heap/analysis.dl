@@ -1,31 +1,19 @@
 #include "../../facts/flow-insensitive-schema.dl"
 #include "../../facts/flow-sensitive-schema.dl"
 #include "../../facts/to-flow-sensitive.dl"
-#include "../../facts/import-facts.dl"
 #include "../../facts/import-entities.dl"
+#include "../../facts/import-facts.dl"
 #include "../../facts/post-process.dl"
 #include "../../basic/basic.dl"
 #include "../../basic/method-resolution.dl"
 #include "../../basic/subclass.dl"
 #include "../../basic/superinterface.dl"
 #include "../../basic/type-hierarchy.dl"
-#include "../../main/implicit-reachable.dl"
 #include "../../main/implicit-reachable-declarations.dl"
-#include "../../main/class-initialization.dl"
+#include "../../main/implicit-reachable.dl"
 #include "../../main/class-initialization-declarations.dl"
+#include "../../main/class-initialization.dl"
 
-/*.type Type
-.type Var 
-.type MethodInvocation
-.type MethodSignature
-.type HeapAllocation
-.type Field
-.type Int
-.type SimpleName
-.type MethodDescriptor
-
-.type Instruction = MethodInvocation
-*/
 // This part is specific to 2objH. 
 .type Simple_Context = [ fst:HeapAllocation, snd:HeapAllocation]
 .type Simple_HContext = HeapAllocation
@@ -94,7 +82,6 @@ Simple_Assign(?ctxInvo, ?local, ?ctxMeth, ?return) :-
 Simple_VarPointsTo(?hctx, ?heap, ?toCtx, ?to) :-
   Simple_Assign(?toCtx, ?to, ?fromCtx, ?from),
   Simple_VarPointsTo(?hctx, ?heap, ?fromCtx, ?from).
-
 
 // New object allocation
 Simple_VarPointsTo(?hctx, ?heap, ?ctx, ?var) :-
