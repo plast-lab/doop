@@ -5,6 +5,7 @@ import java.util.jar.JarFile
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.*
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.*
@@ -17,7 +18,7 @@ import org.clyze.doop.system.*
  * protected instance methods to allow descendants to customize all possible
  * aspects of Analysis creation.
  */
-class AnalysisFactory {
+class DoopAnalysisFactory implements AnalysisFactory {
 
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
@@ -32,17 +33,17 @@ class AnalysisFactory {
         List<String> inputFilePaths
         List<String> platformFilePaths
         List<File> inputFiles
-        List<File>   platformFiles
+        List<File> platformFiles
 
         @Override
         String toString() {
             return [
-                    name:              name,
-                    options:           options.values().toString(),
-                    inputFilePaths:    inputFilePaths.toString(),
+                    name             : name,
+                    options          : options.values().toString(),
+                    inputFilePaths   : inputFilePaths.toString(),
                     platformFilePaths: platformFilePaths.toString(),
-                    inputFiles:        inputFiles.toString(),
-                    platformFiles:     platformFiles.toString()
+                    inputFiles       : inputFiles.toString(),
+                    platformFiles    : platformFiles.toString()
             ].toString()
         }
     }
@@ -82,24 +83,23 @@ class AnalysisFactory {
         if (options.SOUFFLE.value == true) {
             analysis = new SouffleAnalysis(
                     analysisId,
-                    outDir.toString(),
-                    cacheDir.toString(),
-                    name,
+                    name.replace(File.separator, "-"),
                     options,
                     context,
+                    outDir,
+                    cacheDir,
                     vars.inputFiles,
                     vars.platformFiles,
                     commandsEnv)
-        }
-        else {
+        } else {
             if (name != "sound-may-point-to")
                 analysis = new ClassicAnalysis(
                         analysisId,
-                        outDir.toString(),
-                        cacheDir.toString(),
-                        name,
+                        name.replace(File.separator, "-"),
                         options,
                         context,
+                        outDir,
+                        cacheDir,
                         vars.inputFiles,
                         vars.platformFiles,
                         commandsEnv)
@@ -107,15 +107,16 @@ class AnalysisFactory {
                 options.CFG_ANALYSIS.value = true
                 analysis = new SoundMayAnalysis(
                         analysisId,
-                        outDir.toString(),
-                        cacheDir.toString(),
-                        name,
+                        name.replace(File.separator, "-"),
                         options,
                         context,
+                        outDir,
+                        cacheDir,
                         vars.inputFiles,
                         vars.platformFiles,
                         commandsEnv)
             }
+
         }
         logger.debug "Created new analysis"
         return analysis
@@ -125,7 +126,7 @@ class AnalysisFactory {
      * Creates a new analysis, verifying the correctness of its name, options and inputFiles using
      * the default input resolution mechanism.
      */
-    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
+    Analysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
         context.add(inputFilePaths)
         return newAnalysis(id, name, options, context)
@@ -145,7 +146,7 @@ class AnalysisFactory {
 
         if (!isValid) {
             throw new RuntimeException("Invalid analysis id: $id. The id should contain only letters, digits, " +
-                    "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}.")
+                    "${EXTRA_ID_CHARACTERS.collect { "'$it'" }.join(', ')}.")
         }
         return trimmed
     }
@@ -200,10 +201,10 @@ class AnalysisFactory {
         def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
         def files = []
-        switch(platform) {
+        switch (platform) {
             case "java":
                 String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-                switch(version) {
+                switch (version) {
                     case 3:
                         files = ["${path}/rt.jar"]
                         break
@@ -221,95 +222,71 @@ class AnalysisFactory {
                 }
                 // generate the JRE constant for the preprocessor
                 AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
-                        id:"JRE1"+version,
-                        value:true,
+                        id: "JRE1" + version,
+                        value: true,
                         forPreprocessor: true
                 )
                 options[(jreOption.id)] = jreOption
                 break
             case "android":
+                if (platformInfo.size < 3)
+                    throw new RuntimeException("Invalid android platform: $platformInfo")
                 // If the user has given a platform ending in
                 // "_fulljars", then use the "full" subdirectory of
                 // the platforms library, otherwise use the "stubs"
                 // one. This permits use of two Android system JARs
                 // side-by-side: either the stubs provided by the
                 // official Android SDK or a custom Android build.
-                def fullJars = (platformInfo.size() > 2) && (platformInfo[2] == "fulljars")
-                String androidLibFlavor = fullJars ? "full" : "stubs"
-                String path = "${options.PLATFORMS_LIB.value}/Android/" + androidLibFlavor +
-                              "/Android/Sdk/platforms/android-${version}"
-                // The following flag controls whether doop uses
-                // different names for the platform JARs, so that they
-                // match the names of JARs generated by compiling
-                // Android from sources. Usage: "--platform
-                // android_24_fulljars_custom". Note: Because of Soot,
-                // the directory that these files are read from,
-                // should still contain an android.jar file (that
-                // points to core-libart_intermediates.jar).
-                def customAndroidJars = (platformInfo.size() > 2) && (platformInfo[2] == "fulljars_custom")
-                if (customAndroidJars) {
-                    // The names correspond to the JARs generated when building
-                    // Android 4.4 from sources (found in
-                    // out/target/common/obj/JAVA_LIBRARIES).
-                    files = ["${path}/bouncycastle_intermediates.jar",      // com.android.org.bouncycastle
-                             "${path}/conscrypt_intermediates.jar",         // conscrypt
-                             "${path}/core-junit_intermediates.jar",        // junit.framework
-                             "${path}/core-libart_intermediates.jar",       // java.lang
-                             "${path}/ext_intermediates.jar",               // com.android.i18n, org.apache.commons.codec.binary, org.apache.http, org.ccil.cowan.tagsoup
-                             "${path}/framework_intermediates.jar",         // android.app, android.view, android.webkit
-                             "${path}/libphotoviewer_appcompat_intermediates.jar", // android.support.v7.internal.widget
-                             "${path}/okhttp_intermediates.jar",            // com.android.okhttp
-                             "${path}/telephony-common_intermediates.jar",  // android.provider, android.telephony
-                    ]
-                }
-                else {
-                    switch(version) {
-                        case 7:
-                        case 15:
-                            files = ["${path}/android.jar",
-                                     "${path}/data/layoutlib.jar"]
-                            break
-                        case 16:
-                            files = ["${path}/android.jar",
-                                     "${path}/data/layoutlib.jar",
-                                     "${path}/uiautomator.jar"]
-                            break
-                        case 17:
-                        case 18:
-                        case 19:
-                        case 20:
-                        case 21:
-                        case 22:
-                            files = ["${path}/android.jar",
-                                     "${path}/data/icu4j.jar",
-                                     "${path}/data/layoutlib.jar",
-                                     "${path}/uiautomator.jar"]
-                            break
-                        case 23:
-                            files = ["${path}/android.jar",
-                                     "${path}/optional/org.apache.http.legacy.jar",
-                                     "${path}/data/layoutlib.jar",
-                                     "${path}/uiautomator.jar"]
-                            break
-                        case 24:
-                        case 25:
-                            files = ["${path}/android.jar",
-                                     "${path}/android-stubs-src.jar",
-                                     "${path}/optional/org.apache.http.legacy.jar",
-                                     "${path}/data/layoutlib.jar",
-                                     "${path}/uiautomator.jar"]
-                            break
-                        default:
-                            throw new RuntimeException("Invalid android version: $version")
-                    }
+                if (platformInfo[2] != "stubs" && platformInfo[2] != "fulljars")
+                    throw new RuntimeException("Invalid android platform: $platformInfo")
+                String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
+                String path = "${options.PLATFORMS_LIB.value}/Android/$androidLibFlavor/Android/Sdk/platforms/android-$version"
+                switch (version) {
+                    case 7:
+                    case 15:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/layoutlib.jar"]
+                        break
+                    case 16:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 17:
+                    case 18:
+                    case 19:
+                    case 20:
+                    case 21:
+                    case 22:
+                        files = ["${path}/android.jar",
+                                 "${path}/data/icu4j.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 23:
+                        files = ["${path}/android.jar",
+                                 "${path}/optional/org.apache.http.legacy.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    case 24:
+                    case 25:
+                        files = ["${path}/android.jar",
+                                 "${path}/android-stubs-src.jar",
+                                 "${path}/optional/org.apache.http.legacy.jar",
+                                 "${path}/data/layoutlib.jar",
+                                 "${path}/uiautomator.jar"]
+                        break
+                    default:
+                        throw new RuntimeException("Invalid android version: $version")
                 }
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
-            // FIXME: When "full" JARs are used, pick only the first
-            // one (assumed to be android.jar) or XML parsing fails.
-            if (androidLibFlavor.equals("full"))
-                files = [ files[0] ]
+                // FIXME: When "full" JARs are used, pick only the first
+                // one (assumed to be android.jar) or XML parsing fails.
+                if (androidLibFlavor.equals("full"))
+                    files = [files[0]]
         }
         return files
     }
@@ -449,12 +426,12 @@ class AnalysisFactory {
 
         logger.debug "---------------"
         AnalysisVars vars = new AnalysisVars(
-                name:              name,
-                options:           options,
-                inputFilePaths:    inputFilePaths,
+                name: name,
+                options: options,
+                inputFilePaths: inputFilePaths,
                 platformFilePaths: platformFilePaths,
-                inputFiles:        inputFiles,
-                platformFiles:     platformFiles
+                inputFiles: inputFiles,
+                platformFiles: platformFiles
         )
         logger.debug vars
         logger.debug "---------------"
@@ -480,13 +457,13 @@ class AnalysisFactory {
 
             //We process only the first jar for determining the application classes
             /*
-            Set excluded = ["*", "**"] as Set
-            analysis.jars.drop(1).each { Dependency jar ->
-                excluded += Helper.getPackages(jar.input())
-            }
+        Set excluded = ["*", "**"] as Set
+        analysis.jars.drop(1).each { Dependency jar ->
+            excluded += Helper.getPackages(jar.input())
+        }
 
-            Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
-            */
+        Set<String> packages = Helper.getPackages(analysis.jars[0].input()) - excluded
+        */
             Set<String> packages = Helper.getPackages(vars.inputFiles[0])
             vars.options.APP_REGEX.value = packages.sort().join(':')
         }
@@ -542,8 +519,7 @@ class AnalysisFactory {
         String path = env.PATH
         if (path) {
             path = "${lbHome}/bin:${path}"
-        }
-        else {
+        } else {
             path = "${lbHome}/bin"
         }
         env.PATH = path
@@ -552,15 +528,14 @@ class AnalysisFactory {
         String ldLibraryPath = vars.options.LD_LIBRARY_PATH.value
         if (ldLibraryPath) {
             ldLibraryPath = "${lbHome}/lib/cpp:${ldLibraryPath}"
-        }
-        else {
+        } else {
             ldLibraryPath = "${lbHome}/lib/cpp"
         }
         env.LD_LIBRARY_PATH = ldLibraryPath
 
         //LC_ALL
         env.LC_ALL = "en_US.UTF-8"
-        
+
         return env
     }
 }

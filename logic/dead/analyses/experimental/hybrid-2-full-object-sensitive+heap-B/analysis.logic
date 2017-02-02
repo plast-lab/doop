@@ -82,7 +82,7 @@ MyMergeBasis(?hctx, ?heap) <-
 // We also cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[RealHContextFromHContext[?hctx],?heap] = ?calleeCtx,
-OptimizeMerge[?hctx, ?heap] = ?calleeCtx <-
+CachedMerge[?hctx, ?heap] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?heap).
 
   

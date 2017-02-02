@@ -129,7 +129,7 @@ class FactGenerator implements Runnable {
 
 
     /* Check if a Type refers to a phantom class */
-    private boolean phantomBased(Type t) {
+    public static boolean phantomBased(Type t) {
         if (t instanceof RefLikeType) {
             if (t instanceof RefType)
                 return ((RefType) t).getSootClass().isPhantom();
@@ -139,7 +139,7 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    private boolean phantomBased(SootMethod m) {
+    public static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
         if (m.isPhantom())

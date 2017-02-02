@@ -23,16 +23,15 @@ RealHContextFromHContext[?hctx] = ?value,
 PartitionFromHContext[?hctx] = ?partitionId <-
   HContextFromRealHContext[?partitionId, ?value] = ?hctx.
 
-
 // horrible indexing, but there will only be a handful of such contexts
 ImmutableContextFromHContext[?hctx] = ?ctx <-
-  ImmutableContext[] = ?ctx,
+  ImmutableContext(?ctx),
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 ImmutableContextFromContext[?ctx1] = ?ctx2 <-
-  ImmutableContext[] = ?ctx2,
+  ImmutableContext(?ctx2),
   PartitionFromContext[?ctx1] = PartitionFromContext[?ctx2].
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext[] = ?hctx,
+  ImmutableHContext(n?hctx),
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 
 // Merge optimization hack
@@ -68,6 +67,14 @@ PartitionForInvocation[?invo] = ?partitionId <-
   Method:DeclaringType[?inmethod] = ?inClass,
   TypeToPartitionId[?inClass] = ?partitionId.
 
+PartitionForMethod[?method] = ?partitionId <-
+  Method:DeclaringType[?method] = ?inClass,
+  TypeToPartitionId[?inClass] = ?partitionId.
+   
+MethodInAllPartitions(?method) <-
+   Method:DeclaringType[?method] = ?type,
+   TypeInAllPartitions(?type).
+
 PartitionForResolvedInvocation[?type, ?invo] = ?partitionId <-
   MatchingMethodForInvocationAndType[?type, ?invo] = ?tomethod,
   Method:DeclaringType[?tomethod] = ?toclass,
@@ -75,26 +82,27 @@ PartitionForResolvedInvocation[?type, ?invo] = ?partitionId <-
   
 /*
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value).
 */
 
+
 /// Base the decision on the partition of the target method
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   Value:Type[?value] = ?valuetype,
   (PartitionForResolvedInvocation[?valuetype, ?invo] = PartitionForInvocation[?invo];
    TypeInAllPartitions(?valuetype)).
 
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   Value:Type[?value] = ?valuetype,
   !(PartitionForResolvedInvocation[?valuetype, ?invo] = _),
   !TypeInAllPartitions(?valuetype),
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   Value:Type[?value] = ?valuetype,
   PartitionForResolvedInvocation[?valuetype, ?invo] = ?partId,
@@ -102,23 +110,52 @@ OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
    !(PartitionForInvocation[?invo] = _)),
   !TypeInAllPartitions(?valuetype),
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
+// and for static methods
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx -> Context(?callerCtx), Instruction(?invo), Context(?calleeCtx).
+
+
+MergeStaticMacro(?callerCtx, ?invo, ?calleeCtx),
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+   MergeStaticBasis(?callerCtx, ?invo),
+   MethodInvocation:Method[?invo] = ?tomethod,
+   (PartitionForMethod[?tomethod] = PartitionForInvocation[?invo];
+    MethodInAllPartitions(?tomethod)).
+
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+   MergeStaticBasis(?callerCtx, ?invo),
+   MethodInvocation:Method[?invo] = ?tomethod,
+   !(PartitionForInvocation[?invo] = _),
+   !MethodInAllPartitions(?tomethod),
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+   MergeStaticBasis(?callerCtx, ?invo),
+   MethodInvocation:Method[?invo] = ?tomethod,
+   (PartitionForMethod[?tomethod] != PartitionForInvocation[?invo];
+   !(PartitionForInvocation[?invo] = _)),
+   !MethodInAllPartitions(?tomethod),
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
+
+
 
 
 /*
 /// Base the decision on the partition that allocated the receiver object
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   (PartitionForInvocation[?invo] = PartitionForValue[?value];
    ValueInAllPartitions(?value)).
 
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   !(PartitionForValue[?value] = _),
   !ValueInAllPartitions(?value),
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 
-OptimizeMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   PartitionForValue[?value] = ?partId,
   (?partId != PartitionForInvocation[?invo];
@@ -132,18 +169,18 @@ MyRecordBasis(?ctx, ?value) <-
   RecordBasis(_, ?ctx, ?value).
 
 RecordMacro(?ctx, ?value, ?hctx),
-OptimizeRecord[?ctx, ?value] = ?hctx <-
+CachedRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
   (PartitionFromContext[?ctx] = PartitionForValue[?value];
    ValueInAllPartitions(?value)).
 
-OptimizeRecord[?ctx, ?value] = ?hctx <-
+CachedRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
   !(PartitionForValue[?value] = _),
   !ValueInAllPartitions(?value),
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
-OptimizeRecord[?ctx, ?value] = ?hctx <-
+CachedRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
   PartitionForValue[?value] = ?partId,
   ?partId != PartitionFromContext[?ctx],

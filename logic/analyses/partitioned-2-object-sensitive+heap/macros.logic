@@ -7,11 +7,11 @@
   HContext(hctx), \
   HContextFromRealHContext[PartitionFromContext[ctx], RealContext2FromContext[ctx]] = hctx
 
-#define RecordBasisMacro(ctx, var, value) \
+#define AdvancedRecordBasisMacro(ctx, var, value) \
   RecordBasis(var, ctx, value)
   
-#define OptimizeRecordMacro(ctx, value, hctx) \
-  OptimizeRecord[ctx, value] = hctx
+#define CachedRecordMacro(ctx, value, hctx) \
+  CachedRecord[ctx, value] = hctx
 
 #define CompatibleContextAndHContextMacro(ctx, hctx) \
   PartitionFromContext[ctx] = PartitionFromHContext[hctx]
@@ -27,11 +27,11 @@
   ContextFromRealContext[PartitionFromHContext[hctx], \
                          RealHContextFromHContext[hctx], value] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(callerCtx, invocation, hctx, value)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  OptimizeMerge[invocation, hctx, value] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[invocation, hctx, value] = calleeCtx
 
 // For this analysis, static calls just keep the same context as the
 // caller. *Not* creating a new one, but pretending to, nonetheless,
@@ -41,6 +41,12 @@
   ContextFromRealContext[PartitionFromContext[callerCtx], \
                          RealContext1FromContext[callerCtx], \
                          RealContext2FromContext[callerCtx]] = calleeCtx
+                                         
+#define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
+  MergeStaticBasis(callerCtx, invocation)
+
+#define CachedMergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  CachedMergeStatic(callerCtx, invocation, calleeCtx)
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
@@ -52,7 +58,12 @@
 #define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
   ContextFromRealContext[PartitionFromHContext[hctx], \
-                         RealHContextFromHContext[hctx], value] = calleeCtx
+  RealHContextFromHContext[hctx], value] = calleeCtx
+
+
+#define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[PartitionForValue[value], value, value] = calleeCtx
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -69,10 +80,10 @@
                          RealContext2FromContext[callerCtx], value] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[partitionId, value, value] = ctx, \
-  predName[] = ctx <- Value:byId[valueId] = value, PartitionId(partitionId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[partitionId, value, value] = ctx \
+  <- Value:byId[valueId] = value, PartitionId(partitionId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[partitionId, value] = hctx, \
-  predName[] = hctx <- Value:byId[valueId] = value, PartitionId(partitionId)
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[partitionId, value] = hctx \
+  <- Value:byId[valueId] = value, PartitionId(partitionId)

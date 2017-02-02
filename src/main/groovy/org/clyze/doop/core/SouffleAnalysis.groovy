@@ -4,6 +4,8 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
+import org.clyze.analysis.Analysis
+import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.FileOps
 import org.clyze.doop.input.InputResolutionContext
@@ -15,25 +17,25 @@ import static org.apache.commons.io.FileUtils.*
 
 @CompileStatic
 @TypeChecked
-class SouffleAnalysis extends Analysis {
+class SouffleAnalysis extends DoopAnalysis {
     long sootTime
 
     protected SouffleAnalysis(String id,
-                              String outDirPath,
-                              String cacheDirPath,
                               String name,
                               Map<String, AnalysisOption> options,
                               InputResolutionContext ctx,
-                              List<File> inputs,
+                              File outDir,
+                              File cacheDir,
+                              List<File> inputFiles,
                               List<File> platformLibs,
                               Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
 
         new File(outDir, "meta").withWriter { BufferedWriter w -> w.write(this.toString()) }
     }
 
     String toString() {
-        return [id:id, name:safename, outDir:outDir, cacheDir:cacheDir, inputs:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
+        return [id:id, name:name, outDir:outDir, cacheDir:cacheDir, inputFiles:ctx.toString()].collect { Map.Entry entry -> "${entry.key}=${entry.value}" }.join("\n") +
                 "\n" +
                 options.values().collect { AnalysisOption option -> option.toString() }.sort().join("\n") + "\n"
     }
@@ -43,13 +45,13 @@ class SouffleAnalysis extends Analysis {
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
 
-        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + safename), new File(outDir.absolutePath + File.separator + "analyses"))
+        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name), new File(outDir.absolutePath + File.separator + "analyses"))
         copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "facts"), outDir)
         copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "basic"), outDir)
         copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "main"), outDir)
 
         File outAnalysisFile
-        outAnalysisFile = new File(outDir.absolutePath + File.separator + "analyses" + File.separator + safename + File.separator + "analysis.dl")
+        outAnalysisFile = new File(outDir.absolutePath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
         if (options.MAIN_CLASS.value) {
             outAnalysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
         }
@@ -131,7 +133,7 @@ class SouffleAnalysis extends Analysis {
 
     private void runSouffle(int jobs, File factsDir, File outDir, File analysisFile) {
         System.out.println("souffle -c -j$jobs -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath")
-        executor.execute("souffle -c -j$jobs -c -p./profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath")
+        executor.execute("souffle -c -j$jobs -c -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath")
     }
 
     @Override
@@ -143,11 +145,11 @@ class SouffleAnalysis extends Analysis {
 
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
-            inputs[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
+            inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputs.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            Collection<String> deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() + deps
         }
 
@@ -184,7 +186,7 @@ class SouffleAnalysis extends Analysis {
             params = params + ["--only-application-classes-fact-gen"]
         }
 
-        params = params + ["-d", factsDir.toString(), inputs[0].toString()]
+        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -199,19 +201,6 @@ class SouffleAnalysis extends Analysis {
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
         }
-    }
-
-
-    private String cacheMeta() {
-        Collection<String> inputJars = inputs.collect {
-            File file -> file.toString()
-        }
-        Collection<String> cacheOptions = options.values().findAll {
-            it.forCacheID
-        }.collect {
-            AnalysisOption option -> option.toString()
-        }.sort()
-        return (inputJars + cacheOptions).join("\n")
     }
 
     /**
@@ -234,6 +223,18 @@ class SouffleAnalysis extends Analysis {
         return new URLClassLoader(classpath, null as ClassLoader)
     }
 
+    private String cacheMeta() {
+        Collection<String> inputJars = inputFiles.collect {
+            File file -> file.toString()
+        }
+        Collection<String> cacheOptions = options.values().findAll {
+            it.forCacheID
+        }.collect {
+            AnalysisOption option -> option.toString()
+        }.sort()
+        return (inputJars + cacheOptions).join("\n")
+    }
+
     /**
      * Creates a new class loader for running averroes
      */
@@ -243,13 +244,13 @@ class SouffleAnalysis extends Analysis {
         String properties = "$outDir/averroes.properties"
 
         //Determine the library jars
-        Collection<String> libraryJars = inputs.drop(1).collect { it.toString() } + jreAverroesLibraries()
+        Collection<String> libraryJars = inputFiles.drop(1).collect { it.toString() } + jreAverroesLibraries()
 
         //Create the averroes properties
         Properties props = new Properties()
         props.setProperty("application_includes", options.APP_REGEX.value as String)
         props.setProperty("main_class", options.MAIN_CLASS as String)
-        props.setProperty("input_jar_files", inputs[0].toString())
+        props.setProperty("input_jar_files", inputFiles[0].toString())
         props.setProperty("library_jar_files", libraryJars.join(":"))
 
         //Concatenate the dynamic files
@@ -330,7 +331,7 @@ class SouffleAnalysis extends Analysis {
     protected void runJPhantom(){
         logger.info "-- Running jphantom to generate complement jar --"
 
-        String jar = inputs[0].toString()
+        String jar = inputFiles[0].toString()
         String jarName = FilenameUtils.getBaseName(jar)
         String jarExt = FilenameUtils.getExtension(jar)
         String newJar = "${jarName}-complemented.${jarExt}"
@@ -342,7 +343,7 @@ class SouffleAnalysis extends Analysis {
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
         //set the jar of the analysis to the complemented one
-        inputs[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
+        inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 
     @Override

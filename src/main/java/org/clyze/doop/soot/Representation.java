@@ -1,18 +1,14 @@
 package org.clyze.doop.soot;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import soot.*;
 import soot.jimple.*;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Representation {
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
-    private static Set<String> _heapSet = new HashSet<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;
@@ -127,7 +123,7 @@ public class Representation {
         return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    private String getMethodSignature(SootMethod m)
+    private synchronized String getMethodSignature(SootMethod m)
     {
         return m.getSignature();
     }
@@ -191,29 +187,23 @@ public class Representation {
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
         {
-            String heapAllocRepr = heapAlloc(inMethod, session.nextNumber(getMethodSignature(inMethod)));
-            if (_heapSet.contains(heapAllocRepr))
-                throw new RuntimeException("Heap allocation exists" + heapAllocRepr);
-            else
-                _heapSet.add(heapAllocRepr);
-            return heapAllocRepr;
+            return heapAlloc(inMethod, expr.getType(), session);
         }
         else if(expr instanceof NewMultiArrayExpr)
         {
-            String heapAllocRepr = heapAlloc(inMethod, session.nextNumber(getMethodSignature(inMethod)));
-            if (_heapSet.contains(heapAllocRepr))
-                throw new RuntimeException("Heap allocation exists" + heapAllocRepr);
-            else
-                _heapSet.add(heapAllocRepr);
-            return heapAllocRepr;        }
+
+            return heapAlloc(inMethod, expr.getType(), session);
+            //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
+        }
         else
         {
             throw new RuntimeException("Cannot handle new expression: " + expr);
         }
     }
 
-    private String heapAlloc(SootMethod inMethod, int numberInSession)
+    private String heapAlloc(SootMethod inMethod, Type type, Session session)
     {
-        return getMethodSignature(inMethod) + "/" + numberInSession;
+        String s = type.toString();
+        return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
     }
 }

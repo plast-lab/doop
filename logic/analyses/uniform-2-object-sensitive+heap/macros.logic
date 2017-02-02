@@ -14,11 +14,11 @@
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], invo, value] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invo, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invo, hctx, value) \
   MergeBasis(callerCtx, hctx, invo, value)
 
-#define OptimizeMergeMacro(callerCtx, invo, hctx, value, calleeCtx) \
-  OptimizeMerge[hctx, invo, value] = calleeCtx
+#define CachedMergeMacro(callerCtx, invo, hctx, value, calleeCtx) \
+  CachedMerge[hctx, invo, value] = calleeCtx
 
 // For this analysis, static calls use the invocation site and
 // the receiver object of the caller as a context.
@@ -51,10 +51,10 @@
   ContextFromRealContext[RealContext1FromContext[callerCtx], RealContext2FromContext[callerCtx], value] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value, invo, value] = ctx, \
-  predName[] = ctx <- Value:byId[valueId] = value, MethodInvocationValue(invo, valueId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value, invo, value] = ctx \
+  <- Value:byId[valueId] = value, MethodInvocationValue(invo, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx, \
-  predName[] = hctx <- Value:byId[valueId] = value
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx \
+  <- Value:byId[valueId] = value

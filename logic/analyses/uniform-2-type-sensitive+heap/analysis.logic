@@ -46,5 +46,5 @@ MyMergeBasis(?hctx, ?invocation, ?value) <-
 // cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[RealHContextFromHContext[?hctx], ?invocation, ClassToInstr[Value:DeclaringType[?value]]] = ?calleeCtx,
-OptimizeMerge[?hctx, ?invocation, ?value] = ?calleeCtx <-
+CachedMerge[?hctx, ?invocation, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?invocation, ?value).

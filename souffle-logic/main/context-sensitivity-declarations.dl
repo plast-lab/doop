@@ -69,6 +69,7 @@
 
 .decl ReachableContext(?ctx:Context, ?method:Method)
 
+
 .decl OptLoadInstanceField(?to:Var, ?signature:Field, ?base:Var)
 
 .decl OptLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
@@ -87,6 +88,7 @@
 
 .decl OptStoreArrayIndex(?from:Var, ?base:Var)
 
+.decl OptStoreIntoArray(?hctx:HContext, ?basehctx:HContext, ?basevalue:Value, ?value:Value)
 /**
  * Optimizations
  */

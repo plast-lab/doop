@@ -14,11 +14,11 @@
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(callerCtx, invocation, hctx, value)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  OptimizeMerge[hctx, value] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[hctx, value] = calleeCtx
 
 // For this analysis, static calls use additionally the invocation site as a context.
 #define MergeStaticMacro(callerCtx, invo, calleeCtx) \
@@ -64,12 +64,12 @@
   ContextComponent:Value[value] = valueComp
 
 
-#define InitContext(predName, valueId) \
+#define InitContextMacro(valueId) \
   Context(ctx), ContextFromRealContext[valueComp, valueComp] = ctx, \
-  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp, \
-  predName[] = ctx <- Value:byId[valueId] = value
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp \
+  <- Value:byId[valueId] = value
 
-#define InitHContext(predName, valueId) \
+#define InitHContextMacro(valueId) \
   HContext(hctx), HContextFromRealHContext[valueComp] = hctx, \
-  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp, \
-  predName[] = hctx <- Value:byId[valueId] = value
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp \
+  <- Value:byId[valueId] = value

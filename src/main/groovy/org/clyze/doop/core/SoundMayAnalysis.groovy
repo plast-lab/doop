@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
@@ -16,15 +17,15 @@ import org.clyze.deepdoop.system.*
 class SoundMayAnalysis extends ClassicAnalysis {
 
     protected SoundMayAnalysis(String id,
-                       String outDirPath,
-                       String cacheDirPath,
-                       String name,
-                       Map<String, AnalysisOption> options,
-                       InputResolutionContext ctx,
-                       List<File> inputs,
-                       List<File> platformLibs,
-                       Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
+                               String name,
+                               Map<String, AnalysisOption> options,
+                               InputResolutionContext ctx,
+                               File outDir,
+                               File cacheDir,
+                               List<File> inputFiles,
+                               List<File> platformLibs,
+                               Map<String, String> commandsEnvironment) {
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
     }
 
     @Override

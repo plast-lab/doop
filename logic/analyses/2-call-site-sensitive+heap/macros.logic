@@ -13,11 +13,11 @@
   Context(calleeCtx), \
   ContextFromRealContext[RealContext2FromContext[callerCtx], invocation] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(hctx, value, callerCtx, invocation)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  OptimizeMerge[callerCtx, invocation] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[callerCtx, invocation] = calleeCtx
 
 #define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
   Context(calleeCtx), \
@@ -40,10 +40,10 @@
   ContextFromRealContext[RealContext2FromContext[callerCtx], FakeInvocation:RegisterFinalize[value]] = newCtx
 
 
-#define InitContext(predName, valueId) \
-  Context(ctx), ContextFromRealContext[value, value] = ctx, \
-  predName[] = ctx <- MethodInvocationValue(value, valueId)
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[value, value] = ctx \
+  <- MethodInvocationValue(value, valueId)
 
-#define InitHContext(predName, valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx, \
-  predName[] = hctx <- MethodInvocationValue(value, valueId)
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[value] = hctx \
+  <- MethodInvocationValue(value, valueId)
