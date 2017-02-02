@@ -29,7 +29,6 @@ Value_DeclaringType(?value, ?type) :-
    Method_DeclaringType(?inmethod, ?type),
    !isStringConstant(?heap),
    !isClassHeap(?heap),
-   [?heap] = ?value,
    Value_Heap(?value, ?heap).
 
 Value_DeclaringType(?value, "java.lang.System") :-
