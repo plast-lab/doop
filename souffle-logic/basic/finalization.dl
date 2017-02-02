@@ -1,5 +1,3 @@
-#include "finalization-declarations.dl"
-
 AllocatedObjectSupportsFinalize(?heap, ?inmethod) :-
     AssignHeapAllocation(?heap, _, ?inmethod),
     HeapAllocation_Type(?heap, ?class),

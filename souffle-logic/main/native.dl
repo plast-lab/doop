@@ -1,0 +1,10 @@
+VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
+ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
+   ImmutableHContextFromContext(?ctx, ?hctx),
+   MainMethodDeclaration(?mainMethod),
+   ReachableContext(?ctx, ?mainMethod),
+   FormalParam(0, ?mainMethod, ?args),
+   Value_Heap(?argArray, ?argArrayHeap),
+   MainMethodArgArray(?argArrayHeap),
+   Value_Heap(?argArrayContent, ?argArrayContentHeap),
+   MainMethodArgArrayContent(?argArrayContentHeap).
