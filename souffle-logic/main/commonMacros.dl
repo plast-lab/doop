@@ -1,0 +1,3 @@
+#define PlusMethodInvocation(string) \
+   isInstruction(string), \
+   isMethodInvocation(string)

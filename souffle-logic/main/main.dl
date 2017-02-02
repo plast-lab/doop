@@ -9,13 +9,17 @@
 #include "threads.dl"
 #include "prologue.dl"
 
+#include "commonMacros.dl"
+
+#include "main-delta.dl"
+
 #if defined(REFLECTION)
 #include "reflection/rules.dl" 
 #endif
 
 FakeInvocation_RegisterFinalize(?value, ?invo) :-
    FakeInvocation_RegisterFinalize0(?heap, ?invo),
-   Value_byHeap(?heap, ?value).
+   Value_Heap(?value, ?heap).
 
 Value_isHeap(?value),
 Value_Heap(?value, ?heap),
