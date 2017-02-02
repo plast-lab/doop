@@ -7,6 +7,7 @@
 #include "reference.dl"
 #include "string-constants.dl"
 #include "threads.dl"
+#include "prologue.dl"
 
 #if defined(REFLECTION)
 #include "reflection/rules.dl" 
@@ -68,18 +69,21 @@ ReachableContext(?clinitContext, ?clinit) :-
   InitializedClass(?class),
   ClassInitializer(?class, ?clinit).
 
-InitHContext("<<immutable-hcontext>>")
-InitHContext("<<jvm-startup-hcontext>>")
+isImmutableHContext(hctx), InitHContext("<<immutable-hcontext>>")
+isJVMStartupHContext(hctx), InitHContext("<<jvm-startup-hcontext>>")
 
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),
-  Value_byId("<<system-thread-group>>", ?alloc).
+  ?alloc = ["<<system-thread-group>>"],
+  isValue(?alloc).
 
 MainThreadGroup(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),
-  Value_byId("<<main-thread-group>>", ?alloc).
+  ?alloc = ["<<main-thread-group>>"],
+  isValue(?alloc).
 
 MainThread(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),
-  Value_byId("<<main-thread>>", ?alloc).
+  ?alloc = ["<<main-thread>>"],
+  isValue(?alloc).

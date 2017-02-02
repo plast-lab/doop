@@ -110,11 +110,11 @@
 /**
  * Special heap abstractions.
  */
-.decl SystemThreadGroup(?hctx:HContext, ?value:Value)
+.decl SystemThreadGroup(?hctx:HContext, ?value:Value) output
 
-.decl MainThreadGroup(?hctx:HContext, ?value:Value)
+.decl MainThreadGroup(?hctx:HContext, ?value:Value) output
 
-.decl MainThread(?hctx:HContext, ?value:Value)
+.decl MainThread(?hctx:HContext, ?value:Value) output
 
 .decl TaintedValue(?value:Value)
 

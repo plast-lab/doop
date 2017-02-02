@@ -1,0 +1,11 @@
+
+HeapAllocation_Type(?id, ?type),
+isHeapAllocation(?id) :-
+   (?id = "<<system-thread-group>>";
+    ?id = "<<main-thread-group>>"),
+   ?type = "java.lang.ThreadGroup".
+
+HeapAllocation_Type(?id, ?type),
+isHeapAllocation(?id) :-
+   ?id = "<<main-thread>>",
+   ?type = "java.lang.Thread".
