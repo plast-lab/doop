@@ -1,5 +1,6 @@
 #include "context-sensitivity-declarations.dl"
 
+
 // This is a temporary hack. See near bottom for a proper definition of
 // these predicates. Unfortunately derived predicates don't seem to
 // be supported by the join optimizer currently.
