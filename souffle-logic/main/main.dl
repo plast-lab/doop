@@ -1,3 +1,5 @@
+#include "commonMacros.dl"
+
 #include "class-initialization.dl"
 #include "exceptions.dl"
 #include "finalization.dl"
@@ -7,11 +9,10 @@
 #include "reference.dl"
 #include "string-constants.dl"
 #include "threads.dl"
-#include "prologue.dl"
-
-#include "commonMacros.dl"
 
 #include "main-delta.dl"
+
+#include "prologue.dl"
 
 #if defined(REFLECTION)
 #include "reflection/rules.dl" 

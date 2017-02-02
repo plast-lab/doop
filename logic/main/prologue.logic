@@ -10,7 +10,6 @@ MockHeapConsMacro(?id, ?type, ?heap) <-
    ?id = "java.io.UnixFileSystem.list/new java.lang.String",
    ?type = "java.lang.String".
 
-
 MockHeapConsMacro(?id, ?type, ?heap) <-
    (?id = "<<string-constant>>";
     ?id = "<<reflection-string-constant>>"),

@@ -1,0 +1,24 @@
+.decl SpecialLibraryObject(?heap:HeapAllocation)
+
+SpecialLibraryObject(?heap) :-
+  AssignHeapAllocation_Heap(?insn, ?heap),
+  Instruction_Method(?insn, ?method),
+  SpecialLibraryMethod(?method).
+
+.decl SpecialLibraryMethod(?method:Method)
+SpecialLibraryMethod(?method) :-
+  Method_DeclaringType(?method, ?class),
+  SpecialLibraryClass(?class).
+
+.decl SpecialLibraryClass(?class:Type)
+SpecialLibraryClass(?class) :-
+  isClassType(?class),
+  !ApplicationClass(?class),
+  !CollectionLibraryClass(?class).
+
+.decl CollectionLibraryClass(?class:Type)
+CollectionLibraryClass(?class) :-
+  isClassType(?class),
+  !ApplicationClass(?class),
+  isType(?class),
+  contains(?class, "java.util").

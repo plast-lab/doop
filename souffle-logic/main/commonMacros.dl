@@ -1,3 +1,44 @@
+//TODO: Revisit regarding constructors?
+#define NormalHeapConsMacro(heap, type) \
+   isHeapAllocation(heap), \
+   isNormalHeap(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define StringConstantConsMacro(heap, type) \
+   isHeapAllocation(heap), \
+   isStringConstant(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define ClassHeapConsMacro(heap, type) \
+   isHeapAllocation(heap) \
+   isClassHeap(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define MockHeapConsMacro(heap, type) \
+   isHeapAllocation(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define MockValueConsMacro(value, type) \
+   isValue(value), \
+   Value_Type(value, type)
+
+#define PlusVar(var, method,type) \
+   isVar(var), \
+   Var_Type(var, type), \
+   Var_DeclaringMethod(var, method)
+
+#define PlusType(type) \
+   isType(type) \
+
 #define PlusMethodInvocation(string) \
    isInstruction(string), \
    isMethodInvocation(string)
+
+#define PlusVirtualMethodInvocation(ins) \
+   isVirtualMethodInvocation_Insn(ins)
+
+#define PlusSpecialMethodInvocation(ins) \
+   isSpecialMethodInvocation_Insn(ins)
+
+#define PlusStaticMethodInvocation(ins) \
+   isStaticMethodInvocation_Insn(ins)
