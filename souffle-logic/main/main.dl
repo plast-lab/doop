@@ -16,6 +16,7 @@ FakeInvocation_RegisterFinalize(?value, ?invo) :-
    FakeInvocation_RegisterFinalize0(?heap, ?invo),
    Value_byHeap(?heap, ?value).
 
+Value_isHeap(?value),
 Value_Heap(?value, ?heap),
 isValue(?value),
 Value_Type(?value, ?type) :-
