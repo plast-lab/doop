@@ -229,7 +229,8 @@ public class Main {
 
             if (_runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
-                app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+                String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
+                app.calculateSourcesSinksEntrypoints(filename);
                 dummyMain = app.getDummyMainMethod();
                 if (dummyMain == null) {
                     throw new RuntimeException("Dummy main null");
