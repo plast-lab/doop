@@ -1,10 +1,10 @@
 #include "class-initialization.dl"
 #include "exceptions.dl"
-//#include "finalization.dl"
+#include "finalization.dl"
 //#include "android.dl"
 #include "implicit-reachable.dl"
-//#include "native.dl"
-//#include "reference.dl"
+#include "native.dl"
+#include "reference.dl"
 #include "string-constants.dl"
 #include "threads.dl"
 
