@@ -50,7 +50,7 @@ ReifiedComponent[?type] = ?heap
   ?id = "<android component object " + ?typeStr + ">".
 
 // Create a new heap object per control object declared in layout (XML) resources.
-MockHeapConsMacro(?id, ?type, ?heap),
+MockHeapConsMacro(?heapId, ?type, ?heap),
 ReifiedLayoutControl[?type,?id] = ?heap
 <-
   LayoutControl(?id, ?type, _),
