@@ -1,0 +1,54 @@
+/*****************************************************************************
+ * Throw statements
+ *****************************************************************************/
+
+/**
+ * A method throws an exception in a context if there is a throw statement in
+ * the method, and the thrown variable points to an object in this context, but
+ * this object is not immediately caught by an exception handler (ThrowPointsTo
+ * rule).
+ * If the object is a caught, then it is assigned to the formal parameter of
+ * the exeception handler (VarPointsTo rule).
+ */
+
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
+    Throw(?ref, ?var),
+    VarPointsTo(?hctx, ?value, ?ctx, ?var),
+    Value_Type(?value, ?valuetype),
+    !(ExceptionHandler_At(?valuetype, ?ref, _)),
+    Instruction_Method(?ref, ?method).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
+    Throw(?ref, ?var),
+    VarPointsTo(?hctx, ?value, ?ctx, ?var),
+    Value_Type(?value, ?valuetype),
+    ExceptionHandler_At(?valuetype, ?ref, ?handler),
+    ExceptionHandler_FormalParam(?handler, ?param).
+
+/*****************************************************************************
+ * Method invocations
+ *****************************************************************************/
+
+/**
+ * A method M1 throws an exception in a context if there is a call graph edge
+ * from an invocation in M1 to some method M2 and the method M2 throws a an
+ * exception for this specific (context-sensitive) call graph edge. Also, the
+ * exception should not be caught immediately by an exception handler in M1
+ * (ThrowPointsTo rule).
+ * If there is such an exception handler, then the exception object is assigned
+ * to the formal parameter of the exception handler (VarPointsTo rule).
+ */
+
+ThrowPointsTo(?hctx, ?value, ?callerCtx, ?callerMethod) :-
+    CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+    ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
+    Value_Type(?value, ?valuetype),
+    !(ExceptionHandler_At(?valuetype, ?invocation, _)),
+    Instruction_Method(?invocation, ?callerMethod).
+
+VarPointsTo(?hctx, ?value, ?callerCtx, ?param) :-
+    CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+    ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
+    Value_Type(?value, ?valuetype),
+    ExceptionHandler_At(?valuetype, ?invocation, ?handler),
+    ExceptionHandler_FormalParam(?handler, ?param).

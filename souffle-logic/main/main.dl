@@ -1,5 +1,5 @@
 #include "class-initialization.dl"
-//#include "exceptions.dl"
+#include "exceptions.dl"
 //#include "finalization.dl"
 //#include "android.dl"
 #include "implicit-reachable.dl"

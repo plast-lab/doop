@@ -1,5 +1,5 @@
 #include "class-initialization-declarations.dl"
-//#include "exceptions-declarations.dl"
+#include "exceptions-declarations.dl"
 #include "implicit-reachable-declarations.dl"
 //#include "string-constants-declarations.dl"
 #include "threads-declarations.dl"
