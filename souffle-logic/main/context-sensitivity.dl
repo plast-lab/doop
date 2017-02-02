@@ -68,7 +68,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 #else /* there is optimized behavior available */
   RecordBasisMacro(?ctx, ?var, ?value) :-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_byHeap(?heap, ?value),
+  Value_Heap(?value, ?heap),
   ReachableContext(?ctx, ?inmethod).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
@@ -89,7 +89,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_byHeap(?heap, ?value),
+  Value_Heap(?value, ?heap),
   ReachableContext(?ctx, ?inmethod),
   Value_Type(?value, ?type),
   RecordArrayMacro(?ctx, ?value, ?hctx),
@@ -101,14 +101,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
-  Value_byHeap(?heap, ?value),
+  Value_Heap(?value, ?heap),
   RecordMacro(?ctx, ?value, ?hctx),
   ReachableContext(?ctx, ?inmethod).
 
 #ifdef RecordRefinedMacro
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_byHeap(?heap, ?value),
+  Value_Heap(?value, ?heap),
   RecordRefinedMacro(?ctx, ?value, ?hctx),
   ReachableContext(?ctx, ?inmethod).
   //TODO fix: ObjectShouldBeRefined(?value)
@@ -117,7 +117,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
-  Value_byHeap(?heap, ?value),
+  Value_Heap(?value, ?heap),
   ReachableContext(?ctx, ?inmethod).
 
 /**
@@ -144,15 +144,6 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    ReachableContext(?toCtx, ?inmethod),
    ImmutableHContextFromContext(?toCtx, ?hctx).
 
-
-/**
- * Local assignments
-Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
-  AssignLocal(?from, ?to, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  Var:Type[?to] = ?type.
-*/
-
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
@@ -163,6 +154,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 /**
  * Cast assignments
  */
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   Reachable(?inmethod),
   AssignCast(?type, ?from, ?to, ?inmethod),
@@ -187,12 +179,13 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
 /**
  * Store instance fields
  */
+
 .decl NotSpecialValue(?value:Value)
 
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  //Value:Null[] != ?basevalue,
+  !Value_Null(?basevalue),
   NotSpecialValue(?value).
 
 NotSpecialValue(?value) :- (Value_Heap(?value, ?heap), !SpecialObject(?heap));
@@ -243,11 +236,11 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 /**
  * Load array index
  */
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
    NotEmptyArrayValue(?basevalue),
    LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
    ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
-
 
 .decl NotEmptyArrayValue(?value:Value)
 
@@ -258,8 +251,11 @@ NotEmptyArrayValue(?value) :-
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) :-
   ReachableLoadArrayIndexBase(?base),
-  LoadArrayIndex(?base, ?to, _),
+  OptLoadArrayIndex(?to, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+OptLoadArrayIndex(?to, ?base) :-
+  LoadArrayIndex(?base, ?to, _).
 
 .decl ReachableLoadArrayIndexBase(?base:Var)
 
@@ -270,7 +266,6 @@ ReachableLoadArrayIndexBase(?base) :-
 /**
  * Store array index
  */
-.decl OptStoreIntoArray(?hctx:HContext, ?basehctx:HContext, ?basevalue:Value, ?value:Value)
 
 OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
@@ -303,8 +298,6 @@ OptStoreArrayIndex(?from, ?base) :-
 /**
  * Assignments for method invocations
  */
-
-.decl OptInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 
 OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),

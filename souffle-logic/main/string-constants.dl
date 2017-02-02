@@ -1,0 +1,9 @@
+/**
+ * Join with AssignHeapAllocation for performance.
+ */
+.decl HeapAllocation_Special(?heap:HeapAllocation)
+
+
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) :-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  ! HeapAllocation_Special(?heap).

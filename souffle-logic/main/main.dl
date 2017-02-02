@@ -5,7 +5,7 @@
 #include "implicit-reachable.dl"
 //#include "native.dl"
 //#include "reference.dl"
-//#include "string-constants.dl"
+#include "string-constants.dl"
 //#include "threads.dl"
 
 #if defined(REFLECTION)

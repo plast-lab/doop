@@ -77,6 +77,8 @@
 
 .decl OptStoreInstanceField(?from:Var, ?signature:Field, ?base:Var)
 
+.decl OptInterproceduralAssign(?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+
 .decl ReachableSpecialMethodInvocation(?invocation:MethodInvocation, ?base:Var)
 
 .decl ReachableVirtualMethodInvocation(?invocation:MethodInvocation, ?base:Var)

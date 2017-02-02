@@ -150,7 +150,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
 
 
 /**
- * Local assignments
+ * Local Assignments
 Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
   AssignLocal(?from, ?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
