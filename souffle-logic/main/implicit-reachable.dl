@@ -7,7 +7,7 @@ Reachable(?method) :-
     ImplicitReachable(?method).
 
 ImplicitReachable(sig) :-
-   AndroidEntryPoint(sig).
+    AndroidEntryPoint(sig).
 
 ImplicitReachable("<java.lang.System: void initializeSystemClass()>").
 

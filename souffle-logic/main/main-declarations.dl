@@ -1,11 +1,11 @@
 #include "class-initialization-declarations.dl"
-//#include "exceptions-declarations.logic"
+//#include "exceptions-declarations.dl"
 #include "implicit-reachable-declarations.dl"
-//#include "string-constants-declarations.logic"
-//#include "threads-declarations.logic"
+//#include "string-constants-declarations.dl"
+#include "threads-declarations.dl"
 
 #if defined(REFLECTION)
-#include "reflection/declarations.logic" 
+#include "reflection/declarations.dl"
 #endif
 
 .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
