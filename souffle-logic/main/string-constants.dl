@@ -91,7 +91,7 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    isHeapAllocation(?heapRepr),
    ?heapRepr = "<<string-buffer>>").
 
-.decl _RepresentativesToPickFrom(?heapRepr:symbol, ?heap:HeapAllocation)
+.decl _RepresentativesToPickFrom(?heapRepr:symbol, ?heap:HeapAllocation) output
 
 _RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
@@ -101,12 +101,18 @@ _RepresentativesToPickFrom(?heapRepr, ?heap) :-
 
 // If none of the special cases applies, just pick the lowest-id potential
 // representative.
-/*_HeapAllocation_AggMerge(?heap, ?mergeHeap) :-
-  agg<<?mergeHeap = min(?heapRepr)>>(_RepresentativesToPickFrom(?heapRepr, ?heap)).
+.decl _HeapAllocation_AggMerge(?heap:HeapAllocation, ?mergeHeap:symbol) output
+.decl _MinHeapRepr(?heapRepr:symbol)
 
-HeapAllocation:Merge[?heap] = ?mergeHeap <-
-  _HeapAllocation:AggMerge[?heap] = ?mergeHeap.
-*/
+//_MinHeapRepr(minHeapRepr) :-
+//    minHeapRepr = min a: _RepresentativesToPickFrom(a, _).
+
+//_HeapAllocation_AggMerge(?heap, ?mergeHeap) :-
+//  isHeapAllocation(?heap),
+//  ?mergeHeap =
+
+//HeapAllocation_Merge(?heap, ?mergeHeap) :-
+//  _HeapAllocation_AggMerge(?heap, ?mergeHeap).
 
 /*************************************************************
  * String constants

@@ -8,3 +8,219 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    MainMethodArgArray(?argArrayHeap),
    Value_Heap(?argArrayContent, ?argArrayContentHeap),
    MainMethodArgArrayContent(?argArrayContentHeap).
+
+/**
+ *
+ *  Conversion to souffle logic native-delta.logic below
+ *
+ **/
+
+#define PlusAssignLocal(strFrom, strTo, strMethod) \
+  AssignLocal(strFrom, strTo, strMethod) :- \
+    isVar(strFrom), \
+    isVar(strTo), \
+    isMethod(strMethod)
+
+#define PlusStoreStaticField(method, local, field) \
+  StoreStaticField(local, field, method) :- \
+    isMethod(method), \
+    isVar(local), \
+    isField(field)
+
+#define SimulateNativeAllocation(strMethod, strHeap, strConstructor) \
+  AssignHeapAllocation(strHeap, ?return, strMethod) \
+    :- \
+      isMethod(strMethod), \
+      ReturnVar(?return, strMethod), \
+      isHeapAllocation(strHeap). \
+  \
+  SpecialMethodInvocation_Base(cat(strMethod, cat("/native", strConstructor)), ?return), \
+  Instruction_Method(cat(strMethod, cat("/native", strConstructor)), strMethod), \
+  MethodInvocation_Method(cat(strMethod, cat("/native", strConstructor)), strConstructor), \
+  PlusSpecialMethodInvocation(cat(strMethod, cat("/native", strConstructor))), \
+  Instruction_Index(cat(strMethod, cat("/native", strConstructor)), ?index) \
+    :- \
+      isMethod(strMethod), \
+      ReturnVar(?return, strMethod), \
+      isMethod(strConstructor), \
+      ?index = 1
+
+
+#define SimulateNativeStringArrayAllocation(strMethod, strArray, strElement, strElementType) \
+  AssignHeapAllocation(strArray, ?return, strMethod) \
+    :- \
+      isMethod(strMethod), \
+      ReturnVar(?return, strMethod), \
+      isHeapAllocation(strArray). \
+  \
+  isVar(cat(strMethod, "/@native-array-element")), \
+  Var_Type(cat(strMethod, "/@native-array-element"), strElementType), \
+  Var_DeclaringMethod(cat(strMethod, "/@native-array-element"), strMethod), \
+  AssignHeapAllocation(strElement, cat(strMethod, "/@native-array-element"), strMethod), \
+  StoreArrayIndex(cat(strMethod, "/@native-array-element"), ?base, strMethod) \
+    :- \
+      isMethod(strMethod), \
+      ReturnVar(?base, strMethod), \
+      isType(strElementType), \
+      isHeapAllocation(strElement)
+
+#define SimulateNativeStaticToVirtual(strMethod, strVirtual) \
+  PlusVirtualMethodInvocation(cat(strMethod, cat("/native ", strVirtual))), \
+  VirtualMethodInvocation(cat(strMethod, cat("/native ", strVirtual)), strVirtual, strMethod), \
+  VirtualMethodInvocation_Base(cat(strMethod, cat("/native ", strVirtual)), ?base), \
+  Instruction_Method(cat(strMethod, cat("/native ", strVirtual)), strMethod), \
+  MethodInvocation_Method(cat(strMethod, cat("/native ", strVirtual)), strVirtual), \
+  Instruction_Index(cat(strMethod, cat("/native ", strVirtual)), ?index) \
+    :- \
+      isMethod(strMethod), \
+      FormalParam(0, strMethod, ?base), \
+      isMethod(strVirtual), \
+      ?index = 1.\
+  \
+  PlusMethodInvocation(cat(strMethod, cat("/native ", strVirtual))), \
+  AssignReturnValue(cat(strMethod, cat("/native ", strVirtual)), ?return) \
+    :- \
+      isMethod(strMethod), \
+      ReturnVar(?return, strMethod)
+
+/**********************************************************************************
+ *
+ * java.lang.Object
+ *
+ **********************************************************************************/
+
+/**
+ * <java.lang.Object: java.lang.Object clone()>
+ *
+ * TODO could throw CloneNotSupportedException
+ *
+ * TODO should check if the object is Cloneable.
+ *
+ * TODO should return a clone of the heap allocation (not
+ *      identity). The behaviour implemented here is based on Soot.
+ */
+PlusAssignLocal(
+  "java.lang.Object.clone/@this",
+  "java.lang.Object.clone/@native-return",
+  "<java.lang.Object: java.lang.Object clone()>").
+
+/**********************************************************************************
+ *
+ * java.lang.System
+ *
+ ***************************************************/
+
+/**
+ * <java.lang.System: void setIn0(java.io.InputStream)>
+ */
+PlusStoreStaticField(
+  "<java.lang.System: void setIn0(java.io.InputStream)>",
+  "java.lang.System.setIn0/@param0",
+  "<java.lang.System: java.io.InputStream in>").
+
+/**
+ * <java.lang.System: void setOut0(java.io.PrintStream)>
+ */
+PlusStoreStaticField(
+  "<java.lang.System: void setOut0(java.io.PrintStream)>",
+  "java.lang.System.setOut0/@param0",
+  "<java.lang.System: java.io.PrintStream out>").
+
+/**
+ * <java.lang.System: void setErr0(java.io.PrintStream)>
+ */
+PlusStoreStaticField(
+  "<java.lang.System: void setErr0(java.io.PrintStream)>",
+  "java.lang.System.setErr0/@param0",
+  "<java.lang.System: java.io.PrintStream err>").
+
+/**
+ * <java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>
+ */
+PlusVar(cat(?invocation, "/@tmp-arraycopy"), ?inmethod, ?tmpType),
+LoadArrayIndex(?src, cat(?invocation, "/@tmp-arraycopy"), ?inmethod),
+StoreArrayIndex(cat(?invocation, "/@tmp-arraycopy"), ?dest, ?inmethod)
+    :-
+      ?arraycopy = "<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>",
+      isMethod(?arraycopy),
+      StaticMethodInvocation(?invocation, ?arraycopy, ?inmethod),
+      ActualParam(0, ?invocation, ?src),
+      ActualParam(2, ?invocation, ?dest),
+      isMethodInvocation(?invocation),
+      ?tmpType = "java.lang.Object",
+      isType(?tmpType).
+
+/**********************************************************************************
+ *
+ * java.io.FileSystem
+ *
+ **********************************************************************************/
+
+SimulateNativeAllocation(
+  "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
+  "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
+  "<java.io.UnixFileSystem: void <init>()>").
+
+SimulateNativeStringArrayAllocation(
+  "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>",
+  "java.io.UnixFileSystem.list/new java.lang.String[]",
+  "java.io.UnixFileSystem.list/new java.lang.String",
+  "java.lang.String").
+
+/**********************************************************************************
+ *
+ * java.lang.ref.Finalizer
+ *
+ **********************************************************************************/
+
+/**
+ * Indirect invocations of finalize methods from java.lang.ref.Finalizer.
+ *
+ * Object.finalize is a protected method, so it cannot be directly
+ * invoked. Finalizer uses an indirection via native code to
+ * circumvent this. This rule implements this indirection.
+ */
+SimulateNativeStaticToVirtual(
+  "<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>",
+  "<java.lang.Object: void finalize()>").
+
+/**********************************************************************************
+ *
+ * java.security.AccessController
+ *
+ **********************************************************************************/
+
+/**
+ * The run methods of privileged actions are invoked through the
+ * AccessController.doPrivileged method. This introduces an
+ * indirection via native code that needs to be simulated in a pointer
+ * analysis.
+ *
+ * Call from an invocation of doPrivileged to an implementation of the
+ * PrivilegedAction.run method that will be indirectly invoked.
+ *
+ * The first parameter of a doPrivileged invocation (a
+ * PrivilegedAction) is assigned to the 'this' variable of 'run()'
+ * method invocation.
+ *
+ * The return variable of the 'run()' method of a privileged action is
+ * assigned to the return result of the doPrivileged method
+ * invocation.
+ *
+ * TODO for PrivilegedExceptionAction, catch exceptions and wrap them in a PriviligedActionException.
+ */
+SimulateNativeStaticToVirtual(
+  "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>",
+  "<java.security.PrivilegedAction: java.lang.Object run()>").
+
+SimulateNativeStaticToVirtual(
+  "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>",
+  "<java.security.PrivilegedAction: java.lang.Object run()>").
+
+SimulateNativeStaticToVirtual(
+  "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>",
+  "<java.security.PrivilegedExceptionAction: java.lang.Object run()>").
+
+SimulateNativeStaticToVirtual(
+  "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>",
+  "<java.security.PrivilegedExceptionAction: java.lang.Object run()>").

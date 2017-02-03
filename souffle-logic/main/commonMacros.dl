@@ -22,7 +22,7 @@
    isValue(value), \
    Value_Type(value, type)
 
-#define PlusVar(var, method,type) \
+#define PlusVar(var, method, type) \
    isVar(var), \
    Var_Type(var, type), \
    Var_DeclaringMethod(var, method)
@@ -30,9 +30,9 @@
 #define PlusType(type) \
    isType(type) \
 
-#define PlusMethodInvocation(string) \
-   isInstruction(string), \
-   isMethodInvocation(string)
+#define PlusMethodInvocation(invocation) \
+   isInstruction(invocation), \
+   isMethodInvocation(invocation)
 
 #define PlusVirtualMethodInvocation(ins) \
    isVirtualMethodInvocation_Insn(ins)
