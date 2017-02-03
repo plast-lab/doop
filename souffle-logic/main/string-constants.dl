@@ -19,8 +19,6 @@ HeapAllocation_Special(?heap) :-
 HeapAllocation_Special(?heap) :-
     HeapAllocation_Merge(?heap, _).
 
-HeapAllocation_Special(?heap) :-
-    HeapAllocation_ContextInsensitive(?heap).
 
 /**
  * Objects that should use a context-insensitive heap abstraction.

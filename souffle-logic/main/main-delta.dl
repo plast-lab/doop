@@ -4,7 +4,7 @@ PlusMethodInvocation(cat("<register-finalize", cat(?val1, cat( "/", cat(?val2, "
     isMethod(?val1),
     isHeapAllocation(?val2).
 
-/** The above written like this would lead to unground ?str error
+/** The above written like this would lead to ungrounded ?str error
 
     FakeInvocation_RegisterFinalize0(?val2, ?str),
     PlusMethodInvocation(?str) :-

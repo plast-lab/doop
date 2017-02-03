@@ -155,7 +155,7 @@ StoreArrayIndex(cat(?invocation, "/@tmp-arraycopy"), ?dest, ?inmethod)
  * java.io.FileSystem
  *
  **********************************************************************************/
-
+/*
 SimulateNativeAllocation(
   "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
   "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
@@ -166,7 +166,7 @@ SimulateNativeStringArrayAllocation(
   "java.io.UnixFileSystem.list/new java.lang.String[]",
   "java.io.UnixFileSystem.list/new java.lang.String",
   "java.lang.String").
-
+*/
 /**********************************************************************************
  *
  * java.lang.ref.Finalizer

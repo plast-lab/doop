@@ -35,10 +35,16 @@
    isMethodInvocation(invocation)
 
 #define PlusVirtualMethodInvocation(ins) \
+   isInstruction(ins), \
+   isMethodInvocation(ins), \
    isVirtualMethodInvocation_Insn(ins)
 
 #define PlusSpecialMethodInvocation(ins) \
+   isInstruction(ins), \
+   isMethodInvocation(ins), \
    isSpecialMethodInvocation_Insn(ins)
 
 #define PlusStaticMethodInvocation(ins) \
+   isInstruction(ins), \
+   isMethodInvocation(ins), \
    isStaticMethodInvocation_Insn(ins)
