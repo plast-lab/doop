@@ -72,7 +72,6 @@ ReturnVar(?var, ?method) :-
 ReturnVar(?var, ?method) :-
     NativeReturnVar(?var, ?method).
 
-
 VirtualMethodInvocation(?invocation, ?signature, ?inmethod) :-
     isVirtualMethodInvocation_Insn(?invocation),
     Instruction_Method(?invocation, ?inmethod),

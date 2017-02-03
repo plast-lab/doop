@@ -375,12 +375,12 @@ MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
 // new objects is merely looking up the previously created context
 // objects.
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  Value:Type[?value] = ?valuetype,
-  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
-  ThisVar[?tomethod] = ?this.
+  Value_Type(?value, ?valuetype),
+  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this).
 //  ViableInvocation(?callerCtx, ?invocation),
 //TODO fix:  SiteShouldNotBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */
@@ -416,12 +416,12 @@ MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  Value:Type[?value] = ?valuetype,
-  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
-  ThisVar[?tomethod] = ?this,
+  Value_Type(?value, ?valuetype),
+  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVa([?tomethod, ?this),
 //  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */
@@ -490,12 +490,12 @@ MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   OptSpecialMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
   MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
   OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Method[?invocation] = ?tomethod,
-  SpecialMethodInvocation:Insn(?invocation),
-  ThisVar[?tomethod] = ?this.
+  MethodInvocation_Method(?invocation, ?tomethod),
+  isSpecialMethodInvocation_Insn(?invocation),
+  ThisVar(?tomethod, ?this).
   //TODO fix: SiteShouldBeRefined(?invocation).
 #endif /* #ifndef OptimizeMergeMacro */
 #endif /* #ifdef MergeRefinedMacro
