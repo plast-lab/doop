@@ -1,1 +1,8 @@
+#include "exceptions-declarations.dl"
+#include "finalization-declarations.dl"
+#include "method-resolution-declarations.dl"
+#include "subclass-declarations.dl"
+#include "superinterface-declarations.dl"
+#include "type-hierarchy-declarations.dl"
+
 .decl MainMethodDeclaration(?method:Method)

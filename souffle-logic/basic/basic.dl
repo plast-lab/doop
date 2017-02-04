@@ -1,5 +1,12 @@
 #include "basic-declarations.dl"
 
+#include "exceptions.dl"
+#include "finalization.dl"
+#include "method-resolution.dl"
+#include "subclass.dl"
+#include "superinterface.dl"
+#include "type-hierarchy.dl"
+
 MainMethodDeclaration(?method) :-
    MainClass(?type),
    Method_DeclaringType(?method, ?type),

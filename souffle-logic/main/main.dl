@@ -1,19 +1,13 @@
-#include "commonMacros.dl"
-#include "native.dl"
-
-
 #include "class-initialization.dl"
 #include "exceptions.dl"
 #include "finalization.dl"
 //#include "android.dl"
 #include "implicit-reachable.dl"
+#include "native.dl"
 #include "reference.dl"
 #include "string-constants.dl"
 #include "threads.dl"
-
 #include "main-delta.dl"
-
-#include "prologue.dl"
 
 #if defined(REFLECTION)
 #include "reflection/rules.dl" 

@@ -1,5 +1,3 @@
-#include "subclass-declarations.dl"
-
 DirectSubclass(?a, ?c) :-
     DirectSuperclass(?a, ?c).
 

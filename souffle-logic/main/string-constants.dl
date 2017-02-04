@@ -168,13 +168,13 @@ HeapAllocation_ContextInsensitive(?heap) :-
  *************************************************************/
 
 #ifdef COARSE_GRAINED_ALLOCATION
-// // Very coarse-grained allocation policy
+// Very coarse-grained allocation policy
 // AllocationShouldBeMergedPerPackage(?type, ?packageName) <-
 //   AllocationsPerPackageAndType[?type, ?packageName] > 1.
 
 // Coarse-grained allocation policy
-AllocationShouldBeMergedPerClass(?type, ?class) <-
-  AllocationsPerClassAndType[?type, ?class] > 1.
+//AllocationShouldBeMergedPerClass(?type, ?class) <-
+//  AllocationsPerClassAndType[?type, ?class] > 1.
 #endif // COARSE_GRAINED_ALLOCATION
 
 
@@ -189,10 +189,10 @@ HeapAllocation_ContextInsensitive(?heap) :-
   !HeapRepresentative(_, ?heap).
 
 #ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
-AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
-  AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
-  Method:DeclaringType[?meth] = ?class,
-  SpecialLibraryClass(?class).
+//AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+//  AllocationsPerMethodAndType(?heaptype, ?meth) > 1,
+//  Method_DeclaringType(?meth, ?class),
+//  SpecialLibraryClass(?class).
 #endif
 #endif
 

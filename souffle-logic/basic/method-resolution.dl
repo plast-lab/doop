@@ -1,5 +1,3 @@
-#include "method-resolution-declarations.dl"
-
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
     MethodImplemented(?simplename, ?descriptor, ?type, ?method).
 

@@ -1,5 +1,3 @@
-#include "superinterface-declarations.dl"
-
 /**
  * An interface type K is a superinterface of class type C if one of the
  * following is true

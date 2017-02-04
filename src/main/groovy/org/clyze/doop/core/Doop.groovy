@@ -28,7 +28,9 @@ class Doop {
     static String souffleLogicPath
     static String factsPath
     static String addonsPath
+    static String souffleAddonsPath
     static String analysesPath
+    static String souffleAnalysesPath
 
     static Map<String, AnalysisOption> defaultOptionsMap
 
@@ -51,7 +53,9 @@ class Doop {
         souffleLogicPath    = "$doopHome/souffle-logic"
         factsPath           = "$logicPath/facts"
         addonsPath          = "$logicPath/addons"
+        souffleAddonsPath   = "$souffleLogicPath/addons"
         analysesPath        = "$logicPath/analyses"
+        souffleAnalysesPath = "$souffleLogicPath/analyses"
 
         //create all necessary files/folders
         File f = new File(doopOut)

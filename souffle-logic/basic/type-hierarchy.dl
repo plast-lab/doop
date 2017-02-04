@@ -1,5 +1,3 @@
-#include "type-hierarchy-declarations.dl"
-
 /**
  * The following rules check whether type S can be cast to type T. Implicitly,
  * they expose the type hierarchy.

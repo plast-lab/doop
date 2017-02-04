@@ -1,20 +1,3 @@
-#include "macros.dl"
-#include "../../facts/flow-insensitive-schema.dl"
-#include "../../facts/flow-sensitive-schema.dl"
-#include "../../facts/to-flow-sensitive.dl"
-#include "../../facts/import-facts.dl"
-#include "../../facts/import-entities.dl"
-#include "../../facts/post-process.dl"
-#include "../../basic/finalization.dl"
-#include "../../basic/finalization-declarations.dl"
-#include "../../basic/basic.dl"
-#include "../../basic/method-resolution.dl"
-#include "../../basic/subclass.dl"
-#include "../../basic/superinterface.dl"
-#include "../../basic/type-hierarchy.dl"
-#include "../../main/context-sensitivity.dl"
-
-
 // Context-insensitive pointer analysis with on-the-fly call graph discovery
 
 // This analysis has no context for either method calls or heap objects.

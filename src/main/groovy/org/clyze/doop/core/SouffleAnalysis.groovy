@@ -2,15 +2,10 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
-import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.FileOps
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.datalog.*
-import org.clyze.doop.system.*
 
 import static org.apache.commons.io.FileUtils.*
 
@@ -45,20 +40,12 @@ class SouffleAnalysis extends DoopAnalysis {
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
 
-        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "analyses" + File.separator + name), new File(outDir.absolutePath + File.separator + "analyses"))
-        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "facts"), outDir)
-        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "basic"), outDir)
-        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "main"), outDir)
 
-        File outAnalysisFile
-        outAnalysisFile = new File(outDir.absolutePath + File.separator + "analyses" + File.separator + name + File.separator + "analysis.dl")
-        if (options.MAIN_CLASS.value) {
-            outAnalysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
-        }
-        else {
-            logger.warn("No main class specified")
-        }
-        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir, outAnalysisFile)
+        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "facts"), outDir)
+        initDatabase()
+        basicAnalysis()
+        mainAnalysis()
+
     }
 
     @Override
@@ -113,28 +100,110 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void initDatabase() {
+        cpp.preprocess("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/facts/to-flow-sensitive.dl")
+        cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/facts/flow-sensitive-schema.dl",
+                "${Doop.souffleLogicPath}/facts/flow-insensitive-schema.dl",
+                "${Doop.souffleLogicPath}/facts/import-entities.dl",
+                "${Doop.souffleLogicPath}/facts/import-facts.dl",
+                "${Doop.souffleLogicPath}/facts/post-process.dl"
+                                        )
 
     }
 
     @Override
     protected void basicAnalysis() {
+        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
+        cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
+
+        if (options.CFG_ANALYSIS.value) {
+            cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/cfg-analysis/analysis.dl",
+                    "${Doop.addonsPath}/cfg-analysis/declarations.dl")
+        }
 
     }
 
     @Override
     protected void mainAnalysis() {
+        def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
+        def macros       = "${Doop.souffleAnalysesPath}/${name}/macros.dl"
+        def mainPath     = "${Doop.souffleLogicPath}/main"
+        def analysisPath = "${Doop.souffleAnalysesPath}/${name}"
 
+        // By default, assume we run a context-sensitive analysis
+        boolean isContextSensitive = true
+        try {
+            def file = FileOps.findFileOrThrow("${analysisPath}/analysis.properties", "No analysis.properties for ${name}")
+            Properties props = FileOps.loadProperties(file)
+            isContextSensitive = props.getProperty("is_context_sensitive").toBoolean()
+        }
+        catch(e) {
+            logger.debug e.getMessage()
+        }
+        if (isContextSensitive) {
+            cpp.includeAtStart("${outDir}/${name}.dl", /*"${analysisPath}/declarations.dl",*/
+                    "${mainPath}/context-sensitivity-declarations.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/prologue.dl", commonMacros)
+            cpp.includeAtStart("${outDir}/${name}.dl", /*"${analysisPath}/delta.dl",*/
+                    commonMacros, "${mainPath}/main-delta.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl",
+                    commonMacros, macros, "${mainPath}/context-sensitivity.dl")
+        }
+        else {
+            cpp.includeAtStart("${outDir}/${name}-declarations.dl", "${analysisPath}/declarations.dl")
+            cpp.includeAtStart("${outDir}/prologue.dl", "${mainPath}/prologue.dl", commonMacros)
+            cpp.includeAtStart("${outDir}/${name}-prologue.dl", "${analysisPath}/prologue.dl")
+            cpp.includeAtStart("${outDir}/${name}-delta.dl", "${analysisPath}/delta.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl")
+        }
+
+        if (options.REFLECTION.value) {
+            cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/reflection/delta.dl")
+        }
+
+        if (options.DACAPO.value || options.DACAPO_BACH.value)
+            cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/dacapo/rules.dl", commonMacros)
+
+        if (options.SANITY.value)
+            cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/sanity.dl")
+
+        if (options.MAIN_CLASS.value) {
+            def analysisFile = FileOps.findFileOrThrow("${outDir}/${name}.dl", "Missing ${outDir}/${name}.dl")
+            analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
+        }
+
+        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir)
+    }
+
+    private void runSouffle(int jobs, File factsDir, File outDir) {
+        System.out.println("souffle -c -j$jobs -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath ${outDir}/${name}.dl")
+        executor.execute("souffle -c -j$jobs -c -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath ${outDir}/${name}.dl")
     }
 
     @Override
     protected void produceStats() {
 
+        if (options.X_STATS_NONE.value) return;
+
+        if (options.X_STATS_AROUND.value) {
+        }
+        // Special case of X_STATS_AROUND (detected automatically)
+        def specialStats       = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
+        if (specialStats.exists()) {
+            cpp.includeAtStart("${outDir}/${name}.dl", specialStats.toString())
+            return
+        }
+
+        def macros    = "${Doop.souffleAnalysesPath}/${name}/macros.logic"
+        def statsPath = "${Doop.souffleAddonsPath}/statistics"
+        cpp.includeAtStart("${outDir}/${name}.dl", "${statsPath}/statistics-simple.dl", macros)
+
+        if (options.X_STATS_FULL.value) {
+            cpp.includeAtStart("${outDir}/${name}.dl", "${statsPath}/statistics.dl", macros)
+        }
+
     }
 
-    private void runSouffle(int jobs, File factsDir, File outDir, File analysisFile) {
-        System.out.println("souffle -c -j$jobs -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath")
-        executor.execute("souffle -c -j$jobs -c -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath $analysisFile.absolutePath --debug")
-    }
+
 
     @Override
     protected void runSoot() {
