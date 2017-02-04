@@ -29,7 +29,7 @@ HeapAllocation_Special(?heap) :-
  * Objects that should be merged to some heap abstraction
  * (will overlap with merely context-insensitive objects)
  */
-.decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation)
+.decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation) output
 
 // The ones that absolutely have to be kept distinct
 .decl HeapAllocation_Keep(?heap:HeapAllocation)
@@ -109,8 +109,8 @@ _RepresentativesToPickFrom(?heapRepr, ?heap) :-
 //  isHeapAllocation(?heap),
 //  ?mergeHeap =
 
-//HeapAllocation_Merge(?heap, ?mergeHeap) :-
-//  _HeapAllocation_AggMerge(?heap, ?mergeHeap).
+HeapAllocation_Merge(?heap, ?mergeHeap) :-
+  _RepresentativesToPickFrom(?heap, ?mergeHeap).
 
 /*************************************************************
  * String constants
@@ -161,7 +161,77 @@ HeapAllocation_ContextInsensitive(?heap) :-
 HeapAllocation_ContextInsensitive(?heap) :-
   isClassHeap(?heap).
 
+/*************************************************************
+ * Merging allocation sites per method, per class, or per package.
+ *************************************************************/
 
+// Per-method merging: auto-merge allocation sites for method that
+// allocates many objects of same type. Also, enable other rules to
+// explicitly ask for per-method merging, beyond the above heuristic
+// (by setting "...ShouldBeMerged...").
+
+.decl MethodAllocationMergeThreshold(?t:number)
+MethodAllocationMergeThreshold(50).
+
+.decl ExceptionType(?type:Type)
+
+ExceptionType(?type) :-
+  ?throw = "java.lang.Throwable",
+  isType(?throw),
+  SubtypeOf(?type, ?throw).
+
+.decl OptAssignHeapAllocation(?inmethod:Method, ?heap:HeapAllocation)
+
+OptAssignHeapAllocation(?inmethod, ?heap) :-
+  AssignHeapAllocation(?heap, _, ?inmethod).
+
+// There are objects, like strings, null, and class objects, that
+// don't have a unique allocation site.
+.decl ObjectMultipleAllocated(?heap:HeapAllocation)
+
+ObjectMultipleAllocated(?heap) :-
+  OptAssignHeapAllocation(?inmethod1, ?heap),
+  OptAssignHeapAllocation(?inmethod2, ?heap),
+  ?inmethod1 != ?inmethod2.
+
+.decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)
+.decl StringFactoryHeap(?heap:HeapAllocation)
+
+MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
+  AssignHeapAllocation(?heap, _, ?meth),
+  HeapAllocation_Type(?heap, ?heaptype),
+  !isStringConstant(?heap),
+  !StringFactoryHeap(?heap),
+  !HeapAllocation_EmptyArray(?heap),
+  !ObjectMultipleAllocated(?heap),
+  !HeapAllocation_Keep(?heap).
+
+.decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)
+
+AllocationsPerMethodAndType(?type, ?meth, ?n) :-
+  ?n = count : {MethodAndTypeToHeap(_, ?type, ?meth)}.
+
+.decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)
+
+AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+  AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
+  ?n > ?t,
+  MethodAllocationMergeThreshold(?t).
+
+.decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
+
+MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
+  AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
+  MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
+
+.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
+/*
+MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
+  ?representativeHeap = min ?heap: {(MethodAndTypeToMergedHeap(?heap, ?type, ?meth))}.
+*/
+HeapRepresentative(?representativeHeap, ?heap) :-
+  MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap),
+  MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
 
 /*************************************************************
  * Coarse-grained allocation policy
@@ -189,12 +259,44 @@ HeapAllocation_ContextInsensitive(?heap) :-
   !HeapRepresentative(_, ?heap).
 
 #ifdef MERGE_LIBRARY_OBJECTS_PER_METHOD
-//AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
-//  AllocationsPerMethodAndType(?heaptype, ?meth) > 1,
-//  Method_DeclaringType(?meth, ?class),
-//  SpecialLibraryClass(?class).
+AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+  AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
+  ?n > 1,
+  Method_DeclaringType(?meth, ?class),
+  SpecialLibraryClass(?class).
 #endif
 #endif
+
+/*************************************************************
+ * String buffers and builders
+ *************************************************************/
+.decl StringFactoryType(?type:Type)
+
+StringFactoryType(?type) :-
+  isType(?type),
+  ?type = "java.lang.StringBuffer" ;
+  isType(?type),
+  isType = "java.lang.StringBuilder".
+
+StringFactoryHeap(?heap) :-
+  HeapAllocation_Type(?heap, ?heaptype),
+  StringFactoryType(?heaptype).
+
+HeapRepresentative(?mergeHeap, ?heap) :-
+  HeapAllocation_Type(?heap, ?type),
+  isType(?type),
+  ?type = "java.lang.StringBuffer",
+  ?mergeHeap = "<<string-buffer>>",
+  isHeapAllocation(?mergeHeap),
+  !HeapAllocation_Keep(?heap).
+
+HeapRepresentative(?mergeHeap, ?heap) :-
+  HeapAllocation_Type(?heap, ?type),
+  isType(?type),
+  ?type = "java.lang.StringBuilder",
+  ?mergeHeap = "<<string-builder>>",
+  isHeapAllocation(?mergeHeap),
+  !HeapAllocation_Keep(?heap).
 
 
 /*************************************************************

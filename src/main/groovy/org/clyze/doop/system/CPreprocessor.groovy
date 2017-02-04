@@ -16,10 +16,14 @@ class CPreprocessor {
             option.forPreprocessor && option.value
         }
         .collect{ AnalysisOption option ->
-            if (option.value instanceof Boolean)
+            if (option.value instanceof Boolean) {
+                System.out.println("-D${option.id}")
                 return "-D${option.id}"
-            else
+            }
+            else {
+                System.out.println("-D${option.id}='\"${option.value}\"'")
                 return "-D${option.id}='\"${option.value}\"'"
+            }
         }
         .join(" ")
         _executor = executor
