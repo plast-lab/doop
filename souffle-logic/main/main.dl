@@ -1,7 +1,7 @@
 #include "class-initialization.dl"
 #include "exceptions.dl"
 #include "finalization.dl"
-//#include "android.dl"
+#include "android.dl"
 #include "implicit-reachable.dl"
 #include "native.dl"
 #include "reference.dl"
@@ -24,6 +24,39 @@ Value_Type(?value, ?type) :-
     [?heap] = ?value,
     isHeapAllocation(?heap),
     HeapAllocation_Type(?heap, ?type).
+
+
+
+// Only create values for numeric constants in a static initializer
+// (or initial field value) inside a class whose name contains
+// ".R$". We are trying to capture just the constants in Android "R"
+// nested classes. REVIEW to generalize.
+Value_byNum(?const, ?value),
+Value_isNonHeap(?value),
+isValue(?value),
+Value_Type(?value, ?type) :-
+   isNumConstant(?const),
+   AssignNumConstant_Id(?insn, ?const),
+   Instruction_Method(?insn, ?meth),
+   Method_SimpleName(?meth, "<clinit>"),
+   Method_DeclaringType(?meth, ?className),
+   isType(?className),
+   match("\.R$.*", ?className),
+   Type_int(?type),
+   [?const] = ?value.
+
+Value_byNum(?const, ?value),
+Value_isNonHeap(?value),
+isValue(?value),
+Value_Type(?value, ?type) :-
+   isNumConstant(?const),
+   FieldInitialValue(?fld, ?const),
+   Field_DeclaringType(?fld, ?className),
+   isType(?className),
+   match("\.R$.*", ?className),
+   Type_int(?type),
+   [?const] = ?value.
+
 
 Value_Null(?nullvalue) :-
    HeapAllocation_Null(?nullheap),

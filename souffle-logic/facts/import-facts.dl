@@ -673,7 +673,7 @@ CallbackMethod(?id) :-
 
 // LayoutControl
 
-.decl _LayoutControl(?id:number, ?typename:symbol, ?parent:symbol) input
+.decl _LayoutControl(?id:NumConstant, ?typename:symbol, ?parent:symbol) input
 
 LayoutControl0(?id, ?typename, ?parent) :-
     _LayoutControl(?id, ?typename, ?parent).

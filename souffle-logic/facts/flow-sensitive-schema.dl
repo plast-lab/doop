@@ -468,8 +468,8 @@
 .decl ContentProvider(?x:Type)
 .decl BroadcastReceiver(?x:Type)
 .decl CallbackMethod(?x:Method)
-.decl LayoutControl(?id:number, ?type:Type, ?parent:symbol)
-.decl LayoutControl0(?id:number, ?typename:symbol, ?parent:symbol)
+.decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
+.decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 
 //-----------------------------------------------------------------------------
