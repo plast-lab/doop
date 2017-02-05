@@ -89,28 +89,28 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    isHeapAllocation(?heapRepr),
    ?heapRepr = "<<string-builder>>").
 
-.decl _RepresentativesToPickFrom(?heapRepr:symbol, ?heap:HeapAllocation) output
+.decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation) output
+.decl RepresentativesToPickFromOrdinals(?heapReprOrd:number, ?heap:HeapAllocation) output
 
-_RepresentativesToPickFrom(?heapRepr, ?heap) :-
+RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
   !isStringConstant(?heap),
   !HeapIsMergedStringFactory(?heap),
   !HeapAllocation_Keep(?heap).
 
-// If none of the special cases applies, just pick the lowest-id potential
-// representative.
-.decl _HeapAllocation_AggMerge(?heap:HeapAllocation, ?mergeHeap:symbol) output
-.decl _MinHeapRepr(?heapRepr:symbol)
+RepresentativesToPickFromOrdinals(ord(?heapRepr), ?heap) :-
+    RepresentativesToPickFrom(?heapRepr, ?heap).
 
-//_MinHeapRepr(minHeapRepr) :-
-//    minHeapRepr = min a: _RepresentativesToPickFrom(a, _).
+.decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
 
-//_HeapAllocation_AggMerge(?heap, ?mergeHeap) :-
-//  isHeapAllocation(?heap),
-//  ?mergeHeap =
+MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
+    RepresentativesToPickFromOrdinals(_, ?heap),
+    ?minHeapReprOrd = min ?heapReprOrd: RepresentativesToPickFromOrdinals(?heapReprOrd, ?heap).
 
 HeapAllocation_Merge(?heap, ?mergeHeap) :-
-  _RepresentativesToPickFrom(?heap, ?mergeHeap).
+    isHeapAllocation(?mergeHeap),
+    ord(?mergeHeap) = ?minHeapReprOrd,
+    MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
 
 /*************************************************************
  * String constants
@@ -194,8 +194,8 @@ ObjectMultipleAllocated(?heap) :-
   OptAssignHeapAllocation(?inmethod2, ?heap),
   ?inmethod1 != ?inmethod2.
 
-.decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)
-.decl StringFactoryHeap(?heap:HeapAllocation)
+.decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method) output
+.decl StringFactoryHeap(?heap:HeapAllocation) output
 
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
   AssignHeapAllocation(?heap, _, ?meth),
@@ -206,32 +206,67 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
   !ObjectMultipleAllocated(?heap),
   !HeapAllocation_Keep(?heap).
 
-.decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)
+.decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number) output
 
 AllocationsPerMethodAndType(?type, ?meth, ?n) :-
-  ?n = count : {MethodAndTypeToHeap(_, ?type, ?meth)}.
+  MethodAndTypeToHeap(_, ?type, ?meth),
+  ?n = count : MethodAndTypeToHeap(_, ?type, ?meth).
 
-.decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)
+.decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method) output
 
 AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
   AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
   ?n > ?t,
   MethodAllocationMergeThreshold(?t).
 
-.decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
+.decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method) output
+.decl MethodAndTypeToMergedHeapOrdinal(?heap:number, ?heaptype:Type, ?meth:Method) output
+
+MethodAndTypeToMergedHeapOrdinal(ord(?heap), ?type, ?meth) :-
+    MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
 
 MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
   AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
 
-.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
-/*
+.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation) output
+.decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method) output
+
+MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
+    MethodAndTypeToMergedHeapOrdinal(_, ?type, ?meth),
+    ?minHeapOrd = min ?heapOrd: MethodAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?meth).
+
 MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
-  ?representativeHeap = min ?heap: {(MethodAndTypeToMergedHeap(?heap, ?type, ?meth))}.
-*/
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+
+/* TODO: Check if the following works too with some minor modifications
+  MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
+     isHeapAllocation(?representativeHeap),
+     MethodAndTypeToMergedHeap(_, ?type, ?meth),
+     ord(?representativeHeap) = min ord(?heap): {MethodAndTypeToMergedHeap(?heap, ?type, ?meth)}.
+ */
+
 HeapRepresentative(?representativeHeap, ?heap) :-
   MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap),
   MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+
+// Now, per-class merging. This is more rare and should be requested
+// explicitly for a given type. Again, does not apply to types with
+// special merging policies.
+.decl ClassAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:ClassType)
+.decl AllocationsPerClassAndType(?type:Type, ?class:ClassType, ?n:number)
+
+ClassAndTypeToHeap(?heap, ?heaptype, ?class) :-
+  MethodAndTypeToHeap(?heap, ?heaptype, ?meth),
+  Method_DeclaringType(?meth, ?class).
+
+AllocationsPerClassAndType(?type, ?class, ?n) :-
+  ClassAndTypeToHeap(_, ?type, ?class),
+  ?n = count : ClassAndTypeToHeap(_, ?type, ?class).
+
 
 /*************************************************************
  * Coarse-grained allocation policy
@@ -276,7 +311,7 @@ StringFactoryType(?type) :-
   isType(?type),
   ?type = "java.lang.StringBuffer" ;
   isType(?type),
-  isType = "java.lang.StringBuilder".
+  ?type = "java.lang.StringBuilder".
 
 StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
@@ -298,6 +333,72 @@ HeapRepresentative(?mergeHeap, ?heap) :-
   isHeapAllocation(?mergeHeap),
   !HeapAllocation_Keep(?heap).
 
+/*************************************************************
+ * Throwable
+ *************************************************************/
+
+/*
+ // (Yannis) This is the original, precise and straightforward treatment
+ // of throwables. They were allocated context insensitively. This still
+ // produced huge ThrowPointsTo sets and caused slowdowns.
+ */
+#ifdef SEPARATE_EXCEPTION_OBJECTS
+HeapAllocation_ContextInsensitive(?heap) <-
+  HeapAllocation_Type(?heap, ?type),
+  ExceptionType(?type).
+#else
+
+// The optimized treatment represents every exception (i.e., throwable)
+// object by a unique representative of the same type. All exception
+// objects of the same type are therefore merged. This means that points-to
+// results for throwables are not accurate! Only the type will be right.
+
+//TypeToHeap2(?heap, ?heaptype) <-
+//  HeapAllocation:Type[?heap] = ?heaptype,
+//  Type:Id(?throw:"java.lang.Throwable"),
+//  SubtypeOf(?heaptype, ?throw),
+//  ExceptionHandler:Type[_] = ?handlertype,
+//  SubtypeOf(?heaptype, ?handlertype).
+.decl TypeToHeap(?heap:HeapAllocation, ?type:Type)
+.decl TypeToHeapOrdinal(?heap:number, ?type:Type)
+
+TypeToHeap(?heap, ?heaptype) :-
+  AssignHeapAllocation(?heap, _, _),
+  HeapAllocation_Type(?heap, ?heaptype),
+  ExceptionType(?heaptype).
+
+TypeToHeapOrdinal(ord(?heap), ?heapType) :-
+  TypeToHeap(?heap, ?heapType).
+
+.decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
+
+ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
+  TypeToHeap(_, ?type),
+  ?representativeHeapOrd = min ?otherHeap : TypeToHeapOrdinal(?otherHeap, ?type).
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  isHeapAllocation(?representativeHeap),
+  ord(?representativeHeap) = ?representativeHeapOrd,
+  TypeToHeap(?heap, ?heaptype),
+  ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd).
+
+#endif // SEPARATE_EXCEPTION_OBJECTS
+/*
+// An intermediate option is to only merge exception objects of the
+// same type that are thrown in the same method.
+SameTypeAndMethod(?heap1, ?heap2) <-
+  HeapAllocation:Type[?heap1] = ?heaptype,
+  Type:Id(?throw:"java.lang.Throwable"),
+  SubtypeOf(?heaptype, ?throw),
+  HeapAllocation:Type[?heap2] = ?heaptype,
+  AssignHeapAllocation(?heap1,_,?inmethod),
+  AssignHeapAllocation(?heap2,_,?inmethod).
+
+// Similarly quadratic but efficient.
+HeapRepresentative(?representativeHeap, ?heap) <-
+  agg<<?representativeHeap = min(?otherHeap)>>(SameTypeAndMethod(?otherHeap,?heap)).
+
+*/
 
 /*************************************************************
  * Primitive arrays

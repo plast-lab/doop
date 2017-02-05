@@ -21,4 +21,4 @@ CollectionLibraryClass(?class) :-
   isClassType(?class),
   !ApplicationClass(?class),
   isType(?class),
-  contains(?class, "java.util").
+  match("java\.util.*", ?class).
