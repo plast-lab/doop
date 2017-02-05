@@ -311,8 +311,8 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
   AssignReturnValue(?invocation, ?local).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
-  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
-  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
 
 /**
  * Static method invocations
@@ -442,12 +442,12 @@ OptSpecialMethodInvocationBase(?invocation, ?base) :-
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-    MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-    VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
     OptSpecialMethodInvocationBase(?invocation, ?base),
-    MethodInvocation_Method(?invocation, ?tomethod),
     isSpecialMethodInvocation_Insn(?invocation),
-    ThisVar(?tomethod, ?this).
+    MethodInvocation_Method(?invocation, ?tomethod),
+    ThisVar(?tomethod, ?this),
+    VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
+    MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
   //TODO fix: SiteShouldNotBeRefined(?invocation).
 
 #else /* there is optimized behavior available */
