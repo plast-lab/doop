@@ -80,14 +80,14 @@ HeapIsMergedStringFactory(?heap) :-
   (isHeapAllocation(?heapRepr),
      ?heapRepr = "<<string-buffer>>";
      isHeapAllocation(?heapRepr),
-     ?heapRepr = "<<string-buffer>>").
+     ?heapRepr = "<<string-builder>>").
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
   HeapRepresentative(?heapRepr, ?heap),
   (isHeapAllocation(?heapRepr),
    ?heapRepr = "<<string-buffer>>";
    isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-buffer>>").
+   ?heapRepr = "<<string-builder>>").
 
 .decl _RepresentativesToPickFrom(?heapRepr:symbol, ?heap:HeapAllocation) output
 

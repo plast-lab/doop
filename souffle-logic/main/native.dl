@@ -139,23 +139,22 @@ PlusStoreStaticField(
  */
 PlusVar(cat(?invocation, "/@tmp-arraycopy"), ?inmethod, ?tmpType),
 LoadArrayIndex(?src, cat(?invocation, "/@tmp-arraycopy"), ?inmethod),
-StoreArrayIndex(cat(?invocation, "/@tmp-arraycopy"), ?dest, ?inmethod)
-    :-
-      ?arraycopy = "<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>",
-      isMethod(?arraycopy),
-      StaticMethodInvocation(?invocation, ?arraycopy, ?inmethod),
-      ActualParam(0, ?invocation, ?src),
-      ActualParam(2, ?invocation, ?dest),
-      isMethodInvocation(?invocation),
-      ?tmpType = "java.lang.Object",
-      isType(?tmpType).
+StoreArrayIndex(cat(?invocation, "/@tmp-arraycopy"), ?dest, ?inmethod) :-
+   ?arraycopy = "<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>",
+   isMethod(?arraycopy),
+   StaticMethodInvocation(?invocation, ?arraycopy, ?inmethod),
+   ActualParam(0, ?invocation, ?src),
+   ActualParam(2, ?invocation, ?dest),
+   isMethodInvocation(?invocation),
+   ?tmpType = "java.lang.Object",
+   isType(?tmpType).
 
 /**********************************************************************************
  *
  * java.io.FileSystem
  *
  **********************************************************************************/
-/*
+
 SimulateNativeAllocation(
   "<java.io.FileSystem: java.io.FileSystem getFileSystem()>",
   "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
@@ -166,7 +165,7 @@ SimulateNativeStringArrayAllocation(
   "java.io.UnixFileSystem.list/new java.lang.String[]",
   "java.io.UnixFileSystem.list/new java.lang.String",
   "java.lang.String").
-*/
+
 /**********************************************************************************
  *
  * java.lang.ref.Finalizer
