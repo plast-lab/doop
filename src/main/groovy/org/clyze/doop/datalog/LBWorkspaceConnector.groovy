@@ -55,6 +55,9 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
     public IWorkspaceAPI transaction() {
         throw new UnsupportedOperationException("transaction")
     }
+    public IWorkspaceAPI timedTransaction(String message) {
+        throw new UnsupportedOperationException("timedTransaction")
+    }
     public IWorkspaceAPI commit() {
         throw new UnsupportedOperationException("commit")
     }

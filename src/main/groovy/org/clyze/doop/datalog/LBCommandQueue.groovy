@@ -6,7 +6,7 @@ import org.clyze.doop.system.CPreprocessor
 class LBCommandQueue implements IWorkspaceAPI {
 
     File                                  _outDir
-    CPreprocessor                          _cpp
+    CPreprocessor                         _cpp
     List<LBWorkspaceConnector.IComponent> _components
 
     public LBCommandQueue(File outDir, CPreprocessor cpp) {
@@ -21,7 +21,7 @@ class LBCommandQueue implements IWorkspaceAPI {
     }
 
     public IWorkspaceAPI echo(String message) {
-        return eval('echo "' + message + '"')
+        return eval('\necho "' + message + '"')
     }
     public IWorkspaceAPI startTimer() {
         return eval("startTimer")
@@ -31,6 +31,11 @@ class LBCommandQueue implements IWorkspaceAPI {
     }
     public IWorkspaceAPI transaction() {
         return eval("transaction")
+    }
+    public IWorkspaceAPI timedTransaction(String message) {
+        return  echo(message)
+               .startTimer()
+               .transaction()
     }
     public IWorkspaceAPI commit() {
         return eval("commit")
