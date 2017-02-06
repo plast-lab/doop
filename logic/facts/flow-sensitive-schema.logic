@@ -53,6 +53,7 @@ DirectSuperinterface(?ref, ?interface) ->
 // Important class subsets
 
 ApplicationClass(?ref) -> ReferenceType(?ref).
+ConcreteClass(?ref)    -> ReferenceType(?ref).
 
 MainClass(?class) -> ClassType(?class).
 

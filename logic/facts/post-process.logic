@@ -52,6 +52,9 @@ ApplicationVar(?var) <-
    Var:DeclaringMethod(?var, ?method),
    ApplicationMethod(?method).
 
+ConcreteClass(?class) <-
+   ClassType(?class), !ClassModifier("abstract", ?class).
+
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    VirtualMethodInvocation:Insn(?invocation),
