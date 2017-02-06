@@ -97,7 +97,7 @@ AndroidLibraryListenerType(?type) :-
   AndroidLibraryType(?type),
   isType(?type),
   (contains("Listener", ?type);
-   contains("Callback", ?type).
+   contains("Callback", ?type)).
 
 ListenerType(?type) :-
   SubtypeOf(?type, ?listenerType),
@@ -184,7 +184,6 @@ ReachableContext(?ctx, ?meth) :-
    OverridingProtectedOnMethodOfLayoutControl(?meth)),
   isImmutableContext(?ctx).
 
-
 // Handle library-callable "on*" methods of listeners/callbacks
 // REVIEW: this is currently liberal. It checks that the app class
 // subtypes a library listener and that it has an "on*" method,
@@ -195,14 +194,11 @@ ReachableContext(?ctx, ?meth) :-
 _OptMethodFromVar(?var, ?meth) :-
   Var_DeclaringMethod(?var, ?meth).
 
-
 // ... all analysis-reachable objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
   VarPointsTo(?hctx, ?value, _, _),
   Value_Type(?value, ?ofType),
   ApplicationClass(?ofType).
-
-
 
 // Be liberal: if an object is a listener, and it is instantiated
 // in the application, then consider it to flow to the library.
@@ -231,10 +227,6 @@ LibraryReachableAppListenerType(?type) :-
 //   ApplicationObjectFlowingToLibrary(_, _, ?type),
 //   AndroidApplicationListenerClass(?type).
 
-
-
-
-
 PublicOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
@@ -242,15 +234,12 @@ PublicOnMethodOfReachableListener(?meth) :-
   match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
-
-
 ProtectedOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
   match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
-
 
 OverridingProtectedOnMethodOfReachableListener(?meth) :-
   ProtectedOnMethodOfReachableListener(?meth),
@@ -262,12 +251,8 @@ ReachableContext(?ctx, ?meth) :-
    OverridingProtectedOnMethodOfReachableListener(?meth)),
   isImmutableContext(?ctx).
 
-
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type
-
-
-
 
 // First, for objects implicitly registered (XML or library).
 ReifiedAndroidObjectValue(?value, ?type) :-
