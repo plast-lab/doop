@@ -75,7 +75,7 @@ ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
 // Main logic
 AndroidLibraryType(?type) :-
   isType(?type),
-  match("android.*", ?type).
+  match("android\..*", ?type).
 
 
 // REVIEW: is this needed? android.support classes are included in the
@@ -93,15 +93,11 @@ AndroidViewType(?type) :-
    ?superType = "android.view.ViewGroup",
    isType(?supertype)).
 
-
-
 AndroidLibraryListenerType(?type) :-
   AndroidLibraryType(?type),
   isType(?type),
-  (?type = "Listener";
-   ?type = "Callback").
-
-
+  (contains("Listener", ?type);
+   contains("Callback", ?type).
 
 ListenerType(?type) :-
   SubtypeOf(?type, ?listenerType),
@@ -126,20 +122,15 @@ MethodDeclaredOrInherited(?meth, ?class) :-
   Method_SimpleName(?meth, ?simplename),
   MethodLookup(?simplename, ?descriptor, ?class, ?meth).
 
-
-
 PublicMethodOfComponent(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   AndroidAppComponent(?type),
   Method_Modifier("public", ?meth).
 
-
-
 ProtectedMethodOfComponent(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   AndroidAppComponent(?type),
   Method_Modifier("protected", ?meth).
-
 
 AppMethodOverridesAndroidLibraryMethod(?meth) :-
   Method_DeclaringType(?meth, ?type),
@@ -176,16 +167,12 @@ PublicOnMethodOfLayoutControl(?meth) :-
   match("on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
-
-
 ProtectedOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
   match("on.*", ?simplename),
   Method_Modifier("protected", ?meth).
-
-
 
 OverridingProtectedOnMethodOfLayoutControl(?meth) :-
   ProtectedOnMethodOfLayoutControl(?meth),
