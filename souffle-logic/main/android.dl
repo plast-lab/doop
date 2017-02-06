@@ -75,8 +75,7 @@ ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
 // Main logic
 AndroidLibraryType(?type) :-
   isType(?type),
-  match("android\..*", ?type).
-
+  match("^android\..*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
 // application for compatibility with older Android versions. We
@@ -103,11 +102,9 @@ ListenerType(?type) :-
   SubtypeOf(?type, ?listenerType),
   AndroidLibraryListenerType(?listenerType).
 
-
 AndroidApplicationListenerClass(?class) :-
   AndroidApplicationClass(?class),
   ListenerType(?class).
-
 
 MethodDeclaredOrInherited(?meth, ?class) :-
   Method_DeclaringType(?meth, ?class),
@@ -164,14 +161,14 @@ PublicOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  match("^on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfLayoutControl(?meth) :-
   MethodDeclaredOrInherited(?meth, ?type),
   LayoutControl(_, ?type, _),
   Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  match("^on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfLayoutControl(?meth) :-
@@ -231,14 +228,14 @@ PublicOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  match("^on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
 ProtectedOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
   Method_SimpleName(?meth, ?simplename),
-  match("on.*", ?simplename),
+  match("^on.*", ?simplename),
   Method_Modifier("protected", ?meth).
 
 OverridingProtectedOnMethodOfReachableListener(?meth) :-
