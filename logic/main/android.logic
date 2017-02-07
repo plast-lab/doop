@@ -41,22 +41,16 @@ AndroidAppComponent(?type) <-
 ReifiedComponent[?type] = ?heap -> Type(?type), HeapAllocation(?heap).
 ReifiedLayoutControl[?type,?id] = ?heap -> int[32](?id), Type(?type), HeapAllocation(?heap).
 
-// Create a new heap object per component declared in layout
-// (XML) resources. (REVIEW) These are normal heap objects.
-HeapAllocation:Normal:Cons[?id] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?type,
+// Create a new heap object per component declared in layout (XML) resources.
+MockHeapConsMacro(?id, ?type, ?heap),
 ReifiedComponent[?type] = ?heap
 <-
   AndroidAppComponent(?type),
   Type:Id(?type:?typeStr),
   ?id = "<android component object " + ?typeStr + ">".
 
-// Create a new heap object per control object declared in layout
-// (XML) resources. (REVIEW) These are normal heap objects.
-HeapAllocation:Normal:Cons[?heapId] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?type,
+// Create a new heap object per control object declared in layout (XML) resources.
+MockHeapConsMacro(?heapId, ?type, ?heap),
 ReifiedLayoutControl[?type,?id] = ?heap
 <-
   LayoutControl(?id, ?type, _),
@@ -68,9 +62,7 @@ ImplicitlyInstantiatedLibraryType(?type) <-
   Type:Id(?type:"android.content.Intent");
   Type:Id(?type:"android.os.Bundle").
 
-HeapAllocation:Normal:Cons[?id] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?type,
+MockHeapConsMacro(?id, ?type, ?heap),
 ReifiedLibraryObject[?type] = ?heap
 <-
   ImplicitlyInstantiatedLibraryType(?type),
