@@ -7,13 +7,13 @@
 CallGraphEdge(?callerCtx, ?fakeinvo, ?calleeCtx, ?register),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) :-
     FakeInvocation_RegisterFinalize(?value, ?fakeinvo),
-    RecordMacro(?callerCtx, ?value, ?hctx),
-    MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?calleeCtx),
+    Value_Heap(?value, ?heap),
+    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
+    (!(HeapAllocation_Merge(?heap, _)); HeapAllocation_Merge(?heap, ?heap)),  // the object retains its identity
     ReachableContext(?callerCtx, ?inmethod),
     ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
     isMethod(?register),
     FormalParam(0, ?register, ?formal),
-    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
-    (!(HeapAllocation_Merge(?heap, _)); HeapAllocation_Merge(?heap, ?heap)),  // the object retains its identity
-    Value_Heap(?value, ?heap).
+    RecordMacro(?callerCtx, ?value, ?hctx),
+    MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?calleeCtx).
     //ObjectShouldNotBeRefined(?value).

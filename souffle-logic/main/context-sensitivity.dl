@@ -348,12 +348,12 @@ OptVirtualMethodInvocationBase(?invocation, ?base) :-
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-    VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
     OptVirtualMethodInvocationBase(?invocation, ?base),
+    VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
     Value_Type(?value, ?valuetype),
     ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-    MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-    ThisVar(?tomethod, ?this).
+    ThisVar(?tomethod, ?this),
+    MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
 //  ViableInvocation(?callerCtx, ?invocation),
 //TODO fix:    SiteShouldNotBeRefined(?invocation).
 

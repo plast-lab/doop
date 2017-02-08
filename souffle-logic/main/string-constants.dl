@@ -370,6 +370,7 @@ TypeToHeap(?heap, ?heaptype) :-
 TypeToHeapOrdinal(ord(?heap), ?heapType) :-
   TypeToHeap(?heap, ?heapType).
 
+
 .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
 
 ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
@@ -377,10 +378,10 @@ ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ?representativeHeapOrd = min ?otherHeap : TypeToHeapOrdinal(?otherHeap, ?type).
 
 HeapRepresentative(?representativeHeap, ?heap) :-
-  isHeapAllocation(?representativeHeap),
-  ord(?representativeHeap) = ?representativeHeapOrd,
+  ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
   TypeToHeap(?heap, ?heaptype),
-  ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd).
+  ord(?representativeHeap) = ?representativeHeapOrd,
+  isHeapAllocation(?representativeHeap).
 
 #endif // SEPARATE_EXCEPTION_OBJECTS
 /*
