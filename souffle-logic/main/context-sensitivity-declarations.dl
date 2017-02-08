@@ -46,7 +46,7 @@
 // through the heap.
 .decl SpecialObject(?heap:HeapAllocation)
 
-.decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var) output
+.decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
 
 .decl InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
 
