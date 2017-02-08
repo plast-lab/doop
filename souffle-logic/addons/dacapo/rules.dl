@@ -1,0 +1,40 @@
+/**
+ * DACAPO_BENCHMARK should be defined to represent the current benchmark being
+ * analyzed. E.g. "antlr".
+ */
+.decl DacapoHarnessClass(?classNameHeap:StringConstant)
+
+#ifdef DACAPO_BACH
+    StringConstantConsMacro(cat("org.dacapo.harness.", DACAPO_BENCHMARK), ?type),
+    DacapoHarnessClass(cat("org.dacapo.harness.", DACAPO_BENCHMARK)) :-
+#else
+    StringConstantConsMacro(cat("dacapo.", cat(DACAPO_BENCHMARK, ".Harness")), ?type),
+    DacapoHarnessClass(cat("dacapo.", cat(DACAPO_BENCHMARK, ".Harness"))) :-
+#endif
+   ?type = "java.lang.String",
+   isType(?type).
+
+/**
+ * Extra logic to handle a specific value read from a configuration file for
+ * the DaCapo benchmarks. The value is used afterwards reflectively to create a
+ * new object.
+ */
+VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to)
+:-
+   ImmutableHContextFromContext(?ctx, ?hctx),
+   MethodInvocation_Method(?inv,
+#ifdef DACAPO_BACH
+   "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
+#else
+   "<dacapo.parser.Config: void setClass(java.lang.String)>"
+#endif
+   ),
+   VirtualMethodInvocation_Base(?inv, ?base),
+   Var_DeclaringMethod(?base, ?method),
+   ReachableContext(?ctx, ?method),
+   ActualParam(0, ?inv, ?to),
+   DacapoHarnessClass(?classNameHeap),
+   Value_Heap(?classNameValue, ?classNameHeap).
+
+HeapAllocation_Keep(?classNameHeap) :-
+   DacapoHarnessClass(?classNameHeap).

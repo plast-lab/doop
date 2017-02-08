@@ -41,7 +41,7 @@ Value_Type(?value, ?type) :-
    Method_SimpleName(?meth, "<clinit>"),
    Method_DeclaringType(?meth, ?className),
    isType(?className),
-   match(".*\.R$.*", ?className),
+   contains(".R$", ?className),
    Type_int(?type),
    [?const] = ?value.
 
@@ -53,7 +53,7 @@ Value_Type(?value, ?type) :-
    FieldInitialValue(?fld, ?const),
    Field_DeclaringType(?fld, ?className),
    isType(?className),
-   match(".*\.R$.*", ?className),
+   contains(".R$", ?className),
    Type_int(?type),
    [?const] = ?value.
 
