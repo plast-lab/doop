@@ -76,7 +76,7 @@ class SouffleAnalysis extends DoopAnalysis {
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
-                new File(factsDir, "Tamiflex.facts").withWriter { w ->
+                new File(factsDir, "_Tamiflex_ReflectionData.facts").withWriter { w ->
                     origTamFile.eachLine { line ->
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
@@ -108,6 +108,12 @@ class SouffleAnalysis extends DoopAnalysis {
                 "${Doop.souffleLogicPath}/facts/post-process.dl"
                                         )
 
+        if (options.TAMIFLEX.value) {
+            def tamiflexDir = "${Doop.souffleAddonsPath}/tamiflex"
+            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexDir}/fact-declarations.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexDir}/import.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexDir}/post-import.dl")
+        }
     }
 
     @Override
@@ -162,6 +168,12 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
             cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/dacapo/rules.dl", commonMacros)
+
+        if (options.TAMIFLEX.value) {
+            cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/tamiflex/declarations.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/tamiflex/delta.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/tamiflex/rules.dl", commonMacros)
+        }
 
         if (options.SANITY.value)
             cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/sanity.dl")

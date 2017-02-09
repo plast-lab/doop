@@ -14,18 +14,18 @@ Value_DeclaringType(?value, ?type) :-
   Value_Heap(?heap, ?value),
   Value_Type(?value, ?type).
 
-
-Tamiflex_Class_NewInstance(?invocation, ?heap) :-
+MockHeapConsMacro(?id, ?type),
+Tamiflex_Class_NewInstance(?invocation, ?id) :-
   ?sig = "<java.lang.Class: java.lang.Object newInstance()>",
   isMethod(?sig),
   VirtualMethodInvocation(?invocation, ?sig, _),
   Tamiflex_ReflectionMap(?type, ?invocation),
   isInstruction(?invocation),
   isType(?type),
-  ?id = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"),
-  MockHeapConsMacro(?id, ?type, ?heap).
+  ?id = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">").
 
-Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?heap) :-
+MockHeapConsMacro(?id, ?type),
+Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?id) :-
   ?sig = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>",
   isMethod(?sig),
   VirtualMethodInvocation(?invocation, ?sig, _),
@@ -34,20 +34,20 @@ Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?heap) :-
   isMethod(?constructor),
   Method_DeclaringType(?constructor, ?type),
   isType(?type),
-  ?id = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"),
-  MockHeapConsMacro(?id, ?type, ?heap).
+  ?id = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">").
 
-Tamiflex_Array_NewInstance(?invocation, ?heap) :-
+MockHeapConsMacro(?id, ?type),
+Tamiflex_Array_NewInstance(?invocation, ?id) :-
   ?sig = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>",
   isMethod(?sig),
   StaticMethodInvocation(?invocation, ?sig, _),
   Tamiflex_ReflectionMap(?type, ?invocation),
   isInstruction(?invocation),
   isType(?type),
-  ?id = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"),
-  MockHeapConsMacro(?id, ?type, ?heap).
+  ?id = cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">").
 
-Tamiflex_ReifiedField(?fld, ?heap, ?invocation) :-
+MockHeapConsMacro(?id, ?type),
+Tamiflex_ReifiedField(?fld, ?id, ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>" ),
   isMethod(?sig),
@@ -56,10 +56,10 @@ Tamiflex_ReifiedField(?fld, ?heap, ?invocation) :-
   isField(?fld),
   ?type = "java.lang.reflect.Field",
   isType(?type),
-  ?id = cat(cat("<(Tamiflex) ", ?fld), ">"),
-  MockHeapConsMacro(?id, ?type, ?heap).
+  ?id = cat(cat("<(Tamiflex) ", ?fld), ">").
 
-Tamiflex_ReifiedFieldArray(?type, ?heap, ?invocation) :-
+MockHeapConsMacro(?id, ?javaFieldArrayType),
+Tamiflex_ReifiedFieldArray(?type, ?id, ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Field[] getFields()>" ),
   isMethod(?sig),
@@ -68,10 +68,11 @@ Tamiflex_ReifiedFieldArray(?type, ?heap, ?invocation) :-
   isType(?type),
   ?javaFieldArrayType = "java.lang.reflect.Field[]",
   isType(?javaFieldArrayType),
-  ?id = cat(cat("<(Tamiflex) ", ?type), "/Field[]>"),
-  MockHeapConsMacro(?id, ?javaFieldArrayType, ?heap).
+  ?id = cat(cat("<(Tamiflex) ", ?type), "/Field[]>").
 
-Tamiflex_ReifiedMethod(?method, ?heap, ?invocation) :-
+
+MockHeapConsMacro(?id, ?type),
+Tamiflex_ReifiedMethod(?method, ?id, ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>" ),
   isMethod(?sig),
@@ -80,10 +81,10 @@ Tamiflex_ReifiedMethod(?method, ?heap, ?invocation) :-
   isMethod(?method),
   ?type = "java.lang.reflect.Method",
   isType(?type),
-  ?id = cat(cat("<(Tamiflex) ", ?method), ">"),
-  MockHeapConsMacro(?id, ?type, ?heap).
+  ?id = cat(cat("<(Tamiflex) ", ?method), ">").
 
-Tamiflex_ReifiedMethodArray(?type, ?heap, ?invocation) :-
+MockHeapConsMacro(?id, ?javaMethodArrayType),
+Tamiflex_ReifiedMethodArray(?type, ?id, ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Method[] getMethods()>" ),
   isMethod(?sig),
@@ -92,8 +93,7 @@ Tamiflex_ReifiedMethodArray(?type, ?heap, ?invocation) :-
   isType(?type),
   ?javaMethodArrayType = "java.lang.reflect.Method[]",
   isType(?javaMethodArrayType),
-  ?id = cat(cat("<(Tamiflex) ", ?type), "/Method[]>"),
-  MockHeapConsMacro(?id, ?javaMethodArrayType, ?heap).
+  ?id = cat(cat("<(Tamiflex) ", ?type), "/Method[]>").
 
 
 /**
