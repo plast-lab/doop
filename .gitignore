@@ -19,3 +19,6 @@ doop-nexgen.iml
 
 #netbeans files
 .nb-gradle
+
+#souffle profiler html output dir
+profiler_html
