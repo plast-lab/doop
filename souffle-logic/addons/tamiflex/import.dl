@@ -17,7 +17,11 @@ _Tamiflex_ToDoopFormat("set*", "set").
 
 Tamiflex_ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) :-
   _Tamiflex_ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
-  ?original = cat(cat(?classStr0, "."), methodStr0),   
+  ?original = cat(cat(?classStr0, "."), ?methodStr0),   
   _Tamiflex_ToDoopFormat(?classStr0, ?classStr),
-  (_Tamiflex_ToDoopFormat(?methodStr0, ?methodStr);
-   ?methodStr0 = ?methodStr).
+  _Tamiflex_ToDoopFormat(?methodStr0, ?methodStr).
+
+//Tamiflex_ReflectionData(?classStr, ?methodStr0, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) :-
+//  _Tamiflex_ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+//  ?original = cat(cat(?classStr0, "."), ?methodStr0),   
+//  _Tamiflex_ToDoopFormat(?classStr0, ?classStr).
