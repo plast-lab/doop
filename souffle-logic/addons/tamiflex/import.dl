@@ -12,16 +12,12 @@ _Tamiflex_ToDoopFormat("get*", "get").
 _Tamiflex_ToDoopFormat("set*", "set").
 
 // Import data from the reflection log generated from tamiflex
-.decl _Tamiflex_ReflectionData(?original:symbol, ?mapped:symbol, ?inClassStr:symbol,
+.decl _Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol,
                                ?inMethodStr:symbol, ?lineNumber:number) input
 
 Tamiflex_ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) :-
-  _Tamiflex_ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
-  ?original = cat(cat(?classStr0, "."), ?methodStr0),   
+  _Tamiflex_ReflectionData(?classStr0, ?methodStr0, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
   _Tamiflex_ToDoopFormat(?classStr0, ?classStr),
-  _Tamiflex_ToDoopFormat(?methodStr0, ?methodStr).
+  (_Tamiflex_ToDoopFormat(?methodStr0, ?methodStr) ;
+   ?methodStr0 = ?methodStr).
 
-//Tamiflex_ReflectionData(?classStr, ?methodStr0, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) :-
-//  _Tamiflex_ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
-//  ?original = cat(cat(?classStr0, "."), ?methodStr0),   
-//  _Tamiflex_ToDoopFormat(?classStr0, ?classStr).

@@ -81,12 +81,11 @@ class SouffleAnalysis extends DoopAnalysis {
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
                                 .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second + "\n" }
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + "\t" + second+ "\n"
+                        }.replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
             }
-
-
 
             logger.info "Caching facts in $cacheDir"
             deleteQuietly(cacheDir)
