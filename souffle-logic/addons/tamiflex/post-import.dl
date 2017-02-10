@@ -3,7 +3,7 @@
  * probably due to some weird issue with the engine.
  */
 Tamiflex_ReflectionMap(?mapped, ?invocation) :-
-   Tamiflex_ReflectionData(?class, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?line),
+   Tamiflex_ReflectionData(?class, ?methodStr, ?mapped, ?inClass, ?inMethodStr, ?line),
 
    isClassType(?class),
    Method_SimpleName(?method, ?methodStr),
