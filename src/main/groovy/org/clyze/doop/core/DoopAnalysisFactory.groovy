@@ -357,6 +357,13 @@ class DoopAnalysisFactory implements AnalysisFactory {
             options.MUST_AFTER_MAY.value = true
         }
 
+        if (options.X_DRY_RUN.value) {
+            options.X_STATS_NONE.value = true
+            if (options.CACHE.value) {
+                logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
+            }
+        }
+
         context.resolve()
         def inputFiles = context.getAll()
         def platformFiles = resolve(platformFilePaths)

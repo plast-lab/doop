@@ -419,37 +419,40 @@ class ClassicAnalysis extends DoopAnalysis {
             depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
         }
 
-        Collection<String> params = null
+        Collection<String> params
 
         switch(platform) {
             case "java":
                 params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
-            // This uses all platformLibs.
-            // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-            // This uses just platformLibs[0], assumed to be android.jar.
-            params = ["--full"] + depArgs + ["--android-jars"] +
-                 [platformLibs[0].getAbsolutePath()]
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--full"] + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
         break
             default:
                 throw new RuntimeException("Unsupported platform")
         }
 
         if (options.SSA.value) {
-            params = params + ["--ssa"]
+            params += ["--ssa"]
         }
 
         if (!options.RUN_JPHANTOM.value) {
-            params = params + ["--allow-phantom"]
+            params += ["--allow-phantom"]
         }
 
         if (options.RUN_FLOWDROID.value) {
-            params = params + ["--run-flowdroid"]
+            params += ["--run-flowdroid"]
         }
 
         if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-            params = params + ["--only-application-classes-fact-gen"]
+            params += ["--only-application-classes-fact-gen"]
+        }
+
+        if (options.X_DRY_RUN.value) {
+            params += ["--noFacts"]
         }
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
