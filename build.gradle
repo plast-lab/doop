@@ -14,7 +14,7 @@ plugins {
     id 'groovy'
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
-    id 'net.researchgate.release' version '2.4.0' 
+    id 'net.researchgate.release' version '2.4.0'
 }
 
 apply from  : 'benchmarks.gradle'
@@ -120,7 +120,7 @@ run {
 }
 
 task bytecode2jimple(type: JavaExec) {
-    description 'Generate Jimple/Shimple'
+    description 'Generate Jimple/Shimple file'
     group = 'Other'
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
@@ -151,7 +151,7 @@ task bytecode2jimple(type: JavaExec) {
 }
 
 task jimple2json(type: JavaExec) {
-    description 'Run JSON files from Jimple'
+    description 'Generate JSON files from Jimple'
     group = 'Other'
     main = 'org.clyze.jimple.Main'
     classpath = sourceSets.main.runtimeClasspath
@@ -218,7 +218,7 @@ if (project.hasProperty('artifactory_user')) {
     }
 
     release {
-    
+
         failOnSnapshotDependencies = false
 
         /* publish before releasing
