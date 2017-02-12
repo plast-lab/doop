@@ -1,103 +1,3 @@
-/**
- * Compute for an instruction which exception handlers handle which exception
- * types
- */
-ExceptionHandler:At[?type, ?instruction] = ?handler ->
-   ExceptionHandler(?handler), Type(?type), Instruction(?instruction).
-
-ImpossibleExceptionHandler(?handler, ?type, ?instruction) ->
-   ExceptionHandler(?handler), Type(?type), Instruction(?instruction).
-
-/**
- * All possible handlers of an exception type for an instruction
- */
-PossibleExceptionHandler(?handler, ?type, ?instruction) ->
-   ExceptionHandler(?handler),
-   Type(?type),
-   Instruction(?instruction).
-
-/**
- * Instructions that are in the range of an exception handler
- */
-ExceptionHandler:InRange(?handler, ?instruction) ->
-   ExceptionHandler(?handler),
-   Instruction(?instruction).
-
-/**
- * Transitive closure of ExceptionHandler:Previous.
- */
-ExceptionHandler:Before(?before, ?handler) ->
-   ExceptionHandler(?before),
-   ExceptionHandler(?handler).
-
-InRangeOfExceptionHandler(?instruction) -> Instruction(?instruction).
-/**
- * (REVIEW-Yannis) Note how this logic is superlinear. We keep relations that
- * link every exception handler to every relevant (i.e., throw or methcall)
- * instruction under its range, and to every type that the exception handler
- * can handle, including all subtypes of the declared type.  It is not easy to
- * change this, nor perhaps too valuable. But it is certainly a spot where
- * bottom-up evaluation with an explicit representation hurts us.  We have very
- * large ExceptionHandler:At, PossibleExceptionHandler, etc. relations.
- * NOTE: currently exception objects are allocated context-insensitively.
-/**
- * An exception of a specific type, thrown at an instruction, is handled by an
- * exception handler.
- */
-ExceptionHandler:At[?type, ?instruction] = ?handler <-
-   PossibleExceptionHandler(?handler, ?type, ?instruction),
-   !ImpossibleExceptionHandler(?handler, ?type, ?instruction).
-
-/**
- * An exception type that is caught by an earlier exception handler (not
- * ?handler).
- */
-ImpossibleExceptionHandler(?handler, ?type, ?instruction) <-
-   PossibleExceptionHandler(?handler, ?type, ?instruction),
-   ExceptionHandler:Before(?previous, ?handler),
-   PossibleExceptionHandler(?previous, ?type, ?instruction).
-
-PossibleExceptionHandler(?handler, ?type, ?instruction) <-
-   ExceptionHandler:InRange(?handler, ?instruction),
-   ExceptionHandler:Type[?handler] = ?type.
-
-PossibleExceptionHandler(?handler, ?subtype, ?instruction) <-
-   ExceptionHandler:InRange(?handler, ?instruction),
-   ExceptionHandler:Type[?handler] = ?type,
-   Superclass(?subtype, ?type).
-
-
-ExceptionHandler:InRange(?handler, ?instruction) <-
-   Instruction:Method[?instruction] = ?method,
-   ExceptionHandler:Method[?handler] = ?method, // TODO: this could be optimized
-   Instruction:Index[?instruction] = ?index,
-   ExceptionHandler:Begin[?handler] = ?begin,
-   ?begin <= ?index,
-   ExceptionHandler:End[?handler] = ?end,
-   ?index < ?end.
-
-ExceptionHandler:Before(?previous, ?handler) <-
-   ExceptionHandler:Previous[?handler] = ?previous.
-
-ExceptionHandler:Before(?before, ?handler) <-
-   ExceptionHandler:Before(?middle, ?handler),
-   ExceptionHandler:Previous[?middle] = ?before.
-
-
-
-/**
- * TODO: Implicitly thrown exceptions are not included
- */
-
-/**
- * Represents the exceptions a method can throw
- */
-ThrowPointsTo(?hctx, ?value, ?ctx, ?method) ->
-   HContext(?hctx), Value(?value),
-   Context(?ctx), Method(?method).
-
-
-
 Instruction:Throws(?hctx, ?value, ?ctx, ?insn) <-
   Throw(?insn, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var).
@@ -106,14 +6,113 @@ Instruction:Throws(?hctx, ?value, ?callerCtx, ?invocation) <-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
   ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod).
 
+/**
+ * Represents the exceptions a method can throw
+ * TODO Implicitly thrown exceptions are not included
+ */
 ThrowPointsTo(?hctx, ?value, ?ctx, ?method) <-
   Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
   Instruction:Method[?insn] = ?method,
-  Value:Type[?value] = ?valueType,
-   !(ExceptionHandler:At[?valueType, ?insn] = _).
+  !ExceptionHandler:InRange(_, ?insn).
+
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) <-
+  Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
+  Instruction:Method[?insn] = ?method,
+  ExceptionHandler:SameInsn:Repr[?insn] = ?repr,
+  ExceptionHandler:SameBlock:Repr[?repr] = ?block,
+  !ExceptionHandler:TypeIsCaught(Value:Type[?value], ?block).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?param) <-
   Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
   Value:Type[?value] = ?valueType,
-   ExceptionHandler:At[?valueType, ?insn] = ?handler,
-   ExceptionHandler:FormalParam[?handler] = ?param.
+  ExceptionHandler:InRange(?handler, ?insn),
+	ExceptionHandler:Type[?handler] = ?handlerType,
+  SubtypeOf(?valueType, ?handlerType),
+  ConcreteClass(?valueType), // filtering null_type
+  !ExceptionHandler:Impossible(?valueType, ?handler, ?insn),
+  ExceptionHandler:FormalParam[?handler] = ?param.
+
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+ * This will only used to check that an exception is *not* caught (negated).
+ * Merge handlers with the same catch block for further optimization.
+ */
+ExceptionHandler:TypeIsCaught(?type, ?block) <-
+  ExceptionHandler:InRange(?handler, ?insn),
+  ExceptionHandler:SameInsn:Repr[?insn] = ?repr,
+  ExceptionHandler:SameBlock:Repr[?repr] = ?block,
+  SubtypeOf(?type, ExceptionHandler:Type[?handler]),
+  ConcreteClass(?type).
+
+/*
+ * Inclusion of instuction is important. E.g. handler1 covers indices 20-30,
+ * handler2 covers indices 10-40. Also, Previous(handler1, handler2).
+ * Instruction #25 may infer Impossible(T1, handler2). Subsequently, when
+ * checking instruction #15, we would (falsely) have that handler2 is
+ * impossible for type T1.
+ */
+ExceptionHandler:Impossible(?type, ?h2, ?insn) <-
+  ExceptionHandler:InRange(?h1, ?insn),
+  ExceptionHandler:InRange(?h2, ?insn),
+  ExceptionHandler:Before(?h1, ?h2),
+  ExceptionHandler:Type[?h1] = ?h1Type,
+  ExceptionHandler:Type[?h2] = ?h2Type,
+  SubtypeOf(?type, ?h1Type),
+  SubtypeOf(?type, ?h2Type),
+  ConcreteClass(?type).
+
+///////////////////////////////////////////////////////////////////////////////
+
+ExceptionHandler:Method:Opt(?handler, ?method) <-
+  ExceptionHandler:Method[?handler] = ?method.
+
+ExceptionHandler:InRange(?handler, ?instruction) <-
+  Instruction:Method[?instruction] = ?method,
+  Instruction:Index[?instruction] = ?index,
+  ExceptionHandler:Method:Opt(?handler, ?method),
+  ExceptionHandler:Begin[?handler] <= ?index,
+  ExceptionHandler:End[?handler] > ?index.
+
+/*
+ * Previous(h1, h2) has different semantics compared to Index[h1] < Index[h2].
+ * This is due to catch clauses with multiple exceptions.
+ * E.g. catch(IOException|SQLException ex)
+ */
+ExceptionHandler:Before(?previous, ?handler) <-
+  ExceptionHandler:Previous[?handler] = ?previous.
+
+ExceptionHandler:Before(?before, ?handler) <-
+  ExceptionHandler:Before(?middle, ?handler),
+  ExceptionHandler:Previous[?middle] = ?before.
+
+/*
+ * An instruction may be in range of multiple handlers. Pick the first one as a
+ * representative and have it handling all (concrete) types of those handlers.
+ */
+ExceptionHandler:SameInsn:PartialOrder(?h1, ?h2, ?insn) <-
+  ExceptionHandler:InRange(?h1, ?insn),
+  ExceptionHandler:InRange(?h2, ?insn),
+  ExceptionHandler:Before(?h1, ?h2).
+
+ExceptionHandler:SameInsn:Repr[?insn] = ?handler <-
+  ExceptionHandler:InRange(?handler, ?insn),
+  !ExceptionHandler:SameInsn:PartialOrder(_, ?handler, ?insn).
+
+/*
+ * In Jimple, multiple handlers share the same catch block. Also, additional
+ * handlers/catch blocks might be added (e.g. to handle exitmonitor commands).
+ * NOTE: there are cases where:
+ * Previous(h1, h2), Repr[h1] = block1, Repr[h2] = block2 *but* Index[block1] > Index[block2]
+ */
+ExceptionHandler:SameBlock:PartialOrder(?h1, ?h2) <-
+  ExceptionHandler:Before(?h1, ?h2),
+  ExceptionHandler:Index[?h1] = ExceptionHandler:Index[?h2].
+
+ExceptionHandler:SameBlock:Repr[?handler] = ?handler <-
+  ExceptionHandler(?handler),
+  !ExceptionHandler:SameBlock:PartialOrder(_, ?handler).
+
+ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
+  ExceptionHandler:SameBlock:PartialOrder(?repr, ?handler),
+  !ExceptionHandler:SameBlock:PartialOrder(_, ?repr).
