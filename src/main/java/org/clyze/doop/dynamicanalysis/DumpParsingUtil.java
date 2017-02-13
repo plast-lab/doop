@@ -1,8 +1,6 @@
 package org.clyze.doop.dynamicanalysis;
 
-import com.sun.tools.hat.internal.model.JavaClass;
-import com.sun.tools.hat.internal.model.Snapshot;
-import com.sun.tools.hat.internal.model.StackTrace;
+import com.sun.tools.hat.internal.model.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -105,5 +103,10 @@ public class DumpParsingUtil {
             return new DynamicHeapAllocation(heapAbstraction, frame.getLineNumber(), fullyQualifiedMethodName, clazz.getName());
         }
         return new DynamicHeapAllocation("Unknown object of type: "+clazz.getName(),"unknown", "unknown", clazz.getName());
+    }
+
+    static String getSignatureForField(JavaClass declaringClass, JavaField field) {
+        return "<" + declaringClass.getName() + ": " + convertType(field.getSignature()) + " " + field.getName() + ">";
+
     }
 }

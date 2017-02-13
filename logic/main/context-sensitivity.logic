@@ -550,6 +550,31 @@ Reachable(?method) <-
 
 
 /**
+ * Dynamic analysis
+ */
+#ifdef ANALYZE_MEMORY_DUMP
+FromStatic(?value, ?signature),
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+   DynamicStaticFieldPointsTo(?heap, ?signature),
+   Value:byHeap[?heap] = ?value,
+   ImmutableHContext(?hctx).
+   
+FromInstance(?value, ?fld, ?basevalue),
+InstanceFieldPointsTo(?hctx, ?value, ?fld, ?hctx, ?basevalue) <-
+   DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap),
+   Value:byHeap[?heap] = ?value,
+   Value:byHeap[?baseHeap] = ?basevalue,
+   ImmutableHContext(?hctx).
+   
+FromArray(?value, ?basevalue),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue) <-
+   DynamicArrayIndexPointsTo(?heap, ?baseHeap),
+   Value:byHeap[?heap] = ?value,
+   Value:byHeap[?baseHeap] = ?basevalue,
+   ImmutableHContext(?hctx).
+#endif
+
+/**
  * EXPERIMENTS ONLY below this point
  */
 

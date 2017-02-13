@@ -57,10 +57,13 @@ public class MemoryAnalyser {
             if (heap instanceof JavaObject) {
                 JavaObject obj = (JavaObject) heap;
                 String baseHeap = getAllocationAbstraction(obj);
-                for (JavaField field : obj.getClazz().getFields()) {
-                    JavaThing fieldValue = obj.getField(field.getName());
-                    instanceFieldPointsToSet.add(new InstanceFieldPointsTo(baseHeap, field.getName(), getAllocationAbstraction(fieldValue)));
-                }
+                JavaClass clazz = obj.getClazz();
+                do {
+                    for (JavaField field : clazz.getFields()) {
+                        JavaThing fieldValue = obj.getField(field.getName());
+                        instanceFieldPointsToSet.add(new InstanceFieldPointsTo(baseHeap, DumpParsingUtil.getSignatureForField(clazz, field), getAllocationAbstraction(fieldValue)));
+                    }
+                } while ((clazz = clazz.getSuperclass()) != null);
             } else if (heap instanceof  JavaObjectArray) {
                 JavaObjectArray obj = (JavaObjectArray) heap;
                 String baseHeap = getAllocationAbstraction(obj);
@@ -74,7 +77,7 @@ public class MemoryAnalyser {
                 JavaClass obj = (JavaClass) heap;
                 for (JavaStatic javaStatic : obj.getStatics()) {
                     staticFieldPointsToSet.add(new StaticFieldPointsTo(
-                            obj.getName(),
+                            DumpParsingUtil.getSignatureForField(obj, javaStatic.getField()),
                             getAllocationAbstraction(javaStatic.getValue())
                     ));
                 }

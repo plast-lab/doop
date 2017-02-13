@@ -551,8 +551,8 @@ FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 //-----------------------------------------------------------------------------
 // [Dynamic analysis related]
 //-----------------------------------------------------------------------------
-DynamicStaticFieldPointsTo(?heap, ?fld) -> HeapAllocation(?heap), string(?fld).
-DynamicInstanceFieldPointsTo(?baseheap, ?fieldname, ?heap) -> HeapAllocation(?baseheap), string(?fieldname), HeapAllocation(?heap).
+DynamicStaticFieldPointsTo(?heap, ?fld) -> HeapAllocation(?heap), Field(?fld).
+DynamicInstanceFieldPointsTo(?baseheap, ?fieldname, ?heap) -> HeapAllocation(?baseheap), Field(?fieldname), HeapAllocation(?heap).
 DynamicArrayIndexPointsTo(?heap, ?baseheap) -> HeapAllocation(?heap), HeapAllocation(?baseheap).
 DynamicHeapAllocation(?representation, ?heap) -> HeapAllocation(?heap), string(?representation).
 
