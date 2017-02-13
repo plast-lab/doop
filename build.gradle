@@ -8,9 +8,14 @@ buildscript {
     }
 }
 
-apply plugin: 'antlr'
-apply plugin: 'application'
-apply plugin: 'groovy'
+plugins {
+    id 'antlr'
+    id 'application'
+    id 'groovy'
+    id 'maven-publish'
+    //see https://github.com/researchgate/gradle-release
+    id 'net.researchgate.release' version '2.4.0'
+}
 
 apply from  : 'benchmarks.gradle'
 
@@ -19,7 +24,6 @@ sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
 group = 'org.clyze'
-version = '1.0-SNAPSHOT'
 
 //For the doop app
 mainClassName = 'org.clyze.doop.Main'
@@ -30,9 +34,18 @@ task wrapper(type: Wrapper) {
 }
 
 repositories {
+
+    mavenLocal()
+
     mavenCentral()
+
     maven {
-        url "http://centauri.di.uoa.gr:8081/artifactory/ext-snapshot-local"
+        credentials {
+            username artifactory_user
+            password artifactory_password
+        }
+
+        url "${artifactory_contextUrl}/plast"
     }
 }
 
@@ -55,6 +68,11 @@ def sootInfoflowAndroidJar = file('lib/soot-infoflow-android-1.1.jar')
    }
 }
 
+//This is required only for the SNAPSHOT dependencies
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
             'commons-logging:commons-logging:1.1',              // Logging wrapper
@@ -68,6 +86,8 @@ dependencies {
     compile 'ext:AXMLPrinter2:1.0-SNAPSHOT',
             'ext:dexlib2:2.2b4'
 
+    compile 'org.clyze:clue-common:1.+'
+
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'
     runtime 'ext:averroes-no-properties:1.0-SNAPSHOT',
@@ -80,28 +100,6 @@ dependencies {
     compile 'org.antlr:antlr4-runtime:4.5.1-1'
     testCompile 'junit:junit:4.12',
                 'org.spockframework:spock-core:1.0-groovy-2.4'
-}
-
-task generateFiles(type: JavaExec) {
-    description 'Generate the doop.properties file'
-    group = 'Other'
-    main = 'org.clyze.doop.FileGenerator'
-    classpath = sourceSets.main.runtimeClasspath
-    args = [ projectDir ]
-}
-
-task bytecode2jimple(type: JavaExec) {
-    description 'Generate Jimple/Shimple'
-    group = 'Other'
-    main = 'org.clyze.doop.soot.Main'
-    classpath = sourceSets.main.runtimeClasspath
-    if (!project.hasProperty('args') ||
-        project.property('args').isEmpty() ||
-        project.property('args').contains("-h")) {
-        args = ["--bytecode2jimpleHelp"]
-    } else {
-        args = ["--bytecode2jimple", "--allow-phantom"] + project.property('args').tokenize()
-    }
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
@@ -118,6 +116,47 @@ run {
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
         args project.property('args').split()
+    }
+}
+
+task bytecode2jimple(type: JavaExec) {
+    description 'Generate Jimple/Shimple file'
+    group = 'Other'
+    main = 'org.clyze.doop.soot.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if (!project.hasProperty('args') ||
+        project.property('args').isEmpty() ||
+        project.property('args') == '-h' ||
+        project.property('args') == '--help') {
+        args = ["--bytecode2jimpleHelp"]
+    } else {
+        def gradleInvocationDir = System.getProperty('user.dir')
+        def givenArgs = project.property('args').tokenize()
+        def index = givenArgs.indexOf("-d")
+        if (index != -1) {
+            def outDir = givenArgs[index+1]
+            if (!outDir.startsWith("/"))
+                givenArgs[index+1] = gradleInvocationDir + "/" + outDir
+        }
+        else {
+            givenArgs = ["-d", gradleInvocationDir] + givenArgs
+        }
+        def lastIndex = givenArgs.size()-1
+        def inputFile = givenArgs[lastIndex]
+        if (!inputFile.startsWith("/"))
+            givenArgs[lastIndex] = gradleInvocationDir + "/" + inputFile
+
+        args = ["--bytecode2jimple", "--allow-phantom"] + givenArgs
+    }
+}
+
+task jimple2json(type: JavaExec) {
+    description 'Generate JSON files from Jimple'
+    group = 'Other'
+    main = 'org.clyze.jimple.Main'
+    classpath = sourceSets.main.runtimeClasspath
+    if (project.hasProperty("args")) {
+        args project.property("args").split()
     }
 }
 
@@ -148,8 +187,6 @@ clean.doFirst {
 
 if (project.hasProperty('artifactory_user')) {
 
-    apply plugin: 'maven-publish'
-
     //Generate a jar with the logic files
     task logicJar(type:Jar) {
         from "$projectDir/logic"
@@ -179,4 +216,16 @@ if (project.hasProperty('artifactory_user')) {
             }
         }
     }
+
+    release {
+
+        failOnSnapshotDependencies = false
+
+        /* publish before releasing
+           buildTasks =['build', 'publish']
+         */
+    }
+
+    afterReleaseBuild.dependsOn publish
+
 }

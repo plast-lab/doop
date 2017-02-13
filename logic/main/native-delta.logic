@@ -32,7 +32,7 @@
   \
   +SpecialMethodInvocation:Base[?invocation] = ?return, \
   +Instruction:Method[?invocation] = ?method, \
-  +MethodInvocation:Signature[?invocation] = ?constructor, \
+  +MethodInvocation:Method[?invocation] = ?constructor, \
   PlusSpecialMethodInvocation(?invocation, ?strInvocation), \
   +Instruction:Index[?invocation] = ?index \
     <- \
@@ -67,7 +67,7 @@
   +VirtualMethodInvocation(?invocation, ?signature, ?inmethod), \
   +VirtualMethodInvocation:Base[?invocation] = ?base, \
   +Instruction:Method[?invocation] = ?inmethod, \
-  +MethodInvocation:Signature[?invocation] = ?signature, \
+  +MethodInvocation:Method[?invocation] = ?signature, \
   +Instruction:Index[?invocation] = ?index \
     <- \
       Method:Id(?inmethod:strMethod), \

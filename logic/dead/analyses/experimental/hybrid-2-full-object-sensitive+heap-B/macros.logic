@@ -15,11 +15,11 @@
   Context(calleeCtx), \
   ContextFromRealContext[RealHContextFromHContext[hctx], heap] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, heap) \
   MergeBasis(callerCtx, invocation, hctx, heap)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-  OptimizeMerge[hctx, heap] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  CachedMerge[hctx, heap] = calleeCtx
 
 // For this analysis, static calls use the invocation site as a context.
 // Better precision when using RealContext1FromContext instead of RealContext2FromContext.

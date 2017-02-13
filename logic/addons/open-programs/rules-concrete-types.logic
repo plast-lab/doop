@@ -3,7 +3,13 @@
 #include "entry-points.logic"
 
 ConcreteImplementations[?staticType] = ?class <-
-   agg << ?class = min(?allClasses) >> AllConcreteImplementations(?allClasses, ?staticType).
+   agg << ?class = min(?allClasses) >> (
+                         #ifdef MULTIPLE_SEGREGATED_ANALYSES
+                         TypeToPartitionId[?allClasses] = TypeToPartitionId[?staticType],
+                         #endif
+                         AllConcreteImplementations(?allClasses, ?staticType)
+                      ).
+
 
 StaticToActualType(?class, ?staticType) <-
    ConcreteImplementations[?staticType] = ?class,

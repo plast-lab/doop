@@ -1,6 +1,5 @@
 #include "basic-declarations.logic"
 
-#include "exceptions.logic"
 #include "finalization.logic"
 #include "method-resolution.logic"
 #include "subclass.logic"

@@ -27,9 +27,9 @@ class FactWriter {
         _varTypeMap = new ConcurrentHashMap<>();
     }
 
-	String str(int i) {
-		return String.valueOf(i);
-	}
+    String str(int i) {
+        return String.valueOf(i);
+    }
 
     String writeStringConstant(String constant) {
         String raw;
@@ -492,9 +492,9 @@ class FactWriter {
     }
 
     void writeGoto(SootMethod m, Stmt stmt, Unit to, Session session) {
-		session.calcUnitNumber(stmt);
+        session.calcUnitNumber(stmt);
         int index = session.getUnitNumber(stmt);
-		session.calcUnitNumber(to);
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -506,9 +506,9 @@ class FactWriter {
      * If
      */
     void writeIf(SootMethod m, Stmt stmt, Unit to, Session session) {
-		// index was already computed earlier
+        // index was already computed earlier
         int index = session.getUnitNumber(stmt);
-		session.calcUnitNumber(to);
+        session.calcUnitNumber(to);
         int indexTo = session.getUnitNumber(to);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -544,13 +544,13 @@ class FactWriter {
         _db.add(TABLE_SWITCH, insn, str(stmtIndex), _rep.local(inMethod, l), methodId);
 
         for (int tgIndex = stmt.getLowIndex(), i = 0; tgIndex <= stmt.getHighIndex(); tgIndex++, i++) {
-			session.calcUnitNumber(stmt.getTarget(i));
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(TABLE_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
         }
 
-		session.calcUnitNumber(stmt.getDefaultTarget());
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(TABLE_SWITCH_DEFAULT, insn, str(defaultIndex));
@@ -572,13 +572,13 @@ class FactWriter {
 
         for(int i = 0, end = stmt.getTargetCount(); i < end; i++) {
             int tgIndex = stmt.getLookupValue(i);
-			session.calcUnitNumber(stmt.getTarget(i));
+            session.calcUnitNumber(stmt.getTarget(i));
             int indexTo = session.getUnitNumber(stmt.getTarget(i));
 
             _db.add(LOOKUP_SWITCH_TARGET, insn, str(tgIndex), str(indexTo));
         }
 
-		session.calcUnitNumber(stmt.getDefaultTarget());
+        session.calcUnitNumber(stmt.getDefaultTarget());
         int defaultIndex = session.getUnitNumber(stmt.getDefaultTarget());
 
         _db.add(LOOKUP_SWITCH_DEFAULT, insn, str(defaultIndex));
@@ -881,8 +881,8 @@ class FactWriter {
         _db.add(CALLBACK_METHOD, callbackMethod);
     }
 
-    void writeLayoutControl(Integer id, String layoutControl) {
-        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl);
+    void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
+        _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
     void writeFieldInitialValue(SootField f) {

@@ -34,5 +34,5 @@ if __name__ == '__main__':
     ratios = ((parseOut(getProcess(arguments['<db1>']).stdout) * 1.0)
               / parseOut(getProcess(arguments['<db2>']).stdout))
     pd.set_option('display.max_rows', len(ratios))
-    print(ratios[ratios > 1.01].sort_values())
+    print(ratios.sort_values())
 

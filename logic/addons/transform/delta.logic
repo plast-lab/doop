@@ -67,7 +67,7 @@
    RedundantInvocation@previous(?invocation).
 
 -Instruction:Method[?invocation] = ?inmethod,
--MethodInvocation:Signature(?invocation, ?sig),
+-MethodInvocation:Method(?invocation, ?sig),
 -StaticMethodInvocation(?invocation, ?sig, ?inmethod),
 -AssignReturnValue[?invocation] = ?ret <-
    StaticMethodInvocation@previous(?invocation, ?sig, ?inmethod),
@@ -75,7 +75,7 @@
    (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
 
 -Instruction:Method[?invocation] = ?inmethod,
--MethodInvocation:Signature(?invocation, ?sig),
+-MethodInvocation:Method(?invocation, ?sig),
 -StaticMethodInvocation(?invocation, ?sig, ?inmethod)
 <-
    StaticMethodInvocation@previous(?invocation, ?sig, ?inmethod),
@@ -98,11 +98,11 @@
 -VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
 -VirtualMethodInvocation:Base[?invocation] = ?base,
 -Instruction:Method[?invocation] = ?inmethod,
--MethodInvocation:Signature[?invocation] = ?sig,
+-MethodInvocation:Method[?invocation] = ?sig,
 -AssignReturnValue[?invocation] = ?ret 
 <-
    Instruction:Method@previous[?invocation] = ?inmethod,
-   MethodInvocation:Signature@previous[?invocation] = ?sig,
+   MethodInvocation:Method@previous[?invocation] = ?sig,
    VirtualMethodInvocation:Base@previous[?invocation] = ?base, 
    AssignReturnValue@previous[?invocation] = ?ret, 
    (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
@@ -110,10 +110,10 @@
 -VirtualMethodInvocation(?invocation, ?sig, ?inmethod),
 -VirtualMethodInvocation:Base[?invocation] = ?base,
 -Instruction:Method[?invocation] = ?inmethod,
--MethodInvocation:Signature[?invocation] = ?sig 
+-MethodInvocation:Method[?invocation] = ?sig 
 <-
    Instruction:Method@previous[?invocation] = ?inmethod,
-   MethodInvocation:Signature@previous[?invocation] = ?sig,
+   MethodInvocation:Method@previous[?invocation] = ?sig,
    VirtualMethodInvocation:Base@previous[?invocation] = ?base, 
    !(AssignReturnValue@previous[?invocation] = _), 
    RedundantInvocation@previous(?invocation).
@@ -133,22 +133,22 @@
 
 -SpecialMethodInvocation:Base[?invocation] = ?base,
 -Instruction:Method[?invocation] = ?inmethod,
--MethodInvocation:Signature[?invocation] = ?sig,
+-MethodInvocation:Method[?invocation] = ?sig,
 -AssignReturnValue[?invocation] = ?ret 
 <-
    SpecialMethodInvocation:Base@previous[?invocation] = ?base,
    Instruction:Method@previous[?invocation] = ?inmethod,
-   MethodInvocation:Signature@previous[?invocation] = ?sig,
+   MethodInvocation:Method@previous[?invocation] = ?sig,
    AssignReturnValue@previous[?invocation] = ?ret, 
    (Copies@previous[?ret] = _ ; RedundantInvocation@previous(?invocation)).
 
 -SpecialMethodInvocation:Base[?invocation] = ?base,
 -Instruction:Method[?invocation] = ?inmethod,
--MethodInvocation:Signature[?invocation] = ?sig 
+-MethodInvocation:Method[?invocation] = ?sig 
 <-
    SpecialMethodInvocation:Base@previous[?invocation] = ?base, 
    Instruction:Method@previous[?invocation] = ?inmethod,
-   MethodInvocation:Signature@previous[?invocation] = ?sig,
+   MethodInvocation:Method@previous[?invocation] = ?sig,
    !(AssignReturnValue@previous[?invocation] = _), 
    RedundantInvocation@previous(?invocation).
 

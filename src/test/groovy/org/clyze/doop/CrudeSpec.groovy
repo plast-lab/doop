@@ -1,6 +1,6 @@
 package org.clyze.doop
 
-import org.clyze.doop.core.Analysis
+import org.clyze.analysis.Analysis
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -23,11 +23,11 @@ class CrudeSpec extends Specification {
 		equals("reachable casts that may fail", expFailCasts)
 
 		where:
-		scenario                                  | expVPT   | expFPT | expCGE | expPolyCalls | expFailCasts
-		"antlr-insensitive-tamiflex.properties"   | 2558501  | 272062 | 58659  | 1993         | 1139
-		"antlr-1call-tamiflex.properties"         | 10606448 | 195205 | 56576  | 1914         | 891
-		"antlr-1objH-tamiflex.properties"         | 6499003  | 108610 | 55054  | 1806         | 847
-		"antlr-insensitive-reflection.properties" | 11409446 | 908842 | 64454  | 2083         | 1295
+		scenario                                  | expVPT   | expFPT  | expCGE | expPolyCalls | expFailCasts
+		"antlr-insensitive-tamiflex.properties"   | 2558505  | 272062  | 58659  | 1993         | 1139
+		"antlr-1call-tamiflex.properties"         | 10606450 | 195205  | 56576  | 1914         | 891
+		"antlr-1objH-tamiflex.properties"         | 6499007  | 108610  | 55054  | 1806         | 847
+		"antlr-insensitive-reflection.properties" | 8461301  | 1029402 | 79650  | 2532         | 1679
 	}
 
 	void equals(String metric, int expectedVal) {

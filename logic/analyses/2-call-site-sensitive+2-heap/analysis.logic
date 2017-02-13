@@ -1,46 +1,35 @@
 // Context-sensitive pointer analysis with context of 2 call site and
 // a context-sensitive heap abstraction of 2 call sites
 
+// In this analysis, the real context and the real heap context are pairs of
+// MethodInvocations. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+ContextFromRealContext[?invocation1, ?invocation2] = ?ctx ->
+  Context(?ctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?invocation ->
+  Context(?ctx), MethodInvocation(?invocation).
+RealContext2FromContext[?ctx] = ?invocation ->
+  Context(?ctx), MethodInvocation(?invocation).
 RealContext1FromContext[?ctx] = ?invocation1,
 RealContext2FromContext[?ctx] = ?invocation2 <-
   ContextFromRealContext[?invocation1, ?invocation2] = ?ctx.
 
+HContextFromRealHContext[?invocation1, ?invocation2] = ?hctx ->
+  HContext(?hctx), MethodInvocation(?invocation1), MethodInvocation(?invocation2).
+lang:constructor(`HContextFromRealHContext).
+RealHContext1FromHContext[?hctx] = ?invocation ->
+  HContext(?hctx), MethodInvocation(?invocation).
+RealHContext2FromHContext[?hctx] = ?invocation ->
+  HContext(?hctx), MethodInvocation(?invocation).
 RealHContext1FromHContext[?hctx] = ?invocation1,
 RealHContext2FromHContext[?hctx] = ?invocation2 <-
   HContextFromRealHContext[?invocation1, ?invocation2] = ?hctx.
 
-Context(?ctx),
-ContextFromRealContext[?invo, ?invo] = ?ctx,
-ImmutableContext(?ctx) <-
-  MethodInvocationValue(?invo, "<<immutable-context>>").
-
-HContext(?hctx),
-HContextFromRealHContext[?invo, ?invo] = ?hctx,
-ImmutableHContext(?hctx) <-
-  MethodInvocationValue(?invo, "<<immutable-hcontext>>").
-
-
-// Create initial objects with their heap contexts
-HContext(?hctx),
-HContextFromRealHContext[?invo, ?invo] = ?hctx,
-SystemThreadGroup(?hctx, ?alloc) <-
-  MethodInvocationValue(?invo, "<<jvm-startup>>"),
-  Value:byId["<<system-thread-group>>"] = ?alloc.
-
-HContext(?hctx),
-HContextFromRealHContext[?invo, ?invo] = ?hctx,
-MainThreadGroup(?hctx, ?alloc) <-
-  MethodInvocationValue(?invo, "<<jvm-startup>>"),
-  Value:byId["<<main-thread-group>>"] = ?alloc.
-
-HContext(?hctx),
-HContextFromRealHContext[?invo, ?invo] = ?hctx,
-MainThread(?hctx, ?alloc) <-
-  MethodInvocationValue(?invo, "<<jvm-startup>>"),
-  Value:byId["<<main-thread>>"] = ?alloc.
 
 StartupInvocation[] = ?startupInvocation <-
-  MethodInvocationValue(?startupInvocation, "<<jvm-startup>>").
+  MethodInvocationValue(?startupInvocation, "<<jvm-startup-context>>").
 
 // Merge optimization hack
 
@@ -56,26 +45,5 @@ MyMergeBasis(?callerCtx, ?invocation) <-
 // cache them, so they can be looked up without a join.
 Context(?calleeCtx),
 ContextFromRealContext[RealContext2FromContext[?callerCtx], ?invocation] = ?calleeCtx,
-OptimizeMerge[?callerCtx, ?invocation] = ?calleeCtx <-
+CachedMerge[?callerCtx, ?invocation] = ?calleeCtx <-
   MyMergeBasis(?callerCtx, ?invocation).
-
-
-// Initially reachable methods
-Context(?ctx),
-ContextFromRealContext[?invo, ?invo] = ?ctx,
-ReachableContext(?ctx, ?method) <-
-  MainMethodDeclaration(?method),
-  MethodInvocationValue(?invo, "<<initial-context>>").
-
-Context(?ctx),
-ContextFromRealContext[?invo, ?invo] = ?ctx,
-ReachableContext(?ctx, ?method) <-
-  ImplicitReachable(?method),
-  MethodInvocationValue(?invo, "<<jvm-startup>>").
-
-Context(?ctx),
-ContextFromRealContext[?invo, ?invo] = ?ctx,
-ReachableContext(?ctx, ?clinit) <-
-  InitializedClass(?class),
-  ClassInitializer[?class] = ?clinit,
-  MethodInvocationValue(?invo, "<<class-initialization>>").

@@ -78,7 +78,6 @@ MockObjectForType(?value, ?staticType) <-
    MockObject(?value, ?class),
    StaticToActualTypeOpt(?staticType, ?class).
 
-
 ComponentTypeOpt(?arrayType, ?componentType) <-
    ComponentType[?arrayType] = ?componentType.
 
@@ -86,14 +85,18 @@ MockObjectForComponentType(?value, ?arrayType) <-
    ComponentTypeOpt(?arrayType, ?componentType),
    MockObjectForType(?value, ?componentType).
 
-ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
-   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
-   ArrayType(?arrayType),
-   MockObjectForComponentType(?componentValue, ?arrayType).
+// Try no arrayindexpointsto
+//ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
+//   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
+//   ArrayType(?arrayType),
+//   MockObjectForComponentType(?componentValue, ?arrayType).
+
+FormalsForEntryPoints(?method, ?formal) -> Method(?method), Var(?formal).
 
 FormalsForEntryPoints(?method, ?formal) <-
    FormalParam[_, ?method] = ?formal,
    EntryPoint(?method).
+
 
 MockObjFromFormal(?subtype),
 ObjToMock(?subtype),
@@ -102,9 +105,15 @@ TypeForFormals(?formal, ?method, ?subtype) <-
    Var:Type[?formal] = ?staticType,
    StaticToActualType(?subtype, ?staticType).
 
-MockForFormal(?value, ?formal, ?class, ?method) <-
-   TypeForFormals(?formal, ?method, ?class),
-   MockObject(?value, ?class).
+MockForFormal(?value, ?formal, ?type, ?method) <-
+   TypeForFormals(?formal, ?method, ?type),
+#ifdef MULTIPLE_SEGREGATED_ANALYSES
+   Method:DeclaringType[?method] = ?class,
+   TypeToPartitionId[?class] = TypeToPartitionId[?type],
+#endif
+   MockObject(?value, ?type).
+   
+   
 
 // bind mock objects to formals
 MockObjectContext(?hctx, ?value, ?class),
@@ -123,11 +132,12 @@ RecordMacro(?calleeCtx, ?value, ?hctx),
 MockObjectContext(?hctx, ?value, ?class),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) <-
 #ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
-   ImmutableHContext(?hctx),
+   ImmutableHContextFromContext[?calleeCtx] = ?hctx,
 #endif
    ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
 
 
+// REVIEW: clean up
 ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
 #ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
 #ifdef MergeOpenProgramEntryPointMacro
@@ -141,12 +151,13 @@ ContextForEntryPoint(?calleeCtx, ?method)
    ThisVar[?method] = ?receiver,
    Method:DeclaringType[?method] = ?class,
    MockObjectForType(?value, ?class),
-   EntryPoint(?method),
+#ifndef MergeOpenProgramEntryPointMacro
+   ImmutableHContext(?immutablehctx),
+#endif
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
    ImmutableContext(?calleeCtx),
 #endif
-   ImmutableHContext(?immutablehctx).
+   EntryPoint(?method).
 
 
 ReachableContext(?ctx, ?method) <-  ContextForEntryPoint(?ctx, ?method).
-

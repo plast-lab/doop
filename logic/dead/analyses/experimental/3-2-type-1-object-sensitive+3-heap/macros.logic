@@ -26,11 +26,11 @@
  *                        heap] = calleeCtx
  */
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, heap) \
   MergeBasis(callerCtx, invocation, hctx, heap)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-  OptimizeMerge[hctx, heap] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  CachedMerge[hctx, heap] = calleeCtx
 
 // For this analysis, static calls just keep the same context as the
 // caller. *Not* creating a new one, but pretending to, nonetheless,
