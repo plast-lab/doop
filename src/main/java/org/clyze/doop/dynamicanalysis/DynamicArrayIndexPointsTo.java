@@ -6,12 +6,13 @@ import org.clyze.doop.common.PredicateFile;
 /**
  * Created by neville on 25/01/2017.
  */
-public class StaticFieldPointsTo implements DynamicFact{
-    private String sig;
+public class DynamicArrayIndexPointsTo implements DynamicFact {
+    private String baseHeap;
+
     private String heap;
 
-    public StaticFieldPointsTo(String sig,  String heap) {
-        this.sig = sig;
+    public DynamicArrayIndexPointsTo(String baseHeap, String heap) {
+        this.baseHeap = baseHeap;
         this.heap = heap;
     }
 
@@ -21,29 +22,30 @@ public class StaticFieldPointsTo implements DynamicFact{
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        StaticFieldPointsTo that = (StaticFieldPointsTo) o;
+        DynamicArrayIndexPointsTo that = (DynamicArrayIndexPointsTo) o;
 
-        if (!sig.equals(that.sig)) return false;
+        if (!baseHeap.equals(that.baseHeap)) return false;
+
         return heap.equals(that.heap);
     }
 
     @Override
     public int hashCode() {
-        int result = sig.hashCode();
+        int result = baseHeap.hashCode();
         result = 31 * result + heap.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return "StaticFieldPointsTo{" +
-                "sig='" + sig + '\'' +
+        return "DynamicArrayIndexPointsTo{" +
+                "baseHeap='" + baseHeap + '\'' +
                 ", heap='" + heap + '\'' +
                 '}';
     }
 
     @Override
     public void write_fact(Database db) {
-        db.add(PredicateFile.DYNAMIC_STATIC_FIELD_POINTS_TO, sig, heap);
+        db.add(PredicateFile.DYNAMIC_ARRAY_INDEX_POINTS_TO, baseHeap, heap);
     }
 }

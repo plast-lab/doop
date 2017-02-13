@@ -9,7 +9,6 @@ import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.tools.hat.internal.model.*;
 import org.clyze.doop.common.Database;
-import org.clyze.doop.common.PredicateFile;
 
 import java.io.*;
 import java.util.*;
@@ -45,9 +44,9 @@ public class MemoryAnalyser {
     public Set<DynamicFact> getFactsFromDump() throws IOException, InterruptedException {
         //String heapDumpFile = doHeapDump();
         Snapshot snapshot = DumpParsingUtil.getSnapshotFromFile(filename);
-        Set<InstanceFieldPointsTo> instanceFieldPointsToSet = new HashSet<>();
-        Set<ArrayIndexPointsTo> arrayIndexPointsToSet = new HashSet<>();
-        Set<StaticFieldPointsTo> staticFieldPointsToSet = new HashSet<>();
+        Set<DynamicInstanceFieldPointsTo> dynamicInstanceFieldPointsToSet = new HashSet<>();
+        Set<DynamicArrayIndexPointsTo> dynamicArrayIndexPointsToSet = new HashSet<>();
+        Set<DynamicStaticFieldPointsTo> dynamicStaticFieldPointsToSet = new HashSet<>();
 
         Enumeration<JavaHeapObject> instances = snapshot.getThings();
 
@@ -61,7 +60,7 @@ public class MemoryAnalyser {
                 do {
                     for (JavaField field : clazz.getFields()) {
                         JavaThing fieldValue = obj.getField(field.getName());
-                        instanceFieldPointsToSet.add(new InstanceFieldPointsTo(baseHeap, DumpParsingUtil.getSignatureForField(clazz, field), getAllocationAbstraction(fieldValue)));
+                        dynamicInstanceFieldPointsToSet.add(new DynamicInstanceFieldPointsTo(baseHeap, field.getName(), clazz.getName(), getAllocationAbstraction(fieldValue)));
                     }
                 } while ((clazz = clazz.getSuperclass()) != null);
             } else if (heap instanceof  JavaObjectArray) {
@@ -69,15 +68,15 @@ public class MemoryAnalyser {
                 String baseHeap = getAllocationAbstraction(obj);
                 for (JavaThing value : obj.getElements()) {
                     if (value != null)
-                       arrayIndexPointsToSet.add(new ArrayIndexPointsTo(baseHeap, getAllocationAbstraction(value)));
+                       dynamicArrayIndexPointsToSet.add(new DynamicArrayIndexPointsTo(baseHeap, getAllocationAbstraction(value)));
                 }
             } else if (heap instanceof  JavaValueArray) {
                 // TODO
             } else if (heap instanceof JavaClass) {
                 JavaClass obj = (JavaClass) heap;
                 for (JavaStatic javaStatic : obj.getStatics()) {
-                    staticFieldPointsToSet.add(new StaticFieldPointsTo(
-                            DumpParsingUtil.getSignatureForField(obj, javaStatic.getField()),
+                    dynamicStaticFieldPointsToSet.add(new DynamicStaticFieldPointsTo(
+                            javaStatic.getField().getName(), obj.getName(),
                             getAllocationAbstraction(javaStatic.getValue())
                     ));
                 }
@@ -85,7 +84,7 @@ public class MemoryAnalyser {
                 throw new RuntimeException("Unknown: " + heap.getClass().toString());
             }
         }
-        return Sets.union(Sets.union(staticFieldPointsToSet, instanceFieldPointsToSet), arrayIndexPointsToSet);
+        return Sets.union(Sets.union(dynamicStaticFieldPointsToSet, dynamicInstanceFieldPointsToSet), dynamicArrayIndexPointsToSet);
 
     }
 

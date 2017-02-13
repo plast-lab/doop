@@ -95,6 +95,16 @@ public class DumpParsingUtil {
             } else {
                 frame = trace.getFrames()[1];
             }
+            if (frame.getClassName().equals("sun.reflect.NativeConstructorAccessorImpl") &&
+                    frame.getMethodName().equals("NativeConstructorAccessorImpl")) {
+                if (trace.getFrames().length > 5) {
+                    throw new RuntimeException("TODO");
+                }
+                else {
+                    return new DynamicHeapAllocation("Reflectively created: " + clazz.getName(), "unknown", "unknown", clazz.getName());
+                }
+
+            }
             String inMethod = convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
             String type = clazz.getName();
             String heapAbstraction = "<" + frame.getClassName() + ": " +  inMethod + ":" + frame.getLineNumber() + ">/new " + type;
@@ -106,7 +116,7 @@ public class DumpParsingUtil {
     }
 
     static String getSignatureForField(JavaClass declaringClass, JavaField field) {
-        return "<" + declaringClass.getName() + ": " + convertType(field.getSignature()) + " " + field.getName() + ">";
+        return "<" + declaringClass.getName() + ": % " + field.getName() + ">";
 
     }
 }
