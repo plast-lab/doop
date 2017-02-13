@@ -89,7 +89,7 @@ public class DumpParsingUtil {
         return model;
     }
 
-    static String getHeapRepresentation(StackTrace trace, JavaClass clazz) {
+    static DynamicHeapAllocation getHeapRepresentation(StackTrace trace, JavaClass clazz) {
         if (trace != null && trace.getFrames().length > 0) {
             com.sun.tools.hat.internal.model.StackFrame frame = null;;
             if (clazz.isArray() || trace.getFrames().length == 1) {
@@ -97,15 +97,13 @@ public class DumpParsingUtil {
             } else {
                 frame = trace.getFrames()[1];
             }
-            String heapAbstraction = "<" +
-                    frame.getClassName() +
-                    ": " +
-                    convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName()) +
-                    ">/%:" +
-                    frame.getLineNumber();
+            String inMethod = convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
+            String type = clazz.getName();
+            String heapAbstraction = "<" + frame.getClassName() + ": " +  inMethod + ":" + frame.getLineNumber() + ">/new " + type;
+            String fullyQualifiedMethodName = "<" + frame.getClassName() + ": " +  inMethod + ">";
 
-            return heapAbstraction;
+            return new DynamicHeapAllocation(heapAbstraction, frame.getLineNumber(), fullyQualifiedMethodName, clazz.getName());
         }
-        return null;
+        return new DynamicHeapAllocation("Unknown object of type: "+clazz.getName(),"unknown", "unknown", clazz.getName());
     }
 }

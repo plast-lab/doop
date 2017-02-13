@@ -34,6 +34,8 @@ public class MemoryAnalyser {
 
     private static String filename;
 
+    private Set<DynamicHeapAllocation> heapAllocations = new HashSet<>();
+
     public MemoryAnalyser(String filename) {
 
         this.filename = "/home/neville/Downloads/jetty-distribution-9.4.0.v20161208/java.hprof";
@@ -90,6 +92,9 @@ public class MemoryAnalyser {
         for (DynamicFact fact: factsFromDump) {
             fact.write_fact(db);
         }
+        for (DynamicHeapAllocation heapAllocation: heapAllocations) {
+            heapAllocation.write_fact(db);
+        }
         db.flush();
         db.close();
         return factsFromDump.size();
@@ -106,15 +111,16 @@ public class MemoryAnalyser {
             JavaObject obj = (JavaObject) heap;
             StackTrace trace = obj.getAllocatedFrom();
 
-            String heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
-            if (heapAbstraction != null) return heapAbstraction;
-            return "Object of type: " + obj.getClazz().getName();
+            DynamicHeapAllocation heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
+
+            heapAllocations.add(heapAbstraction);
+            return heapAbstraction.getRepresentation();
         } else if (heap instanceof  JavaObjectArray) {
             JavaObjectArray obj = (JavaObjectArray) heap;
-            String heapRepresentation = DumpParsingUtil.getHeapRepresentation(obj.getAllocatedFrom(), obj.getClazz());
+            DynamicHeapAllocation heapRepresentation = DumpParsingUtil.getHeapRepresentation(obj.getAllocatedFrom(), obj.getClazz());
 
-            return heapRepresentation == null ? "TODO" : heapRepresentation;
-            // TODO type?
+            heapAllocations.add(heapRepresentation);
+            return heapRepresentation.getRepresentation();
         } else if (heap instanceof JavaValue) {
             return "Primitive Object";
 

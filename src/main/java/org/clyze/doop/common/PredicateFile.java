@@ -87,6 +87,7 @@ public enum PredicateFile
     PHANTOM_INVOKE("PhantomInvoke"),
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
+    DYNAMIC_HEAP_ALLOCATION("DynamicHeapAllocation"),
     DYNAMIC_STATIC_FIELD_POINTS_TO("DynamicStaticFieldPointsTo"),
     DYNAMIC_INSTANCE_FIELD_POINTS_TO("DynamicInstanceFieldPointsTo"),
     DYNAMIC_ARRAY_INDEX_POINTS_TO("DynamicArrayIndexPointsTo"),

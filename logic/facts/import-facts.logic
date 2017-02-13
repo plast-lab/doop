@@ -74,7 +74,7 @@ lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
 lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
 lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
 lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
-_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
+_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod, ?linenumber) ->
    string(?instruction),
    int[32](?index),
    string(?heap),

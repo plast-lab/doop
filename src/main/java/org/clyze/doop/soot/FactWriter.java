@@ -171,7 +171,6 @@ class FactWriter {
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
-        int index = session.calcUnitNumber(stmt);
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
 
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
@@ -217,10 +216,12 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
 
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+tag.getLineNumber());
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
@@ -286,11 +287,14 @@ class FactWriter {
         String content = constant.substring(1, constant.length() - 1);
         String heapId = writeStringConstant(content);
 
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+
+
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+tag.getLineNumber());
     }
 
     void writeAssignNull(SootMethod m, Stmt stmt, Local l, Session session) {
@@ -350,7 +354,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {

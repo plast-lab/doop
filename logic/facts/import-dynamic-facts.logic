@@ -12,8 +12,7 @@ _DynamicStaticFieldPointsTo(?param1, ?param2) ->
   string(?param2).
 
 +DynamicStaticFieldPointsTo(?heap, ?fld) <-
-   HeapAllocation:byId[?heapStringFull] = ?heap,
-   string:like(?heapStringFull, ?heapString),   
+   DynamicHeapAllocation(?heapString, ?heap),
    _DynamicStaticFieldPointsTo(?fld, ?heapString).
 
 
@@ -28,10 +27,8 @@ _DynamicInstanceFieldPointsTo(?param1, ?param2, ?param3) ->
   string(?param3).
 
 +DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap) <-
-   HeapAllocation:byId[?heapStringFull] = ?heap,
-   HeapAllocation:byId[?baseheapStringFull] = ?baseHeap,
-   string:like(?baseheapStringFull, ?baseHeapString),
-   string:like(?heapStringFull, ?heapString),
+   DynamicHeapAllocation(?heapString, ?heap),
+   DynamicHeapAllocation(?baseHeapString, ?baseHeap),
    _DynamicInstanceFieldPointsTo(?baseHeapString, ?fld, ?heapString).
 
 
@@ -45,8 +42,30 @@ _DynamicArrayIndexPointsTo(?param1, ?param2) ->
   string(?param2).
 
 +DynamicArrayIndexPointsTo(?heap, ?baseHeap) <-
-   HeapAllocation:byId[?heapStringFull] = ?heap,
-   HeapAllocation:byId[?baseheapStringFull] = ?baseHeap,
-   string:like(?baseheapStringFull, ?baseHeapString),
-   string:like(?heapStringFull, ?heapString),
+   DynamicHeapAllocation(?heapString, ?heap),
+   DynamicHeapAllocation(?baseHeapString, ?baseHeap),
    _DynamicArrayIndexPointsTo(?baseHeapString, ?heapString).
+
+
+// DynamicHeapAllocation
+lang:physical:storageModel[`_DynamicHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_DynamicHeapAllocation] = "facts/DynamicHeapAllocation.facts".
+lang:physical:delimiter[`_DynamicHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_DynamicHeapAllocation] = false.
+_DynamicHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+  string(?param1),
+  string(?param2),
+  string(?param3),
+  string(?param4).
+
+
+_HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
+   Instruction:Line[?insn] = ?lineNumber,
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   HeapAllocation:Type[?heap] = ?type,
+   Instruction:Method[?insn] = ?method,
+   Method:Id[?method] = ?methodId.
+
++DynamicHeapAllocation(?representation, ?heap) <-
+   _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
+   _DynamicHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
