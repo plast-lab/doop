@@ -33,7 +33,6 @@ Value_Type(?value, ?type) :-
 // ".R$". We are trying to capture just the constants in Android "R"
 // nested classes. REVIEW to generalize.
 Value_Num(?value, ?const),
-Value_byNum(?const, ?value),
 Value_isNonHeap(?value),
 isValue(?value),
 Value_Type(?value, ?type) :-
@@ -48,7 +47,6 @@ Value_Type(?value, ?type) :-
    [?const] = ?value.
 
 Value_Num(?value, ?const),
-Value_byNum(?const, ?value),
 Value_isNonHeap(?value),
 isValue(?value),
 Value_Type(?value, ?type) :-

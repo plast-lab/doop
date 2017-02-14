@@ -19,19 +19,11 @@
 .type ValueBase = HeapAllocation | NumConstant
 
 .type Value = [ contents:ValueBase ]
-.decl isValue(?value:Value) output
-
-.decl Value_Num_Cons(?const:NumConstant, ?value:Value)
-.decl Value_Mock_Cons(?id:symbol, ?value:Value)
+.decl isValue(?value:Value)
 
 .decl Value_Heap(?value:Value, ?heap:HeapAllocation)
-.decl Value_byHeap(?heap:HeapAllocation, ?value:Value)
 
 .decl Value_Num(?value:Value, ?const:NumConstant)
-.decl Value_byNum(?const:NumConstant, ?value:Value)
-
-.decl Value_Id(?value:Value, ?id:symbol)
-.decl Value_byId(?id:symbol, ?value:Value)
 
 .decl Value_isHeap(?value:Value)
 .decl Value_isNonHeap(?value:Value)

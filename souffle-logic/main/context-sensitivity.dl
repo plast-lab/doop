@@ -137,7 +137,7 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
    (AssignNumConstant_Id(?insn, ?const);
     AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
    AssignInstruction_To(?insn, ?to),
-   Value_byNum(?const, ?value),
+   Value_Num(?value, ?const),
    Instruction_Method(?insn, ?inmethod),
    ReachableContext(?toCtx, ?inmethod),
    ImmutableHContextFromContext(?toCtx, ?hctx).
@@ -228,7 +228,7 @@ ReachableStoreStaticFieldFrom(?from) :-
  */
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   FieldInitialValue(?signature, ?const),
-  Value_byNum(?const, ?value),
+  Value_Num(?value, ?const),
   isImmutableHContext(?hctx).
 
 

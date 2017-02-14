@@ -29,7 +29,7 @@ HeapAllocation_Special(?heap) :-
  * Objects that should be merged to some heap abstraction
  * (will overlap with merely context-insensitive objects)
  */
-.decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation) output
+.decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation)
 
 // The ones that absolutely have to be kept distinct
 .decl HeapAllocation_Keep(?heap:HeapAllocation)
@@ -89,8 +89,8 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    isHeapAllocation(?heapRepr),
    ?heapRepr = "<<string-builder>>").
 
-.decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation) output
-.decl RepresentativesToPickFromOrdinals(?heapReprOrd:number, ?heap:HeapAllocation) output
+.decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
+.decl RepresentativesToPickFromOrdinals(?heapReprOrd:number, ?heap:HeapAllocation)
 
 RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
@@ -194,8 +194,8 @@ ObjectMultipleAllocated(?heap) :-
   OptAssignHeapAllocation(?inmethod2, ?heap),
   ?inmethod1 != ?inmethod2.
 
-.decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method) output
-.decl StringFactoryHeap(?heap:HeapAllocation) output
+.decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)
+.decl StringFactoryHeap(?heap:HeapAllocation)
 
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
   AssignHeapAllocation(?heap, _, ?meth),
@@ -206,21 +206,21 @@ MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
   !ObjectMultipleAllocated(?heap),
   !HeapAllocation_Keep(?heap).
 
-.decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number) output
+.decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)
 
 AllocationsPerMethodAndType(?type, ?meth, ?n) :-
   MethodAndTypeToHeap(_, ?type, ?meth),
   ?n = count : MethodAndTypeToHeap(_, ?type, ?meth).
 
-.decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method) output
+.decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)
 
 AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
   AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
   ?n > ?t,
   MethodAllocationMergeThreshold(?t).
 
-.decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method) output
-.decl MethodAndTypeToMergedHeapOrdinal(?heap:number, ?heaptype:Type, ?meth:Method) output
+.decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
+.decl MethodAndTypeToMergedHeapOrdinal(?heap:number, ?heaptype:Type, ?meth:Method)
 
 MethodAndTypeToMergedHeapOrdinal(ord(?heap), ?type, ?meth) :-
     MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
@@ -229,8 +229,8 @@ MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
   AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
 
-.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation) output
-.decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method) output
+.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
+.decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)
 
 MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
     MethodAndTypeToMergedHeapOrdinal(_, ?type, ?meth),
