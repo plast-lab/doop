@@ -9,10 +9,11 @@ else
 fi
 
 DB1=out/context-insensitive/${BENCH}/database
-DB2=out/context-insensitive/${BENCH}-reflection-dynamic-proxies/database
+DB2=out/context-insensitive/${BENCH}--reflection-dynamic-proxies/database
 
 echo Evaluation of dynamic proxy analysis, BENCH=${BENCH}
-
+echo DB1 = ${DB1}
+echo DB2 = ${DB2}
 
 echo '== Are newProxyInstance() calls reachable? =='
 echo 'Using the context-insensitive/no-proxies case:'

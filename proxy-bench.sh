@@ -43,7 +43,7 @@ else
     BENCH="$1"
 fi
 
-for PROXY_SWITCH in "" "-reflection-dynamic-proxies"
+for PROXY_SWITCH in "" "--reflection-dynamic-proxies"
 do
     case ${BENCH} in
 	dummy)
