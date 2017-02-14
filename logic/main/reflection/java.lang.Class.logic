@@ -59,7 +59,7 @@ ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   Instruction:Method[?invocation] = ?inmethod,
   AssignHeapAllocation(?constantHeap, _, ?inmethod),
   (NumberOfClassesMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
-   ClassNameMatchingStringConstantExact:Type(?type, ?constantHeap)).
+   ClassNameMatchingStringConstant:Type(?type, ?constantHeap)).
 
 
 /**
@@ -210,7 +210,7 @@ ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   Var:DeclaringMethod(?to, ?inmethod),
   AssignHeapAllocation(?constantHeap, _, ?inmethod),
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
-   MethodNameMatchingStringConstantExact:Signature(?signature, ?constantHeap)).
+   MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
 /*
 //VERSION-A
@@ -364,7 +364,7 @@ ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   Var:DeclaringMethod(?to, ?inmethod),
   AssignHeapAllocation(?constantHeap, _, ?inmethod),
   (NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
-   FieldNameMatchingStringConstantExact:Signature(?signature, ?constantHeap)).
+   FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
 /*
 //VERSION-A
