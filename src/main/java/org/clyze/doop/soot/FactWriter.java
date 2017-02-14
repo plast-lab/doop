@@ -171,7 +171,7 @@ class FactWriter {
 
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
-        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+
 
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
@@ -191,8 +191,18 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, getLineNumberFromStmt(stmt));
+    }
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+tag.getLineNumber());
+    private static String getLineNumberFromStmt(Stmt stmt) {
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        String lineNumber;
+        if (tag == null) {
+            lineNumber = "unknown";
+        } else {
+            lineNumber = "" + tag.getLineNumber();
+        }
+        return lineNumber;
     }
 
     Type getComponentType(ArrayType type) {
@@ -216,12 +226,11 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
 
-        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
 
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+tag.getLineNumber());
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, getLineNumberFromStmt(stmt));
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
@@ -287,14 +296,12 @@ class FactWriter {
         String content = constant.substring(1, constant.length() - 1);
         String heapId = writeStringConstant(content);
 
-        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
-
 
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+tag.getLineNumber());
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, getLineNumberFromStmt(stmt));
     }
 
     void writeAssignNull(SootMethod m, Stmt stmt, Local l, Session session) {

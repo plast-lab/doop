@@ -3,6 +3,8 @@ package org.clyze.doop.dynamicanalysis;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
 
+import java.util.Arrays;
+
 /**
  * Created by neville on 08/02/2017.
  */
@@ -10,17 +12,19 @@ public class DynamicHeapAllocation implements DynamicFact {
 
 
     private String representation;
-    private String lineNumber;
-    private String inMethod;
+    private String[] lineNumber;
+    private String[] inMethod;
     private String type;
 
-    public DynamicHeapAllocation(String representation, String lineNumber, String inMethod, String type) {
-        this.representation = representation;
+    public DynamicHeapAllocation(String[] lineNumber, String[] inMethod, String type) {
+        String[] zipped = new String[lineNumber.length];
+        for (int i = 0; i<lineNumber.length; i++)
+            zipped[i] = inMethod[i] + ":" + lineNumber[i];
+        representation = String.join("...", zipped) + "/new " + type;
         this.lineNumber = lineNumber;
         this.inMethod = inMethod;
         this.type = type;
     }
-
 
 
     @Override
@@ -30,67 +34,36 @@ public class DynamicHeapAllocation implements DynamicFact {
 
         DynamicHeapAllocation that = (DynamicHeapAllocation) o;
 
-        if (representation != null ? !representation.equals(that.representation) : that.representation != null)
+        if (getRepresentation() != null ? !getRepresentation().equals(that.getRepresentation()) : that.getRepresentation() != null)
             return false;
-        if (getLineNumber() != null ? !getLineNumber().equals(that.getLineNumber()) : that.getLineNumber() != null)
-            return false;
-        if (getInMethod() != null ? !getInMethod().equals(that.getInMethod()) : that.getInMethod() != null)
-            return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(lineNumber, that.lineNumber)) return false;
+        // Probably incorrect - comparing Object[] arrays with Arrays.equals
+        if (!Arrays.equals(inMethod, that.inMethod)) return false;
         return getType() != null ? getType().equals(that.getType()) : that.getType() == null;
     }
 
     @Override
     public int hashCode() {
-        int result = representation != null ? representation.hashCode() : 0;
-        result = 31 * result + (getLineNumber() != null ? getLineNumber().hashCode() : 0);
-        result = 31 * result + (getInMethod() != null ? getInMethod().hashCode() : 0);
+        int result = getRepresentation() != null ? getRepresentation().hashCode() : 0;
+        result = 31 * result + Arrays.hashCode(lineNumber);
+        result = 31 * result + Arrays.hashCode(inMethod);
         result = 31 * result + (getType() != null ? getType().hashCode() : 0);
         return result;
     }
 
     @Override
-    public String toString() {
-        return "DynamicHeapAllocation{" +
-                "lineNumber='" + lineNumber + '\'' +
-                ", inMethod='" + inMethod + '\'' +
-                ", type='" + type + '\'' +
-                '}';
-    }
-
-    @Override
     public void write_fact(Database db) {
-        db.add(PredicateFile.DYNAMIC_HEAP_ALLOCATION, lineNumber, inMethod, type, representation);
+        for (int i = 0; i<lineNumber.length; i++)
+            db.add(PredicateFile.DYNAMIC_HEAP_ALLOCATION, lineNumber[i], inMethod[i], ""+i, type, representation);
     }
 
     public String getRepresentation() {
         return representation;
     }
 
-    public void setRepresentation(String representation) {
-        this.representation = representation;
-    }
-
-    public String getLineNumber() {
-        return lineNumber;
-    }
-
-    public void setLineNumber(String lineNumber) {
-        this.lineNumber = lineNumber;
-    }
-
-    public String getInMethod() {
-        return inMethod;
-    }
-
-    public void setInMethod(String inMethod) {
-        this.inMethod = inMethod;
-    }
-
     public String getType() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
 }

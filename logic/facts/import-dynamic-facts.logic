@@ -57,11 +57,12 @@ lang:physical:storageModel[`_DynamicHeapAllocation] = "DelimitedFile".
 lang:physical:filePath[`_DynamicHeapAllocation] = "facts/DynamicHeapAllocation.facts".
 lang:physical:delimiter[`_DynamicHeapAllocation] = "\t".
 lang:physical:hasColumnNames[`_DynamicHeapAllocation] = false.
-_DynamicHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+_DynamicHeapAllocation(?param1, ?param2, ?param3, ?param4, ?param5) ->
   string(?param1),
   string(?param2),
   string(?param3),
-  string(?param4).
+  string(?param4),
+  string(?param5).
 
 
 _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
@@ -72,9 +73,19 @@ _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
    Method:Id[?method] = ?methodId.
 
 +DynamicHeapAllocation(?representation, ?heap) <-
-   _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
-   _DynamicHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+   _MatchedHeapAllocation(?representation, ?heap).
 
-+UnmatchedDynamicHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation) <-
-   !_HeapAllocationInformation(?lineNumber, ?inMethod, ?type, _),
-   _DynamicHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+_MatchedHeapAllocation(?representation, ?heap) <-
+   _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
+   _DynamicHeapAllocation(?lineNumber, ?inMethod, _, ?type, ?representation).
+
+_OptDynamicHeapAllocation(?representation, ?type) <-
+   _DynamicHeapAllocation(_, _, _, ?type, ?representation).
+
++UnmatchedDynamicHeapAllocation(?type, ?representation) <-
+   !_MatchedHeapAllocation(?representation, _),
+   _OptDynamicHeapAllocation(?representation, ?type).
+
++UnmatchedStaticHeapAllocation(?methodId, ?lineNumber, ?type) <-
+   _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap),
+   !_DynamicHeapAllocation(?lineNumber, ?methodId, _, ?type, _).

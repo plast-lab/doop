@@ -4,12 +4,15 @@ import com.sun.tools.hat.internal.model.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
  * Created by neville on 27/01/2017.
  */
 public class DumpParsingUtil {
+    private static final String[] UNKNOWN = new String[] {"Unknown"};
+
     public static String[] convertType(String compact) {
         if (compact.length() == 0) return new String[]{"", ""};
         String first = compact.substring(0, 1);
@@ -55,9 +58,9 @@ public class DumpParsingUtil {
                     do {
                         temp = convertType(compactArgTypes);
                         compactArgTypes = temp[1];
-                        res += temp[0] + ", ";
+                        res += temp[0] + ",";
                     } while (compactArgTypes.length() > 0);
-                    return new String[] {res.substring(0, res.length()-2)+")", ""};
+                    return new String[] {res.substring(0, res.length()-1)+")", ""};
 
                 } else throw new RuntimeException("Unknown: " + compact);
         }
@@ -89,34 +92,21 @@ public class DumpParsingUtil {
 
     static DynamicHeapAllocation getHeapRepresentation(StackTrace trace, JavaClass clazz) {
         if (trace != null && trace.getFrames().length > 0) {
-            com.sun.tools.hat.internal.model.StackFrame frame = null;;
-            if (clazz.isArray() || trace.getFrames().length == 1) {
-                frame = trace.getFrames()[0];
-            } else {
-                frame = trace.getFrames()[1];
+            com.sun.tools.hat.internal.model.StackFrame[] frames = trace.getFrames();
+            ArrayList<String> inMethods = new ArrayList<>();
+            ArrayList<String> lineNumbers = new ArrayList<>();
+            for (int i = 0; i<trace.getFrames().length; i++) {
+                com.sun.tools.hat.internal.model.StackFrame frame = trace.getFrames()[i];
+                String inMethod = convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
+                String fullyQualifiedMethodName = "<" + frame.getClassName() + ": " +  inMethod + ">";
+                inMethods.add(fullyQualifiedMethodName);
+                lineNumbers.add(frame.getLineNumber());
             }
-            if (frame.getClassName().equals("sun.reflect.NativeConstructorAccessorImpl") &&
-                    frame.getMethodName().equals("NativeConstructorAccessorImpl")) {
-                if (trace.getFrames().length > 5) {
-                    throw new RuntimeException("TODO");
-                }
-                else {
-                    return new DynamicHeapAllocation("Reflectively created: " + clazz.getName(), "unknown", "unknown", clazz.getName());
-                }
 
-            }
-            String inMethod = convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
-            String type = clazz.getName();
-            String heapAbstraction = "<" + frame.getClassName() + ": " +  inMethod + ":" + frame.getLineNumber() + ">/new " + type;
-            String fullyQualifiedMethodName = "<" + frame.getClassName() + ": " +  inMethod + ">";
-
-            return new DynamicHeapAllocation(heapAbstraction, frame.getLineNumber(), fullyQualifiedMethodName, clazz.getName());
+            return new DynamicHeapAllocation(lineNumbers.toArray(new String[lineNumbers.size()]),
+                    inMethods.toArray(new String[inMethods.size()]), clazz.getName());
         }
-        return new DynamicHeapAllocation("Unknown object of type: "+clazz.getName(),"unknown", "unknown", clazz.getName());
+        return new DynamicHeapAllocation(UNKNOWN, UNKNOWN, clazz.getName());
     }
 
-    static String getSignatureForField(JavaClass declaringClass, JavaField field) {
-        return "<" + declaringClass.getName() + ": % " + field.getName() + ">";
-
-    }
 }
