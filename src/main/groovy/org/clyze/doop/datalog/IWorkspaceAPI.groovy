@@ -5,6 +5,7 @@ interface IWorkspaceAPI {
     public IWorkspaceAPI startTimer()
     public IWorkspaceAPI elapsedTime()
     public IWorkspaceAPI transaction()
+    public IWorkspaceAPI timedTransaction(String message)
     public IWorkspaceAPI commit()
     public IWorkspaceAPI createDB(String database)
     public IWorkspaceAPI openDB(String database)

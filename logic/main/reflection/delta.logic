@@ -1,5 +1,3 @@
-#include "../../commonMacros.logic"
-
 +LoadArrayIndex(?array, ?value, ?inmethod)/*,
 +java:lang:reflect:Array:get(?invocation)*/ <-
   Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>"),
@@ -13,3 +11,93 @@
   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
   ActualParam@previous[0, ?invocation] = ?array,
   ActualParam@previous[2, ?invocation] = ?value.
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+
+// For every interface, we create a dummy dynamic proxy class.
+// TODO Proxy classes are public only if all their interfaces are
+// public, otherwise they are non-public (i.e. no modifier).
++Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
++ClassModifier("final", ?proxyClass),
++DirectSuperclass[?proxyClass] = ?proxySuperclass,
++DirectSuperinterface(?proxyClass, ?interface) <-
+  InterfaceType@previous(?interface),
+  Type:Id@previous(?interface:?interfaceId),
+  Type:Id@previous(?proxySuperclass:"java.lang.reflect.Proxy"),
+  ClassType@previous(?proxySuperclass),
+  ?proxyClassId = "$Proxy$for$" + ?interfaceId.
+#endif
+
+/* == Dynamic proxy handling ==
+
+   Java dynamic proxies are handled in two steps:
+
+   1. For every interface, we create a dummy proxy class that will
+      represent the type of objects returned by
+      Proxy.newProxyInstance(). This proxy class is concrete and
+      contains entry points for all methods declared in the interface
+      it implements. All such methods are implemented as calls to the
+      invoke() method of an InvocationHandler (which is passed to the
+      constructor and stored in a local field).
+
+   2. For every call to Proxy.newProxyInstance, such as the following:
+
+        Object obj = Proxy.newProxyInstance(cl, is, h);   // e.g. instr. #4
+
+      we generate facts as if we had seen the following code:
+
+        // special proxy constructor variable
+        Constructor c;
+        Object obj = c.newInstance(h);
+ 
+      Explanation: our handling of "newInstance" on
+      java.lang.reflect.Constructor already takes care of the
+      delegation pattern for "invoke". So we appeal to that. The
+      values flowing into generated constructor var "c" will be
+      inferred by analysis rules, depending on the values of "is":
+      whenever the "is" argument can contain the class object of
+      some interface I, then c is the constructor of the proxy class
+      of I.
+
+   For more details on each step, see below.
+
+   == Step 1: Dummy proxy class generation ==
+
+   To see how the methods of the proxy class are implemented, assume
+   that the proxy is for an interface I:
+
+     interface I {
+       void report(String c);
+       int count();
+     }
+
+   Then, we generate a proxy class for I, with the following method
+   bodies:
+     class G_I {
+       ... // reference ih to actual handler and constructor
+       public void report(String msg) {
+         Method interfaceMethod = I$V$report$Ljava$lang$String;
+         Object[] args = new Object[] {msg};
+         ih.invoke(this, interfaceMethod, args);
+       }
+
+       public int count() {
+         Method interfaceMethod = I$I$count$V;
+         Object[] args = new Object[] { };
+         return (Integer)ih.invoke(this, interfaceMethod, args);
+       }
+     }
+
+   Notes about the code above:
+
+     - In the second method, we depend on implicitly unboxing the
+       Integer result of the call to int. The cast to Integer is
+       needed when the above is written as Java code.
+
+     - The Method variables are supposed to be initialized with
+       special values. In practice, our logic records the existence of
+       these Method variables here, and it later (during reflection
+       analysis) makes them point to the appropriate reified method
+       objects.
+
+*/
