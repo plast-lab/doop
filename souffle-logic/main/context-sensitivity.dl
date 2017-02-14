@@ -159,7 +159,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   SupertypeOf(?type, ?valuetype).
-
+  .plan 1:(3,2,1,4,5)
 
 /**
  * Load instance fields
@@ -183,25 +183,26 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  !Value_Null(?basevalue),
-  NotSpecialValue(?value).
+  NotSpecialValue(?value),
+  !Value_Null(?basevalue).
 
-NotSpecialValue(?value) :- (Value_Heap(?value, ?heap), !SpecialObject(?heap));
-                            Value_isNonHeap(?value).
+NotSpecialValue(?value) :-
+  (Value_Heap(?value, ?heap), !SpecialObject(?heap));
+  Value_isNonHeap(?value).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
   StoreInstanceField(?from, ?base, ?signature, _),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
-
 /**
  * Load static fields
  */
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ReachableContext(?ctx, ?inmethod),
-  LoadStaticField(?sig, ?to, ?inmethod),
   StaticFieldPointsTo(?hctx, ?value, ?sig),
+  LoadStaticField(?sig, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
   CompatibleContextAndHContextMacro(?ctx, ?hctx).
+  .plan 1:(3,2,1)
 
 /**
  * Store static fields
@@ -217,8 +218,8 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 .decl ReachableStoreStaticFieldFrom(?from:Var)
 
 ReachableStoreStaticFieldFrom(?from) :-
-  StoreStaticField(?from, _, ?inmethod),
-  Reachable(?inmethod).
+  Reachable(?inmethod),
+  StoreStaticField(?from, _, ?inmethod).
 
 
 /**
@@ -258,8 +259,8 @@ OptLoadArrayIndex(?to, ?base) :-
 .decl ReachableLoadArrayIndexBase(?base:Var)
 
 ReachableLoadArrayIndexBase(?base) :-
-  LoadArrayIndex(?base, _, ?inmethod),
-  Reachable(?inmethod).
+  Reachable(?inmethod),
+  LoadArrayIndex(?base, _, ?inmethod).
 
 /**
  * Store array index
@@ -286,8 +287,8 @@ StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
 .decl ReachableStoreArrayIndexBase(?base:Var)
 
 ReachableStoreArrayIndexBase(?base) :-
-  StoreArrayIndex(_, ?base, ?inmethod),
-  Reachable(?inmethod).
+  Reachable(?inmethod),
+  StoreArrayIndex(_, ?base, ?inmethod).
 
 OptStoreArrayIndex(?from, ?base) :-
   StoreArrayIndex(?from, ?base, _).
@@ -313,15 +314,16 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
+  .plan 1:(2,1)
 
 /**
  * Static method invocations
  */
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
   ReachableContext(?callerCtx, ?inmethod),
-  MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+  MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx).
 
 /**
  * Virtual Method Invocation
@@ -348,12 +350,12 @@ OptVirtualMethodInvocationBase(?invocation, ?base) :-
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-    OptVirtualMethodInvocationBase(?invocation, ?base),
-    VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-    Value_Type(?value, ?valuetype),
-    ResolveInvocation(?valuetype, ?invocation, ?tomethod),
-    ThisVar(?tomethod, ?this),
-    MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  Value_Type(?value, ?valuetype),
+  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
 //  ViableInvocation(?callerCtx, ?invocation),
 //TODO fix:    SiteShouldNotBeRefined(?invocation).
 
@@ -442,12 +444,12 @@ OptSpecialMethodInvocationBase(?invocation, ?base) :-
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-    OptSpecialMethodInvocationBase(?invocation, ?base),
-    isSpecialMethodInvocation_Insn(?invocation),
-    MethodInvocation_Method(?invocation, ?tomethod),
-    ThisVar(?tomethod, ?this),
-    VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
-    MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  isSpecialMethodInvocation_Insn(?invocation),
+  MethodInvocation_Method(?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
   //TODO fix: SiteShouldNotBeRefined(?invocation).
 
 #else /* there is optimized behavior available */

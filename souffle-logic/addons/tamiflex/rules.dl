@@ -127,13 +127,13 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?return) :-
   AssignReturnValue(?invocation, ?return).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   (Tamiflex_Class_NewInstance(?invocation, ?heap) ;
    Tamiflex_Array_NewInstance(?invocation, ?heap) ),
   Value_Heap(?value, ?heap),
   Instruction_Method(?invocation, ?inmethod),
+  AssignReturnValue(?invocation, ?return),
   ReachableContext(?ctx, ?inmethod),
-  AssignReturnValue(?invocation, ?return).
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 .decl TamiflexConstructorCallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation,
                                        ?calleeCtx:Context, ?callee:Method)
