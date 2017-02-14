@@ -218,6 +218,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				forPreprocessor:true,
 				isAdvanced:true
 			),
+			new AnalysisOption<Boolean>(
+				id:"REFLECTION_DYNAMIC_PROXIES",
+				name:"reflection-dynamic-proxies",
+				description:"Enable handling of the Java dynamic proxy API.",
+				value:false,
+				webUI:true,
+				forPreprocessor:true,
+				isAdvanced:true
+			),
 
 			new AnalysisOption<Boolean>(
 				id:"TRANSFORM_INPUT",

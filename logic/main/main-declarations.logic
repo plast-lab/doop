@@ -46,3 +46,11 @@ Value:DeclaringType[?value] = ?type -> Value(?value), Type(?type).
 
 // [Miscellaneous]
 Value:Null[] = ?null -> Value(?null).
+
+//-----------------------------------------------------------------------------
+// [Proxy classes and methods - artificially created]
+//-----------------------------------------------------------------------------
+
+ProxyClass(?t) -> ClassType(?t).
+lang:entity(`ProxyClass).
+lang:physical:capacity[`ProxyClass] = 131072.
