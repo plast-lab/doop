@@ -2,6 +2,8 @@
 
 .decl _NormalHeap(?id:symbol, ?type:symbol) input 
 
+.input _NormalHeap(IO="file", filename="NormalHeap.facts", delimiter="\t")
+
 isType(?type),
 isHeapAllocation(?id),
 isNormalHeap(?id),
@@ -17,6 +19,8 @@ isClassType("java.lang.String").
 
 .decl _StringConstant(?id:symbol) input 
 
+.input _StringConstant(IO="file", filename="StringConstant.facts", delimiter="\t")
+
 isHeapAllocation(?id),
 isStringConstant(?id),
 HeapAllocation_Type(?id, "java.lang.String") :-
@@ -26,6 +30,9 @@ HeapAllocation_Type(?id, "java.lang.String") :-
 // StringRaw
 
 .decl _StringRaw(?id:symbol, ?rawId:symbol) input 
+
+.input _StringRaw(IO="file", filename="StringRaw.facts", delimiter="\t")
+
 .decl String_toRaw(?id:symbol, ?rawId:symbol)
 
 isStringRaw(?id),
@@ -36,6 +43,8 @@ String_toRaw(?id, ?rawId) :-
 // ClassHeap
 
 .decl _ClassHeap(?id:symbol, ?instanceType:symbol) input 
+
+.input _ClassHeap(IO="file", filename="ClassHeap.facts", delimiter="\t")
 
 isType(?instanceType),
 isHeapAllocation(?id),
@@ -49,6 +58,8 @@ HeapAllocation_Type(?id, "java.lang.Class") :-
 
 .decl _EmptyArray(?id:symbol) input
 
+.input _EmptyArray(IO="file", filename="EmptyArray.facts", delimiter="\t")
+
 HeapAllocation_EmptyArray(?id) :-
     _EmptyArray(?id).
 
@@ -56,6 +67,8 @@ HeapAllocation_EmptyArray(?id) :-
 // AssignHeapAllocation
 
 .decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol) input
+
+.input _AssignHeapAllocation(IO="file", filename="AssignHeapAllocation.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -71,6 +84,8 @@ AssignHeapAllocation_Heap(?instruction, ?heap) :-
 
 .decl _AndroidEntryPoint(?method:symbol) input
 
+.input _AndroidEntryPoint(IO="file", filename="AndroidEntryPoint.facts", delimiter="\t")
+
 AndroidEntryPoint(?method) :-
     _AndroidEntryPoint(?method).
 
@@ -78,6 +93,8 @@ AndroidEntryPoint(?method) :-
 // AssignLocal
 
 .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol) input
+
+.input _AssignLocal(IO="file", filename="AssignLocal.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -94,6 +111,9 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .decl _AssignBinop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol) input
 
+.input _AssignBinop(IO="file", filename="AssignBinop.facts", delimiter="\t")
+
+
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignOper_Insn(?instruction),
@@ -107,6 +127,8 @@ AssignInstruction_To(?instruction, ?to) :-
 // AssignUnop
 
 .decl _AssignUnop(?instruction:symbol, ?index:number, ?to:symbol, ?inmethod:symbol) input
+
+.input _AssignUnop(IO="file", filename="AssignUnop.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -122,6 +144,8 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .decl _AssignOperFrom(?instruction:symbol, ?from:symbol) input
 
+.input _AssignOperFrom(IO="file", filename="AssignOperFrom.facts", delimiter="\t")
+
 // TODO: Recheck this rule
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -133,6 +157,8 @@ AssignOper_From(?instruction, ?from) :-
 // AssignOperType
 
 .decl _AssignOperType(?instruction:symbol, ?type:symbol) input
+
+.input _AssignOperType(IO="file", filename="AssignOperType.facts", delimiter="\t")
 
 // TODO: Recheck this rule
 isInstruction(?instruction),
@@ -146,6 +172,8 @@ AssignOper_Type(?instruction, ?type) :-
 
 .decl _IfVar(?instruction:symbol, ?var:symbol) input
 
+.input _IfVar(IO="file", filename="IfVar.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isIf_Insn(?instruction),
 If_Var(?instruction, ?var) :-
@@ -155,6 +183,8 @@ If_Var(?instruction, ?var) :-
 // AssignCast
 
 .decl _AssignCast(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol) input
+
+.input _AssignCast(IO="file", filename="AssignCast.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -170,6 +200,8 @@ AssignInstruction_To(?instruction, ?to) :-
 // AssignCastNumConstant
 
 .decl _AssignCastNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol) input
+
+.input _AssignCastNumConstant(IO="file", filename="AssignCastNumConstant.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -187,6 +219,8 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .decl _AssignCastNull(?instruction:symbol, ?index:number, ?to:symbol, ?type:symbol, ?method:symbol) input
 
+.input _AssignCastNull(IO="file", filename="AssignCastNull.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignCast_Insn(?instruction),
@@ -201,6 +235,8 @@ AssignInstruction_To(?instruction, ?to) :-
 // AssignNumConstant
 
 .decl _AssignNumConstant(?instruction:symbol, ?index:number, ?const:symbol, ?to:symbol, ?inmethod:symbol) input
+
+.input _AssignNumConstant(IO="file", filename="AssignNumConstant.facts", delimiter="\t")
 
 isNumConstant(?const),
 isInstruction(?instruction),
@@ -217,6 +253,8 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .decl _AssignNull(?instruction:symbol, ?index:number, ?to:symbol, ?method:symbol) input
 
+.input _AssignNull(IO="file", filename="AssignNull.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignNull_Insn(?instruction),
@@ -229,6 +267,8 @@ AssignInstruction_To(?instruction, ?to) :-
 // AssignInstanceOf
 
 .decl _AssignInstanceOf(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?type:symbol, ?inmethod:symbol) input
+
+.input _AssignInstanceOf(IO="file", filename="AssignInstanceOf.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
@@ -245,6 +285,8 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .decl _Field(?signature:symbol, ?declaringClass:symbol, ?simplename:symbol, ?type:symbol) input
 
+.input _Field(IO="file", filename="Field.facts", delimiter="\t")
+
 isField(?signature),
 Field_DeclaringType(?signature, ?declaringType),
 Field_SimpleName(?signature, ?simplename),
@@ -255,6 +297,8 @@ Field_Type(?signature, ?type) :-
 // EnterMonitor
 
 .decl _EnterMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
+
+.input _EnterMonitor(IO="file", filename="EnterMonitor.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isMonitorInstruction(?instruction),
@@ -269,6 +313,8 @@ EnterMonitor_Var(?instruction, ?var) :-
 
 .decl _ExitMonitor(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
+.input _ExitMonitor(IO="file", filename="ExitMonitor.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isMonitorInstruction(?instruction),
 isExitMonitor_Insn(?instruction),
@@ -282,6 +328,8 @@ ExitMonitor_Var(?instruction, ?var) :-
 
 .decl _MethodInvocation_Line(?instruction:symbol, line:number) input
 
+.input _MethodInvocation_Line(IO="file", filename="MethodInvocation_Line.facts", delimiter="\t")
+
 isMethodInvocation(?instruction),
 MethodInvocation_Line(?instruction, ?line) :-
     _MethodInvocation_Line(?instruction, ?line).
@@ -290,6 +338,8 @@ MethodInvocation_Line(?instruction, ?line) :-
 // Static method invocation
 
 .decl _StaticMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?method:symbol) input
+
+.input _StaticMethodInvocation(IO="file", filename="StaticMethodInvocation.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isStaticMethodInvocation_Insn(?instruction),
@@ -303,6 +353,8 @@ MethodInvocation_Method(?instruction, ?signature) :-
 
 .decl _SpecialMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol) input
 
+.input _SpecialMethodInvocation(IO="file", filename="SpecialMethodInvocation.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isSpecialMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
@@ -314,6 +366,8 @@ MethodInvocation_Method(?instruction, ?signature) :-
 // Virtual method invocation
 
 .decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol) input
+
+.input _VirtualMethodInvocation(IO="file", filename="VirtualMethodInvocation.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isVirtualMethodInvocation_Insn(?instruction),
@@ -328,6 +382,8 @@ MethodInvocation_Method(?instruction, ?signature) :-
 
 .decl _Throw(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
+.input _Throw(IO="file", filename="Throw.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isThrow_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
@@ -340,6 +396,8 @@ Throw_Var(?instruction, ?var) :-
 
 .decl _ThrowNull(?instruction:symbol, ?index:number, ?method:symbol) input
 
+.input _ThrowNull(IO="file", filename="ThrowNull.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isThrow_Insn(?instruction),
 isThrowNull_Insn(?instruction),
@@ -351,6 +409,8 @@ Instruction_Method(?instruction, ?method) :-
 // Exception handler
 
 .decl _ExceptionHandler(?handler:symbol, ?method:symbol, ?index:number, ?type:symbol, ?var:symbol, ?begin:number, ?end:number) input
+
+.input _ExceptionHandler(IO="file", filename="ExceptionHandler.facts", delimiter="\t")
 
 isExceptionHandler(?handler),
 ExceptionHandler_Method(?handler, ?method),
@@ -365,6 +425,8 @@ ExceptionHandler_End(?handler, ?end) :-
 // Method
 
 .decl _Method(?method:symbol, ?simplename:symbol, ?descriptor:symbol, ?declaringType:symbol, ?returnType:symbol, ?jvmDescriptor:symbol) input
+
+.input _Method(IO="file", filename="Method.facts", delimiter="\t")
 
 isMethod(?method),
 isMethodDescriptor(?descriptor),
@@ -381,6 +443,8 @@ Method_ReturnType(?method, ?returnType) :-
 
 .decl _StoreInstanceField(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?signature:symbol, ?method:symbol) input
 
+.input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isFieldInstruction(?instruction),
 isStoreInstanceField_Insn(?instruction),
@@ -395,6 +459,8 @@ StoreInstanceField_From(?instruction, ?from) :-
 // LoadInstanceField
 
 .decl _LoadInstanceField(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?signature:symbol, ?method:symbol) input
+
+.input _LoadInstanceField(IO="file", filename="LoadInstanceField.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isFieldInstruction(?instruction),
@@ -411,6 +477,8 @@ LoadInstanceField_To(?instruction, ?to) :-
 
 .decl _StoreStaticField(?instruction:symbol, ?index:number, ?from:symbol, ?signature:symbol, ?method:symbol) input
 
+.input _StoreStaticField(IO="file", filename="StoreStaticField.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isFieldInstruction(?instruction),
 isStoreStaticField_Insn(?instruction),
@@ -424,6 +492,8 @@ StoreStaticField_From(?instruction, ?from) :-
 // LoadStaticField
 
 .decl _LoadStaticField(?instruction:symbol, ?index:number, ?to:symbol, ?signature:symbol, ?method:symbol) input
+
+.input _LoadStaticField(IO="file", filename="LoadStaticField.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isFieldInstruction(?instruction),
@@ -439,6 +509,8 @@ LoadStaticField_To(?instruction, ?to) :-
 
 .decl _StoreArrayIndex(?instruction:symbol, ?index:number, ?from:symbol, ?base:symbol, ?method:symbol) input
 
+.input _StoreArrayIndex(IO="file", filename="StoreArrayIndex.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isArrayInstruction(?instruction),
 isStoreArrayIndex_Insn(?instruction),
@@ -452,6 +524,8 @@ StoreArrayIndex_From(?instruction, ?from) :-
 // LoadArrayIndex
 
 .decl _LoadArrayIndex(?instruction:symbol, ?index:number, ?to:symbol, ?base:symbol, ?method:symbol) input
+
+.input _LoadArrayIndex(IO="file", filename="LoadArrayIndex.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isArrayInstruction(?instruction),
@@ -467,6 +541,8 @@ LoadArrayIndex_To(?instruction, ?to) :-
 
 .decl _ArrayInsnIndex(?instruction:symbol, ?index:symbol) input
 
+.input _ArrayInsnIndex(IO="file", filename="ArrayInsnIndex.facts", delimiter="\t")
+
 ArrayInsnIndex(?instruction, ?index) :-
     _ArrayInsnIndex(?instruction, ?index).
 
@@ -474,6 +550,8 @@ ArrayInsnIndex(?instruction, ?index) :-
 // Goto
 
 .decl _Goto(?instruction:symbol, ?index:number, ?to:number, ?method:symbol) input
+
+.input _Goto(IO="file", filename="Goto.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isGoto_Insn(?instruction),
@@ -487,6 +565,8 @@ Goto_Target(?instruction, ?to) :-
 
 .decl _If(?instruction:symbol, ?index:number, ?to:number, ?method:symbol) input
 
+.input _If(IO="file", filename="If.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isIf_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
@@ -499,6 +579,8 @@ If_Target(?instruction, ?to) :-
 
 .decl _TableSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol) input
 
+.input _TableSwitch(IO="file", filename="TableSwitch.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isSwitch_Insn(?instruction),
 isTableSwitch_Insn(?instruction),
@@ -509,6 +591,8 @@ Switch_Key(?instruction, ?key) :-
 
 
 .decl _LookupSwitch(?instruction:symbol, ?index:number, ?key:symbol, ?method:symbol) input
+
+.input _LookupSwitch(IO="file", filename="LookupSwitch.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isSwitch_Insn(?instruction),
@@ -523,6 +607,8 @@ Switch_Key(?instruction, ?key) :-
 
 .decl _TableSwitch_Target(?instruction:symbol, ?value:number, ?target:number) input
 
+.input _TableSwitch_Target(IO="file", filename="TableSwitch_Target.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isSwitch_Insn(?instruction),
 isTableSwitch_Insn(?instruction),
@@ -531,6 +617,8 @@ Switch_Target(?instruction, ?value, ?target) :-
 
 
 .decl _LookupSwitch_Target(?instruction:symbol, ?value:number, ?target:number) input
+
+.input _LookupSwitch_Target(IO="file", filename="LookupSwitch_Target.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isSwitch_Insn(?instruction),
@@ -563,6 +651,8 @@ Switch_Target(?instruction, ?value, ?target) :-
 
 .decl _Return(?instruction:symbol, ?index:number, ?var:symbol, ?method:symbol) input
 
+.input _Return(IO="file", filename="Return.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isReturnInstruction(?instruction),
 isReturnNonvoid_Insn(?instruction),
@@ -576,6 +666,8 @@ ReturnNonvoid_Var(?instruction, ?var) :-
 
 .decl _ReturnVoid(?instruction:symbol, ?index:number, ?method:symbol) input
 
+.input _ReturnVoid(IO="file", filename="ReturnVoid.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isReturnInstruction(?instruction),
 isReturnVoid_Insn(?instruction),
@@ -587,6 +679,8 @@ Instruction_Method(?instruction, ?method) :-
 // AssignPhantomInvoke
 
 .decl _AssignPhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol) input
+
+.input _AssignPhantomInvoke(IO="file", filename="AssignPhantomInvoke.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isUnsupportedInstruction(?instruction),
@@ -600,6 +694,8 @@ Instruction_Method(?instruction, ?method) :-
 
 .decl _PhantomInvoke(?instruction:symbol, ?index:number, ?method:symbol) input
 
+.input _PhantomInvoke(IO="file", filename="PhantomInvoke.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isUnsupportedInstruction(?instruction),
 isPhantomInvoke(?instruction),
@@ -611,6 +707,8 @@ Instruction_Method(?instruction, ?method) :-
 // BreakPointStmt
 
 .decl _BreakpointStmt(?instruction:symbol, ?index:number, ?method:symbol) input
+
+.input _BreakpointStmt(IO="file", filename="BreakpointStmt.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isUnsupportedInstruction(?instruction),
@@ -624,6 +722,8 @@ Instruction_Method(?instruction, ?method) :-
 
 .decl _UnsupportedInstruction(?instruction:symbol, ?index:number, ?method:symbol) input
 
+.input _UnsupportedInstruction(IO="file", filename="UnsupportedInstruction.facts", delimiter="\t")
+
 isInstruction(?instruction),
 isUnsupportedInstruction(?instruction),
 Instruction_Index(?instruction, ?index),
@@ -635,6 +735,8 @@ Instruction_Method(?instruction, ?method) :-
 
 .decl _Activity(?id:symbol) input
 
+.input _Activity(IO="file", filename="Activity.facts", delimiter="\t")
+
 Activity(?id) :-
     _Activity(?id).
 
@@ -642,6 +744,8 @@ Activity(?id) :-
 // Service
 
 .decl _Service(?id:symbol) input
+
+.input _Service(IO="file", filename="Service.facts", delimiter="\t")
 
 Service(?id) :-
     _Service(?id).
@@ -651,6 +755,8 @@ Service(?id) :-
 
 .decl _ContentProvider(?id:symbol) input
 
+.input _ContentProvider(IO="file", filename="ContentProvider.facts", delimiter="\t")
+
 ContentProvider(?id) :-
     _ContentProvider(?id).
 
@@ -658,6 +764,8 @@ ContentProvider(?id) :-
 // BroadcastReceiver
 
 .decl _BroadcastReceiver(?id:symbol) input
+
+.input _BroadcastReceiver(IO="file", filename="BroadcastReceiver.facts", delimiter="\t")
 
 BroadcastReceiver(?id) :-
     _BroadcastReceiver(?id).
@@ -667,6 +775,8 @@ BroadcastReceiver(?id) :-
 
 .decl _CallbackMethod(?id:symbol) input
 
+.input _CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
+
 CallbackMethod(?id) :-
     _CallbackMethod(?id).
 
@@ -675,6 +785,8 @@ CallbackMethod(?id) :-
 
 .decl _LayoutControl(?id:NumConstant, ?typename:symbol, ?parent:symbol) input
 
+.input _LayoutControl(IO="file", filename="LayoutControl.facts", delimiter="\t")
+
 LayoutControl0(?id, ?typename, ?parent) :-
     _LayoutControl(?id, ?typename, ?parent).
 
@@ -682,6 +794,8 @@ LayoutControl0(?id, ?typename, ?parent) :-
 // FieldInitialValue
 
 .decl _FieldInitialValue(?fld:symbol, ?valueString:symbol) input
+
+.input _FieldInitialValue(IO="file", filename="FieldInitialValue.facts", delimiter="\t")
 
 FieldInitialValue(?fld, ?valueString) :-
     _FieldInitialValue(?fld, ?valueString).

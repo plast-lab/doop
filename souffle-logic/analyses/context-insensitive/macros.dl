@@ -33,7 +33,6 @@
   isContext(newCtx), \
   ContextFromRealContext(newCtx)
 
-
 #define InitContext(ictx) \
   isContext(ctx), ContextFromRealContext(ctx) :- ctx = "*0".
 #define InitHContext(ihctx) \

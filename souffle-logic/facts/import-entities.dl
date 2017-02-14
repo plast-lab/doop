@@ -2,6 +2,8 @@
 
 .decl _ClassType(?class:symbol) input
 
+.input _ClassType(IO="file", filename="ClassType.facts", delimiter="\t")
+
 isType(?class),
 isReferenceType(?class),
 isClassType(?class) :-
@@ -11,6 +13,8 @@ isClassType(?class) :-
 // ArrayType
 
 .decl _ArrayType(?arrayType:symbol) input
+
+.input _ArrayType(IO="file", filename="ArrayType.facts", delimiter="\t")
 
 isType(?arrayType),
 isReferenceType(?arrayType),
@@ -22,6 +26,8 @@ isArrayType(?arrayType) :-
 
 .decl _InterfaceType(?interface:symbol) input
 
+.input _InterfaceType(IO="file", filename="InterfaceType.facts", delimiter="\t")
+
 isType(?interface),
 isReferenceType(?interface),
 isInterfaceType(?interface) :-
@@ -31,6 +37,8 @@ isInterfaceType(?interface) :-
 // ComponentType
 
 .decl _ComponentType(?arrayType:symbol, ?componentType:symbol) input
+
+.input _ComponentType(IO="file", filename="ComponentType.facts", delimiter="\t")
 
 isType(?arrayType),
 isReferenceType(?arrayType),
@@ -44,6 +52,8 @@ ComponentType(?arrayType, ?componentType) :-
 
 .decl _ActualParam(?index:number, ?invocation:symbol, ?var:symbol) input
 
+.input _ActualParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+
 isInstruction(?invocation),
 isMethodInvocation(?invocation),
 isVar(?var),
@@ -54,6 +64,8 @@ ActualParam(?index, ?invocation, ?var) :-
 // DirectSuperinterface
 
 .decl _DirectSuperinterface(?class:symbol, ?interface:symbol) input
+
+.input _DirectSuperinterface(IO="file", filename="DirectSuperinterface.facts", delimiter="\t")
 
 isType(?class),
 isReferenceType(?class),
@@ -67,6 +79,8 @@ DirectSuperinterface(?class, ?interface) :-
 // DirectSuperclass
 
 .decl _DirectSuperclass(?class:symbol, ?superclass:symbol) input
+
+.input _DirectSuperclass(IO="file", filename="DirectSuperclass.facts", delimiter="\t")
 
 isType(?class),
 isReferenceType(?class),
@@ -82,6 +96,8 @@ DirectSuperclass(?class, ?superclass) :-
 
 .decl _Field_Modifier(?modifier:symbol, ?field:symbol) input
 
+.input _Field_Modifier(IO="file", filename="Field_Modifier.facts", delimiter="\t")
+
 isModifier(?modifier),
 isField(?field),
 Field_Modifier(?modifier, ?field) :-
@@ -92,6 +108,8 @@ Field_Modifier(?modifier, ?field) :-
 
 .decl _ClassModifier(?class:symbol, ?modifier:symbol) input
 
+.input _ClassModifier(IO="file", filename="ClassModifier.facts", delimiter="\t")
+
 ClassModifier(?class, ?modifier) :-
     _ClassModifier(?class, ?modifier).
 
@@ -99,6 +117,8 @@ ClassModifier(?class, ?modifier) :-
 // FormalParam
 
 .decl _FormalParam(?index:number, ?method:symbol, ?var:symbol) input
+
+.input _FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
 
 isMethod(?method),
 isVar(?var),
@@ -109,6 +129,8 @@ FormalParam(?index, ?method, ?var) :-
 // Method:DeclaresException
 
 .decl _Method_DeclaresException(?exceptionType:symbol, ?method:symbol) input
+
+.input _Method_DeclaresException(IO="file", filename="Method_DeclaresException.facts", delimiter="\t")
 
 isType(?exceptionType),
 isReferenceType(?exceptionType),
@@ -121,6 +143,8 @@ Method_DeclaresException(?exceptionType, ?method) :-
 
 .decl _Method_Modifier(?mod:symbol, ?method:symbol) input
 
+.input _Method_Modifier(IO="file", filename="Method_Modifier.facts", delimiter="\t")
+
 isModifier(?mod),
 isMethod(?method),
 Method_Modifier(?mod, ?method) :-
@@ -130,6 +154,8 @@ Method_Modifier(?mod, ?method) :-
 // NativeReturnVar
 
 .decl _NativeReturnVar(?var:symbol, ?method:symbol) input
+
+.input _NativeReturnVar(IO="file", filename="NativeReturnVar.facts", delimiter="\t")
 
 isVar(?var),
 isMethod(?method),
@@ -141,6 +167,8 @@ NativeReturnVar(?var, ?method) :-
 
 .decl _Var_Type(?var:symbol, ?type:symbol) input
 
+.input _Var_Type(IO="file", filename="Var_Type.facts", delimiter="\t")
+
 isVar(?var),
 isType(?type),
 Var_Type(?var, ?type) :-
@@ -150,6 +178,8 @@ Var_Type(?var, ?type) :-
 // Var:DeclaringMethod
 
 .decl _Var_DeclaringMethod(?var:symbol, ?method:symbol) input
+
+.input _Var_DeclaringMethod(IO="file", filename="Var_DeclaringMethod.facts", delimiter="\t")
 
 isVar(?var),
 isMethod(?method),
@@ -161,6 +191,8 @@ Var_DeclaringMethod(?var, ?method) :-
 
 .decl _ApplicationClass(?type:symbol) input
 
+.input _ApplicationClass(IO="file", filename="ApplicationClass.facts", delimiter="\t")
+
 isType(?type),
 isReferenceType(?type),
 ApplicationClass(?type) :-
@@ -170,6 +202,8 @@ ApplicationClass(?type) :-
 // ThisVar
 
 .decl _ThisVar(?method:symbol, ?var:symbol) input
+
+.input _ThisVar(IO="file", filename="ThisVar.facts", delimiter="\t")
 
 isMethod(?method),
 isVar(?var),
@@ -181,6 +215,8 @@ ThisVar(?method, ?var) :-
 
 .decl _ExceptionHandler_Previous(?handler:symbol, ?previous:symbol) input
 
+.input _ExceptionHandler_Previous(IO="file", filename="ExceptionHandler_Previous.facts", delimiter="\t")
+
 isExceptionHandler(?handler),
 isExceptionHandler(?previous),
 ExceptionHandler_Previous(?handler, ?previous) :-
@@ -190,6 +226,8 @@ ExceptionHandler_Previous(?handler, ?previous) :-
 // AssignReturnValue
 
 .decl _AssignReturnValue(?invocation:symbol, ?to:symbol) input
+
+.input _AssignReturnValue(IO="file", filename="AssignReturnValue.facts", delimiter="\t")
 
 isInstruction(?invocation),
 isMethodInvocation(?invocation),
@@ -201,6 +239,8 @@ AssignReturnValue(?invocation, ?to) :-
 // Properties
 
 .decl _Properties(?path:symbol, ?key:symbol, ?value:symbol) input
+
+.input _Properties(IO="file", filename="Properties.facts", delimiter="\t")
 
 //+Instruction:Id(?path:?param1),
 //+StringConstant(?path),

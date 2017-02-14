@@ -76,7 +76,7 @@ class SouffleAnalysis extends DoopAnalysis {
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
-                new File(factsDir, "_Tamiflex_ReflectionData.facts").withWriter { w ->
+                new File(factsDir, "Tamiflex_ReflectionData.facts").withWriter { w ->
                     origTamFile.eachLine { line ->
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
