@@ -126,7 +126,10 @@ PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId) <-
 // Primitive values passed as arguments to proxied methods, are boxed
 // to be passed to the args array. Thus, for every primitive argument
 // of a proxied method, we create a new heap allocation to show where
-// boxing occurs in the method. REVIEW: contexts (as above)?
+// boxing occurs in the method. This simulates codeWrapArgument() of
+// sun.misc.ProxyGenerator, which calls the valueOf() method of the
+// appropriate wrapper type for every argument of a primitive type.
+// REVIEW: contexts (as above)?
 HeapAllocation:Normal:Cons[?heapId] = ?heap,
 NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?boxType,
