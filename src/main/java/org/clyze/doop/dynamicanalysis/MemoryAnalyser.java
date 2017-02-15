@@ -94,9 +94,13 @@ public class MemoryAnalyser {
         for (DynamicFact fact: factsFromDump) {
             fact.write_fact(db);
         }
+        int unmatched = 0;
         for (DynamicHeapAllocation heapAllocation: heapAllocations) {
             heapAllocation.write_fact(db);
+            if (heapAllocation.isProbablyUnmatched()) unmatched++;
         }
+
+        System.out.println("Warning, "+unmatched+" heap dump objects have a stacktrace that is too shallow to match to a static counterpart.");
         db.flush();
         db.close();
         return factsFromDump.size();

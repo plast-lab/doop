@@ -190,7 +190,15 @@ class ClassicAnalysis extends DoopAnalysis {
 
         if (options.ANALYZE_MEMORY_DUMP.value) {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
-            connector.queue().transaction().executeFile("import-dynamic-facts.logic").commit()
+            cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
+            cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
+            connector.queue()
+                    .transaction()
+                    .executeFile("import-dynamic-facts.logic")
+                    .addBlockFile("externalheaps.logic")
+                    .commit().transaction()
+                    .executeFile("import-dynamic-facts2.logic")
+                    .commit()
         }
 
         if (options.TRANSFORM_INPUT.value)

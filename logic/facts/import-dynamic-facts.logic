@@ -2,55 +2,6 @@
 // [Dynamic analysis related]
 //-----------------------------------------------------------------------------
 
-// DynamicStaticFieldPointsTo
-lang:physical:storageModel[`_DynamicStaticFieldPointsTo] = "DelimitedFile".
-lang:physical:filePath[`_DynamicStaticFieldPointsTo] = "facts/DynamicStaticFieldPointsTo.facts".
-lang:physical:delimiter[`_DynamicStaticFieldPointsTo] = "\t".
-lang:physical:hasColumnNames[`_DynamicStaticFieldPointsTo] = false.
-_DynamicStaticFieldPointsTo(?param1, ?param2, ?param3) ->
-   string(?param1),
-   string(?param2),
-   string(?param3).
-
-+DynamicStaticFieldPointsTo(?heap, ?fld) <-
-   Field:SimpleName[?fld] = ?fldSimpleName,
-   Field:DeclaringType[?fld] = ?fldDeclaringClass,
-   DynamicHeapAllocation(?heapString, ?heap),
-   _DynamicStaticFieldPointsTo(?fldSimpleName, ?fldDeclaringClass, ?heapString).
-
-
-// DynamicInstanceFieldPointsTo
-lang:physical:storageModel[`_DynamicInstanceFieldPointsTo] = "DelimitedFile".
-lang:physical:filePath[`_DynamicInstanceFieldPointsTo] = "facts/DynamicInstanceFieldPointsTo.facts".
-lang:physical:delimiter[`_DynamicInstanceFieldPointsTo] = "\t".
-lang:physical:hasColumnNames[`_DynamicInstanceFieldPointsTo] = false.
-_DynamicInstanceFieldPointsTo(?param1, ?param2, ?param3, ?param4) ->
-  string(?param1),
-  string(?param2),
-  string(?param3),
-  string(?param4).
-
-+DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap) <-
-   DynamicHeapAllocation(?heapString, ?heap),
-   DynamicHeapAllocation(?baseHeapString, ?baseHeap),
-   Field:SimpleName[?fld] = ?fldSimpleName,
-   Field:DeclaringType[?fld] = ?fldDeclaringClass,
-   _DynamicInstanceFieldPointsTo(?baseHeapString, ?fldSimpleName, ?fldDeclaringClass, ?heapString).
-
-// DynamicArrayIndexPointsTo
-lang:physical:storageModel[`_DynamicArrayIndexPointsTo] = "DelimitedFile".
-lang:physical:filePath[`_DynamicArrayIndexPointsTo] = "facts/DynamicArrayIndexPointsTo.facts".
-lang:physical:delimiter[`_DynamicArrayIndexPointsTo] = "\t".
-lang:physical:hasColumnNames[`_DynamicArrayIndexPointsTo] = false.
-_DynamicArrayIndexPointsTo(?param1, ?param2) ->
-  string(?param1),
-  string(?param2).
-
-+DynamicArrayIndexPointsTo(?heap, ?baseHeap) <-
-   DynamicHeapAllocation(?heapString, ?heap),
-   DynamicHeapAllocation(?baseHeapString, ?baseHeap),
-   _DynamicArrayIndexPointsTo(?baseHeapString, ?heapString).
-
 
 // DynamicHeapAllocation
 lang:physical:storageModel[`_DynamicHeapAllocation] = "DelimitedFile".
@@ -72,20 +23,26 @@ _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
    Instruction:Method[?insn] = ?method,
    Method:Id[?method] = ?methodId.
 
-+DynamicHeapAllocation(?representation, ?heap) <-
-   _MatchedHeapAllocation(?representation, ?heap).
++DynamicHeapAllocation(?representation, ?heap1) <-
+   _MatchedHeapAllocation(?representation, ?heap1, ?order),
+   !_InvalidOrder(?representation, ?order).
 
-_MatchedHeapAllocation(?representation, ?heap) <-
+_InvalidOrder(?representation, ?order1) <-
+   _MatchedHeapAllocation(?representation, _, ?order1),
+   _MatchedHeapAllocation(?representation, _, ?order2),
+   ?order2 > ?order1.
+
+_MatchedHeapAllocation(?representation, ?heap, ?order) <-
    _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
-   _DynamicHeapAllocation(?lineNumber, ?inMethod, _, ?type, ?representation).
+   _DynamicHeapAllocation(?lineNumber, ?inMethod, ?order, ?type, ?representation).
 
-_OptDynamicHeapAllocation(?representation, ?type) <-
-   _DynamicHeapAllocation(_, _, _, ?type, ?representation).
+_OptDynamicHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
+   _DynamicHeapAllocation(?lineNumber, ?inMethod, "0", ?type, ?representation).
 
-+UnmatchedDynamicHeapAllocation(?type, ?representation) <-
-   !_MatchedHeapAllocation(?representation, _),
-   _OptDynamicHeapAllocation(?representation, ?type).
++UnmatchedDynamicHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod) <-
+   !DynamicHeapAllocation(?representation,  _), // is this working ?
+   _OptDynamicHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod).
 
 +UnmatchedStaticHeapAllocation(?methodId, ?lineNumber, ?type) <-
-   _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap),
+   _HeapAllocationInformation(?lineNumber, ?methodId, ?type, _),
    !_DynamicHeapAllocation(?lineNumber, ?methodId, _, ?type, _).

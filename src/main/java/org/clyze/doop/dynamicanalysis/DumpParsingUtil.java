@@ -1,5 +1,6 @@
 package org.clyze.doop.dynamicanalysis;
 
+import com.google.common.collect.Lists;
 import com.sun.tools.hat.internal.model.*;
 
 import java.io.File;
@@ -12,6 +13,7 @@ import java.util.Arrays;
  */
 public class DumpParsingUtil {
     private static final String[] UNKNOWN = new String[] {"Unknown"};
+    public static final int BIG_NUMBER = 999;
 
     public static String[] convertType(String compact) {
         if (compact.length() == 0) return new String[]{"", ""};
@@ -93,9 +95,18 @@ public class DumpParsingUtil {
     static DynamicHeapAllocation getHeapRepresentation(StackTrace trace, JavaClass clazz) {
         if (trace != null && trace.getFrames().length > 0) {
             com.sun.tools.hat.internal.model.StackFrame[] frames = trace.getFrames();
+
+            int lastRelevantIndex = BIG_NUMBER;
+            for (int i = 0; i < trace.getFrames().length; i++) {
+                if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
+                    lastRelevantIndex = i+1;
+            }
+            if (clazz.isArray()) lastRelevantIndex = 0;
+            // reverse order
             ArrayList<String> inMethods = new ArrayList<>();
             ArrayList<String> lineNumbers = new ArrayList<>();
-            for (int i = 0; i<trace.getFrames().length; i++) {
+
+           for (int i = 0; i<trace.getFrames().length && i <= lastRelevantIndex; i++) {
                 com.sun.tools.hat.internal.model.StackFrame frame = trace.getFrames()[i];
                 String inMethod = convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
                 String fullyQualifiedMethodName = "<" + frame.getClassName() + ": " +  inMethod + ">";
@@ -103,8 +114,10 @@ public class DumpParsingUtil {
                 lineNumbers.add(frame.getLineNumber());
             }
 
-            return new DynamicHeapAllocation(lineNumbers.toArray(new String[lineNumbers.size()]),
-                    inMethods.toArray(new String[inMethods.size()]), clazz.getName());
+            DynamicHeapAllocation dyn = new DynamicHeapAllocation(Lists.reverse(lineNumbers).toArray(new String[lineNumbers.size()]),
+                    Lists.reverse(inMethods).toArray(new String[inMethods.size()]), clazz.getName());
+           dyn.setProbablyUnmatched(lastRelevantIndex == BIG_NUMBER);
+           return dyn;
         }
         return new DynamicHeapAllocation(UNKNOWN, UNKNOWN, clazz.getName());
     }

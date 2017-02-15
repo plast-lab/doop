@@ -16,10 +16,13 @@ public class DynamicHeapAllocation implements DynamicFact {
     private String[] inMethod;
     private String type;
 
+    private transient boolean probablyUnmatched = false;
+
     public DynamicHeapAllocation(String[] lineNumber, String[] inMethod, String type) {
         String[] zipped = new String[lineNumber.length];
-        for (int i = 0; i<lineNumber.length; i++)
+        for (int i = 0; i<lineNumber.length; i++) {
             zipped[i] = inMethod[i] + ":" + lineNumber[i];
+        }
         representation = String.join("...", zipped) + "/new " + type;
         this.lineNumber = lineNumber;
         this.inMethod = inMethod;
@@ -66,4 +69,11 @@ public class DynamicHeapAllocation implements DynamicFact {
         return type;
     }
 
+    public boolean isProbablyUnmatched() {
+        return probablyUnmatched;
+    }
+
+    public void setProbablyUnmatched(boolean probablyUnmatched) {
+        this.probablyUnmatched = probablyUnmatched;
+    }
 }
