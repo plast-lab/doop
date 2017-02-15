@@ -26,7 +26,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?param) <-
   Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
   Value:Type[?value] = ?valueType,
   ExceptionHandler:InRange(?handler, ?insn),
-	ExceptionHandler:Type[?handler] = ?handlerType,
+  ExceptionHandler:Type[?handler] = ?handlerType,
   SubtypeOf(?valueType, ?handlerType),
   ConcreteClass(?valueType), // filtering null_type
   !ExceptionHandler:Impossible(?valueType, ?handler, ?insn),
@@ -46,7 +46,7 @@ ExceptionHandler:TypeIsCaught(?type, ?block) <-
   ConcreteClass(?type).
 
 /*
- * Inclusion of instuction is important. E.g. handler1 covers indices 20-30,
+ * Inclusion of instruction is important. E.g. handler1 covers indices 20-30,
  * handler2 covers indices 10-40. Also, Previous(handler1, handler2).
  * Instruction #25 may infer Impossible(T1, handler2). Subsequently, when
  * checking instruction #15, we would (falsely) have that handler2 is
