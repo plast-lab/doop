@@ -116,3 +116,59 @@ ExceptionHandler:SameBlock:Repr[?handler] = ?handler <-
 ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
   ExceptionHandler:SameBlock:PartialOrder(?repr, ?handler),
   !ExceptionHandler:SameBlock:PartialOrder(_, ?repr).
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+/* Dynamic proxies have some special exception semantics, since the
+   single invoke() method must pose as any method and thus is declared
+   to throw a Throwable. */
+
+// Case (a): If invoke() has to throw an exception e that is not a
+// checked exception of the interface method, then e is wrapped as
+// UndeclaredThrowableException(e) and thrown. The actual rule below
+// is a bit simpler than the spec, as we do not provide the inner
+// exception e. Since we create one exception per proxy call graph
+// edge, we can add this information in the future if needed.
+HeapAllocation:Normal:Cons[?heapId] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?UTEClass,
+Instruction:Throws(?hctx, Value:byHeap[?value], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, _, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx,
+  Instruction:Id(?invo:?invoId),
+  ?heapId = "<UndeclaredThrowableException thrown of proxy call at " + ?invoId + ">",
+  Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
+
+// Case (b): "If the value returned by invoke is null and the
+// interface method's return type is primitive, then a
+// NullPointerException will be thrown by the method invocation on the
+// proxy instance." TODO: Here we assume the invoke() may alway return
+// null.
+HeapAllocation:Normal:Cons[?heapId] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?NPEClass,
+Instruction:Throws(?hctx, Value:byHeap[?value], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, _, ?handlerInvokeMeth),
+  AssignReturnValue[?invo] = ?return,
+  PrimitiveType(Var:Type[?return]),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx,
+  Instruction:Id(?invo:?invoId),
+  ?heapId = "<NullPointerException thrown of proxy call at " + ?invoId + ">",
+  Type:Id(?NPEClass:"java.lang.NullPointerException").
+
+// Case (c): "If the value returned by invoke is otherwise not
+// compatible with the method's declared return type as described
+// above, a ClassCastException will be thrown by the proxy instance."
+// If invoke() returns B and the interface method returns A, then A
+// and B are not compatible if (a) they are different primitive types
+// or (b) B is not a subtype of A.
+
+// TODO.
+/*
+((PrimitiveType(?typeA), PrimitiveType(?typeB), ?typeA != ?typeB) ;
+ (!Subtype(?typeB, ?typeA)).
+*/
+
+// TODO: reflective call graph edges bring all the checked exceptions
+// of the proxied method.
+
+#endif /* REFLECTION_DYNAMIC_PROXIES */
