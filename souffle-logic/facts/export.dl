@@ -1,0 +1,9 @@
+/*
+ * This file should contain only output directives.
+ * If there are no output directives, Souffle does not even run the analysis.
+ * Only the parts of the analysis that can affect the output are executed.
+ */
+
+.output CallGraphEdge(IO="file", filename="CallGraphEdge.facts", delimiter="\t")
+
+.output VarPointsTo(IO="file", filename="VarPointsTo.facts", delimiter="\t")

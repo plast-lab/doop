@@ -104,7 +104,8 @@ class SouffleAnalysis extends DoopAnalysis {
                 "${Doop.souffleLogicPath}/facts/flow-insensitive-schema.dl",
                 "${Doop.souffleLogicPath}/facts/import-entities.dl",
                 "${Doop.souffleLogicPath}/facts/import-facts.dl",
-                "${Doop.souffleLogicPath}/facts/post-process.dl"
+                "${Doop.souffleLogicPath}/facts/post-process.dl",
+                "${Doop.souffleLogicPath}/facts/export.dl"
                                         )
 
         if (options.TAMIFLEX.value) {
