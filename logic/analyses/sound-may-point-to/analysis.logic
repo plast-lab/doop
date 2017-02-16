@@ -56,6 +56,68 @@ AccessPath:toString[ap2] = str2 <-
 
 
 
+			//// POINT2---IgnorableMethodInvocation to go here
+
+			//// ====================================
+			//// BEGIN configuration
+			////  Different ways to kick-start the analysis.
+  /*
+
+  .init SoundMayPhase1 = SoundMay<DummyMustPointTo>
+  .init SoundMayPhase2 = SoundMay<DummyMustPointTo>
+  SoundMayPhase2.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+    SoundMayPhase1.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+  SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+    SoundMayPhase1.MayReachableMethodUnderMayContext(ctx, meth).
+
+  .init SoundMayPhase3 = SoundMay<SoundMustPointTo>
+  SoundMayPhase3.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+    SoundMayPhase2.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+  SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+    SoundMayPhase2.MayReachableMethodUnderMayContext(ctx, meth).
+  */
+
+/*
+.init SoundMayPhase4 = SoundMay<SoundMustPointTo>
+SoundMayPhase4.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+  SoundMayPhase3.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+SoundMayPhase4.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+  SoundMayPhase3.MayReachableMethodUnderMayContext(ctx, meth).
+
+.init SoundMayPhase5 = SoundMay<SoundMustPointTo>
+SoundMayPhase5.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+  SoundMayPhase4.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+  SoundMayPhase4.MayReachableMethodUnderMayContext(ctx, meth).
+
+.init SoundMayPhase6 = SoundMay<SoundMustPointTo>
+SoundMayPhase6.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+  SoundMayPhase5.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+SoundMayPhase6.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+  SoundMayPhase5.MayReachableMethodUnderMayContext(ctx, meth).
+
+.init SoundMayPhase7 = SoundMay<SoundMustPointTo>
+SoundMayPhase7.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+  SoundMayPhase6.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+SoundMayPhase7.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+  SoundMayPhase6.MayReachableMethodUnderMayContext(ctx, meth).
+
+.init SoundMayPhase8 = SoundMay<SoundMustPointTo>
+SoundMayPhase8.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+  SoundMayPhase7.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+SoundMayPhase8.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+  SoundMayPhase7.MayReachableMethodUnderMayContext(ctx, meth).
+
+.init SoundMayPhase9 = SoundMay<SoundMustPointTo>
+SoundMayPhase9.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
+  SoundMayPhase8.MayCallGraphEdge(ctx, meth, callerCtx, invo).
+SoundMayPhase9.MayReachableMethodUnderMayContext_Prev(ctx, meth) :-
+  SoundMayPhase8.MayReachableMethodUnderMayContext(ctx, meth).
+*/
+
+			.init IntraprocMustForStats = IntraproceduralMust
+IntraprocMustForStats.MayReachableMethodUnderMayContext(ctx, meth) :-
+  SoundMayPhase1.MayReachableMethodUnderMayContext(ctx, meth).
 
 
 
@@ -179,10 +241,24 @@ LoadCollection:Base[invo] = base <-
   LibraryCollectionLoadOperation(invo),
   VirtualMethodInvocation:Base[invo] = base.
 
+// TODO
+// Try to discover hidden "main" heuristically
+//AppMainMethod(mainMeth) :-
+//  MethodSignature_SimpleName(mainMeth, "main"),
+//  MethodSignature_DeclaringType(mainMeth, class),
+//  ApplicationClass(class).
+
+// TODO
+// Heuristic: if you can reach it in the analysis and it's a static
+// initializer, start a new search (with zero context depth) from it.
+// There are lots of static final fields in the library that see heavy
+// use.
+//ClinitMethodOfClass(meth, class) :-
+//  MethodSignature_SimpleName(meth, "<clinit>"),
+//  MethodSignature_DeclaringType(meth, class).
 
 
-
-
+// TODO needed??
 ThisVarOfConstructor[method] = this <-
    Method:SimpleName(method, "<init>"),
    ThisVar[method] = this.
@@ -298,6 +374,62 @@ IgnorableForNonCollectionsMethodInvocation(invo) <-
 //// END configuration of ignorable method calls
 
 
+/*
+// Friendly API for access path display
+AccessPath_ToString(ap, str) ->
+   AccessPath(ap), string(str).
+
+// loses lots of information, which may be confusing during debugging.
+AccessPath_ToString(ap, str) :-
+   AccessPath_ByVarInv(ap, v),
+   _NameFromRefMode(v, str).
+//   Var_Value(v,vs),
+//   OptVar_DeclaringMethod(m,v),
+//   MethodSignature_Value(m_ms),
+//   str = vs + ms.
+
+AccessPath_ToString(ap, str) :-
+   AccessPath_ByStaticFieldInv(ap, f),
+   _NameFromRefMode(f, str).
+
+AccessPath_ToString(ap, str2) :-
+   AccessPath_ByCollectionVarInv(ap, v),
+   _NameFromRefMode(v, str),
+   str2 = "collection on " + str.
+
+AccessPath_ToString(ap, str) :-
+   AccessPath_Base(ap, base),
+   AccessPath_LastField(ap, fld),
+   AccessPath_ToString(base, strBase),
+   _NameFromRefMode(fld, fldName),
+   baseDot = strBase + ".",
+   str = baseDot + fldName.
+
+_NameFromRefMode(ref, name) ->
+   string(ref), string(name).
+
+_NameFromRefMode(ref, varName) :-
+   Var_Value(_:ref),
+   _VarRefModeLastTokenIndex(ref, maxIdx),
+   string_split[ref, "/", maxIdx] = varName.
+lang:derivationType[`_NameFromRefMode] = "Derived".
+
+_NameFromRefMode(ref, varName) :-
+   FieldSignature_Value(_:ref),
+   _FieldRefModeLastTokenIndex(ref, maxIdx),
+   string_split[ref, "/", maxIdx] = varName.
+lang:derivationType[`_NameFromRefMode] = "Derived".
+
+_VarRefModeLastTokenIndex(ref, maxIdx) :-
+   agg<<maxIdx = max(idx)>>
+   Var_Value(_:ref),
+   string_split[ref, "/", idx] = _.
+
+_FieldRefModeLastTokenIndex(ref, maxIdx) :-
+   agg<<maxIdx = max(idx)>>
+   FieldSignature_Value(_:ref),
+   string_split[ref, "/", idx] = _.
+*/
 /*
   // TODO not updated for LB
   ///// POINT1--unchanged access paths code
