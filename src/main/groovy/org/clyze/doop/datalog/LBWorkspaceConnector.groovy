@@ -25,11 +25,11 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
         _executor = executor
     }
 
-    public IWorkspaceAPI connect(String workspace) {
+    IWorkspaceAPI connect(String workspace) {
         _workspace = workspace
         return this
     }
-    public IWorkspaceAPI disconnect() {
+    IWorkspaceAPI disconnect() {
         _workspace = null
         return this
     }
@@ -43,69 +43,72 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
         _queue.clear()
     }
 
-    public IWorkspaceAPI echo(String message) {
+    IWorkspaceAPI echo(String message) {
         throw new UnsupportedOperationException("echo")
     }
-    public IWorkspaceAPI startTimer() {
+    IWorkspaceAPI startTimer() {
         throw new UnsupportedOperationException("startTimer")
     }
-    public IWorkspaceAPI elapsedTime() {
+    IWorkspaceAPI elapsedTime() {
         throw new UnsupportedOperationException("elapsedTime")
     }
-    public IWorkspaceAPI transaction() {
+    IWorkspaceAPI transaction() {
         throw new UnsupportedOperationException("transaction")
     }
-    public IWorkspaceAPI commit() {
+    IWorkspaceAPI timedTransaction(String message) {
+        throw new UnsupportedOperationException("timedTransaction")
+    }
+    IWorkspaceAPI commit() {
         throw new UnsupportedOperationException("commit")
     }
-    public IWorkspaceAPI createDB(String database) {
+    IWorkspaceAPI createDB(String database) {
         connect(database)
         return eval("-create -overwrite -blocks base")
     }
-    public IWorkspaceAPI openDB(String database) {
+    IWorkspaceAPI openDB(String database) {
         throw new UnsupportedOperationException("openDB")
     }
-    public IWorkspaceAPI addBlock(String logiqlString) {
+    IWorkspaceAPI addBlock(String logiqlString) {
         return eval("-addBlock '$logiqlString'")
     }
-    public IWorkspaceAPI addBlockFile(String filePath) {
+    IWorkspaceAPI addBlockFile(String filePath) {
         return eval("-addBlock -file $filePath")
     }
-    public IWorkspaceAPI addBlockFile(String filePath, String blockName) {
+    IWorkspaceAPI addBlockFile(String filePath, String blockName) {
         return eval("-addBlock -file $filePath -name $blockName")
     }
-    public IWorkspaceAPI execute(String logiqlString) {
+    IWorkspaceAPI execute(String logiqlString) {
         return eval("-execute '$logiqlString'")
     }
-    public IWorkspaceAPI executeFile(String filePath) {
+    IWorkspaceAPI executeFile(String filePath) {
         return eval("-execute -file $filePath")
     }
 
-    public IWorkspaceAPI eval(String cmd) {
+    IWorkspaceAPI eval(String cmd) {
         exec("$_bloxbatch -db $_workspace $cmd $_bloxOpts")
         return this
     }
 
-    public IWorkspaceAPI external(String cmd) {
+    IWorkspaceAPI external(String cmd) {
         // TODO
         throw new UnsupportedOperationException("external")
     }
 
-    public IWorkspaceAPI include(String filePath) {
+    IWorkspaceAPI include(String filePath) {
         throw new UnsupportedOperationException("include")
     }
 
 
-    public void processQuery(String logiqlString, String printOpt, Closure outputLineProcessor) {
+    void processQuery(String logiqlString, String printOpt, Closure outputLineProcessor) {
         exec("$_bloxbatch -db $_workspace -query '$logiqlString' $printOpt", outputLineProcessor)
     }
-    public void processQuery(String logiqlString, Closure outputLineProcessor) {
+    void processQuery(String logiqlString, Closure outputLineProcessor) {
         processQuery(logiqlString, "", outputLineProcessor)
     }
-    public void processPredicate(String predicate, Closure outputLineProcessor) {
+    void processPredicate(String predicate, Closure outputLineProcessor) {
         processQuery(predicate, "", outputLineProcessor)
     }
-    public Map<String, Integer> popCount(String... predicates) {
+    Map<String, Integer> popCount(String... predicates) {
         def counters = [:]
         exec("$_bloxbatch -db $_workspace -popCount ${predicates.join(',')}") { String line ->
             def num = line.tokenize(':').last()
@@ -115,7 +118,7 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
 
         return counters.asImmutable()
     }
-    public List<String> listPredicates() {
+    List<String> listPredicates() {
         def predicates = []
         exec("$_bloxbatch -db $_workspace -list") { String line -> predicates.add(line) }
 

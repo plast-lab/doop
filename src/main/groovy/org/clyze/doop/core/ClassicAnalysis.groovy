@@ -4,8 +4,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
@@ -150,9 +148,7 @@ class ClassicAnalysis extends DoopAnalysis {
 
         connector.queue()
             .createDB(database.getName())
-            .echo("-- Init DB --")
-            .startTimer()
-            .transaction()
+            .timedTransaction("-- Init DB (import) --")
             .addBlockFile("flow-sensitive-schema.logic")
             .addBlockFile("flow-insensitive-schema.logic")
             .executeFile("import-entities.logic")
@@ -175,9 +171,13 @@ class ClassicAnalysis extends DoopAnalysis {
 
         connector.queue()
             .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
+            .commit()
+            .elapsedTime()
+            .timedTransaction("-- Init DB (post) --")
             .addBlockFile("post-process.logic")
             .commit()
-            .transaction()
+            .elapsedTime()
+            .timedTransaction("-- Init DB (flow-ins) --")
             .executeFile("to-flow-insensitive-delta.logic")
             .commit()
             .elapsedTime()
@@ -209,9 +209,7 @@ class ClassicAnalysis extends DoopAnalysis {
         cpp.preprocess("${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 
         connector.queue()
-            .echo("-- Basic Analysis --")
-            .startTimer()
-            .transaction()
+            .timedTransaction("-- Basic Analysis --")
             .addBlockFile("basic.logic")
 
         if (options.CFG_ANALYSIS.value) {
@@ -260,13 +258,12 @@ class ClassicAnalysis extends DoopAnalysis {
         }
 
         connector.queue()
-            .echo("-- Prologue --")
-            .startTimer()
-            .transaction()
+            .timedTransaction("-- Prologue --")
             .addBlockFile("${name}-declarations.logic")
             .addBlockFile("prologue.logic")
             .commit()
-            .transaction()
+            .elapsedTime()
+            .timedTransaction("-- Main Deltas -- ")
             .executeFile("${name}-delta.logic")
 
         if (options.REFLECTION.value) {
@@ -342,9 +339,7 @@ class ClassicAnalysis extends DoopAnalysis {
         if (isRefineStep) importRefinement()
 
         connector.queue()
-            .echo("-- " + echo_analysis + " --")
-            .startTimer()
-            .transaction()
+            .timedTransaction("-- " + echo_analysis + " --")
             .addBlockFile("${name}.logic")
             .commit()
             .elapsedTime()
@@ -391,9 +386,7 @@ class ClassicAnalysis extends DoopAnalysis {
         cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic", macros)
 
         connector.queue()
-            .echo("-- Statistics --")
-            .startTimer()
-            .transaction()
+            .timedTransaction("-- Statistics --")
             .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
@@ -419,41 +412,44 @@ class ClassicAnalysis extends DoopAnalysis {
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
+            def deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
-        Collection<String> params = null
+        Collection<String> params
 
         switch(platform) {
             case "java":
                 params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
-	        // This uses all platformLibs.
-	        // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
-	        // This uses just platformLibs[0], assumed to be android.jar.
-	        params = ["--full"] + depArgs + ["--android-jars"] +
-		         [platformLibs[0].getAbsolutePath()]
-		break
+                // This uses all platformLibs.
+                // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
+                // This uses just platformLibs[0], assumed to be android.jar.
+                params = ["--full"] + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+        break
             default:
                 throw new RuntimeException("Unsupported platform")
         }
 
         if (options.SSA.value) {
-            params = params + ["--ssa"]
+            params += ["--ssa"]
         }
 
         if (!options.RUN_JPHANTOM.value) {
-            params = params + ["--allow-phantom"]
+            params += ["--allow-phantom"]
         }
 
         if (options.RUN_FLOWDROID.value) {
-            params = params + ["--run-flowdroid"]
+            params += ["--run-flowdroid"]
         }
 
         if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-            params = params + ["--only-application-classes-fact-gen"]
+            params += ["--only-application-classes-fact-gen"]
+        }
+
+        if (options.X_DRY_RUN.value) {
+            params += ["--noFacts"]
         }
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
@@ -674,5 +670,5 @@ class ClassicAnalysis extends DoopAnalysis {
         return "$path/rt.jar"
     }
 
-	Iterable<AnalysisPhase> phases() { return null }
+    Iterable<AnalysisPhase> phases() { return null }
 }

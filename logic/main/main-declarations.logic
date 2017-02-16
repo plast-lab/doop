@@ -1,5 +1,4 @@
 #include "class-initialization-declarations.logic"
-#include "exceptions-declarations.logic"
 #include "implicit-reachable-declarations.logic"
 #include "string-constants-declarations.logic"
 #include "threads-declarations.logic"
@@ -47,3 +46,11 @@ Value:DeclaringType[?value] = ?type -> Value(?value), Type(?type).
 
 // [Miscellaneous]
 Value:Null[] = ?null -> Value(?null).
+
+//-----------------------------------------------------------------------------
+// [Proxy classes and methods - artificially created]
+//-----------------------------------------------------------------------------
+
+ProxyClass(?t) -> ClassType(?t).
+lang:entity(`ProxyClass).
+lang:physical:capacity[`ProxyClass] = 131072.

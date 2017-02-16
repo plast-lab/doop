@@ -32,6 +32,7 @@ public class Main {
     private static ClassFilter applicationClassFilter;
     private static String appRegex = "**";
     private static boolean _runFlowdroid = false;
+    private static boolean _noFacts = false;
 
     private static boolean _bytecode2jimple = false;
     private static boolean _toStdout = false;
@@ -134,6 +135,9 @@ public class Main {
                     case "--sequential":
                         _classicFactGen = true;
                         break;
+                    case "--noFacts":
+                        _noFacts = true;
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -147,9 +151,10 @@ public class Main {
                         System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
+                        System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
 
                         System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
-                        System.err.println("  --stdout                              Write Jimple/Shimple to stdout");
+                        System.err.println("  --bytecode2jimpleHelp                 Show help information regarding bytecode2jimple");
                         System.exit(0);
                     case "--bytecode2jimpleHelp":
                         System.err.println("\nusage: [options] file");
@@ -229,7 +234,8 @@ public class Main {
 
             if (_runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
-                app.calculateSourcesSinksEntrypoints("SourcesAndSinks.txt");
+                String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
+                app.calculateSourcesSinksEntrypoints(filename);
                 dummyMain = app.getDummyMainMethod();
                 if (dummyMain == null) {
                     throw new RuntimeException("Dummy main null");
@@ -434,13 +440,15 @@ public class Main {
                     }
                 }
             }
-            if (_classicFactGen)
-                driver.doInSequentialOrder(classes);
-            else {
-                scene.getOrMakeFastHierarchy();
-                // avoids a concurrent modification exception, since we may
-                // later be asking soot to add phantom classes to the scene's hierarchy
-                driver.doInParallel(classes);
+            if (!_noFacts) {
+                if (_classicFactGen)
+                    driver.doInSequentialOrder(classes);
+                else {
+                    scene.getOrMakeFastHierarchy();
+                    // avoids a concurrent modification exception, since we may
+                    // later be asking soot to add phantom classes to the scene's hierarchy
+                    driver.doInParallel(classes);
+                }
             }
             db.close();
         }

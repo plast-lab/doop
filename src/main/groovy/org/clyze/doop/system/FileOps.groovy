@@ -5,10 +5,6 @@ import org.apache.commons.io.FileUtils
 
 class FileOps {
 
-    private static final FileFilter ALL_FILES = [
-        accept: { File f -> f.isFile() }
-    ] as FileFilter
-
     private static final FileFilter ALL_FILES_AND_DIRECTORIES = [
         accept: { File f -> true }
     ] as FileFilter
@@ -80,14 +76,6 @@ class FileOps {
             throw new RuntimeException(message)
 
         return dir
-    }
-
-    /**
-     *  Moves the contents of the src directory to dest (as in: mv src/* dest).
-     */
-    static void moveDirContents(File src, File dest) {
-        FileUtils.copyDirectory(src, dest, ALL_FILES_AND_DIRECTORIES)
-        FileUtils.cleanDirectory(src)
     }
 
     /**

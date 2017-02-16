@@ -65,8 +65,8 @@ class NoSearchingClassProvider implements ClassProvider {
 
             // Sanity check
             if (_classes.containsKey(className)) {
-                throw new IllegalStateException(
-                    "Class " + className + " has already been added to this class provider");
+                //throw new IllegalStateException(
+                System.err.println("Class " + className + " has already been added to this class provider");
             }
 
             // Store class resource

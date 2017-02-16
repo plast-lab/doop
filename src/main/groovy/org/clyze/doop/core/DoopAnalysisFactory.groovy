@@ -316,7 +316,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
             options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
         }
 
-        if (options.DACAPO.value) {
+        if (options.DACAPO.value || options.DACAPO_BACH.value) {
             def inputJarName = inputFilePaths[0]
             def deps = inputJarName.replace(".jar", "-deps.jar")
             if (!inputFilePaths.contains(deps))
@@ -326,24 +326,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
                 options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
-            logger.info "Running dacapo benchmark: $benchmark"
-            options.DACAPO_BENCHMARK.value = benchmark
-        }
-
-        if (options.DACAPO_BACH.value) {
-            def inputJarName = inputFilePaths[0]
-            if (inputJarName.startsWith("http")) throw new RuntimeException("Currently, a local path is required for DaCapo-Bach benchmarks")
-            def depsDir = inputJarName.replace(".jar", "-libs")
-            new File(depsDir).eachFile { File depsFile ->
-                if (FilenameUtils.getExtension(depsFile.getName()).equals("jar") && !inputFilePaths.contains(depsFile.toString()))
-                    inputFilePaths.add(depsFile.toString())
-            }
-
-            if (!options.REFLECTION.value)
-                options.TAMIFLEX.value = inputJarName.replace(".jar", "-tamiflex.log")
-
-            def benchmark = FilenameUtils.getBaseName(inputJarName)
-            logger.info "Running dacapo-bach benchmark: $benchmark"
+            logger.info "Running "+(options.DACAPO.value ? "dacapo" : "dacapo-bach")+" benchmark: $benchmark"
             options.DACAPO_BENCHMARK.value = benchmark
         }
 
@@ -355,6 +338,13 @@ class DoopAnalysisFactory implements AnalysisFactory {
             options.SSA.value = true
             options.CFG_ANALYSIS.value = true
             options.MUST_AFTER_MAY.value = true
+        }
+
+        if (options.X_DRY_RUN.value) {
+            options.X_STATS_NONE.value = true
+            if (options.CACHE.value) {
+                logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
+            }
         }
 
         context.resolve()

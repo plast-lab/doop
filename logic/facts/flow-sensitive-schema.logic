@@ -40,7 +40,6 @@ lang:entity(`ArrayType).
 lang:entity(`ClassType).
 lang:entity(`InterfaceType).
 
-
 // Inheritance and Subtyping
 
 DirectSuperclass[?class] = ?superclass ->
@@ -53,6 +52,7 @@ DirectSuperinterface(?ref, ?interface) ->
 // Important class subsets
 
 ApplicationClass(?ref) -> ReferenceType(?ref).
+ConcreteClass(?ref)    -> ReferenceType(?ref).
 
 MainClass(?class) -> ClassType(?class).
 
@@ -625,7 +625,6 @@ lang:physical:capacity[`NumConstant]         = 4194304.
 lang:physical:capacity[`StringConstant]      = 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
 lang:physical:capacity[`StringRaw]           = 4194304.
-
 
 //-----------------------------------------------------------------------------
 // [Android]

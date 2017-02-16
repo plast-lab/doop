@@ -1,4 +1,5 @@
 package org.clyze.doop.input
+
 import org.apache.commons.io.FileUtils
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.module.descriptor.DefaultDependencyDescriptor

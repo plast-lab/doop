@@ -6,70 +6,75 @@ import org.clyze.doop.system.CPreprocessor
 class LBCommandQueue implements IWorkspaceAPI {
 
     File                                  _outDir
-    CPreprocessor                          _cpp
+    CPreprocessor                         _cpp
     List<LBWorkspaceConnector.IComponent> _components
 
-    public LBCommandQueue(File outDir, CPreprocessor cpp) {
+    LBCommandQueue(File outDir, CPreprocessor cpp) {
         _outDir = outDir
         _cpp = cpp
         _components = new ArrayList<>()
         _components.add(new LBWorkspaceConnector.Script(_outDir))
     }
 
-    public void clear() {
+    void clear() {
         _components = new ArrayList<>()
     }
 
-    public IWorkspaceAPI echo(String message) {
-        return eval('echo "' + message + '"')
+    IWorkspaceAPI echo(String message) {
+        return eval('\necho "' + message + '"')
     }
-    public IWorkspaceAPI startTimer() {
+    IWorkspaceAPI startTimer() {
         return eval("startTimer")
     }
-    public IWorkspaceAPI elapsedTime() {
+    IWorkspaceAPI elapsedTime() {
         return eval("elapsedTime")
     }
-    public IWorkspaceAPI transaction() {
+    IWorkspaceAPI transaction() {
         return eval("transaction")
     }
-    public IWorkspaceAPI commit() {
+    IWorkspaceAPI timedTransaction(String message) {
+        return  echo(message)
+               .startTimer()
+               .transaction()
+    }
+    IWorkspaceAPI commit() {
         return eval("commit")
     }
-    public IWorkspaceAPI createDB(String database) {
+    IWorkspaceAPI createDB(String database) {
         return eval("create $database --overwrite --blocks base")
     }
-    public IWorkspaceAPI openDB(String database) {
+    IWorkspaceAPI openDB(String database) {
         return eval("open $database")
     }
-    public IWorkspaceAPI addBlock(String logiqlString) {
+    IWorkspaceAPI addBlock(String logiqlString) {
         return eval("addBlock '$logiqlString'")
     }
-    public IWorkspaceAPI addBlockFile(String filePath) {
+    IWorkspaceAPI addBlockFile(String filePath) {
         return eval("addBlock -F $filePath")
     }
-    public IWorkspaceAPI addBlockFile(String filePath, String blockName) {
+    IWorkspaceAPI addBlockFile(String filePath, String blockName) {
         return eval("addBlock -F $filePath -B $blockName")
     }
-    public IWorkspaceAPI execute(String logiqlString) {
+    IWorkspaceAPI execute(String logiqlString) {
         return eval("exec '$logiqlString'")
     }
-    public IWorkspaceAPI executeFile(String filePath) {
+    IWorkspaceAPI executeFile(String filePath) {
         return eval("exec -F $filePath")
     }
 
-    public IWorkspaceAPI eval(String cmd) {
+    IWorkspaceAPI eval(String cmd) {
         _components.last().add(cmd)
         return this
     }
 
-    public IWorkspaceAPI external(String cmd) {
+    IWorkspaceAPI external(String cmd) {
         _components.add(new LBWorkspaceConnector.External())
         _components.last().add(cmd)
 
         _components.add(new LBWorkspaceConnector.Script(_outDir))
     }
 
-    public IWorkspaceAPI include(String filePath) {
+    IWorkspaceAPI include(String filePath) {
         def inDir  = new File(filePath).getParentFile()
         def tmpFile = File.createTempFile("tmp", ".lb", _outDir)
         _cpp.preprocess(tmpFile.toString(), filePath)

@@ -1589,6 +1589,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
  * END invention of objects
  *************************************************************/
 
+#ifdef REFLECTION_DYNAMIC_PROXIES
+#include "dynamic-proxies.logic"
+#endif
+
 // Mark all the above special objects
 SpecialObject(?heap) <-
   SpecialMissingForNameHeap[_] = ?heap;

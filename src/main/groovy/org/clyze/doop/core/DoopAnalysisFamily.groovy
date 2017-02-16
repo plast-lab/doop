@@ -218,6 +218,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				forPreprocessor:true,
 				isAdvanced:true
 			),
+			new AnalysisOption<Boolean>(
+				id:"REFLECTION_DYNAMIC_PROXIES",
+				name:"reflection-dynamic-proxies",
+				description:"Enable handling of the Java dynamic proxy API.",
+				value:false,
+				webUI:true,
+				forPreprocessor:true,
+				isAdvanced:true
+			),
 
 			new AnalysisOption<Boolean>(
 				id:"TRANSFORM_INPUT",
@@ -360,7 +369,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				id:"PLATFORMS_LIB",
 				name:"platforms-lib",
 				description:"The path to the platform libs directory.",
-				value:System.getenv("DOOP_PLATFORMS_LIB") ? System.getenv("DOOP_PLATFORMS_LIB") : ARTIFACTORY_PLATFORMS_URL,
+				value: System.getenv("DOOP_PLATFORMS_LIB") ?: Doop.ARTIFACTORY_PLATFORMS_URL,
 				cli: false
 			),
 			new AnalysisOption<String>(
@@ -370,7 +379,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
 				value: "java_7",
 				webUI: true,
-				forCacheID: true
+				forCacheID:true
 			),
 			/* Start of non-standard flags */
 			new AnalysisOption<Boolean>(
@@ -405,17 +414,24 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				value:false,
 				nonStandard:true
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<Boolean>(
 				id:"X_STOP_AT_INIT",
 				name:"XstopAt:init",
 				description:"Initialize database with facts and exit.",
 				value:false,
 				nonStandard:true
 			),
-			new AnalysisOption<String>(
+			new AnalysisOption<Boolean>(
 				id:"X_STOP_AT_BASIC",
 				name:"XstopAt:basic",
 				description:"Run the basic analysis and exit.",
+				value:false,
+				nonStandard:true
+			),
+			new AnalysisOption<Boolean>(
+				id:"X_DRY_RUN",
+				name:"XdryRun",
+				description:"Do a dry run of the analysis.",
 				value:false,
 				nonStandard:true
 			),
