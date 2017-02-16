@@ -10,7 +10,7 @@ class CPreprocessor {
     String   _macroCli
     Executor _executor
 
-    public CPreprocessor(Analysis analysis, Executor executor) {
+    CPreprocessor(Analysis analysis, Executor executor) {
         _macroCli = analysis.options.values()
         .findAll { AnalysisOption option ->
             option.forPreprocessor && option.value

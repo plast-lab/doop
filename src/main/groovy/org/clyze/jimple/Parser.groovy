@@ -6,9 +6,9 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 
-public class Parser {
+class Parser {
 
-	public static void parse(String filename) {
+	static void parse(String filename) {
 		// XYZ/abc.def.Foo.jimple
 		def origFile = new File(filename)
 		// XYZ

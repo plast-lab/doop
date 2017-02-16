@@ -1,23 +1,23 @@
 package org.clyze.doop.datalog
 
 interface IWorkspaceAPI {
-    public IWorkspaceAPI echo(String message)
-    public IWorkspaceAPI startTimer()
-    public IWorkspaceAPI elapsedTime()
-    public IWorkspaceAPI transaction()
-    public IWorkspaceAPI timedTransaction(String message)
-    public IWorkspaceAPI commit()
-    public IWorkspaceAPI createDB(String database)
-    public IWorkspaceAPI openDB(String database)
-    public IWorkspaceAPI addBlock(String logiqlString)
-    public IWorkspaceAPI addBlockFile(String filePath)
-    public IWorkspaceAPI addBlockFile(String filePath, String blockName)
-    public IWorkspaceAPI execute(String logiqlString)
-    public IWorkspaceAPI executeFile(String filePath)
+    IWorkspaceAPI echo(String message)
+    IWorkspaceAPI startTimer()
+    IWorkspaceAPI elapsedTime()
+    IWorkspaceAPI transaction()
+    IWorkspaceAPI timedTransaction(String message)
+    IWorkspaceAPI commit()
+    IWorkspaceAPI createDB(String database)
+    IWorkspaceAPI openDB(String database)
+    IWorkspaceAPI addBlock(String logiqlString)
+    IWorkspaceAPI addBlockFile(String filePath)
+    IWorkspaceAPI addBlockFile(String filePath, String blockName)
+    IWorkspaceAPI execute(String logiqlString)
+    IWorkspaceAPI executeFile(String filePath)
 
-    public IWorkspaceAPI eval(String cmd)
-    public IWorkspaceAPI external(String cmd)
+    IWorkspaceAPI eval(String cmd)
+    IWorkspaceAPI external(String cmd)
 
-    public IWorkspaceAPI include(String filePath)
+    IWorkspaceAPI include(String filePath)
 }
 

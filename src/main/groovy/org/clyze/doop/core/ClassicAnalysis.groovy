@@ -4,8 +4,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.*
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
@@ -415,8 +413,8 @@ class ClassicAnalysis extends DoopAnalysis {
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            Collection<String> deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
-            depArgs = platformLibs.collect{ lib -> ["-l", lib.toString()]}.flatten() +  deps
+            def deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
         Collection<String> params
