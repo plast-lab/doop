@@ -15,15 +15,13 @@ _Tamiflex:ToDoopFormat[?orig] = ?formatted ->
 // Import data from the reflection log generated from tamiflex
 lang:physical:storageModel[`_Tamiflex:ReflectionData] = "DelimitedFile".
 lang:physical:filePath[`_Tamiflex:ReflectionData] = "facts/Tamiflex.facts".
-lang:physical:delimiter[`_Tamiflex:ReflectionData] = ";".
+lang:physical:delimiter[`_Tamiflex:ReflectionData] = "\t".
 lang:physical:hasColumnNames[`_Tamiflex:ReflectionData] = false.
-_Tamiflex:ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
-   string(?original), string(?mapped), string(?inClassStr), string(?inMethodStr), int[64](?lineNumber).
+_Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) ->
+   string(?classStr), string(?methodStr), string(?mapped), string(?inClassStr), string(?inMethodStr), int[64](?lineNumber).
 
 +Tamiflex:ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) <-
-   _Tamiflex:ReflectionData(?original, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
-   string:split[?original, ".", 0] = ?classStr0,
+   _Tamiflex:ReflectionData(?classStr0, ?methodStr0, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
    _Tamiflex:ToDoopFormat[?classStr0] = ?classStr,
-   string:split[?original, ".", 1] = ?methodStr0,
-   (_Tamiflex:ToDoopFormat[?methodStr0] = ?methodStr;
+   (_Tamiflex:ToDoopFormat[?methodStr0] = ?methodStr ;
     ?methodStr0 = ?methodStr).

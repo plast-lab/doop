@@ -76,24 +76,13 @@ class SouffleAnalysis extends DoopAnalysis {
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
-                new File(factsDir, "Tamiflex_ReflectionData.facts").withWriter { w ->
-                    origTamFile.eachLine { line ->
-                        w << line
-                                .replaceFirst(/;[^;]*;$/, "")
-                                .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + "\t" + second+ "\n"
-                        }.replaceAll(";", "\t").replaceFirst(/\./, "\t")
-                    }
-                }
-
-                // Create LB-suitable facts (too) to be able to run LB and compare results without running Soot again.
-                // TO BE REMOVED
                 new File(factsDir, "Tamiflex.facts").withWriter { w ->
                     origTamFile.eachLine { line ->
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
                                 .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second+ "\n" }
+                                .replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
             }

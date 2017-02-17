@@ -15,7 +15,7 @@ _Tamiflex_ToDoopFormat("set*", "set").
 .decl _Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol,
                                ?inMethodStr:symbol, ?lineNumber:number) input
 
-.input _Tamiflex_ReflectionData(IO="file", filename="Tamiflex_ReflectionData.facts", delimiter="\t")
+.input _Tamiflex_ReflectionData(IO="file", filename="Tamiflex.facts", delimiter="\t")
 
 Tamiflex_ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) :-
   _Tamiflex_ReflectionData(?classStr0, ?methodStr0, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
