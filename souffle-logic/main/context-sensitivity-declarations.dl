@@ -60,7 +60,7 @@
 /**
  * Call graph
  */
-.decl CallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?method:Method) output
+.decl CallGraphEdge(?callerCtx:Context, ?invocation:MethodInvocation, ?calleeCtx:Context, ?method:Method)
 
 /**
  * Reachable
