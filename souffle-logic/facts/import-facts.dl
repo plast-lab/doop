@@ -388,6 +388,7 @@ isInstruction(?instruction),
 isThrow_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
+Throw(?instruction, ?var),
 Throw_Var(?instruction, ?var) :-
     _Throw(?instruction, ?index, ?var, ?method).
 

@@ -25,6 +25,7 @@
 .type ClassType     = ReferenceType
 .type InterfaceType = ReferenceType
 
+
 .decl isPrimitiveType(?t:PrimitiveType)
 .decl isReferenceType(?t:ReferenceType)
 .decl isNullType(?t:NullType)
@@ -41,6 +42,7 @@
 // Important class subsets
 
 .decl ApplicationClass(?ref:ReferenceType)
+.decl ConcreteClass(?ref:ReferenceType)
 .decl MainClass(?class:ClassType)
 
 

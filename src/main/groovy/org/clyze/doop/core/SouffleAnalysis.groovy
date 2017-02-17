@@ -186,8 +186,8 @@ class SouffleAnalysis extends DoopAnalysis {
     }
 
     private void runSouffle(int jobs, File factsDir, File outDir) {
-        System.out.println("souffle -c -j$jobs -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath ${outDir}/${name}.dl")
-        executor.execute("souffle -c -j$jobs -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath ${outDir}/${name}.dl")
+        System.out.println("souffle -w -c -j$jobs -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath ${outDir}/${name}.dl")
+        executor.execute("souffle -w -c -j$jobs -p$outDir.absolutePath/profile.txt -F$factsDir.absolutePath -D$outDir.absolutePath ${outDir}/${name}.dl")
     }
 
     @Override

@@ -24,6 +24,9 @@ ApplicationVar(?var) :-
    Var_DeclaringMethod(?var, ?method),
    ApplicationMethod(?method).
 
+ConcreteClass(?class) :-
+   isClassType(?class), !ClassModifier("abstract", ?class).
+
 VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
 VirtualMethodInvocation_Descriptor(?invocation, ?descriptor) :-
    isVirtualMethodInvocation_Insn(?invocation),
