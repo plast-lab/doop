@@ -85,6 +85,17 @@ class SouffleAnalysis extends DoopAnalysis {
                         }.replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
+
+                // Create LB-suitable facts (too) to be able to run LB and compare results without running Soot again.
+                // TO BE REMOVED
+                new File(factsDir, "Tamiflex.facts").withWriter { w ->
+                    origTamFile.eachLine { line ->
+                        w << line
+                                .replaceFirst(/;[^;]*;$/, "")
+                                .replaceFirst(/;$/, ";0")
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
+                    }
+                }
             }
 
             logger.info "Caching facts in $cacheDir"
