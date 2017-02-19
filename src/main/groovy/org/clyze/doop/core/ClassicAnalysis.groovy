@@ -122,7 +122,8 @@ class ClassicAnalysis extends DoopAnalysis {
                         w << line
                                 .replaceFirst(/;[^;]*;$/, "")
                                 .replaceFirst(/;$/, ";0")
-                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
+                                .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first + ";" + second+ "\n" }
+                                .replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
             }
