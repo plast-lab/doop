@@ -68,9 +68,11 @@ def sootInfoflowAndroidJar = file('lib/soot-infoflow-android-1.1.jar')
    }
 }
 
-//This is required only for the SNAPSHOT dependencies
 configurations.all {
+    //This is required only for the SNAPSHOT dependencies
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+
+    resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
 }
 
 dependencies {
