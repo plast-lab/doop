@@ -151,6 +151,38 @@ StoreArrayIndex(cat(?invocation, "/@tmp-arraycopy"), ?dest, ?inmethod) :-
 
 /**********************************************************************************
  *
+ * sun.misc.Unsafe
+ *
+ **********************************************************************************/
+// For now handle these as array operations, not as field operations
+StoreArrayIndex(?from, ?base, ?inmethod) :-
+  ?casObject = "<sun.misc.Unsafe: boolean compareAndSwapObject(java.lang.Object,long,java.lang.Object,java.lang.Object)>",
+  isMethod(?casObject),
+  VirtualMethodInvocation(?invocation, ?casObject, ?inmethod),
+  ActualParam(0, ?invocation, ?base),
+  ActualParam(3, ?invocation, ?from).
+
+StoreArrayIndex(?from, ?base, ?inmethod) :-
+  (?putObj = "<sun.misc.Unsafe: void putObject(java.lang.Object,long,java.lang.Object)>";
+   ?putObj = "<sun.misc.Unsafe: void putObject(java.lang.Object,int,java.lang.Object)>";
+   ?putObj = "<sun.misc.Unsafe: void putObjectVolatile(java.lang.Object,long,java.lang.Object)>";
+   ?putObj = "<sun.misc.Unsafe: void putOrderedObject(java.lang.Object,long,java.lang.Object)>"),
+  isMethod(?putObj),
+  VirtualMethodInvocation(?invocation, ?putObj, ?inmethod),
+  ActualParam(0, ?invocation, ?base),
+  ActualParam(2, ?invocation, ?from).
+
+LoadArrayIndex(?base, ?to, ?inmethod) :-
+  (?getObj = "<sun.misc.Unsafe: java.lang.Object getObjectVolatile(java.lang.Object,long)>";
+   ?getObj = "<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,long)>";
+   ?getObj = "<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,int)>"),
+  isMethod(?getObj),
+  VirtualMethodInvocation(?invocation, ?getObj, ?inmethod),
+  ActualParam(0, ?invocation, ?base),
+  AssignReturnValue(?invocation, ?to).
+
+/**********************************************************************************
+ *
  * java.io.FileSystem
  *
  **********************************************************************************/
