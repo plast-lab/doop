@@ -53,7 +53,7 @@ ApplicationVar(?var) <-
    ApplicationMethod(?method).
 
 ConcreteClass(?class) <-
-   isClassType(?class), !ClassModifier("abstract", ?class).
+   ClassType(?class), !ClassModifier("abstract", ?class).
 
 VirtualMethodInvocation:SimpleName[?invocation] = ?simplename,
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor <-
