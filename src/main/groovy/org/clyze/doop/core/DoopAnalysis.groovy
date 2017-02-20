@@ -93,7 +93,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     }
 
     @Override
-    abstract public void run()
+    abstract void run()
 
     abstract protected void generateFacts()
 
@@ -115,7 +115,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
 
 
-    public static long timing(Closure c) {
+    static long timing(Closure c) {
         long now = System.currentTimeMillis()
         try {
             c.call()
