@@ -1,0 +1,6 @@
+component Foo {
+	P(x) -> string(x).
+}
+as S1
+
+S2 { * } => .

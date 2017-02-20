@@ -50,6 +50,8 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		final Program initP = Program.from(newGlobal, new HashMap<>(), new HashMap<>(), new HashSet<>());
 		n.inits.forEach( (initName, compName) -> {
 			Component comp = n.comps.get(compName);
+			if (comp == null)
+				ErrorManager.error(ErrorId.UNKNOWN_COMP, compName);
 			_r.reset(null, initName, externalAtoms(comp));
 			initP.addComponent((Component) comp.accept(this));
 		});
@@ -61,6 +63,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			String to                    = prop.toId;
 			Component fromComp           = initP.comps.get(from);
 			Component toComp             = (to == null ? initP.globalComp : initP.comps.get(to));
+			if (fromComp == null)
+				ErrorManager.error(ErrorId.UNKNOWN_COMP, from);
+			if (toComp == null)
+				ErrorManager.error(ErrorId.UNKNOWN_COMP, to);
+
 			Map<String, IAtom> declAtoms = _acActor.getDeclaringAtoms(fromComp);
 			Set<IAtom> newPreds          = new HashSet<>();
 

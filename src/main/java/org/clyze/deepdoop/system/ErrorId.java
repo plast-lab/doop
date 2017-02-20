@@ -16,7 +16,8 @@ public enum ErrorId {
 	ID_IN_USE,
 	NO_DECL,
 	UNKNOWN_VAR,
-	UNUSED_VAR;
+	UNUSED_VAR,
+	UNKNOWN_COMP;
 
 	static Map<ErrorId, String> _msgMap;
 	static {
@@ -33,6 +34,7 @@ public enum ErrorId {
 		_msgMap.put(ErrorId.NO_DECL, "Predicate `{0}` used but not declared");
 		_msgMap.put(ErrorId.UNKNOWN_VAR, "Unknown var `{0}`");
 		_msgMap.put(ErrorId.UNUSED_VAR, "Unused var `{0}`");
+		_msgMap.put(ErrorId.UNKNOWN_COMP, "Unknown component `{0}`");
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {
