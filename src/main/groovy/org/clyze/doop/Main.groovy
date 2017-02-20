@@ -128,11 +128,8 @@ class Main {
             executorService.shutdownNow()
 
         } catch (e) {
-            // e is of type java.util.concurrent.ExecutionException wrapping the actual exception
-            if (logger.debugEnabled)
-                logger.error(e.getCause().getMessage(), e.getCause())
-            else
-                logger.error(e.getCause().getMessage())
+            e = (e.getCause() ?: e)
+            logger.error(e.getMessage(), e)
             System.exit(-1)
         }
     }
