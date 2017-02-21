@@ -25,7 +25,7 @@ inits
 	: 'as' identifierList ;
 
 propagate
-	: IDENTIFIER '{' (ALL | predicateNameList) '}' '=>' (IDENTIFIER | GLOBAL) ;
+	: IDENTIFIER '{' (ALL | predicateNameList) '}' '->' (IDENTIFIER | GLOBAL) ;
 
 predicateNameList
 	: predicateName

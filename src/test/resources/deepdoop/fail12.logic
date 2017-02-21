@@ -6,4 +6,4 @@ component Foo {
 }
 as S1
 
-S1 { * } => .
+S1 { * } -> .

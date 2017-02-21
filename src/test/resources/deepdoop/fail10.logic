@@ -9,4 +9,4 @@ command Bar {
 }
 as S
 
-S { * } => .
+S { * } -> .

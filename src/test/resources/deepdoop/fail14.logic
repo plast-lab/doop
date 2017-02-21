@@ -4,4 +4,4 @@ component Foo {
 
 component Bar as S1
 
-S1 { * } => .
+S1 { * } -> .
