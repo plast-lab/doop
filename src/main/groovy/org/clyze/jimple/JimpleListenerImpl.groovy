@@ -5,13 +5,14 @@ import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.*
 import static org.clyze.jimple.JimpleParser.*
 
+import org.clyze.persistent.Position
+import org.clyze.persistent.doop.*
+
 class JimpleListenerImpl extends JimpleBaseListener {
 
 	String              _filename
-	List<Map>           _vars        = []
 	List<Map>           _pending
 	Map<String, String> _types       = [:]
-	List<Map>           _heaps       = []
 	int                 _heapCounter
 	String              _klass
 	String              _method
@@ -19,12 +20,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	String              json
 
+    BasicMetadata       metadata     = new BasicMetadata()
+
 	JimpleListenerImpl(String filename) {
 		_filename = filename
 	}
 
 
 	void exitProgram(ProgramContext ctx) {
+        /*
 		json = JsonOutput.toJson([
 			Field: [],
 			Variable: _vars,
@@ -35,6 +39,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			Occurrence: []
 		])
 		json = JsonOutput.prettyPrint(json)
+        */
+        json = "" //just to avoid nulls
 	}
 
 	void enterKlass(KlassContext ctx) {
@@ -49,7 +55,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	void exitIdentifierList(IdentifierListContext ctx) {
 		if (_inDecl)
-			_vars.push(var(ctx.IDENTIFIER(), true))
+			metadata.variables.add(var(ctx.IDENTIFIER(), true))
 	}
 
 	void enterDeclarationStmt(DeclarationStmtContext ctx) {
@@ -62,7 +68,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def type = ctx.IDENTIFIER().getText()
 		_pending.each { v ->
 			v.type = type
-			_types[v.doopName] = type
+			_types[v.doopId] = type
 		}
 	}
 
@@ -70,84 +76,84 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		(0..1).each {
 			if (ctx.IDENTIFIER(it) != null) {
 				def name = ctx.IDENTIFIER(it).getText()
-				_vars.push(var(ctx.IDENTIFIER(it), name.startsWith("@parameter")))
+				metadata.variables.add(var(ctx.IDENTIFIER(it), name.startsWith("@parameter")))
 			}
 		}
 		(0..1).each {
 			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
-				_vars.push(var(ctx.value(it).IDENTIFIER(), true))
+				metadata.variables.add(var(ctx.value(it).IDENTIFIER(), true))
 		}
 	}
 
 	void exitReturnStmt(ReturnStmtContext ctx) {
 		if (ctx.value() != null && ctx.value().IDENTIFIER() != null)
-			_vars.push(var(ctx.value().IDENTIFIER(), true))
+			metadata.variables.add(var(ctx.value().IDENTIFIER(), true))
 	}
 
 	void exitAllocationStmt(AllocationStmtContext ctx) {
-		_vars.push(var(ctx.IDENTIFIER(0), true))
-		_heaps.push(heap(ctx.IDENTIFIER(1)))
+		metadata.variables.add(var(ctx.IDENTIFIER(0), true))
+		metadata.heapAllocations.add(heap(ctx.IDENTIFIER(1)))
 		_heapCounter++
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
 		(0..1).each {
 			if (ctx.IDENTIFIER(it) != null)
-				_vars.push(var(ctx.IDENTIFIER(it), true))
+				metadata.variables.add(var(ctx.IDENTIFIER(it), true))
 		}
 	}
 
 	void exitValueList(ValueListContext ctx) {
 		if (ctx.value().IDENTIFIER() != null)
-			_vars.push(var(ctx.value().IDENTIFIER(), true))
+			metadata.variables.add(var(ctx.value().IDENTIFIER(), true))
 	}
 
 	void exitJumpStmt(JumpStmtContext ctx) {
 		(0..1).each {
 			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
-				_vars.push(var(ctx.value(it).IDENTIFIER(), true))
+				metadata.variables.add(var(ctx.value(it).IDENTIFIER(), true))
 		}
 	}
 
-	Map var(TerminalNode id, boolean isLocal) {
+	Variable var(TerminalNode id, boolean isLocal) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
-		def v = [
-			name: name,
-			doopName: "$_method/$name",
-			isLocal: isLocal,
-			isParameter: !isLocal,
-			sourceFileName: _filename,
-			position: [
-				startLine: line,
-				startColumn: startCol,
-				endLine: line,
-				endColumn: startCol + name.length()
-			]]
-		v.id = v.hashCode()
-		if (_types[v.doopName])
-			v.type = _types[v.doopName]
+
+        Position position = new Position(line, line, startCol, startCol + name.length())
+        Variable v = new Variable(
+            position, //position
+            _filename, //sourceFileName
+            name, //name
+            "$_method/$name", //doopId
+            null, //type, provided later
+            null, //declaringMethodId (value missing?),
+            isLocal, //isLocal
+            !isLocal //isParameter
+        )
+
+		if (_types[v.doopId])
+			v.type = _types[v.doopId]
 		else
 			_pending.push(v)
 		return v
 	}
 
-	Map heap(TerminalNode id) {
+	HeapAllocation heap(TerminalNode id) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def type = id.getText()
-		def h = [
-			type: type,
-			doopID: "$_method/$_heapCounter",
-			sourceFileName: _filename,
-			position: [
-				startLine: line,
-				startColumn: startCol,
-				endLine: line,
-				endColumn: startCol + type.length()
-			]]
-		h.id = h.hashCode()
+
+        Position position = new Position(line, line, startCol, startCol + type.length())
+
+        HeapAllocation h = new HeapAllocation(
+            position, //position
+            _filename, //sourceFileName
+            "$_method/$_heapCounter", //doopId
+            type, //type
+            null //allocatingMethodId (value missing?)
+        )
+
 		return h
 	}
 
