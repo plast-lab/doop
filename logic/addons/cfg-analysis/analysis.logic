@@ -1,5 +1,10 @@
 // See the declarations of the predicates for comments on their use and meaning.
 
+Method:FirstInstruction[?method] = ?insn <-
+   Instruction:Method[?insn] = ?method,
+   !Instruction:Prev[?insn] = _,
+   !IsJumpTarget(?insn).
+
 OptInstructionFromMethodIndex[?method, ?index] = ?insn <-
    Instruction:Method[?insn] = ?method,
    Instruction:Index[?insn] = ?index.
