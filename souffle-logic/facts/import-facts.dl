@@ -738,6 +738,7 @@ Instruction_Method(?instruction, ?method) :-
 
 .input _Activity(IO="file", filename="Activity.facts", delimiter="\t")
 
+isType(?id),
 Activity(?id) :-
     _Activity(?id).
 
@@ -748,6 +749,7 @@ Activity(?id) :-
 
 .input _Service(IO="file", filename="Service.facts", delimiter="\t")
 
+isType(?id),
 Service(?id) :-
     _Service(?id).
 
@@ -758,6 +760,7 @@ Service(?id) :-
 
 .input _ContentProvider(IO="file", filename="ContentProvider.facts", delimiter="\t")
 
+isType(?id),
 ContentProvider(?id) :-
     _ContentProvider(?id).
 
@@ -768,6 +771,7 @@ ContentProvider(?id) :-
 
 .input _BroadcastReceiver(IO="file", filename="BroadcastReceiver.facts", delimiter="\t")
 
+isType(?id),
 BroadcastReceiver(?id) :-
     _BroadcastReceiver(?id).
 
@@ -778,6 +782,7 @@ BroadcastReceiver(?id) :-
 
 .input _CallbackMethod(IO="file", filename="CallbackMethod.facts", delimiter="\t")
 
+isMethod(?id),
 CallbackMethod(?id) :-
     _CallbackMethod(?id).
 
