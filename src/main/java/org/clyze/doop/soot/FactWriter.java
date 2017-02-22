@@ -1,5 +1,6 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.Database;
 import soot.*;
 import soot.jimple.*;
@@ -33,11 +34,7 @@ class FactWriter {
     }
 
     String writeStringConstant(String constant) {
-        String raw;
-        if(constant.trim().equals(constant) && constant.length() > 0)
-            raw = constant;
-        else
-            raw = "<<\"" + constant + "\">>";
+        String raw = FactEncoders.encodeStringConstant(constant);
 
         String result;
         if(raw.length() <= 256)
@@ -779,6 +776,7 @@ class FactWriter {
         }
 
         if (expr instanceof StaticInvokeExpr) {
+
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
         }
         else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {

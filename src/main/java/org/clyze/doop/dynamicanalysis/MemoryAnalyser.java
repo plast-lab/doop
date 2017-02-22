@@ -1,12 +1,6 @@
 package org.clyze.doop.dynamicanalysis;
 
 import com.google.common.collect.*;
-import com.sun.jdi.*;
-import com.sun.jdi.StackFrame;
-import com.sun.jdi.VirtualMachine;
-import com.sun.jdi.event.*;
-import com.sun.jdi.request.EventRequestManager;
-import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.tools.hat.internal.model.*;
 import org.clyze.doop.common.Database;
 
@@ -34,6 +28,7 @@ public class MemoryAnalyser {
     private static String filename;
 
     private Set<DynamicHeapAllocation> heapAllocations = new HashSet<>();
+    private Set<DynamicReachableMethod> reachableMethods = new HashSet<>();
 
     public MemoryAnalyser(String filename) {
 
@@ -90,39 +85,58 @@ public class MemoryAnalyser {
 
     public int getAndOutputFactsToDB(File factDir) throws IOException, InterruptedException {
         Database db = new Database(factDir);
-        final Set<DynamicFact> factsFromDump = getFactsFromDump();
+        Set<DynamicFact> factsFromDump = null;
+        try {
+            factsFromDump = getFactsFromDump();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
+
         for (DynamicFact fact: factsFromDump) {
             fact.write_fact(db);
         }
+
+        for (DynamicFact fact: reachableMethods) {
+            fact.write_fact(db);
+        }
+
         int unmatched = 0;
         for (DynamicHeapAllocation heapAllocation: heapAllocations) {
             heapAllocation.write_fact(db);
             if (heapAllocation.isProbablyUnmatched()) unmatched++;
         }
 
-        System.out.println("Warning, "+unmatched+" heap dump objects have a stacktrace that is too shallow to match to a static counterpart.");
+        System.out.println("Warning, "+unmatched+" heap dump objects are likely not to hav a static counterpart.");
         db.flush();
         db.close();
         return factsFromDump.size();
-    }
-
-    private String getFieldSignature(JavaField field, JavaClass obj) {
-        return obj.getName() +
-                ": " +
-                DumpParsingUtil.convertType(field.getSignature())[0] + " " + field.getName();
     }
 
     private String getAllocationAbstraction(JavaThing heap) {
         if (heap instanceof JavaObject) {
             JavaObject obj = (JavaObject) heap;
             StackTrace trace = obj.getAllocatedFrom();
+            DynamicHeapAllocation heapAbstraction = null;
+            /*if(obj.getClazz().isString()) {
+                JavaThing value = obj.getField("value");
+                if (value instanceof JavaValueArray) {
+                    String stringValue = ((JavaValueArray) value).valueString();
+                    if (stringValue.length() < 128) {
+                        heapAbstraction = new DynamicStringHeapAllocation(stringValue);
+                    }
+                }
+            }
+            // else
+            if (heapAbstraction == null)*/
+                heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
 
-            DynamicHeapAllocation heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
+            reachableMethods.addAll(DynamicReachableMethod.fromStackTrace(trace));
 
             heapAllocations.add(heapAbstraction);
             return heapAbstraction.getRepresentation();
-        } else if (heap instanceof  JavaObjectArray) {
-            JavaObjectArray obj = (JavaObjectArray) heap;
+
+        } else if (heap instanceof  JavaObjectArray || heap instanceof  JavaValueArray) {
+            JavaHeapObject obj = (JavaHeapObject) heap;
             DynamicHeapAllocation heapRepresentation = DumpParsingUtil.getHeapRepresentation(obj.getAllocatedFrom(), obj.getClazz());
 
             heapAllocations.add(heapRepresentation);
@@ -133,9 +147,6 @@ public class MemoryAnalyser {
         } else if (heap instanceof JavaObjectRef) {
             JavaObjectRef obj = (JavaObjectRef) heap;
             return "JavaObjectRef";
-        } else if (heap instanceof  JavaValueArray) {
-            JavaValueArray obj = (JavaValueArray) heap;
-            return "Array of: " + obj.getClazz().getName();
         } else if (heap instanceof JavaClass) {
             return "TODO";
         }
@@ -143,64 +154,5 @@ public class MemoryAnalyser {
 
     }
 
-    private static ArrayList<Map<LocalVariable,Value>> doMonitorDebug(VirtualMachine virtualMachine) {
-        EventRequestManager erm = virtualMachine.eventRequestManager();
-        MethodEntryRequest methodEntryRequest = erm.createMethodEntryRequest();
-        methodEntryRequest.addClassExclusionFilter("java.");
-        methodEntryRequest.addClassExclusionFilter("javax.");
-        methodEntryRequest.enable();
-        EventQueue eventQueue = virtualMachine.eventQueue();
-        ArrayList<Map<LocalVariable,Value>> variableMaps = new ArrayList<>();
-        while (true) {
-            EventSet eventSet = null;
-            try {
-                eventSet = eventQueue.remove();
-            } catch (InterruptedException e) {
-                return variableMaps;
-            }
-            for (Event event : eventSet) {
-                if (event instanceof VMDeathEvent
-                        || event instanceof VMDisconnectEvent) {
-                    // exit
-                    return variableMaps;
-                } else if (event instanceof IntegerType) {
-                    MethodExitEvent meEvent = (MethodExitEvent) event;
-                    // TODO
-                    try {
-                        ImmutableSetMultimap.Builder<LocalVariable, Value> builder = ImmutableSetMultimap.builder();
-                        for (StackFrame frame : meEvent.thread().frames()) {
-                            try {
-                                frame.getValues(frame.visibleVariables()).entrySet().forEach(builder::put);
-                            } catch (AbsentInformationException e) {
-
-                            }
-                        }
-
-                    } catch (IncompatibleThreadStateException e) {
-                        e.printStackTrace();
-                    }
-                } else if (event instanceof MethodEntryEvent) {
-                    MethodEntryEvent meEvent = (MethodEntryEvent) event;
-                    try {
-                        StackFrame frame = meEvent.thread().frame(0);
-                        variableMaps.add(frame.getValues(frame.visibleVariables()));
-                    } catch (IncompatibleThreadStateException e) {
-                    } catch (AbsentInformationException e) {
-
-                    }
-
-
-                } else if (event instanceof ModificationWatchpointEvent) {
-                    // a Test.foo has changed
-                    ModificationWatchpointEvent modEvent = (ModificationWatchpointEvent) event;
-                    System.out.println("old="
-                            + modEvent.valueCurrent());
-                    System.out.println("new=" + modEvent.valueToBe());
-                    System.out.println();
-                }
-            }
-            eventSet.resume();
-        }
-    }
 
 }

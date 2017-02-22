@@ -45,6 +45,8 @@ public class DumpParsingUtil {
 
                 if (compact.startsWith("L")) {
                     String[] temp = compact.substring(1).split("\\;");
+                    if (temp.length == 0)
+                        throw new RuntimeException("Truncated input?");
                     res = temp[0].replace('/', '.');
                     String rest = String.join(";",  Arrays.copyOfRange(temp, 1, temp.length));
                     return new String[]{res, rest};
@@ -97,29 +99,47 @@ public class DumpParsingUtil {
             com.sun.tools.hat.internal.model.StackFrame[] frames = trace.getFrames();
 
             int lastRelevantIndex = BIG_NUMBER;
-            for (int i = 0; i < trace.getFrames().length; i++) {
-                if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
-                    lastRelevantIndex = i+1;
+            if (clazz.isArray()) {
+                lastRelevantIndex = 0;
             }
-            if (clazz.isArray()) lastRelevantIndex = 0;
+            else if (frames[frames.length-1].getClassName().equals("sun.reflect.NativeConstructorAccessorImpl") &&
+                    frames[frames.length-1].getMethodName().equals("newInstance0")) {
+                 // do nothing for now
+
+            } else {
+                for (int i = 0; i < trace.getFrames().length; i++) {
+                    if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
+                        lastRelevantIndex = i + 1;
+                }
+            }
+
+
+
             // reverse order
             ArrayList<String> inMethods = new ArrayList<>();
             ArrayList<String> lineNumbers = new ArrayList<>();
 
            for (int i = 0; i<trace.getFrames().length && i <= lastRelevantIndex; i++) {
                 com.sun.tools.hat.internal.model.StackFrame frame = trace.getFrames()[i];
-                String inMethod = convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
-                String fullyQualifiedMethodName = "<" + frame.getClassName() + ": " +  inMethod + ">";
+                String fullyQualifiedMethodName = fullyQualifiedMethodSignatureFromFrame(frame);
                 inMethods.add(fullyQualifiedMethodName);
                 lineNumbers.add(frame.getLineNumber());
             }
 
-            DynamicHeapAllocation dyn = new DynamicHeapAllocation(Lists.reverse(lineNumbers).toArray(new String[lineNumbers.size()]),
+            DynamicNormalHeapAllocation dyn = new DynamicNormalHeapAllocation(Lists.reverse(lineNumbers).toArray(new String[lineNumbers.size()]),
                     Lists.reverse(inMethods).toArray(new String[inMethods.size()]), clazz.getName());
            dyn.setProbablyUnmatched(lastRelevantIndex == BIG_NUMBER);
            return dyn;
         }
-        return new DynamicHeapAllocation(UNKNOWN, UNKNOWN, clazz.getName());
+        return new DynamicNormalHeapAllocation(UNKNOWN, UNKNOWN, clazz.getName());
+    }
+
+    public static String fullyQualifiedMethodSignatureFromFrame(StackFrame frame) {
+        return "<" + frame.getClassName() + ": " +  methodSignatureFromStackFrame(frame) + ">";
+    }
+
+    public static String methodSignatureFromStackFrame(StackFrame frame) {
+        return convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
     }
 
 }

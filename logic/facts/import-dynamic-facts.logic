@@ -3,18 +3,17 @@
 //-----------------------------------------------------------------------------
 
 
-// DynamicHeapAllocation
-lang:physical:storageModel[`_DynamicHeapAllocation] = "DelimitedFile".
-lang:physical:filePath[`_DynamicHeapAllocation] = "facts/DynamicHeapAllocation.facts".
-lang:physical:delimiter[`_DynamicHeapAllocation] = "\t".
-lang:physical:hasColumnNames[`_DynamicHeapAllocation] = false.
-_DynamicHeapAllocation(?param1, ?param2, ?param3, ?param4, ?param5) ->
+// DynamicNormalHeapAllocation
+lang:physical:storageModel[`_DynamicNormalHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_DynamicNormalHeapAllocation] = "facts/DynamicNormalHeapAllocation.facts".
+lang:physical:delimiter[`_DynamicNormalHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_DynamicNormalHeapAllocation] = false.
+_DynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4, ?param5) ->
   string(?param1),
   string(?param2),
   string(?param3),
   string(?param4),
   string(?param5).
-
 
 _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
    Instruction:Line[?insn] = ?lineNumber,
@@ -34,15 +33,47 @@ _InvalidOrder(?representation, ?order1) <-
 
 _MatchedHeapAllocation(?representation, ?heap, ?order) <-
    _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
-   _DynamicHeapAllocation(?lineNumber, ?inMethod, ?order, ?type, ?representation).
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?order, ?type, ?representation).
 
-_OptDynamicHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
-   _DynamicHeapAllocation(?lineNumber, ?inMethod, "0", ?type, ?representation).
+_OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, "0", ?type, ?representation).
 
-+UnmatchedDynamicHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod) <-
++UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod) <-
    !DynamicHeapAllocation(?representation,  _), // is this working ?
-   _OptDynamicHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod).
+   _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod).
 
-+UnmatchedStaticHeapAllocation(?methodId, ?lineNumber, ?type) <-
++UnmatchedStaticNormalHeapAllocation(?methodId, ?lineNumber, ?type) <-
    _HeapAllocationInformation(?lineNumber, ?methodId, ?type, _),
-   !_DynamicHeapAllocation(?lineNumber, ?methodId, _, ?type, _).
+   !_DynamicNormalHeapAllocation(?lineNumber, ?methodId, _, ?type, _).
+
+
+// do same for string
+
+// DynamicStringHeapAllocation
+lang:physical:storageModel[`_DynamicStringHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_DynamicStringHeapAllocation] = "facts/DynamicStringHeapAllocation.facts".
+lang:physical:delimiter[`_DynamicStringHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_DynamicStringHeapAllocation] = false.
+_DynamicStringHeapAllocation(?param1) ->
+  string(?param1).
+
++DynamicHeapAllocation(?representation, ?heap) <-
+   _DynamicStringHeapAllocation(?representation),
+   HeapAllocation:byId[?representation] = ?heap.
+
+
+// DynamicStringHeapAllocation
+lang:physical:storageModel[`_DynamicReachableMethod] = "DelimitedFile".
+lang:physical:filePath[`_DynamicReachableMethod] = "facts/DynamicReachableMethod.facts".
+lang:physical:delimiter[`_DynamicReachableMethod] = "\t".
+lang:physical:hasColumnNames[`_DynamicReachableMethod] = false.
+_DynamicReachableMethod(?param1) ->
+  string(?param1).
+
++DynamicReachableMethod(?method) <-
+   _DynamicReachableMethod(?representation),
+   Method:Id(?method:?representation).
+
++UnmatchedDynamicReachableMethod(?representation) <-
+   _DynamicReachableMethod(?representation),
+   !Method:Id(_:?representation).

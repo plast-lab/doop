@@ -87,11 +87,13 @@ public enum PredicateFile
     PHANTOM_INVOKE("PhantomInvoke"),
     BREAKPOINT_STMT("BreakpointStmt"),
     UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
-    DYNAMIC_HEAP_ALLOCATION("DynamicHeapAllocation"),
+    DYNAMIC_NORMAL_HEAP_ALLOCATION("DynamicNormalHeapAllocation"),
+    DYNAMIC_STRING_HEAP_ALLOCATION("DynamicStringHeapAllocation"),
     DYNAMIC_STATIC_FIELD_POINTS_TO("DynamicStaticFieldPointsTo"),
     DYNAMIC_INSTANCE_FIELD_POINTS_TO("DynamicInstanceFieldPointsTo"),
     DYNAMIC_ARRAY_INDEX_POINTS_TO("DynamicArrayIndexPointsTo"),
-    DYNAMIC_VAR_POINTS_TO("DynamicVarPointsTo");
+    DYNAMIC_VAR_POINTS_TO("DynamicVarPointsTo"),
+    DYNAMIC_REACHABLE_METHOD("DynamicReachableMethod");
 
     private final String name;
 

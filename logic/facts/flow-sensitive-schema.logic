@@ -555,17 +555,20 @@ DynamicStaticFieldPointsTo(?heap, ?fld) -> HeapAllocation(?heap), Field(?fld).
 DynamicInstanceFieldPointsTo(?baseheap, ?fieldname, ?heap) -> HeapAllocation(?baseheap), Field(?fieldname), HeapAllocation(?heap).
 DynamicArrayIndexPointsTo(?heap, ?baseheap) -> HeapAllocation(?heap), HeapAllocation(?baseheap).
 DynamicHeapAllocation(?representation, ?heap) -> HeapAllocation(?heap), string(?representation).
-UnmatchedDynamicHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+UnmatchedDynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
   string(?param1),
   string(?param2),
   string(?param3),
   string(?param4).
 
-UnmatchedStaticHeapAllocation(?param1, ?param2, ?param3) ->
+UnmatchedStaticNormalHeapAllocation(?param1, ?param2, ?param3) ->
   string(?param1),
   string(?param2),
   string(?param3).
 
+DynamicReachableMethod(?x) -> Method(?x).
+
+UnmatchedDynamicReachableMethod(?methodId) -> string(?methodId).
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
