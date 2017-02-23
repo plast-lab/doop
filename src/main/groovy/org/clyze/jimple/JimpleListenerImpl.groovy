@@ -20,28 +20,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	String              json
 
-    BasicMetadata       metadata     = new BasicMetadata()
+	BasicMetadata       metadata     = new BasicMetadata()
 
 	JimpleListenerImpl(String filename) {
 		_filename = filename
 	}
 
-
-	void exitProgram(ProgramContext ctx) {
-        /*
-		json = JsonOutput.toJson([
-			Field: [],
-			Variable: _vars,
-			HeapAllocation: _heaps,
-			Class: [],
-			MethodInvocation: [],
-			Method: [],
-			Occurrence: []
-		])
-		json = JsonOutput.prettyPrint(json)
-        */
-        json = "" //just to avoid nulls
-	}
 
 	void enterKlass(KlassContext ctx) {
 		_klass = ctx.IDENTIFIER(0).getText()
@@ -120,17 +104,17 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
 
-        Position position = new Position(line, line, startCol, startCol + name.length())
-        Variable v = new Variable(
-            position, //position
-            _filename, //sourceFileName
-            name, //name
-            "$_method/$name", //doopId
-            null, //type, provided later
-            null, //declaringMethodId (value missing?),
-            isLocal, //isLocal
-            !isLocal //isParameter
-        )
+		Position position = new Position(line, line, startCol, startCol + name.length())
+		Variable v = new Variable(
+			position, //position
+			_filename, //sourceFileName
+			name, //name
+			"$_method/$name", //doopId
+			null, //type, provided later
+			null, //declaringMethodId (value missing?),
+			isLocal, //isLocal
+			!isLocal //isParameter
+		)
 
 		if (_types[v.doopId])
 			v.type = _types[v.doopId]
@@ -144,15 +128,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def type = id.getText()
 
-        Position position = new Position(line, line, startCol, startCol + type.length())
+		Position position = new Position(line, line, startCol, startCol + type.length())
 
-        HeapAllocation h = new HeapAllocation(
-            position, //position
-            _filename, //sourceFileName
-            "$_method/$_heapCounter", //doopId
-            type, //type
-            null //allocatingMethodId (value missing?)
-        )
+		HeapAllocation h = new HeapAllocation(
+			position, //position
+			_filename, //sourceFileName
+			"$_method/$_heapCounter", //doopId
+			type, //type
+			null //allocatingMethodId (value missing?)
+		)
 
 		return h
 	}
