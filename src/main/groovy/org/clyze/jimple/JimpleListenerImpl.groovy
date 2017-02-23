@@ -14,11 +14,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	List<Map>           _pending
 	Map<String, String> _types       = [:]
 	int                 _heapCounter
-	String              _klass
-	String              _method
+	Class               _klass
+	Method              _method
 	boolean             _inDecl
-
-	String              json
 
 	BasicMetadata       metadata     = new BasicMetadata()
 
@@ -28,12 +26,55 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 
 	void enterKlass(KlassContext ctx) {
-		_klass = ctx.IDENTIFIER(0).getText()
+		def id = ctx.IDENTIFIER(0)
+		def line = id.getSymbol().getLine()
+		def startCol = id.getSymbol().getCharPositionInLine() + 1
+		// abc.def.Foo
+		def fullName = ctx.IDENTIFIER(0).getText()
+		def position = new Position(line, line, startCol, startCol + fullName.length())
+		def i = fullName.lastIndexOf(".")
+		// abc.def
+		def packageName = fullName[0..i]
+		// Foo
+		def className = fullName[(i+1)..-1]
+
+		_klass = new Class(
+			position,
+			_filename,
+			className,
+			packageName,
+			hasToken(ctx, "interface"),
+			ctx.modifier().any() { hasToken(it, "enum") },
+			ctx.modifier().any() { hasToken(it, "static") },
+			false,//isInner, missing?
+			false,//isAnonymous, missing?
+		)
+		_klass.doopId = fullName
 	}
 
 	void enterMethod(MethodContext ctx) {
+		def id = ctx.IDENTIFIER(0)
+		def line = id.getSymbol().getLine()
+		def startCol = id.getSymbol().getCharPositionInLine() + 1
+		def retType = ctx.IDENTIFIER(0).getText()
+		def name = ctx.IDENTIFIER(1).getText()
+		def position = new Position(line, line, startCol, startCol + name.length())
 		def args = gatherIdentifiers(ctx.identifierList(0)).join(",")
-		_method = "<$_klass: ${ctx.IDENTIFIER(0).getText()} ${ctx.IDENTIFIER(1).getText()}($args)>"
+
+		_method = new Method(
+			position,
+			_filename,
+			name,
+			_klass.doopId, //declaringClassId
+			retType,
+			"<$_klass: $name ${ctx.IDENTIFIER(1).getText()}($args)>", //doopId
+			null, //params, TODO
+			null, //paramTypes, TODO
+			ctx.modifier().any() { hasToken(it, "static") },
+			0, //totalInvocations, missing?
+			0, //totalAllocations, missing?
+		)
+
 		_heapCounter = 0
 	}
 
@@ -103,17 +144,17 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
+		def position = new Position(line, line, startCol, startCol + name.length())
 
-		Position position = new Position(line, line, startCol, startCol + name.length())
-		Variable v = new Variable(
-			position, //position
-			_filename, //sourceFileName
-			name, //name
-			"$_method/$name", //doopId
+		def v = new Variable(
+			position,
+			_filename,
+			name,
+			"${_method.doopId}/$name", //doopId
 			null, //type, provided later
-			null, //declaringMethodId (value missing?),
-			isLocal, //isLocal
-			!isLocal //isParameter
+			_method.doopId, //declaringMethodId
+			isLocal,
+			!isLocal
 		)
 
 		if (_types[v.doopId])
@@ -127,22 +168,26 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def type = id.getText()
+		def position = new Position(line, line, startCol, startCol + type.length())
 
-		Position position = new Position(line, line, startCol, startCol + type.length())
-
-		HeapAllocation h = new HeapAllocation(
-			position, //position
-			_filename, //sourceFileName
-			"$_method/$_heapCounter", //doopId
-			type, //type
-			null //allocatingMethodId (value missing?)
+		return new HeapAllocation(
+			position,
+			_filename,
+			"${_method.doopId}/$_heapCounter", //doopId
+			type,
+			_method.doopId //allocatingMethodId
 		)
-
-		return h
 	}
 
 	List<String> gatherIdentifiers(IdentifierListContext ctx) {
 		if (ctx == null) return []
 		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER().getText()]
+	}
+	boolean hasToken(ParserRuleContext ctx, String token) {
+		for (int i = 0; i < ctx.getChildCount(); i++)
+			if (ctx.getChild(i) instanceof TerminalNode &&
+				((TerminalNode)ctx.getChild(i)).getText().equals(token))
+				return true
+		return false
 	}
 }

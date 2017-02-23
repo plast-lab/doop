@@ -10,22 +10,7 @@ import org.clyze.persistent.doop.BasicMetadata
 
 class Parser {
 
-	static String parse(String filename) {
-		File sourceFile = new File(filename) //does the sourceFileName gets reported in the same way with the jcplugin?
-
-		JimpleParser parser = new JimpleParser(
-				new CommonTokenStream(
-					new JimpleLexer(
-						new ANTLRFileStream(sourceFile as String))))
-		JimpleListenerImpl listener = new JimpleListenerImpl(sourceFile as String)
-		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
-
-		// XYZ/abc.def.Foo.json
-		//new File(dir, simplename + ".json").withWriter { it << listener.json }
-		return listener.metadata.variables.collect{ it.doopId }.join(", ")
-	}
-
-    static BasicMetadata parseJimple(String filename) {
+	static BasicMetadata parseJimple(String filename) {
 		/*
 		Are these needed?
 
