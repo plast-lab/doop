@@ -59,7 +59,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def retType = ctx.IDENTIFIER(0).getText()
 		def name = ctx.IDENTIFIER(1).getText()
 		def position = new Position(line, line, startCol, startCol + name.length())
-		def args = gatherIdentifiers(ctx.identifierList(0)).join(",")
+		def paramTypes = gatherIdentifiers(ctx.identifierList(0))
+		def params = paramTypes.join(",")
 
 		_method = new Method(
 			position,
@@ -67,9 +68,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			_klass.doopId, //declaringClassId
 			retType,
-			"<$_klass: $name ${ctx.IDENTIFIER(1).getText()}($args)>", //doopId
+			"<$_klass: $name ${ctx.IDENTIFIER(1).getText()}($params)>", //doopId
 			null, //params, TODO
-			null, //paramTypes, TODO
+			paramTypes as String[],
 			ctx.modifier().any() { hasToken(it, "static") },
 			0, //totalInvocations, missing?
 			0, //totalAllocations, missing?
