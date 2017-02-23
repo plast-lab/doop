@@ -62,7 +62,7 @@ _DynamicStringHeapAllocation(?param1) ->
    HeapAllocation:byId[?representation] = ?heap.
 
 
-// DynamicStringHeapAllocation
+// DynamicReachableMethod
 lang:physical:storageModel[`_DynamicReachableMethod] = "DelimitedFile".
 lang:physical:filePath[`_DynamicReachableMethod] = "facts/DynamicReachableMethod.facts".
 lang:physical:delimiter[`_DynamicReachableMethod] = "\t".
@@ -77,3 +77,25 @@ _DynamicReachableMethod(?param1) ->
 +UnmatchedDynamicReachableMethod(?representation) <-
    _DynamicReachableMethod(?representation),
    !Method:Id(_:?representation).
+
+// DynamicCallGraphEdge
+lang:physical:storageModel[`_DynamicCallGraphEdge] = "DelimitedFile".
+lang:physical:filePath[`_DynamicCallGraphEdge] = "facts/DynamicCallGraphEdge.facts".
+lang:physical:delimiter[`_DynamicCallGraphEdge] = "\t".
+lang:physical:hasColumnNames[`_DynamicCallGraphEdge] = false.
+_DynamicCallGraphEdge(?param1, ?param2, ?param3) ->
+   string(?param1),
+   int[64](?param2),
+   string(?param3).
+
+_InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation) <-
+   MethodInvocation:Line[?invocation] = ?lineNumber,
+   MethodInvocation:SimpleName[?invocation] = ?name,   
+   Instruction:Method[?invocation] = ?fromMethod,
+   Method:Id(?fromMethod:?fromMethodId).
+
++DynamicCallGraphEdge(?invocation, ?toMethod) <-
+   _DynamicCallGraphEdge(?fromMethodId, ?lineNumber, ?toMethodId),
+   _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation),
+   Method:SimpleName[?toMethod] = ?name,
+   Method:Id(?toMethod:?toMethodId).

@@ -7,4 +7,6 @@ import org.clyze.doop.common.Database;
  */
 public interface DynamicFact {
     public void write_fact(Database db);
+
+    default boolean isProbablyUnmatched() { return false; }
 }

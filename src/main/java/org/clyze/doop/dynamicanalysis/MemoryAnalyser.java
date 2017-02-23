@@ -1,8 +1,8 @@
 package org.clyze.doop.dynamicanalysis;
 
-import com.google.common.collect.*;
 import com.sun.tools.hat.internal.model.*;
 import org.clyze.doop.common.Database;
+import soot.jimple.infoflow.collect.ConcurrentHashSet;
 
 import java.io.*;
 import java.util.*;
@@ -27,8 +27,7 @@ public class MemoryAnalyser {
 
     private static String filename;
 
-    private Set<DynamicHeapAllocation> heapAllocations = new HashSet<>();
-    private Set<DynamicReachableMethod> reachableMethods = new HashSet<>();
+    private Set<DynamicFact> dynamicFacts = new ConcurrentHashSet<>();
 
     public MemoryAnalyser(String filename) {
 
@@ -36,18 +35,17 @@ public class MemoryAnalyser {
         this.filename = filename;
     }
 
-    public Set<DynamicFact> getFactsFromDump() throws IOException, InterruptedException {
-        //String heapDumpFile = doHeapDump();
+    public void resolveFactsFromDump() throws IOException, InterruptedException {
         Snapshot snapshot = DumpParsingUtil.getSnapshotFromFile(filename);
-        Set<DynamicInstanceFieldPointsTo> dynamicInstanceFieldPointsToSet = new HashSet<>();
-        Set<DynamicArrayIndexPointsTo> dynamicArrayIndexPointsToSet = new HashSet<>();
-        Set<DynamicStaticFieldPointsTo> dynamicStaticFieldPointsToSet = new HashSet<>();
+
+        System.out.println("Extracting facts from heap dump...");
+
+        Set<DynamicInstanceFieldPointsTo> dynamicInstanceFieldPointsToSet = new ConcurrentHashSet<>();
+        Set<DynamicArrayIndexPointsTo> dynamicArrayIndexPointsToSet = new ConcurrentHashSet<>();
+        Set<DynamicStaticFieldPointsTo> dynamicStaticFieldPointsToSet = new ConcurrentHashSet<>();
 
         Enumeration<JavaHeapObject> instances = snapshot.getThings();
-
-        while(instances.hasMoreElements()) {
-            JavaHeapObject heap = instances.nextElement();
-
+        Collections.list(instances).parallelStream().forEach(heap -> {
             if (heap instanceof JavaObject) {
                 JavaObject obj = (JavaObject) heap;
                 String baseHeap = getAllocationAbstraction(obj);
@@ -63,7 +61,7 @@ public class MemoryAnalyser {
                 String baseHeap = getAllocationAbstraction(obj);
                 for (JavaThing value : obj.getElements()) {
                     if (value != null)
-                       dynamicArrayIndexPointsToSet.add(new DynamicArrayIndexPointsTo(baseHeap, getAllocationAbstraction(value)));
+                        dynamicArrayIndexPointsToSet.add(new DynamicArrayIndexPointsTo(baseHeap, getAllocationAbstraction(value)));
                 }
             } else if (heap instanceof  JavaValueArray) {
                 // TODO
@@ -78,38 +76,34 @@ public class MemoryAnalyser {
             } else {
                 throw new RuntimeException("Unknown: " + heap.getClass().toString());
             }
-        }
-        return Sets.union(Sets.union(dynamicStaticFieldPointsToSet, dynamicInstanceFieldPointsToSet), dynamicArrayIndexPointsToSet);
+        });
+
+
+        dynamicFacts.addAll(dynamicStaticFieldPointsToSet);
+        dynamicFacts.addAll(dynamicInstanceFieldPointsToSet);
+        dynamicFacts.addAll(dynamicArrayIndexPointsToSet);
 
     }
 
     public int getAndOutputFactsToDB(File factDir) throws IOException, InterruptedException {
         Database db = new Database(factDir);
-        Set<DynamicFact> factsFromDump = null;
+
         try {
-            factsFromDump = getFactsFromDump();
+            resolveFactsFromDump();
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
 
-        for (DynamicFact fact: factsFromDump) {
-            fact.write_fact(db);
-        }
-
-        for (DynamicFact fact: reachableMethods) {
-            fact.write_fact(db);
-        }
-
         int unmatched = 0;
-        for (DynamicHeapAllocation heapAllocation: heapAllocations) {
-            heapAllocation.write_fact(db);
-            if (heapAllocation.isProbablyUnmatched()) unmatched++;
+        for (DynamicFact fact: dynamicFacts) {
+            fact.write_fact(db);
+            if (fact.isProbablyUnmatched()) unmatched++;
         }
 
         System.out.println("Warning, "+unmatched+" heap dump objects are likely not to hav a static counterpart.");
         db.flush();
         db.close();
-        return factsFromDump.size();
+        return dynamicFacts.size();
     }
 
     private String getAllocationAbstraction(JavaThing heap) {
@@ -130,16 +124,18 @@ public class MemoryAnalyser {
             if (heapAbstraction == null)*/
                 heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
 
-            reachableMethods.addAll(DynamicReachableMethod.fromStackTrace(trace));
+            dynamicFacts.addAll(DynamicReachableMethod.fromStackTrace(trace));
 
-            heapAllocations.add(heapAbstraction);
+            dynamicFacts.addAll(DynamicCallGraphEdge.fromStackTrace(trace));
+
+            dynamicFacts.add(heapAbstraction);
             return heapAbstraction.getRepresentation();
 
         } else if (heap instanceof  JavaObjectArray || heap instanceof  JavaValueArray) {
             JavaHeapObject obj = (JavaHeapObject) heap;
             DynamicHeapAllocation heapRepresentation = DumpParsingUtil.getHeapRepresentation(obj.getAllocatedFrom(), obj.getClazz());
 
-            heapAllocations.add(heapRepresentation);
+            dynamicFacts.add(heapRepresentation);
             return heapRepresentation.getRepresentation();
         } else if (heap instanceof JavaValue) {
             return "Primitive Object";

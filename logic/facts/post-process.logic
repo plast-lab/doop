@@ -76,6 +76,12 @@ SpecialMethodInvocation:Descriptor[?invocation] = ?descriptor <-
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor.
 
+// Combining the three
+MethodInvocation:SimpleName[?invocation] = ?simplename <-
+  VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ;
+  SpecialMethodInvocation:SimpleName[?invocation] = ?simplename ;
+  StaticMethodInvocation:SimpleName[?invocation] = ?simplename.
+
 // Note that this is more than a straightforward import of generated
 // facts into a DB relation. It filters out the guessed control
 // types that do not correspond to existing types.

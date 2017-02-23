@@ -193,12 +193,15 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
             cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
             connector.queue()
-                    .transaction()
-                    .executeFile("import-dynamic-facts.logic")
-                    .addBlockFile("externalheaps.logic")
-                    .commit().transaction()
-                    .executeFile("import-dynamic-facts2.logic")
-                    .commit()
+                .echo("-- Importing dynamic facts ---")
+                .startTimer()
+                .transaction()
+                .executeFile("import-dynamic-facts.logic")
+                .addBlockFile("externalheaps.logic")
+                .commit().transaction()
+                .executeFile("import-dynamic-facts2.logic")
+                .commit()
+                .elapsedTime()
         }
 
         if (options.TRANSFORM_INPUT.value)
@@ -537,10 +540,9 @@ class ClassicAnalysis extends DoopAnalysis {
     }
 
     protected void analyseMemoryDump(String filename) {
-        logger.info("-- Analysing Memory Dump --")
         MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename)
         int n = memoryAnalyser.getAndOutputFactsToDB(factsDir)
-        logger.info("Generated " + n + " addditional facts from memory dump: "+factsDir)
+        logger.info("Generated " + n + " addditional facts from memory dump")
 
     }
 

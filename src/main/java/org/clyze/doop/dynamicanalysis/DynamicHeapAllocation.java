@@ -6,5 +6,5 @@ package org.clyze.doop.dynamicanalysis;
 public interface DynamicHeapAllocation extends DynamicFact {
     String getRepresentation();
 
-    boolean isProbablyUnmatched();
+
 }

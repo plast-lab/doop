@@ -15,6 +15,15 @@ public class DumpParsingUtil {
     private static final String[] UNKNOWN = new String[] {"Unknown"};
     public static final int BIG_NUMBER = 999;
 
+    public static String parseLineNumber(String lineNumber) {
+        try {
+            int a = Integer.parseInt(lineNumber);
+            return "" + a;
+        } catch (NumberFormatException e) {
+            return "0";
+        }
+    }
+
     public static String[] convertType(String compact) {
         if (compact.length() == 0) return new String[]{"", ""};
         String first = compact.substring(0, 1);

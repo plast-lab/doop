@@ -93,7 +93,8 @@ public enum PredicateFile
     DYNAMIC_INSTANCE_FIELD_POINTS_TO("DynamicInstanceFieldPointsTo"),
     DYNAMIC_ARRAY_INDEX_POINTS_TO("DynamicArrayIndexPointsTo"),
     DYNAMIC_VAR_POINTS_TO("DynamicVarPointsTo"),
-    DYNAMIC_REACHABLE_METHOD("DynamicReachableMethod");
+    DYNAMIC_REACHABLE_METHOD("DynamicReachableMethod"),
+    DYNAMIC_CALL_GRAPH_EDGE("DynamicCallGraphEdge");
 
     private final String name;
 
