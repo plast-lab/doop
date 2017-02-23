@@ -50,6 +50,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			false,//isAnonymous, missing?
 		)
 		_klass.doopId = fullName
+		metadata.heapAllocations.add(_klass)
 	}
 
 	void enterMethod(MethodContext ctx) {
@@ -75,6 +76,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			0, //totalInvocations, missing?
 			0, //totalAllocations, missing?
 		)
+		metadata.methods.add(_method)
 
 		_heapCounter = 0
 	}
