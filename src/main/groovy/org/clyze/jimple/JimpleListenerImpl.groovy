@@ -46,15 +46,35 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			hasToken(ctx, "interface"),
 			ctx.modifier().any() { hasToken(it, "enum") },
 			ctx.modifier().any() { hasToken(it, "static") },
-			false,//isInner, missing?
-			false,//isAnonymous, missing?
+			false, //isInner, missing?
+			false  //isAnonymous, missing?
 		)
 		_klass.doopId = fullName
 		metadata.heapAllocations.add(_klass)
 	}
 
+	void exitField(FieldContext ctx) {
+		def id = ctx.IDENTIFIER(1)
+		def line = id.getSymbol().getLine()
+		def startCol = id.getSymbol().getCharPositionInLine() + 1
+		def type = ctx.IDENTIFIER(0).getText() + (hasToken(ctx, "[]") ? "[]" : "")
+		def name = ctx.IDENTIFIER(1).getText()
+		def position = new Position(line, line, startCol, startCol + name.length())
+
+		def f = new Field(
+			position,
+			_filename,
+			name,
+			"<$_klass: $type $name>", //doopId
+			type,
+			_klass.doopId, //declaringClassId
+			ctx.modifier().any() { hasToken(it, "static") }
+		)
+		metadata.fields.add(f)
+	}
+
 	void enterMethod(MethodContext ctx) {
-		def id = ctx.IDENTIFIER(0)
+		def id = ctx.IDENTIFIER(1)
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def retType = ctx.IDENTIFIER(0).getText()
@@ -69,12 +89,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			_klass.doopId, //declaringClassId
 			retType,
-			"<$_klass: $name ${ctx.IDENTIFIER(1).getText()}($params)>", //doopId
+			"<${_klass.doopId}: $retType $name ($params)>", //doopId
 			null, //params, TODO
 			paramTypes as String[],
 			ctx.modifier().any() { hasToken(it, "static") },
 			0, //totalInvocations, missing?
-			0, //totalAllocations, missing?
+			0  //totalAllocations, missing?
 		)
 		metadata.methods.add(_method)
 
