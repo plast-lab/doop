@@ -34,7 +34,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def position = new Position(line, line, startCol, startCol + fullName.length())
 		def i = fullName.lastIndexOf(".")
 		// abc.def
-		def packageName = fullName[0..i]
+		def packageName = fullName[0..(i-1)]
 		// Foo
 		def className = fullName[(i+1)..-1]
 
@@ -50,7 +50,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			false  //isAnonymous, missing?
 		)
 		_klass.doopId = fullName
-		metadata.heapAllocations.add(_klass)
+		metadata.classes.add(_klass)
 	}
 
 	void exitField(FieldContext ctx) {
