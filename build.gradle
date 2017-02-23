@@ -82,7 +82,8 @@ dependencies {
             'commons-cli:commons-cli:1.2',                      // Command line processor
             'commons-io:commons-io:2.4',                        // File Utils
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
-            'org.ow2.asm:asm-debug-all:5.1'                     // Java Bytecode library
+            'org.ow2.asm:asm-debug-all:5.1',                    // Java Bytecode library
+            'com.google.code.gson:gson:2.4'                     // GSON library
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter2:1.0-SNAPSHOT',

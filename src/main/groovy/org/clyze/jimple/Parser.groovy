@@ -1,5 +1,6 @@
 package org.clyze.jimple
 
+import com.google.gson.GsonBuilder
 import org.antlr.v4.runtime.ANTLRFileStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
@@ -9,6 +10,18 @@ import org.apache.commons.io.FilenameUtils
 import org.clyze.persistent.doop.BasicMetadata
 
 class Parser {
+
+	static String parseJimple2JSON(String filename) {
+		def metadata = parseJimple(filename)
+
+		def json = [:]
+		json.put("Class", metadata.classes)
+		json.put("Method", metadata.methods)
+		json.put("Variable", metadata.variables)
+		json.put("HeapAllocation", metadata.heapAllocations)
+
+		return new GsonBuilder().disableHtmlEscaping().create().toJson(json)
+	}
 
 	static BasicMetadata parseJimple(String filename) {
 		/*
