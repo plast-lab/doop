@@ -25,9 +25,6 @@ class Parser {
 	}
 
 	static BasicMetadata parseJimple(String filename) {
-		/*
-		Are these needed?
-
 		// XYZ/abc.def.Foo.jimple
 		def origFile = new File(filename)
 		// XYZ
@@ -51,9 +48,6 @@ class Parser {
 		}
 		else
 			sourceFile = origFile
-		*/
-
-		File sourceFile = new File(filename) //does the sourceFileName gets reported in the same way with the jcplugin?
 
 		JimpleParser parser = new JimpleParser(
 				new CommonTokenStream(
