@@ -378,24 +378,23 @@ HeapRepresentative(?representativeHeap, ?heap) :-
 
 /*************************************************************
  * Coarse-grained allocation policy
- * Merging allocation sites per method or per package
  *************************************************************/
 
 #ifdef COARSE_GRAINED_ALLOCATION
-// Ultra coarse-grained allocation policy
-AllocationShouldBeMergedGlobally(?type) :-
-  AllocationsPerType(?type, ?n),
-  ?n > 1.
+// // Ultra coarse-grained allocation policy
+// AllocationShouldBeMergedGlobally(?type) :-
+//   AllocationsPerType(?type, ?n),
+//  ?n > 1.
 
 // // Very coarse-grained allocation policy
 // AllocationShouldBeMergedPerPackage(?type, ?packageName) :-
 //   AllocationsPerPackageAndType(?type, ?packageName, ?n),
 //   ?n > 1.
 
-// //Coarse-grained allocation policy
-// AllocationShouldBeMergedPerClass(?type, ?class) :-
-//   AllocationsPerClassAndType(?type, ?class, ?n),
-//   ?n > 1.
+// Coarse-grained allocation policy
+AllocationShouldBeMergedPerClass(?type, ?class) :-
+  AllocationsPerClassAndType(?type, ?class, ?n),
+  ?n > 1.
 #endif // COARSE_GRAINED_ALLOCATION
 
 
