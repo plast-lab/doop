@@ -8,32 +8,27 @@
 // We need to *pretend* we are creating new contexts, since the
 // product of the macro goes to the head of a rule.
 #define RecordMacro(ctx, value, hctx) \
-  isHContext(hctx), \
-  HContextFromRealHContext(hctx)
+  isHContext(hctx)
 
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  isContext(calleeCtx), \
-  ContextFromRealContext(calleeCtx)
+  isContext(calleeCtx)
 
 #define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
-  isContext(calleeCtx), \
-  ContextFromRealContext(calleeCtx)
+  isContext(calleeCtx)
 
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
-  isContext(newCtx), \
-  ContextFromRealContext(newCtx)
+  isContext(newCtx)
 
 #define MergeStartupMacro(hctx, value, calleeCtx) \
-  isContext(calleeCtx), \
-  ContextFromRealContext(calleeCtx)
+  isContext(calleeCtx)
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
-  isContext(newCtx), \
-  ContextFromRealContext(newCtx)
+  isContext(newCtx)
 
-#define InitContext(ictx) \
-  isContext(ctx), ContextFromRealContext(ctx) :- ctx = "*0".
-#define InitHContext(ihctx) \
-  isHContext(hctx), HContextFromRealHContext(hctx) :- hctx = "*0".
+#define InitContext(valueId) \
+  isContext(ctx) :- ctx = "*GlobalContextObject".
+
+#define InitHContext(valueId) \
+  isHContext(hctx) :- hctx = "*GlobalHContextObject".

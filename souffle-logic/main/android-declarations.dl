@@ -13,7 +13,7 @@
 .decl ProtectedMethodOfComponent(?meth:Method)
 .decl AppMethodOverridesAndroidLibraryMethod(?meth:Method)
 .decl OverridingProtectedMethodOfComponent(?meth:Method)
-.decl ForcedReachableAndroidContext(?ctx:ImmutableContext, ?meth:Method)
+.decl ForcedReachableAndroidContext(?ctx:Context, ?meth:Method)
 .decl PublicOnMethodOfLayoutControl(?meth:Method)
 .decl ProtectedOnMethodOfLayoutControl(?meth:Method)
 .decl OverridingProtectedOnMethodOfLayoutControl(?meth:Method)

@@ -4,15 +4,6 @@
  * Generic declarations for context-sensitive pointer analysis.
  */
 
-.type Context
-.type HContext = HeapAllocation
-.type ImmutableContext = Context
-.type InitialContext = Context
-.type JVMStartupContext = Context
-.type ClinitContext = Context
-.type ImmutableHContext = HContext
-.type JVMStartupHContext = HContext
-
 .decl isContext(?ctx:symbol)
 .decl isHContext(?hctx:symbol)
 
