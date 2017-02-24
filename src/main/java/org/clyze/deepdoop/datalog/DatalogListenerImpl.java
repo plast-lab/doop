@@ -142,9 +142,22 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 
 		if (ctx.refmode() == null) {
 			List<IAtom> typesList = get(_atoms, ctx.predicateList());
-			Set<IAtom> types = (typesList == null ? new HashSet<>() : new HashSet<>(typesList));
+			Set<IAtom> types = new HashSet<>();
+			if (typesList != null)
+				for (IAtom type : typesList)
+					if (type instanceof Predicate) {
+						Predicate p = (Predicate) type;
+						types.add(new Entity(p.name, p.stage, p.exprs));
+					}
+					else
+						types.add(type);
 
 			IAtom atom = (IAtom) get(_elem, ctx.predicate());
+			if (types.isEmpty()) {
+				Predicate p = (Predicate) atom;
+				atom = new Entity(p.name, p.stage, p.exprs);
+			}
+
 			if (isConstraint(atom, types))
 				_currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)));
 			else
@@ -153,7 +166,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		else {
 			RefMode refmode = (RefMode) get(_elem, ctx.refmode());
 			List<IExpr> exprs = Arrays.asList(refmode.entityVar);
-			Predicate entity = new Predicate(get(_name, ctx.predicateName()), exprs);
+			Predicate entity = new Entity(get(_name, ctx.predicateName()), exprs);
 			Primitive primitive = (Primitive) get(_elem, ctx.predicate());
 			_currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive));
 		}
@@ -165,7 +178,13 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	public void exitRule_(Rule_Context ctx) {
 		recLoc(ctx);
 		if (ctx.predicateList() != null) {
-			LogicalElement head = new LogicalElement(LogicType.AND, new HashSet<>(get(_atoms, ctx.predicateList())));
+			List<IAtom> headAtoms = get(_atoms, ctx.predicateList());
+			IAtom firstAtom = headAtoms.get(0);
+			if (firstAtom instanceof Directive && firstAtom.name().equals("lang:entity")) {
+				assert headAtoms.size() == 1;
+				_currComp.markEntity(((Directive)firstAtom).backtick.name());
+			}
+			LogicalElement head = new LogicalElement(LogicType.AND, new HashSet<>(headAtoms));
 			IElement body = get(_elem, ctx.ruleBody());
 			_currComp.addRule(new Rule(head, body));
 		} else {
@@ -176,7 +195,7 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 	}
 	public void exitPredicate(PredicateContext ctx) {
 		recLoc(ctx);
-		assert (_inDecl && ctx.AT_STAGE() == null && ctx.BACKTICK() == null) || (!_inDecl && ctx.CAPACITY() == null);
+		assert (_inDecl && ctx.BACKTICK() == null) || (!_inDecl && ctx.CAPACITY() == null);
 
 		String      name     = get(_name, ctx.predicateName(0));
 		List<IExpr> exprs    = (ctx.exprList() == null ? new ArrayList<>() : get(_exprs, ctx.exprList()));

@@ -96,6 +96,8 @@ public class FlatteningActor implements IActor<IVisitable> {
 	@Override
 	public Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) { return n; }
 	@Override
+	public Entity exit(Entity n, Map<IVisitable, IVisitable> m) { return n; }
+	@Override
 	public Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) { return n; }
 	@Override
 	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) { return n; }

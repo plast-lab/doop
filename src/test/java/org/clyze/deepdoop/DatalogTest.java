@@ -101,6 +101,10 @@ public class DatalogTest {
 		test("t9.logic");
 	}
 	@Test
+	public void testT10() throws IOException {
+		test("t10.logic");
+	}
+	@Test
 	public void testSample() throws IOException {
 		test("sample.logic");
 	}
@@ -144,6 +148,18 @@ public class DatalogTest {
 	@Test
 	public void test_Fail12() throws IOException {
 		test("fail12.logic", ErrorId.UNKNOWN_VAR);
+	}
+	@Test
+	public void test_Fail13() throws IOException {
+		test("fail13.logic", ErrorId.UNKNOWN_COMP);
+	}
+	@Test
+	public void test_Fail14() throws IOException {
+		test("fail14.logic", ErrorId.UNKNOWN_COMP);
+	}
+	@Test
+	public void test_Fail15() throws IOException {
+		test("fail15.logic", ErrorId.MULTIPLE_ENT_DECLS);
 	}
 
 

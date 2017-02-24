@@ -28,16 +28,17 @@ import org.clyze.deepdoop.system.*;
 
 public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String> {
 
-	AtomCollectingActor     _acActor;
-	Set<String>             _globalAtoms;
-	Map<IVisitable, String> _codeMap;
+	AtomCollectingActor      _acActor;
+	Set<String>              _globalAtoms;
+	Map<IVisitable, String>  _codeMap;
 
-	Component               _unhandledGlobal;
-	Set<String>             _handledAtoms;
+	Map<String, Set<String>> _reverseProps;
+	Component                _unhandledGlobal;
+	Set<String>              _handledAtoms;
 
-	Path                    _outDir;
-	Path                    _latestFile;
-	List<Result>            _results;
+	Path                     _outDir;
+	Path                     _latestFile;
+	List<Result>             _results;
 
 	public LBCodeGenVisitingActor(String outDirName) {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -49,6 +50,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		_acActor      = new AtomCollectingActor();
 		_codeMap      = new HashMap<>();
 
+		_reverseProps = new HashMap<>();
 		_handledAtoms = new HashSet<>();
 
 		_results      = new ArrayList<>();
@@ -68,6 +70,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		// Transform program before visiting nodes
 		PostOrderVisitor<IVisitable> v = new InitVisitingActor();
 		Program n = (Program) flatP.accept(v);
+		_actor.enter(n);
 
 		Map<IVisitable, String> m = new HashMap<>();
 		m.put(n.globalComp, n.globalComp.accept(this));
@@ -76,19 +79,46 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	}
 
 	@Override
+	public void enter(Program n) {
+		for (Propagation prop : n.props) {
+			Set<String> fromSet = _reverseProps.get(prop.toId);
+			if (fromSet == null) fromSet = new HashSet<>();
+			fromSet.add(prop.fromId);
+			_reverseProps.put(prop.toId, fromSet);
+		}
+
+		// Backpatch entity names from previous components
+		for (Component comp : n.comps.values()) {
+			Map<Declaration, Declaration> newDeclarations = new HashMap<>();
+			for (Declaration d : comp.declarations) {
+				Set<IAtom> newTypes = new HashSet<>();
+				for (IAtom type : d.types) {
+					if (type instanceof Entity && type.name().endsWith(":past")) {
+						Entity e = (Entity) type;
+						Set<String> potentialDeclPreds = Renamer.revert(e.name(), n.comps.keySet(), _reverseProps);
+						if (potentialDeclPreds.size() != 1)
+							ErrorManager.error(ErrorId.MULTIPLE_ENT_DECLS, e.name());
+						else
+							newTypes.add(new Entity(potentialDeclPreds.iterator().next(), null, e.exprs));
+					}
+					else
+						newTypes.add(type);
+				}
+				newDeclarations.put(d, new Declaration(d.atom, newTypes));
+			}
+			newDeclarations.forEach( (oldDecl, newDecl) -> {
+				comp.declarations.remove(oldDecl);
+				comp.declarations.add(newDecl);
+			});
+		}
+	}
+
+	@Override
 	public String exit(Program n, Map<IVisitable, String> m) {
 		n.accept(new PostOrderVisitor<IVisitable>(_acActor));
 		_globalAtoms = _acActor.getDeclaringAtoms(n.globalComp).keySet();
 
 		// Check that all used predicates have a declaration/definition
-		Map<String, Set<String>> reversePropagations = new HashMap<>();
-		for (Propagation prop : n.props) {
-			Set<String> fromSet = reversePropagations.get(prop.toId);
-			if (fromSet == null) fromSet = new HashSet<>();
-			fromSet.add(prop.fromId);
-			reversePropagations.put(prop.toId, fromSet);
-		}
-
 		Set<String> allDeclAtoms = new HashSet<>(_globalAtoms);
 		Set<String> allUsedAtoms = new HashSet<>();
 		for (Component c : n.comps.values()) {
@@ -96,7 +126,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 			allUsedAtoms.addAll(_acActor.getUsedAtoms(c).keySet());
 		}
 		for (String usedPred : allUsedAtoms) {
-			Set<String> potentialDeclPreds = Renamer.revert(usedPred, n.comps.keySet(), reversePropagations);
+			Set<String> potentialDeclPreds = Renamer.revert(usedPred, n.comps.keySet(), _reverseProps);
 			boolean declFound = false;
 			for (String potentialDeclPred : potentialDeclPreds) {
 				if (allDeclAtoms.contains(potentialDeclPred)) {
@@ -202,6 +232,10 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : n.exprs) joiner.add(m.get(e));
 		return n.name + (n.stage == null ? "" : n.stage) + "(" + joiner + ")";
+	}
+	@Override
+	public String exit(Entity n, Map<IVisitable, String> m) {
+		return exit((Predicate) n, m);
 	}
 	@Override
 	public String exit(Primitive n, Map<IVisitable, String> m) {

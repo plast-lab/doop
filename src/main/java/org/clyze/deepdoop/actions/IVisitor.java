@@ -27,6 +27,7 @@ public interface IVisitor<T> {
 	T visit(Directive n);
 	T visit(Functional n);
 	T visit(Predicate n);
+	T visit(Entity n);
 	T visit(Primitive n);
 	T visit(RefMode n);
 	T visit(StubAtom n);

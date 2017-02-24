@@ -1,0 +1,17 @@
+component Foo {
+  A(x) -> .
+}
+as S1
+
+component Baz {
+  A(x) -> .
+}
+as S2
+
+component FooBaz {
+  P(x, y) -> int(x), A@past(y).
+}
+as S3
+
+S1 {*}-> S3
+S2 {*}-> S3

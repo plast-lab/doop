@@ -181,6 +181,11 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 		return n;
 	}
 	@Override
+	public Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
+		exit((Predicate) n, m);
+		return n;
+	}
+	@Override
 	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = new HashMap<>();
 		usedMap.put(n.name(), n);

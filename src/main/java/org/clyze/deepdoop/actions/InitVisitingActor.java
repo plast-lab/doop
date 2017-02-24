@@ -85,7 +85,8 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			_r.reset(from, to, null);
 			// Generate frame rules
 			for (IAtom atom : newPreds) {
-				if (atom instanceof Directive) continue;
+				// Ignore lang directives and entities
+				if (atom instanceof Directive || atom instanceof Entity) continue;
 
 				List<VariableExpr> vars = VariableExpr.genTempVars(atom.arity());
 
@@ -194,6 +195,12 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		List<IExpr> newExprs = new ArrayList<>();
 		for (IExpr e : n.exprs) newExprs.add((IExpr) m.get(e));
 		return new Predicate(_r.rename(n.name, n.stage), _r.restage(n.stage), newExprs);
+	}
+	@Override
+	public Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
+		List<IExpr> newExprs = new ArrayList<>();
+		for (IExpr e : n.exprs) newExprs.add((IExpr) m.get(e));
+		return new Entity(_r.rename(n.name, n.stage), _r.restage(n.stage), newExprs);
 	}
 	@Override
 	public Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) {

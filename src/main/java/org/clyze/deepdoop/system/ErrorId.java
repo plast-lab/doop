@@ -17,7 +17,8 @@ public enum ErrorId {
 	NO_DECL,
 	UNKNOWN_VAR,
 	UNUSED_VAR,
-	UNKNOWN_COMP;
+	UNKNOWN_COMP,
+	MULTIPLE_ENT_DECLS;
 
 	static Map<ErrorId, String> _msgMap;
 	static {
@@ -35,6 +36,7 @@ public enum ErrorId {
 		_msgMap.put(ErrorId.UNKNOWN_VAR, "Unknown var `{0}`");
 		_msgMap.put(ErrorId.UNUSED_VAR, "Unused var `{0}`");
 		_msgMap.put(ErrorId.UNKNOWN_COMP, "Unknown component `{0}`");
+		_msgMap.put(ErrorId.MULTIPLE_ENT_DECLS, "Multiple declarations for Entity `{0}` in previous components");
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {

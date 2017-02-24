@@ -142,6 +142,13 @@ public class PostOrderVisitor<T> implements IVisitor<T> {
 		return _actor.exit(n, m);
 	}
 	@Override
+	public T visit(Entity n) {
+		_actor.enter(n);
+		Map<IVisitable, T> m = new HashMap<>();
+		for (IExpr e : n.exprs) m.put(e, e.accept(this));
+		return _actor.exit(n, m);
+	}
+	@Override
 	public T visit(Primitive n) {
 		_actor.enter(n);
 		Map<IVisitable, T> m = new HashMap<>();

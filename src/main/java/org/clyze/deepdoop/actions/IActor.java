@@ -45,6 +45,8 @@ public interface IActor<T> {
 	default T exit(Functional n, Map<IVisitable, T> m)         { return null; }
 	default void enter(Predicate n)                            {}
 	default T exit(Predicate n, Map<IVisitable, T> m)          { return null; }
+	default void enter(Entity n)                               {}
+	default T exit(Entity n, Map<IVisitable, T> m)             { return null; }
 	default void enter(Primitive n)                            {}
 	default T exit(Primitive n, Map<IVisitable, T> m)          { return null; }
 	default void enter(RefMode n)                              {}
