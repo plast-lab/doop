@@ -4,6 +4,8 @@
  * Only the parts of the analysis that can affect the output are executed.
  */
 
-.output CallGraphEdge(IO="file", filename="CallGraphEdge.facts", delimiter="\t")
+// It is possible to have multiple relations in an .output statement
+// e.g. .output CallGraphEdge, VarPointsTo
 
-.output VarPointsTo(IO="file", filename="VarPointsTo.facts", delimiter="\t")
+.output CallGraphEdge
+.output VarPointsTo
