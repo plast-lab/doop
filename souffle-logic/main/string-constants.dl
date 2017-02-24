@@ -64,14 +64,21 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
  * which merging is best.
  *************************************************************/
 
-// If the object is a string that should be merged, ignore other
-// representatives and merge with that.
 .decl HeapRepresentative(?heap:HeapAllocation, ?heapRepr:symbol)
 
-HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative(?heapRepr, ?heap),
+// If the object is a string that should be merged, ignore other
+// representatives and merge with that.
+.decl HeapIsMergedString(?heap:HeapAllocation)
+
+HeapIsMergedString(?heap) :-
   ?heapRepr = "<<string-constant>>",
-  isHeapAllocation(?heapRepr).
+  isHeapAllocation(?heapRepr),
+  HeapRepresentative(?heapRepr, ?heap).
+
+HeapAllocation_Merge(?heap, ?heapRepr) :-
+  ?heapRepr = "<<string-constant>>",
+  isHeapAllocation(?heapRepr),
+  HeapRepresentative(?heapRepr, ?heap).
 
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
@@ -94,7 +101,7 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
 
 RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
-  !isStringConstant(?heap),
+  !HeapIsMergedString(?heap),
   !HeapIsMergedStringFactory(?heap),
   !HeapAllocation_Keep(?heap).
 
@@ -153,7 +160,6 @@ HeapAllocation_ContextInsensitive(?heap) :-
   !HeapRepresentative(_, ?heap).
 
 
-
 /*************************************************************
  * Class constants
  *************************************************************/
@@ -162,7 +168,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
   isClassHeap(?heap).
 
 /*************************************************************
- * Merging allocation sites per method, per class, or per package.
+ * Merging allocation sites per method, per class, or per package
  *************************************************************/
 
 // Per-method merging: auto-merge allocation sites for method that
@@ -195,7 +201,6 @@ ObjectMultipleAllocated(?heap) :-
   ?inmethod1 != ?inmethod2.
 
 .decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)
-.decl StringFactoryHeap(?heap:HeapAllocation)
 
 MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
   AssignHeapAllocation(?heap, _, ?meth),
@@ -222,32 +227,24 @@ AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
 .decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
 .decl MethodAndTypeToMergedHeapOrdinal(?heap:number, ?heaptype:Type, ?meth:Method)
 
-MethodAndTypeToMergedHeapOrdinal(ord(?heap), ?type, ?meth) :-
-    MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
-
 MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
   AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
 
-.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
+MethodAndTypeToMergedHeapOrdinal(ord(?heap), ?type, ?meth) :-
+    MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+
 .decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)
+.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
 
 MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
-    MethodAndTypeToMergedHeapOrdinal(_, ?type, ?meth),
-    ?minHeapOrd = min ?heapOrd: MethodAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?meth).
+  MethodAndTypeToMergedHeapOrdinal(_, ?type, ?meth),
+  ?minHeapOrd = min ?heapOrd: MethodAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?meth).
 
 MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
   MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth),
   ord(?representativeHeap) = ?minHeapOrd.
-
-
-/* TODO: Check if the following works too with some minor modifications
-  MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
-     isHeapAllocation(?representativeHeap),
-     MethodAndTypeToMergedHeap(_, ?type, ?meth),
-     ord(?representativeHeap) = min ord(?heap): {MethodAndTypeToMergedHeap(?heap, ?type, ?meth)}.
- */
 
 HeapRepresentative(?representativeHeap, ?heap) :-
   MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap),
@@ -267,19 +264,138 @@ AllocationsPerClassAndType(?type, ?class, ?n) :-
   ClassAndTypeToHeap(_, ?type, ?class),
   ?n = count : ClassAndTypeToHeap(_, ?type, ?class).
 
+// This is explicitly set for types that want it.
+.decl AllocationShouldBeMergedPerClass(?heaptype:Type, ?class:Type)
+
+.decl ClassAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:Type)
+.decl ClassAndTypeToMergedHeapOrdinal(?heapOrd:number, ?heaptype:Type, ?class:Type)
+
+ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) :-
+  AllocationShouldBeMergedPerClass(?heaptype, ?class),
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class).
+
+ClassAndTypeToMergedHeapOrdinal(ord(?heap), ?heaptype, ?class) :-
+  ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class).
+
+.decl MinHeapOrdinalPerClassAndType(?minHeapOrd:number, ?type:Type, ?class:Type)
+.decl ClassAndTypeToRepresentative(?type:Type, ?class:Type, ?reprHeap:HeapAllocation)
+
+MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class) :-
+  ClassAndTypeToMergedHeapOrdinal(_, ?type, ?class),
+  ?minHeapOrd = min ?heapOrd: ClassAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?class).
+
+ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap),
+  ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+
+// Same for per-package merging.
+#include "package-heuristic.dl"
+
+.decl PackageAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)
+.decl AllocationsPerPackageAndType(?type:Type, ?packageName:symbol, ?n:number)
+
+PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) :-
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class),
+  Class_PackageHack(?class, ?packageName).
+
+AllocationsPerPackageAndType(?type, ?packageName, ?n) :-
+  PackageAndTypeToHeap(_, ?type, ?packageName),
+  ?n = count : PackageAndTypeToHeap(_, ?type, ?packageName).
+
+// This is explicitly set for types that want it.
+.decl AllocationShouldBeMergedPerPackage(?heaptype:Type, ?packageName:symbol)
+
+.decl PackageAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)
+.decl PackageAndTypeToMergedHeapOrdinal(?heapOrd:number, ?heaptype:Type, ?packageName:symbol)
+
+PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) :-
+  AllocationShouldBeMergedPerPackage(?heaptype, ?packageName),
+  PackageAndTypeToHeap(?heap, ?heaptype, ?packageName).
+
+PackageAndTypeToMergedHeapOrdinal(ord(?heap), ?heaptype, ?packageName) :-
+  PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName).
+
+.decl MinHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, ?packageName:symbol)
+.decl PackageAndTypeToRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)
+
+MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
+  PackageAndTypeToMergedHeapOrdinal(_, ?type, ?packageName),
+  ?minHeapOrd = min ?heapOrd: PackageAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?packageName).
+
+PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap),
+  PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+
+// And the ultimate: universal per-type merging
+.decl TypeToHeap(?heap:HeapAllocation, ?heaptype:Type)
+.decl AllocationsPerType(?type:Type, ?n:number)
+
+TypeToHeap(?heap, ?heaptype) :-
+  ClassAndTypeToHeap(?heap, ?heaptype, _).
+
+AllocationsPerType(?type, ?n) :-
+  TypeToHeap(_, ?type),
+  ?n = count : TypeToHeap(_, ?type).
+
+// This is explicitly set for types that want it.
+.decl AllocationShouldBeMergedGlobally(?heaptype:Type)
+
+.decl TypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type)
+.decl TypeToMergedHeapOrdinal(?heapOrd:number, ?heaptype:Type)
+
+TypeToMergedHeap(?heap, ?heaptype) :-
+  AllocationShouldBeMergedGlobally(?heaptype),
+  TypeToHeap(?heap, ?heaptype).
+
+TypeToMergedHeapOrdinal(ord(?heap), ?heaptype) :-
+  TypeToMergedHeap(?heap, ?heaptype).
+
+.decl MinHeapOrdinalPerType(?minHeapOrd:number, ?type:Type)
+.decl TypeToRepresentative(?type:Type, ?representativeHeap:HeapAllocation)
+
+MinHeapOrdinalPerType(?minHeapOrd, ?type) :-
+  TypeToMergedHeapOrdinal(_, ?type),
+  ?minHeapOrd = min ?heapOrd: TypeToMergedHeapOrdinal(?heapOrd, ?type).
+
+TypeToRepresentative(?type, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerType(?minHeapOrd, ?type),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  TypeToRepresentative(?type, ?representativeHeap),
+  TypeToMergedHeap(?heap, ?type).
 
 /*************************************************************
  * Coarse-grained allocation policy
+ * Merging allocation sites per method or per package
  *************************************************************/
 
 #ifdef COARSE_GRAINED_ALLOCATION
-// Very coarse-grained allocation policy
-// AllocationShouldBeMergedPerPackage(?type, ?packageName) <-
-//   AllocationsPerPackageAndType[?type, ?packageName] > 1.
+// Ultra coarse-grained allocation policy
+AllocationShouldBeMergedGlobally(?type) :-
+  AllocationsPerType(?type, ?n),
+  ?n > 1.
 
-// Coarse-grained allocation policy
-//AllocationShouldBeMergedPerClass(?type, ?class) <-
-//  AllocationsPerClassAndType[?type, ?class] > 1.
+// // Very coarse-grained allocation policy
+// AllocationShouldBeMergedPerPackage(?type, ?packageName) :-
+//   AllocationsPerPackageAndType(?type, ?packageName, ?n),
+//   ?n > 1.
+
+// //Coarse-grained allocation policy
+// AllocationShouldBeMergedPerClass(?type, ?class) :-
+//   AllocationsPerClassAndType(?type, ?class, ?n),
+//   ?n > 1.
 #endif // COARSE_GRAINED_ALLOCATION
 
 
@@ -306,6 +422,7 @@ AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
  * String buffers and builders
  *************************************************************/
 .decl StringFactoryType(?type:Type)
+.decl StringFactoryHeap(?heap:HeapAllocation)
 
 StringFactoryType(?type) :-
   isType(?type),
@@ -359,27 +476,27 @@ HeapAllocation_ContextInsensitive(?heap) <-
 //  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
-.decl TypeToHeap(?heap:HeapAllocation, ?type:Type)
-.decl TypeToHeapOrdinal(?heap:number, ?type:Type)
+.decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
+.decl ExceptionTypeToHeapOrdinal(?heapOrd:number, ?type:Type)
 
-TypeToHeap(?heap, ?heaptype) :-
+ExceptionTypeToHeap(?heap, ?heaptype) :-
   AssignHeapAllocation(?heap, _, _),
   HeapAllocation_Type(?heap, ?heaptype),
   ExceptionType(?heaptype).
 
-TypeToHeapOrdinal(ord(?heap), ?heapType) :-
-  TypeToHeap(?heap, ?heapType).
+ExceptionTypeToHeapOrdinal(ord(?heap), ?heapType) :-
+  ExceptionTypeToHeap(?heap, ?heapType).
 
 
 .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
 
 ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
-  TypeToHeap(_, ?type),
-  ?representativeHeapOrd = min ?otherHeap : TypeToHeapOrdinal(?otherHeap, ?type).
+  ExceptionTypeToHeap(_, ?type),
+  ?representativeHeapOrd = min ?heapOrd : ExceptionTypeToHeapOrdinal(?heapOrd, ?type).
 
 HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
-  TypeToHeap(?heap, ?heaptype),
+  ExceptionTypeToHeap(?heap, ?heaptype),
   ord(?representativeHeap) = ?representativeHeapOrd,
   isHeapAllocation(?representativeHeap).
 
