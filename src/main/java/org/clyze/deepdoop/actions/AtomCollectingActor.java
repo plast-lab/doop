@@ -73,8 +73,12 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> declMap = new HashMap<>();
-		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
+		// The order of the two loops is important! Rules may contain
+		// lang:entity declarations that use a StubAtom instead of the actual
+		// Atom. Map.putAll overwrites existing keys and we want to keep the
+		// one belonging to the actual declaration.
 		for (Rule r : n.rules)               declMap.putAll(getDeclaringAtoms(r));
+		for (Declaration d : n.declarations) declMap.putAll(getDeclaringAtoms(d));
 		_declAtoms.put(n, declMap);
 
 		Map<String, IAtom> usedMap = new HashMap<>();
