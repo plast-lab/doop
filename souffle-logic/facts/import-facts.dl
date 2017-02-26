@@ -341,6 +341,7 @@ MethodInvocation_Line(?instruction, ?line) :-
 
 .input _StaticMethodInvocation(IO="file", filename="StaticMethodInvocation.facts", delimiter="\t")
 
+isMethod(?signature),
 isInstruction(?instruction),
 isStaticMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
@@ -355,6 +356,7 @@ MethodInvocation_Method(?instruction, ?signature) :-
 
 .input _SpecialMethodInvocation(IO="file", filename="SpecialMethodInvocation.facts", delimiter="\t")
 
+isMethod(?signature),
 isInstruction(?instruction),
 isSpecialMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
@@ -369,6 +371,7 @@ MethodInvocation_Method(?instruction, ?signature) :-
 
 .input _VirtualMethodInvocation(IO="file", filename="VirtualMethodInvocation.facts", delimiter="\t")
 
+isMethod(?signature),
 isInstruction(?instruction),
 isVirtualMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
