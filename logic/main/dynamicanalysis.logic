@@ -1,0 +1,35 @@
+/**
+ * Dynamic analysis
+ */
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+   DynamicStaticFieldPointsTo(?heap, ?signature),
+   Value:byHeap[?heap] = ?value,
+   ImmutableHContext(?hctx).
+   
+InstanceFieldPointsTo(?hctx, ?value, ?fld, ?hctx, ?basevalue) <-
+   DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap),
+   Value:byHeap[?heap] = ?value,
+   Value:byHeap[?baseHeap] = ?basevalue,
+   ImmutableHContext(?hctx).
+   
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue) <-
+   DynamicArrayIndexPointsTo(?heap, ?baseHeap),
+   Value:byHeap[?heap] = ?value,
+   Value:byHeap[?baseHeap] = ?basevalue,
+   ImmutableHContext(?hctx).
+
+OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
+
+InitializedClass(?class) <-
+   DynamicReachableMethod(?method),
+   OptClassInitializer(?class, ?method).
+
+//ImplicitReachable(?method) <-
+//   UnmatchedDynamicCallGraphEdgeNode(?method),
+//   DynamicReachableMethod(?method),
+//   !OptClassInitializer(_, ?method).
+
+CallGraphEdge(?ctx, ?invocation, ?ctx, ?toMethod) <-
+   ReachableContext(?ctx, ?method),
+   !StaticMethodInvocation:Insn(?invocation),
+   DynamicCallGraphEdge(?toMethod, ?invocation, ?method).
