@@ -122,6 +122,7 @@ public class MemoryAnalyser {
             }
             // else
             if (heapAbstraction == null)*/
+
                 heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
 
             dynamicFacts.addAll(DynamicReachableMethod.fromStackTrace(trace));
