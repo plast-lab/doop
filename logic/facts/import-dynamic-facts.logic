@@ -1,3 +1,7 @@
+/*
+This stage must be executed before any basic analysis but *AFTER* Heap Allocations have been resolved.
+*/
+
 //-----------------------------------------------------------------------------
 // [Dynamic analysis related]
 //-----------------------------------------------------------------------------
@@ -15,6 +19,8 @@ _DynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4, ?param5) ->
   string(?param4),
   string(?param5).
 
+
+// optimized relation to map heapallocation by lineNumber, method and type
 _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
    Instruction:Line[?insn] = ?lineNumber,
    AssignHeapAllocation:Heap[?insn] = ?heap,
@@ -22,6 +28,9 @@ _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
    Instruction:Method[?insn] = ?method,
    Method:Id[?method] = ?methodId.
 
+
+// Heap allocations may map to more than one place in the allocation stacktrace
+// When this happens we simple take the deeper stack trace level
 +DynamicHeapAllocation(?representation, ?heap1) <-
    _MatchedHeapAllocation(?representation, ?heap1, ?order),
    !_InvalidOrder(?representation, ?order).
@@ -35,6 +44,9 @@ _MatchedHeapAllocation(?representation, ?heap, ?order) <-
    _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
    _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?order, ?type, ?representation).
 
+// For unmatched heap allocations, we record the shallowest (most specific) level of the stack trace
+// This is used to create fake allocations in a subsequent step.
+
 _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
    _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, "0", ?type, ?representation).
 
@@ -42,12 +54,15 @@ _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) 
    !DynamicHeapAllocation(?representation,  _), // is this working ?
    _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod).
 
+
+// We also keep track of statically inferred heap allocations that do not match
+// with dynamic heap allocations for debugging.
 +UnmatchedStaticNormalHeapAllocation(?methodId, ?lineNumber, ?type) <-
    _HeapAllocationInformation(?lineNumber, ?methodId, ?type, _),
    !_DynamicNormalHeapAllocation(?lineNumber, ?methodId, _, ?type, _).
 
 
-// do same for string
+// WARNING: String constants not working yet (low priority for now). 
 
 // DynamicStringHeapAllocation
 lang:physical:storageModel[`_DynamicStringHeapAllocation] = "DelimitedFile".
@@ -70,6 +85,8 @@ lang:physical:hasColumnNames[`_DynamicReachableMethod] = false.
 _DynamicReachableMethod(?param1) ->
   string(?param1).
 
+// Dynamic call graph edges are found by taking stack trace elements in the heap dump.
+
 +DynamicReachableMethod(?method) <-
    _DynamicReachableMethod(?representation),
    Method:Id(?method:?representation).
@@ -88,6 +105,9 @@ _DynamicCallGraphEdge(?param1, ?param2, ?param3) ->
    int[64](?param2),
    string(?param3).
 
+// Dynamic call graph edges are found by combining successive
+// stack trace elements in the heap dump.
+
 _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod) <-
    MethodInvocation:Line[?invocation] = ?lineNumber,
    MethodInvocation:SimpleName[?invocation] = ?name,   
@@ -101,7 +121,7 @@ _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMe
    Method:Id(?toMethod:?toMethodId).
 
 //+UnmatchedDynamicCallGraphEdgeNode(?method) <-
-//bla   (_DynamicCallGraphEdge(?methodId, _, _) ;
+//   (_DynamicCallGraphEdge(?methodId, _, _) ;
 //    _DynamicCallGraphEdge(_, _, ?methodId)),
 //    Method:Id(?method:?methodId),
 //   !(DynamicCallGraphEdge(?method, _, _) ;
