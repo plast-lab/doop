@@ -1,15 +1,5 @@
-FakeInvocation_RegisterFinalize0(?val2, cat("<register-finalize", cat(?val1, cat( "/", cat(?val2, " >"))))),
-PlusMethodInvocation(cat("<register-finalize", cat(?val1, cat( "/", cat(?val2, " >"))))) :-
+FakeInvocation_RegisterFinalize0(?val2, cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))),
+PlusMethodInvocation(cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >"))))) :-
     AllocatedObjectSupportsFinalize(?val2, ?val1),
     isMethod(?val1),
     isHeapAllocation(?val2).
-
-/** The above written like this would lead to ungrounded ?str error
-
-    FakeInvocation_RegisterFinalize0(?val2, ?str),
-    PlusMethodInvocation(?str) :-
-        AllocatedObjectSupportsFinalize(?val2, ?val1),
-        isMethod(?val1),
-        isHeapAllocation(?val2),
-        ?str = cat("<register-finalize", cat(?val1, cat( "/", cat(?val2, " >")))).
-*/
