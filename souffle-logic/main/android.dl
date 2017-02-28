@@ -75,7 +75,7 @@ ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
 // Main logic
 AndroidLibraryType(?type) :-
   isType(?type),
-  match("^android\..*", ?type).
+  match("^android.*", ?type).
 
 // REVIEW: is this needed? android.support classes are included in the
 // application for compatibility with older Android versions. We
