@@ -203,6 +203,7 @@ AssignInstruction_To(?instruction, ?to) :-
 
 .input _AssignCastNumConstant(IO="file", filename="AssignCastNumConstant.facts", delimiter="\t")
 
+isNumConstant(?const),
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignCast_Insn(?instruction),
@@ -343,6 +344,7 @@ MethodInvocation_Line(?instruction, ?line) :-
 
 isMethod(?signature),
 isInstruction(?instruction),
+isMethodInvocation(?instruction),
 isStaticMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -358,6 +360,7 @@ MethodInvocation_Method(?instruction, ?signature) :-
 
 isMethod(?signature),
 isInstruction(?instruction),
+isMethodInvocation(?instruction),
 isSpecialMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
@@ -373,6 +376,7 @@ MethodInvocation_Method(?instruction, ?signature) :-
 
 isMethod(?signature),
 isInstruction(?instruction),
+isMethodInvocation(?instruction),
 isVirtualMethodInvocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
 Instruction_Method(?instruction, ?method),
