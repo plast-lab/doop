@@ -236,13 +236,11 @@ ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) <-
 // REVIEW: contexts.
 
 // Handle return values: connect the return value of handler.invoke()
-// to the return value of the wrapped method.
-//
-// TODO Exceptions from spec: (a) the resulting value must be able to
-// be succesfully cast to the correct type (or a ClassCastException is
-// raised) and (b) if invoke() returns a null and the intended result
-// is a primitive, then NullPointerException is raised.
-VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret)
+// to the return value of the wrapped method. The exceptions mandated
+// by the spec are handled elsewhere (in exceptions.logic); here only
+// we record the internal invoke() return variable for use there.
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret),
+ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
 <-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
