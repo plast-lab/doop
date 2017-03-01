@@ -126,34 +126,37 @@ ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
 // checked exception of the interface method, then e is wrapped as
 // UndeclaredThrowableException(e) and thrown. The actual rule below
 // is a bit simpler than the spec, as we do not provide the inner
-// exception e. Since we create one exception per proxy call graph
-// edge, we can add this information in the future if needed.
+// exception e, so we use a global exception object.
+
 HeapAllocation:Normal:Cons[?heapId] = ?heap,
 NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?UTEClass,
-Instruction:Throws(?hctx, Value:byHeap[?value], ?callerCtx, ?invo) <-
-  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
-  ImmutableHContextFromContext[?calleeCtx] = ?hctx,
-  Instruction:Id(?invo:?invoId),
-  ?heapId = "<UndeclaredThrowableException thrown of proxy call at " + ?invoId + ">",
+ProxyUTE[] = ?heap <-
+  ?heapId = "<UndeclaredThrowableException thrown by proxy call>",
   Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
+
+Instruction:Throws(?hctx, Value:byHeap[ProxyUTE[]], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
 
 // Case (b): "If the value returned by invoke is null and the
 // interface method's return type is primitive, then a
 // NullPointerException will be thrown by the method invocation on the
-// proxy instance." TODO: Here we assume the invoke() may alway return
-// null.
+// proxy instance." For performance, we use a single global
+// object. TODO: Here we assume the invoke() may alway return null.
+
 HeapAllocation:Normal:Cons[?heapId] = ?heap,
 NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?NPEClass,
-Instruction:Throws(?hctx, Value:byHeap[?value], ?callerCtx, ?invo) <-
-  ProxyCallGraphEdge(?callerCtx, ?invo, _, ?handlerInvokeMeth),
+ProxyNPE[] = ?heap <-
+  ?heapId = "<NullPointerException thrown by proxy call>",
+  Type:Id(?NPEClass:"java.lang.NullPointerException").
+
+Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
   AssignReturnValue[?invo] = ?return,
   PrimitiveType(Var:Type[?return]),
-  ImmutableHContextFromContext[?calleeCtx] = ?hctx,
-  Instruction:Id(?invo:?invoId),
-  ?heapId = "<NullPointerException thrown of proxy call at " + ?invoId + ">",
-  Type:Id(?NPEClass:"java.lang.NullPointerException").
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
 
 // Case (c): "If the value returned by invoke is otherwise not
 // compatible with the method's declared return type as described
