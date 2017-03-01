@@ -3,9 +3,6 @@
 /**
  * Implicitly reachable methods are invoked by the JVM on startup.
  */
-Reachable(?method) :-
-    ImplicitReachable(?method).
-
 ImplicitReachable(sig) :-
     AndroidEntryPoint(sig).
 
