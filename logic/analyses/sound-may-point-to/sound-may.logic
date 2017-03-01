@@ -1,249 +1,321 @@
-				//.comp SoundMay<MustPointToParameter> {
 component SoundMay {
-	//// =====================================
-	//// The main computed concepts:
+	// =====================================
+	// The main computed concepts:
 
 	// May-point-to information in a specific context (which may be an
 	// all-contexts value).
 
-	// Whenever (if) it is reached under context ?ctx, variable ?var may point to an object
-	// allocated at site ?heap. Since we assume SSA and variables are ensured initialized before use,
-	// there is no point in keeping this information per-instruction.
+	// Whenever (if) it is reached under context ctx, variable var may point to
+	// an object allocated at site ?heap. Since we assume SSA and variables are
+	// ensured initialized before use, there is no point in keeping this
+	// information per-instruction.
 	MayPointTo(hctx, heap, ctx, var) ->
-		MayHeapContext(hctx), HeapAllocation(hctx), MayContext(ctx), Var(var).
+		MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Var(var).
 
-	// Only for access paths that are not plain local vars. Distinguished
-	// from above, since MayPointTo doesn't need ?insn (SSA form
-	// assumed). Represents relationships that hold *after* the
-	// instruction. There is also a Before_ version.
-	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) ->
+	// Only for access paths that are not plain local vars. Distinguished from
+	// above, since MayPointTo doesn't need insn (SSA form assumed). Represents
+	// relationships that hold *after* the instruction.
+	AccessPath:MayPointTo(hctx, heap, ap, ctx, insn) ->
 		MayHeapContext(hctx), HeapAllocation(heap), AccessPath(ap), MayContext(ctx), Instruction(insn).
 
-	Before:AccessPathMayPointTo(hctx, heap, ap, ctx, insn) ->
+	AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn) ->
 		MayHeapContext(hctx), HeapAllocation(heap), AccessPath(ap), MayContext(ctx), Instruction(insn).
 
+	//// BEGIN final relations for stats
 
+	AllCtxMayPointTo:App(hctx, heap, var) <-
+		ReachableContext:May(ctx, method),
+		InitialMayContext(ctx),
+		ApplicationMethod(method),
+		MayPointTo(hctx, heap, ctx, var).
+
+	//// END final relations for stats
+
+
+	//// =====================================
+	//// BEGIN core MayPointTo code
+
+	// Need to identify relevant (i.e., reachable) methods for the analysis,
+	// instead of blindly applying it to all available code.
+	ReachableContext:May(ctx, method) <-
+		RootMethodForMayAnalysis(method),
+		InitialMayContext(ctx).
+
+	ReachableContext:May(ctx, method) <-
+		MayCallGraphEdge(ctx, method, _, _).
+
+	// Root of all inferences. Assigning new heap allocations.
+	// REVIEW: This introduces dependency on string-constants.logic
+	// RecordMacroMay(ctx, heap, hctx),
+	MayPointTo(hctx, heap, ctx, var) <-
+		AssignNormalHeapAllocation(heap, var, method),
+		ReachableContext:May(ctx, method),
+		cons:MayHeapContext:Empty[] = hctx.
+
+	// strings and others
+	MayPointTo(hctx, heap, ctx, var) <-
+		AssignContextInsensitiveHeapAllocation(heap, var, method),
+		(!HeapAllocation:Merge[heap] = _;
+		 HeapAllocation:Merge[heap] = heap),
+		ReachableContext:May(ctx, method),
+		cons:MayHeapContext:Empty[] = hctx.
+
+	// null assignments
+	//RecordMacroMay(ctx, heap, hctx),
+	MayPointTo(hctx, heap, ctx, var) <-
+		AssignNull:Insn(insn),
+		AssignInstruction:To[insn] = var,
+		HeapAllocation:Null(heap),
+		Instruction:Method(insn, method),
+		ReachableContext:May(ctx, method),
+		cons:MayHeapContext:Empty[] = hctx.
+
+	// Move, but not Phi nodes, which are also represented as local assignments.
+	MayPointTo(hctx, heap, ctx, to) <-
+		AssignLocal:From[insn] = from,
+		MayPointTo(hctx, heap, ctx, from),
+		!PhiNodeHead[insn] = _,
+		AssignInstruction:To[insn] = to.
+
+	// Place an order to the access path factory for the creation of access paths
+	// resulting from the Move instruction. Also for Phi nodes.
+	AccessPath:ShouldBeRebased(ap, from, to) <-
+		AssignLocal:From[insn] = from,
+		AccessPath:MayPointTo(_, _, ap, _, insn),
+		AccessPath:Var[ap] = from,
+		AssignInstruction:To[insn] = to.
+
+	AccessPath:MayPointTo(hctx, heap, toAp, ctx, insn) <-
+		AssignLocal:From[insn] = from,
+		AccessPath:MayPointTo:Before(hctx, heap, fromAp, ctx, insn),
+		!PhiNodeHead[insn] = _,
+		AccessPath:Var[fromAp] = from,
+		AssignInstruction:To[insn] = to,
+		AccessPath:RebaseComposite(fromAp, from, to, toAp).
+
+	// Casts are like local assignments
+	// TODO: filter our badly typed values
+	MayPointTo(hctx, heap, ctx, to) <-
+		AssignCast:From[insn] = from,
+		MayPointTo(hctx, heap, ctx, from),
+		AssignInstruction:To[insn] = to.
+
+	AccessPath:ShouldBeRebased(ap, from, to) <-
+		AssignCast:From[insn] = from,
+		AccessPath:MayPointTo(_, _, ap, _, insn),
+		AccessPath:Var[ap] = from,
+		AssignInstruction:To[insn] = to.
+
+	AccessPath:MayPointTo(hctx, heap, toAp, ctx, insn) <-
+		AssignCas:Insn(insn),
+		AssignInstruction:To[insn] = to,
+		AssignCast:From[insn] = from,
+		AccessPath:MayPointTo(hctx, heap, fromAp, ctx, insn),
+		AccessPath:Var[fromAp] = from,
+		AccessPath:RebaseComposite(fromAp, from, to, toAp).
+
+	// Phi
+	PhiNodeVarWithResolvedMayPointTo(ctx, var),
+	MayPointTo(hctx, heap, ctx, var) <-
+		MayPointToUpToPhiInstruction(hctx, heap, ctx, lastInsn),
+		!NextInSamePhiNode(lastInsn, _),
+		AssignInstruction:T[lastInsn] = var.
+
+	// Phi node treatment of composite access paths
+
+	// This logic turns out to be surprisingly simple and general: If the base
+	// var is set (i.e., all paths had points-to for the SSA sub-variables) then
+	// take the union of all access-path info for all paths based on
+	// sub-variables. If such info has reached the phi node, it means it wasn't
+	// invalidated in any of the other paths!
+	AccessPath:MayPointTo(hctx, heap, toAp, ctx, insn) <-
+		PhiNodeVarWithResolvedMayPointTo(ctx, to),
+		AssignInstructio:To[insn] = to,
+		AssignLocal:From[insn] = from,
+		PhiNodeHead[insn] = _,
+		AccessPath:Var[fromAp] = from,
+		AccessPath:MayPointTo:Before(hctx, heap, fromAp, ctx, insn),
+		AccessPath:RebaseComposite(fromAp, from, to, toAp).
+
+	// Load and Store instructions
+	StoreFromVar:MayPointTo(hctx, heap, ctx, insn) <-
+		MayPointTo(hctx, heap, ctx, from),
+		StoreInstanceField:From[insn] = from.
+
+	StaticStoreFrom:VarMayPointTo(hctx, heap, ctx, insn) <-
+		MayPointTo(hctx, heap, ctx, from),
+		StoreStaticField:From[insn] = from.
+
+	// Store instructions, strong update of AccessPath:MayPointTo info for
+	// the same access path
+	cons:AccessPath:byField[base, fld] = ap, AccessPath(ap),
+	AccessPath:MayPointTo(hctx, heap, ap, ctx, insn) <-
+		StoreFromVar:MayPointTo(hctx, heap, ctx, insn),
+		StoreInstanceField:Base[insn] = base,
+		FieldInstruction:Signature[insn] = fld.
+
+	// store instructions, strong update of AccessPathMayPointTo info for
+	// an access path with a must-aliased base.
+	cons:AccessPath:byField[base2, fld] = ap, AccessPath(ap),
+	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
+		StoreFromVar:MayPointTo(hctx, heap, ctx, insn),
+		StoreInstanceField:Base[insn] = base,
+		FieldInstruction:Signature[insn] = fld,
+		(VarMustAlias@prev(base, base2, ctx); // MustPointToAnalysis
+		 (cons:AccessPath:byVar[base] = ap1,
+		  cons:AccessPath:byVar[base2] = ap2,
+		  MustAlias@prev(ap1, ap2, ctx, insn))). // MustAliasAnalysis
+
+	// Weak update of access paths with the same field but different base
+	// TODO extend to longer access paths
+	AccessPath:MayPointTo(hctx1, heap1, ap, ctx, insn),
+	AccessPath:MayPointTo(hctx2, heap2, ap, ctx, insn) <-
+		AccessPath:MayPointTo:Before(hctx1, heap1, ap, ctx, insn),
+		StoreFromVar:MayPointTo(hctx2, heap2, ctx, insn),
+		StoreInstanceField:Base[insn] = _, // base, ???
+		FieldInstruction:Signature[insn] = fld,
+		AccessPath:SingleField(fld, ap),
+		AccessPath:Length[ap] = 2.
+
+	// Similar for static stores
+	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
+		StaticStoreFromVar:MayPointTo(hctx, heap, ctx, insn),
+		FieldInstructio:Signature[insn] = fld,
+		AccessPath:ContainsStaticField(fld, ap), // OPT
+		cons:AccessPath:byStaticField[fld] = ap.
+
+	// Load instructions
+	MayPointTo(hctx, heap, ctx, to) <-
+		AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn),
+		LoadInstanceField:Base[insn] = base,
+		LoadInstanceField:To[insn] = to,
+		FieldInstruction:Signature[insn] = fld,
+		cons:AccessPath:byField[base, fld] = ap.
+
+	// Static load instructions
+	MayPointTo(hctx, heap, ctx, to) <-
+		AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn),
+		LoadStaticField:To[insn] = to,
+		FieldInstruction:Signature[insn] = fld,
+		cons:AccessPath:byStaticField[fld] = ap.
+
+	// Final static fields that must point to an object, at the end of a
+	// class initializer, cannot change in the future; thus, we can make
+	// closed-world assumptions about the field.
+	StaticFinalField:MayPointTo(hctx, heap, fld) <-
+		cons:MayContext:Initial[] = initCtx,
+		AccessPath:MayPointTo:ALlReturn(hctx, heap, ap, initCtx, method),
+		AccessPath:ContainsStaticField(fld, ap), // OPT
+		cons:AccessPath:byStaticField[fld] = ap,
+		Method:SimpleName[method] = "<clinit>",
+		Field:Modifier("final", fld).
+
+	MayPointTo(hctx, heap, ctx, to) <-
+		LoadStaticField:To[insn] = to,
+		FieldInstruction:Signature[insn] = fld,
+		StaticFinalField:MayPointTo(hctx, heap, fld),
+		Var:DeclaringMethod(to, method),
+		ReachableContext:May(ctx, method).
+
+	FinalField:MayPointTo(hctx, heap, fld) <-
+		cons:MayContext:Initial[] = initCtx,
+		AccessPath:MayPointTo:ALlReturn(hctx, heap, ap, initCtx, method),
+		cons:AccessPath:byField[var, fld] = ap, // not enough??
+		//ap = [ var, [ rest, fld ] ], rest = rest,
+		(ThisVar[method] = var;
+		 VarMustAliasThis@prev(var)), // MustPointToAnalysis
+		Method:SimpleName[method] = "<init>",
+		Field:Modifier("final", fld).
+
+	MayPointTo(hctx, heap, ctx, to) <-
+		FinalField:MayPointTo(hctx, heap, fld),
+		FieldInstruction:Signature[insn] = fld,
+		Instruction:Method[insn] = method,
+		ReachableContext:May(ctx, method),
+		LoadInstanceField:To[insn] = to.
+
+	//// END core MayPointTo code
+	//// ====================================
+	//// BEGIN access path definitions, creation and other auxiliary
+
+	AccessPath:Length[ap] = 1,
+	AccessPath:IsSimple(ap) <-
+		cons:AccessPath:byVar[_] = ap ;
+		cons:AccessPath:byStaticField[_] = ap.
+
+	AccessPath:IsComposite(ap) <-
+		cons:AccessPath:byField[_, _] = ap.
+
+	AccessPath:Length[ap] = len0 + 1 <-
+		cons:AccessPath:byField[ap0, _] = ap,
+		AccessPath:Length[ap0] = len0.
+
+	AccessPath:ContainsField(fld, ap) <-
+		cons:AccessPath:byStaticField[fld] = ap ;
+		cons:AccessPath:byField[_, fld] = ap.
+
+	AccessPath:ContainsField(fld, ap) <-
+		cons:AccessPath:byField[ap0, _] = ap,
+		AccessPath:ConstainsField(fld, ap0).
+
+	AccessPath:ContainsStatisField(fld, ap) <-
+		cons:AccessPath:byStaticField[fld] = ap.
+
+	AccessPath:ContainsStatisField(fld, ap) <-
+		cons:AccessPath:byField[ap0, _] = ap,
+		AccessPath:ContainsStaticField(fld, ap0).
+
+	AccessPath:BaseVar(base, ap) <-
+		cons:AccessPath:byVar[base] = ap.
+
+	AccessPath:BaseVar(base, ap) <-
+		cons:AccessPath:byField[ap0, _] = ap,
+		AccessPath:BaseVar(base, ap0).
+
+	AccesssPath:SingleField(fld, ap) <-
+		cons:AccessPath:byStaticField[fld] = ap.
+
+	AccessPath:SingleField(fld, ap) <-
+		cons:AccessPath:byField[ap0, fld] = ap,
+		cons:AccessPath:byVar[_] = ap0.
+
+	AccessPath:DoubleField(fld1, fld2, ap) <-
+		cons:AccessPath:byField[ap0, fld2] = ap,
+		cons:AccessPath:byStaticField[fld1] = ap0.
+
+	AccessPath:DoubleField(fld1, fld2, ap) <-
+		cons:AccessPath:byField[ap1, fld2] = ap,
+		cons:AccessPath:byField[ap0, fld1] = ap1,
+		cons:AccessPath:byVar[_] = ap0.
+
+	AccessPath:IsCollection(ap) <-
+		cons:AccessPath:byField[ap0, "dummyCollection"] = ap,
+		cons:AccessPath:byVar[base] = ap0,
+		Var:Type[base] = type,
+		(ArrayType(type);
+		 LibraryCollectionType(type)).
+
+	//AccessPath:RebaseComposite(ap, from, to, newAp) <-
+	//	AccessPath:ShouldBeRebased(ap, from, to),
+	//	newAp = [to, rest],
+	//	ap = [from, rest].
+
+	//// END access path definitions, creation and other auxiliary
+	//// ====================================
+}
+
+
+
+/*
+.comp SoundMay<MustPointToParameter> {
 		  #include "must-alias.dl"
           .init MustAliasAnalysis = DummyMustAlias
 
           .init MustPointToAnalysis = MustPointToParameter
 
 
-	//// =====================================
-	//// BEGIN final relations for stats
 
-	AppAllCtxMayPointTo(hctx, heap, var) <-
-		MayReachableMethodUnderMayContext(ctx, meth),
-		InitialMayContext(ctx),
-		ApplicationMethod(meth),
-		MayPointTo(hctx, heap, ctx, var).
 
-	//// END final stats
-
-	//// =====================================
-	//// BEGIN core MayPointTo code
-
-	// Need to identify relevant (i.e., reachable) methods for the
-	// analysis, instead of blindly applying it to all available code.
-	MayReachableMethodUnderMayContext(ctx, meth) <-
-		RootMethodForMayAnalysis(meth),
-		InitialMayContext(ctx).
-
-	MayReachableMethodUnderMayContext(ctx, meth) <-
-		MayCallGraphEdge(ctx, meth, _, _).
-
-	MayReachableMayContext(ctx) <-
-		MayReachableMethodUnderMayContext(ctx, _).
-
-	// Root of all inferences. Assigning new heap allocations.
-	// REVIEW: This introduces dependency on string-constants.logic
-	// RecordMacroMay(ctx, heap, hctx),
-	MayPointTo(hctx, heap, ctx, var) <-
-		AssignNormalHeapAllocation(heap, var, inMeth),
-		MayReachableMethodUnderMayContext(ctx, inMeth),
-		EmptyHeapContext(hctx).
-
-	// strings and others
-	MayPointTo(hctx, heap, ctx, var) <-
-		AssignContextInsensitiveHeapAllocation(heap, var, inMeth),
-		(!HeapAllocation_Merge(heap, _); HeapAllocation_Merge(heap, heap)),
-		EmptyHeapContext(hctx),
-		MayReachableMethodUnderMayContext(ctx, inMeth).
-
-	// null assignments
-	//RecordMacroMay(ctx, heap, hctx),
-	MayPointTo(hctx, heap, ctx, var) <-
-		AssignNull_Insn(insn),
-		AssignInstruction:To(insn, var),
-		HeapAllocation_Null(heap),
-		Instruction:Method(insn, inMeth),
-		MayReachableMethodUnderMayContext(ctx, inMeth),
-		EmptyHeapContext(hctx).
-
-	// Move, but not Phi nodes, which are also represented as local assignments.
-	MayPointTo(hctx, heap, ctx, to) <-
-		AssignLocal:From(insn, from),
-		MayPointTo(hctx, heap, ctx, from),
-		!PhiNodeHead(insn, _),
-		AssignInstruction:To(insn, to).
-
-	// Place an order to the access path factory for the creation of
-	// access paths resulting from the Move instruction. Also for Phi nodes.
-	AccessPathShouldBeRebased(ap, from, to) <-
-		AssignLocal:From(insn, from),
-		AccessPathMayPointTo(_, _, ap, _, insn),
-		AccessPath:BaseVar(ap, from),
-		AssignInstruction:To(insn, to).
-
-	AccessPathMayPointTo(hctx, heap, toAp, ctx, insn) <-
-		AssignLocal_From(insn, from),
-		Before_AccessPathMayPointTo(hctx, heap, fromAp, ctx, insn),
-		!PhiNodeHead(insn, _),
-		AccessPath_BaseVar(fromAp, from),
-		AssignInstruction:To(insn, to),
-		RebaseCompositeAccessPath(fromAp, from, to, toAp).
-		//   .plan 1: (3,2,1,4,5), 2: (5,3,1,4,2)  // another core dump
-
-	// casts are like local assignments
-	//// TODO: filter our badly typed values
-	MayPointTo(hctx, heap, ctx, to) <-
-		AssignCast_From(insn, from),
-		MayPointTo(hctx, heap, ctx, from),
-		AssignInstruction_To(insn, to).
-
-	AccessPathShouldBeRebased(ap, from, to) <-
-		AssignCast_From(insn, from),
-		AccessPathMayPointTo(_, _, ap, _, insn),
-		AccessPath_BaseVar(ap, from),
-		AssignInstruction_To(insn, to).
-
-	AccessPathMayPointTo(hctx, heap, toAp, ctx, insn) <-
-		AssignCast_Insn(insn),
-		AssignInstruction_To(insn, to),
-		AssignCast_From(insn, from),
-		AccessPathMayPointTo(hctx, heap, fromAp, ctx, insn),
-		AccessPath_BaseVar(fromAp, from),
-		RebaseCompositeAccessPath(fromAp, from, to, toAp).
-
-	// Phi
-	PhiNodeVarWithResolvedMayPointTo(ctx, var),
-	MayPointTo(hctx, heap, ctx, var) <-
-		MayPointToUpToPhiInstruction(hctx, heap, ctx, lastInsn),
-		!(NextInSamePhiNode(lastInsn, _)),
-		AssignInstruction_To(lastInsn, var).
-
-	// phi node treatment of composite access paths
-
-	// This logic turns out to be surprisingly simple and general:
-	// If the base var is set (i.e., all paths had points-to for the
-	// SSA sub-variables) then take the union of all access-path info
-	// for all paths based on sub-variables. If such info has reached
-	// the phi node, it means it wasn't invalidated in any of the
-	// other paths!
-	AccessPathMayPointTo(hctx, heap, toAp, ctx, insn) <-
-		PhiNodeVarWithResolvedMayPointTo(ctx, to),
-		AssignInstruction_To(insn, to),
-		AssignLocal_From(insn, from),
-		PhiNodeHead(insn, _),
-		AccessPath_BaseVar(fromAp, from),
-		Before_AccessPathMayPointTo(hctx, heap, fromAp, ctx, insn),
-		RebaseCompositeAccessPath(fromAp, from, to, toAp).
-
-	// Load and Store instructions
-	StoreFromVarMayPointTo(hctx, heap, ctx, insn) <-
-		MayPointTo(hctx, heap, ctx, from),
-		StoreInstanceField_From(insn, from).
-
-	StaticStoreFromVarMayPointTo(hctx, heap, ctx, insn) <-
-		MayPointTo(hctx, heap, ctx, from),
-		StoreStaticField_From(insn, from).
-
-	// store instructions, strong update of AccessPathMayPointTo info for
-	// the same access path
-	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
-		StoreFromVarMayPointTo(hctx, heap, ctx, insn),
-		StoreInstanceField_Base(insn, base),
-		FieldInstruction_Signature(insn, fld),
-		ap = [base, [nil, fld]].
-
-	// store instructions, strong update of AccessPathMayPointTo info for
-	// an access path with a must-aliased base.
-	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
-		StoreFromVarMayPointTo(hctx, heap, ctx, insn),
-		StoreInstanceField_Base(insn, base),
-		FieldInstruction_Signature(insn, fld),
-		(MustPointToAnalysis.VarMustAlias(base, base2, ctx);
-		MustAliasAnalysis.MustAlias([base, nil], [base2, nil], ctx, insn)),
-		ap = [base2, [nil, fld]].
-
-	// weak update of access paths with the same field but different base
-	// TODO extend to longer access paths
-	AccessPathMayPointTo(hctx1, heap1, ap, ctx, insn),
-	AccessPathMayPointTo(hctx2, heap2, ap, ctx, insn) <-
-		Before_AccessPathMayPointTo(hctx1, heap1, ap, ctx, insn),
-		StoreFromVarMayPointTo(hctx2, heap2, ctx, insn),
-		StoreInstanceField_Base(insn, base),
-		FieldInstruction_Signature(insn, fld),
-		SingleFieldAccessPath(fld, ap),
-		AccessPath_Length(ap, len), len = 2.
-
-	// similar for static stores
-	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
-		StaticStoreFromVarMayPointTo(hctx, heap, ctx, insn),
-		FieldInstruction_Signature(insn, fld),
-		AccessPath_ContainsStaticField(ap, fld),
-		ap = [ fld, nil ].
-
-	// load instructions
-	MayPointTo(hctx, heap, ctx, to) <-
-		Before_AccessPathMayPointTo(hctx, heap, ap, ctx, insn),
-		LoadInstanceField_Base(insn, base),
-		LoadInstanceField_To(insn, to),
-		FieldInstruction_Signature(insn, fld),
-		ap = [ base, [nil, fld] ].
-
-	// static load instructions
-	MayPointTo(hctx, heap, ctx, to) <-
-		Before_AccessPathMayPointTo(hctx, heap, ap, ctx, insn),
-		LoadStaticField_To(insn, to),
-		FieldInstruction_Signature(insn, fld),
-		ap = [ fld, nil ].
-
-	// Final static fields that must point to an object, at the end of a
-	// class initializer, cannot change in the future; thus, we can make
-	// closed-world assumptions about the field.
-	StaticFinalFieldMayPointTo(hctx, heap, fld) <-
-		InitialMayContext(initCtx),
-		AllReturn_AccessPathMayPointTo(hctx, heap, ap, initCtx, meth),
-		AccessPath_ContainsStaticField(ap, fld),
-		ap = [ fld, nil ],
-		MethodSignature_SimpleName(meth, "<clinit>"),
-		FieldModifier(mod, fld),
-		Modifier_final(mod).
-
-	MayPointTo(hctx, heap, ctx, to) <-
-		LoadStaticField_To(insn, to),
-		FieldInstruction_Signature(insn, fld),
-		StaticFinalFieldMayPointTo(hctx, heap, fld),
-		Var_DeclaringMethod(to, inMeth),
-		MayReachableMethodUnderMayContext(ctx, inMeth).
-
-	FinalFieldMayPointTo(hctx, heap, fld) <-
-		InitialMayContext(initCtx),
-		AllReturn_AccessPathMayPointTo(hctx, heap, ap, initCtx, meth),
-		ap = [ var, [ rest, fld ] ], rest = rest,
-		(ThisVar(meth, var);
-		MustPointToAnalysis.VarMustAliasThis(var)),
-		MethodSignature_SimpleName(meth, "<init>"),
-		FieldModifier(mod, fld),
-		Modifier_final(mod).
-
-	MayPointTo(hctx, heap, ctx, to) <-
-		FinalFieldMayPointTo(hctx, heap, fld),
-		FieldInstruction_Signature(insn, fld),
-		Instruction_Method(insn, inMeth),
-		MayReachableMethodUnderMayContext(ctx, inMeth),
-		LoadInstanceField_To(insn, to).
 
 
 	// static or special method invocation
@@ -255,7 +327,7 @@ component SoundMay {
 	//MergeMacroMay(ctx, invo, hctx, heap, calleeCtx),
 	ComputedContext([invo, ctx]),
 	MayCallGraphEdge([invo, ctx], toMeth, ctx, invo) <-
-		MayReachableMethodUnderMayContext(ctx, inMeth),
+		ReachableContext:May(ctx, inMeth),
 		MayContextDepth(ctx, ctxDepth),
 		MaxMayContextDepth(maxCtxDepth),
 		ctxDepth < maxCtxDepth,
@@ -328,14 +400,14 @@ component SoundMay {
 		MayCallGraphEdge(_, toMethod, callerCtx, invo),
 		FormalParam(index, toMethod, formal),
 		ActualParam(index, invo, actual),
-		RebaseCompositeAccessPath(ap, actual, formal, newAp).
+		AccessPath:RebaseComposite(ap, actual, formal, newAp).
 		//.plan 1: (4,3,1,2)
 
 	AccessPathRebasedForCall(newAp, ap, callerCtx, invo)  <-
 		MayCallGraphEdge(_, toMethod, callerCtx, invo),
 		OptVirtualOrSpecialMethodInvocation_Base(invo, base),
 		ThisVar(toMethod, this),
-		RebaseCompositeAccessPath(ap, base, this, newAp).
+		AccessPath:RebaseComposite(ap, base, this, newAp).
 		//.plan 1: (4,3,1,2)
 
 	Before_AccessPathMayPointTo(hctx, heap, calleeAp, calleeCtx, firstInsn) <-
@@ -356,7 +428,7 @@ component SoundMay {
 	// Handle constructors and initialization to null.
 	//RecordMacroMay(ctx, heap, hctx),
 	Before_AccessPathMayPointTo(hctx, nullHeap, [this, [nil, fld]], ctx, firstInsn) <-
-		MayReachableMethodUnderMayContext(ctx, ctorMethod),
+		ReachableContext:May(ctx, ctorMethod),
 		ThisVarOfConstructor(ctorMethod, this),
 		FirstInstructionOfMethod(ctorMethod, firstInsn),
 		MethodSignature_DeclaringType(ctorMethod, heapType),
@@ -366,7 +438,7 @@ component SoundMay {
 		FieldSignature_Type(fld, fldType),
 		ReferenceType(fldType),
 		HeapAllocation_Null(nullHeap),
-		EmptyHeapContext(hctx).
+		cons:MayHeapContext:Empty[] = hctx.
 
 
 	// handling returns
@@ -392,7 +464,7 @@ component SoundMay {
 	// attention to the case that all return statements use the same var.
 	AccessPathShouldBeRebased(ap, var, to) <-
 		ReturnValueOfResolvedCallAssignedTo(_, to, calleeCtx, toMethod),
-		AllReturn_AccessPathMayPointTo(_, _, ap, calleeCtx, toMethod),
+		AccessPath:MayPointTo:ALlReturn(_, _, ap, calleeCtx, toMethod),
 		AllReturn_SameRetVar(toMethod, var),
 		AccessPath_BaseVar(ap, var).
 
@@ -400,7 +472,7 @@ component SoundMay {
 		MayCallGraphEdge_Prev(calleeCtx, toMethod, _, invo),
 		FormalParam(index, toMethod, formal),
 		ActualParam(index, invo, actual),
-		AllReturn_AccessPathMayPointTo(_, _, formalAp, calleeCtx, toMethod),
+		AccessPath:MayPointTo:ALlReturn(_, _, formalAp, calleeCtx, toMethod),
 		AccessPath_BaseVar(formalAp, formal).
 
 	AccessPathShouldBeRebased(thisAp, this, base) <-
@@ -408,7 +480,7 @@ component SoundMay {
 		(VirtualMethodInvocation_Base(invo, base);
 		SpecialMethodInvocation_Base(invo, base)),
 		ThisVar(toMethod, this),
-		AllReturn_AccessPathMayPointTo(_, _, thisAp, calleeCtx, toMethod),
+		AccessPath:MayPointTo:ALlReturn(_, _, thisAp, calleeCtx, toMethod),
 		AccessPath_BaseVar(thisAp, this).
 
 	// Now collect the rebasing transformations
@@ -416,20 +488,20 @@ component SoundMay {
 		MayCallGraphEdge_Prev(_, toMethod, callerCtx, invo),
 		AssignReturnValue(invo, to),
 		AllReturn_SameRetVar(toMethod, ret),
-		RebaseCompositeAccessPath(calleeAp, ret, to, callerAp).
+		AccessPath:RebaseComposite(calleeAp, ret, to, callerAp).
 
 	AccessPathRebasedForReturn(callerAp, calleeAp, callerCtx, invo) <-
 		MayCallGraphEdge_Prev(_, toMethod, callerCtx, invo),
 		FormalParam(index, toMethod, formal),
 		ActualParam(index, invo, actual),
-		RebaseCompositeAccessPath(calleeAp, formal, actual, callerAp).
+		AccessPath:RebaseComposite(calleeAp, formal, actual, callerAp).
 
 	AccessPathRebasedForReturn(callerAp, calleeAp, callerCtx, invo) <-
 		MayCallGraphEdge_Prev(_, toMethod, callerCtx, invo),
 		ThisVar(toMethod, this),
 		(VirtualMethodInvocation_Base(invo, base);
 		SpecialMethodInvocation_Base(invo, base)),
-		RebaseCompositeAccessPath(calleeAp, this, base, callerAp).
+		AccessPath:RebaseComposite(calleeAp, this, base, callerAp).
 
 	AccessPathMayPointTo(hctx, heap, callerAp, callerCtx, invo) <-
 		MayCallGraphEdge_Prev(calleeCtx, toMethod, callerCtx, invo),
@@ -479,21 +551,21 @@ component SoundMay {
 		MayPointTo(hctx, heap, initCtx, var),
 		InitialMayContext(initCtx),
 		Var_DeclaringMethod(var, method),
-		MayReachableMethodUnderMayContext(ctx, method).
+		ReachableContext:May(ctx, method).
 		//.plan 1: (4,3,2,1)
 
 	AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
 		AccessPathMayPointTo(hctx, heap, ap, initCtx, insn),
 		InitialMayContext(initCtx),
 		Instruction_Method(insn, method),
-		MayReachableMethodUnderMayContext(ctx, method).
+		ReachableContext:May(ctx, method).
 		//.plan 1: (4,3,2,1)
 
 	Before_AccessPathMayPointTo(hctx, heap, ap, ctx, insn) <-
 		Before_AccessPathMayPointTo(hctx, heap, ap, initCtx, insn),
 		InitialMayContext(initCtx),
 		Instruction_Method(insn, method),
-		MayReachableMethodUnderMayContext(ctx, method).
+		ReachableContext:May(ctx, method).
 		//.plan 1: (4,3,2,1)
 
 	// //// END weakening rules
@@ -679,7 +751,7 @@ component SoundMay {
 
 	// transitive unresolved call
 	MethodHasUnresolvedInvocation(ctx, method) <-
-		MayReachableMethodUnderMayContext_Prev(ctx, method),
+		ReachableContext:May_Prev(ctx, method),
 		MethodHasInvocationSite(invo, method),
 		!InvocationSiteFullyResolved(ctx, invo),
 		!IgnorableMethodInvocation(invo).
@@ -690,7 +762,7 @@ component SoundMay {
 
 	// transitive may-assign-field based on sound-callgraph
 	MethodMayAssignField(fld, ctx, method) <-
-		MayReachableMethodUnderMayContext_Prev(ctx, method),
+		ReachableContext:May_Prev(ctx, method),
 		Instruction_Method(insn, method),
 		FieldInstruction_Signature(insn, fld).
 
@@ -743,7 +815,7 @@ component SoundMay {
 	// There are lots of static final fields in the library that see heavy
 	// use.
 	RootMethodForMayAnalysis(clinitMeth) <-
-		MayReachableMethodUnderMayContext(_, meth),
+		ReachableContext:May(_, meth),
 		MethodSignature_DeclaringType(meth, class),
 		ClinitMethodOfClass(clinitMeth, class).
 
@@ -754,16 +826,16 @@ component SoundMay {
 	AccessPathMayPointTo(hctx, argHeap, [args, [nil, "dummyCollection"]], ctx, firstInsn) <-
 		MainClass(mainClass),
 		MethodSignature_DeclaringType(mainMethod, mainClass),
-		MayReachableMethodUnderMayContext(ctx, mainMethod),
+		ReachableContext:May(ctx, mainMethod),
 		MethodSignature_Descriptor(mainMethod, "void(java.lang.String[])"),
 		FormalParam(0, mainMethod, args),
 		MainMethodArgsArray(argsArray),
 		MainMethodArgHeap(argHeap),
-		EmptyHeapContext(hctx),
+		cons:MayHeapContext:Empty[] = hctx,
 		FirstInstructionOfMethod(mainMethod, firstInsn).
 
 	// RootMethodForMayAnalysis(meth) <-
-	//    MayReachableMethodUnderMayContext(_, meth).
+	//    ReachableContext:May(_, meth).
 
 	// RootMethodForMayAnalysis(meth) <-
 	//    AppMainMethod(meth).
@@ -771,7 +843,7 @@ component SoundMay {
 	// // Heuristic: if you can reach it in the analysis and it's an app
 	// // method, start a new search (with zero context depth) from it.
 	// RootMethodForMayAnalysis(meth) <-
-	//    MayReachableMethodUnderMayContext(_, meth),
+	//    ReachableContext:May(_, meth),
 	//    MethodSignature_DeclaringType(meth, class),
 	//    ApplicationClass(class).
 
@@ -828,7 +900,7 @@ component SoundMay {
 		NextReturn(prevReturn, return),
 		Before_AccessPathMayPointTo(hctx2, heap2, ap, ctx, return).
 
-	AllReturn_AccessPathMayPointTo(hctx, heap, ap, ctx, method) <-
+	AccessPath:MayPointTo:ALlReturn(hctx, heap, ap, ctx, method) <-
 		UpToReturnAccessPathMayPointTo(hctx, heap, ap, ctx, return),
 		!(NextReturn(return, _)),
 		Instruction_Method(return, method).
@@ -889,13 +961,13 @@ component SoundMay {
 	UpToCallee_ReturnAccessPathMayPointTo(hctx, heap, calleeAp, calleeCtx, meth) <-
 		MayCallGraphEdge_Prev(calleeCtx, meth, _, _),
 		FirstCalleeFromCallsite(calleeCtx, meth),
-		AllReturn_AccessPathMayPointTo(hctx, heap, calleeAp, calleeCtx, meth).
+		AccessPath:MayPointTo:ALlReturn(hctx, heap, calleeAp, calleeCtx, meth).
 
 	UpToCallee_ReturnAccessPathMayPointTo(hctx1, heap1, calleeAp, calleeCtx, meth),
 	UpToCallee_ReturnAccessPathMayPointTo(hctx2, heap2, calleeAp, calleeCtx, meth) <-
 		UpToCallee_ReturnAccessPathMayPointTo(hctx1, heap1, calleeAp, prevCalleeCtx, prevMeth),
 		NextCalleeFromCallsite(prevCalleeCtx, prevMeth, calleeCtx, meth),
-		AllReturn_AccessPathMayPointTo(hctx2, heap2, calleeAp, calleeCtx, meth).
+		AccessPath:MayPointTo:ALlReturn(hctx2, heap2, calleeAp, calleeCtx, meth).
 
 	AllCallee_ReturnAccessPathMayPointTo(hctx, heap, calleeAp, calleeCtx, meth) <-
 		UpToCallee_ReturnAccessPathMayPointTo(hctx, heap, calleeAp, calleeCtx, meth),
@@ -1003,92 +1075,20 @@ component SoundMay {
 	// definition
 	.decl ComputedAccessPath(ap:AccessPath) output
 
-	// These are computed uniformly:
-	.decl AccessPath_IsSimple(ap:AccessPath)
-	.decl AccessPath_IsComposite(ap:AccessPath)
 	// Is access path a special one, based on a variable of collection type
 	// Incompatible with all other access path types. The access paths represents
 	// all the *contents* of the collection (not the collection that the var
 	// points-to, but all the objects that the collection points-to internally).
 	.decl AccessPath_IsCollection(ap:AccessPath)
-	.decl AccessPath_ContainsField(fld:FieldSignature, ap:AccessPath)
-	.decl FieldListContains(fld:FieldSignature, fldList:AccessPathSuffix)
-	// Access path has static field as base
-	.decl AccessPath_ContainsStaticField(ap:AccessPath, fld:FieldSignature)
-	.decl AccessPath_Length(ap:AccessPath, len:number)
-	.decl FieldList_Length(fldList:AccessPathSuffix, len:number)
-	// static or var.instance
-	.decl SingleFieldAccessPath(fld:FieldSignature, ap:AccessPath)
-	.decl DoubleFieldAccessPath(fld1:FieldSignature, fld2:FieldSignature, ap:AccessPath)
-	.decl AccessPath_BaseVar(ap:AccessPath, var:Var) output
 
 
-	AccessPath_IsSimple(ap) <-
-		ComputedAccessPath(ap),
-		ap = [ base, nil ], base = base. // suppress warning
 
-	AccessPath_IsComposite(ap) <-
-		ComputedAccessPath(ap),
-		ap = [ base, [ rest, fld] ],
-		base = base, fld = fld, rest = rest.
 
-	FieldListContains(fld, fldList) <-
-		ComputedAccessPath(ap),
-		ap = [ base, fldList ], base = base, // suppress warning
-		fldList = [ rest, fld ], rest = rest. // suppress warning
 
-	FieldListContains(fld, fldList) <-
-		ComputedAccessPath(ap),
-		ap = [ base, fldList ], base = base, // suppress warning
-		fldList = [ rest, fld ], rest = rest, // suppress warning
-		FieldListContains(fld, rest).
 
-	AccessPath_ContainsField(fld, ap) <-
-		ComputedAccessPath(ap),
-		ap = [ base, flds ], base = base, // suppress warning
-		FieldListContains(fld, flds).
 
-	FieldList_Length(nil, 0).
-	FieldList_Length(fldList, len+1) <-
-		ComputedAccessPath(ap),
-		ap = [ base, fldList ], base = base, // suppress warning
-		fldList = [ rest, fld ], fld = fld, // suppress warning
-		FieldList_Length(rest, len).
 
-	AccessPath_Length(ap, len+1) <-
-		ComputedAccessPath(ap),
-		ap = [ base, fldList ], base = base, // suppress warning
-		FieldList_Length(fldList, len).
-		// .plan 1: (2,1)
 
-	SingleFieldAccessPath(fld, ap) <-
-		AccessPath_ContainsStaticField(ap, fld),
-		AccessPath_Length(ap, 1).
-
-	SingleFieldAccessPath(fld, ap) <-
-		ComputedAccessPath(ap),
-		ap = [ base, [ nil, fld ] ], base = base, // suppress
-		Var_Type(base, _). // to be sure it's a var
-
-	DoubleFieldAccessPath(fld1, fld2, ap) <-
-		ComputedAccessPath(ap),
-		ap = [ fld1, [ nil, fld2 ] ],
-		AccessPath_ContainsStaticField(ap, fld1).
-
-	DoubleFieldAccessPath(fld1, fld2, ap) <-
-		ComputedAccessPath(ap),
-		ap = [ var, [ [ nil, fld1 ], fld2 ] ], var = var, // suppress
-		Var_Type(var, _). // to be sure it's a var
-
-	AccessPath_ContainsStaticField(ap, fld) <-
-		ComputedAccessPath(ap),
-		ap = [ fld, fldList ], fldList = fldList, // suppress
-		FieldSignature_DeclaringClass(fld, _). // to be sure it's a field
-
-	AccessPath_BaseVar(ap, var) <-
-		ComputedAccessPath(ap),
-		ap = [ var, fldList ], fldList = fldList, // suppress
-		Var_Type(var, _). // to be sure it's a var
 
 	//// REVIEW/TODO: current policy of access-path creation is roughly:
 	////  -create APs for all local vars, anywhere
@@ -1101,7 +1101,7 @@ component SoundMay {
 
 	// implies it's computed
 	.decl AccessPathShouldBeRebased(ap:AccessPath, from:Var, to:Var) output
-	.decl RebaseCompositeAccessPath(ap:AccessPath, from:Var, to:Var, newAp:AccessPath) output
+	.decl AccessPath:RebaseComposite(ap:AccessPath, from:Var, to:Var, newAp:AccessPath) output
 
 	// If some access path is to be rebased, its non-var prefixes are as well.
 	AccessPathShouldBeRebased(newAp , from, to) <-
@@ -1109,25 +1109,13 @@ component SoundMay {
 		ap = [ from, [ [ rest, nextFld ], lastFld ] ], lastFld = lastFld, // suppress warning
 		newAp = [ from, [ rest, nextFld ] ].
 
-	ComputedAccessPath(newAp),
-	RebaseCompositeAccessPath(ap, from, to, newAp) <-
-		AccessPathShouldBeRebased(ap, from, to),
-		newAp = [to, rest],
-		ap = [from, rest].
-
-	AccessPath_IsCollection(ap) <-
-		ap = [base,  [nil, "dummyCollection"]],
-		Var_Type(base, type),
-		(ArrayType(type);
-		LibraryCollectionType(type)).
-
 	//// END access path definitions, auxiliary
 	//// ====================================
 	//// BEGIN context management
 
 	// Again, component-specific only because of "computed" concept
 
-	EmptyHeapContext("emptyHeapContext").
+	cons:MayHeapContext:Empty("emptyHeapContext").
 	InitialMayContext(nil).
 
 	.decl MayContextDepth(ctx:MayContext, depth:number)
@@ -1155,13 +1143,13 @@ component SoundMay {
 	//RecordMacroMay(ctx, heap, hctx),
 	AccessPathMayPointTo(hctx, nullHeap, [to, [nil, "dummyCollection"]], ctx, insn) <-
 		AssignHeapAllocation(arrayHeap, to, inMeth),
-		MayReachableMethodUnderMayContext(ctx, inMeth),
+		ReachableContext:May(ctx, inMeth),
 		HeapAllocation_Type(arrayHeap, type),
 		(ArrayType(type); LibraryCollectionType(type)),
 		AssignInstruction_To(insn, to),
 		HeapAllocation_Null(nullHeap),
-		EmptyHeapContext(hctxArray),
-		EmptyHeapContext(hctx).
+		cons:MayHeapContext:Empty(hctxArray),
+		cons:MayHeapContext:Empty(hctx).
 
 	CollectionStoreFromVarMayPointTo(hctx, heap, ctx, insn) <-
 		MayPointTo(hctx, heap, ctx, from),
@@ -1198,7 +1186,7 @@ component SoundMay {
 	// predecessors have no way to have set it (and all others have
 	// it). We speak of "Relevant" predecessors.
 	BasicBlockMayAffectField(fld, headInsn) <-
-		MayReachableMethodUnderMayContext_Prev(_, method),
+		ReachableContext:May_Prev(_, method),
 		Instruction_Method(insn, method),
 		BasicBlockHead(insn, headInsn),
 		FieldInstruction_Signature(insn, fld).
@@ -1209,7 +1197,7 @@ component SoundMay {
 		MethodMayAssignField(fld, toCtx, toMethod).
 
 	BasicBlockContainsUnresolvedCall(headInsn) <-
-		MayReachableMethodUnderMayContext_Prev(_, method),
+		ReachableContext:May_Prev(_, method),
 		Instruction_Method(insn, method),
 		MethodInvocation(insn),
 		BasicBlockHead(insn, headInsn),
@@ -1249,3 +1237,4 @@ component SoundMay {
 	// //// END Utilities for establishing relevant predecessors
 	// //// ====================================
 }
+*/
