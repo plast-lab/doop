@@ -169,11 +169,21 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
 // and B are not compatible if (a) they are different primitive types
 // or (b) B is not a subtype of A.
 
-// TODO.
-/*
-((PrimitiveType(?typeA), PrimitiveType(?typeB), ?typeA != ?typeB) ;
- (!Subtype(?typeB, ?typeA)).
-*/
+// In practice, this is usually true due to the variety of return
+// types appearing in interface methods, se we can just assume that
+// proxy calls may throw ClassCastException and we use a single object
+// for all such exceptions.
+
+HeapAllocation:Normal:Cons[?heapId] = ?heap,
+NormalHeap(?heap),
+HeapAllocation:Type[?heap] = ?CCEClass,
+ProxyCCE[] = ?heap <-
+  ?heapId = "<ClassCastException thrown by proxy call>",
+  Type:Id(?CCEClass:"java.lang.ClassCastException").
+
+Instruction:Throws(?hctx, Value:byHeap[ProxyCCE[]], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
 
 // TODO: reflective call graph edges bring all the checked exceptions
 // of the proxied method.
