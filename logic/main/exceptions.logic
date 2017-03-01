@@ -143,7 +143,7 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyUTE[]], ?callerCtx, ?invo) <-
 // interface method's return type is primitive, then a
 // NullPointerException will be thrown by the method invocation on the
 // proxy instance." For performance, we use a single global
-// object. TODO: Here we assume the invoke() may alway return null.
+// object.
 
 HeapAllocation:Normal:Cons[?heapId] = ?heap,
 NormalHeap(?heap),
@@ -152,8 +152,12 @@ ProxyNPE[] = ?heap <-
   ?heapId = "<NullPointerException thrown by proxy call>",
   Type:Id(?NPEClass:"java.lang.NullPointerException").
 
+ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx) <-
+  ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar),
+  VarPointsTo(_, Value:Null[], _, ?handlerReturnVar).
+
 Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
-  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx),
   AssignReturnValue[?invo] = ?return,
   PrimitiveType(Var:Type[?return]),
   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
