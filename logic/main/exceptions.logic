@@ -132,7 +132,7 @@ HeapAllocation:Normal:Cons[?heapId] = ?heap,
 NormalHeap(?heap),
 HeapAllocation:Type[?heap] = ?UTEClass,
 Instruction:Throws(?hctx, Value:byHeap[?value], ?callerCtx, ?invo) <-
-  ProxyCallGraphEdge(?callerCtx, ?invo, _, _),
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
   ImmutableHContextFromContext[?calleeCtx] = ?hctx,
   Instruction:Id(?invo:?invoId),
   ?heapId = "<UndeclaredThrowableException thrown of proxy call at " + ?invoId + ">",
