@@ -31,7 +31,7 @@ ImmutableContextFromContext[?ctx1] = ?ctx2 <-
   ImmutableContext(?ctx2),
   PartitionFromContext[?ctx1] = PartitionFromContext[?ctx2].
 ImmutableHContextFromContext[?ctx] = ?hctx <-
-  ImmutableHContext(n?hctx),
+  ImmutableHContext(?hctx),
   PartitionFromContext[?ctx] = PartitionFromHContext[?hctx].
 
 // Merge optimization hack
@@ -126,7 +126,7 @@ CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
 CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
    MergeStaticBasis(?callerCtx, ?invo),
    MethodInvocation:Method[?invo] = ?tomethod,
-   !(PartitionForInvocation[?invo] = _),
+   !(PartitionForMethod[?tomethod] = _),
    !MethodInAllPartitions(?tomethod),
    ImmutableContextFromContext[?callerCtx] = ?calleeCtx.
 
