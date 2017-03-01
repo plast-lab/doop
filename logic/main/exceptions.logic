@@ -185,7 +185,4 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyCCE[]], ?callerCtx, ?invo) <-
   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
 
-// TODO: reflective call graph edges bring all the checked exceptions
-// of the proxied method.
-
 #endif /* REFLECTION_DYNAMIC_PROXIES */
