@@ -53,7 +53,7 @@ repositories {
 def sootClassesJar = file('lib/sootclasses-1.1.jar')
 def sootInfoflowJar = file('lib/soot-infoflow-1.1.jar')
 def sootInfoflowAndroidJar = file('lib/soot-infoflow-android-1.1.jar')
-[[sootClassesJar, "ext:sootclasses:1.1"],
+[[sootClassesJar, "ext:sootclasses:1.2"],
  [sootInfoflowJar, "ext:soot-infoflow:1.1"],
  [sootInfoflowAndroidJar, "ext:soot-infoflow-android:1.1"]].each{ p->
    if (p[0].exists()) {
