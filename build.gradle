@@ -40,12 +40,7 @@ repositories {
     mavenCentral()
 
     maven {
-        credentials {
-            username artifactory_user
-            password artifactory_password
-        }
-
-        url "${artifactory_contextUrl}/plast"
+        url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
 }
 
