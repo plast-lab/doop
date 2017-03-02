@@ -15,9 +15,9 @@ class Parser {
 		def metadata = parseJimple(filename)
 
 		def json = [:]
-		json.put("Class", metadata.classes)
-		json.put("Field", metadata.fields)
-		json.put("Method", metadata.methods)
+		//json.put("Class", metadata.classes)
+		//json.put("Field", metadata.fields)
+		//json.put("Method", metadata.methods)
 		//json.put("Variable", metadata.variables)
 		//json.put("HeapAllocation", metadata.heapAllocations)
 
@@ -31,6 +31,7 @@ class Parser {
 		def dir = origFile.getParentFile()
 		dir = dir ?: new File(".")
 		// abc.def.Foo
+		def extension = FilenameUtils.getExtension( FilenameUtils.getName(filename) )
 		def simplename = FilenameUtils.removeExtension( FilenameUtils.getName(filename) )
 		def i = simplename.lastIndexOf(".")
 		// abc.def
@@ -38,22 +39,22 @@ class Parser {
 		// Foo
 		def classname = simplename[(i+1)..-1]
 		File sourceFile
-        String sourceFileName
+		String sourceFileName
 		if (i != -1) {
-            packages = packages.replaceAll("\\.", "/")
+			packages = packages.replaceAll("\\.", "/")
 			// XYZ/abc/def
 			def path = new File(dir, packages)
 			path.mkdirs()
 			// XYZ/abc/def/Foo.jimple
-			sourceFile = new File(path, classname + ".jimple")
+			sourceFile = new File(path, classname + ".$extension")
 			FileUtils.copyFile(origFile, sourceFile)
-            sourceFileName = packages + classname + ".jimple"
+			sourceFileName = packages + classname + ".$extension"
 		}
 		else {
 			//no dot in filename (e.g. no extension? FTB, we need the file to end with .jimple @ server-side)
-            sourceFile = origFile
-            sourceFileName = origFile.getName()
-        }
+			sourceFile = origFile
+			sourceFileName = origFile.getName()
+ 		}
 
 		JimpleParser parser = new JimpleParser(
 				new CommonTokenStream(
