@@ -128,9 +128,7 @@ ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
 // is a bit simpler than the spec, as we do not provide the inner
 // exception e, so we use a global exception object.
 
-HeapAllocation:Normal:Cons[?heapId] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?UTEClass,
+MockHeapConsMacro(?heapId, ?UTEClass, ?heap),
 ProxyUTE[] = ?heap <-
   ?heapId = "<UndeclaredThrowableException thrown by proxy call>",
   Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
@@ -145,9 +143,7 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyUTE[]], ?callerCtx, ?invo) <-
 // proxy instance." For performance, we use a single global
 // object.
 
-HeapAllocation:Normal:Cons[?heapId] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?NPEClass,
+MockHeapConsMacro(?heapId, ?NPEClass, ?heap),
 ProxyNPE[] = ?heap <-
   ?heapId = "<NullPointerException thrown by proxy call>",
   Type:Id(?NPEClass:"java.lang.NullPointerException").
@@ -174,9 +170,7 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
 // proxy calls may throw ClassCastException and we use a single object
 // for all such exceptions.
 
-HeapAllocation:Normal:Cons[?heapId] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?CCEClass,
+MockHeapConsMacro(?heapId, ?CCEClass, ?heap),
 ProxyCCE[] = ?heap <-
   ?heapId = "<ClassCastException thrown by proxy call>",
   Type:Id(?CCEClass:"java.lang.ClassCastException").
