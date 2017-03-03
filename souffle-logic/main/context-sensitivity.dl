@@ -237,16 +237,22 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
  */
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-   NotEmptyArrayValue(?basevalue),
-   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
-   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
+  NotEmptyArrayValue(?basevalue),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
+  // this is necessary to handle untyped array operations, e.g., the
+  // simulation of arrayCopy calls as Load/Stores
+  Value_Type(?basevalue, ?basevaluetype),
+  Var_Type(?to, ?type),
+  ComponentType(?basevaluetype, ?basecomponenttype),
+  SupertypeOf(?type, ?basecomponenttype).
 
 .decl NotEmptyArrayValue(?value:Value)
 
 NotEmptyArrayValue(?value) :-
-   (Value_Heap(?value, ?heap),
-    !HeapAllocation_EmptyArray(?heap)) ;
-   Value_isNonHeap(?value).
+  (Value_Heap(?value, ?heap),
+   !HeapAllocation_EmptyArray(?heap)) ;
+  Value_isNonHeap(?value).
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) :-
   ReachableLoadArrayIndexBase(?base),
