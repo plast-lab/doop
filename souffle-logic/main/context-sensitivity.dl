@@ -100,8 +100,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
   Value_Heap(?value, ?heap),
-  RecordMacro(?ctx, ?value, ?hctx),
-  ReachableContext(?ctx, ?inmethod).
+  ReachableContext(?ctx, ?inmethod),
+  RecordMacro(?ctx, ?value, ?hctx).
 
 #ifdef RecordRefinedMacro
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
@@ -325,11 +325,11 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
 /**
  * Static method invocations
  */
-
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) :-
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod) :-
   StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
   ReachableContext(?callerCtx, ?inmethod),
-  MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx).
+  MergeStaticMacro(?callerCtx, ?invocation, ?newCtx).
 
 /**
  * Virtual Method Invocation
@@ -353,15 +353,15 @@ OptVirtualMethodInvocationBase(?invocation, ?base) :-
 // is currently very slow and we shouldn't invoke it for
 // all the different combinations that will yield the same object.
 
-
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
   OptVirtualMethodInvocationBase(?invocation, ?base),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   Value_Type(?value, ?valuetype),
   ResolveInvocation(?valuetype, ?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
-  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
+  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
 //  ViableInvocation(?callerCtx, ?invocation),
 //TODO fix:    SiteShouldNotBeRefined(?invocation).
 
@@ -447,15 +447,15 @@ OptSpecialMethodInvocationBase(?invocation, ?base) :-
 
 #ifndef OptimizeMergeMacro
 // Default, unoptimized behavior
-
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
   OptSpecialMethodInvocationBase(?invocation, ?base),
   isSpecialMethodInvocation_Insn(?invocation),
   MethodInvocation_Method(?invocation, ?tomethod),
   ThisVar(?tomethod, ?this),
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx).
+  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
   //TODO fix: SiteShouldNotBeRefined(?invocation).
 
 #else /* there is optimized behavior available */
@@ -573,40 +573,6 @@ SiteShouldBeRefined(?invocation) <-
   NegativeSiteFilter("true"), !SiteToRefine(?invocation).
 */
 
-
-/*
-// YANNIS: There's hardly any reason why the code below might work
-// better than regular interprocedural assignments (minor exception:
-// for return vars, there are methods that have multiple, so some
-// benefit might exist). But it was tempting, since interprocedural
-// assignments are such a bottleneck. This code doesn't pay off though.
-OptActualParam(?index, ?invocation, ?actual) <-
-  ActualParam[?index, ?invocation] = ?actual.
-
-OptInvocationWithParam(?index, ?calleeCtx, ?method, ?callerCtx, ?actual) <-
-  ActualParam[?index, ?invocation] = ?actual,
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method).
-
-MethodArgPointsTo(?hctx, ?heap, ?index, ?calleeCtx, ?method) <-
-  OptInvocationWithParam(?index, ?calleeCtx, ?method, ?callerCtx, ?actual),
-  VarPointsTo(?hctx, ?heap, ?callerCtx, ?actual).
-
-VarPointsTo(?hctx, ?heap, ?calleeCtx, ?formal) <-
-  FormalParam[?index, ?method] = ?formal,
-  MethodArgPointsTo(?hctx, ?heap, ?index, ?calleeCtx, ?method).
-
-OptReturnVar(?method, ?return) <-
-  ReturnVar(?return, ?method).
-
-ReturnVarPointsTo(?hctx, ?heap, ?calleeCtx, ?method) <-
-  OptReturnVar(?method, ?return),
-  VarPointsTo(?hctx, ?heap, ?calleeCtx, ?return).
-
-VarPointsTo(?hctx, ?heap, ?callerCtx, ?local) <-
-  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  AssignReturnValue[?invocation] = ?local,
-  ReturnVarPointsTo(?hctx, ?heap, ?calleeCtx, ?method).
-*/
 /* YANNIS
 VarPointsTo(?hctx, ?heap, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),

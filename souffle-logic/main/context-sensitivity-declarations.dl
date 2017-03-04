@@ -4,8 +4,8 @@
  * Generic declarations for context-sensitive pointer analysis.
  */
 
-.decl isContext(?ctx:symbol)
-.decl isHContext(?hctx:symbol)
+.decl isContext(?ctx:Context)
+.decl isHContext(?hctx:HContext)
 
 // These are normally unique, but for partitioned analyses there may be
 // one per partition.

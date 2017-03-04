@@ -1,0 +1,13 @@
+/**
+ * Special calling contexts
+ */
+isMethodInvocation("<<initial-context>>").
+isInstruction("<<initial-context>>").
+isMethodInvocation("<<jvm-startup-context>>").
+isInstruction("<<jvm-startup-context>>").
+isMethodInvocation("<<jvm-startup-hcontext>>").
+isInstruction("<<jvm-startup-hcontext>>").
+isMethodInvocation("<<clinit-context>>").
+isInstruction("<<clinit-context>>").
+isMethodInvocation("<<immutable-context>>").
+isInstruction("<<immutable-context>>").

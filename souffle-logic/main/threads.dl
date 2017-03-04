@@ -17,6 +17,7 @@ RunningThread(?hctx, ?value) :-
  * 1.5 and JRE 1.6 Thread.start() is defined in Java and there is native method
  * start0.
  */
+isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?run),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
 RunningThread(?hctx, ?value) 
@@ -61,6 +62,7 @@ ReachableCurrentThreadInvocation(?callerCtx, ?local) :-
  * invoking the private ThreadGroup() constructor (openjdk:
  * create_initial_thread_group).
  */
+isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
     ?signature = "<java.lang.ThreadGroup: void <init>()>",
@@ -78,6 +80,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
  *
  * TODO: set the "main" argument.
  */
+isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
@@ -98,6 +101,7 @@ VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-
  *
  * TODO: set the "main" argument.
  */
+isContext(?calleeCtx),
 ReachableContext(?calleeCtx, ?signature),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam) :-

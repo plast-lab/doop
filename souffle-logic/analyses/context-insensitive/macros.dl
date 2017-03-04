@@ -27,8 +27,8 @@
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   isContext(newCtx)
 
-#define InitContext(valueId) \
+#define InitContextMacro(valueId) \
   isContext(ctx) :- ctx = "*GlobalContextObject".
 
-#define InitHContext(valueId) \
+#define InitHContextMacro(valueId) \
   isHContext(hctx) :- hctx = "*GlobalHContextObject".

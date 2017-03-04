@@ -149,7 +149,7 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtStart("${outDir}/${name}.dl", /*"${analysisPath}/declarations.dl",*/
                     "${mainPath}/context-sensitivity-declarations.dl")
             cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/prologue.dl", commonMacros)
-            cpp.includeAtStart("${outDir}/${name}.dl", /*"${analysisPath}/delta.dl",*/
+            cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/delta.dl",
                     commonMacros, "${mainPath}/main-delta.dl")
             cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl",
                     commonMacros, macros, "${mainPath}/context-sensitivity.dl")

@@ -1,4 +1,3 @@
-//TODO: Revisit regarding constructors?
 #define NormalHeapConsMacro(heap, type) \
    isHeapAllocation(heap), \
    isNormalHeap(heap), \

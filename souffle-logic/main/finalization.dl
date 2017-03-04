@@ -4,8 +4,8 @@
  * allocated object becomes the actual parameter to Finalizer.register.
  */
 
-CallGraphEdge(?callerCtx, ?fakeinvo, ?calleeCtx, ?register),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) :-
+CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register),
+VarPointsTo(?hctx, ?value, ?newCtx, ?formal) :-
     FakeInvocation_RegisterFinalize(?value, ?fakeinvo),
     Value_Heap(?value, ?heap),
     AllocatedObjectSupportsFinalize(?heap, ?inmethod),
@@ -15,5 +15,5 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) :-
     isMethod(?register),
     FormalParam(0, ?register, ?formal),
     RecordMacro(?callerCtx, ?value, ?hctx),
-    MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?calleeCtx).
+    MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?newCtx).
     //ObjectShouldNotBeRefined(?value).

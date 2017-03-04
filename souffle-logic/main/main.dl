@@ -85,10 +85,10 @@ Value_DeclaringType(?value, "java.lang.Object") :-
    MainMethodArgArrayContent(?heap),
    Value_Heap(?value, ?heap).
 
-isImmutableContext(ctx), InitContext("<<immutable-context>>")
-isInitialContext(ctx), InitContext("<<initial-context>>")
-isJVMStartupContext(ctx), InitContext("<<jvm-startup-context>>")
-isClinitContext(ctx), InitContext("<<clinit-context>>")
+isImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
+isInitialContext(ctx), InitContextMacro("<<initial-context>>").
+isJVMStartupContext(ctx), InitContextMacro("<<jvm-startup-context>>").
+isClinitContext(ctx), InitContextMacro("<<clinit-context>>").
 
 // The main method is reachable
 ReachableContext(?initialContext, ?method) :-
@@ -107,8 +107,8 @@ ReachableContext(?clinitContext, ?clinit) :-
   InitializedClass(?class),
   ClassInitializer(?class, ?clinit).
 
-isImmutableHContext(hctx), InitHContext("<<immutable-hcontext>>")
-isJVMStartupHContext(hctx), InitHContext("<<jvm-startup-hcontext>>")
+isImmutableHContext(hctx), InitHContextMacro("<<immutable-hcontext>>").
+isJVMStartupHContext(hctx), InitHContextMacro("<<jvm-startup-hcontext>>").
 
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) :-
