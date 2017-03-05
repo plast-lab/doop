@@ -1,22 +1,28 @@
 /**
  * Dynamic analysis
  */
-StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
+
+Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
+   HeapAllocation:Merge[?heap] = ?mergeHeap,
+   HeapAllocation:Dynamic(?heap).
+
+Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
+   !HeapAllocation:Merge[?heap] = _,
+   HeapAllocation:Dynamic(?heap).
+
+StaticFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?signature) <-
    DynamicStaticFieldPointsTo(?heap, ?signature),
-   Value:byHeap[?heap] = ?value,
    ImmutableHContext(?hctx).
    
-InstanceFieldPointsTo(?hctx, ?value, ?fld, ?hctx, ?basevalue) <-
+InstanceFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?fld, ?hctx, Value:byDynamicHeap[?baseHeap]) <-
    DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap),
-   Value:byHeap[?heap] = ?value,
-   Value:byHeap[?baseHeap] = ?basevalue,
    ImmutableHContext(?hctx).
    
-ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue) <-
+ArrayIndexPointsTo(?hctx, Value:byDynamicHeap[?heap], ?hctx, Value:byDynamicHeap[?baseHeap]) <-
    DynamicArrayIndexPointsTo(?heap, ?baseHeap),
-   Value:byHeap[?heap] = ?value,
-   Value:byHeap[?baseHeap] = ?basevalue,
    ImmutableHContext(?hctx).
+
 
 OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
 
