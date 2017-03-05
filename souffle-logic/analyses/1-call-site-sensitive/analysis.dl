@@ -11,6 +11,4 @@
 // which is used everywhere.
 .decl StartupInvocation(?invocation:MethodInvocation)
 
-StartupInvocation(?startupInvocation) :-
-  ?startupInvocation = "<<jvm-startup-context>>",
-  isMethodInvocation(?startupInvocation).
+StartupInvocation("<<jvm-startup-context>>").

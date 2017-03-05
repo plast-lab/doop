@@ -3,7 +3,7 @@
  * the method Finalizer.register to register the object for finalization. The
  * allocated object becomes the actual parameter to Finalizer.register.
  */
-
+isContext(?newCtx),
 CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register),
 VarPointsTo(?hctx, ?value, ?newCtx, ?formal) :-
     FakeInvocation_RegisterFinalize(?value, ?fakeinvo),
