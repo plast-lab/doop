@@ -241,6 +241,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
                     throw new RuntimeException("Invalid android platform: $platformInfo")
                 String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
                 String path = "${options.PLATFORMS_LIB.value}/Android/$androidLibFlavor/Android/Sdk/platforms/android-$version"
+                System.out.println("Path to search for android jars: " + path)
                 switch (version) {
                     case 7:
                     case 15:
