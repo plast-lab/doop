@@ -113,19 +113,19 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 #endif
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
   Value_Heap(?value, ?heap),
-  ReachableContext(?ctx, ?inmethod).
+  ReachableContext(?ctx, ?inmethod),
+  ImmutableHContextFromContext(?ctx, ?hctx).
 
 /**
  * Null assignments
  */
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
-   ImmutableHContextFromContext(?toCtx, ?hctx),
    AssignNull(?to, ?inmethod),
    Value_Null(?null),
-   ReachableContext(?toCtx, ?inmethod).
+   ReachableContext(?toCtx, ?inmethod),
+   ImmutableHContextFromContext(?toCtx, ?hctx).
 
 /**
  * Assignment of numeric constant. Currently context-insensitive and
