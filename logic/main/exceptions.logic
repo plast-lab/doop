@@ -64,6 +64,15 @@ ExceptionHandler:Impossible(?type, ?h2, ?insn) <-
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// An "exception handler" has a separate identity and the following information:
+//  -where it starts being active
+//  -where it stops
+//  -which type it handles
+//  -where it jumps when an appropriate exception is caught ("catch block"). This is
+//   independent from the instructions the handler covers and has no semantics
+//   (e.g., no priority of handlers based on locations of catch blocks).
+//  -in which order it appears in the program text. This is important for priority.
+
 ExceptionHandler:Method:Opt(?handler, ?method) <-
   ExceptionHandler:Method[?handler] = ?method.
 
@@ -74,11 +83,6 @@ ExceptionHandler:InRange(?handler, ?instruction) <-
   ExceptionHandler:Begin[?handler] <= ?index,
   ExceptionHandler:End[?handler] > ?index.
 
-/*
- * Previous(h1, h2) has different semantics compared to Index[h1] < Index[h2].
- * This is due to catch clauses with multiple exceptions.
- * E.g. catch(IOException|SQLException ex)
- */
 ExceptionHandler:Before(?previous, ?handler) <-
   ExceptionHandler:Previous[?handler] = ?previous.
 
@@ -101,9 +105,7 @@ ExceptionHandler:SameInsn:Repr[?insn] = ?handler <-
 
 /*
  * In Jimple, multiple handlers share the same catch block. Also, additional
- * handlers/catch blocks might be added (e.g. to handle exitmonitor commands).
- * NOTE: there are cases where:
- * Previous(h1, h2), Repr[h1] = block1, Repr[h2] = block2 *but* Index[block1] > Index[block2]
+ * handlers/catch blocks might be added (e.g., to handle exitmonitor commands).
  */
 ExceptionHandler:SameBlock:PartialOrder(?h1, ?h2) <-
   ExceptionHandler:Before(?h1, ?h2),
