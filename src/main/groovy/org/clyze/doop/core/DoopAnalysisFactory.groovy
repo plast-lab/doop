@@ -322,7 +322,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
             if (!inputFilePaths.contains(deps))
                 inputFilePaths.add(deps)
 
-            if (!options.REFLECTION.value)
+            if (!options.REFLECTION.value && !options.ANALYZE_MEMORY_DUMP.value)
                 options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
@@ -393,10 +393,12 @@ class DoopAnalysisFactory implements AnalysisFactory {
                     options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
                     options.REFLECTION_REFINED_OBJECTS.value) {
                 logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
-            } else if (!options.TAMIFLEX.value) {
-                logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
-            } else {
+            } else if (options.TAMIFLEX.value) {
                 logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
+            } else if (options.ANALYZE_MEMORY_DUMP.value) {
+                logger.warn "\nWARNING: Handling of Java reflection via heap dump analysis!\n"
+            } else {
+                logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
             }
         }
 
