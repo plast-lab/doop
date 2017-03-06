@@ -82,8 +82,6 @@ dependencies {
             'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
             'org.ow2.asm:asm-debug-all:5.1'                     // Java Bytecode library
 
-    compile files("${System.properties['java.home']}/../lib/tools.jar") // oracle tools
-
     compile group: 'com.google.guava', name: 'guava', version: '21.0'
 
 
@@ -92,6 +90,8 @@ dependencies {
             'ext:dexlib2:2.2b4'
 
     compile 'org.clyze:clue-common:1.+'
+
+    compile(group: 'sun', name: 'jhat', version: 'PATCHED')
 
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'
