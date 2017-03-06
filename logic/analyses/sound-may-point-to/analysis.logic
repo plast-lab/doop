@@ -11,10 +11,11 @@ lang:physical:capacity[`MayContext] = 2^32.
 cons:MayContext:Initial[] = ctx -> MayContext(ctx).
 lang:constructor(`cons:MayContext:Initial).
 
-PushMayContext[invo, ctx] = pushedCtx ->
+cons:MayContext:extend[invo, ctx] = pushedCtx ->
 	MethodInvocation(invo), MayContext(ctx), MayContext(pushedCtx).
-lang:constructor(`PushMayContext).
+lang:constructor(`cons:MayContext:extend).
 
+//// ====================================
 
 MayHeapContext(hctx) -> .
 lang:entity(`MayHeapContext).
@@ -24,6 +25,7 @@ lang:physical:capacity[`MayHeapContext] = 2^23.
 cons:MayHeapContext:Empty[] = hctx -> MayHeapContext(hctx).
 lang:constructor(`cons:MayHeapContext:Empty).
 
+//// ====================================
 
 AccessPath(ap) -> .
 lang:entity(`AccessPath).
@@ -34,8 +36,12 @@ cons:AccessPath:byVar[var] = ap -> Var(var), AccessPath(ap).
 lang:constructor(`cons:AccessPath:byVar).
 cons:AccessPath:byStaticField[fld] = ap -> Field(fld), AccessPath(ap).
 lang:constructor(`cons:AccessPath:byStaticField).
-cons:AccessPath:byField[ap1, fld] = ap2 -> AccessPath(ap1), Field(fld), AccessPath(ap2).
+cons:AccessPath:byField[var, fld] = ap -> Var(var), Field(fld), AccessPath(ap).
 lang:constructor(`cons:AccessPath:byField).
+cons:AccessPath:extend[ap1, fld] = ap2 -> AccessPath(ap1), Field(fld), AccessPath(ap2).
+lang:constructor(`cons:AccessPath:extend).
+cons:AccessPath:mock[tag, var] = ap -> string(tag), Var(var), AccessPath(ap).
+lang:constructor(`cons:AccessPath:mock).
 
 AccessPath:Var[ap] = var <-
 	cons:AccessPath:byVar[var] = ap.
@@ -44,14 +50,11 @@ AccessPath:Var[ap] = var <-
   cons:AccessPath:byField[ap0, _] = ap,
   AccessPath:Var[ap0] = var.
 
+//// ====================================
+
 // TODO check
 // Initial computed access paths. Faster than doing the same thing all over
-InitialComputedAccessPath(ap) -> AccessPath(ap).
-
-
-
-MayContext:MaxDepth[]  = 4.
-AccessPath:MaxLength[] = 3.
+AccessPath:Precomputed(ap) -> AccessPath(ap).
 
 cons:MayContext:Initial[] = ctx, MayContext(ctx).
 cons:MayHeapContext:Empty[] = hctx, MayHeapContext(hctx).
@@ -64,24 +67,23 @@ InitialRootMethodForMayAnalysis(method) <-
 // The rules below create access paths from all variables and all access fields
 // in the program.
 cons:AccessPath:byVar[var] = ap, AccessPath(ap),
-InitialComputedAccessPath(ap) <-
+AccessPath:Precomputed(ap) <-
 	Var:Type[var] = type,
 	ReferenceType(type).
 
 // Invariant: all computed access paths are type safe: the fields exist in the
 // static type of the prefix. REVIEW: This may (rarely) prevent detection of
 // valid aliasing.
-cons:AccessPath:byField[ap1, fld] = ap2, AccessPath(ap2),
-InitialComputedAccessPath(ap2) <-
+cons:AccessPath:byField[base, fld] = ap, AccessPath(ap),
+AccessPath:Precomputed(ap) <-
 	(LoadInstanceField:Base[insn] = base ;
 	 StoreInstanceField:Base[insn] = base),
-	cons:AccessPath:byVar[base] = ap1,
 	FieldInstruction:Signature[insn] = fld,
 	Field:Type[fld] = type,
 	ReferenceType(type).
 
 cons:AccessPath:byStaticField[fld] = ap, AccessPath(ap),
-InitialComputedAccessPath(ap) <-
+AccessPath:Precomputed(ap) <-
 	(LoadStaticField:To[insn] = _ ;
 	 StoreStaticField:From[insn] = _),
 	FieldInstruction:Signature[insn] = fld,
@@ -97,19 +99,20 @@ InitialComputedAccessPath(ap) <-
 
 //// ====================================
 //// BEGIN configuration
-//// Different ways to kick-start the analysis.
 
-component IMustAlias as MustAlias1, MustAlias2
-component IMustPointTo as MustPoint1, MustPoint2
-component SoundMay as SoundPhase1, SoundPhase2
+MayContext:MaxDepth[]  = 4.
+AccessPath:MaxLength[] = 3.
+
+component IMustAlias as MustAlias1//, MustAlias2
+component IMustPointTo as MustPoint1//, MustPoint2
+component SoundMay as SoundMay1//, SoundMay2
+
+MustAlias1 { MustAlias } -> SoundMay1
+MustPoint1 { * } -> SoundMay1
+//MustPoint1 { VarMustAlias, VarMustAliasThis } -> SoundMay1
 
 //// END configuration
-
-
-//component IntraproceduralMust as F1
-//component SoundMustPointTo as F2
-//component SoundMustAlias as F3
-//Foo {*} -> .
+//// ====================================
 
 
 //.init SoundMayPhase1 = SoundMay<DummyMustPointTo>
@@ -169,12 +172,14 @@ component SoundMay as SoundPhase1, SoundPhase2
 //IntraprocMustForStats.ReachableContext:May(ctx, meth) :-
 //SoundMayPhase1.ReachableContext:May(ctx, meth).
 
+//// ====================================
+//// ====================================
 
 
 
-
-
-
+ClinitMethodOfClass[class] = method <-
+	Method:SimpleName[method] = "<clinit>",
+	Method:DeclaringType[method] = class.
 
 LibraryCollectionType(type) <-
 	(root = "java.util.AbstractCollection" ;
@@ -341,24 +346,6 @@ AccessPath:toString[ap2] = str2 <-
   AccessPath:toString[ap1] = str1,
   str2 = str1 + "." + fldStr.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
   // TODO not updated for LB
   ///// POINT1--unchanged access paths code
@@ -387,7 +374,7 @@ AccessPath:toString[ap2] = str2 <-
 
   // Before_AccessPathMayPointTo(hctx, heap, ap, calleeCtx, firstInsn) <_
   //    OptPotentialAccessPathMayPointToPropagation(hctx, heap, invo, calleeCtx, toMethod, ap),
-  //    AccessPath_BaseVar(ap, baseVar),
+  //    AccessPath:BaseVar[ap] = baseVar,
   //    !ChangedBaseAtInvocation(baseVar, invo),
   //    SingleFieldAccessPath(fld, ap),
   //    (MethodMayAssignField(fld, toMethod);
@@ -396,7 +383,7 @@ AccessPath:toString[ap2] = str2 <-
 
   // Before_AccessPathMayPointTo(hctx, heap, ap, calleeCtx, firstInsn) <-
   //    OptPotentialAccessPathMayPointToPropagation(hctx, heap, invo, calleeCtx, toMethod, ap),
-  //    AccessPath_BaseVar(ap, baseVar),
+  //    AccessPath:BaseVar[ap] = baseVar,
   //    !ChangedBaseAtInvocation(baseVar, invo),
   //    _DoubleFieldAccessPath(fld1, fld2, ap),
   //    (MethodMayAssignField(fld1, toMethod);
@@ -414,19 +401,19 @@ AccessPath:toString[ap2] = str2 <-
  // Logic for assuming the library does not affect application fields,
  // except via reflection.
  ApplicationField(fld) <-
-    FieldSignature_DeclaringClass(fld, class),
+    Field:DeclaringClass[fld] = class,
     ApplicationClass(class).
 
  MethodCallsReflection(meth) <-
-    Instruction_Method(invo, meth),
+    Instruction:Method[invo] = meth,
     MethodInvocation_Signature(invo, sig),
     string_substring(sig, 0, _, "<java.lang.reflect").
 
  _Opt2MethodInvocation_Signature(invo, inMeth, toMeth) <-
-    (StaticMethodInvocation_Insn(invo);
-     SpecialMethodInvocation_Insn(invo)),
+    (StaticMethodInvocation:Insn(invo);
+     SpecialMethodInvocation:Insn(invo)),
     MethodInvocation_Signature(invo, toMeth),
-    Instruction_Method(invo, inMeth).
+    Instruction:Method[invo] = inMeth.
 
  // exact resolution for static/special
  MethodCallsReflection(inMeth) <-
@@ -435,14 +422,14 @@ AccessPath:toString[ap2] = str2 <-
 
  // underapproximation of virtual method resolution, as if static
  _Opt2MethodInvocation_Signature(invo, inMeth, toMeth) <-
-    VirtualMethodInvocation_Insn(invo),
+    VirtualMethodInvocation:Insn(invo),
     MethodInvocation_Signature(invo, toMeth),
-    Instruction_Method(invo, inMeth).
+    Instruction:Method[invo] = inMeth.
 
  // Naive virtual method resolution, based on name. REVIEW: too conservative
  _OptVirtualMethodInvocation_Simplename(inMeth, simpleName) <-
     VirtualMethodInvocation_SimpleName(invo, simpleName),
-    Instruction_Method(invo, inMeth).
+    Instruction:Method[invo] =inMeth.
 
  MethodCallsReflection(inMeth) <-
     MethodCallsReflection(toMeth),

@@ -28,7 +28,7 @@ component SoundMustAlias : IMustAlias {
 		!PhiNodeHead(insn, _),
 		Instruction:Method[insn] = method,
 		ReachableContext:May(ctx, method),
-		cons:AccessPath:byVar[from] = fromAp,
+		AccessPath:BaseVar[fromAp] = from,
 		AssignInstruction:To[insn] = to,
 		RebaseCompositeAccessPath(fromAp, from, to, toAp).
 
@@ -46,7 +46,7 @@ component SoundMustAlias : IMustAlias {
 		ReachableContext:May(ctx, method),
 		AssignInstruction:To[insn] = to,
 		AssignCast:From[insn] = from,
-		cons:AccessPath:byVar[from] = fromAp,
+		AccessPath:BaseVar[fromAp] = from,
 		RebaseCompositeAccessPath(fromAp, from, to, toAp).
 
 	// Load and store instructions
@@ -90,10 +90,9 @@ component SoundMustAlias : IMustAlias {
 	// Weakening
 	MustAlias(ap1, ap2, ctx, insn) <-
 		MustAlias(ap1, ap2, initCtx, insn),
-		InitialMayContext(initCtx),
+		cons:MayContext:Initial[] = initCtx,
 		Instruction:Method[insn] = method,
 		ReachableContext:May(ctx, method).
-		//.plan 1: (4,3,2,1)
 
 	// Propagation across instructions
 
