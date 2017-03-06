@@ -224,7 +224,9 @@ public class Main {
         if (_android) {
             String apkLocation = _inputs.get(0);
             SetupApplication app = new SetupApplication(_androidJars, apkLocation);
+            //soot.options.Options.v().set_debug(true);
             soot.options.Options.v().set_process_multiple_dex(true);
+            System.out.println("SOOT CLASSPATH: " + soot.options.Options.v().soot_classpath());
 
             apkClasses = new HashSet<>();
             apkClasses.addAll(SourceLocator.v().getClassesUnder(apkLocation));
