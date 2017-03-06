@@ -1,7 +1,6 @@
 /**
  * Dynamic analysis
  */
-
 HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
@@ -23,6 +22,7 @@ InstanceFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?fld, ?hctx, Value:byDy
 ArrayIndexPointsTo(?hctx, Value:byDynamicHeap[?heap], ?hctx, Value:byDynamicHeap[?baseHeap]) <-
    DynamicArrayIndexPointsTo(?heap, ?baseHeap),
    ImmutableHContext(?hctx).
+
 
 OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
 
