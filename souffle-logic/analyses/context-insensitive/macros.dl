@@ -28,7 +28,7 @@
   isContext(newCtx)
 
 #define InitContextMacro(valueId) \
-  isContext(ctx) :- ctx = "*GlobalContextObject".
+  isContext(ctx) :- ctx = "*GlobalContextObject"
 
 #define InitHContextMacro(valueId) \
-  isHContext(hctx) :- hctx = "*GlobalHContextObject".
+  isHContext(hctx) :- hctx = "*GlobalHContextObject"
