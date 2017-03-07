@@ -43,13 +43,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			_filename,
 			className,
 			packageName,
+			fullName,
 			hasToken(ctx, "interface"),
 			ctx.modifier().any() { hasToken(it, "enum") },
 			ctx.modifier().any() { hasToken(it, "static") },
 			false, //isInner, missing?
 			false  //isAnonymous, missing?
 		)
-		_klass.doopId = fullName
 		metadata.classes.add(_klass)
 	}
 
