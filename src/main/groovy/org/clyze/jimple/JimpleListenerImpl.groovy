@@ -89,7 +89,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			_klass.doopId, //declaringClassId
 			retType,
-			"<${_klass.doopId}: $retType $name ($params)>", //doopId
+			"<${_klass.doopId}: $retType $name($params)>", //doopId
 			null, //params, TODO
 			paramTypes as String[],
 			ctx.modifier().any() { hasToken(it, "static") },
@@ -175,7 +175,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			"${_method.doopId}/$name", //doopId
 			null, //type, provided later
-			_method.doopId, //declaringMethodId
+			_method.id, //declaringMethodId
 			isLocal,
 			!isLocal
 		)
