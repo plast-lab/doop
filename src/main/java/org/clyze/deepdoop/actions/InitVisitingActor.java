@@ -78,7 +78,10 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			else
 				prop.preds.forEach(pred -> {
 					String newName = _r.rename(pred.name());
-					newPreds.add(declAtoms.get(newName));
+					IAtom atom = declAtoms.get(newName);
+					if (atom == null)
+						ErrorManager.error(ErrorId.UNKNOWN_PRED, pred.name());
+					newPreds.add(atom);
 				});
 			initP.addPropagation(from, newPreds, to);
 
