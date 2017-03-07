@@ -67,7 +67,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			"<$_klass: $type $name>", //doopId
 			type,
-			_klass.doopId, //declaringClassId
+			_klass.id, //declaringClassId
 			ctx.modifier().any() { hasToken(it, "static") }
 		)
 		metadata.fields.add(f)
@@ -87,7 +87,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			position,
 			_filename,
 			name,
-			_klass.doopId, //declaringClassId
+			_klass.id, //declaringClassId
 			retType,
 			"<${_klass.doopId}: $retType $name($params)>", //doopId
 			null, //params, TODO
@@ -198,7 +198,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			_filename,
 			"${_method.doopId}/$_heapCounter", //doopId
 			type,
-			_method.doopId //allocatingMethodId
+			_method.id //allocatingMethodId
 		)
 	}
 
