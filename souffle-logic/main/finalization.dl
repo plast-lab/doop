@@ -4,8 +4,9 @@
  * allocated object becomes the actual parameter to Finalizer.register.
  */
 isContext(?newCtx),
+isHContext(?newHCtx),
 CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register),
-VarPointsTo(?hctx, ?value, ?newCtx, ?formal) :-
+VarPointsTo(?newHCtx, ?value, ?newCtx, ?formal) :-
     FakeInvocation_RegisterFinalize(?value, ?fakeinvo),
     Value_Heap(?value, ?heap),
     AllocatedObjectSupportsFinalize(?heap, ?inmethod),
@@ -14,6 +15,6 @@ VarPointsTo(?hctx, ?value, ?newCtx, ?formal) :-
     ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
     isMethod(?register),
     FormalParam(0, ?register, ?formal),
-    RecordMacro(?callerCtx, ?value, ?hctx),
+    RecordMacro(?callerCtx, ?value, ?newHCtx),
     MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?value, ?newCtx).
     //ObjectShouldNotBeRefined(?value).

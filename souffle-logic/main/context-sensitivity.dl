@@ -53,14 +53,17 @@ ImmutableContextFromContext(?ctx1, ?ctx2) :-
 
 #ifndef OptimizeRecordMacro
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+isHContext(?newHCtx),
+VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
   Value_Heap(?value, ?heap),
-  RecordMacro(?ctx, ?value, ?hctx),
-  ReachableContext(?ctx, ?inmethod).
+  RecordMacro(?ctx, ?value, ?newHCtx),
+  ReachableContext(?ctx, ?inmethod),
 #ifdef RecordArrayMacro
-  !ArrayType(Value:Type[?value]),
+  Value_Type(?value, ?type),
+  !isArrayType(?type),
 #endif
+  ?value = ?value.
   //TODO fix: ObjectShouldNotBeRefined(?value)
 
 #else /* there is optimized behavior available */
@@ -74,34 +77,34 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   OptimizeRecordMacro(?ctx, ?value, ?hctx).
 #ifdef RecordArrayMacro
   HeapAllocation_Type(?value, ?type),
-  !ArrayType(?type).
+  !isArrayType(?type).
 #endif
   //TODO fix: ObjectShouldNotBeRefined(?value)
 #endif /* #ifndef OptimizeMergeMacro */
 
-/*
+
 #ifdef RecordArrayMacro
 // This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
 // which greatly benefits) define this macro and handle arrays
 // specially.
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+isHContext(?newHCtx),
+VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
   Value_Heap(?value, ?heap),
   ReachableContext(?ctx, ?inmethod),
   Value_Type(?value, ?type),
-  RecordArrayMacro(?ctx, ?value, ?hctx),
-  ArrayType(?type)
+  RecordArrayMacro(?ctx, ?value, ?newHCtx),
+  isArrayType(?type).
   //TODO fix: ObjectShouldNotBeRefined(?value)
 #endif // def RecordArrayMacro
-*/
 
-
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+isHContext(?newHCtx),
+VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
   AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
   Value_Heap(?value, ?heap),
   ReachableContext(?ctx, ?inmethod),
-  RecordMacro(?ctx, ?value, ?hctx).
+  RecordMacro(?ctx, ?value, ?newHCtx).
 
 #ifdef RecordRefinedMacro
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
