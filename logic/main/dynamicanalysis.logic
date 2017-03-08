@@ -1,6 +1,7 @@
 /**
  * Dynamic analysis
  */
+
 HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
@@ -23,17 +24,17 @@ ArrayIndexPointsTo(?hctx, Value:byDynamicHeap[?heap], ?hctx, Value:byDynamicHeap
    DynamicArrayIndexPointsTo(?heap, ?baseHeap),
    ImmutableHContext(?hctx).
 
-
 OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
+
 
 InitializedClass(?class) <-
    DynamicReachableMethod(?method),
    OptClassInitializer(?class, ?method).
 
-//ImplicitReachable(?method) <-
-//   UnmatchedDynamicCallGraphEdgeNode(?method),
-//   DynamicReachableMethod(?method),
-//   !OptClassInitializer(_, ?method).
+ImplicitReachable(?method) <-
+   UnmatchedDynamicCallGraphEdgeNode(?method),
+   DynamicReachableMethod(?method),
+   !OptClassInitializer(_, ?method).
 
 CallGraphEdge(?ctx, ?invocation, ?ctx, ?toMethod) <-
    ReachableContext(?ctx, ?method),
