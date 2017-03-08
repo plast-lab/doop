@@ -2,7 +2,11 @@ package org.clyze.doop.dynamicanalysis;
 
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
+import sun.security.provider.MD5;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 /**
@@ -24,6 +28,20 @@ public class DynamicNormalHeapAllocation implements DynamicHeapAllocation {
             zipped[i] = inMethod[i] + ":" + lineNumber[i];
         }
         representation = String.join("...", zipped) + "/new " + type;
+        if (representation.length() > 200) {
+            MessageDigest m = null;
+            try {
+                m = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+            m.reset();
+            m.update(representation.getBytes());
+            byte[] digest = m.digest();
+            BigInteger bigInt = new BigInteger(1,digest);
+            String hashtext = bigInt.toString(16);
+            representation = "<MD5 HASH: "+hashtext+">";
+        }
         this.lineNumber = lineNumber;
         this.inMethod = inMethod;
         this.type = type;
