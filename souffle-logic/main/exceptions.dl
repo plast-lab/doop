@@ -5,6 +5,7 @@ Instruction_Throws(?hctx, ?value, ?ctx, ?insn) :-
 Instruction_Throws(?hctx, ?value, ?callerCtx, ?invocation) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
   ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod).
+  .plan 1:(2,1)
 
 /**
  * Represents the exceptions a method can throw
