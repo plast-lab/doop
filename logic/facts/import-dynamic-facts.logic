@@ -120,9 +120,9 @@ _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMe
    Method:SimpleName[?toMethod] = ?name,
    Method:Id(?toMethod:?toMethodId).
 
-//+UnmatchedDynamicCallGraphEdgeNode(?method) <-
-//   (_DynamicCallGraphEdge(?methodId, _, _) ;
-//    _DynamicCallGraphEdge(_, _, ?methodId)),
-//    Method:Id(?method:?methodId),
-//   !(DynamicCallGraphEdge(?method, _, _) ;
-//     DynamicCallGraphEdge(_, _, ?method)).
++UnmatchedDynamicCallGraphEdgeNode(?method) <-
+   (_DynamicCallGraphEdge(?methodId, _, _) ;
+    _DynamicCallGraphEdge(_, _, ?methodId)),
+    Method:Id(?method:?methodId),
+   !(DynamicCallGraphEdge(?method, _, _) ;
+     DynamicCallGraphEdge(_, _, ?method)).

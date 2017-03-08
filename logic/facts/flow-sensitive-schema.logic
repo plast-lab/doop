@@ -572,7 +572,7 @@ UnmatchedDynamicReachableMethod(?methodId) -> string(?methodId).
 
 DynamicCallGraphEdge(?toMethod, ?invocation, ?fromMethod) -> Method(?fromMethod), Method(?toMethod), MethodInvocation(?invocation).
 
-UnmatchedDynamicCallGraphEdgeNode(?method) <- Method(?method).
+UnmatchedDynamicCallGraphEdgeNode(?method) -> Method(?method).
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
