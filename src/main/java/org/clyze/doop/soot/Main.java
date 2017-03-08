@@ -10,6 +10,7 @@ import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
+import javax.xml.transform.Source;
 import java.io.File;
 import java.util.*;
 
@@ -208,10 +209,9 @@ public class Main {
     }
 
     private static void produceFacts() throws Exception {
-        NoSearchingClassProvider classProvider = new NoSearchingClassProvider();
+        NoSearchingClassProvider javaClassProvider = new NoSearchingClassProvider();
         DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
-        Set<String> apkClasses = null;
 
         Set<SootClass> classes = new HashSet<>();
         List<AXmlNode> appServices = null;
@@ -220,19 +220,14 @@ public class Main {
         List<AXmlNode> appBroadcastReceivers = null;
         Map<String, Set<String>> appCallbackMethods = null;
         Map<String, Set<PossibleLayoutControl>> appUserControls = null;
+        File apk = null;
 
         if (_android) {
             String apkLocation = _inputs.get(0);
+            apk = new File(apkLocation);
             SetupApplication app = new SetupApplication(_androidJars, apkLocation);
             //soot.options.Options.v().set_debug(true);
             soot.options.Options.v().set_process_multiple_dex(true);
-            System.out.println("SOOT CLASSPATH: " + soot.options.Options.v().soot_classpath());
-
-            apkClasses = new HashSet<>();
-            apkClasses.addAll(SourceLocator.v().getClassesUnder(apkLocation));
-
-            System.out.println("Classes found  in apk: " + apkClasses.size());
-
 
             if (_runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
@@ -272,10 +267,10 @@ public class Main {
             for (String arg : _inputs) {
                 if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
                     System.out.println("Adding archive: " + arg);
-                    classProvider.addArchive(new File(arg));
+                    javaClassProvider.addArchive(new File(arg));
                 } else {
                     System.out.println("Adding file: " + arg);
-                    classProvider.addClass(new File(arg));
+                    javaClassProvider.addClass(new File(arg));
                 }
             }
         }
@@ -288,7 +283,7 @@ public class Main {
             if (!libraryFile.exists()) {
                 System.err.println("Library file does not exist: " + libraryFile);
             } else {
-                classProvider.addArchiveForResolving(libraryFile);
+                javaClassProvider.addArchiveForResolving(libraryFile);
             }
         }
 
@@ -296,7 +291,7 @@ public class Main {
 
         if (_android)
             providersList.add(dexClassProvider);
-        providersList.add(classProvider);
+        providersList.add(javaClassProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 
         if(_main != null) {
@@ -318,22 +313,24 @@ public class Main {
 
 
         if (_android) {
-            String libraryClassPath = "";
-            for(String library : _libraries) {
-                libraryClassPath += File.pathSeparator + library;
-            }
-            scene.setSootClassPath(_inputs.get(0) + libraryClassPath);
+            scene.setSootClassPath(_inputs.get(0));
+            System.out.println("Source Locator classpath: " + SourceLocator.v().classPath());
+            for (String className : dexClassProvider.classesOfDex(apk)) {
+                scene.loadClass(className, SootClass.SIGNATURES);
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
 
-            for (String className : apkClasses) {
-                SourceLocator.v().getClassSource(className);
-                scene.addBasicClass(className, SootClass.BODIES);
-                classes.add(scene.forceResolve(className, SootClass.BODIES));
+                classes.add(c);
             }
+
+            System.out.println("Classes found  in apk: " + dexClassProvider.classesOfDex(apk).size());
         }
+        else {
+            for (String className : javaClassProvider.getClassNames()) {
+                scene.loadClass(className, SootClass.SIGNATURES);
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
 
-        for (String className : classProvider.getClassNames()) {
-            scene.loadClass(className, SootClass.SIGNATURES);
-            classes.add(scene.loadClass(className, SootClass.BODIES));
+                classes.add(c);
+            }
         }
 
         if (!_android) {
@@ -349,16 +346,16 @@ public class Main {
              * of the FileSystem, but the classes are not loaded automatically
              * due to the indirection via native code.
              */
-            addCommonDynamicClass(scene, classProvider, "java.io.UnixFileSystem");
-            addCommonDynamicClass(scene, classProvider, "java.io.WinNTFileSystem");
-            addCommonDynamicClass(scene, classProvider, "java.io.Win32FileSystem");
+            addCommonDynamicClass(scene, javaClassProvider, "java.io.UnixFileSystem");
+            addCommonDynamicClass(scene, javaClassProvider, "java.io.WinNTFileSystem");
+            addCommonDynamicClass(scene, javaClassProvider, "java.io.Win32FileSystem");
 
             /* java.net.URL loads handlers dynamically */
-            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.file.Handler");
-            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.ftp.Handler");
-            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.http.Handler");
-            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.https.Handler");
-            addCommonDynamicClass(scene, classProvider, "sun.net.www.protocol.jar.Handler");
+            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.file.Handler");
+            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.ftp.Handler");
+            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.http.Handler");
+            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.https.Handler");
+            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.jar.Handler");
         }
 
         scene.loadNecessaryClasses();
@@ -394,7 +391,7 @@ public class Main {
             classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
             // Read all stored properties files
-            for (Map.Entry<String,Properties> entry : classProvider.getProperties().entrySet()) {
+            for (Map.Entry<String,Properties> entry : javaClassProvider.getProperties().entrySet()) {
                 String path = entry.getKey();
                 Properties properties = entry.getValue();
 
