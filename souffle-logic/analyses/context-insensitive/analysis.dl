@@ -6,8 +6,11 @@
 .type Context
 .type HContext
 
-/**
- * Reachable methods. Main method, for sure.
- */
-Reachable(?method) :-
-   MainMethodDeclaration(?method).
+// Helper relations that store the single Context and HContext objects,
+// which are used everywhere.
+.decl GlobalContext(?ctx:Context)
+.decl GlobalHContext(?hctx:HContext)
+
+GlobalContext("<<global-context>>").
+GlobalHContext("<<global-hcontext>>").
+

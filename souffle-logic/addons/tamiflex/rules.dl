@@ -143,14 +143,14 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?return),
 TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
-  ImmutableContextFromContext(?callerCtx, ?calleeCtx),
   Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?heap),
   Value_Heap(?value, ?heap),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?callerCtx, ?inmethod),
   AssignReturnValue(?invocation, ?return),
-  ThisVar(?constructor, ?this).
+  ThisVar(?constructor, ?this),
+  ImmutableHContextFromContext(?callerCtx, ?hctx),
+  ImmutableContextFromContext(?callerCtx, ?calleeCtx).
 
 Tamiflex_Invoke(?callerCtx, ?invocation, ?method) :-
   ?sig = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>",

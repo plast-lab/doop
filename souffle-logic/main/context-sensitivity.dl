@@ -159,7 +159,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   SupertypeOf(?type, ?valuetype).
-  .plan 1:(3,2,1,4,5)
 
 /**
  * Load instance fields
@@ -169,6 +168,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+  .plan 1:(2,1)
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
   LoadInstanceField(?base, ?sig, ?to, _),
@@ -327,8 +327,8 @@ VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
  */
 isContext(?newCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod) :-
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
   ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
   MergeStaticMacro(?callerCtx, ?invocation, ?newCtx).
 
 /**
