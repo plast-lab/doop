@@ -1,5 +1,6 @@
-// We need to *pretend* we are creating new contexts, since the
-// product of the macro goes to the head of a rule.
+// Each rule that uses merge and/or record macros should add
+// the created contexts into the respective relations, since
+// the product of the macro goes to the body of a rule.
 #define RecordMacro(ctx, value, hctx) \
   GlobalHContext(hctx)
 
@@ -22,6 +23,7 @@
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   FakeInvocation_RegisterFinalize(value, invocation), \
   newCtx = [invocation]
+
 
 #define InitContextMacro(invocation) \
   isContext(ctx) :- \

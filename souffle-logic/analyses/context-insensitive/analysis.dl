@@ -6,8 +6,6 @@
 .type Context
 .type HContext
 
-// Helper relations that store the single Context and HContext objects,
-// which are used everywhere.
 .decl GlobalContext(?ctx:Context)
 .decl GlobalHContext(?hctx:HContext)
 

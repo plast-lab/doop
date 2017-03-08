@@ -5,10 +5,9 @@
  * generate constant contexts.
  */
 
-// We need to *pretend* we are creating new contexts, since the
-// product of the macro goes to the head of a rule.
 #define RecordMacro(ctx, value, hctx) \
   GlobalHContext(hctx)
+
 
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   GlobalContext(calleeCtx)
@@ -26,6 +25,7 @@
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   GlobalContext(newCtx)
+
 
 #define InitContextMacro(valueId) \
   isContext(ctx) :- GlobalContext(ctx)

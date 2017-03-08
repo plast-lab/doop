@@ -8,6 +8,7 @@
 #define RecordArrayMacro(ctx, value, hctx) \
   ContextToHContext(ctx, hctx)
 
+
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object. Again, this may trigger creation of
 // a new object.
