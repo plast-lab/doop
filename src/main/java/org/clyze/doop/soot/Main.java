@@ -310,7 +310,7 @@ public class Main {
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         soot.options.Options.v().set_keep_line_number(true);
-
+        System.out.println("COFFI: " + soot.options.Options.v().coffi());
 
         if (_android) {
             scene.setSootClassPath(_inputs.get(0));

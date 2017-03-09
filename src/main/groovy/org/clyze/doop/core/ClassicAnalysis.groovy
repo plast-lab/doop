@@ -468,6 +468,9 @@ class ClassicAnalysis extends DoopAnalysis {
             //separate process.
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
+            for (String loadedClass : ((CustomURLClassLoader) loader).classesLoaded) {
+                System.out.println("Loaded class: " + loadedClass);
+            }
         }
     }
 
@@ -582,7 +585,7 @@ class ClassicAnalysis extends DoopAnalysis {
     private ClassLoader copyOfCurrentClasspath() {
         URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
         URL[] classpath = loader.getURLs()
-        return new URLClassLoader(classpath, null as ClassLoader)
+        return new CustomURLClassLoader(classpath, null as ClassLoader)
     }
 
     /**
