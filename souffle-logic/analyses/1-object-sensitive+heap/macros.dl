@@ -1,0 +1,45 @@
+// For this analysis, every heap context recorded on allocation
+// corresponds to the calling context of the allocator method.
+// Subtle point: this may need to be created because even though it
+// exists as a Context it may not exist as an HContext.
+#define RecordMacro(ctx, value, hctx) \
+  ctx = [ctxValue], \
+  hctx = [ctxValue]
+
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object. Again, this may trigger creation of
+// a new object.
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  calleeCtx = [value]
+
+// For this analysis, static calls just keep the same context as the
+// caller. *Not* creating a new one, but pretending to, nonetheless,
+// so the engine doesn't barf.
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  calleeCtx = callerCtx
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  newCtx = [value]
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  calleeCtx = [value]
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  newCtx = [value]
+
+
+#define InitContextMacro(valueId) \
+  isContext(ctx) :- \
+  value = [valueId], \
+  isValue(value), \
+  ctx = [value]
+
+#define InitHContextMacro(valueId) \
+  isHContext(hctx) :- \
+  value = [valueId], \
+  isValue(value), \
+  hctx = [value]
+
