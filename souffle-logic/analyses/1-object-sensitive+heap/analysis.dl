@@ -1,0 +1,7 @@
+// Context-sensitive pointer analysis with context of 1 object and a
+// context-sensitive heap abstraction.
+
+// In this analysis, both the real context and the real heap context are
+// Values.
+.type Context  = [ value:Value ]
+.type HContext = [ value:Value ]
