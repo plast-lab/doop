@@ -9,6 +9,9 @@ import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
 
+import java.lang.instrument.Instrumentation
+import java.lang.reflect.Field
+
 /**
  * A classic (may, unsound) DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.
  *
@@ -468,8 +471,15 @@ class ClassicAnalysis extends DoopAnalysis {
             //separate process.
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-            for (String loadedClass : ((CustomURLClassLoader) loader).classesLoaded) {
-                System.out.println("Loaded class: " + loadedClass);
+//            for (String loadedClass : ((CustomURLClassLoader) loader).classesLoaded) {
+//                System.out.println("Loaded class: " + loadedClass);
+//            }
+            Field f = ClassLoader.class.getDeclaredField("classes");
+            f.setAccessible(true);
+
+            List<Class> classes = (List<Class>) f.get(loader)
+            for (Class klass : classes) {
+                System.out.println("Loaded class: " + klass);
             }
         }
     }
@@ -585,7 +595,7 @@ class ClassicAnalysis extends DoopAnalysis {
     private ClassLoader copyOfCurrentClasspath() {
         URLClassLoader loader = this.getClass().getClassLoader() as URLClassLoader
         URL[] classpath = loader.getURLs()
-        return new CustomURLClassLoader(classpath, null as ClassLoader)
+        return new URLClassLoader(classpath, null as ClassLoader)
     }
 
     /**
