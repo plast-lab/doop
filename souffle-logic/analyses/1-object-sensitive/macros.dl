@@ -16,8 +16,7 @@
   calleeCtx  = [value]
 
 // For this analysis, static calls just keep the same context as the
-// caller. *Not* creating a new one, but pretending to, nonetheless,
-// so the engine doesn't barf.
+// caller.
 #define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
   calleeCtx = callerCtx
 
