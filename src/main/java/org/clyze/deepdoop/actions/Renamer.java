@@ -4,44 +4,42 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.clyze.deepdoop.datalog.element.atom.IAtom;
 
 public class Renamer {
 
 	String      _removeId;
 	String      _addId;
-	Set<String> _ignoreAtoms;
+	Set<String> _externalAtoms;
 
-	public Renamer(String removeId, String addId, Set<String> ignoreAtoms) {
-		reset(removeId, addId, ignoreAtoms);
+	public Renamer(String removeId, String addId, Set<String> externalAtoms) {
+		_removeId      = removeId;
+		_addId         = addId;
+		_externalAtoms = (externalAtoms != null ? externalAtoms : new HashSet<>());
 	}
-	public void reset(String removeId, String addId, Set<String> ignoreAtoms) {
-		_removeId    = removeId;
-		_addId       = addId;
-		_ignoreAtoms = (ignoreAtoms != null ? ignoreAtoms : new HashSet<>());
+	public Renamer(String removeId, String addId) {
+		this(removeId, addId, null);
 	}
-
-	public String addId() { return _addId; }
-
-	public String rename(String name, String stage) {
-		// If predicate is used with "@past" assume it is declared in previous components
-		if ("@past".equals(stage)) _ignoreAtoms.remove(name);
-		return handleStage(handleName(name), stage);
-	}
-	public String rename(String name) {
-		return rename(name, null);
-	}
-	public String restage(String stage) {
-		return "@past".equals(stage) ? null : stage;
+	public Renamer(String addId, Set<String> externalAtoms) {
+		this(null, addId, externalAtoms);
 	}
 
-	// * prefix with component's (initialization) name
-	// * remove component's prefix (going back to global space)
-	String handleName(String name) {
-		// atom is external => should remain unaltered
-		if (_ignoreAtoms.contains(name)) {
+	public String getAddId() { return _addId; }
+
+	public String init(IAtom atom) {
+		String name = atom.name();
+		// name should remain unaltered:
+		// * we are in the global component (_addId == null)
+		// * atom is external (to component)
+		// * explicit stage "@past"
+		if (_addId == null || _externalAtoms.contains(name) || "@past".equals(atom.stage()))
 			return name;
-		}
 
+		return _addId + ":" + name;
+	}
+
+	public String rename(IAtom atom) {
+		String name = atom.name();
 		// != null => coming from another component
 		// == null => coming from global space
 		if (_removeId != null) {
@@ -55,11 +53,6 @@ public class Renamer {
 		}
 
 		return name;
-	}
-
-	// * replace "@past" with ":past" (connecting different components)
-	String handleStage(String name, String stage) {
-		return "@past".equals(stage) ? name + ":past" : name;
 	}
 
 

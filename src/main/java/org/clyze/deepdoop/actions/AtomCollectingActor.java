@@ -119,13 +119,26 @@ public class AtomCollectingActor implements IActor<IVisitable> {
 		// Atoms used in the head, are declared in the rule
 		Map<String, IAtom> declMap = new HashMap<>();
 		declMap.putAll(getUsedAtoms(n.head));
-		_declAtoms.put(n, declMap);
 
 		Map<String, IAtom> usedMap = new HashMap<>();
 		usedMap.putAll(getUsedAtoms(n.body));
+		
+		// Atoms that appear in the head of the rule but have the @past stage
+		// are external
+		Set<IAtom> toRemove = new HashSet<>();
+		declMap.forEach( (name, atom) -> {
+			if ("@past".equals(atom.stage()))
+				toRemove.add(atom);
+		});
+		toRemove.forEach(atom -> {
+			declMap.remove(atom.name());
+			usedMap.put(atom.name(), atom);
+		});
+		_declAtoms.put(n, declMap);
 		_usedAtoms.put(n, usedMap);
 		return n;
 	}
+
 
 	@Override
 	public AggregationElement exit(AggregationElement n, Map<IVisitable, IVisitable> m) {

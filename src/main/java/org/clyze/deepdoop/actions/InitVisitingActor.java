@@ -27,7 +27,8 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		super(null);
 		_actor = this;
 
-		_r = new Renamer(null, null, null);
+		_r       = new Renamer(null, null, null);
+		_acActor = new AtomCollectingActor();
 	}
 
 
@@ -35,7 +36,6 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	// multiple times (if initialized multiple times)
 	@Override
 	public IVisitable visit(Program n) {
-		_acActor = new AtomCollectingActor();
 		PostOrderVisitor<IVisitable> acVisitor = new PostOrderVisitor<>(_acActor);
 		n.accept(acVisitor);
 
@@ -52,7 +52,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			Component comp = n.comps.get(compName);
 			if (comp == null)
 				ErrorManager.error(ErrorId.UNKNOWN_COMP, compName);
-			_r.reset(null, initName, externalAtoms(comp));
+			_r = new Renamer(initName, externalAtoms(comp));
 			initP.addComponent((Component) comp.accept(this));
 		});
 		initP.accept(acVisitor);
@@ -71,13 +71,13 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			Map<String, IAtom> declAtoms = _acActor.getDeclaringAtoms(fromComp);
 			Set<IAtom> newPreds          = new HashSet<>();
 
-			_r.reset(null, from, externalAtoms(fromComp));
+			_r = new Renamer(from, externalAtoms(fromComp));
 			// empty means "*" => propagate everything
 			if (prop.preds.isEmpty())
 				newPreds.addAll(declAtoms.values());
 			else
 				prop.preds.forEach(pred -> {
-					String newName = _r.rename(pred.name());
+					String newName = _r.init(pred);
 					IAtom atom = declAtoms.get(newName);
 					if (atom == null)
 						ErrorManager.error(ErrorId.UNKNOWN_PRED, pred.name());
@@ -85,7 +85,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				});
 			initP.addPropagation(from, newPreds, to);
 
-			_r.reset(from, to, null);
+			_r = new Renamer(from, to);
 			// Generate frame rules
 			for (IAtom atom : newPreds) {
 				// Ignore lang directives and entities
@@ -95,7 +95,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 				// Propagate to global scope
 				if (to == null) {
-					String newName = _r.rename(atom.name());
+					String newName = _r.rename(atom);
 					// Declared in global space
 					if (globalDeclAtoms.contains(newName))
 						ErrorManager.error(ErrorId.DEP_GLOBAL, newName);
@@ -127,11 +127,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		for (StubAtom p : n.imports) newImports.add((StubAtom) m.get(p));
 		Set<StubAtom> newExports = new HashSet<>();
 		for (StubAtom p : n.exports) newExports.add((StubAtom) m.get(p));
-		return new CmdComponent(_r.addId(), newDeclarations, n.eval, newImports, newExports);
+		return new CmdComponent(_r.getAddId(), newDeclarations, n.eval, newImports, newExports);
 	}
 	@Override
 	public Component exit(Component n, Map<IVisitable, IVisitable> m) {
-		Component newComp = new Component(_r.addId());
+		Component newComp = new Component(_r.getAddId());
 		for (Declaration d : n.declarations) newComp.declarations.add((Declaration) m.get(d));
 		for (Constraint c : n.constraints)   newComp.constraints.add((Constraint) m.get(c));
 		for (Rule r : n.rules)               newComp.rules.add((Rule) m.get(r));
@@ -191,19 +191,19 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	public Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
 		List<IExpr> newKeyExprs = new ArrayList<>();
 		for (IExpr e : n.keyExprs) newKeyExprs.add((IExpr) m.get(e));
-		return new Functional(_r.rename(n.name, n.stage), _r.restage(n.stage), newKeyExprs, (IExpr) m.get(n.valueExpr));
+		return new Functional(_r.init(n), n.stage, newKeyExprs, (IExpr) m.get(n.valueExpr));
 	}
 	@Override
 	public Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
 		List<IExpr> newExprs = new ArrayList<>();
 		for (IExpr e : n.exprs) newExprs.add((IExpr) m.get(e));
-		return new Predicate(_r.rename(n.name, n.stage), _r.restage(n.stage), newExprs);
+		return new Predicate(_r.init(n), n.stage, newExprs);
 	}
 	@Override
 	public Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
 		List<IExpr> newExprs = new ArrayList<>();
 		for (IExpr e : n.exprs) newExprs.add((IExpr) m.get(e));
-		return new Entity(_r.rename(n.name, n.stage), _r.restage(n.stage), newExprs);
+		return new Entity(_r.init(n), n.stage, newExprs);
 	}
 	@Override
 	public Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) {
@@ -211,11 +211,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	}
 	@Override
 	public RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) {
-		return new RefMode(_r.rename(n.name), _r.restage(n.stage), (VariableExpr) m.get(n.entityVar), (IExpr) m.get(n.valueExpr));
+		return new RefMode(_r.init(n), n.stage, (VariableExpr) m.get(n.entityVar), (IExpr) m.get(n.valueExpr));
 	}
 	@Override
 	public StubAtom exit(StubAtom n, Map<IVisitable, IVisitable> m) {
-		return new StubAtom(_r.rename(n.name, n.stage));
+		return new StubAtom(_r.init(n));
 	}
 
 
@@ -244,8 +244,8 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	Set<String> externalAtoms(Component n) {
 		Set<String> declAtoms = _acActor.getDeclaringAtoms(n).keySet();
 		Set<String> usedAtoms = _acActor.getUsedAtoms(n).keySet();
-		// Atoms that are used but not declared in the component, are external
 		Set<String> externals = new HashSet<>(usedAtoms);
+		// Atoms that are used but not declared in the component, are external
 		externals.removeAll(declAtoms);
 		return externals;
 	}
