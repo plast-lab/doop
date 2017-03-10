@@ -18,25 +18,7 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 
 public class Main {
 
-    private enum Mode {INPUTS, FULL}
-    private static Mode _mode = null;
-    private static List<String> _inputs = new ArrayList<>();
-    private static List<String> _libraries = new ArrayList<>();
-    private static String _outputDir = null;
-    private static String _main = null;
-    private static boolean _classicFactGen = false;
-    private static boolean _ssa = false;
-    private static boolean _android = false;
-    private static String _androidJars = null;
-    private static boolean _allowPhantom = false;
-    private static boolean _onlyApplicationClassesFactGen = false;
-    private static ClassFilter applicationClassFilter;
-    private static String appRegex = "**";
-    private static boolean _runFlowdroid = false;
-    private static boolean _noFacts = false;
 
-    private static boolean _bytecode2jimple = false;
-    private static boolean _toStdout = false;
 
     private static int shift(String[] args, int index) {
         if(args.length == index + 1) {
@@ -47,13 +29,14 @@ public class Main {
         return index + 1;
     }
 
-    private static boolean isApplicationClass(SootClass klass) {
-        applicationClassFilter = new GlobClassFilter(appRegex);
+    private static boolean isApplicationClass(SootParameters sootParameters, SootClass klass) {
+        sootParameters.applicationClassFilter = new GlobClassFilter(sootParameters.appRegex);
 
-        return applicationClassFilter.matches(klass.getName());
+        return sootParameters.applicationClassFilter.matches(klass.getName());
     }
 
     public static void main(String[] args) {
+        SootParameters sootParameters = new SootParameters();
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
@@ -63,39 +46,39 @@ public class Main {
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
                     case "--full":
-                        if (_mode != null) {
+                        if (sootParameters._mode != null) {
                             System.err.println("error: duplicate mode argument");
                             System.exit(1);
                         }
 
-                        _mode = Mode.FULL;
+                        sootParameters._mode = SootParameters.Mode.FULL;
                         break;
                     case "-d":
                         i = shift(args, i);
-                        _outputDir = args[i];
+                        sootParameters._outputDir = args[i];
                         break;
                     case "--main":
                         i = shift(args, i);
-                        _main = args[i];
+                        sootParameters._main = args[i];
                         break;
                     case "--ssa":
-                        _ssa = true;
+                        sootParameters._ssa = true;
                         break;
                     case "--android-jars":
                         i = shift(args, i);
-                        _allowPhantom = true;
-                        _android = true;
-                        _androidJars = args[i];
+                        sootParameters._allowPhantom = true;
+                        sootParameters._android = true;
+                        sootParameters._androidJars = args[i];
                         break;
                     case "-l":
                         i = shift(args, i);
-                        _libraries.add(args[i]);
+                        sootParameters._libraries.add(args[i]);
                         break;
                     case "-lsystem":
                         String javaHome = System.getProperty("java.home");
-                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
-                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
-                        _libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
+                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "rt.jar");
+                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "jce.jar");
+                        sootParameters._libraries.add(javaHome + File.separator + "lib" + File.separator + "jsse.jar");
                         break;
                     case "--deps":
                         i = shift(args, i);
@@ -110,34 +93,34 @@ public class Main {
                         }
                         for (File file : f.listFiles()) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
-                                _libraries.add(file.getCanonicalPath());
+                                sootParameters._libraries.add(file.getCanonicalPath());
                             }
                         }
                         break;
                     case "--application-regex":
                         i = shift(args, i);
-                        appRegex = args[i];
+                        sootParameters.appRegex = args[i];
                         break;
                     case "--allow-phantom":
-                        _allowPhantom = true;
+                        sootParameters._allowPhantom = true;
                         break;
                     case "--run-flowdroid":
-                        _runFlowdroid = true;
+                        sootParameters._runFlowdroid = true;
                         break;
                     case "--only-application-classes-fact-gen":
-                        _onlyApplicationClassesFactGen = true;
+                        sootParameters._onlyApplicationClassesFactGen = true;
                         break;
                     case "--bytecode2jimple":
-                        _bytecode2jimple = true;
+                        sootParameters._bytecode2jimple = true;
                         break;
                     case "--stdout":
-                        _toStdout = true;
+                        sootParameters._toStdout = true;
                         break;
                     case "--sequential":
-                        _classicFactGen = true;
+                        sootParameters._classicFactGen = true;
                         break;
                     case "--noFacts":
-                        _noFacts = true;
+                        sootParameters._noFacts = true;
                         break;
                     case "-h":
                     case "--help":
@@ -173,34 +156,34 @@ public class Main {
                             System.err.println("error: unrecognized option: " + args[i]);
                             System.exit(0);
                         } else {
-                            _inputs.add(args[i]);
+                            sootParameters._inputs.add(args[i]);
                         }
                         break;
                 }
             }
 
-            if(_mode == null) {
-                _mode = Mode.INPUTS;
+            if(sootParameters._mode == null) {
+                sootParameters._mode = SootParameters.Mode.INPUTS;
             }
 
-            if (_toStdout && !_bytecode2jimple) {
+            if (sootParameters._toStdout && !sootParameters._bytecode2jimple) {
                 System.err.println("error: --stdout must be used with --bytecode2jimple");
                 System.exit(1);
             }
-            if (_toStdout && _outputDir != null) {
+            if (sootParameters._toStdout && sootParameters._outputDir != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
                 System.exit(2);
             }
-            else if ((_inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
-                    (!_android)) {
+            else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
+                    (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk inputs");
                 System.exit(3);
             }
-            else if (!_toStdout && _outputDir == null) {
-                _outputDir = System.getProperty("user.dir");
+            else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
+                sootParameters._outputDir = System.getProperty("user.dir");
             }
 
-            produceFacts();
+            produceFacts(sootParameters);
         }
         catch(Exception exc) {
             exc.printStackTrace();
@@ -208,7 +191,7 @@ public class Main {
         }
     }
 
-    private static void produceFacts() throws Exception {
+    private static void produceFacts(SootParameters sootParameters) throws Exception {
         NoSearchingClassProvider javaClassProvider = new NoSearchingClassProvider();
         DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
@@ -222,14 +205,14 @@ public class Main {
         Map<String, Set<PossibleLayoutControl>> appUserControls = null;
         File apk = null;
 
-        if (_android) {
-            String apkLocation = _inputs.get(0);
+        if (sootParameters._android) {
+            String apkLocation = sootParameters._inputs.get(0);
             apk = new File(apkLocation);
-            SetupApplication app = new SetupApplication(_androidJars, apkLocation);
+            SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
             //soot.options.Options.v().set_debug(true);
             soot.options.Options.v().set_process_multiple_dex(true);
 
-            if (_runFlowdroid) {
+            if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
                 String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
                 app.calculateSourcesSinksEntrypoints(filename);
@@ -264,7 +247,7 @@ public class Main {
 
         }
         else {
-            for (String arg : _inputs) {
+            for (String arg : sootParameters._inputs) {
                 if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
                     System.out.println("Adding archive: " + arg);
                     javaClassProvider.addArchive(new File(arg));
@@ -275,7 +258,7 @@ public class Main {
             }
         }
         Scene scene = Scene.v();
-        for (String lib : _libraries) {
+        for (String lib : sootParameters._libraries) {
             System.out.println("Adding archive for resolving: " + lib);
 
             File libraryFile = new File(lib);
@@ -289,20 +272,20 @@ public class Main {
 
         List<ClassProvider> providersList = new ArrayList<>();
 
-        if (_android)
+        if (sootParameters._android)
             providersList.add(dexClassProvider);
         providersList.add(javaClassProvider);
         soot.SourceLocator.v().setClassProviders(providersList);
 
-        if(_main != null) {
-            soot.options.Options.v().set_main_class(_main);
+        if(sootParameters._main != null) {
+            soot.options.Options.v().set_main_class(sootParameters._main);
         }
 
-        if(_mode == Mode.FULL) {
+        if(sootParameters._mode == SootParameters.Mode.FULL) {
             soot.options.Options.v().set_full_resolver(true);
         }
 
-        if(_allowPhantom) {
+        if(sootParameters._allowPhantom) {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
 
@@ -310,10 +293,9 @@ public class Main {
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         soot.options.Options.v().set_keep_line_number(true);
-        System.out.println("COFFI: " + soot.options.Options.v().coffi());
 
-        if (_android) {
-            scene.setSootClassPath(_inputs.get(0));
+        if (sootParameters._android) {
+            scene.setSootClassPath(sootParameters._inputs.get(0));
             System.out.println("Source Locator classpath: " + SourceLocator.v().classPath());
             for (String className : dexClassProvider.classesOfDex(apk)) {
                 scene.loadClass(className, SootClass.SIGNATURES);
@@ -333,7 +315,7 @@ public class Main {
             }
         }
 
-        if (!_android) {
+        if (!sootParameters._android) {
             /*
              * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
              * to 1 (HIERARCHY) before calling produceFacts(). The following line is necessary to avoid
@@ -368,25 +350,25 @@ public class Main {
         * call to `setApplicationClass()').
         */
 
-        classes.stream().filter(Main::isApplicationClass).forEachOrdered(SootClass::setApplicationClass);
+        classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
-        if(_mode == Mode.FULL && !_onlyApplicationClassesFactGen) {
+        if(sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen) {
             classes = new HashSet<>(scene.getClasses());
         }
 
         System.out.println("Total classes in Scene: " + classes.size());
 
-        if (_bytecode2jimple) {
-            ThreadFactory factory = new ThreadFactory(_ssa, _toStdout, _outputDir);
-            Driver driver = new Driver(factory, _ssa, classes.size());
+        if (sootParameters._bytecode2jimple) {
+            ThreadFactory factory = new ThreadFactory(sootParameters._ssa, sootParameters._toStdout, sootParameters._outputDir);
+            Driver driver = new Driver(factory, sootParameters._ssa, classes.size());
 
             driver.doInSequentialOrder(classes);
         }
         else {
-            Database db = new Database(new File(_outputDir));
+            Database db = new Database(new File(sootParameters._outputDir));
             FactWriter writer = new FactWriter(db);
-            ThreadFactory factory = new ThreadFactory(writer, _ssa);
-            Driver driver = new Driver(factory, _ssa, classes.size());
+            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
+            Driver driver = new Driver(factory, sootParameters._ssa, classes.size());
 
             classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
@@ -403,9 +385,9 @@ public class Main {
 
             db.flush();
 
-            if (_android) {
-                if (_runFlowdroid) {
-                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, _ssa);
+            if (sootParameters._android) {
+                if (sootParameters._runFlowdroid) {
+                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
                     db.close();
                     return;
                 }
@@ -439,8 +421,8 @@ public class Main {
                     }
                 }
             }
-            if (!_noFacts) {
-                if (_classicFactGen)
+            if (!sootParameters._noFacts) {
+                if (sootParameters._classicFactGen)
                     driver.doInSequentialOrder(classes);
                 else {
                     scene.getOrMakeFastHierarchy();
