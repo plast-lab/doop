@@ -1,10 +1,11 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
-        classpath 'commons-io:commons-io:2.4'
+        classpath 'commons-io:commons-io:2.4', 'ca.cutterslade.gradle:gradle-dependency-analyze:1.1.0'
     }
 }
 
@@ -15,7 +16,9 @@ plugins {
     id 'maven-publish'
     //see https://github.com/researchgate/gradle-release
     id 'net.researchgate.release' version '2.4.0'
+    //id 'ca.cutterslade.analyze' version '1.1'
 }
+apply plugin: 'ca.cutterslade.analyze'
 
 apply from  : 'benchmarks.gradle'
 
@@ -49,6 +52,11 @@ repositories {
     }
 }
 
+task printClasspath {
+    doLast {
+        configurations.compile.each { println it }
+    }
+}
 
 configurations.all {
     //This is required only for the SNAPSHOT dependencies
