@@ -189,7 +189,9 @@ class SouffleAnalysis extends DoopAnalysis {
     private void runSouffle(int jobs, File factsDir, File outDir) {
         System.out.println("Compiling datalog to produce C++ program and executable with souffle")
         System.out.println("Souffle command: souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl")
-        executor.execute("souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
+        long t = timing { executor.execute("souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")}
+
+        System.out.println("Compilation time (sec): ${t}")
 
         // The analysis executable is created at the directory level of the doop invocation so we have to move it under the outDir
         executor.execute("mv ${name} ${outDir}")
