@@ -32,13 +32,11 @@
 
 #define InitContextMacro(valueId) \
   isContext(ctx) :- \
-  value = [valueId], \
-  isValue(value), \
-  ctx = [value]
+  isValue(valueId), \
+  ctx = [valueId]
 
 #define InitHContextMacro(valueId) \
   isHContext(hctx) :- \
-  value = [valueId], \
-  isValue(value), \
-  hctx = [value]
+  isValue(valueId), \
+  hctx = [valueId]
 

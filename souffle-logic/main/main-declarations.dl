@@ -13,16 +13,14 @@
 .decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)
 
 //-----------------------------------------------------------------------------
-// [Value - artificially created]
+// [Value]
 //-----------------------------------------------------------------------------
 
-.type ValueBase = HeapAllocation | NumConstant
+.type Value = HeapAllocation | NumConstant
 
-.type Value = [ contents:ValueBase ]
 .decl isValue(?value:Value)
 
 .decl Value_Heap(?value:Value, ?heap:HeapAllocation)
-
 .decl Value_Num(?value:Value, ?const:NumConstant)
 
 .decl Value_isHeap(?value:Value)

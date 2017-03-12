@@ -22,7 +22,7 @@ Value_isHeap(?value),
 Value_Heap(?value, ?heap),
 isValue(?value),
 Value_Type(?value, ?type) :-
-    [?heap] = ?value,
+    ?value = ?heap,
     isHeapAllocation(?heap),
     HeapAllocation_Type(?heap, ?type).
 
@@ -44,7 +44,7 @@ Value_Type(?value, ?type) :-
    isType(?className),
    contains(".R$", ?className),
    Type_int(?type),
-   [?const] = ?value.
+   ?value = ?const.
 
 Value_Num(?value, ?const),
 Value_isNonHeap(?value),
@@ -56,7 +56,7 @@ Value_Type(?value, ?type) :-
    isType(?className),
    contains(".R$", ?className),
    Type_int(?type),
-   [?const] = ?value.
+   ?value = ?const.
 
 
 Value_Null(?nullvalue) :-
@@ -113,15 +113,15 @@ isJVMStartupHContext(hctx), InitHContextMacro("<<jvm-startup-hcontext>>").
 // Create initial objects with their heap contexts
 SystemThreadGroup(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),
-  ?alloc = ["<<system-thread-group>>"],
+  ?alloc = "<<system-thread-group>>",
   isValue(?alloc).
 
 MainThreadGroup(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),
-  ?alloc = ["<<main-thread-group>>"],
+  ?alloc = "<<main-thread-group>>",
   isValue(?alloc).
 
 MainThread(?hctx, ?alloc) :-
   isJVMStartupHContext(?hctx),
-  ?alloc = ["<<main-thread>>"],
+  ?alloc = "<<main-thread>>",
   isValue(?alloc).

@@ -16,6 +16,6 @@ GlobalHContext("<<global-context>>").
 // Only used for arrays. Maps each context to a *potential* hcontext.
 .decl ContextToHContext(?ctx:Context, ?hctx:HContext)
 
-ContextToHContext(?ctx, cat("<<constructed-hctx-", cat(?valueBase, ">>"))) :-
+ContextToHContext(?ctx, cat("<<constructed-hctx-", cat(?value, ">>"))) :-
   isContext(?ctx),
-  ?ctx = [[?valueBase]].
+  ?ctx = [?value].

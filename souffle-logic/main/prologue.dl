@@ -66,31 +66,31 @@ MockHeapConsMacro(?heap, ?type) :-
 
 
 Value_DeclaringType(?value, "java.lang.System") :-
-   isValue(?value),
-   ["<<string-constant>>"] = ?value ;
-   isValue(?value),
-   ["<<reflection-string-constant>>"] = ?value ;
-   isValue(?value),
-   ["<<string-buffer>>"] = ?value ;
-   isValue(?value),
-   ["<<string-builder>>"] = ?value ;
-   isValue(?value),
-   ["<<initial-context>>"] = ?value ;
-   isValue(?value),
-   ["<<jvm-startup-context>>"] = ?value ;
-   isValue(?value),
-   ["<<jvm-startup-hcontext>>"] = ?value ;
-   isValue(?value),
-   ["<<clinit-context>>"] = ?value ;
-   isValue(?value),
-   ["<<system-thread-group>>"] = ?value ;
-   isValue(?value),
-   ["<<main-thread-group>>"] = ?value ;
-   isValue(?value),
-   ["<<main-thread>>"] = ?value ;
-   isValue(?value),
-   ["<<immutable-context>>"] = ?value ;
-   isValue(?value),
-   ["<<immutable-hcontext>>"] = ?value ;
-   isValue(?value),
-   ["<<immutable>>"] = ?value.
+   ?value = "<<string-constant>>",
+   isValue(?value) ;
+   ?value = "<<reflection-string-constant>>",
+   isValue(?value) ;
+   ?value = "<<string-buffer>>",
+   isValue(?value) ;
+   ?value = "<<string-builder>>",
+   isValue(?value) ;
+   ?value = "<<initial-context>>",
+   isValue(?value) ;
+   ?value = "<<jvm-startup-context>>",
+   isValue(?value) ;
+   ?value = "<<jvm-startup-hcontext>>",
+   isValue(?value) ;
+   ?value = "<<clinit-context>>",
+   isValue(?value) ;
+   ?value = "<<system-thread-group>>",
+   isValue(?value) ;
+   ?value = "<<main-thread-group>>",
+   isValue(?value) ;
+   ?value = "<<main-thread>>",
+   isValue(?value) ;
+   ?value = "<<immutable-context>>",
+   isValue(?value) ;
+   ?value = "<<immutable-hcontext>>",
+   isValue(?value) ;
+   ?value = "<<immutable>>",
+   isValue(?value).
