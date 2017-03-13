@@ -105,6 +105,10 @@ public class DatalogTest {
 		test("t10.logic");
 	}
 	@Test
+	public void testT11() throws IOException {
+		test("t11.logic");
+	}
+	@Test
 	public void testSample() throws IOException {
 		test("sample.logic");
 	}
