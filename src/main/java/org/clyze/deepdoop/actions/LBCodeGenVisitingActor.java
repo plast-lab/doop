@@ -95,7 +95,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 				for (IAtom type : d.types) {
 					if (type instanceof Entity && type.name().endsWith(":past")) {
 						Entity e = (Entity) type;
-						Set<String> potentialDeclPreds = Renamer.revert(e.name(), n.comps.keySet(), _reverseProps);
+						Set<String> potentialDeclPreds = InitVisitingActor.revert(e.name(), n.comps.keySet(), _reverseProps);
 						if (potentialDeclPreds.size() != 1)
 							ErrorManager.error(ErrorId.MULTIPLE_ENT_DECLS, e.name());
 						else
@@ -119,14 +119,16 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		_globalAtoms = _acActor.getDeclaringAtoms(n.globalComp).keySet();
 
 		// Check that all used predicates have a declaration/definition
-		Set<String> allDeclAtoms = new HashSet<>(_globalAtoms);
-		Set<String> allUsedAtoms = new HashSet<>();
+		Set<String> allDeclAtoms        = new HashSet<>(_globalAtoms);
+		Map<String, IAtom> allUsedAtoms = new HashMap<>();
 		for (Component c : n.comps.values()) {
 			allDeclAtoms.addAll(_acActor.getDeclaringAtoms(c).keySet());
-			allUsedAtoms.addAll(_acActor.getUsedAtoms(c).keySet());
+			allUsedAtoms.putAll(_acActor.getUsedAtoms(c));
 		}
-		for (String usedPred : allUsedAtoms) {
-			Set<String> potentialDeclPreds = Renamer.revert(usedPred, n.comps.keySet(), _reverseProps);
+		allUsedAtoms.forEach( (usedAtomName, usedAtom) -> {
+			if ("@past".equals(usedAtom.stage())) return;
+
+			Set<String> potentialDeclPreds = InitVisitingActor.revert(usedAtomName, n.comps.keySet(), _reverseProps);
 			boolean declFound = false;
 			for (String potentialDeclPred : potentialDeclPreds) {
 				if (allDeclAtoms.contains(potentialDeclPred)) {
@@ -135,8 +137,8 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 				}
 			}
 			if (!declFound)
-				ErrorManager.warn(ErrorId.NO_DECL, usedPred);
-		}
+				ErrorManager.warn(ErrorId.NO_DECL, usedAtomName);
+		});
 
 		// Compute dependency graph for components (and global predicates)
 		DependencyGraph graph = new DependencyGraph(n);
