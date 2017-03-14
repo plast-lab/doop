@@ -2,7 +2,9 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
+import org.objectweb.asm.ClassReader;
 import soot.*;
+import soot.SourceLocator.FoundFile;
 import soot.asm.AsmClassProvider;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.AXmlNode;
@@ -202,11 +204,11 @@ public class Main {
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
-//        ClassProvider javaClassProvider = new CoffiClassProvider();
-//        DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
 
+        PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
+        Set<String> classesInApplicationJar = new HashSet<>();
         List<AXmlNode> appServices = null;
         List<AXmlNode> appActivities = null;
         List<AXmlNode> appContentProviders = null;
@@ -261,49 +263,42 @@ public class Main {
         else {
             soot.options.Options.v().set_src_prec(src_prec_class);
 
-//            JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
-//            JarEntry entry;
-//            JarFile jarFile = new JarFile(new FileInputStream(sootParameters._inputs.get(0)));
-//
-//            try {
-//            /* List all JAR entries */
-//                while ((entry = jin.getNextJarEntry()) != null)
-//                {
-//                /* Skip directories */
-//                    if (entry.isDirectory())
-//                        continue;
-//
-//                /* Skip non-class files */
-//                    if(!entry.getName().endsWith(".class"))
-//                        continue;
-//
-//                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-//                    reader.getClassName();
-//                }
-//            } finally {
-//                jarFile.close();
-//                jin.close();
-//            }
+            JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
+            JarEntry entry;
+            JarFile jarFile = new JarFile(sootParameters._inputs.get(0));
+
+            try {
+                /* List all JAR entries */
+                while ((entry = jin.getNextJarEntry()) != null)
+                {
+                    /* Skip directories */
+                    if (entry.isDirectory())
+                        continue;
+
+                    /* Skip non-class files and non-property files */
+                    if(!entry.getName().endsWith(".class") && !entry.getName().endsWith(".properties"))
+                        continue;
+
+                    if (entry.getName().endsWith(".class")) {
+                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                        classesInApplicationJar.add(reader.getClassName().replace("/", "."));
+                    }
+
+                    if (entry.getName().endsWith(".properties")) {
+                        propertyProvider.addProperties((new FoundFile(sootParameters._inputs.get(0), entry.getName())));
+                    }
+                }
+            } finally {
+                jarFile.close();
+                jin.close();
+            }
         }
+
         Scene scene = Scene.v();
-//        for (String lib : sootParameters._libraries) {
-//            System.out.println("Adding archive for resolving: " + lib);
-//
-//            File libraryFile = new File(lib);
-//
-//            if (!libraryFile.exists()) {
-//                System.err.println("Library file does not exist: " + libraryFile);
-//            } else {
-//                javaClassProvider.addArchiveForResolving(libraryFile);
-//            }
-//        }
-
-//        List<ClassProvider> providersList = new ArrayList<>();
-
-//        if (sootParameters._android)
-//            providersList.add(dexClassProvider);
-//        providersList.add(javaClassProvider);
-//        soot.SourceLocator.v().setClassProviders(providersList);
+        scene.setSootClassPath(sootParameters._inputs.get(0));
+        for (int i = 0; i < sootParameters._libraries.size(); i++) {
+            scene.extendSootClassPath(sootParameters._libraries.get(i));
+        }
 
         if(sootParameters._main != null) {
             soot.options.Options.v().set_main_class(sootParameters._main);
@@ -323,12 +318,6 @@ public class Main {
         soot.options.Options.v().set_keep_line_number(true);
 
         if (sootParameters._android) {
-            scene.setSootClassPath(sootParameters._inputs.get(0));
-            for (int i = 0; i < sootParameters._libraries.size(); i++) {
-                scene.extendSootClassPath(sootParameters._libraries.get(i));
-                System.out.println("Soot classpath: " + scene.getSootClassPath());
-            }
-
             for (String className : classesOfDex(apk)) {
                 SootClass c = scene.loadClass(className, SootClass.BODIES);
                 classes.add(c);
@@ -337,14 +326,13 @@ public class Main {
             System.out.println("Classes found  in apk: " + classesOfDex(apk).size());
         }
         else {
-//            for (String className : ) {
-//                SootClass c = scene.loadClass(className, SootClass.BODIES);
-//
-//                classes.add(c);
-//            }
-        }
+            for (String className : classesInApplicationJar) {
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
+                classes.add(c);
+            }
 
-        if (!sootParameters._android) {
+            System.out.println("Classes in application jar: " + classesInApplicationJar.size());
+
             /*
              * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
              * to 1 (HIERARCHY) before calling produceFacts(). The following line is necessary to avoid
@@ -357,16 +345,16 @@ public class Main {
              * of the FileSystem, but the classes are not loaded automatically
              * due to the indirection via native code.
              */
-//            addCommonDynamicClass(scene, javaClassProvider, "java.io.UnixFileSystem");
-//            addCommonDynamicClass(scene, javaClassProvider, "java.io.WinNTFileSystem");
-//            addCommonDynamicClass(scene, javaClassProvider, "java.io.Win32FileSystem");
-//
-//            /* java.net.URL loads handlers dynamically */
-//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.file.Handler");
-//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.ftp.Handler");
-//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.http.Handler");
-//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.https.Handler");
-//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.jar.Handler");
+            addCommonDynamicClass(scene, "java.io.UnixFileSystem");
+            addCommonDynamicClass(scene, "java.io.WinNTFileSystem");
+            addCommonDynamicClass(scene, "java.io.Win32FileSystem");
+
+            /* java.net.URL loads handlers dynamically */
+            addCommonDynamicClass(scene, "sun.net.www.protocol.file.Handler");
+            addCommonDynamicClass(scene, "sun.net.www.protocol.ftp.Handler");
+            addCommonDynamicClass(scene, "sun.net.www.protocol.http.Handler");
+            addCommonDynamicClass(scene, "sun.net.www.protocol.https.Handler");
+            addCommonDynamicClass(scene, "sun.net.www.protocol.jar.Handler");
         }
 
         scene.loadNecessaryClasses();
@@ -402,15 +390,15 @@ public class Main {
             classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
             // Read all stored properties files
-//            for (Map.Entry<String,Properties> entry : javaClassProvider.getProperties().entrySet()) {
-//                String path = entry.getKey();
-//                Properties properties = entry.getValue();
-//
-//                for (String propertyName : properties.stringPropertyNames()) {
-//                    String propertyValue = properties.getProperty(propertyName);
-//                    writer.writeProperty(path, propertyName, propertyValue);
-//                }
-//            }
+            for (Map.Entry<String,Properties> entry : propertyProvider.getProperties().entrySet()) {
+                String path = entry.getKey();
+                Properties properties = entry.getValue();
+
+                for (String propertyName : properties.stringPropertyNames()) {
+                    String propertyValue = properties.getProperty(propertyName);
+                    writer.writeProperty(path, propertyName, propertyValue);
+                }
+            }
 
             db.flush();
 
@@ -464,8 +452,8 @@ public class Main {
         }
     }
 
-    private static void addCommonDynamicClass(Scene scene, ClassProvider provider, String className) {
-        if(provider.find(className) != null) {
+    private static void addCommonDynamicClass(Scene scene, String className) {
+        if(SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
     }
