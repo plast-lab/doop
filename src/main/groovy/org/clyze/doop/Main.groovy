@@ -20,7 +20,7 @@ class Main {
     private static final int DEFAULT_TIMEOUT = 180 // 3 hours
 
     // Allow access to the analysis object from external code
-    static Analysis analysis
+    static DoopAnalysis analysis
 
     static void main(String[] args) {
 

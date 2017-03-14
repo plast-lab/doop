@@ -6,19 +6,19 @@ import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.*
 import org.clyze.doop.core.*
 
-class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
+class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis> {
 
     protected Log logger = LogFactory.getLog(getClass())
 
     @Override
-    void process(Analysis analysis) {
+    void process(DoopAnalysis analysis) {
         if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
             printStats(analysis)
         linkResult(analysis)
     }
 
 
-    protected void printStats(Analysis analysis) {
+    protected void printStats(DoopAnalysis analysis) {
         def lines = [] as List<String>
         analysis.connector.processPredicate("Stats:Runtime") { String line ->
             lines.add(line)
