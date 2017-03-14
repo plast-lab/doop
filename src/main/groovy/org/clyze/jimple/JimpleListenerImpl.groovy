@@ -43,13 +43,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			_filename,
 			className,
 			packageName,
+			fullName,
 			hasToken(ctx, "interface"),
 			ctx.modifier().any() { hasToken(it, "enum") },
 			ctx.modifier().any() { hasToken(it, "static") },
 			false, //isInner, missing?
 			false  //isAnonymous, missing?
 		)
-		_klass.doopId = fullName
 		metadata.classes.add(_klass)
 	}
 
@@ -67,7 +67,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			"<$_klass: $type $name>", //doopId
 			type,
-			_klass.doopId, //declaringClassId
+			_klass.doopId, //declaringClassDoopId
 			ctx.modifier().any() { hasToken(it, "static") }
 		)
 		metadata.fields.add(f)
@@ -87,9 +87,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			position,
 			_filename,
 			name,
-			_klass.doopId, //declaringClassId
+			_klass.doopId, //declaringClassDoopId
 			retType,
-			"<${_klass.doopId}: $retType $name ($params)>", //doopId
+			"<${_klass.doopId}: $retType $name($params)>", //doopId
 			null, //params, TODO
 			paramTypes as String[],
 			ctx.modifier().any() { hasToken(it, "static") },
@@ -175,7 +175,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			name,
 			"${_method.doopId}/$name", //doopId
 			null, //type, provided later
-			_method.doopId, //declaringMethodId
+			_method.doopId, //declaringMethodDoopId
 			isLocal,
 			!isLocal
 		)
@@ -198,7 +198,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			_filename,
 			"${_method.doopId}/$_heapCounter", //doopId
 			type,
-			_method.doopId //allocatingMethodId
+			_method.doopId //allocatingMethodDoopId
 		)
 	}
 

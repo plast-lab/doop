@@ -34,12 +34,12 @@ method
 	: modifier* IDENTIFIER IDENTIFIER '(' identifierList? ')' ('throws' identifierList)? (methodBody | ';') ;
 
 identifierList
-	: IDENTIFIER
-	| identifierList ',' IDENTIFIER
+	: IDENTIFIER MARKER?
+	| identifierList ',' IDENTIFIER MARKER?
 	;
 
 methodBody
-	: '{' (statement ';' | IDENTIFIER ':')+ '}' ;
+	: '{' ( ('(' INTEGER ')')? statement ';' | IDENTIFIER ':')+ '}' ;
 
 statement
 	: declarationStmt
@@ -69,6 +69,7 @@ assignmentStmt
 	| (IDENTIFIER '.')? fieldSig '=' value
 	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
 	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+ '[]'?
+	| IDENTIFIER '=' 'Phi' '(' identifierList ')'
 	;
 
 returnStmt
@@ -131,6 +132,9 @@ INTEGER
 	| '-'?'0'[0-7]+'L'?
 	| '-'?'0'[xX][0-9a-fA-F]+'L'?
 	;
+
+MARKER
+	: '#'INTEGER ;
 
 fragment
 EXPONENT

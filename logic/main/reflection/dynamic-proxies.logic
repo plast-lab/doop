@@ -76,9 +76,7 @@ Optjava:lang:reflect:Proxy:newProxyInstance(?ret, ?handler, ?interfaces, ?invo) 
 // (newProxyInstance call, interface type) pair.
 //// REVIEW: ideally these should be allocated context sensitively, i.e.,
 //// call RecordMacro, and use the calling ?ctx as argument.
-HeapAllocation:Normal:Cons[?heapId] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?proxyClass,
+MockHeapConsMacro(?heapId, ?proxyClass, ?heap),
 ProxyClassInstance[?iface, ?invo] = ?heap
 <-
    Optjava:lang:reflect:Proxy:newProxyInstance(_, _, _, ?invo),
@@ -92,9 +90,7 @@ MethodOfInterface(?meth, ?iface) <-
    InterfaceType(?iface),
    Method:DeclaringType[?meth] = ?iface.
 
-HeapAllocation:Normal:Cons[?heapId] = ?arrHeap,
-NormalHeap(?arrHeap),
-HeapAllocation:Type[?arrHeap] = ?objArrayType,
+MockHeapConsMacro(?heapId, ?objArrayType, ?arrHeap),
 ArgArrayOfProxyMethod[?meth, ?invo] = ?arrHeap
 <-
    ProxyClassInstance[?iface, ?invo] = _,
@@ -130,9 +126,7 @@ PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId) <-
 // sun.misc.ProxyGenerator, which calls the valueOf() method of the
 // appropriate wrapper type for every argument of a primitive type.
 // REVIEW: contexts (as above)?
-HeapAllocation:Normal:Cons[?heapId] = ?heap,
-NormalHeap(?heap),
-HeapAllocation:Type[?heap] = ?boxType,
+MockHeapConsMacro(?heapId, ?boxType, ?heap),
 BoxAllocationOfPrimitiveFormal[?formal] = ?heap
  <-
    PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId),
