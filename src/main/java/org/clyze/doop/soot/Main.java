@@ -3,18 +3,28 @@ package org.clyze.doop.soot;
 import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import soot.*;
+import soot.asm.AsmClassProvider;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.options.Options;
 
 import javax.xml.transform.Source;
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 
+import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
+import static soot.options.Options.src_prec_apk;
+import static soot.options.Options.src_prec_apk_class_jimple;
+import static soot.options.Options.src_prec_class;
 
 public class Main {
 
@@ -192,8 +202,8 @@ public class Main {
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
-        NoSearchingClassProvider javaClassProvider = new NoSearchingClassProvider();
-        DexClassProvider dexClassProvider = new DexClassProvider();
+//        ClassProvider javaClassProvider = new CoffiClassProvider();
+//        DexClassProvider dexClassProvider = new DexClassProvider();
         SootMethod dummyMain = null;
 
         Set<SootClass> classes = new HashSet<>();
@@ -211,6 +221,7 @@ public class Main {
             SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
             //soot.options.Options.v().set_debug(true);
             soot.options.Options.v().set_process_multiple_dex(true);
+            soot.options.Options.v().set_src_prec(src_prec_apk_class_jimple);
 
             if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
@@ -222,6 +233,7 @@ public class Main {
                 }
             }
             else {
+
                 ProcessManifest processMan = new ProcessManifest(apkLocation);
                 String appPackageName = processMan.getPackageName();
                 ARSCFileParser resParser = new ARSCFileParser();
@@ -247,35 +259,51 @@ public class Main {
 
         }
         else {
-            for (String arg : sootParameters._inputs) {
-                if (arg.endsWith(".jar") || arg.endsWith(".zip")) {
-                    System.out.println("Adding archive: " + arg);
-                    javaClassProvider.addArchive(new File(arg));
-                } else {
-                    System.out.println("Adding file: " + arg);
-                    javaClassProvider.addClass(new File(arg));
-                }
-            }
+            soot.options.Options.v().set_src_prec(src_prec_class);
+
+//            JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
+//            JarEntry entry;
+//            JarFile jarFile = new JarFile(new FileInputStream(sootParameters._inputs.get(0)));
+//
+//            try {
+//            /* List all JAR entries */
+//                while ((entry = jin.getNextJarEntry()) != null)
+//                {
+//                /* Skip directories */
+//                    if (entry.isDirectory())
+//                        continue;
+//
+//                /* Skip non-class files */
+//                    if(!entry.getName().endsWith(".class"))
+//                        continue;
+//
+//                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+//                    reader.getClassName();
+//                }
+//            } finally {
+//                jarFile.close();
+//                jin.close();
+//            }
         }
         Scene scene = Scene.v();
-        for (String lib : sootParameters._libraries) {
-            System.out.println("Adding archive for resolving: " + lib);
+//        for (String lib : sootParameters._libraries) {
+//            System.out.println("Adding archive for resolving: " + lib);
+//
+//            File libraryFile = new File(lib);
+//
+//            if (!libraryFile.exists()) {
+//                System.err.println("Library file does not exist: " + libraryFile);
+//            } else {
+//                javaClassProvider.addArchiveForResolving(libraryFile);
+//            }
+//        }
 
-            File libraryFile = new File(lib);
+//        List<ClassProvider> providersList = new ArrayList<>();
 
-            if (!libraryFile.exists()) {
-                System.err.println("Library file does not exist: " + libraryFile);
-            } else {
-                javaClassProvider.addArchiveForResolving(libraryFile);
-            }
-        }
-
-        List<ClassProvider> providersList = new ArrayList<>();
-
-        if (sootParameters._android)
-            providersList.add(dexClassProvider);
-        providersList.add(javaClassProvider);
-        soot.SourceLocator.v().setClassProviders(providersList);
+//        if (sootParameters._android)
+//            providersList.add(dexClassProvider);
+//        providersList.add(javaClassProvider);
+//        soot.SourceLocator.v().setClassProviders(providersList);
 
         if(sootParameters._main != null) {
             soot.options.Options.v().set_main_class(sootParameters._main);
@@ -296,23 +324,24 @@ public class Main {
 
         if (sootParameters._android) {
             scene.setSootClassPath(sootParameters._inputs.get(0));
-            System.out.println("Source Locator classpath: " + SourceLocator.v().classPath());
-            for (String className : dexClassProvider.classesOfDex(apk)) {
-                scene.loadClass(className, SootClass.SIGNATURES);
-                SootClass c = scene.loadClass(className, SootClass.BODIES);
+            for (int i = 0; i < sootParameters._libraries.size(); i++) {
+                scene.extendSootClassPath(sootParameters._libraries.get(i));
+                System.out.println("Soot classpath: " + scene.getSootClassPath());
+            }
 
+            for (String className : classesOfDex(apk)) {
+                SootClass c = scene.loadClass(className, SootClass.BODIES);
                 classes.add(c);
             }
 
-            System.out.println("Classes found  in apk: " + dexClassProvider.classesOfDex(apk).size());
+            System.out.println("Classes found  in apk: " + classesOfDex(apk).size());
         }
         else {
-            for (String className : javaClassProvider.getClassNames()) {
-                scene.loadClass(className, SootClass.SIGNATURES);
-                SootClass c = scene.loadClass(className, SootClass.BODIES);
-
-                classes.add(c);
-            }
+//            for (String className : ) {
+//                SootClass c = scene.loadClass(className, SootClass.BODIES);
+//
+//                classes.add(c);
+//            }
         }
 
         if (!sootParameters._android) {
@@ -328,16 +357,16 @@ public class Main {
              * of the FileSystem, but the classes are not loaded automatically
              * due to the indirection via native code.
              */
-            addCommonDynamicClass(scene, javaClassProvider, "java.io.UnixFileSystem");
-            addCommonDynamicClass(scene, javaClassProvider, "java.io.WinNTFileSystem");
-            addCommonDynamicClass(scene, javaClassProvider, "java.io.Win32FileSystem");
-
-            /* java.net.URL loads handlers dynamically */
-            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.file.Handler");
-            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.ftp.Handler");
-            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.http.Handler");
-            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.https.Handler");
-            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.jar.Handler");
+//            addCommonDynamicClass(scene, javaClassProvider, "java.io.UnixFileSystem");
+//            addCommonDynamicClass(scene, javaClassProvider, "java.io.WinNTFileSystem");
+//            addCommonDynamicClass(scene, javaClassProvider, "java.io.Win32FileSystem");
+//
+//            /* java.net.URL loads handlers dynamically */
+//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.file.Handler");
+//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.ftp.Handler");
+//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.http.Handler");
+//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.https.Handler");
+//            addCommonDynamicClass(scene, javaClassProvider, "sun.net.www.protocol.jar.Handler");
         }
 
         scene.loadNecessaryClasses();
@@ -373,15 +402,15 @@ public class Main {
             classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 
             // Read all stored properties files
-            for (Map.Entry<String,Properties> entry : javaClassProvider.getProperties().entrySet()) {
-                String path = entry.getKey();
-                Properties properties = entry.getValue();
-
-                for (String propertyName : properties.stringPropertyNames()) {
-                    String propertyValue = properties.getProperty(propertyName);
-                    writer.writeProperty(path, propertyName, propertyValue);
-                }
-            }
+//            for (Map.Entry<String,Properties> entry : javaClassProvider.getProperties().entrySet()) {
+//                String path = entry.getKey();
+//                Properties properties = entry.getValue();
+//
+//                for (String propertyName : properties.stringPropertyNames()) {
+//                    String propertyValue = properties.getProperty(propertyName);
+//                    writer.writeProperty(path, propertyName, propertyValue);
+//                }
+//            }
 
             db.flush();
 
