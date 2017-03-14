@@ -27,7 +27,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
     /**
      * Processes the cli args and generates a new analysis.
      */
-    Analysis newAnalysis(OptionAccessor cli) {
+    DoopAnalysis newAnalysis(OptionAccessor cli) {
 
         //Get the name of the analysis (short option: a)
         String name = cli.a
@@ -47,7 +47,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
     /**
      * Processes the properties and the cli and generates a new analysis.
      */
-    Analysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
+    DoopAnalysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
         String name = cli.a ?: props.getProperty("analysis")

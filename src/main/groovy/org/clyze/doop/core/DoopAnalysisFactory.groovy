@@ -18,7 +18,7 @@ import org.clyze.doop.system.*
  * protected instance methods to allow descendants to customize all possible
  * aspects of Analysis creation.
  */
-class DoopAnalysisFactory implements AnalysisFactory {
+class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-.'.toCharArray()
@@ -56,7 +56,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
      * - if it is valid, it will be used to identify the analysis,
      * - if it is invalid, an exception will be thrown.
      */
-    Analysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
+    DoopAnalysis newAnalysis(String id, String name, Map<String, AnalysisOption> options, InputResolutionContext context) {
 
         def vars = processOptions(name, options, context)
 
@@ -78,7 +78,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
 
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
-        Analysis analysis
+        DoopAnalysis analysis
         if (name != "sound-may-point-to")
             analysis = new ClassicAnalysis(
                 analysisId,
@@ -112,7 +112,7 @@ class DoopAnalysisFactory implements AnalysisFactory {
      * the default input resolution mechanism.
      */
     @Override
-    Analysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
+    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
         context.add(inputFilePaths)
         return newAnalysis(id, name, options, context)
