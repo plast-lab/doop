@@ -43,13 +43,6 @@ lang:constructor(`cons:AccessPath:extend).
 cons:AccessPath:mock[tag, var] = ap -> string(tag), Var(var), AccessPath(ap).
 lang:constructor(`cons:AccessPath:mock).
 
-AccessPath:Var[ap] = var <-
-	cons:AccessPath:byVar[var] = ap.
-
-AccessPath:Var[ap] = var <-
-  cons:AccessPath:byField[ap0, _] = ap,
-  AccessPath:Var[ap0] = var.
-
 //// ====================================
 
 // TODO check
@@ -108,8 +101,7 @@ component IMustPointTo as MustPoint1//, MustPoint2
 component SoundMay as SoundMay1//, SoundMay2
 
 MustAlias1 { MustAlias } -> SoundMay1
-MustPoint1 { * } -> SoundMay1
-//MustPoint1 { VarMustAlias, VarMustAliasThis } -> SoundMay1
+MustPoint1 { VarMustAlias, VarMustAlias:This } -> SoundMay1
 
 //// END configuration
 //// ====================================
@@ -341,7 +333,13 @@ AccessPath:toString[ap] = str <-
   Field:Id(fld:str).
 
 AccessPath:toString[ap2] = str2 <-
-  cons:AccessPath:byField[ap1, fld] = ap2,
+  cons:AccessPath:byField[var, fld] = ap2,
+	Var:Id(var:varStr),
+  Field:Id(fld:fldStr),
+  str2 = varStr + "." + fldStr.
+
+AccessPath:toString[ap2] = str2 <-
+  cons:AccessPath:extend[ap1, fld] = ap2,
   Field:Id(fld:fldStr),
   AccessPath:toString[ap1] = str1,
   str2 = str1 + "." + fldStr.

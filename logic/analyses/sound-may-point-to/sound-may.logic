@@ -152,7 +152,6 @@ component SoundMay {
 		StoreFromVar:MayPointTo(hctx, heap, ctx, insn),
 		StoreInstanceField:Base[insn] = base,
 		FieldInstruction:Signature[insn] = fld,
-		//TODO check that this is precomputed
 		cons:AccessPath:byField[base, fld] = ap.
 
 	// store instructions, strong update of AccessPath:MayPointTo info for
@@ -161,11 +160,10 @@ component SoundMay {
 		StoreFromVar:MayPointTo(hctx, heap, ctx, insn),
 		StoreInstanceField:Base[insn] = base1,
 		FieldInstruction:Signature[insn] = fld,
-		(VarMustAlias@prev(base1, base2, ctx); // MustPointToAnalysis
+		(VarMustAlias@past(base1, base2, ctx); // MustPointToAnalysis
 		 (cons:AccessPath:byVar[base1] = ap1,
 		  cons:AccessPath:byVar[base2] = ap2,
-		  MustAlias@prev(ap1, ap2, ctx, insn))), // MustAliasAnalysis
-		//TODO check that this is precomputed
+		  MustAlias@past(ap1, ap2, ctx, insn))), // MustAliasAnalysis
 		cons:AccessPath:byField[base2, fld] = ap.
 
 	// Weak update of access paths with the same field but different base
@@ -184,7 +182,6 @@ component SoundMay {
 		StaticStoreFromVar:MayPointTo(hctx, heap, ctx, insn),
 		FieldInstruction:Signature[insn] = fld,
 		AccessPath:ContainsStaticField:Opt(ap, fld),
-		//TODO check that this is precomputed
 		cons:AccessPath:byStaticField[fld] = ap.
 
 	// Load instructions
@@ -193,7 +190,6 @@ component SoundMay {
 		LoadInstanceField:Base[insn] = base,
 		LoadInstanceField:To[insn] = to,
 		FieldInstruction:Signature[insn] = fld,
-		//TODO check that this is precomputed
 		cons:AccessPath:byField[base, fld] = ap.
 
 	// Static load instructions
@@ -201,7 +197,6 @@ component SoundMay {
 		AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn),
 		LoadStaticField:To[insn] = to,
 		FieldInstruction:Signature[insn] = fld,
-		//TODO check that this is precomputed
 		cons:AccessPath:byStaticField[fld] = ap.
 
 	// Final static fields that must point to an object, at the end of a
@@ -211,7 +206,6 @@ component SoundMay {
 		cons:MayContext:Initial[] = initCtx,
 		AccessPath:MayPointTo:AllReturn(hctx, heap, ap, initCtx, method),
 		AccessPath:ContainsStaticField(fld, ap),
-		//TODO check that this is precomputed
 		cons:AccessPath:byStaticField[fld] = ap,
 		Method:SimpleName[method] = "<clinit>",
 		Field:Modifier("final", fld).
@@ -230,7 +224,7 @@ component SoundMay {
 		cons:AccessPath:byField[var, fld] = ap, // not enough??
 		//ap = [ var, [ rest, fld ] ], rest = rest,
 		(ThisVar[method] = var;
-		 VarMustAliasThis@prev(var)), // MustPointToAnalysis
+		 VarMustAlias:This@past(var)), // MustPointToAnalysis
 		Method:SimpleName[method] = "<init>",
 		Field:Modifier("final", fld).
 
@@ -248,7 +242,7 @@ component SoundMay {
 		Instruction:Method[invo] = method.
 
 	//MergeMacroMay(ctx, invo, hctx, heap, calleeCtx),
-	cons:MayContext:extend[invo, ctx] = newCtx, MayContext(newCtx),
+	cons:MayContext:extend@past[invo, ctx] = newCtx, MayContext@past(newCtx),
 	MayCallGraphEdge(newCtx, toMethod, ctx, invo) <-
 		ReachableContext:May(ctx, inMethod),
 		MayContext:Depth[ctx] = ctxDepth,
@@ -273,7 +267,7 @@ component SoundMay {
 		MayPointTo(hctx, heap, ctx, base).
 
 	//MergeMacroMay(ctx, invo, hctx, heap, calleeCtx),
-	cons:MayContext:extend[invo, ctx] = newCtx, MayContext(newCtx),
+	cons:MayContext:extend@past[invo, ctx] = newCtx, MayContext@past(newCtx),
 	MayCallGraphEdge(newCtx, toMethod, ctx, invo),
 	MayPointTo(hctx, heap, newCtx, this) <-
 		PotentialVirtualMethodBase:Opt(hctx, heap, ctx, invo),
@@ -357,7 +351,6 @@ component SoundMay {
 		ReferenceType(fldType),
 		HeapAllocation:Null[] = nullHeap,
 		cons:MayHeapContext:Empty[] = hctx,
-		//TODO check that this is precomputed
 		cons:AccessPath:byField[this, fld] = ap.
 
 	// Handle return
@@ -368,7 +361,7 @@ component SoundMay {
 	// previous run call-graph, due to "forall" over it.
 
 	ResolvedCall:ReturnValueTo(callerCtx, to, calleeCtx, toMethod) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(calleeCtx, toMethod, callerCtx, invo),
 		AssignReturnValue[invo] = to.
 
 	MayPointTo(hctx, heap, callerCtx, to) <-
@@ -388,14 +381,14 @@ component SoundMay {
 		AccessPath:BaseVar[ap] = var.
 
 	AccessPath:ShouldBeRebased(formalAp, formal, actual) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, _, invo),
+		MayCallGraphEdge@past(calleeCtx, toMethod, _, invo),
 		FormalParam[index, toMethod] = formal,
 		ActualParam[index, invo] = actual,
 		AccessPath:MayPointTo:AllReturn(_, _, formalAp, calleeCtx, toMethod),
 		AccessPath:BaseVar[formalAp] = formal.
 
 	AccessPath:ShouldBeRebased(thisAp, this, base) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, _, invo),
+		MayCallGraphEdge@past(calleeCtx, toMethod, _, invo),
 		(VirtualMethodInvocation:Base[invo] = base;
 		 SpecialMethodInvocation:Base[invo] = base),
 		ThisVar[toMethod] = this,
@@ -404,32 +397,32 @@ component SoundMay {
 
 	// Now collect the rebasing transformations
 	AccessPath:RebasedForReturn(callerAp, calleeAp, callerCtx, invo) <-
-		MayCallGraphEdge@prev(_, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(_, toMethod, callerCtx, invo),
 		AssignReturnValue[invo] = to,
 		AllReturn_SameRetVar(toMethod, ret),
 		AccessPath:RebaseComposite(calleeAp, ret, to, callerAp).
 
 	AccessPath:RebasedForReturn(callerAp, calleeAp, callerCtx, invo) <-
-		MayCallGraphEdge@prev(_, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(_, toMethod, callerCtx, invo),
 		FormalParam[index, toMethod] = formal,
 		ActualParam[index, invo] = actual,
 		AccessPath:RebaseComposite(calleeAp, formal, actual, callerAp).
 
 	AccessPath:RebasedForReturn(callerAp, calleeAp, callerCtx, invo) <-
-		MayCallGraphEdge@prev(_, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(_, toMethod, callerCtx, invo),
 		ThisVar[toMethod] = this,
 		(VirtualMethodInvocation:Base[invo] = base;
 		 SpecialMethodInvocation:Base[invo] = base),
 		AccessPath:RebaseComposite(calleeAp, this, base, callerAp).
 
 	AccessPath:MayPointTo(hctx, heap, callerAp, callerCtx, invo) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(calleeCtx, toMethod, callerCtx, invo),
 		AllCallee_ReturnAccessPath:MayPointTo(hctx, heap, calleeAp, calleeCtx, toMethod),
 		AccessPath:RebasedForReturn(callerAp, calleeAp, callerCtx, invo).
 
 	// Let's not forget static fields and unchanged access paths
 	AccessPath:MayPointTo(hctx, heap, staticAp, callerCtx, invo) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(calleeCtx, toMethod, callerCtx, invo),
 		AllCallee_ReturnAccessPath:MayPointTo(hctx, heap, staticAp, calleeCtx, toMethod),
 		AccessPath:ContainsStaticField(_, staticAp).
 
@@ -437,7 +430,7 @@ component SoundMay {
 	// access paths that we haven't decided are safe to ignore (propagated by
 	// frame rule) based on the pre-analysis.
 	AccessPath:MayPointTo(hctx, heap, ap, callerCtx, invo) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, callerCtx, invo),
+		MayCallGraphEdge@past(calleeCtx, toMethod, callerCtx, invo),
 		AllCallee_ReturnAccessPath:MayPointTo(hctx, heap, ap, calleeCtx, toMethod),
 		AccessPath:BaseVar[ap] = baseVar,
 		!Var:DeclaringMethod(baseVar, toMethod).
@@ -447,20 +440,19 @@ component SoundMay {
 
 	// Catch-all access path inference from MustAlias
 	AccessPath:MayPointTo(hctx, heap, ap1, ctx, insn) <-
-		MustAlias@prev(ap1, ap2, ctx, insn), // MustAliasAnalysis
+		MustAlias@past(ap1, ap2, ctx, insn), // MustAliasAnalysis
 		AccessPath:MayPointTo(hctx, heap, ap2, ctx, insn),
 		(AccessPath:IsComposite(ap1);
 		 AccessPath:ContainsStaticField(_, ap1)).
 
 	OptAccessPathWithVarMayPointTo(hctx, heap, var, fld, ctx, insn) <-
 		AccessPath:MayPointTo(hctx, heap, ap, ctx, insn),
-		//TODO check that this is precomputed
 		// NEED REVERSE OPT!!!!
 		cons:AccessPath:byField[var, fld] = ap.
 
 	AccessPath:MayPointTo(hctx, heap, ap2, ctx, insn) <-
 		OptAccessPathWithVarMayPointTo(hctx, heap, base1, fld, ctx, insn),
-		VarMustAlias@prev(base1, base2, ctx), // MustPointToAnalysis
+		VarMustAlias@past(base1, base2, ctx), // MustPointToAnalysis
 		cons:AccessPath:byField[base2, fld] = ap2.
 
 	//// ====================================
@@ -608,24 +600,24 @@ component SoundMay {
 	// rather than passing all the access paths in. Interesting rules!
 
 	CalleeMayAssignField(fld, ctx, insn) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, ctx, insn),
+		MayCallGraphEdge@past(calleeCtx, toMethod, ctx, insn),
 		MethodMayAssignField(fld, calleeCtx, toMethod).
 
 	CalleeHasUnresolvedInvocation(ctx, insn) <-
-		MayCallGraphEdge@prev(calleeCtx, toMethod, ctx, insn),
+		MayCallGraphEdge@past(calleeCtx, toMethod, ctx, insn),
 		MethodHasUnresolvedInvocation(calleeCtx, toMethod).
 
 	AccessPath:MayPointTo(hctx, heap, ap, ctx, insn) <-
 		AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn),
 		AccessPath:SingleField(fld, ap),
-		MayCallGraphEdge@prev(_, _, ctx, insn),
+		MayCallGraphEdge@past(_, _, ctx, insn),
 		!CalleeMayAssignField(fld, ctx, insn),
 		!CalleeHasUnresolvedInvocation(ctx, insn).
 
 	AccessPath:MayPointTo(hctx, heap, ap, ctx, insn) <-
 		AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn),
 		AccessPath:DoubleField(fld1, fld2, ap),
-		MayCallGraphEdge@prev(_, _, ctx, insn),
+		MayCallGraphEdge@past(_, _, ctx, insn),
 		!CalleeMayAssignField(fld1, ctx, insn),
 		!CalleeMayAssignField(fld2, ctx, insn),
 		!CalleeHasUnresolvedInvocation(ctx, insn).
@@ -641,19 +633,19 @@ component SoundMay {
 	// NOTE: the "InitialMayContext" is an overapproximation. It's stronger than
 	// what we typically need.
 	InvocationSiteFullyResolved(ctx, invo) <-
-		MayCallGraphEdge@prev(_, _, ctx, invo).
+		MayCallGraphEdge@past(_, _, ctx, invo).
 
 	MethodHasInvocationSite(invo, method) <-
 		MethodInvocation(invo),
 		Instruction:Method[invo] = method.
 
 	MethodCanCallOther(ctxFrom, method, ctxTo, toMethod) <-
-		MayCallGraphEdge@prev(ctxTo, toMethod, ctxFrom, invo),
+		MayCallGraphEdge@past(ctxTo, toMethod, ctxFrom, invo),
 		Instruction:Method[invo] = method.
 
 	// Transitive unresolved call
 	MethodHasUnresolvedInvocation(ctx, method) <-
-		ReachableContext:May@prev(ctx, method), // ?????????????
+		ReachableContext:May@past(ctx, method), // ?????????????
 		MethodHasInvocationSite(invo, method),
 		!InvocationSiteFullyResolved(ctx, invo),
 		!MethodInvocation:Ignorable(invo).
@@ -664,7 +656,7 @@ component SoundMay {
 
 	// Transitive may-assign-field based on sound-callgraph
 	MethodMayAssignField(fld, ctx, method) <-
-		ReachableContext:May@prev(ctx, method), // ?????????????
+		ReachableContext:May@past(ctx, method), // ?????????????
 		Instruction:Method[insn] = method,
 		FieldInstruction:Signature[insn] = fld.
 
@@ -722,7 +714,7 @@ component SoundMay {
 	// For the legit, official main of a standard Java program, provide dummy
 	// argument (String[] args).
 	MayPointTo(hctx, argArray, ctx, args),
-	cons:AccessPath:mock["dummyCollection", args] = ap, AccessPath(ap),
+	cons:AccessPath:mock@past["dummyCollection", args] = ap, AccessPath@past(ap),
 	AccessPath:MayPointTo(hctx, argHeap, ap, ctx, firstInsn) <-
 		MainMethodDeclaration(mainMethod),
 		ReachableContext:May(ctx, mainMethod),
@@ -823,13 +815,13 @@ component SoundMay {
 
 	// All returns of a callee is not enough. We also need "all callee" reasoning
 	CalleeFromSameCallsite(calleeCtx1, meth1, calleeCtx2, meth2) <-
-		MayCallGraphEdge@prev(calleeCtx1, meth1, callerCtx, invo),
-		MayCallGraphEdge@prev(calleeCtx2, meth2, callerCtx, invo),
+		MayCallGraphEdge@past(calleeCtx1, meth1, callerCtx, invo),
+		MayCallGraphEdge@past(calleeCtx2, meth2, callerCtx, invo),
 		Method:Id(meth1:meth1Id), Method:Id(meth2:meth2Id),
 		meth1Id < meth2Id.
 
 	FirstCalleeFromCallsite(calleeCtx, method) <-
-		MayCallGraphEdge@prev(calleeCtx, method, _, _),
+		MayCallGraphEdge@past(calleeCtx, method, _, _),
 		!CalleeFromSameCallsite(_, _, calleeCtx, method).
 
 	NotNextCalleeFromCallsite(calleeCtx, method, calleeCtxNext, methNext) <-
@@ -843,7 +835,7 @@ component SoundMay {
 		!NotNextCalleeFromCallsite(calleeCtx, method, calleeCtxNext, methNext).
 
 	UpToCallee_ReturnMayPointTo(hctx, heap, calleeCtx, method) <-
-		MayCallGraphEdge@prev(calleeCtx, method, _, _),
+		MayCallGraphEdge@past(calleeCtx, method, _, _),
 		FirstCalleeFromCallsite(calleeCtx, method),
 		MayPointTo:AllReturn(hctx, heap, calleeCtx, method).
 
@@ -859,7 +851,7 @@ component SoundMay {
 
 	// Same (all callee) reasoning for access paths
 	UpToCallee_ReturnAccessPath:MayPointTo(hctx, heap, calleeAp, calleeCtx, method) <-
-		MayCallGraphEdge@prev(calleeCtx, method, _, _),
+		MayCallGraphEdge@past(calleeCtx, method, _, _),
 		FirstCalleeFromCallsite(calleeCtx, method),
 		AccessPath:MayPointTo:AllReturn(hctx, heap, calleeAp, calleeCtx, method).
 
@@ -889,7 +881,7 @@ component SoundMay {
 
 	AccessPath:RelevantToMethod(ap, method) <-
 		(AccessPath:MayPointTo(_, _, ap, _, insn);
-		 MustAlias@prev(_, ap, _, insn)), // MustAliasAnalysis
+		 MustAlias@past(_, ap, _, insn)), // MustAliasAnalysis
 		Instruction:Method[insn] = method.
 
 	AccessPathUnaffectedByPredecessorBB(ap, pred) <-
@@ -976,14 +968,6 @@ component SoundMay {
 	// and all access fields in the program.
 	//ComputedAccessPath(ap) <- InitialComputedAccessPath(ap).
 
-	// implies it's computed
-	//.decl AccessPath:ShouldBeRebased(ap:AccessPath, from:Var, to:Var) output
-	//.decl AccessPath:RebaseComposite(ap:AccessPath, from:Var, to:Var, newAp:AccessPath) output
-
-
-
-
-
 	AccessPath:IsSimple(ap) <-
 		cons:AccessPath:byVar[_] = ap ;
 		cons:AccessPath:byStaticField[_] = ap.
@@ -1053,7 +1037,7 @@ component SoundMay {
 	// Incompatible with all other access path types. The access path represents
 	// all the *contents* of the collection (not the collection that the var
 	// points-to, but all the objects that the collection points-to internally).
-	cons:AccessPath:mock["dummyCollection", base] = ap, AccessPath(ap),
+	cons:AccessPath:mock@past["dummyCollection", base] = ap, AccessPath@past(ap),
 	AccessPath:IsCollection(ap) <-
 		Var:Type[base] = type,
 		(ArrayType(type);
@@ -1067,17 +1051,17 @@ component SoundMay {
 		AccessPath:BaseVar[ap] = from. // TODO needed?
 
 	// TODO REVIEW if they need to be constructed
-	cons:AccessPath:byVar[to] = newAp, AccessPath(newAp),
+	cons:AccessPath:byVar@past[to] = newAp, AccessPath@past(newAp),
 	AccessPath:RebaseComposite(ap, from, to, newAp) <-
 		AccessPath:ShouldBeRebased(ap, from, to),
 		cons:AccessPath:byVar[from] = ap.
 
-	cons:AccessPath:byField[to, fld] = newAp, AccessPath(newAp),
+	cons:AccessPath:byField@past[to, fld] = newAp, AccessPath@past(newAp),
 	AccessPath:RebaseComposite(ap, from, to, newAp) <-
 		AccessPath:ShouldBeRebased(ap, from, to),
 		cons:AccessPath:byField[from, fld] = ap.
 
-	cons:AccessPath:extend[newAp0, fld] = newAp, AccessPath(newAp),
+	cons:AccessPath:extend@past[newAp0, fld] = newAp, AccessPath@past(newAp),
 	AccessPath:RebaseComposite(ap, from, to, newAp) <-
 		AccessPath:ShouldBeRebased(ap, from, to),
 		cons:AccessPath:extend[ap0, fld] = ap,
@@ -1113,7 +1097,7 @@ component SoundMay {
 	// Collection loads and stores. For arrays and library collections.
 	// initialize arrays and library collections to null at allocation
 	//RecordMacroMay(ctx, heap, hctx),
-	cons:AccessPath:mock["dummyCollection", to] = ap, AccessPath(ap),
+	cons:AccessPath:mock@past["dummyCollection", to] = ap, AccessPath@past(ap),
 	AccessPath:MayPointTo(hctx, nullHeap, ap, ctx, insn) <-
 		AssignHeapAllocation(heap, to, inMethod),
 		ReachableContext:May(ctx, inMethod),
@@ -1128,7 +1112,7 @@ component SoundMay {
 		MayPointTo(hctx, heap, ctx, from),
 		StoreCollection:From[insn] = from.
 
-	cons:AccessPath:mock["dummyCollection", base] = ap, AccessPath(ap),
+	cons:AccessPath:mock@past["dummyCollection", base] = ap, AccessPath@past(ap),
 	TentativeCollectionBaseApMayPointTo(hctx, heap, ap, ctx, insn) <-
 		CollectionStoreFromVarMayPointTo(hctx, heap, ctx, insn),
 		StoreCollection:Base[insn] = base.
@@ -1159,27 +1143,27 @@ component SoundMay {
 	// have no way to have set it (and all others have it). We speak of
 	// "Relevant" predecessors.
 	BasicBlockMayAffectField(fld, headInsn) <-
-		ReachableContext:May@prev(_, method),
+		ReachableContext:May@past(_, method),
 		Instruction:Method[insn] = method,
 		BasicBlockHead[insn] = headInsn,
 		FieldInstruction:Signature[insn] = fld.
 
 	BasicBlockMayAffectField(fld, headInsn) <-
-		MayCallGraphEdge@prev(toCtx, toMethod, _, insn),
+		MayCallGraphEdge@past(toCtx, toMethod, _, insn),
 		BasicBlockHead(insn, headInsn),
 		MethodMayAssignField(fld, toCtx, toMethod).
 
 	BasicBlockContainsUnresolvedCall(headInsn) <-
-		ReachableContext:May@prev(_, method),
+		ReachableContext:May@past(_, method),
 		Instruction:Method[insn] = method,
 		MethodInvocation(insn),
 		BasicBlockHead[insn] = headInsn,
 		cons:MayContext:Initial[] = initCtx,
 		!MethodInvocation:Ignorable(insn),
-		!MayCallGraphEdge@prev(_, _, initCtx, insn).
+		!MayCallGraphEdge@past(_, _, initCtx, insn).
 
 	BasicBlockContainsUnresolvedCall(headInsn) <-
-		MayCallGraphEdge@prev(toCtx, toMethod, _, insn),
+		MayCallGraphEdge@past(toCtx, toMethod, _, insn),
 		BasicBlockHead[insn] = headInsn,
 		!MethodInvocation:Ignorable(insn),
 		MethodHasUnresolvedInvocation(toCtx, toMethod).
@@ -1212,24 +1196,8 @@ component SoundMay {
 	//// ====================================
 }
 
-
-
 /*
 .comp SoundMay<MustPointToParameter> {
-		  #include "must-alias.dl"
-          .init MustAliasAnalysis = DummyMustAlias
-
-          .init MustPointToAnalysis = MustPointToParameter
-
-
-
-
-
-
-
-
-
-
-
-
+.init MustAliasAnalysis = DummyMustAlias
+.init MustPointToAnalysis = MustPointToParameter
 */
