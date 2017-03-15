@@ -372,7 +372,7 @@ public class Main {
         Database db = new Database(new File(sootParameters._outputDir));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
-        Driver driver = new Driver(factory, sootParameters._ssa, classes.size(), sootParameters._generateJimple);
+        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple);
 
         classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
 

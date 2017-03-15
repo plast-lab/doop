@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 class Driver {
     private ThreadFactory _factory;
-    private boolean _ssa;
     private boolean _generateJimple;
 
     private ExecutorService _executor;
@@ -22,9 +21,8 @@ class Driver {
     private int _cores;
     private int _classSplit = 5;
 
-    Driver(ThreadFactory factory, boolean ssa, int totalClasses, boolean generateJimple) {
+    Driver(ThreadFactory factory, int totalClasses, boolean generateJimple) {
         _factory = factory;
-        _ssa = ssa;
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
