@@ -23,6 +23,6 @@ public class SootParameters {
      boolean _runFlowdroid = false;
      boolean _noFacts = false;
 
-     boolean _bytecode2jimple = false;
+     boolean _generateJimple = false;
      boolean _toStdout = false;
 }

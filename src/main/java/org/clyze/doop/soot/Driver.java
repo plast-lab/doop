@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 class Driver {
     private ThreadFactory _factory;
     private boolean _ssa;
+    private boolean _generateJimple;
 
     private ExecutorService _executor;
     private int _classCounter;
@@ -21,12 +22,13 @@ class Driver {
     private int _cores;
     private int _classSplit = 5;
 
-    Driver(ThreadFactory factory, boolean ssa, int totalClasses) {
+    Driver(ThreadFactory factory, boolean ssa, int totalClasses, boolean generateJimple) {
         _factory = factory;
         _ssa = ssa;
         _classCounter = 0;
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
+        _generateJimple = generateJimple;
         _cores = Runtime.getRuntime().availableProcessors();
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -36,6 +38,7 @@ class Driver {
     }
 
     void doInParallel(Set<SootClass> classesToProcess) {
+
         classesToProcess.forEach(this::generate);
         _executor.shutdown();
         try {
@@ -46,18 +49,12 @@ class Driver {
     }
 
     void doInSequentialOrder(Set<SootClass> sootClasses) {
-        if(_factory.inFactGenerationMode()) {
-            FactGenerator factGenerator = new FactGenerator(_factory.get_factWriter(), _factory.getSsa(), sootClasses);
+            FactGenerator factGenerator = new FactGenerator(_factory.get_factWriter(), _factory.getSSA(), sootClasses, _generateJimple);
             factGenerator.run();
-        }
-        else {
-            JimpleCodePrinter jimpleCodePrinter = new JimpleCodePrinter(_ssa, _factory.getToStdout(), _factory.getOutputDir(), _factory.getPrintWriter(), sootClasses); //.stream().collect(Collectors.toList()));
-            jimpleCodePrinter.run();
-        }
     }
 
     void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
+        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, _generateJimple);
         factGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();

@@ -1,20 +1,16 @@
 package org.clyze.doop.soot;
 
-import org.clyze.doop.util.filter.ClassFilter;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.objectweb.asm.ClassReader;
 import soot.*;
 import soot.SourceLocator.FoundFile;
-import soot.asm.AsmClassProvider;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
-import soot.options.Options;
 
-import javax.xml.transform.Source;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.*;
@@ -24,13 +20,9 @@ import java.util.jar.JarInputStream;
 
 import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
-import static soot.options.Options.src_prec_apk;
-import static soot.options.Options.src_prec_apk_class_jimple;
-import static soot.options.Options.src_prec_class;
+import static soot.options.Options.*;
 
 public class Main {
-
-
 
     private static int shift(String[] args, int index) {
         if(args.length == index + 1) {
@@ -122,8 +114,8 @@ public class Main {
                     case "--only-application-classes-fact-gen":
                         sootParameters._onlyApplicationClassesFactGen = true;
                         break;
-                    case "--bytecode2jimple":
-                        sootParameters._bytecode2jimple = true;
+                    case "--generate-jimple":
+                        sootParameters._generateJimple = true;
                         break;
                     case "--stdout":
                         sootParameters._toStdout = true;
@@ -149,10 +141,10 @@ public class Main {
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
 
-                        System.err.println("  --bytecode2jimple                     Generate Jimple/Shimple files instead of facts");
-                        System.err.println("  --bytecode2jimpleHelp                 Show help information regarding bytecode2jimple");
+                        System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
+                        System.err.println("  --generate-jimple-help                 Show help information regarding bytecode2jimple");
                         System.exit(0);
-                    case "--bytecode2jimpleHelp":
+                    case "--generate-jimple-help":
                         System.err.println("\nusage: [options] file");
                         System.err.println("options:");
                         System.err.println("  --ssa                                 Generate Shimple files (use SSA for variables)");
@@ -178,8 +170,8 @@ public class Main {
                 sootParameters._mode = SootParameters.Mode.INPUTS;
             }
 
-            if (sootParameters._toStdout && !sootParameters._bytecode2jimple) {
-                System.err.println("error: --stdout must be used with --bytecode2jimple");
+            if (sootParameters._toStdout && !sootParameters._generateJimple) {
+                System.err.println("error: --stdout must be used with --generate-jimple");
                 System.exit(1);
             }
             if (sootParameters._toStdout && sootParameters._outputDir != null) {
@@ -205,6 +197,17 @@ public class Main {
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
         SootMethod dummyMain = null;
+
+        soot.options.Options.v().set_output_dir(sootParameters._outputDir);
+        if (sootParameters._ssa) {
+            soot.options.Options.v().set_via_shimple(true);
+            soot.options.Options.v().set_output_format(output_format_shimple);
+        } else {
+            soot.options.Options.v().set_output_format(output_format_jimple);
+        }
+        soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
+        soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
+        soot.options.Options.v().set_keep_line_number(true);
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
@@ -233,8 +236,7 @@ public class Main {
                 if (dummyMain == null) {
                     throw new RuntimeException("Dummy main null");
                 }
-            }
-            else {
+            } else {
 
                 ProcessManifest processMan = new ProcessManifest(apkLocation);
                 String appPackageName = processMan.getPackageName();
@@ -259,9 +261,8 @@ public class Main {
 //            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
             }
 
-        }
-        else {
-            soot.options.Options.v().set_src_prec(src_prec_class);
+        } else {
+            soot.options.Options.v().set_src_prec(src_prec_java);
 
             JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
             JarEntry entry;
@@ -269,14 +270,13 @@ public class Main {
 
             try {
                 /* List all JAR entries */
-                while ((entry = jin.getNextJarEntry()) != null)
-                {
+                while ((entry = jin.getNextJarEntry()) != null) {
                     /* Skip directories */
                     if (entry.isDirectory())
                         continue;
 
                     /* Skip non-class files and non-property files */
-                    if(!entry.getName().endsWith(".class") && !entry.getName().endsWith(".properties"))
+                    if (!entry.getName().endsWith(".class") && !entry.getName().endsWith(".properties"))
                         continue;
 
                     if (entry.getName().endsWith(".class")) {
@@ -300,22 +300,17 @@ public class Main {
             scene.extendSootClassPath(sootParameters._libraries.get(i));
         }
 
-        if(sootParameters._main != null) {
+        if (sootParameters._main != null) {
             soot.options.Options.v().set_main_class(sootParameters._main);
         }
 
-        if(sootParameters._mode == SootParameters.Mode.FULL) {
+        if (sootParameters._mode == SootParameters.Mode.FULL) {
             soot.options.Options.v().set_full_resolver(true);
         }
 
-        if(sootParameters._allowPhantom) {
+        if (sootParameters._allowPhantom) {
             soot.options.Options.v().set_allow_phantom_refs(true);
         }
-
-        soot.options.Options.v().set_process_multiple_dex(true);
-        soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
-        soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
-        soot.options.Options.v().set_keep_line_number(true);
 
         if (sootParameters._android) {
             for (String className : classesOfDex(apk)) {
@@ -324,8 +319,7 @@ public class Main {
             }
 
             System.out.println("Classes found  in apk: " + classesOfDex(apk).size());
-        }
-        else {
+        } else {
             for (String className : classesInApplicationJar) {
                 SootClass c = scene.loadClass(className, SootClass.BODIES);
                 classes.add(c);
@@ -369,87 +363,78 @@ public class Main {
 
         classes.stream().filter((klass) -> isApplicationClass(sootParameters, klass)).forEachOrdered(SootClass::setApplicationClass);
 
-        if(sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen) {
+        if (sootParameters._mode == SootParameters.Mode.FULL && !sootParameters._onlyApplicationClassesFactGen) {
             classes = new HashSet<>(scene.getClasses());
         }
 
         System.out.println("Total classes in Scene: " + classes.size());
 
-        if (sootParameters._bytecode2jimple) {
-            ThreadFactory factory = new ThreadFactory(sootParameters._ssa, sootParameters._toStdout, sootParameters._outputDir);
-            Driver driver = new Driver(factory, sootParameters._ssa, classes.size());
+        Database db = new Database(new File(sootParameters._outputDir));
+        FactWriter writer = new FactWriter(db);
+        ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
+        Driver driver = new Driver(factory, sootParameters._ssa, classes.size(), sootParameters._generateJimple);
 
-            driver.doInSequentialOrder(classes);
+        classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
+
+        // Read all stored properties files
+        for (Map.Entry<String, Properties> entry : propertyProvider.getProperties().entrySet()) {
+            String path = entry.getKey();
+            Properties properties = entry.getValue();
+
+            for (String propertyName : properties.stringPropertyNames()) {
+                String propertyValue = properties.getProperty(propertyName);
+                writer.writeProperty(path, propertyName, propertyValue);
+            }
         }
-        else {
-            Database db = new Database(new File(sootParameters._outputDir));
-            FactWriter writer = new FactWriter(db);
-            ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-            Driver driver = new Driver(factory, sootParameters._ssa, classes.size());
 
-            classes.stream().filter(SootClass::isApplicationClass).forEachOrdered(writer::writeApplicationClass);
+        db.flush();
 
-            // Read all stored properties files
-            for (Map.Entry<String,Properties> entry : propertyProvider.getProperties().entrySet()) {
-                String path = entry.getKey();
-                Properties properties = entry.getValue();
-
-                for (String propertyName : properties.stringPropertyNames()) {
-                    String propertyValue = properties.getProperty(propertyName);
-                    writer.writeProperty(path, propertyName, propertyValue);
+        if (sootParameters._android) {
+            if (sootParameters._runFlowdroid) {
+                driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
+                db.close();
+                return;
+            } else {
+                for (AXmlNode node : appActivities) {
+                    writer.writeActivity(node.getAttribute("name").getValue().toString());
                 }
-            }
 
-            db.flush();
-
-            if (sootParameters._android) {
-                if (sootParameters._runFlowdroid) {
-                    driver.doAndroidInSequentialOrder(dummyMain, classes, writer, sootParameters._ssa);
-                    db.close();
-                    return;
+                for (AXmlNode node : appServices) {
+                    writer.writeService(node.getAttribute("name").getValue().toString());
                 }
-                else {
-                    for (AXmlNode node : appActivities) {
-                        writer.writeActivity(node.getAttribute("name").getValue().toString());
-                    }
 
-                    for (AXmlNode node : appServices) {
-                        writer.writeService(node.getAttribute("name").getValue().toString());
-                    }
+                for (AXmlNode node : appContentProviders) {
+                    writer.writeContentProvider(node.getAttribute("name").getValue().toString());
+                }
 
-                    for (AXmlNode node : appContentProviders) {
-                        writer.writeContentProvider(node.getAttribute("name").getValue().toString());
-                    }
+                for (AXmlNode node : appBroadcastReceivers) {
+                    writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                }
 
-                    for (AXmlNode node : appBroadcastReceivers) {
-                        writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                for (Set<String> callBackMethods : appCallbackMethods.values()) {
+                    for (String callbackMethod : callBackMethods) {
+                        writer.writeCallbackMethod(callbackMethod);
                     }
+                }
 
-                    for (Set<String> callBackMethods : appCallbackMethods.values()) {
-                        for (String callbackMethod : callBackMethods) {
-                            writer.writeCallbackMethod(callbackMethod);
-                        }
-                    }
-
-                    for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
-                        for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
-                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                        }
+                for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
+                    for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
+                        writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                     }
                 }
             }
-            if (!sootParameters._noFacts) {
-                if (sootParameters._classicFactGen)
-                    driver.doInSequentialOrder(classes);
-                else {
-                    scene.getOrMakeFastHierarchy();
-                    // avoids a concurrent modification exception, since we may
-                    // later be asking soot to add phantom classes to the scene's hierarchy
-                    driver.doInParallel(classes);
-                }
-            }
-            db.close();
         }
+        if (!sootParameters._noFacts) {
+            if (sootParameters._classicFactGen)
+                driver.doInSequentialOrder(classes);
+            else {
+                scene.getOrMakeFastHierarchy();
+                // avoids a concurrent modification exception, since we may
+                // later be asking soot to add phantom classes to the scene's hierarchy
+                driver.doInParallel(classes);
+            }
+        }
+        db.close();
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {

@@ -263,19 +263,27 @@ class SouffleAnalysis extends DoopAnalysis {
         }
 
         if (options.SSA.value) {
-            params = params + ["--ssa"]
+            params += ["--ssa"]
         }
 
         if (!options.RUN_JPHANTOM.value) {
-            params = params + ["--allow-phantom"]
+            params += ["--allow-phantom"]
         }
 
         if (options.RUN_FLOWDROID.value) {
-            params = params + ["--run-flowdroid"]
+            params += ["--run-flowdroid"]
         }
 
         if (options.ONLY_APPLICATION_CLASSES_FACT_GEN.value) {
-            params = params + ["--only-application-classes-fact-gen"]
+            params += ["--only-application-classes-fact-gen"]
+        }
+
+        if (options.GENERATE_JIMPLE.value) {
+            params += ["--generate-jimple"]
+        }
+
+        if (options.X_DRY_RUN.value) {
+            params += ["--noFacts"]
         }
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]

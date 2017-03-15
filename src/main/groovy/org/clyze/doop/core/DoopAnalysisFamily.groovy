@@ -299,6 +299,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				value:false,
 				forCacheID:true
 			),
+            new AnalysisOption<Boolean>(
+                id:"GENERATE_JIMPLE",
+                name:"generate-jimple",
+                description:"Generate Jimple/Shimple files along with .facts files",
+                value:false,
+                forCacheID:false
+            ),
 			new AnalysisOption<Boolean>(
 				id:"RUN_AVERROES",
 				name:"run-averroes",

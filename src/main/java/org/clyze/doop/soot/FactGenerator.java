@@ -17,21 +17,22 @@ class FactGenerator implements Runnable {
 
     private FactWriter _writer;
     private boolean _ssa;
+    private boolean _generateJimple;
     private Set<SootClass> _sootClasses;
     private final int maxRetries = 10;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean generateJimple)
     {
         this._writer = writer;
         this._ssa = ssa;
         this._sootClasses = sootClasses;
+        this._generateJimple = generateJimple;
     }
 
     @Override
     public void run() {
 
         for (SootClass _sootClass : _sootClasses) {
-
             _writer.writeClassOrInterfaceType(_sootClass);
 
             int modifiers = _sootClass.getModifiers();
@@ -92,6 +93,13 @@ class FactGenerator implements Runnable {
                     success = false;
                 }
             } while (!success);
+
+            if (_generateJimple) {
+                PackManager.v().writeClass(_sootClass);
+                for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                    m.releaseActiveBody();
+                }
+            }
         }
     }
 
@@ -220,9 +228,9 @@ class FactGenerator implements Runnable {
             {
                 // This instruction is the bottleneck of
                 // soot-fact-generation.
-                //                synchronized(Scene.v()) {
+                // synchronized(Scene.v()) {
                 m.retrieveActiveBody();
-                //                } // synchronizing so broadly = giving up on Soot's races
+                // } // synchronizing so broadly = giving up on Soot's races
             }
 
             Body b = m.getActiveBody();
@@ -236,16 +244,14 @@ class FactGenerator implements Runnable {
                 DoopRenamer.transform(b);
                 generate(m, b, session);
             }
-
-            m.releaseActiveBody();
+            if (!_generateJimple) {
+                m.releaseActiveBody();
+            }
         }
     }
 
     private void generate(SootMethod m, Body b, Session session)
     {
-        //TODO: Identify the problem with the jimple body of this method.
-        if (!m.getDeclaration().equals("public java.lang.Object launch(java.net.URLConnection, java.io.InputStream, sun.net.www.MimeTable) throws sun.net.www.ApplicationLaunchException"))
-            b.validate();
 
         for(Local l : b.getLocals())
         {

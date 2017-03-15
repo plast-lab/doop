@@ -453,6 +453,10 @@ class ClassicAnalysis extends DoopAnalysis {
             params += ["--only-application-classes-fact-gen"]
         }
 
+        if (options.GENERATE_JIMPLE.value) {
+            params += ["--generate-jimple"]
+        }
+
         if (options.X_DRY_RUN.value) {
             params += ["--noFacts"]
         }
@@ -471,16 +475,6 @@ class ClassicAnalysis extends DoopAnalysis {
             //separate process.
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
-//            for (String loadedClass : ((CustomURLClassLoader) loader).classesLoaded) {
-//                System.out.println("Loaded class: " + loadedClass);
-//            }
-            Field f = ClassLoader.class.getDeclaredField("classes");
-            f.setAccessible(true);
-
-            List<Class> classes = (List<Class>) f.get(loader)
-            for (Class klass : classes) {
-                System.out.println("Loaded class: " + klass);
-            }
         }
     }
 
