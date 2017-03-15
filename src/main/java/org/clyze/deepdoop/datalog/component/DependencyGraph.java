@@ -26,7 +26,7 @@ public class DependencyGraph {
 		Set<String> globalAtoms = acActor.getDeclaringAtoms(p.globalComp).keySet();
 		Set<String> handledGlobalAtoms = new HashSet<>();
 
-		p.props.forEach(prop -> {
+		p.props.forEach( prop -> {
 			Component fromComp = p.comps.get(prop.fromId);
 			Component toComp   = p.comps.get(prop.toId);
 
@@ -37,18 +37,16 @@ public class DependencyGraph {
 				fromNode.addEdgeTo(getNode(toComp));
 			// Propagate to global space
 			else
-				prop.preds.forEach(pred -> {
-					IAtom newPred = (IAtom) pred.accept(new InitVisitingActor());
-					//IAtom newPred = (IAtom) pred.accept(new InitVisitingActor(prop.fromId, null, new HashSet<>()));
-					fromNode.addEdgeTo(getNode(newPred.name()));
-					handledGlobalAtoms.add(newPred.name());
+				prop.preds.forEach( pred -> {
+					fromNode.addEdgeTo(getNode(pred.name()));
+					handledGlobalAtoms.add(pred.name());
 				});
 
 			// Dependencies from global space
 			Set<String> fromGlobal  = acActor.getUsedAtoms(fromComp).keySet();
 			fromGlobal.retainAll(globalAtoms);
 
-			fromGlobal.forEach(globalAtomName -> getNode(globalAtomName).addEdgeTo(fromNode));
+			fromGlobal.forEach( globalAtomName -> getNode(globalAtomName).addEdgeTo(fromNode) );
 			handledGlobalAtoms.addAll(fromGlobal);
 		});
 
@@ -92,7 +90,7 @@ public class DependencyGraph {
 
 		globalAtoms.removeAll(handledGlobalAtoms);
 		Set<Node> lastGlobalNodes = new HashSet<>();
-		globalAtoms.forEach(globalAtom -> lastGlobalNodes.add(getNode(globalAtom)));
+		globalAtoms.forEach( globalAtom -> lastGlobalNodes.add(getNode(globalAtom)) );
 		_layers.add(lastGlobalNodes);
 	}
 

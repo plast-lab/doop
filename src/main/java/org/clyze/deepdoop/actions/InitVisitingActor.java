@@ -51,10 +51,11 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 		// Global Component
 		Component newGlobal = (Component) n.globalComp.accept(this);
+		Program initP = Program.from(newGlobal, new HashMap<>(), new HashMap<>(), new HashSet<>());
+
 
 		// Component -> Propagated Atoms
 		Map<String, Set<String>> propagatedInComp = new HashMap<>();
-		Set<Propagation> flatProps                = new HashSet<>();
 		n.props.forEach( prop -> {
 			Component fromTemplateComp    = n.comps.get(n.inits.get(prop.fromId));
 			Map<String, IAtom> declAtoms  = _acActor.getDeclaringAtoms(fromTemplateComp);
@@ -68,20 +69,17 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 			toPropagate.forEach( pred -> {
 				Set<String> set = propagatedInComp.get(prop.toId);
-				if (set == null) {
-					set = new HashSet<>();
-					propagatedInComp.put(prop.toId, set);
-				}
+				if (set == null) set = new HashSet<>();
 				set.add(pred.name());
+				propagatedInComp.put(prop.toId, set);
 				Pair p = rename(pred);
 				newPreds.add(new StubAtom(p.name));
 			});
-			flatProps.add(new Propagation(prop.fromId, newPreds, prop.toId));
+			initP.addPropagation(prop.fromId, newPreds, prop.toId);
 		});
 
 
 		// Initializations
-		Program initP = Program.from(newGlobal, new HashMap<>(), new HashMap<>(), new HashSet<>());
 		n.inits.forEach( (initName, compName) -> {
 			Component comp   = n.comps.get(compName);
 
@@ -104,7 +102,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		globalAtoms.addAll(_acActor.getUsedAtoms(n.globalComp).keySet());
 
 		// Propagations
-		flatProps.forEach( prop -> {
+		initP.props.forEach( prop -> {
 			Component fromComp = initP.comps.get(prop.fromId);
 			Component toComp   = (prop.toId == null ? initP.globalComp : initP.comps.get(prop.toId));
 
@@ -153,13 +151,13 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	// Need to be overriden to keep track when we are in the head of a rule
 	@Override
 	public IVisitable visit(Rule n) {
-		_actor.enter(n);
+		enter(n);
 		Map<IVisitable, IVisitable> m = new HashMap<>();
 		_inRuleHead = true;
 		m.put(n.head, n.head.accept(this));
 		_inRuleHead = false;
 		if (n.body != null) m.put(n.body, n.body.accept(this));
-		return _actor.exit(n, m);
+		return exit(n, m);
 	}
 
 
@@ -316,11 +314,14 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		// discovering predicated declared in a component will assume that a
 		// @past predicate in the head of the rule is declared in the
 		// component.
-		if ("@past".equals(atom.stage()))
-			// * if @past is used in the head of a rule, leave the name
-			// unaltered
+		if ("@past".equals(atom.stage())) {
+			// * if @past is used in the head of a rule, leave the name unaltered
+			if (_inRuleHead) return new Pair(name, null);
+			// * else if @past is used for a declaration, leave the name unaltered
+			else if (atom instanceof Entity) return new Pair(name, null);
 			// * else explicitly add the appropriate prefix and suffix
-			return (_inRuleHead ? new Pair(name, null) : new Pair(_initName + ":" + name + ":past", "@past"));
+			else return new Pair(_initName + ":" + name + ":past", "@past");
+		}
 
 		// * if the atom is declared in this component, add the appropriate prefix
 		if (_declaredAtoms.contains(name))
@@ -344,25 +345,25 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	// P0 -> P0
 	// S1:P1 -> S1:P1
 	// S3:P2:past -> S1:P2, S2:P2 when S1 and S2 propagate to S3
-	public static Set<String> revert(String name, Set<String> initIds, Map<String, Set<String>> reversePropagations) {
-		if (!name.endsWith(":past")) return Collections.singleton(name);
+	//public static Set<String> revert(String name, Set<String> initIds, Map<String, Set<String>> reversePropagations) {
+	//	if (!name.endsWith(":past")) return Collections.singleton(name);
 
-		int i = name.indexOf(':');
-		if (i == -1) return Collections.singleton(name);
+	//	int i = name.indexOf(':');
+	//	if (i == -1) return Collections.singleton(name);
 
-		String id = name.substring(0, i);
-		String subName = name.substring(i+1, name.length());
+	//	String id = name.substring(0, i);
+	//	String subName = name.substring(i+1, name.length());
 
-		if (reversePropagations.get(id) != null) {
-			subName = subName.substring(0, subName.lastIndexOf(":past"));
-			Set<String> fromSet = reversePropagations.get(id);
-			Set<String> result = new HashSet<>();
-			for (String fromId : fromSet) {
-				result.add(fromId + ":" + subName);
-			}
-			return result;
-		}
-		else
-			return Collections.singleton(subName);
-	}
+	//	if (reversePropagations.get(id) != null) {
+	//		subName = subName.substring(0, subName.lastIndexOf(":past"));
+	//		Set<String> fromSet = reversePropagations.get(id);
+	//		Set<String> result = new HashSet<>();
+	//		for (String fromId : fromSet) {
+	//			result.add(fromId + ":" + subName);
+	//		}
+	//		return result;
+	//	}
+	//	else
+	//		return Collections.singleton(subName);
+	//}
 }

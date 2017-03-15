@@ -68,49 +68,43 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	@Override
 	public String visit(Program flatP) {
 		// Transform program before visiting nodes
-		PostOrderVisitor<IVisitable> v = new InitVisitingActor();
-		Program n = (Program) flatP.accept(v);
-		_actor.enter(n);
-
-		Map<IVisitable, String> m = new HashMap<>();
-		m.put(n.globalComp, n.globalComp.accept(this));
-		for (Component c : n.comps.values()) m.put(c, c.accept(this));
-		return _actor.exit(n, m);
+		Program n = (Program) flatP.accept(new InitVisitingActor());
+		return super.visit(n);
 	}
 
 	@Override
 	public void enter(Program n) {
-		for (Propagation prop : n.props) {
+		n.props.forEach( prop -> {
 			Set<String> fromSet = _reverseProps.get(prop.toId);
 			if (fromSet == null) fromSet = new HashSet<>();
 			fromSet.add(prop.fromId);
 			_reverseProps.put(prop.toId, fromSet);
-		}
+		});
 
-		// Backpatch entity names from previous components
-		for (Component comp : n.comps.values()) {
-			Map<Declaration, Declaration> newDeclarations = new HashMap<>();
-			for (Declaration d : comp.declarations) {
-				Set<IAtom> newTypes = new HashSet<>();
-				for (IAtom type : d.types) {
-					if (type instanceof Entity && type.name().endsWith(":past")) {
-						Entity e = (Entity) type;
-						Set<String> potentialDeclPreds = InitVisitingActor.revert(e.name(), n.comps.keySet(), _reverseProps);
-						if (potentialDeclPreds.size() != 1)
-							ErrorManager.error(ErrorId.MULTIPLE_ENT_DECLS, e.name());
-						else
-							newTypes.add(new Entity(potentialDeclPreds.iterator().next(), null, e.exprs));
-					}
-					else
-						newTypes.add(type);
-				}
-				newDeclarations.put(d, new Declaration(d.atom, newTypes));
-			}
-			newDeclarations.forEach( (oldDecl, newDecl) -> {
-				comp.declarations.remove(oldDecl);
-				comp.declarations.add(newDecl);
-			});
-		}
+		//// Backpatch entity names from previous components
+		//for (Component comp : n.comps.values()) {
+		//	Map<Declaration, Declaration> newDeclarations = new HashMap<>();
+		//	for (Declaration d : comp.declarations) {
+		//		Set<IAtom> newTypes = new HashSet<>();
+		//		for (IAtom type : d.types) {
+		//			if (type instanceof Entity && type.name().endsWith(":past")) {
+		//				Entity e = (Entity) type;
+		//				Set<String> potentialDeclPreds = InitVisitingActor.revert(e.name(), n.comps.keySet(), _reverseProps);
+		//				if (potentialDeclPreds.size() != 1)
+		//					ErrorManager.error(ErrorId.MULTIPLE_ENT_DECLS, e.name());
+		//				else
+		//					newTypes.add(new Entity(potentialDeclPreds.iterator().next(), null, e.exprs));
+		//			}
+		//			else
+		//				newTypes.add(type);
+		//		}
+		//		newDeclarations.put(d, new Declaration(d.atom, newTypes));
+		//	}
+		//	newDeclarations.forEach( (oldDecl, newDecl) -> {
+		//		comp.declarations.remove(oldDecl);
+		//		comp.declarations.add(newDecl);
+		//	});
+		//}
 	}
 
 	@Override
@@ -128,17 +122,12 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		allUsedAtoms.forEach( (usedAtomName, usedAtom) -> {
 			if ("@past".equals(usedAtom.stage())) return;
 
-			Set<String> potentialDeclPreds = InitVisitingActor.revert(usedAtomName, n.comps.keySet(), _reverseProps);
-			boolean declFound = false;
-			for (String potentialDeclPred : potentialDeclPreds) {
-				if (allDeclAtoms.contains(potentialDeclPred)) {
-					declFound = true;
-					break;
-				}
-			}
-			if (!declFound)
+			//Set<String> potentialDeclPreds = InitVisitingActor.revert(usedAtomName, n.comps.keySet(), _reverseProps);
+			//if ( !potentialDeclPreds.stream().anyMatch( pred -> allDeclAtoms.contains(pred) ) )
+			if (!allDeclAtoms.contains(usedAtomName))
 				ErrorManager.warn(ErrorId.NO_DECL, usedAtomName);
 		});
+
 
 		// Compute dependency graph for components (and global predicates)
 		DependencyGraph graph = new DependencyGraph(n);
@@ -146,13 +135,7 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		_unhandledGlobal  = new Component(n.globalComp);
 		Set<Node> currSet = new HashSet<>();;
 		for (Set<Node> layer : graph.getLayers()) {
-			boolean hasCmd = false;
-			for (Node node : layer)
-				if (node instanceof CmdNode) {
-					hasCmd = true;
-					break;
-				}
-			if (hasCmd) {
+			if (layer.stream().anyMatch(node -> node instanceof CmdNode)) {
 				emit(n, m, currSet);
 				emitCmd(n, m, layer);
 				currSet = new HashSet<>();
