@@ -1,3 +1,5 @@
+XYZ(x) <- ABC(x).
+
 component Foo {
   B(x) -> .
   P(x) <- Z(x).
@@ -7,8 +9,8 @@ as Foo1
 
 component Bar {
   W(x) <- Z(x), P(x).
-  A(x), cons:byFoo@past[] = f, B@past(f) <- W(x).
   D(x) -> B@past(x).
+  A(x), cons:byFoo@past[] = f, B@past(f) <- W(x).
 }
 as Bar1
 
@@ -23,7 +25,6 @@ component Bar as Bar2
 Baz1 {Z} -> Bar2
 
 Bar2 {*} -> .
-
 
 
 

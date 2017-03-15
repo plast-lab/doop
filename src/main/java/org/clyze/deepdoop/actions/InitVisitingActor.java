@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.clyze.deepdoop.datalog.*;
 import org.clyze.deepdoop.datalog.clause.*;
 import org.clyze.deepdoop.datalog.component.*;
@@ -24,10 +25,9 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	String                   _initName;
 	boolean                  _inRuleHead;
 	Set<String>              _declaredAtoms;
-	// For a given (initialized) component get all the predicates that are
-	// propagated from a different component (thus need to use the frame
-	// rules).
-	Set<String>              _propagatedAtoms;
+	// For a given predicate in an (initialized) component get all the
+	// components that propagate this predicate.
+	Map<IAtom, Set<String>>  _reverseProps;
 
 	AtomCollectingActor      _acActor;
 
@@ -54,8 +54,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		Program initP = Program.from(newGlobal, new HashMap<>(), new HashMap<>(), new HashSet<>());
 
 
-		// Component -> Propagated Atoms
-		Map<String, Set<String>> propagatedInComp = new HashMap<>();
+		Map<String, Map<IAtom, Set<String>>> reversePropsMap = new HashMap<>();
 		n.props.forEach( prop -> {
 			Component fromTemplateComp    = n.comps.get(n.inits.get(prop.fromId));
 			Map<String, IAtom> declAtoms  = _acActor.getDeclaringAtoms(fromTemplateComp);
@@ -65,15 +64,19 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 			_initName                     = prop.fromId;
 			_inRuleHead                   = false;
-			_declaredAtoms                = _acActor.getDeclaringAtoms(fromTemplateComp).keySet();
+			_declaredAtoms                = declAtoms.keySet();
 
 			toPropagate.forEach( pred -> {
-				Set<String> set = propagatedInComp.get(prop.toId);
-				if (set == null) set = new HashSet<>();
-				set.add(pred.name());
-				propagatedInComp.put(prop.toId, set);
+				Map<IAtom, Set<String>> reverseMap = reversePropsMap.get(prop.toId);
+				if (reverseMap == null) reverseMap = new HashMap<>();
+				Set<String> fromSet = reverseMap.get(pred);
+				if (fromSet == null) fromSet = new HashSet<>();
+				fromSet.add(prop.fromId);
 				Pair p = rename(pred);
 				newPreds.add(new StubAtom(p.name));
+
+				reverseMap.put(pred, fromSet);
+				reversePropsMap.put(prop.toId, reverseMap);
 			});
 			initP.addPropagation(prop.fromId, newPreds, prop.toId);
 		});
@@ -81,19 +84,18 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 		// Initializations
 		n.inits.forEach( (initName, compName) -> {
-			Component comp   = n.comps.get(compName);
+			Component comp = n.comps.get(compName);
 
 			if (comp == null)
 				ErrorManager.error(ErrorId.UNKNOWN_COMP, compName);
 
-			_removeName      = null;
-			_initName        = initName;
-			_inRuleHead      = false;
-			_declaredAtoms   = _acActor.getDeclaringAtoms(comp).keySet();
-			_propagatedAtoms = propagatedInComp.get(initName);
+			_removeName    = null;
+			_initName      = initName;
+			_inRuleHead    = false;
+			_declaredAtoms = _acActor.getDeclaringAtoms(comp).keySet();
+			_reverseProps  = reversePropsMap.get(initName);
 			initP.addComponent((Component) comp.accept(this));
 		});
-		// TODO why??
 		initP.accept(acVisitor);
 
 
@@ -306,64 +308,49 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		if (_removeName != null && name.startsWith(_removeName + ":"))
 			name = name.replaceFirst(_removeName + ":", "");
 
-		// * we are in the global component
-		if (_initName == null)
-			return new Pair(name, atom.stage());
+		List<Set<String>> fromComps;
+		if (_reverseProps == null) fromComps = new ArrayList<>();
+		else fromComps =
+			_reverseProps.entrySet().stream()
+			.filter( entry -> entry.getKey().name().equals(atom.name()) )
+			.map( entry -> entry.getValue() )
+			.collect(Collectors.toList());
+		assert (fromComps.size() <= 1);
 
 		// NOTE: This if should go before the next one, since the heuristic for
 		// discovering predicated declared in a component will assume that a
 		// @past predicate in the head of the rule is declared in the
 		// component.
 		if ("@past".equals(atom.stage())) {
-			// * if @past is used in the head of a rule, leave the name unaltered
-			if (_inRuleHead) return new Pair(name, null);
-			// * else if @past is used for a declaration, leave the name unaltered
-			else if (atom instanceof Entity) return new Pair(name, null);
+			// * we are in the global component, thus in a custom frame rule
+			if (_initName == null)
+				return new Pair(name + ":past", "@past");
+			// * if @past is used in the head of a rule
+			// * if @past is used for an entity
+			// then fix name accordingly
+			else if (_inRuleHead || atom instanceof Entity) {
+				if (fromComps.isEmpty())
+					return new Pair(name, null);
+				else {
+					assert (fromComps.get(0).size() == 1);
+					String fromComp = fromComps.get(0).iterator().next();
+					return new Pair(fromComp + ":" + name, null);
+				}
+			}
 			// * else explicitly add the appropriate prefix and suffix
 			else return new Pair(_initName + ":" + name + ":past", "@past");
 		}
 
 		// * if the atom is declared in this component, add the appropriate prefix
-		if (_declaredAtoms.contains(name))
+		if (_declaredAtoms != null && _declaredAtoms.contains(name))
 			return new Pair(_initName + ":" + name, atom.stage());
 
 		// * if the atom is propagated from another component, explicitly add
 		// the appropriate prefix and suffix
-		if (_propagatedAtoms != null && _propagatedAtoms.contains(name))
+		if (!fromComps.isEmpty())
 			return new Pair(_initName + ":" + name + ":past", "@past");
 
 		// * otherwise it is an external atom, thus leave the name unaltered
 		return new Pair(name, atom.stage());
 	}
-
-	String restage(IAtom atom) {
-		String stage = atom.stage();
-		// * if @past is used in the head of a rule, clear the stage
-		return ("@past".equals(stage) && _inRuleHead) ? null : stage;
-	}
-
-	// P0 -> P0
-	// S1:P1 -> S1:P1
-	// S3:P2:past -> S1:P2, S2:P2 when S1 and S2 propagate to S3
-	//public static Set<String> revert(String name, Set<String> initIds, Map<String, Set<String>> reversePropagations) {
-	//	if (!name.endsWith(":past")) return Collections.singleton(name);
-
-	//	int i = name.indexOf(':');
-	//	if (i == -1) return Collections.singleton(name);
-
-	//	String id = name.substring(0, i);
-	//	String subName = name.substring(i+1, name.length());
-
-	//	if (reversePropagations.get(id) != null) {
-	//		subName = subName.substring(0, subName.lastIndexOf(":past"));
-	//		Set<String> fromSet = reversePropagations.get(id);
-	//		Set<String> result = new HashSet<>();
-	//		for (String fromId : fromSet) {
-	//			result.add(fromId + ":" + subName);
-	//		}
-	//		return result;
-	//	}
-	//	else
-	//		return Collections.singleton(subName);
-	//}
 }

@@ -32,7 +32,6 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	Set<String>              _globalAtoms;
 	Map<IVisitable, String>  _codeMap;
 
-	Map<String, Set<String>> _reverseProps;
 	Component                _unhandledGlobal;
 	Set<String>              _handledAtoms;
 
@@ -50,7 +49,6 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		_acActor      = new AtomCollectingActor();
 		_codeMap      = new HashMap<>();
 
-		_reverseProps = new HashMap<>();
 		_handledAtoms = new HashSet<>();
 
 		_results      = new ArrayList<>();
@@ -73,41 +71,6 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	}
 
 	@Override
-	public void enter(Program n) {
-		n.props.forEach( prop -> {
-			Set<String> fromSet = _reverseProps.get(prop.toId);
-			if (fromSet == null) fromSet = new HashSet<>();
-			fromSet.add(prop.fromId);
-			_reverseProps.put(prop.toId, fromSet);
-		});
-
-		//// Backpatch entity names from previous components
-		//for (Component comp : n.comps.values()) {
-		//	Map<Declaration, Declaration> newDeclarations = new HashMap<>();
-		//	for (Declaration d : comp.declarations) {
-		//		Set<IAtom> newTypes = new HashSet<>();
-		//		for (IAtom type : d.types) {
-		//			if (type instanceof Entity && type.name().endsWith(":past")) {
-		//				Entity e = (Entity) type;
-		//				Set<String> potentialDeclPreds = InitVisitingActor.revert(e.name(), n.comps.keySet(), _reverseProps);
-		//				if (potentialDeclPreds.size() != 1)
-		//					ErrorManager.error(ErrorId.MULTIPLE_ENT_DECLS, e.name());
-		//				else
-		//					newTypes.add(new Entity(potentialDeclPreds.iterator().next(), null, e.exprs));
-		//			}
-		//			else
-		//				newTypes.add(type);
-		//		}
-		//		newDeclarations.put(d, new Declaration(d.atom, newTypes));
-		//	}
-		//	newDeclarations.forEach( (oldDecl, newDecl) -> {
-		//		comp.declarations.remove(oldDecl);
-		//		comp.declarations.add(newDecl);
-		//	});
-		//}
-	}
-
-	@Override
 	public String exit(Program n, Map<IVisitable, String> m) {
 		n.accept(new PostOrderVisitor<IVisitable>(_acActor));
 		_globalAtoms = _acActor.getDeclaringAtoms(n.globalComp).keySet();
@@ -122,8 +85,6 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 		allUsedAtoms.forEach( (usedAtomName, usedAtom) -> {
 			if ("@past".equals(usedAtom.stage())) return;
 
-			//Set<String> potentialDeclPreds = InitVisitingActor.revert(usedAtomName, n.comps.keySet(), _reverseProps);
-			//if ( !potentialDeclPreds.stream().anyMatch( pred -> allDeclAtoms.contains(pred) ) )
 			if (!allDeclAtoms.contains(usedAtomName))
 				ErrorManager.warn(ErrorId.NO_DECL, usedAtomName);
 		});
@@ -210,13 +171,15 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	public String exit(Functional n, Map<IVisitable, String> m) {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : n.keyExprs) joiner.add(m.get(e));
-		return n.name + (n.stage == null ? "" : n.stage) + "[" + joiner + "]" + (n.valueExpr != null ? " = " + m.get(n.valueExpr) : "");
+		String stage = (n.stage == null || "@past".equals(n.stage) ? "" : n.stage);
+		return n.name + stage + "[" + joiner + "]" + (n.valueExpr != null ? " = " + m.get(n.valueExpr) : "");
 	}
 	@Override
 	public String exit(Predicate n, Map<IVisitable, String> m) {
 		StringJoiner joiner = new StringJoiner(", ");
 		for (IExpr e : n.exprs) joiner.add(m.get(e));
-		return n.name + (n.stage == null ? "" : n.stage) + "(" + joiner + ")";
+		String stage = (n.stage == null || "@past".equals(n.stage) ? "" : n.stage);
+		return n.name + stage + "(" + joiner + ")";
 	}
 	@Override
 	public String exit(Entity n, Map<IVisitable, String> m) {
@@ -228,7 +191,8 @@ public class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements 
 	}
 	@Override
 	public String exit(RefMode n, Map<IVisitable, String> m) {
-		return n.name + (n.stage == null ? "" : n.stage) + "(" + m.get(n.entityVar) + ":" + m.get(n.valueExpr) + ")";
+		String stage = (n.stage == null || "@past".equals(n.stage) ? "" : n.stage);
+		return n.name + stage + "(" + m.get(n.entityVar) + ":" + m.get(n.valueExpr) + ")";
 	}
 	@Override
 	public String exit(StubAtom n, Map<IVisitable, String> m) {
