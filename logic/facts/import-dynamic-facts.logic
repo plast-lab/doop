@@ -29,26 +29,22 @@ _HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
    Method:Id[?method] = ?methodId.
 
 
+
 // Heap allocations may map to more than one place in the allocation stacktrace
 // When this happens we simple take the deeper stack trace level
-+DynamicHeapAllocation(?representation, ?heap1) <-
-   _MatchedHeapAllocation(?representation, ?heap1, ?order),
-   !_InvalidOrder(?representation, ?order).
++DynamicHeapAllocation(?representation, ?heap, ?hctx) <-
+   _MatchedHeapAllocation(?representation, ?heap, ?hctx),
 
-_InvalidOrder(?representation, ?order1) <-
-   _MatchedHeapAllocation(?representation, _, ?order1),
-   _MatchedHeapAllocation(?representation, _, ?order2),
-   ?order2 > ?order1.
 
-_MatchedHeapAllocation(?representation, ?heap, ?order) <-
+_MatchedHeapAllocation(?representation, ?heap, ?hctx) <-
    _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
-   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?order, ?type, ?representation).
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
 
 // For unmatched heap allocations, we record the shallowest (most specific) level of the stack trace
 // This is used to create fake allocations in a subsequent step.
 
 _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
-   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, "0", ?type, ?representation).
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
 
 +UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod) <-
    !DynamicHeapAllocation(?representation,  _), // is this working ?

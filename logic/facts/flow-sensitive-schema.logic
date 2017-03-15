@@ -574,6 +574,8 @@ DynamicCallGraphEdge(?toMethod, ?invocation, ?fromMethod) -> Method(?fromMethod)
 
 UnmatchedDynamicCallGraphEdgeNode(?method) -> Method(?method).
 
+RepresentationOrder(?representation, ?order) -> string(?representation), string(?order).
+
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
 //-----------------------------------------------------------------------------

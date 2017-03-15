@@ -12,7 +12,6 @@ import java.util.Arrays;
  * Created by neville on 27/01/2017.
  */
 public class DumpParsingUtil {
-    private static final String[] UNKNOWN = new String[] {"Unknown"};
     public static final int BIG_NUMBER = 999;
 
     public static String parseLineNumber(String lineNumber) {
@@ -103,45 +102,6 @@ public class DumpParsingUtil {
         return model;
     }
 
-    static DynamicHeapAllocation getHeapRepresentation(StackTrace trace, JavaClass clazz) {
-        if (trace != null && trace.getFrames().length > 0) {
-            com.sun.tools.hat.internal.model.StackFrame[] frames = trace.getFrames();
-
-            int lastRelevantIndex = BIG_NUMBER;
-            if (clazz.isArray()) {
-                lastRelevantIndex = 0;
-            }
-            else if (frames[frames.length-1].getClassName().equals("sun.reflect.NativeConstructorAccessorImpl") &&
-                    frames[frames.length-1].getMethodName().equals("newInstance0")) {
-                 // do nothing for now
-
-            } else {
-                for (int i = 0; i < trace.getFrames().length; i++) {
-                    if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
-                        lastRelevantIndex = i + 1;
-                }
-            }
-
-
-
-            // reverse order
-            ArrayList<String> inMethods = new ArrayList<>();
-            ArrayList<String> lineNumbers = new ArrayList<>();
-
-           for (int i = 0; i<trace.getFrames().length && i <= lastRelevantIndex; i++) {
-                com.sun.tools.hat.internal.model.StackFrame frame = trace.getFrames()[i];
-                String fullyQualifiedMethodName = fullyQualifiedMethodSignatureFromFrame(frame);
-                inMethods.add(fullyQualifiedMethodName);
-                lineNumbers.add(frame.getLineNumber());
-            }
-
-            DynamicNormalHeapAllocation dyn = new DynamicNormalHeapAllocation(Lists.reverse(lineNumbers).toArray(new String[lineNumbers.size()]),
-                    Lists.reverse(inMethods).toArray(new String[inMethods.size()]), clazz.getName());
-           dyn.setProbablyUnmatched(lastRelevantIndex == BIG_NUMBER);
-           return dyn;
-        }
-        return new DynamicNormalHeapAllocation(UNKNOWN, UNKNOWN, clazz.getName());
-    }
 
     public static String fullyQualifiedMethodSignatureFromFrame(StackFrame frame) {
         return "<" + frame.getClassName() + ": " +  methodSignatureFromStackFrame(frame) + ">";
@@ -151,4 +111,28 @@ public class DumpParsingUtil {
         return convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
     }
 
+    public static StackFrame getAllocationFrame(JavaHeapObject obj) {
+
+            StackTrace trace = obj.getAllocatedFrom();
+            JavaClass clazz = obj.getClazz();
+            if (trace != null && trace.getFrames().length > 0) {
+                com.sun.tools.hat.internal.model.StackFrame[] frames = trace.getFrames();
+
+                int relevantIndex = frames.length - 1;
+                // find index where object is allocated
+                if (clazz.isArray() || clazz.getName().equals("java.lang.Object") || !frames[0].getMethodName().equals("<init>")) {
+                    relevantIndex = 0;
+                } else {
+                    for (int i = 0; i < frames.length - 1; i++) {
+                        if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
+                            relevantIndex = i + 1;
+                        else break;
+                    }
+                }
+
+                return frames[relevantIndex];
+            }
+            return null;
+
+    }
 }

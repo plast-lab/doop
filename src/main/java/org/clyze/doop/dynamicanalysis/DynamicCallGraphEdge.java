@@ -6,14 +6,15 @@ import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * Created by neville on 22/02/2017.
  */
 public class DynamicCallGraphEdge implements DynamicFact {
+
+    private final String contextFrom;
+    private final String contextTo;
     private final String methodFrom;
     private final String lineNumberFrom;
 
@@ -39,7 +40,9 @@ public class DynamicCallGraphEdge implements DynamicFact {
         return result;
     }
 
-    public DynamicCallGraphEdge(String methodFrom, String lineNumberFrom, String methodTo) {
+    public DynamicCallGraphEdge(String methodFrom, String lineNumberFrom, String methodTo, String contextFrom, String contextTo) {
+        this.contextFrom = contextFrom;
+        this.contextTo = contextTo;
 
         this.methodFrom = methodFrom;
         this.lineNumberFrom = lineNumberFrom;
@@ -55,7 +58,8 @@ public class DynamicCallGraphEdge implements DynamicFact {
             edges.add(new DynamicCallGraphEdge(
                     DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i]),
                     DumpParsingUtil.parseLineNumber(frames[i].getLineNumber()),
-                    DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i-1]))
+                    DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i-1]),
+                    new ContextInsensitive().getRepresentation(), new ContextInsensitive().getRepresentation())
             );
         }
 

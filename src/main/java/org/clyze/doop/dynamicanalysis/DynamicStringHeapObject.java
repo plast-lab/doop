@@ -8,10 +8,10 @@ import static org.clyze.doop.common.PredicateFile.*;
 /**
  * Created by neville on 15/02/2017.
  */
-public class DynamicStringHeapAllocation implements DynamicHeapAllocation {
+public class DynamicStringHeapObject implements DynamicHeapObject {
     private final String representation;
 
-    public DynamicStringHeapAllocation(String stringValue) {
+    public DynamicStringHeapObject(String stringValue) {
         this.representation = FactEncoders.encodeStringConstant(stringValue);
     }
 
@@ -20,7 +20,7 @@ public class DynamicStringHeapAllocation implements DynamicHeapAllocation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DynamicStringHeapAllocation that = (DynamicStringHeapAllocation) o;
+        DynamicStringHeapObject that = (DynamicStringHeapObject) o;
 
         return getRepresentation().equals(that.getRepresentation());
     }
@@ -30,7 +30,6 @@ public class DynamicStringHeapAllocation implements DynamicHeapAllocation {
         return getRepresentation().hashCode();
     }
 
-    @Override
     public String getRepresentation() {
         return representation;
 

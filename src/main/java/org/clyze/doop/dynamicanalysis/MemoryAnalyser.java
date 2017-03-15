@@ -5,7 +5,10 @@ import org.clyze.doop.common.Database;
 import soot.jimple.infoflow.collect.ConcurrentHashSet;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 // Z                        boolean
 // B                        byte
@@ -29,14 +32,37 @@ public class MemoryAnalyser {
 
     private Set<DynamicFact> dynamicFacts = new ConcurrentHashSet<>();
 
+    private HeapAbstractionIndexer heapAbstractionIndexer = null;
+
     public MemoryAnalyser(String filename) {
 
-        this.filename = "/home/neville/Downloads/jetty-distribution-9.4.0.v20161208/java.hprof";
         this.filename = filename;
     }
 
-    public void resolveFactsFromDump() throws IOException, InterruptedException {
+
+
+    public void resolveFactsFromDump(String sensitivity) throws IOException, InterruptedException {
         Snapshot snapshot = DumpParsingUtil.getSnapshotFromFile(filename);
+
+
+        try {
+            Class heapAbstractionIndexerClass = Class.forName(
+                    "org.clyze.doop.dynamicanalysis.HeapAbstractionIndexer" + sensitivity
+            );
+            heapAbstractionIndexer = (HeapAbstractionIndexer) heapAbstractionIndexerClass
+                    .getConstructor(Snapshot.class)
+                    .newInstance(snapshot);
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
         System.out.println("Extracting facts from heap dump...");
 
@@ -48,20 +74,20 @@ public class MemoryAnalyser {
         Collections.list(instances).parallelStream().forEach(heap -> {
             if (heap instanceof JavaObject) {
                 JavaObject obj = (JavaObject) heap;
-                String baseHeap = getAllocationAbstraction(obj);
+                String baseHeap = heapAbstractionIndexer.getAllocationAbstraction(obj);
                 JavaClass clazz = obj.getClazz();
                 do {
                     for (JavaField field : clazz.getFields()) {
                         JavaThing fieldValue = obj.getField(field.getName());
-                        dynamicInstanceFieldPointsToSet.add(new DynamicInstanceFieldPointsTo(baseHeap, field.getName(), clazz.getName(), getAllocationAbstraction(fieldValue)));
+                        dynamicInstanceFieldPointsToSet.add(new DynamicInstanceFieldPointsTo(baseHeap, field.getName(), clazz.getName(), heapAbstractionIndexer.getAllocationAbstraction(fieldValue)));
                     }
                 } while ((clazz = clazz.getSuperclass()) != null);
             } else if (heap instanceof  JavaObjectArray) {
                 JavaObjectArray obj = (JavaObjectArray) heap;
-                String baseHeap = getAllocationAbstraction(obj);
+                String baseHeap = heapAbstractionIndexer.getAllocationAbstraction(obj);
                 for (JavaThing value : obj.getElements()) {
                     if (value != null)
-                        dynamicArrayIndexPointsToSet.add(new DynamicArrayIndexPointsTo(baseHeap, getAllocationAbstraction(value)));
+                        dynamicArrayIndexPointsToSet.add(new DynamicArrayIndexPointsTo(baseHeap, heapAbstractionIndexer.getAllocationAbstraction(value)));
                 }
             } else if (heap instanceof  JavaValueArray) {
                 // TODO
@@ -70,7 +96,7 @@ public class MemoryAnalyser {
                 for (JavaStatic javaStatic : obj.getStatics()) {
                     dynamicStaticFieldPointsToSet.add(new DynamicStaticFieldPointsTo(
                             javaStatic.getField().getName(), obj.getName(),
-                            getAllocationAbstraction(javaStatic.getValue())
+                            heapAbstractionIndexer.getAllocationAbstraction(javaStatic.getValue())
                     ));
                 }
             } else {
@@ -89,67 +115,25 @@ public class MemoryAnalyser {
         Database db = new Database(factDir);
 
         try {
-            resolveFactsFromDump();
+            resolveFactsFromDump("2ObjH");
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
 
-        int unmatched = 0;
         for (DynamicFact fact: dynamicFacts) {
             fact.write_fact(db);
-            if (fact.isProbablyUnmatched()) unmatched++;
         }
 
-        System.out.println("Warning, "+unmatched+" heap dump objects are likely not to hav a static counterpart.");
+        for (DynamicFact fact: heapAbstractionIndexer.getDynamicFacts()) {
+            fact.write_fact(db);
+        }
+
         db.flush();
         db.close();
         return dynamicFacts.size();
     }
 
-    private String getAllocationAbstraction(JavaThing heap) {
-        if (heap instanceof JavaObject) {
-            JavaObject obj = (JavaObject) heap;
-            StackTrace trace = obj.getAllocatedFrom();
-            DynamicHeapAllocation heapAbstraction = null;
-            /*if(obj.getClazz().isString()) {
-                JavaThing value = obj.getField("value");
-                if (value instanceof JavaValueArray) {
-                    String stringValue = ((JavaValueArray) value).valueString();
-                    if (stringValue.length() < 128) {
-                        heapAbstraction = new DynamicStringHeapAllocation(stringValue);
-                    }
-                }
-            }
-            // else
-            if (heapAbstraction == null)*/
 
-                heapAbstraction = DumpParsingUtil.getHeapRepresentation(trace, obj.getClazz());
-
-            dynamicFacts.addAll(DynamicReachableMethod.fromStackTrace(trace));
-
-            dynamicFacts.addAll(DynamicCallGraphEdge.fromStackTrace(trace));
-
-            dynamicFacts.add(heapAbstraction);
-            return heapAbstraction.getRepresentation();
-
-        } else if (heap instanceof  JavaObjectArray || heap instanceof  JavaValueArray) {
-            JavaHeapObject obj = (JavaHeapObject) heap;
-            DynamicHeapAllocation heapRepresentation = DumpParsingUtil.getHeapRepresentation(obj.getAllocatedFrom(), obj.getClazz());
-
-            dynamicFacts.add(heapRepresentation);
-            return heapRepresentation.getRepresentation();
-        } else if (heap instanceof JavaValue) {
-            return "Primitive Object";
-
-        } else if (heap instanceof JavaObjectRef) {
-            JavaObjectRef obj = (JavaObjectRef) heap;
-            return "JavaObjectRef";
-        } else if (heap instanceof JavaClass) {
-            return "TODO";
-        }
-        throw new RuntimeException("Unknown: " + heap.getClass().toString());
-
-    }
 
 
 }
