@@ -4,7 +4,7 @@ import static groovy.io.FileType.FILES
 
 args.each {
 	if (new File(it).isDirectory())
-		new File(it).eachFileMatch(FILES, ~/.*jimple/) { f -> Parser.parse(f as String) }
+		new File(it).eachFileMatch(FILES, ~/.*(jimple|shimple)/) { f -> println Parser.parseJimple2JSON(f as String) }
 	else
-		Parser.parse(it)
+		println Parser.parseJimple2JSON(it)
 }

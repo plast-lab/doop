@@ -45,3 +45,15 @@ VPTCIandMockVal(v,o) <- VPTCI(v,o), VPTMockVal(v,o).
 // All others: merged string constants that still arise reflectively, layout control objects
 VPTOther(v,o) <- _VPTOpt(v,o), !VPTNormal(v,o), !VPTCI(v,o), !VPTNum(v,o), !VPTMerged(v,o), !VPTMockVal(v,o), !VPTMockHeap(v,o), !VPTClassHeap(v,o).
 
+Var:DeclaringType(Method:DeclaringType[?method], ?var) <- Var:DeclaringMethod(?var, ?method).
+
+JavaUtilVar(?var) <-
+     Type:Id(?class:?className),
+     string:substring[?className, 0, _] = "java.util",
+     Var:DeclaringType(?class, ?var).
+
+VPTJavaUtil(?val, ?var) <-
+   VarPointsTo(_,?val,_,?var),
+   JavaUtilVar(?var).
+
+

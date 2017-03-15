@@ -26,7 +26,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?param) <-
   Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
   Value:Type[?value] = ?valueType,
   ExceptionHandler:InRange(?handler, ?insn),
-	ExceptionHandler:Type[?handler] = ?handlerType,
+  ExceptionHandler:Type[?handler] = ?handlerType,
   SubtypeOf(?valueType, ?handlerType),
   ConcreteClass(?valueType), // filtering null_type
   !ExceptionHandler:Impossible(?valueType, ?handler, ?insn),
@@ -46,7 +46,7 @@ ExceptionHandler:TypeIsCaught(?type, ?block) <-
   ConcreteClass(?type).
 
 /*
- * Inclusion of instuction is important. E.g. handler1 covers indices 20-30,
+ * Inclusion of instruction is important. E.g. handler1 covers indices 20-30,
  * handler2 covers indices 10-40. Also, Previous(handler1, handler2).
  * Instruction #25 may infer Impossible(T1, handler2). Subsequently, when
  * checking instruction #15, we would (falsely) have that handler2 is
@@ -64,6 +64,15 @@ ExceptionHandler:Impossible(?type, ?h2, ?insn) <-
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// An "exception handler" has a separate identity and the following information:
+//  -where it starts being active
+//  -where it stops
+//  -which type it handles
+//  -where it jumps when an appropriate exception is caught ("catch block"). This is
+//   independent from the instructions the handler covers and has no semantics
+//   (e.g., no priority of handlers based on locations of catch blocks).
+//  -in which order it appears in the program text. This is important for priority.
+
 ExceptionHandler:Method:Opt(?handler, ?method) <-
   ExceptionHandler:Method[?handler] = ?method.
 
@@ -74,11 +83,6 @@ ExceptionHandler:InRange(?handler, ?instruction) <-
   ExceptionHandler:Begin[?handler] <= ?index,
   ExceptionHandler:End[?handler] > ?index.
 
-/*
- * Previous(h1, h2) has different semantics compared to Index[h1] < Index[h2].
- * This is due to catch clauses with multiple exceptions.
- * E.g. catch(IOException|SQLException ex)
- */
 ExceptionHandler:Before(?previous, ?handler) <-
   ExceptionHandler:Previous[?handler] = ?previous.
 
@@ -101,9 +105,7 @@ ExceptionHandler:SameInsn:Repr[?insn] = ?handler <-
 
 /*
  * In Jimple, multiple handlers share the same catch block. Also, additional
- * handlers/catch blocks might be added (e.g. to handle exitmonitor commands).
- * NOTE: there are cases where:
- * Previous(h1, h2), Repr[h1] = block1, Repr[h2] = block2 *but* Index[block1] > Index[block2]
+ * handlers/catch blocks might be added (e.g., to handle exitmonitor commands).
  */
 ExceptionHandler:SameBlock:PartialOrder(?h1, ?h2) <-
   ExceptionHandler:Before(?h1, ?h2),
@@ -116,3 +118,67 @@ ExceptionHandler:SameBlock:Repr[?handler] = ?handler <-
 ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
   ExceptionHandler:SameBlock:PartialOrder(?repr, ?handler),
   !ExceptionHandler:SameBlock:PartialOrder(_, ?repr).
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+/* Dynamic proxies have some special exception semantics, since the
+   single invoke() method must pose as any method and thus is declared
+   to throw a Throwable. */
+
+// Case (a): If invoke() has to throw an exception e that is not a
+// checked exception of the interface method, then e is wrapped as
+// UndeclaredThrowableException(e) and thrown. The actual rule below
+// is a bit simpler than the spec, as we do not provide the inner
+// exception e, so we use a global exception object.
+
+MockHeapConsMacro(?heapId, ?UTEClass, ?heap),
+ProxyUTE[] = ?heap <-
+  ?heapId = "<UndeclaredThrowableException thrown by proxy call>",
+  Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
+
+Instruction:Throws(?hctx, Value:byHeap[ProxyUTE[]], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+
+// Case (b): "If the value returned by invoke is null and the
+// interface method's return type is primitive, then a
+// NullPointerException will be thrown by the method invocation on the
+// proxy instance." For performance, we use a single global
+// object.
+
+MockHeapConsMacro(?heapId, ?NPEClass, ?heap),
+ProxyNPE[] = ?heap <-
+  ?heapId = "<NullPointerException thrown by proxy call>",
+  Type:Id(?NPEClass:"java.lang.NullPointerException").
+
+ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx) <-
+  ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar),
+  VarPointsTo(_, Value:Null[], _, ?handlerReturnVar).
+
+Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
+  ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx),
+  AssignReturnValue[?invo] = ?return,
+  PrimitiveType(Var:Type[?return]),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+
+// Case (c): "If the value returned by invoke is otherwise not
+// compatible with the method's declared return type as described
+// above, a ClassCastException will be thrown by the proxy instance."
+// If invoke() returns B and the interface method returns A, then A
+// and B are not compatible if (a) they are different primitive types
+// or (b) B is not a subtype of A.
+
+// In practice, this is usually true due to the variety of return
+// types appearing in interface methods, se we can just assume that
+// proxy calls may throw ClassCastException and we use a single object
+// for all such exceptions.
+
+MockHeapConsMacro(?heapId, ?CCEClass, ?heap),
+ProxyCCE[] = ?heap <-
+  ?heapId = "<ClassCastException thrown by proxy call>",
+  Type:Id(?CCEClass:"java.lang.ClassCastException").
+
+Instruction:Throws(?hctx, Value:byHeap[ProxyCCE[]], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+
+#endif /* REFLECTION_DYNAMIC_PROXIES */
