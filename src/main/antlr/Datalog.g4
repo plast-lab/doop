@@ -5,24 +5,20 @@ package org.clyze.deepdoop.datalog;
 }
 
 program
-	: (comp | propagate | cmd | datalog)* ;
+	: (comp | cmd | initialize | propagate | datalog)* ;
 
 
 lineMarker
 	: '#' INTEGER STRING INTEGER* ;
 
 comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK inits?
-	| COMP IDENTIFIER inits
-	;
+	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK ('as' identifierList)? ;
 
 cmd
-	: CMD IDENTIFIER L_BRACK datalog* R_BRACK inits?
-	| CMD IDENTIFIER inits
-	;
+	: CMD IDENTIFIER L_BRACK datalog* R_BRACK ('as' identifierList)? ;
 
-inits
-	: 'as' identifierList ;
+initialize
+	: IDENTIFIER 'as' identifierList ;
 
 propagate
 	: IDENTIFIER '{' (ALL | predicateNameList) '}' '->' (IDENTIFIER | GLOBAL) ;

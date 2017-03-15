@@ -2,6 +2,6 @@ component Foo {
 	P(x) -> string(x).
 }
 
-component Bar as S1
+Bar as S1
 
 S1 { * } -> .

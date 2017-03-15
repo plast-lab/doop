@@ -93,8 +93,8 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitComp(CompContext ctx) {
-		if (ctx.inits() != null) {
-			List<String> inits = get(_names, ctx.inits().identifierList());
+		if (ctx.identifierList() != null) {
+			List<String> inits = get(_names, ctx.identifierList());
 			inits.forEach(id -> _program.addInit(id, _currCompName));
 		}
 		if (ctx.L_BRACK() != null) {
@@ -110,14 +110,19 @@ public class DatalogListenerImpl extends DatalogBaseListener {
 		}
 	}
 	public void exitCmd(CmdContext ctx) {
-		if (ctx.inits() != null) {
-			List<String> inits = get(_names, ctx.inits().identifierList());
+		if (ctx.identifierList() != null) {
+			List<String> inits = get(_names, ctx.identifierList());
 			inits.forEach(id -> _program.addInit(id, _currCompName));
 		}
 		if (ctx.L_BRACK() != null) {
 			_program.addComponent(_currComp);
 			_currComp = _program.globalComp;
 		}
+	}
+	public void exitInitialize(InitializeContext ctx) {
+		String compName = ctx.IDENTIFIER().getText();
+		List<String> inits = get(_names, ctx.identifierList());
+		inits.forEach(id -> _program.addInit(id, compName));
 	}
 	public void exitPropagate(PropagateContext ctx) {
 		Set<String> predNames = (ctx.ALL() != null ? new HashSet<>() : new HashSet<>(get(_names, ctx.predicateNameList())));

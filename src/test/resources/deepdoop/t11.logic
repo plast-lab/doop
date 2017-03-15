@@ -21,7 +21,8 @@ component Baz {
 }
 as Baz1
 
-component Bar as Bar2
+Bar as Bar2
+
 Baz1 {Z} -> Bar2
 
 Bar2 {*} -> .

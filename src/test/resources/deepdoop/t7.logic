@@ -25,7 +25,7 @@ component Foo : Base {
 }
 as S2, S3
 
-component Foo as S4
+Foo as S4
 
 S0 { * } -> S2
 S1 { * } -> .
