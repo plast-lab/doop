@@ -119,7 +119,7 @@ SubtypeOf(?s, ?t) :-
 
 SubtypeOf(?s, ?t) :-
     Type_int(?s),
-    Type_float(?t).
+    Type_long(?t).
 
 SubtypeOf(?s, ?t) :-
     Type_char(?s),
