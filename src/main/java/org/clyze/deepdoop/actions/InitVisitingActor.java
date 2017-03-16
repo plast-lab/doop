@@ -27,7 +27,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 	Set<String>              _declaredAtoms;
 	// For a given predicate in an (initialized) component get all the
 	// components that propagate this predicate.
-	Map<IAtom, Set<String>>  _reverseProps;
+	Map<String, Set<String>> _reverseProps;
 
 	AtomCollectingActor      _acActor;
 
@@ -54,7 +54,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		Program initP = Program.from(newGlobal, new HashMap<>(), new HashMap<>(), new HashSet<>());
 
 
-		Map<String, Map<IAtom, Set<String>>> reversePropsMap = new HashMap<>();
+		Map<String, Map<String, Set<String>>> reversePropsMap = new HashMap<>();
 		n.props.forEach( prop -> {
 			Component fromTemplateComp    = n.comps.get(n.inits.get(prop.fromId));
 			Map<String, IAtom> declAtoms  = _acActor.getDeclaringAtoms(fromTemplateComp);
@@ -67,7 +67,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			_declaredAtoms                = declAtoms.keySet();
 
 			toPropagate.forEach( pred -> {
-				Map<IAtom, Set<String>> reverseMap = reversePropsMap.get(prop.toId);
+				Map<String, Set<String>> reverseMap = reversePropsMap.get(prop.toId);
 				if (reverseMap == null) reverseMap = new HashMap<>();
 				Set<String> fromSet = reverseMap.get(pred);
 				if (fromSet == null) fromSet = new HashSet<>();
@@ -75,7 +75,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 				Pair p = rename(pred);
 				newPreds.add(new StubAtom(p.name));
 
-				reverseMap.put(pred, fromSet);
+				reverseMap.put(pred.name(), fromSet);
 				reversePropsMap.put(prop.toId, reverseMap);
 			});
 			initP.addPropagation(prop.fromId, newPreds, prop.toId);
@@ -308,14 +308,10 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 		if (_removeName != null && name.startsWith(_removeName + ":"))
 			name = name.replaceFirst(_removeName + ":", "");
 
-		List<Set<String>> fromComps;
-		if (_reverseProps == null) fromComps = new ArrayList<>();
-		else fromComps =
-			_reverseProps.entrySet().stream()
-			.filter( entry -> entry.getKey().name().equals(atom.name()) )
-			.map( entry -> entry.getValue() )
-			.collect(Collectors.toList());
-		assert (fromComps.size() <= 1);
+		Set<String> reverseSet = null;
+		if (_reverseProps != null)
+			reverseSet = _reverseProps.get(atom.name());
+		assert (reverseSet == null || reverseSet.size() == 1);
 
 		// NOTE: This if should go before the next one, since the heuristic for
 		// discovering predicated declared in a component will assume that a
@@ -329,13 +325,10 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 			// * if @past is used for an entity
 			// then fix name accordingly
 			else if (_inRuleHead || atom instanceof Entity) {
-				if (fromComps.isEmpty())
+				if (reverseSet == null)
 					return new Pair(name, null);
-				else {
-					assert (fromComps.get(0).size() == 1);
-					String fromComp = fromComps.get(0).iterator().next();
-					return new Pair(fromComp + ":" + name, null);
-				}
+				else
+					return new Pair(reverseSet.iterator().next() + ":" + name, null);
 			}
 			// * else explicitly add the appropriate prefix and suffix
 			else return new Pair(_initName + ":" + name + ":past", "@past");
@@ -347,7 +340,7 @@ public class InitVisitingActor extends PostOrderVisitor<IVisitable> implements I
 
 		// * if the atom is propagated from another component, explicitly add
 		// the appropriate prefix and suffix
-		if (!fromComps.isEmpty())
+		if (reverseSet != null)
 			return new Pair(_initName + ":" + name + ":past", "@past");
 
 		// * otherwise it is an external atom, thus leave the name unaltered
