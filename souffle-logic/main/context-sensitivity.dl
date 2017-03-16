@@ -137,13 +137,14 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
  */
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+   ReachableContext(?toCtx, ?inmethod),
+   Instruction_Method(?insn, ?inmethod),
    (AssignNumConstant_Id(?insn, ?const);
     AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
    AssignInstruction_To(?insn, ?to),
    Value_Num(?value, ?const),
-   Instruction_Method(?insn, ?inmethod),
-   ReachableContext(?toCtx, ?inmethod),
    ImmutableHContextFromContext(?toCtx, ?hctx).
+   .plan 1:(6,1,2,3,4,5)
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
@@ -239,16 +240,42 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
  * Load array index
  */
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+// Intermediate relations used for optimization purposes
+.decl OptLoadHeapArrayIndex(?var:Var, ?value:Value)
+.decl Temp1(?value:Value, ?var:Var)
+.decl Temp2(?ctx:Context, ?var:Var, ?hctx:HContext, ?value:Value)
+
+OptLoadHeapArrayIndex(?to, ?basevalue) :-
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue).
+
+Temp1(?basevalue, ?to) :-
   NotEmptyArrayValue(?basevalue),
-  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
-  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
-  // this is necessary to handle untyped array operations, e.g., the
-  // simulation of arrayCopy calls as Load/Stores
+  OptLoadHeapArrayIndex(?to, ?basevalue),
   Value_Type(?basevalue, ?basevaluetype),
-  Var_Type(?to, ?type),
   ComponentType(?basevaluetype, ?basecomponenttype),
+  Var_Type(?to, ?type),
   SupertypeOf(?type, ?basecomponenttype).
+
+Temp2(?ctx, ?to, ?basehctx, ?basevalue) :-
+  Temp1(?basevalue, ?to),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  Temp2(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
+
+// The above logic aims to optimize the following rule:
+//
+// VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+//   NotEmptyArrayValue(?basevalue),
+//   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+//   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
+//   // this is necessary to handle untyped array operations, e.g., the
+//   // simulation of arrayCopy calls as Load/Stores
+//   Value_Type(?basevalue, ?basevaluetype),
+//   Var_Type(?to, ?type),
+//   ComponentType(?basevaluetype, ?basecomponenttype),
+//   SupertypeOf(?type, ?basecomponenttype).
 
 .decl NotEmptyArrayValue(?value:Value)
 
