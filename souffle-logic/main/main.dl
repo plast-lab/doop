@@ -27,15 +27,16 @@ Value_Type(?value, ?type) :-
     HeapAllocation_Type(?heap, ?type).
 
 
-
 // Only create values for numeric constants in a static initializer
 // (or initial field value) inside a class whose name contains
 // ".R$". We are trying to capture just the constants in Android "R"
 // nested classes. REVIEW to generalize.
-Value_Num(?value, ?const),
-Value_isNonHeap(?value),
-isValue(?value),
-Value_Type(?value, ?type) :-
+// Numeric constants are prepended with *num-constant-* to distinguish
+// them from allocations that share the same string value.
+Value_Num(cat("num-constant-", ?value), ?const),
+Value_isNonHeap(cat("num-constant-", ?value)),
+isValue(cat("num-constant-", ?value)),
+Value_Type(cat("num-constant-", ?value), ?type) :-
    isNumConstant(?const),
    AssignNumConstant_Id(?insn, ?const),
    Instruction_Method(?insn, ?meth),
@@ -46,10 +47,10 @@ Value_Type(?value, ?type) :-
    Type_int(?type),
    ?value = ?const.
 
-Value_Num(?value, ?const),
-Value_isNonHeap(?value),
-isValue(?value),
-Value_Type(?value, ?type) :-
+Value_Num(cat("num-constant-", ?value), ?const),
+Value_isNonHeap(cat("num-constant-", ?value)),
+isValue(cat("num-constant-", ?value)),
+Value_Type(cat("num-constant-", ?value), ?type) :-
    isNumConstant(?const),
    FieldInitialValue(?fld, ?const),
    Field_DeclaringType(?fld, ?className),
