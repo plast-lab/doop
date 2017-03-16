@@ -96,9 +96,9 @@ AccessPath:Precomputed(ap) <-
 MayContext:MaxDepth[]  = 4.
 AccessPath:MaxLength[] = 3.
 
-component IMustAlias as MustAlias1//, MustAlias2
-component IMustPointTo as MustPoint1//, MustPoint2
-component SoundMay as SoundMay1//, SoundMay2
+IMustAlias as MustAlias1//, MustAlias2
+IMustPointTo as MustPoint1//, MustPoint2
+SoundMay as SoundMay1//, SoundMay2
 
 MustAlias1 { MustAlias } -> SoundMay1
 MustPoint1 { VarMustAlias, VarMustAlias:This } -> SoundMay1
