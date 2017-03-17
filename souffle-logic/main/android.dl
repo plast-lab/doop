@@ -193,9 +193,9 @@ _OptMethodFromVar(?var, ?meth) :-
 
 // ... all analysis-reachable objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
-  VarPointsTo(?hctx, ?value, _, _),
+  ApplicationClass(?ofType),
   Value_Type(?value, ?ofType),
-  ApplicationClass(?ofType).
+  VarPointsTo(?hctx, ?value, _, _).
 
 // Be liberal: if an object is a listener, and it is instantiated
 // in the application, then consider it to flow to the library.
