@@ -520,7 +520,6 @@ _Throw(?ref, ?index, ?var, ?method) ->
    string(?method).
 
 +Throw:Insn(?x),
-+Instruction:Id(?x:?ref),
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +Throw:Var[?x] = ?var <-

@@ -198,7 +198,8 @@ class SouffleAnalysis extends DoopAnalysis {
 
         System.out.println("Running analysis executable")
         System.out.println("${outDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath")
-        executor.execute("${outDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath")
+        t = timing { executor.execute("${outDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath") }
+        System.out.println("Analysis time (sec): ${t}")
     }
 
     @Override
