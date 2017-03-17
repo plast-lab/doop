@@ -21,7 +21,6 @@
  */
 VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to)
 :-
-   ImmutableHContextFromContext(?ctx, ?hctx),
    MethodInvocation_Method(?inv,
 #ifdef DACAPO_BACH
    "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
@@ -32,6 +31,7 @@ VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to)
    VirtualMethodInvocation_Base(?inv, ?base),
    Var_DeclaringMethod(?base, ?method),
    ReachableContext(?ctx, ?method),
+   ImmutableHContextFromContext(?ctx, ?hctx),
    ActualParam(0, ?inv, ?to),
    DacapoHarnessClass(?classNameHeap),
    Value_Heap(?classNameValue, ?classNameHeap).

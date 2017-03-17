@@ -228,7 +228,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) :-
   SupertypeOf(?type, ?valuetype).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   (Tamiflex_ReifiedField(_, ?heap, ?invocation) ;
    Tamiflex_ReifiedFieldArray(_, ?heap, ?invocation) ;
    Tamiflex_ReifiedMethod(_, ?heap, ?invocation) ;
@@ -236,4 +235,5 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   Value_Heap(?value, ?heap),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
+  ImmutableHContextFromContext(?ctx, ?hctx),
   AssignReturnValue(?invocation, ?return).
