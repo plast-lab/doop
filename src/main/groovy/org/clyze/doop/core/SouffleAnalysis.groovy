@@ -100,14 +100,13 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void initDatabase() {
-        cpp.preprocess("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/facts/to-flow-sensitive.dl")
-        cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/facts/flow-sensitive-schema.dl",
-                "${Doop.souffleLogicPath}/facts/flow-insensitive-schema.dl",
-                "${Doop.souffleLogicPath}/facts/import-entities.dl",
-                "${Doop.souffleLogicPath}/facts/import-facts.dl",
-                "${Doop.souffleLogicPath}/facts/post-process.dl",
-                "${Doop.souffleLogicPath}/facts/export.dl"
-                                        )
+        cpp.preprocess("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/facts/to-flow-sensitive.dl",
+                                               "${Doop.souffleLogicPath}/facts/flow-sensitive-schema.dl",
+                                               "${Doop.souffleLogicPath}/facts/flow-insensitive-schema.dl",
+                                               "${Doop.souffleLogicPath}/facts/import-entities.dl",
+                                               "${Doop.souffleLogicPath}/facts/import-facts.dl",
+                                               "${Doop.souffleLogicPath}/facts/post-process.dl",
+                                               "${Doop.souffleLogicPath}/facts/export.dl")
 
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.souffleAddonsPath}/tamiflex"
@@ -195,7 +194,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (!analysisCacheDir.exists()) {
             System.out.println("Compiling datalog to produce C++ program and executable with souffle")
-            System.out.println("Souffle command: souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl")
+            System.out.println("Souffle command: souffle -w -o souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
 
             long t = timing {
                 executor.execute("souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
