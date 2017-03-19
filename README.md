@@ -122,7 +122,7 @@ You can also override the options from a properties file with options from the c
 
 In order to use Soufflé instead of the LogicBlox engine you can provide the --souffle argument. Soufflé supports multithreading so you can select the number of threads the analysis will run on by providing the --jobs argument to doop. For example:
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --id souffle-antlr --souffle --jobs 12
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle --jobs 12
 
 You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
