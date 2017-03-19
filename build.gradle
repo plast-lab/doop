@@ -69,7 +69,7 @@ dependencies {
             'com.google.code.gson:gson:2.4'                     // GSON library
 
     // Soot is a compile time dependency
-    compile 'ext:AXMLPrinter2:1.0-SNAPSHOT',
+    compile 'ext:AXMLPrinter:2.0',
             "ext:sootclasses:1.+",
             "ext:soot-infoflow:1.+",
             "ext:soot-infoflow-android:1.+"
