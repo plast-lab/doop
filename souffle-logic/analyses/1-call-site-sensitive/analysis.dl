@@ -1,0 +1,17 @@
+// Context-sensitive pointer analysis with context of 1 call site.
+
+// In this analysis, the real context is a MethodInvocation.
+.type Context = [ invocation:MethodInvocation ]
+
+// This analysis has no context for heap objects.
+// This is emulated by creating a single HContext object,
+// which is used everywhere.
+.type HContext
+.decl GlobalHContext(?hctx:HContext)
+
+GlobalHContext("<<global-hcontext>>").
+
+
+.decl StartupInvocation(?invocation:MethodInvocation)
+
+StartupInvocation("<<jvm-startup-context>>").

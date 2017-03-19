@@ -1,0 +1,3 @@
+.decl AllocatedObjectSupportsFinalize(?heap:HeapAllocation, ?inmethod:Method)
+
+.decl OverridesFinalize(?class:Type)

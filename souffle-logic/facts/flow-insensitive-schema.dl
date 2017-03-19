@@ -1,0 +1,45 @@
+//-----------------------------------------------------------------------------
+// [Flow-insensitive Schema Layer]
+//
+// The following section contains a slightly modified schema that hides the
+// underlying instruction entities, which are irrelevant to flow-insensitive
+// analyses.
+//
+// The basic pattern is that, for each instruction entity, we introduce another
+// predicate that joins all of its properties (encoded as functional
+// predicates) but does not contain the instruction itself.
+//
+// Note that this pattern applies only to a subset of instructions that is
+// important for flow-insensitive analysis.
+//-----------------------------------------------------------------------------
+
+.decl Throw(?insn:Throw_Insn, ?var:Var)
+
+// Note: for OPT inmethod last
+
+.decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)
+
+.decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)
+
+.decl LoadStaticField(?sig:Field, ?to:Var, ?inmethod:Method)
+
+.decl StoreStaticField(?from:Var, ?signature:Field, ?inmethod:Method)
+
+.decl LoadArrayIndex(?base:Var, ?to:Var, ?inmethod:Method)
+
+.decl StoreArrayIndex(?from:Var, ?base:Var, ?inmethod:Method)
+
+.decl AssignCast(?type:Type, ?from:Var, ?to:Var, ?inmethod:Method)
+
+.decl AssignLocal(?from:Var, ?to:Var, ?inmethod:Method)
+
+.decl AssignNull(?to:Var, ?inmethod:Method)
+
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)
+
+// Note: a Jimple method can have multiple return variables
+.decl ReturnVar(?var:Var, ?method:Method)
+
+.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+
+.decl StaticMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)

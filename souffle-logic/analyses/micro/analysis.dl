@@ -1,0 +1,207 @@
+#include "../../facts/flow-insensitive-schema.dl"
+#include "../../facts/flow-sensitive-schema.dl"
+#include "../../facts/to-flow-sensitive.dl"
+#include "../../facts/import-entities.dl"
+#include "../../facts/import-facts.dl"
+#include "../../facts/post-process.dl"
+#include "../../basic/basic.dl"
+#include "../../basic/exceptions.dl"
+#include "../../basic/finalization.dl"
+#include "../../basic/method-resolution.dl"
+#include "../../basic/subclass.dl"
+#include "../../basic/superinterface.dl"
+#include "../../basic/type-hierarchy.dl"
+#include "../../main/implicit-reachable.dl"
+#include "../../main/implicit-reachable-declarations.dl"
+#include "../../main/class-initialization.dl"
+#include "../../main/class-initialization-declarations.dl"
+
+/////////
+// IDB //
+/////////
+
+.decl Assign(?to:Var, ?from:Var) output
+.decl VarPointsTo(?heap:HeapAllocation, ?var:Var) output
+.decl InstanceFieldPointsTo(?heap:HeapAllocation , ?fld:Field, ?baseheap:HeapAllocation) output
+.decl StaticFieldPointsTo(?heap:HeapAllocation, ?fld:Field) output
+.decl CallGraphEdge(?invocation:MethodInvocation, ?meth:Method) output
+.decl ArrayIndexPointsTo(?baseheap:HeapAllocation, ?heap:HeapAllocation) output
+.decl Reachable(?method:Method)
+
+/**
+ * Invocation assignments
+ */
+
+Assign(?actual, ?formal) :-
+   CallGraphEdge(?invocation, ?method),
+   FormalParam(?index, ?method, ?formal),
+   ActualParam(?index, ?invocation, ?actual).
+
+Assign(?return, ?local) :-
+   CallGraphEdge(?invocation, ?method),
+   ReturnVar(?return, ?method),
+   AssignReturnValue(?invocation, ?local).
+
+
+VarPointsTo(?heap, ?var) :-
+  AssignHeapAllocation(?heap, ?var, ?inMethod),
+  Reachable(?inMethod).
+
+/**
+ *  Variable points to heap object via assignment
+ */
+
+VarPointsTo(?heap, ?to) :-
+   Assign(?from, ?to),
+   VarPointsTo(?heap, ?from).
+
+/**
+ *  Local Assignments
+ */
+
+VarPointsTo(?heap, ?to) :-
+   Reachable(?inmethod),
+   AssignLocal(?from, ?to, ?inmethod),
+   VarPointsTo(?heap, ?from).
+
+/**
+ * Cast Assignments
+ */
+
+VarPointsTo(?heap, ?to) :-
+    Reachable(?method),
+    AssignCast(?type, ?from, ?to, ?method),
+    SupertypeOf(?type, ?heaptype),
+    HeapAllocation_Type(?heap, ?heaptype),
+    VarPointsTo(?heap, ?from).
+
+/**
+ * Arrays
+ *
+ */
+
+ArrayIndexPointsTo(?baseheap, ?heap) :-
+   Reachable(?inmethod),
+   StoreArrayIndex(?from, ?base, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   VarPointsTo(?heap, ?from),
+   HeapAllocation_Type(?heap, ?heaptype),
+   HeapAllocation_Type(?baseheap, ?baseheaptype),
+   ComponentType(?baseheaptype, ?componenttype),
+   SupertypeOf(?componenttype, ?heaptype).
+
+VarPointsTo(?heap, ?to) :-
+   Reachable(?inmethod),
+   LoadArrayIndex(?base, ?to, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   ArrayIndexPointsTo(?baseheap, ?heap),
+   Var_Type(?to, ?type),
+   HeapAllocation_Type(?baseheap, ?baseheaptype),
+   ComponentType(?baseheaptype, ?basecomponenttype),
+   SupertypeOf(?type, ?basecomponenttype).
+
+/**
+ * Load instance fields
+ *
+ */
+
+VarPointsTo(?heap, ?to) :-
+   Reachable(?inmethod),
+   LoadInstanceField(?base, ?signature, ?to, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   InstanceFieldPointsTo(?heap, ?signature, ?baseheap).
+
+/**
+ * Store instance fields
+ */
+
+InstanceFieldPointsTo(?heap, ?fld, ?baseheap) :-
+  Reachable(?inmethod),
+  StoreInstanceField(?from, ?base, ?fld, ?inmethod),
+  VarPointsTo(?heap, ?from),
+  VarPointsTo(?baseheap, ?base).
+
+/**
+ * Load static fields
+ */
+
+VarPointsTo(?heap, ?to) :-
+  Reachable(?inmethod),
+  LoadStaticField(?fld, ?to, ?inmethod),
+  StaticFieldPointsTo(?heap, ?fld).
+
+/**
+ * Store static fields
+ */
+
+StaticFieldPointsTo(?heap, ?fld) :-
+    Reachable(?inmethod),
+    StoreStaticField(?from, ?fld, ?inmethod),
+    VarPointsTo(?heap, ?from).
+
+
+VarPointsTo(?heap, ?this) :-
+  Reachable(?inMethod),
+  Instruction_Method(?invocation, ?inMethod),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(?heap, ?base),
+  HeapAllocation_Type(?heap, ?heaptype),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod),
+  ThisVar(?toMethod, ?this).
+
+/**
+ *   Call graph creation
+ **/
+
+Reachable(?toMethod),
+CallGraphEdge(?invocation, ?toMethod) :-
+  Reachable(?inMethod),
+  Instruction_Method(?invocation, ?inMethod),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VarPointsTo(?heap, ?base),
+  HeapAllocation_Type(?heap, ?heaptype),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod).
+
+Reachable(?tomethod),
+CallGraphEdge(?invocation, ?tomethod) :-
+   Reachable(?inmethod),
+   StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+
+Reachable(?tomethod),
+CallGraphEdge(?invocation, ?tomethod),
+VarPointsTo(?heap, ?this) :-
+   Reachable(?inmethod),
+   Instruction_Method(?invocation, ?inmethod),
+   SpecialMethodInvocation_Base(?invocation, ?base),
+   VarPointsTo(?heap, ?base),
+   MethodInvocation_Method(?invocation, ?tomethod),
+   ThisVar(?tomethod, ?this).
+
+
+/**
+ * Implicitly reachable methods are invoked by the JVM on startup.
+ */
+Reachable(?method) :-
+    ImplicitReachable(?method).
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+Reachable(?method) :-
+   MainMethodDeclaration(?method).
+
+/**
+ * If a class needs to be initialized, then its class initializer is
+ * invoked.
+ *
+ * Note that InitializedClass already deals with superclasses that
+ * needs to be initialized as well, so we don't need to invoke class
+ * initializers of the super class here.
+ */
+Reachable(?clinit) :-
+   InitializedClass(?class),
+   ClassInitializer(?class, ?clinit).

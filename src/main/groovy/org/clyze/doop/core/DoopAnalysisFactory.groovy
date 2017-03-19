@@ -79,29 +79,42 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         DoopAnalysis analysis
-        if (name != "sound-may-point-to")
-            analysis = new ClassicAnalysis(
-                analysisId,
-                name.replace(File.separator, "-"),
-                options,
-                context,
-                outDir,
-                cacheDir,
-                vars.inputFiles,
-                vars.platformFiles,
-                commandsEnv)
-        else {
-            options.CFG_ANALYSIS.value = true
-            analysis = new SoundMayAnalysis(
-                analysisId,
-                name.replace(File.separator, "-"),
-                options,
-                context,
-                outDir,
-                cacheDir,
-                vars.inputFiles,
-                vars.platformFiles,
-                commandsEnv)
+        if (options.SOUFFLE.value == true) {
+            analysis = new SouffleAnalysis(
+                    analysisId,
+                    name.replace(File.separator, "-"),
+                    options,
+                    context,
+                    outDir,
+                    cacheDir,
+                    vars.inputFiles,
+                    vars.platformFiles,
+                    commandsEnv)
+        } else {
+            if (name != "sound-may-point-to")
+                analysis = new ClassicAnalysis(
+                        analysisId,
+                        name.replace(File.separator, "-"),
+                        options,
+                        context,
+                        outDir,
+                        cacheDir,
+                        vars.inputFiles,
+                        vars.platformFiles,
+                        commandsEnv)
+            else {
+                options.CFG_ANALYSIS.value = true
+                analysis = new SoundMayAnalysis(
+                        analysisId,
+                        name.replace(File.separator, "-"),
+                        options,
+                        context,
+                        outDir,
+                        cacheDir,
+                        vars.inputFiles,
+                        vars.platformFiles,
+                        commandsEnv)
+            }
         }
         logger.debug "Created new analysis"
         return analysis
@@ -269,10 +282,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
-            // FIXME: When "full" JARs are used, pick only the first
-            // one (assumed to be android.jar) or XML parsing fails.
-            if (androidLibFlavor.equals("full"))
-                files = [ files[0] ]
+                // FIXME: When "full" JARs are used, pick only the first
+                // one (assumed to be android.jar) or XML parsing fails.
+                if (androidLibFlavor.equals("full"))
+                    files = [ files[0] ]
         }
         return files
     }
@@ -513,7 +526,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         //LC_ALL
         env.LC_ALL = "en_US.UTF-8"
-        
+
         return env
     }
 }

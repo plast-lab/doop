@@ -1,0 +1,3 @@
+.decl RunningThread(?hctx:HContext, ?value:Value)
+
+.decl ReachableCurrentThreadInvocation(?callerCtx:Context, ?local:Var)
