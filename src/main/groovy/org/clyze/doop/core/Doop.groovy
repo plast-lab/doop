@@ -24,14 +24,10 @@ class Doop {
     static String doopHome
     static String doopOut
     static String doopCache
-    static String souffleAnalysesCache
     static String logicPath
-    static String souffleLogicPath
     static String factsPath
     static String addonsPath
-    static String souffleAddonsPath
     static String analysesPath
-    static String souffleAnalysesPath
 
     static Map<String, AnalysisOption> defaultOptionsMap
 
@@ -48,16 +44,12 @@ class Doop {
         if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
         FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
-        doopOut             = outPath ?: "$doopHome/out"
-        doopCache           = cachePath ?: "$doopHome/cache"
-        souffleAnalysesCache= "$doopCache/souffle-analyses"
-        logicPath           = "$doopHome/logic"
-        souffleLogicPath    = "$doopHome/souffle-logic"
-        factsPath           = "$logicPath/facts"
-        addonsPath          = "$logicPath/addons"
-        souffleAddonsPath   = "$souffleLogicPath/addons"
-        analysesPath        = "$logicPath/analyses"
-        souffleAnalysesPath = "$souffleLogicPath/analyses"
+        doopOut      = outPath ?: "$doopHome/out"
+        doopCache    = cachePath ?: "$doopHome/cache"
+        logicPath    = "$doopHome/logic"
+        factsPath    = "$logicPath/facts"
+        addonsPath   = "$logicPath/addons"
+        analysesPath = "$logicPath/analyses"
 
         //create all necessary files/folders
         File f = new File(doopOut)

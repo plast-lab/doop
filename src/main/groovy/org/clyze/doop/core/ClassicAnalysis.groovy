@@ -121,7 +121,6 @@ class ClassicAnalysis extends DoopAnalysis {
                                 .replaceFirst(/;[^;]*;$/, "")
                                 .replaceFirst(/;$/, ";0")
                                 .replaceFirst(/(^.*;.*)\.([^.]+;[0-9]+$)/) { full, first, second -> first+";"+second+"\n" }
-                                .replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
             }
