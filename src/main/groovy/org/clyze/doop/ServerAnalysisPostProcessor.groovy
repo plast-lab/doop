@@ -12,6 +12,8 @@ class ServerAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis>
 
     @Override
     void process(DoopAnalysis analysis) {
-        analysis.connector.addBlockFile("${Doop.addonsPath}/server-logic/queries.logic")
+        if (!analysis.options.X_STOP_AT_FACTS.value) {
+            analysis.connector.addBlockFile("${Doop.addonsPath}/server-logic/queries.logic")
+        }
     }
 }

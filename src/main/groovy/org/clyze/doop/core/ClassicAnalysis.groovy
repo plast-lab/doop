@@ -449,6 +449,10 @@ class ClassicAnalysis extends DoopAnalysis {
             params += ["--only-application-classes-fact-gen"]
         }
 
+        if (options.GENERATE_JIMPLE.value) {
+            params += ["--generate-jimple"]
+        }
+
         if (options.X_DRY_RUN.value) {
             params += ["--noFacts"]
         }

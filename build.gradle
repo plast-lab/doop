@@ -107,16 +107,16 @@ run {
     }
 }
 
-task bytecode2jimple(type: JavaExec) {
+task generateJimple(type: JavaExec) {
     description 'Generate Jimple/Shimple file'
     group = 'Other'
     main = 'org.clyze.doop.soot.Main'
     classpath = sourceSets.main.runtimeClasspath
     if (!project.hasProperty('args') ||
-            project.property('args').isEmpty() ||
-            project.property('args') == '-h' ||
-            project.property('args') == '--help') {
-        args = ["--bytecode2jimpleHelp"]
+        project.property('args').isEmpty() ||
+        project.property('args') == '-h' ||
+        project.property('args') == '--help') {
+        args = ["--generate-jimple-help"]
     } else {
         def gradleInvocationDir = System.getProperty('user.dir')
         def givenArgs = project.property('args').tokenize()
@@ -134,7 +134,7 @@ task bytecode2jimple(type: JavaExec) {
         if (!inputFile.startsWith("/"))
             givenArgs[lastIndex] = gradleInvocationDir + "/" + inputFile
 
-        args = ["--bytecode2jimple", "--allow-phantom"] + givenArgs
+        args = ["--generate-jimple", "--allow-phantom"] + givenArgs
     }
 }
 
