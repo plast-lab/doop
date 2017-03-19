@@ -4,7 +4,7 @@ This document contains instructions for invoking the main driver of Doop. For an
 
 ## Getting Started
 
-At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). You can use **PA-Datalog**, an open-source porting of the LogicBlox engine, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html).
+At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). You can use **PA-Datalog**, an open-source porting of the LogicBlox engine, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). Part of the codebase has been ported to Soufflé Datalog, developed by [Oracle](http://souffle-lang.org/). In order to install an up-to-date version of Soufflé, the best practice is to clone the development Github [repo](https://github.com/souffle-lang/souffle) and follow the instructions found on [this page](http://souffle-lang.org/docs/build/). 
 
 For trouble-free configuration:
 
@@ -118,6 +118,18 @@ You can also override the options from a properties file with options from the c
     $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_6
 
 
+### Using Soufflé as the Datalog engine of choice
+
+In order to use Soufflé instead of the LogicBlox engine you can provide the --souffle argument. Soufflé supports multithreading so you can select the number of threads the analysis will run on by providing the --jobs argument to doop. For example:
+
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle --jobs 12
+
+You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+
+    $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
+
+Keep in mind that only a subset of the analyses expressed in LogiQL have been ported to Soufflé. Soufflé integration is still a work in progress and the code is not fully optimized yet.
+   
 ## License
 MIT license (see [LICENSE](LICENSE)).
 
