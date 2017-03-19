@@ -381,6 +381,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				webUI: true,
 				forCacheID:true
 			),
+			new AnalysisOption<Boolean>(
+				id:"RUN_SERVER_LOGIC",
+				name:"run-server-logic",
+				description:"Run server queries under addons/server-logic"
+			),
 			/* Start of non-standard flags */
 			new AnalysisOption<Boolean>(
 				id:"X_STATS_FULL",

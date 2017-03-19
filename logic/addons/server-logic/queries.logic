@@ -1,0 +1,172 @@
+/** Variable points to Heap **/
+serverVarPointsToHeap(var, heapid) <- VarPointsTo(_, value, _, var),
+                 Value:isHeap(value),
+                 Value:Id[value] = heapid.
+
+/** Call Graph Edges **/
+serverVirtualCallGraphEdge(invocation, tomethod) <- CallGraphEdge(_, invocation, _, tomethod),
+                                                    VirtualMethodInvocation:Insn(invocation).
+
+
+serverStaticCallGraphEdge(invocation, tomethod) <- CallGraphEdge(_, invocation, _, tomethod),
+                                                  StaticMethodInvocation:Insn(invocation).
+
+/** Field Points to Heap **/
+serverInstanceFieldPointsTo(heapid, sig, baseheapid) <- AssignHeapAllocation:Heap[_] = baseheap,
+                                                        Value:byHeap[baseheap] = basevalue,
+                                                        Value:Id[value] = heapid,
+                                                        Value:Id[basevalue] = baseheapid,
+                                                        Value:isHeap(basevalue),
+                                                        Value:isHeap(value),
+                                                        InstanceFieldPointsTo(_, value, sig, _, basevalue).
+
+serverStaticFieldPointsTo(sig, heapid) <- StaticFieldPointsTo(_, value, sig),
+                                          Value:isHeap(value),
+                                          Value:Id[value] = heapid.
+
+/** Aggregations **/
+
+SimpleCallGraphEdge(?toMethod, ?invocation) ->
+   MethodInvocation(?invocation),
+   Method(?toMethod).
+
+SimpleCallGraphEdge(?toMethod, ?invocation) <-
+   CallGraphEdge(_, ?invocation, _, ?toMethod).
+
+// All the methods reachable from a method (transitive call-graph)
+ReachableFromMethod(?fromMethod, ?toMethod) ->
+   Method(?fromMethod),
+   Method(?toMethod).
+
+ReachableFromMethod(?fromMethod, ?toMethod) <-
+   SimpleCallGraphEdge(?toMethod, ?invocation),
+   Instruction:Method[?invocation] = ?fromMethod.
+
+ReachableFromMethod(?fromMethod, ?toMethod) <-
+   ReachableFromMethod(?fromMethod, ?toMethodMid),
+   Instruction:Method[?invocation] = ?toMethodMid,
+   SimpleCallGraphEdge(?toMethod, ?invocation).
+   // Instruction:Method[?invocation] = ?fromMethod,
+   // SimpleCallGraphEdge(?invocation, ?toMethodMid),
+   // ReachableFromMethod(?toMethodMid, ?toMethod).
+
+// Recursive methods
+RecursiveMethod(?method) ->
+   Method(?method).
+
+RecursiveMethod(?method) <-
+   ReachableFromMethod(?method, ?method).
+
+// Total number of heap allocations inside method body. It DOES NOT
+// take heap allocation in methods invoked therein into account.
+AllocInMethod(?insn, ?method) ->
+   Method(?method),
+   AssignHeapAllocation:Insn(?insn).
+
+AllocInMethod(?insn, ?method) <-
+   AssignHeapAllocation:Insn(?insn),
+   Instruction:Method[?insn] = ?method.
+
+TotalIndirectAllocationsInMethodEmpty[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalIndirectAllocationsInMethodNonEmpty[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalIndirectAllocationsInMethod[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalDirectAllocationsInMethod[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalDirectAllocationsInMethodEmpty[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalDirectAllocationsInMethodNonEmpty[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalAllocationsInMethod[?method] = n ->
+   Method(?method),
+   uint[32](n).
+
+TotalDirectAllocationsInMethodNonEmpty[?method] = n <-
+   agg<<n = count()>>
+   AllocInMethod(_, ?method).
+
+TotalDirectAllocationsInMethodEmpty[?method] = 0 <-
+    Method(?method),
+    !AllocInMethod(_, ?method).
+
+TotalDirectAllocationsInMethod[?method] = n <-
+    TotalDirectAllocationsInMethodEmpty[?method] = n.
+
+TotalDirectAllocationsInMethod[?method] = n <-
+    TotalDirectAllocationsInMethodNonEmpty[?method] = n.
+
+TotalIndirectAllocationsInMethodNonEmpty[?method] = n <-
+   agg<<n = count()>>
+   ReachableFromMethod(?method, ?toMethod),
+   ?method != ?toMethod,
+   AllocInMethod(_, ?toMethod).
+
+TotalIndirectAllocationsInMethodEmpty[?method] = 0 <-
+    Method(?method),
+   !ReachesAllocator(?method).
+
+TotalIndirectAllocationsInMethod[?method] = n <-
+    TotalIndirectAllocationsInMethodNonEmpty[?method] = n.
+
+TotalIndirectAllocationsInMethod[?method] = n <-
+   TotalIndirectAllocationsInMethodEmpty[?method] = n.
+
+ReachesAllocator(?method) <-
+    ReachableFromMethod(?method, ?toMethod),
+    AllocInMethod(_, ?toMethod).
+
+TotalAllocationsInMethod[?method] = n <-
+   n = i + j,
+   TotalDirectAllocationsInMethod[?method] = i,
+   TotalIndirectAllocationsInMethod[?method] = j.
+
+TotalAllocationsFromNonRecursiveMethods[?method] = n <-
+   TotalAllocationsInMethod[?method] = n,
+   !RecursiveMethod(?method).
+
+TotalDirectInvocationsInMethod[?method] = n ->
+   Method(?method),
+   int[64](n).
+
+TotalDirectInvocationsInMethod[?method] = n <-
+   agg<<n = count()>>
+   MethodInvocation(?invocation),
+   Instruction:Method[?invocation] = ?method.
+
+TotalIndirectInvocationsInMethod[?method] = n ->
+   Method(?method),
+   int[64](n).
+
+TotalIndirectInvocationsInMethod[?method] = n <-
+   agg<<n = count()>>
+   ReachableFromMethod(?method, ?toMethod),
+   ?method != ?toMethod,
+   Instruction:Method[?invocation] = ?toMethod,
+   MethodInvocation(?invocation).
+
+TotalInvocationsInMethod[?method] = n ->
+   Method(?method),
+   int[64](n).
+
+TotalInvocationsInMethod[?method] = n <-
+   n = i + j,
+   TotalDirectInvocationsInMethod[?method] = i,
+   TotalIndirectInvocationsInMethod[?method] = j.
+
+TotalInvocationsFromNonRecursiveMethods[?method] = n <-
+   TotalInvocationsInMethod[?method] = n,
+   !RecursiveMethod(?method).
