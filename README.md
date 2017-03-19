@@ -4,7 +4,7 @@ This document contains instructions for invoking the main driver of Doop. For an
 
 ## Getting Started
 
-At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). You can use **PA-Datalog**, an open-source porting of the LogicBlox engine, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). Part of the codebase has been ported to Soufflé Datalog, developed by [Oracle](http://souffle-lang.org/). In order to install an up-to-date version of Souffle, the best practice is to clone the development Github [repo](https://github.com/souffle-lang/souffle) and follow the instructions found on [this page](http://souffle-lang.org/docs/build/). 
+At its core, Doop is a collection of various analyses expressed in the form of Datalog rules--more specifically **LogiQL**, a Datalog dialect developed by [LogicBlox](http://www.logicblox.com/). You can use **PA-Datalog**, an open-source porting of the LogicBlox engine, by following the instructions found on [this page](http://snf-705535.vm.okeanos.grnet.gr/agreement.html). Part of the codebase has been ported to Soufflé Datalog, developed by [Oracle](http://souffle-lang.org/). In order to install an up-to-date version of Soufflé, the best practice is to clone the development Github [repo](https://github.com/souffle-lang/souffle) and follow the instructions found on [this page](http://souffle-lang.org/docs/build/). 
 
 For trouble-free configuration:
 
