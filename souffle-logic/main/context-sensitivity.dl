@@ -1,0 +1,603 @@
+// This is a temporary hack. See near bottom for a proper definition of
+// these predicates. Unfortunately derived predicates don't seem to
+// be supported by the join optimizer currently.
+/*#define ObjectShouldNotBeRefined(heap) \
+    ((NegativeObjectFilter[] = true, ValueToRefine(heap)); \
+    (!NegativeObjectFilter[] = true, !ValueToRefine(heap)))
+#define ObjectShouldBeRefined(heap) \
+    ((!NegativeObjectFilter[] = true, ValueToRefine(heap)); \
+    (NegativeObjectFilter[] = true, !ValueToRefine(heap)))
+#define SiteShouldNotBeRefined(invocation) \
+    ((!NegativeSiteFilter[] = true, !SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, SiteToRefine(invocation)))
+#define SiteShouldBeRefined(invocation) \
+    ((!NegativeSiteFilter[] = true, SiteToRefine(invocation)); \
+    (NegativeSiteFilter[] = true, !SiteToRefine(invocation)))
+  */
+/**
+ * Elegance hacks, using macros: instead of burdening all normal
+ * analyses, provide default definitions for the common cases.
+ */
+
+#ifndef MULTIPLE_SEGREGATED_ANALYSES
+ImmutableContextFromHContext(?hctx, ?ctx) :-
+  isImmutableContext(?ctx),
+  isHContext(?hctx).
+
+ImmutableHContextFromContext(?ctx, ?hctx) :-
+  isImmutableHContext(?hctx),
+  isContext(?ctx).
+
+ImmutableContextFromContext(?ctx1, ?ctx2) :-
+  isImmutableContext(?ctx2),
+  isContext(?ctx1).
+#endif // MULTIPLE_SEGREGATED_ANALYSES
+
+#ifndef CompatibleContextAndHContextMacro
+#define CompatibleContextAndHContextMacro(ctx, hctx) ctx = ctx, hctx = hctx
+#endif
+#ifndef CompatibleHContextsMacro
+#define CompatibleHContextsMacro(hctx1, hctx2) hctx1 = hctx1, hctx2 = hctx2
+#endif
+
+#include "main.dl"
+
+/**
+ * Generic context-sensitive pointer analysis
+ */
+
+
+/**
+ * Heap allocation
+ */
+
+#ifndef OptimizeRecordMacro
+
+isHContext(?newHCtx),
+VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value_Heap(?value, ?heap),
+  RecordMacro(?ctx, ?value, ?newHCtx),
+  ReachableContext(?ctx, ?inmethod),
+#ifdef RecordArrayMacro
+  Value_Type(?value, ?type),
+  !isArrayType(?type),
+#endif
+  ?value = ?value.
+  //TODO fix: ObjectShouldNotBeRefined(?value)
+
+#else /* there is optimized behavior available */
+  RecordBasisMacro(?ctx, ?var, ?value) :-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value_Heap(?value, ?heap),
+  ReachableContext(?ctx, ?inmethod).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  RecordBasisMacro(?ctx, ?var, ?value),
+  OptimizeRecordMacro(?ctx, ?value, ?hctx).
+#ifdef RecordArrayMacro
+  HeapAllocation_Type(?value, ?type),
+  !isArrayType(?type).
+#endif
+  //TODO fix: ObjectShouldNotBeRefined(?value)
+#endif /* #ifndef OptimizeMergeMacro */
+
+
+#ifdef RecordArrayMacro
+// This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
+// which greatly benefits) define this macro and handle arrays
+// specially.
+
+isHContext(?newHCtx),
+VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value_Heap(?value, ?heap),
+  ReachableContext(?ctx, ?inmethod),
+  Value_Type(?value, ?type),
+  RecordArrayMacro(?ctx, ?value, ?newHCtx),
+  isArrayType(?type).
+  //TODO fix: ObjectShouldNotBeRefined(?value)
+#endif // def RecordArrayMacro
+
+isHContext(?newHCtx),
+VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
+  AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
+  Value_Heap(?value, ?heap),
+  ReachableContext(?ctx, ?inmethod),
+  RecordMacro(?ctx, ?value, ?newHCtx).
+
+#ifdef RecordRefinedMacro
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+  Value_Heap(?value, ?heap),
+  RecordRefinedMacro(?ctx, ?value, ?hctx),
+  ReachableContext(?ctx, ?inmethod).
+  //TODO fix: ObjectShouldBeRefined(?value)
+#endif
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
+  Value_Heap(?value, ?heap),
+  ReachableContext(?ctx, ?inmethod),
+  ImmutableHContextFromContext(?ctx, ?hctx).
+
+/**
+ * Null assignments
+ */
+VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
+   AssignNull(?to, ?inmethod),
+   Value_Null(?null),
+   ReachableContext(?toCtx, ?inmethod),
+   ImmutableHContextFromContext(?toCtx, ?hctx).
+
+/**
+ * Assignment of numeric constant. Currently context-insensitive and
+ * only used for android analyses, hence the ad hoc logic to match
+ * a specific host class (R).
+ */
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+   (AssignNumConstant_Id(?insn, ?const);
+    AssignCastNumConstant_Id(?insn, ?const)), // TODO: check the cast?
+   AssignInstruction_To(?insn, ?to),
+   Value_Num(?value, ?const),
+   Instruction_Method(?insn, ?inmethod),
+   ReachableContext(?toCtx, ?inmethod),
+   ImmutableHContextFromContext(?toCtx, ?hctx).
+
+// No need to check if type compatible: check is done at original
+// inputs to VarPointsTo
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  Reachable(?inmethod),
+  AssignLocal(?from, ?to, ?inmethod),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from).
+
+/**
+ * Cast assignments
+ */
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  Reachable(?inmethod),
+  AssignCast(?type, ?from, ?to, ?inmethod),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value_Type(?value, ?valuetype),
+  SupertypeOf(?type, ?valuetype).
+
+/**
+ * Load instance fields
+ *
+ */
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+  .plan 1:(2,1)
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
+  LoadInstanceField(?base, ?sig, ?to, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+/**
+ * Store instance fields
+ */
+
+.decl NotSpecialValue(?value:Value)
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  NotSpecialValue(?value),
+  !Value_Null(?basevalue).
+
+NotSpecialValue(?value) :-
+  (Value_Heap(?value, ?heap), !SpecialObject(?heap));
+  Value_isNonHeap(?value).
+
+StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
+  StoreInstanceField(?from, ?base, ?signature, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+/**
+ * Load static fields
+ */
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  StaticFieldPointsTo(?hctx, ?value, ?sig),
+  LoadStaticField(?sig, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  CompatibleContextAndHContextMacro(?ctx, ?hctx).
+  .plan 1:(3,2,1)
+
+/**
+ * Store static fields
+ *
+ * TODO: I don't think context actually matters. double check.
+ */
+StaticFieldPointsTo(?hctx, ?value, ?signature) :-
+  ReachableStoreStaticFieldFrom(?from),
+  StoreStaticField(?from, ?signature, _),
+  VarPointsTo(?hctx, ?value, _, ?from).
+
+
+.decl ReachableStoreStaticFieldFrom(?from:Var)
+
+ReachableStoreStaticFieldFrom(?from) :-
+  Reachable(?inmethod),
+  StoreStaticField(?from, _, ?inmethod).
+
+
+/**
+ * Store default value in static field (android-only!)
+ *
+ */
+StaticFieldPointsTo(?hctx, ?value, ?signature) :-
+  FieldInitialValue(?signature, ?const),
+  Value_Num(?value, ?const),
+  isImmutableHContext(?hctx).
+
+
+/**
+ * Load array index
+ */
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  NotEmptyArrayValue(?basevalue),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
+  // this is necessary to handle untyped array operations, e.g., the
+  // simulation of arrayCopy calls as Load/Stores
+  Value_Type(?basevalue, ?basevaluetype),
+  Var_Type(?to, ?type),
+  ComponentType(?basevaluetype, ?basecomponenttype),
+  SupertypeOf(?type, ?basecomponenttype).
+
+.decl NotEmptyArrayValue(?value:Value)
+
+NotEmptyArrayValue(?value) :-
+  (Value_Heap(?value, ?heap),
+   !HeapAllocation_EmptyArray(?heap)) ;
+  Value_isNonHeap(?value).
+
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) :-
+  ReachableLoadArrayIndexBase(?base),
+  OptLoadArrayIndex(?to, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+OptLoadArrayIndex(?to, ?base) :-
+  LoadArrayIndex(?base, ?to, _).
+
+.decl ReachableLoadArrayIndexBase(?base:Var)
+
+ReachableLoadArrayIndexBase(?base) :-
+  Reachable(?inmethod),
+  LoadArrayIndex(?base, _, ?inmethod).
+
+/**
+ * Store array index
+ */
+
+OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) :-
+  StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from).
+
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
+  OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),     
+  NotSpecialValue(?value),
+  NotEmptyArrayValue(?basevalue),
+  Value_Type(?value, ?valuetype),
+  Value_Type(?basevalue, ?basevaluetype),
+  ComponentType(?basevaluetype, ?componenttype),
+  SupertypeOf(?componenttype, ?valuetype).
+
+StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
+  ReachableStoreArrayIndexBase(?base),
+  OptStoreArrayIndex(?from, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+.decl ReachableStoreArrayIndexBase(?base:Var)
+
+ReachableStoreArrayIndexBase(?base) :-
+  Reachable(?inmethod),
+  StoreArrayIndex(_, ?base, ?inmethod).
+
+OptStoreArrayIndex(?from, ?base) :-
+  StoreArrayIndex(?from, ?base, _).
+
+
+/**
+ * Assignments for method invocations
+ */
+
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  FormalParam(?index, ?method, ?formal),
+  ActualParam(?index, ?invocation, ?actual).
+
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
+  ReturnVar(?return, ?method),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+#ifdef INFORMATION_FLOW
+ !SanitizationMethod(?method),
+#endif
+  AssignReturnValue(?invocation, ?local).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
+  .plan 1:(2,1)
+
+/**
+ * Static method invocations
+ */
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod) :-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod),
+  MergeStaticMacro(?callerCtx, ?invocation, ?newCtx).
+
+/**
+ * Virtual Method Invocation
+ */
+
+.decl OptVirtualMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+// REVIEW: indexing changed in the Doop->flow-sens revision,
+// so the optimization below should be re-examined.
+OptVirtualMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  VirtualMethodInvocation_Base(?invocation, ?base).
+
+
+// This rule is the default logic for the majority of analyses
+
+#ifndef OptimizeMergeMacro
+// This is the "proper" form of the rule. We diverge from it
+// only for reasons of optimization. Skolem object creation
+// is currently very slow and we shouldn't invoke it for
+// all the different combinations that will yield the same object.
+
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  Value_Type(?value, ?valuetype),
+  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
+//  ViableInvocation(?callerCtx, ?invocation),
+//TODO fix:    SiteShouldNotBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+// The optimization is as follows: the main analysis (this file)
+// first creates all the possible bindings that the Merge logic
+// might need to create a new context. Then each individual analysis
+// creates new context objects carefully by invoking the skolem
+// functions as rarely as possible.
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base).
+
+// Finally, the step of the main analysis that should be creating the
+// new objects is merely looking up the previously created context
+// objects.
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  Value_Type(?value, ?valuetype),
+  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this).
+//  ViableInvocation(?callerCtx, ?invocation),
+//TODO fix:  SiteShouldNotBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+
+
+#ifdef MergeRefinedMacro
+#ifndef OptimizeMergeRefinedMacro
+// Default, unoptimized behavior
+/**
+ * This logic applies to refinement-based (or "adaptive") analyses. The
+ * analysis is first run with the filter predicate (SiteToRefine) empty,
+ * performing a low-precision but cheap computation. Then the external logic
+ * runs delta rules to populate the filter predicate and re-runs the analysis.
+ * (Note that the #ifdef just checks if the analysis has defined the
+ * appropriate macro. This is not an input flag.)
+ */
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  Value:Type[?value] = ?valuetype,
+  ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
+  ThisVar[?tomethod] = ?this,
+//  ViableInvocation(?callerCtx, ?invocation),
+  SiteShouldBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptVirtualMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  Value_Type(?value, ?valuetype),
+  ResolveInvocation(?valuetype, ?invocation, ?tomethod),
+  ThisVa([?tomethod, ?this),
+//  ViableInvocation(?callerCtx, ?invocation),
+  SiteShouldBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifdef MergeRefinedMacro */
+
+/**
+ * Special method invocations. Optimized much like virtual methods.
+ */
+
+.decl OptSpecialMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+// REVIEW: indexing changed in the Doop->flow-sens revision,
+// so the optimization below should be re-examined.
+OptSpecialMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  SpecialMethodInvocation_Base(?invocation, ?base).
+
+#ifndef OptimizeMergeMacro
+// Default, unoptimized behavior
+isContext(?newCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?newCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  isSpecialMethodInvocation_Insn(?invocation),
+  MethodInvocation_Method(?invocation, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
+  //TODO fix: SiteShouldNotBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) :-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation_Method(?invocation, ?tomethod),
+  isSpecialMethodInvocation_Insn(?invocation),
+  ThisVar(?tomethod, ?this).
+  //TODO fix: SiteShouldNotBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+
+#ifdef MergeRefinedMacro
+#ifndef OptimizeMergeRefinedMacro
+// Default, unoptimized behavior
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx)
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  MethodInvocation_Method(?invocation, ?tomethod),
+  isSpecialMethodInvocation_Insn(?invocation),
+  ThisVar(?tomethod, ?this).
+  //TODO fix: SiteShouldBeRefined(?invocation).
+
+#else /* there is optimized behavior available */
+
+MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  OptSpecialMethodInvocationBase(?invocation, ?base).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation_Method(?invocation, ?tomethod),
+  isSpecialMethodInvocation_Insn(?invocation),
+  ThisVar(?tomethod, ?this).
+  //TODO fix: SiteShouldBeRefined(?invocation).
+#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifdef MergeRefinedMacro
+
+
+/**
+ * Reachable
+ */
+ReachableContext(?ctx, ?method) :-
+  CallGraphEdge(_, _, ?ctx, ?method).
+
+Reachable(?method) :-
+  ReachableContext(_, ?method).
+
+
+/**
+ * EXPERIMENTS ONLY below this point
+ */
+
+/**
+ * Logic to decide whether to apply refined or regular bindings for
+ * methods and objects
+ */
+// We want to allow predicates that express the *complement* of the set
+// of objects to refine. We introduce derived-only temp predicates to
+// avoid logic replication in the points-to rule itself.
+
+/*
+// Below is the proper way to write this but it's currently not well
+// supported by the query optimizer so I have to resort to brute
+// force (macro-)inlining.
+ObjectShouldNotBeRefined(?heap) ->
+  HeapAllocation(?heap).
+lang:derivationType[`ObjectShouldNotBeRefined] = "Derived".
+
+ObjectShouldNotBeRefined(?heap) <-
+  NegativeObjectFilter("true"), ValueToRefine(?heap).
+
+ObjectShouldNotBeRefined(?heap) <-
+  !(NegativeObjectFilter("true")), !ValueToRefine(?heap).
+
+ObjectShouldBeRefined(?heap) ->
+  HeapAllocation(?heap).
+lang:derivationType[`ObjectShouldBeRefined] = "Derived".
+
+ObjectShouldBeRefined(?heap) <-
+  !NegativeObjectFilter("true"), ValueToRefine(?heap).
+
+ObjectShouldBeRefined(?heap) <-
+  NegativeObjectFilter("true"), !ValueToRefine(?heap).
+
+SiteShouldNotBeRefined(?invocation) ->
+  MethodInvocation(?invocation).
+lang:derivationType[`SiteShouldNotBeRefined] = "Derived".
+
+SiteShouldNotBeRefined(?invocation) <-
+  !NegativeSiteFilter("true"), !SiteToRefine(?invocation).
+
+SiteShouldNotBeRefined(?invocation) <-
+  NegativeSiteFilter("true"), SiteToRefine(?invocation).
+
+SiteShouldBeRefined(?invocation) ->
+  MethodInvocation(?invocation).
+lang:derivationType[`SiteShouldBeRefined] = "Derived".
+
+SiteShouldBeRefined(?invocation) <-
+  !NegativeSiteFilter("true"), SiteToRefine(?invocation).
+
+SiteShouldBeRefined(?invocation) <-
+  NegativeSiteFilter("true"), !SiteToRefine(?invocation).
+*/
+
+/* YANNIS
+VarPointsTo(?hctx, ?heap, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?baseheap),
+  InstanceFieldPointsTo(?hctx, ?heap, ?signature, ?basehctx, ?baseheap).
+
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?baseheap) :-
+  ReachableLoadInstanceField(?to, ?sig, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+#endif
+
+.decl ReachableLoadInstanceField(?to:Var, ?sig:Field, ?base:Var)
+
+ReachableLoadInstanceField(?to, ?sig, ?base) :-
+  LoadInstanceField(?base, ?sig, ?to, ?inmethod),
+  Reachable(?inmethod).
+
+StoreHeapArrayIndex(?basehctx, ?baseheap, ?ctx, ?from) :-
+  ReachableStoreArrayIndex(?from, ?base),
+  VarPointsTo(?basehctx, ?baseheap, ?ctx, ?base).
+
+
+ReachableStoreArrayIndex(?from, ?base) :-
+  StoreArrayIndex(?from, ?base, ?inmethod),
+  Reachable(?inmethod).
+*/

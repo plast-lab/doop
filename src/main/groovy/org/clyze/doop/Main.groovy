@@ -116,10 +116,12 @@ class Main {
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()
-                        new CommandLineAnalysisPostProcessor().process(analysis)
-                        if (analysis.options.RUN_SERVER_LOGIC.value == true) {
-                            logger.info "Running server logic"
-                            new ServerAnalysisPostProcessor().process(analysis)
+                        if (!analysis.options.SOUFFLE.value) {
+                            new CommandLineAnalysisPostProcessor().process(analysis)
+                            if (analysis.options.RUN_SERVER_LOGIC.value == true) {
+                                logger.info "Running server logic"
+                                new ServerAnalysisPostProcessor().process(analysis)
+                            }
                         }
                     }
                 }).get(timeout, TimeUnit.MINUTES)

@@ -1,0 +1,16 @@
+#include "basic-declarations.dl"
+
+#include "exceptions.dl"
+#include "finalization.dl"
+#include "method-resolution.dl"
+#include "subclass.dl"
+#include "superinterface.dl"
+#include "type-hierarchy.dl"
+
+MainMethodDeclaration(?method) :-
+   MainClass(?type),
+   Method_DeclaringType(?method, ?type),
+   Method_SimpleName(?method, "main"),
+   Method_Descriptor(?method, "void(java.lang.String[])"),
+   Method_Modifier("public", ?method),
+   Method_Modifier("static", ?method).

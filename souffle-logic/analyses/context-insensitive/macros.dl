@@ -1,0 +1,34 @@
+/**
+ * Some library modules are generically defined, and need the macro
+ * definitions for the context-sensitive pointer analysis they are
+ * used in. For a context-insensitive pointer analysis we just
+ * generate constant contexts.
+ */
+
+#define RecordMacro(ctx, value, hctx) \
+  GlobalHContext(hctx)
+
+
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  GlobalContext(calleeCtx)
+
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  GlobalContext(calleeCtx)
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  GlobalContext(newCtx)
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  GlobalContext(calleeCtx)
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  GlobalContext(newCtx)
+
+
+#define InitContextMacro(valueId) \
+  isContext(ctx) :- GlobalContext(ctx)
+
+#define InitHContextMacro(valueId) \
+  isHContext(hctx) :- GlobalHContext(hctx)

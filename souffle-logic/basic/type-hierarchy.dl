@@ -1,0 +1,164 @@
+/**
+ * The following rules check whether type S can be cast to type T. Implicitly,
+ * they expose the type hierarchy.
+ */
+SupertypeOf(?s, ?t) :-
+    SubtypeOf(?t, ?s).
+
+
+/**
+ * If S is an ordinary (nonarray) class, then
+ * - S must be the same class as T
+ * - or a subclass of T
+ */
+SubtypeOf(?s, ?s) :-
+    isClassType(?s).
+
+SubtypeOf(?s, ?t) :-
+    Subclass(?t, ?s).
+
+/**
+ * If T is an interface type, then
+ * - S must implement interface T
+ */
+SubtypeOf(?s, ?t) :-
+    isClassType(?s),
+    Superinterface(?t, ?s).
+
+/**
+ * If S is an interface type, then
+ * - If T is a class type, then T must be Object
+ */
+SubtypeOf(?s, ?t) :-
+    isInterfaceType(?s),
+    isType(?t),
+    ?t = "java.lang.Object".
+
+/**
+ * If T is an interface type, then
+ * - T must be the same interface as S
+ * - or a superinterface of S
+ */
+SubtypeOf(?s, ?s) :-
+    isInterfaceType(?s).
+
+SubtypeOf(?s, ?t) :-
+    isInterfaceType(?s),
+    Superinterface(?t, ?s).
+
+/**
+ *  If S is a class representing the array type SC[], that is, an array of
+ *  components of type SC, then
+ *  - If T is a class type, then T must be Object
+ */
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isType(?t),
+    ?t = "java.lang.Object".
+
+/**
+ *  If T is an array type TC[], that is, an array of components of type TC,
+ *  then one of the following must be true
+ *  - TC and SC are the same primitive type
+ */
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isArrayType(?t),
+    ComponentType(?s, ?sc),
+    ComponentType(?t, ?sc),
+    isPrimitiveType(?sc).
+
+
+/**
+ * - TC and SC are reference types (2.4.6), and type SC can be cast to TC by
+ * recursive application of these rules
+ */
+SubtypeOf(?s, ?t) :-
+    ComponentType(?s, ?sc),
+    ComponentType(?t, ?tc),
+    isReferenceType(?sc),
+    isReferenceType(?tc),
+    SubtypeOf(?sc, ?tc).
+
+/**
+ *  If T is an interface type, T must be one of the interfaces implemented by
+ *  arrays (2.15)
+ */
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isInterfaceType(?t),
+    isType(?t),
+    ?t = "java.lang.Cloneable".
+
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isInterfaceType(?t),
+    isType(?t),
+    ?t = "java.io.Serializable".
+
+
+/**
+ *  Null type acts as a bottom type
+ */
+SubtypeOf(?s, ?t) :-
+    Type_null(?s),
+    isReferenceType(?t),
+    ?t != ?s.
+
+
+/**
+ * Subtyping among Primitive Types
+ */
+SubtypeOf(?s, ?t) :-
+    Type_float(?s),
+    Type_double(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_long(?s),
+    Type_float(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_int(?s),
+    Type_float(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_char(?s),
+    Type_int(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_short(?s),
+    Type_int(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_byte(?s),
+    Type_short(?t).
+
+/**
+ * Each type is a subtype / supertype of itself
+ */
+SubtypeOf(?t, ?t) :-
+    isType(?t).
+
+
+// Extra logic for determining whether it is possible to subclass a type (based on Oracle Souffle)
+
+Unsubclassable("java.lang.ClassLoader").
+Unsubclassable("java.lang.SecurityManager").
+
+
+// Subclassable
+
+Subclassable(?type) :-
+    ClassModifier("public", ?type),
+    ! ClassModifier("final", ?type),
+    ClassConstructor(?method, ?type),
+    Method_Modifier("public", ?method),
+    ! Unsubclassable(?type).
+
+Subclassable(?type) :-
+    ClassModifier("public", ?type),
+    ! ClassModifier("final", ?type),
+    ClassConstructor(?method, ?type),
+    Method_Modifier("protected", ?method),
+    ! Unsubclassable(?type).
+

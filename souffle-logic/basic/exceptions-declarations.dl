@@ -1,0 +1,24 @@
+/**
+ * Compute for an instruction which exception handlers handle which exception
+ * types
+ */
+.decl ExceptionHandler_At(?type:Type, ?instruction:Instruction, ?handler:ExceptionHandler)
+
+.decl ImpossibleExceptionHandler(?handler:ExceptionHandler, ?type:Type, ?instruction:Instruction)
+
+/**
+ * All possible handlers of an exception type for an instruction
+ */
+.decl PossibleExceptionHandler(?handler:ExceptionHandler, ?type:Type, ?instruction:Instruction)
+
+/**
+ * Instructions that are in the range of an exception handler
+ */
+.decl ExceptionHandler_InRange(?handler:ExceptionHandler, ?instruction:Instruction)
+
+/**
+ * Transitive closure of ExceptionHandler:Previous.
+ */
+.decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)
+
+.decl InRangeOfExceptionHandler(?instruction:Instruction)

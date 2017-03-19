@@ -82,6 +82,22 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				cli:false,
 				forPreprocessor:true
 			),
+			new AnalysisOption<Boolean>(
+					id:"SOUFFLE",
+					name:"souffle",
+					value:false,
+					cli:true,
+					webUI:false
+			),
+			/* Souffle related options */
+			new AnalysisOption<String>(
+					id:"JOBS",
+					name:"jobs",
+					argName:"jobNumber",
+					value:false,
+					cli:true,
+					webUI:false
+			),
 			/* Start of preprocessor constant flags */
 			new AnalysisOption<Boolean>(
 				id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",

@@ -1,0 +1,127 @@
+#include "android.dl"
+#include "class-initialization.dl"
+#include "exceptions.dl"
+#include "finalization.dl"
+#include "implicit-reachable.dl"
+#include "native.dl"
+#include "reference.dl"
+#include "string-constants.dl"
+#include "threads.dl"
+
+#include "main-delta.dl"
+
+#if defined(REFLECTION)
+#include "reflection/rules.dl" 
+#endif
+
+FakeInvocation_RegisterFinalize(?value, ?invo) :-
+   FakeInvocation_RegisterFinalize0(?heap, ?invo),
+   Value_Heap(?value, ?heap).
+
+Value_isHeap(?value),
+Value_Heap(?value, ?heap),
+isValue(?value),
+Value_Type(?value, ?type) :-
+    ?value = ?heap,
+    isHeapAllocation(?heap),
+    HeapAllocation_Type(?heap, ?type).
+
+
+
+// Only create values for numeric constants in a static initializer
+// (or initial field value) inside a class whose name contains
+// ".R$". We are trying to capture just the constants in Android "R"
+// nested classes. REVIEW to generalize.
+Value_Num(?value, ?const),
+Value_isNonHeap(?value),
+isValue(?value),
+Value_Type(?value, ?type) :-
+   isNumConstant(?const),
+   AssignNumConstant_Id(?insn, ?const),
+   Instruction_Method(?insn, ?meth),
+   Method_SimpleName(?meth, "<clinit>"),
+   Method_DeclaringType(?meth, ?className),
+   isType(?className),
+   contains(".R$", ?className),
+   Type_int(?type),
+   ?value = ?const.
+
+Value_Num(?value, ?const),
+Value_isNonHeap(?value),
+isValue(?value),
+Value_Type(?value, ?type) :-
+   isNumConstant(?const),
+   FieldInitialValue(?fld, ?const),
+   Field_DeclaringType(?fld, ?className),
+   isType(?className),
+   contains(".R$", ?className),
+   Type_int(?type),
+   ?value = ?const.
+
+
+Value_Null(?nullvalue) :-
+   HeapAllocation_Null(?nullheap),
+   Value_Heap(?nullvalue, ?nullheap).
+
+Value_DeclaringType(?value, ?type) :-
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   Method_DeclaringType(?inmethod, ?type),
+   !isStringConstant(?heap),
+   !isClassHeap(?heap),
+   Value_Heap(?value, ?heap).
+
+Value_DeclaringType(?value, "java.lang.System") :-
+   isClassHeap(?heap),
+   Value_Heap(?value, ?heap).
+
+Value_DeclaringType(?value, "java.lang.String") :-
+   isStringConstant(?heap),
+   Value_Heap(?value, ?heap).
+
+Value_DeclaringType(?value, "java.lang.Object") :-
+   Value_Null(?value) ;
+   MainMethodArgArray(?heap),
+   Value_Heap(?value, ?heap) ;
+   MainMethodArgArrayContent(?heap),
+   Value_Heap(?value, ?heap).
+
+isImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
+isInitialContext(ctx), InitContextMacro("<<initial-context>>").
+isJVMStartupContext(ctx), InitContextMacro("<<jvm-startup-context>>").
+isClinitContext(ctx), InitContextMacro("<<clinit-context>>").
+
+// The main method is reachable
+ReachableContext(?initialContext, ?method) :-
+  isInitialContext(?initialContext),
+  MainMethodDeclaration(?method).
+
+// Implicitly reachable methods are invoked by the JVM on startup.
+ReachableContext(?jvmStartUpContext, ?method) :-
+  isJVMStartupContext(?jvmStartUpContext),
+  ImplicitReachable(?method).
+
+// If a class needs to be initialized, then its class initializer is invoked
+// Note: InitializedClass already deals with superclasses that need initialization
+ReachableContext(?clinitContext, ?clinit) :-
+  isClinitContext(?clinitContext),
+  InitializedClass(?class),
+  ClassInitializer(?class, ?clinit).
+
+isImmutableHContext(hctx), InitHContextMacro("<<immutable-hcontext>>").
+isJVMStartupHContext(hctx), InitHContextMacro("<<jvm-startup-hcontext>>").
+
+// Create initial objects with their heap contexts
+SystemThreadGroup(?hctx, ?alloc) :-
+  isJVMStartupHContext(?hctx),
+  ?alloc = "<<system-thread-group>>",
+  isValue(?alloc).
+
+MainThreadGroup(?hctx, ?alloc) :-
+  isJVMStartupHContext(?hctx),
+  ?alloc = "<<main-thread-group>>",
+  isValue(?alloc).
+
+MainThread(?hctx, ?alloc) :-
+  isJVMStartupHContext(?hctx),
+  ?alloc = "<<main-thread>>",
+  isValue(?alloc).
