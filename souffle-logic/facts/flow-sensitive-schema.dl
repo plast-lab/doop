@@ -16,8 +16,6 @@
 // Java Type Hierarchy
 
 .type Type
-.decl isType(?t:Type)
-
 .type PrimitiveType = Type
 .type ReferenceType = Type
 .type NullType      = ReferenceType
@@ -25,7 +23,7 @@
 .type ClassType     = ReferenceType
 .type InterfaceType = ReferenceType
 
-
+.decl isType(?t:Type)
 .decl isPrimitiveType(?t:PrimitiveType)
 .decl isReferenceType(?t:ReferenceType)
 .decl isNullType(?t:NullType)
@@ -38,13 +36,11 @@
 .decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)
 .decl DirectSuperinterface(?ref:ReferenceType, ?interface:InterfaceType)
 
-
 // Important class subsets
 
 .decl ApplicationClass(?ref:ReferenceType)
 .decl ConcreteClass(?ref:ReferenceType)
 .decl MainClass(?class:ClassType)
-
 
 // Common type selectors
 
@@ -118,20 +114,12 @@
 // [Heap Allocation]
 //-----------------------------------------------------------------------------
 
-/*.decl HeapAllocation0_Normal(?repr:symbol, ?type:Type)
-.decl HeapAllocation0_String(?repr:symbol)
-.decl HeapAllocation0_Class(?repr:symbol, ?instanceType:Type)
-.decl HeapAllocation0_EmptyArray(?repr:symbol)
-.decl AssignHeapAllocation0(?instr:AssignHeapAllocation_Insn, ?heapId:symbol)
-*/
-
 .type HeapAllocation
-.decl isHeapAllocation(?h:HeapAllocation)
-
 .type NormalHeap     = HeapAllocation
 .type StringConstant = HeapAllocation
 .type ClassHeap      = HeapAllocation
 
+.decl isHeapAllocation(?h:HeapAllocation)
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isClassHeap(?h:ClassHeap)
@@ -146,11 +134,6 @@
 .decl MainMethodArgArrayContent(?heap:HeapAllocation)
 
 .decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)
-
-// Use an entity to represent raw strings since the engine is having problems
-// with huge strings as keys.
-//StringRaw(?x), StringRaw:Id(?x:?id) -> string(?id).
-//String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 
 
 //-----------------------------------------------------------------------------
@@ -265,6 +248,7 @@
 .decl EnterMonitor_Var(?insn:EnterMonitor_Insn, ?var:Var)
 .decl ExitMonitor_Var(?insn:ExitMonitor_Insn, ?var:Var)
 
+
 //-----------------------------------------------------------------------------
 // [Field Instructions]
 //-----------------------------------------------------------------------------
@@ -323,6 +307,7 @@
 //------------------------------------------------
 
 .decl StoreStaticField_From(?insn:StoreStaticField_Insn, ?var:Var)
+
 
 //-----------------------------------------------------------------------------
 // [Array Instructions]
@@ -473,6 +458,7 @@
 .decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
 .decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl FieldInitialValue(?fld:Field, ?valueString:symbol)
+
 
 //-----------------------------------------------------------------------------
 // [Android]

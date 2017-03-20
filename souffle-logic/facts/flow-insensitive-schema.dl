@@ -15,8 +15,6 @@
 
 .decl Throw(?insn:Throw_Insn, ?var:Var)
 
-// Note: for OPT inmethod last
-
 .decl LoadInstanceField(?base:Var, ?sig:Field, ?to:Var, ?inmethod:Method)
 
 .decl StoreInstanceField(?from:Var, ?base:Var, ?signature:Field, ?inmethod:Method)

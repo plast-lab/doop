@@ -1,83 +1,83 @@
 Throw(?insn, ?var) :-
-    isThrow_Insn(?insn),
-    Throw_Var(?insn, ?var).
+  isThrow_Insn(?insn),
+  Throw_Var(?insn, ?var).
 
 LoadInstanceField(?base, ?sig, ?to, ?inmethod) :-
-    isLoadInstanceField_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    LoadInstanceField_Base(?insn, ?base),
-    FieldInstruction_Signature(?insn, ?sig),
-    LoadInstanceField_To(?insn, ?to).
+  isLoadInstanceField_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  LoadInstanceField_Base(?insn, ?base),
+  FieldInstruction_Signature(?insn, ?sig),
+  LoadInstanceField_To(?insn, ?to).
 
 StoreInstanceField(?from, ?base, ?sig, ?inmethod) :-
-    isStoreInstanceField_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    StoreInstanceField_From(?insn, ?from),
-    StoreInstanceField_Base(?insn, ?base),
-    FieldInstruction_Signature(?insn, ?sig).
+  isStoreInstanceField_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  StoreInstanceField_From(?insn, ?from),
+  StoreInstanceField_Base(?insn, ?base),
+  FieldInstruction_Signature(?insn, ?sig).
 
 LoadStaticField(?sig, ?to, ?inmethod) :-
-    isLoadStaticField_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    FieldInstruction_Signature(?insn, ?sig),
-    LoadStaticField_To(?insn, ?to).
+  isLoadStaticField_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  FieldInstruction_Signature(?insn, ?sig),
+  LoadStaticField_To(?insn, ?to).
 
 StoreStaticField(?from, ?sig, ?inmethod) :-
-    isStoreStaticField_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    StoreStaticField_From(?insn, ?from),
-    FieldInstruction_Signature(?insn, ?sig).
+  isStoreStaticField_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  StoreStaticField_From(?insn, ?from),
+  FieldInstruction_Signature(?insn, ?sig).
 
 LoadArrayIndex(?base, ?to, ?inmethod) :-
-    isLoadArrayIndex_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    LoadArrayIndex_Base(?insn, ?base),
-    LoadArrayIndex_To(?insn, ?to).
+  isLoadArrayIndex_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  LoadArrayIndex_Base(?insn, ?base),
+  LoadArrayIndex_To(?insn, ?to).
 
 StoreArrayIndex(?from, ?base, ?inmethod) :-
-    isStoreArrayIndex_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    StoreArrayIndex_From(?insn, ?from),
-    StoreArrayIndex_Base(?insn, ?base).
+  isStoreArrayIndex_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  StoreArrayIndex_From(?insn, ?from),
+  StoreArrayIndex_Base(?insn, ?base).
 
 AssignCast(?type, ?from, ?to, ?inmethod) :-
-    isAssignCast_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    AssignCast_From(?insn, ?from),
-    AssignInstruction_To(?insn, ?to),
-    AssignCast_Type(?insn, ?type).
+  isAssignCast_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  AssignCast_From(?insn, ?from),
+  AssignInstruction_To(?insn, ?to),
+  AssignCast_Type(?insn, ?type).
 
 AssignLocal(?from, ?to, ?inmethod) :-
-    isAssignLocal_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
-    Instruction_Method(?insn, ?inmethod),
-    AssignLocal_From(?insn, ?from).
+  isAssignLocal_Insn(?insn),
+  AssignInstruction_To(?insn, ?to),
+  Instruction_Method(?insn, ?inmethod),
+  AssignLocal_From(?insn, ?from).
 
 AssignNull(?to, ?inmethod) :-
-    isAssignNull_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
-    Instruction_Method(?insn, ?inmethod).
+  isAssignNull_Insn(?insn),
+  AssignInstruction_To(?insn, ?to),
+  Instruction_Method(?insn, ?inmethod).
 
 AssignHeapAllocation(?heap, ?to, ?inmethod) :-
-    isAssignHeapAllocation_Insn(?insn),
-    Instruction_Method(?insn, ?inmethod),
-    AssignHeapAllocation_Heap(?insn, ?heap),
-    AssignInstruction_To(?insn, ?to).
+  isAssignHeapAllocation_Insn(?insn),
+  Instruction_Method(?insn, ?inmethod),
+  AssignHeapAllocation_Heap(?insn, ?heap),
+  AssignInstruction_To(?insn, ?to).
 
 ReturnVar(?var, ?method) :-
-    isReturnNonvoid_Insn(?insn),
-    Instruction_Method(?insn, ?method),
-    ReturnNonvoid_Var(?insn, ?var).
+  isReturnNonvoid_Insn(?insn),
+  Instruction_Method(?insn, ?method),
+  ReturnNonvoid_Var(?insn, ?var).
 
 ReturnVar(?var, ?method) :-
-    NativeReturnVar(?var, ?method).
+  NativeReturnVar(?var, ?method).
 
 VirtualMethodInvocation(?invocation, ?signature, ?inmethod) :-
-    isVirtualMethodInvocation_Insn(?invocation),
-    Instruction_Method(?invocation, ?inmethod),
-    MethodInvocation_Method(?invocation, ?signature).
+  isVirtualMethodInvocation_Insn(?invocation),
+  Instruction_Method(?invocation, ?inmethod),
+  MethodInvocation_Method(?invocation, ?signature).
 
 StaticMethodInvocation(?invocation, ?signature, ?inmethod) :-
-    isStaticMethodInvocation_Insn(?invocation),
-    Instruction_Method(?invocation, ?inmethod),
-    MethodInvocation_Method(?invocation, ?signature).
+  isStaticMethodInvocation_Insn(?invocation),
+  Instruction_Method(?invocation, ?inmethod),
+  MethodInvocation_Method(?invocation, ?signature).
