@@ -2,6 +2,7 @@ package org.clyze.doop.core
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -152,6 +153,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
     protected File createOutputDirectory(AnalysisVars vars, String id) {
         def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
+        FileUtils.deleteQuietly(outDir)
         outDir.mkdirs()
         FileOps.findDirOrThrow(outDir, "Could not create analysis directory: ${outDir}")
         return outDir

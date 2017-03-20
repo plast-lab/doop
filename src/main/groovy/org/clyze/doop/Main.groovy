@@ -134,10 +134,8 @@ class Main {
             executorService.shutdownNow()
 
         } catch (e) {
-            if (logger.debugEnabled)
-                logger.error(e.getMessage(), e)
-            else
-                logger.error(e.getMessage())
+            e = (e.getCause() ?: e)
+            logger.error(e.getMessage(), e)
             System.exit(-1)
         }
     }

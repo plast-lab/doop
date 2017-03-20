@@ -5,29 +5,31 @@ package org.clyze.deepdoop.datalog;
 }
 
 program
-	: (comp | init_ | propagate | cmd | datalog)* ;
+	: (comp | cmd | initialize | propagate | datalog)* ;
 
+
+lineMarker
+	: '#' INTEGER STRING INTEGER* ;
 
 comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' ;
+	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK ('as' identifierList)? ;
 
-init_
-	: IDENTIFIER '=' NEW IDENTIFIER ;
+cmd
+	: CMD IDENTIFIER L_BRACK datalog* R_BRACK ('as' identifierList)? ;
+
+initialize
+	: IDENTIFIER 'as' identifierList ;
 
 propagate
-	: IDENTIFIER '{' (ALL | predicateNameList) '}' PROPAGATE (IDENTIFIER | GLOBAL) ;
+	: IDENTIFIER '{' (ALL | predicateNameList) '}' '->' (IDENTIFIER | GLOBAL) ;
 
 predicateNameList
 	: predicateName
 	| predicateNameList ',' predicateName
 	;
 
-cmd
-	: CMD IDENTIFIER '{' datalog* '}' ;
-
-
 datalog
-	: declaration | constraint | rule_ ;
+	: declaration | constraint | rule_ | lineMarker ;
 
 declaration
 	: predicate '->' predicateList? '.'
@@ -96,6 +98,10 @@ exprList
 	| exprList ',' expr
 	;
 
+identifierList
+	: IDENTIFIER
+	| identifierList ',' IDENTIFIER
+	;
 
 
 // Lexer
@@ -127,18 +133,19 @@ COMP
 	: 'component' ;
 
 GLOBAL
-	: '.global' ;
+	: '.' ;
 
-NEW
-	: 'new' ;
+L_BRACK
+	: '{' ;
 
-PROPAGATE
-	: 'copyto' ;
+R_BRACK
+	: '}' ;
 
 INTEGER
 	: [0-9]+
 	| '0'[0-7]+
 	| '0'[xX][0-9a-fA-F]+
+	| '2^'[0-9]+
 	;
 
 fragment

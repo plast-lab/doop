@@ -8,10 +8,7 @@ component Foo {
 	P1(x) <- P(x).
 	P1(x) -> string(x).
 }
-
-component Baz {
-	Final(x, y) <- A@past(x,_), B@past(y).
-}
+as S1
 
 command Bar {
 	lang:cmd:EVAL[] = "dir2/run.sh -flag1".
@@ -21,11 +18,13 @@ command Bar {
 	A(x, y) -> string(x), string(y).
 	B(x) -> int(x).
 }
+as S2
 
-S1 = new Foo
-S2 = new Bar
-S3 = new Baz
+component Baz {
+	Final(x, y) <- A@past(x,_), B@past(y).
+}
+as S3
 
-S1 { * } copyto S2
-S2 { * } copyto S3
-S3 { * } copyto .global
+S1 { * } -> S2
+S2 { * } -> S3
+S3 { * } -> .

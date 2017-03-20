@@ -1,3 +1,6 @@
+Method:FirstInstruction[?method] = ?insn ->
+   Method(?method), Instruction(?insn).
+
 OptInstructionFromMethodIndex[?method, ?index] = ?insn ->
    Instruction(?insn), int[32](?index), Method(?method).
 
