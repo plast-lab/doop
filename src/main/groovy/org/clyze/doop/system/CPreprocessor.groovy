@@ -9,6 +9,7 @@ class CPreprocessor {
 
     String   _macroCli
     Executor _executor
+    boolean  _emitLineMarkers
 
     CPreprocessor(Analysis analysis, Executor executor) {
         _macroCli = analysis.options.values()
@@ -23,9 +24,19 @@ class CPreprocessor {
         }
         .join(" ")
         _executor = executor
+        _emitLineMarkers = false
     }
 
-    void preprocessIfExists(String output, String input, String... includes) {
+    CPreprocessor enableLineMarkers() {
+        _emitLineMarkers = true
+        return this
+    }
+    CPreprocessor disableLineMarkers() {
+        _emitLineMarkers = false
+        return this
+    }
+
+    CPreprocessor preprocessIfExists(String output, String input, String... includes) {
         if (new File(input).isFile())
             preprocess(output, input, includes)
         else {
@@ -34,11 +45,14 @@ class CPreprocessor {
             preprocess(output, tmpFile.getCanonicalPath(), includes)
             FileUtils.deleteQuietly(tmpFile)
         }
+        return this
     }
 
-    void preprocess(String output, String input, String... includes) {
+    CPreprocessor preprocess(String output, String input, String... includes) {
+        def lineMarkersFlag = _emitLineMarkers ? '' : ' -P'
         def includeArgs = includes.collect{ "-include $it" }.join(" ")
-        _executor.execute("cpp -P $_macroCli $input $includeArgs $output")
+        _executor.execute("cpp $lineMarkersFlag $_macroCli $input $includeArgs $output")
+        return this
     }
 
     // Preprocess input file and put contents *in the beginning* of the output file.

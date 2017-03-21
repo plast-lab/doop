@@ -46,6 +46,8 @@ class SoundMayAnalysis extends ClassicAnalysis {
             if (!options.X_STOP_AT_BASIC.value) {
 
                 mainAnalysis()
+
+                produceStats()
             }
         }
 
@@ -63,11 +65,19 @@ class SoundMayAnalysis extends ClassicAnalysis {
     protected void mainAnalysis() {
         def analysisPath = "${Doop.analysesPath}/${name}"
         def outFile = "${outDir}/sound.logic"
+        cpp.preprocess("${outDir}/string-constants.logic", "${Doop.logicPath}/main/string-constants.logic")
 
         connector.queue()
+            .timedTransaction("-- String Constants --")
+            .addBlockFile("${outDir}/string-constants.logic")
+            .commit()
+            .elapsedTime()
             .echo("-- Sound May Pointer Analysis --")
 
-        cpp.preprocess(outFile, "${analysisPath}/analysis.logic")
+        cpp
+            .enableLineMarkers()
+            .preprocess(outFile, "${analysisPath}/analysis.logic")
+            .disableLineMarkers()
         Compiler.compile(outDir.toString(), outFile).each { result ->
             if (result.kind == Result.Kind.LOGIC)
                 connector.queue()
