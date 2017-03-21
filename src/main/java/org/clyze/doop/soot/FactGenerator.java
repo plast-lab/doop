@@ -229,6 +229,7 @@ class FactGenerator implements Runnable {
                 // This instruction is the bottleneck of
                 // soot-fact-generation.
                 // synchronized(Scene.v()) {
+                System.out.println("You should never see this anymore");
                 m.retrieveActiveBody();
                 // } // synchronizing so broadly = giving up on Soot's races
             }
@@ -236,17 +237,17 @@ class FactGenerator implements Runnable {
             Body b = m.getActiveBody();
             if (b != null) {
                 if (_ssa) {
-                    //                synchronized(Scene.v()) {
                     b = Shimple.v().newBody(b);
-                    //                }
-                    m.setActiveBody(b);
+                    //m.setActiveBody(b);
                 }
+                //if (!_generateJimple) {
+                    m.releaseActiveBody();
+                //}
                 DoopRenamer.transform(b);
                 generate(m, b, session);
+
             }
-            if (!_generateJimple) {
-                m.releaseActiveBody();
-            }
+
         }
     }
 
