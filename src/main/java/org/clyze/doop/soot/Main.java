@@ -206,7 +206,7 @@ public class Main {
             soot.options.Options.v().set_output_format(output_format_jimple);
         }
         //soot.options.Options.v().set_debug_resolver(true);
-        soot.options.Options.v().set_drop_bodies_after_load(true);
+        //soot.options.Options.v().set_drop_bodies_after_load(true);
         soot.options.Options.v().set_asm_backend(true);
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
