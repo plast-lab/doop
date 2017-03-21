@@ -2,14 +2,15 @@ package org.clyze.doop.soot;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import soot.*;
 import soot.jimple.*;
 
 public class Representation {
-    private Map<SootMethod, String> _methodRepr = new HashMap<>();
-    private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
-    private Map<Trap, String> _trapRepr = new HashMap<>();
+    private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
+    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
     private static Representation _repr;
@@ -33,7 +34,7 @@ public class Representation {
         return "<class " + t + ">";
     }
 
-    public synchronized String signature(SootMethod m) {
+    public String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
 
         if(result == null)
@@ -103,7 +104,7 @@ public class Representation {
         return s + "/intermediate/" +  session.nextNumber(s);
     }
 
-    synchronized String handler(SootMethod m, Trap trap, Session session)
+    String handler(SootMethod m, Trap trap, Session session)
     {
         String result = _trapRepr.get(trap);
 
@@ -124,7 +125,7 @@ public class Representation {
         return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    private synchronized String getMethodSignature(SootMethod m)
+    private String getMethodSignature(SootMethod m)
     {
         return m.getSignature();
     }
