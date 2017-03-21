@@ -194,7 +194,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (!analysisCacheDir.exists()) {
             System.out.println("Compiling datalog to produce C++ program and executable with souffle")
-            System.out.println("Souffle command: souffle -w -o souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
+            System.out.println("Souffle command: souffle -w -o souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p")
 
             long t = timing {
                 executor.execute("souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
@@ -212,8 +212,8 @@ class SouffleAnalysis extends DoopAnalysis {
         }
 
         long t = timing {
-            System.out.println("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath")
-            executor.execute("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath")
+            System.out.println("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath -p$outDir.absolutePath/profile.txt")
+            executor.execute("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath -p$outDir.absolutePath/profile.txt")
         }
         System.out.println("Analysis execution time (sec): ${t}")
     }
