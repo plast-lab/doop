@@ -163,10 +163,10 @@ class DatalogTest {
 	void test_Fail14() throws IOException {
 		test("fail14.logic", ErrorId.UNKNOWN_COMP)
 	}
-	@Test
-	void test_Fail15() throws IOException {
-		test("fail15.logic", ErrorId.MULTIPLE_ENT_DECLS)
-	}
+	//@Test
+	//void test_Fail15() throws IOException {
+	//	test("fail15.logic", ErrorId.MULTIPLE_ENT_DECLS)
+	//}
 
 
 	@Test
