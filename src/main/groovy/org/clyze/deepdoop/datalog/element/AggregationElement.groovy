@@ -7,27 +7,25 @@ import org.clyze.deepdoop.system.*
 
 class AggregationElement implements IElement {
 
-	public final VariableExpr var
-	public final Predicate    predicate
-	public final IElement     body
+	VariableExpr var
+	Predicate    predicate
+	IElement     body
 
 	AggregationElement(VariableExpr var, Predicate predicate, IElement body) {
 		this.var       = var
 		this.predicate = predicate
 		this.body      = body
-		this._loc      = SourceManager.v().getLastLoc()
+		this.loc       = SourceManager.v().getLastLoc()
 	}
 
-
-	@Override
 	List<VariableExpr> getVars() {
-		return body.getVars() + predicate.getVars() + [var]
+		body.getVars() + predicate.getVars() + [var]
 	}
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
 
-	String toString() { return "agg<<$var = $predicate>> $body" }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	String toString() { "agg<<$var = $predicate>> $body" }
+
+	SourceLocation loc
+	SourceLocation location() { loc }
 }

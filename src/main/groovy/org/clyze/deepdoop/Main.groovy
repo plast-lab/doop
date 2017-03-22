@@ -7,6 +7,6 @@ Helper.initLogging("INFO", System.getenv("DOOP_HOME") + "/build/logs", true)
 
 try {
 	println Compiler.compile("build", args[0])
-} catch (RuntimeException e) {
+} catch (Exception e) {
 	e.printStackTrace()
 }

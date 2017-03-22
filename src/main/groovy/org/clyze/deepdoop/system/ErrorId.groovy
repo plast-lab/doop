@@ -40,6 +40,6 @@ enum ErrorId {
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {
-		return MessageFormat.format(_msgMap.get(errorId), values)
+		MessageFormat.format(_msgMap.get(errorId), values)
 	}
 }

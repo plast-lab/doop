@@ -6,11 +6,12 @@ import org.clyze.deepdoop.system.*
 
 class DependencyGraph {
 
-	Map<String, Node> _nodes
-	List<Set<Node>>   _layers
+	Map<String, Node> nodes
+	List<Set<Node>>   layers
 
 	DependencyGraph(Program p) {
-		_nodes = [:]
+		nodes  = [:]
+		layers = []
 
 		def acActor = new AtomCollectingActor()
 		def acVisitor = new PostOrderVisitor<IVisitable>(acActor)
@@ -20,8 +21,8 @@ class DependencyGraph {
 		Set<String> handledGlobalAtoms = []
 
 		p.props.each{ prop ->
-			Component fromComp = p.comps.get(prop.fromId)
-			Component toComp   = p.comps.get(prop.toId)
+			Component fromComp = p.comps[prop.fromId]
+			Component toComp   = p.comps[prop.toId]
 
 			def fromNode = getNode(fromComp)
 
@@ -31,8 +32,8 @@ class DependencyGraph {
 			// Propagate to global space
 			else
 				prop.preds.each{ pred ->
-					fromNode.addEdgeTo(getNode(pred.name()))
-					handledGlobalAtoms.add(pred.name())
+					fromNode.addEdgeTo(getNode(pred.orig.name()))
+					handledGlobalAtoms.add(pred.orig.name())
 				}
 
 			// Dependencies from global space
@@ -40,39 +41,33 @@ class DependencyGraph {
 			fromGlobal.retainAll(globalAtoms)
 
 			fromGlobal.each{ globalAtomName -> getNode(globalAtomName).addEdgeTo(fromNode) }
-			handledGlobalAtoms.addAll(fromGlobal)
+			handledGlobalAtoms += fromGlobal
 		}
 
 		// Topological sort
 		Map<Node, Integer> inDegrees = [:]
 		Set<Node> zeroInNodes = []
-		_nodes.values().each{ n ->
+		nodes.values().each{ n ->
 			def inDegree = n.inEdges.size()
 			inDegrees[n] = inDegree
-			if (inDegree == 0) zeroInNodes.add(n)
+			if (inDegree == 0) zeroInNodes << n
 		}
 
 		def curLayer = 0
-		_layers = []
 		while (!zeroInNodes.isEmpty()) {
 			Set<Node> newZeroInNodes = []
 			def successorsExist = false
 			zeroInNodes.each{ n ->
 				inDegrees.remove(n)
-				if (_layers.size() == curLayer) {
-					Set<Node> layerNodes = []
-					layerNodes.add(n)
-					_layers.add(layerNodes)
-				}
-				else {
-					def layerNodes = _layers.get(curLayer)
-					layerNodes.add(n)
-				}
+				if (layers.size() == curLayer)
+					layers << ([n] as Set)
+				else
+					layers[curLayer] << n
 				n.outEdges.each{ succ ->
 					successorsExist = true
-					def newInDegree = inDegrees.get(succ) - 1
+					def newInDegree = inDegrees[succ] - 1
 					inDegrees[succ] = newInDegree
-					if (newInDegree == 0) newZeroInNodes.add(succ)
+					if (newInDegree == 0) newZeroInNodes << succ
 				}
 			}
 			if (newZeroInNodes.isEmpty() && successorsExist)
@@ -82,28 +77,25 @@ class DependencyGraph {
 		}
 
 		globalAtoms.removeAll(handledGlobalAtoms)
-		Set<Node> lastGlobalNodes = []
-		globalAtoms.each{ globalAtom -> lastGlobalNodes.add(getNode(globalAtom)) }
-		_layers.add(lastGlobalNodes)
-	}
 
-	List<Set<Node>> getLayers() { return _layers }
+		layers << (globalAtoms.collect{ getNode(it) } as Set)
+	}
 
 	Node getNode(String name) {
 		def key = "<$name>"
-		def node = _nodes[key]
+		def node = nodes[key]
 		if (node == null) {
 			node = new PredNode(name)
-			_nodes[key] = node
+			nodes[key] = node
 		}
 		return node
 	}
 	Node getNode(Component comp) {
 		def key = comp.name
-		def node = _nodes[key]
+		def node = nodes[key]
 		if (node == null) {
 			node = (comp instanceof CmdComponent ? new CmdNode(comp.name) : new CompNode(comp.name))
-			_nodes[key] = node
+			nodes[key] = node
 		}
 		return node
 	}
@@ -111,9 +103,9 @@ class DependencyGraph {
 
 	abstract static class Node {
 
-		public final String    name
-		public final Set<Node> inEdges
-		public final Set<Node> outEdges
+		String    name
+		Set<Node> inEdges
+		Set<Node> outEdges
 
 		Node(String name) {
 			this.name     = name
@@ -122,20 +114,20 @@ class DependencyGraph {
 		}
 
 		void addEdgeTo(Node toNode) {
-			outEdges.add(toNode)
-			toNode.inEdges.add(this)
+			outEdges << toNode
+			toNode.inEdges << this
 		}
 	}
 	static class PredNode extends Node {
 		PredNode(String name) { super(name) }
-		String toString() { return name }
+		String toString() { name }
 	}
 	static class CompNode extends Node {
 		CompNode(String name) { super(name) }
-		String toString() { return "<$name>" }
+		String toString() { "<$name>" }
 	}
 	static class CmdNode extends Node {
 		CmdNode(String name) { super(name) }
-		String toString() { return "{$name}" }
+		String toString() { "{$name}" }
 	}
 }

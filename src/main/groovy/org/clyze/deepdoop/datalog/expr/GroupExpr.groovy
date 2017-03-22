@@ -4,17 +4,11 @@ import org.clyze.deepdoop.actions.IVisitor
 
 class GroupExpr implements IExpr {
 
-	public final IExpr expr
+	IExpr expr
 
-	GroupExpr(IExpr expr) {
-		this.expr = expr
-	}
+	List<VariableExpr> getVars() { expr.getVars() }
 
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	@Override
-	List<VariableExpr> getVars() { return expr.getVars() }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
-
-	String toString() { return expr.toString() }
+	String toString() { expr.toString() }
 }

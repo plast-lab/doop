@@ -7,9 +7,9 @@ enum BinOperator {
 	// Arithmetic
 	PLUS("+"), MINUS("-"), MULT("*"), DIV("/")
 
-	private String _op
+	private String op
 
-	BinOperator(String op) { _op = op }
+	BinOperator(String op) { this.op = op }
 
-	String toString() { return _op }
+	String toString() { op }
 }

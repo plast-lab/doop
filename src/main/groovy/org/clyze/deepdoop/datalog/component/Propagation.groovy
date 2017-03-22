@@ -4,15 +4,14 @@ import org.clyze.deepdoop.datalog.element.atom.IAtom
 
 class Propagation {
 
-	public final String     fromId
-	public final Set<IAtom> preds
-	public final String     toId
-
-	Propagation(String fromId, Set<IAtom> preds, String toId) {
-		this.fromId = fromId
-		this.preds  = preds
-		this.toId   = toId
+	static class Alias {
+		IAtom orig
+		IAtom alias
 	}
 
-	String toString() { return "$fromId -- $preds --> $toId" }
+	String     fromId
+	Set<Alias> preds
+	String     toId
+
+	String toString() { "$fromId { $preds } -> $toId" }
 }

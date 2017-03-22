@@ -12,13 +12,14 @@ class Entity extends Predicate {
 		this(name, null, exprs)
 	}
 
-	@Override
-	IAtom instantiate(String stage, List<VariableExpr> vars) {
+	IAtom newAtom(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size()
 		assert arity() == 1
-		return new Entity(name, stage, vars.collect())
+		new Entity(name, stage, [] + vars)
 	}
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
-}
+	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
+		throw new UnsupportedOperationException()
+	}
 
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
+}

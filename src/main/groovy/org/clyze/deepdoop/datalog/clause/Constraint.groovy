@@ -6,21 +6,19 @@ import org.clyze.deepdoop.system.*
 
 class Constraint implements IVisitable, ISourceItem {
 
-	public final IElement head
-	public final IElement body
+	IElement head
+	IElement body
 
 	Constraint(IElement head, IElement body) {
 		this.head = head
 		this.body = body
-		this._loc = SourceManager.v().getLastLoc()
+		this.loc  = SourceManager.v().getLastLoc()
 	}
 
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	String toString() { "$head -> $body." }
 
-	String toString() { return "$head -> $body." }
-
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	SourceLocation loc
+	SourceLocation location() { loc }
 }

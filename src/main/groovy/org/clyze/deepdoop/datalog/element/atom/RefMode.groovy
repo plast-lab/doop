@@ -6,10 +6,10 @@ import org.clyze.deepdoop.system.*
 
 class RefMode implements IAtom {
 
-	public final String       name
-	public final String       stage
-	public final VariableExpr entityVar
-	public final IExpr        valueExpr
+	String       name
+	String       stage
+	VariableExpr entityVar
+	IExpr        valueExpr
 
 	RefMode(String name, String stage, VariableExpr entityVar, IExpr valueExpr) {
 		assert stage != "@past"
@@ -19,25 +19,21 @@ class RefMode implements IAtom {
 		this.valueExpr = valueExpr
 	}
 
-	@Override
-	String name() { return name }
-	@Override
-	String stage() { return stage }
-	@Override
-	int arity() { return 2 }
-	@Override
-	IAtom instantiate(String stage, List<VariableExpr> vars) {
+	String name() { name }
+	String stage() { stage }
+	int arity() { 2 }
+	IAtom newAtom(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size()
-		return new RefMode(name, stage, vars.get(0), vars.get(1))
+		return new RefMode(name, stage, vars[0], vars[1])
 	}
-	@Override
-	List<VariableExpr> getVars() {
-		return [entityVar] + valueExpr.getVars()
+	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
+		throw new UnsupportedOperationException()
 	}
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	List<VariableExpr> getVars() { [entityVar] + valueExpr.getVars() }
 
-	String toString() { return "$name($entityVar:$valueExpr)" }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	SourceLocation location() { return null }
+	String toString() { "$name($entityVar:$valueExpr)" }
+
+	SourceLocation location() { null }
 }

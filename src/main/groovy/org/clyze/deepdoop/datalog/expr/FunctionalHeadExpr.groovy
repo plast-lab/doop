@@ -5,7 +5,7 @@ import org.clyze.deepdoop.datalog.element.atom.Functional
 
 class FunctionalHeadExpr implements IExpr {
 
-	public final Functional functional
+	Functional functional
 
 	FunctionalHeadExpr(String name, String stage, List<IExpr> keyExprs) {
 		this.functional = new Functional(name, stage, keyExprs, null)
@@ -15,11 +15,9 @@ class FunctionalHeadExpr implements IExpr {
 		this.functional = functional
 	}
 
+	List<VariableExpr> getVars() { functional.getVars() }
 
-	@Override
-	List<VariableExpr> getVars() { return functional.getVars() }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	String toString() { return functional.toString() }
+	String toString() { functional.toString() }
 }

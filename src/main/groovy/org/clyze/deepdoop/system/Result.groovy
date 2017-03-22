@@ -6,9 +6,9 @@ class Result {
 
 	enum Kind { LOGIC, IMPORT, EXPORT, CMD }
 
-	public final Kind kind
-	public final Path file
-	public final String cmd
+	Kind kind
+	Path file
+	String cmd
 
 	Result(Kind kind, Path file) {
 		this.kind = kind
@@ -21,7 +21,5 @@ class Result {
 		this.cmd  = cmd
 	}
 
-	String toString() {
-		return "($kind) " + (file != null ? file.toString() : cmd)
-	}
+	String toString() { "($kind) " + (file ?: cmd) }
 }

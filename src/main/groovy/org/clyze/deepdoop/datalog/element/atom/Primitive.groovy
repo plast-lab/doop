@@ -6,9 +6,9 @@ import org.clyze.deepdoop.system.*
 
 class Primitive implements IAtom {
 
-	public final String       name
-	public final int          capacity
-	public final VariableExpr var
+	String       name
+	int          capacity
+	VariableExpr var
 
 	Primitive(String name, String cap, VariableExpr var) {
 		this.capacity = normalize(name, cap)
@@ -16,25 +16,23 @@ class Primitive implements IAtom {
 		this.var      = var
 	}
 
-	@Override
-	String name() { return name }
-	@Override
-	String stage() { return null }
-	@Override
-	int arity() { return 1 }
-	@Override
-	IAtom instantiate(String stage, List<VariableExpr> vars) {
+	String name() { name }
+	String stage() { null }
+	int arity() { 1 }
+	IAtom newAtom(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size()
 		return this
 	}
-	@Override
-	List<VariableExpr> getVars() { return [var] }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
+		throw new UnsupportedOperationException()
+	}
+	List<VariableExpr> getVars() { [var] }
 
-	String toString() { return "$name($var)" }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	SourceLocation location() { return null }
+	String toString() { "$name($var)" }
+
+	SourceLocation location() { null }
 
 
 	static int normalize(String name, String capacity) {

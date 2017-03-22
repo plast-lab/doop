@@ -9,95 +9,79 @@ import org.clyze.deepdoop.datalog.expr.*
 
 class FlatteningActor implements IActor<IVisitable> {
 
-	Map<String, Component> _allComps
+	Map<String, Component> allComps
 
 	FlatteningActor(Map<String, Component> allComps) {
-		_allComps = allComps
+		this.allComps = allComps
 	}
 
-
-	@Override
 	Program exit(Program n, Map<IVisitable, IVisitable> m) {
 		Program flatP = Program.from(n.globalComp, [:], n.inits, n.props)
 		n.comps.values().each{ flatP.addComponent(m[it] as Component) }
 		return flatP
 	}
 
-	@Override
-	CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) {
-		return n
-	}
+	CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) { n }
+
 	// Flatten components that extend other components
-	@Override
 	Component exit(Component n, Map<IVisitable, IVisitable> m) {
 		Component currComp = n
 		Component flatComp = new Component(currComp)
 		while (currComp.superComp != null) {
-			currComp = _allComps[currComp.superComp]
+			currComp = allComps[currComp.superComp]
 			flatComp.addAll(currComp)
 		}
 		return flatComp
 	}
 
-	@Override
 	Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
 		def head = m[n.head] as IElement
 		def body = m[n.body] as IElement
 		return (head == n.head && body == n.body ? n : new Constraint(head, body))
 	}
-	@Override
+
 	Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
 		def head = m[n.head] as LogicalElement
 		def body = m[n.body] as IElement
 		return (head == n.head && body == n.body ? n : new Rule(head, body, false))
 	}
 
-	@Override
 	AggregationElement exit(AggregationElement n, Map<IVisitable, IVisitable> m) {
 		def body = m[n.body] as IElement
 		return (body == n.body ? n : new AggregationElement(n.var, n.predicate, body))
 	}
-	@Override
-	ComparisonElement exit(ComparisonElement n, Map<IVisitable, IVisitable> m) {
-		return n
-	}
-	@Override
+
+	ComparisonElement exit(ComparisonElement n, Map<IVisitable, IVisitable> m) { n }
+
 	GroupElement exit(GroupElement n, Map<IVisitable, IVisitable> m) {
 		def e = m[n.element] as IElement
 		return (e == n.element ? n : new GroupElement(e))
 	}
+
 	// Flatten LogicalElement "trees"
-	@Override
 	LogicalElement exit(LogicalElement n, Map<IVisitable, IVisitable> m) {
-		Set<IElement> newElements = [] as Set
+		Set<IElement> newElements = []
 		n.elements.each{ e ->
 			def flatE = m[e] as IElement
 			if (flatE instanceof LogicalElement && (flatE as LogicalElement).type == n.type)
-				newElements.addAll((flatE as LogicalElement).elements)
+				newElements << (flatE as LogicalElement).elements
 			else
-				newElements.add(flatE)
+				newElements << flatE
 		}
 		return new LogicalElement(n.type, newElements)
 	}
-	@Override
+
 	NegationElement exit(NegationElement n, Map<IVisitable, IVisitable> m) {
 		def e = m[n.element] as IElement
 		return (e == n.element ? n : new NegationElement(e))
 	}
 
-	
-	@Override
-	Directive exit(Directive n, Map<IVisitable, IVisitable> m)   { return n }
-	@Override
-	Functional exit(Functional n, Map<IVisitable, IVisitable> m) { return n }
-	@Override
-	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m)   { return n }
-	@Override
-	Entity exit(Entity n, Map<IVisitable, IVisitable> m)         { return n }
-	@Override
-	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m)   { return n }
-	@Override
-	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m)       { return n }
+	Directive exit(Directive n, Map<IVisitable, IVisitable> m)   { n }
+	Functional exit(Functional n, Map<IVisitable, IVisitable> m) { n }
+	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m)   { n }
+	Entity exit(Entity n, Map<IVisitable, IVisitable> m)         { n }
+	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m)   { n }
+	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m)       { n }
 
 	void enter(Program n) {}
 
@@ -106,9 +90,9 @@ class FlatteningActor implements IActor<IVisitable> {
 
 	void enter(Constraint n) {}
 	void enter(Declaration n) {}
-	IVisitable exit(Declaration n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(Declaration n, Map<IVisitable, IVisitable> m) { null }
 	void enter(RefModeDeclaration n) {}
-	IVisitable exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) { null }
 	void enter(Rule n) {}
 
 	void enter(AggregationElement n) {}
@@ -123,17 +107,17 @@ class FlatteningActor implements IActor<IVisitable> {
 	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	void enter(RefMode n) {}
-	void enter(StubAtom n) {}
-	IVisitable exit(StubAtom n, Map<IVisitable, IVisitable> m) { return null }
+	void enter(Stub n) {}
+	IVisitable exit(Stub n, Map<IVisitable, IVisitable> m) { null }
 
 	void enter(BinaryExpr n) {}
-	IVisitable exit(BinaryExpr n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(BinaryExpr n, Map<IVisitable, IVisitable> m) { null }
 	void enter(ConstantExpr n) {}
-	IVisitable exit(ConstantExpr n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(ConstantExpr n, Map<IVisitable, IVisitable> m) { null }
 	void enter(FunctionalHeadExpr n) {}
-	IVisitable exit(FunctionalHeadExpr n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(FunctionalHeadExpr n, Map<IVisitable, IVisitable> m) { null }
 	void enter(GroupExpr n) {}
-	IVisitable exit(GroupExpr n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(GroupExpr n, Map<IVisitable, IVisitable> m) { null }
 	void enter(VariableExpr n) {}
-	IVisitable exit(VariableExpr n, Map<IVisitable, IVisitable> m) { return null }
+	IVisitable exit(VariableExpr n, Map<IVisitable, IVisitable> m) { null }
 }

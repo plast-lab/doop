@@ -6,43 +6,42 @@ import org.clyze.deepdoop.system.*
 
 class Directive implements IAtom {
 
-	public final String       name
-	public final StubAtom     backtick
-	public final ConstantExpr constant
-	public final boolean      isPredicate
-	int                       _arity
+	String       name
+	Stub backtick
+	ConstantExpr constant
+	boolean      isPredicate
 
-	Directive(String name, StubAtom backtick) {
+	int          arity
+
+	Directive(String name, Stub backtick) {
 		assert backtick != null
 		this.name         = name
 		this.backtick     = backtick
 		this.constant     = null
 		this.isPredicate  = true
-		this._arity       = 1
+		this.arity       = 1
 	}
-	Directive(String name, StubAtom backtick, ConstantExpr constant) {
+	Directive(String name, Stub backtick, ConstantExpr constant) {
 		this.name         = name
 		this.backtick     = backtick
 		this.constant     = constant
 		this.isPredicate  = false
-		_arity            = (backtick == null ? 1 : 2)
+		arity            = (backtick == null ? 1 : 2)
 	}
 
-	@Override
-	String name() { return name }
-	@Override
-	String stage() { return null }
-	@Override
-	int arity() { return _arity }
-	@Override
-	IAtom instantiate(String stage, List<VariableExpr> vars) {
+	String name() { name }
+	String stage() { null }
+	int arity() { arity }
+	IAtom newAtom(String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size()
-		return this
+		this
 	}
-	@Override
-	List<VariableExpr> getVars() { return [] }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
+		throw new UnsupportedOperationException()
+	}
+	List<VariableExpr> getVars() { [] }
+
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	String toString() {
 		if (isPredicate)
@@ -51,5 +50,5 @@ class Directive implements IAtom {
 			return "$name[" + (backtick == null ? "" : backtick) + "] = $constant"
 	}
 
-	SourceLocation location() { return null }
+	SourceLocation location() { null }
 }

@@ -7,8 +7,6 @@ import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 
-
-
 interface IActor<T> {
 	void enter(Program n)
 	T exit(Program n, Map<IVisitable, T> m)
@@ -50,8 +48,8 @@ interface IActor<T> {
 	T exit(Primitive n, Map<IVisitable, T> m)
 	void enter(RefMode n)
 	T exit(RefMode n, Map<IVisitable, T> m)
-	void enter(StubAtom n)
-	T exit(StubAtom n, Map<IVisitable, T> m)
+	void enter(Stub n)
+	T exit(Stub n, Map<IVisitable, T> m)
 
 	void enter(BinaryExpr n)
 	T exit(BinaryExpr n, Map<IVisitable, T> m)

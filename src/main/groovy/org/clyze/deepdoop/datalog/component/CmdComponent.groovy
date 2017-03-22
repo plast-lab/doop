@@ -7,25 +7,22 @@ import org.clyze.deepdoop.system.*
 
 class CmdComponent extends Component {
 
-	public String              eval
-	public final Set<StubAtom> exports
-	public final Set<StubAtom> imports
+	String        eval
+	Set<Stub> exports
+	Set<Stub> imports
 
-	CmdComponent(String name, Set<Declaration> declarations, String eval, Set<StubAtom> imports, Set<StubAtom> exports) {
+	CmdComponent(String name, Set<Declaration> declarations, String eval, Set<Stub> imports, Set<Stub> exports) {
 		super(name, null, declarations, [], [])
 		this.eval    = eval
 		this.imports = imports
 		this.exports = exports
 	}
 	CmdComponent(String name) {
-		this(name, [], null, [], [])
+		this(name, [] as Set, null, [] as Set, [] as Set)
 	}
 
-	@Override
-	void addDecl(Declaration d) { declarations.add(d) }
-	@Override
+	void addDecl(Declaration d) { declarations << d }
 	void addCons(Constraint c) { ErrorManager.error(ErrorId.CMD_CONSTRAINT) }
-	@Override
 	void addRule(Rule r) {
 		if (!r.isDirective) {
 			super.addRule(r)
@@ -36,19 +33,18 @@ class CmdComponent extends Component {
 		switch (d.name) {
 			case "lang:cmd:EVAL"  :
 					   if (eval != null) ErrorManager.error(ErrorId.CMD_EVAL, name)
-					   eval = ((String) d.constant.value).replaceAll('^\"|\"$', ""); break
+					   eval = (d.constant.value as String).replaceAll('^\"|\"$', ""); break
 			case "lang:cmd:export":
-					   exports.add(new StubAtom(d.backtick.name, "@past")); break
+					   exports << new Stub(d.backtick.name, "@past"); break
 			case "lang:cmd:import":
-					   imports.add(new StubAtom(d.backtick.name)); break
+					   imports << new Stub(d.backtick.name); break
 			default               :
 					   ErrorManager.error(ErrorId.CMD_DIRECTIVE, name)
 		}
 	}
-	@Override
 	void addAll(Component other) {
 		throw new UnsupportedOperationException("`addAll` is not supported on a command block")
 	}
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

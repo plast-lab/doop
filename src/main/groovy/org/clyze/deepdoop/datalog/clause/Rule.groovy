@@ -7,9 +7,9 @@ import org.clyze.deepdoop.system.*
 
 class Rule implements IVisitable, ISourceItem {
 
-	public final LogicalElement head
-	public final IElement       body
-	public final boolean        isDirective
+	LogicalElement head
+	IElement       body
+	boolean        isDirective
 
 	Rule(LogicalElement head, IElement body) {
 		this(head, body, true)
@@ -21,7 +21,7 @@ class Rule implements IVisitable, ISourceItem {
 				body == null &&
 				head.elements.size() == 1 &&
 				head.elements.first() instanceof Directive)
-		this._loc = SourceManager.v().getLastLoc()
+		this.loc  = SourceManager.v().getLastLoc()
 
 		if (doChecks && body != null) {
 			def varsInHead = head.getVars()
@@ -34,15 +34,13 @@ class Rule implements IVisitable, ISourceItem {
 	}
 
 	Directive getDirective() {
-		return (isDirective ? (Directive) head.elements.first() : null)
+		isDirective ? head.elements.first() as Directive : null
 	}
 
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	String toString() { "$head <- $body." }
 
-	String toString() { return "$head <- $body." }
-
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	SourceLocation loc
+	SourceLocation location() { loc }
 }
