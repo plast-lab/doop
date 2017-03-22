@@ -199,6 +199,7 @@ public class Main {
         SootMethod dummyMain = null;
 
         soot.options.Options.v().set_output_dir(sootParameters._outputDir);
+
         if (sootParameters._ssa) {
             soot.options.Options.v().set_via_shimple(true);
             soot.options.Options.v().set_output_format(output_format_shimple);
@@ -371,8 +372,13 @@ public class Main {
         }
 
         System.out.println("Total classes in Scene: " + classes.size());
-        soot.PackManager.v().retrieveAllSceneClassesBodies();
-        System.out.println("Retrieved all bodies");
+        try {
+            soot.PackManager.v().retrieveAllSceneClassesBodies();
+            System.out.println("Retrieved all bodies");
+        }
+        catch (Exception ex) {
+            System.out.println("Not all bodies retrieved");
+        }
         Database db = new Database(new File(sootParameters._outputDir));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
@@ -437,7 +443,7 @@ public class Main {
         }
 
         db.close();
-}
+    }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
         if(SourceLocator.v().getClassSource(className) != null) {

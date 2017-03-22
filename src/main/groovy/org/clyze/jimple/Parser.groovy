@@ -11,7 +11,7 @@ import org.clyze.persistent.doop.BasicMetadata
 
 class Parser {
 
-	static String parseJimple2JSON(String filename) {
+	static String parseJimple2JSON(String filename, String outPath) {
 		def metadata = parseJimple(filename)
 
 		def json = [:]
@@ -24,12 +24,18 @@ class Parser {
 		return new GsonBuilder().disableHtmlEscaping().create().toJson(json)
 	}
 
-	static BasicMetadata parseJimple(String filename) {
+	static BasicMetadata parseJimple(String filename, String outPath) {
 		// XYZ/abc.def.Foo.jimple
 		def origFile = new File(filename)
 		// XYZ
-		def dir = origFile.getParentFile()
-		dir = dir ?: new File(".")
+		def dir
+		if (outPath == null) {
+			dir = origFile.getParentFile()
+			dir = dir ?: new File(".")
+		}
+		else {
+			dir = outPath
+		}
 		// abc.def.Foo
 		def extension = FilenameUtils.getExtension( FilenameUtils.getName(filename) )
 		def simplename = FilenameUtils.removeExtension( FilenameUtils.getName(filename) )

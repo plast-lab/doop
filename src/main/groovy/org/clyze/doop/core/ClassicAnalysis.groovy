@@ -5,6 +5,7 @@ import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
+import org.clyze.doop.ServerAnalysisPostProcessor
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
@@ -84,6 +85,11 @@ class ClassicAnalysis extends DoopAnalysis {
             .connect(database.toString())
             .addBlock("""Stats:Runtime("script wall-clock time (sec)", $t).
                          Stats:Runtime("disk footprint (KB)", $dbSize).""")
+
+        if (options.RUN_SERVER_LOGIC.value) {
+            logger.info "Running server logic\n"
+            new ServerAnalysisPostProcessor().process(this)
+        }
     }
 
 
