@@ -205,6 +205,9 @@ public class Main {
         } else {
             soot.options.Options.v().set_output_format(output_format_jimple);
         }
+        //soot.options.Options.v().set_debug_resolver(true);
+        //soot.options.Options.v().set_drop_bodies_after_load(true);
+        soot.options.Options.v().set_asm_backend(true);
         soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
         soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
         soot.options.Options.v().set_keep_line_number(true);
@@ -368,7 +371,8 @@ public class Main {
         }
 
         System.out.println("Total classes in Scene: " + classes.size());
-
+        soot.PackManager.v().retrieveAllSceneClassesBodies();
+        System.out.println("Retrieved all bodies");
         Database db = new Database(new File(sootParameters._outputDir));
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
@@ -425,17 +429,15 @@ public class Main {
             }
         }
         if (!sootParameters._noFacts) {
-            if (sootParameters._classicFactGen)
-                driver.doInSequentialOrder(classes);
-            else {
-                scene.getOrMakeFastHierarchy();
-                // avoids a concurrent modification exception, since we may
-                // later be asking soot to add phantom classes to the scene's hierarchy
-                driver.doInParallel(classes);
-            }
+
+            scene.getOrMakeFastHierarchy();
+            // avoids a concurrent modification exception, since we may
+            // later be asking soot to add phantom classes to the scene's hierarchy
+            driver.doInParallel(classes);
         }
+
         db.close();
-    }
+}
 
     private static void addCommonDynamicClass(Scene scene, String className) {
         if(SourceLocator.v().getClassSource(className) != null) {

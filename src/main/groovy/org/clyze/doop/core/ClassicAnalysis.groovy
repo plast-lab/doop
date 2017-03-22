@@ -472,6 +472,8 @@ class ClassicAnalysis extends DoopAnalysis {
             ClassLoader loader = sootClassLoader()
             Helper.execJava(loader, "org.clyze.doop.soot.Main", params.toArray(new String[params.size()]))
         }
+
+        logger.info "Fact generation time: ${sootTime}"
     }
 
     @Override

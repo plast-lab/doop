@@ -70,7 +70,7 @@ dependencies {
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',
-            "ext:sootclasses:1.+",
+            "ext:sootclasses:2.+",
             "ext:soot-infoflow:1.+",
             "ext:soot-infoflow-android:1.+"
 

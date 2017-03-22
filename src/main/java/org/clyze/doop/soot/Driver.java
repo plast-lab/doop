@@ -19,7 +19,7 @@ class Driver {
     private Set<SootClass> _tmpClassGroup;
     private int _totalClasses;
     private int _cores;
-    private int _classSplit = 5;
+    private int _classSplit = 80;
 
     Driver(ThreadFactory factory, int totalClasses, boolean generateJimple) {
         _factory = factory;
