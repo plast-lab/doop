@@ -63,8 +63,7 @@ class Component implements IVisitable, ISourceItem {
 	void markEntity(String entityName) {
 		entities << entityName
 		// backwards patching
-		// TODO is this OK??
-		def decl = declarations.findAll{ it.atom.name() == entityName }.first()
+		def decl = declarations.find{ it.atom.name() == entityName }
 		if (decl != null) {
 			def pred = decl.atom as Predicate
 			def entity = new Entity(pred.name, pred.stage, pred.exprs)
