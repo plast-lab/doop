@@ -225,7 +225,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 			c.declarations.each {
 				assert !(it instanceof RefModeDeclaration)
 				def atom = acActor.getDeclaringAtoms(it).values().first() as IAtom
-				emitFilePredicate(atom, d, latestFile)
+				emitFilePredicate(atom, it, latestFile)
 			}
 		}
 	}

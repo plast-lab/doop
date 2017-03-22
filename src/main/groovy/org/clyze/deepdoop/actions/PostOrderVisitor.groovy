@@ -62,7 +62,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		m[n.atom] = n.atom.accept(this)
-		n.types.each{ m[t] = it.accept(this) }
+		n.types.each{ m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
