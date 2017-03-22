@@ -7,5 +7,6 @@ interface IAtom extends IElement {
 	String name()
 	String stage()
 	int    arity()
-	IAtom  instantiate(String stage, List<VariableExpr> vars)
+	IAtom  newAtom(String stage, List<VariableExpr> vars)
+	IAtom  newAlias(String name, String stage, List<VariableExpr> vars)
 }

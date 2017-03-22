@@ -6,9 +6,9 @@ import org.clyze.deepdoop.system.*
 
 class Predicate implements IAtom {
 
-	public final String      name
-	public final String      stage
-	public final List<IExpr> exprs
+	String      name
+	String      stage
+	List<IExpr> exprs
 
 	Predicate(String name, String stage, List<IExpr> exprs) {
 		this.name  = name
@@ -19,30 +19,21 @@ class Predicate implements IAtom {
 		this(name, null, exprs)
 	}
 
-	@Override
-	String name() { return name }
-	@Override
-	String stage() { return stage }
-	@Override
-	int arity() { return exprs.size() }
-	@Override
-	IAtom instantiate(String stage, List<VariableExpr> vars) {
+	String name() { name }
+	String stage() { stage }
+	int arity() { exprs.size() }
+	IAtom newAtom(String stage, List<VariableExpr> vars) {
+		newAlias(name, stage, vars)
+	}
+	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size()
-		return new Predicate(name, stage, vars.collect())
+		return new Predicate(name, stage, [] + vars)
 	}
-	@Override
-	List<VariableExpr> getVars() {
-		List<VariableExpr> list = new ArrayList<>();
-		exprs.each{ e -> list.addAll(e.getVars()) }
-		return list;
-	}
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	List<VariableExpr> getVars() { exprs.collect{ it.getVars() }.flatten() }
 
-	String toString() {
-		def exprStr = exprs.collect{ it.toString() }.join(', ')
-		return "$name($exprStr)"
-	}
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	SourceLocation location() { return null }
+	String toString() { "$name(${exprs.collect{ it.toString() }.join(', ')})" }
+
+	SourceLocation location() { null }
 }

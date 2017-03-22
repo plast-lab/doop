@@ -1,0 +1,17 @@
+component Foo {
+  P(1).
+  Q(2).
+  R(3).
+  R(4).
+}
+as Foo1, Foo2, Foo3, Foo4
+
+component Bar {
+
+}
+as Bar1, Bar2, Bar3, Bar4
+
+Foo1 {*} -> Bar1
+Foo2 {P,Q} -> Bar2
+Foo3 {P as A, Q as B} -> Bar3
+Foo4 {P as A, *} -> Bar4

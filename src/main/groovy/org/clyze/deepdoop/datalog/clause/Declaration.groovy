@@ -6,38 +6,32 @@ import org.clyze.deepdoop.system.*
 
 class Declaration implements IVisitable, ISourceItem {
 
-	public final IAtom       atom
-	public final List<IAtom> types
+	IAtom       atom
+	List<IAtom> types
 
 	Declaration(IAtom atom, Set<IAtom> types) {
-		this.atom = atom
-		this._loc = SourceManager.v().getLastLoc()
+		this.atom  = atom
+		this.types = []
+		this.loc   = SourceManager.v().getLastLoc()
 
 		def varsInHead = atom.getVars()
-		def typesCount = types.size()
-		def ordered = new IAtom[typesCount]
 		types.each{ t ->
 			def vars = t.getVars()
 			assert vars.size() == 1
 			def index = varsInHead.indexOf(vars.get(0))
 			if (index == -1)
 				ErrorManager.error(location(), ErrorId.UNKNOWN_VAR, vars.get(0).name)
-			ordered[index] = t
+			this.types[index] = t
 		}
-		assert (typesCount == 0 || typesCount == varsInHead.size())
-
-		this.types = new ArrayList<>(Arrays.asList(ordered))
+		assert (types.size() == 0 || types.size() == varsInHead.size())
 	}
 
-
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	String toString() {
-		def typeStr = types.collect{ it.toString() }.join(',')
-		return "$atom -> $typeStr."
+		"$atom -> ${types.collect{ it.toString() }.join(',')}."
 	}
 
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	SourceLocation loc
+	SourceLocation location() { loc }
 }

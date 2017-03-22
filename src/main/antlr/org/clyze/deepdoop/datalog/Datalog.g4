@@ -12,20 +12,26 @@ lineMarker
 	: '#' INTEGER STRING INTEGER* ;
 
 comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK ('as' identifierList)? ;
+	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK (AS identifierList)? ;
 
 cmd
-	: CMD IDENTIFIER L_BRACK datalog* R_BRACK ('as' identifierList)? ;
+	: CMD IDENTIFIER L_BRACK datalog* R_BRACK (AS identifierList)? ;
 
 initialize
-	: IDENTIFIER 'as' identifierList ;
+	: IDENTIFIER AS identifierList ;
 
 propagate
-	: IDENTIFIER '{' (ALL | predicateNameList) '}' '->' (IDENTIFIER | GLOBAL) ;
+	: IDENTIFIER '{' propagationList '}' '->' (IDENTIFIER | GLOBAL) ;
 
-predicateNameList
-	: predicateName
-	| predicateNameList ',' predicateName
+propagationElement
+	: ALL
+	| predicateName AS predicateName
+	| predicateName
+	;
+
+propagationList
+	: propagationElement
+	| propagationList ',' propagationElement
 	;
 
 datalog
@@ -111,6 +117,9 @@ AGG
 
 ALL
 	: '*' ;
+
+AS
+	: 'as' ;
 
 AT_STAGE
 	: '@init'

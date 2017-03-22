@@ -6,10 +6,10 @@ import org.clyze.deepdoop.system.*
 
 class Functional implements IAtom {
 
-	public final String      name
-	public final String      stage
-	public final List<IExpr> keyExprs
-	public final IExpr       valueExpr
+	String      name
+	String      stage
+	List<IExpr> keyExprs
+	IExpr       valueExpr
 
 	Functional(String name, String stage, List<IExpr> keyExprs, IExpr valueExpr) {
 		this.name      = name
@@ -18,32 +18,30 @@ class Functional implements IAtom {
 		this.valueExpr = valueExpr
 	}
 
-	@Override
-	String name() { return name }
-	@Override
-	String stage() { return stage }
-	@Override
-	int arity() { return keyExprs.size() + 1 }
-	@Override
-	IAtom instantiate(String stage, List<VariableExpr> vars) {
+	String name() { name }
+	String stage() { stage }
+	int arity() { keyExprs.size() + 1 }
+	IAtom newAtom(String stage, List<VariableExpr> vars) {
+		newAlias(name, stage, vars)
+	}
+	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
 		assert arity() == vars.size()
-		def varsCopy = vars.collect()
+		def varsCopy = [] << vars
 		def valueVar = varsCopy.pop()
 		return new Functional(name, stage, varsCopy, valueVar)
 	}
-	@Override
 	List<VariableExpr> getVars() {
 		def list = keyExprs.collect{ it.getVars() }.flatten()
-		if (valueExpr != null) list.addAll(valueExpr.getVars())
+		if (valueExpr != null) list += valueExpr.getVars()
 		return list
 	}
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	String toString() {
 		def exprStr = keyExprs.collect{ it.toString() }.join(', ')
 		return "$name[$exprStr]" + (valueExpr == null ? '' : " = $valueExpr")
 	}
 
-	SourceLocation location() { return null }
+	SourceLocation location() { null }
 }

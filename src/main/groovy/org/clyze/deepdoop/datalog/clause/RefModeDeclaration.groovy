@@ -6,12 +6,10 @@ import org.clyze.deepdoop.datalog.element.atom.*
 class RefModeDeclaration extends Declaration {
 
 	RefModeDeclaration(RefMode refmode, Predicate entity, Primitive primitive) {
-		super(refmode, new HashSet<>(Arrays.asList(entity, primitive)))
+		super(refmode, [entity, primitive] as Set)
 	}
 
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
-
-	String toString() { return "${types.get(0)}, $atom -> ${types.get(1)}" }
+	String toString() { "${types[0]}, $atom -> ${types[1]}" }
 }

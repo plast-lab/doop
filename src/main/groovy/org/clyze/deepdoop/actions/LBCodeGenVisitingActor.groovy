@@ -15,70 +15,62 @@ import org.clyze.deepdoop.system.*
 
 class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String> {
 
-	AtomCollectingActor      _acActor
-	Set<String>              _globalAtoms
-	Map<IVisitable, String>  _codeMap
+	AtomCollectingActor      acActor
+	Set<String>              globalAtoms
+	Map<IVisitable, String>  codeMap
 
-	Component                _unhandledGlobal
-	Set<String>              _handledAtoms
+	Component                unhandledGlobal
+	Set<String>              handledAtoms
 
-	Path                     _outDir
-	Path                     _latestFile
-	List<Result>             _results
+	Path                     outDir
+	Path                     latestFile
+	List<Result>             results
 
 	LBCodeGenVisitingActor(String outDirName) {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
 		super(null)
-		_actor        = this
+		actor        = this
 
-		_acActor      = new AtomCollectingActor()
-		_codeMap      = [:]
+		acActor      = new AtomCollectingActor()
+		codeMap      = [:]
 
-		_handledAtoms = [] as Set
+		handledAtoms = [] as Set
 
-		_results      = []
-		_outDir       = Paths.get(outDirName)
+		results      = []
+		outDir       = Paths.get(outDirName)
 	}
 
-	List<Result> getResults() {
-		return _results
-	}
-
-
-	@Override
 	String visit(Program flatP) {
 		// Transform program before visiting nodes
 		def n = flatP.accept(new InitVisitingActor()) as Program
 		return super.visit(n)
 	}
 
-	@Override
 	String exit(Program n, Map<IVisitable, String> m) {
-		n.accept(new PostOrderVisitor<IVisitable>(_acActor))
-		_globalAtoms = _acActor.getDeclaringAtoms(n.globalComp).keySet()
+		n.accept(new PostOrderVisitor<IVisitable>(acActor))
+		globalAtoms = acActor.getDeclaringAtoms(n.globalComp).keySet()
 
 		// Check that all used predicates have a declaration/definition
-		Set<String> allDeclAtoms        = _globalAtoms.collect() as Set
+		Set<String> allDeclAtoms        = [] + globalAtoms
 		Map<String, IAtom> allUsedAtoms = [:]
 		n.comps.values().each{
-			allDeclAtoms.addAll(_acActor.getDeclaringAtoms(it).keySet())
-			allUsedAtoms.putAll(_acActor.getUsedAtoms(it))
+			allDeclAtoms += acActor.getDeclaringAtoms(it).keySet()
+			allUsedAtoms << acActor.getUsedAtoms(it)
 		}
 		allUsedAtoms.each{ usedAtomName, usedAtom ->
 			if (usedAtom.stage() == "@past") return
 
-			if (!allDeclAtoms.contains(usedAtomName))
+			if (!(usedAtomName in allDeclAtoms))
 				ErrorManager.warn(ErrorId.NO_DECL, usedAtomName)
 		}
-
 
 		// Compute dependency graph for components (and global predicates)
 		def graph = new DependencyGraph(n)
 
-		_unhandledGlobal  = new Component(n.globalComp)
-		Set<DependencyGraph.Node> currSet = [] as Set
+		unhandledGlobal  = new Component(n.globalComp)
+		Set<DependencyGraph.Node> currSet = []
 		graph.getLayers().each{ layer ->
 			if (layer.any{ node -> node instanceof DependencyGraph.CmdNode }) {
 				emit(n, m, currSet)
@@ -86,178 +78,154 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 				currSet = [] as Set
 			}
 			else
-				currSet.addAll(layer)
+				currSet += layer
 		}
 		emit(n, m, currSet)
 
 		return null
 	}
 
-	@Override
 	String exit(Constraint n, Map<IVisitable, String> m) {
-		def res = m.get(n.head) + " -> " + m.get(n.body) + "."
-		_codeMap[n] = res
-		return res
-	}
-	@Override
-	String exit(Declaration n, Map<IVisitable, String> m) {
-		def typeStr = n.types.collect{ m[it] }.join(', ')
-		def res = m[n.atom] + " -> " + typeStr + "."
-		_codeMap[n] = res
-		return res
-	}
-	@Override
-	String exit(RefModeDeclaration n, Map<IVisitable, String> m) {
-		def res = m[n.types.get(0)] + ", " + m[n.atom] + " -> " + m[n.types.get(1)] + "."
-		_codeMap[n] = res
-		return res
-	}
-	@Override
-	String exit(Rule n, Map<IVisitable, String> m) {
-		def res = m[n.head] + (n.body != null ? " <- " + m[n.body] : "") + "."
-		_codeMap[n] = res
+		def res = "${m[n.head]} -> ${m[n.body]}."
+		codeMap[n] = res
 		return res
 	}
 
-	@Override
+	String exit(Declaration n, Map<IVisitable, String> m) {
+		def typeStr = n.types.collect{ m[it] }.join(', ')
+		def res = "${m[n.atom]} -> ${typeStr}."
+		codeMap[n] = res
+		return res
+	}
+
+	String exit(RefModeDeclaration n, Map<IVisitable, String> m) {
+		def res = "${m[n.types[0]]}, ${m[n.atom]} -> ${m[n.types[1]]}."
+		codeMap[n] = res
+		return res
+	}
+
+	String exit(Rule n, Map<IVisitable, String> m) {
+		def res = m[n.head] + (n.body != null ? " <- " + m[n.body] : "") + "."
+		codeMap[n] = res
+		return res
+	}
+
 	String exit(AggregationElement n, Map<IVisitable, String> m) {
-		return "agg<<" + m[n.var] + " = " + m[n.predicate] + ">> " + m[n.body]
+		"agg<<${m[n.var]} = ${m[n.predicate]}>> ${m[n.body]}"
 	}
-	@Override
-	String exit(ComparisonElement n, Map<IVisitable, String> m) {
-		return m[n.expr]
-	}
-	@Override
-	String exit(GroupElement n, Map<IVisitable, String> m) {
-		return "(" + m[n.element] + ")"
-	}
-	@Override
+
+	String exit(ComparisonElement n, Map<IVisitable, String> m) { m[n.expr] }
+
+	String exit(GroupElement n, Map<IVisitable, String> m) { "(${m[n.element]})" }
+
 	String exit(LogicalElement n, Map<IVisitable, String> m) {
 		def delim = (n.type == LogicalElement.LogicType.AND ? ", " : "; ")
 		return n.elements.collect { m[it] }.join(delim)
 	}
-	@Override
-	String exit(NegationElement n, Map<IVisitable, String> m) {
-		return "!" + m[n.element]
-	}
 
-	@Override
+	String exit(NegationElement n, Map<IVisitable, String> m) { "!${m[n.element]}" }
+
 	String exit(Directive n, Map<IVisitable, String> m) {
 		def middle = (n.backtick != null ? "`" + n.backtick.name : "")
 		if (n.isPredicate)
-			return n.name + "(" + middle + ")"
+			return "${n.name}($middle)"
 		else
-			return n.name + "[" + middle + "] = " + m[n.constant]
+			return "${n.name}[$middle] = ${m[n.constant]}"
 	}
-	@Override
+
 	String exit(Functional n, Map<IVisitable, String> m) {
 		def keyStr = n.keyExprs.collect { m[it] }.join(', ')
 		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
 		return n.name + stage + "[" + keyStr + "]" + (n.valueExpr != null ? " = " + m[n.valueExpr] : "")
 	}
-	@Override
+
 	String exit(Predicate n, Map<IVisitable, String> m) {
 		def str = n.exprs.collect { m[it] }.join(', ')
 		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
 		return n.name + stage + "(" + str + ")"
 	}
-	@Override
-	String exit(Entity n, Map<IVisitable, String> m) {
-		return exit(n as Predicate, m)
-	}
-	@Override
-	String exit(Primitive n, Map<IVisitable, String> m) {
-		return n.name + "(" + m[n.var] + ")"
-	}
-	@Override
+
+	String exit(Entity n, Map<IVisitable, String> m) { exit(n as Predicate, m) }
+
+	String exit(Primitive n, Map<IVisitable, String> m) { "${n.name}(${m[n.var]})" }
+
 	String exit(RefMode n, Map<IVisitable, String> m) {
 		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
 		return n.name + stage + "(" + m[n.entityVar] + ":" + m[n.valueExpr] + ")"
 	}
-	@Override
-	String exit(StubAtom n, Map<IVisitable, String> m) {
-		return "STUB<" + n.name + ">"
+
+	String exit(Stub n, Map<IVisitable, String> m) { "STUB<${n.name}>" }
+
+	String exit(BinaryExpr n, Map<IVisitable, String> m) {
+		"${m[n.left]} ${n.op} ${m[n.right]}"
 	}
 
-	@Override
-	String exit(BinaryExpr n, Map<IVisitable, String> m) {
-		return m[n.left] + " " + n.op + " " + m[n.right]
-	}
-	@Override
-	String exit(ConstantExpr n, Map<IVisitable, String> m) {
-		return n.value.toString()
-	}
-	@Override
-	String exit(FunctionalHeadExpr n, Map<IVisitable, String> m) {
-		return m[n.functional]
-	}
-	@Override
-	String exit(GroupExpr n, Map<IVisitable, String> m) {
-		return "(" + m[n.expr] + ")"
-	}
-	@Override
-	String exit(VariableExpr n, Map<IVisitable, String> m) {
-		return n.name
-	}
+	String exit(ConstantExpr n, Map<IVisitable, String> m) { n.value.toString() }
+
+	String exit(FunctionalHeadExpr n, Map<IVisitable, String> m) { m[n.functional] }
+
+	String exit(GroupExpr n, Map<IVisitable, String> m) { "(${m[n.expr]})" }
+
+	String exit(VariableExpr n, Map<IVisitable, String> m) { n.name }
 
 
 	void emit(Program n, Map<IVisitable, String> m, Set<DependencyGraph.Node> nodes) {
-		_latestFile = create("out_", ".logic")
-		_results.add(new Result(Result.Kind.LOGIC, _latestFile))
+		latestFile = create("out_", ".logic")
+		results << new Result(Result.Kind.LOGIC, latestFile)
 
-		Set<String> currSet = [] as Set
+		Set<String> currSet = []
 		nodes.each { node ->
 			if (node instanceof DependencyGraph.CompNode) {
 				def c = n.comps[node.name]
 				List<String> l = []
-				c.declarations.each { l.add(_codeMap[it]) }
-				c.constraints.each { l.add(_codeMap[it]) }
-				c.rules.each { l.add(_codeMap[it]) }
-				write(_latestFile, l)
+				c.declarations.each { l << codeMap[it] }
+				c.constraints.each { l << codeMap[it] }
+				c.rules.each { l << codeMap[it] }
+				write(latestFile, l)
 			} else if (node instanceof DependencyGraph.CmdNode)
 				assert false
 			else /* if (node instanceof PredNode)*/ {
-				_handledAtoms.add(node.name)
-				currSet.add(node.name)
+				handledAtoms << node.name
+				currSet << node.name
 			}
 		}
 
-		handle(_unhandledGlobal.declarations, _latestFile)
-		handle(_unhandledGlobal.constraints,  _latestFile)
-		handle(_unhandledGlobal.rules,        _latestFile)
+		handle(unhandledGlobal.declarations, latestFile)
+		handle(unhandledGlobal.constraints,  latestFile)
+		handle(unhandledGlobal.rules,        latestFile)
 	}
 
 	void emitCmd(Program n, Map<IVisitable, String> m, Set<DependencyGraph.Node> nodes) {
 		assert nodes.size() == 1
 		nodes.each { node ->
 			assert node instanceof DependencyGraph.CmdNode
-			assert _latestFile != null
+			assert latestFile != null
 			def c = n.comps[node.name] as CmdComponent
 
 			// Write frame rules from previous components
-			c.rules.each { write(_latestFile, _codeMap[it]) }
+			c.rules.each { write(latestFile, codeMap[it]) }
 
-			_latestFile = create("out_", "-export.logic")
-			_results.add(new Result(Result.Kind.EXPORT, _latestFile))
+			latestFile = create("out_", "-export.logic")
+			results << new Result(Result.Kind.EXPORT, latestFile)
 
 			c.rules.each {
 				assert it.head.elements.size() == 1
 				def atom = it.head.elements.first() as IAtom
-				emitFilePredicate(atom, null, _latestFile)
+				emitFilePredicate(atom, null, latestFile)
 			}
 
-			//for (StubAtom export : c.exports)
+			//for (Stub export : c.exports)
 			//	write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name()+" -exportDataDir . -exportDelimiter '\\t'");
 
-			_results.add(new Result(c.eval))
+			results << new Result(c.eval)
 
-			_latestFile = create("out_", "-import.logic")
-			_results.add(new Result(Result.Kind.IMPORT, _latestFile))
+			latestFile = create("out_", "-import.logic")
+			results << new Result(Result.Kind.IMPORT, latestFile)
 
 			c.declarations.each {
 				assert !(it instanceof RefModeDeclaration)
-				def atom = _acActor.getDeclaringAtoms(it).values().first() as IAtom
-				emitFilePredicate(atom, d, _latestFile)
+				def atom = acActor.getDeclaringAtoms(it).values().first() as IAtom
+				emitFilePredicate(atom, d, latestFile)
 			}
 		}
 	}
@@ -275,7 +243,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 		write(file, [
 			"lang:physical:storageModel[`_$atomName] = \"DelimitedFile\".",
-			"lang:physical:filePath[`_$atomName] = \"$atomName.facts\".",
+			"lang:physical:filePath[`_$atomName] = \"${atomName}.facts\".",
 			"lang:physical:delimiter[`$atomName] = \"\\t\".",
 			"lang:physical:hasColumnNames[`_$atomName] = false.",
 			decl,
@@ -286,7 +254,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 	Path create(String prefix, String suffix) {
 		try {
-			return Files.createTempFile(_outDir, prefix, suffix)
+			return Files.createTempFile(outDir, prefix, suffix)
 		}
 		catch (IOException e) {
 			// TODO
@@ -294,7 +262,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		return null
 	}
 	void write(Path file, String data) {
-		write(file, Arrays.asList(data))
+		write(file, [data])
 	}
 	void write(Path file, List<String> data) {
 		try {
@@ -306,30 +274,30 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	}
 
 	def <T extends IVisitable> void handle(Set<T> set, Path file) {
-		Set<T> toRemove = [] as Set
+		Set<T> toRemove = []
 		set.each {
 			if (allHandledFor(it)) {
-				write(file, _codeMap[it])
-				toRemove.add(it)
+				write(file, codeMap[it])
+				toRemove << it
 			}
 		}
 		toRemove.each { set.remove(it) }
 	}
 	boolean allHandledFor(IVisitable n) {
-		Set<String> atoms = [] as Set
-		_acActor.getDeclaringAtoms(n).values().each { atoms.add(it.name()) }
-		_acActor.getUsedAtoms(n).values().each { atoms.add(it.name()) }
-		atoms.retainAll(_globalAtoms)
+		Set<String> atoms = []
+		acActor.getDeclaringAtoms(n).values().each { atoms << it.name() }
+		acActor.getUsedAtoms(n).values().each { atoms << it.name() }
+		atoms.retainAll(globalAtoms)
 
-		return atoms.every{ _handledAtoms.contains(it) }
+		return atoms.every{ handledAtoms.contains(it) }
 	}
 
 	void enter(Program n) {}
 
 	void enter(CmdComponent n) {}
-	String exit(CmdComponent n, Map<IVisitable, String> m) { return null }
+	String exit(CmdComponent n, Map<IVisitable, String> m) { null }
 	void enter(Component n) {}
-	String exit(Component n, Map<IVisitable, String> m) { return null }
+	String exit(Component n, Map<IVisitable, String> m) { null }
 
 	void enter(Constraint n) {}
 	void enter(Declaration n) {}
@@ -348,7 +316,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	void enter(RefMode n) {}
-	void enter(StubAtom n) {}
+	void enter(Stub n) {}
 
 	void enter(BinaryExpr n) {}
 	void enter(ConstantExpr n) {}

@@ -6,8 +6,8 @@ class ConstantExpr implements IExpr {
 
 	enum Type { INTEGER, REAL, BOOLEAN, STRING }
 
-	public final Type   type
-	public final Object value
+	Type   type
+	Object value
 
 	ConstantExpr(Long l) {
 		type  = Type.INTEGER
@@ -26,11 +26,9 @@ class ConstantExpr implements IExpr {
 		value = s
 	}
 
+	List<VariableExpr> getVars() { [] }
 
-	@Override
-	List<VariableExpr> getVars() { return new ArrayList<>() }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	String toString() { return value.toString() }
+	String toString() { value.toString() }
 }

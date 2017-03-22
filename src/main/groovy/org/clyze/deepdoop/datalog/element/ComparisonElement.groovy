@@ -7,25 +7,23 @@ import org.clyze.deepdoop.system.*
 
 class ComparisonElement implements IElement {
 
-	public final BinaryExpr expr
+	BinaryExpr expr
 
 	ComparisonElement(IExpr left, BinOperator op, IExpr right) {
 		this.expr = new BinaryExpr(left, op, right)
-		this._loc = SourceManager.v().getLastLoc()
+		this.loc  = SourceManager.v().getLastLoc()
 	}
 	ComparisonElement(BinaryExpr expr) {
 		this.expr = expr
-		this._loc = SourceManager.v().getLastLoc()
+		this.loc  = SourceManager.v().getLastLoc()
 	}
 
+	List<VariableExpr> getVars() { expr.getVars() }
 
-	@Override
-	List<VariableExpr> getVars() { return expr.getVars() }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	String toString() { return expr.toString() }
+	String toString() { expr.toString() }
 
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	SourceLocation loc
+	SourceLocation location() { loc }
 }

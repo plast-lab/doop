@@ -5,7 +5,7 @@ import org.apache.commons.logging.LogFactory
 class ErrorManager {
 
 	static void warn(ErrorId errorId, Object... values) {
-		def msg = "[DD] WARNING: " + ErrorId.idToMsg(errorId, values)
+		def msg = "[DD] WARNING: ${ErrorId.idToMsg(errorId, values)}"
 		LogFactory.getLog(ErrorManager.class).warn(msg)
 	}
 
@@ -13,9 +13,8 @@ class ErrorManager {
 		error(null, errorId, values)
 	}
 	static void error(SourceLocation loc, ErrorId errorId, Object... values) {
-		def msg = "[DD] ERROR: " + ErrorId.idToMsg(errorId, values)
-		if (loc != null) msg = msg + "\n" + loc
+		def msg = "[DD] ERROR: ${ErrorId.idToMsg(errorId, values)}"
+		if (loc != null) msg = "$msg\n$loc"
 		throw new DeepDoopException(msg, errorId)
 	}
 }
-

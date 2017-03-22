@@ -7,21 +7,22 @@ import org.clyze.deepdoop.system.*
 
 class Component implements IVisitable, ISourceItem {
 
-	public final String           name
-	public final String           superComp
-	public final Set<Declaration> declarations
-	public final Set<Constraint>  constraints
-	public final Set<Rule>        rules
-	Set<String>                   _entities
+	String           name
+	String           superComp
+	Set<Declaration> declarations
+	Set<Constraint>  constraints
+	Set<Rule>        rules
+
+	Set<String>      entities
 
 	Component(Component other) {
 		this.name         = other.name
 		this.superComp    = other.superComp
-		this.declarations = other.declarations.collect()
-		this.constraints  = other.constraints.collect()
-		this.rules        = other.rules.collect()
-		this._entities    = other._entities.collect()
-		this._loc         = SourceManager.v().getLastLoc()
+		this.declarations = [] + other.declarations
+		this.constraints  = [] + other.constraints
+		this.rules        = [] + other.rules
+		this.entities     = [] + other.entities
+		this.loc          = SourceManager.v().getLastLoc()
 	}
 
 	Component(String name, String superComp, Set<Declaration> declarations, Set<Constraint> constraints, Set<Rule> rules) {
@@ -30,67 +31,57 @@ class Component implements IVisitable, ISourceItem {
 		this.declarations = declarations
 		this.constraints  = constraints
 		this.rules        = rules
-		this._entities    = []
-		this._loc         = SourceManager.v().getLastLoc()
+		this.entities     = []
+		this.loc          = SourceManager.v().getLastLoc()
 	}
 	Component(String name, String superComp) {
-		this(name, superComp, new HashSet<>(), new HashSet<>(), new HashSet<>())
+		this(name, superComp, [] as Set, [] as Set, [] as Set)
 	}
 	Component(String name) {
-		this(name, null, new HashSet<>(), new HashSet<>(), new HashSet<>())
+		this(name, null, [] as Set, [] as Set, [] as Set)
 	}
 	Component() {
-		this(null, null, new HashSet<>(), new HashSet<>(), new HashSet<>())
+		this(null, null, [] as Set, [] as Set, [] as Set)
 	}
 
 	void addDecl(Declaration d) {
 		// forward patching
-		if (_entities.contains(d.atom.name())) {
+		if (d.atom.name() in entities) {
 			def pred = d.atom as Predicate
 			def entity = new Entity(pred.name, pred.stage, pred.exprs)
-			d = new Declaration(entity, d.types.collect())
+			d = new Declaration(entity, [] + d.types as Set)
 		}
-		declarations.add(d)
+		declarations << d
 	}
-	void addCons(Constraint c) {
-		constraints.add(c)
-	}
-	void addRule(Rule r) {
-		rules.add(r)
-	}
+	void addCons(Constraint c) { constraints << c }
+	void addRule(Rule r) { rules << r }
 	void addAll(Component other) {
-		declarations.addAll(other.declarations)
-		constraints.addAll(other.constraints)
-		rules.addAll(other.rules)
+		declarations += other.declarations
+		constraints  += other.constraints
+		rules        += other.rules
 	}
 	void markEntity(String entityName) {
-		_entities.add(entityName)
+		entities << entityName
 		// backwards patching
-		Declaration decl = null
-		for (Declaration d : declarations)
-			if (d.atom.name().equals(entityName)) {
-				decl = d;
-				break;
-			}
+		// TODO is this OK??
+		def decl = declarations.findAll{ it.atom.name() == entityName }.first()
 		if (decl != null) {
 			def pred = decl.atom as Predicate
 			def entity = new Entity(pred.name, pred.stage, pred.exprs)
 			declarations.remove(decl)
-			declarations.add(new Declaration(entity as Predicate, decl.types.collect() as Set))
+			declarations << new Declaration(entity, ([] + decl.types) as Set)
 		}
 	}
 
-
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	String toString() {
-		return "--------- $name ---------" +
-			declarations.collect{ it.toString() } +
-			constraints.collect{ it.toString() } +
-			rules.collect{ it.toString() }.join("\n")
+		"--------- $name ---------" +
+				declarations.collect{ it.toString() } +
+				constraints.collect{ it.toString() } +
+				rules.collect{ it.toString() }.join("\n")
 	}
 
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	SourceLocation loc
+	SourceLocation location() { loc }
 }

@@ -6,21 +6,19 @@ import org.clyze.deepdoop.system.*
 
 class GroupElement implements IElement {
 
-	public final IElement element
+	IElement element
 
 	GroupElement(IElement element) {
 		this.element = element
-		this._loc    = SourceManager.v().getLastLoc()
+		this.loc     = SourceManager.v().getLastLoc()
 	}
 
+	List<VariableExpr> getVars() { element.getVars() }
 
-	@Override
-	List<VariableExpr> getVars() { return element.getVars() }
-	@Override
-	<T> T accept(IVisitor<T> v) { return v.visit(this) }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
-	String toString() { return "($element)" }
+	String toString() { "($element)" }
 
-	SourceLocation _loc
-	SourceLocation location() { return _loc }
+	SourceLocation loc
+	SourceLocation location() { loc }
 }

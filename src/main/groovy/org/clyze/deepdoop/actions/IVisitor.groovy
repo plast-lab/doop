@@ -30,7 +30,7 @@ interface IVisitor<T> {
 	T visit(Entity n)
 	T visit(Primitive n)
 	T visit(RefMode n)
-	T visit(StubAtom n)
+	T visit(Stub n)
 
 	T visit(BinaryExpr n)
 	T visit(ConstantExpr n)
