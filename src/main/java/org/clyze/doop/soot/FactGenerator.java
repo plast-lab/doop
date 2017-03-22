@@ -2,6 +2,7 @@ package org.clyze.doop.soot;
 
 import soot.*;
 import soot.jimple.*;
+import soot.options.Options;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
@@ -240,9 +241,9 @@ class FactGenerator implements Runnable {
                     b = Shimple.v().newBody(b);
                     //m.setActiveBody(b);
                 }
-                //if (!_generateJimple) {
+                if (!_generateJimple) {
                     m.releaseActiveBody();
-                //}
+                }
                 DoopRenamer.transform(b);
                 generate(m, b, session);
 
