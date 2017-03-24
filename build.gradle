@@ -208,7 +208,12 @@ if (project.hasProperty('artifactory_user')) {
     release {
 
         failOnSnapshotDependencies = false
-
+        failOnUnversionedFiles = false
+        failOnCommitNeeded = false
+    
+        git {
+           commitVersionFileOnly = true
+        }
         /* publish before releasing
            buildTasks =['build', 'publish']
          */
