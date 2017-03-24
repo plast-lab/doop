@@ -48,8 +48,9 @@ _DynamicNormalHeapObject(?param1, ?param2, ?param3) ->
   string(?param3).
 
 
++DynamicHeapObject(?dynamicContext, ?heap) <- _DynamicHeapObjectRep(_, ?heap, ?dynamicContext).
 
-+DynamicHeapObject(?representation, ?heap, ?dynamicContext) <-
+_DynamicHeapObjectRep(?representation, ?heap, ?dynamicContext) <-
    DynamicHeapAllocation(?heapRepresentation, ?heap),
    DynamicContext(?dynamicContext),
    DynamicContext:Id(?dynamicContext:?contextRepresentation),
@@ -94,17 +95,17 @@ _DynamicArrayIndexPointsTo(?param1, ?param2) ->
 +DynamicStaticFieldPointsTo(?fld, ?dynamicContext, ?heap) <-
    Field:SimpleName[?fld] = ?fldSimpleName,
    Field:DeclaringType[?fld] = ?fldDeclaringClass,
-   DynamicHeapObject(?objString, ?heap, ?dynamicContext),
+   _DynamicHeapObjectRep(?objString, ?heap, ?dynamicContext),
    _DynamicStaticFieldPointsTo(?fldSimpleName, ?fldDeclaringClass, ?objString).
 
 +DynamicInstanceFieldPointsTo(?fld, ?ctx, ?heap, ?baseCtx, ?baseHeap) <-
-   DynamicHeapObject(?objString, ?heap, ?ctx),
-   DynamicHeapObject(?baseObjString, ?baseHeap, ?baseCtx),
+   _DynamicHeapObjectRep(?objString, ?heap, ?ctx),
+   _DynamicHeapObjectRep(?baseObjString, ?baseHeap, ?baseCtx),
    Field:SimpleName[?fld] = ?fldSimpleName,
    Field:DeclaringType[?fld] = ?fldDeclaringClass,
    _DynamicInstanceFieldPointsTo(?baseObjString, ?fldSimpleName, ?fldDeclaringClass, ?objString).
 
 +DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) <-
-   DynamicHeapObject(?objString, ?heap, ?ctx),
-   DynamicHeapObject(?baseObjString, ?baseHeap, ?baseCtx),
+   _DynamicHeapObjectRep(?objString, ?heap, ?ctx),
+   _DynamicHeapObjectRep(?baseObjString, ?baseHeap, ?baseCtx),
    _DynamicArrayIndexPointsTo(?baseObjString, ?objString).

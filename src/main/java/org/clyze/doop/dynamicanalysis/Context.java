@@ -12,7 +12,7 @@ public interface Context extends DynamicFact {
 
     public static void write_facts_once(Database db) {
         for (String defaultCtx: DEFAULT_CTXS) {
-            db.add(PredicateFile.DYNAMIC_CONTEXT, defaultCtx);
+            db.add(PredicateFile.DYNAMIC_CONTEXT, defaultCtx, DEFAULT_CTX_ARGS);
         }
     }
 

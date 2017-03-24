@@ -36,21 +36,31 @@ Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
    HeapAllocation:Dynamic(?heap).
 
 // Context sensitive allocations
-StaticFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?signature) <-
-   DynamicStaticFieldPointsTo(?signature, ?dynamicContext, ?heap),
-   DynamicContextToHContext(?hctx, ?dynamicContext).
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+   DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
+   FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap).
    
-InstanceFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?fld, ?baseHctx, Value:byDynamicHeap[?baseHeap]) <-
+InstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) <-
    DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
-   DynamicContextToHContext(?hctx, ?dctx),
-   DynamicContextToHContext(?baseHctx, ?baseDCtx).
+   FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
+   FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
    
-ArrayIndexPointsTo(?hctx, Value:byDynamicHeap[?heap], ?baseHctx, Value:byDynamicHeap[?baseHeap]) <-
+ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseValue) <-
    DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap),
-   DynamicContextToHContext(?hctx, ?dctx),
-   DynamicContextToHContext(?baseHctx, ?baseDCtx).
+   FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
+   FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
 
 // Context insensitive allocations
+FromDynamicHeapObject(?hctx, Value:byHeap[?mergeHeap], ?dctx, ?dheap) <-
+   ImmutableHContext(?hctx),
+   HeapAllocation:Merge[?dheap] = ?mergeHeap,
+   DynamicHeapObject(?dctx, ?dheap).
+
+
+FromDynamicHeapObject(?hctx, Value:byHeap[?dheap], ?dctx, ?dheap) <-
+   DynamicContextToHContext(?hctx, ?dctx),
+   !HeapAllocation:Merge[?dheap] = _,
+   DynamicHeapObject(?dctx, ?dheap).
 
 
 // TODO: Consider context insensitive allocations

@@ -561,8 +561,7 @@ DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) ->
    DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?heap), HeapAllocation(?baseHeap).
 DynamicHeapAllocation(?representation, ?heap) -> HeapAllocation(?heap), string(?representation).
 
-DynamicHeapObject(?representation, ?heap, ?dynamicContext) ->
-   string(?representation), HeapAllocation(?heap), DynamicContext(?dynamicContext).
+DynamicHeapObject(?dynamicContext, ?heap) ->  HeapAllocation(?heap), DynamicContext(?dynamicContext).
 
 UnmatchedDynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
   string(?param1),

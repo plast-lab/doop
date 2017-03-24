@@ -35,7 +35,7 @@ public class DynamicNormalHeapObject implements DynamicHeapObject {
     @Override
     public void write_fact(Database db) {
         db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_ALLOCATION, lineNumber, inMethod, type, heapRepresentation);
-        db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_OBJECT, contextRepresentation, representation);
+        db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_OBJECT, heapRepresentation, contextRepresentation, representation);
     }
 
     public String getRepresentation() {

@@ -2,7 +2,7 @@
  * Special objects
  *
  * Some objects are so common that they heavily impact performance if
- * every allocation is distinguished or a contextRepresentation-sensitive heap
+ * every allocation is distinguished or a context-sensitive heap
  * abstraction is used. In many cases, this precision is not actually
  * useful for a points-to analysis, so handling them in a less precise
  * way is beneficial.
@@ -20,14 +20,14 @@ HeapAllocation:Special(?heap) <-
   HeapAllocation:Merge[?heap] = _.
 
 /**
- * Objects that should use a contextRepresentation-insensitive heap abstraction.
+ * Objects that should use a context-insensitive heap abstraction.
  */
 HeapAllocation:ContextInsensitive(?heap) ->
   HeapAllocation(?heap).
 
 /**
  * Objects that should be merged to some heap abstraction 
- * (will overlap with merely contextRepresentation-insensitive objects)
+ * (will overlap with merely context-insensitive objects)
  */
 HeapAllocation:Merge[?heap] = ?mergeHeap ->
   HeapAllocation(?heap),
@@ -732,7 +732,7 @@ HeapRepresentative(?mergeHeap, ?heap) <-
 
 /*
  // (Yannis) This is the original, precise and straightforward treatment
- // of throwables. They were allocated contextRepresentation insensitively. This still
+ // of throwables. They were allocated context insensitively. This still
  // produced huge ThrowPointsTo sets and caused slowdowns.
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
@@ -786,7 +786,7 @@ HeapRepresentative(?representativeHeap, ?heap) <-
  * Primitive arrays
  *
  * char[] or int[] don't have object elements, so it's useless to
- * allocate them contextRepresentation-sensitively.
+ * allocate them context-sensitively.
  *
  *************************************************************/
 
@@ -799,7 +799,7 @@ HeapAllocation:ContextInsensitive(?heap) <-
 /*************************************************************
  * Class without reference fields
  *
- * Treat contextRepresentation-insensitively always? It doesn't matter much,
+ * Treat context-insensitively always? It doesn't matter much,
  * but doesn't hurt much either.
  *************************************************************/
 /*
