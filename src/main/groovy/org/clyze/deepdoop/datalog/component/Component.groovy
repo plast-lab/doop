@@ -12,7 +12,6 @@ class Component implements IVisitable, ISourceItem {
 	Set<Declaration> declarations
 	Set<Constraint>  constraints
 	Set<Rule>        rules
-
 	Set<String>      entities
 
 	Component(Component other) {

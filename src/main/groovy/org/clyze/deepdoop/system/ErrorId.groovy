@@ -13,6 +13,7 @@ enum ErrorId {
 	DEP_GLOBAL,
 	ID_IN_USE,
 	NO_DECL,
+	NO_DECL_REC,
 	UNKNOWN_PRED,
 	UNKNOWN_VAR,
 	UNUSED_VAR,
@@ -32,6 +33,7 @@ enum ErrorId {
 		_msgMap.put(ErrorId.DEP_GLOBAL, "Reintroducing predicate `{0}` to global space")
 		_msgMap.put(ErrorId.ID_IN_USE, "Id `{0}` already used to initialize a component")
 		_msgMap.put(ErrorId.NO_DECL, "Predicate `{0}` used but not declared")
+		_msgMap.put(ErrorId.NO_DECL_REC, "Predicate `{0}` used with @past but not declared")
 		_msgMap.put(ErrorId.UNKNOWN_PRED, "Unknown predicate `{0}` used in propagation")
 		_msgMap.put(ErrorId.UNKNOWN_VAR, "Unknown var `{0}`")
 		_msgMap.put(ErrorId.UNUSED_VAR, "Unused var `{0}`")
