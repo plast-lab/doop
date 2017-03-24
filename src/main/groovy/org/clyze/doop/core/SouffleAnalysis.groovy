@@ -193,29 +193,29 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
         if (!analysisCacheDir.exists()) {
-            System.out.println("Compiling datalog to produce C++ program and executable with souffle")
-            System.out.println("Souffle command: souffle -w -o souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p")
+            logger.info "Compiling datalog to produce C++ program and executable with souffle"
+            logger.info "Souffle command: souffle -w -o souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p"
 
             long t = timing {
                 executor.execute("souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
             }
 
-            System.out.println("Compilation time (sec): ${t}")
+            logger.info "Compilation time (sec): ${t}"
 
             // The analysis executable is created at the directory level of the doop invocation so we have to move it under the outDir
             analysisCacheDir.mkdirs()
             executor.execute("mv ${name} ${analysisCacheDir}")
-            System.out.println("Running analysis executable")
+            logger.info "Running analysis executable"
         }
         else {
-            System.out.println("Running cached analysis executable")
+            logger.info "Running cached analysis executable"
         }
 
         long t = timing {
             System.out.println("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath -p$outDir.absolutePath/profile.txt")
             executor.execute("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath -p$outDir.absolutePath/profile.txt")
         }
-        System.out.println("Analysis execution time (sec): ${t}")
+        logger.info "Analysis execution time (sec): ${t}"
     }
 
     @Override
