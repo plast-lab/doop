@@ -20,6 +20,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	// components that propagate this predicate.
 	Map<String, Set<String>> reverseProps
 
+	Component                curComp
+	Set<Declaration>         autoGenDecls
+
 	AtomCollectingActor      acActor
 
 	InitVisitingActor() {
@@ -30,6 +33,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		actor = this
 
 		acActor = new AtomCollectingActor()
+		autoGenDecls = [] as Set
 	}
 
 
@@ -92,6 +96,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			inRuleHead    = false
 			declaredAtoms = acActor.getDeclaringAtoms(comp).keySet()
 			reverseProps  = reversePropsMap[initName]
+			curComp       = comp
 			initP.addComponent(comp.accept(this) as Component)
 		}
 		initP.accept(acVisitor)
@@ -139,10 +144,12 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 						ErrorManager.warn(ErrorId.DEP_GLOBAL, newName)
 				}
 
-				def stage = (prop.toId == null ? null : "@past")
-				def vars  = VariableExpr.genTempVars(origAtom.arity())
-				def head  = origAtom.newAlias(atom.name(), stage, vars).accept(this) as IAtom
-				def body  = origAtom.newAtom(null, vars) as IAtom
+				def stage  = (prop.toId == null ? null : "@past")
+				def vars   = VariableExpr.genTempVars(origAtom.arity())
+				inRuleHead = true
+				def head   = origAtom.newAlias(atom.name(), stage, vars).accept(this) as IAtom
+				inRuleHead = false
+				def body   = origAtom.newAtom(null, vars) as IAtom
 				toComp.addRule(new Rule(new LogicalElement(head), body, false))
 			}
 		}
@@ -175,7 +182,8 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 
 	Component exit(Component n, Map<IVisitable, IVisitable> m) {
 		Component newComp = new Component(initName as String)
-		n.declarations.each{ newComp.declarations << (m[it] as Declaration) }
+		n.declarations.each{ newComp.addDecl(m[it] as Declaration) }
+		autoGenDecls.each { newComp.addDecl(it) }
 		n.constraints.each{ newComp.constraints << (m[it] as Constraint) }
 		n.rules.each{ newComp.rules << (m[it] as Rule) }
 		return newComp
@@ -239,7 +247,14 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		List<IExpr> newExprs = []
 		n.exprs.each{ newExprs << (m[it] as IExpr) }
 		def (newName, newStage) = rename(n)
-		return new Predicate(newName, newStage, newExprs)
+		def p = new Predicate(newName, newStage, newExprs)
+		if (!inRuleHead && n.stage == "@past" && n.name in declaredAtoms) {
+			def decl = curComp.declarations.find{ it.atom.name() == n.name() }
+			if (!decl)
+				ErrorManager.error(ErrorId.NO_DECL_REC, n.name())
+			autoGenDecls << new Declaration(p, decl.types as Set)
+		}
+		return p
 	}
 
 	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {

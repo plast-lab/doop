@@ -1,0 +1,12 @@
+component Foo {
+P(x) <- Q(x).
+Bar(x) <- P(x), Bar@past(x).
+Bar(x) -> int(x).
+}
+as Foo1, Foo2
+
+Q(1).
+Q(2).
+
+Foo1 {*} -> Foo2
+Foo2 {*} -> .

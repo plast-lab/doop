@@ -167,6 +167,14 @@ class DatalogTest {
 	//void test_Fail15() throws IOException {
 	//	test("fail15.logic", ErrorId.MULTIPLE_ENT_DECLS)
 	//}
+	@Test
+	void test_Fail16() throws IOException {
+		test("fail16.logic", ErrorId.UNKNOWN_PRED)
+	}
+	@Test
+	void test_Fail17() throws IOException {
+		test("fail17.logic", ErrorId.NO_DECL_REC)
+	}
 
 
 	@Test
