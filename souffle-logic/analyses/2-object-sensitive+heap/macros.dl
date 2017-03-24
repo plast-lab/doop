@@ -1,0 +1,79 @@
+// For this analysis, every heap context recorded on allocation
+// corresponds to the most significant element of the calling
+// context of the allocator method.
+#define RecordMacro(ctx, value, hctx) \
+  ctx = [value1, value2], \
+  hctx = [value2], \
+  isHContext(hctx), \
+  isContext(ctx)
+
+
+// For this analysis the context of a method call corresponds to the
+// identity of the receiver object and the receiver object of the caller.
+// Again, this may trigger creation of a new object.
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  isContext(calleeCtx), \
+  hctx = [value1], \
+  calleeCtx = [value1, value]
+//  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+
+/*#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
+  MergeBasis(callerCtx, invocation, hctx, value)
+
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[hctx, value] = calleeCtx
+*/
+// For this analysis, static calls just keep the same context as the
+// caller. *Not* creating a new one, but pretending to, nonetheless,
+// so the engine doesn't barf.
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  callerCtx = [value1, value2], \
+  calleeCtx = [value1, value2]//, \
+  //isContext(calleeCtx), \
+  //isContext(callerCtx)
+//  ContextFromRealContext[RealContext1FromContext[callerCtx], \
+//                         RealContext2FromContext[callerCtx]] = calleeCtx
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  hctx = [value1], \
+  newCtx = [value1, value]//, \
+  //isContext(newCtx), \
+  //isHContext(hctx)
+
+  //ContextFromRealContext[RealHContextFromHContext[hctx], value] = newCtx
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  hctx = [value1], \
+  calleeCtx = [value1, value]//, \
+  //isContext(calleeCtx), \
+  //isHContext(hctx)
+
+  //ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+
+// This is exactly equivalent to the regular merge logic, but written
+// differently. At finalization, we create a new hctx, based on the
+// callerCtx, and then use this new hctx as we would in regular Merge.
+// The macro below does this, without referring to the new hctx (i.e.,
+// using knowledge of how it is created). This is necessary because since
+// the new hctx is created in the same rule, it will not yet have values
+// for its inverse functions (RealHContextFromHContext), so the rule will never
+// fire if done naively. The signature of the macro (which does not accept a
+// hctx) is a hint for avoiding this problem.
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  isContext(callerCtx), \
+  callerCtx = [value1, value2], \
+  newCtx = [value1, value]//, \
+  //isContext(newCtx)
+  //ContextFromRealContext[RealContext2FromContext[callerCtx], value] = newCtx
+
+#define InitContextMacro(value) \
+  isContext(ctx) \
+  :- isValue(value), \
+     ctx = [value, value]
+
+#define InitHContextMacro(value) \
+  isHContext(hctx) \
+  :- isValue(value), \
+     hctx = [value]
