@@ -52,7 +52,7 @@ public class HeapAbstractionIndexer {
             JavaHeapObject heapObject = (JavaHeapObject) obj;
             DynamicHeapObject heapAbstraction = null;
 
-            heapAbstraction = getHeapRepresentation(heapObject, new ContextInsensitive());
+            heapAbstraction = getHeapRepresentation(heapObject, ContextInsensitive.get());
 
             addFact(heapAbstraction);
 

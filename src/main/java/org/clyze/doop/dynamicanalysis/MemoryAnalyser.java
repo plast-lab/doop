@@ -7,8 +7,6 @@ import soot.jimple.infoflow.collect.ConcurrentHashSet;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 // Z                        boolean
 // B                        byte
@@ -46,21 +44,14 @@ public class MemoryAnalyser {
 
 
         try {
-            Class heapAbstractionIndexerClass = Class.forName(
+            Class<?> heapAbstractionIndexerClass = Class.forName(
                     "org.clyze.doop.dynamicanalysis.HeapAbstractionIndexer" + sensitivity
             );
             heapAbstractionIndexer = (HeapAbstractionIndexer) heapAbstractionIndexerClass
                     .getConstructor(Snapshot.class)
                     .newInstance(snapshot);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
+        } catch (InstantiationException | NoSuchMethodException | IllegalAccessException |
+                ClassNotFoundException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 
@@ -119,6 +110,8 @@ public class MemoryAnalyser {
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
+
+        Context.write_facts_once(db);
 
         for (DynamicFact fact: dynamicFacts) {
             fact.write_fact(db);

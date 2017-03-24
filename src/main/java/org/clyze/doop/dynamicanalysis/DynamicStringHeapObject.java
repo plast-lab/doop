@@ -45,6 +45,6 @@ public class DynamicStringHeapObject implements DynamicHeapObject {
         // To think about, keeping track of all raw strings is infeasable for now.
         //db.add(STRING_RAW, representation, representation);
         //db.add(STRING_CONST, representation);
-        db.add(DYNAMIC_STRING_HEAP_ALLOCATION, representation);
+        db.add(DYNAMIC_STRING_HEAP_OBJECT, representation);
     }
 }

@@ -23,15 +23,23 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
 
     }
 
+    private void warnNoContext() {
+        System.err.println("Warning: No context information found!");
+    }
+
     private void indexContext2ObjH(Snapshot snapshot) {
 
         System.out.println("Indexing heap dump (2objH)...");
         JavaClass clazz = snapshot.findClass(HCTX_RECORDER_CLASS_NAME);
-        if (clazz == null)
+        if (clazz == null) {
+            warnNoContext();
             return;
-        Enumeration objectAndContextInstances = clazz.getInstances(false);
-        if (objectAndContextInstances == null)
+        }
+        Enumeration<?> objectAndContextInstances = clazz.getInstances(false);
+        if (objectAndContextInstances == null) {
+            warnNoContext();
             return;
+        }
         Collections.list(objectAndContextInstances).parallelStream().forEach(a -> {
             JavaObject objectAndContext = (JavaObject) a;
             JavaHeapObject hctx = (JavaHeapObject) objectAndContext.getField("hctx");
@@ -49,11 +57,11 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
 
         StackFrame frame = DumpParsingUtil.getAllocationFrame(hctx);
 
-        if (frame == null) return new ContextInsensitive();
+        if (frame == null) return ContextInsensitive.get();
 
-        String fullyQualifiedMethodName = fullyQualifiedMethodSignatureFromFrame(frame);
+        String fullyQualifiedMethodSignature = fullyQualifiedMethodSignatureFromFrame(frame);
 
-        return new ContextObj(frame.getLineNumber(), fullyQualifiedMethodName, cls.getName());
+        return new ContextObj(frame.getLineNumber(), fullyQualifiedMethodSignature, cls.getName());
 
     }
 

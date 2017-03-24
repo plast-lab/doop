@@ -2,6 +2,29 @@
  * Dynamic analysis
  */
 
+/*
+ Default handling of context sensitivity
+*/
+
+DynamicContextToContext(?ctx, ?dctx) -> Context(?ctx), DynamicContext(?dctx).
+DynamicContextToHContext(?hctx, ?dctx) -> HContext(?hctx), DynamicContext(?dctx).
+
+#ifndef DYNAMIC_CONTEXT_SENSITIVITY
+DynamicContextToContext(?ctx, ?dctx) <-
+   ImmutableContext(?ctx),
+   DynamicContext(?dctx).
+
+DynamicContextToHContext(?hctx, ?dctx) <-
+   DynamicContext(?dctx),
+   ImmutableHContext(?hctx).
+#endif
+
+
+/*
+ matching dynamic facts
+*/
+
+
 HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
@@ -12,17 +35,25 @@ Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
    !HeapAllocation:Merge[?heap] = _,
    HeapAllocation:Dynamic(?heap).
 
+// Context sensitive allocations
 StaticFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?signature) <-
-   DynamicStaticFieldPointsTo(?heap, ?signature),
-   ImmutableHContext(?hctx).
+   DynamicStaticFieldPointsTo(?signature, ?dynamicContext, ?heap),
+   DynamicContextToHContext(?hctx, ?dynamicContext).
    
-InstanceFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?fld, ?hctx, Value:byDynamicHeap[?baseHeap]) <-
-   DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap),
-   ImmutableHContext(?hctx).
+InstanceFieldPointsTo(?hctx, Value:byDynamicHeap[?heap], ?fld, ?baseHctx, Value:byDynamicHeap[?baseHeap]) <-
+   DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
+   DynamicContextToHContext(?hctx, ?dctx),
+   DynamicContextToHContext(?baseHctx, ?baseDCtx).
    
-ArrayIndexPointsTo(?hctx, Value:byDynamicHeap[?heap], ?hctx, Value:byDynamicHeap[?baseHeap]) <-
-   DynamicArrayIndexPointsTo(?heap, ?baseHeap),
-   ImmutableHContext(?hctx).
+ArrayIndexPointsTo(?hctx, Value:byDynamicHeap[?heap], ?baseHctx, Value:byDynamicHeap[?baseHeap]) <-
+   DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap),
+   DynamicContextToHContext(?hctx, ?dctx),
+   DynamicContextToHContext(?baseHctx, ?baseDCtx).
+
+// Context insensitive allocations
+
+
+// TODO: Consider context insensitive allocations
 
 OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
 
@@ -40,3 +71,5 @@ CallGraphEdge(?ctx, ?invocation, ?ctx, ?toMethod) <-
    ReachableContext(?ctx, ?method),
    !StaticMethodInvocation:Insn(?invocation),
    DynamicCallGraphEdge(?toMethod, ?invocation, ?method).
+
+

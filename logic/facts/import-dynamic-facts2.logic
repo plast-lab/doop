@@ -1,3 +1,61 @@
++DynamicHeapAllocation(?representation, ?heap) <-
+   ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).
+
+
+// DynamicContext
+lang:physical:storageModel[`_DynamicContext] = "DelimitedFile".
+lang:physical:filePath[`_DynamicContext] = "facts/DynamicContext.facts".
+lang:physical:delimiter[`_DynamicContext] = "\t".
+lang:physical:hasColumnNames[`_DynamicContext] = false.
+_DynamicContext(?representation, ?heap1rep, ?heap2rep, ?site1inMeth, ?site1line, ?site2inMeth, ?site2line) ->
+  string(?heap1rep),
+  string(?heap2rep),
+  string(?site1inMeth),
+  int[64](?site1line),
+  string(?site2inMeth),
+  int[64](?site2line),
+  string(?representation).
+
++DynamicContext(?ctx),
++DynamicContext:Id(?ctx:?representation)
+ <- _DynamicContext(?representation, _, _, _, _, _, _).
+
++DynamicContextHeap1(?heap, ?ctx) <-
+   DynamicContext:Id(?ctx:?ctxrep),
+   _DynamicContext(?ctxrep, ?obj1rep, _, _, _, _, _),
+   DynamicHeapAllocation(?obj1rep, ?heap).
+
++DynamicContextHeap2(?heap, ?ctx) <-
+   DynamicContext:Id(?ctx:?ctxrep),
+   _DynamicContext(?ctxrep, _, ?obj2rep, _, _, _, _),
+   DynamicHeapAllocation(?obj2rep, ?heap).
+
+//TODO
+//+DynamicContextInvo1(?invo, ?ctx) <-
+//   DynamicContext(?ctx),
+//   _DynamicContext(_, _, _, _, ?ctx),
+//   DynamicHeapAllocation(?obj1rep, ?heap).
+
+
+// DynamicNormalHeapObject
+lang:physical:storageModel[`_DynamicNormalHeapObject] = "DelimitedFile".
+lang:physical:filePath[`_DynamicNormalHeapObject] = "facts/DynamicNormalHeapObject.facts".
+lang:physical:delimiter[`_DynamicNormalHeapObject] = "\t".
+lang:physical:hasColumnNames[`_DynamicNormalHeapObject] = false.
+_DynamicNormalHeapObject(?param1, ?param2, ?param3) ->
+  string(?param1),
+  string(?param2),
+  string(?param3).
+
+
+
++DynamicHeapObject(?representation, ?heap, ?dynamicContext) <-
+   DynamicHeapAllocation(?heapRepresentation, ?heap),
+   DynamicContext(?dynamicContext),
+   DynamicContext:Id(?dynamicContext:?contextRepresentation),
+   _DynamicNormalHeapObject(?heapRepresentation, ?contextRepresentation, ?representation).
+
+
 // DynamicStaticFieldPointsTo
 lang:physical:storageModel[`_DynamicStaticFieldPointsTo] = "DelimitedFile".
 lang:physical:filePath[`_DynamicStaticFieldPointsTo] = "facts/DynamicStaticFieldPointsTo.facts".
@@ -8,11 +66,6 @@ _DynamicStaticFieldPointsTo(?param1, ?param2, ?param3) ->
    string(?param2),
    string(?param3).
 
-+DynamicStaticFieldPointsTo(?heap, ?fld) <-
-   Field:SimpleName[?fld] = ?fldSimpleName,
-   Field:DeclaringType[?fld] = ?fldDeclaringClass,
-   DynamicHeapAllocation(?heapString, ?heap),
-   _DynamicStaticFieldPointsTo(?fldSimpleName, ?fldDeclaringClass, ?heapString).
 
 
 // DynamicInstanceFieldPointsTo
@@ -26,12 +79,6 @@ _DynamicInstanceFieldPointsTo(?param1, ?param2, ?param3, ?param4) ->
   string(?param3),
   string(?param4).
 
-+DynamicInstanceFieldPointsTo(?heap, ?fld, ?baseHeap) <-
-   DynamicHeapAllocation(?heapString, ?heap),
-   DynamicHeapAllocation(?baseHeapString, ?baseHeap),
-   Field:SimpleName[?fld] = ?fldSimpleName,
-   Field:DeclaringType[?fld] = ?fldDeclaringClass,
-   _DynamicInstanceFieldPointsTo(?baseHeapString, ?fldSimpleName, ?fldDeclaringClass, ?heapString).
 
 // DynamicArrayIndexPointsTo
 lang:physical:storageModel[`_DynamicArrayIndexPointsTo] = "DelimitedFile".
@@ -42,11 +89,22 @@ _DynamicArrayIndexPointsTo(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-+DynamicArrayIndexPointsTo(?heap, ?baseHeap) <-
-   DynamicHeapAllocation(?heapString, ?heap),
-   DynamicHeapAllocation(?baseHeapString, ?baseHeap),
-   _DynamicArrayIndexPointsTo(?baseHeapString, ?heapString).
 
 
-+DynamicHeapAllocation(?representation, ?heap) <-
-   ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).
++DynamicStaticFieldPointsTo(?fld, ?dynamicContext, ?heap) <-
+   Field:SimpleName[?fld] = ?fldSimpleName,
+   Field:DeclaringType[?fld] = ?fldDeclaringClass,
+   DynamicHeapObject(?objString, ?heap, ?dynamicContext),
+   _DynamicStaticFieldPointsTo(?fldSimpleName, ?fldDeclaringClass, ?objString).
+
++DynamicInstanceFieldPointsTo(?fld, ?ctx, ?heap, ?baseCtx, ?baseHeap) <-
+   DynamicHeapObject(?objString, ?heap, ?ctx),
+   DynamicHeapObject(?baseObjString, ?baseHeap, ?baseCtx),
+   Field:SimpleName[?fld] = ?fldSimpleName,
+   Field:DeclaringType[?fld] = ?fldDeclaringClass,
+   _DynamicInstanceFieldPointsTo(?baseObjString, ?fldSimpleName, ?fldDeclaringClass, ?objString).
+
++DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) <-
+   DynamicHeapObject(?objString, ?heap, ?ctx),
+   DynamicHeapObject(?baseObjString, ?baseHeap, ?baseCtx),
+   _DynamicArrayIndexPointsTo(?baseObjString, ?objString).

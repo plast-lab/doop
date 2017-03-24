@@ -3,8 +3,6 @@ package org.clyze.doop.dynamicanalysis;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.PredicateFile;
 
-import java.util.Arrays;
-
 /**
  * Created by neville on 08/02/2017.
  */
@@ -15,16 +13,18 @@ public class DynamicNormalHeapObject implements DynamicHeapObject {
     private String lineNumber;
     private String inMethod;
     private String type;
-    private String context;
+    private String contextRepresentation;
 
     private transient boolean probablyUnmatched = false;
+    private String heapRepresentation;
 
-    public DynamicNormalHeapObject(String lineNumber, String inMethod, String type, String context) {
-        this.context = context;
+    public DynamicNormalHeapObject(String lineNumber, String inMethod, String type, String contextRepresentation) {
+        this.contextRepresentation = contextRepresentation;
         this.lineNumber = lineNumber;
         this.inMethod = inMethod;
         this.type = type;
-        representation = getAllocationRepresentation(lineNumber, inMethod, type) + "@" + context;
+        heapRepresentation = getAllocationRepresentation(lineNumber, inMethod, type);
+        representation = heapRepresentation + "@" + contextRepresentation;
     }
 
     public static String getAllocationRepresentation(String lineNumber, String inMethod, String type) {
@@ -34,7 +34,8 @@ public class DynamicNormalHeapObject implements DynamicHeapObject {
 
     @Override
     public void write_fact(Database db) {
-        db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_ALLOCATION, lineNumber, inMethod, type, context, representation);
+        db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_ALLOCATION, lineNumber, inMethod, type, heapRepresentation);
+        db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_OBJECT, contextRepresentation, representation);
     }
 
     public String getRepresentation() {

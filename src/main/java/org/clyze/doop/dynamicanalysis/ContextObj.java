@@ -5,7 +5,7 @@ import org.clyze.doop.common.Database;
 /**
  * Created by neville on 15/03/2017.
  */
-public class ContextObj implements Context {
+public class ContextObj implements ComposableContext {
 
     private final String lineNumber;
     private final String inMethod;
@@ -35,10 +35,18 @@ public class ContextObj implements Context {
     }
     @Override
     public void write_fact(Database db) {
+        throw new RuntimeException();
+    }
 
+    public int getStartIndex() { return 2; }
+
+    public String[] getComponents() {
+        return new String[] { representation };
     }
 
     public String getRepresentation() {
         return representation;
     }
+
+
 }

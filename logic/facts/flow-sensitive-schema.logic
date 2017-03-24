@@ -551,10 +551,19 @@ FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
 //-----------------------------------------------------------------------------
 // [Dynamic analysis related]
 //-----------------------------------------------------------------------------
-DynamicStaticFieldPointsTo(?heap, ?fld) -> HeapAllocation(?heap), Field(?fld).
-DynamicInstanceFieldPointsTo(?baseheap, ?fieldname, ?heap) -> HeapAllocation(?baseheap), Field(?fieldname), HeapAllocation(?heap).
-DynamicArrayIndexPointsTo(?heap, ?baseheap) -> HeapAllocation(?heap), HeapAllocation(?baseheap).
+lang:entity(`DynamicContext).
+DynamicContext(?ctx), DynamicContext:Id(?ctx:?id) -> string(?id).
+DynamicStaticFieldPointsTo(?fld, ?ctx, ?heap) ->
+   DynamicContext(?ctx), HeapAllocation(?heap), Field(?fld).
+DynamicInstanceFieldPointsTo(?fieldname, ?ctx, ?heap, ?baseCtx, ?baseHeap) ->
+   DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?baseHeap), Field(?fieldname), HeapAllocation(?heap).
+DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) ->
+   DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?heap), HeapAllocation(?baseHeap).
 DynamicHeapAllocation(?representation, ?heap) -> HeapAllocation(?heap), string(?representation).
+
+DynamicHeapObject(?representation, ?heap, ?dynamicContext) ->
+   string(?representation), HeapAllocation(?heap), DynamicContext(?dynamicContext).
+
 UnmatchedDynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
   string(?param1),
   string(?param2),
@@ -574,7 +583,10 @@ DynamicCallGraphEdge(?toMethod, ?invocation, ?fromMethod) -> Method(?fromMethod)
 
 UnmatchedDynamicCallGraphEdgeNode(?method) -> Method(?method).
 
-RepresentationOrder(?representation, ?order) -> string(?representation), string(?order).
+DynamicContextInvo1(?invo, ?ctx) -> MethodInvocation(?invo), DynamicContext(?ctx).
+DynamicContextInvo2(?invo, ?ctx) -> MethodInvocation(?invo), DynamicContext(?ctx).
+DynamicContextHeap1(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
+DynamicContextHeap2(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]

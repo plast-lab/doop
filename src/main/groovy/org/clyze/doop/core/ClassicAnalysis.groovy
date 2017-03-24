@@ -93,6 +93,7 @@ class ClassicAnalysis extends DoopAnalysis {
         FileUtils.deleteQuietly(factsDir)
         factsDir.mkdirs()
 
+
         if (cacheDir.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheDir"
             FileOps.copyDirContents(cacheDir, factsDir)

@@ -33,3 +33,23 @@ MyMergeBasis(?hctx, ?value) <-
 MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
 CachedMerge[?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?value).
+
+// Dynamic analysis
+ContextFromRealContext[Value:byDynamicHeap[?heap1], Value:byDynamicHeap[?heap2]] = ?ctx,
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   DynamicContextHeap2(?heap2, ?dynCtx).
+
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   ImmutableContext(?ctx),
+   DynamicContext(?dynCtx),
+   !DynamicContextHeap2(_, ?dynCtx).
+
+HContextFromRealHContext[Value:byDynamicHeap[?heap1]] = ?hctx,
+DynamicContextToHContext(?hctx, ?dynCtx) <-
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToHContext(?hctx, ?dynCtx) <-
+   ImmutableHContext(?hctx),
+   DynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx).

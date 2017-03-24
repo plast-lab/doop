@@ -8,4 +8,7 @@ ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap) ->
 MockHeapConsMacro((?inMethod + ?lineNumber + ?type), ?type, ?heap),
 ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap) <-
 //  !Method:Id[_] = ?inMethod,
-  UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod).
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod).
+
+
+

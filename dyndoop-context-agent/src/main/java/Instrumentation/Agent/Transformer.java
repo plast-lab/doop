@@ -1,11 +1,11 @@
 package Instrumentation.Agent;
 
+import javassist.expr.*;
+import org.objectweb.asm.ClassReader;
 import javassist.*;
-import javassist.expr.ExprEditor;
-import javassist.expr.NewArray;
-import javassist.expr.NewExpr;
 
-import java.io.IOException;
+import java.io.*;
+
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -37,23 +37,13 @@ public class Transformer implements ClassFileTransformer {
 
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
                             ProtectionDomain pd, byte[] classFile) throws IllegalClassFormatException {
-        if (isLibraryClass(className)) return null;
         CtClass cls = null;
         try {
             cls = getCtClass(className);
-        } catch (NotFoundException e) {
-//            ClassPool cp = ClassPool.getDefault();
-//            cp.insertClassPath(new ByteArrayClassPath(className.replace("/", "."), classFile));
-//            try {
-//                cls = getCtClass(className);
-//            } catch (NotFoundException e2) {
-//                System.err.println("Warning: Cannot find " + className);
-//                return null;
-//            }
+        } catch (Exception e) {
             return null;
         }
-
-        if (cls.isInterface()) return null;
+        if (isLibraryClass(className)) return null;
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
@@ -62,9 +52,23 @@ public class Transformer implements ClassFileTransformer {
                         if (!isInterestingClass(newExpr.getClassName()))
                             return;
                         if (Modifier.isStatic(m.getModifiers())) {
-                            // TODO
-                        } else if (true) {
+                            newExpr.replace("{ $_ = $proceed($$);   Instrumentation.Recorder.Recorder.recordStatic($_); }");
+                        } else {
                             newExpr.replace("{ $_ = $proceed($$);   Instrumentation.Recorder.Recorder.record(this, $_); }");
+                        }
+                    }
+
+                    public void edit(MethodCall call) throws CannotCompileException {
+                        try {
+                            if (!Modifier.isStatic(call.getMethod().getModifiers()))
+                                return;
+                            if (Modifier.isStatic(m.getModifiers())) {
+                                call.replace(" { Instrumentation.Recorder.Recorder.mergeStatic(); $_ = $proceed($$); }");
+                            } else {
+                                call.replace(" { Instrumentation.Recorder.Recorder.merge(this); $_ = $proceed($$); }");
+                            }
+                        } catch (NotFoundException e) {
+                            return;
                         }
                     }
 
@@ -76,7 +80,8 @@ public class Transformer implements ClassFileTransformer {
                             return;
                         }
                         if (Modifier.isStatic(m.getModifiers())) {
-                            // TODO
+                            newArray.replace("{ $_ = $proceed($$);   Instrumentation.Recorder.Recorder.recordStatic($_); }");
+
                         } else {
                             newArray.replace("{ $_ = $proceed($$);   Instrumentation.Recorder.Recorder.record(this, $_); }");
                         }
@@ -90,9 +95,7 @@ public class Transformer implements ClassFileTransformer {
         try {
             byte[] byteCode =  cls.toBytecode();
             return byteCode;
-        } catch (IOException e) {
-            //e.printStackTrace();
-        } catch (CannotCompileException e) {
+        } catch (IOException | CannotCompileException e) {
             //e.printStackTrace();
         } finally {
             cls.detach();

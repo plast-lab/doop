@@ -59,7 +59,7 @@ public class DynamicCallGraphEdge implements DynamicFact {
                     DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i]),
                     DumpParsingUtil.parseLineNumber(frames[i].getLineNumber()),
                     DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i-1]),
-                    new ContextInsensitive().getRepresentation(), new ContextInsensitive().getRepresentation())
+                    ContextInsensitive.get().getRepresentation(), ContextInsensitive.get().getRepresentation())
             );
         }
 
