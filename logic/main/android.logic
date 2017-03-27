@@ -38,32 +38,37 @@ AndroidAppComponent(?type) <-
   BroadcastReceiver(?type);
   ContentProvider(?type).
 
-ReifiedComponent[?type] = ?heap -> Type(?type), HeapAllocation(?heap).
-ReifiedLayoutControl[?type,?id] = ?heap -> int[32](?id), Type(?type), HeapAllocation(?heap).
+ReifiedComponent[?type] = ?value -> Type(?type), Value(?value).
+ReifiedLayoutControl[?type,?id] = ?value -> int[32](?id), Type(?type), Value(?value).
 
-// Create a new heap object per component declared in layout (XML) resources.
-MockHeapConsMacro(?id, ?type, ?heap),
-ReifiedComponent[?type] = ?heap
+#define MockValueConsMacro(id, type, value) \
+   Value:Mock:Cons[id] = value, \
+   Value(value), \
+   Value:Type[value] = type
+
+// Create a new value object per component declared in layout (XML) resources.
+MockValueConsMacro(?id, ?type, ?value),
+ReifiedComponent[?type] = ?value
 <-
   AndroidAppComponent(?type),
   Type:Id(?type:?typeStr),
   ?id = "<android component object " + ?typeStr + ">".
 
-// Create a new heap object per control object declared in layout (XML) resources.
-MockHeapConsMacro(?heapId, ?type, ?heap),
-ReifiedLayoutControl[?type,?id] = ?heap
+// Create a new value object per control object declared in layout (XML) resources.
+MockValueConsMacro(?valueId, ?type, ?value),
+ReifiedLayoutControl[?type,?id] = ?value
 <-
   LayoutControl(?id, ?type, _),
   Type:Id(?type:?typeStr),
-  ?heapId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
+  ?valueId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
 
 // Also instantiate implicitly some library objects
 ImplicitlyInstantiatedLibraryType(?type) <-
   Type:Id(?type:"android.content.Intent");
   Type:Id(?type:"android.os.Bundle").
 
-MockHeapConsMacro(?id, ?type, ?heap),
-ReifiedLibraryObject[?type] = ?heap
+MockValueConsMacro(?id, ?type, ?value),
+ReifiedLibraryObject[?type] = ?value
 <-
   ImplicitlyInstantiatedLibraryType(?type),
   Type:Id(?type:?typeStr),
@@ -246,10 +251,9 @@ ReachableContext(?ctx, ?meth) <-
 
 // First, for objects implicitly registered (XML or library).
 ReifiedAndroidObjectValue(?value, ?type) <-
-  (ReifiedComponent[?type] = ?heap;
-   ReifiedLayoutControl[?type,_] = ?heap;
-   ReifiedLibraryObject[?type] = ?heap),
-  Value:byHeap[?heap] = ?value.
+  (ReifiedComponent[?type] = ?value;
+   ReifiedLayoutControl[?type,_] = ?value;
+   ReifiedLibraryObject[?type] = ?value).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
@@ -318,8 +322,7 @@ VarsAtInvocationRetrievingView(?ret, ?var) <-
 
 ViewObjectValueFromId(?viewValue, ?numId) <-
   LayoutControl(?numId, ?type, _),
-  ReifiedLayoutControl[?type, ?numId] = ?heap,
-  Value:byHeap[?heap] = ?viewValue.
+  ReifiedLayoutControl[?type, ?numId] = ?viewValue.
 
 // ... and the clincher: given an id for a view object, at one of the
 // invocation sites of methods retrieving views, return the
