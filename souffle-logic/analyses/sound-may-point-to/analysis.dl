@@ -2,97 +2,9 @@
 // "True-may"-point-to?). Does not conclude anything if it is not
 // certain it over-approximates all possible points-to targets. That
 // is, an empty points-to set means "anything can be pointed to".
+.type Context
+.type HContext
 
-.type Type
-.type Var 
-.type MethodInvocationInsn
-.type MethodSignature
-.type HeapAllocation
-.type FieldSignature
-.type SimpleName
-.type MethodDescriptor
-.type String
-.type Modifier
-
-.type Instruction = MethodInvocationInsn
-
-// INPUTS
-.decl ActualParam(?index:number, ?callsite:MethodInvocationInsn, ?actualVariable:Var)  input
-.decl ApplicationClass(?class:Type) input
-.decl ArrayType(?type:Type) input
-.decl AssignCast_From(?insn:Instruction, ?from:Var) input
-.decl AssignCast_Insn(?insn:Instruction) input
-.decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMeth:MethodSignature) input
-.decl AssignHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMethod:MethodSignature) input 
-.decl AssignInstruction_To(?insn:Instruction, ?var:Var) input
-.decl AssignLocal_From(?insn:Instruction, ?from:Var) input
-.decl AssignLocal_Insn(?insn:Instruction) input
-.decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inMeth:MethodSignature) input
-.decl AssignNull_Insn(?insn:Instruction) input
-.decl AssignReturnValue(?callsite:MethodInvocationInsn, ?variableAssignedTo:Var) input
-.decl BasicBlockBegin(?insn:Instruction) input
-.decl BasicBlockEnd(?tail:Instruction) input
-.decl BasicBlockHead(?tail:Instruction, ?head:Instruction) input
-.decl ExceptionHandlerFirstInstruction(?insn:Instruction) input
-.decl ExistsPreviousPredecessorToSameBB(?pred:Instruction, ?insn:Instruction) input
-.decl ExistsPreviousReturn(?returnInsn:Instruction) input
-.decl FieldInstruction_Signature(?insn:Instruction, ?fld:FieldSignature) input
-.decl FieldModifier(?mod:Modifier, ?fld:FieldSignature) input
-.decl FieldSignature_DeclaringClass(?fld:FieldSignature, ?cls:Type) input
-.decl FieldSignature_Type(?fld:FieldSignature, ?type:Type) input
-.decl FormalParam(?index:number, ?containingMethod:MethodSignature, ?variable:Var)  input
-.decl HeapAllocation_Merge(?heap1:HeapAllocation, ?heap2:HeapAllocation) input
-.decl HeapAllocation_Null(?heap:HeapAllocation) input
-.decl HeapAllocation_Type(?heapAllocation:HeapAllocation, ?heaptype:Type)  input
-.decl Instruction_Index(?insn:Instruction, ?index:number) input
-.decl Instruction_Method(?insn:Instruction, ?inMethod:MethodSignature) input
-.decl IsJumpTarget(?insn:Instruction) input
-.decl LoadArrayIndex_Base(?insn:Instruction, ?base:Var) input
-.decl LoadArrayIndex_To(?insn:Instruction, ?to:Var) input
-.decl LoadInstanceField_Base(?insn:Instruction, ?base:Var) input
-.decl LoadInstanceField_To(?insn:Instruction, ?to:Var) input
-.decl LoadStaticField_To(?insn:Instruction, ?to:Var) input
-.decl MainClass(?mainClass:Type) input
-.decl MainMethodArgHeap(?argHeap:HeapAllocation) input
-.decl MainMethodArgsArray(?argsArray:HeapAllocation) input
-.decl MayPredecessorBBModuloThrow(?pred:Instruction, ?insn:Instruction) input
-.decl MaySuccessorBBModuloThrow(?insn:Instruction, ?insn2:Instruction) input
-.decl MethodInvocation(?invocation:MethodInvocationInsn) input
-.decl MethodInvocation_Signature(?invocation:MethodInvocationInsn, ?toMethod:MethodSignature) input
-.decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, ?heaptype:Type, ?tomethod:MethodSignature) input 
-.decl MethodSignature_DeclaringType(?meth:MethodSignature, ?class:Type) input
-.decl MethodSignature_Descriptor(?meth:MethodSignature, ?desc:String) input
-.decl MethodSignature_SimpleName(?meth:MethodSignature, ?name:String) input
-.decl Modifier_final(?mod:Modifier) input
-.decl Modifier_static(?mod:Modifier) input
-.decl MonitorInstruction(?insn:Instruction) input
-.decl NextInSamePhiNode(?insn:Instruction, ?nextInsn:Instruction) input
-.decl NextPredecessorToSameBB(?insn:Instruction, ?prevPred:Instruction, ?pred:Instruction) input
-.decl NextReturn(?returnInsn:Instruction, ?nextRetInsn:Instruction) input
-.decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction) input
-.decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction) input
-.decl Reachable(?inMethod:MethodSignature) input
-.decl ReferenceType(?type:Type) input
-.decl ReturnInstruction(?returnInsn:Instruction) input
-.decl ReturnNonvoid_Var(?returnInsn:Instruction, ?return:Var) input
-.decl ReturnVar(?return:Var, ?toMethod:MethodSignature)  input 
-.decl SpecialMethodInvocation_Base(?invocation:MethodInvocationInsn, ?base:Var) input
-.decl SpecialMethodInvocation_Insn(?invocation:MethodInvocationInsn) input
-.decl StaticMethodInvocation_Insn(?invocation:MethodInvocationInsn) input
-.decl StoreArrayIndex_Base(?insn:Instruction, ?base:Var) input
-.decl StoreArrayIndex_From(?insn:Instruction, ?from:Var) input
-.decl StoreInstanceField_Base(?insn:Instruction, ?base:Var) input
-.decl StoreInstanceField_From(?insn:Instruction, ?from:Var) input
-.decl StoreStaticField_From(?insn:Instruction, ?from:Var) input
-.decl SubtypeOf(?sub:Type, ?super:Type) input
-.decl ThisVar(?method:MethodSignature, ?thisVariable:Var)  input
-.decl Var_DeclaringMethod(?var:Var, ?inMeth:MethodSignature) input
-.decl Var_Type(?var:Var, ?type:Type) input
-.decl VirtualMethodInvocation_Base(?callsite:MethodInvocationInsn, ?instanceVariable:Var)  input
-.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocationInsn, ?descriptor:MethodDescriptor) input
-.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocationInsn, ?simplename:SimpleName) input
-
-// COMPUTED
 .decl InitialRootMethodForMayAnalysis(?meth:MethodSignature)
 .decl EmptyHeapContext(?hctx:MayHeapContext)
 .decl InitialMayContext(?ctx:MayContext)
@@ -1949,7 +1861,6 @@ IgnorableForNonCollectionsMethodInvocation(?invo) :-
   LibraryCollectionStoreOperation(?invo);
   LibraryCollectionLoadOperation(?invo).
 
-.decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocationInsn, ?simplename:String)
 StaticMethodInvocation_SimpleName(?invocation, ?simplename) :-
    MethodInvocation_Signature(?invocation, ?signature),
    StaticMethodInvocation_Insn(?invocation),

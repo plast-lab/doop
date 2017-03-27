@@ -80,7 +80,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         DoopAnalysis analysis
-        if (options.SOUFFLE.value == true) {
+        if (options.SOUFFLE.value) {
             analysis = new SouffleAnalysis(
                     analysisId,
                     name.replace(File.separator, "-"),
