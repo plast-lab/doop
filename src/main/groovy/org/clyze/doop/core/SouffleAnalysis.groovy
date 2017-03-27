@@ -121,9 +121,9 @@ class SouffleAnalysis extends DoopAnalysis {
         def commonMacros = "${Doop.souffleLogicPath}/commonMacros.dl"
         cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/basic/basic.dl", commonMacros)
 
-        if (options.CFG_ANALYSIS.value) {
+        if (options.CFG_ANALYSIS.value || name == "sound-may-point-to") {
             cpp.includeAtStart("${outDir}/${name}.dl", "${Doop.souffleAddonsPath}/cfg-analysis/analysis.dl",
-                    "${Doop.addonsPath}/cfg-analysis/declarations.dl")
+                    "${Doop.souffleAddonsPath}/cfg-analysis/declarations.dl")
         }
 
     }
@@ -145,23 +145,32 @@ class SouffleAnalysis extends DoopAnalysis {
         catch(e) {
             logger.debug e.getMessage()
         }
-        if (isContextSensitive) {
+
+        if (name == "sound-may-point-to") {
+            cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/string-constants.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/exceptions.dl")
             cpp.includeAtStart("${outDir}/${name}.dl", /*"${analysisPath}/declarations.dl",*/
                     "${mainPath}/context-sensitivity-declarations.dl")
-            cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/prologue.dl", commonMacros)
-            cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/delta.dl",
-                    commonMacros, "${mainPath}/main-delta.dl")
-            cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl",
-                    commonMacros, macros, "${mainPath}/context-sensitivity.dl")
-        }
-        else {
-            cpp.includeAtStart("${outDir}/${name}-declarations.dl", "${analysisPath}/declarations.dl")
-            cpp.includeAtStart("${outDir}/prologue.dl", "${mainPath}/prologue.dl", commonMacros)
-            cpp.includeAtStart("${outDir}/${name}-prologue.dl", "${analysisPath}/prologue.dl")
-            cpp.includeAtStart("${outDir}/${name}-delta.dl", "${analysisPath}/delta.dl")
             cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl")
         }
+        else {
+            if (isContextSensitive) {
+                cpp.includeAtStart("${outDir}/${name}.dl", /*"${analysisPath}/declarations.dl",*/
+                        "${mainPath}/context-sensitivity-declarations.dl")
+                cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/prologue.dl", commonMacros)
+                cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/delta.dl",
+                        commonMacros, "${mainPath}/main-delta.dl")
+                cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl",
+                        commonMacros, macros, "${mainPath}/context-sensitivity.dl")
+            } else {
+                cpp.includeAtStart("${outDir}/${name}-declarations.dl", "${analysisPath}/declarations.dl")
+                cpp.includeAtStart("${outDir}/prologue.dl", "${mainPath}/prologue.dl", commonMacros)
+                cpp.includeAtStart("${outDir}/${name}-prologue.dl", "${analysisPath}/prologue.dl")
+                cpp.includeAtStart("${outDir}/${name}-delta.dl", "${analysisPath}/delta.dl")
+                cpp.includeAtStart("${outDir}/${name}.dl", "${analysisPath}/analysis.dl")
+            }
 
+        }
         if (options.REFLECTION.value) {
             cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/reflection/delta.dl")
         }
@@ -194,10 +203,10 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (!analysisCacheDir.exists()) {
             logger.info "Compiling datalog to produce C++ program and executable with souffle"
-            logger.info "Souffle command: souffle -w -o souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p"
+            logger.info "Souffle command: souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt"
 
             long t = timing {
-                executor.execute("souffle -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
+                executor.execute("souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
             }
 
             logger.info "Compilation time (sec): ${t}"

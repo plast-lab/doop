@@ -3,15 +3,15 @@
 // context of the allocator method.
 #define RecordMacro(ctx, value, hctx) \
   ctx = [ctxValue1, ctxValue2], \
-  hctx = [ctxValue2]
+  hctx = [ctxValue1, ctxValue2]
 
 
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
 // Again, this may trigger creation of a new object.
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  hctx = [hctxValue], \
-  calleeCtx = [hctxValue, value]
+  hctx = [hctxValue1, hctxValue2], \
+  calleeCtx = [hctxValue2, value]
 
 // For this analysis, static calls just keep the same context as the
 // caller.
@@ -21,12 +21,12 @@
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
-  hctx = [hctxValue], \
-  newCtx = [hctxValue, value]
+  hctx = [hctxValue1, hctxValue2], \
+  newCtx = [hctxValue2, value]
 
 #define MergeStartupMacro(hctx, value, calleeCtx) \
-  hctx = [hctxValue], \
-  calleeCtx = [hctxValue, value]
+  hctx = [hctxValue1, hctxValue2], \
+  calleeCtx = [hctxValue2, value]
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -46,4 +46,4 @@
 #define InitHContextMacro(value) \
   isHContext(hctx) :- \
     isValue(value), \
-    hctx = [value]
+    hctx = [value, value]

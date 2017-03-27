@@ -2,16 +2,24 @@
 // corresponds to the most significant element of the calling
 // context of the allocator method.
 #define RecordMacro(ctx, value, hctx) \
-  ctx = [ctxValue1, ctxValue2], \
-  hctx = [ctxValue2]
+  ctx = [ctxType, ctxValue], \
+  hctx = [ctxValue]
 
 
 // For this analysis the context of a method call corresponds to the
-// identity of the receiver object and the receiver object of the caller.
-// Again, this may trigger creation of a new object.
+// identity of the receiver object and the declaring class of the
+// receiver object of the caller. Again, this may trigger creation of
+// a new object.
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   hctx = [hctxValue], \
-  calleeCtx = [hctxValue, value]
+  Value_DeclaringType(hctxValue, type), \
+  calleeCtx = [type, value]
+
+/*
+ * The above gives us an upper bound of the receiver allocator's allocator's dynamic type!
+ * Another option is the exact dynamic type of the allocator object. In that case we have:
+ * ContextFromRealContext[Value:Type[RealHContextFromHContext[hctx]], value] = calleeCtx
+ */
 
 // For this analysis, static calls just keep the same context as the
 // caller.
@@ -22,11 +30,13 @@
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   hctx = [hctxValue], \
-  newCtx = [hctxValue, value]
+  Value_DeclaringType(hctxValue, type), \
+  newCtx = [type, value]
 
 #define MergeStartupMacro(hctx, value, calleeCtx) \
   hctx = [hctxValue], \
-  calleeCtx = [hctxValue, value]
+  Value_DeclaringType(hctxValue, type), \
+  calleeCtx = [type, value]
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -34,14 +44,15 @@
 // The macro below does this, without referring to the new hctx (i.e.,
 // using knowledge of how it is created).
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
-  callerCtx = [callerCtxValue1, callerCtxValue2], \
-  newCtx = [callerCtxValue2, value]
+  callerCtx = [callerCtxType, callerCtxValue], \
+  Value_DeclaringType(callerCtxValue, type), \
+  newCtx = [type, value]
 
 
 #define InitContextMacro(value) \
   isContext(ctx) :- \
     isValue(value), \
-    ctx = [value, value]
+    ctx = ["java.lang.String", value]
 
 #define InitHContextMacro(value) \
   isHContext(hctx) :- \
