@@ -39,7 +39,7 @@
     AssignInstruction_To(?insn, ?to).	
 
   MustAlias(?fromAp, ?toAp, ?ctx, ?insn) :-
-    AssignCast_Insn(?insn),
+    isAssignCast_Insn(?insn),
     Instruction_Method(?insn, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth),
     AssignInstruction_To(?insn, ?to),
@@ -124,7 +124,7 @@
 	!AccessPath_IsCollection(?ap1),
 	!AccessPath_IsCollection(?ap2),
     !MustAliasBaseInvalidated(?ap1, ?ap2, ?insn),
-	!MonitorInstruction(?insn),
+	!isMonitorInstruction(?insn),
     (!MethodInvocation(?insn);
      IgnorableMethodInvocation(?insn);
      IgnorableForNonCollectionsMethodInvocation(?insn)),
