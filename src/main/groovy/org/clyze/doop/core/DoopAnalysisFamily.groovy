@@ -94,7 +94,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						id:"JOBS",
 						name:"jobs",
 						argName:"jobNumber",
-						value:false,
+						value:"1",
 						cli:true,
 						webUI:false
 				),
