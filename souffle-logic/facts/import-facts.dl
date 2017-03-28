@@ -588,25 +588,26 @@ isLookupSwitch_Insn(?instruction),
 Switch_Target(?instruction, ?value, ?target) :-
   _LookupSwitch_Target(?instruction, ?value, ?target).
 
-// TODO: check if needed
 // Default target
 
-//.decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number)
+.decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number)
+.input _TableSwitch_DefaultTarget(IO="file", filename="TableSwitch-Default.facts", delimiter="\t")
 
-//isInstruction(?instruction),
-//isSwitch_Insn(?instruction),
-//isTableSwitch_Insn(?instruction),
-//Switch_DefaultTarget(?instruction, ?target) :-
-//    _TableSwitch_DefaultTarget(?instruction, ?target).
+isInstruction(?instruction),
+isSwitch_Insn(?instruction),
+isTableSwitch_Insn(?instruction),
+Switch_DefaultTarget(?instruction, ?target) :-
+    _TableSwitch_DefaultTarget(?instruction, ?target).
 
 
-//.decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number)
+.decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number)
+.input _LookupSwitch_DefaultTarget(IO="file", filename="LookupSwitch-Default.facts", delimiter="\t")
 
-//isInstruction(?instruction),
-//isSwitch_Insn(?instruction),
-//isLookupSwitch_Insn(?instruction),
-//Switch_DefaultTarget(?instruction, ?target) :-
-//    _LookupSwitch_DefaultTarget(?instruction, ?target).
+isInstruction(?instruction),
+isSwitch_Insn(?instruction),
+isLookupSwitch_Insn(?instruction),
+Switch_DefaultTarget(?instruction, ?target) :-
+    _LookupSwitch_DefaultTarget(?instruction, ?target).
 
 
 // ReturnNonvoid

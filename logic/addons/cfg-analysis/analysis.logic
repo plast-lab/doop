@@ -120,7 +120,10 @@ CFGRoot(?insn, ?method) <-
 // or... could also be beginning of exception handler
 CFGRoot(?insn, ?method) <-
    BBHeadInMethod(?insn, ?method),
-   !(MayPredecessorBBModuloThrow(_, ?insn)).
+   !ExistsMayPredecessorBBModuloThrow(?insn).
+
+ExistsMayPredecessorBBModuloThrow(?insn) <-
+    MayPredecessorBBModuloThrow(_, ?insn).
 
 // DoesNotDominate(?dominatorCandidate, ?insn): ?insn (which is a
 // basic block head) is NOT dominated by ?dominatorCandidate

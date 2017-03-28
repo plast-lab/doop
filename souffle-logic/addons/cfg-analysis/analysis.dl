@@ -66,12 +66,12 @@ BasicBlockBegin(?insn) :-
 BasicBlockBegin(?insn) :-
    FallThrough(?insn).
 
-.decl NextInSameBasicBlock(?insn:Instruction, ?next:Instruction)
+.decl NextInSameBasicBlock(?insn:Instruction, ?next:Instruction) printsize
 NextInSameBasicBlock(?insn, ?next) :-
    Instruction_Next(?insn, ?next),
    !BasicBlockBegin(?next).
 
-.decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction)
+.decl PrevInSameBasicBlock(?insn:Instruction, ?prev:Instruction) printsize
 PrevInSameBasicBlock(?insn, ?prev) :-
    NextInSameBasicBlock(?prev, ?insn).
 
@@ -131,9 +131,13 @@ CFGRoot(?insn, ?method) :-
    BBHeadInMethod(?insn, ?method),
    !(MayPredecessorBBModuloThrow(_, ?insn)).
 
+.decl ExistsMayPredecessorBBModuloThrow(?insn:Instruction) printsize
+ExistsMayPredecessorBBModuloThrow(?insn) :-
+   MayPredecessorBBModuloThrow(_, ?insn).
+
 // DoesNotDominate(?dominatorCandidate, ?insn): ?insn (which is a
 // basic block head) is NOT dominated by ?dominatorCandidate
-.decl DoesNotDominate(?dominatorCandidate:Instruction, ?insn:Instruction)
+.decl DoesNotDominate(?dominatorCandidate:Instruction, ?insn:Instruction) printsize
 DoesNotDominate(?dominatorCandidate, ?insn) :-
    BBHeadInMethod(?dominatorCandidate, ?method),
    CFGRoot(?insn, ?method),
@@ -191,12 +195,12 @@ InstructionInPhiNode(?insn, ?headInsn) :-
 
 
 ///// auxiliary quick-and-dirty predicates
-.decl OptReturnInsn(?insn:Instruction, ?method:Method)
+.decl OptReturnInsn(?insn:Instruction, ?method:Method) printsize
 OptReturnInsn(?insn, ?method) :-
    isReturnInstruction(?insn),
    Instruction_Method(?insn, ?method).
 
-.decl HigherReturnIndex(?insn:Instruction, ?indexHigher:number)
+.decl HigherReturnIndex(?insn:Instruction, ?indexHigher:number) printsize
 HigherReturnIndex(?insn, ?indexHigher) :-
    OptReturnInsn(?insn, ?method),
    OptReturnInsn(?insnHigher, ?method),
@@ -204,8 +208,9 @@ HigherReturnIndex(?insn, ?indexHigher) :-
    Instruction_Index(?insn, ?index),
    ?index < ?indexHigher.
 
-.decl NextReturnIndex(?returnInsn:Instruction, ?nextReturnIndex:number)
+.decl NextReturnIndex(?returnInsn:Instruction, ?nextReturnIndex:number) printsize
 NextReturnIndex(?returnInsn, ?nextReturnIndex) :-
+   isInstruction(?returnInsn), 
    ?nextReturnIndex = min ?index : HigherReturnIndex(?returnInsn, ?index).
 
 NextReturn(?returnInsn, ?nextReturnInsn) :-
@@ -217,12 +222,12 @@ NextReturn(?returnInsn, ?nextReturnInsn) :-
 ExistsPreviousReturn(?insn) :-
    NextReturn(_, ?insn).
 
-.decl BBHeadInMethod(?insn:Instruction, ?method:Method)
+.decl BBHeadInMethod(?insn:Instruction, ?method:Method) printsize
 BBHeadInMethod(?insn, ?method) :-
    BasicBlockBegin(?insn),
    Instruction_Method(?insn, ?method).
 
-.decl SameMethodBBHeads(?insn1:Instruction, ?insn2:Instruction)
+.decl SameMethodBBHeads(?insn1:Instruction, ?insn2:Instruction) printsize
 SameMethodBBHeads(?insn1, ?insn2) :-
    BBHeadInMethod(?insn1, ?method),
    BBHeadInMethod(?insn2, ?method).
@@ -231,24 +236,26 @@ SameMethodBBHeads(?insn1, ?insn2) :-
 
 // Quadratic, but doesn't matter, since it's so local and only
 // defined on basic blocks.
-.decl PredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction)
+.decl PredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction) printsize
 PredecessorBBsToSameBB(?insn, ?prev1, ?prev2) :-
    MayPredecessorBBModuloThrow(?prev1, ?insn),
    MayPredecessorBBModuloThrow(?prev2, ?insn),
    ?prev1 != ?prev2.
 
-.decl LargerPredecessorIndexToSameBB(?insn:Instruction, ?indexLarge:number, ?prevSmall:Instruction)
+.decl LargerPredecessorIndexToSameBB(?insn:Instruction, ?indexLarge:number, ?prevSmall:Instruction) printsize
 LargerPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) :-
    PredecessorBBsToSameBB(?insn, ?prevLarge, ?prevSmall),
    Instruction_Index(?prevLarge, ?indexLarge),
    Instruction_Index(?prevSmall, ?indexSmall),
    ?indexLarge > ?indexSmall.
 
-.decl NextPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)
+.decl NextPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number) printsize
 NextPredecessorIndexToSameBB(?insn, ?prev, ?indexNext) :-
+   isInstruction(?insn),
+   isInstruction(?prev),
    ?indexNext = min ?index : LargerPredecessorIndexToSameBB(?insn, ?index, ?prev).
 
-.decl NextPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)
+.decl NextPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction) printsize
 NextPredecessorToSameBB(?insn, ?pred, ?nextPred) :-
    NextPredecessorIndexToSameBB(?insn, ?pred, ?indexNext),
    Instruction_Method(?insn, ?method),
@@ -265,7 +272,7 @@ ExistsPreviousPredecessorToSameBB(?pred, ?insn) :-
 
 // Same concepts as above, but for non-dominated (shortened to "NonDom")
 // predecessors
-.decl NonDomPredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction)
+.decl NonDomPredecessorBBsToSameBB(?insn:Instruction, ?prev1:Instruction, ?prev2:Instruction) printsize
 NonDomPredecessorBBsToSameBB(?insn, ?prev1, ?prev2) :-   
    MayPredecessorBBModuloThrow(?prev1, ?insn),
    MayPredecessorBBModuloThrow(?prev2, ?insn),
@@ -282,8 +289,10 @@ LargerNonDomPredecessorIndexToSameBB(?insn, ?indexLarge, ?prevSmall) :-
    Instruction_Index(?prevSmall, ?indexSmall),
    ?indexLarge > ?indexSmall.
 
-.decl NextNonDomPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number)
+.decl NextNonDomPredecessorIndexToSameBB(?insn:Instruction, ?prev:Instruction, ?indexNext:number) printsize
 NextNonDomPredecessorIndexToSameBB(?insn, ?prev, ?indexNext) :-
+   isInstruction(?insn),
+   isInstruction(?prev),
    ?indexNext = min ?index : LargerNonDomPredecessorIndexToSameBB(?insn, ?index, ?prev).
 
 .decl NextNonDomPredecessorToSameBB(?insn:Instruction, ?pred:Instruction, ?nextPred:Instruction)
@@ -292,10 +301,10 @@ NextNonDomPredecessorToSameBB(?insn, ?pred, ?nextPred) :-
    Instruction_Method(?insn, ?method),
    OptInstructionFromMethodIndex(?method, ?indexNext, ?nextPred).
 
-.decl PreviousNonDomPredecessorToSameBB(?insn:Instruction, ?nextPred:Instruction, ?prevPred:Instruction)
+.decl PreviousNonDomPredecessorToSameBB(?insn:Instruction, ?nextPred:Instruction, ?prevPred:Instruction) printsize
 PreviousNonDomPredecessorToSameBB(?insn, ?nextPred, ?prevPred) :-
    NextNonDomPredecessorToSameBB(?insn, ?prevPred, ?nextPred).
 
-.decl ExistsPreviousNonDomPredecessorToSameBB(?pred:Instruction, ?insn:Instruction)
+.decl ExistsPreviousNonDomPredecessorToSameBB(?pred:Instruction, ?insn:Instruction) printsize
 ExistsPreviousNonDomPredecessorToSameBB(?pred, ?insn) :-
    NextNonDomPredecessorToSameBB(?insn, _, ?pred).
