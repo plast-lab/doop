@@ -541,9 +541,14 @@ class ClassicAnalysis extends DoopAnalysis {
     }
 
     protected void analyseMemoryDump(String filename) {
-        MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename)
-        int n = memoryAnalyser.getAndOutputFactsToDB(factsDir)
-        logger.info("Generated " + n + " addditional facts from memory dump")
+        try {
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename)
+            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir)
+            logger.info("Generated " + n + " addditional facts from memory dump")
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 

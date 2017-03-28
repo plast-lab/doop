@@ -19,10 +19,11 @@ _DynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
   string(?param4).
 
 // optimized relation to map heapallocation by lineNumber, method and type
-_HeapAllocationInformation(?lineNumber, ?methodId, ?type, ?heap) <-
+_HeapAllocationInformation(?lineNumber, ?methodId, ?typeStr, ?heap) <-
    Instruction:Line[?insn] = ?lineNumber,
    AssignHeapAllocation:Heap[?insn] = ?heap,
    HeapAllocation:Type[?heap] = ?type,
+   Type:Id(?type:?typeStr),
    Instruction:Method[?insn] = ?method,
    Method:Id[?method] = ?methodId.
 
@@ -45,7 +46,7 @@ _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) 
    _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
 
 +UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod) <-
-   _MatchedHeapAllocation(?representation, _),
+   !_MatchedHeapAllocation(?representation, _),
    _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod).
 
 

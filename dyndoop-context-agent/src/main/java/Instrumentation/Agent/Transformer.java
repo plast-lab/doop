@@ -1,7 +1,6 @@
 package Instrumentation.Agent;
 
 import javassist.expr.*;
-import org.objectweb.asm.ClassReader;
 import javassist.*;
 
 import java.io.*;
@@ -16,7 +15,7 @@ public class Transformer implements ClassFileTransformer {
     public static synchronized void agentmain(String args, Instrumentation inst) {
 
     }
-    // java -javaagent:build/libs/agent-instrument-test-all-1.0-SNAPSHOT.jar -jar ../../doop-benchmarks/dacapo-9.12-bach.jar jython | more
+
     public static synchronized void premain(String args, Instrumentation inst) throws ClassNotFoundException, IOException {
         inst.addTransformer(new Transformer());
     }
@@ -47,6 +46,7 @@ public class Transformer implements ClassFileTransformer {
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
+                System.err.println("DEBUG: Instrumenting " + m.getDeclaringClass().getName() + "." + m.getName());
                 m.instrument(new ExprEditor() {
                     public void edit(NewExpr newExpr) throws CannotCompileException {
                         if (!isInterestingClass(newExpr.getClassName()))
@@ -59,16 +59,10 @@ public class Transformer implements ClassFileTransformer {
                     }
 
                     public void edit(MethodCall call) throws CannotCompileException {
-                        try {
-                            if (!Modifier.isStatic(call.getMethod().getModifiers()))
-                                return;
-                            if (Modifier.isStatic(m.getModifiers())) {
-                                call.replace(" { Instrumentation.Recorder.Recorder.mergeStatic(); $_ = $proceed($$); }");
-                            } else {
-                                call.replace(" { Instrumentation.Recorder.Recorder.merge(this); $_ = $proceed($$); }");
-                            }
-                        } catch (NotFoundException e) {
-                            return;
+                        if (Modifier.isStatic(m.getModifiers())) {
+                            call.replace(" { Instrumentation.Recorder.Recorder.mergeStatic(); $_ = $proceed($$); }");
+                        } else {
+                            call.replace(" { Instrumentation.Recorder.Recorder.merge(this); $_ = $proceed($$); }");
                         }
                     }
 

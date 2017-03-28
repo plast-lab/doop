@@ -15,6 +15,10 @@ public final class Recorder {
 
     // BEWARE! Dragons! Do not modify this code!
 
+    public static void recordCall() {
+
+    }
+
     public static void mergeStatic() {
         Object receiver = thisMap.get(FrameId.getCurrent());
         if (receiver == null) {

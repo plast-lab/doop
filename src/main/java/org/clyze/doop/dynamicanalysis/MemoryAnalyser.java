@@ -52,8 +52,13 @@ public class MemoryAnalyser {
                     .newInstance(snapshot);
         } catch (InstantiationException | NoSuchMethodException | IllegalAccessException |
                 ClassNotFoundException | InvocationTargetException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
+        } catch (RuntimeException e1) {
+            e1.printStackTrace();
+            throw new RuntimeException(e1);
         }
+
 
         System.out.println("Extracting facts from heap dump...");
 

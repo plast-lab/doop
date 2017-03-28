@@ -3,6 +3,8 @@ package org.clyze.doop.dynamicanalysis;
 import com.sun.tools.hat.internal.model.*;
 import soot.jimple.infoflow.collect.ConcurrentHashSet;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,18 +13,18 @@ import static org.clyze.doop.dynamicanalysis.DumpParsingUtil.fullyQualifiedMetho
 /**
  * Created by neville on 15/03/2017.
  */
-public class HeapAbstractionIndexer {
+class HeapAbstractionIndexer {
     private static final String UNKNOWN = "Unknown";
-    protected final ConcurrentHashMap<JavaThing, DynamicHeapObject> heapIndex = new ConcurrentHashMap<>();
-    protected final Snapshot snapshot;
+    final Map<Long, DynamicHeapObject> heapIndex = new ConcurrentHashMap<>();
+    final Snapshot snapshot;
 
     private final Set<DynamicFact> dynamicFacts = new ConcurrentHashSet<>();
 
-    public HeapAbstractionIndexer(Snapshot snapshot) {
+    HeapAbstractionIndexer(Snapshot snapshot) {
         this.snapshot = snapshot;
     }
 
-    protected DynamicHeapObject getHeapRepresentation(JavaHeapObject obj, Context hctx) {
+    DynamicHeapObject getHeapRepresentation(JavaHeapObject obj, Context hctx) {
         JavaClass cls = obj.getClazz();
 
         StackFrame frame = DumpParsingUtil.getAllocationFrame(obj);
@@ -37,20 +39,18 @@ public class HeapAbstractionIndexer {
 
     }
 
-    public Set<DynamicFact> getDynamicFacts() {
+    Set<DynamicFact> getDynamicFacts() {
         return dynamicFacts;
     }
 
     // public facade with caching
-    public String getAllocationAbstraction(JavaThing obj) {
-        if (heapIndex.contains(obj)) {
-            return heapIndex.get(obj).getRepresentation();
-        }
+    String getAllocationAbstraction(JavaThing obj) {
         if (obj instanceof JavaValueArray ||
                 obj instanceof JavaObjectArray ||
                 obj instanceof JavaObject) {
             JavaHeapObject heapObject = (JavaHeapObject) obj;
-            DynamicHeapObject heapAbstraction = null;
+            DynamicHeapObject heapAbstraction = heapIndex.getOrDefault(heapObject.getId(), null);
+            if (heapAbstraction != null) return heapAbstraction.getRepresentation();
 
             heapAbstraction = getHeapRepresentation(heapObject, ContextInsensitive.get());
 
@@ -69,7 +69,7 @@ public class HeapAbstractionIndexer {
     }
 
 
-    protected void addFact(DynamicFact hctxFact) {
+    void addFact(DynamicFact hctxFact) {
         dynamicFacts.add(hctxFact);
     }
 }

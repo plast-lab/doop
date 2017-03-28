@@ -15,7 +15,7 @@ import static org.clyze.doop.dynamicanalysis.DumpParsingUtil.fullyQualifiedMetho
  */
 public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
 
-    public static final String HCTX_RECORDER_CLASS_NAME = "Instrumentation.Recorder$ObjectAndContext";
+    public static final String HCTX_RECORDER_CLASS_NAME = "Instrumentation.Recorder.Recorder$ObjectAndContext";
 
     public HeapAbstractionIndexer2ObjH(Snapshot snapshot) {
         super(snapshot);
@@ -42,13 +42,24 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
         }
         Collections.list(objectAndContextInstances).parallelStream().forEach(a -> {
             JavaObject objectAndContext = (JavaObject) a;
-            JavaHeapObject hctx = (JavaHeapObject) objectAndContext.getField("hctx");
-            JavaHeapObject obj = (JavaHeapObject) objectAndContext.getField("obj");
+            JavaHeapObject hctx = null;
+            JavaHeapObject obj = null;
+            try {
+                hctx = (JavaHeapObject) objectAndContext.getField("hctx");
+                obj = (JavaHeapObject) objectAndContext.getField("obj");
+            } catch (ClassCastException e) {
+                System.err.println("Unknown heap object: " + objectAndContext.getField("obj"));
+                return;
+            }
             Context hctxFact =  getHContextFromDumpObject(hctx);
             addFact(hctxFact);
             DynamicHeapObject objFact = getHeapRepresentation(obj, hctxFact);
-            heapIndex.put(obj, objFact);
+            addFact(objFact);
+            heapIndex.put(obj.getId(), objFact);
         });
+
+        System.out.println("Indexed "+ heapIndex.size() + " heap objects with context.");
+
 
     }
 
