@@ -82,7 +82,7 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getName(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  ClassHeap:InstanceType[Value:Heap[?classValue]] = ?instanceType,
+  OptReifiedClass(?instanceType, ?classValue),
   Type:Id(?instanceType:?className),
   HeapAllocation:byId[?className] = ?classNameHeap,
   StringConstant(?classNameHeap),

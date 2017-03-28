@@ -87,6 +87,7 @@ Value:DeclaringType[?value] = ?type <-
    !ClassHeap(?heap),
    Value:byHeap[?heap] = ?value.
 
+// Arbitrary, but would it matter?
 Value:DeclaringType[?value] = "java.lang.System" <-
    ClassHeap(?heap),
    Value:byHeap[?heap] = ?value.

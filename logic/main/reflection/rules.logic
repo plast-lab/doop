@@ -47,19 +47,15 @@ Value:DeclaringType[?value] = ?type <-
   ReflectiveAllocation[_, ?type] = ?value.
 
 Value:DeclaringType[?value] = ?type <-
-  ReifiedConstructor[_] = ?value,
+  (ReifiedConstructor[_] = ?value;
+   ReifiedMethod[_] = ?value;
+   ReifiedField[_] = ?value),
   Value:Type[?value] = ?type,
   ReferenceType(?type).
 
 Value:DeclaringType[?value] = ?type <-
-  ReifiedMethod[_] = ?value,
-  Value:Type[?value] = ?type,
-  ReferenceType(?type).
-
-Value:DeclaringType[?value] = ?type <-
-  ReifiedField[_] = ?value,
-  Value:Type[?value] = ?type,
-  ReferenceType(?type).
+  ReifiedClass[?type] = ?value,
+  !_TypeHasHeap(?type).
 
 /*************************************************************
  * Create objects that are implicitly allocated in reflection calls.
@@ -258,27 +254,33 @@ java:lang:reflect:Method:invoke(?invocation, ?method) <-
   VirtualMethodInvocation:Base[?invocation] = ?method.
 
 
+
 // We use a distinct value abstraction for every java.lang.Class, i.e., for
 // every class type that appears in the bytecode, for example '<class
 // java.lang.String>'. The predicate ReifiedClass is used to look up the value
 // abstraction for a given type.
 
-// Objects created by newInstance invocations are represented by a generated
-// value, a combination of the invocation-site of newInstance and the
-// type of the allocated object.
+// Many of these already have a meta-object representing them in the input.
+// This appears explicitly in the program source, e.g., "Foo.Class".
+ReifiedClass[?type] = ?classValue <-
+  ReferenceType(?type),
+  ClassHeap:InstanceType[?classHeap] = ?type,
+  Value:byHeap[?classHeap] = ?classValue.
 
+_TypeHasHeap(?type) <-
+  ClassHeap:InstanceType[_] = ?type.
+
+// Perhaps others don't have a meta object and need one created. Both kinds
+// are represented as the ReifiedClass for the type. The ids will have
+// a different form (<class..> vs <<reified class..>>)
 MockValueConsMacro(?classValueId, ?javaLangClass, ?classValue),
 ReifiedClass[?type] = ?classValue
 <-
   ReferenceType(?type),
+  !_TypeHasHeap(?type),
   Type:Id(?type:?typeStr),
   ?classValueId = "<<reified class " + ?typeStr + ">>",
-//// It used to be that we *wanted* these ids to coincide with those
-//// of ClassHeaps generated during fact-generation. But now we want
-//// them to be distinct.
-// ?classValueId = "<class " + ?typeStr + ">",
   Type:Id(?javaLangClass:"java.lang.Class").
-
 
 // Values for reified constructors (java.lang.reflect.Constructor)
 MockValueConsMacro(?id, ?type, ?value),

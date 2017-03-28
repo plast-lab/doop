@@ -44,7 +44,9 @@ java:lang:reflect:Proxy:newProxyInstance(?invo, ?ret, ?handler, ?interfaces) <-
 
 ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) <-
    ArrayIndexPointsTo(_, ?interfaceVal, ?hctx, ?arrayValue),
-   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?iface,
+   OptReifiedClass(?iface, ?interfaceVal),
+//// Old version: syntactic meta-object instead of semantic
+//   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?iface,
    InterfaceType(?iface).
 
 // Proxy.getProxyClass() is simpler than Proxy.newProxyInstance(): it
