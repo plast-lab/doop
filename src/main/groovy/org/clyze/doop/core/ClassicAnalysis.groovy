@@ -152,6 +152,7 @@ class ClassicAnalysis extends DoopAnalysis {
         cpp.preprocess("${outDir}/import-facts.logic", "${Doop.factsPath}/import-facts.logic")
         cpp.preprocess("${outDir}/to-flow-insensitive-delta.logic", "${Doop.factsPath}/to-flow-insensitive-delta.logic")
         cpp.preprocess("${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
+        cpp.preprocess("${outDir}/mock-heap.logic", "${Doop.factsPath}/mock-heap.logic", commonMacros)
 
         connector.queue()
             .createDB(database.getName())
@@ -182,6 +183,7 @@ class ClassicAnalysis extends DoopAnalysis {
             .elapsedTime()
             .timedTransaction("-- Init DB (post) --")
             .addBlockFile("post-process.logic")
+            .addBlockFile("mock-heap.logic")
             .commit()
             .elapsedTime()
             .timedTransaction("-- Init DB (flow-ins) --")

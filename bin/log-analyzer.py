@@ -64,7 +64,7 @@ class Factbus:
     def next(self):
         for line in self.file:
             # starting a factbus
-            if self.state == 0 and (re.search('Full evaluation', line) or re.search('Assertion evaluation', line) or re.search('Retraction evaluation', line)):
+            if self.state == 0 and (re.search('Full evaluation', line) or re.search('Full aggregation', line) or re.search('Putback evaluation', line) or re.search('Assertion evaluation', line) or re.search('Retraction evaluation', line)):
                 self.state = 1
                 pred = ''
             # getting the predicate signature            

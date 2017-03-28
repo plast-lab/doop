@@ -134,36 +134,97 @@ HeapRepresentative(?constant, ?heap) <-
   !HeapAllocation:Keep(?heap).
 
 //#ifdef GROUP_REFLECTION_STRINGS
-_StringRepresentativeForType[?type] = ?mergeHeap <-
-  agg<<?mergeHeap = min(?heap)>>(PreClassNameMatchingStringConstant:Type(?type, ?heap)).
-_StringRepresentativeForMethod[?sig] = ?mergeHeap <-
-  agg<<?mergeHeap = min(?heap)>>(PreMethodNameMatchingStringConstant:Signature(?sig, ?heap)).
-_StringRepresentativeForField[?sig] = ?mergeHeap <-
-  agg<<?mergeHeap = min(?heap)>>(PreFieldNameMatchingStringConstant:Signature(?sig, ?heap)).
 
-_OptPreClassNameMatchingStringConstant:Type(?heap, ?type) <-
-  PreClassNameMatchingStringConstant:Type(?type, ?heap).
-_OptPreMethodNameMatchingStringConstant:Signature(?heap, ?sig) <-
-  PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
-_OptPreFieldNameMatchingStringConstant:Signature(?heap, ?sig) <-
-  PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
+// ///// Naive Merging strategy: all strings that map to same reflection object
+// ///// are merged. Not too effective.
+// _StringRepresentativeForType[?type] = ?mergeHeap <-
+//   agg<<?mergeHeap = min(?heap)>>(PreClassNameMatchingStringConstant:Type(?type, ?heap)).
+// _StringRepresentativeForMethod[?sig] = ?mergeHeap <-
+//   agg<<?mergeHeap = min(?heap)>>(PreMethodNameMatchingStringConstant:Signature(?sig, ?heap)).
+// _StringRepresentativeForField[?sig] = ?mergeHeap <-
+//   agg<<?mergeHeap = min(?heap)>>(PreFieldNameMatchingStringConstant:Signature(?sig, ?heap)).
+
+// _OptPreClassNameMatchingStringConstant:Type(?heap, ?type) <-
+//   PreClassNameMatchingStringConstant:Type(?type, ?heap).
+// _OptPreMethodNameMatchingStringConstant:Signature(?heap, ?sig) <-
+//   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
+// _OptPreFieldNameMatchingStringConstant:Signature(?heap, ?sig) <-
+//   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
+
+// HeapRepresentative(?mergeHeap, ?heap) <-
+//   _OptPreClassNameMatchingStringConstant:Type(?heap, ?type),
+//   _StringRepresentativeForType[?type] = ?mergeHeap.
+
+// HeapRepresentative(?mergeHeap, ?heap) <-
+//   _OptPreMethodNameMatchingStringConstant:Signature(?heap, ?sig),
+//   _StringRepresentativeForMethod[?sig] = ?mergeHeap.
+
+// HeapRepresentative(?mergeHeap, ?heap) <-
+//   _OptPreFieldNameMatchingStringConstant:Signature(?heap, ?sig),
+//   _StringRepresentativeForField[?sig] = ?mergeHeap.
+// ///// End naive merging strategy
+
+///// Merging strategy that employs coloring of heap allocations based on
+///// the classes they conflict on.
+
+MemberOfClassMatchesString(?heap, ?type) <-
+  PreMethodNameMatchingStringConstant:Signature(?sig, ?heap),
+  Method:DeclaringType[?sig] = ?type.
+  
+MemberOfClassMatchesString(?heap, ?type) <- 
+  PreFieldNameMatchingStringConstant:Signature(?sig, ?heap),
+  Field:DeclaringType[?sig] = ?type.
+
+// Important to not forget NullType: it derives from everything!
+MemberOfClassMatchesString(?heap, ?type) <-
+  MemberOfClassMatchesString(?heap, ?superType),
+  SubtypeOf(?type, ?superType),
+  !NullType(?type).
+
+// Also, we could restrict this to leaf classes, since they will
+// exhibit maximal conflicts anyway. But this doesn't seem to pay off,
+// at least in smaller benchmarks.
+
+// Arbitrary ordering relation to determine coloring
+StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) <-
+  MemberOfClassMatchesString(?heap1, ?type),
+  MemberOfClassMatchesString(?heap2, ?type),
+  HeapAllocation:Id[?heap1] > HeapAllocation:Id[?heap2].
+
+StringImmediatelyLessThanOtherInClass[?heap, ?type] = ?heapGreater <-
+  agg<<?heapGreater=min(?h)>> StringGreaterThanOtherInSameClass(?h, ?heap, ?type).
+
+StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater, ?heap) <-
+  StringImmediatelyLessThanOtherInClass[?heap, _] = ?heapGreater.
+  
+StringColorGreaterThan(?num, ?heap) -> int[32](?num), HeapAllocation(?heap).
+
+StringColorGreaterThan(0, ?heap) <-
+  MemberOfClassMatchesString(?heap, _).
+
+StringColorGreaterThan(?num + 1, ?heap) <-
+  StringImmediatelyGreaterThanOtherInSomeClass(?heap, ?heapLower),
+  StringColorGreaterThan(?num, ?heapLower).
+
+StringColorForHeap[?heap] = ?color <-
+  agg<<?color=max(?n)>> StringColorGreaterThan(?n, ?heap).
+
+StringColorAndHeap(?heap, ?color) <-
+  StringColorForHeap[?heap] = ?color.
+
+StringRepresentativeForColor[?color] = ?mergeHeap <-
+  agg<<?mergeHeap = min(?heap)>>(StringColorAndHeap(?heap, ?color)).
 
 HeapRepresentative(?mergeHeap, ?heap) <-
-  _OptPreClassNameMatchingStringConstant:Type(?heap, ?type),
-  _StringRepresentativeForType[?type] = ?mergeHeap.
+  StringColorForHeap[?heap] = ?color,
+  StringRepresentativeForColor[?color] = ?mergeHeap.
+  
+///// End coloring strategy
 
-HeapRepresentative(?mergeHeap, ?heap) <-
-  _OptPreMethodNameMatchingStringConstant:Signature(?heap, ?sig),
-  _StringRepresentativeForMethod[?sig] = ?mergeHeap.
-
-HeapRepresentative(?mergeHeap, ?heap) <-
-  _OptPreFieldNameMatchingStringConstant:Signature(?heap, ?sig),
-  _StringRepresentativeForField[?sig] = ?mergeHeap.
-
-// Make the representative play (at a minimum) the same role as
-// the original string re: reflection. This will introduce some
-// imprecision, but it's expected to be small, compared to the cost
-// of tracking full strings all over the code.
+// Make the representative play (at a minimum) the same role as the
+// original string re: reflection. This may introduce some imprecision
+// (depending on the merging strategy), but it's expected to be small,
+// compared to the cost of tracking full strings all over the code.
 ClassNameMatchingStringConstant:Type(?type, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreClassNameMatchingStringConstant:Type(?type, ?heap).
