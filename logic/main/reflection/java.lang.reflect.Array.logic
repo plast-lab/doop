@@ -8,10 +8,9 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:reflect:Array:newInstance(?invocation, ?to, ?param),
   VarPointsTo(_, ?componentClass, ?ctx, ?param),
-  ReifiedClass:Value[?componentType] = ?componentClass,
+  ReifiedClass[?componentType] = ?componentClass,
   ComponentType[?arrayType] = ?componentType,
-  ReflectiveAllocation[?invocation, ?arrayType] = ?arrayHeap,
-  Value:byHeap[?arrayHeap] = ?arrayValue.
+  ReflectiveAllocation[?invocation, ?arrayType] = ?arrayValue.
 
 /*************************************************************
  * java.lang.reflect.Array.get
