@@ -1,23 +1,23 @@
-Tamiflex:Class:NewInstance(?invocation, ?heap) ->
-   MethodInvocation(?invocation), HeapAllocation(?heap).
+Tamiflex:Class:NewInstance(?invocation, ?value) ->
+   MethodInvocation(?invocation), Value(?value).
 
-Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap) ->
-   MethodInvocation(?invocation), Method(?constructor), HeapAllocation(?heap).
+Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?value) ->
+   MethodInvocation(?invocation), Method(?constructor), Value(?value).
 
-Tamiflex:Array:NewInstance(?invocation, ?heap) ->
-   MethodInvocation(?invocation), HeapAllocation(?heap).
+Tamiflex:Array:NewInstance(?invocation, ?value) ->
+   MethodInvocation(?invocation), Value(?value).
 
 Tamiflex:Invoke(?callerCtx, ?invocation, ?method) ->
    Context(?callerCtx), MethodInvocation(?invocation), Method(?method).
 
-Tamiflex:ReifiedField(?fld, ?heap, ?invocation) ->
-   Field(?fld), HeapAllocation(?heap), MethodInvocation(?invocation).
+Tamiflex:ReifiedField(?fld, ?value, ?invocation) ->
+   Field(?fld), Value(?value), MethodInvocation(?invocation).
 
-Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation) ->
-   Type(?type), HeapAllocation(?heap), MethodInvocation(?invocation).
+Tamiflex:ReifiedFieldArray(?type, ?value, ?invocation) ->
+   Type(?type), Value(?value), MethodInvocation(?invocation).
 
-Tamiflex:ReifiedMethod(?method, ?heap, ?invocation) ->
-   Method(?method), HeapAllocation(?heap), MethodInvocation(?invocation).
+Tamiflex:ReifiedMethod(?method, ?value, ?invocation) ->
+   Method(?method), Value(?value), MethodInvocation(?invocation).
 
-Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation) ->
-   Type(?type), HeapAllocation(?heap), MethodInvocation(?invocation).
+Tamiflex:ReifiedMethodArray(?type, ?value, ?invocation) ->
+   Type(?type), Valu0e(?value), MethodInvocation(?invocation).
