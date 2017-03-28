@@ -41,11 +41,6 @@ AndroidAppComponent(?type) <-
 ReifiedComponent[?type] = ?value -> Type(?type), Value(?value).
 ReifiedLayoutControl[?type,?id] = ?value -> int[32](?id), Type(?type), Value(?value).
 
-#define MockValueConsMacro(id, type, value) \
-   Value:Mock:Cons[id] = value, \
-   Value(value), \
-   Value:Type[value] = type
-
 // Create a new value object per component declared in layout (XML) resources.
 MockValueConsMacro(?id, ?type, ?value),
 ReifiedComponent[?type] = ?value

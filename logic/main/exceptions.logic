@@ -130,12 +130,12 @@ ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
 // is a bit simpler than the spec, as we do not provide the inner
 // exception e, so we use a global exception object.
 
-MockHeapConsMacro(?heapId, ?UTEClass, ?heap),
-ProxyUTE[] = ?heap <-
-  ?heapId = "<UndeclaredThrowableException thrown by proxy call>",
+MockValueConsMacro(?valueId, ?UTEClass, ?value),
+ProxyUTE[] = ?value <-
+  ?valueId = "<UndeclaredThrowableException thrown by proxy call>",
   Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
 
-Instruction:Throws(?hctx, Value:byHeap[ProxyUTE[]], ?callerCtx, ?invo) <-
+Instruction:Throws(?hctx, ProxyUTE[], ?callerCtx, ?invo) <-
   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
 
@@ -145,16 +145,16 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyUTE[]], ?callerCtx, ?invo) <-
 // proxy instance." For performance, we use a single global
 // object.
 
-MockHeapConsMacro(?heapId, ?NPEClass, ?heap),
-ProxyNPE[] = ?heap <-
-  ?heapId = "<NullPointerException thrown by proxy call>",
+MockValueConsMacro(?valueId, ?NPEClass, ?value),
+ProxyNPE[] = ?value <-
+  ?valueId = "<NullPointerException thrown by proxy call>",
   Type:Id(?NPEClass:"java.lang.NullPointerException").
 
 ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx) <-
   ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar),
   VarPointsTo(_, Value:Null[], _, ?handlerReturnVar).
 
-Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
+Instruction:Throws(?hctx, ProxyNPE[], ?callerCtx, ?invo) <-
   ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx),
   AssignReturnValue[?invo] = ?return,
   PrimitiveType(Var:Type[?return]),
@@ -172,12 +172,12 @@ Instruction:Throws(?hctx, Value:byHeap[ProxyNPE[]], ?callerCtx, ?invo) <-
 // proxy calls may throw ClassCastException and we use a single object
 // for all such exceptions.
 
-MockHeapConsMacro(?heapId, ?CCEClass, ?heap),
-ProxyCCE[] = ?heap <-
-  ?heapId = "<ClassCastException thrown by proxy call>",
+MockValueConsMacro(?valueId, ?CCEClass, ?value),
+ProxyCCE[] = ?value <-
+  ?valueId = "<ClassCastException thrown by proxy call>",
   Type:Id(?CCEClass:"java.lang.ClassCastException").
 
-Instruction:Throws(?hctx, Value:byHeap[ProxyCCE[]], ?callerCtx, ?invo) <-
+Instruction:Throws(?hctx, ProxyCCE[], ?callerCtx, ?invo) <-
   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
 

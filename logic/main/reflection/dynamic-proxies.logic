@@ -76,29 +76,29 @@ Optjava:lang:reflect:Proxy:newProxyInstance(?ret, ?handler, ?interfaces, ?invo) 
 // (newProxyInstance call, interface type) pair.
 //// REVIEW: ideally these should be allocated context sensitively, i.e.,
 //// call RecordMacro, and use the calling ?ctx as argument.
-MockHeapConsMacro(?heapId, ?proxyClass, ?heap),
-ProxyClassInstance[?iface, ?invo] = ?heap
+MockValueConsMacro(?valueId, ?proxyClass, ?value),
+ProxyClassInstance[?iface, ?invo] = ?value
 <-
    Optjava:lang:reflect:Proxy:newProxyInstance(_, _, _, ?invo),
    InterfaceType(?iface),
    ProxyClassOfInterface[?iface] = ?proxyClass,
    Type:Id(?iface:?ifaceName),
    Instruction:Id(?invo:?invoId),
-   ?heapId = "<proxy object for interface " + ?ifaceName + " at " + ?invoId + ">".
+   ?valueId = "<proxy object for interface " + ?ifaceName + " at " + ?invoId + ">".
 
 MethodOfInterface(?meth, ?iface) <-
    InterfaceType(?iface),
    Method:DeclaringType[?meth] = ?iface.
 
-MockHeapConsMacro(?heapId, ?objArrayType, ?arrHeap),
-ArgArrayOfProxyMethod[?meth, ?invo] = ?arrHeap
+MockValueConsMacro(?valueId, ?objArrayType, ?arrValue),
+ArgArrayOfProxyMethod[?meth, ?invo] = ?arrValue
 <-
    ProxyClassInstance[?iface, ?invo] = _,
    Instruction:Id(?invo:?invoId),
    Type:Id(?objArrayType:"java.lang.Object[]"),
    MethodOfInterface(?meth, ?iface),
    Method:Id(?meth:?methName),
-   ?heapId = "<argument array for proxied method " + ?methName + " at " + ?invoId + ">".
+   ?valueId = "<argument array for proxied method " + ?methName + " at " + ?invoId + ">".
 
 // JLS 5.1.7 (Java 8).
 // TODO Misses null-to-null boxing (is it useful for proxies?).
@@ -121,19 +121,19 @@ PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId) <-
 
 // Primitive values passed as arguments to proxied methods, are boxed
 // to be passed to the args array. Thus, for every primitive argument
-// of a proxied method, we create a new heap allocation to show where
+// of a proxied method, we create a new value to show where
 // boxing occurs in the method. This simulates codeWrapArgument() of
 // sun.misc.ProxyGenerator, which calls the valueOf() method of the
 // appropriate wrapper type for every argument of a primitive type.
 // REVIEW: contexts (as above)?
-MockHeapConsMacro(?heapId, ?boxType, ?heap),
-BoxAllocationOfPrimitiveFormal[?formal] = ?heap
+MockValueConsMacro(?valueId, ?boxType, ?value),
+BoxAllocationOfPrimitiveFormal[?formal] = ?value
  <-
    PrimitiveFormalOfInterface(?methName, ?formal, ?formalTypeId),
    PrimitiveType:Boxed[?formalTypeId] = ?boxTypeId,
    Var:Id(?formal:?formalId),
    Type:Id(?boxType:?boxTypeId),
-   ?heapId = "<boxed " + ?boxTypeId + " argument for proxied method " + ?methName + " and formal " + ?formalId + ">".
+   ?valueId = "<boxed " + ?boxTypeId + " argument for proxied method " + ?methName + " and formal " + ?formalId + ">".
 
 // Return var of newProxyInstance should point to the appropriate
 // dynamic proxy object.
@@ -142,32 +142,30 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) <-
    java:lang:reflect:Proxy:newProxyInstance(?invo, ?ret, _, ?interfaces),
    VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces), 
    ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
-   ProxyClassInstance[?iface, ?invo] = ?heap,
-   Value:byHeap[?heap] = ?value,
+   ProxyClassInstance[?iface, ?invo] = ?value,
    ImmutableHContextFromContext[?ctx] = ?hctxImmutable.
 
 Opt2java:lang:reflect:Proxy:newProxyInstance(?ret, ?interfaces, ?invo, ?handler) <-
    java:lang:reflect:Proxy:newProxyInstance(?invo, ?ret, ?handler, ?interfaces).
 
-ProxyObject:Invocation[?heap] = ?invo,
-ProxyObject:Handler(?handlerObj, ?heap),
-ProxyObject:HandlerHctx(?hctxHandler, ?heap),
-ProxyObject:Interface[?heap] = ?iface
+ProxyObject:Invocation[?value] = ?invo,
+ProxyObject:Handler(?handlerObj, ?value),
+ProxyObject:HandlerHctx(?hctxHandler, ?value),
+ProxyObject:Interface[?value] = ?iface
 <-
    Opt2java:lang:reflect:Proxy:newProxyInstance(_, _, ?invo, ?handler),
    VarPointsTo(?hctxHandler, ?handlerObj, _, ?handler), 
-   ProxyClassInstance[?iface, ?invo] = ?heap.
+   ProxyClassInstance[?iface, ?invo] = ?value.
 
 
 // And the clincher: if a method gets invoked on a proxy object, simulate
 // a call to the proxy object handler's "invoke" method, with the right
 // arguments passed in.
-CallToMethodOfProxyObject(?heap, ?ctx, ?invo) <-
+CallToMethodOfProxyObject(?value, ?ctx, ?invo) <-
    VirtualMethodInvocation:Insn(?invo),
    VirtualMethodInvocation:Base[?invo] = ?base,
    VarPointsTo(_, ?value, ?ctx, ?base),
-   Value:Heap[?value] = ?heap,
-   ProxyObject:Invocation[?heap] = _.
+   ProxyObject:Invocation[?value] = _.
 
 
 //// REVIEW
@@ -177,9 +175,9 @@ ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
 VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this)
 <-
    ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
-   CallToMethodOfProxyObject(?heap, ?callerCtx, ?invo),
-   ProxyObject:Handler(?handlerObj, ?heap),
-   ProxyObject:HandlerHctx(?hctxHandler, ?heap),
+   CallToMethodOfProxyObject(?value, ?callerCtx, ?invo),
+   ProxyObject:Handler(?handlerObj, ?value),
+   ProxyObject:HandlerHctx(?hctxHandler, ?value),
    Value:Type[?handlerObj] = ?handlerType,
    Method:Id(?invoke:"<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>"),
    Method:SimpleName[?invoke] = ?invokeMethName,
@@ -195,16 +193,14 @@ VarPointsTo(?hctx, ?methValue, ?calleeCtx, ?methArg),
 VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
 ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) <-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
-   CallToMethodOfProxyObject(?heap, ?callerCtx, ?invo),
+   CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
    FormalParam[0, ?handlerInvokeMeth] = ?proxyArg,
    FormalParam[1, ?handlerInvokeMeth] = ?methArg,
    FormalParam[2, ?handlerInvokeMeth] = ?argsArg,
    ImmutableHContextFromContext[?calleeCtx] = ?hctx,
-   Value:byHeap[?heap] = ?proxyValue,
    MethodInvocation:Method[?invo] = ?methSig,
    ReifiedMethod:Value[?methSig] = ?methValue,
-   ArgArrayOfProxyMethod[?methSig, ProxyObject:Invocation[?heap]] = ?argsArrHeap,
-   Value:byHeap[?argsArrHeap] = ?argsArrValue.
+   ArgArrayOfProxyMethod[?methSig, ProxyObject:Invocation[?proxyValue]] = ?argsArrValue.
 
 ReachableContext(?calleeCtx, ?callee) <-
   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
@@ -225,8 +221,7 @@ ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx2, ?arrValue) <-
 ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) <-
    ArgArrayAndActualArg(?arrValue, ?methSig, _),
    FormalParam[_, ?methSig] = ?formal,
-   BoxAllocationOfPrimitiveFormal[?formal] = ?heap,
-   Value:byHeap[?heap] = ?actualVal,
+   BoxAllocationOfPrimitiveFormal[?formal] = ?actualVal,
    ImmutableHContext(?hctx).
 // REVIEW: contexts.
 
