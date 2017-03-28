@@ -96,75 +96,67 @@ AccessPath:Precomputed(ap) <-
 MayContext:MaxDepth[]  = 4.
 AccessPath:MaxLength[] = 3.
 
-IMustAlias as MustAlias1//, MustAlias2
-IMustPointTo as MustPoint1//, MustPoint2
-SoundMay as SoundMay1//, SoundMay2
+IMustAlias as MustAlias1, MustAlias2
+IMustPointTo as MustPoint1, MustPoint2
+SoundMay as SoundMay1, SoundMay2
 
 MustAlias1 { MustAlias } -> SoundMay1
 MustPoint1 { VarMustAlias, VarMustAlias:This } -> SoundMay1
 
+//MustAlias2 { MustAlias } -> SoundMay2
+//MustPoint2 { VarMustAlias, VarMustAlias:This } -> SoundMay2
+//SoundMay1  { MayCallGraphEdge, ReachableContext:May } -> SoundMay2
+//
+//
+//IMustAlias as MustAlias3
+//SoundMustPointTo as MustPoint3
+//SoundMay as SoundMay3
+//
+//MustAlias3 { MustAlias } -> SoundMay3
+//MustPoint3 { VarMustAlias, VarMustAlias:This } -> SoundMay3
+//SoundMay2  { MayCallGraphEdge, ReachableContext:May } -> SoundMay3
+//
+//
+//IMustAlias as MustAlias4
+//SoundMustPointTo as MustPoint4
+//SoundMay as SoundMay4
+//
+//MustAlias4 { MustAlias } -> SoundMay4
+//MustPoint4 { VarMustAlias, VarMustAlias:This } -> SoundMay4
+//SoundMay3  { MayCallGraphEdge, ReachableContext:May } -> SoundMay4
+//
+//
+//IMustAlias as MustAlias5
+//SoundMustPointTo as MustPoint5
+//SoundMay as SoundMay5
+//
+//MustAlias5 { MustAlias } -> SoundMay5
+//MustPoint5 { VarMustAlias, VarMustAlias:This } -> SoundMay5
+//SoundMay4  { MayCallGraphEdge, ReachableContext:May } -> SoundMay5
+//
+//
+//IMustAlias as MustAlias6
+//SoundMustPointTo as MustPoint6
+//SoundMay as SoundMay6
+//
+//MustAlias6 { MustAlias } -> SoundMay6
+//MustPoint6 { VarMustAlias, VarMustAlias:This } -> SoundMay6
+//SoundMay5  { MayCallGraphEdge, ReachableContext:May } -> SoundMay6
+//
+//
+//IMustAlias as MustAlias7
+//SoundMustPointTo as MustPoint7
+//SoundMay as SoundMay7
+//
+//MustAlias7 { MustAlias } -> SoundMay7
+//MustPoint7 { VarMustAlias, VarMustAlias:This } -> SoundMay7
+//SoundMay6  { MayCallGraphEdge, ReachableContext:May } -> SoundMay7
+//
+//
+//IntraproceduralMust as IntraMustForStats
+//SoundMay1 { ReachableContext:May } -> IntraMustForStats
+
 //// END configuration
-//// ====================================
-
-
-//.init SoundMayPhase1 = SoundMay<DummyMustPointTo>
-//.init SoundMayPhase2 = SoundMay<DummyMustPointTo>
-//SoundMayPhase2.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase1.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase2.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase1.ReachableContext:May(ctx, meth).
-
-
-
-
-//
-//.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
-//SoundMayPhase3.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase2.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase3.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase2.ReachableContext:May(ctx, meth).
-//
-//.init SoundMayPhase4 = SoundMay<SoundMustPointTo>
-//SoundMayPhase4.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase3.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase4.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase3.ReachableContext:May(ctx, meth).
-//
-//.init SoundMayPhase5 = SoundMay<SoundMustPointTo>
-//SoundMayPhase5.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase4.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase5.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase4.ReachableContext:May(ctx, meth).
-//
-//.init SoundMayPhase6 = SoundMay<SoundMustPointTo>
-//SoundMayPhase6.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase5.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase6.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase5.ReachableContext:May(ctx, meth).
-//
-//.init SoundMayPhase7 = SoundMay<SoundMustPointTo>
-//SoundMayPhase7.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase6.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase7.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase6.ReachableContext:May(ctx, meth).
-//
-//.init SoundMayPhase8 = SoundMay<SoundMustPointTo>
-//SoundMayPhase8.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase7.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase8.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase7.ReachableContext:May(ctx, meth).
-//
-//.init SoundMayPhase9 = SoundMay<SoundMustPointTo>
-//SoundMayPhase9.MayCallGraphEdge_Prev(ctx, meth, callerCtx, invo) :-
-//SoundMayPhase8.MayCallGraphEdge(ctx, meth, callerCtx, invo).
-//SoundMayPhase9.ReachableContext:May_Prev(ctx, meth) :-
-//SoundMayPhase8.ReachableContext:May(ctx, meth).
-//
-//.init IntraprocMustForStats = IntraproceduralMust
-//IntraprocMustForStats.ReachableContext:May(ctx, meth) :-
-//SoundMayPhase1.ReachableContext:May(ctx, meth).
-
-//// ====================================
 //// ====================================
 
 

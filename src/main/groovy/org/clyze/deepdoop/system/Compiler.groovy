@@ -12,25 +12,18 @@ class Compiler {
 	static List<Result> compile(String outDir, String filename) {
 		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename")
 
-		def results = []
-		try {
-			def parser = new DatalogParser(
-					new CommonTokenStream(
-						new DatalogLexer(
-							new ANTLRFileStream(filename))))
-			def listener = new DatalogListenerImpl(filename)
-			ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+		def parser = new DatalogParser(
+				new CommonTokenStream(
+					new DatalogLexer(
+						new ANTLRFileStream(filename))))
+		def listener = new DatalogListenerImpl(filename)
+		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
-			def p = listener.program
-			def flatP = p.accept(new PostOrderVisitor<IVisitable>(new FlatteningActor(p.comps))) as Program
+		def p = listener.program
+		def flatP = p.accept(new PostOrderVisitor<IVisitable>(new FlatteningActor(p.comps))) as Program
 
-			def codeGenActor = new LBCodeGenVisitingActor(outDir)
-			codeGenActor.visit(flatP)
-			results = codeGenActor.getResults()
-
-		} catch (Exception e) {
-			e.printStackTrace()
-		}
-		return results
+		def codeGenActor = new LBCodeGenVisitingActor(outDir)
+		codeGenActor.visit(flatP)
+		return codeGenActor.getResults()
 	}
 }

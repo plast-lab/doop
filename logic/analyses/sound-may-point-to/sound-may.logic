@@ -21,6 +21,12 @@ component SoundMay {
 	AccessPath:MayPointTo:Before(hctx, heap, ap, ctx, insn) ->
 		MayHeapContext(hctx), HeapAllocation(heap), AccessPath(ap), MayContext(ctx), Instruction(insn).
 
+	ReachableContext:May(ctx, method) ->
+		MayContext(ctx), Method(method).
+
+	MayCallGraphEdge(newCtx, toMethod, ctx, invo) ->
+		MayContext(newCtx), Method(toMethod), MayContext(ctx), MethodInvocation(invo).
+
 	//// BEGIN final relations for stats
 
 	AllCtxMayPointTo:App(hctx, heap, var) <-
@@ -79,6 +85,7 @@ component SoundMay {
 
 	// Place an order to the access path factory for the creation of access paths
 	// resulting from the Move instruction. Also for Phi nodes.
+	//AccessPath:ShouldBeRebased(ap, from, to) -> AccessPath(ap), Var(from), Var(to).
 	AccessPath:ShouldBeRebased(ap, from, to) <-
 		AssignLocal:From[insn] = from,
 		AccessPath:MayPointTo(_, _, ap, _, insn),
@@ -304,7 +311,7 @@ component SoundMay {
 		VirtualMethodInvocation:Base[invo] = base ;
 		SpecialMethodInvocation:Base[invo] = base.
 
-	AccessPath:ShouldBeRebased(baseAp, base, this) <-
+	AccessPath:ShouldBeRebased(ap, base, this) <-
 		AccessPath:MayPointTo:Before(_, _, ap, callerCtx, invo),
 		VirtualOrSpecialMethodInvocation:Base[invo] =base,
 		MayCallGraphEdge(_, toMethod, callerCtx, invo),
@@ -1110,7 +1117,7 @@ component SoundMay {
 
 	CollectionStoreFromVarMayPointTo(hctx, heap, ctx, insn) <-
 		MayPointTo(hctx, heap, ctx, from),
-		StoreCollection:From[insn] = from.
+		StoreCollection:From(insn, from).
 
 	cons:AccessPath:mock@past["dummyCollection", base] = ap, AccessPath@past(ap),
 	TentativeCollectionBaseApMayPointTo(hctx, heap, ap, ctx, insn) <-
@@ -1195,9 +1202,3 @@ component SoundMay {
 	//// END Utilities for establishing relevant predecessors
 	//// ====================================
 }
-
-/*
-.comp SoundMay<MustPointToParameter> {
-.init MustAliasAnalysis = DummyMustAlias
-.init MustPointToAnalysis = MustPointToParameter
-*/

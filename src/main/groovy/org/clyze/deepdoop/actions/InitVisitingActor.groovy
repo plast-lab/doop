@@ -15,13 +15,14 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	String                   removeName
 	String                   initName
 	boolean                  inRuleHead
+	boolean                  inFrameRules
 	Set<String>              declaredAtoms
 	// For a given predicate in an (initialized) component get all the
 	// components that propagate this predicate.
 	Map<String, Set<String>> reverseProps
 
 	Component                curComp
-	Set<Declaration>         autoGenDecls
+	Map<String, Declaration> autoGenDecls
 
 	AtomCollectingActor      acActor
 
@@ -33,7 +34,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		actor = this
 
 		acActor = new AtomCollectingActor()
-		autoGenDecls = [] as Set
+		autoGenDecls = [:]
 	}
 
 
@@ -106,6 +107,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		Set<String> globalAtoms     = globalDeclAtoms.collect() as Set
 		globalAtoms.addAll(acActor.getUsedAtoms(n.globalComp).keySet())
 
+		inFrameRules = true
 		// Propagations
 		initP.props.each{ prop ->
 			def fromComp = initP.comps[prop.fromId]
@@ -144,12 +146,10 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 						ErrorManager.warn(ErrorId.DEP_GLOBAL, newName)
 				}
 
-				def stage  = (prop.toId == null ? null : "@past")
-				def vars   = VariableExpr.genTempVars(origAtom.arity())
-				inRuleHead = true
-				def head   = origAtom.newAlias(atom.name(), stage, vars).accept(this) as IAtom
-				inRuleHead = false
-				def body   = origAtom.newAtom(null, vars) as IAtom
+				def stage = (prop.toId == null ? null : "@past")
+				def vars  = VariableExpr.genTempVars(origAtom.arity())
+				def head  = origAtom.newAlias(atom.name(), stage, vars).accept(this) as IAtom
+				def body  = origAtom.newAtom(null, vars) as IAtom
 				toComp.addRule(new Rule(new LogicalElement(head), body, false))
 			}
 		}
@@ -183,7 +183,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	Component exit(Component n, Map<IVisitable, IVisitable> m) {
 		Component newComp = new Component(initName as String)
 		n.declarations.each{ newComp.addDecl(m[it] as Declaration) }
-		autoGenDecls.each { newComp.addDecl(it) }
+		autoGenDecls.each { newComp.addDecl(it.value) }
 		n.constraints.each{ newComp.constraints << (m[it] as Constraint) }
 		n.rules.each{ newComp.rules << (m[it] as Rule) }
 		return newComp
@@ -237,30 +237,38 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
-		List<IExpr> newKeyExprs = []
-		n.keyExprs.each{ newKeyExprs << (m[it] as IExpr) }
 		def (newName, newStage) = rename(n)
+		def newKeyExprs = n.keyExprs.collect{ m[it] as IExpr }
+
+		if (!inFrameRules && n.stage == "@past" && n.name in declaredAtoms && !autoGenDecls[newName]) {
+			def decl = curComp.declarations.find{ it.atom.name() == n.name() }
+			if (!decl)
+				ErrorManager.error(ErrorId.NO_DECL_REC, n.name())
+			def newVars = decl.types.collect{ it.getVars().first() }
+			def newValueVar = newVars.takeRight(1)
+			def newKeyVars = newVars.dropRight(1)
+			autoGenDecls[newName] = new Declaration(new Functional(newName, null, newKeyVars, newValueVar), decl.types as Set)
+		}
 		return new Functional(newName, newStage, newKeyExprs, m[n.valueExpr] as IExpr)
 	}
 
 	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
-		List<IExpr> newExprs = []
-		n.exprs.each{ newExprs << (m[it] as IExpr) }
 		def (newName, newStage) = rename(n)
-		def p = new Predicate(newName, newStage, newExprs)
-		if (!inRuleHead && n.stage == "@past" && n.name in declaredAtoms) {
+		def newExprs = n.exprs.collect{ m[it] as IExpr }
+
+		if (!inFrameRules && n.stage == "@past" && n.name in declaredAtoms && !autoGenDecls[newName]) {
 			def decl = curComp.declarations.find{ it.atom.name() == n.name() }
 			if (!decl)
 				ErrorManager.error(ErrorId.NO_DECL_REC, n.name())
-			autoGenDecls << new Declaration(p, decl.types as Set)
+			def newVars = decl.types.collect{ it.getVars().first() }
+			autoGenDecls[newName] = new Declaration(new Predicate(newName, null, newVars), decl.types as Set)
 		}
-		return p
+		return new Predicate(newName, newStage, newExprs)
 	}
 
 	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
-		List<IExpr> newExprs = []
-		n.exprs.each{ newExprs << (m[it] as IExpr) }
 		def (newName, newStage) = rename(n)
+		def newExprs = n.exprs.collect{ m[it] as IExpr }
 		return new Entity(newName, newStage, newExprs)
 	}
 
