@@ -44,7 +44,9 @@ java:lang:reflect:Proxy:newProxyInstance(?invo, ?ret, ?handler, ?interfaces) <-
 
 ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) <-
    ArrayIndexPointsTo(_, ?interfaceVal, ?hctx, ?arrayValue),
-   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?iface,
+   OptReifiedClass(?iface, ?interfaceVal),
+//// Old version: syntactic meta-object instead of semantic
+//   ClassHeap:InstanceType[Value:Heap[?interfaceVal]] = ?iface,
    InterfaceType(?iface).
 
 // Proxy.getProxyClass() is simpler than Proxy.newProxyInstance(): it
@@ -61,7 +63,7 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) <-
    VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
    ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
    ProxyClassOfInterface[?iface] = ?proxyClass,
-   ReifiedClass:Value[?proxyClass] = ?proxyClassObj,
+   ReifiedClass[?proxyClass] = ?proxyClassObj,
    ImmutableHContextFromContext[?ctx] = ?hctxImmutable.
 
 // _OptVarPointsToForArray(?ctx, ?interfaces, ?hctx, ?interfacesValue) <-
@@ -199,7 +201,7 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) <-
    FormalParam[2, ?handlerInvokeMeth] = ?argsArg,
    ImmutableHContextFromContext[?calleeCtx] = ?hctx,
    MethodInvocation:Method[?invo] = ?methSig,
-   ReifiedMethod:Value[?methSig] = ?methValue,
+   ReifiedMethod[?methSig] = ?methValue,
    ArgArrayOfProxyMethod[?methSig, ProxyObject:Invocation[?proxyValue]] = ?argsArrValue.
 
 ReachableContext(?calleeCtx, ?callee) <-
