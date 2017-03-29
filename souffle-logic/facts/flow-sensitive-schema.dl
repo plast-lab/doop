@@ -141,7 +141,7 @@
 //-----------------------------------------------------------------------------
 
 .type Instruction
-.decl isInstruction(?insn:Instruction)
+.decl isInstruction(?insn:Instruction) output
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)

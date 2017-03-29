@@ -20,4 +20,4 @@ Tamiflex:ReifiedMethod(?method, ?value, ?invocation) ->
    Method(?method), Value(?value), MethodInvocation(?invocation).
 
 Tamiflex:ReifiedMethodArray(?type, ?value, ?invocation) ->
-   Type(?type), Valu0e(?value), MethodInvocation(?invocation).
+   Type(?type), Value(?value), MethodInvocation(?invocation).
