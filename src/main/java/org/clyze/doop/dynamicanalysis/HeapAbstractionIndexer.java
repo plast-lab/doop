@@ -3,7 +3,6 @@ package org.clyze.doop.dynamicanalysis;
 import com.sun.tools.hat.internal.model.*;
 import soot.jimple.infoflow.collect.ConcurrentHashSet;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,10 +23,39 @@ class HeapAbstractionIndexer {
         this.snapshot = snapshot;
     }
 
+    protected StackFrame getAllocationFrame(JavaHeapObject obj) {
+
+        StackTrace trace = obj.getAllocatedFrom();
+        // Store dynamic edges
+        dynamicFacts.addAll(DynamicCallGraphEdge.fromStackTrace(trace));
+        dynamicFacts.addAll(DynamicReachableMethod.fromStackTrace(trace));
+
+        JavaClass clazz = obj.getClazz();
+        if (trace != null && trace.getFrames().length > 0) {
+            StackFrame[] frames = trace.getFrames();
+
+            int relevantIndex = frames.length - 1;
+            // find index where object is allocated
+            if (clazz.isArray() || clazz.getName().equals("java.lang.Object") || !frames[0].getMethodName().equals("<init>")) {
+                relevantIndex = 0;
+            } else {
+                for (int i = 0; i < frames.length - 1; i++) {
+                    if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
+                        relevantIndex = i + 1;
+                    else break;
+                }
+            }
+
+            return frames[relevantIndex];
+        }
+        return null;
+
+    }
+
     DynamicHeapObject getHeapRepresentation(JavaHeapObject obj, Context hctx) {
         JavaClass cls = obj.getClazz();
 
-        StackFrame frame = DumpParsingUtil.getAllocationFrame(obj);
+        StackFrame frame = getAllocationFrame(obj);
 
         if (frame == null) return new DynamicNormalHeapObject(UNKNOWN, UNKNOWN, cls.getName(), hctx.getRepresentation());
 
@@ -69,7 +97,7 @@ class HeapAbstractionIndexer {
     }
 
 
-    void addFact(DynamicFact hctxFact) {
-        dynamicFacts.add(hctxFact);
+    void addFact(DynamicFact fact) {
+        dynamicFacts.add(fact);
     }
 }

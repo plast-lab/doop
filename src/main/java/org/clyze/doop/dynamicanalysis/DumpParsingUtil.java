@@ -111,28 +111,4 @@ public class DumpParsingUtil {
         return convertType(frame.getMethodSignature())[0].replace("<MethodName>", frame.getMethodName());
     }
 
-    public static StackFrame getAllocationFrame(JavaHeapObject obj) {
-
-            StackTrace trace = obj.getAllocatedFrom();
-            JavaClass clazz = obj.getClazz();
-            if (trace != null && trace.getFrames().length > 0) {
-                com.sun.tools.hat.internal.model.StackFrame[] frames = trace.getFrames();
-
-                int relevantIndex = frames.length - 1;
-                // find index where object is allocated
-                if (clazz.isArray() || clazz.getName().equals("java.lang.Object") || !frames[0].getMethodName().equals("<init>")) {
-                    relevantIndex = 0;
-                } else {
-                    for (int i = 0; i < frames.length - 1; i++) {
-                        if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
-                            relevantIndex = i + 1;
-                        else break;
-                    }
-                }
-
-                return frames[relevantIndex];
-            }
-            return null;
-
-    }
 }

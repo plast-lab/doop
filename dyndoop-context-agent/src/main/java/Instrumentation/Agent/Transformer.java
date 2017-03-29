@@ -46,7 +46,7 @@ public class Transformer implements ClassFileTransformer {
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
-                System.err.println("DEBUG: Instrumenting " + m.getDeclaringClass().getName() + "." + m.getName());
+                //System.err.println("DEBUG: Instrumenting " + m.getDeclaringClass().getName() + "." + m.getName());
                 m.instrument(new ExprEditor() {
                     public void edit(NewExpr newExpr) throws CannotCompileException {
                         if (!isInterestingClass(newExpr.getClassName()))
@@ -82,14 +82,13 @@ public class Transformer implements ClassFileTransformer {
                     }
                 });
 
-            } catch (CannotCompileException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });
         try {
-            byte[] byteCode =  cls.toBytecode();
-            return byteCode;
-        } catch (IOException | CannotCompileException e) {
+            return cls.toBytecode();
+        } catch (Exception e) {
             //e.printStackTrace();
         } finally {
             cls.detach();

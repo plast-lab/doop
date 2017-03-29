@@ -1,12 +1,9 @@
 package org.clyze.doop.dynamicanalysis;
 
 import com.sun.tools.hat.internal.model.*;
-import soot.jimple.infoflow.collect.ConcurrentHashSet;
 
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.dynamicanalysis.DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame;
 
@@ -66,7 +63,7 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
     private Context getHContextFromDumpObject(JavaHeapObject hctx) {
         JavaClass cls = hctx.getClazz();
 
-        StackFrame frame = DumpParsingUtil.getAllocationFrame(hctx);
+        StackFrame frame = getAllocationFrame(hctx);
 
         if (frame == null) return ContextInsensitive.get();
 

@@ -33,10 +33,13 @@ public final class Recorder {
     }
 
     public static void recordStatic(Object obj) {
-        objects.add(new ObjectAndContext(obj, thisMap.get(FrameId.getCurrent())));
+        Object hctx = thisMap.get(FrameId.getCurrent());
+        if (hctx == null) return;
+        objects.add(new ObjectAndContext(hctx, obj));
     }
 
     public static void record(Object hctx, Object obj) {
+        if (hctx == null) return;
         objects.add(new ObjectAndContext(hctx, obj));
     }
 
