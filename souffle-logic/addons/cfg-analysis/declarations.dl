@@ -1,31 +1,31 @@
-.decl Method_FirstInstruction(?method:Method, ?insn:Instruction) printsize
-.decl OptInstructionFromMethodIndex(?method:Method, ?index:number, ?insn:Instruction) printsize
-.decl Instruction_Next(?i:Instruction, ?next:Instruction) printsize
-.decl Instruction_Prev(?i:Instruction, ?prev:Instruction) printsize
-.decl JumpTarget(?insn:Instruction, ?prev:Instruction) printsize
+.decl Method_FirstInstruction(?method:Method, ?insn:Instruction) 
+.decl OptInstructionFromMethodIndex(?method:Method, ?index:number, ?insn:Instruction) 
+.decl Instruction_Next(?i:Instruction, ?next:Instruction) 
+.decl Instruction_Prev(?i:Instruction, ?prev:Instruction) 
+.decl JumpTarget(?insn:Instruction, ?prev:Instruction) 
 
 // Making explicit, so it can be negated.
-.decl IsJumpTarget(?insn:Instruction) printsize
-.decl ExceptionHandlerFirstInstruction(?insn:Instruction) printsize
-.decl FallThrough(?insn:Instruction) printsize
-.decl BasicBlockBegin(?insn:Instruction) printsize
-.decl BasicBlockHead(?insn:Instruction, ?headInsn:Instruction) printsize
-.decl BasicBlockTail(?headInsn:Instruction, ?tailInsn:Instruction) printsize
-.decl BasicBlockEnd(?insn:Instruction) printsize
-.decl UnconditionalControlTransfer(?insn:Instruction) printsize
+.decl IsJumpTarget(?insn:Instruction) 
+.decl ExceptionHandlerFirstInstruction(?insn:Instruction) 
+.decl FallThrough(?insn:Instruction) 
+.decl BasicBlockBegin(?insn:Instruction) 
+.decl BasicBlockHead(?insn:Instruction, ?headInsn:Instruction) 
+.decl BasicBlockTail(?headInsn:Instruction, ?tailInsn:Instruction) 
+.decl BasicBlockEnd(?insn:Instruction) 
+.decl UnconditionalControlTransfer(?insn:Instruction) 
 
 // This is almost but not really a "may" relation for successor
 // instructions. It does not include the targets of throw
 // instructions. Hence the predicate name, meant to remind users that
 // they should always check if the instruction is the beginning of
 // an exception handler.
-.decl MaySuccessorModuloThrow(?next:Instruction, ?prev:Instruction) printsize
-.decl MayPredecessorModuloThrow(?prev:Instruction, ?next:Instruction) printsize
+.decl MaySuccessorModuloThrow(?next:Instruction, ?prev:Instruction) 
+.decl MayPredecessorModuloThrow(?prev:Instruction, ?next:Instruction) 
 
 // Same concept for basic blocks. Reduces the cost significantly, since
 // subsequent computation is quadratic.
-.decl MaySuccessorBBModuloThrow(?next:Instruction, ?prev:Instruction) printsize
-.decl MayPredecessorBBModuloThrow(?prev:Instruction, ?next:Instruction) printsize
+.decl MaySuccessorBBModuloThrow(?next:Instruction, ?prev:Instruction) 
+.decl MayPredecessorBBModuloThrow(?prev:Instruction, ?next:Instruction) 
 
 // The Dominates relation is defined on basic blocks,
 // represented by their first instruction (head). Defining
@@ -33,21 +33,22 @@
 // instructions was hugely expensive.
 
 // To get to ?insn, we need to have gone through ?dominator
-.decl Dominates(?dominator:Instruction, ?insn:Instruction) printsize
+.decl Dominates(?dominator:Instruction, ?insn:Instruction) 
 
 // ?insn dominates its predecessor. Must be head of basic block
 // (head of a loop).
-.decl DominatesItsPredecessorInstruction(?prevInsn:Instruction, ?insn:Instruction) printsize
+.decl DominatesItsPredecessorInstruction(?prevInsn:Instruction, ?insn:Instruction) 
 
 // A generally useful concept. Includes the case of both being in the
 // same basic block.
-.decl DominatesItsSuccessorInstruction(?insn:Instruction, ?prevInsn:Instruction) printsize
+.decl DominatesItsSuccessorInstruction(?insn:Instruction, ?prevInsn:Instruction) 
 
 // Phi Nodes Definition. If we have SSA input, then any multiple
 // assignments to the same var are because of a Phi node. In fact,
 // these will also be consecutive.
-.decl NextInSamePhiNode(?insn1:Instruction, ?insn2:Instruction) printsize
-.decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction) printsize
+.decl NextInSamePhiNode(?insn1:Instruction, ?insn2:Instruction) 
+.decl PhiNodeHead(?insn:Instruction, ?headInsn:Instruction)
+
 
 // Just inverting for efficiency.
 .decl InstructionInPhiNode(?insn:Instruction, ?headInsn:Instruction)
