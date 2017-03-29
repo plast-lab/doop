@@ -203,10 +203,13 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (!analysisCacheDir.exists()) {
             logger.info "Compiling datalog to produce C++ program and executable with souffle"
-            logger.info "Souffle command: souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt"
+            def commandLine = "souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt"
+            if (options.SOUFFLE_DEBUG_REPORT)
+                commandLine += " -r$outDir.absolutePath/report.html"
+            logger.info "Souffle command: ${commandLine}"
 
             long t = timing {
-                executor.execute("souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt")
+                executor.execute(commandLine)
             }
 
             logger.info "Compilation time (sec): ${t}"

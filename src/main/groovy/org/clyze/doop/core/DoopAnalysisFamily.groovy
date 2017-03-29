@@ -98,6 +98,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						cli:true,
 						webUI:false
 				),
+				new AnalysisOption<Boolean>(
+						id:"SOUFFLE_DEBUG_REPORT",
+						name:"souffle-debug-report",
+						value:false,
+						cli:true
+				),
 				/* Start of preprocessor constant flags */
 				new AnalysisOption<Boolean>(
 						id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
