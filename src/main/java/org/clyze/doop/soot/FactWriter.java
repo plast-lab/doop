@@ -1,5 +1,7 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.FactEncoders;
+import org.clyze.doop.common.Database;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -10,7 +12,7 @@ import soot.util.backend.ASMBackendUtils;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.clyze.doop.soot.PredicateFile.*;
+import static org.clyze.doop.common.PredicateFile.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
@@ -32,11 +34,7 @@ class FactWriter {
     }
 
     String writeStringConstant(String constant) {
-        String raw;
-        if(constant.trim().equals(constant) && constant.length() > 0)
-            raw = constant;
-        else
-            raw = "<<\"" + constant + "\">>";
+        String raw = FactEncoders.encodeStringConstant(constant);
 
         String result;
         if(raw.length() <= 256)
@@ -171,6 +169,7 @@ class FactWriter {
     void writeAssignHeapAllocation(SootMethod m, Stmt stmt, Local l, AnyNewExpr expr, Session session) {
         String heap = _rep.heapAlloc(m, expr, session);
 
+
         _db.add(NORMAL_HEAP, heap, writeType(expr.getType()));
 
         if (expr instanceof NewArrayExpr) {
@@ -189,8 +188,18 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, getLineNumberFromStmt(stmt));
+    }
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId);
+    private static String getLineNumberFromStmt(Stmt stmt) {
+        LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
+        String lineNumber;
+        if (tag == null) {
+            lineNumber = "unknown";
+        } else {
+            lineNumber = "" + tag.getLineNumber();
+        }
+        return lineNumber;
     }
 
     Type getComponentType(ArrayType type) {
@@ -213,10 +222,12 @@ class FactWriter {
         String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
+
+
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, getLineNumberFromStmt(stmt));
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
@@ -282,11 +293,12 @@ class FactWriter {
         String content = constant.substring(1, constant.length() - 1);
         String heapId = writeStringConstant(content);
 
+
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, getLineNumberFromStmt(stmt));
     }
 
     void writeAssignNull(SootMethod m, Stmt stmt, Local l, Session session) {
@@ -346,7 +358,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {
@@ -764,6 +776,7 @@ class FactWriter {
         }
 
         if (expr instanceof StaticInvokeExpr) {
+
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
         }
         else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
