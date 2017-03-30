@@ -1,9 +1,8 @@
 // For this analysis, every heap context recorded on allocation
-// corresponds to the most significant element of the calling
-// context of the allocator method.
+// corresponds to every element of the calling context of the allocator method.
 #define RecordMacro(ctx, value, hctx) \
   ctx = [invocation1, invocation2], \
-  hctx = [invocation2]
+  hctx = [invocation1, invocation2]
 
 
 // For this analysis the context of a method call corresponds to the
@@ -17,20 +16,18 @@
   callerCtx = [invocation1, invocation2], \
   calleeCtx = [invocation2, invocation]
 
-// Just keep the same context as the
-// caller. *Not* creating a new one, but pretending to, nonetheless,
-// so the engine doesn't barf.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
-   newCtx = callerCtx
-   
+  callerCtx = newCtx
+  
 #define MergeStartupMacro(hctx, value, calleeCtx) \
   StartupInvocation(invocation), \
   calleeCtx = [invocation, invocation]
 
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
-  FakeInvocation_RegisterFinalize(value, invocation), \
   callerCtx = [invocation1, invocation2], \
+  FakeInvocation_RegisterFinalize(value, invocation), \
   newCtx = [invocation2, invocation]
+
 
 #define InitContextMacro(invocation) \
   isContext(ctx) \
@@ -39,5 +36,5 @@
 
 #define InitHContextMacro(invocation) \
   isHContext(hctx) \
-  :- hctx = [invocation], \
+  :- hctx = [invocation, invocation], \
      isMethodInvocation(invocation)

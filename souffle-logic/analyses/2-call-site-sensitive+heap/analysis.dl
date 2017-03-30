@@ -8,7 +8,7 @@
 .type Context = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
 .type HContext = [ invocation:MethodInvocation ]
 
-.decl isStartupInvocation(?startupInvocation:MethodInvocation)
-isStartupInvocation(?startupInvocation) :-
+.decl StartupInvocation(?startupInvocation:MethodInvocation)
+StartupInvocation(?startupInvocation) :-
   ?startupInvocation = "<<jvm-startup-context>>",
   isMethodInvocation(?startupInvocation).
