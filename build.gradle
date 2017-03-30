@@ -68,6 +68,9 @@ dependencies {
             'org.smali:dexlib2:2.2b4',                          // Dexlib2: library for reading/modifying/writing Android dex files
             'com.google.code.gson:gson:2.4'                     // GSON library
 
+    compile group: 'com.google.guava', name: 'guava', version: '21.0'
+
+
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',
             "ext:sootclasses:2.+",
@@ -75,6 +78,8 @@ dependencies {
             "ext:soot-infoflow-android:1.+"
 
     compile 'org.clyze:clue-common:1.+'
+
+    compile(group: 'sun', name: 'jhat', version: 'PATCHED')
 
     // JPhantom is a runtime dependency
     runtime 'org.clyze:jphantom:1.2'

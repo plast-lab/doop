@@ -1,4 +1,4 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.common;
 
 import java.io.Closeable;
 import java.io.File;
@@ -9,17 +9,19 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 
-class Database implements Closeable, Flushable {
+public class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
+    private File directory = null;
 
     private final Map<PredicateFile, Writer> _writers;
 
-    Database(File directory) throws IOException {
+    public Database(File directory) throws IOException {
+        this.directory = directory;
         this._writers = new EnumMap<>(PredicateFile.class);
 
         for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
-            _writers.put(predicateFile, predicateFile.getWriter(directory, ".facts"));
+            _writers.put(predicateFile, predicateFile.getWriter(this.directory, ".facts"));
     }
 
     @Override

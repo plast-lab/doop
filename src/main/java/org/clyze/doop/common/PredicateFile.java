@@ -1,4 +1,4 @@
-package org.clyze.doop.soot;
+package org.clyze.doop.common;
 
 import org.apache.commons.io.FileUtils;
 
@@ -7,7 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
-enum PredicateFile
+public enum PredicateFile
 {
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     ACTIVITY("Activity"),
@@ -86,7 +86,17 @@ enum PredicateFile
     ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
     PHANTOM_INVOKE("PhantomInvoke"),
     BREAKPOINT_STMT("BreakpointStmt"),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
+    DYNAMIC_NORMAL_HEAP_OBJECT("DynamicNormalHeapObject"),
+    DYNAMIC_STRING_HEAP_OBJECT("DynamicStringHeapObject"),
+    DYNAMIC_STATIC_FIELD_POINTS_TO("DynamicStaticFieldPointsTo"),
+    DYNAMIC_INSTANCE_FIELD_POINTS_TO("DynamicInstanceFieldPointsTo"),
+    DYNAMIC_ARRAY_INDEX_POINTS_TO("DynamicArrayIndexPointsTo"),
+    DYNAMIC_VAR_POINTS_TO("DynamicVarPointsTo"),
+    DYNAMIC_REACHABLE_METHOD("DynamicReachableMethod"),
+    DYNAMIC_CALL_GRAPH_EDGE("DynamicCallGraphEdge"),
+    DYNAMIC_NORMAL_HEAP_ALLOCATION("DynamicNormalHeapAllocation"),
+    DYNAMIC_CONTEXT("DynamicContext");
 
     private final String name;
 
@@ -102,6 +112,6 @@ enum PredicateFile
     public Writer getWriter(File directory, String suffix) throws IOException {
         File factsFile = new File(directory, name + suffix);
         FileUtils.touch(factsFile);
-        return new FileWriter(factsFile);
+        return new FileWriter(factsFile, true);
     }
 }

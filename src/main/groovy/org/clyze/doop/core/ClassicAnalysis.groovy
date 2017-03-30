@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.*
 import org.clyze.doop.ServerAnalysisPostProcessor
+import org.clyze.doop.dynamicanalysis.MemoryAnalyser
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.datalog.*
 import org.clyze.doop.system.*
@@ -98,6 +99,7 @@ class ClassicAnalysis extends DoopAnalysis {
         FileUtils.deleteQuietly(factsDir)
         factsDir.mkdirs()
 
+
         if (cacheDir.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheDir"
             FileOps.copyDirContents(cacheDir, factsDir)
@@ -113,7 +115,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 runAverroes()
             }
 
-            runSoot()
+             runSoot()
 
             FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
             FileUtils.touch(new File(factsDir, "Properties.facts"))
@@ -130,6 +132,10 @@ class ClassicAnalysis extends DoopAnalysis {
                                 .replaceAll(";", "\t").replaceFirst(/\./, "\t")
                     }
                 }
+            }
+
+            if (options.ANALYZE_MEMORY_DUMP.value) {
+                analyseMemoryDump(options.ANALYZE_MEMORY_DUMP.value.toString())
             }
 
             logger.info "Caching facts in $cacheDir"
@@ -162,6 +168,7 @@ class ClassicAnalysis extends DoopAnalysis {
             .executeFile("import-entities.logic")
             .executeFile("import-facts.logic")
 
+
         if (options.TAMIFLEX.value) {
             def tamiflexDir = "${Doop.addonsPath}/tamiflex"
             cpp.preprocess("${outDir}/tamiflex-fact-declarations.logic", "${tamiflexDir}/fact-declarations.logic")
@@ -190,6 +197,22 @@ class ClassicAnalysis extends DoopAnalysis {
             .executeFile("to-flow-insensitive-delta.logic")
             .commit()
             .elapsedTime()
+
+        if (options.ANALYZE_MEMORY_DUMP.value) {
+            cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
+            cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
+            cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
+            connector.queue()
+                .echo("-- Importing dynamic facts ---")
+                .startTimer()
+                .transaction()
+                .executeFile("import-dynamic-facts.logic")
+                .addBlockFile("externalheaps.logic")
+                .commit().transaction()
+                .executeFile("import-dynamic-facts2.logic")
+                .commit()
+                .elapsedTime()
+        }
 
         if (options.TRANSFORM_INPUT.value)
             runTransformInput()
@@ -529,6 +552,18 @@ class ClassicAnalysis extends DoopAnalysis {
 
         ClassLoader loader = averroesClassLoader()
         Helper.execJava(loader, "org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader", null)
+    }
+
+    protected void analyseMemoryDump(String filename) {
+        try {
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename)
+            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir)
+            logger.info("Generated " + n + " addditional facts from memory dump")
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
     }
 
 

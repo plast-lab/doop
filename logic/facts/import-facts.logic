@@ -74,20 +74,22 @@ lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
 lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
 lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
 lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
-_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
+_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod, ?linenumber) ->
    string(?instruction),
    int[32](?index),
    string(?heap),
    string(?to),
-   string(?inmethod).
+   string(?inmethod),
+   string(?linenumber).
 
 +AssignHeapAllocation:Insn(?instr),
 +Instruction:Id(?instr:?instrId),
 +Instruction:Index[?instr] = ?index,
 +Instruction:Method[?instr] = ?method,
++Instruction:Line[?instr] = ?linenumber,
 +AssignInstruction:To[?instr] = ?to,
 +AssignHeapAllocation0(?instr, ?heapId) <-
-   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
+   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method, ?linenumber).
 
 
 // AndroidEntryPoints
@@ -1093,7 +1095,6 @@ _FieldInitialValue(?param1, ?param2) ->
 
 +FieldInitialValue[?fld] = ?valueString <-
    _FieldInitialValue(?fld, ?valueString).
-
 
 // Access Modifiers
 

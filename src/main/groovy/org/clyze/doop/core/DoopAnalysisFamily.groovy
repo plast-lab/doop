@@ -378,6 +378,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						webUI:true,
 						forPreprocessor:true
 				),
+				new AnalysisOption<String>(
+						id:"ANALYZE_MEMORY_DUMP",
+						name:"analyze-memory-dump",
+						argName:"dump-filename",
+						description:"Use dynamic information from memory dump",
+						value:null,
+						forPreprocessor:true
+				),
 				new AnalysisOption<Boolean>(
 						id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
 						name:"only-application-classes-fact-gen",
@@ -472,6 +480,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						nonStandard:true
 				),
 				/* End of non-standard flags */
+
 		]
 	}
 }

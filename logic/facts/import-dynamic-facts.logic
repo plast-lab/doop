@@ -1,0 +1,122 @@
+/*
+This stage must be executed before any basic analysis but *AFTER* Heap Allocations have been resolved.
+*/
+
+//-----------------------------------------------------------------------------
+// [Dynamic analysis related]
+//-----------------------------------------------------------------------------
+
+
+// DynamicNormalHeapAllocation
+lang:physical:storageModel[`_DynamicNormalHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_DynamicNormalHeapAllocation] = "facts/DynamicNormalHeapAllocation.facts".
+lang:physical:delimiter[`_DynamicNormalHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_DynamicNormalHeapAllocation] = false.
+_DynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+  string(?param1),
+  string(?param2),
+  string(?param3),
+  string(?param4).
+
+// optimized relation to map heapallocation by lineNumber, method and type
+_HeapAllocationInformation(?lineNumber, ?methodId, ?typeStr, ?heap) <-
+   Instruction:Line[?insn] = ?lineNumber,
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   HeapAllocation:Type[?heap] = ?type,
+   Type:Id(?type:?typeStr),
+   Instruction:Method[?insn] = ?method,
+   Method:Id[?method] = ?methodId.
+
+
+
+// Heap allocations may map to more than one place in the allocation stacktrace
+// When this happens we simple take the deeper stack trace level
++DynamicHeapAllocation(?representation, ?heap) <-
+   _MatchedHeapAllocation(?representation, ?heap).
+
+
+_MatchedHeapAllocation(?representation, ?heap) <-
+   _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+
+// For unmatched heap allocations, we record the shallowest (most specific) level of the stack trace
+// This is used to create fake allocations in a subsequent step.
+
+_OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+
++UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?lineNumber, ?inMethod) <-
+   !_MatchedHeapAllocation(?representation, _),
+   _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod).
+
+
+// We also keep track of statically inferred heap allocations that do not match
+// with dynamic heap allocations for debugging.
++UnmatchedStaticNormalHeapAllocation(?methodId, ?lineNumber, ?type) <-
+   _HeapAllocationInformation(?lineNumber, ?methodId, ?type, _),
+   !_DynamicNormalHeapAllocation(?lineNumber, ?methodId, ?type, _).
+
+
+
+// TODO: DynamicStringHeapAllocation 
+//lang:physical:storageModel[`_DynamicStringHeapAllocation] = "DelimitedFile".
+//lang:physical:filePath[`_DynamicStringHeapAllocation] = "facts/DynamicStringHeapAllocation.facts".
+//lang:physical:delimiter[`_DynamicStringHeapAllocation] = "\t".
+//lang:physical:hasColumnNames[`_DynamicStringHeapAllocation] = false.
+//_DynamicStringHeapAllocation(?param1) ->
+//  string(?param1).
+//
+//+DynamicHeapAllocation(?representation, ?heap) <-
+//   _DynamicStringHeapAllocation(?representation),
+//   HeapAllocation:byId[?representation] = ?heap.
+
+
+// DynamicReachableMethod
+lang:physical:storageModel[`_DynamicReachableMethod] = "DelimitedFile".
+lang:physical:filePath[`_DynamicReachableMethod] = "facts/DynamicReachableMethod.facts".
+lang:physical:delimiter[`_DynamicReachableMethod] = "\t".
+lang:physical:hasColumnNames[`_DynamicReachableMethod] = false.
+_DynamicReachableMethod(?param1) ->
+  string(?param1).
+
+// Dynamic call graph edges are found by taking stack trace elements in the heap dump.
+
++DynamicReachableMethod(?method) <-
+   _DynamicReachableMethod(?representation),
+   Method:Id(?method:?representation).
+
++UnmatchedDynamicReachableMethod(?representation) <-
+   _DynamicReachableMethod(?representation),
+   !Method:Id(_:?representation).
+
+// DynamicCallGraphEdge
+lang:physical:storageModel[`_DynamicCallGraphEdge] = "DelimitedFile".
+lang:physical:filePath[`_DynamicCallGraphEdge] = "facts/DynamicCallGraphEdge.facts".
+lang:physical:delimiter[`_DynamicCallGraphEdge] = "\t".
+lang:physical:hasColumnNames[`_DynamicCallGraphEdge] = false.
+_DynamicCallGraphEdge(?param1, ?param2, ?param3) ->
+   string(?param1),
+   int[64](?param2),
+   string(?param3).
+
+// Dynamic call graph edges are found by combining successive
+// stack trace elements in the heap dump.
+
+_InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod) <-
+   MethodInvocation:Line[?invocation] = ?lineNumber,
+   MethodInvocation:SimpleName[?invocation] = ?name,   
+   Instruction:Method[?invocation] = ?fromMethod,
+   Method:Id(?fromMethod:?fromMethodId).
+
++DynamicCallGraphEdge(?toMethod, ?invocation, ?fromMethod) <-
+   _DynamicCallGraphEdge(?fromMethodId, ?lineNumber, ?toMethodId),
+   _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod),
+   Method:SimpleName[?toMethod] = ?name,
+   Method:Id(?toMethod:?toMethodId).
+
++UnmatchedDynamicCallGraphEdgeNode(?method) <-
+   (_DynamicCallGraphEdge(?methodId, _, _) ;
+    _DynamicCallGraphEdge(_, _, ?methodId)),
+    Method:Id(?method:?methodId),
+   !(DynamicCallGraphEdge(?method, _, _) ;
+     DynamicCallGraphEdge(_, _, ?method)).

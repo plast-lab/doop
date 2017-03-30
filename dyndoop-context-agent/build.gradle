@@ -1,0 +1,37 @@
+version '0.1'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Jar File Example',
+                'Implementation-Version': version,
+                'Manifest-Version': '1.0',
+                'Agent-Class': 'Instrumentation.Agent.Transformer',
+                'Premain-Class': 'Instrumentation.Agent.Transformer',
+                'Boot-Class-Path': baseName + '-' + version + '.jar' + ":   ",
+                'Can-Retransform-Classes': 'true'
+
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    // https://mvnrepository.com/artifact/org.javassist/javassist
+    compile group: 'org.javassist', name: 'javassist', version: '3.21.0-GA'
+
+    // https://mvnrepository.com/artifact/org.ow2.asm/asm
+    //compile group: 'org.ow2.asm', name: 'asm', version: '5.2'
+
+
+
+}

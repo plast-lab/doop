@@ -159,6 +159,10 @@ Instruction:Index[?insn] = ?index ->
 Instruction:Method[?insn] = ?inMethod ->
    Instruction(?insn), Method(?inMethod).
 
+Instruction:Line[?insn] = ?line ->
+   Instruction(?insn), string(?line).
+
+
 lang:entity(`Throw:Insn).
 lang:entity(`ThrowNull:Insn).
 lang:entity(`Goto:Insn).
@@ -542,6 +546,45 @@ CallbackMethod(?x) -> Method(?x).
 LayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
 LayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
 FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
+
+//-----------------------------------------------------------------------------
+// [Dynamic analysis related]
+//-----------------------------------------------------------------------------
+lang:entity(`DynamicContext).
+DynamicContext(?ctx), DynamicContext:Id(?ctx:?id) -> string(?id).
+DynamicStaticFieldPointsTo(?fld, ?ctx, ?heap) ->
+   DynamicContext(?ctx), HeapAllocation(?heap), Field(?fld).
+DynamicInstanceFieldPointsTo(?fieldname, ?ctx, ?heap, ?baseCtx, ?baseHeap) ->
+   DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?baseHeap), Field(?fieldname), HeapAllocation(?heap).
+DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) ->
+   DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?heap), HeapAllocation(?baseHeap).
+DynamicHeapAllocation(?representation, ?heap) -> HeapAllocation(?heap), string(?representation).
+
+DynamicHeapObject(?dynamicContext, ?heap) ->  HeapAllocation(?heap), DynamicContext(?dynamicContext).
+
+UnmatchedDynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+  string(?param1),
+  string(?param2),
+  string(?param3),
+  string(?param4).
+
+UnmatchedStaticNormalHeapAllocation(?param1, ?param2, ?param3) ->
+  string(?param1),
+  string(?param2),
+  string(?param3).
+
+DynamicReachableMethod(?x) -> Method(?x).
+
+UnmatchedDynamicReachableMethod(?methodId) -> string(?methodId).
+
+DynamicCallGraphEdge(?toMethod, ?invocation, ?fromMethod) -> Method(?fromMethod), Method(?toMethod), MethodInvocation(?invocation).
+
+UnmatchedDynamicCallGraphEdgeNode(?method) -> Method(?method).
+
+DynamicContextInvo1(?invo, ?ctx) -> MethodInvocation(?invo), DynamicContext(?ctx).
+DynamicContextInvo2(?invo, ?ctx) -> MethodInvocation(?invo), DynamicContext(?ctx).
+DynamicContextHeap1(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
+DynamicContextHeap2(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
