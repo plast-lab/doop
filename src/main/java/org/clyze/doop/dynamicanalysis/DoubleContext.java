@@ -24,13 +24,13 @@ public class DoubleContext<T extends ComposableContext> implements Context {
 
         for (int i = 0, j = ctx1.getStartIndex();
              i < ctx1.getComponents().length;
-             i++, i++)
+             i++, j++)
             args[j] = ctx1.getComponents()[i];
 
 
         for (int i = 0, j = ctx2.getStartIndex() + ctx2.getComponents().length;
              i < ctx2.getComponents().length;
-             i++, i++)
+             i++, j++)
             args[j] = ctx2.getComponents()[i];
         db.add(PredicateFile.DYNAMIC_CONTEXT, getRepresentation(), args);
     }

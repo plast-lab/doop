@@ -115,7 +115,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 runAverroes()
             }
 
-             runSoot()
+            runSoot()
 
             FileUtils.touch(new File(factsDir, "ApplicationClass.facts"))
             FileUtils.touch(new File(factsDir, "Properties.facts"))
