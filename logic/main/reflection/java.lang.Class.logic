@@ -88,6 +88,9 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
   StringConstant(?classNameHeap),
   Value:byHeap[?classNameHeap] = ?classNameValue.
 
+// REVIEW: Note how unsound this rule is: it returns a string only
+// if the string exists in the input. 
+
 // REVIEW: when getName returns a string, but our normal reflection
 // logic would have merged that string with others, should the result
 // be the string itself or its HeapAllocation:Merge?
@@ -205,7 +208,7 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
-  Var:DeclaringMethod(?to, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
   AssignHeapAllocation(?constantHeap, _, ?inmethod),
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
@@ -355,7 +358,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
-  Var:DeclaringMethod(?to, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
   AssignHeapAllocation(?constantHeap, _, ?inmethod),
   (NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap)).

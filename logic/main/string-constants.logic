@@ -167,6 +167,12 @@ HeapRepresentative(?constant, ?heap) <-
 ///// Merging strategy that employs coloring of heap allocations based on
 ///// the classes they conflict on.
 
+// REVIEW: There are two cases that are currently ignored, as too rare to matter:
+//  -conflicts between a field and a method are not important. The constraint is
+//   that string matching methods should not conflict with strings matching other
+//   methods (and similar for fields), not with any member.
+//  -we lose precision because we may merge strings that match different class
+//   names.
 MemberOfClassMatchesString(?heap, ?type) <-
   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap),
   Method:DeclaringType[?sig] = ?type.
