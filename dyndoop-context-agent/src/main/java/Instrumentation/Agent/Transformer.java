@@ -46,6 +46,9 @@ public class Transformer implements ClassFileTransformer {
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
+                if (!Modifier.isStatic(m.getModifiers())) {
+                    m.insertBefore("Instrumentation.Recorder.Recorder.recordCall(this);");
+                }
                 //System.err.println("DEBUG: Instrumenting " + m.getDeclaringClass().getName() + "." + m.getName());
                 m.instrument(new ExprEditor() {
                     public void edit(NewExpr newExpr) throws CannotCompileException {

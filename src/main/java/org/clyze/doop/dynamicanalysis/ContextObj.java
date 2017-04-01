@@ -12,6 +12,7 @@ public class ContextObj implements ComposableContext {
     private final String inMethod;
     private final String type;
     private final String representation;
+    private final boolean createHeapAllocation;
 
     @Override
     public boolean equals(Object o) {
@@ -28,18 +29,29 @@ public class ContextObj implements ComposableContext {
         return getRepresentation() != null ? getRepresentation().hashCode() : 0;
     }
 
-    public ContextObj(String lineNumber, String inMethod, String type) {
+    public ContextObj(String lineNumber, String inMethod, String type, boolean createHeapAllocation) {
         this.lineNumber = lineNumber;
         this.inMethod = inMethod;
         this.type = type;
+        this.createHeapAllocation = createHeapAllocation;
         this.representation = DynamicNormalHeapObject.getAllocationRepresentation(lineNumber, inMethod, type);
     }
+
+    public ContextObj(String representation) {
+        lineNumber = null;
+        type = null;
+        inMethod = null;
+        this.createHeapAllocation = false;
+        this.representation = representation;
+    }
+
     @Override
     public void write_fact(Database db) {
         String[] args = Context.DEFAULT_CTX_ARGS.clone();
         args[0] = representation;
         db.add(PredicateFile.DYNAMIC_CONTEXT, representation, args);
-        db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_ALLOCATION, lineNumber, inMethod, type, representation);
+        if (createHeapAllocation)
+            db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_ALLOCATION, lineNumber, inMethod, type, representation);
     }
 
     public int getStartIndex() { return 2; }

@@ -6,4 +6,8 @@ package org.clyze.doop.dynamicanalysis;
 public interface DynamicHeapObject extends DynamicFact {
     String getRepresentation();
 
+    String getContextRepresentation();
+
+    String getHeapRepresentation();
+
 }

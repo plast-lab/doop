@@ -36,6 +36,16 @@ public class DynamicStringHeapObject implements DynamicHeapObject {
     }
 
     @Override
+    public String getContextRepresentation() {
+        return null;
+    }
+
+    @Override
+    public String getHeapRepresentation() {
+        return null;
+    }
+
+    @Override
     public boolean isProbablyUnmatched() {
         return false;
     }

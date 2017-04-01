@@ -577,7 +577,12 @@ DynamicReachableMethod(?x) -> Method(?x).
 
 UnmatchedDynamicReachableMethod(?methodId) -> string(?methodId).
 
-DynamicCallGraphEdge(?toMethod, ?invocation, ?fromMethod) -> Method(?fromMethod), Method(?toMethod), MethodInvocation(?invocation).
+DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) ->
+   Method(?fromMethod),
+   Method(?toMethod),
+   MethodInvocation(?invocation),
+   DynamicContext(?ctxTo),
+   DynamicContext(?ctxFrom).
 
 UnmatchedDynamicCallGraphEdgeNode(?method) -> Method(?method).
 

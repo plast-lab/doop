@@ -77,9 +77,10 @@ ImplicitReachable(?method) <-
    DynamicReachableMethod(?method),
    !OptClassInitializer(_, ?method).
 
-CallGraphEdge(?ctx, ?invocation, ?ctx, ?toMethod) <-
-   ReachableContext(?ctx, ?method),
+CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
    !StaticMethodInvocation:Insn(?invocation),
-   DynamicCallGraphEdge(?toMethod, ?invocation, ?method).
+   DynamicContextToContext(?ctxTo, ?dctxTo),
+   DynamicContextToContext(?ctxFrom, ?dctxFrom),
+   DynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, ?method).
 
 

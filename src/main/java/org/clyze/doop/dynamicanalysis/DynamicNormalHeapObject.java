@@ -15,7 +15,6 @@ public class DynamicNormalHeapObject implements DynamicHeapObject {
     private String type;
     private String contextRepresentation;
 
-    private transient boolean probablyUnmatched = false;
     private String heapRepresentation;
 
     public DynamicNormalHeapObject(String lineNumber, String inMethod, String type, String contextRepresentation) {
@@ -42,17 +41,18 @@ public class DynamicNormalHeapObject implements DynamicHeapObject {
         return representation;
     }
 
-    public String getType() {
-        return type;
+    @Override
+    public String getContextRepresentation() {
+        return contextRepresentation;
     }
 
     @Override
-    public boolean isProbablyUnmatched() {
-        return probablyUnmatched;
+    public String getHeapRepresentation() {
+        return heapRepresentation;
     }
 
-    public void setProbablyUnmatched(boolean probablyUnmatched) {
-        this.probablyUnmatched = probablyUnmatched;
+    public String getType() {
+        return type;
     }
 
     @Override
@@ -68,5 +68,13 @@ public class DynamicNormalHeapObject implements DynamicHeapObject {
     @Override
     public int hashCode() {
         return getRepresentation() != null ? getRepresentation().hashCode() : 0;
+    }
+
+    public String getLineNumber() {
+        return lineNumber;
+    }
+
+    public String getInMethod() {
+        return inMethod;
     }
 }
