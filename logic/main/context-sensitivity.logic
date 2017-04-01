@@ -197,6 +197,10 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
 /**
  * Store instance fields
  */
+
+SpecialObject(?value) <- SpecialObject(?value).
+
+
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
