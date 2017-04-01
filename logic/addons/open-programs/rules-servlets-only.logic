@@ -1,5 +1,7 @@
 #include "../../commonMacros.logic"
- 
+#include "declarations.logic"
+
+
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").
 
@@ -22,6 +24,9 @@ ServletClass(?class) <-
    AllConcreteImplementations(?class, ?staticType),
    ClassType(?class),
    Type:Id(?staticType:"javax.servlet.http.HttpServlet").
+
+EntryPoint(?method) <- MockEntryPoint(_, ?method).
+
 
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
@@ -46,6 +51,7 @@ MockObject(?value, ?type) -> Value(?value), Type(?type).
 Value(?value),
 MockValueConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?value),
 //MockHeapConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?heap),
+MockObjFromEntryPoint(?value),
 MockObject(?value, ?class)
 <-
    MockEntryPoint(?class, _),
