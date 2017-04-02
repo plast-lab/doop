@@ -44,7 +44,7 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
         System.out.println("Acquiring call graph edge contexts (2H calling ctx)...");
 
         getAllocationAbstractionTuple(
-                HCTX_RECORDER_CLASS_NAME,
+                EDGE_CTXS_RECORDER_CLASS_NAME,
                 "WARNING: calling ctx info not found",
                 "ctxFrom", "ctxTo").forEach(a -> {
                     // get edge

@@ -46,8 +46,8 @@ public class Transformer implements ClassFileTransformer {
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
-                if (!Modifier.isStatic(m.getModifiers())) {
-                    m.insertBefore("Instrumentation.Recorder.Recorder.recordCall(this);");
+                if (!Modifier.isStatic(m.getModifiers()) && !Modifier.isAbstract(m.getModifiers())) {
+                    m.insertBefore("Instrumentation.Recorder.Recorder.recordCall($0);");
                 }
                 //System.err.println("DEBUG: Instrumenting " + m.getDeclaringClass().getName() + "." + m.getName());
                 m.instrument(new ExprEditor() {
@@ -86,7 +86,8 @@ public class Transformer implements ClassFileTransformer {
                 });
 
             } catch (Exception e) {
-                e.printStackTrace();
+                // fail silently
+                //e.printStackTrace();
             }
         });
         try {

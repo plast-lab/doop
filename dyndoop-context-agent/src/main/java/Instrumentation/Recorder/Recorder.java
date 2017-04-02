@@ -19,7 +19,8 @@ public final class Recorder {
 
     public static void recordCall(Object receiver) {
         Object previousReceiver = thisMap.get(FrameId.getCurrent());
-        edgeContexts.add(new EdgeContexts(previousReceiver, receiver));
+        if (previousReceiver != null)
+            edgeContexts.add(new EdgeContexts(previousReceiver, receiver));
     }
 
     public static void mergeStatic() {
