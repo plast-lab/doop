@@ -122,3 +122,69 @@ ExceptionHandler_SameBlock_Repr(?handler, ?handler) :-
 ExceptionHandler_SameBlock_Repr(?handler, ?repr) :-
   ExceptionHandler_SameBlock_PartialOrder(?repr, ?handler),
   !ExceptionHandler_SameBlock_PartialOrder(_, ?repr).
+
+// TODO: port dynamic proxies
+//
+// #ifdef REFLECTION_DYNAMIC_PROXIES
+// /* Dynamic proxies have some special exception semantics, since the
+//    single invoke() method must pose as any method and thus is declared
+//    to throw a Throwable. */
+// 
+// // Case (a): If invoke() has to throw an exception e that is not a
+// // checked exception of the interface method, then e is wrapped as
+// // UndeclaredThrowableException(e) and thrown. The actual rule below
+// // is a bit simpler than the spec, as we do not provide the inner
+// // exception e, so we use a global exception object.
+// 
+// MockValueConsMacro(?valueId, ?UTEClass, ?value),
+// ProxyUTE[] = ?value <-
+//   ?valueId = "<UndeclaredThrowableException thrown by proxy call>",
+//   Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
+// 
+// Instruction:Throws(?hctx, ProxyUTE[], ?callerCtx, ?invo) <-
+//   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+//   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+// 
+// // Case (b): "If the value returned by invoke is null and the
+// // interface method's return type is primitive, then a
+// // NullPointerException will be thrown by the method invocation on the
+// // proxy instance." For performance, we use a single global
+// // object.
+// 
+// MockValueConsMacro(?valueId, ?NPEClass, ?value),
+// ProxyNPE[] = ?value <-
+//   ?valueId = "<NullPointerException thrown by proxy call>",
+//   Type:Id(?NPEClass:"java.lang.NullPointerException").
+// 
+// ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx) <-
+//   ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar),
+//   VarPointsTo(_, Value:Null[], _, ?handlerReturnVar).
+// 
+// Instruction:Throws(?hctx, ProxyNPE[], ?callerCtx, ?invo) <-
+//   ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx),
+//   AssignReturnValue[?invo] = ?return,
+//   PrimitiveType(Var:Type[?return]),
+//   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+// 
+// // Case (c): "If the value returned by invoke is otherwise not
+// // compatible with the method's declared return type as described
+// // above, a ClassCastException will be thrown by the proxy instance."
+// // If invoke() returns B and the interface method returns A, then A
+// // and B are not compatible if (a) they are different primitive types
+// // or (b) B is not a subtype of A.
+// 
+// // In practice, this is usually true due to the variety of return
+// // types appearing in interface methods, se we can just assume that
+// // proxy calls may throw ClassCastException and we use a single object
+// // for all such exceptions.
+// 
+// MockValueConsMacro(?valueId, ?CCEClass, ?value),
+// ProxyCCE[] = ?value <-
+//   ?valueId = "<ClassCastException thrown by proxy call>",
+//   Type:Id(?CCEClass:"java.lang.ClassCastException").
+// 
+// Instruction:Throws(?hctx, ProxyCCE[], ?callerCtx, ?invo) <-
+//   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+//   ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+// 
+// #endif /* REFLECTION_DYNAMIC_PROXIES */
