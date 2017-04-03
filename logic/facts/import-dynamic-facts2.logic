@@ -116,7 +116,7 @@ lang:physical:storageModel[`_DynamicCallGraphEdge] = "DelimitedFile".
 lang:physical:filePath[`_DynamicCallGraphEdge] = "facts/DynamicCallGraphEdge.facts".
 lang:physical:delimiter[`_DynamicCallGraphEdge] = "\t".
 lang:physical:hasColumnNames[`_DynamicCallGraphEdge] = false.
-_DynamicCallGraphEdge(?param1, ?param2, ?param3) ->
+_DynamicCallGraphEdge(?param1, ?param2, ?param3, ?param4, ?param5) ->
    string(?param1),
    int[64](?param2),
    string(?param3),
