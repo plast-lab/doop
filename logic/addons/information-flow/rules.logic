@@ -140,7 +140,7 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) <-
   !AssignReturnValue[?invocation] = _.
 
 
-#ifdef ALIASING_BY_TAINTED_VALUES
+#ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 ValueTaintedFromValue(?newvalue, ?baseObj) <- 
    BaseValueTaintedFromParamValue(?newvalue, ?baseObj),
    ?newvalue != ?baseObj.
@@ -184,12 +184,7 @@ VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) <-
 MethodInvocationInContext(?ctx, ?invocation, ?tomethod) -> Context(?ctx), MethodInvocation(?invocation), Method(?tomethod).
 
 // Option 1
-#ifdef INFORMATION_FLOW_PRECISE_SOURCES_AND_SINKS
-MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
-   CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
-#else
-// Option 2
-
+#ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 MethodInvocationInMethod(?tomethod, ?invocation, ?inmethod) <-
    AnyMethodInvocationOpt(?tomethod, ?invocation),
    Instruction:Method[?invocation] = ?inmethod.
@@ -197,6 +192,12 @@ MethodInvocationInMethod(?tomethod, ?invocation, ?inmethod) <-
 MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
    MethodInvocationInMethod(?tomethod, ?invocation, ?inmethod),
    ReachableContext(?ctx, ?inmethod).
+
+
+#else
+// Option 2
+MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
+   CallGraphEdge(?ctx, ?invocation, _, ?tomethod).
 
 #endif
  

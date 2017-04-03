@@ -829,7 +829,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature).
 
-#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+#if defined(REFLECTION_HIGH_SOUNDNESS_MODE) || defined(INFORMATION_FLOW_HIGH_SOUNDNESS)
 // If in high-soundness mode, don't require agreement or high-confidence
 // for inference.
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
