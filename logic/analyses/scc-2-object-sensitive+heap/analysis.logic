@@ -1,0 +1,150 @@
+// This is an SCC-based 2objH analysis, over strongly connected components
+// of classes, connected via any explicit (constant-pool-based)
+// relationship in the bytecode.
+// The overal analysis logic is something like this:
+// -When in the same SCC do what the base analysis would do
+// -When switching SCCs, keep (parts of) the context that existed,
+//  so that library analysis can be done based on the caller.
+
+#include "../../main/classes-scc.logic"
+
+// In this analysis, the real context is a pair of Values and the real
+// heap context a single Value. Keeping mapping functions is the way
+// to handle analyses where HContext = Context (since the language considers
+// them different types).
+ContextFromRealContext[?value1, ?value2] = ?ctx ->
+  Context(?ctx), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
+// Some basics, for encoding-decoding
+RealContext1FromContext[?ctx] = ?value1,
+RealContext2FromContext[?ctx] = ?value2 <-
+  ContextFromRealContext[?value1, ?value2] = ?ctx.
+
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?value <-
+  HContextFromRealHContext[?value] = ?hctx.
+
+
+// Common resolution predicate for both special and virtual methods (for convenience)
+MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
+  ResolveInvocation[?type, ?invocation] = ?tomethod.
+
+MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
+  SpecialMethodInvocation:Base[?invocation] = ?base,
+  Var:Type[?base] = ?basetype,
+  MethodInvocation:Method[?invocation] = ?tomethod,
+  SubtypeOf(?type, ?basetype).
+
+// Convenience mappings from all usual concepts (invo-sites, contexts, methods) to SCC
+SCCForInvocation[?invo] = ?sccId <-
+  Instruction:Method[?invo] = ?inmethod,
+  Method:DeclaringType[?inmethod] = ?inClass,
+  TypeToSCCId[?inClass] = ?sccId.
+
+SCCForMethod[?method] = ?sccId <-
+  Method:DeclaringType[?method] = ?inClass,
+  TypeToSCCId[?inClass] = ?sccId.
+   
+SCCForResolvedInvocation[?type, ?invo] = ?sccId <-
+  MatchingMethodForInvocationAndType[?type, ?invo] = ?tomethod,
+  SCCForMethod[?tomethod] = ?sccId.
+
+SCCForContext1[?ctx] = ?sccId <-
+  Value:Type[RealContext1FromContext[?ctx]] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+SCCForContext2[?ctx] = ?sccId <-
+  Value:Type[RealContext2FromContext[?ctx]] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+SCCForHContext[?hctx] = ?sccId <-
+  Value:Type[RealHContextFromHContext[?hctx]] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+// Distinguish startup contexts
+_DefaultContext(?ctx) -> Context(?ctx).
+_DefaultContext(?ctx) <-
+  ImmutableContext(?ctx); InitialContext(?ctx); JVMStartupContext(?ctx); ClinitContext(?ctx).
+_NotImmutableContext(?ctx) <- Context(?ctx), ImmutableContext(?ctx2), ?ctx != ?ctx2.
+_NotInitialContext(?ctx) <- Context(?ctx), InitialContext(?ctx2), ?ctx != ?ctx2.
+_NotJVMStartupContext(?ctx) <- Context(?ctx), JVMStartupContext(?ctx2), ?ctx != ?ctx2.
+_NotClinitContext(?ctx) <- Context(?ctx), ClinitContext(?ctx2), ?ctx != ?ctx2.
+_NotDefaultContext(?ctx) <-
+  _NotImmutableContext(?ctx), _NotInitialContext(?ctx), _NotJVMStartupContext(?ctx), _NotClinitContext(?ctx).
+
+_DefaultHContext(?hctx) -> HContext(?hctx).
+_DefaultHContext(?hctx) <- _DefaultHContext(?hctx).
+_DefaultHContext(?hctx) <-
+  ImmutableHContext(?hctx); JVMStartupHContext(?hctx).
+_NotImmutableHContext(?hctx) <- HContext(?hctx), ImmutableHContext(?hctx2), ?hctx != ?hctx2.
+_NotJVMStartupHContext(?hctx) <- HContext(?hctx), JVMStartupHContext(?hctx2), ?hctx != ?hctx2.
+_NotDefaultHContext(?hctx) <-
+  _NotImmutableHContext(?hctx), _NotJVMStartupHContext(?hctx).
+
+// For calling contexts:
+//  -if the previous calling context was an initial context -> default
+//   (i.e., do what the base analysis would do)
+//  -if the call is to the same SCC as the previous context -> default
+//  -if the call is to a different SCC from previous context -> keep context unchanged
+// For heap contexts:
+//  -default
+
+// REVIEW: this policy will likely need significant tuning. E.g., what happens
+//  when going from an SCC that does not match the current context to another
+//  (which either does or does not match the context's SCC, and we
+//  need to distinguish the cases)
+
+MergeMacro(?callerCtx, ?invo, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+  _DefaultContext(?callerCtx).
+
+MergeMacro(?callerCtx, ?invo, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+  Value:Type[?value] = ?valuetype,
+  SCCForResolvedInvocation[?valuetype, ?invo] = SCCForContext2[?callerCtx].
+
+Context(?calleeCtx),
+ContextFromRealContext[?value, RealContext2FromContext[?callerCtx]] = ?calleeCtx,
+CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
+//// REVIEW
+//CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?callerCtx <-
+  MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+  Value:Type[?value] = ?valuetype,
+  _NotDefaultContext(?callerCtx),
+  SCCForResolvedInvocation[?valuetype, ?invo] != SCCForContext2[?callerCtx].
+//// These conditions are unnecessary (the SCC always exists) and
+//// introduce recursion through negation
+//  (!(SCCForResolvedInvocation[?valuetype, ?invo] = _) ;
+//   !(SCCForContext2[?callerCtx] = _) ;
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx -> Context(?callerCtx), Instruction(?invo), Context(?calleeCtx).
+
+MergeStaticMacro(?callerCtx, ?invo, ?calleeCtx),
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  _DefaultContext(?callerCtx).
+
+MergeStaticMacro(?callerCtx, ?invo, ?calleeCtx),
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  SCCForMethod[?tomethod] = SCCForContext2[?callerCtx].
+
+CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  _NotDefaultContext(?callerCtx),
+  SCCForMethod[?tomethod] != SCCForContext2[?callerCtx].
+
+
+// What are the necessary parameters for this analysis?
+MyRecordBasis(?ctx, ?value) <-
+  RecordBasis(_, ?ctx, ?value).
+
+RecordMacro(?ctx, ?value, ?hctx),
+CachedRecord[?ctx, ?value] = ?hctx <-
+  MyRecordBasis(?ctx, ?value).

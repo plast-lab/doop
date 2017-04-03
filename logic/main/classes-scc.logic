@@ -1,0 +1,73 @@
+// Define a straightforward SCC decomposition of classes, based on
+// constant-pool information.
+
+// REVIEW: this is very similar to the partitioning logic, yet with
+// important differences. There is no distinction between application
+// and library classes, no special classes (collections, etc.). In the
+// future, we should try to merge the two.
+  
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  DirectSubclass[?typeFrom] = ?typeTo.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  DirectSuperinterface(?typeFrom, ?typeTo).
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  Field:Type[?field] = ?typeTo,
+  Field:DeclaringType[?field] = ?typeFrom.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  MethodInvocation:Method[?invo] = ?method,
+  Instruction:Method[?invo] = ?fromMethod,
+  Method:DeclaringType[?method] = ?typeTo,
+  Method:DeclaringType[?fromMethod] = ?typeFrom.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  Var:Type[?var] = ?typeTo,
+  Var:DeclaringMethod(?var, ?method),
+  Method:DeclaringType[?method] = ?typeFrom.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  ExceptionHandler:Method[?handler] = ?inmethod,
+  ExceptionHandler:Type[?handler] = ?typeTo,
+  Method:DeclaringType[?inmethod] = ?typeFrom.
+
+// Now reflexively-transitively close it.
+OptTypeRefersToOther(?typeTo, ?typeFrom) <-
+  TypeRefersToOther(?typeFrom, ?typeTo).
+
+TypeTransitivelyRefersToOther(?typeFrom, ?typeTo) <-
+  TypeRefersToOther(?typeFrom, ?typeTo).
+
+TypeTransitivelyRefersToOther(?typeFrom, ?typeTo) <-
+  TypeTransitivelyRefersToOther(?typeFrom, ?typeInterm),
+  OptTypeRefersToOther(?typeTo, ?typeInterm).
+
+SCCType(?type) <-
+  ClassType(?type).
+
+SCCTypesInSameSCC(?type1, ?type2) <-
+  TypeTransitivelyRefersToOther(?type1, ?type2),
+  TypeTransitivelyRefersToOther(?type2, ?type1).
+
+SCCTypesInSameSCC(?type, ?type) <-
+  SCCType(?type).
+
+TypeToSCCId[?type] = ?idType <-
+  agg<<?idType = min(?t)>>(SCCTypesInSameSCC(?type, ?t)).
+
+CountOfTypesPerSCC[?idType] = ?num <-
+  agg<<?num = count()>>(TypeToSCCId[_] = ?idType).
+
+SCCPerCountOfTypes(?idType, ?num) <-
+  CountOfTypesPerSCC[?idType] = ?num.
+
+MaxCountOfTypesPerSCC[] = ?maxNum <-
+  agg<<?maxNum = max(?num)>>(CountOfTypesPerSCC[_] = ?num).
+
+SCCWithMaxCountOfTypes(?idType) <-
+  SCCPerCountOfTypes(?idType, MaxCountOfTypesPerSCC[]).
+
+NumberOfRelevantTypes[] = ?num <-
+  agg<<?num = count()>>(SCCType(_)).
+  
