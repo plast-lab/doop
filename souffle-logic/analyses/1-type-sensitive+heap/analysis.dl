@@ -1,0 +1,8 @@
+// Context-sensitive pointer analysis with context of 1 type and a
+// context-sensitive heap abstraction.
+
+// In this analysis, both the real context and the real heap context are Types
+// The type is now always a class type, because of arrays currently being a
+// non-class subtype of Object
+.type Context  = [ type:Type ]
+.type HContext = [ type:Type ]

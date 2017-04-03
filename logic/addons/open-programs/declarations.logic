@@ -1,9 +1,3 @@
-ServletClass(?type) -> ClassType(?type).
-
-MockObject(?receiverHeap, ?class) ->
-   string(?receiverHeap), ReferenceType(?class).
-
-MockEntryPoint(?class, ?method) ->
-   ClassType(?class), Method(?method).
-
-ServletEntryMethodName(?str) -> string(?str).
+MockObjFromArray(?obj) -> Value(?obj).
+MockObjFromField(?obj) -> Value(?obj).
+MockObjFromFormal(?obj) -> Value(?obj).

@@ -333,8 +333,10 @@ PreFieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
   HeapAllocation:Id[?heap] = ?string,
   // Field:DeclaringType[?sig] = ?declaringClass,
   // ApplicationClass(?declaringClass);
-#ifndef REFLECTION_HIGH_SOUNDNESS_MODE  
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS   
   NonTrivialStringConstant(?heap),
+#endif
 #endif
   Field:SimpleName[?sig] = ?string.
 
@@ -760,6 +762,7 @@ StringFactoryHeap(?heap) <-
   StringFactoryType(?heaptype).
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
+#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
 #ifdef DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
 
 PackageAndTypeToStringFactoryHeap(?heap, ?heaptype, ?packageName) <-
@@ -799,6 +802,7 @@ HeapRepresentative(?mergeHeap, ?heap) <-
   Type:Id(?type:"java.lang.StringBuilder"),
   HeapAllocation:byId["<<string-builder>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
+#endif
 #endif
 #endif
 

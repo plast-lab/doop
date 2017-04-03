@@ -10,13 +10,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class Recorder {
     private static final int INITIAL_CAPACITY = 0x10000;
-    private static final ArrayList<ObjectAndContext> objects = new ArrayList<>(INITIAL_CAPACITY);
+    private static final ArrayList<ObjectAndContext> objectAndContexts = new ArrayList<>(INITIAL_CAPACITY);
+    private static final ArrayList<EdgeContexts> edgeContexts = new ArrayList<>(INITIAL_CAPACITY);
+
     private static ConcurrentHashMap<FrameId, Object> thisMap = new ConcurrentHashMap<>();
 
     // BEWARE! Dragons! Do not modify this code!
 
-    public static void recordCall() {
-
+    public static void recordCall(Object receiver) {
+        Object previousReceiver = thisMap.get(FrameId.getCurrent());
+        if (previousReceiver != null)
+            edgeContexts.add(new EdgeContexts(previousReceiver, receiver));
     }
 
     public static void mergeStatic() {
@@ -35,12 +39,12 @@ public final class Recorder {
     public static void recordStatic(Object obj) {
         Object hctx = thisMap.get(FrameId.getCurrent());
         if (hctx == null) return;
-        objects.add(new ObjectAndContext(hctx, obj));
+        objectAndContexts.add(new ObjectAndContext(hctx, obj));
     }
 
     public static void record(Object hctx, Object obj) {
         if (hctx == null) return;
-        objects.add(new ObjectAndContext(hctx, obj));
+        objectAndContexts.add(new ObjectAndContext(hctx, obj));
     }
 
 
@@ -51,6 +55,16 @@ public final class Recorder {
         private ObjectAndContext(Object hctx, Object obj) {
             this.hctx = hctx;
             this.obj = obj;
+        }
+    }
+
+    private static final class EdgeContexts {
+        //TODO use soft references here
+        private final Object ctxFrom, ctxTo;
+
+        private EdgeContexts(Object ctxFrom, Object ctxTo) {
+            this.ctxFrom = ctxFrom;
+            this.ctxTo = ctxTo;
         }
     }
 
@@ -67,7 +81,6 @@ public final class Recorder {
             Thread thread = Thread.currentThread();
             return new FrameId(thread.getId(), thread.getStackTrace().length - 1);
         }
-
 
         private FrameId(long threadId, int depth) {
             this.threadId = threadId;
@@ -88,5 +101,7 @@ public final class Recorder {
             result = 31 * result + depth;
             return result;
         }
+
+
     }
 }

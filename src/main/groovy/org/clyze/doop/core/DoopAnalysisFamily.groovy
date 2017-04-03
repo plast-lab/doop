@@ -350,9 +350,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						forPreprocessor:true
 				),
 				new AnalysisOption<Boolean>(
-						id:"INFORMATION_FLOW_PRECISE_SOURCES_AND_SINKS",
-						name:"information-flow-precise-sources-and-sinks",
-						description:"Use precise call graph for identifying sources and sinks.",
+						id:"INFORMATION_FLOW_HIGH_SOUNDNESS",
+						name:"information-flow-high-soundness",
+						description:"Enter high soundness mode for information flow microbenchmarks.",
 						value:false,
 						forPreprocessor:true
 				),

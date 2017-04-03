@@ -109,3 +109,40 @@ _DynamicArrayIndexPointsTo(?param1, ?param2) ->
    _DynamicHeapObjectRep(?objString, ?heap, ?ctx),
    _DynamicHeapObjectRep(?baseObjString, ?baseHeap, ?baseCtx),
    _DynamicArrayIndexPointsTo(?baseObjString, ?objString).
+
+
+// DynamicCallGraphEdge
+lang:physical:storageModel[`_DynamicCallGraphEdge] = "DelimitedFile".
+lang:physical:filePath[`_DynamicCallGraphEdge] = "facts/DynamicCallGraphEdge.facts".
+lang:physical:delimiter[`_DynamicCallGraphEdge] = "\t".
+lang:physical:hasColumnNames[`_DynamicCallGraphEdge] = false.
+_DynamicCallGraphEdge(?param1, ?param2, ?param3) ->
+   string(?param1),
+   int[64](?param2),
+   string(?param3),
+   string(?param4),
+   string(?param5).
+
+// Dynamic call graph edges are found by combining successive
+// stack trace elements in the heap dump.
+
+_InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod) <-
+   MethodInvocation:Line[?invocation] = ?lineNumber,
+   MethodInvocation:SimpleName[?invocation] = ?name,   
+   Instruction:Method[?invocation] = ?fromMethod,
+   Method:Id(?fromMethod:?fromMethodId).
+
++DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) <-
+   _DynamicCallGraphEdge(?fromMethodId, ?lineNumber, ?toMethodId, ?ctxFromId, ?ctxToId),
+   _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod),
+   DynamicContext:Id(?ctxFrom:?ctxFromId),
+   DynamicContext:Id(?ctxTo:?ctxToId),
+   Method:SimpleName[?toMethod] = ?name,
+   Method:Id(?toMethod:?toMethodId).
+
++UnmatchedDynamicCallGraphEdgeNode(?method) <-
+   (_DynamicCallGraphEdge(?methodId, _, _, _, _) ;
+    _DynamicCallGraphEdge(_, _, ?methodId, _, _)),
+    Method:Id(?method:?methodId),
+   !(DynamicCallGraphEdge(?method, _, _, _, _) ;
+     DynamicCallGraphEdge(_, _, ?method, _, _)).

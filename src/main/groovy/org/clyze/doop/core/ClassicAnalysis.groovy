@@ -135,6 +135,7 @@ class ClassicAnalysis extends DoopAnalysis {
             }
 
             if (options.ANALYZE_MEMORY_DUMP.value) {
+
                 analyseMemoryDump(options.ANALYZE_MEMORY_DUMP.value.toString())
             }
 
