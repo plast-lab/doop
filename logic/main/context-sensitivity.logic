@@ -201,7 +201,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value:Null[] != ?basevalue,
-  !SpecialObject(?value).
+  NotSpecialObject(?value).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
@@ -299,7 +299,7 @@ OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) <-
 
 ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
   OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),     
-  !SpecialObject(?value),
+  NotSpecialObject(?value),
   NotEmptyArrayValue(?basevalue),
   Value:Type[?value] = ?valuetype,
   Value:Type[?basevalue] = ?basevaluetype,

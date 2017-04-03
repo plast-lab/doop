@@ -23,6 +23,11 @@
    Value(value), \
    Value:Type[value] = type
 
+#define SpecialValueConsMacro(id, type, value) \
+   Value:Special:Cons[id] = value, \
+   Value(value), \
+   Value:Type[value] = type
+
 #define PlusVar(x,method,string,type) \
    +Var(x), \
    +Var:Id(x:string), \

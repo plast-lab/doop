@@ -746,7 +746,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value:Null[] != ?basevalue,
-  !SpecialObject(?value),
+  NotSpecialObject(?value),
   Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype,
   SupertypeOf(?fieldtype, ?valuetype).
@@ -871,7 +871,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
  * First create objects for the backward logic
  *************************************************************/
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingForNameValue[?invocation] = ?value
 <-
   java:lang:Class:forName(?invocation, _),
@@ -881,7 +881,7 @@ SpecialMissingForNameValue[?invocation] = ?value
 
 // Note how the return type is that of newInstance (Object), although the relation remembers the forName
 // call that produced the Class on which newInstance got called.
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingNewInstanceValue[?invocation] = ?value
 <-
   java:lang:Class:forName(?invocation, _),
@@ -890,7 +890,7 @@ SpecialMissingNewInstanceValue[?invocation] = ?value
   ?strValue = "<special object for missing newInstance values " + ?strInvocation + ">".
 
 // Special value value that propagates through all constructor calls and remembers the original forName 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetConstructorValue[?invocation] = ?value
 <-
   java:lang:Class:forName(?invocation, _),
@@ -902,7 +902,7 @@ SpecialMissingGetConstructorValue[?invocation] = ?value
 // where their unknown result flows to. Note how the return type is a single Method
 // and not an array. The array is always there, the special value just gets added to
 // its contents to represent all unknown methods collectively.
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetMethodsValue[?invocation] = ?value
 <-
   (java:lang:Class:getMethods(?invocation, _, _);
@@ -911,7 +911,7 @@ SpecialMissingGetMethodsValue[?invocation] = ?value
   Instruction:Id(?invocation:?strInvocation),
   ?strValue = "<special object for missing get[Declared]Methods values " + ?strInvocation + ">".
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingInvokeValueFromGetMethods[?invocation] = ?value
 <-
   (java:lang:Class:getMethods(?invocation, _, _);
@@ -920,7 +920,7 @@ SpecialMissingInvokeValueFromGetMethods[?invocation] = ?value
   Instruction:Id(?invocation:?strInvocation),
   ?strValue = "<special object for missing invoke() values " + ?strInvocation + ">".
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetMethodValue[?invocation] = ?value
 <-
   (Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
@@ -931,7 +931,7 @@ SpecialMissingGetMethodValue[?invocation] = ?value
   Instruction:Id(?invocation:?strInvocation),
   ?strValue = "<special object for missing get[Declared]Method values " + ?strInvocation + ">".
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingInvokeValueFromGetMethod[?invocation] = ?value
 <-
   (Method:Id(?getMethod:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ;
@@ -943,7 +943,7 @@ SpecialMissingInvokeValueFromGetMethod[?invocation] = ?value
   ?strValue = "<special object for missing invoke() values " + ?strInvocation + ">".
 
 // Special objects for get[Declared]Field[s]. Very similar to methods.
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetFieldsValue[?invocation] = ?value
 <-
   (java:lang:Class:getDeclaredFields(?invocation, _, _);
@@ -952,7 +952,7 @@ SpecialMissingGetFieldsValue[?invocation] = ?value
   Instruction:Id(?invocation:?strInvocation),
   ?strValue = "<special object for missing get[Declared]Fields values " + ?strInvocation + ">".
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetValueFromGetFields[?invocation] = ?value
 <-
   (java:lang:Class:getDeclaredFields(?invocation, _, _);
@@ -961,7 +961,7 @@ SpecialMissingGetValueFromGetFields[?invocation] = ?value
   Instruction:Id(?invocation:?strInvocation),
   ?strValue = "<special object for missing get() values " + ?strInvocation + ">".
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetFieldValue[?invocation] = ?value
 <-
   (Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
@@ -972,7 +972,7 @@ SpecialMissingGetFieldValue[?invocation] = ?value
   Instruction:Id(?invocation:?strInvocation),
   ?strValue = "<special object for missing get[Declared]Field values " + ?strInvocation + ">".
 
-MockValueConsMacro(?strValue, ?type, ?value),
+SpecialValueConsMacro(?strValue, ?type, ?value),
 SpecialMissingGetValueFromGetField[?invocation] = ?value
 <-
   (Method:Id(?getField:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ;
@@ -1539,16 +1539,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
 #include "dynamic-proxies.logic"
 #endif
 
-// Mark all the above special objects
-SpecialObject(?value) <-
-  SpecialMissingForNameValue[_] = ?value;
-  SpecialMissingNewInstanceValue[_] = ?value;
-  SpecialMissingGetConstructorValue[_] = ?value;
-  SpecialMissingGetMethodValue[_] = ?value;
-  SpecialMissingGetMethodsValue[_] = ?value;
-  SpecialMissingInvokeValueFromGetMethod[_] = ?value;
-  SpecialMissingInvokeValueFromGetMethods[_] = ?value;
-  SpecialMissingGetFieldValue[_] = ?value;
-  SpecialMissingGetFieldsValue[_] = ?value;
-  SpecialMissingGetValueFromGetField[_] = ?value;
-  SpecialMissingGetValueFromGetFields[_] = ?value.
+// Mark objects that are normal, i.e., not special
+NotSpecialObject(?value) <-
+  Value:Heap:Cons[_] = ?value;
+  Value:Num:Cons[_] = ?value;
+  Value:Mock:Cons[_] = ?value.

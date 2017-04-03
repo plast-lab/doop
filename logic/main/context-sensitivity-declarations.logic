@@ -45,7 +45,7 @@ lang:constructor(`ContextComponent:Value).
 // Special value objects are just artificial ones that we use to find where the
 // result of a reflective call can flow to. We don't want to track them
 // through the heap.
-SpecialObject(?value) -> Value(?value).
+NotSpecialObject(?value) -> Value(?value).
 
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) ->

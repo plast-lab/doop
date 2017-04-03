@@ -24,10 +24,12 @@ lang:physical:capacity[`Value] = 4194304.
 Value:Heap:Cons[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
 Value:Num:Cons[?const] = ?value -> NumConstant(?const), Value(?value).
 Value:Mock:Cons[?id]   = ?value -> string(?id), Value(?value).
+Value:Special:Cons[?id]   = ?value -> string(?id), Value(?value).
 
 lang:constructor(`Value:Heap:Cons).
 lang:constructor(`Value:Num:Cons).
 lang:constructor(`Value:Mock:Cons).
+lang:constructor(`Value:Special:Cons).
 
 Value:Heap[?value] = ?heap -> Value(?value), HeapAllocation(?heap).
 Value:byHeap[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
