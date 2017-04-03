@@ -248,19 +248,19 @@ NewMetricMacro(25.0, _t41, "app reachable casts that may fail", Stats:Simple:App
 //NewMetricMacro(51.0, _t48, "allocation sites that did (not) get refined", ValueToRefine(_)).
 
 #ifdef INFORMATION_FLOW
-Stats:Simple:InsensTaintedVarPointsTo(?value, ?var) <- TaintedVarPointsTo(_, ?value, _, ?var).
+Stats:Simple:InsensTaintedVarPointsTo(?value, ?var) <- TaintedVarPointsTo(?value, _, ?var).
 
 Stats:Simple:Application:InsensTaintedVarPointsTo(?value, ?var),
-Stats:Simple:Application:TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
-   TaintedVarPointsTo(?hctx, ?value, ?ctx, ?var),
+Stats:Simple:Application:TaintedVarPointsTo(?value, ?ctx, ?var) <-
+   TaintedVarPointsTo(?value, ?ctx, ?var),
    Var:DeclaringMethod(?var, ?meth), ApplicationMethod(?meth).
 
 Stats:Simple:OriginalTaintedValue(?id) <- SourceFromTaintedValue[_] = ?id.
 
 NewMetricMacro(40.0, _t60, "tainted flows-to (INS)", Stats:Simple:InsensTaintedVarPointsTo(_, _)).
-NewMetricMacro(40.5, _t61, "tainted flows-to (SENS)", TaintedVarPointsTo(_, _, _, _)).
+NewMetricMacro(40.5, _t61, "tainted flows-to (SENS)", TaintedVarPointsTo(_, _, _)).
 NewMetricMacro(41.0, _t62, "app tainted flows-to (INS)", Stats:Simple:Application:InsensTaintedVarPointsTo(_, _)).
-NewMetricMacro(41.5, _t63, "app tainted flows-to (SENS)", Stats:Simple:Application:TaintedVarPointsTo(_, _, _, _)).
+NewMetricMacro(41.5, _t63, "app tainted flows-to (SENS)", Stats:Simple:Application:TaintedVarPointsTo(_, _, _)).
 NewMetricMacro(42.0, _t64, "total tainted values", TaintedValue(_)).
 NewMetricMacro(43.0, _t65, "original tainted values", Stats:Simple:OriginalTaintedValue(_)).
 #endif
