@@ -1539,8 +1539,3 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
 #include "dynamic-proxies.logic"
 #endif
 
-// Mark objects that are normal, i.e., not special
-NotSpecialObject(?value) <-
-  Value:Heap:Cons[_] = ?value;
-  Value:Num:Cons[_] = ?value;
-  Value:Mock:Cons[_] = ?value.

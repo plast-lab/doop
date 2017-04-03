@@ -106,6 +106,12 @@ Value:DeclaringType[?value] = "java.lang.Object" <-
    Value:byHeap[MainMethodArgArrayContent[]] = ?value.
 
 
+// Mark objects that are normal, i.e., not special
+NotSpecialObject(?value) <-
+  Value:Heap:Cons[_] = ?value;
+  Value:Num:Cons[_] = ?value;
+  Value:Mock:Cons[_] = ?value.
+
 
 ImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
 InitialContext(ctx), InitContextMacro("<<initial-context>>").
