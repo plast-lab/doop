@@ -308,7 +308,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
         }
 
-        if (!options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
+        if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
                 options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
             logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
         }
