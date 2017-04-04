@@ -63,8 +63,6 @@ FromDynamicHeapObject(?hctx, Value:byHeap[?dheap], ?dctx, ?dheap) <-
    DynamicHeapObject(?dctx, ?dheap).
 
 
-// TODO: Consider context insensitive allocations
-
 OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
 
 
@@ -81,6 +79,6 @@ CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
    !StaticMethodInvocation:Insn(?invocation),
    DynamicContextToContext(?ctxTo, ?dctxTo),
    DynamicContextToContext(?ctxFrom, ?dctxFrom),
-   DynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, ?method).
+   DynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, ?fromMethod).
 
 
