@@ -1,4 +1,3 @@
-
 // For this analysis, every heap context recorded on allocation
 // corresponds to the most significant element of the calling
 // context of the allocator method.
@@ -15,12 +14,12 @@
 // Regular 2objH context creator
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+  ContextFromRealContext[Clock:Zero[], RealHContextFromHContext[hctx], value] = calleeCtx
 
 // // Lhotak-style 2objH context creator
 // #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
 //   Context(calleeCtx), \
-//   ContextFromRealContext[RealContext2FromContext[callerCtx], value] = calleeCtx
+//   ContextFromRealContext[Clock:Zero[], RealContext2FromContext[callerCtx], value] = calleeCtx
 
 #define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(callerCtx, invocation, hctx, value)
@@ -31,7 +30,7 @@
 // 2objH macro
 #define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealContext1FromContext[callerCtx], \
+  ContextFromRealContext[Clock:Zero[], RealContext1FromContext[callerCtx], \
                          RealContext2FromContext[callerCtx]] = calleeCtx
                                          
 #define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
@@ -44,16 +43,16 @@
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], value] = newCtx
+  ContextFromRealContext[Clock:Zero[], RealHContextFromHContext[hctx], value] = newCtx
 
 #define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+  ContextFromRealContext[Clock:Zero[], RealHContextFromHContext[hctx], value] = calleeCtx
 
 
 #define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[value, value] = calleeCtx
+  ContextFromRealContext[Clock:Zero[], value, value] = calleeCtx
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -66,11 +65,11 @@
 // hctx) is a hint for avoiding this problem.
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealContext2FromContext[callerCtx], value] = newCtx
+  ContextFromRealContext[Clock:Zero[], RealContext2FromContext[callerCtx], value] = newCtx
 
 
 #define InitContextMacro(valueId) \
-  Context(ctx), ContextFromRealContext[value, value] = ctx \
+  Context(ctx), ContextFromRealContext[Clock:Zero[], value, value] = ctx \
   <- Value:byId[valueId] = value
 
 #define InitHContextMacro(valueId) \

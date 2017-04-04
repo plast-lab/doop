@@ -52,15 +52,15 @@ SCCForResolvedInvocation[?type, ?invo] = ?sccId <-
   SCCForMethod[?tomethod] = ?sccId.
 
 SCCForContext1[?ctx] = ?sccId <-
-  Value:Type[RealContext1FromContext[?ctx]] = ?type,
+  Value:DeclaringType[RealContext1FromContext[?ctx]] = ?type,
   TypeToSCCId[?type] = ?sccId.
 
 SCCForContext2[?ctx] = ?sccId <-
-  Value:Type[RealContext2FromContext[?ctx]] = ?type,
+  Value:DeclaringType[RealContext2FromContext[?ctx]] = ?type,
   TypeToSCCId[?type] = ?sccId.
 
 SCCForHContext[?hctx] = ?sccId <-
-  Value:Type[RealHContextFromHContext[?hctx]] = ?type,
+  Value:DeclaringType[RealHContextFromHContext[?hctx]] = ?type,
   TypeToSCCId[?type] = ?sccId.
 
 // Distinguish startup contexts
@@ -82,6 +82,8 @@ _NotImmutableHContext(?hctx) <- HContext(?hctx), ImmutableHContext(?hctx2), ?hct
 _NotJVMStartupHContext(?hctx) <- HContext(?hctx), JVMStartupHContext(?hctx2), ?hctx != ?hctx2.
 _NotDefaultHContext(?hctx) <-
   _NotImmutableHContext(?hctx), _NotJVMStartupHContext(?hctx).
+
+//// ===============================================================
 
 // For calling contexts:
 //  -if the previous calling context was an initial context -> default
@@ -108,7 +110,7 @@ CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
   SCCForResolvedInvocation[?valuetype, ?invo] = SCCForContext2[?callerCtx].
 
 Context(?calleeCtx),
-ContextFromRealContext[?value, RealContext2FromContext[?callerCtx]] = ?calleeCtx,
+ContextFromRealContext[RealContext2FromContext[?callerCtx], ?value] = ?calleeCtx,
 CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
 //// REVIEW
 //CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?callerCtx <-
@@ -141,10 +143,93 @@ CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
   SCCForMethod[?tomethod] != SCCForContext2[?callerCtx].
 
 
-// What are the necessary parameters for this analysis?
+//// ===============================================================
+
+//// Experiment with special treatment of strings or immutable types
+//// (not used as contexts)
+
+// FieldIsStatic(?sig) <-
+//   Modifier:Id(?static:"static"),
+//   Field:Modifier(?static, ?sig).
+// FieldIsFinal(?sig) <-
+//   Modifier:Id(?final:"final"),
+//   Field:Modifier(?final, ?sig).
+
+// Type:HasNoMutableReferenceField(?type) -> Type(?type).
+// Type:DeclaresMutableReferenceField(?type) -> Type(?type).
+
+// Type:DeclaresMutableReferenceField(?class) <-
+//   ClassType(?class),
+//   Field:DeclaringType[?signature] = ?class,
+//   Field:Type[?signature] = ?type,
+//   ReferenceType(?type),
+// //  !FieldIsStatic(?signature),
+//   !FieldIsFinal(?signature).
+
+// Type:HasNoMutableReferenceField(?type) <-
+//   Type:Id(?type:"java.lang.Object").
+
+// Type:HasNoMutableReferenceField(?class) <-
+//   ClassType(?class),
+//   DirectSuperclass[?class] = ?super,
+//   Type:HasNoMutableReferenceField(?super),
+//   !Type:DeclaresMutableReferenceField(?class).
+
+// CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?callerCtx <-
+//   MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+//   Value:Type[?value] = ?valuetype,
+// //  Type:HasNoMutableReferenceField(?valuetype).
+//   Type:Id(?valuetype:"java.lang.String").
+
+// MergeMacro(?callerCtx, ?invo, ?hctx, ?value, ?calleeCtx),
+// CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
+//   MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+//   Value:Type[?value] = ?valuetype,
+// //  !Type:HasNoMutableReferenceField(?valuetype).
+//   Type:Id(?valuetype:?typeId),
+//   ?typeId != "java.lang.String".
+
+// CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx -> Context(?callerCtx), Instruction(?invo), Context(?calleeCtx).
+
+// CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
+//   MergeStaticBasis(?callerCtx, ?invo).
+
+
+//// ===============================================================
+
+// //// Experiment with keeping old context for small SCCs (assumed to be
+// //// leaves in the call graph)
+// MergeMacro(?callerCtx, ?invo, ?hctx, ?value, ?calleeCtx),
+// CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
+//   MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+//   Value:Type[?value] = ?valuetype,
+//   CountOfTypesPerSCC[SCCForResolvedInvocation[?valuetype, ?invo]] > 5.
+
+// CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?callerCtx <-
+//   MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+//   Value:Type[?value] = ?valuetype,
+//   CountOfTypesPerSCC[SCCForResolvedInvocation[?valuetype, ?invo]] <= 5.
+
+// CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx -> Context(?callerCtx), Instruction(?invo), Context(?calleeCtx).
+
+// CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
+//   MergeStaticBasis(?callerCtx, ?invo).
+
+
+//// ===============================================================
+
+//// Heap contexts. Probably same treatment for each variation.
+
 MyRecordBasis(?ctx, ?value) <-
   RecordBasis(_, ?ctx, ?value).
 
 RecordMacro(?ctx, ?value, ?hctx),
 CachedRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value).
+
+
+
+
+
+
+
