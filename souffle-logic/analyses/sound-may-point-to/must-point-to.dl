@@ -32,8 +32,8 @@
 
   // RecordMacroMay...
   MustPointTo(?hctx, ?heap, ?ctx, ?var) :-
-    Var_DeclaringMethod(?var, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    Var_DeclaringMethod(?var, ?inMeth),
     Var_Type(?var, ?type),
     isReferenceType(?type),
     EmptyHeapContext(?hctx),
@@ -41,15 +41,15 @@
 
   // Move, but not Phi nodes, which are also represented as local assignments.
   MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignLocal_From(?insn, ?from),
     MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignLocal_From(?insn, ?from),
     !PhiNodeHead(?insn, _),
     AssignInstruction_To(?insn, ?to).
 
   // Cast assignments, handled similarly
   MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignCast_From(?insn, ?from),
     MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignCast_From(?insn, ?from),
     AssignInstruction_To(?insn, ?to).
 
   // Phi: shows that this is a must and not a may analysis
@@ -60,8 +60,8 @@
 
   // Store instructions: pretty much like in a may-point-to analysis
   FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-
-    StoreInstanceField_From(?insn, ?from),
     MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    StoreInstanceField_From(?insn, ?from),
     StoreInstanceField_Base(?insn, ?base),
     MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
     FieldInstruction_Signature(?insn, ?fld).
@@ -95,8 +95,8 @@
     FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
   MustPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
-    ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
-    AllCallee_ReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
+    AllCallee_ReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod),
+    ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod).
 
   FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?callerCtx, ?invo) :-
     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
@@ -163,9 +163,9 @@
   .decl MustPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?lastInsn:Instruction)
 
   MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?from),
     PhiNodeHead(_, ?headInsn),
-    AssignLocal_From(?headInsn, ?from),
-    MustPointTo(?hctx, ?heap, ?ctx, ?from).
+    AssignLocal_From(?headInsn, ?from).
 
   MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?nextInsn) :-
     MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?insn),
