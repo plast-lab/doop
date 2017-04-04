@@ -18,19 +18,19 @@ TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) <-
    VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
    TaintedVarPointsTo(?value, ?fromCtx, ?from).
 
-TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
    TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
    ImmutableHContext(?hctx).
 
-TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
    VarIsTaintedFromValue(?type, ?value, ?toCtx, ?to),
    ImmutableHContext(?hctx).
    
 
-CallTaintingMethod(?ctx, ?invocation) <-
-   TaintSourceMethod(?tomethod),
+CallTaintingMethod(?label, ?ctx, ?invocation) <-
+   TaintSourceMethod(?label, ?tomethod),
    Instruction:Method[?invocation] = ?inmethod,
    ApplicationClass(Method:DeclaringType[?inmethod]),
    MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
@@ -156,7 +156,7 @@ XYZ(?existingvalue, ?ctx, ?param) <-
   VarPointsTo(_, ?existingvalue, ?ctx, ?base).
 
 
-TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
 BaseValueTaintedFromParamValue(?newvalue, ?existingvalue) <-
   Value:Type[?existingvalue] = ?type,
   TaintedVarPointsTo(?value, ?ctx, ?param),
@@ -169,7 +169,7 @@ XYZ2(?type, ?heap, ?ctx, ?param) <-
   Value:Heap[?value] = ?heap,
   Value:Type[?value] = ?type.
 
-TaintedValueTransferred(?value, ?type, ?newvalue),
+TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) <-
    XYZ2(?type, ?oldvalue, ?ctx, ?from),
    TaintedVarPointsTo(?value, ?ctx, ?from),
@@ -204,22 +204,23 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
 /**
  * Sinks and leaks
  */
-LeakingSinkVariable(?invocation, ?ctx, ?var) <-
+LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
   MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
-  LeakingSinkMethod(?index, ?tomethod),
+  LeakingSinkMethodArg(?label, ?index, ?tomethod),
   ActualParam[?index, ?invocation] = ?var.
 
-LeakingTaintedInformation(?ctx, ?invocation, ?source) <-
+LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) <-
   TaintedVarPointsTo(?value, ?ctx, ?var),
-  LeakingSinkVariable(?invocation, ?ctx, ?var),
-  SourceFromTaintedValue[?value] = ?source.
+  LeakingSinkVariable(?destLabel, ?invocation, ?ctx, ?var),
+  SourceFromTaintedValue[?value] = ?source,
+  LabelFromSource(?source, ?sourceLabel).
 
 /**
  * Special Heap allocation on function call
  */
-TaintedValueIntroduced(?declaringType, ?invocation, ?type, ?value),
+TaintedValueIntroduced(?declaringType, ?invocation, ?type, ?label, ?value),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-   CallTaintingMethod(?ctx, ?invocation),
+   CallTaintingMethod(?label, ?ctx, ?invocation),
    ImmutableHContext(?hctx),
    TypeForReturnValue(?type, ?to, ?invocation),
    Method:DeclaringType[Instruction:Method[?invocation]] = ?declaringType.
