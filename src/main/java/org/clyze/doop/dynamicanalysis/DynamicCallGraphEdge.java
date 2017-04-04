@@ -45,7 +45,7 @@ public class DynamicCallGraphEdge implements DynamicFact {
         this.contextTo = contextTo;
 
         this.methodFrom = methodFrom;
-        this.lineNumberFrom = lineNumberFrom;
+        this.lineNumberFrom = DumpParsingUtil.parseLineNumber(lineNumberFrom);
         this.methodTo = methodTo;
     }
 
@@ -57,7 +57,7 @@ public class DynamicCallGraphEdge implements DynamicFact {
         for (int i = 1 ; i < frames.length; i ++) {
             edges.add(new DynamicCallGraphEdge(
                     DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i]),
-                    DumpParsingUtil.parseLineNumber(frames[i].getLineNumber()),
+                    frames[i].getLineNumber(),
                     DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame(frames[i-1]),
                     ContextInsensitive.get().getRepresentation(), ContextInsensitive.get().getRepresentation())
             );
@@ -91,6 +91,6 @@ public class DynamicCallGraphEdge implements DynamicFact {
 
     @Override
     public void write_fact(Database db) {
-        db.add(PredicateFile.DYNAMIC_CALL_GRAPH_EDGE, methodFrom, lineNumberFrom, methodTo);
+        db.add(PredicateFile.DYNAMIC_CALL_GRAPH_EDGE, methodFrom, lineNumberFrom, methodTo, contextFrom, contextTo);
     }
 }

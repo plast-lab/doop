@@ -144,5 +144,5 @@ _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMe
    (_DynamicCallGraphEdge(?methodId, _, _, _, _) ;
     _DynamicCallGraphEdge(_, _, ?methodId, _, _)),
     Method:Id(?method:?methodId),
-   !(DynamicCallGraphEdge(?method, _, _, _, _) ;
-     DynamicCallGraphEdge(_, _, ?method, _, _)).
+   !(DynamicCallGraphEdge(_, ?method, _,  _, _) ;
+     DynamicCallGraphEdge(_, _, _, _, ?method)).

@@ -1,6 +1,6 @@
 #include "common-transfer-methods.logic"
 
-LeakingSinkMethodArg(?label, ?index, ?method) <- LeakingSinkMethod(?label, ?method), FormalParam[?index, ?method] = _
+LeakingSinkMethodArg(?label, ?index, ?method) <- LeakingSinkMethod(?label, ?method), FormalParam[?index, ?method] = _.
 
 TaintSourceMethod("Location", "<android.location.Location: double getLatitude()>").
 TaintSourceMethod("Location", "<android.location.Location: double getLongitude()>").
