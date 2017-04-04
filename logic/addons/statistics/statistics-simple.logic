@@ -283,13 +283,21 @@ NewMetricMacro(61.4, _t75, "Mock Objects for Formals", MockObjFromFormal(_)).
 #endif
 
 #ifdef ANALYZE_MEMORY_DUMP
-NewMetricMacro(80.0, _t80, "Dynamic Heap Allocations", DynamicHeapAllocation(_,_)).
+NewMetricMacro(80.0, _t80, "Dynamic Heap Allocations (INS)", DynamicHeapAllocation(_,_)).
 NewMetricMacro(81.0, _t81, "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_)).
 NewMetricMacro(82.0, _t82, "Unmatched Heap Allocations..", UnmatchedDynamicNormalHeapAllocation(_,_,_,_)).
 NewMetricMacro(83.0, _t83, "..of which were reconstructed", ReconstructedUnmatchedDynamicHeapAllocation(_, _)).
 NewMetricMacro(84.0, _t84, "Contexts", DynamicContext(_)).
-NewMetricMacro(85.0, _t85, "Dynamic instance field points-to (SENS)", DynamicInstanceFieldPointsTo(_,_,_,_,_)).
-NewMetricMacro(86.0, _t86, "Dynamic static field points-to (SENS)", DynamicStaticFieldPointsTo(_,_,_)).
-NewMetricMacro(87.0, _t87, "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
-NewMetricMacro(88.0, _t88, "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_)).
+Stats:Simple:InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap) <- DynamicInstanceFieldPointsTo(?fld,_,?heap,_,?baseHeap).
+NewMetricMacro(85.0, _t85, "Dynamic instance field points-to (INS)", Stats:Simple:InsensDynamicInstanceFieldPointsTo(_,_,_)).
+NewMetricMacro(86.0, _t86, "Dynamic instance field points-to (SENS)", DynamicInstanceFieldPointsTo(_,_,_,_,_)).
+Stats:Simple:InsensDynamicStaticFieldPointsTo(?fld, ?heap) <- DynamicStaticFieldPointsTo(?fld,_,?heap).
+NewMetricMacro(87.0, _t87, "Dynamic static field points-to (INS)", Stats:Simple:InsensDynamicStaticFieldPointsTo(_,_)).
+NewMetricMacro(88.0, _t88, "Dynamic static field points-to (SENS)", DynamicStaticFieldPointsTo(_,_,_)).
+Stats:Simple:InsensDynamicArrayIndexPointsTo(?heap, ?baseHeap) <- DynamicArrayIndexPointsTo(_,?heap,_,?baseHeap).
+NewMetricMacro(89.0, _t89, "Dynamic array index points-to (INS)", Stats:Simple:InsensDynamicArrayIndexPointsTo(_,_)).
+NewMetricMacro(90.0, _t90, "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
+Stats:Simple:InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) <- DynamicCallGraphEdge(_,?toMeth,?invocation,_, ?fromMeth).
+NewMetricMacro(91.0, _t91, "Dynamic call graph edges (INS)", Stats:Simple:InsensDynamicCallGraphEdge(_,_,_)).
+NewMetricMacro(92.0, _t92, "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_,_,_)).
 #endif 
