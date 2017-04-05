@@ -5,4 +5,5 @@
 +InformationLabel("Log").
 +InformationLabel("OS").
 +InformationLabel("Personal").
++InformationLabel("Audio").
 +InformationLabel("Net").

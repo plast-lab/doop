@@ -153,7 +153,7 @@ LeakingSinkMethod("Telephony", "<android.telephony.SmsManager: void sendTextMess
 LeakingSinkMethod("Telephony", "<android.telephony.SmsManager: void sendDataMessage(java.lang.String,java.lang.String,short,byte[],android.app.PendingIntent,android.app.PendingIntent)>").
 LeakingSinkMethod("Telephony", "<android.telephony.SmsManager: void sendMultipartTextMessage(java.lang.String,java.lang.String,java.util.ArrayList,java.util.ArrayList,java.util.ArrayList)>").
 LeakingSinkMethod("Net", "<java.net.Socket: void connect(java.net.SocketAddress)>").
-LeakingSinkMethod("Telephony", "<android.os.Handler: boolean sendMessage(android.os.Message)>").
+LeakingSinkMethod("OS", "<android.os.Handler: boolean sendMessage(android.os.Message)>").
 LeakingSinkMethod("OS", "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putBoolean(java.lang.String,boolean)>").
 LeakingSinkMethod("OS", "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putFloat(java.lang.String,float)>").
 LeakingSinkMethod("OS", "<android.content.SharedPreferences$Editor: android.content.SharedPreferences$Editor putInt(java.lang.String,int)>").
