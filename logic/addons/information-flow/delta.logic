@@ -2,8 +2,9 @@
 +InformationLabel("Location").
 +InformationLabel("Telephony").
 +InformationLabel("Bundle").
-+InformationLabel("Log").
 +InformationLabel("OS").
 +InformationLabel("Personal").
-+InformationLabel("Audio").
++InformationLabel("IPC").
++InformationLabel("Persistence").
++InformationLabel("IO").
 +InformationLabel("Net").
