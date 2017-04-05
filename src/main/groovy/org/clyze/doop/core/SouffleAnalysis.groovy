@@ -106,6 +106,7 @@ class SouffleAnalysis extends DoopAnalysis {
                                                "${Doop.souffleLogicPath}/facts/import-entities.dl",
                                                "${Doop.souffleLogicPath}/facts/import-facts.dl",
                                                "${Doop.souffleLogicPath}/facts/post-process.dl",
+                                               "${Doop.souffleLogicPath}/facts/mock-heap.dl",
                                                "${Doop.souffleLogicPath}/facts/export.dl")
 
         if (options.TAMIFLEX.value) {
