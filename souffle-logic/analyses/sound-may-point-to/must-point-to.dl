@@ -6,6 +6,7 @@
   .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
   .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
   .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) 
+  .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)
   .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)
   .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
 }
@@ -32,7 +33,7 @@
 
   // RecordMacroMay...
   MustPointTo(?hctx, ?heap, ?ctx, ?var) :-
-    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    MayReachableMethodUnderMayContext_Prev(?ctx, ?inMeth),
     Var_DeclaringMethod(?var, ?inMeth),
     Var_Type(?var, ?type),
     isReferenceType(?type),
@@ -76,24 +77,25 @@
     LoadInstanceField_Base(?insn, ?base),
     MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
     LoadInstanceField_To(?insn, ?to).
+   .plan 1: (4,3,2,1,5)
 
   // Calls
   // TODO: prime/unprime access paths
   MustPointTo(?hctxBase, ?heapBase, ?calleeCtx, ?this) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    MustPointTo(?hctxBase, ?heapBase, ?callerCtx, ?base),
 	OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base),
-    ThisVar(?toMethod, ?this),
-    MustPointTo(?hctxBase, ?heapBase, ?callerCtx, ?base).
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    ThisVar(?toMethod, ?this).
 
   MustPointTo(?hctx, ?heap, ?calleeCtx, ?formal) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
-    FormalParam(?index, ?toMethod, ?formal),
+    MustPointTo(?hctx, ?heap, ?callerCtx, ?actual),
     ActualParam(?index, ?invo, ?actual),
-    MustPointTo(?hctx, ?heap, ?callerCtx, ?actual).
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    FormalParam(?index, ?toMethod, ?formal).
 
   Before_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?firstInsn) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     FirstInstructionOfMethod(?toMethod, ?firstInsn).
 
   MustPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
@@ -101,8 +103,8 @@
     ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod).
 
   FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?callerCtx, ?invo) :-
-    MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
-    AllCallee_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?toMethod).
+    AllCallee_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?toMethod),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo).
   
   // //// ====================================
   // //// frame rules, control-flow join rules
@@ -132,19 +134,26 @@
   .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) output
   VarMustAlias(?var1, ?var2, ?ctx) :-
     MustPointTo(?hctx, ?heap, ?ctx, ?var1),
-    MustPointTo(?hctx, ?heap, ?ctx, ?var2),
-    ?var1 != ?var2.
+    MustPointTo(?hctx, ?heap, ?ctx, ?var2).
   .plan 1: (2,1)
 
   VarMustAlias(?var1, ?var2, ?ctx) :-
     (MustPointTo(?hctx, [?var2, "var-object"], ?ctx, ?var1);
-     MustPointTo(?hctx, [?var1, "var-object"], ?ctx, ?var2)),
-    ?var1 != ?var2.
+     MustPointTo(?hctx, [?var1, "var-object"], ?ctx, ?var2)).
 
   .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)
   VarMustAliasThis(?var1, ?method, ?ctx) :-
     VarMustAlias(?var1, ?var2, ?ctx),
+    ?var1 != ?var2,
     ThisVar(?method, ?var2).
+
+  .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext) output
+
+  VarMustAliasRepresentative(?var, ?varRepr, ?ctx) :-
+    VarMustAlias(?var, ?varRepr, ?ctx),
+    ?valRepr = ord(?varRepr),
+    ?valRepr = max ord(v) : VarMustAlias(?var, v, ?ctx).
+
 
 /*
   .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
@@ -152,7 +161,7 @@
     MustPointTo(?hctx, ?heap, ?ctx, ?var),
     MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
     FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
-    ?ap = [?base, [nil, ?fld]].
+    ?ap = [?base, [?fld, nil]].
   .plan 1: (2,3,1)
   .plan 2: (3,2,1)
 */
@@ -198,9 +207,9 @@
 
   .decl UpToCalleeReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)
   UpToCalleeReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+	AllReturn_MustPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	FirstCalleeFromCallsite(?calleeCtx, ?meth),
-	AllReturn_MustPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+	FirstCalleeFromCallsite(?calleeCtx, ?meth).
 
   UpToCalleeReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
     UpToCalleeReturnMustPointTo(?hctx, ?heap, ?prevCalleeCtx, ?prevMeth),
@@ -232,9 +241,9 @@
 
   .decl UpToCalleeFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?meth:Method)
   UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth) :- 
+    AllReturn_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth),
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	FirstCalleeFromCallsite(?calleeCtx, ?meth),
-    AllReturn_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth).
+	FirstCalleeFromCallsite(?calleeCtx, ?meth).
 
   UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth) :- 
     UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?prevCalleeCtx, ?prevMeth),
