@@ -235,12 +235,11 @@
 
   AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) :-
     AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
-    isAssignCast_Insn(?insn),
-    AssignInstruction_To(?insn, ?to),
     AssignCast_From(?insn, ?from),
     AccessPath_BaseVar(?fromAp, ?from),
+    AssignInstruction_To(?insn, ?to),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
-   .plan 1: (5,4,2,1,3,6), 2: (6,4,5,2,1,3)
+   .plan 1: (3,2,1,4,5), 2: (5,2,3,1,4)
 
   .decl PhiNodeVarWithResolvedMayPointTo(?ctx:MayContext, ?var:Var)
 
@@ -287,17 +286,17 @@
     StoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
     StoreInstanceField_Base(?insn, ?base),
     FieldInstruction_Signature(?insn, ?fld),
-	?ap = [?base, [nil, ?fld]].
+	?ap = [?base, [?fld, nil]].
 
   // store instructions, strong update of AccessPathMayPointTo info for
   // an access path with a must-aliased base.
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     StoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
     StoreInstanceField_Base(?insn, ?base),
-    FieldInstruction_Signature(?insn, ?fld),
     (MustPointToAnalysis.VarMustAlias(?base, ?base2, ?ctx);
      MustAliasAnalysis.MustAlias([?base, nil], [?base2, nil], ?ctx, ?insn)),
-	?ap = [?base2, [nil, ?fld]].
+    FieldInstruction_Signature(?insn, ?fld),
+	?ap = [?base2, [?fld, nil]].
 
   // weak update of access paths with the same field but different base
   // TODO extend to longer access paths
@@ -305,10 +304,10 @@
   AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?insn),
     StoreFromVarMayPointTo(?hctx2, ?heap2, ?ctx, ?insn),
-    StoreInstanceField_Base(?insn, ?base),
     FieldInstruction_Signature(?insn, ?fld),
     SingleFieldAccessPath(?fld, ?ap),
 	AccessPath_Length(?ap, ?len), ?len = 2.
+   .plan 1: (2,1,3,4,5), 2: (4,5,3,2,1), 3: (5,4,3,2,1)
 
   // similar for static stores 
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
@@ -323,7 +322,7 @@
     LoadInstanceField_Base(?insn, ?base),
     LoadInstanceField_To(?insn, ?to),
     FieldInstruction_Signature(?insn, ?fld),
-	?ap = [ ?base, [nil, ?fld] ].
+	?ap = [ ?base, [?fld, nil] ].
 
   // static load instructions
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
@@ -353,15 +352,24 @@
     LoadStaticField_To(?insn, ?to),
     Var_DeclaringMethod(?to, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth).
-   .plan 1:(5,4,3,2,1)
+   .plan 1: (5,4,3,2,1)
 
   FinalFieldMayPointTo(?hctx, ?heap, ?fld) :-
-    InitialMayContext(?initCtx),
     AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?meth),
-	?ap = [ ?var, [ ?rest, ?fld ] ], ?rest = ?rest,
-    (ThisVar(?meth, ?var);
-     MustPointToAnalysis.VarMustAliasThis(?var)),
+    InitialMayContext(?initCtx),
+    ThisVar(?meth, ?var),
+	?ap = [ ?var, [ ?fld, nil ] ],
     Method_SimpleName(?meth, "<init>"),
+    Field_Modifier(?mod, ?fld),
+	Modifier_final(?mod).
+
+  // Almost same rule as above, but different optimization
+  FinalFieldMayPointTo(?hctx, ?heap, ?fld) :-
+    AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?meth),
+    MustPointToAnalysis.VarMustAliasThis(?var, ?meth, ?initCtx),
+    Method_SimpleName(?meth, "<init>"),
+    InitialMayContext(?initCtx),
+	?ap = [ ?var, [ ?fld, nil ] ],
     Field_Modifier(?mod, ?fld),
 	Modifier_final(?mod).
 
@@ -390,7 +398,7 @@
     ?ctxDepth < ?maxCtxDepth,
     StaticOrSpecialInvocationInMethod(?invo, ?inMeth),
     MethodInvocation_Method(?invo, ?toMeth).
-  //   .plan 1: (2,1,3,4,5) // caused a crash!
+   .plan 1: (2,1,3,4,5) // caused a crash!
 
   // special method invocation "this" variable assignment
   .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
@@ -432,8 +440,8 @@
     ActualParam(?index, ?invo, ?actual).
 
   MayPointTo(?hctx, ?heap, ?calleeCtx, ?formal) :-
-    InvocationActualFormalAssignment(?calleeCtx, ?formal, ?callerCtx, ?actual),
-    MayPointTo(?hctx, ?heap, ?callerCtx, ?actual).
+    MayPointTo(?hctx, ?heap, ?callerCtx, ?actual),
+    InvocationActualFormalAssignment(?calleeCtx, ?formal, ?callerCtx, ?actual).
 
   // args and this for composite access paths.
   // First, place an order to the access path factory to create them, if
@@ -492,7 +500,7 @@
 
   // Handle constructors and initialization to null.
   //RecordMacroMay(?ctx, ?heap, ?hctx),
-  Before_AccessPathMayPointTo(?hctx, ?nullHeap, [?this, [nil, ?fld]], ?ctx, ?firstInsn) :-
+  Before_AccessPathMayPointTo(?hctx, ?nullHeap, [?this, [?fld, nil]], ?ctx, ?firstInsn) :-
     MayReachableMethodUnderMayContext(?ctx, ?ctorMethod),
     ThisVarOfConstructor(?ctorMethod, ?this),
     FirstInstructionOfMethod(?ctorMethod, ?firstInsn),
@@ -519,8 +527,8 @@
     AssignReturnValue(?invo, ?to).
 
   MayPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
-    ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
-    AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod).
+    AllCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod),
+    ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod).
 
   // return access paths
 
@@ -529,39 +537,40 @@
   // order to do a correct access path rebasing, we conservatively limit our
   // attention to the case that all return statements use the same var.
   AccessPathShouldBeRebased(?ap, ?var, ?to) :-
-    ReturnValueOfResolvedCallAssignedTo(_, ?to, ?calleeCtx, ?toMethod),
     AllReturn_AccessPathMayPointTo(_, _, ?ap, ?calleeCtx, ?toMethod),
+    ReturnValueOfResolvedCallAssignedTo(_, ?to, ?calleeCtx, ?toMethod),
     AllReturn_SameRetVar(?toMethod, ?var),
     AccessPath_BaseVar(?ap, ?var).
 
   AccessPathShouldBeRebased(?formalAp, ?formal, ?actual) :-
-    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
-    ActualParam(?index, ?invo, ?actual),
-    FormalParam(?index, ?toMethod, ?formal),
     AllReturn_AccessPathMayPointTo(_, _, ?formalAp, ?calleeCtx, ?toMethod),
-    AccessPath_BaseVar(?formalAp, ?formal).
-   .plan 1: (4,1,2,3,5)
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
+    AccessPath_BaseVar(?formalAp, ?formal),
+    ActualParam(?index, ?invo, ?actual),
+    FormalParam(?index, ?toMethod, ?formal).
+   .plan 1: (3,1,2,4,5)
 
   AccessPathShouldBeRebased(?thisAp, ?this, ?base) :-
+    AllReturn_AccessPathMayPointTo(_, _, ?thisAp, ?calleeCtx, ?toMethod),
     MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
      (VirtualMethodInvocation_Base(?invo, ?base);
       SpecialMethodInvocation_Base(?invo, ?base)),
     ThisVar(?toMethod, ?this),
-    AllReturn_AccessPathMayPointTo(_, _, ?thisAp, ?calleeCtx, ?toMethod),
     AccessPath_BaseVar(?thisAp, ?this).
+   .plan 1: (5,4,2,1,3)
 
   // Now collect the rebasing transformations
   .decl AccessPathRebasedForReturn(?callerAp:AccessPath, ?calleeAp:AccessPath, ?callerCtx:MayContext, ?invo:MethodInvocation)
   AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
     MayCallGraphEdge_Prev(_, ?toMethod, ?callerCtx, ?invo),
-    AssignReturnValue(?invo, ?to),
     AllReturn_SameRetVar(?toMethod, ?ret),
+    AssignReturnValue(?invo, ?to),
     RebaseCompositeAccessPath(?calleeAp, ?ret, ?to, ?callerAp).
 
   AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
     MayCallGraphEdge_Prev(_, ?toMethod, ?callerCtx, ?invo),
-    FormalParam(?index, ?toMethod, ?formal),
     ActualParam(?index, ?invo, ?actual),
+    FormalParam(?index, ?toMethod, ?formal),
     RebaseCompositeAccessPath(?calleeAp, ?formal, ?actual, ?callerAp).
 
   AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo) :-
@@ -569,25 +578,25 @@
     ThisVar(?toMethod, ?this),
     (VirtualMethodInvocation_Base(?invo, ?base);
      SpecialMethodInvocation_Base(?invo, ?base)),
-    RebaseCompositeAccessPath(?calleeAp, ?this, ?base, ?callerAp).
+    RebaseCompositeAccessPath(?calleeAp, ?this, ?base, ?callerAp).     
 
   AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo) :-
-    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?toMethod),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPathRebasedForReturn(?callerAp, ?calleeAp, ?callerCtx, ?invo).
 
   // Let's not forget static fields and unchanged access paths
   AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?callerCtx, ?invo) :-
-    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?toMethod),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPath_ContainsStaticField(?staticAp, _).   
 
   // This is quite expensive in principle, but is mostly restricted to the
   // access paths that we haven't decided are safe to ignore (propagated
   // by frame rule) based on the pre-analysis.
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?callerCtx, ?invo) :-
-    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AllCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?calleeCtx, ?toMethod),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPath_BaseVar(?ap, ?baseVar),
     !Var_DeclaringMethod(?baseVar, ?toMethod).
 
@@ -600,19 +609,51 @@
     AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn),
     (AccessPath_IsComposite(?ap1);
      AccessPath_ContainsStaticField(?ap1, _)).
+   .plan 1: (2,1,3)
 
-  .decl OptAccessPathWithVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var, ?fld:Field, ?ctx:MayContext, ?insn:Instruction) output
+  .decl RepresentativeAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var, ?fld:Field, ?ctx:MayContext, ?insn:Instruction) 
 
-  OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?var, ?fld, ?ctx, ?insn) :-
-    AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
-    ?ap = [?var, [nil, ?fld]].
-    
-  ComputedAccessPath(?ap2),
-  AccessPathMayPointTo(?hctx, ?heap, ?ap2, ?ctx, ?insn) :-
-    OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?base1, ?fld, ?ctx, ?insn),
-    MustPointToAnalysis.VarMustAlias(?base1, ?base2, ?ctx),
-    ?ap2 = [?base2, [nil, ?fld]].
-   .plan 1: (2,1)
+  RepresentativeAccessPathMayPointTo(?hctx, ?heap, ?varRepr, ?fld, ?ctx, ?insn) :-
+    AccessPathMayPointTo(?hctx, ?heap, [?var, [?fld, nil]], ?ctx, ?insn),
+    MustPointToAnalysis.VarMustAliasRepresentative(?var, ?varRepr, ?ctx).
+
+  ComputedAccessPath([?var, [?fld, nil]]),
+  AccessPathMayPointTo(?hctx, ?heap, [?var, [?fld, nil]], ?ctx, ?insn) :-
+    RepresentativeAccessPathMayPointTo(?hctx, ?heap, ?varRepr, ?fld, ?ctx, ?insn),
+    MustPointToAnalysis.VarMustAliasRepresentative(?var, ?varRepr, ?ctx).
+
+    //// Below is the best result of the insane optimization efforts I
+    //// made before introducing representatives for VarMustAlias. Still way too
+    //// slow.
+    //   .decl OptAccessPathWithVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var, ?fld:Field, ?ctx:MayContext, ?insn:Instruction)
+
+    //   OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?var, ?fld, ?ctx, ?insn) :-
+    //     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
+    //     ?ap = [?var, [?fld, nil]].
+
+    //   .decl Opt2AccessPathWithVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var, ?fld:Field, ?ctx:MayContext, ?insn:Instruction) 
+
+    //   Opt2AccessPathWithVarMayPointTo(?hctx, ?heap, ?base2, ?fld, ?ctx, ?insn) :-
+    //     OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?base1, ?fld, ?ctx, ?insn),
+    //     MustPointToAnalysis.VarMustAlias(?base2, ?base1, ?ctx).
+    // // No longer recursive
+    // //   .plan 1: (2,1)
+
+    //   AccessPathMayPointTo(?hctx, ?heap, [?base2, [?fld, nil]], ?ctx, ?insn) :-
+    //     Opt2AccessPathWithVarMayPointTo(?hctx, ?heap, ?base2, ?fld, ?ctx, ?insn).
+  
+    //   .decl OptAccessPathWithVarExists(?fld:Field, ?base:Var, ?ctx:MayContext)
+    //   OptAccessPathWithVarExists(?fld, ?base, ?ctx) :-
+    //     OptAccessPathWithVarMayPointTo(_, _, ?base, ?fld, ?ctx, _).
+    //   .decl ComputedVarFieldAP(?var:Var, ?fld:Field) output
+    //   ComputedVarFieldAP(?base2, ?fld) :-
+    //     OptAccessPathWithVarExists(?fld, ?base1, ?ctx),
+    //     MustPointToAnalysis.VarMustAlias(?base2, ?base1, ?ctx).
+    // //   .plan 1: (2,1)
+
+    //   ComputedAccessPath([?base, [?fld, nil]]) :-
+    //     ComputedVarFieldAP(?base, ?fld).
+
 
   // //// ====================================
   // //// Weakening rules
@@ -731,7 +772,7 @@
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     LibraryCollectionStoreOperation(?insn),
     AccessPath_IsCollection(?ap),
-	?ap = [?base, [nil, "dummyCollection"]],
+	?ap = [?base, ["dummyCollection", nil]],
     Var_Type(?base, ?type),
     isArrayType(?type).
   
@@ -740,7 +781,7 @@
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     StoreArrayIndex_Base(?insn,_),
     AccessPath_IsCollection(?ap),
-	?ap = [?base, [nil, "dummyCollection"]],
+	?ap = [?base, ["dummyCollection", nil]],
     Var_Type(?base, ?type),
     LibraryCollectionType(?type).
 
@@ -905,8 +946,8 @@
   // For the legit, official main of a standard Java program, provide
   // dummy argument (String[] args).
   MayPointTo(?hctx, ?argsArray, ?ctx, ?args),
-  ComputedAccessPath([?args, [nil, "dummyCollection"]]),
-  AccessPathMayPointTo(?hctx, ?argHeap, [?args, [nil, "dummyCollection"]], ?ctx, ?firstInsn) :-
+  ComputedAccessPath([?args, ["dummyCollection", nil]]),
+  AccessPathMayPointTo(?hctx, ?argHeap, [?args, ["dummyCollection", nil]], ?ctx, ?firstInsn) :-
     MainClass(?mainClass),
     Method_DeclaringType(?mainMethod, ?mainClass),
     MayReachableMethodUnderMayContext(?ctx, ?mainMethod),
@@ -987,6 +1028,7 @@
     UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?prevReturn),
     NextReturn(?prevReturn, ?return),
     Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return).
+   .plan 1: (3,2,1)
 
   .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:Method)
   AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
@@ -1039,9 +1081,9 @@
 
   .decl UpToCallee_ReturnMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeCtx:MayContext, ?meth:Method)
   UpToCallee_ReturnMayPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	FirstCalleeFromCallsite(?calleeCtx, ?meth),
-	AllReturn_MayPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+	FirstCalleeFromCallsite(?calleeCtx, ?meth).
 
   UpToCallee_ReturnMayPointTo(?hctx1, ?heap1, ?calleeCtx, ?meth),
   UpToCallee_ReturnMayPointTo(?hctx2, ?heap2, ?calleeCtx, ?meth) :-
@@ -1057,9 +1099,9 @@
   // same (all callee) reasoning for access paths
   .decl UpToCallee_ReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?calleeAp:AccessPath, ?calleeCtx:MayContext, ?meth:Method)
   UpToCallee_ReturnAccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth) :-
+	AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth),
     MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
-	FirstCalleeFromCallsite(?calleeCtx, ?meth),
-	AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?meth).
+	FirstCalleeFromCallsite(?calleeCtx, ?meth).
 
   UpToCallee_ReturnAccessPathMayPointTo(?hctx1, ?heap1, ?calleeAp, ?calleeCtx, ?meth),
   UpToCallee_ReturnAccessPathMayPointTo(?hctx2, ?heap2, ?calleeAp, ?calleeCtx, ?meth) :-
@@ -1204,24 +1246,26 @@
   
   
   AccessPath_IsSimple(?ap) :-
-  ComputedAccessPath(?ap),
-  ?ap = [ ?base, nil ], ?base = ?base. // suppress warning
+    ComputedAccessPath(?ap),
+    ?ap = [ ?base, nil ], ?base = ?base. // suppress warning
   
   AccessPath_IsComposite(?ap) :-
     ComputedAccessPath(?ap),
-    ?ap = [ ?base, [ ?rest, ?fld] ],
+    ?ap = [ ?base, [ ?fld, ?rest] ],
     ?base = ?base, ?fld = ?fld, ?rest = ?rest.
-  
-  FieldListContains(?fld, ?fldList) :-
+
+  .decl ComputedFieldList(?fldList:AccessPathSuffix)
+  ComputedFieldList(?fldList) :-
     ComputedAccessPath(?ap),
-    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-    ?fldList = [ ?rest, ?fld ], ?rest = ?rest. // suppress warning
-  
+    ?ap = [ ?base, ?fldList ], ?base = ?base. // suppress warning
+
+  ComputedFieldList(?rest) :-
+    ComputedFieldList(?fldList),
+    ?fldList = [ ?fld, ?rest ], ?fld = ?fld.
+
   FieldListContains(?fld, ?fldList) :-
-    ComputedAccessPath(?ap),
-    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-    ?fldList = [ ?rest, ?fld ], ?rest = ?rest, // suppress warning
-    FieldListContains(?fld, ?rest).
+    ComputedFieldList(?fldList),
+    ?fldList = [ ?fld, ?rest ], ?rest = ?rest. // suppress warning
   
   AccessPath_ContainsField(?fld, ?ap) :-
     ComputedAccessPath(?ap),
@@ -1230,9 +1274,8 @@
   
   FieldList_Length(nil, 0).
   FieldList_Length(?fldList, ?len+1) :-
-    ComputedAccessPath(?ap),
-    ?ap = [ ?base, ?fldList ], ?base = ?base, // suppress warning
-    ?fldList = [ ?rest, ?fld ], ?fld = ?fld, // suppress warning
+    ComputedFieldList(?fldList),
+    ?fldList = [ ?fld, ?rest ], ?fld = ?fld, // suppress warning
     FieldList_Length(?rest, ?len).
   
   AccessPath_Length(?ap, ?len+1) :-
@@ -1247,17 +1290,17 @@
   
   SingleFieldAccessPath(?fld, ?ap) :-
     ComputedAccessPath(?ap),
-    ?ap = [ ?base, [ nil, ?fld ] ], ?base = ?base, // suppress
+    ?ap = [ ?base, [ ?fld, nil ] ], ?base = ?base, // suppress
     Var_Type(?base, _). // to be sure it's a var
   
   DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
     ComputedAccessPath(?ap),
-    ?ap = [ ?fld1, [ nil, ?fld2 ] ], 
+    ?ap = [ ?fld1, [ ?fld2, nil ] ], 
     AccessPath_ContainsStaticField(?ap, ?fld1).
   
   DoubleFieldAccessPath(?fld1, ?fld2, ?ap) :-
     ComputedAccessPath(?ap),
-    ?ap = [ ?var, [ [ nil, ?fld1 ], ?fld2 ] ], ?var = ?var, // suppress
+    ?ap = [ ?var, [ ?fld2, [ ?fld1, nil ] ] ], ?var = ?var, // suppress
     Var_Type(?var, _). // to be sure it's a var
   
   AccessPath_ContainsStaticField(?ap, ?fld) :-
@@ -1284,10 +1327,10 @@
   .decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath) output
     
   // If some access path is to be rebased, its non-var prefixes are as well.
-  AccessPathShouldBeRebased(?newAp , ?from, ?to) :-
+  AccessPathShouldBeRebased(?newAp, ?from, ?to) :-
     AccessPathShouldBeRebased(?ap, ?from, ?to),
-    ?ap = [ ?from, [ [ ?rest, ?nextFld ], ?lastFld ] ], ?lastFld = ?lastFld, // suppress warning
-    ?newAp = [ ?from, [ ?rest, ?nextFld ] ].
+    ?ap = [ ?from, [ ?lastFld, [ ?nextFld, ?rest] ] ], ?lastFld = ?lastFld, // suppress warning
+    ?newAp = [ ?from, [ ?nextFld, ?rest ] ].
   
   ComputedAccessPath(?newAp),
   RebaseCompositeAccessPath(?ap, ?from, ?to, ?newAp) :-
@@ -1296,7 +1339,7 @@
     ?ap = [?from, ?rest].
   
   AccessPath_IsCollection(?ap) :-
-    ?ap = [?base,  [nil, "dummyCollection"]],
+    ?ap = [?base,  ["dummyCollection", nil]],
     Var_Type(?base, ?type),
     (isArrayType(?type);
      LibraryCollectionType(?type)).
@@ -1333,7 +1376,7 @@
   // collection loads and stores. For arrays and library collections.
   // initialize arrays and library collections to null at allocation
   //RecordMacroMay(?ctx, ?heap, ?hctx),
-  AccessPathMayPointTo(?hctx, ?nullHeap, [?to, [nil, "dummyCollection"]], ?ctx, ?insn) :-
+  AccessPathMayPointTo(?hctx, ?nullHeap, [?to, ["dummyCollection", nil]], ?ctx, ?insn) :-
     AssignHeapAllocation(?arrayHeap, ?to, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth),
     HeapAllocation_Type(?arrayHeap, ?type),
@@ -1349,7 +1392,7 @@
     StoreCollection_From(?insn, ?from).
   
   .decl TentativeCollectionBaseApMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
-  TentativeCollectionBaseApMayPointTo(?hctx, ?heap, [?base, [nil, "dummyCollection"]], ?ctx, ?insn) :-
+  TentativeCollectionBaseApMayPointTo(?hctx, ?heap, [?base, ["dummyCollection", nil]], ?ctx, ?insn) :-
     CollectionStoreFromVarMayPointTo(?hctx, ?heap, ?ctx, ?insn),
     StoreCollection_Base(?insn, ?base).
   
@@ -1367,7 +1410,7 @@
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     LoadCollection_Base(?insn, ?base),
     AccessPath_IsCollection(?ap),
-    ?ap = [?base, [nil, "dummyCollection"]],
+    ?ap = [?base, ["dummyCollection", nil]],
     LoadCollection_To(?insn, ?to).
 	
   // //// END handling of collections
@@ -1505,7 +1548,7 @@ LoadCollection_Base(?invo, ?var) :-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth(5).
+MaxMayContextDepth(2).
 
 AccessPath_MaxLength(3).
 
@@ -1516,12 +1559,14 @@ SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase3 = SoundMay<DummyMustPointTo>
+.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
+//.init SoundMayPhase3 = SoundMay<DummyMustPointTo>
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+/*
 .init SoundMayPhase4 = SoundMay<DummyMustPointTo>
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
@@ -1534,26 +1579,25 @@ SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase4.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
-.init SoundMayPhase6 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase6 = SoundMay<DummyMustPointTo>
 SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase6.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase5.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase7 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase7 = SoundMay<DummyMustPointTo>
 SoundMayPhase7.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase6.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase7.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase6.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase8 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase8 = SoundMay<DummyMustPointTo>
 SoundMayPhase8.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase7.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase8.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase7.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase9 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase9 = SoundMay<DummyMustPointTo>
 SoundMayPhase9.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase8.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase9.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
@@ -1577,12 +1621,21 @@ InitialRootMethodForMayAnalysis(?meth) :-
 .type MayContext = [ ?invo:MethodInvocation, ?rest:MayContext ]
 .type MayHeapContext
 
+.type AccessPathBase = Var | Field   // the latter for static fields
+.type AccessPathSuffix = [ ?fld:Field, ?rest:AccessPathSuffix ] 
+.type AccessPath = [ ?base:AccessPathBase, ?flds:AccessPathSuffix ]
+// This is the main entity that represents Access Paths.
+// Access Paths are expressions of the form: v(.fi)* or fi.(.fi)*, for static first field
+// In our Field list, the last field is first. I.e., [ var, [fld1, [fld2, [fld3, nil]]]] is
+// the access path var.fld3.fld2.fld1
 
+/*
 .type AccessPathBase = Var | Field   // the latter for static fields
 .type AccessPathSuffix = [ ?base:AccessPathSuffix, ?fld:Field ] 
 // This is the main entity that represents Access Paths.
 // Access Paths are expressions of the form: v(.fi)* or fi.(.fi)*, for static first field
 .type AccessPath = [ ?base:AccessPathBase, ?flds:AccessPathSuffix ]
+*/
 
 //// END type definitions
 //// ====================================
@@ -1664,12 +1717,12 @@ InitialComputedAccessPath([?var, nil]) :-
 // Invariant: all computed access paths are type safe: the fields
 // exist in the static type of the prefix. REVIEW: This may (rarely)
 // prevent detection of valid aliasing.
-InitialComputedAccessPath([?base, [ nil, ?fld ] ]) :-
+InitialComputedAccessPath([?base, [ ?fld, nil ] ]) :-
   LoadInstanceField_Base(?insn, ?base),
   FieldInstruction_Signature(?insn, ?fld),
   Field_Type(?fld, ?type),
   isReferenceType(?type).
-InitialComputedAccessPath([?base, [ nil, ?fld ] ]) :-
+InitialComputedAccessPath([?base, [ ?fld, nil ] ]) :-
   StoreInstanceField_Base(?insn, ?base),
   FieldInstruction_Signature(?insn, ?fld),
   Field_Type(?fld, ?type),
