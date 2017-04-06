@@ -20,10 +20,14 @@
 
 .decl isValue(?value:Value)
 
-.decl Value_Heap(?value:Value, ?heap:HeapAllocation)
+.decl Value_isHeap(?value:Value)
+.decl Value_isMock(?value:Value)
+
+// Value_Num maps each numeric constant to a value while
+// also prepending it with *num-constant-* to distinguish it
+// from heap allocations that share the same string value.
 .decl Value_Num(?value:Value, ?const:NumConstant)
 
-.decl Value_isHeap(?value:Value)
 .decl Value_isNonHeap(?value:Value)
 
 .decl Value_Type(?value:Value, ?type:Type)

@@ -9,7 +9,7 @@ InformationLabel(?x), InformationLabel:Id(?x:?id) -> string(?id).
 TaintSourceMethod(?label, ?method) -> Method(?method), InformationLabel(?label).
 
 LeakingSinkMethodArg(?label, ?index, ?method) ->
-   InformationLabel(?label), Method(?method), int[32](?index).
+   InformationLabel(?label), Method(?method), ParamIndex(?index).
 
 LeakingSinkVariable(?label, ?tomethod, ?ctx, ?var) ->
   InformationLabel(?label), MethodInvocation(?tomethod), Var(?var), Context(?ctx).

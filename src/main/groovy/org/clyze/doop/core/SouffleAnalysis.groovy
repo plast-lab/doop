@@ -106,6 +106,7 @@ class SouffleAnalysis extends DoopAnalysis {
                                                "${Doop.souffleLogicPath}/facts/import-entities.dl",
                                                "${Doop.souffleLogicPath}/facts/import-facts.dl",
                                                "${Doop.souffleLogicPath}/facts/post-process.dl",
+                                               "${Doop.souffleLogicPath}/facts/mock-heap.dl",
                                                "${Doop.souffleLogicPath}/facts/export.dl")
 
         if (options.TAMIFLEX.value) {
@@ -201,10 +202,10 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisChecksum = CheckSum.checksum(new File("${outDir}/${name}.dl"), DoopAnalysisFactory.HASH_ALGO)
         def analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
-        if (!analysisCacheDir.exists()) {
+        if (!analysisCacheDir.exists() || options.SOUFFLE_DEBUG) {
             logger.info "Compiling datalog to produce C++ program and executable with souffle"
             def commandLine = "souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt"
-            if (options.SOUFFLE_DEBUG_REPORT.value)
+            if (options.SOUFFLE_DEBUG.value)
                 commandLine += " -r$outDir.absolutePath/report.html"
             logger.info "Souffle command: ${commandLine}"
 

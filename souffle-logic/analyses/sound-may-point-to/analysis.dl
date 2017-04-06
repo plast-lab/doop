@@ -196,27 +196,28 @@
 
   // Move, but not Phi nodes, which are also represented as local assignments.
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    AssignLocal_From(?insn, ?from),
     MayPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignLocal_From(?insn, ?from),
     !PhiNodeHead(?insn, _),
     AssignInstruction_To(?insn, ?to).
 
   // Place an order to the access path factory for the creation of
   // access paths resulting from the Move instruction. Also for Phi nodes.
   AccessPathShouldBeRebased(?ap, ?from, ?to) :-
-    AssignLocal_From(?insn, ?from),
     AccessPathMayPointTo(_, _, ?ap, _, ?insn),
+    AssignLocal_From(?insn, ?from),
     AccessPath_BaseVar(?ap, ?from),
     AssignInstruction_To(?insn, ?to).
+   .plan 1: (3,2,1,4)
 
   AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) :-
-    AssignLocal_From(?insn, ?from),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
+    AssignLocal_From(?insn, ?from),
     !PhiNodeHead(?insn, _),
     AccessPath_BaseVar(?fromAp, ?from),
     AssignInstruction_To(?insn, ?to),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
-  //   .plan 1: (3,2,1,4,5), 2: (5,3,1,4,2)  // another core dump
+   .plan 1: (3,2,1,4,5), 2: (5,3,2,1,4) 
 
   // casts are like local assignments
   //// TODO: filter our badly typed values
@@ -226,18 +227,20 @@
     AssignInstruction_To(?insn, ?to).
 
   AccessPathShouldBeRebased(?ap, ?from, ?to) :-
-    AssignCast_From(?insn, ?from),
     AccessPathMayPointTo(_, _, ?ap, _, ?insn),
+    AssignCast_From(?insn, ?from),
     AccessPath_BaseVar(?ap, ?from),
     AssignInstruction_To(?insn, ?to).
+   .plan 1: (3,2,1,4)
 
   AccessPathMayPointTo(?hctx, ?heap, ?toAp, ?ctx, ?insn) :-
+    AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
     isAssignCast_Insn(?insn),
     AssignInstruction_To(?insn, ?to),
     AssignCast_From(?insn, ?from),
-    AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
     AccessPath_BaseVar(?fromAp, ?from),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
+   .plan 1: (5,4,2,1,3,6), 2: (6,4,5,2,1,3)
 
   .decl PhiNodeVarWithResolvedMayPointTo(?ctx:MayContext, ?var:Var)
 
@@ -264,7 +267,8 @@
     AccessPath_BaseVar(?fromAp, ?from),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?fromAp, ?ctx, ?insn),
     RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
-
+   .plan 1: (5,3,4,7,6,1,2), 2: (6,1,5,3,2,7,4), 3: (7,3,5,6,1,2,4)
+   
   // Load and Store instructions
 
   .decl StoreFromVarMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?insn:Instruction)
@@ -344,11 +348,12 @@
 	Modifier_final(?mod).
 
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
-    LoadStaticField_To(?insn, ?to),
-    FieldInstruction_Signature(?insn, ?fld),
     StaticFinalFieldMayPointTo(?hctx, ?heap, ?fld),
+    FieldInstruction_Signature(?insn, ?fld),
+    LoadStaticField_To(?insn, ?to),
     Var_DeclaringMethod(?to, ?inMeth),
     MayReachableMethodUnderMayContext(?ctx, ?inMeth).
+   .plan 1:(5,4,3,2,1)
 
   FinalFieldMayPointTo(?hctx, ?heap, ?fld) :-
     InitialMayContext(?initCtx),
@@ -400,8 +405,8 @@
 
   .decl OptPotentialVirtualMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
   OptPotentialVirtualMethodBase(?hctx, ?heap, ?ctx, ?invo) :-
-    VirtualMethodInvocation_Base(?invo, ?base),
-    MayPointTo(?hctx, ?heap, ?ctx, ?base).
+    MayPointTo(?hctx, ?heap, ?ctx, ?base),
+    VirtualMethodInvocation_Base(?invo, ?base).
 
   // virtual method invocation
   //MergeMacroMay(?ctx, ?invo, ?hctx, ?heap, ?calleeCtx),
@@ -417,6 +422,7 @@
     MaxMayContextDepth(?maxCtxDepth),
     MayContextDepth(?ctx, ?ctxDepth),
     ?ctxDepth < ?maxCtxDepth.
+   .plan 1: (8,7,1,2,3,4,5,6)
 
   // args
   .decl InvocationActualFormalAssignment(?calleeCtx:MayContext, ?formal:Var, ?callerCtx:MayContext, ?actual:Var) 
@@ -468,10 +474,11 @@
    .plan 1: (4,3,1,2)
 
   Before_AccessPathMayPointTo(?hctx, ?heap, ?calleeAp, ?calleeCtx, ?firstInsn) :-
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo),
     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?callerAp, ?callerCtx, ?invo),
     AccessPathRebasedForCall(?calleeAp, ?callerAp, ?callerCtx, ?invo),
     FirstInstructionOfMethod(?toMethod, ?firstInsn).
+   .plan 1: (2,1,3,4), 2: (3,1,2,4) 
 
   // Let's not forget static fields and unchanged access paths
   Before_AccessPathMayPointTo(?hctx, ?heap, ?staticAp, ?calleeCtx, ?firstInsn) :-
@@ -479,6 +486,7 @@
     MayCallGraphEdge(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
     AccessPath_ContainsStaticField(?staticAp, _),
     FirstInstructionOfMethod(?toMethod, ?firstInsn).
+   .plan 1: (2,1,3,4), 2: (3,1,2,4)
 
   ///// POINT1--unchanged access paths code goes here
 
@@ -528,10 +536,11 @@
 
   AccessPathShouldBeRebased(?formalAp, ?formal, ?actual) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
-    FormalParam(?index, ?toMethod, ?formal),
     ActualParam(?index, ?invo, ?actual),
+    FormalParam(?index, ?toMethod, ?formal),
     AllReturn_AccessPathMayPointTo(_, _, ?formalAp, ?calleeCtx, ?toMethod),
     AccessPath_BaseVar(?formalAp, ?formal).
+   .plan 1: (4,1,2,3,5)
 
   AccessPathShouldBeRebased(?thisAp, ?this, ?base) :-
     MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, _, ?invo),
@@ -603,7 +612,7 @@
     OptAccessPathWithVarMayPointTo(?hctx, ?heap, ?base1, ?fld, ?ctx, ?insn),
     MustPointToAnalysis.VarMustAlias(?base1, ?base2, ?ctx),
     ?ap2 = [?base2, [nil, ?fld]].
-  .plan 1: (2,1)
+   .plan 1: (2,1)
 
   // //// ====================================
   // //// Weakening rules
@@ -613,21 +622,21 @@
     InitialMayContext(?initCtx),
     Var_DeclaringMethod(?var, ?method),
     MayReachableMethodUnderMayContext(?ctx, ?method).
-	.plan 1: (4,3,2,1)
+   .plan 1: (4,3,2,1)
   
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
     InitialMayContext(?initCtx),
     Instruction_Method(?insn, ?method),
     MayReachableMethodUnderMayContext(?ctx, ?method).
-	.plan 1: (4,3,2,1)
+   .plan 1: (4,3,2,1)
   
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?initCtx, ?insn),
     InitialMayContext(?initCtx),
     Instruction_Method(?insn, ?method),
     MayReachableMethodUnderMayContext(?ctx, ?method).
-	.plan 1: (4,3,2,1)
+   .plan 1: (4,3,2,1)
     
   // //// END weakening rules
   // //// ====================================
@@ -657,7 +666,7 @@
   Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn),
     AllRelevantPredecessors_HasAccessPathMayPointTo(?ap, ?ctx, ?insn).
-    .plan 1: (2,1)
+   .plan 1: (2,1)
 
   //// Infer info after instruction from info before it
   // First, uniform treatment of easy case for any length non-collection AP
@@ -704,7 +713,7 @@
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPath_IsFinalStaticField(?ap),
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
-    .plan 1: (2,1)
+   .plan 1: (2,1)
 
   // *Collections*
   // Also propagating the information for collection access paths.
@@ -932,9 +941,9 @@
   .decl MayPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?lastInsn:Instruction)
 
   MayPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
-    PhiNodeHead(_, ?headInsn),
+    MayPointTo(?hctx, ?heap, ?ctx, ?from),
     AssignLocal_From(?headInsn, ?from),
-    MayPointTo(?hctx, ?heap, ?ctx, ?from).
+    PhiNodeHead(_, ?headInsn).
 
   MayPointToUpToPhiInstruction(?hctx1, ?heap1, ?ctx, ?nextInsn),
   MayPointToUpToPhiInstruction(?hctx2, ?heap2, ?ctx, ?nextInsn) :-
@@ -969,9 +978,9 @@
   // same for composite access paths
   .decl UpToReturnAccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?ret:Instruction)
   UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return) :-
+    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
     isReturnInstruction(?return),
-    !ExistsPreviousReturn(?return),
-    Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return).
+    !ExistsPreviousReturn(?return).
 
   UpToReturnAccessPathMayPointTo(?hctx1, ?heap1, ?ap, ?ctx, ?return),
   UpToReturnAccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?return) :-
@@ -1009,7 +1018,7 @@
     MayCallGraphEdge_Prev(?calleeCtx1, ?meth1, ?callerCtx, ?invo),
     MayCallGraphEdge_Prev(?calleeCtx2, ?meth2, ?callerCtx, ?invo),
 	ord(?meth1) < ord(?meth2).
-	.plan 1: (2,1)
+   .plan 1: (2,1)
 
   .decl FirstCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method)
   FirstCalleeFromCallsite(?calleeCtx, ?meth) :- 
@@ -1021,7 +1030,7 @@
     CalleeFromSameCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext),
     CalleeFromSameCallsite(?calleeCtx, ?meth, _, ?methOther),
 	ord(?methOther) < ord(?methNext).
-	.plan 1: (2,1)
+   .plan 1: (2,1)
 
   .decl NextCalleeFromCallsite(?calleeCtx:MayContext, ?meth:Method, ?calleeCtxNext:MayContext, ?methNext:Method)
   NextCalleeFromCallsite(?calleeCtx, ?meth, ?calleeCtxNext, ?methNext) :-
@@ -1101,15 +1110,16 @@
   .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
-    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+//// Remove? Seems completely unnecessary
+//    AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
+    OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn),
     MayPredecessorBBModuloThrow(?pred, ?insn),
-    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
-    OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
 
   .decl OptAccessPathUnaffectedByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath) output
   OptAccessPathUnaffectedByInsnPredecessorBB(?pred, ?insn, ?ap) :-
-    MaySuccessorBBModuloThrow(?insn, ?pred),
-    AccessPathUnaffectedByPredecessorBB(?ap, ?pred).
+    AccessPathUnaffectedByPredecessorBB(?ap, ?pred),
+    MaySuccessorBBModuloThrow(?insn, ?pred).
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointToAtSomePredecessor(_, _, ?ap, ?ctx, ?insn),
@@ -1131,13 +1141,13 @@
     HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
     NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
     OptHasAccessPathPointToAtPredecessor(?pred, ?ap, ?ctx, ?insn).
-    .plan 1: (3,2,1)
+   .plan 1: (3,2,1)
 	
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
     NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
     AccessPathUnaffectedByPredecessorBB(?ap, ?pred).
-    .plan 1: (3,2,1)
+   .plan 1: (3,2,1)
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
     HasAccessPathMayPointToUpToRelevantPredecessor(?prevPred, ?ap, ?ctx, ?insn),
@@ -1495,7 +1505,7 @@ LoadCollection_Base(?invo, ?var) :-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth(4).
+MaxMayContextDepth(5).
 
 AccessPath_MaxLength(3).
 
@@ -1506,25 +1516,25 @@ SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase3 = SoundMay<DummyMustPointTo>
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
-.init SoundMayPhase4 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase4 = SoundMay<DummyMustPointTo>
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase4.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase3.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase5 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase5 = SoundMay<DummyMustPointTo>
 SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase4.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+/*
 .init SoundMayPhase6 = SoundMay<SoundMustPointTo>
 SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
@@ -1555,7 +1565,7 @@ IntraprocMustForStats.MayReachableMethodUnderMayContext(?ctx, ?meth) :-
   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
 InitialRootMethodForMayAnalysis(?meth) :-
-  Reachable(?meth), // just for benchmarking against unsound VPT analysis
+//  Reachable(?meth), // just for benchmarking against unsound VPT analysis
   Method_DeclaringType(?meth, ?class), ApplicationClass(?class).
 
 //// END configuration
