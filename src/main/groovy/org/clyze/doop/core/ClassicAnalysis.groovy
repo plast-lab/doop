@@ -391,7 +391,7 @@ class ClassicAnalysis extends DoopAnalysis {
                 .elapsedTime()
         }
 
-        if (!options.X_STOP_AT_FACTS.value) {
+        if (!options.X_STOP_AT_FACTS.value && options.RUN_SERVER_LOGIC.value) {
             connector.queue()
                 .timedTransaction("-- Server Logic --")
                 .addBlockFile("${Doop.addonsPath}/server-logic/queries.logic")
