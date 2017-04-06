@@ -18,6 +18,7 @@
    HeapAllocation_Type(heap, type)
 
 #define MockValueConsMacro(value, type) \
+   Value_isMock(value), \
    isValue(value), \
    Value_Type(value, type)
 

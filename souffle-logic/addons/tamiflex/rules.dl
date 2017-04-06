@@ -1,20 +1,18 @@
 Value_DeclaringType(?value, ?type) :-
-  (Tamiflex_Class_NewInstance(?invocation, ?heap) ;
-   Tamiflex_Constructor_NewInstance(?invocation, _, ?heap) ;
-   Tamiflex_Array_NewInstance(?invocation, ?heap)),
-  Value_Heap(?value, ?heap),
+  (Tamiflex_Class_NewInstance(?invocation, ?value) ;
+   Tamiflex_Constructor_NewInstance(?invocation, _, ?value) ;
+   Tamiflex_Array_NewInstance(?invocation, ?value)),
   Instruction_Method(?invocation, ?meth),
   Method_DeclaringType(?meth, ?type).
 
 Value_DeclaringType(?value, ?type) :-
-  (Tamiflex_ReifiedField(_, ?heap, _) ;
-   Tamiflex_ReifiedFieldArray(_, ?heap, _) ;
-   Tamiflex_ReifiedMethod(_, ?heap, _) ;
-   Tamiflex_ReifiedMethodArray(_, ?heap, _)),
-  Value_Heap(?value, ?heap),
+  (Tamiflex_ReifiedField(_, ?value, _) ;
+   Tamiflex_ReifiedFieldArray(_, ?value, _) ;
+   Tamiflex_ReifiedMethod(_, ?value, _) ;
+   Tamiflex_ReifiedMethodArray(_, ?value, _)),
   Value_Type(?value, ?type).
 
-MockHeapConsMacro(cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"), ?type),
+MockValueConsMacro(cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"), ?type),
 Tamiflex_Class_NewInstance(?invocation, cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">")) :-
   ?sig = "<java.lang.Class: java.lang.Object newInstance()>",
   isMethod(?sig),
@@ -23,7 +21,7 @@ Tamiflex_Class_NewInstance(?invocation, cat(cat(cat(cat("<(Tamiflex) ", ?invocat
   isInstruction(?invocation),
   isType(?type).
 
-MockHeapConsMacro(cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"), ?type),
+MockValueConsMacro(cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"), ?type),
 Tamiflex_Constructor_NewInstance(?invocation, ?constructor, cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">")) :-
   ?sig = "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>",
   isMethod(?sig),
@@ -34,7 +32,7 @@ Tamiflex_Constructor_NewInstance(?invocation, ?constructor, cat(cat(cat(cat("<(T
   Method_DeclaringType(?constructor, ?type),
   isType(?type).
 
-MockHeapConsMacro(cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"), ?type),
+MockValueConsMacro(cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">"), ?type),
 Tamiflex_Array_NewInstance(?invocation, cat(cat(cat(cat("<(Tamiflex) ", ?invocation), "/"), ?type), ">")) :-
   ?sig = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>",
   isMethod(?sig),
@@ -43,7 +41,7 @@ Tamiflex_Array_NewInstance(?invocation, cat(cat(cat(cat("<(Tamiflex) ", ?invocat
   isInstruction(?invocation),
   isType(?type).
 
-MockHeapConsMacro(cat(cat("<(Tamiflex) ", ?fld), ">"), ?type),
+MockValueConsMacro(cat(cat("<(Tamiflex) ", ?fld), ">"), ?type),
 Tamiflex_ReifiedField(?fld, cat(cat("<(Tamiflex) ", ?fld), ">"), ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>" ),
@@ -54,7 +52,7 @@ Tamiflex_ReifiedField(?fld, cat(cat("<(Tamiflex) ", ?fld), ">"), ?invocation) :-
   ?type = "java.lang.reflect.Field",
   isType(?type).
 
-MockHeapConsMacro(cat(cat("<(Tamiflex) ", ?type), "/Field[]>"), ?javaFieldArrayType),
+MockValueConsMacro(cat(cat("<(Tamiflex) ", ?type), "/Field[]>"), ?javaFieldArrayType),
 Tamiflex_ReifiedFieldArray(?type, cat(cat("<(Tamiflex) ", ?type), "/Field[]>"), ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Field[] getFields()>" ),
@@ -66,7 +64,7 @@ Tamiflex_ReifiedFieldArray(?type, cat(cat("<(Tamiflex) ", ?type), "/Field[]>"), 
   isType(?javaFieldArrayType).
 
 
-MockHeapConsMacro(cat(cat("<(Tamiflex) ", ?method), ">"), ?type),
+MockValueConsMacro(cat(cat("<(Tamiflex) ", ?method), ">"), ?type),
 Tamiflex_ReifiedMethod(?method, cat(cat("<(Tamiflex) ", ?method), ">"), ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>" ),
@@ -77,7 +75,7 @@ Tamiflex_ReifiedMethod(?method, cat(cat("<(Tamiflex) ", ?method), ">"), ?invocat
   ?type = "java.lang.reflect.Method",
   isType(?type).
 
-MockHeapConsMacro(cat(cat("<(Tamiflex) ", ?type), "/Method[]>"), ?javaMethodArrayType),
+MockValueConsMacro(cat(cat("<(Tamiflex) ", ?type), "/Method[]>"), ?javaMethodArrayType),
 Tamiflex_ReifiedMethodArray(?type, cat(cat("<(Tamiflex) ", ?type), "/Method[]>"), ?invocation) :-
   (?sig = "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>" ;
    ?sig = "<java.lang.Class: java.lang.reflect.Method[] getMethods()>" ),
@@ -115,7 +113,7 @@ OptForNameInvocation(?invocation, ?inmethod) :-
   isMethod(?sig),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
 
-VarPointsTo(?hctx, ?classValue, ?ctx, ?return) :-
+VarPointsTo(?hctx, ?classObj, ?ctx, ?return) :-
   OptForNameInvocation(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),
@@ -123,13 +121,11 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?return) :-
   ?classObj = cat(cat("<class ", ?class), ">"),
   isHeapAllocation(?classObj),
   HeapAllocation_Type(?classObj, "java.lang.Class"),
-  Value_Heap(?classValue, ?classObj),
   AssignReturnValue(?invocation, ?return).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  (Tamiflex_Class_NewInstance(?invocation, ?heap) ;
-   Tamiflex_Array_NewInstance(?invocation, ?heap) ),
-  Value_Heap(?value, ?heap),
+  (Tamiflex_Class_NewInstance(?invocation, ?value) ;
+   Tamiflex_Array_NewInstance(?invocation, ?value) ),
   Instruction_Method(?invocation, ?inmethod),
   AssignReturnValue(?invocation, ?return),
   ReachableContext(?ctx, ?inmethod),
@@ -143,8 +139,7 @@ VarPointsTo(?hctx, ?value, ?callerCtx, ?return),
 TamiflexCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 TamiflexConstructorCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?constructor),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
-  Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?heap),
-  Value_Heap(?value, ?heap),
+  Tamiflex_Constructor_NewInstance(?invocation, ?constructor, ?value),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?callerCtx, ?inmethod),
   AssignReturnValue(?invocation, ?return),
@@ -228,11 +223,10 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) :-
   SupertypeOf(?type, ?valuetype).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
-  (Tamiflex_ReifiedField(_, ?heap, ?invocation) ;
-   Tamiflex_ReifiedFieldArray(_, ?heap, ?invocation) ;
-   Tamiflex_ReifiedMethod(_, ?heap, ?invocation) ;
-   Tamiflex_ReifiedMethodArray(_, ?heap, ?invocation) ),
-  Value_Heap(?value, ?heap),
+  (Tamiflex_ReifiedField(_, ?value, ?invocation) ;
+   Tamiflex_ReifiedFieldArray(_, ?value, ?invocation) ;
+   Tamiflex_ReifiedMethod(_, ?value, ?invocation) ;
+   Tamiflex_ReifiedMethodArray(_, ?value, ?invocation) ),
   Instruction_Method(?invocation, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx),

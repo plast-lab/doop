@@ -90,7 +90,8 @@ _DynamicArrayIndexPointsTo(?param1, ?param2) ->
   string(?param1),
   string(?param2).
 
-
+_DynamicHeapObjectRep(?heapStr, ?heap, ?ctx) <-
+   HeapAllocation:byId[?heapStr] = ?heap, DynamicContext:Id(?ctx:"<Immutable dctx>").
 
 +DynamicStaticFieldPointsTo(?fld, ?dynamicContext, ?heap) <-
    Field:SimpleName[?fld] = ?fldSimpleName,

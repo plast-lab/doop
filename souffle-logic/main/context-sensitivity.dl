@@ -54,22 +54,20 @@ ImmutableContextFromContext(?ctx1, ?ctx2) :-
 #ifndef OptimizeRecordMacro
 
 isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_Heap(?value, ?heap),
-  RecordMacro(?ctx, ?value, ?newHCtx),
+VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
+  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
+  RecordMacro(?ctx, ?heapValue, ?newHCtx),
   ReachableContext(?ctx, ?inmethod),
 #ifdef RecordArrayMacro
-  Value_Type(?value, ?type),
+  Value_Type(?heapValue, ?type),
   !isArrayType(?type),
 #endif
-  ?value = ?value.
+  ?heapValue = ?heapValue.
   //TODO fix: ObjectShouldNotBeRefined(?value)
 
 #else /* there is optimized behavior available */
-  RecordBasisMacro(?ctx, ?var, ?value) :-
-  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_Heap(?value, ?heap),
+  RecordBasisMacro(?ctx, ?var, ?heapValue) :-
+  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
@@ -89,39 +87,35 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
 // specially.
 
 isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_Heap(?value, ?heap),
+VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
+  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  Value_Type(?value, ?type),
-  RecordArrayMacro(?ctx, ?value, ?newHCtx),
+  Value_Type(?heapValue, ?type),
+  RecordArrayMacro(?ctx, ?heapValue, ?newHCtx),
   isArrayType(?type).
   //TODO fix: ObjectShouldNotBeRefined(?value)
 #endif // def RecordArrayMacro
 
 isHContext(?newHCtx),
-VarPointsTo(?newHCtx, ?value, ?ctx, ?var) :-
-  AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
-  Value_Heap(?value, ?heap),
+VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
+  AssignAuxiliaryHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
-  RecordMacro(?ctx, ?value, ?newHCtx).
+  RecordMacro(?ctx, ?heapValue, ?newHCtx).
 
 #ifdef RecordRefinedMacro
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
-  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-  Value_Heap(?value, ?heap),
-  RecordRefinedMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
+  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
+  RecordRefinedMacro(?ctx, ?heapValue, ?hctx),
   ReachableContext(?ctx, ?inmethod).
   //TODO fix: ObjectShouldBeRefined(?value)
 #endif
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
   Reachable(?inmethod),  // optimization purposes
-  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
-  Value_Heap(?value, ?heap),
+  AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   ImmutableHContextFromContext(?ctx, ?hctx).
-  .plan 2:(5,4,1,2,3)
+  .plan 2:(4,3,1,2)
 
 /**
  * Null assignments
@@ -194,8 +188,10 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   NotSpecialValue(?value),
   !Value_Null(?basevalue).
 
+NotSpecialValue(?heapValue) :-
+  Value_isHeap(?heapValue),
+  !SpecialObject(?heapValue).
 NotSpecialValue(?value) :-
-  (Value_Heap(?value, ?heap), !SpecialObject(?heap));
   Value_isNonHeap(?value).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
@@ -283,9 +279,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 .decl NotEmptyArrayValue(?value:Value)
 
+NotEmptyArrayValue(?heapValue) :-
+  Value_isHeap(?heapValue),
+  !HeapAllocation_EmptyArray(?heapValue).
 NotEmptyArrayValue(?value) :-
-  (Value_Heap(?value, ?heap),
-   !HeapAllocation_EmptyArray(?heap)) ;
   Value_isNonHeap(?value).
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) :-

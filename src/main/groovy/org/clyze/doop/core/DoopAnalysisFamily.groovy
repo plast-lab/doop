@@ -99,8 +99,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						webUI:false
 				),
 				new AnalysisOption<Boolean>(
-						id:"SOUFFLE_DEBUG_REPORT",
-						name:"souffle-debug-report",
+						id:"SOUFFLE_DEBUG",
+						name:"souffle-debug",
 						value:false,
 						cli:true
 				),

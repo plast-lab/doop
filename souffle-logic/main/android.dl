@@ -41,18 +41,14 @@ AndroidAppComponent(?type) :-
 
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
-isNormalHeap(cat("<android component object ", cat(?type, ">"))),
-isHeapAllocation(cat("<android component object ", cat(?type, ">"))),
-HeapAllocation_Type(cat("<android component object ", cat(?type, ">")), ?type),
+MockValueConsMacro(cat("<android component object ", cat(?type, ">")), ?type),
 ReifiedComponent(?type, cat("<android component object ", cat(?type, ">"))) :-
   AndroidAppComponent(?type),
   isType(?type).
 
 // Create a new heap object per control object declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
-isNormalHeap(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))),
-isHeapAllocation(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))),
-HeapAllocation_Type(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
+MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">")))), ?type),
 ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
   LayoutControl(?id, ?type, _),
   isType(?type).
@@ -64,9 +60,7 @@ ImplicitlyInstantiatedLibraryType(?type) :-
   ?type = "android.os.Bundle",
   isType(?type).
 
-isNormalHeap(cat("<android library object ", cat(?type, ">"))),
-isHeapAllocation(cat("<android library object ", cat(?type, ">"))),
-HeapAllocation_Type(cat("<android library object ", cat(?type, ">")), ?type),
+MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
 ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
   ImplicitlyInstantiatedLibraryType(?type),
   isType(?type).
@@ -253,10 +247,9 @@ ReachableContext(?ctx, ?meth) :-
 
 // First, for objects implicitly registered (XML or library).
 ReifiedAndroidObjectValue(?value, ?type) :-
-  (ReifiedComponent(?type, ?heap);
-   ReifiedLayoutControl(?type, _, ?heap);
-   ReifiedLibraryObject(?type, ?heap)),
-  Value_Heap(?value, ?heap).
+  ReifiedComponent(?type, ?value);
+  ReifiedLayoutControl(?type, _, ?value);
+  ReifiedLibraryObject(?type, ?value).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
@@ -332,8 +325,7 @@ VarsAtInvocationRetrievingView(?ret, ?var) :-
 
 ViewObjectValueFromId(?viewValue, ?numId) :-
   LayoutControl(?numId, ?type, _),
-  ReifiedLayoutControl(?type, ?numId, ?heap),
-  Value_Heap(?viewValue, ?heap).
+  ReifiedLayoutControl(?type, ?numId, ?viewValue).
 
 // ... and the clincher: given an id for a view object, at one of the
 // invocation sites of methods retrieving views, return the
