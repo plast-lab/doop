@@ -4,10 +4,8 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
    MainMethodDeclaration(?mainMethod),
    ReachableContext(?ctx, ?mainMethod),
    FormalParam(0, ?mainMethod, ?args),
-   Value_Heap(?argArray, ?argArrayHeap),
-   MainMethodArgArray(?argArrayHeap),
-   Value_Heap(?argArrayContent, ?argArrayContentHeap),
-   MainMethodArgArrayContent(?argArrayContentHeap).
+   MainMethodArgArray(?argArray),
+   MainMethodArgArrayContent(?argArrayContent).
 
 /**
  *
