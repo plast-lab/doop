@@ -15,7 +15,7 @@ public class DoopRenamer {
         // For all statements, see whether they def a var.
         for (Unit u : body.getUnits()) {
             int potentialNextLineNumber = u.getJavaSourceStartLineNumber();
-            if (potentialNextLineNumber > linenumber) {
+            if (potentialNextLineNumber > 0) {
                 linenumber = potentialNextLineNumber;
             }
             int linenumberToRegister = linenumber;
