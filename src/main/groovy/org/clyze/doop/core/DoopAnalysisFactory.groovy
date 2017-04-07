@@ -177,9 +177,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 .findAll { it.forCacheID }
                 .collect { option -> option.toString() }
 
-        Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
-            File file -> CheckSum.checksum(file, HASH_ALGO)
-        }
+        Collection<String> checksums = []
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
