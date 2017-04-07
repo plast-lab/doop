@@ -337,7 +337,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             if (!inputFilePaths.contains(deps))
                 inputFilePaths.add(deps)
 
-            if (!options.REFLECTION.value)
+            if (!options.REFLECTION.value && !options.TAMIFLEX.value)
                options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
