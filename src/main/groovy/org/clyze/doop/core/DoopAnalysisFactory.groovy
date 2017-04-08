@@ -204,22 +204,40 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def files = []
         switch(platform) {
             case "java":
-                String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-                switch(version) {
-                    case 3:
-                        files = ["${path}/rt.jar"]
-                        break
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    case 8:
-                        files = ["${path}/rt.jar",
-                                 "${path}/jce.jar",
-                                 "${path}/jsse.jar"]
-                        break
-                    default:
-                        throw new RuntimeException("Invalid JRE version: $version")
+                if (platformInfo.size == 2) {
+                    String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
+                    switch (version) {
+                        case 3:
+                            files = ["${path}/rt.jar"]
+                            break
+                        case 4:
+                        case 5:
+                        case 6:
+                        case 7:
+                        case 8:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid JRE version: $version")
+                    }
+                }
+                else if (platformInfo.size == 3 && platformInfo[2] == "debug") {
+                    String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}_${platformInfo[2]}/lib"
+                    switch (version) {
+                        case 7:
+                        case 8:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid JRE version: $version")
+                    }
+                }
+                else {
+                    throw new RuntimeException("Invalid JRE version: $version")
                 }
                 // generate the JRE constant for the preprocessor
                 AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(

@@ -2,7 +2,6 @@ package org.clyze.doop.soot;
 
 import soot.*;
 import soot.jimple.*;
-import soot.options.Options;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
