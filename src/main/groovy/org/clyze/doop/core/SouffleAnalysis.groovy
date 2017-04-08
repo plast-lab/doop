@@ -202,7 +202,7 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisChecksum = CheckSum.checksum(new File("${outDir}/${name}.dl"), DoopAnalysisFactory.HASH_ALGO)
         def analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
-        if (!analysisCacheDir.exists() || options.SOUFFLE_DEBUG) {
+        if (!analysisCacheDir.exists() || options.SOUFFLE_DEBUG.value) {
             logger.info "Compiling datalog to produce C++ program and executable with souffle"
             def commandLine = "souffle -c -w -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt"
             if (options.SOUFFLE_DEBUG.value)

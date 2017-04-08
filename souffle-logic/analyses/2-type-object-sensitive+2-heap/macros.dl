@@ -1,9 +1,9 @@
 // For this analysis, every heap context recorded on allocation
-// corresponds to the most significant element of the calling
+// corresponds to the two most significant elements of the calling
 // context of the allocator method.
 #define RecordMacro(ctx, value, hctx) \
   ctx = [ctxType, ctxValue], \
-  hctx = [ctxValue]
+  hctx = [ctxType, ctxValue]
 
 
 // For this analysis the context of a method call corresponds to the
@@ -11,7 +11,7 @@
 // receiver object of the caller. Again, this may trigger creation of
 // a new object.
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  hctx = [hctxValue], \
+  hctx = [hctxType, hctxValue], \
   Value_DeclaringType(hctxValue, type), \
   calleeCtx = [type, value]
 
@@ -29,12 +29,12 @@
 // MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
-  hctx = [hctxValue], \
+  hctx = [hctxType, hctxValue], \
   Value_DeclaringType(hctxValue, type), \
   newCtx = [type, value]
 
 #define MergeStartupMacro(hctx, value, calleeCtx) \
-  hctx = [hctxValue], \
+  hctx = [hctxType, hctxValue], \
   Value_DeclaringType(hctxValue, type), \
   calleeCtx = [type, value]
 
@@ -57,4 +57,4 @@
 #define InitHContextMacro(value) \
   isHContext(hctx) :- \
     isValue(value), \
-    hctx = [value]
+    hctx = ["java.lang.String", value]

@@ -177,9 +177,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 .findAll { it.forCacheID }
                 .collect { option -> option.toString() }
 
-        Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
-            File file -> CheckSum.checksum(file, HASH_ALGO)
-        }
+        Collection<String> checksums = []
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
@@ -355,8 +353,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             if (!inputFilePaths.contains(deps))
                 inputFilePaths.add(deps)
 
-            //if (!options.REFLECTION.value)
-            //   options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
+            if (!options.REFLECTION.value && !options.TAMIFLEX.value)
+               options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
             logger.info "Running "+(options.DACAPO.value ? "dacapo" : "dacapo-bach")+" benchmark: $benchmark"
