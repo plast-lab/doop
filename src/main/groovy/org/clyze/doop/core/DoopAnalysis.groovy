@@ -134,6 +134,23 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
 
+            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+
+            if (options.DACAPO.value) {
+                new File(factsDir, "Dacapo.facts").withWriter { w ->
+                    w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
+                }
+            }
+            else if (options.DACAPO_BACH.value) {
+                new File(factsDir, "Dacapo.facts").withWriter { w ->
+                    w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
+                }
+            }
+            else {
+                touch(new File(factsDir, "Dacapo.facts"))
+            }
+
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
