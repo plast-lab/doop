@@ -324,22 +324,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						name:"dacapo",
 						description:"Load additional logic for DaCapo (2006) benchmarks properties.",
 						value:false,
-						webUI:true,
-						forPreprocessor:true
+						webUI:true
 				),
 				new AnalysisOption<Boolean>(
 						id:"DACAPO_BACH",
 						name:"dacapo-bach",
 						description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
 						value:false,
-						webUI:true,
-						forPreprocessor:true
-				),
-				new AnalysisOption<String>(
-						id:"DACAPO_BENCHMARK",
-						value:null,
-						cli:false,
-						forPreprocessor:true
+						webUI:true
 				),
 				new AnalysisOption<String>(
 						id:"INFORMATION_FLOW",
