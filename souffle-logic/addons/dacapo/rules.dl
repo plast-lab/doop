@@ -1,39 +1,20 @@
-/**
- * DACAPO_BENCHMARK should be defined to represent the current benchmark being
- * analyzed. E.g. "antlr".
- */
-.decl DacapoHarnessClass(?classNameHeap:StringConstant)
+.decl Dacapo(?classNameHeap:StringConstant, method:Method)
 
-#ifdef DACAPO_BACH
-    StringConstantConsMacro(cat("org.dacapo.harness.", DACAPO_BENCHMARK), ?type),
-    DacapoHarnessClass(cat("org.dacapo.harness.", DACAPO_BENCHMARK)) :-
-#else
-    StringConstantConsMacro(cat("dacapo.", cat(DACAPO_BENCHMARK, ".Harness")), ?type),
-    DacapoHarnessClass(cat("dacapo.", cat(DACAPO_BENCHMARK, ".Harness"))) :-
-#endif
-   ?type = "java.lang.String",
-   isType(?type).
+StringConstantConsMacro(?heap, "java.lang.String"),
+HeapAllocation_Keep(?heap),
+Dacapo(?heap, ?method) :-
+  _Dacapo(?heap, ?method).
 
 /**
  * Extra logic to handle a specific value read from a configuration file for
  * the DaCapo benchmarks. The value is used afterwards reflectively to create a
  * new object.
  */
-VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to)
-:-
-   MethodInvocation_Method(?inv,
-#ifdef DACAPO_BACH
-   "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
-#else
-   "<dacapo.parser.Config: void setClass(java.lang.String)>"
-#endif
-   ),
-   VirtualMethodInvocation_Base(?inv, ?base),
-   Var_DeclaringMethod(?base, ?method),
-   ReachableContext(?ctx, ?method),
-   ImmutableHContextFromContext(?ctx, ?hctx),
-   ActualParam(0, ?inv, ?to),
-   DacapoHarnessClass(?classNameHeap).
-
-HeapAllocation_Keep(?classNameHeap) :-
-   DacapoHarnessClass(?classNameHeap).
+VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) :-
+  Dacapo(?classNameHeap, ?dacapoMethod),
+  MethodInvocation_Method(?invo, ?dacapoMethod),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  Var_DeclaringMethod(?base, ?method),
+  ReachableContext(?ctx, ?method),
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  ActualParam(0, ?invo, ?to).

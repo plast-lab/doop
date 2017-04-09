@@ -780,3 +780,9 @@ isType(?t), isPrimitiveType(?t), Type_void(?t)    :- ?t = "void".
 isType(?t), isReferenceType(?t), isNullType(?t), Type_null(?t) :- ?t = "null_type".
 
 isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.lang.Object".
+
+
+// Dacapo
+
+.decl _Dacapo(?id:symbol, ?method:symbol)
+.input _Dacapo(IO="file", filename="Dacapo.facts", delimiter="\t")
