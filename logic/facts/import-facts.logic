@@ -74,12 +74,13 @@ lang:physical:storageModel[`_AssignHeapAllocation] = "DelimitedFile".
 lang:physical:filePath[`_AssignHeapAllocation] = "facts/AssignHeapAllocation.facts".
 lang:physical:delimiter[`_AssignHeapAllocation] = "\t".
 lang:physical:hasColumnNames[`_AssignHeapAllocation] = false.
-_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
+_AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod, ?linenumber) ->
    string(?instruction),
    int[32](?index),
    string(?heap),
    string(?to),
-   string(?inmethod).
+   string(?inmethod),
+   string(?linenumber).
 
 +AssignHeapAllocation:Insn(?instr),
 +Instruction:Id(?instr:?instrId),
@@ -87,7 +88,7 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod) ->
 +Instruction:Method[?instr] = ?method,
 +AssignInstruction:To[?instr] = ?to,
 +AssignHeapAllocation0(?instr, ?heapId) <-
-   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method).
+   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method, _).
 
 
 // AndroidEntryPoints

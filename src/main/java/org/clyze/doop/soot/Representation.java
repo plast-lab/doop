@@ -1,46 +1,40 @@
 package org.clyze.doop.soot;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import soot.*;
 import soot.jimple.*;
 
-import java.util.HashMap;
-import java.util.Map;
+public class Representation {
+    private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
+    private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
-public class Representation
-{
-    private Map<SootMethod, String> _methodRepr = new HashMap<>();
-    private Map<SootMethod, String> _methodSigRepr = new HashMap<>();
-    private Map<Trap, String> _trapRepr = new HashMap<>();
+    // Make it a trivial singleton.
+    private static Representation _repr;
+    private Representation() {}
 
-    String type(SootClass c)
-    {
-        return c.getName();
+    public static Representation getRepresentation() {
+        if (_repr == null)
+            _repr = new Representation();
+        return _repr;
     }
 
-    String type(Type t)
-    {
-        return t.toString();
+    String classConstant(SootClass c) {
+        return "<class " + c.getName() + ">";
     }
 
-    /*
-       public String classconstant(Type t)
-       {
-       return "<class " + type(t) + ">";
-       }
-       */
-
-    String classconstant(SootClass c)
-    {
-        return "<class " + type(c) + ">";
+    String classConstant(String className) {
+        return "<class " + className + ">";
     }
 
-    String classconstant(Type t)
-    {
-        return "<class " + type(t) + ">";
+    String classConstant(Type t) {
+        return "<class " + t + ">";
     }
 
-    synchronized String signature(SootMethod m)
-    {
+    public String signature(SootMethod m) {
         String result = _methodSigRepr.get(m);
 
         if(result == null)
@@ -52,24 +46,16 @@ public class Representation
         return result;
     }
 
-    String signature(SootField f)
-    {
+    String signature(SootField f) {
         return f.getSignature();
     }
 
-    String simpleName(SootMethod m)
-    {
+    String simpleName(SootMethod m) {
         return m.getName();
     }
 
-    String simpleName(SootField m)
-    {
+    String simpleName(SootField m) {
         return m.getName();
-    }
-
-    String modifier(String m)
-    {
-        return m;
     }
 
     String descriptor(SootMethod m)
@@ -94,27 +80,22 @@ public class Representation
 
     String thisVar(SootMethod m)
     {
-        return compactMethod(m) + "/@this";
+        return getMethodSignature(m) + "/@this";
     }
 
     String nativeReturnVar(SootMethod m)
     {
-        return compactMethod(m) + "/@native-return";
+        return getMethodSignature(m) + "/@native-return";
     }
 
     String param(SootMethod m, int i)
     {
-        return compactMethod(m) + "/@param" + i;
-    }
-
-    String index(int i)
-    {
-        return "" + i;
+        return getMethodSignature(m) + "/@param" + i;
     }
 
     String local(SootMethod m, Local l)
     {
-        return compactMethod(m) + "/" + l.getName();
+        return getMethodSignature(m) + "/" + l.getName();
     }
 
     String newLocalIntermediate(SootMethod m, Local l, Session session)
@@ -123,14 +104,14 @@ public class Representation
         return s + "/intermediate/" +  session.nextNumber(s);
     }
 
-    synchronized String handler(SootMethod m, Trap trap, Session session)
+    String handler(SootMethod m, Trap trap, Session session)
     {
         String result = _trapRepr.get(trap);
 
         if(result == null)
         {
-            String name = "catch " + type(trap.getException());
-            result = compactMethod(m) + "/" + name + "/" + session.nextNumber(name);
+            String name = "catch " + trap.getException().getName();
+            result = getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
 
             _trapRepr.put(trap, result);
         }
@@ -141,43 +122,12 @@ public class Representation
     String throwLocal(SootMethod m, Local l, Session session)
     {
         String name = "throw " + l.getName();
-        return compactMethod(m) + "/" + name + "/" + session.nextNumber(name);
+        return getMethodSignature(m) + "/" + name + "/" + session.nextNumber(name);
     }
 
-    public String method(SootMethod m)
+    private String getMethodSignature(SootMethod m)
     {
-        return signature(m);
-    }
-
-    /**
-     * If there is only one method with the name of m, then returns a
-     * compact name. Otherwise, the signature is returned.
-     */
-    private synchronized String compactMethod(SootMethod m)
-    {
-        String result = _methodRepr.get(m);
-
-        if(result == null) {
-            String name = m.getName();
-
-            int count = 0;
-            for(SootMethod other : m.getDeclaringClass().getMethods()) {
-                if(other.getName().equals(name)) {
-                    count++;
-                }
-            }
-
-            if(count > 1) {
-                result = m.getSignature();
-            }
-            else {
-                result = m.getDeclaringClass().getName() + "." + name;
-            }
-
-            _methodRepr.put(m, result);
-        }
-
-        return result;
+        return m.getSignature();
     }
 
     private String getKind(Stmt stmt)
@@ -212,7 +162,7 @@ public class Representation
 
     String unsupported(SootMethod inMethod, Stmt stmt, Session session, int index)
     {
-        return compactMethod(inMethod) +
+        return getMethodSignature(inMethod) +
             "/unsupported " + getKind(stmt) +
             "/" +  stmt.toString() +
             "/instruction" + index;
@@ -223,17 +173,18 @@ public class Representation
      */
     String instruction(SootMethod inMethod, Stmt stmt, Session session, int index)
     {
-        return compactMethod(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
+        return getMethodSignature(inMethod) + "/" + getKind(stmt) + "/instruction" + index;
     }
 
     String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
     {
         String name = expr.getMethod().getName();
 
-        return compactMethod(inMethod)
+        return getMethodSignature(inMethod)
             + "/" + expr.getMethod().getDeclaringClass() + "." + name
             + "/" + session.nextNumber(name);
     }
+
 
     String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
@@ -244,13 +195,16 @@ public class Representation
         else if(expr instanceof NewMultiArrayExpr)
         {
             return heapAlloc(inMethod, expr.getType(), session);
-            //      return compactMethod(inMethod) + "/" + type + "/" +  session.nextNumber(type);
+            //      return getMethodSignature(inMethod) + "/" + type + "/" +  session.nextNumber(type);
+
+
         }
         else
         {
             throw new RuntimeException("Cannot handle new expression: " + expr);
         }
     }
+
 
     String heapMultiArrayAlloc(SootMethod inMethod, NewMultiArrayExpr expr, ArrayType type, Session session)
     {
@@ -260,30 +214,10 @@ public class Representation
     private String heapAlloc(SootMethod inMethod, Type type, Session session)
     {
         String s = type.toString();
-        return compactMethod(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+        return getMethodSignature(inMethod) + "/new " + s + "/" +  session.nextNumber(s);
+
+
     }
 
-    String stringConstant(SootMethod inMethod, StringConstant constant) {
-        String content = stringConstantRaw(inMethod, constant);
 
-        if(content.length() <= 256)
-            return content;
-        else
-            return "<<HASH:" + content.hashCode() + ">>";
-    }
-
-    String stringConstantRaw(SootMethod inMethod, StringConstant constant) {
-        String s = constant.toString();
-        String content = s.substring(1, s.length() - 1);
-
-        if(content.trim().equals(content) && content.length() > 0)
-            return content;
-        else
-            return "<<\"" + content + "\">>";
-    }
-
-    String numconstant(SootMethod inMethod, NumericConstant constant)
-    {
-        return constant.toString();
-    }
 }

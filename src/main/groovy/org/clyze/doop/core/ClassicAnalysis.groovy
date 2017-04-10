@@ -425,12 +425,12 @@ class ClassicAnalysis extends Analysis {
 
         switch(platform) {
             case "java":
-                params = ["--full", "--keep-line-number"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
                 def androidPlatform = options.PLATFORMS_LIB.value.toString() +
                                       File.separator + "Android" + File.separator + "Sdk" + File.separator + "platforms"
-                params = ["--full", "--keep-line-number"] + depArgs + ["--android-jars", androidPlatform]
+                params = ["--full"] + depArgs + ["--android-jars", androidPlatform]
                 break
             default:
                 throw new RuntimeException("Unsupported platform")

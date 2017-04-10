@@ -1,5 +1,7 @@
 package org.clyze.doop.soot;
 
+import org.clyze.doop.common.PredicateFile;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;

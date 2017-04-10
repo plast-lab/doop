@@ -5,59 +5,108 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
  * generate facts. The class FactGenerator is the main class
  * controlling what facts are generated.
- *
- * @author Martin Bravenboer
- * @license MIT
  */
-public class SequentialFactGenerator
-{
+
+class FactGenerator implements Runnable {
+
     private FactWriter _writer;
     private boolean _ssa;
+    private boolean _generateJimple;
+    private Set<SootClass> _sootClasses;
+    private final int maxRetries = 10;
 
-    SequentialFactGenerator(FactWriter writer, boolean ssa)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean generateJimple)
     {
-        _writer = writer;
-        _ssa = ssa;
+        this._writer = writer;
+        this._ssa = ssa;
+        this._sootClasses = sootClasses;
+        this._generateJimple = generateJimple;
     }
 
-    void generate(SootClass c)
-    {
-        _writer.writeClassOrInterfaceType(c);
+    @Override
+    public void run() {
 
-        // the isInterface condition prevents Object as superclass of interface
-        if(c.hasSuperclass() && !c.isInterface())
-        {
-            _writer.writeDirectSuperclass(c, c.getSuperclass());
-        }
+        for (SootClass _sootClass : _sootClasses) {
+            _writer.writeClassOrInterfaceType(_sootClass);
 
-        for(SootClass i : c.getInterfaces())
-        {
-            _writer.writeDirectSuperinterface(c, i);
-        }
+            int modifiers = _sootClass.getModifiers();
+            if(Modifier.isAbstract(modifiers))
+                _writer.writeClassModifier(_sootClass, "abstract");
+            if(Modifier.isFinal(modifiers))
+                _writer.writeClassModifier(_sootClass, "final");
+            if(Modifier.isPublic(modifiers))
+                _writer.writeClassModifier(_sootClass, "public");
+            if(Modifier.isPrivate(modifiers))
+                _writer.writeClassModifier(_sootClass, "private");
 
-        c.getFields().forEach(this::generate);
+            // the isInterface condition prevents Object as superclass of interface
+            if (_sootClass.hasSuperclass() && !_sootClass.isInterface()) {
+                _writer.writeDirectSuperclass(_sootClass, _sootClass.getSuperclass());
+            }
 
-        for (SootMethod m : new ArrayList<>(c.getMethods())) {
-            Session session = new Session();
-            try {
-                generate(m, session);
-            } catch (RuntimeException exc) {
-                System.err.println("Error while processing method: " + m);
-                throw exc;
+            for (SootClass i : _sootClass.getInterfaces()) {
+                _writer.writeDirectSuperinterface(_sootClass, i);
+            }
+
+            _sootClass.getFields().forEach(this::generate);
+
+            boolean success;
+            int numRetries = 0;
+            do {
+                success = true;
+                try {
+                    for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                        Session session = new Session();
+                        try {
+                            generate(m, session);
+                        }
+                        catch (Exception exc) {
+                            // Map<Thread,StackTraceElement[]> liveThreads = Thread.getAllStackTraces();
+                            // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+                            //     Thread key = i.next();
+                            //     System.err.println("Thread " + key.getName());
+                            //     StackTraceElement[] trace = liveThreads.get(key);
+                            //     for (int j = 0; j < trace.length; j++) {
+                            //         System.err.println("\tat " + trace[j]);
+                            //     }
+                            // }
+                    
+                            System.err.println("Error while processing method: " + m);
+                            throw exc;
+                        }
+                    }                 
+                } catch (Exception exc) {
+                    numRetries++;
+                    if (numRetries > maxRetries) {
+                        System.err.println("\nGiving up...\n");
+                        throw exc;
+                    }
+                    else {
+                        System.err.println("\nRETRYING\n");
+                    }
+                    success = false;
+                }
+            } while (!success);
+
+            if (_generateJimple) {
+                PackManager.v().writeClass(_sootClass);
+                for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                    m.releaseActiveBody();
+                }
             }
         }
-
     }
 
     private void generate(SootField f)
     {
         _writer.writeField(f);
+        _writer.writeFieldInitialValue(f);
 
         int modifiers = f.getModifiers();
         if(Modifier.isAbstract(modifiers))
@@ -86,8 +135,9 @@ public class SequentialFactGenerator
         // TODO enum?
     }
 
+
     /* Check if a Type refers to a phantom class */
-    private boolean phantomBased(Type t) {
+    public static boolean phantomBased(Type t) {
         if (t instanceof RefLikeType) {
             if (t instanceof RefType)
                 return ((RefType) t).getSootClass().isPhantom();
@@ -97,7 +147,7 @@ public class SequentialFactGenerator
         return false;
     }
 
-    private boolean phantomBased(SootMethod m) {
+    public static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
         if (m.isPhantom())
@@ -177,28 +227,30 @@ public class SequentialFactGenerator
             if(!m.hasActiveBody())
             {
                 // This instruction is the bottleneck of
-                // soot-fact-generation. It accounts for more than 80%
-                // of its total execution time. However, it is soot
-                // internal so we'll need a profiler to optimize it.
+                // soot-fact-generation.
+                // synchronized(Scene.v()) {
+                System.out.println("You should never see this anymore");
                 m.retrieveActiveBody();
+                // } // synchronizing so broadly = giving up on Soot's races
             }
-
 
             Body b = m.getActiveBody();
-            if(_ssa)
-            {
-                b = Shimple.v().newBody(b);
-                m.setActiveBody(b);
+            if (b != null) {
+                if (_ssa) {
+                    b = Shimple.v().newBody(b);
+                    m.setActiveBody(b);
+                }
+                if (!_generateJimple) {
+                    m.releaseActiveBody();
+                }
+                DoopRenamer.transform(b);
+                generate(m, b, session);
             }
-            generate(m, b, session);
-
-            m.releaseActiveBody();
         }
     }
 
     private void generate(SootMethod m, Body b, Session session)
     {
-        b.validate();
 
         for(Local l : b.getLocals())
         {
@@ -281,8 +333,16 @@ public class SequentialFactGenerator
             }
             else
             {
-                // make sure we can jump to statement we do not care about (yet)
-                _writer.writeUnsupported(m, stmt, session);
+                // only reason for assign or invoke statements to be irrelevant
+                // is the invocation of a method on a phantom class
+                if(stmt instanceof AssignStmt)
+                    _writer.writeAssignPhantomInvoke(m, stmt, session);
+                else if (stmt instanceof InvokeStmt)
+                    _writer.writePhantomInvoke(m, stmt, session);
+                else if (stmt instanceof BreakpointStmt)
+                    _writer.writeBreakpointStmt(m, stmt, session);
+                else
+                    throw new RuntimeException("Unexpected irrelevant statement: " + stmt);
             }
         }
 
@@ -307,6 +367,7 @@ public class SequentialFactGenerator
                 _writer.writeLookupSwitch(m, (LookupSwitchStmt) stmt, session);
             }
         }
+
         Trap previous = null;
         for(Trap t : b.getTraps())
         {
@@ -323,7 +384,7 @@ public class SequentialFactGenerator
     /**
      * Assignment statement
      */
-    private void generate(SootMethod inMethod, AssignStmt stmt, Session session)
+    public void generate(SootMethod inMethod, AssignStmt stmt, Session session)
     {
         Value left = stmt.getLeftOp();
 
@@ -396,14 +457,13 @@ public class SequentialFactGenerator
             Local base = (Local) ref.getBase();
             Value index = ref.getIndex();
 
-
             if(index instanceof Local)
             {
-                _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, (Local) index, session);
             }
             else if(index instanceof IntConstant)
             {
-                _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
+                    _writer.writeLoadArrayIndex(inMethod, stmt, base, left, null, session);
             }
             else
             {
@@ -419,18 +479,14 @@ public class SequentialFactGenerator
             {
                 _writer.writeAssignCast(inMethod, stmt, left, (Local) op, cast.getCastType(), session);
             }
-            else if(
-                    op instanceof IntConstant
-                            || op instanceof LongConstant
-                            || op instanceof FloatConstant
-                            || op instanceof DoubleConstant
-                            || op instanceof NullConstant
-                            || op instanceof StringConstant
-                            || op instanceof ClassConstant
-                    )
+            else if(op instanceof NumericConstant)
             {
-                // make sure we can jump to statement we do not care about (yet)
-                _writer.writeUnsupported(inMethod, stmt, session);
+                // seems to always get optimized out, do we need this?
+                _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
+            }
+            else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)
+            {
+                _writer.writeAssignCastNull(inMethod, stmt, left, cast.getCastType(), session);
             }
             else
             {
@@ -444,14 +500,21 @@ public class SequentialFactGenerator
                 _writer.writeAssignLocal(inMethod, stmt, left, (Local) alternative, session);
             }
         }
-        else if(
-                right instanceof BinopExpr
-                        || right instanceof NegExpr
-                        || right instanceof LengthExpr
-                        || right instanceof InstanceOfExpr)
+        else if (right instanceof BinopExpr)
         {
-            // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeAssignBinop(inMethod, stmt, left, (BinopExpr) right, session);
+        }
+        else if (right instanceof UnopExpr)
+        {
+            _writer.writeAssignUnop(inMethod, stmt, left, (UnopExpr) right, session);
+        }
+        else if (right instanceof InstanceOfExpr)
+        {
+            InstanceOfExpr expr = (InstanceOfExpr) right;
+            if (expr.getOp() instanceof Local)
+                _writer.writeAssignInstanceOf(inMethod, stmt, left, (Local) expr.getOp(), expr.getCheckType(), session);
+            else // TODO check if this is possible (instanceof on something that is not a local var)
+                _writer.writeUnsupported(inMethod, stmt, session);
         }
         else
         {
@@ -614,8 +677,7 @@ public class SequentialFactGenerator
         }
         else if(v instanceof NullConstant)
         {
-            // make sure we can jump to statement we do not care about (yet)
-            _writer.writeUnsupported(inMethod, stmt, session);
+            _writer.writeThrowNull(inMethod, stmt, session);
         }
         else
         {
@@ -623,3 +685,4 @@ public class SequentialFactGenerator
         }
     }
 }
+

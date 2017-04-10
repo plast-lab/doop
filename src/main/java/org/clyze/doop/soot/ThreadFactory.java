@@ -4,70 +4,29 @@ import soot.SootClass;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.List;
+import java.util.Set;
 
 public class ThreadFactory {
-   private boolean _makeClassGenerator;
-
     FactWriter _factWriter;
 
     private boolean _ssa;
+    private boolean _generateJimple;
 
-
-
-    private boolean _toStdout;
-    private String _outputDir;
-    private PrintWriter _printWriter;
-
-    ThreadFactory(FactWriter writer, boolean ssa) {
-        _makeClassGenerator = true;
-        _factWriter = writer;
+    ThreadFactory(FactWriter factWriter, boolean ssa, boolean generateJimple) {
+        _factWriter = factWriter;
         _ssa = ssa;
+        _generateJimple = generateJimple;
     }
 
-    ThreadFactory(boolean ssa, boolean toStdout, String outputDir) {
-        _makeClassGenerator = false;
-        _ssa = ssa;
-        _toStdout = toStdout;
-        _outputDir = outputDir;
-        if (_toStdout) {
-            _printWriter = new PrintWriter(System.out);
-        } else {
-            new File(_outputDir).mkdirs();
-            _printWriter = null;
-        }
-    }
-
-    Runnable newRunnable(List<SootClass> sootClasses) {
-        if (_makeClassGenerator)
-            return new RunnableFactGenerator(_factWriter, _ssa, sootClasses);
-        else
-            return new FactPrinter(_ssa, _toStdout, _outputDir, _printWriter, sootClasses);
+    Runnable newRunnable(Set<SootClass> sootClasses) {
+        return new FactGenerator(_factWriter, _ssa, sootClasses, _generateJimple);
     }
 
     public FactWriter get_factWriter() {
         return _factWriter;
     }
 
-    public boolean getSsa() {
+    public boolean getSSA() {
         return _ssa;
     }
-
-    public boolean getMakeClassGenerator() {
-        return _makeClassGenerator;
-    }
-
-    public boolean getToStdout() {
-        return _toStdout;
-    }
-
-    public String getOutputDir() {
-        return _outputDir;
-    }
-
-    public PrintWriter getPrintWriter() {
-        return _printWriter;
-    }
-
-
 }

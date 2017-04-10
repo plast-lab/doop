@@ -3,32 +3,30 @@ package org.clyze.doop.soot;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 class Driver {
     private ThreadFactory _factory;
-    private boolean _ssa;
+    private boolean _generateJimple;
 
     private ExecutorService _executor;
     private int _classCounter;
-    private List<SootClass> _sootClasses;
+    private Set<SootClass> _tmpClassGroup;
     private int _totalClasses;
     private int _cores;
-    private int _classSplit = 3;
+    private int _classSplit = 80;
 
-    Driver(ThreadFactory factory, boolean ssa, int totalClasses) {
+    Driver(ThreadFactory factory, int totalClasses, boolean generateJimple) {
         _factory = factory;
-        _ssa = ssa;
         _classCounter = 0;
-        _sootClasses = new ArrayList<>();
+        _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
+        _generateJimple = generateJimple;
         _cores = Runtime.getRuntime().availableProcessors();
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -37,8 +35,9 @@ class Driver {
         }
     }
 
-    void doInParallel(Set<SootClass> sootClasses) {
-        sootClasses.forEach(this::generate);
+    void doInParallel(Set<SootClass> classesToProcess) {
+
+        classesToProcess.forEach(this::generate);
         _executor.shutdown();
         try {
             _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -48,31 +47,25 @@ class Driver {
     }
 
     void doInSequentialOrder(Set<SootClass> sootClasses) {
-        if(_factory.getMakeClassGenerator()) {
-            SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(_factory.get_factWriter(), _factory.getSsa());
-            sootClasses.forEach(sequentialFactGenerator::generate);
-        }
-        else {
-            SequentialFactPrinter sequentialFactPrinter = new SequentialFactPrinter(_ssa, _factory.getToStdout(), _factory.getOutputDir(), _factory.getPrintWriter(), sootClasses.stream().collect(Collectors.toList()));
-            sequentialFactPrinter.run();
-        }
+            FactGenerator factGenerator = new FactGenerator(_factory.get_factWriter(), _factory.getSSA(), sootClasses, _generateJimple);
+            factGenerator.run();
     }
 
-    void doInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        SequentialFactGenerator sequentialFactGenerator = new SequentialFactGenerator(writer, ssa);
-        sequentialFactGenerator.generate(dummyMain, new Session());
+    void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
+        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, _generateJimple);
+        factGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
-        sootClasses.forEach(sequentialFactGenerator::generate);
+        factGenerator.run();
     }
 
-    private void generate(SootClass _sootClass) {
+    private void generate(SootClass curClass) {
         _classCounter++;
-        _sootClasses.add(_sootClass);
+        _tmpClassGroup.add(curClass);
 
-        if ((_classCounter % _classSplit == 0) || (_classCounter + 1 == _totalClasses)) {
-            Runnable runnable = _factory.newRunnable(_sootClasses);
+        if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
+            Runnable runnable = _factory.newRunnable(_tmpClassGroup);
             _executor.execute(runnable);
-            _sootClasses = new ArrayList<>();
+            _tmpClassGroup = new HashSet<>();
         }
     }
 }
