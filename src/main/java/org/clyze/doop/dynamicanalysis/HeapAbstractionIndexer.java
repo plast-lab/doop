@@ -34,7 +34,7 @@ class HeapAbstractionIndexer {
         if (trace != null && trace.getFrames().length > 0) {
             StackFrame[] frames = trace.getFrames();
 
-            int relevantIndex = frames.length - 1;
+            int relevantIndex = 0;
             // find index where object is allocated
             if (clazz.isArray() || clazz.getName().equals("java.lang.Object") || !frames[0].getMethodName().equals("<init>")) {
                 relevantIndex = 0;
@@ -42,7 +42,7 @@ class HeapAbstractionIndexer {
                 for (int i = 0; i < frames.length - 1; i++) {
                     if (frames[i].getClassName().equals(clazz.getName()) && frames[i].getMethodName().equals("<init>"))
                         relevantIndex = i + 1;
-                    else break;
+                    else if (relevantIndex > 0) break;
                 }
             }
 
