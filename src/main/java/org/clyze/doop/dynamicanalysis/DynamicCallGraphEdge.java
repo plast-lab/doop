@@ -56,7 +56,7 @@ public class DynamicCallGraphEdge implements DynamicFact {
         ArrayList<DynamicCallGraphEdge> edges = new ArrayList<>(frames.length - 1);
         for (int i = 1 ; i < frames.length; i ++) {
             if (frames[i].getClassName().startsWith("Instrumentation") ||
-                    frames[i].getClassName().startsWith("javaassist"))
+                    frames[i].getClassName().startsWith("javassist"))
                 return edges;
         }
         for (int i = 1 ; i < frames.length; i ++) {

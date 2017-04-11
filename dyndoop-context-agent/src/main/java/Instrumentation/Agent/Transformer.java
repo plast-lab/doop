@@ -27,7 +27,7 @@ public class Transformer implements ClassFileTransformer {
     }
 
     private static boolean isInterestingClass(String name) {
-        if (name.startsWith("javaassist"))
+        if (name.startsWith("javassist"))
             return false;
         if (name.startsWith("Instrumentation"))
             return false;
