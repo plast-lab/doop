@@ -351,7 +351,11 @@ OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
-  .plan 1:(2,1)
+// .plan 1:(2,1)
+// TODO check: .plan 1:(2,1) can make the above rule very slow when
+// VarPointsTo deltas become really big, even if it shouldn't (i.e.,
+// the VarPointsTo deltas are smaller than the OptInterproceduralAssign
+// relation).
 
 /**
  * Static method invocations
