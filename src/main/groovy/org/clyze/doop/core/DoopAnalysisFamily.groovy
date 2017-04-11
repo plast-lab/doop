@@ -378,6 +378,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						value:null,
 						forPreprocessor:true
 				),
+				new AnalysisOption<String>(
+						id:"IMPORT_DYNAMIC_FACTS",
+						name:"import-dynamic-facts",
+						argName:"facts-filename",
+						description:"Use dynamic information",
+						value:null,
+						forPreprocessor:true
+				),
 				new AnalysisOption<Boolean>(
 						id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
 						name:"only-application-classes-fact-gen",
