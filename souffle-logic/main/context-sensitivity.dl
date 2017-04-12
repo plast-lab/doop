@@ -246,7 +246,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 .decl Temp2(?ctx:Context, ?var:Var, ?hctx:HContext, ?value:Value)
 
 OptLoadHeapArrayIndex(?to, ?basevalue) :-
-  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue).
+  LoadHeapArrayIndex(_, ?to, _, ?basevalue).
 
 Temp1(?basevalue, ?to) :-
   NotEmptyArrayValue(?basevalue),

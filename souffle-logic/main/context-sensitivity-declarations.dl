@@ -57,6 +57,7 @@
  * Reachable
  */
 .decl Reachable(?method:Method)
+.output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 
 .decl ReachableContext(?ctx:Context, ?method:Method)
 
