@@ -15,7 +15,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                                            'If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
-    static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
+    static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 90 minutes).'
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
                                            "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
