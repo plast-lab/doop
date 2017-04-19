@@ -1014,10 +1014,12 @@
     ReturnNonvoid_Var(?return, ?var),
     MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
 
+  .decl ExistsNextReturn(?ret:Instruction)
+  ExistsNextReturn(?ret) :- NextReturn(?ret, _).
   .decl AllReturn_MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?method:Method)
   AllReturn_MayPointTo(?hctx, ?heap, ?ctx, ?method) :-
     UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
+    !ExistsNextReturn(?return),
     Instruction_Method(?return, ?method).
 
   // same for composite access paths
@@ -1037,7 +1039,7 @@
   .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:Method)
   AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
     UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
+    !ExistsNextReturn(?return),
     Instruction_Method(?return, ?method).
 
   // all returns of a method have the same return var
@@ -1055,7 +1057,7 @@
   .decl AllReturn_SameRetVar(?method:Method, ?var:Var)
   AllReturn_SameRetVar(?method, ?var) :-
     UpToReturnSameRetVar(?return, ?var),
-    !(NextReturn(?return, _)),
+    !ExistsNextReturn(?return),
     Instruction_Method(?return, ?method).
 
   // all returns of a callee is not enough. We also need "all callee" reasoning
