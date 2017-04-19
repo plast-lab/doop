@@ -132,10 +132,6 @@ AssignInstruction_To(?instruction, ?to) :-
 .decl _AssignOperFrom(?instruction:symbol, ?from:symbol)
 .input _AssignOperFrom(IO="file", filename="AssignOperFrom.facts", delimiter="\t")
 
-// TODO: Recheck this rule
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignOper_Insn(?instruction),
 AssignOper_From(?instruction, ?from) :-
   _AssignOperFrom(?instruction, ?from).
 
@@ -145,10 +141,6 @@ AssignOper_From(?instruction, ?from) :-
 .decl _AssignOperType(?instruction:symbol, ?type:symbol)
 .input _AssignOperType(IO="file", filename="AssignOperType.facts", delimiter="\t")
 
-// TODO: Recheck this rule
-isInstruction(?instruction),
-isAssignInstruction(?instruction),
-isAssignOper_Insn(?instruction),
 AssignOper_Type(?instruction, ?type) :-
   _AssignOperType(?instruction, ?type).
 
@@ -158,8 +150,6 @@ AssignOper_Type(?instruction, ?type) :-
 .decl _IfVar(?instruction:symbol, ?var:symbol)
 .input _IfVar(IO="file", filename="IfVar.facts", delimiter="\t")
 
-isInstruction(?instruction),
-isIf_Insn(?instruction),
 If_Var(?instruction, ?var) :-
   _IfVar(?instruction, ?var).
 
@@ -572,9 +562,6 @@ Switch_Key(?instruction, ?key) :-
 .decl _TableSwitch_Target(?instruction:symbol, ?value:number, ?target:number)
 .input _TableSwitch_Target(IO="file", filename="TableSwitch-Target.facts", delimiter="\t")
 
-isInstruction(?instruction),
-isSwitch_Insn(?instruction),
-isTableSwitch_Insn(?instruction),
 Switch_Target(?instruction, ?value, ?target) :-
   _TableSwitch_Target(?instruction, ?value, ?target).
 
@@ -582,9 +569,6 @@ Switch_Target(?instruction, ?value, ?target) :-
 .decl _LookupSwitch_Target(?instruction:symbol, ?value:number, ?target:number)
 .input _LookupSwitch_Target(IO="file", filename="LookupSwitch-Target.facts", delimiter="\t")
 
-isInstruction(?instruction),
-isSwitch_Insn(?instruction),
-isLookupSwitch_Insn(?instruction),
 Switch_Target(?instruction, ?value, ?target) :-
   _LookupSwitch_Target(?instruction, ?value, ?target).
 
@@ -593,9 +577,6 @@ Switch_Target(?instruction, ?value, ?target) :-
 .decl _TableSwitch_DefaultTarget(?instruction:symbol, ?target:number)
 .input _TableSwitch_DefaultTarget(IO="file", filename="TableSwitch-Default.facts", delimiter="\t")
 
-isInstruction(?instruction),
-isSwitch_Insn(?instruction),
-isTableSwitch_Insn(?instruction),
 Switch_DefaultTarget(?instruction, ?target) :-
     _TableSwitch_DefaultTarget(?instruction, ?target).
 
@@ -603,9 +584,6 @@ Switch_DefaultTarget(?instruction, ?target) :-
 .decl _LookupSwitch_DefaultTarget(?instruction:symbol, ?target:number)
 .input _LookupSwitch_DefaultTarget(IO="file", filename="LookupSwitch-Default.facts", delimiter="\t")
 
-isInstruction(?instruction),
-isSwitch_Insn(?instruction),
-isLookupSwitch_Insn(?instruction),
 Switch_DefaultTarget(?instruction, ?target) :-
     _LookupSwitch_DefaultTarget(?instruction, ?target).
 
