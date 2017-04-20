@@ -76,7 +76,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   AdvancedRecordBasisMacro(?ctx, ?var, ?value),
   CachedRecordMacro(?ctx, ?value, ?hctx),
 #ifdef RecordArrayMacro
-  !ArrayType(HeapAllocation:Type[?value]),
+  !ArrayType(Value:Type[?value]),
 #endif
   ObjectShouldNotBeRefined(?value).
 #endif /* #ifndef AdvancedRecordBasisMacro */
