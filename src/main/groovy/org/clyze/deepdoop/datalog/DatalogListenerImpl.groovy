@@ -2,8 +2,6 @@ package org.clyze.deepdoop.datalog
 
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
-import org.antlr.v4.runtime.tree.ParseTree
-import org.antlr.v4.runtime.tree.ParseTreeProperty
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.component.*
@@ -17,37 +15,149 @@ import static org.clyze.deepdoop.datalog.DatalogParser.*
 
 class DatalogListenerImpl extends DatalogBaseListener {
 
-	ParseTreeProperty<String>         name
-	ParseTreeProperty<List<String>>   names
-	ParseTreeProperty<Alias>          prop
-	ParseTreeProperty<List<Alias>>    props
-	ParseTreeProperty<IElement>       elem
-	ParseTreeProperty<List<IElement>> elems
-	ParseTreeProperty<List<IAtom>>    atoms
-	ParseTreeProperty<IExpr>          expr
-	ParseTreeProperty<List<IExpr>>    exprs
-
-	boolean                           inDecl
-	Component                         currComp
-	String                            currCompName
-	Program                           program
+	def       values = [:]
+	def       inDecl = false
+	Component currComp
+	String    currCompName
+	def       program = new Program()
 
 	DatalogListenerImpl(String filename) {
-		name     = new ParseTreeProperty<>()
-		names    = new ParseTreeProperty<>()
-		prop     = new ParseTreeProperty<>()
-		props    = new ParseTreeProperty<>()
-		elem     = new ParseTreeProperty<>()
-		elems    = new ParseTreeProperty<>()
-		atoms    = new ParseTreeProperty<>()
-		expr     = new ParseTreeProperty<>()
-		exprs    = new ParseTreeProperty<>()
-		program  = new Program()
 		currComp = program.globalComp
-
 		SourceManager.v().setOutputFile(new File(filename).getAbsolutePath())
 	}
 
+	void enterComp(CompContext ctx) {
+		currCompName = ctx.IDENTIFIER(0).getText()
+		if (ctx.L_BRACK()) {
+			recLoc(ctx)
+			currComp = new Component(currCompName, (ctx.IDENTIFIER(1) == null ? null : ctx.IDENTIFIER(1).getText()))
+		}
+	}
+	void exitComp(CompContext ctx) {
+		if (ctx.identifierList()) {
+			def inits = values[ctx.identifierList()]
+			inits.each { id -> program.addInit(id, currCompName) }
+		}
+		if (ctx.L_BRACK() != null) {
+			program.addComponent(currComp)
+			currComp = program.globalComp
+		}
+	}
+	void enterCmd(CmdContext ctx) {
+		currCompName = ctx.IDENTIFIER().getText()
+		if (ctx.L_BRACK()) {
+			recLoc(ctx)
+			currComp = new CmdComponent(currCompName)
+		}
+	}
+	void exitCmd(CmdContext ctx) {
+		if (ctx.identifierList()) {
+			def inits = values[ctx.identifierList()]
+			inits.each{ id -> program.addInit(id, currCompName) }
+		}
+		if (ctx.L_BRACK()) {
+			program.addComponent(currComp)
+			currComp = program.globalComp
+		}
+	}
+	void exitInitialize(InitializeContext ctx) {
+		def compName = ctx.IDENTIFIER().getText()
+		def inits = values[ctx.identifierList()]
+		inits.each{ program.addInit(it, compName) }
+	}
+	void exitPropagate(PropagateContext ctx) {
+		program.addPropagation(new Propagation(
+			ctx.IDENTIFIER(0).getText(),
+			(values[ctx.propagationList()] + []) as Set,
+			ctx.IDENTIFIER(1)?.getText() ))
+	}
+	void exitIdentifierList(IdentifierListContext ctx) {
+		def id = ctx.IDENTIFIER().getText()
+		def list = (values[ctx.identifierList()] ?: []) << id
+		values[ctx] = list
+	}
+	void exitPropagationElement(PropagationElementContext ctx) {
+		if (ctx.ALL())
+			values[ctx] = new Alias(orig: null, alias: null)
+		else if (ctx.AS()) {
+			def orig  = values[ctx.predicateName(0)]
+			def alias = values[ctx.predicateName(1)]
+			values[ctx] = new Alias(orig: new Stub(orig), alias: new Stub(alias))
+		}
+		else {
+			def orig  = values[ctx.predicateName(0)]
+			values[ctx] = new Alias(orig: new Stub(orig), alias: null)
+		}
+	}
+	void exitPropagationList(PropagationListContext ctx) {
+		def propElement = values[ctx.propagationElement()]
+		def list = (values[ctx.propagationList()] ?: []) << propElement
+		values[ctx] = list
+	}
+
+	void enterDeclaration(DeclarationContext ctx) {
+		inDecl = true
+	}
+	void exitDeclaration(DeclarationContext ctx) {
+		recLoc(ctx)
+		inDecl = false
+
+		if (ctx.refmode()) {
+			def p = values[ctx.singleAtom()] as Predicate
+			assert p.exprs.size() == 1
+			def entity = new Entity(p.name, p.stage, p.exprs.first())
+			def refmode = values[ctx.refmode()] as RefMode
+			assert ctx.primitiveType()
+			def primitive = values[ctx, primitiveType()] as Primitive
+			currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive))
+		}
+		else {
+			def typesList = values[ctx.predicateList()]
+			Set<IAtom> types = [] as Set
+			if (typesList)
+				typesList.each { type ->
+					if (type instanceof Predicate) {
+						def p = type as Predicate
+						types.add(new Entity(p.name, p.stage, p.exprs))
+					}
+					else
+						types.add(type)
+				}
+
+			IAtom atom = values[ctx.predicate()] as IAtom
+			if (types.isEmpty()) {
+				def p = atom as Predicate
+				atom = new Entity(p.name, p.stage, p.exprs)
+			}
+
+			if (isConstraint(atom, types))
+				currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)))
+			else
+				currComp.addDecl(new Declaration(atom, types))
+		}
+	}
+	void exitConstraint(ConstraintContext ctx) {
+		recLoc(ctx)
+		currComp.addCons(new Constraint(values[ctx.compound(0)], values[ctx.compound(1)]))
+	}
+	void exitRule_(Rule_Context ctx) {
+		recLoc(ctx)
+		if (ctx.predicateList() != null) {
+			def headAtoms = values[ctx.predicateList()]
+			def firstAtom = headAtoms.first()
+			if (firstAtom instanceof Directive && firstAtom.name() == "lang:entity") {
+				assert headAtoms.size() == 1
+				currComp.markEntity((firstAtom as Directive).backtick.name())
+			}
+			def head = new LogicalElement(LogicType.AND, headAtoms.collect() as Set)
+			def body = values[ctx.compound()] as IElement
+			currComp.addRule(new Rule(head, body))
+		} else {
+			LogicalElement head = new LogicalElement(values[ctx.predicate()])
+			AggregationElement aggregation = (AggregationElement) values[ctx.aggregation()]
+			currComp.addRule(new Rule(head, aggregation))
+		}
+	}
 	void enterLineMarker(LineMarkerContext ctx) {
 		// Line number of the original file (emitted by C-Preprocessor)
 		def markerLine = Integer.parseInt(ctx.INTEGER(0).getText())
@@ -55,10 +165,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		def markerActualLine = ctx.start.getLine()
 		// Name of the original file (emitted by C-Preprocessor)
 		def sourceFile = ctx.STRING().getText()
-		// Remove quotes from file name
+		// Remove quotes from file values
 		sourceFile = sourceFile.substring(1, sourceFile.length()-1)
 
-		// Ignore first line of output. It reports the name of the C-Preprocessed file
+		// Ignore first line of output. It reports the values of the C-Preprocessed file
 		if (markerActualLine == 1) return
 		// Ignore lines for system info (e.g. <built-in> or /usr/include/stdc-predef.h)
 		if (sourceFile.startsWith("<") || sourceFile.startsWith("/usr/include")) return
@@ -75,179 +185,113 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		else
 			// TODO handle in a different way (report it)
 			println "Weird line marker flag: $t"
-
-	}
-
-	void enterComp(CompContext ctx) {
-		currCompName = ctx.IDENTIFIER(0).getText()
-		if (ctx.L_BRACK() != null) {
-			recLoc(ctx)
-			currComp = new Component(currCompName, (ctx.IDENTIFIER(1) == null ? null : ctx.IDENTIFIER(1).getText()))
-		}
-	}
-	void exitComp(CompContext ctx) {
-		if (ctx.identifierList() != null) {
-			def inits = get(names, ctx.identifierList())
-			inits.each { id -> program.addInit(id, currCompName) }
-		}
-		if (ctx.L_BRACK() != null) {
-			program.addComponent(currComp)
-			currComp = program.globalComp
-		}
-	}
-	void enterCmd(CmdContext ctx) {
-		currCompName = ctx.IDENTIFIER().getText()
-		if (ctx.L_BRACK() != null) {
-			recLoc(ctx)
-			currComp = new CmdComponent(currCompName)
-		}
-	}
-	void exitCmd(CmdContext ctx) {
-		if (ctx.identifierList() != null) {
-			def inits = get(names, ctx.identifierList())
-			inits.each{ id -> program.addInit(id, currCompName) }
-		}
-		if (ctx.L_BRACK() != null) {
-			program.addComponent(currComp)
-			currComp = program.globalComp
-		}
-	}
-	void exitInitialize(InitializeContext ctx) {
-		def compName = ctx.IDENTIFIER().getText()
-		def inits = get(names, ctx.identifierList())
-		inits.each{ program.addInit(it, compName) }
-	}
-	void exitPropagate(PropagateContext ctx) {
-		program.addPropagation(new Propagation(
-				fromId: ctx.IDENTIFIER(0).getText(),
-				preds: get(props, ctx.propagationList()).collect() as Set,
-				toId: ctx.IDENTIFIER(1)?.getText() ))
-	}
-	void exitPropagationElement(PropagationElementContext ctx) {
-		if (ctx.ALL() != null)
-			prop.put(ctx, new Alias(orig: null, alias: null))
-		else if (ctx.AS() != null) {
-			def orig  = get(name, ctx.predicateName(0))
-			def alias = get(name, ctx.predicateName(1))
-			prop.put(ctx, new Alias(orig: new Stub(orig), alias: new Stub(alias)))
-		}
-		else {
-			def orig  = get(name, ctx.predicateName(0))
-			prop.put(ctx, new Alias(orig: new Stub(orig), alias: null))
-		}
-	}
-	void exitPropagationList(PropagationListContext ctx) {
-		def propElement = get(prop, ctx.propagationElement())
-		def list = get(props, ctx.propagationList(), propElement)
-		props.put(ctx, list)
-	}
-	void enterDeclaration(DeclarationContext ctx) {
-		inDecl = true
-	}
-	void exitDeclaration(DeclarationContext ctx) {
-		recLoc(ctx)
-		inDecl = false
-
-		if (ctx.refmode() == null) {
-			def typesList = get(atoms, ctx.predicateList())
-			Set<IAtom> types = [] as Set
-			if (typesList != null)
-				for (IAtom type : typesList)
-					if (type instanceof Predicate) {
-						def p = type as Predicate
-						types.add(new Entity(p.name, p.stage, p.exprs))
-					}
-					else
-						types.add(type)
-
-			def atom = get(elem, ctx.predicate()) as IAtom
-			if (types.isEmpty()) {
-				def p = atom as Predicate
-				atom = new Entity(p.name, p.stage, p.exprs)
-			}
-
-			if (isConstraint(atom, types))
-				currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)))
-			else
-				currComp.addDecl(new Declaration(atom, types))
-		}
-		else {
-			def refmode = get(elem, ctx.refmode()) as RefMode
-			List<IExpr> exprs = [ refmode.entityVar ]
-			def entity = new Entity(get(name, ctx.predicateName()), exprs)
-			def primitive = get(elem, ctx.predicate()) as Primitive
-			currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive))
-		}
-	}
-
-	void exitConstraint(ConstraintContext ctx) {
-		recLoc(ctx)
-		currComp.addCons(new Constraint(get(elem, ctx.ruleBody(0)), get(elem, ctx.ruleBody(1))))
-	}
-
-	void exitRule_(Rule_Context ctx) {
-		recLoc(ctx)
-		if (ctx.predicateList() != null) {
-			def headAtoms = get(atoms, ctx.predicateList())
-			def firstAtom = headAtoms.first()
-			if (firstAtom instanceof Directive && firstAtom.name() == "lang:entity") {
-				assert headAtoms.size() == 1
-				currComp.markEntity((firstAtom as Directive).backtick.name())
-			}
-			def head = new LogicalElement(LogicType.AND, headAtoms.collect() as Set)
-			def body = get(elem, ctx.ruleBody()) as IElement
-			currComp.addRule(new Rule(head, body))
-		} else {
-			LogicalElement head = new LogicalElement(get(elem, ctx.predicate()))
-			AggregationElement aggregation = (AggregationElement) get(elem, ctx.aggregation())
-			currComp.addRule(new Rule(head, aggregation))
-		}
 	}
 
 	void exitPredicate(PredicateContext ctx) {
+		if      (ctx.primitiveType()) values[ctx] = values[ctx.primitiveType()]
+		else if (ctx.directive())     values[ctx] = values[ctx.directive()]
+		else if (ctx.refmode())       values[ctx] = values[ctx.refmode()]
+		else if (ctx.singleAtom())    values[ctx] = values[ctx.singleAtom()]
+		else if (ctx.atom())          values[ctx] = values[ctx.atom()]
+		else if (ctx.functional())    values[ctx] = values[ctx.functional()]
+	}
+	void exitPrimitiveType(PrimitiveTypeContext ctx) {
+		assert inDecl
 		recLoc(ctx)
-		assert (inDecl && ctx.BACKTICK() == null) || (!inDecl && ctx.CAPACITY() == null)
-
-		String      name     = get(name, ctx.predicateName(0))
-		List<IExpr> exprs    = (ctx.exprList() == null ? [] : get(exprs, ctx.exprList()))
-		IExpr       expr     = get(expr, ctx.expr())
-		String      capacity = (ctx.CAPACITY() == null ? null : ctx.CAPACITY().getText())
-		String      stage    = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText())
-		Stub backtick = (ctx.BACKTICK() == null ? null : new Stub(get(this.name, ctx.predicateName(1))))
-
-		boolean     isRefMode    = (ctx.predicateName(0) == null)
-		boolean     isFunctional = hasToken(ctx, "[")
-		boolean     isPrimitive  = (!isRefMode && (capacity != null || isPrimitive(name)))
-		boolean     isPredicate  = (!isRefMode && !isFunctional && !isPrimitive)
-		boolean     isDirective  = (!isRefMode && (name.startsWith("lang:") || ctx.BACKTICK() != null))
-
-		if (isPrimitive)
-			elem.put(ctx, new Primitive(name, capacity, (VariableExpr) exprs.get(0)))
-		else if (isPredicate && !isDirective)
-			elem.put(ctx, new Predicate(name, stage, exprs))
-		else if (isPredicate && isDirective)
-			elem.put(ctx, new Directive(name, backtick))
-		else if (isFunctional && !isDirective)
-			elem.put(ctx, new Functional(name, stage, exprs, expr))
-		else if (isFunctional && isDirective)
-			elem.put(ctx, new Directive(name, backtick, (ConstantExpr)expr))
-		else if (isRefMode)
-			elem.put(ctx, get(elem, ctx.refmode()))
+		values[ctx] = new Primitive(
+			values[ctx.predicateName()],
+			ctx.CAPACITY().getText(),
+			new VariableExpr(ctx.IDENTIFIER().getText()))
+	}
+	void exitDirective(DirectiveContext ctx) {
+		assert !inDecl
+		recLoc(ctx)
+		if (ctx.expr())
+			values[ctx] = new Directive(
+				values[ctx.predicateName(0)],
+				new Stub(values[ctx.predicateName(1)]),
+				values[ctx.expr()] as ConstantExpr)
+		else
+			values[ctx] = new Directive(
+				values[ctx.predicateName(0)],
+				new Stub(values[ctx.predicateName(1)]))
+	}
+	void exitRefmode(RefmodeContext ctx) {
+		recLoc(ctx)
+		values[ctx] = new RefMode(
+			values[ctx.predicateName()],
+			ctx.AT_STAGE()?.getText(),
+			new VariableExpr(ctx.IDENTIFIER().getText()),
+			values[ctx.expr()])
+	}
+	void exitSingleAtom(SingleAtomContext ctx) {
+		recLoc(ctx)
+		def name = values[ctx.predicateName()]
+		if (isPrimitive(name))
+			values[ctx] = new Primitive(name, null, values[ctx.expr()])
+		else
+			values[ctx] = new Predicate(name, ctx.AT_STAGE()?.getText(), [values[ctx.expr()] ])
+	}
+	void exitAtom(AtomContext ctx) {
+		recLoc(ctx)
+		if (ctx.expr())
+			values[ctx] = new Predicate(
+				values[ctx.predicateName()],
+				ctx.AT_STAGE()?.getText(),
+				[])
+		else
+			values[ctx] = new Predicate(
+				values[ctx.predicateName()],
+				ctx.AT_STAGE()?.getText(),
+				[values[ctx.expr()] ] + values[ctx.exprList()])
+	}
+	void exitFunctionalHead(FunctionalHeadContext ctx) {
+		recLoc(ctx)
+		values[ctx] = new FunctionalHeadExpr(
+			values[ctx.predicateName()],
+			ctx.AT_STAGE()?.getText(),
+			ctx.exprList() ? values[ctx.exprList()] : [])
+	}
+	void exitFunctional(FunctionalContext ctx) {
+		recLoc(ctx)
+		def fHead = (values[ctx.functionalHead()] as FunctionalHeadExpr).functional
+		def valueExpr = values[ctx.expr()]
+		if (fHead.name.startsWith("lang:"))
+			values[ctx] = new Directive(fHead.name, null, valueExpr)
+		else
+			values[ctx] = new Functional(fHead.name, fHead.stage, fHead.keyExprs, valueExpr)
 	}
 
-	void exitRuleBody(RuleBodyContext ctx) {
+	void exitAggregation(AggregationContext ctx) {
+		recLoc(ctx)
+		def variable = new VariableExpr(ctx.IDENTIFIER().getText())
+		def predicate = values[ctx.predicate()] as Predicate
+		def body = values[ctx.compound()]
+		values[ctx] = new AggregationElement(
+			new VariableExpr(ctx.IDENTIFIER().getText()),
+			values[ctx.predicate()] as Predicate,
+			values[ctx.compound()])
+	}
+
+	void exitPredicateList(PredicateListContext ctx) {
+		def atom = values[ctx.predicate()] as IAtom
+		def list = (values[ctx.predicateList()] ?: []) << atom
+		values[ctx] = list
+	}
+
+	void exitCompound(CompoundContext ctx) {
 		recLoc(ctx)
 		IElement result
 
-		if (ctx.comparison() != null)
-			result = get(elem, ctx.comparison())
-		else if (ctx.predicate() != null)
-			result = get(elem, ctx.predicate())
-		else if (ctx.ruleBody(1) == null)
-			result = new GroupElement(get(elem, ctx.ruleBody(0)))
+		if (ctx.comparison())
+			result = values[ctx.comparison()]
+		else if (ctx.predicate())
+			result = values[ctx.predicate()]
+		else if (ctx.compound(1) == null)
+			result = new GroupElement(values[ctx.compound(0)])
 		else {
 			def token = getToken(ctx, 0)
-			List<IElement> list = [get(elem, ctx.ruleBody(0)), get(elem, ctx.ruleBody(1)) ]
+			List<IElement> list = [values[ctx.compound(0)], values[ctx.compound(1)] ]
 			result = new LogicalElement(token.equals(",") ? LogicType.AND : LogicType.OR, list)
 		}
 
@@ -255,35 +299,19 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		if (token != null && token == "!")
 			result = new NegationElement(result)
 
-		elem.put(ctx, result)
-	}
-
-	void exitAggregation(AggregationContext ctx) {
-		recLoc(ctx)
-		def variable = new VariableExpr(ctx.IDENTIFIER().getText())
-		def predicate = get(elem, ctx.predicate()) as Predicate
-		def body = get(elem, ctx.ruleBody())
-		elem.put(ctx, new AggregationElement(variable, predicate, body))
-	}
-
-	void exitRefmode(RefmodeContext ctx) {
-		recLoc(ctx)
-		def name  = get(name, ctx.predicateName())
-		def stage = (ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText())
-		elem.put(ctx, new RefMode(name, stage, new VariableExpr(ctx.IDENTIFIER().getText()), get(expr, ctx.expr())))
+		values[ctx] = result
 	}
 
 	void exitPredicateName(PredicateNameContext ctx) {
 		recLoc(ctx)
-		def child = ctx.predicateName()
 		def name = ctx.IDENTIFIER().getText()
-		if (child != null)
-			name = get(this.name, child) + ":" + name
-		this.name.put(ctx, name)
+		if (ctx.predicateName())
+			name = values[ctx.predicateName()] + ":" + name
+		values[ctx] = name
 	}
 
 	void exitConstant(ConstantContext ctx) {
-		if (ctx.INTEGER() != null) {
+		if (ctx.INTEGER()) {
 			def str = ctx.INTEGER().getText()
 			Long constant
 			if (str.startsWith("0x") || str.startsWith("0X")) {
@@ -301,29 +329,25 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			else {
 				constant = Long.parseLong(str, 10)
 			}
-			expr.put(ctx, new ConstantExpr(constant))
+			values[ctx] = new ConstantExpr(constant)
 		}
-		else if (ctx.REAL() != null)    expr.put(ctx, new ConstantExpr(Double.parseDouble(ctx.REAL().getText())))
-		else if (ctx.BOOLEAN() != null) expr.put(ctx, new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText())))
-		else if (ctx.STRING() != null)  expr.put(ctx, new ConstantExpr(ctx.STRING().getText()))
+		else if (ctx.REAL())    values[ctx] = new ConstantExpr(Double.parseDouble(ctx.REAL().getText()))
+		else if (ctx.BOOLEAN()) values[ctx] = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().getText()))
+		else if (ctx.STRING())  values[ctx] = new ConstantExpr(ctx.STRING().getText())
 	}
 
 	void exitExpr(ExprContext ctx) {
 		IExpr e
-		if (ctx.IDENTIFIER() != null)
+		if (ctx.IDENTIFIER())
 			e = new VariableExpr(ctx.IDENTIFIER().getText())
-		else if (ctx.predicateName() != null) {
-			def name = get(name, ctx.predicateName())
-			def stage = ctx.AT_STAGE() == null ? null : ctx.AT_STAGE().getText()
-			List<IExpr> exprs = (ctx.exprList() == null ? [] : get(exprs, ctx.exprList()))
-			e = new FunctionalHeadExpr(name, stage, exprs)
-		}
-		else if (ctx.constant() != null)
-			e = get(expr, ctx.constant())
+		else if (ctx.functionalHead())
+			e = values[ctx.functionalHead()]
+		else if (ctx.constant())
+			e = values[ctx.constant()]
 		else {
 			List<ExprContext> exprs = ctx.expr()
 			if (exprs.size() == 2) {
-				def left = get(expr, exprs.get(0))
+				def left = values[exprs.get(0)]
 				BinOperator op = null
 				switch (getToken(ctx, 0)) {
 					case "+": op = BinOperator.PLUS ; break
@@ -331,20 +355,26 @@ class DatalogListenerImpl extends DatalogBaseListener {
 					case "*": op = BinOperator.MULT ; break
 					case "/": op = BinOperator.DIV  ; break
 				}
-				def right = get(expr, exprs.get(1))
+				def right = values[exprs.get(1)]
 				e = new BinaryExpr(left, op, right)
 			}
 			else
-				e = new GroupExpr(get(expr, exprs.get(0)))
+				e = new GroupExpr(values[exprs.get(0)])
 		}
 
-		expr.put(ctx, e)
+		values[ctx] = e
+	}
+
+	void exitExprList(ExprListContext ctx) {
+		def p = values[ctx.expr()]
+		def list = (values[ctx.exprList()] ?: []) << p
+		values[ctx] = list
 	}
 
 	void exitComparison(ComparisonContext ctx) {
 		def token = getToken(ctx, 0)
-		def left = get(expr, ctx.expr(0))
-		def right = get(expr, ctx.expr(1))
+		def left = values[ctx.expr(0)]
+		def right = values[ctx.expr(1)]
 		BinOperator op = null
 		switch (token) {
 			case "=" : op = BinOperator.EQ ; break
@@ -355,57 +385,18 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			case "!=": op = BinOperator.NEQ; break
 		}
 
-		elem.put(ctx, new ComparisonElement(left, op, right))
-	}
-
-	void exitPredicateList(PredicateListContext ctx) {
-		def atom = get(elem, ctx.predicate()) as IAtom
-		List<IAtom> list = get(atoms, ctx.predicateList(), atom)
-		atoms.put(ctx, list)
-	}
-
-	void exitExprList(ExprListContext ctx) {
-		def p = get(expr, ctx.expr())
-		List<IExpr> list = get(exprs, ctx.exprList(), p)
-		exprs.put(ctx, list)
-	}
-
-	void exitIdentifierList(IdentifierListContext ctx) {
-		def id = ctx.IDENTIFIER().getText()
-		List<String> list = get(names, ctx.identifierList(), id)
-		names.put(ctx, list)
+		values[ctx] = new ComparisonElement(left, op, right)
 	}
 
 	void visitErrorNode(ErrorNode node) {
 		throw new RuntimeException("Parsing error")
 	}
 
-	static <T> T get(ParseTreeProperty<T> values, ParseTree node) {
-		T t = values.get(node)
-		values.removeFrom(node)
-		return t
-	}
-	static <T> List<T> get(ParseTreeProperty<List<T>> values, ParseTree node, T newValue) {
-		List<T> lt
-		if (node != null)
-			lt = get(values, node)
-		else
-			lt = []
-		lt.add(newValue)
-		return lt
-	}
 	static String getToken(ParserRuleContext ctx, int index) {
 		for (int i = 0; i < ctx.getChildCount(); i++)
 			if (ctx.getChild(i) instanceof TerminalNode && index-- == 0)
 				return (ctx.getChild(i) as TerminalNode).getText()
 		return null
-	}
-	static boolean hasToken(ParserRuleContext ctx, String token) {
-		for (int i = 0; i < ctx.getChildCount(); i++)
-			if (ctx.getChild(i) instanceof TerminalNode &&
-				(ctx.getChild(i) as TerminalNode).getText().equals(token))
-				return true
-		return false
 	}
 	static boolean isPrimitive(String name) {
 		switch (name) {
