@@ -1,0 +1,9 @@
+// Context-sensitive pointer analysis with context of 3 object and a
+// context-sensitive heap abstraction.
+
+// In this analysis, both the real context and the real heap context are
+// triplets of Values. Keeping mapping functions is the way to handle
+// analyses where HContext = Context (since the language considers them
+// different types).
+.type Context  = [ value1:Value, value2:Value, value3:Value ]
+.type HContext = [ value1:Value, value2:Value, value3:Value ]

@@ -97,7 +97,6 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    ?heapRepr = "<<string-builder>>").
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
-.decl RepresentativesToPickFromOrdinals(?heapReprOrd:number, ?heap:HeapAllocation)
 
 RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
@@ -105,14 +104,11 @@ RepresentativesToPickFrom(?heapRepr, ?heap) :-
   !HeapIsMergedStringFactory(?heap),
   !HeapAllocation_Keep(?heap).
 
-RepresentativesToPickFromOrdinals(ord(?heapRepr), ?heap) :-
-    RepresentativesToPickFrom(?heapRepr, ?heap).
-
 .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
 
 MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
-    RepresentativesToPickFromOrdinals(_, ?heap),
-    ?minHeapReprOrd = min ?heapReprOrd: RepresentativesToPickFromOrdinals(?heapReprOrd, ?heap).
+    RepresentativesToPickFrom(_, ?heap),
+    ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
 
 HeapAllocation_Merge(?heap, ?mergeHeap) :-
     isHeapAllocation(?mergeHeap),
@@ -460,22 +456,17 @@ HeapAllocation_ContextInsensitive(?heap) <-
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
 .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
-.decl ExceptionTypeToHeapOrdinal(?heapOrd:number, ?type:Type)
 
 ExceptionTypeToHeap(?heap, ?heaptype) :-
   AssignHeapAllocation(?heap, _, _),
   HeapAllocation_Type(?heap, ?heaptype),
   ExceptionType(?heaptype).
 
-ExceptionTypeToHeapOrdinal(ord(?heap), ?heapType) :-
-  ExceptionTypeToHeap(?heap, ?heapType).
-
-
 .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
 
 ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ExceptionTypeToHeap(_, ?type),
-  ?representativeHeapOrd = min ?heapOrd : ExceptionTypeToHeapOrdinal(?heapOrd, ?type).
+  ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
 
 HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),

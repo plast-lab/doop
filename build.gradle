@@ -171,9 +171,10 @@ compileJava {
 import org.apache.commons.io.FileUtils
 
 clean.doFirst {
-    def out = System.getenv('DOOP_OUT') ?: "${projectDir}/out"
+    def out = System.getenv('DOOP_OUT') ?: "$projectDir/out"
+    def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
     file(out      ).list().each { f -> delete "$out/$f" }
-    file('logs'   ).list().each { f -> delete "logs/$f" }
+    file(cache    ).list().each { f -> delete "$cache/$f" }
     file('results').list().each { f -> delete "results/$f" }
     FileUtils.deleteQuietly(new File('last-analysis'))
 }
@@ -204,8 +205,8 @@ if (project.hasProperty('artifactory_user')) {
                 }
 
                 url version.endsWith("-SNAPSHOT") ?
-                        "${artifactory_contextUrl}/libs-snapshot-local" :
-                        "${artifactory_contextUrl}/libs-release-local"
+                        "$artifactory_contextUrl/libs-snapshot-local" :
+                        "$artifactory_contextUrl/libs-release-local"
             }
         }
     }
