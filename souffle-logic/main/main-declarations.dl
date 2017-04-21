@@ -30,6 +30,11 @@
 
 .decl Value_isNonHeap(?value:Value)
 
+// Special value objects are just artificial ones that we use to find where the
+// result of a reflective call can flow to. We don't want to track them
+// through the heap.
+.decl NotSpecialObject(?value:Value)
+
 .decl Value_Type(?value:Value, ?type:Type)
 .decl Value_DeclaringType(?value:Value, ?type:Type)
 
