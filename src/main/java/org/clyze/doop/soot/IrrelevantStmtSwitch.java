@@ -52,12 +52,8 @@ class IrrelevantStmtSwitch implements StmtSwitch
         relevant = true;
     }
 
-    public void caseInvokeStmt(InvokeStmt stmt)
-    {
-        if (Options.getInstance().allow_phantom_refs())
-            relevant = !stmt.getInvokeExpr().getMethodRef().declaringClass().isPhantom();
-        else
-            relevant = true;
+    public void caseInvokeStmt(InvokeStmt stmt) {
+        relevant = !Options.getInstance().allow_phantom_refs() || !stmt.getInvokeExpr().getMethodRef().declaringClass().isPhantom();
     }
 
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt)

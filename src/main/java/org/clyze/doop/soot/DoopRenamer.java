@@ -9,7 +9,7 @@ import java.util.*;
 
 public class DoopRenamer {
     static protected void transform(Body body) {
-        Set<Local> transformedLocals = new HashSet<Local>();
+        Set<Local> transformedLocals = new HashSet<>();
         int linenumber = 0;
 
         // For all statements, see whether they def a var.
