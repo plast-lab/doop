@@ -30,7 +30,7 @@ mainClassName = 'org.clyze.doop.Main'
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.1'
+    gradleVersion = '3.5'
 }
 
 repositories {

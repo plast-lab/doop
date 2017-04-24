@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
+import static soot.coffi.Util.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
@@ -328,7 +329,7 @@ class FactWriter {
            char[] */
         if (s.charAt(0) == '[') {
             // array type
-            Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
+            Type t = jimpleTypeOfFieldDescriptor(s);
 
             heap = _rep.classConstant(t);
             actualType = t.toString();
@@ -696,7 +697,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
+        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.String"));
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -726,7 +727,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
+        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.Class"));
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;

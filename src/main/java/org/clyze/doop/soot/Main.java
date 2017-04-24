@@ -11,6 +11,7 @@ import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.options.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,7 +22,6 @@ import java.util.jar.JarInputStream;
 
 import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
-import static soot.options.Options.*;
 
 public class Main {
 
@@ -199,20 +199,17 @@ public class Main {
     private static void produceFacts(SootParameters sootParameters) throws Exception {
         SootMethod dummyMain = null;
 
-        soot.options.Options.v().set_output_dir(sootParameters._outputDir);
+        Options.getInstance().set_output_dir(sootParameters._outputDir);
 
         if (sootParameters._ssa) {
-            soot.options.Options.v().set_via_shimple(true);
-            soot.options.Options.v().set_output_format(output_format_shimple);
+            Options.getInstance().set_via_shimple(true);
+            Options.getInstance().set_output_format(Options.output_format_shimple);
         } else {
-            soot.options.Options.v().set_output_format(output_format_jimple);
+            Options.getInstance().set_output_format(Options.output_format_jimple);
         }
-        //soot.options.Options.v().set_debug_resolver(true);
-        //soot.options.Options.v().set_drop_bodies_after_load(true);
-        soot.options.Options.v().set_asm_backend(true);
-        soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
-        soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
-        soot.options.Options.v().set_keep_line_number(true);
+        //soot.options.Options.getInstance().set_debug_resolver(true);
+        //soot.options.Options.getInstance().set_drop_bodies_after_load(true);
+        Options.getInstance().set_keep_line_number(true);
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
@@ -229,9 +226,9 @@ public class Main {
             String apkLocation = sootParameters._inputs.get(0);
             apk = new File(apkLocation);
             SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
-            //soot.options.Options.v().set_debug(true);
-            soot.options.Options.v().set_process_multiple_dex(true);
-            soot.options.Options.v().set_src_prec(src_prec_apk_class_jimple);
+            //soot.options.Options.getInstance().set_debug(true);
+            Options.getInstance().set_process_multiple_dex(true);
+            Options.getInstance().set_src_prec(Options.src_prec_apk);
 
             if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
@@ -267,7 +264,7 @@ public class Main {
             }
 
         } else {
-            soot.options.Options.v().set_src_prec(src_prec_java);
+            Options.getInstance().set_src_prec(Options.src_prec_class);
 
             JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
             JarEntry entry;
@@ -299,22 +296,22 @@ public class Main {
             }
         }
 
-        Scene scene = Scene.v();
+        Scene scene = Scene.getInstance();
         scene.setSootClassPath(sootParameters._inputs.get(0));
         for (int i = 0; i < sootParameters._libraries.size(); i++) {
             scene.extendSootClassPath(sootParameters._libraries.get(i));
         }
 
         if (sootParameters._main != null) {
-            soot.options.Options.v().set_main_class(sootParameters._main);
+            Options.getInstance().set_main_class(sootParameters._main);
         }
 
         if (sootParameters._mode == SootParameters.Mode.FULL) {
-            soot.options.Options.v().set_full_resolver(true);
+            Options.getInstance().set_full_resolver(true);
         }
 
         if (sootParameters._allowPhantom) {
-            soot.options.Options.v().set_allow_phantom_refs(true);
+            Options.getInstance().set_allow_phantom_refs(true);
         }
 
         if (sootParameters._android) {
@@ -374,7 +371,7 @@ public class Main {
 
         System.out.println("Total classes in Scene: " + classes.size());
         try {
-            soot.PackManager.v().retrieveAllSceneClassesBodies();
+            new JimplePackManager().retrieveAllSceneClassesBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
@@ -447,7 +444,7 @@ public class Main {
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
-        if(SourceLocator.v().getClassSource(className) != null) {
+        if(new SourceLocator().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
     }

@@ -85,7 +85,7 @@ class IvyResolver implements InputResolver {
         resolver.addArtifactPattern('http://repo1.maven.org/maven2/[organisation]/[module]/[revision]/[artifact](-[revision]).[ext]')
         settings.addResolver(resolver)
         settings.setDefaultResolver(resolver.getName())
-        Ivy ivy = Ivy.newInstance(settings)
+        Ivy ivy = Ivy.getInstance(settings)
         */
 
         //Configure ivy using the default settings
