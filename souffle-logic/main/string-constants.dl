@@ -14,10 +14,10 @@
 .decl HeapAllocation_Special(?heap:HeapAllocation)
 
 HeapAllocation_Special(?heap) :-
-    HeapAllocation_ContextInsensitive(?heap).
+  HeapAllocation_ContextInsensitive(?heap).
 
 HeapAllocation_Special(?heap) :-
-    HeapAllocation_Merge(?heap, _).
+  HeapAllocation_Merge(?heap, _).
 
 
 /**
@@ -43,7 +43,7 @@ HeapAllocation_Special(?heap) :-
  */
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
-  ! HeapAllocation_Special(?heap).
+  !HeapAllocation_Special(?heap).
 
 AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
@@ -85,9 +85,9 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
 HeapIsMergedStringFactory(?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
   (isHeapAllocation(?heapRepr),
-     ?heapRepr = "<<string-buffer>>";
-     isHeapAllocation(?heapRepr),
-     ?heapRepr = "<<string-builder>>").
+   ?heapRepr = "<<string-buffer>>";
+   isHeapAllocation(?heapRepr),
+   ?heapRepr = "<<string-builder>>").
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
   HeapRepresentative(?heapRepr, ?heap),
@@ -107,13 +107,13 @@ RepresentativesToPickFrom(?heapRepr, ?heap) :-
 .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
 
 MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
-    RepresentativesToPickFrom(_, ?heap),
-    ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
+  RepresentativesToPickFrom(_, ?heap),
+  ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
 
 HeapAllocation_Merge(?heap, ?mergeHeap) :-
-    isHeapAllocation(?mergeHeap),
-    ord(?mergeHeap) = ?minHeapReprOrd,
-    MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
+  isHeapAllocation(?mergeHeap),
+  ord(?mergeHeap) = ?minHeapReprOrd,
+  MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
 
 /*************************************************************
  * String constants
@@ -173,6 +173,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 // (by setting "...ShouldBeMerged...").
 
 .decl MethodAllocationMergeThreshold(?t:number)
+
 MethodAllocationMergeThreshold(50).
 
 .decl ExceptionType(?type:Type)
@@ -217,8 +218,8 @@ AllocationsPerMethodAndType(?type, ?meth, ?n) :-
 
 AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
   AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
-  ?n > ?t,
-  MethodAllocationMergeThreshold(?t).
+  MethodAllocationMergeThreshold(?t),
+  ?n > ?t.
 
 .decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
 

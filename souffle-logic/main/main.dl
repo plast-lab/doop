@@ -59,6 +59,7 @@ Value_isNonHeap(?value) :-
 Value_Null(?nullheap) :-
   HeapAllocation_Null(?nullheap).
 
+
 Value_DeclaringType(?heapValue, ?type) :-
   AssignHeapAllocation(?heapValue, _, ?inmethod),
   Method_DeclaringType(?inmethod, ?type),
@@ -75,6 +76,14 @@ Value_DeclaringType(?value, "java.lang.Object") :-
   Value_Null(?value);
   MainMethodArgArray(?value);
   MainMethodArgArrayContent(?value).
+
+
+// Mark objects that are normal, i.e., not special
+NotSpecialObject(?value) :-
+  Value_isHeap(?value) ;
+  Value_isMock(?value) ;
+  Value_Num(?value, _).
+
 
 isImmutableContext(ctx), InitContextMacro("<<immutable-context>>").
 isInitialContext(ctx), InitContextMacro("<<initial-context>>").
@@ -97,6 +106,7 @@ ReachableContext(?clinitContext, ?clinit) :-
   isClinitContext(?clinitContext),
   InitializedClass(?class),
   ClassInitializer(?class, ?clinit).
+
 
 isImmutableHContext(hctx), InitHContextMacro("<<immutable-hcontext>>").
 isJVMStartupHContext(hctx), InitHContextMacro("<<jvm-startup-hcontext>>").
