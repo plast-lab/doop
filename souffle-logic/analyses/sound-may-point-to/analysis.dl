@@ -1436,7 +1436,7 @@
     BasicBlockHead(?insn, ?headInsn),
     FieldInstruction_Signature(?insn, ?fld).
   
-    BasicBlockMayAffectField(?fld, ?headInsn) :-
+  BasicBlockMayAffectField(?fld, ?headInsn) :-
     MayCallGraphEdge_Prev(?toCtx, ?toMethod, _, ?insn),
     BasicBlockHead(?insn, ?headInsn),
     MethodMayAssignField(?fld, ?toCtx, ?toMethod).
@@ -1503,12 +1503,12 @@ LibraryCollectionStoreOperation(?invo) :-
   VirtualMethodInvocation_SimpleName(?invo, "set"); 
   VirtualMethodInvocation_SimpleName(?invo, "put").
 LibraryCollectionLoadOperation(?invo) :-
-  VirtualMethodInvocation_SimpleName(?invo, "peek"),
-  VirtualMethodInvocation_SimpleName(?invo, "pop"),
-  VirtualMethodInvocation_SimpleName(?invo, "elementAt"),
-  VirtualMethodInvocation_SimpleName(?invo, "firstElement"),
-  VirtualMethodInvocation_SimpleName(?invo, "lastElement"),
-  VirtualMethodInvocation_SimpleName(?invo, "remove"),
+  VirtualMethodInvocation_SimpleName(?invo, "peek");
+  VirtualMethodInvocation_SimpleName(?invo, "pop");
+  VirtualMethodInvocation_SimpleName(?invo, "elementAt");
+  VirtualMethodInvocation_SimpleName(?invo, "firstElement");
+  VirtualMethodInvocation_SimpleName(?invo, "lastElement");
+  VirtualMethodInvocation_SimpleName(?invo, "remove");
   VirtualMethodInvocation_SimpleName(?invo, "get"). // TODO: better match in future
 
 .decl StoreCollection_From(?insn:Instruction, ?from:Var)
@@ -1548,7 +1548,7 @@ LoadCollection_Base(?invo, ?var) :-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth(2).
+MaxMayContextDepth(4).
 
 AccessPath_MaxLength(3).
 
@@ -1559,14 +1559,13 @@ SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
-//.init SoundMayPhase3 = SoundMay<DummyMustPointTo>
+//.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
+.init SoundMayPhase3 = SoundMay<DummyMustPointTo>
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase2.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
 .init SoundMayPhase4 = SoundMay<DummyMustPointTo>
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
@@ -1579,6 +1578,7 @@ SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase4.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+/*
 .init SoundMayPhase6 = SoundMay<DummyMustPointTo>
 SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).

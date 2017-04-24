@@ -324,22 +324,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						name:"dacapo",
 						description:"Load additional logic for DaCapo (2006) benchmarks properties.",
 						value:false,
-						webUI:true,
-						forPreprocessor:true
+						webUI:true
 				),
 				new AnalysisOption<Boolean>(
 						id:"DACAPO_BACH",
 						name:"dacapo-bach",
 						description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
 						value:false,
-						webUI:true,
-						forPreprocessor:true
-				),
-				new AnalysisOption<String>(
-						id:"DACAPO_BENCHMARK",
-						value:null,
-						cli:false,
-						forPreprocessor:true
+						webUI:true
 				),
 				new AnalysisOption<String>(
 						id:"INFORMATION_FLOW",
@@ -383,6 +375,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						name:"analyze-memory-dump",
 						argName:"dump-filename",
 						description:"Use dynamic information from memory dump",
+						value:null,
+						forPreprocessor:true
+				),
+				new AnalysisOption<String>(
+						id:"IMPORT_DYNAMIC_FACTS",
+						name:"import-dynamic-facts",
+						argName:"facts-filename",
+						description:"Use dynamic information",
 						value:null,
 						forPreprocessor:true
 				),

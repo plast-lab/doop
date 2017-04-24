@@ -5,6 +5,7 @@
 #ifdef MULTIPLE_SEGREGATED_ANALYSES
 #define VarPointsTo(hctx, heap, ctx, var) CollapsedVarPointsTo(hctx, heap, ctx, var)
 #endif // MULTIPLE_SEGREGATED_ANALYSES
+
 #include "macros.logic"
 
 /***************************************************

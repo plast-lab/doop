@@ -28,13 +28,14 @@ class Executor {
             File cwd = FileOps.findDirOrThrow(workingDirectory, "Working directory is invalid: $workingDirectory")
             pb.directory(cwd)
         }
+        pb.redirectErrorStream(true)
         def environment = pb.environment()
         environment.clear()
         environment.putAll(this.environment)
         def process = pb.start()
 
         final InputStream is = process.getInputStream()
-        final InputStream es = process.getErrorStream()
+        //final InputStream es = process.getErrorStream()
 
         /*
          * Put the use of readline in a separate thread because it ignores
@@ -74,12 +75,10 @@ class Executor {
         def returnCode = process.waitFor()
 
         // Create an error string that contains everything in the stderr stream
-        def errorMessages = es.getText()
-
-        // Print the remaining warnings
-        if (!errorMessages.isAllWhitespace()) {
-            System.err.print(errorMessages)
-        }
+        //def errorMessages = es.getText()
+        //if (!errorMessages.isAllWhitespace()) {
+        //    System.err.print(errorMessages)
+        //}
 
         // Check return code and raise exception at failure indication
         if (returnCode != 0) {

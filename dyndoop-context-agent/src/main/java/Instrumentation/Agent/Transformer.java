@@ -11,6 +11,8 @@ import java.util.Arrays;
 
 public class Transformer implements ClassFileTransformer {
 
+    static boolean optInstrumentCGE = false;
+
 
     public static synchronized void agentmain(String args, Instrumentation inst) {
 
@@ -25,7 +27,7 @@ public class Transformer implements ClassFileTransformer {
     }
 
     private static boolean isInterestingClass(String name) {
-        if (name.startsWith("javaassist"))
+        if (name.startsWith("javassist"))
             return false;
         if (name.startsWith("Instrumentation"))
             return false;
@@ -46,10 +48,10 @@ public class Transformer implements ClassFileTransformer {
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
-                if (!Modifier.isStatic(m.getModifiers()) && !Modifier.isAbstract(m.getModifiers())) {
+                if (!Modifier.isStatic(m.getModifiers()) && !Modifier.isAbstract(m.getModifiers()) && optInstrumentCGE) {
                     m.insertBefore("Instrumentation.Recorder.Recorder.recordCall($0);");
                 }
-                //System.err.println("DEBUG: Instrumenting " + m.getDeclaringClass().getName() + "." + m.getName());
+
                 m.instrument(new ExprEditor() {
                     public void edit(NewExpr newExpr) throws CannotCompileException {
                         if (!isInterestingClass(newExpr.getClassName()))

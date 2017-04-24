@@ -45,6 +45,9 @@ AssignHeapAllocation:Heap[?instr] = ?heap <-
    HeapAllocation:byId[?heapId] = ?heap.
 
 
+MethodInvocation:Method:Opt(?invocation, ?signature) <-
+  MethodInvocation:Method[?invocation] = ?signature.
+
 ApplicationMethod(?method) <-
    Method:DeclaringType[?method] = ?class,
    ApplicationClass(?class).

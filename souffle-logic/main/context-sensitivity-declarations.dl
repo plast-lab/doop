@@ -32,11 +32,6 @@
 .decl ContextComponent_Value(?value:Value, ?comp:ContextComponent)
 
 
-// Special heap objects are just artificial ones that we use to find where the
-// result of a reflective call can flow to. We don't want to track them
-// through the heap.
-.decl SpecialObject(?heap:HeapAllocation)
-
 .decl VarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
 
 .decl InstanceFieldPointsTo(?hctx:HContext, ?value:Value, ?sig:Field, ?basehctx:HContext, ?basevalue:Value)
@@ -57,6 +52,7 @@
  * Reachable
  */
 .decl Reachable(?method:Method)
+.output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 
 .decl ReachableContext(?ctx:Context, ?method:Method)
 
@@ -117,16 +113,14 @@
 .decl TempSiteToRefine(?invocation:MethodInvocation)
 
 .decl ValueToRefine(?value:Value)
-ValueToRefine(?v) :- ValueToRefine(?v).
-
 .decl TempValueToRefine(?value:Value)
 
 // Is the SiteToRefine the real list of objects needing
 // refinement or its negation?
-//NegativeSiteFilter[] = ?v -> boolean(?v).
-//TempNegativeSiteFilter[] = ?v -> boolean(?v).
+.decl NegativeSiteFilter(?v:symbol)
+.decl TempNegativeSiteFilter(?v:symbol)
 
 // Is the ValueToRefine the real list of objects needing
 // refinement or its negation?
-//NegativeObjectFilter[] = ?v -> boolean(?v) .
-//TempNegativeObjectFilter[] = ?v -> boolean(?v).
+.decl NegativeObjectFilter(?v:symbol)
+.decl TempNegativeObjectFilter(?v:symbol)

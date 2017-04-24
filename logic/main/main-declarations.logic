@@ -43,6 +43,11 @@ Value:byId[?id] = ?value -> string(?id), Value(?value).
 Value:isHeap(?value) -> Value(?value).
 Value:isNonHeap(?value) -> Value(?value).
 
+// Special value objects are just artificial ones that we use to find where the
+// result of a reflective call can flow to. We don't want to track them
+// through the heap.
+NotSpecialObject(?value) -> Value(?value).
+
 Value:Type[?value] = ?type -> Value(?value), Type(?type).
 Value:DeclaringType[?value] = ?type -> Value(?value), Type(?type).
 
