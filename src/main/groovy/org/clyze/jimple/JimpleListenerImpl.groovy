@@ -196,7 +196,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		return new HeapAllocation(
 			position,
 			_filename,
-			"${_method.doopId}/$_heapCounter", //doopId
+			"${_method.doopId}/new $type/$_heapCounter", //doopId
 			type,
 			_method.doopId //allocatingMethodDoopId
 		)

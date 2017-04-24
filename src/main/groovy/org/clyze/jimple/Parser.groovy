@@ -12,14 +12,14 @@ import org.clyze.persistent.doop.BasicMetadata
 class Parser {
 
 	static String parseJimple2JSON(String filename, String outPath) {
-		def metadata = parseJimple(filename)
+		def metadata = parseJimple(filename, outPath)
 
 		def json = [:]
 		//json.put("Class", metadata.classes)
 		//json.put("Field", metadata.fields)
 		//json.put("Method", metadata.methods)
 		//json.put("Variable", metadata.variables)
-		//json.put("HeapAllocation", metadata.heapAllocations)
+		json.put("HeapAllocation", metadata.heapAllocations)
 
 		return new GsonBuilder().disableHtmlEscaping().create().toJson(json)
 	}
