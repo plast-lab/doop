@@ -11,20 +11,21 @@ serverVirtualCallGraphEdge(invocation, tomethod) <- CallGraphEdge(_, invocation,
 serverStaticCallGraphEdge(invocation, tomethod) <- CallGraphEdge(_, invocation, _, tomethod),
                                                   StaticMethodInvocation:Insn(invocation).
 
+_IsAssignHeapAllocation(heap) <- AssignHeapAllocation:Heap[_] = heap.
 /** Field Points to Heap **/
-serverInstanceFieldPointsTo(heapid, sig, baseheapid) <- AssignHeapAllocation:Heap[_] = baseheap,
-                                                        Value:byHeap[baseheap] = basevalue,
+serverInstanceFieldPointsTo(heapid, sig, baseheapid) <- _IsAssignHeapAllocation(baseheap),
+                                                        Value:Heap[basevalue] = baseheap, 
                                                         Value:Id[value] = heapid,
                                                         Value:Id[basevalue] = baseheapid,
                                                         Value:isHeap(basevalue),
                                                         Value:isHeap(value),
                                                         InstanceFieldPointsTo(_, value, sig, _, basevalue).
-
+/*
 serverStaticFieldPointsTo(sig, heapid) <- StaticFieldPointsTo(_, value, sig),
                                           Value:isHeap(value),
                                           Value:Id[value] = heapid.
 
-/** Aggregations **/
+// Aggregations 
 
 SimpleCallGraphEdge(?toMethod, ?invocation) ->
    MethodInvocation(?invocation),
@@ -34,22 +35,25 @@ SimpleCallGraphEdge(?toMethod, ?invocation) <-
    CallGraphEdge(_, ?invocation, _, ?toMethod).
 
 // All the methods reachable from a method (transitive call-graph)
-ReachableFromMethod(?fromMethod, ?toMethod) ->
+_ReachableFromMethod(?toMethod, ?fromMethod) ->
    Method(?fromMethod),
    Method(?toMethod).
 
-ReachableFromMethod(?fromMethod, ?toMethod) <-
+_ReachableFromMethod(?toMethod, ?fromMethod) <-
    SimpleCallGraphEdge(?toMethod, ?invocation),
    Instruction:Method[?invocation] = ?fromMethod.
 
-ReachableFromMethod(?fromMethod, ?toMethod) <-
-   ReachableFromMethod(?fromMethod, ?toMethodMid),
-   Instruction:Method[?invocation] = ?toMethodMid,
-   SimpleCallGraphEdge(?toMethod, ?invocation).
+_ReachableFromMethod(?toMethod, ?fromMethod) <-
+   _ReachableFromMethod(?toMethod, ?midMethod),
+   Instruction:Method[?invocation] = ?fromMethod,
+   SimpleCallGraphEdge(?midMethod, ?invocation).
    // Instruction:Method[?invocation] = ?fromMethod,
    // SimpleCallGraphEdge(?invocation, ?toMethodMid),
    // ReachableFromMethod(?toMethodMid, ?toMethod).
 
+ReachableFromMethod(?fromMethod, ?toMethod) <-
+   _ReachableFromMethod(?toMethod, ?fromMethod).
+   
 // Recursive methods
 RecursiveMethod(?method) ->
    Method(?method).
@@ -59,10 +63,6 @@ RecursiveMethod(?method) <-
 
 // Total number of heap allocations inside method body. It DOES NOT
 // take heap allocation in methods invoked therein into account.
-AllocInMethod(?insn, ?method) ->
-   Method(?method),
-   AssignHeapAllocation:Insn(?insn).
-
 AllocInMethod(?insn, ?method) <-
    AssignHeapAllocation:Insn(?insn),
    Instruction:Method[?insn] = ?method.
@@ -170,3 +170,4 @@ TotalInvocationsInMethod[?method] = n <-
 TotalInvocationsFromNonRecursiveMethods[?method] = n <-
    TotalInvocationsInMethod[?method] = n,
    !RecursiveMethod(?method).
+*/
