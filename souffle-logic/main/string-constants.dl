@@ -65,36 +65,25 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
  *************************************************************/
 
 .decl HeapRepresentative(?heap:HeapAllocation, ?heapRepr:symbol)
+.decl HeapIsMergedString(?heap:HeapAllocation)
 
 // If the object is a string that should be merged, ignore other
 // representatives and merge with that.
-.decl HeapIsMergedString(?heap:HeapAllocation)
-
 HeapIsMergedString(?heap) :-
-  ?heapRepr = "<<string-constant>>",
-  isHeapAllocation(?heapRepr),
-  HeapRepresentative(?heapRepr, ?heap).
-
+  HeapRepresentative("<<string-constant>>", ?heap).
+// Rule split in two since it needs to be stratified differently
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  ?heapRepr = "<<string-constant>>",
-  isHeapAllocation(?heapRepr),
-  HeapRepresentative(?heapRepr, ?heap).
+  HeapRepresentative("<<string-constant>>", ?heap).
 
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
 HeapIsMergedStringFactory(?heap) :-
-  HeapRepresentative(?heapRepr, ?heap),
-  (isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-buffer>>";
-   isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-builder>>").
+  HeapRepresentative("<<string-buffer>>", ?heap);
+  HeapRepresentative("<<string-builder>>", ?heap).
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative(?heapRepr, ?heap),
-  (isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-buffer>>";
-   isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-builder>>").
+  HeapRepresentative("<<string-buffer>>", ?heap);
+  HeapRepresentative("<<string-builder>>", ?heap).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
 
@@ -401,33 +390,24 @@ AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
 /*************************************************************
  * String buffers and builders
  *************************************************************/
+
 .decl StringFactoryType(?type:Type)
 .decl StringFactoryHeap(?heap:HeapAllocation)
 
 StringFactoryType(?type) :-
-  isType(?type),
   ?type = "java.lang.StringBuffer" ;
-  isType(?type),
   ?type = "java.lang.StringBuilder".
 
 StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
 
-HeapRepresentative(?mergeHeap, ?heap) :-
-  HeapAllocation_Type(?heap, ?type),
-  isType(?type),
-  ?type = "java.lang.StringBuffer",
-  ?mergeHeap = "<<string-buffer>>",
-  isHeapAllocation(?mergeHeap),
+HeapRepresentative("<<string-buffer>>", ?heap) :-
+  HeapAllocation_Type(?heap, "java.lang.StringBuffer"),
   !HeapAllocation_Keep(?heap).
 
-HeapRepresentative(?mergeHeap, ?heap) :-
-  HeapAllocation_Type(?heap, ?type),
-  isType(?type),
-  ?type = "java.lang.StringBuilder",
-  ?mergeHeap = "<<string-builder>>",
-  isHeapAllocation(?mergeHeap),
+HeapRepresentative("<<string-builder>>", ?heap) :-
+  HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
   !HeapAllocation_Keep(?heap).
 
 /*************************************************************
@@ -523,9 +503,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 decl Type_HasNoReferenceField(?type:Type)
 decl Type_DeclaresReferenceField(?type:Type)
 
-Type_HasNoReferenceField(?type) :-
-  ?type = "java.lang.Object",
-  isType(?type).
+Type_HasNoReferenceField("java.lang.Object").
 
 Type_HasNoReferenceField(?class) :-
   isClassType(?class),
@@ -541,9 +519,7 @@ Type_DeclaresReferenceField(?class) :-
   !FieldIsStatic(?signature).
 
 FieldIsStatic(?sig) :-
-  ?static = "static",
-  Modifier(?static),
-  Field_Modifier(?static, ?sig).
+  Field_Modifier("static", ?sig).
 
 //// Quite risky: even final fields hold interesting state.
 //FieldIsStaticOrFinal?sig) <-
