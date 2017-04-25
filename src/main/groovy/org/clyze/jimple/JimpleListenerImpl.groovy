@@ -16,6 +16,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	int                 _heapCounter
 	Class               _klass
 	Method              _method
+	Map<String,Integer> _methodInvoCounters
 	boolean             _inDecl
 
 	BasicMetadata       metadata     = new BasicMetadata()
@@ -99,6 +100,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		metadata.methods << _method
 
 		_heapCounter = 0
+		_methodInvoCounters = [:]
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
@@ -161,6 +163,26 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		if (ctx.IDENTIFIER(1))
 			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+
+		if (!ctx.methodSig(0).IDENTIFIER(1))
+			throw new RuntimeException("Why?")
+
+		def methodClass = ctx.methodSig(0).IDENTIFIER(0).getText()
+		def retType     = ctx.methodSig(0).IDENTIFIER(1).getText()
+		def methodName  = ctx.methodSig(0).IDENTIFIER(2).getText()
+		def c = _methodInvoCounters[methodName] ?: 0
+		_methodInvoCounters[methodName] = c+1
+
+		def line = ctx.methodSig(0).IDENTIFIER(0).getSymbol().getLine()
+		def startCol = ctx.methodSig(0).IDENTIFIER(0).getSymbol().getCharPositionInLine()
+		def len = methodClass.length() + retType.length() + methodName.length() + 4
+
+		metadata.invocations << new MethodInvocation(
+			new Position(line, line, startCol, startCol + len),
+			_filename,
+			"${_method.doopId}/${methodClass}.$methodName/$c", //doopId
+			_method.doopId //invokingMethodDoopId
+		)
 	}
 
 	void exitValueList(ValueListContext ctx) {
