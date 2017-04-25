@@ -19,8 +19,9 @@ class Parser {
 		//json.put("Field", metadata.fields)
 		//json.put("Method", metadata.methods)
 		//json.put("Variable", metadata.variables)
+		//json.put("MethodInvocation", metadata.invocations)
 		//json.put("HeapAllocation", metadata.heapAllocations)
-		//json.put("Usages", metadata.usages)
+		//json.put("Usage", metadata.usages)
 
 		return new GsonBuilder().disableHtmlEscaping().create().toJson(json)
 	}

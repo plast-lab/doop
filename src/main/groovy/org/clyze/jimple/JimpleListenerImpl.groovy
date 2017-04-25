@@ -120,58 +120,61 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	void exitComplexAssignmentStmt(AssignmentStmtContext ctx) {
-		(0..1).each {
-			if (ctx.IDENTIFIER(it))
-				metadata.usages << usage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
-		}
+	void exitComplexAssignmentStmt(ComplexAssignmentStmtContext ctx) {
+		if (ctx.IDENTIFIER())
+			metadata.usages << varUsage(ctx.IDENTIFIER(), UsageKind.DATA_READ)
+
+		if (ctx.fieldSig())
+			metadata.usages << fieldUsage(ctx.fieldSig(), UsageKind.DATA_WRITE)
+
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
-				metadata.usages << usage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
+				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
 
 	void exitAssignmentStmt(AssignmentStmtContext ctx) {
 		if (ctx.IDENTIFIER(0))
-			metadata.usages << usage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		if (ctx.IDENTIFIER(1))
-			metadata.usages << usage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
-				metadata.usages << usage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
+				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
 
 	void exitReturnStmt(ReturnStmtContext ctx) {
 		if (ctx.value()?.IDENTIFIER())
-			metadata.usages << usage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
+			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
 
 	void exitAllocationStmt(AllocationStmtContext ctx) {
-		metadata.usages << usage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+		metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		metadata.heapAllocations << heap(ctx.IDENTIFIER(1))
 		_heapCounter++
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
 		if (ctx.IDENTIFIER(0))
-			metadata.usages << usage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		if (ctx.IDENTIFIER(1))
-			metadata.usages << usage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 	}
 
 	void exitValueList(ValueListContext ctx) {
 		if (ctx.value().IDENTIFIER())
-			metadata.usages << usage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
+			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
 
 	void exitJumpStmt(JumpStmtContext ctx) {
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
-				metadata.usages << usage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
+				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
+
 
 	Variable var(TerminalNode id, boolean isLocal) {
 		def line = id.getSymbol().getLine()
@@ -210,7 +213,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 	}
 
-	Usage usage(TerminalNode id, UsageKind kind) {
+	Usage varUsage(TerminalNode id, UsageKind kind) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
@@ -222,11 +225,28 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			kind
 		)
 	}
+	Usage fieldUsage(FieldSigContext ctx, UsageKind kind) {
+		def klass = ctx.IDENTIFIER(0).getText()
+		def type  = ctx.IDENTIFIER(1).getText()
+		def name  = ctx.IDENTIFIER(2).getText()
+
+		def line = ctx.IDENTIFIER(0).getSymbol().getLine()
+		def startCol = ctx.IDENTIFIER(0).getSymbol().getCharPositionInLine()
+		def len = klass.length() + type.length() +  name.length() + 4
+
+		def u = new Usage(
+			new Position(line, line, startCol, startCol + len),
+			_filename,
+			"<$klass: $type $name>", //doopId
+			kind
+		)
+	}
 
 	List<String> gatherIdentifiers(IdentifierListContext ctx) {
 		if (ctx == null) return []
 		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER().getText()]
 	}
+
 	boolean hasToken(ParserRuleContext ctx, String token) {
 		for (int i = 0; i < ctx.getChildCount(); i++)
 			if (ctx.getChild(i) instanceof TerminalNode &&
