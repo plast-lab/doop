@@ -436,6 +436,7 @@ HeapAllocation_ContextInsensitive(?heap) <-
 //  SubtypeOf(?heaptype, ?throw),
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
+
 .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
 
 ExceptionTypeToHeap(?heap, ?heaptype) :-
@@ -493,6 +494,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
  * Treat context-insensitively always? It doesn't matter much,
  * but doesn't hurt much either.
  *************************************************************/
+
 /*
 HeapAllocation_ContextInsensitive(?heap) :-
   HeapAllocation:Type(?heap, ?heaptype),
@@ -509,7 +511,7 @@ Type_HasNoReferenceField(?class) :-
   isClassType(?class),
   DirectSuperclass(?class, ?super),
   Type_HasNoReferenceField(?super),
-  ! Type_DeclaresReferenceField(?class).
+  !Type_DeclaresReferenceField(?class).
 
 Type_DeclaresReferenceField(?class) :-
   isClassType(?class),
