@@ -133,10 +133,9 @@ ReflectionSubstringObject(?heap) :-
   MethodNameMatchingStringConstantInexact:Signature(_,?heap);
   FieldNameMatchingStringConstantInexact:Signature(_,?heap).
 
-HeapRepresentative(?constant, ?heap) :-
+HeapRepresentative("<<string-constant>>", ?heap) :-
   isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
-  HeapAllocation_byId["<<string-constant>>"] = ?constant,
   !HeapAllocation_Keep(?heap).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
@@ -420,7 +419,7 @@ HeapRepresentative("<<string-builder>>", ?heap) :-
  // produced huge ThrowPointsTo sets and caused slowdowns.
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
-HeapAllocation_ContextInsensitive(?heap) <-
+HeapAllocation_ContextInsensitive(?heap) :-
   HeapAllocation_Type(?heap, ?type),
   ExceptionType(?type).
 #else
@@ -430,11 +429,12 @@ HeapAllocation_ContextInsensitive(?heap) <-
 // objects of the same type are therefore merged. This means that points-to
 // results for throwables are not accurate! Only the type will be right.
 
-//TypeToHeap2(?heap, ?heaptype) <-
-//  HeapAllocation:Type[?heap] = ?heaptype,
-//  Type:Id(?throw:"java.lang.Throwable"),
-//  SubtypeOf(?heaptype, ?throw),
-//  ExceptionHandler:Type[_] = ?handlertype,
+//.decl ExceptionTypeToHeap2(?heap:HeapAllocation, ?type:Type)
+//
+//ExceptionTypeToHeap2(?heap, ?heaptype) :-
+//  HeapAllocation_Type(?heap, ?heaptype),
+//  SubtypeOf(?heaptype, "java.lang.Throwable"),
+//  ExceptionHandler_Type(_, ?handlertype),
 //  SubtypeOf(?heaptype, ?handlertype).
 
 .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
@@ -497,13 +497,13 @@ HeapAllocation_ContextInsensitive(?heap) :-
 
 /*
 HeapAllocation_ContextInsensitive(?heap) :-
-  HeapAllocation:Type(?heap, ?heaptype),
+  HeapAllocation_Type(?heap, ?heaptype),
   Type_HasNoReferenceField(?heaptype),
   !HeapRepresentative(_, ?heap).
   // The rules have become complex enough that they overlap.
 
-decl Type_HasNoReferenceField(?type:Type)
-decl Type_DeclaresReferenceField(?type:Type)
+.decl Type_HasNoReferenceField(?type:Type)
+.decl Type_DeclaresReferenceField(?type:Type)
 
 Type_HasNoReferenceField("java.lang.Object").
 
