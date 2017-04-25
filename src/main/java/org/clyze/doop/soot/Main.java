@@ -65,7 +65,7 @@ public class Main {
                         sootParameters._main = args[i];
                         break;
                     case "--ssa":
-                        sootParameters._ssa = false;
+                        sootParameters._ssa = true;
                         break;
                     case "--android-jars":
                         i = shift(args, i);
