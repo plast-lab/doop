@@ -17,28 +17,24 @@ plugins {
     id 'net.researchgate.release' version '2.4.0'
 }
 
-apply from  : 'benchmarks.gradle'
+apply from  : "benchmarks.gradle"
 
 //applicationDefaultJvmArgs = ["-Xmx2048m"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
-group = 'org.clyze'
+group = "org.clyze"
 
 //For the doop app
-mainClassName = 'org.clyze.doop.Main'
-
+mainClassName = "org.clyze.doop.Main"
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.1'
+    gradleVersion = "3.1"
 }
 
 repositories {
-
     mavenLocal()
-
     mavenCentral()
-
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
@@ -51,48 +47,44 @@ task printClasspath {
 }
 
 configurations.all {
-    //This is required only for the SNAPSHOT dependencies
+    //This is required for SNAPSHOT dependencies
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-
+    //This is required for dependencies using the "+" notation
     resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
-            'commons-logging:commons-logging:1.1',              // Logging wrapper
-            'log4j:log4j:1.2.14',                               // Logging implementation
-            'commons-cli:commons-cli:1.2',                      // Command line processor
-            'commons-io:commons-io:2.4',                        // File Utils
-            'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
-            'org.ow2.asm:asm-debug-all:5.1',                    // Java Bytecode library
-            'org.smali:dexlib2:2.2b4',                          // Dexlib2: library for reading/modifying/writing Android dex files
-            'com.google.code.gson:gson:2.4'                     // GSON library
-
-    compile group: 'com.google.guava', name: 'guava', version: '21.0'
-
-
-    // Soot is a compile time dependency
-    compile 'ext:AXMLPrinter:2.0',
+    compile "org.codehaus.groovy:groovy-all:2.4.7",             // Groovy
+            "commons-logging:commons-logging:1.1",              // Logging wrapper
+            "log4j:log4j:1.2.14",                               // Logging implementation
+            "commons-cli:commons-cli:1.2",                      // Command line processor
+            "commons-io:commons-io:2.4",                        // File Utils
+            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
+            "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
+            "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
+            "com.google.code.gson:gson:2.4",                    // GSON library
+            "org.clyze:clue-common:1.+",
+            "com.google.guava:guava:21.0",
+            // Soot is a compile time dependency
+            "ext:AXMLPrinter:2.0",
             "ext:sootclasses:2.+",
             "ext:soot-infoflow:1.+",
             "ext:soot-infoflow-android:1.+"
 
-    compile 'org.clyze:clue-common:1.+'
-
-    compile(group: 'sun', name: 'jhat', version: 'PATCHED')
+    compile(group: "sun", name: "jhat", version: "PATCHED")
 
     // JPhantom is a runtime dependency
-    runtime 'org.clyze:jphantom:1.2'
-    runtime 'ext:averroes-no-properties:1.0-SNAPSHOT',
-            'ext:herosclasses:1.1',
-            'ext:axml:2.0',
-            'org.smali:util:2.2b4'                              // Dexlib2 utilities
+    runtime "org.clyze:jphantom:1.2",
+            "ext:averroes-no-properties:1.0-SNAPSHOT",
+            "ext:herosclasses:1.1",
+            "ext:axml:2.0",
+            "org.smali:util:2.2b4"                              // Dexlib2 utilities
 
     // DeepDoop
-    antlr   'org.antlr:antlr4:4.5.1-1'
-    compile 'org.antlr:antlr4-runtime:4.5.1-1'
-    testCompile 'junit:junit:4.12',
-            'org.spockframework:spock-core:1.0-groovy-2.4'
+    antlr   "org.antlr:antlr4:4.5.1-1"
+    compile "org.antlr:antlr4-runtime:4.5.1-1"
+    testCompile "junit:junit:4.12",
+                "org.spockframework:spock-core:1.0-groovy-2.4"
 }
 
 applicationDistribution.from(file("$projectDir/logic")) {
@@ -102,7 +94,6 @@ applicationDistribution.from(file("$projectDir/logic")) {
 applicationDistribution.from(projectDir) {
     include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
-
 
 run {
     //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
@@ -171,7 +162,7 @@ compileJava {
 import org.apache.commons.io.FileUtils
 
 clean.doFirst {
-    def out = System.getenv('DOOP_OUT') ?: "$projectDir/out"
+    def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
     def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
     file(out      ).list().each { f -> delete "$out/$f" }
     file(cache    ).list().each { f -> delete "$cache/$f" }
@@ -212,7 +203,6 @@ if (project.hasProperty('artifactory_user')) {
     }
 
     release {
-
         failOnSnapshotDependencies = false
         failOnUnversionedFiles = false
         failOnCommitNeeded = false
@@ -226,5 +216,4 @@ if (project.hasProperty('artifactory_user')) {
     }
 
     afterReleaseBuild.dependsOn publish
-
 }
