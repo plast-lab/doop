@@ -147,7 +147,7 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    public static boolean phantomBased(SootMethod m) {
+    private static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
         if (m.isPhantom())
@@ -240,11 +240,11 @@ class FactGenerator implements Runnable {
                     b = new Shimple().newBody(b);
                     m.setActiveBody(b);
                 }
+                DoopRenamer.transform(b);
+                generate(m, b, session);
                 if (!_generateJimple) {
                     m.releaseActiveBody();
                 }
-                DoopRenamer.transform(b);
-                generate(m, b, session);
             }
         }
     }

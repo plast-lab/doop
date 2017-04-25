@@ -27,7 +27,7 @@ public class DoopRenamer {
                 Value assignee = def.getLeftOp();
                 if (assignee instanceof Local) {
                     Local var = (Local) assignee;
-                    if (!(var.getName().startsWith("$")) && !(transformedLocals.contains(var))) {
+                    if (!(var.getName().startsWith("$") || (var.getName().startsWith("tmp$"))) && !(transformedLocals.contains(var))) {
                         transformedLocals.add(var);
                         var.setName(var.getName() + "#_" + linenumberToRegister);
                     }
