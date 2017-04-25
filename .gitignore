@@ -22,3 +22,11 @@ doop-nexgen.iml
 
 #souffle profiler html output dir
 profiler_html
+1o+h/
+Minijavac-facts
+classes/
+context-insensitive
+context-insensitive-antlr--null.trace
+debug-soot.gradle
+debug/
+jphantom-facts

@@ -30,7 +30,6 @@ public class Main {
             System.err.println("error: option " + args[index] + " requires an argument");
             System.exit(1);
         }
-
         return index + 1;
     }
 
@@ -55,7 +54,6 @@ public class Main {
                             System.err.println("error: duplicate mode argument");
                             System.exit(1);
                         }
-
                         sootParameters._mode = SootParameters.Mode.FULL;
                         break;
                     case "-d":
@@ -187,7 +185,6 @@ public class Main {
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
-
             produceFacts(sootParameters);
         }
         catch(Exception exc) {
@@ -207,7 +204,6 @@ public class Main {
         } else {
             Options.getInstance().set_output_format(Options.output_format_jimple);
         }
-        //soot.options.Options.getInstance().set_debug_resolver(true);
         //soot.options.Options.getInstance().set_drop_bodies_after_load(true);
         Options.getInstance().set_keep_line_number(true);
 
@@ -226,7 +222,6 @@ public class Main {
             String apkLocation = sootParameters._inputs.get(0);
             apk = new File(apkLocation);
             SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
-            //soot.options.Options.getInstance().set_debug(true);
             Options.getInstance().set_process_multiple_dex(true);
             Options.getInstance().set_src_prec(Options.src_prec_apk);
 
@@ -239,18 +234,15 @@ public class Main {
                     throw new RuntimeException("Dummy main null");
                 }
             } else {
-
                 ProcessManifest processMan = new ProcessManifest(apkLocation);
                 String appPackageName = processMan.getPackageName();
                 ARSCFileParser resParser = new ARSCFileParser();
                 resParser.parse(apkLocation);
-                List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
                 DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
                 lfp.registerLayoutFilesDirect(apkLocation);
                 lfp.parseLayoutFileDirect(apkLocation);
 
                 // now collect the facts we need
-                Set<String> appEntrypoints = processMan.getEntryPointClasses();
                 appServices = processMan.getServices();
                 appActivities = processMan.getActivities();
                 appContentProviders = processMan.getProviders();
@@ -266,11 +258,9 @@ public class Main {
         } else {
             Options.getInstance().set_src_prec(Options.src_prec_class);
 
-            JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
             JarEntry entry;
-            JarFile jarFile = new JarFile(sootParameters._inputs.get(0));
 
-            try {
+            try (JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0))); JarFile jarFile = new JarFile(sootParameters._inputs.get(0))) {
                 /* List all JAR entries */
                 while ((entry = jin.getNextJarEntry()) != null) {
                     /* Skip directories */
@@ -290,9 +280,6 @@ public class Main {
                         propertyProvider.addProperties((new FoundFile(sootParameters._inputs.get(0), entry.getName())));
                     }
                 }
-            } finally {
-                jarFile.close();
-                jin.close();
             }
         }
 
