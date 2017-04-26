@@ -697,7 +697,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.String"));
+        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.String"), -1, -1);
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -707,7 +707,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type);
+        Local l = new JimpleLocal(varname, type, -1, -1);
         writeLocal(inMethod, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
@@ -717,7 +717,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType());
+        Local l = new JimpleLocal(varname, constant.getType(), -1, -1);
         writeLocal(inMethod, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -727,13 +727,13 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.Class"));
+        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.Class"), -1 , -1);
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;
     }
 
-    void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
+    private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
         for(int i = 0; i < expr.getArgCount(); i++) {
             Value v = expr.getArg(i);
 
@@ -764,7 +764,7 @@ class FactWriter {
         writeInvokeHelper(inMethod, stmt, expr, session);
     }
 
-    String writeInvokeHelper(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session) {
+    private String writeInvokeHelper(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.invoke(inMethod, expr, session);
         String methodId = writeMethod(inMethod);
