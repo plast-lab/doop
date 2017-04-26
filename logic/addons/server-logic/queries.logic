@@ -176,3 +176,16 @@ TotalInvocationsFromNonRecursiveMethods[?method] = n <-
   TotalInvocationsInMethod[?method] = n,
   !RecursiveMethod(?method).
 */
+
+_ClassDeclaresMethod(method, class) <-
+  Method:DeclaringType[method] = class.
+
+_ReachableClass(class) <-
+  ClassType(class),
+  _ClassDeclaresMethod(method, class),
+  Reachable(method).
+
+Server:UnReachableLibClass(class) <-
+  ClassType(class),
+  !ApplicationClass(class),
+  !_ReachableClass(class).
