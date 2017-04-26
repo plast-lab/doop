@@ -1,12 +1,12 @@
 /** Variable points to Heap **/
 
-_HeapValueId[?value] = ?heapid <-
+_HeapValueId[?value] = ?heapId <-
   Value:isHeap(?value),
-  Value:Id[?value] = ?heapid.
+  Value:Id[?value] = ?heapId.
 
-serverVarPointsToHeap(?var, ?heapid) <-
+Server:VarPointsToHeap(?var, ?heapId) <-
   VarPointsTo(_, ?value, _, ?var),
-  _HeapValueId[?value] = ?heapid.
+  _HeapValueId[?value] = ?heapId.
 
 /** Call Graph Edges **/
 SimpleCallGraphEdge(?toMethod, ?invocation) ->
