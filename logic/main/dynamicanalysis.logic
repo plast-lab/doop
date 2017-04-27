@@ -71,7 +71,9 @@ InitializedClass(?class) <-
    OptClassInitializer(?class, ?method).
 
 ImplicitReachable(?method) <-
+#ifndef FEATHERWEIGHT_ANALYSIS
    UnmatchedDynamicCallGraphEdgeNode(?method),
+#endif
    DynamicReachableMethod(?method),
    !OptClassInitializer(_, ?method).
 
