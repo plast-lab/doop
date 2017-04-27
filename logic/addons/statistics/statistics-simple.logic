@@ -289,16 +289,45 @@ NewMetricMacro(81.0, _t81, "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_))
 NewMetricMacro(82.0, _t82, "Unmatched Heap Allocations..", UnmatchedDynamicNormalHeapAllocation(_,_,_,_)).
 NewMetricMacro(83.0, _t83, "..of which were reconstructed", ReconstructedUnmatchedDynamicHeapAllocation(_, _)).
 NewMetricMacro(84.0, _t84, "Contexts", DynamicContext(_)).
+
+NotLibraryHeapAllocation(?heap) <-
+   !AssignNormalHeapAllocation(?heap, _, _),
+   DynamicHeapAllocation(_, ?heap).
+   
+
+// Instance fields
 Stats:Simple:InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap) <- DynamicInstanceFieldPointsTo(?fld,_,?heap,_,?baseHeap).
+NotLibraryHeapAllocation(?heap) <-
+   AssignNormalHeapAllocation(?heap, _, ?meth),
+   ApplicationMethod(?meth).
+
+Stats:Simple:Application:InsensDynamicInstanceFieldPointsTo(?baseHeap, ?fld, ?heap) <-
+   NotLibraryHeapAllocation(?heap),
+   Stats:Simple:InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap).
+
 NewMetricMacro(85.0, _t85, "Dynamic instance field points-to (INS)", Stats:Simple:InsensDynamicInstanceFieldPointsTo(_,_,_)).
 NewMetricMacro(86.0, _t86, "Dynamic instance field points-to (SENS)", DynamicInstanceFieldPointsTo(_,_,_,_,_)).
+
+// Static fields
 Stats:Simple:InsensDynamicStaticFieldPointsTo(?fld, ?heap) <- DynamicStaticFieldPointsTo(?fld,_,?heap).
+Stats:Simple:Application:InsensDynamicStaticFieldPointsTo(?fld, ?heap) <-
+   Stats:Simple:InsensDynamicStaticFieldPointsTo(?fld, ?heap),
+   Field:DeclaringType[?fld] = ?cls,
+   ApplicationClass(?cls).
+
 NewMetricMacro(87.0, _t87, "Dynamic static field points-to (INS)", Stats:Simple:InsensDynamicStaticFieldPointsTo(_,_)).
 NewMetricMacro(88.0, _t88, "Dynamic static field points-to (SENS)", DynamicStaticFieldPointsTo(_,_,_)).
+NewMetricMacro(89.0, _t89, "App Dynamic static field points-to (INS)", Stats:Simple:Application:InsensDynamicStaticFieldPointsTo(_,_)).
+
+// array index
 Stats:Simple:InsensDynamicArrayIndexPointsTo(?heap, ?baseHeap) <- DynamicArrayIndexPointsTo(_,?heap,_,?baseHeap).
-NewMetricMacro(89.0, _t89, "Dynamic array index points-to (INS)", Stats:Simple:InsensDynamicArrayIndexPointsTo(_,_)).
-NewMetricMacro(90.0, _t90, "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
+NewMetricMacro(90.0, _t90, "Dynamic array index points-to (INS)", Stats:Simple:InsensDynamicArrayIndexPointsTo(_,_)).
+NewMetricMacro(91.0, _t91, "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
+
+// call graph and reachability
 Stats:Simple:InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) <- DynamicCallGraphEdge(_,?toMeth,?invocation,_, ?fromMeth).
-NewMetricMacro(91.0, _t91, "Dynamic call graph edges (INS)", Stats:Simple:InsensDynamicCallGraphEdge(_,_,_)).
-NewMetricMacro(92.0, _t92, "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_,_,_)).
+NewMetricMacro(92.0, _t92, "Dynamic call graph edges (INS)", Stats:Simple:InsensDynamicCallGraphEdge(_,_,_)).
+NewMetricMacro(93.0, _t93, "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_,_,_)).
+NewMetricMacro(94.0, _t94, "Dynamic reachable methods (INS)", DynamicReachableMethod(_)).
+NewMetricMacro(95.0, _t95, "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).
 #endif 
