@@ -280,8 +280,7 @@ FieldNameMatchingStringConstant:Signature(?sig, ?heap) <-
 
 PreClassNameMatchingStringConstant(?heap),
 PreClassNameMatchingStringConstant:Type(?type, ?heap),
-PreClassNameMatchingStringConstantExact:Type(?type, ?heap)
-  <-
+PreClassNameMatchingStringConstantExact:Type(?type, ?heap) <-
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
   ReferenceType(?type),
@@ -303,8 +302,7 @@ PreMethodNameMatchingStringConstantInexact:Signature(?sig, ?heap) ->
 
 PreMethodNameMatchingStringConstant(?heap),
 PreMethodNameMatchingStringConstant:Signature(?sig, ?heap),
-PreMethodNameMatchingStringConstantExact:Signature(?sig, ?heap)
-  <-
+PreMethodNameMatchingStringConstantExact:Signature(?sig, ?heap) <-
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
   //  Method:DeclaringType[?sig] = ?type, 
@@ -327,8 +325,7 @@ PreFieldNameMatchingStringConstantInexact:Signature(?sig, ?heap) ->
 
 PreFieldNameMatchingStringConstant(?heap),
 PreFieldNameMatchingStringConstant:Signature(?sig, ?heap),
-PreFieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
-  <-
+PreFieldNameMatchingStringConstantExact:Signature(?sig, ?heap) <-
   StringConstant(?heap),
   HeapAllocation:Id[?heap] = ?string,
   // Field:DeclaringType[?sig] = ?declaringClass,
@@ -345,8 +342,7 @@ PreFieldNameMatchingStringConstantExact:Signature(?sig, ?heap)
 // sense for application classes/fields/methods.
 PreClassNameMatchingStringConstant(?heap),
 PreClassNameMatchingStringConstant:Type(?type, ?heap),
-PreClassNameMatchingStringConstantInexact:Type(?type, ?heap)
-  <-
+PreClassNameMatchingStringConstantInexact:Type(?type, ?heap) <-
   HeapAllocation:Id[?heap] = ?string,
   ClassNameSuffix(?string, ?type),
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE  
@@ -356,8 +352,7 @@ PreClassNameMatchingStringConstantInexact:Type(?type, ?heap)
 
 PreMethodNameMatchingStringConstant(?heap),
 PreMethodNameMatchingStringConstant:Signature(?sig, ?heap),
-PreMethodNameMatchingStringConstantInexact:Signature(?sig, ?heap)
-  <-
+PreMethodNameMatchingStringConstantInexact:Signature(?sig, ?heap) <-
   HeapAllocation(?heap),
   HeapAllocation:Id[?heap] = ?string,
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE  
@@ -372,8 +367,7 @@ PreMethodNameMatchingStringConstantInexact:Signature(?sig, ?heap)
 
 PreFieldNameMatchingStringConstant(?heap),
 PreFieldNameMatchingStringConstant:Signature(?sig, ?heap),
-PreFieldNameMatchingStringConstantInexact:Signature(?sig, ?heap)
-  <-
+PreFieldNameMatchingStringConstantInexact:Signature(?sig, ?heap) <-
   HeapAllocation(?heap),
   HeapAllocation:Id[?heap] = ?string,
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE  
@@ -497,16 +491,14 @@ FieldNamePrefix(?prefix, ?sig) <-
 //  string:substring[?className, ?pos, ?suffixLength] = ?suffix.  
 //
 //PreClassNameMatchingStringConstant(?heap),
-//PreClassNameMatchingStringConstant:Type(?type, ?heap)
-//  <-
+//PreClassNameMatchingStringConstant:Type(?type, ?heap) <-
 //  NonTrivialStringConstant(?heap),
 //  HeapAllocation:Id[?heap] = ?string,
 //  ClassNameSuffix(?type, ?suffix),
 //  string:substring[?suffix, _, string:length[?string]] = ?string.
 //
 //PreMethodNameMatchingStringConstant(?heap),
-//PreMethodNameMatchingStringConstant:Signature(?sig, ?heap)
-//  <-
+//PreMethodNameMatchingStringConstant:Signature(?sig, ?heap) <-
 //  NonTrivialStringConstant(?heap),
 //  HeapAllocation:Id[?heap] = ?string,
 //  Method:SimpleName[?sig] = ?methodName,
@@ -525,15 +517,13 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var),
   StringFactoryVar(?var).
 
-VarAssignedToStringFactoryVar(?param, ?base)
- <-
+VarAssignedToStringFactoryVar(?param, ?base) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVar(?base),
   ActualParam[0, ?invocation] = ?param.
 
-VarAssignedFromStringFactoryVar(?ret, ?base)
- <-
+VarAssignedFromStringFactoryVar(?ret, ?base) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "toString",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVar(?base),
@@ -543,14 +533,12 @@ VarAssignedFromStringFactoryVar(?ret, ?base)
 // (merge reflection strings), less coverage (require that string
 // in/out operations on Builders/Buffers are in the same method).  The
 // current approach (precise) seems to work ok.
-VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var)
- <-
+VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
   VarOfReflectionInterest(?ctx, ?var),
   VarAssignedToStringFactoryVar(?var, ?factoryVar),
   StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
 
-VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue)
- <-
+VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) <-
   VarAssignedFromStringFactoryVar(?var, ?factoryVar),
   StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
 
@@ -566,13 +554,11 @@ ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 
 ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) ->
   HContext(?hctx), Value(?value), HContext(?factoryHctx), Value(?factoryValue).
-ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue)
- <-
+ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) <-
   VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var),
   ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var).
 
-VarPointsTo(?hctx, ?value, ?ctx, ?var)
- <-
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue),
   VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue).
 
