@@ -43,6 +43,7 @@ methodBody
 
 statement
 	: declarationStmt
+	| complexAssignmentStmt
 	| assignmentStmt
 	| returnStmt
 	| invokeStmt
@@ -56,6 +57,11 @@ statement
 declarationStmt
 	: IDENTIFIER identifierList ;
 
+complexAssignmentStmt
+	: IDENTIFIER '[' value ']' '=' value ('[' value ']')?
+	| (IDENTIFIER '.')? fieldSig '=' value
+	;
+
 assignmentStmt
 	: IDENTIFIER ':=' IDENTIFIER ':' IDENTIFIER
 	| IDENTIFIER ':=' '@caughtexception'
@@ -64,9 +70,7 @@ assignmentStmt
 	| IDENTIFIER '=' ('lengthof'|'class'|'neg') value
 	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'cmpg'|'instanceof') value
 	| IDENTIFIER '=' value '[' value ']'
-	| IDENTIFIER '[' value ']' '=' value ('[' value ']')?
 	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
-	| (IDENTIFIER '.')? fieldSig '=' value
 	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
 	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+ '[]'?
 	| IDENTIFIER '=' 'Phi' '(' identifierList ')'
