@@ -564,9 +564,6 @@ ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ReflectionSubstringObject(?heap).
 #endif
 
-OptVarMethod(?method, ?var) <-
-  Var:DeclaringMethod(?var, ?method).
-
 ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) ->
   HContext(?hctx), Value(?value), HContext(?factoryHctx), Value(?factoryValue).
 ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue)
