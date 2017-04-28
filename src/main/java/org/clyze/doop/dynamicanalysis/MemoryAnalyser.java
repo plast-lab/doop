@@ -73,7 +73,7 @@ public class MemoryAnalyser {
                 String baseHeap = heapAbstractionIndexer.getAllocationAbstraction(obj);
                 JavaClass clazz = obj.getClazz();
                 if (obj.getClazz().toString().startsWith("Instrumentation") ||
-                        obj.getClazz().toString().startsWith("javaassist")) return;
+                        obj.getClazz().toString().startsWith("javassist")) return;
                 do {
                     for (JavaField field : clazz.getFields()) {
                         JavaThing fieldValue = obj.getField(field.getName());

@@ -333,6 +333,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						value:false,
 						webUI:true
 				),
+       				new AnalysisOption<String>(
+						id:"FEATHERWEIGHT_ANALYSIS",
+						name:"featherweight-analysis",
+						description:"Perform a featherweight analysis (global state and complex objects immutable).",
+						value:false,
+						forPreprocessor:true
+				),
 				new AnalysisOption<String>(
 						id:"INFORMATION_FLOW",
 						name:"information-flow",

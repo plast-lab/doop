@@ -201,11 +201,14 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
  * Store instance fields
  */
 
+#ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value:Null[] != ?basevalue,
   NotSpecialObject(?value).
+#endif
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
@@ -235,10 +238,12 @@ OptLoadStaticField(?ctx, ?to, ?sig) <-
  * TODO: I don't think context actually matters. double check.
  */
 
+#ifndef FEATHERWEIGHT_ANALYSIS
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   ReachableStoreStaticFieldFrom(?from),
   OptStoreStaticField(?signature, ?from),
   VarPointsTo(?hctx, ?value, _, ?from).
+#endif
 
 OptStoreStaticField(?signature, ?from) <-
   StoreStaticField(?from, ?signature, _).
@@ -312,10 +317,13 @@ ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
   ComponentType[?basevaluetype] = ?componenttype,
   SupertypeOf(?componenttype, ?valuetype).
 
+#ifndef FEATHERWEIGHT_ANALYSIS
 StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) <-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+#endif
+StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) <- StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from).
 
 ReachableStoreArrayIndexBase(?base) -> Var(?base).
 ReachableStoreArrayIndexBase(?base) <-
