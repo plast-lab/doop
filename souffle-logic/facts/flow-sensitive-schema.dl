@@ -1,6 +1,3 @@
-.number_type ParamIndex
-.type SimpleName
-
 .type NumConstant
 .decl isNumConstant(?n:NumConstant)
 
@@ -64,7 +61,7 @@
 .decl isField(?field:Field)
 
 .decl Field_DeclaringType(?field:Field, ?declaringClass:ReferenceType)
-.decl Field_SimpleName(?field:Field, ?simpleName:SimpleName)
+.decl Field_SimpleName(?field:Field, ?simpleName:symbol)
 .decl Field_Type(?field:Field, ?type:Type)
 .decl Field_Modifier(?mod:Modifier, ?field:Field)
 
@@ -79,7 +76,7 @@
 
 .decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
 .decl Method_ReturnType(?method:Method, ?returnType:Type)
-.decl Method_SimpleName(?method:Method, ?simpleName:SimpleName)
+.decl Method_SimpleName(?method:Method, ?simpleName:symbol)
 .decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
 
 .type JVMDescriptor
@@ -95,7 +92,7 @@
 // Exceptions clause in Java bytecode.
 .decl Method_DeclaresException(?exceptionType:ReferenceType, ?method:Method)
 
-.decl FormalParam(?index:ParamIndex, ?method:Method, ?var:Var)
+.decl FormalParam(?index:number, ?method:Method, ?var:Var)
 
 .decl ThisVar(?method:Method, ?var:Var)
 
@@ -385,20 +382,20 @@
 
 // The actual parameters of the invocation. Note: this does not
 // contain the receiver object (see MethodInvocation:Base predicates).
-.decl ActualParam(?index:ParamIndex, ?invocation:MethodInvocation, ?var:Var)
+.decl ActualParam(?index:number, ?invocation:MethodInvocation, ?var:Var)
 
 // Virtual Method Invocation
 .decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
-.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName)
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
 .decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
 
 // Static Method Invocation
-.decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName)
+.decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
 .decl StaticMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
 
 // Special Method Invocation
 .decl SpecialMethodInvocation_Base(?invocation:SpecialMethodInvocation_Insn, ?base:Var)
-.decl SpecialMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:SimpleName)
+.decl SpecialMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
 .decl SpecialMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
 
 

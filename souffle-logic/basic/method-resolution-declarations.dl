@@ -3,12 +3,12 @@
  *
  * TODO Test for accessibility.
  */
-.decl MethodLookup(?simplename:SimpleName, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
 
 /**
  * Is there a non-abstract method declaration?
  */
-.decl MethodImplemented(?simplename:SimpleName, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
+.decl MethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:Type, ?method:Method)
 
 /**
  * Encodes a CHA callgraph, effectively
