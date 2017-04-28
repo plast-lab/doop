@@ -2,20 +2,19 @@ _HeapValueId[?value] = ?heapId <-
   Value:isHeap(?value),
   Value:Id[?value] = ?heapId.
 
-Server:VarPointsTo(?var, ?heapId) <-
+Server:VarPointsTo(?class, ?var, ?heapId) <-
   VarPointsTo(_, ?value, _, ?var),
-  _HeapValueId[?value] = ?heapId.
+  _HeapValueId[?value] = ?heapId,
+  Var:DeclaringMethod(?var, ?method),
+  Method:DeclaringType[?method] = ?class.
 
 _SimpleCallGraphEdge(?toMethod, ?invocation) <-
   CallGraphEdge(_, ?invocation, _, ?toMethod).
 
-Server:VirtualCallGraphEdge(?invocation, ?tomethod) <-
+Server:CallGraphEdge(?invocation, ?tomethod) <-
   _SimpleCallGraphEdge(?tomethod, ?invocation),
-  VirtualMethodInvocation:Insn(?invocation).
-
-Server:StaticCallGraphEdge(?invocation, ?tomethod) <-
-  _SimpleCallGraphEdge(?tomethod, ?invocation),
-  StaticMethodInvocation:Insn(?invocation).
+  (VirtualMethodInvocation:Insn(?invocation);
+   StaticMethodInvocation:Insn(?invocation)).
 
 _IsAssignHeapAllocation(?heap) <-
   AssignHeapAllocation:Heap[_] = ?heap.
@@ -30,6 +29,18 @@ Server:InstanceFieldPointsTo(?heapId, ?sig, ?baseheapId) <-
 Server:StaticFieldPointsTo(?sig, ?heapId) <-
   StaticFieldPointsTo(_, ?value, ?sig),
   _HeapValueId[?value] = ?heapId.
+
+_Class:DeclaresMethod(?method, ?class) <-
+  Method:DeclaringType[?method] = ?class.
+
+_ReachableClass(?class) <-
+  _Class:DeclaresMethod(?method, ?class),
+  Reachable(?method).
+
+Server:UnreachableLibClass(?class) <-
+  ClassType(?class),
+  !ApplicationClass(?class),
+  !_ReachableClass(?class).
 
 
 /*
@@ -168,16 +179,3 @@ TotalInvocationsFromNonRecursiveMethods[?method] = n <-
   TotalInvocationsInMethod[?method] = n,
   !RecursiveMethod(?method).
 */
-
-_ClassDeclaresMethod(method, class) <-
-  Method:DeclaringType[method] = class.
-
-_ReachableClass(class) <-
-  ClassType(class),
-  _ClassDeclaresMethod(method, class),
-  Reachable(method).
-
-Server:UnReachableLibClass(class) <-
-  ClassType(class),
-  !ApplicationClass(class),
-  !_ReachableClass(class).
