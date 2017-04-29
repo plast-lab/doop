@@ -148,13 +148,19 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
    ThisVar[?constructor] = ?this.
 
 
-Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
-<-
-   Method:Id(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+Java:lang:reflect:Method:invoke(?invocation) <-
    VirtualMethodInvocation(?invocation, ?sig, _),
+   Method:Id(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>").
+                                
+InsensTamiflexInvoke(?invocation, ?method, ?inmethod) <-
+   Java:lang:reflect:Method:invoke(?invocation),
    Tamiflex:ReflectionMap(?methodStr, ?invocation),
    Method:Id(?method:?methodStr),
-   Instruction:Method[?invocation] = ?inmethod,
+   Instruction:Method[?invocation] = ?inmethod.
+   
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
+<-
+   InsensTamiflexInvoke(?invocation, ?method, ?inmethod),
    ReachableContext(?callerCtx, ?inmethod).
 
 
