@@ -68,7 +68,8 @@ OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
 
 
 InitializedClass(?class) <-
-   DynamicReachableMethod(?method),
+   (TamiflexDynamicallyReachableMethod(?method) ;
+   DynamicReachableMethod(?method)),
    OptClassInitializer(?class, ?method).
 
 ProbablyReachable(?method) <-
@@ -80,10 +81,18 @@ ProbablyReachable(?tomethod) <-
 
 ForcedImplicitReachable(?method),
 ImplicitReachable(?method) <-
-   DynamicReachableMethod(?method),
+   (TamiflexDynamicallyReachableMethod(?method) ;
+   DynamicReachableMethod(?method)),
    !ProbablyReachable(?method),
    !OptClassInitializer(_, ?method).
 
+TamiflexDynamicallyReachableMethod(?inmethod) -> Method(?inmethod).
+
+#ifdef TAMIFLEX
+TamiflexDynamicallyReachableMethod(?inmethod) <-
+    Tamiflex:ReflectionMap(_, ?invocation),
+    Instruction:Method[?invocation] = ?inmethod.
+#endif
 
 #ifdef DYNAMIC_CONTEXT_SENSITIVITY
 CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
