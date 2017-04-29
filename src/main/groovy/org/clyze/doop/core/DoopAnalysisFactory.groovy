@@ -177,9 +177,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 .findAll { it.forCacheID }
                 .collect { option -> option.toString() }
 
-        Collection<String> checksums = new File(Doop.factsPath).listFiles().collect {
-            File file -> CheckSum.checksum(file, HASH_ALGO)
-        }
+        Collection<String> checksums = []
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
@@ -204,22 +202,40 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def files = []
         switch(platform) {
             case "java":
-                String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-                switch(version) {
-                    case 3:
-                        files = ["${path}/rt.jar"]
-                        break
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    case 8:
-                        files = ["${path}/rt.jar",
-                                 "${path}/jce.jar",
-                                 "${path}/jsse.jar"]
-                        break
-                    default:
-                        throw new RuntimeException("Invalid JRE version: $version")
+                if (platformInfo.size == 2) {
+                    String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
+                    switch (version) {
+                        case 3:
+                            files = ["${path}/rt.jar"]
+                            break
+                        case 4:
+                        case 5:
+                        case 6:
+                        case 7:
+                        case 8:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid JRE version: $version")
+                    }
+                }
+                else if (platformInfo.size == 3 && platformInfo[2] == "debug") {
+                    String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}_${platformInfo[2]}/lib"
+                    switch (version) {
+                        case 7:
+                        case 8:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid JRE version: $version")
+                    }
+                }
+                else {
+                    throw new RuntimeException("Invalid JRE version: $version")
                 }
                 // generate the JRE constant for the preprocessor
                 AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
@@ -337,12 +353,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             if (!inputFilePaths.contains(deps))
                 inputFilePaths.add(deps)
 
-            if (!options.REFLECTION.value)
+            if (!options.REFLECTION.value && !options.TAMIFLEX.value)
                options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
 
             def benchmark = FilenameUtils.getBaseName(inputJarName)
             logger.info "Running "+(options.DACAPO.value ? "dacapo" : "dacapo-bach")+" benchmark: $benchmark"
-            options.DACAPO_BENCHMARK.value = benchmark
         }
 
         if (options.TAMIFLEX.value) {

@@ -18,7 +18,7 @@
 /*
  * The above gives us an upper bound of the receiver allocator's allocator's dynamic type!
  * Another option is the exact dynamic type of the allocator object. In that case we have:
- * ContextFromRealContext[Value:Type[RealHContextFromHContext[hctx]], value] = calleeCtx
+ * Value_Type(hctxValue, type) instead of Value_DeclaringType(hctxValue, type)
  */
 
 // For this analysis, static calls just keep the same context as the

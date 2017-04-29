@@ -141,7 +141,7 @@
 //-----------------------------------------------------------------------------
 
 .type Instruction
-.decl isInstruction(?insn:Instruction) output
+.decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
@@ -378,6 +378,7 @@
 .decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
 
 .decl ApplicationMethod(?method:Method)
+.output ApplicationMethod(IO="file",filename="ApplicationMethod.csv",delimiter="\t")
 
 // The (call-site) variable that holds the result of the invocation
 .decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)

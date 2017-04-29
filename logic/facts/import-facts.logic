@@ -1118,3 +1118,12 @@ _FieldInitialValue(?param1, ?param2) ->
 +PrimitiveType(?t), +Type:Id(?t:"void"),    +Type:void[] = ?t.
 +NullType(?t),      +Type:Id(?t:"null_type"), +Type:null[] = ?t.
 +ClassType(?t),     +Type:Id(?t:"java.lang.Object"), +Type:object[] = ?t.
+
+
+
+lang:physical:storageModel[`_Dacapo] = "DelimitedFile".
+lang:physical:filePath[`_Dacapo] = "facts/Dacapo.facts".
+lang:physical:delimiter[`_Dacapo] = "\t".
+lang:physical:hasColumnNames[`_Dacapo] = false.
+_Dacapo(?id, ?method) -> string(?id), string(?method).
++Dacapo0(?id, ?method) <- _Dacapo(?id, ?method).

@@ -324,21 +324,20 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						name:"dacapo",
 						description:"Load additional logic for DaCapo (2006) benchmarks properties.",
 						value:false,
-						webUI:true,
-						forPreprocessor:true
+						webUI:true
 				),
 				new AnalysisOption<Boolean>(
 						id:"DACAPO_BACH",
 						name:"dacapo-bach",
 						description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
 						value:false,
-						webUI:true,
-						forPreprocessor:true
+						webUI:true
 				),
-				new AnalysisOption<String>(
-						id:"DACAPO_BENCHMARK",
-						value:null,
-						cli:false,
+       				new AnalysisOption<String>(
+						id:"FEATHERWEIGHT_ANALYSIS",
+						name:"featherweight-analysis",
+						description:"Perform a featherweight analysis (global state and complex objects immutable).",
+						value:false,
 						forPreprocessor:true
 				),
 				new AnalysisOption<String>(
@@ -386,6 +385,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						value:null,
 						forPreprocessor:true
 				),
+				new AnalysisOption<String>(
+						id:"IMPORT_DYNAMIC_FACTS",
+						name:"import-dynamic-facts",
+						argName:"facts-filename",
+						description:"Use dynamic information",
+						value:null,
+						forPreprocessor:true
+				),
 				new AnalysisOption<Boolean>(
 						id:"ONLY_APPLICATION_CLASSES_FACT_GEN",
 						name:"only-application-classes-fact-gen",
@@ -413,7 +420,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						id:"PLATFORM",
 						name:"platform",
 						argName: "platform",
-						description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22, android_24). default: java_7",
+						description:"The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22_stubs, android_24_fulljars). For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
 						value: "java_7",
 						webUI: true,
 						forCacheID:true

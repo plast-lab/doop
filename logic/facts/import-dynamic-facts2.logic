@@ -30,6 +30,9 @@ _DynamicContext(?representation, ?heap1rep, ?heap2rep, ?site1inMeth, ?site1line,
    _DynamicContext(?ctxrep, _, ?obj2rep, _, _, _, _),
    DynamicHeapAllocation(?obj2rep, ?heap).
 
++DynamicContext("<Immutable dctx>").
+
+               
 //TODO
 //+DynamicContextInvo1(?invo, ?ctx) <-
 //   DynamicContext(?ctx),

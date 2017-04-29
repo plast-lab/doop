@@ -1,0 +1,8 @@
+// Context-sensitive pointer analysis with context of 3 types and a
+// context-sensitive heap abstraction.
+
+// In this analysis, the real context and the real heap context is a triplet of
+// Types. The type is not always a class type, because of arrays currently being
+// a non-class subtype of Object.
+.type Context  = [ type1:Type, type2:Type, type3:Type ]
+.type HContext = [ type1:Type, type2:Type, type3:Type ]

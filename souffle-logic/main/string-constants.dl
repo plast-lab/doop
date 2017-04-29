@@ -14,10 +14,10 @@
 .decl HeapAllocation_Special(?heap:HeapAllocation)
 
 HeapAllocation_Special(?heap) :-
-    HeapAllocation_ContextInsensitive(?heap).
+  HeapAllocation_ContextInsensitive(?heap).
 
 HeapAllocation_Special(?heap) :-
-    HeapAllocation_Merge(?heap, _).
+  HeapAllocation_Merge(?heap, _).
 
 
 /**
@@ -43,7 +43,7 @@ HeapAllocation_Special(?heap) :-
  */
 AssignNormalHeapAllocation(?heap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
-  ! HeapAllocation_Special(?heap).
+  !HeapAllocation_Special(?heap).
 
 AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) :-
   AssignHeapAllocation(?heap, ?var, ?inmethod),
@@ -85,9 +85,9 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
 HeapIsMergedStringFactory(?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
   (isHeapAllocation(?heapRepr),
-     ?heapRepr = "<<string-buffer>>";
-     isHeapAllocation(?heapRepr),
-     ?heapRepr = "<<string-builder>>").
+   ?heapRepr = "<<string-buffer>>";
+   isHeapAllocation(?heapRepr),
+   ?heapRepr = "<<string-builder>>").
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
   HeapRepresentative(?heapRepr, ?heap),
@@ -97,7 +97,6 @@ HeapAllocation_Merge(?heap, ?heapRepr) :-
    ?heapRepr = "<<string-builder>>").
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
-.decl RepresentativesToPickFromOrdinals(?heapReprOrd:number, ?heap:HeapAllocation)
 
 RepresentativesToPickFrom(?heapRepr, ?heap) :-
   HeapRepresentative(?heapRepr, ?heap),
@@ -105,19 +104,16 @@ RepresentativesToPickFrom(?heapRepr, ?heap) :-
   !HeapIsMergedStringFactory(?heap),
   !HeapAllocation_Keep(?heap).
 
-RepresentativesToPickFromOrdinals(ord(?heapRepr), ?heap) :-
-    RepresentativesToPickFrom(?heapRepr, ?heap).
-
 .decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
 
 MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
-    RepresentativesToPickFromOrdinals(_, ?heap),
-    ?minHeapReprOrd = min ?heapReprOrd: RepresentativesToPickFromOrdinals(?heapReprOrd, ?heap).
+  RepresentativesToPickFrom(_, ?heap),
+  ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
 
 HeapAllocation_Merge(?heap, ?mergeHeap) :-
-    isHeapAllocation(?mergeHeap),
-    ord(?mergeHeap) = ?minHeapReprOrd,
-    MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
+  isHeapAllocation(?mergeHeap),
+  ord(?mergeHeap) = ?minHeapReprOrd,
+  MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
 
 /*************************************************************
  * String constants
@@ -177,6 +173,7 @@ HeapAllocation_ContextInsensitive(?heap) :-
 // (by setting "...ShouldBeMerged...").
 
 .decl MethodAllocationMergeThreshold(?t:number)
+
 MethodAllocationMergeThreshold(50).
 
 .decl ExceptionType(?type:Type)
@@ -221,25 +218,21 @@ AllocationsPerMethodAndType(?type, ?meth, ?n) :-
 
 AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
   AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
-  ?n > ?t,
-  MethodAllocationMergeThreshold(?t).
+  MethodAllocationMergeThreshold(?t),
+  ?n > ?t.
 
 .decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
-.decl MethodAndTypeToMergedHeapOrdinal(?heap:number, ?heaptype:Type, ?meth:Method)
 
 MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
   AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
   MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
 
-MethodAndTypeToMergedHeapOrdinal(ord(?heap), ?type, ?meth) :-
-    MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
-
 .decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)
 .decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
 
 MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
-  MethodAndTypeToMergedHeapOrdinal(_, ?type, ?meth),
-  ?minHeapOrd = min ?heapOrd: MethodAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?meth).
+  MethodAndTypeToMergedHeap(_, ?type, ?meth),
+  ?minHeapOrd = min ord(?heap): MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
 
 MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -268,21 +261,17 @@ AllocationsPerClassAndType(?type, ?class, ?n) :-
 .decl AllocationShouldBeMergedPerClass(?heaptype:Type, ?class:Type)
 
 .decl ClassAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:Type)
-.decl ClassAndTypeToMergedHeapOrdinal(?heapOrd:number, ?heaptype:Type, ?class:Type)
 
 ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) :-
   AllocationShouldBeMergedPerClass(?heaptype, ?class),
   ClassAndTypeToHeap(?heap, ?heaptype, ?class).
 
-ClassAndTypeToMergedHeapOrdinal(ord(?heap), ?heaptype, ?class) :-
-  ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class).
-
 .decl MinHeapOrdinalPerClassAndType(?minHeapOrd:number, ?type:Type, ?class:Type)
 .decl ClassAndTypeToRepresentative(?type:Type, ?class:Type, ?reprHeap:HeapAllocation)
 
 MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class) :-
-  ClassAndTypeToMergedHeapOrdinal(_, ?type, ?class),
-  ?minHeapOrd = min ?heapOrd: ClassAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?class).
+  ClassAndTypeToMergedHeap(_, ?type, ?class),
+  ?minHeapOrd = min ord(?heap): ClassAndTypeToMergedHeap(?heap, ?type, ?class).
 
 ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -311,21 +300,17 @@ AllocationsPerPackageAndType(?type, ?packageName, ?n) :-
 .decl AllocationShouldBeMergedPerPackage(?heaptype:Type, ?packageName:symbol)
 
 .decl PackageAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)
-.decl PackageAndTypeToMergedHeapOrdinal(?heapOrd:number, ?heaptype:Type, ?packageName:symbol)
 
 PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) :-
   AllocationShouldBeMergedPerPackage(?heaptype, ?packageName),
   PackageAndTypeToHeap(?heap, ?heaptype, ?packageName).
 
-PackageAndTypeToMergedHeapOrdinal(ord(?heap), ?heaptype, ?packageName) :-
-  PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName).
-
 .decl MinHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, ?packageName:symbol)
 .decl PackageAndTypeToRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)
 
 MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
-  PackageAndTypeToMergedHeapOrdinal(_, ?type, ?packageName),
-  ?minHeapOrd = min ?heapOrd: PackageAndTypeToMergedHeapOrdinal(?heapOrd, ?type, ?packageName).
+  PackageAndTypeToMergedHeap(_, ?type, ?packageName),
+  ?minHeapOrd = min ord(?heap): PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
 
 PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -351,21 +336,17 @@ AllocationsPerType(?type, ?n) :-
 .decl AllocationShouldBeMergedGlobally(?heaptype:Type)
 
 .decl TypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type)
-.decl TypeToMergedHeapOrdinal(?heapOrd:number, ?heaptype:Type)
 
 TypeToMergedHeap(?heap, ?heaptype) :-
   AllocationShouldBeMergedGlobally(?heaptype),
   TypeToHeap(?heap, ?heaptype).
 
-TypeToMergedHeapOrdinal(ord(?heap), ?heaptype) :-
-  TypeToMergedHeap(?heap, ?heaptype).
-
 .decl MinHeapOrdinalPerType(?minHeapOrd:number, ?type:Type)
 .decl TypeToRepresentative(?type:Type, ?representativeHeap:HeapAllocation)
 
 MinHeapOrdinalPerType(?minHeapOrd, ?type) :-
-  TypeToMergedHeapOrdinal(_, ?type),
-  ?minHeapOrd = min ?heapOrd: TypeToMergedHeapOrdinal(?heapOrd, ?type).
+  TypeToMergedHeap(_, ?type),
+  ?minHeapOrd = min ord(?heap): TypeToMergedHeap(?heap, ?type).
 
 TypeToRepresentative(?type, ?representativeHeap) :-
   isHeapAllocation(?representativeHeap),
@@ -476,22 +457,17 @@ HeapAllocation_ContextInsensitive(?heap) <-
 //  ExceptionHandler:Type[_] = ?handlertype,
 //  SubtypeOf(?heaptype, ?handlertype).
 .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
-.decl ExceptionTypeToHeapOrdinal(?heapOrd:number, ?type:Type)
 
 ExceptionTypeToHeap(?heap, ?heaptype) :-
   AssignHeapAllocation(?heap, _, _),
   HeapAllocation_Type(?heap, ?heaptype),
   ExceptionType(?heaptype).
 
-ExceptionTypeToHeapOrdinal(ord(?heap), ?heapType) :-
-  ExceptionTypeToHeap(?heap, ?heapType).
-
-
 .decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
 
 ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ExceptionTypeToHeap(_, ?type),
-  ?representativeHeapOrd = min ?heapOrd : ExceptionTypeToHeapOrdinal(?heapOrd, ?type).
+  ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
 
 HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),

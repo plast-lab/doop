@@ -16,6 +16,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	int                 _heapCounter
 	Class               _klass
 	Method              _method
+	Map<String,Integer> _methodInvoCounters
 	boolean             _inDecl
 
 	BasicMetadata       metadata     = new BasicMetadata()
@@ -50,7 +51,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			false, //isInner, missing?
 			false  //isAnonymous, missing?
 		)
-		metadata.classes.add(_klass)
+		metadata.classes << _klass
 	}
 
 	void exitField(FieldContext ctx) {
@@ -70,7 +71,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			_klass.doopId, //declaringClassDoopId
 			ctx.modifier().any() { hasToken(it, "static") }
 		)
-		metadata.fields.add(f)
+		metadata.fields << f
 	}
 
 	void enterMethod(MethodContext ctx) {
@@ -96,14 +97,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			0, //totalInvocations, missing?
 			0  //totalAllocations, missing?
 		)
-		metadata.methods.add(_method)
+		metadata.methods << _method
 
 		_heapCounter = 0
+		_methodInvoCounters = [:]
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
 		if (_inDecl)
-			metadata.variables.add(var(ctx.IDENTIFIER(), true))
+			metadata.variables << var(ctx.IDENTIFIER(), true)
 	}
 
 	void enterDeclarationStmt(DeclarationStmtContext ctx) {
@@ -120,57 +122,89 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
-	void exitAssignmentStmt(AssignmentStmtContext ctx) {
+	void exitComplexAssignmentStmt(ComplexAssignmentStmtContext ctx) {
+		if (ctx.IDENTIFIER())
+			metadata.usages << varUsage(ctx.IDENTIFIER(), UsageKind.DATA_READ)
+
+		if (ctx.fieldSig())
+			metadata.usages << fieldUsage(ctx.fieldSig(), UsageKind.DATA_WRITE)
+
 		(0..1).each {
-			if (ctx.IDENTIFIER(it) != null) {
-				def name = ctx.IDENTIFIER(it).getText()
-				metadata.variables.add(var(ctx.IDENTIFIER(it), name.startsWith("@parameter")))
-			}
+			if (ctx.value(it)?.IDENTIFIER())
+				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
+	}
+
+	void exitAssignmentStmt(AssignmentStmtContext ctx) {
+		if (ctx.IDENTIFIER(0))
+			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+		if (ctx.IDENTIFIER(1))
+			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+
 		(0..1).each {
-			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
-				metadata.variables.add(var(ctx.value(it).IDENTIFIER(), true))
+			if (ctx.value(it)?.IDENTIFIER())
+				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
 
 	void exitReturnStmt(ReturnStmtContext ctx) {
-		if (ctx.value() != null && ctx.value().IDENTIFIER() != null)
-			metadata.variables.add(var(ctx.value().IDENTIFIER(), true))
+		if (ctx.value()?.IDENTIFIER())
+			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
 
 	void exitAllocationStmt(AllocationStmtContext ctx) {
-		metadata.variables.add(var(ctx.IDENTIFIER(0), true))
-		metadata.heapAllocations.add(heap(ctx.IDENTIFIER(1)))
+		metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+		metadata.heapAllocations << heap(ctx.IDENTIFIER(1))
 		_heapCounter++
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
-		(0..1).each {
-			if (ctx.IDENTIFIER(it) != null)
-				metadata.variables.add(var(ctx.IDENTIFIER(it), true))
-		}
+		if (ctx.IDENTIFIER(0))
+			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+		if (ctx.IDENTIFIER(1))
+			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+
+		if (!ctx.methodSig(0).IDENTIFIER(1))
+			throw new RuntimeException("Why?")
+
+		def methodClass = ctx.methodSig(0).IDENTIFIER(0).getText()
+		def retType     = ctx.methodSig(0).IDENTIFIER(1).getText()
+		def methodName  = ctx.methodSig(0).IDENTIFIER(2).getText()
+		def c = _methodInvoCounters[methodName] ?: 0
+		_methodInvoCounters[methodName] = c+1
+
+		def line = ctx.methodSig(0).IDENTIFIER(0).getSymbol().getLine()
+		def startCol = ctx.methodSig(0).IDENTIFIER(0).getSymbol().getCharPositionInLine()
+		def len = methodClass.length() + retType.length() + methodName.length() + 4
+
+		metadata.invocations << new MethodInvocation(
+			new Position(line, line, startCol, startCol + len),
+			_filename,
+			"${_method.doopId}/${methodClass}.$methodName/$c", //doopId
+			_method.doopId //invokingMethodDoopId
+		)
 	}
 
 	void exitValueList(ValueListContext ctx) {
-		if (ctx.value().IDENTIFIER() != null)
-			metadata.variables.add(var(ctx.value().IDENTIFIER(), true))
+		if (ctx.value().IDENTIFIER())
+			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
 
 	void exitJumpStmt(JumpStmtContext ctx) {
 		(0..1).each {
-			if (ctx.value(it) != null && ctx.value(it).IDENTIFIER() != null)
-				metadata.variables.add(var(ctx.value(it).IDENTIFIER(), true))
+			if (ctx.value(it)?.IDENTIFIER())
+				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
+
 
 	Variable var(TerminalNode id, boolean isLocal) {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def name = id.getText()
-		def position = new Position(line, line, startCol, startCol + name.length())
 
 		def v = new Variable(
-			position,
+			new Position(line, line, startCol, startCol + name.length()),
 			_filename,
 			name,
 			"${_method.doopId}/$name", //doopId
@@ -191,14 +225,42 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def line = id.getSymbol().getLine()
 		def startCol = id.getSymbol().getCharPositionInLine() + 1
 		def type = id.getText()
-		def position = new Position(line, line, startCol, startCol + type.length())
 
 		return new HeapAllocation(
-			position,
+			new Position(line, line, startCol, startCol + type.length()),
 			_filename,
-			"${_method.doopId}/$_heapCounter", //doopId
+			"${_method.doopId}/new $type/$_heapCounter", //doopId
 			type,
 			_method.doopId //allocatingMethodDoopId
+		)
+	}
+
+	Usage varUsage(TerminalNode id, UsageKind kind) {
+		def line = id.getSymbol().getLine()
+		def startCol = id.getSymbol().getCharPositionInLine() + 1
+		def name = id.getText()
+
+		def u = new Usage(
+			new Position(line, line, startCol, startCol + name.length()),
+			_filename,
+			"${_method.doopId}/$name", //doopId
+			kind
+		)
+	}
+	Usage fieldUsage(FieldSigContext ctx, UsageKind kind) {
+		def klass = ctx.IDENTIFIER(0).getText()
+		def type  = ctx.IDENTIFIER(1).getText()
+		def name  = ctx.IDENTIFIER(2).getText()
+
+		def line = ctx.IDENTIFIER(0).getSymbol().getLine()
+		def startCol = ctx.IDENTIFIER(0).getSymbol().getCharPositionInLine()
+		def len = klass.length() + type.length() +  name.length() + 4
+
+		def u = new Usage(
+			new Position(line, line, startCol, startCol + len),
+			_filename,
+			"<$klass: $type $name>", //doopId
+			kind
 		)
 	}
 
@@ -206,6 +268,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (ctx == null) return []
 		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER().getText()]
 	}
+
 	boolean hasToken(ParserRuleContext ctx, String token) {
 		for (int i = 0; i < ctx.getChildCount(); i++)
 			if (ctx.getChild(i) instanceof TerminalNode &&

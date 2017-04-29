@@ -19,9 +19,15 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 
     protected void printStats(DoopAnalysis analysis) {
-        def lines = [] as List<String>
+        def filterOutLBWarn = { String line ->
+            line == '*******************************************************************' ||
+            line == 'Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.' ||
+            line == "Please use 'lb' instead of 'bloxbatch'."
+        }
+
+        def lines = []
         analysis.connector.processPredicate("Stats:Runtime") { String line ->
-            lines.add(line)
+            if (!filterOutLBWarn.call(line)) lines.add(line)
         }
 
         logger.info "-- Runtime metrics --"
@@ -30,9 +36,9 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         }
 
         if (!analysis.options.X_STATS_NONE.value) {
-            lines = [] as List<String>
+            lines = []
             analysis.connector.processPredicate("Stats:Metrics") { String line ->
-                lines.add(line)
+                if (!filterOutLBWarn.call(line)) lines.add(line)
             }
 
             logger.info "-- Statistics --"

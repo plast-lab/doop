@@ -28,13 +28,26 @@ class Executor {
             File cwd = FileOps.findDirOrThrow(workingDirectory, "Working directory is invalid: $workingDirectory")
             pb.directory(cwd)
         }
+        pb.redirectErrorStream(true)
         def environment = pb.environment()
         environment.clear()
         environment.putAll(this.environment)
         def process = pb.start()
 
         final InputStream is = process.getInputStream()
-        final InputStream es = process.getErrorStream()
+        //final InputStream es = process.getErrorStream()
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor()
+
+        // Add a shutdown hook in case the JVM terminates during the execution of the process
+        def shutdownActions = {
+            logger.debug("Destroying process: $commandLine")
+            process.destroy()
+            logger.debug("Process destroyed: $commandLine")
+            executorService.shutdownNow()
+        }
+        def shutdownThread = new Thread(shutdownActions as Runnable)
+        Runtime.getRuntime().addShutdownHook(shutdownThread)
 
         /*
          * Put the use of readline in a separate thread because it ignores
@@ -44,7 +57,6 @@ class Executor {
          * occurs, the process will continue to run ignoring any attempt to
          * stop it.
          */
-        ExecutorService executorService = Executors.newSingleThreadExecutor()
         try {
             executorService.submit(new Runnable() {
                 @Override
@@ -60,26 +72,23 @@ class Executor {
             }).get()
         }
         catch (InterruptedException e) {
-            //The process has not terminated, destroy it.
-            logger.debug("Destroying process: $commandLine")
-            process.destroy()
-            logger.debug("Process destroyed: $commandLine")
+            Runtime.getRuntime().removeShutdownHook(shutdownThread)
+            shutdownActions.call()
             throw e
         }
         finally {
             executorService.shutdownNow()
         }
+        Runtime.getRuntime().removeShutdownHook(shutdownThread)
 
         // Wait for process to terminate
         def returnCode = process.waitFor()
 
         // Create an error string that contains everything in the stderr stream
-        def errorMessages = es.getText()
-
-        // Print the remaining warnings
-        if (!errorMessages.isAllWhitespace()) {
-            System.err.print(errorMessages)
-        }
+        //def errorMessages = es.getText()
+        //if (!errorMessages.isAllWhitespace()) {
+        //    System.err.print(errorMessages)
+        //}
 
         // Check return code and raise exception at failure indication
         if (returnCode != 0) {

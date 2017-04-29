@@ -440,6 +440,9 @@ MethodInvocation:Line[?invocation] = ?line ->
 MethodInvocation:Method[?invocation] = ?signature ->
    MethodInvocation(?invocation), Method(?signature).
 
+MethodInvocation:Method:Opt(?invocation, ?signature) ->
+   MethodInvocation(?invocation), Method(?signature).
+
 ApplicationMethod(?method) -> Method(?method).
 
 // The (call-site) variable that holds the result of the invocation
@@ -679,3 +682,6 @@ lang:physical:capacity[`StringRaw]           = 4194304.
 //-----------------------------------------------------------------------------
 
 AndroidEntryPoint(?m) -> Method(?m).
+
+
+Dacapo0(?id, ?method) -> string(?id), Method(?method).

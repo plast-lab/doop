@@ -17,7 +17,7 @@ import org.clyze.doop.system.FileOps
 class Main {
 
     private static final Log logger = LogFactory.getLog(Main)
-    private static final int DEFAULT_TIMEOUT = 180 // 3 hours
+    private static final int DEFAULT_TIMEOUT = 90 // 90 minutes
 
     // Allow access to the analysis object from external code
     static DoopAnalysis analysis
