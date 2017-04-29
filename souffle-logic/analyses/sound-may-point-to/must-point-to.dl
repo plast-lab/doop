@@ -46,7 +46,7 @@
     AssignLocal_From(?insn, ?from),
     !PhiNodeHead(?insn, _),
     AssignInstruction_To(?insn, ?to).
-
+  
   // Cast assignments, handled similarly
   MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
     MustPointTo(?hctx, ?heap, ?ctx, ?from),
@@ -58,6 +58,8 @@
     MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
     !(NextInSamePhiNode(?lastInsn, _)),
     AssignInstruction_To(?lastInsn, ?var).
+
+  // TODO: FieldMustPointTo correctly maintained at Phi instructions
 
   // Store instructions: pretty much like in a may-point-to analysis
   FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-

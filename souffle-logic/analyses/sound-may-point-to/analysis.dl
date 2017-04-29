@@ -801,6 +801,7 @@
 	Instruction_Method(?insn, ?method),
     !MethodReachableFromConstructorOfClassOfField(?fld, ?method),
     !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
+   .plan 1: (2,3,4,1,5)
   // It's not enough to have the instruction not in the constructor,
   // it needs to be after the end of the constructor.  Is this huge?
   // Probably not, by nature of constructors and the sound callgraph.
@@ -1554,7 +1555,7 @@ LoadCollection_Base(?invo, ?var) :-
 //// BEGIN configuration
 ////  Different ways to kick-start the analysis.
 
-MaxMayContextDepth(2).
+MaxMayContextDepth(4).
 
 AccessPath_MaxLength(3).
 
@@ -1565,7 +1566,6 @@ SoundMayPhase2.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase2.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase1.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
 //.init SoundMayPhase3 = SoundMay<SoundMustPointTo>
 .init SoundMayPhase3 = SoundMay<DummyMustPointTo>
 SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
@@ -1573,6 +1573,7 @@ SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
+/*
 .init SoundMayPhase4 = SoundMay<SoundMustPointTo>
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
