@@ -113,7 +113,11 @@ public class MemoryAnalyser {
         Database db = new Database(factDir);
 
         try {
+            long startTime = System.nanoTime();
             resolveFactsFromDump("2ObjH");
+            long endTime = System.nanoTime();
+            long durationSeconds = (endTime - startTime) / 1000000000;
+            System.out.println("Heap dump analysis time: " + durationSeconds);
         } catch (RuntimeException e) {
             e.printStackTrace();
         }

@@ -61,7 +61,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						isFile:true,
 						description:"Use file with tamiflex data for reflection.",
 						value:null,
-						webUI:true
+						webUI:true,
+						forPreprocessor:true                                                
 				),
 				new AnalysisOption<String>(
 						id:"CFG_ANALYSIS",

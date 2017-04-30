@@ -13,6 +13,8 @@
  ***************************************************/
 Stats:Simple:InsensVarPointsTo(?value, ?var) <- VarPointsTo(_, ?value, _, ?var).
 
+Stats:Simple:AssignedVariable(?var) <- Stats:Simple:InsensVarPointsTo(_, ?var).
+
 Stats:Simple:Application:InsensVarPointsTo(?value, ?var),
 Stats:Simple:Application:VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
    VarPointsTo(?hctx, ?value, ?ctx, ?var),
@@ -20,7 +22,8 @@ Stats:Simple:Application:VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 
 Stats:Simple:InsensReachableVar(?var),
 Stats:Simple:ReachableVar(?ctx, ?var) <-
-   ReachableContext(?ctx, ?method), Var:DeclaringMethod(?var, ?method).
+   ReachableContext(?ctx, ?method), Var:DeclaringMethod(?var, ?method),
+   Stats:Simple:AssignedVariable(?var).
 
 #ifdef TRANSFORM_INPUT
 // Example of post-processing of set-based transform results for client analyses
@@ -138,7 +141,8 @@ Stats:Simple:Application:EmptyVirtualMethodInvocation(?invocation) <-
  * Casts
  ***************************************************/
 Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from) <-
-   Reachable(?inmethod), AssignCast(?type, ?from, ?to, ?inmethod).
+   Reachable(?inmethod), AssignCast(?type, ?from, ?to, ?inmethod),
+   Stats:Simple:AssignedVariable(?from).
 
 Stats:Simple:PotentiallyFailingCast(?type, ?from, ?to) <-
    Stats:Simple:ReachableCast(_, ?type, ?to, ?from),
