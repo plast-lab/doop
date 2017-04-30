@@ -33,14 +33,19 @@ Server:StaticFieldPointsTo(?sig, ?heapId) <-
 _Class:DeclaresMethod(?method, ?class) <-
   Method:DeclaringType[?method] = ?class.
 
-_ReachableClass(?class) <-
+// All application types
+Server:KeepClass(?class) <-
+  ApplicationClass(?class).
+
+// All classes with a reachable method
+Server:KeepClass(?class) <-
   _Class:DeclaresMethod(?method, ?class),
   Reachable(?method).
 
-Server:UnreachableLibClass(?class) <-
-  ClassType(?class),
-  !ApplicationClass(?class),
-  !_ReachableClass(?class).
+// Transitively, everything up the hierarchy
+Server:KeepClass(?interface) <-
+  Server:KeepClass(?class),
+  SupertypeOf(?interface, ?class).
 
 
 /*
