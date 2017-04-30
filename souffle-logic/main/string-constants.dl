@@ -65,36 +65,25 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
  *************************************************************/
 
 .decl HeapRepresentative(?heap:HeapAllocation, ?heapRepr:symbol)
+.decl HeapIsMergedString(?heap:HeapAllocation)
 
 // If the object is a string that should be merged, ignore other
 // representatives and merge with that.
-.decl HeapIsMergedString(?heap:HeapAllocation)
-
 HeapIsMergedString(?heap) :-
-  ?heapRepr = "<<string-constant>>",
-  isHeapAllocation(?heapRepr),
-  HeapRepresentative(?heapRepr, ?heap).
-
+  HeapRepresentative("<<string-constant>>", ?heap).
+// Rule split in two since it needs to be stratified differently
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  ?heapRepr = "<<string-constant>>",
-  isHeapAllocation(?heapRepr),
-  HeapRepresentative(?heapRepr, ?heap).
+  HeapRepresentative("<<string-constant>>", ?heap).
 
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
 HeapIsMergedStringFactory(?heap) :-
-  HeapRepresentative(?heapRepr, ?heap),
-  (isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-buffer>>";
-   isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-builder>>").
+  HeapRepresentative("<<string-buffer>>", ?heap);
+  HeapRepresentative("<<string-builder>>", ?heap).
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative(?heapRepr, ?heap),
-  (isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-buffer>>";
-   isHeapAllocation(?heapRepr),
-   ?heapRepr = "<<string-builder>>").
+  HeapRepresentative("<<string-buffer>>", ?heap);
+  HeapRepresentative("<<string-builder>>", ?heap).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
 
@@ -144,10 +133,9 @@ ReflectionSubstringObject(?heap) :-
   MethodNameMatchingStringConstantInexact:Signature(_,?heap);
   FieldNameMatchingStringConstantInexact:Signature(_,?heap).
 
-HeapRepresentative(?constant, ?heap) :-
+HeapRepresentative("<<string-constant>>", ?heap) :-
   isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
-  HeapAllocation_byId["<<string-constant>>"] = ?constant,
   !HeapAllocation_Keep(?heap).
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
@@ -401,33 +389,24 @@ AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
 /*************************************************************
  * String buffers and builders
  *************************************************************/
+
 .decl StringFactoryType(?type:Type)
 .decl StringFactoryHeap(?heap:HeapAllocation)
 
 StringFactoryType(?type) :-
-  isType(?type),
   ?type = "java.lang.StringBuffer" ;
-  isType(?type),
   ?type = "java.lang.StringBuilder".
 
 StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
 
-HeapRepresentative(?mergeHeap, ?heap) :-
-  HeapAllocation_Type(?heap, ?type),
-  isType(?type),
-  ?type = "java.lang.StringBuffer",
-  ?mergeHeap = "<<string-buffer>>",
-  isHeapAllocation(?mergeHeap),
+HeapRepresentative("<<string-buffer>>", ?heap) :-
+  HeapAllocation_Type(?heap, "java.lang.StringBuffer"),
   !HeapAllocation_Keep(?heap).
 
-HeapRepresentative(?mergeHeap, ?heap) :-
-  HeapAllocation_Type(?heap, ?type),
-  isType(?type),
-  ?type = "java.lang.StringBuilder",
-  ?mergeHeap = "<<string-builder>>",
-  isHeapAllocation(?mergeHeap),
+HeapRepresentative("<<string-builder>>", ?heap) :-
+  HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
   !HeapAllocation_Keep(?heap).
 
 /*************************************************************
@@ -440,7 +419,7 @@ HeapRepresentative(?mergeHeap, ?heap) :-
  // produced huge ThrowPointsTo sets and caused slowdowns.
  */
 #ifdef SEPARATE_EXCEPTION_OBJECTS
-HeapAllocation_ContextInsensitive(?heap) <-
+HeapAllocation_ContextInsensitive(?heap) :-
   HeapAllocation_Type(?heap, ?type),
   ExceptionType(?type).
 #else
@@ -450,12 +429,14 @@ HeapAllocation_ContextInsensitive(?heap) <-
 // objects of the same type are therefore merged. This means that points-to
 // results for throwables are not accurate! Only the type will be right.
 
-//TypeToHeap2(?heap, ?heaptype) <-
-//  HeapAllocation:Type[?heap] = ?heaptype,
-//  Type:Id(?throw:"java.lang.Throwable"),
-//  SubtypeOf(?heaptype, ?throw),
-//  ExceptionHandler:Type[_] = ?handlertype,
+//.decl ExceptionTypeToHeap2(?heap:HeapAllocation, ?type:Type)
+//
+//ExceptionTypeToHeap2(?heap, ?heaptype) :-
+//  HeapAllocation_Type(?heap, ?heaptype),
+//  SubtypeOf(?heaptype, "java.lang.Throwable"),
+//  ExceptionHandler_Type(_, ?handlertype),
 //  SubtypeOf(?heaptype, ?handlertype).
+
 .decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
 
 ExceptionTypeToHeap(?heap, ?heaptype) :-
@@ -513,25 +494,24 @@ HeapAllocation_ContextInsensitive(?heap) :-
  * Treat context-insensitively always? It doesn't matter much,
  * but doesn't hurt much either.
  *************************************************************/
+
 /*
 HeapAllocation_ContextInsensitive(?heap) :-
-  HeapAllocation:Type(?heap, ?heaptype),
+  HeapAllocation_Type(?heap, ?heaptype),
   Type_HasNoReferenceField(?heaptype),
   !HeapRepresentative(_, ?heap).
   // The rules have become complex enough that they overlap.
 
-decl Type_HasNoReferenceField(?type:Type)
-decl Type_DeclaresReferenceField(?type:Type)
+.decl Type_HasNoReferenceField(?type:Type)
+.decl Type_DeclaresReferenceField(?type:Type)
 
-Type_HasNoReferenceField(?type) :-
-  ?type = "java.lang.Object",
-  isType(?type).
+Type_HasNoReferenceField("java.lang.Object").
 
 Type_HasNoReferenceField(?class) :-
   isClassType(?class),
   DirectSuperclass(?class, ?super),
   Type_HasNoReferenceField(?super),
-  ! Type_DeclaresReferenceField(?class).
+  !Type_DeclaresReferenceField(?class).
 
 Type_DeclaresReferenceField(?class) :-
   isClassType(?class),
@@ -541,9 +521,7 @@ Type_DeclaresReferenceField(?class) :-
   !FieldIsStatic(?signature).
 
 FieldIsStatic(?sig) :-
-  ?static = "static",
-  Modifier(?static),
-  Field_Modifier(?static, ?sig).
+  Field_Modifier("static", ?sig).
 
 //// Quite risky: even final fields hold interesting state.
 //FieldIsStaticOrFinal?sig) <-
