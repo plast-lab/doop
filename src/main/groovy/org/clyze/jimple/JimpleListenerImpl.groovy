@@ -1,6 +1,5 @@
 package org.clyze.jimple
 
-import groovy.json.JsonOutput
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.*
 import static org.clyze.jimple.JimpleParser.*
@@ -10,19 +9,19 @@ import org.clyze.persistent.doop.*
 
 class JimpleListenerImpl extends JimpleBaseListener {
 
-	String              _filename
-	List<Map>           _pending
-	Map<String, String> _types       = [:]
-	int                 _heapCounter
-	Class               _klass
-	Method              _method
-	Map<String,Integer> _methodInvoCounters
-	boolean             _inDecl
+	String              filename
+	List<Map>           pending
+	Map<String, String> types   = [:]
+	int                 heapCounter
+	Class               klass
+	Method              method
+	Map<String,Integer> methodInvoCounters
+	boolean             inDecl
 
-	BasicMetadata       metadata     = new BasicMetadata()
+	BasicMetadata       metadata = new BasicMetadata()
 
 	JimpleListenerImpl(String filename) {
-		_filename = filename
+		this.filename = filename
 	}
 
 
@@ -39,9 +38,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		// Foo
 		def className = fullName[(i+1)..-1]
 
-		_klass = new Class(
+		klass = new Class(
 			position,
-			_filename,
+			filename,
 			className,
 			packageName,
 			fullName,
@@ -51,7 +50,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			false, //isInner, missing?
 			false  //isAnonymous, missing?
 		)
-		metadata.classes << _klass
+		metadata.classes << klass
 	}
 
 	void exitField(FieldContext ctx) {
@@ -64,11 +63,11 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def f = new Field(
 			position,
-			_filename,
+			filename,
 			name,
-			"<$_klass: $type $name>", //doopId
+			"<$klass: $type $name>", //doopId
 			type,
-			_klass.doopId, //declaringClassDoopId
+			klass.doopId, //declaringClassDoopId
 			ctx.modifier().any() { hasToken(it, "static") }
 		)
 		metadata.fields << f
@@ -84,41 +83,41 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def paramTypes = gatherIdentifiers(ctx.identifierList(0))
 		def params = paramTypes.join(",")
 
-		_method = new Method(
+		method = new Method(
 			position,
-			_filename,
+			filename,
 			name,
-			_klass.doopId, //declaringClassDoopId
+			klass.doopId, //declaringClassDoopId
 			retType,
-			"<${_klass.doopId}: $retType $name($params)>", //doopId
+			"<${klass.doopId}: $retType $name($params)>", //doopId
 			null, //params, TODO
 			paramTypes as String[],
 			ctx.modifier().any() { hasToken(it, "static") },
 			0, //totalInvocations, missing?
 			0  //totalAllocations, missing?
 		)
-		metadata.methods << _method
+		metadata.methods << method
 
-		_heapCounter = 0
-		_methodInvoCounters = [:]
+		heapCounter = 0
+		methodInvoCounters = [:]
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
-		if (_inDecl)
+		if (inDecl)
 			metadata.variables << var(ctx.IDENTIFIER(), true)
 	}
 
 	void enterDeclarationStmt(DeclarationStmtContext ctx) {
-		_inDecl = true
-		_pending = []
+		inDecl = true
+		pending = []
 	}
 
 	void exitDeclarationStmt(DeclarationStmtContext ctx) {
-		_inDecl = false
+		inDecl = false
 		def type = ctx.IDENTIFIER().getText()
-		_pending.each { v ->
+		pending.each { v ->
 			v.type = type
-			_types[v.doopId] = type
+			types[v.doopId] = type
 		}
 	}
 
@@ -155,7 +154,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	void exitAllocationStmt(AllocationStmtContext ctx) {
 		metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		metadata.heapAllocations << heap(ctx.IDENTIFIER(1))
-		_heapCounter++
+		heapCounter++
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
@@ -170,8 +169,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def methodClass = ctx.methodSig(0).IDENTIFIER(0).getText()
 		def retType     = ctx.methodSig(0).IDENTIFIER(1).getText()
 		def methodName  = ctx.methodSig(0).IDENTIFIER(2).getText()
-		def c = _methodInvoCounters[methodName] ?: 0
-		_methodInvoCounters[methodName] = c+1
+		def c = methodInvoCounters[methodName] ?: 0
+		methodInvoCounters[methodName] = c+1
 
 		def line = ctx.methodSig(0).IDENTIFIER(0).getSymbol().getLine()
 		def startCol = ctx.methodSig(0).IDENTIFIER(0).getSymbol().getCharPositionInLine()
@@ -179,9 +178,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		metadata.invocations << new MethodInvocation(
 			new Position(line, line, startCol, startCol + len),
-			_filename,
-			"${_method.doopId}/${methodClass}.$methodName/$c", //doopId
-			_method.doopId //invokingMethodDoopId
+			filename,
+			"${method.doopId}/${methodClass}.$methodName/$c", //doopId
+			method.doopId //invokingMethodDoopId
 		)
 	}
 
@@ -205,19 +204,19 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def v = new Variable(
 			new Position(line, line, startCol, startCol + name.length()),
-			_filename,
+			filename,
 			name,
-			"${_method.doopId}/$name", //doopId
+			"${method.doopId}/$name", //doopId
 			null, //type, provided later
-			_method.doopId, //declaringMethodDoopId
+			method.doopId, //declaringMethodDoopId
 			isLocal,
 			!isLocal
 		)
 
-		if (_types[v.doopId])
-			v.type = _types[v.doopId]
+		if (types[v.doopId])
+			v.type = types[v.doopId]
 		else
-			_pending.push(v)
+			pending.push(v)
 		return v
 	}
 
@@ -228,10 +227,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		return new HeapAllocation(
 			new Position(line, line, startCol, startCol + type.length()),
-			_filename,
-			"${_method.doopId}/new $type/$_heapCounter", //doopId
+			filename,
+			"${method.doopId}/new $type/$heapCounter", //doopId
 			type,
-			_method.doopId //allocatingMethodDoopId
+			method.doopId //allocatingMethodDoopId
 		)
 	}
 
@@ -242,8 +241,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def u = new Usage(
 			new Position(line, line, startCol, startCol + name.length()),
-			_filename,
-			"${_method.doopId}/$name", //doopId
+			filename,
+			"${method.doopId}/$name", //doopId
 			kind
 		)
 	}
@@ -258,7 +257,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def u = new Usage(
 			new Position(line, line, startCol, startCol + len),
-			_filename,
+			filename,
 			"<$klass: $type $name>", //doopId
 			kind
 		)
