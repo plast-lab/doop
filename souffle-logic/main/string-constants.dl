@@ -73,7 +73,8 @@ HeapIsMergedString(?heap) :-
   HeapRepresentative("<<string-constant>>", ?heap).
 // Rule split in two since it needs to be stratified differently
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative("<<string-constant>>", ?heap).
+  ?heapRepr = "<<string-constant>>",
+  HeapRepresentative(?heapRepr, ?heap).
 
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
@@ -82,8 +83,10 @@ HeapIsMergedStringFactory(?heap) :-
   HeapRepresentative("<<string-builder>>", ?heap).
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative("<<string-buffer>>", ?heap);
-  HeapRepresentative("<<string-builder>>", ?heap).
+  (?heapRepr = "<<string-buffer>>",
+   HeapRepresentative(?heapRepr, ?heap));
+  (?heapRepr = "<<string-builder>>",
+   HeapRepresentative(?heapRepr, ?heap)).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
 
