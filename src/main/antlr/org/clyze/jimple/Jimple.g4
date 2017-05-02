@@ -71,8 +71,6 @@ assignmentStmt
 	| IDENTIFIER '=' value (OP|'cmp'|'cmpl'|'cmpg'|'instanceof') value
 	| IDENTIFIER '=' value '[' value ']'
 	| IDENTIFIER '=' (IDENTIFIER '.')? fieldSig
-	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
-	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+ '[]'?
 	| IDENTIFIER '=' 'Phi' '(' identifierList ')'
 	;
 
@@ -86,12 +84,13 @@ invokeStmt
 	;
 
 allocationStmt
-	: IDENTIFIER '=' 'new' IDENTIFIER ;
+	: IDENTIFIER '=' 'new' IDENTIFIER
+	| IDENTIFIER '=' 'newarray' '(' IDENTIFIER ')' '[' value ']'
+	| IDENTIFIER '=' 'newmultiarray' '(' IDENTIFIER ')' ('[' value? ']')+ '[]'?
+	;
 
 methodSig
-	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList? ')' '>'
-	| '<' IDENTIFIER '(' identifierList? ')' '>'
-	;
+	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '(' identifierList? ')' '>' ;
 
 fieldSig
 	: '<' IDENTIFIER ':' IDENTIFIER IDENTIFIER '>' ;
