@@ -161,16 +161,18 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def type = ctx.IDENTIFIER(1).text
 		def endCol = startCol + type.length()
 
+		def lastToken = getLastToken(ctx)
 		if (hasToken(ctx, "newarray")) {
 			type = "$type[]" as String
-			endCol += 2
+			startCol -= 1
+			endCol = lastToken.symbol.charPositionInLine + 2
 		}
 		else if (hasToken(ctx, "newmultiarray")) {
-			def lastToken = getLastToken(ctx)
 			def lastIsEmpty = lastToken.text == "[]"
 			def dimensions = ctx.value().size() + (lastIsEmpty ? 1 : 0)
 			type = type + (1..dimensions).collect{"[]"}.join()
-			endCol = lastToken.symbol.charPositionInLine + (lastIsEmpty ? 2 : 1)
+			startCol -= 1
+			endCol = lastToken.symbol.charPositionInLine + (lastIsEmpty ? 3 : 2)
 		}
 
 		def c = heapCounters[type] ?: 0
