@@ -20,3 +20,17 @@ VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to) <-
   ActualParam[0, ?invo] = ?to,
   ReachableContext(?ctx, ?method),
   ImmutableHContextFromContext[?ctx] = ?hctx.
+
+StringsInDacapoHarness(HeapAllocation:Id[?heap]) <-
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   Method:DeclaringType[Instruction:Method[?insn]] = ?id,
+   StringConstant(?heap),
+   Dacapo0(?id, _).
+
+DacapoEntryPoint(?method),
+ReachableContext(?ctx,?method) <-
+   Method:DeclaringType[?method] = ?strClass,
+   StringsInDacapoHarness(?strClass),
+   StringsInDacapoHarness(?strMethod),
+   Method:SimpleName[?method] = ?strMethod,
+   InitialContext(?ctx).

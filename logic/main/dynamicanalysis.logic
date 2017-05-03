@@ -80,11 +80,12 @@ ProbablyReachable(?tomethod) <-
    ProbablyReachable(?fromMethod).
 
 ForcedImplicitReachable(?method),
-ImplicitReachable(?method) <-
+ReachableContext(?ctx, ?method) <-
    (TamiflexDynamicallyReachableMethod(?method) ;
    DynamicReachableMethod(?method)),
    !ProbablyReachable(?method),
-   !OptClassInitializer(_, ?method).
+   !OptClassInitializer(_, ?method),
+   ImmutableContext(?ctx).
 
 TamiflexDynamicallyReachableMethod(?inmethod) -> Method(?inmethod).
 
