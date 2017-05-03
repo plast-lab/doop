@@ -157,21 +157,25 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		}
 
 		def line = ctx.IDENTIFIER(1).symbol.line
-		def startCol = ctx.IDENTIFIER(1).symbol.charPositionInLine + 1
 		def type = ctx.IDENTIFIER(1).text
-		def endCol = startCol + type.length()
-
 		def lastToken = getLastToken(ctx)
-		if (hasToken(ctx, "newarray")) {
+		int startCol, endCol
+		TerminalNode newToken
+
+		if ((newToken = findToken(ctx, "new"))) {
+			startCol = newToken.symbol.charPositionInLine + 1
+			endCol = startCol + type.length()
+		}
+		else if ((newToken = findToken(ctx, "newarray"))) {
 			type = "$type[]" as String
-			startCol -= 1
+			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + 2
 		}
-		else if (hasToken(ctx, "newmultiarray")) {
+		else if ((newToken = findToken(ctx, "newmultiarray"))) {
 			def lastIsEmpty = lastToken.text == "[]"
 			def dimensions = ctx.value().size() + (lastIsEmpty ? 1 : 0)
 			type = type + (1..dimensions).collect{"[]"}.join()
-			startCol -= 1
+			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + (lastIsEmpty ? 3 : 2)
 		}
 
@@ -280,13 +284,16 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER().text]
 	}
 
-	boolean hasToken(ParserRuleContext ctx, String token) {
+	TerminalNode findToken(ParserRuleContext ctx, String token) {
 		for (def i = 0; i < ctx.getChildCount(); i++)
-			if (ctx.getChild(i) instanceof TerminalNode &&
-				((TerminalNode)ctx.getChild(i)).text.equals(token))
-				return true
-		return false
+			if (ctx.getChild(i) instanceof TerminalNode && (ctx.getChild(i) as TerminalNode).text == token)
+				return ctx.getChild(i) as TerminalNode
+		return null
 	}
+	boolean hasToken(ParserRuleContext ctx, String token) {
+		findToken(ctx, token) != null
+	}
+
 	TerminalNode getLastToken(ParserRuleContext ctx) {
 		TerminalNode last
 		for (def i = 0; i < ctx.getChildCount(); i++)
