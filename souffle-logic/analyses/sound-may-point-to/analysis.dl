@@ -403,12 +403,12 @@
   // special method invocation "this" variable assignment
   .decl OptPotentialSpecialMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
   OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo) :-
-    SpecialMethodInvocation_Base(?invo, ?base),
-    MayPointTo(?hctx, ?heap, ?ctx, ?base).
+    MayPointTo(?hctx, ?heap, ?ctx, ?base),
+    SpecialMethodInvocation_Base(?invo, ?base).
 
   MayPointTo(?hctx, ?heap, ?calleeCtx, ?this) :-
-    OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo),
     MayCallGraphEdge(?calleeCtx, ?toMeth, ?ctx, ?invo),
+    OptPotentialSpecialMethodBase(?hctx, ?heap, ?ctx, ?invo),
     ThisVar(?toMeth, ?this).
 
   .decl OptPotentialVirtualMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
@@ -724,7 +724,9 @@
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
     SingleFieldAccessPath(?fld, ?ap),
-    FieldInstruction_Signature(?insn, ?fld).
+    FieldInstruction_Signature(?insn, ?fldOther),
+    ?fld != ?fldOther.
+   .plan 1: (2,1,3)
 
   // also for length 3.
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
@@ -742,6 +744,7 @@
     AccessPath_ContainsStaticField(?ap, _),
 	AccessPath_Length(?ap, 1),
     IgnorableForStaticsMethodInvocation(?insn).
+   .plan 1: (2,3,1,4), 2: (3,2,1,4)
 
   .decl AccessPath_IsFinalStaticField(?ap:AccessPath)
   AccessPath_IsFinalStaticField(?ap) :-
@@ -798,6 +801,7 @@
 	Instruction_Method(?insn, ?method),
     !MethodReachableFromConstructorOfClassOfField(?fld, ?method),
     !ConstructorOfClassOfFieldHasUnresolvedInvocation(?fld).
+   .plan 1: (2,3,4,1,5)
   // It's not enough to have the instruction not in the constructor,
   // it needs to be after the end of the constructor.  Is this huge?
   // Probably not, by nature of constructors and the sound callgraph.
@@ -830,6 +834,7 @@
     MayCallGraphEdge_Prev(_, _, ?ctx, ?insn),
     !CalleeMayAssignField(?fld, ?ctx, ?insn),
     !CalleeHasUnresolvedInvocation(?ctx, ?insn).
+   .plan 1: (2,1,3)
 
   .decl Temp2(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
   Temp2(?hctx, ?heap, ?ap, ?ctx, ?insn),
@@ -1010,10 +1015,12 @@
     ReturnNonvoid_Var(?return, ?var),
     MayPointTo(?hctx2, ?heap2, ?ctx, ?var).
 
+  .decl ExistsNextReturn(?ret:Instruction)
+  ExistsNextReturn(?ret) :- NextReturn(?ret, _).
   .decl AllReturn_MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?method:Method)
   AllReturn_MayPointTo(?hctx, ?heap, ?ctx, ?method) :-
     UpToReturnMayPointTo(?hctx, ?heap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
+    !ExistsNextReturn(?return),
     Instruction_Method(?return, ?method).
 
   // same for composite access paths
@@ -1033,7 +1040,7 @@
   .decl AllReturn_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?m:Method)
   AllReturn_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?method) :-
     UpToReturnAccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?return),
-    !(NextReturn(?return, _)),
+    !ExistsNextReturn(?return),
     Instruction_Method(?return, ?method).
 
   // all returns of a method have the same return var
@@ -1051,7 +1058,7 @@
   .decl AllReturn_SameRetVar(?method:Method, ?var:Var)
   AllReturn_SameRetVar(?method, ?var) :-
     UpToReturnSameRetVar(?return, ?var),
-    !(NextReturn(?return, _)),
+    !ExistsNextReturn(?return),
     Instruction_Method(?return, ?method).
 
   // all returns of a callee is not enough. We also need "all callee" reasoning
@@ -1254,7 +1261,7 @@
     ?ap = [ ?base, [ ?fld, ?rest] ],
     ?base = ?base, ?fld = ?fld, ?rest = ?rest.
 
-  .decl ComputedFieldList(?fldList:AccessPathSuffix)
+  .decl ComputedFieldList(?fldList:AccessPathSuffix) output
   ComputedFieldList(?fldList) :-
     ComputedAccessPath(?ap),
     ?ap = [ ?base, ?fldList ], ?base = ?base. // suppress warning
@@ -1566,19 +1573,19 @@ SoundMayPhase3.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
 SoundMayPhase3.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase2.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase4 = SoundMay<DummyMustPointTo>
+/*
+.init SoundMayPhase4 = SoundMay<SoundMustPointTo>
 SoundMayPhase4.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase3.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase4.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase3.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-.init SoundMayPhase5 = SoundMay<DummyMustPointTo>
+.init SoundMayPhase5 = SoundMay<SoundMustPointTo>
 SoundMayPhase5.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase4.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).
 SoundMayPhase5.MayReachableMethodUnderMayContext_Prev(?ctx, ?meth) :-
   SoundMayPhase4.MayReachableMethodUnderMayContext(?ctx, ?meth).
 
-/*
 .init SoundMayPhase6 = SoundMay<DummyMustPointTo>
 SoundMayPhase6.MayCallGraphEdge_Prev(?ctx, ?meth, ?callerCtx, ?invo) :-
   SoundMayPhase5.MayCallGraphEdge(?ctx, ?meth, ?callerCtx, ?invo).

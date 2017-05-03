@@ -105,6 +105,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						value:false,
 						cli:true
 				),
+				new AnalysisOption<Boolean>(
+                                                id:"SOUFFLE_PROFILE",
+                                                name:"souffle-profile",
+                                                value:false,
+                                                cli:true
+                                ),
 				/* Start of preprocessor constant flags */
 				new AnalysisOption<Boolean>(
 						id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",

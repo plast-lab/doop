@@ -73,7 +73,8 @@ HeapIsMergedString(?heap) :-
   HeapRepresentative("<<string-constant>>", ?heap).
 // Rule split in two since it needs to be stratified differently
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative("<<string-constant>>", ?heap).
+  ?heapRepr = "<<string-constant>>",
+  HeapRepresentative(?heapRepr, ?heap).
 
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
@@ -82,8 +83,10 @@ HeapIsMergedStringFactory(?heap) :-
   HeapRepresentative("<<string-builder>>", ?heap).
 
 HeapAllocation_Merge(?heap, ?heapRepr) :-
-  HeapRepresentative("<<string-buffer>>", ?heap);
-  HeapRepresentative("<<string-builder>>", ?heap).
+  (?heapRepr = "<<string-buffer>>",
+   HeapRepresentative(?heapRepr, ?heap));
+  (?heapRepr = "<<string-builder>>",
+   HeapRepresentative(?heapRepr, ?heap)).
 
 .decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
 
@@ -123,25 +126,507 @@ HeapRepresentative(?constant, ?heap) :-
 #endif // DISTINGUISH_NO_STRING_CONSTANTS mode
 
 #ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
+
 ReflectionStringConstant(?heap) :-
-  ClassNameMatchingStringConstant(?heap);
-  MethodNameMatchingStringConstant(?heap);
-  FieldNameMatchingStringConstant(?heap).
+  PreClassNameMatchingStringConstant(?heap);
+  PreMethodNameMatchingStringConstant(?heap);
+  PreFieldNameMatchingStringConstant(?heap).
 
 ReflectionSubstringObject(?heap) :-
-  ClassNameMatchingStringConstantInexact:Type(_,?heap);
-  MethodNameMatchingStringConstantInexact:Signature(_,?heap);
-  FieldNameMatchingStringConstantInexact:Signature(_,?heap).
+  PreClassNameMatchingStringConstantInexact_Type(_,?heap);
+  PreMethodNameMatchingStringConstantInexact_Signature(_,?heap);
+  PreFieldNameMatchingStringConstantInexact_Signature(_,?heap).
 
 HeapRepresentative("<<string-constant>>", ?heap) :-
   isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
+
+//#ifdef GROUP_REFLECTION_STRINGS
+
+// ///// Naive Merging strategy: all strings that map to same reflection object
+// ///// are merged. Not too effective.
+// _StringRepresentativeForType[?type] = ?mergeHeap <-
+//   agg<<?mergeHeap = min(?heap)>>(PreClassNameMatchingStringConstant:Type(?type, ?heap)).
+// _StringRepresentativeForMethod[?sig] = ?mergeHeap <-
+//   agg<<?mergeHeap = min(?heap)>>(PreMethodNameMatchingStringConstant:Signature(?sig, ?heap)).
+// _StringRepresentativeForField[?sig] = ?mergeHeap <-
+//   agg<<?mergeHeap = min(?heap)>>(PreFieldNameMatchingStringConstant:Signature(?sig, ?heap)).
+
+// _OptPreClassNameMatchingStringConstant:Type(?heap, ?type) <-
+//   PreClassNameMatchingStringConstant:Type(?type, ?heap).
+// _OptPreMethodNameMatchingStringConstant:Signature(?heap, ?sig) <-
+//   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
+// _OptPreFieldNameMatchingStringConstant:Signature(?heap, ?sig) <-
+//   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
+
+// HeapRepresentative(?mergeHeap, ?heap) <-
+//   _OptPreClassNameMatchingStringConstant:Type(?heap, ?type),
+//   _StringRepresentativeForType[?type] = ?mergeHeap.
+
+// HeapRepresentative(?mergeHeap, ?heap) <-
+//   _OptPreMethodNameMatchingStringConstant:Signature(?heap, ?sig),
+//   _StringRepresentativeForMethod[?sig] = ?mergeHeap.
+
+// HeapRepresentative(?mergeHeap, ?heap) <-
+//   _OptPreFieldNameMatchingStringConstant:Signature(?heap, ?sig),
+//   _StringRepresentativeForField[?sig] = ?mergeHeap.
+// ///// End naive merging strategy
+
+///// Merging strategy that employs coloring of heap allocations based on
+///// the classes they conflict on.
+
+// REVIEW: There are two cases that are currently ignored, as too rare to matter:
+//  -conflicts between a field and a method are not important. The constraint is
+//   that string matching methods should not conflict with strings matching other
+//   methods (and similar for fields), not with any member.
+//  -we lose precision because we may merge strings that match different class
+//   names.
+.decl MemberOfClassMatchesString(?heap:HeapAllocation, ?type:Type)
+
+MemberOfClassMatchesString(?heap, ?type) :-
+  PreMethodNameMatchingStringConstant_Signature(?sig, ?heap),
+  Method_DeclaringType(?sig, ?type).
+
+MemberOfClassMatchesString(?heap, ?type) :-
+  PreFieldNameMatchingStringConstant_Signature(?sig, ?heap),
+  Field_DeclaringType(?sig, ?type).
+
+// Important to not forget NullType: it derives from everything!
+MemberOfClassMatchesString(?heap, ?type) :-
+  MemberOfClassMatchesString(?heap, ?superType),
+  SubtypeOf(?type, ?superType),
+  !isNullType(?type).
+
+// Also, we could restrict this to leaf classes, since they will
+// exhibit maximal conflicts anyway. But this doesn't seem to pay off,
+// at least in smaller benchmarks.
+
+// Arbitrary ordering relation to determine coloring
+.decl StringGreaterThanOtherInSameClass(?heap1:HeapAllocation, ?heap2:HeapAllocation, ?type:Type)
+
+StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) :-
+  MemberOfClassMatchesString(?heap1, ?type),
+  MemberOfClassMatchesString(?heap2, ?type),
+  ord(?heap1) > ord(?heap2).
+
+.decl MinStringOrdinalGreaterThanOtherInSameClass(?heap:HeapAllocation, ?heapGreaterOrd:number, ?type:Type)
+.decl StringImmediatelyLessThanOtherInClass(?heap:HeapAllocation, ?type:Type, ?heapGreater:HeapAllocation)
+.decl StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater:HeapAllocation, ?heap:HeapAllocation)
+
+MinStringOrdinalGreaterThanOtherInSameClass(?heap, ?heapGreaterOrd, ?type) :-
+  StringGreaterThanOtherInSameClass(_, ?heap, ?type),
+  ?heapGreaterOrd = min ord(?h): StringGreaterThanOtherInSameClass(?h, ?heap, ?type).
+
+StringImmediatelyLessThanOtherInClass(?heap, ?type, ?heapGreater) :-
+  MinStringOrdinalGreaterThanOtherInSameClass(?heap, ?heapGreaterOrd, ?type),
+  isHeapAllocation(?heapGreater),
+  ord(?heapGreater) = ?heapGreaterOrd.
+
+StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater, ?heap) :-
+  StringImmediatelyLessThanOtherInClass(?heap, _, ?heapGreater).
+
+.decl StringColorGreaterThan(?num:number, ?heap:HeapAllocation)
+
+StringColorGreaterThan(0, ?heap) :-
+  MemberOfClassMatchesString(?heap, _).
+
+StringColorGreaterThan(?num + 1, ?heap) :-
+  StringImmediatelyGreaterThanOtherInSomeClass(?heap, ?heapLower),
+  StringColorGreaterThan(?num, ?heapLower).
+
+.decl StringColorForHeap(?heap:HeapAllocation, ?color:number)
+
+StringColorForHeap(?heap, ?color) :-
+  StringColorGreaterThan(_, ?heap),
+  ?color = max (?n): StringColorGreaterThan(?n, ?heap).
+
+.decl MinStringOrdinalForColor(?color:number, ?minHeapOrd:number)
+.decl StringRepresentativeForColor(?color:number, ?heap:HeapAllocation)
+
+MinStringOrdinalForColor(?color, ?minHeapOrd) :-
+  StringColorForHeap(_, ?color),
+  ?minHeapOrd = min ord(?heap): StringColorForHeap(?heap, ?color).
+
+StringRepresentativeForColor(?color, ?mergeHeap) :-
+  MinStringOrdinalForColor(?color, ?minHeapOrd),
+  isHeapAllocation(?mergeHeap),
+  ord(?mergeHeap) = ?minHeapOrd.
+
+HeapRepresentative(?mergeHeap, ?heap) :-
+  StringColorForHeap(?heap, ?color),
+  StringRepresentativeForColor(?color, ?mergeHeap).
+
+///// End coloring strategy
+
+// Make the representative play (at a minimum) the same role as the
+// original string re: reflection. This may introduce some imprecision
+// (depending on the merging strategy), but it's expected to be small,
+// compared to the cost of tracking full strings all over the code.
+
+ClassNameMatchingStringConstant_Type(?type, ?heapRepr) :-
+  HeapAllocation_Merge(?heap, ?heapRepr),
+  PreClassNameMatchingStringConstant_Type(?type, ?heap).
+
+MethodNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
+  HeapAllocation_Merge(?heap, ?heapRepr),
+  PreMethodNameMatchingStringConstant_Signature(?sig, ?heap).
+
+FieldNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
+  HeapAllocation_Merge(?heap, ?heapRepr),
+  PreFieldNameMatchingStringConstant_Signature(?sig, ?heap).
+//#endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 HeapAllocation_ContextInsensitive(?heap) :-
   isStringConstant(?heap),
   !HeapRepresentative(_, ?heap).
+
+.decl NonTrivialStringConstant(?heap:HeapAllocation)
+
+NonTrivialStringConstant(?heap) :-
+  isStringConstant(?heap),
+  strlen(?heap) >= 7.
+
+/**
+ * String constants that (may) refer to class, method, and field names
+ */
+.decl ClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)
+.decl MethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)
+.decl FieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)
+
+.decl PreClassNameMatchingStringConstant(?heap:HeapAllocation)
+.decl PreClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)
+.decl PreClassNameMatchingStringConstantExact_Type(?type:Type, ?heap:HeapAllocation)
+.decl PreClassNameMatchingStringConstantInexact_Type(?type:Type, ?heap:HeapAllocation)
+
+// These are the predicates that the outside world will use. The Pre-
+// versions are so that they can be stratified earlier and strings can
+// possibly be merged based on them.
+ClassNameMatchingStringConstant_Type(?type, ?heap) :-
+  PreClassNameMatchingStringConstant_Type(?type, ?heap).
+MethodNameMatchingStringConstant_Signature(?sig, ?heap) :-
+  PreMethodNameMatchingStringConstant_Signature(?sig, ?heap).
+FieldNameMatchingStringConstant_Signature(?sig, ?heap) :-
+  PreFieldNameMatchingStringConstant_Signature(?sig, ?heap).
+
+// We distinguish between an exact match and a
+// substring match.
+
+PreClassNameMatchingStringConstant(?string),
+PreClassNameMatchingStringConstant_Type(?type, ?string),
+PreClassNameMatchingStringConstantExact_Type(?type, ?string) :-
+  isStringConstant(?string),
+  isReferenceType(?type),
+  ord(?type) = ord(?string),
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?type),
+     // library classes are known and in known packages. Makes no sense
+     // to access them via .getClass
+#endif
+  NonTrivialStringConstant(?string).
+
+.decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)
+.decl PreMethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)
+.decl PreMethodNameMatchingStringConstantExact_Signature(?sig:Method, ?heap:HeapAllocation)
+.decl PreMethodNameMatchingStringConstantInexact_Signature(?sig:Method, ?heap:HeapAllocation)
+
+PreMethodNameMatchingStringConstant(?string),
+PreMethodNameMatchingStringConstant_Signature(?sig, ?string),
+PreMethodNameMatchingStringConstantExact_Signature(?sig, ?string) :-
+  isStringConstant(?string),
+  //  Method_DeclaringType(?sig, ?type),
+  //  ApplicationClass(?type),
+     // there is some possibility of accessing methods and fields
+     // reflectively, even in system classes. Maybe one needs to
+     // circumvent access control, or maybe one wants to treat all
+     // fields uniformly and some are inherited from a system superclass.
+  Method_SimpleName(?sig, ?string),
+  ?string != "<init>",
+  ?string != "<clinit>". // common, yet not methods callable via reflection
+
+.decl PreFieldNameMatchingStringConstant(?heap:HeapAllocation)
+.decl PreFieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)
+.decl PreFieldNameMatchingStringConstantExact_Signature(?sig:Field, ?heap:HeapAllocation)
+.decl PreFieldNameMatchingStringConstantInexact_Signature(?sig:Field, ?heap:HeapAllocation)
+
+PreFieldNameMatchingStringConstant(?string),
+PreFieldNameMatchingStringConstant_Signature(?sig, ?string),
+PreFieldNameMatchingStringConstantExact_Signature(?sig, ?string) :-
+  isStringConstant(?string),
+  // Field_DeclaringType(?sig, ?declaringClass),
+  // ApplicationClass(?declaringClass);
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
+  NonTrivialStringConstant(?string),
+#endif
+#endif
+  Field_SimpleName(?sig, ?string).
+
+#ifdef REFLECTION_SUBSTRING_ANALYSIS
+// Creating class/field/method names via string concatenation makes more
+// sense for application classes/fields/methods.
+PreClassNameMatchingStringConstant(?string),
+PreClassNameMatchingStringConstant_Type(?type, ?string),
+PreClassNameMatchingStringConstantInexact_Type(?type, ?string) :-
+  isHeapAllocation(?string),
+  ClassNameSuffix(?string, ?type),
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?type),
+#endif
+  NonTrivialStringConstant(?string).
+
+PreMethodNameMatchingStringConstant(?string),
+PreMethodNameMatchingStringConstant_Signature(?sig, ?string),
+PreMethodNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?type),
+  Method_DeclaringType(?sig, ?type),
+#endif
+  (MethodNameSuffix(?string, ?sig);
+   MethodNamePrefix(?string, ?sig)),
+  isHeapAllocation(?string),
+  ?string != "<init>",
+  ?string != "<clinit>". // common, yet not methods callable via reflection
+
+PreFieldNameMatchingStringConstant(?string),
+PreFieldNameMatchingStringConstant_Signature(?sig, ?string),
+PreFieldNameMatchingStringConstantInexact_Signature(?sig, ?string) :-
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+  ApplicationClass(?declaringClass),
+  Field_DeclaringType(?sig, ?declaringClass),
+#endif
+  (FieldNameSuffix(?string, ?sig);
+   FieldNamePrefix(?string, ?sig)),
+  isHeapAllocation(?string).
+
+.decl ClassIterationTrick(?length:number)
+
+ClassIterationTrick(?length) :-
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+
+.decl MemberPrefixIterationTrick(?length:number)
+
+MemberPrefixIterationTrick(?length) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ?length = 3; ?length = 4; ?length = 5; ?length = 6;
+#endif
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+
+.decl MemberSuffixIterationTrick(?length:number)
+
+MemberSuffixIterationTrick(?length) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ?length = 5; ?length = 6;
+#endif
+  ?length = 7; ?length = 8; ?length = 9; ?length = 10; ?length = 11;
+  ?length = 12; ?length = 13; ?length = 14; ?length = 15; ?length = 16;
+  ?length = 17; ?length = 18; ?length = 19; ?length = 20; ?length = 21;
+  ?length = 22; ?length = 23; ?length = 24; ?length = 25; ?length = 26;
+  ?length = 27; ?length = 28; ?length = 29; ?length = 30; ?length = 31;
+  ?length = 32; ?length = 33; ?length = 34; ?length = 35; ?length = 36;
+  ?length = 37; ?length = 38; ?length = 39; ?length = 40; ?length = 41;
+  ?length = 42; ?length = 43; ?length = 44; ?length = 45; ?length = 46.
+
+.decl string_upper(s1:symbol, s2:symbol)
+
+string_upper("a", "A"). string_upper("b", "B"). string_upper("c", "C"). string_upper("d", "D").
+string_upper("e", "E"). string_upper("f", "F"). string_upper("g", "G"). string_upper("h", "H").
+string_upper("i", "I"). string_upper("j", "J"). string_upper("k", "K"). string_upper("l", "L").
+string_upper("m", "M"). string_upper("n", "N"). string_upper("o", "O"). string_upper("p", "P").
+string_upper("q", "Q"). string_upper("r", "R"). string_upper("s", "S"). string_upper("t", "T").
+string_upper("u", "U"). string_upper("v", "V"). string_upper("w", "W"). string_upper("x", "X").
+string_upper("y", "Y"). string_upper("z", "Z").
+string_upper("A", "A"). string_upper("B", "B"). string_upper("C", "C"). string_upper("D", "D").
+string_upper("E", "E"). string_upper("F", "F"). string_upper("G", "G"). string_upper("H", "H").
+string_upper("I", "I"). string_upper("J", "J"). string_upper("K", "K"). string_upper("L", "L").
+string_upper("M", "M"). string_upper("N", "N"). string_upper("O", "O"). string_upper("P", "P").
+string_upper("Q", "Q"). string_upper("R", "R"). string_upper("S", "S"). string_upper("T", "T").
+string_upper("U", "U"). string_upper("V", "V"). string_upper("W", "W"). string_upper("X", "X").
+string_upper("Y", "Y"). string_upper("Z", "Z").
+string_upper("0", "0"). string_upper("1", "1"). string_upper("2", "2"). string_upper("3", "3").
+string_upper("4", "4"). string_upper("5", "5"). string_upper("6", "6"). string_upper("7", "7").
+string_upper("8", "8"). string_upper("9", "9").
+
+// Exploit camel-case convention
+
+#define StringChangesCaseAfterPosition(pos, str) \
+  ((substr(str, pos, 1) = char, \
+  substr(str, pos + 1, 1) = nextChar, \
+  ((string_upper(char, Uchar), Uchar = char, string_upper(nextChar, UnextChar), UnextChar != nextChar); \
+   (string_upper(char, Uchar), Uchar != char, string_upper(nextChar, UnextChar), UnextChar = nextChar))); \
+  (substr(str, pos + 1, 1) = nextChar, \
+   (nextChar = "_"; \
+    nextChar = "."; \
+    nextChar = "$")); \
+  (substr(str, pos, 1) = char, \
+   (char = "_"; \
+    char = "."; \
+    char = "$")))
+
+#define StringChangesCaseBeforePosition(pos, str) \
+  ((substr(str, pos, 1) = char, \
+  substr(str, pos - 1, 1) = prevChar, \
+  ((string_upper(char, Uchar), Uchar = char, string_upper(prevChar, UprevChar), UprevChar != prevChar); \
+   (string_upper(char, Uchar), Uchar != char, string_upper(prevChar, UprevChar), UprevChar = prevChar))); \
+  (substr(str, pos - 1, 1) = prevChar, \
+   (prevChar = "_"; \
+    prevChar = "."; \
+    prevChar = "$")); \
+  (substr(str, pos, 1) = char, \
+   (char = "_"; \
+    char = "."; \
+    char = "$")))
+
+.decl ClassNameSuffix(?suffix:symbol, ?classname:ReferenceType)
+.decl MethodNameSuffix(?suffix:symbol, ?sig:Method)
+.decl MethodNamePrefix(?prefix:symbol, ?sig:Method)
+.decl FieldNameSuffix(?suffix:symbol, ?sig:Field)
+.decl FieldNamePrefix(?prefix:symbol, ?sig:Field)
+
+// Precompute proper suffixes. Crucial for efficiency.
+ClassNameSuffix(substr(?className, strlen(?className) - ?length, ?length), ?className) :-
+  isReferenceType(?className),
+  ClassIterationTrick(?length),
+  strlen(?className) > ?length,
+  StringChangesCaseBeforePosition(strlen(?className) - ?length, ?className).
+
+MethodNameSuffix(substr(?methodName, strlen(?methodName) - ?length, ?length), ?sig) :-
+  Method_SimpleName(?sig, ?methodName),
+  MemberSuffixIterationTrick(?length),
+  strlen(?methodName) > ?length,
+  StringChangesCaseBeforePosition(strlen(?methodName) - ?length, ?methodName).
+
+MethodNamePrefix(substr(?methodName, 0, ?length), ?sig) :-
+  Method_SimpleName(?sig, ?methodName),
+  MemberPrefixIterationTrick(?length),
+  strlen(?methodName) > ?length,
+  StringChangesCaseAfterPosition(?length - 1, ?methodName).
+
+FieldNameSuffix(substr(?fieldName, strlen(?fieldName) - ?length, ?length), ?sig) :-
+  Field_SimpleName(?sig, ?fieldName),
+  MemberSuffixIterationTrick(?length),
+  strlen(?fieldName) > ?length,
+  StringChangesCaseBeforePosition(strlen(?fieldName) - ?length, ?fieldName).
+
+FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
+  Field_SimpleName(?sig, ?fieldName),
+  MemberPrefixIterationTrick(?length),
+  strlen(?fieldName) > ?length,
+  StringChangesCaseAfterPosition(?length - 1, ?fieldName).
+
+//// Too costly!
+//ClassNameSuffix(?type, ?suffix) <-
+//  ReferenceType(?type),
+//  Type:Id(?type:?className),
+//  string:length[?className] = ?classNameLength,
+//  ?pos = ?classNameLength / 2 + 1,
+//  ?suffixLength = ?classNameLength - ?pos,
+//  string:substring[?className, ?pos, ?suffixLength] = ?suffix.
+//
+//PreClassNameMatchingStringConstant(?heap),
+//PreClassNameMatchingStringConstant:Type(?type, ?heap)
+//  <-
+//  NonTrivialStringConstant(?heap),
+//  HeapAllocation:Id[?heap] = ?string,
+//  ClassNameSuffix(?type, ?suffix),
+//  string:substring[?suffix, _, string:length[?string]] = ?string.
+//
+//PreMethodNameMatchingStringConstant(?heap),
+//PreMethodNameMatchingStringConstant:Signature(?sig, ?heap)
+//  <-
+//  NonTrivialStringConstant(?heap),
+//  HeapAllocation:Id[?heap] = ?string,
+//  Method:SimpleName[?sig] = ?methodName,
+//  (string:substring[?methodName, _, _] = ?string ; ?methodName = ?string).
+
+/*************************************************************
+ * Analysis of reflection strings flowing through String Factories
+ *************************************************************/
+
+.decl StringFactoryVar(?var:Var)
+
+StringFactoryVar(?var) :-
+  StringFactoryType(?type),
+  Var_Type(?var, ?type).
+
+.decl StringFactoryVarPointsTo(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
+
+StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
+  StringFactoryVar(?var),
+  VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var).
+
+.decl VarAssignedToStringFactoryVar(?param:Var, ?base:Var)
+
+VarAssignedToStringFactoryVar(?param, ?base) :-
+  VirtualMethodInvocation_SimpleName(?invocation, "append"),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  StringFactoryVar(?base),
+  ActualParam(0, ?invocation, ?param).
+
+.decl VarAssignedFromStringFactoryVar(?ret:Var, ?base:Var)
+
+VarAssignedFromStringFactoryVar(?ret, ?base) :-
+  VirtualMethodInvocation_SimpleName(?invocation, "toString"),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  StringFactoryVar(?base),
+  AssignReturnValue(?invocation, ?ret).
+
+// There can be many variations of the code below: less precision
+// (merge reflection strings), less coverage (require that string
+// in/out operations on Builders/Buffers are in the same method).  The
+// current approach (precise) seems to work ok.
+.decl VarFlowsIntoStringFactory(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
+
+VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
+  VarOfReflectionInterest(?ctx, ?var),
+  VarAssignedToStringFactoryVar(?var, ?factoryVar),
+  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
+  .plan 1:(3,2,1)
+
+.decl VarFlowsFromStringFactory(?ctx:Context, ?var:Var, ?factoryHctx:HContext, ?factoryValue:Value)
+
+VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) :-
+  VarAssignedFromStringFactoryVar(?var, ?factoryVar),
+  StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
+
+.decl VarOfReflectionInterest(?ctx:Context, ?var:Var)
+.decl ReflectionStringConstantVarPointsTo(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var)
+
+VarOfReflectionInterest(?ctx, ?var),
+ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
+  ReflectionStringConstant(?value),
+#else
+  ReflectionSubstringObject(?value),
+#endif
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+.decl ReflectionStringConstantFlowsIntoStringFactory(?hctx:HContext, ?value:Value, ?factoryHctx:HContext, ?factoryValue:Value)
+
+ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue) :-
+  VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var),
+  ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  ReflectionStringConstantFlowsIntoStringFactory(?hctx, ?value, ?factoryHctx, ?factoryValue),
+  VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue).
+
+#endif // REFLECTION_SUBSTRING_ANALYSIS
 
 
 /*************************************************************
@@ -401,6 +886,47 @@ StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
 
+#ifndef DISTINGUISH_ALL_STRING_BUFFERS
+#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
+#ifdef DISTINGUISH_STRING_BUFFERS_PER_PACKAGE
+
+.decl PackageAndTypeToStringFactoryHeap(?heap:HeapAllocation, ?type:Type, ?packageName:symbol)
+
+PackageAndTypeToStringFactoryHeap(?heap, ?heaptype, ?packageName) :-
+  StringFactoryType(?heaptype),
+  HeapAllocation_Type(?heap, ?heaptype),
+  AssignHeapAllocation(?heap, _, ?meth),
+  Method_DeclaringType(?meth, ?class),
+  Class_PackageHack(?class, ?packageName).
+
+.decl MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, packageName:symbol)
+.decl PackageAndTypeToStringFactoryRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)
+
+MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
+  PackageAndTypeToStringFactoryHeap(_, ?type, ?packageName),
+  ?minHeapOrd = min ord(?heap): PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName).
+
+PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representativeHeap) :-
+  MinStringFactoryHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
+  StringFactoryHeap(?representativeHeap),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+// current policy: all string builders merged per-package
+HeapRepresentative(?representativeHeap, ?heap) :-
+  PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName),
+  PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representativeHeap).
+
+//// Used to be all are merged per-class:
+// // all string buffers (and builders) in the same class are merged
+// AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
+//   AllocationsPerClassAndType[?heaptype, ?class] > 1,
+//   StringFactoryType(?heaptype).
+
+//// Used to be per-method:
+// AllocationShouldBeMergedPerMethod(?heaptype, ?meth) <-
+//   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
+//   StringFactoryType(?heaptype).
+#else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE, i.e., merge them all
 HeapRepresentative("<<string-buffer>>", ?heap) :-
   HeapAllocation_Type(?heap, "java.lang.StringBuffer"),
   !HeapAllocation_Keep(?heap).
@@ -408,6 +934,9 @@ HeapRepresentative("<<string-buffer>>", ?heap) :-
 HeapRepresentative("<<string-builder>>", ?heap) :-
   HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
   !HeapAllocation_Keep(?heap).
+#endif
+#endif
+#endif
 
 /*************************************************************
  * Throwable

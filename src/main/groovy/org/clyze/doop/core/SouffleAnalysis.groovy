@@ -138,19 +138,25 @@ class SouffleAnalysis extends DoopAnalysis {
     }
 
     private void runSouffle(int jobs, File factsDir, File outDir) {
-        def analysisChecksum = CheckSum.checksum(new File("${outDir}/${name}.dl"), DoopAnalysisFactory.HASH_ALGO)
+        def analysisFileChecksum = CheckSum.checksum(new File("${outDir}/${name}.dl"), DoopAnalysisFactory.HASH_ALGO)
+        def analysisChecksum = CheckSum.checksum(analysisFileChecksum + String.valueOf(options.SOUFFLE_PROFILE.value),
+                                                 DoopAnalysisFactory.HASH_ALGO)
         def analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
         if (!analysisCacheDir.exists() || options.SOUFFLE_DEBUG.value) {
-            logger.info "Compiling datalog to produce C++ program and executable with souffle"
-            def commandLine = "souffle -c -o ${outDir}/${name} ${outDir}/${name}.dl -p$outDir.absolutePath/profile.txt"
+            def compilationCommand = "souffle -c -o ${outDir}/${name} ${outDir}/${name}.dl"
+
+            if (options.SOUFFLE_PROFILE.value)
+                compilationCommand += " -p$outDir.absolutePath/profile.txt"
             if (options.SOUFFLE_DEBUG.value)
-                commandLine += " -r$outDir.absolutePath/report.html"
-            logger.info "Souffle command: ${commandLine}"
+                compilationCommand += " -r$outDir.absolutePath/report.html"
+
+            logger.info "Compiling datalog to produce C++ program and executable with souffle"
+            logger.info "Souffle command: ${compilationCommand}"
 
             def ignoreCounter = 0
             long t = timing {
-                executor.execute(commandLine) { String line ->
+                executor.execute(compilationCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
                              line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -173,10 +179,10 @@ class SouffleAnalysis extends DoopAnalysis {
             logger.info "Running cached analysis executable"
         }
 
-        long t = timing {
-            System.out.println("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath -p$outDir.absolutePath/profile.txt")
-            executor.execute("${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath -p$outDir.absolutePath/profile.txt")
-        }
+        def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath"
+
+        logger.info executionCommand
+        long t = timing { executor.execute(executionCommand) }
         logger.info "Analysis execution time (sec): ${t}"
     }
 
