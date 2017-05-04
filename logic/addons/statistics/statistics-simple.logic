@@ -157,6 +157,10 @@ Stats:Simple:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
    Stats:Simple:ReachableCast(?inmethod, ?type, ?to, ?from),
    ApplicationMethod(?inmethod).
 
+Stats:Simple:Application:ReachableMethod(?method) <-
+   Reachable(?method),
+   ApplicationMethod(?method).
+
 Stats:Simple:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
    Stats:Simple:Application:ReachableCast(_, ?type, ?to, ?from),
    Stats:Simple:InsensVarPointsTo(?value, ?from),
@@ -248,6 +252,7 @@ NewMetricMacro(22.0, _t38, "reachable casts that may fail", Stats:Simple:Potenti
 NewMetricMacro(23.0, _t39, "app casts (statically)", Stats:Simple:Application:Cast(_, _, _, _)).
 NewMetricMacro(24.0, _t40, "app reachable casts", Stats:Simple:Application:ReachableCast(_, _, _, _)).
 NewMetricMacro(25.0, _t41, "app reachable casts that may fail", Stats:Simple:Application:PotentiallyFailingCast(_, _, _)).
+NewMetricMacro(25.5, _t47, "app reachable methods", Stats:Simple:Application:ReachableMethod(_)).
 
 //NewMetricMacro(50.0, _t47, "call sites that did (not) get refined", SiteToRefine(_)).
 //NewMetricMacro(51.0, _t48, "allocation sites that did (not) get refined", ValueToRefine(_)).
@@ -329,9 +334,13 @@ NewMetricMacro(90.0, _t90, "Dynamic array index points-to (INS)", Stats:Simple:I
 NewMetricMacro(91.0, _t91, "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
 
 // call graph and reachability
+Stats:Simple:Application:DynamicReachableMethod(?method) <-
+   DynamicReachableMethod(?method),
+   ApplicationMethod(?method).
 Stats:Simple:InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) <- DynamicCallGraphEdge(_,?toMeth,?invocation,_, ?fromMeth).
 NewMetricMacro(92.0, _t92, "Dynamic call graph edges (INS)", Stats:Simple:InsensDynamicCallGraphEdge(_,_,_)).
 NewMetricMacro(93.0, _t93, "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_,_,_)).
 NewMetricMacro(94.0, _t94, "Dynamic reachable methods (INS)", DynamicReachableMethod(_)).
-NewMetricMacro(95.0, _t95, "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).
+NewMetricMacro(95.0, _t95, "App Dynamic reachable methods (INS)", Stats:Simple:Application:DynamicReachableMethod(_)).
+NewMetricMacro(96.0, _t96, "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).
 #endif 
