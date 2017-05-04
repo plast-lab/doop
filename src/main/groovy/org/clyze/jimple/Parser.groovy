@@ -11,6 +11,13 @@ import org.clyze.persistent.doop.BasicMetadata
 
 class Parser {
 
+	static def getClassInfo(String qualifiedName) {
+		def i = qualifiedName.lastIndexOf(".")
+		def packageName = i >= 0 ? qualifiedName[0..i] : ''
+		def className = i >= 0 ? qualifiedName[(i+1)..-1] : qualifiedName
+		[packageName, className]
+	}
+
 	static String parseJimple2JSON(String filename, String outPath) {
 		def metadata = parseJimple(filename, outPath)
 
@@ -38,37 +45,27 @@ class Parser {
 		else {
 			dir = outPath
 		}
-		// abc.def.Foo
 		def extension = FilenameUtils.getExtension( FilenameUtils.getName(filename) )
+		// abc.def.Foo
 		def simplename = FilenameUtils.removeExtension( FilenameUtils.getName(filename) )
-		def i = simplename.lastIndexOf(".")
-		// abc.def
-		def packages = simplename[0..i]
-		// Foo
-		def classname = simplename[(i+1)..-1]
-		File sourceFile
-		String sourceFileName
-		if (i != -1) {
-			packages = packages.replaceAll("\\.", "/")
-			// XYZ/abc/def
-			def path = new File(dir, packages)
-			path.mkdirs()
-			// XYZ/abc/def/Foo.jimple
-			sourceFile = new File(path, classname + ".$extension")
-			FileUtils.copyFile(origFile, sourceFile)
-			sourceFileName = packages + classname + ".$extension"
-		}
-		else {
-			//no dot in filename (e.g. no extension? FTB, we need the file to end with .jimple @ server-side)
-			sourceFile = origFile
-			sourceFileName = origFile.getName()
- 		}
+		def (packageName, className) = getClassInfo(simplename)
 
-		JimpleParser parser = new JimpleParser(
+		// abc/def
+		packageName = packageName.replaceAll("\\.", "/")
+		// XYZ/abc/def
+		def path = new File(dir, packageName)
+		path.mkdirs()
+		// XYZ/abc/def/Foo.jimple
+		def sourceFile = new File(path, "${className}.$extension")
+		FileUtils.copyFile(origFile, sourceFile)
+		// abc/def/Foo.jimple
+		def sourceFileName = "${packageName}${className}.${extension}" as String
+
+		def parser = new JimpleParser(
 				new CommonTokenStream(
 					new JimpleLexer(
 						new ANTLRFileStream(sourceFile as String))))
-		JimpleListenerImpl listener = new JimpleListenerImpl(sourceFileName)
+		def listener = new JimpleListenerImpl(sourceFileName)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
 		return listener.metadata

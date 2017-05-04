@@ -27,21 +27,16 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def id = ctx.IDENTIFIER(0)
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
-		// abc.def.Foo
-		def fullName = ctx.IDENTIFIER(0).text
-		def position = new Position(line, line, startCol, startCol + fullName.length())
-		def i = fullName.lastIndexOf(".")
-		// abc.def
-		def packageName = fullName[0..(i-1)]
-		// Foo
-		def className = fullName[(i+1)..-1]
+		def qualifiedName = ctx.IDENTIFIER(0).text
+		def position = new Position(line, line, startCol, startCol + qualifiedName.length())
+		def (packageName, className) = Parser.getClassInfo(qualifiedName)
 
 		klass = new Class(
 			position,
 			filename,
 			className,
 			packageName,
-			fullName,
+			qualifiedName,
 			hasToken(ctx, "interface"),
 			ctx.modifier().any() { hasToken(it, "enum") },
 			ctx.modifier().any() { hasToken(it, "static") },
