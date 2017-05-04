@@ -31,6 +31,16 @@ DacapoEntryPoint(?method),
 ReachableContext(?ctx,?method) <-
    Method:DeclaringType[?method] = ?strClass,
    StringsInDacapoHarness(?strClass),
-   StringsInDacapoHarness(?strMethod),
-   Method:SimpleName[?method] = ?strMethod,
-   InitialContext(?ctx).
+//   StringsInDacapoHarness(?strMethod),
+//   Method:SimpleName[?method] = ?strMethod,
+   Method:Modifier("public", ?method),
+   ImmutableContext(?ctx).
+
+MockValueConsMacro("Dacapo entrypoint receiver "+?classStr, ?class, ?receiver),
+VarPointsTo(?hctx, ?receiver, ?ctx, ?this) <-
+   Type:Id(?class:?classStr),
+   ThisVar[?method] = ?this,
+   Method:DeclaringType[?method] = ?class,
+   DacapoEntryPoint(?method),
+   ImmutableContext(?ctx),
+   ImmutableHContext(?hctx).
