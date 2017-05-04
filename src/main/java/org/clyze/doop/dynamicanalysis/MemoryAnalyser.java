@@ -73,7 +73,7 @@ public class MemoryAnalyser {
                 String baseHeap = heapAbstractionIndexer.getAllocationAbstraction(obj);
                 JavaClass clazz = obj.getClazz();
                 if (obj.getClazz().toString().startsWith("Instrumentation") ||
-                        obj.getClazz().toString().startsWith("javaassist")) return;
+                        obj.getClazz().toString().startsWith("javassist")) return;
                 do {
                     for (JavaField field : clazz.getFields()) {
                         JavaThing fieldValue = obj.getField(field.getName());
@@ -113,7 +113,11 @@ public class MemoryAnalyser {
         Database db = new Database(factDir);
 
         try {
+            long startTime = System.nanoTime();
             resolveFactsFromDump("2ObjH");
+            long endTime = System.nanoTime();
+            long durationSeconds = (endTime - startTime) / 1000000000;
+            System.out.println("Heap dump analysis time: " + durationSeconds);
         } catch (RuntimeException e) {
             e.printStackTrace();
         }

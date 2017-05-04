@@ -20,3 +20,27 @@ VarPointsTo(?hctx, ?classNameValue, ?ctx, ?to) <-
   ActualParam[0, ?invo] = ?to,
   ReachableContext(?ctx, ?method),
   ImmutableHContextFromContext[?ctx] = ?hctx.
+
+StringsInDacapoHarness(HeapAllocation:Id[?heap]) <-
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   Method:DeclaringType[Instruction:Method[?insn]] = ?id,
+   StringConstant(?heap),
+   Dacapo0(?id, _).
+
+DacapoEntryPoint(?method),
+ReachableContext(?ctx,?method) <-
+   Method:DeclaringType[?method] = ?strClass,
+   StringsInDacapoHarness(?strClass),
+//   StringsInDacapoHarness(?strMethod),
+//   Method:SimpleName[?method] = ?strMethod,
+   Method:Modifier("public", ?method),
+   ImmutableContext(?ctx).
+
+MockValueConsMacro("Dacapo entrypoint receiver "+?classStr, ?class, ?receiver),
+VarPointsTo(?hctx, ?receiver, ?ctx, ?this) <-
+   Type:Id(?class:?classStr),
+   ThisVar[?method] = ?this,
+   Method:DeclaringType[?method] = ?class,
+   DacapoEntryPoint(?method),
+   ImmutableContext(?ctx),
+   ImmutableHContext(?hctx).

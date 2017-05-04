@@ -36,6 +36,7 @@ Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
    HeapAllocation:Dynamic(?heap).
 
 // Context sensitive allocations
+
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
    DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
    FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap).
@@ -67,18 +68,45 @@ OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
 
 
 InitializedClass(?class) <-
-   DynamicReachableMethod(?method),
+   (TamiflexDynamicallyReachableMethod(?method) ;
+   DynamicReachableMethod(?method)),
    OptClassInitializer(?class, ?method).
 
-ImplicitReachable(?method) <-
-   UnmatchedDynamicCallGraphEdgeNode(?method),
-   DynamicReachableMethod(?method),
-   !OptClassInitializer(_, ?method).
+ProbablyReachable(?method) <-
+   DynamicCallGraphEdge(_, ?method, _, _, _).
 
+ProbablyReachable(?tomethod) <-
+   StaticMethodInvocation(_, ?tomethod, ?fromMethod),
+   ProbablyReachable(?fromMethod).
+
+ForcedImplicitReachable(?method),
+ReachableContext(?ctx, ?method) <-
+   (TamiflexDynamicallyReachableMethod(?method) ;
+   DynamicReachableMethod(?method)),
+   !ProbablyReachable(?method),
+   !OptClassInitializer(_, ?method),
+   ImmutableContext(?ctx).
+
+TamiflexDynamicallyReachableMethod(?inmethod) -> Method(?inmethod).
+
+#ifdef TAMIFLEX
+TamiflexDynamicallyReachableMethod(?inmethod) <-
+    Tamiflex:ReflectionMap(_, ?invocation),
+    Instruction:Method[?invocation] = ?inmethod.
+#endif
+
+#ifdef DYNAMIC_CONTEXT_SENSITIVITY
 CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
    !StaticMethodInvocation:Insn(?invocation),
    DynamicContextToContext(?ctxTo, ?dctxTo),
    DynamicContextToContext(?ctxFrom, ?dctxFrom),
-   DynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, ?fromMethod).
+   DynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, _).
+#else
+CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
+   ReachableContext(?ctxFrom, ?fromMethod),
+   ImmutableContextFromContext[?ctxFrom] = ?ctxTo,
+   !StaticMethodInvocation:Insn(?invocation),
+   DynamicCallGraphEdge(_, ?toMethod, ?invocation, _, ?fromMethod).
+#endif
 
 

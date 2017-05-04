@@ -61,7 +61,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						isFile:true,
 						description:"Use file with tamiflex data for reflection.",
 						value:null,
-						webUI:true
+						webUI:true,
+						forPreprocessor:true                                                
 				),
 				new AnalysisOption<String>(
 						id:"CFG_ANALYSIS",
@@ -104,6 +105,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						value:false,
 						cli:true
 				),
+				new AnalysisOption<Boolean>(
+                                                id:"SOUFFLE_PROFILE",
+                                                name:"souffle-profile",
+                                                value:false,
+                                                cli:true
+                                ),
 				/* Start of preprocessor constant flags */
 				new AnalysisOption<Boolean>(
 						id:"DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
@@ -332,6 +339,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 						description:"Load additional logic for DaCapo (Bach) benchmarks properties.",
 						value:false,
 						webUI:true
+				),
+       				new AnalysisOption<String>(
+						id:"FEATHERWEIGHT_ANALYSIS",
+						name:"featherweight-analysis",
+						description:"Perform a featherweight analysis (global state and complex objects immutable).",
+						value:false,
+						forPreprocessor:true
 				),
 				new AnalysisOption<String>(
 						id:"INFORMATION_FLOW",
