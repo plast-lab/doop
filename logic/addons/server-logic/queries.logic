@@ -8,13 +8,8 @@ Server:VarPointsTo(?class, ?var, ?heapId) <-
   Var:DeclaringMethod(?var, ?method),
   Method:DeclaringType[?method] = ?class.
 
-_SimpleCallGraphEdge(?toMethod, ?invocation) <-
+Server:CallGraphEdge(?invocation, ?toMethod) <-
   CallGraphEdge(_, ?invocation, _, ?toMethod).
-
-Server:CallGraphEdge(?invocation, ?tomethod) <-
-  _SimpleCallGraphEdge(?tomethod, ?invocation),
-  (VirtualMethodInvocation:Insn(?invocation);
-   StaticMethodInvocation:Insn(?invocation)).
 
 _IsAssignHeapAllocation(?heap) <-
   AssignHeapAllocation:Heap[_] = ?heap.
