@@ -31,8 +31,8 @@ DacapoEntryPoint(?method),
 ReachableContext(?ctx,?method) <-
    Method:DeclaringType[?method] = ?strClass,
    StringsInDacapoHarness(?strClass),
-//   StringsInDacapoHarness(?strMethod),
-//   Method:SimpleName[?method] = ?strMethod,
+   StringsInDacapoHarness(?strMethod),
+   Method:SimpleName[?method] = ?strMethod,
    Method:Modifier("public", ?method),
    ImmutableContext(?ctx).
 
