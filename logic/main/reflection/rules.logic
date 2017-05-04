@@ -684,14 +684,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
 
 ReflectiveStoreStaticField(?signature, ?ctx, ?from) ->
   Field(?signature), Context(?ctx), Var(?from).
-
+#ifndef FEATHERWEIGHT_ANALYSIS
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   ReflectiveStoreStaticField(?signature, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype, 
   SupertypeOf(?fieldtype, ?valuetype).
-
+#endif
 /*************************************************************
  * Reflective load of an instance field
  *************************************************************/
@@ -742,6 +742,7 @@ ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) <
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
 // normal value loads) to filter type-incorrect values.
+#ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
@@ -750,7 +751,7 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   Value:Type[?value] = ?valuetype,
   Field:Type[?signature] = ?fieldtype,
   SupertypeOf(?fieldtype, ?valuetype).
-
+#endif
 /*************************************************************
  * END forward reflection logic
  *************************************************************/
