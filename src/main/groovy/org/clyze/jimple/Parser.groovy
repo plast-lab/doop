@@ -13,7 +13,7 @@ class Parser {
 
 	static def getClassInfo(String qualifiedName) {
 		def i = qualifiedName.lastIndexOf(".")
-		def packageName = i >= 0 ? qualifiedName[0..i] : ''
+		def packageName = i >= 0 ? qualifiedName[0..(i-1)] : ''
 		def className = i >= 0 ? qualifiedName[(i+1)..-1] : qualifiedName
 		[packageName, className]
 	}
@@ -59,7 +59,7 @@ class Parser {
 		def sourceFile = new File(path, "${className}.$extension")
 		FileUtils.copyFile(origFile, sourceFile)
 		// abc/def/Foo.jimple
-		def sourceFileName = "${packageName}${className}.${extension}" as String
+		def sourceFileName = "${packageName}/${className}.${extension}" as String
 
 		def parser = new JimpleParser(
 				new CommonTokenStream(
