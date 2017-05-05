@@ -324,8 +324,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             logger.warn "\nWARNING: multiple distinguish-string-buffer flags. 'All' overrides.\n"
         }
 
-        if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value &&
-                options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
+        if (options.NO_MERGE_LIBRARY_OBJECTS.value) {
+            options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value = false
+        }
+
+        if (options.MERGE_LIBRARY_OBJECTS_PER_METHOD.value && options.CONTEXT_SENSITIVE_LIBRARY_ANALYSIS.value) {
             logger.warn "\nWARNING, possible inconsistency: context-sensitive library analysis with merged objects.\n"
         }
 
@@ -364,9 +367,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.REFLECTION.value = false
         }
 
+        if (options.NO_SSA.value) {
+            options.SSA.value = false
+        }
+
         if (options.MUST.value) {
-            options.SSA.value = true
-            options.CFG_ANALYSIS.value = true
             options.MUST_AFTER_MAY.value = true
         }
 
