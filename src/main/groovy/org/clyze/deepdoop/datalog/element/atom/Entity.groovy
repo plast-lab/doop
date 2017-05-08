@@ -9,7 +9,7 @@ class Entity extends Predicate {
 		super(name, stage, [expr])
 	}
 	Entity(String name, IExpr expr) {
-		this(name, null, [expr])
+		super(name, null, [expr])
 	}
 
 	IAtom newAtom(String stage, List<VariableExpr> vars) {

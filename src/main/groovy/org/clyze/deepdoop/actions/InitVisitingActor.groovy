@@ -81,7 +81,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 				reverseMap[pred.name()] = fromSet
 				reversePropsMap[prop.toId] = reverseMap
 			}
-			initP.addPropagation(new Propagation(fromId: prop.fromId, preds: newPreds, toId: prop.toId))
+			initP.addPropagation(new Propagation(prop.fromId, newPreds, prop.toId))
 		}
 
 
@@ -268,8 +268,8 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 
 	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
 		def (newName, newStage) = rename(n)
-		def newExprs = n.exprs.collect{ m[it] as IExpr }
-		return new Entity(newName, newStage, newExprs)
+		def newExpr = m[n.exprs.first()] as IExpr
+		return new Entity(newName, newStage, newExpr)
 	}
 
 	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) { n }

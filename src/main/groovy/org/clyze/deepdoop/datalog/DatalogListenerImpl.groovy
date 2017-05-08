@@ -103,32 +103,40 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		inDecl = false
 
 		if (ctx.refmode()) {
-			def p = values[ctx.singleAtom()] as Predicate
+			def p = values[ctx.singleAtom(0)] as Predicate
 			assert p.exprs.size() == 1
 			def entity = new Entity(p.name, p.stage, p.exprs.first())
 			def refmode = values[ctx.refmode()] as RefMode
-			assert ctx.primitiveType()
-			def primitive = values[ctx, primitiveType()] as Primitive
+			def primitive = (ctx.primitiveType() ?
+					values[ctx.primitiveType()] :
+					values[ctx.singleAtom(1)]) as Primitive
 			currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive))
 		}
 		else {
-			def typesList = values[ctx.predicateList()]
-			Set<IAtom> types = [] as Set
-			if (typesList)
+			def atom = values[ctx.predicate()] as IAtom
+			def types = [] as Set
+
+			// Normal predicate declaration
+			if (ctx.predicateList()) {
+				def typesList = values[ctx.predicateList()]
 				typesList.each { type ->
-					if (type instanceof Predicate) {
+					if (type instanceof Predicate && !isPrimitive(type.name)) {
 						def p = type as Predicate
-						types.add(new Entity(p.name, p.stage, p.exprs))
+						assert p.exprs.size() == 1
+						types << new Entity(p.name, p.stage, p.exprs.first())
 					}
 					else
-						types.add(type)
+						types << type
 				}
-
-			IAtom atom = values[ctx.predicate()] as IAtom
-			if (types.isEmpty()) {
-				def p = atom as Predicate
-				atom = new Entity(p.name, p.stage, p.exprs)
 			}
+			// Entity declaration
+			else if (atom.arity() == 1) {
+				def p = atom as Predicate
+				assert p.exprs.size() == 1
+				atom = new Entity(p.name, p.stage, p.exprs.first())
+			}
+			// Normal nullary predicate
+			//else {}
 
 			if (isConstraint(atom, types))
 				currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)))
@@ -153,7 +161,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			def body = values[ctx.compound()] as IElement
 			currComp.addRule(new Rule(head, body))
 		} else {
-			LogicalElement head = new LogicalElement(values[ctx.predicate()])
+			LogicalElement head = new LogicalElement(values[ctx.functional()])
 			AggregationElement aggregation = (AggregationElement) values[ctx.aggregation()]
 			currComp.addRule(new Rule(head, aggregation))
 		}
@@ -194,6 +202,15 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		else if (ctx.singleAtom())    values[ctx] = values[ctx.singleAtom()]
 		else if (ctx.atom())          values[ctx] = values[ctx.atom()]
 		else if (ctx.functional())    values[ctx] = values[ctx.functional()]
+		/*else if (ctx.singleAtom()) {
+			def p = values[ctx.singleAtom()] as IAtom
+			if (isPrimitive(p.name())) {
+				assert p.exprs.size() == 1
+				values[ctx] = new Primitive(p.name, null, p.exprs.first())
+			}
+			else
+				values[ctx] = p
+		}*/
 	}
 	void exitPrimitiveType(PrimitiveTypeContext ctx) {
 		assert inDecl
@@ -238,12 +255,12 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			values[ctx] = new Predicate(
 				values[ctx.predicateName()],
 				ctx.AT_STAGE()?.getText(),
-				[])
+				[values[ctx.expr()] ] + values[ctx.exprList()])
 		else
 			values[ctx] = new Predicate(
 				values[ctx.predicateName()],
 				ctx.AT_STAGE()?.getText(),
-				[values[ctx.expr()] ] + values[ctx.exprList()])
+				[])
 	}
 	void exitFunctionalHead(FunctionalHeadContext ctx) {
 		recLoc(ctx)
@@ -264,9 +281,6 @@ class DatalogListenerImpl extends DatalogBaseListener {
 
 	void exitAggregation(AggregationContext ctx) {
 		recLoc(ctx)
-		def variable = new VariableExpr(ctx.IDENTIFIER().getText())
-		def predicate = values[ctx.predicate()] as Predicate
-		def body = values[ctx.compound()]
 		values[ctx] = new AggregationElement(
 			new VariableExpr(ctx.IDENTIFIER().getText()),
 			values[ctx.predicate()] as Predicate,
