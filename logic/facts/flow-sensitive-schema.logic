@@ -360,7 +360,6 @@ ArrayInsnIndex[?insn] = ?index ->
 ComponentType[?arrayType] = ?componentType ->
    ArrayType(?arrayType), Type(?componentType).
 
-// TODO: replace LoadArrayIndex:Base, StoreArrayIndex:Base with ArrayInstruction:Base
 LoadArrayIndex:Base[?insn] = ?var ->
    LoadArrayIndex:Insn(?insn), Var(?var).
 
