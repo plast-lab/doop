@@ -38,6 +38,8 @@ class SouffleAnalysis extends DoopAnalysis {
         initDatabase()
         basicAnalysis()
         mainAnalysis()
+        produceStats()
+        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir)
     }
 
     @Override
@@ -133,8 +135,6 @@ class SouffleAnalysis extends DoopAnalysis {
             def analysisFile = FileOps.findFileOrThrow("${outDir}/${name}.dl", "Missing ${outDir}/${name}.dl")
             analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
         }
-
-        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir)
     }
 
     private void runSouffle(int jobs, File factsDir, File outDir) {
@@ -205,7 +205,7 @@ class SouffleAnalysis extends DoopAnalysis {
             return
         }
 
-        def macros    = "${Doop.souffleAnalysesPath}/${name}/macros.logic"
+        def macros    = "${Doop.souffleAnalysesPath}/${name}/macros.dl"
         def statsPath = "${Doop.souffleAddonsPath}/statistics"
         cpp.includeAtStart("${outDir}/${name}.dl", "${statsPath}/statistics-simple.dl", macros)
 

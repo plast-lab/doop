@@ -1,0 +1,398 @@
+#include "statistics-declarations.dl"
+
+/****************************************************************
+ * Heaps and Values
+ ***************************************************************/
+
+//Stats_ReflectiveHeap(?heap) :-
+//  ReflectiveHeapAllocation(_, _, ?heap).
+
+Stats_ApplicationHeap(?heap) :-
+  ApplicationMethod(?method),
+  AssignNormalHeapAllocation(?heap, _, ?method).
+
+Stats_ApplicationHeap(?heap) :-
+  ApplicationMethod(?method),
+  AssignContextInsensitiveHeapAllocation(?heap, _, ?method).
+
+//Stats_ApplicationHeap(?heap) :-
+//  ApplicationMethod(?method),
+//  Instruction_Method(?instr, ?method),
+//  ReflectiveHeapAllocation(?instr, _, ?heap).
+
+//Stats_ReachableValue(?value),
+//Stats_ReachableValueWithContext(?hctx, ?value) :-
+//   VarPointsTo(?hctx, ?value, _, _).
+//
+//Stats_InsensValuesOnMethodBoundaries(?value, ?var),
+//Stats_ValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var) :-
+//  (FormalParam(_, ?method, ?var) ;
+//   ReturnVar(?var, ?method)),
+//  Var_DeclaringMethod(?var, ?method),
+//  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+//
+//Stats_ThrowablesInMethod(?valuetype, ?method),
+//Stats_InsensThrowableValuesOnMethodBoundaries(?value, ?var),
+//Stats_ThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var) :-
+//  SupertypeOf("java.lang.Throwable", ?valuetype),
+//  Value_Type(?value, ?valuetype),
+//  Stats_ValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var),
+//  Var_DeclaringMethod(?var, ?method).
+//
+//Stats_InsensAppThrowableValuesOnMethodBoundaries(?value, ?var),
+//Stats_AppThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var) :-
+//  ApplicationClass(?valuetype),
+//  Value_Type(?value, ?valuetype),
+//  Stats_ThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var).
+//
+//Stats_ThrowablesInAppMethod(?valuetype, ?method),
+//Stats_InsensAppMethThrowableValuesOnMethodBoundaries(?value, ?var),
+//Stats_AppMethThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var) :-
+//  ApplicationMethod(?method),
+//  Var_DeclaringMethod(?var, ?method),
+//  Stats_ThrowableValuesOnMethodBoundaries(?hctx, ?value, ?ctx, ?var),
+//  Value_Type(?value, ?valuetype).
+
+/****************************************************************
+ * Vars
+ ***************************************************************/
+
+// Count how many objects, a var points to (context-sensitive)
+Stats_VarCount(?ctx, ?var, ?n) :-
+ VarPointsTo(_, _, ?ctx, ?var),
+ ?n = count : VarPointsTo(_, _, ?ctx, ?var).
+
+// Count how many objects, a var points to (value context-insensitive)
+Stats_InsensValueVarPointsTo(?value, ?ctx, ?var) :-
+  VarPointsTo(_, ?value, ?ctx, ?var).
+
+Stats_InsensValueVarCount(?ctx, ?var, ?n) :-
+  Stats_InsensValueVarPointsTo(_, ?ctx, ?var),
+  ?n = count : Stats_InsensValueVarPointsTo(_, ?ctx, ?var).
+
+// Count how many objects, a var points to (base context-insensitive)
+Stats_InsensBaseVarPointsTo(?hctx, ?value, ?var) :-
+  VarPointsTo(?hctx, ?value, _, ?var).
+
+Stats_InsensBaseVarCount(?var, ?n) :-
+  Stats_InsensBaseVarPointsTo(_, _, ?var),
+  ?n = count : Stats_InsensBaseVarPointsTo(_, _, ?var).
+
+// Count how many objects, a var points to (value+base context-insensitive)
+Stats_InsensVarCount(?var, ?n) :-
+  Stats_Simple_InsensVarPointsTo(_, ?var),
+  ?n = count : Stats_Simple_InsensVarPointsTo(_, ?var).
+
+// NOTE: The same applies for Stats_InsensValueVarCount
+Stats_Vars(?n) :-
+  ?n = count : Stats_VarCount(_, _, _).
+
+// NOTE: The same applies for Stats_InsensBaseVarCount
+Stats_InsensVars(?n) :-
+  ?n = count : Stats_InsensVarCount(_, _).
+
+//Stats_InsensVarPointsToNonThrowable(?value, ?var),
+//Stats_VarPointsToNonThrowable(?hctx, ?value, ?ctx, ?var) :-
+//  Value_Type(?value, ?valuetype),
+//  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+//  !SupertypeOf("java.lang.Throwable", ?valuetype).
+
+/****************************************************************
+ * Arrays
+ ***************************************************************/
+
+// Count how many objects, an array points to (context-sensitive)
+Stats_ArrayCount(?basehctx, ?basevalue, ?n) :-
+  ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue),
+  ?n = count : ArrayIndexPointsTo(_, _, ?basehctx, ?basevalue).
+
+// Count how many objects, an array points to (value context-insensitive)
+Stats_InsensValueArrayIndexPointsTo(?value, ?basehctx, ?basevalue) :-
+  ArrayIndexPointsTo(_, ?value, ?basehctx, ?basevalue).
+
+Stats_InsensValueArrayCount(?basehctx, ?basevalue, ?n) :-
+  Stats_InsensValueArrayIndexPointsTo(_, ?basehctx, ?basevalue),
+  ?n = count : Stats_InsensValueArrayIndexPointsTo(_, ?basehctx, ?basevalue).
+
+// Count how many objects, an array points to (basevalue context-insensitive)
+Stats_InsensBaseValueArrayIndexPointsTo(?hctx, ?value, ?basevalue) :-
+  ArrayIndexPointsTo(?hctx, ?value, _, ?basevalue).
+
+Stats_InsensBaseValueArrayCount(?basevalue, ?n) :-
+  Stats_InsensBaseValueArrayIndexPointsTo(_, _, ?basevalue),
+  ?n = count : Stats_InsensBaseValueArrayIndexPointsTo(_, _, ?basevalue).
+
+// Count how many objects, an array points to (value+basevalue context-insensitive)
+Stats_InsensArrayCount(?basevalue, ?n) :-
+  Stats_Simple_InsensArrayIndexPointsTo(_, ?basevalue),
+  ?n = count : Stats_Simple_InsensArrayIndexPointsTo(_, ?basevalue).
+
+// NOTE: The same applies for Stats_InsensValueArrayCount
+Stats_Arrays(?n) :-
+  ?n = count : Stats_ArrayCount(_, _, _).
+
+// NOTE: The same applies for Stats_InsensBaseValueArrayCount
+Stats_InsensArrays(?n) :-
+  ?n = count : Stats_InsensArrayCount(_, _).
+
+/****************************************************************
+ * Fields
+ ***************************************************************/
+
+// Count how many objects, a field points to (context-sensitive)
+Stats_FieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
+  InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue),
+  ?n = count : InstanceFieldPointsTo(_, _, ?sig, ?basehctx, ?basevalue).
+
+// Count how many objects, a field points to (value context-insensitive)
+Stats_InsensValueInstanceFieldPointsTo(?value, ?sig, ?basehctx, ?basevalue) :-
+  InstanceFieldPointsTo(_, ?value, ?sig, ?basehctx, ?basevalue).
+
+Stats_InsensValueFieldCount(?sig, ?basehctx, ?basevalue, ?n) :-
+  Stats_InsensValueInstanceFieldPointsTo(_, ?sig, ?basehctx, ?basevalue),
+  ?n = count : Stats_InsensValueInstanceFieldPointsTo(_, ?sig, ?basehctx, ?basevalue).
+
+// Count how many objects, a field points to (basevalue context-insensitive)
+Stats_InsensBaseValueInstanceFieldPointsTo(?hctx, ?value, ?sig, ?basevalue) :-
+  InstanceFieldPointsTo(?hctx, ?value, ?sig, _, ?basevalue).
+
+Stats_InsensBaseValueFieldCount(?sig, ?basevalue, ?n) :-
+  Stats_InsensBaseValueInstanceFieldPointsTo(_, _, ?sig, ?basevalue),
+  ?n = count : Stats_InsensBaseValueInstanceFieldPointsTo(_, _, ?sig, ?basevalue).
+
+// Count how many objects, a field points to (value+basevalue context-insensitive)
+Stats_InsensFieldCount(?sig, ?basevalue, ?n) :-
+  Stats_Simple_InsensInstanceFieldPointsTo(_, ?sig, ?basevalue),
+  ?n = count : Stats_Simple_InsensInstanceFieldPointsTo(_, ?sig, ?basevalue).
+
+// NOTE: The same applies for Stats_InsensValueFieldCount
+Stats_Fields(?n) :-
+  ?n = count : Stats_FieldCount(_, _, _, _).
+
+// NOTE: The same applies for Stats_InsensBaseFieldCount
+Stats_InsensFields(?n) :-
+  ?n = count : Stats_InsensFieldCount(_, _, _).
+
+//Stats_InsensInstanceFieldPointsToNonThrowable(?value, ?sig, ?basevalue),
+//Stats_InstanceFieldPointsToNonThrowable(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
+//  Value_Type(?value, ?valuetype),
+//  InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+//  !SupertypeOf("java.lang.Throwable", ?valuetype).
+//
+//Stats_InsensInstanceFieldPointsToNonThrowable2(?value, ?sig, ?basevalue),
+//Stats_InstanceFieldPointsToNonThrowable2(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
+//  Value_Type(?basevalue, ?valuetype),
+//  InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+//  !SupertypeOf("java.lang.Throwable", ?valuetype).
+//
+//Stats_InsensInstanceFieldPointsToNonThrowable3(?value, ?sig, ?basevalue),
+//Stats_InstanceFieldPointsToNonThrowable3(?hctx, ?value, ?sig, ?basehctx, ?basevalue) :-
+//  Value_Type(?basevalue, ?basevaluetype),
+//  InstanceFieldPointsTo(?hctx, ?value, ?sig, ?basehctx, ?basevalue),
+//  Value_Type(?value, ?valuetype),
+//  !SupertypeOf("java.lang.Throwable", ?valuetype),
+//  !SupertypeOf("java.lang.Throwable", ?basevaluetype).
+
+/***************************************************
+ * Methods
+ ***************************************************/
+
+// Count how many contexts, a reachable method appears with
+Stats_MethodContextCount(?method, ?n) :-
+  ReachableContext(_, ?method),
+  ?n = count : ReachableContext(_, ?method).
+
+Stats_Methods(?n) :-
+  ?n = count : Reachable(_).
+
+//// Count how many local vars, a reachable method has
+//Stats_InsensVarInReachableMethod(?var, ?method),
+//Stats_VarInReachableMethod(?var, ?ctx, ?method) :-
+//  ReachableContext(?ctx, ?method),
+//  Var_DeclaringMethod(?var, ?method).
+//
+//Stats_MethodVarCount(?ctx, ?method, ?n) :-
+//  Stats_VarInReachableMethod(_, ?ctx, ?method),
+//  ?n = count : Stats_VarInReachableMethod(_, ?ctx, ?method).
+//
+//Stats_InsensMethodVarCount(?method, ?n) :-
+//  Stats_InsensVarInReachableMethod(_, ?method),
+//  ?n = count : Stats_InsensVarInReachableMethod(_, ?method).
+//
+//Stats_MethodsWithVars(?n) :-
+//  ?n = count : Stats_MethodVarCount(_, _, _).
+//
+//Stats_InsensMethodsWithVars(?n) :-
+//  ?n = count : Stats_InsensMethodVarCount(_, _).
+//
+//Stats_ReachableNativeMethod(?method) :-
+//  Reachable(?method),
+//  Method_Modifier("native", ?method).
+
+/****************************************************************
+ * Dominance
+ ***************************************************************/
+
+//Stats_Dominance_VarPointsTo_Var(?var, ?count) :-
+//  VarPointsTo(_, _, _, ?var),
+//  ?count = count : VarPointsTo(_, _, _, ?var).
+//
+//Stats_Dominance_VarPointsTo_AllocationSite(?alloc, ?count) :-
+//  VarPointsTo(_, ?alloc, _, _),
+//  ?count = count : VarPointsTo(_, ?alloc, _, _).
+//
+//Stats_Dominance_VarPointsTo_Object(?hctx, ?value, ?count) :-
+//  VarPointsTo(?hctx, ?value, _, _),
+//  ?count = count : VarPointsTo(?hctx, ?value, _, _).
+//
+//Dominance_VarPointsTo_Method_Var(?method, ?var, ?varCount) :-
+//  Reachable(?method),
+//  Var_DeclaringMethod(?var, ?method)
+//  Stats_Dominance_VarPointsTo_Var(?var, ?varCount).
+//
+//Stats_Dominance_VarPointsTo_Method(?method, ?count) :-
+//  Dominanace_VarPointsTo_Method_Var(?method, _, _),
+//  ?count = sum (?varCount): Dominance_VarPointsTo_Method_Var(?method, _, ?varCount).
+//
+//Stats_Dominance_InstanceFieldPointsTo_Signature(?sig, ?count) :-
+//  InstanceFieldPointsTo(_, _, ?sig, _, _,),
+//  ?count = count : InstanceFieldPointsTo(_, _, ?sig, _, _).
+//
+//Stats_Dominance_InstanceFieldPointsTo_BaseAllocationSite(?alloc, ?count) :-
+//  InstanceFieldPointsTo(_, _, _, _, ?alloc),
+//  ?count = count : InstanceFieldPointsTo(_, _, _, _, ?alloc).
+//
+//Stats_Dominance_InstanceFieldPointsTo_BaseObject(?hctx, ?value, ?count) :-
+//  InstanceFieldPointsTo(_, _, _, ?hctx, ?value),
+//  ?count = count : InstanceFieldPointsTo(_, _, _, ?hctx, ?value).
+//
+//Stats_Dominance_InstanceFieldPointsTo_IdAllocationSite(?alloc, ?count) :-
+//  ?count = count : InstanceFieldPointsTo(_, ?alloc, _, _, _).
+//
+//Stats_Dominance_InstanceFieldPointsTo_IdObject(?hctx, ?value, ?count) :-
+//  InstanceFieldPointsTo(?hctx, ?value, _, _, _),
+//  ?count = count : InstanceFieldPointsTo(?hctx, ?value, _, _, _).
+
+/***************************************************
+ * Call graph edges
+ ***************************************************/
+
+//Stats_InsensCallGraphEdgesFromSize(?from, ?size) :-
+//  Stats_Simple_InsensCallGraphEdge(?from, _),
+//  ?size = count : Stats_Simple_InsensCallGraphEdge(?from, _).
+//
+//Stats_InsensCallGraphEdgesToSize(?to, ?size) :-
+//  Stats_Simple_InsensCallGraphEdge(_, ?to),
+//  ?size = count : Stats_Simple_InsensCallGraphEdge(_, ?to).
+
+/***************************************************
+ * Exceptions
+ ***************************************************/
+
+Stats_InsensValueThrowPointsTo(?value, ?ctx, ?method) :-
+  ThrowPointsTo(_, ?value, ?ctx, ?method).
+
+//Stats_InsensValueThrowPointsToSize(?ctx, ?method, ?size) :-
+//  Stats_InsensValueThrowPointsTo(_, ?ctx, ?method),
+//  ?size = count : Stats_InsensValueThrowPointsTo(_, ?ctx, ?method).
+
+Stats_InsensThrowPointsTo(?value, ?method) :-
+  Stats_InsensValueThrowPointsTo(?value, _, ?method).
+
+//Stats_InsensThrowPointsToSize(?method, ?size)
+//  Stats_InsensThrowPointsTo(_, ?method),
+//  ?size = count : Stats_InsensThrowPointsTo(_, ?method).
+
+//Stats_ReachableExceptionHandler(?handler) :-
+//  Reachable(?method),
+//  ExceptionHandler_Method(?handler, ?method).
+//
+//Stats_ReachableThrow(?ref) :-
+//  Reachable(?method),
+//  Instruction_Method(?ref, ?method),
+//  Throw_Insn(?ref).
+
+//// Count how many objects, a method may throw (context-sensitive)
+//Stats_ThrowsPerMethodCount(?ctx, ?method, ?n) :-
+//  ThrowPointsTo(_, _, ?ctx, ?method),
+//  ?n = count : ThrowPointsTo(_, _, ?ctx, ?method).
+//
+//// Count how many objects, a method may throw (value context-insensitive)
+//Stats_InsensValueThrowsPerMethodCount(?ctx, ?method, ?n) :-
+//  Stats_InsensValueThrowPointsTo(_, ?ctx, ?method),
+//  ?n = count : Stats_InsensValueThrowPointsTo(_, ?ctx, ?method).
+//
+//// Count how many objects, a method may throw (method context-insensitive)
+//Stats_InsensMethodThrowPointsTo(?hctx, ?value, ?method) :-
+//  ThrowPointsTo(?hctx, ?value, _, ?method).
+//
+//Stats_InsensMethodThrowsPerMethodCount(?method, ?n) :-
+//  Stats_InsensMethodThrowPointsTo(_, _, ?method),
+//  ?n = count : Stats_InsensMethodThrowPointsTo(_, _, ?method).
+//
+//// Count how many objects, a method may throw (value+method context-insensitive)
+//Stats_InsensThrowsPerMethodCount(?method, ?n) :-
+//  Stats_InsensThrowPointsTo(_, ?method),
+//  ?n = count : Stats_InsensThrowPointsTo(_, ?method).
+//
+//// NOTE: The same applies for Stats_InsensValueThrowsPerMethodCount
+//Stats_ThrowMethods(?n) :-
+//  ?n = count : Stats_ThrowsPerMethodCount(_, _, _).
+//
+//// NOTE: The same applies for Stats_InsensMethodThrowsPerMethodCount
+//Stats_InsensThrowMethods(?n) :-
+//  ?n = count : Stats_InsensThrowsPerMethodCount(_, _).
+
+/***************************************************
+ * Prepare sorting of predicates
+ ***************************************************/
+
+//VarsRank(?r), VarsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`VarsRank] = 8388608.
+//VarsRankNr(?r) <- uint32_range(1, Stats_Vars[], 1, ?r).
+//+VarsRank(?r) <- +VarsRankNr(?r).
+//
+//InsensVarsRank(?r), InsensVarsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`InsensVarsRank] = 8388608.
+//InsensVarsRankNr(?r) <- uint32_range(1, Stats_InsensVars[], 1, ?r).
+//+InsensVarsRank(?r) <- +InsensVarsRankNr(?r).
+//
+//ArraysRank(?r), ArraysRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`ArraysRank] = 8388608.
+//ArraysRankNr(?r) <- uint32_range(1, Stats_Arrays[], 1, ?r).
+//+ArraysRank(?r) <- +ArraysRankNr(?r).
+//
+//InsensArraysRank(?r), InsensArraysRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`InsensArraysRank] = 8388608.
+//InsensArraysRankNr(?r) <- uint32_range(1, Stats_InsensArrays[], 1, ?r).
+//+InsensArraysRank(?r) <- +InsensArraysRankNr(?r).
+//
+//FieldsRank(?r), FieldsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`FieldsRank] = 8388608.
+//FieldsRankNr(?r) <- uint32_range(1, Stats_Fields[], 1, ?r).
+//+FieldsRank(?r) <- +FieldsRankNr(?r).
+//
+//InsensFieldsRank(?r), InsensFieldsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`InsensFieldsRank] = 8388608.
+//InsensFieldsRankNr(?r) <- uint32_range(1, Stats_InsensFields[], 1, ?r).
+//+InsensFieldsRank(?r) <- +InsensFieldsRankNr(?r).
+//
+//ThrowsRank(?r), ThrowsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`ThrowsRank] = 8388608.
+//ThrowsRankNr(?r) <- uint32_range(1, Stats_ThrowMethods[], 1, ?r).
+//+ThrowsRank(?r) <- +ThrowsRankNr(?r).
+//
+//MethodsRank(?r), MethodsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`MethodsRank] = 8388608.
+//MethodsRankNr(?r) <- uint32_range(1, Stats_Methods[], 1, ?r).
+//+MethodsRank(?r) <- +MethodsRankNr(?r).
+//
+//MethodVarsRank(?r), MethodVarsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`MethodVarsRank] = 8388608.
+//MethodVarsRankNr(?r) <- uint32_range(1, Stats_MethodsWithVars[], 1, ?r).
+//+MethodVarsRank(?r) <- +MethodVarsRankNr(?r).
+//
+//InsensMethodVarsRank(?r), InsensMethodVarsRank_Id(?r_?n) -> uint[32](?n).
+//lang_physical_capacity[`InsensMethodVarsRank] = 8388608.
+//InsensMethodVarsRankNr(?r) <- uint32_range(1, Stats_InsensMethodsWithVars[], 1, ?r).
+//+InsensMethodVarsRank(?r) <- +InsensMethodVarsRankNr(?r).
