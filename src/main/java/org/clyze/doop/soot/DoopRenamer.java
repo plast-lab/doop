@@ -9,7 +9,7 @@ import java.util.*;
 
 public class DoopRenamer {
     static protected void transform(Body body) {
-        Set<Local> transformedLocals = new HashSet<Local>();
+        Set<Local> transformedLocals = new HashSet<>();
         int linenumber = 0;
 
         // For all statements, see whether they def a var.
@@ -23,13 +23,14 @@ public class DoopRenamer {
                 linenumberToRegister = linenumber + 1; // hack to compensate for lack of source for phi
             }
             if (u instanceof DefinitionStmt) {
-                DefinitionStmt def = (DefinitionStmt) u;
-                Value assignee = def.getLeftOp();
-                if (assignee instanceof Local) {
-                    Local var = (Local) assignee;
-                    if (!(var.getName().startsWith("$")) && !(transformedLocals.contains(var))) {
-                        transformedLocals.add(var);
-                        var.setName(var.getName() + "#_" + linenumberToRegister);
+                for (ValueBox valueBox : u.getDefBoxes()) {
+                    Value value = valueBox.getValue();
+                    if (value instanceof  Local) {
+                        Local defVar = (Local) value;
+                        if (!(defVar.getName().startsWith("$") || (defVar.getName().startsWith("tmp$"))) && !(transformedLocals.contains(defVar))) {
+                            transformedLocals.add(defVar);
+                            defVar.setName(defVar.getName() + "#_" + linenumberToRegister);
+                        }
                     }
                 }
             }

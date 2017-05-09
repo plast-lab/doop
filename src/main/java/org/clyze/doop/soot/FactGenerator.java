@@ -95,7 +95,7 @@ class FactGenerator implements Runnable {
             } while (!success);
 
             if (_generateJimple) {
-                PackManager.v().writeClass(_sootClass);
+                JimplePackManager.writeClass(_sootClass);
                 for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
                     m.releaseActiveBody();
                 }
@@ -137,7 +137,7 @@ class FactGenerator implements Runnable {
 
 
     /* Check if a Type refers to a phantom class */
-    public static boolean phantomBased(Type t) {
+    private static boolean phantomBased(Type t) {
         if (t instanceof RefLikeType) {
             if (t instanceof RefType)
                 return ((RefType) t).getSootClass().isPhantom();
@@ -147,7 +147,7 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    public static boolean phantomBased(SootMethod m) {
+    private static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
         if (m.isPhantom())
@@ -237,14 +237,14 @@ class FactGenerator implements Runnable {
             Body b = m.getActiveBody();
             if (b != null) {
                 if (_ssa) {
-                    b = Shimple.v().newBody(b);
+                    b = new Shimple().newBody(b);
                     m.setActiveBody(b);
-                }
-                if (!_generateJimple) {
-                    m.releaseActiveBody();
                 }
                 DoopRenamer.transform(b);
                 generate(m, b, session);
+                if (!_generateJimple) {
+                    m.releaseActiveBody();
+                }
             }
         }
     }

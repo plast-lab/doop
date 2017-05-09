@@ -28,6 +28,7 @@ class Driver {
         _totalClasses = totalClasses;
         _generateJimple = generateJimple;
         _cores = Runtime.getRuntime().availableProcessors();
+
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         } else {
@@ -47,8 +48,8 @@ class Driver {
     }
 
     void doInSequentialOrder(Set<SootClass> sootClasses) {
-            FactGenerator factGenerator = new FactGenerator(_factory.get_factWriter(), _factory.getSSA(), sootClasses, _generateJimple);
-            factGenerator.run();
+        FactGenerator factGenerator = new FactGenerator(_factory.get_factWriter(), _factory.getSSA(), sootClasses, _generateJimple);
+        factGenerator.run();
     }
 
     void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
