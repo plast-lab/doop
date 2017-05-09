@@ -102,10 +102,10 @@ class DatalogTest {
 	void testT10() throws IOException {
 		test("t10.logic")
 	}
-	@Test
-	void testT11() throws IOException {
-		test("t11.logic")
-	}
+	//@Test
+	//void testT11() throws IOException {
+	//	test("t11.logic")
+	//}
 	@Test
 	void testT12() throws IOException {
 		test("t12.logic")

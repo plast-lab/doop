@@ -46,8 +46,9 @@ class Component implements IVisitable, ISourceItem {
 	void addDecl(Declaration d) {
 		// forward patching
 		if (d.atom.name() in entities) {
-			def pred = d.atom as Predicate
-			def entity = new Entity(pred.name, pred.stage, pred.exprs)
+			def p = d.atom as Predicate
+			assert p.exprs.size() == 1
+			def entity = new Entity(p.name, p.stage, p.exprs.first())
 			d = new Declaration(entity, [] + d.types as Set)
 		}
 		declarations << d
@@ -64,8 +65,9 @@ class Component implements IVisitable, ISourceItem {
 		// backwards patching
 		def decl = declarations.find{ it.atom.name() == entityName }
 		if (decl != null) {
-			def pred = decl.atom as Predicate
-			def entity = new Entity(pred.name, pred.stage, pred.exprs)
+			def p = decl.atom as Predicate
+			assert p.exprs.size() == 1
+			def entity = new Entity(p.name, p.stage, p.exprs.first())
 			declarations.remove(decl)
 			declarations << new Declaration(entity, ([] + decl.types) as Set)
 		}

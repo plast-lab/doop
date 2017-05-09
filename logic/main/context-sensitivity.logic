@@ -191,9 +191,6 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
   OptLoadInstanceField(?to, ?sig, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
-//
-// TODO eliminate by reordering the input fact.
-//
 OptLoadInstanceField(?to, ?sig, ?base) <-
   LoadInstanceField(?base, ?sig, ?to, _).
 
@@ -214,9 +211,6 @@ StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
-//
-// TODO eliminate
-//
 OptStoreInstanceField(?from, ?signature, ?base) <-
   StoreInstanceField(?from, ?base, ?signature, _).
 
@@ -234,8 +228,6 @@ OptLoadStaticField(?ctx, ?to, ?sig) <-
 
 /**
  * Store static fields
- *
- * TODO: I don't think context actually matters. double check.
  */
 
 #ifndef FEATHERWEIGHT_ANALYSIS

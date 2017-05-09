@@ -151,15 +151,16 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				metadata.usages << varUsage(it.IDENTIFIER(), UsageKind.DATA_READ)
 		}
 
-		def line = ctx.IDENTIFIER(1).symbol.line
-		def type = ctx.IDENTIFIER(1).text
+		def typeId = ctx.IDENTIFIER(1)
+		def line = typeId.symbol.line
+		def type = typeId.text
 		def lastToken = getLastToken(ctx)
 		int startCol, endCol
 		TerminalNode newToken
 
 		if ((newToken = findToken(ctx, "new"))) {
 			startCol = newToken.symbol.charPositionInLine + 1
-			endCol = startCol + type.length()
+			endCol = typeId.symbol.charPositionInLine + 1 + type.length()
 		}
 		else if ((newToken = findToken(ctx, "newarray"))) {
 			type = "$type[]" as String
