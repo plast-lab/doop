@@ -54,16 +54,21 @@ configurations.all {
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
-            'commons-logging:commons-logging:1.1',              // Logging wrapper
-            'log4j:log4j:1.2.14',                               // Logging implementation
-            'commons-cli:commons-cli:1.2',                      // Command line processor
-            'commons-io:commons-io:2.4',                        // File Utils
-            'org.apache.ivy:ivy:2.3.0',                         // Apache Ivy (for downloading jars from maven repos)
-            'org.smali:dexlib2:2.2b4',                          // Dexlib2: library for reading/modifying/writing Android dex files
-            'com.google.code.gson:gson:2.4'                     // GSON library
 
-    compile group: 'com.google.guava', name: 'guava', version: '21.0'
+    compile "org.codehaus.groovy:groovy-all:2.4.7",             // Groovy
+            "commons-logging:commons-logging:1.1",              // Logging wrapper
+            "log4j:log4j:1.2.14",                               // Logging implementation
+            "commons-cli:commons-cli:1.2",                      // Command line processor
+            "commons-io:commons-io:2.4",                        // File Utils
+            "org.apache.ivy:ivy:2.3.0",                         // Apache Ivy (for downloading jars from maven repos)
+            "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
+            "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
+            "com.google.code.gson:gson:2.4",                    // GSON library
+            "org.clyze:clue-common:1.+",
+            "com.google.guava:guava:21.0",
+            // Soot is a compile time dependency
+            "ext:AXMLPrinter:2.0",
+            "ext:sootclasses:2.+"
 
 
     // Soot is a compile time dependency
