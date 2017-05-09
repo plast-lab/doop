@@ -58,7 +58,6 @@ configurations.all {
 }
 
 dependencies {
-    compile project (":soot")
     compile 'org.codehaus.groovy:groovy-all:2.4.7',             // Groovy
             'commons-logging:commons-logging:1.1',              // Logging wrapper
             'log4j:log4j:1.2.14',                               // Logging implementation
@@ -73,7 +72,7 @@ dependencies {
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',
-            //"ext:sootclasses:2.+",
+            "ext:sootclasses:3.0.0",
             "ext:soot-infoflow:1.+",
             "ext:soot-infoflow-android:1.+"
 
