@@ -154,9 +154,16 @@ class SouffleAnalysis extends DoopAnalysis {
             logger.info "Compiling datalog to produce C++ program and executable with souffle"
             logger.info "Souffle command: ${compilationCommand}"
 
+            deleteQuietly(analysisCacheDir)
+            analysisCacheDir.mkdirs()
+
+            // Create a subshell to temporarely cd to the analysis cache directory and execute the compilation
+            // command, as the analysis executable is created at the directory level of the command's invocation.
+            def subshellCommand = "(cd ${analysisCacheDir} && " + compilationCommand + ")"
+
             def ignoreCounter = 0
             long t = timing {
-                executor.execute(compilationCommand) { String line ->
+                executor.execute(subshellCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
                              line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -169,10 +176,6 @@ class SouffleAnalysis extends DoopAnalysis {
             }
 
             logger.info "Compilation time (sec): ${t}"
-
-            // The analysis executable is created at the directory level of the doop invocation so we have to move it under the outDir
-            analysisCacheDir.mkdirs()
-            executor.execute("mv ${name} ${analysisCacheDir}")
             logger.info "Running analysis executable"
         }
         else {
