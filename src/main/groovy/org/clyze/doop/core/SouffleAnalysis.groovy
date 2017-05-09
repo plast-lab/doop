@@ -182,7 +182,10 @@ class SouffleAnalysis extends DoopAnalysis {
             logger.info "Running cached analysis executable"
         }
 
-        def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath"
+        deleteQuietly(database)
+        database.mkdirs()
+
+        def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir -D$database"
 
         logger.info executionCommand
         long t = timing { executor.execute(executionCommand) }
