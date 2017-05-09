@@ -1,31 +1,18 @@
 package org.clyze.deepdoop.datalog.element
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.element.atom.Predicate
-import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
+import org.clyze.deepdoop.datalog.expr.VariableExpr
 
+@Canonical
 class AggregationElement implements IElement {
 
 	VariableExpr var
-	Predicate    predicate
-	IElement     body
+	Predicate predicate
+	IElement body
 
-	AggregationElement(VariableExpr var, Predicate predicate, IElement body) {
-		this.var       = var
-		this.predicate = predicate
-		this.body      = body
-		this.loc       = SourceManager.v().getLastLoc()
-	}
-
-	List<VariableExpr> getVars() {
-		body.getVars() + predicate.getVars() + [var]
-	}
+	List<VariableExpr> getVars() { body.vars + predicate.vars + [var] }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { "agg<<$var = $predicate>> $body" }
-
-	SourceLocation loc
-	SourceLocation location() { loc }
 }

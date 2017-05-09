@@ -1,8 +1,10 @@
 package org.clyze.deepdoop.datalog.clause
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.*
 import org.clyze.deepdoop.datalog.element.atom.*
 
+@Canonical
 class RefModeDeclaration extends Declaration {
 
 	RefModeDeclaration(RefMode refmode, Predicate entity, Primitive primitive) {
@@ -10,6 +12,4 @@ class RefModeDeclaration extends Declaration {
 	}
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { "${types[0]}, $atom -> ${types[1]}" }
 }

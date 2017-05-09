@@ -78,7 +78,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 				def (newName, newStage) = rename(alias.orig)
 				newPreds << new Alias(orig: new Stub(newName), alias: alias.alias)
 
-				reverseMap[pred.name()] = fromSet
+				reverseMap[pred.name] = fromSet
 				reversePropsMap[prop.toId] = reverseMap
 			}
 			initP.addPropagation(new Propagation(prop.fromId, newPreds, prop.toId))
@@ -124,9 +124,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			declaredAtoms = declAtoms.keySet()
 
 			prop.preds.each{ alias ->
-				def origAtom = declAtoms[alias.orig.name()]
+				def origAtom = declAtoms[alias.orig.name]
 				if (origAtom == null)
-					ErrorManager.error(ErrorId.UNKNOWN_PRED, alias.orig.name())
+					ErrorManager.error(ErrorId.UNKNOWN_PRED, alias.orig.name)
 
 				// Ignore lang directives and entities
 				if (origAtom instanceof Directive || origAtom instanceof Entity) return
@@ -147,8 +147,8 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 				}
 
 				def stage = (prop.toId == null ? null : "@past")
-				def vars  = VariableExpr.genTempVars(origAtom.arity())
-				def head  = origAtom.newAlias(atom.name(), stage, vars).accept(this) as IAtom
+				def vars  = VariableExpr.genTempVars(origAtom.arity)
+				def head  = origAtom.newAlias(atom.name, stage, vars).accept(this) as IAtom
 				def body  = origAtom.newAtom(null, vars) as IAtom
 				toComp.addRule(new Rule(new LogicalElement(head), body, false))
 			}
@@ -241,9 +241,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		def newKeyExprs = n.keyExprs.collect{ m[it] as IExpr }
 
 		if (!inFrameRules && n.stage == "@past" && n.name in declaredAtoms && !autoGenDecls[newName]) {
-			def decl = curComp.declarations.find{ it.atom.name() == n.name() }
+			def decl = curComp.declarations.find{ it.atom.name == n.name }
 			if (!decl)
-				ErrorManager.error(ErrorId.NO_DECL_REC, n.name())
+				ErrorManager.error(ErrorId.NO_DECL_REC, n.name)
 			def newVars = decl.types.collect{ it.getVars().first() }
 			def newValueVar = newVars.takeRight(1)
 			def newKeyVars = newVars.dropRight(1)
@@ -257,9 +257,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		def newExprs = n.exprs.collect{ m[it] as IExpr }
 
 		if (!inFrameRules && n.stage == "@past" && n.name in declaredAtoms && !autoGenDecls[newName]) {
-			def decl = curComp.declarations.find{ it.atom.name() == n.name() }
+			def decl = curComp.declarations.find{ it.atom.name == n.name }
 			if (!decl)
-				ErrorManager.error(ErrorId.NO_DECL_REC, n.name())
+				ErrorManager.error(ErrorId.NO_DECL_REC, n.name)
 			def newVars = decl.types.collect{ it.getVars().first() }
 			autoGenDecls[newName] = new Declaration(new Predicate(newName, null, newVars), decl.types as Set)
 		}
@@ -302,21 +302,21 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 
 
 	def rename(IAtom atom) {
-		def name = atom.name()
+		def name = atom.name
 
 		if (removeName != null && name.startsWith(removeName + ":"))
 			name = name.replaceFirst(removeName + ":", "")
 
 		Set<String> reverseSet = null
 		if (reverseProps != null)
-			reverseSet = reverseProps[atom.name()]
+			reverseSet = reverseProps[atom.name]
 		assert (reverseSet == null || reverseSet.size() == 1)
 
 		// NOTE: This if should go before the next one, since the heuristic for
 		// discovering predicated declared in a component will assume that a
 		// @past predicate in the head of the rule is declared in the
 		// component.
-		if (atom.stage() == "@past") {
+		if (atom.stage == "@past") {
 			// * we are in the global component, thus in a custom frame rule
 			if (initName == null)
 				return new Tuple2(name + ":past", "@past")
@@ -335,7 +335,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 
 		// * if the atom is declared in this component, add the appropriate prefix
 		if (declaredAtoms != null && name in declaredAtoms)
-			return new Tuple2(initName + ":" + name, atom.stage())
+			return new Tuple2(initName + ":" + name, atom.stage)
 
 		// * if the atom is propagated from another component, explicitly add
 		// the appropriate prefix and suffix
@@ -343,7 +343,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			return new Tuple2(initName + ":" + name + ":past", "@past")
 
 		// * otherwise it is an external atom, thus leave the name unaltered
-		return new Tuple2(name, atom.stage())
+		return new Tuple2(name, atom.stage)
 	}
 
 	void enter(Program n) {}

@@ -36,10 +36,10 @@ class Program implements IVisitable {
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	String toString() {
-		globalComp.toString() +
-				(comps.collect{ k, v -> v.toString() } +
-				 inits.collect{ k, v -> "$v as $k".toString() } +
-				 props.collect{ it.toString() }).join('\n')
+		(globalComp as String) +
+				(comps.collect{ k, v -> v as String } +
+				 inits.collect{ k, v -> "$v as $k" as String } +
+				 props.collect{ it as String }).join('\n')
 	}
 
 

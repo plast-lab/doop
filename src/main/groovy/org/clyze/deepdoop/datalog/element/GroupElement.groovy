@@ -1,24 +1,12 @@
 package org.clyze.deepdoop.datalog.element
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
-import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
 
+@Canonical
 class GroupElement implements IElement {
 
-	IElement element
-
-	GroupElement(IElement element) {
-		this.element = element
-		this.loc     = SourceManager.v().getLastLoc()
-	}
-
-	List<VariableExpr> getVars() { element.getVars() }
+	@Delegate IElement element
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { "($element)" }
-
-	SourceLocation loc
-	SourceLocation location() { loc }
 }

@@ -1,17 +1,17 @@
 package org.clyze.deepdoop.datalog.element.atom
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
 
+@Canonical
 class Directive implements IAtom {
 
-	String       name
+	String name
 	Stub backtick
 	ConstantExpr constant
-	boolean      isPredicate
-
-	int          arity
+	boolean isPredicate
+	int arity
 
 	Directive(String name, Stub backtick) {
 		assert backtick != null
@@ -29,11 +29,9 @@ class Directive implements IAtom {
 		arity            = (backtick == null ? 1 : 2)
 	}
 
-	String name() { name }
-	String stage() { null }
-	int arity() { arity }
+	String getStage() { null }
 	IAtom newAtom(String stage, List<VariableExpr> vars) {
-		assert arity() == vars.size()
+		assert arity == vars.size()
 		this
 	}
 	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
@@ -42,13 +40,4 @@ class Directive implements IAtom {
 	List<VariableExpr> getVars() { [] }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() {
-		if (isPredicate)
-			return "$name($backtick)"
-		else
-			return "$name[" + (backtick == null ? "" : backtick) + "] = $constant"
-	}
-
-	SourceLocation location() { null }
 }

@@ -1,20 +1,16 @@
 package org.clyze.deepdoop.system
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.system.SourceLocation.SourceLine
 
 class SourceManager {
 
 	// A C-Preprocessor line marker
+	@Canonical
 	static class LineMarker {
-		int    markerLine       // the line that the last marker reports
-		int    markerActualLine // the line that the last marker is in the output file
-		String sourceFile       // the source file tha the last marker reports
-
-		LineMarker(int markerLine, int markerActualLine, String sourceFile) {
-			this.markerLine = markerLine
-			this.markerActualLine = markerActualLine
-			this.sourceFile = sourceFile
-		}
+		int line       // the line that the last marker reports
+		int actualLine // the line that the last marker is in the output file
+		String file    // the source file tha the last marker reports
 	}
 
 	Stack<LineMarker>     markers
@@ -28,7 +24,7 @@ class SourceManager {
 		locations = []
 	}
 	static SourceManager v() {
-		if (instance == null)
+		if (!instance)
 			instance = new SourceManager()
 		return instance
 	}
@@ -50,7 +46,7 @@ class SourceManager {
 	SourceLocation location(int outputLine) {
 		SourceLine[] lines
 		if (markers.empty()) {
-			lines = [ new SourceLine(file: outputFile, num: outputLine) ]
+			lines = [ new SourceLine(outputFile, outputLine) ]
 		}
 		else {
 			lines = new SourceLine[markers.size()]
@@ -58,11 +54,11 @@ class SourceManager {
 			// Iterate in reverse order, because the top of the stack is at the "end"
 			for (int i = markers.size()-1 ; i >= 0 ; --i) {
 				def lm = markers.get(i)
-				def sourceLine = (lm.markerLine + actualLine - (lm.markerActualLine+1))
-				lines[i] = new SourceLine(file: lm.sourceFile, num: sourceLine)
-				actualLine = lm.markerActualLine
+				def sourceLine = (lm.line + actualLine - (lm.actualLine+1))
+				lines[i] = new SourceLine(lm.file, sourceLine)
+				actualLine = lm.actualLine
 			}
 		}
-		return new SourceLocation(lines: lines)
+		return new SourceLocation(lines)
 	}
 }

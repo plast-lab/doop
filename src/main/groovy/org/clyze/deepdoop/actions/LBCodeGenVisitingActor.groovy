@@ -60,7 +60,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 			allUsedAtoms << acActor.getUsedAtoms(it)
 		}
 		allUsedAtoms.each{ usedAtomName, usedAtom ->
-			if (usedAtom.stage() == "@past") return
+			if (usedAtom.stage == "@past") return
 
 			if (!(usedAtomName in allDeclAtoms))
 				ErrorManager.warn(ErrorId.NO_DECL, usedAtomName)
@@ -215,7 +215,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 			}
 
 			//for (Stub export : c.exports)
-			//	write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name()+" -exportDataDir . -exportDelimiter '\\t'");
+			//	write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name+" -exportDataDir . -exportDelimiter '\\t'");
 
 			results << new Result(c.eval)
 
@@ -231,12 +231,12 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	}
 
 	void emitFilePredicate(IAtom atom, Declaration d, Path file) {
-		def atomName = atom.name()
-		def vars = VariableExpr.genTempVars(atom.arity())
+		def atomName = atom.name
+		def vars = VariableExpr.genTempVars(atom.arity)
 
 		def head = atomName + "(" + vars.collect{ it.name }.join(', ') + ")"
-		def body = (0..atom.arity()-1).collect{ i ->
-			(d != null ? d.types[i].name() : "string") + "(" + vars[i].name + ")"
+		def body = (0..atom.arity-1).collect{ i ->
+			(d != null ? d.types[i].name : "string") + "(" + vars[i].name + ")"
 		}.join(', ')
 		def decl = "_$head -> $body."
 		def rule = (d != null) ? "+$head <- _$head." : "+_$head <- $head."
@@ -285,8 +285,8 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	}
 	boolean allHandledFor(IVisitable n) {
 		Set<String> atoms = []
-		acActor.getDeclaringAtoms(n).values().each { atoms << it.name() }
-		acActor.getUsedAtoms(n).values().each { atoms << it.name() }
+		acActor.getDeclaringAtoms(n).values().each { atoms << it.name }
+		acActor.getUsedAtoms(n).values().each { atoms << it.name }
 		atoms.retainAll(globalAtoms)
 
 		return atoms.every{ handledAtoms.contains(it) }

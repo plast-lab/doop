@@ -1,39 +1,27 @@
 package org.clyze.deepdoop.datalog.element.atom
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
 
+@Canonical
 class RefMode implements IAtom {
 
-	String       name
-	String       stage
+	String name
+	String stage
 	VariableExpr entityVar
-	IExpr        valueExpr
+	IExpr valueExpr
 
-	RefMode(String name, String stage, VariableExpr entityVar, IExpr valueExpr) {
-		assert stage != "@past"
-		this.name      = name
-		this.stage     = stage
-		this.entityVar = entityVar
-		this.valueExpr = valueExpr
-	}
-
-	String name() { name }
-	String stage() { stage }
-	int arity() { 2 }
+	int getArity() { 2 }
 	IAtom newAtom(String stage, List<VariableExpr> vars) {
-		assert arity() == vars.size()
+		assert arity == vars.size()
 		return new RefMode(name, stage, vars[0], vars[1])
 	}
 	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
 		throw new UnsupportedOperationException()
 	}
-	List<VariableExpr> getVars() { [entityVar] + valueExpr.getVars() }
+
+	List<VariableExpr> getVars() { [entityVar] + valueExpr.vars }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { "$name($entityVar:$valueExpr)" }
-
-	SourceLocation location() { null }
 }

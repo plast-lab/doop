@@ -1,23 +1,18 @@
 package org.clyze.deepdoop.datalog.component
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.datalog.element.atom.IAtom
 
+@Canonical
 class Propagation {
 
+	@Canonical
 	static class Alias {
 		IAtom orig
 		IAtom alias
 	}
 
-	String     fromId
+	String fromId
 	Set<Alias> preds
-	String     toId
-
-	Propagation(String fromId, Set<Alias> preds, String toId) {
-		this.fromId = fromId
-		this.preds  = preds
-		this.toId   = toId
-	}
-
-	String toString() { "$fromId { $preds } -> $toId" }
+	String toId
 }

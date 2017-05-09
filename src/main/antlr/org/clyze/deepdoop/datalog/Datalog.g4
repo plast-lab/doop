@@ -43,7 +43,7 @@ datalog
 
 declaration
 	: predicate '->' predicateList? '.'
-	| singleAtom ',' refmode '->' (primitiveType | singleAtom) '.'
+	| singleAtom ',' refmode '->' singleAtom '.'
 	;
 
 constraint
@@ -51,7 +51,7 @@ constraint
 
 rule_
 	: predicateList '.'
-	| predicateList '<-' compound? '.'
+	| predicateList '<-' compound '.'
 	| functional '<-' aggregation '.'
 	;
 
@@ -60,16 +60,12 @@ lineMarker
 
 
 predicate
-	: primitiveType
-	| directive
+	: directive
 	| refmode
 	| singleAtom
 	| atom
 	| functional
 	;
-
-primitiveType
-	: predicateName CAPACITY '(' IDENTIFIER ')' ;
 
 directive
 	: predicateName '(' BACKTICK predicateName ')'

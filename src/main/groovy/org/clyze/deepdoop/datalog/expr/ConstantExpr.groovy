@@ -1,12 +1,14 @@
 package org.clyze.deepdoop.datalog.expr
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
 
+@Canonical
 class ConstantExpr implements IExpr {
 
 	enum Type { INTEGER, REAL, BOOLEAN, STRING }
 
-	Type   type
+	Type type
 	Object value
 
 	ConstantExpr(Long l) {
@@ -29,6 +31,4 @@ class ConstantExpr implements IExpr {
 	List<VariableExpr> getVars() { [] }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { value.toString() }
 }

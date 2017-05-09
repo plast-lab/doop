@@ -1,24 +1,15 @@
 package org.clyze.deepdoop.datalog.clause
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.*
 import org.clyze.deepdoop.datalog.element.IElement
-import org.clyze.deepdoop.system.*
+import org.clyze.deepdoop.system.TSourceItem
 
-class Constraint implements IVisitable, ISourceItem {
+@Canonical
+class Constraint implements IVisitable, TSourceItem {
 
 	IElement head
 	IElement body
 
-	Constraint(IElement head, IElement body) {
-		this.head = head
-		this.body = body
-		this.loc  = SourceManager.v().getLastLoc()
-	}
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { "$head -> $body." }
-
-	SourceLocation loc
-	SourceLocation location() { loc }
 }

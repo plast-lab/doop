@@ -4,9 +4,9 @@ import org.clyze.deepdoop.datalog.element.IElement
 import org.clyze.deepdoop.datalog.expr.VariableExpr
 
 interface IAtom extends IElement {
-	String name()
-	String stage()
-	int    arity()
+	String getName()
+	String getStage()
+	int    getArity()
 	IAtom  newAtom(String stage, List<VariableExpr> vars)
 	IAtom  newAlias(String name, String stage, List<VariableExpr> vars)
 }
