@@ -1,10 +1,8 @@
 package org.clyze.deepdoop.actions
 
-import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
 import org.clyze.deepdoop.datalog.*
 import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.component.*
@@ -25,6 +23,8 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	Path                     outDir
 	File                     latestFile
 	List<Result>             results
+
+	boolean                  inDecl
 
 	LBCodeGenVisitingActor(String outDirName) {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -91,7 +91,11 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		return res
 	}
 
+	void enter(Declaration n) {
+		inDecl = true
+	}
 	String exit(Declaration n, Map<IVisitable, String> m) {
+		inDecl = false
 		def typeStr = n.types.collect{ m[it] }.join(', ')
 		def res = "${m[n.atom]} -> ${typeStr}."
 		codeMap[n] = res
@@ -125,6 +129,21 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 	String exit(NegationElement n, Map<IVisitable, String> m) { "!${m[n.element]}" }
 
+	String exit(Constructor n, Map<IVisitable, String> m) {
+		def functionalStr = exit(n as Functional, m)
+		def res
+		if (inDecl) {
+			def directive = new Directive("lang:constructor", new Stub(n.type.name))
+			res = directive.accept(this) + ".\n" + functionalStr
+		}
+		else {
+			def entityStr = exit(n.type as Entity, m)
+			res = functionalStr + ", " + entityStr
+		}
+		codeMap[n] = res
+		return res
+	}
+
 	String exit(Directive n, Map<IVisitable, String> m) {
 		def middle = (n.backtick != null ? "`" + n.backtick.name : "")
 		if (n.isPredicate)
@@ -132,6 +151,8 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		else
 			return "${n.name}[$middle] = ${m[n.constant]}"
 	}
+
+	String exit(Entity n, Map<IVisitable, String> m) { exit(n as Predicate, m) }
 
 	String exit(Functional n, Map<IVisitable, String> m) {
 		def keyStr = n.keyExprs.collect { m[it] }.join(', ')
@@ -144,8 +165,6 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
 		return n.name + stage + "(" + str + ")"
 	}
-
-	String exit(Entity n, Map<IVisitable, String> m) { exit(n as Predicate, m) }
 
 	String exit(Primitive n, Map<IVisitable, String> m) { "${n.name}(${m[n.var]})" }
 
@@ -290,7 +309,6 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	String exit(Component n, Map<IVisitable, String> m) { null }
 
 	void enter(Constraint n) {}
-	void enter(Declaration n) {}
 	void enter(RefModeDeclaration n) {}
 	void enter(Rule n) {}
 
@@ -300,10 +318,11 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	void enter(LogicalElement n) {}
 	void enter(NegationElement n) {}
 
+	void enter(Constructor n) {}
 	void enter(Directive n) {}
+	void enter(Entity n) {}
 	void enter(Functional n) {}
 	void enter(Predicate n) {}
-	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	void enter(RefMode n) {}
 	void enter(Stub n) {}

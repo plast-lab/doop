@@ -49,7 +49,7 @@ class Component implements IVisitable, TSourceItem {
 			def p = d.atom as Predicate
 			assert p.exprs.size() == 1
 			def entity = new Entity(p.name, p.stage, p.exprs.first())
-			d = new Declaration(entity, [] + d.types as Set)
+			d = new Declaration(entity, [] + d.types)
 		}
 		declarations << d
 	}
@@ -69,7 +69,7 @@ class Component implements IVisitable, TSourceItem {
 			assert p.exprs.size() == 1
 			def entity = new Entity(p.name, p.stage, p.exprs.first())
 			declarations.remove(decl)
-			declarations << new Declaration(entity, ([] + decl.types) as Set)
+			declarations << new Declaration(entity, decl.types)
 		}
 	}
 

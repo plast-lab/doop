@@ -11,7 +11,7 @@ class Declaration implements IVisitable, TSourceItem {
 	IAtom atom
 	List<IAtom> types
 
-	Declaration(IAtom atom, Set<IAtom> types) {
+	Declaration(IAtom atom, List<IAtom> types) {
 		this.atom = atom
 		this.types = []
 

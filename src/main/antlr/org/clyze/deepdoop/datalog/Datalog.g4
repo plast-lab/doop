@@ -42,7 +42,7 @@ datalog
 
 
 declaration
-	: predicate '->' predicateList? '.'
+	: annotation? predicate '->' predicateList? '.'
 	| singleAtom ',' refmode '->' singleAtom '.'
 	;
 
@@ -57,6 +57,9 @@ rule_
 
 lineMarker
 	: '#' INTEGER STRING INTEGER* ;
+
+annotation
+	: '@' IDENTIFIER ;
 
 
 predicate

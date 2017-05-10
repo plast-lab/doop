@@ -113,7 +113,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		}
 		else {
 			def atom = values[ctx.predicate()] as IAtom
-			def types = [] as Set
+			def types = []
 
 			// Normal predicate declaration
 			if (ctx.predicateList()) {
@@ -124,6 +124,12 @@ class DatalogListenerImpl extends DatalogBaseListener {
 						types << new Primitive(p.name, p.exprs.first())
 					else
 						types << new Entity(p.name, p.stage, p.exprs.first())
+				}
+
+				def annotation = values[ctx.annotation()] as Annotation
+				if (annotation && annotation.kind == Annotation.Kind.CONSTRUCTOR) {
+					assert atom instanceof Functional
+					atom = new Constructor(atom as Functional, types.last() as IAtom)
 				}
 			}
 			// Entity declaration
@@ -196,6 +202,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			println "Weird line marker flag: $t"
 	}
 
+	void exitAnnotation(AnnotationContext ctx) {
+		values[ctx] = new Annotation(ctx.IDENTIFIER().text)
+	}
+
 	void exitPredicate(PredicateContext ctx) {
 		if (ctx.directive())       values[ctx] = values[ctx.directive()]
 		else if (ctx.refmode())    values[ctx] = values[ctx.refmode()]
@@ -264,14 +274,14 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		values[ctx] = new AggregationElement(
 				new VariableExpr(ctx.IDENTIFIER().text),
 				values[ctx.predicate()] as Predicate,
-				values[ctx.compound()])
+				values[ctx.compound()] as IElement)
 	}
 
 	void exitConstruction(ConstructionContext ctx) {
 		recLoc(ctx)
-		values[ctx] = new ConstructorElement(
+		values[ctx] = new Constructor(
 				values[ctx.functional()] as Functional,
-				new Stub(values[ctx.predicateName()]))
+				new Stub(values[ctx.predicateName()] as String))
 	}
 
 	void exitPredicateList(PredicateListContext ctx) {
@@ -282,14 +292,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 
 	void exitPredicateListExt(PredicateListExtContext ctx) {
 		def list = (values[ctx.predicateListExt()] ?: [])
-		if (ctx.predicate()) {
+		if (ctx.predicate())
 			list << (values[ctx.predicate()] as IAtom)
-		}
-		else {
-			def construction = values[ctx.construction()] as ConstructorElement
-			list << construction.constructor
-			list << construction.type
-		}
+		else
+			list << (values[ctx.construction()] as IAtom)
 		values[ctx] = list
 	}
 
@@ -407,22 +413,22 @@ class DatalogListenerImpl extends DatalogBaseListener {
 	}
 
 	static String getTerminalToken(ParserRuleContext ctx, int index) {
-		def i = (0..(ctx.getChildCount()-1))
+		def i = (0..(ctx.getChildCount() - 1))
 				.findAll { ctx.getChild(it) instanceof TerminalNode }[index]
 		return i != null ? ctx.getChild(i).text : null
 	}
-	static boolean isConstraint(IAtom atom, Set<IAtom> types) {
-		if (atom.vars.any{ it.isDontCare() }) return true
+	static boolean isConstraint(IAtom atom, List<IAtom> types) {
+		if (atom.vars.any { it.isDontCare() }) return true
 
 		// Entities declaration
 		if (types.isEmpty()) return false
 
-		if (types.stream().any{ t ->
-				List<VariableExpr> vars = t.getVars()
+		if (types.any { t ->
+			def vars = t.vars
 			return vars.size() != 1 || vars.get(0).isDontCare()
 		}) return true
 
-		def bodyCount = types.sum{ it.getVars().size() }
+		def bodyCount = types.sum{ it.vars.size() }
 		return (atom.arity != bodyCount)
 	}
 	static void recLoc(ParserRuleContext ctx) {

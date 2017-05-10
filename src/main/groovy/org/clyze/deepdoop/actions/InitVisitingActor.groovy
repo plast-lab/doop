@@ -194,7 +194,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
-		Set<IAtom> newTypes = [] as Set
+		def newTypes = []
 		n.types.each{ newTypes << (m[it] as IAtom) }
 		return new Declaration(m[n.atom] as IAtom, newTypes)
 	}
@@ -229,11 +229,34 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		new NegationElement(m[n.element] as IElement)
 	}
 
+	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) {
+		def (newName, newStage) = rename(n)
+		def newKeyExprs = n.keyExprs.collect{ m[it] as IExpr }
+
+		if (!inFrameRules && n.stage == "@past" && n.name in declaredAtoms && !autoGenDecls[newName]) {
+			def decl = curComp.declarations.find{ it.atom.name == n.name }
+			if (!decl)
+				ErrorManager.error(ErrorId.NO_DECL_REC, n.name)
+			def newVars = decl.types.collect{ it.getVars().first() }
+			def newValueVar = newVars.takeRight(1)
+			def newKeyVars = newVars.dropRight(1)
+			autoGenDecls[newName] = new Declaration(new Functional(newName, null, newKeyVars, newValueVar), decl.types)
+		}
+		def newFunctional = new Functional(newName, newStage, newKeyExprs, m[n.valueExpr] as IExpr)
+		return new Constructor(newFunctional, n.type)
+	}
+
 	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
 		if (n.isPredicate)
 			return new Directive(n.name, m[n.backtick] as Stub)
 		else
 			return new Directive(n.name, m[n.backtick] as Stub, m[n.constant] as ConstantExpr)
+	}
+
+	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
+		def (newName, newStage) = rename(n)
+		def newExpr = m[n.exprs.first()] as IExpr
+		return new Entity(newName, newStage, newExpr)
 	}
 
 	Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
@@ -247,7 +270,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			def newVars = decl.types.collect{ it.getVars().first() }
 			def newValueVar = newVars.takeRight(1)
 			def newKeyVars = newVars.dropRight(1)
-			autoGenDecls[newName] = new Declaration(new Functional(newName, null, newKeyVars, newValueVar), decl.types as Set)
+			autoGenDecls[newName] = new Declaration(new Functional(newName, null, newKeyVars, newValueVar), decl.types)
 		}
 		return new Functional(newName, newStage, newKeyExprs, m[n.valueExpr] as IExpr)
 	}
@@ -261,15 +284,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			if (!decl)
 				ErrorManager.error(ErrorId.NO_DECL_REC, n.name)
 			def newVars = decl.types.collect{ it.getVars().first() }
-			autoGenDecls[newName] = new Declaration(new Predicate(newName, null, newVars), decl.types as Set)
+			autoGenDecls[newName] = new Declaration(new Predicate(newName, null, newVars), decl.types)
 		}
 		return new Predicate(newName, newStage, newExprs)
-	}
-
-	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
-		def (newName, newStage) = rename(n)
-		def newExpr = m[n.exprs.first()] as IExpr
-		return new Entity(newName, newStage, newExpr)
 	}
 
 	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) { n }
@@ -363,10 +380,11 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	void enter(LogicalElement n) {}
 	void enter(NegationElement n) {}
 
+	void enter(Constructor n) {}
 	void enter(Directive n) {}
+	void enter(Entity n) {}
 	void enter(Functional n) {}
 	void enter(Predicate n) {}
-	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	void enter(RefMode n) {}
 	void enter(Stub n) {}

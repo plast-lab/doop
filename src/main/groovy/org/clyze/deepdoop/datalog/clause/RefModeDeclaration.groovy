@@ -8,7 +8,7 @@ import org.clyze.deepdoop.datalog.element.atom.*
 class RefModeDeclaration extends Declaration {
 
 	RefModeDeclaration(RefMode refmode, Predicate entity, Primitive primitive) {
-		super(refmode, [entity, primitive] as Set)
+		super(refmode, [entity, primitive])
 	}
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }

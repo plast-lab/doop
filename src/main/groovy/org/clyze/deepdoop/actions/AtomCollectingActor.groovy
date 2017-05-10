@@ -147,11 +147,25 @@ class AtomCollectingActor implements IActor<IVisitable> {
 		return n
 	}
 
+	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = [:]
+		usedMap[n.name] = n
+		n.keyExprs.each{ usedMap << getUsedAtoms(it) }
+		if (n.valueExpr) usedMap << getUsedAtoms(n.valueExpr)
+		usedAtoms[n] = usedMap
+		return n
+	}
+
 	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
 		if (n.isPredicate) {
 			Map<String, IAtom> usedMap = [(n.backtick.name) : n.backtick as IAtom]
 			usedAtoms[n] = usedMap
 		}
+		return n
+	}
+
+	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
+		exit(n as Predicate, m)
 		return n
 	}
 
@@ -169,11 +183,6 @@ class AtomCollectingActor implements IActor<IVisitable> {
 		usedMap[n.name] = n
 		n.exprs.each{ usedMap << getUsedAtoms(it) }
 		usedAtoms[n] = usedMap
-		return n
-	}
-
-	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
-		exit(n as Predicate, m)
 		return n
 	}
 
@@ -218,10 +227,11 @@ class AtomCollectingActor implements IActor<IVisitable> {
 	void enter(LogicalElement n) {}
 	void enter(NegationElement n) {}
 
+	void enter(Constructor n) {}
 	void enter(Directive n) {}
+	void enter(Entity n) {}
 	void enter(Functional n) {}
 	void enter(Predicate n) {}
-	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	IVisitable exit(Primitive n, Map<IVisitable, IVisitable> m) { null }
 	void enter(RefMode n) {}
