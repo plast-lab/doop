@@ -11,6 +11,7 @@ import org.clyze.deepdoop.datalog.element.LogicalElement.LogicType
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 import org.clyze.deepdoop.system.*
+
 import static org.clyze.deepdoop.datalog.DatalogParser.*
 
 class DatalogListenerImpl extends DatalogBaseListener {
@@ -303,12 +304,12 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		else if (ctx.compound(1) == null)
 			result = new GroupElement(values[ctx.compound(0)])
 		else {
-			def token = getToken(ctx, 0)
+			def token = getTerminalToken(ctx, 0)
 			List<IElement> list = [values[ctx.compound(0)], values[ctx.compound(1)] ]
 			result = new LogicalElement(token.equals(",") ? LogicType.AND : LogicType.OR, list)
 		}
 
-		def token = getToken(ctx, 0)
+		def token = getTerminalToken(ctx, 0)
 		if (token != null && token == "!")
 			result = new NegationElement(result)
 
@@ -362,7 +363,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			if (exprs.size() == 2) {
 				def left = values[exprs.get(0)]
 				BinOperator op = null
-				switch (getToken(ctx, 0)) {
+				switch (getTerminalToken(ctx, 0)) {
 					case "+": op = BinOperator.PLUS ; break
 					case "-": op = BinOperator.MINUS; break
 					case "*": op = BinOperator.MULT ; break
@@ -385,9 +386,9 @@ class DatalogListenerImpl extends DatalogBaseListener {
 	}
 
 	void exitComparison(ComparisonContext ctx) {
-		def token = getToken(ctx, 0)
-		def left = values[ctx.expr(0)]
-		def right = values[ctx.expr(1)]
+		def token = getTerminalToken(ctx, 0)
+		def left = values[ctx.expr(0)] as IExpr
+		def right = values[ctx.expr(1)] as IExpr
 		BinOperator op = null
 		switch (token) {
 			case "=" : op = BinOperator.EQ ; break
@@ -405,11 +406,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		throw new RuntimeException("Parsing error")
 	}
 
-	static String getToken(ParserRuleContext ctx, int index) {
-		for (int i = 0; i < ctx.getChildCount(); i++)
-			if (ctx.getChild(i) instanceof TerminalNode && index-- == 0)
-				return (ctx.getChild(i) as TerminalNode).text
-		return null
+	static String getTerminalToken(ParserRuleContext ctx, int index) {
+		def i = (0..(ctx.getChildCount()-1))
+				.findAll { ctx.getChild(it) instanceof TerminalNode }[index]
+		return i != null ? ctx.getChild(i).text : null
 	}
 	static boolean isConstraint(IAtom atom, Set<IAtom> types) {
 		if (atom.vars.any{ it.isDontCare() }) return true
