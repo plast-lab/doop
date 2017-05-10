@@ -19,7 +19,7 @@ plugins {
 
 apply from  : "benchmarks.gradle"
 
-//applicationDefaultJvmArgs = ["-Xmx2048m"]
+applicationDefaultJvmArgs = ["-Xmx12000m", "-Xss2000m"]
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
@@ -72,9 +72,9 @@ dependencies {
 
     // Soot is a compile time dependency
     compile 'ext:AXMLPrinter:2.0',
-            "ext:sootclasses:3.1.4",
-            "ext:soot-infoflow:1.+",
-            "ext:soot-infoflow-android:1.+"
+            "ext:sootclasses:2.6.0",
+            "ext:soot-infoflow:1.2",
+            "ext:soot-infoflow-android:1.2"
 
     compile(group: "sun", name: "jhat", version: "PATCHED")
 

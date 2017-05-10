@@ -329,7 +329,7 @@ class FactWriter {
            char[] */
         if (s.charAt(0) == '[') {
             // array type
-            Type t = jimpleTypeOfFieldDescriptor(s);
+            Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
 
             heap = _rep.classConstant(t);
             actualType = t.toString();
@@ -697,7 +697,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.String"), -1, -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -707,7 +707,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type, -1, -1);
+        Local l = new JimpleLocal(varname, type);
         writeLocal(inMethod, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
@@ -717,7 +717,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType(), -1, -1);
+        Local l = new JimpleLocal(varname, constant.getType());
         writeLocal(inMethod, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -727,7 +727,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.getInstance("java.lang.Class"), -1 , -1);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;

@@ -15,7 +15,7 @@ class IrrelevantStmtSwitch implements StmtSwitch
         // An assignment instruction is irrelevant if the right
         // hand side is an invoke expression of a method of a
         // phantom class
-        relevant = !(Options.getInstance().allow_phantom_refs()
+        relevant = !(Options.v().allow_phantom_refs()
                 && (right instanceof InvokeExpr)
                 && ((InvokeExpr) right).getMethodRef()
                 .declaringClass()
@@ -53,7 +53,7 @@ class IrrelevantStmtSwitch implements StmtSwitch
     }
 
     public void caseInvokeStmt(InvokeStmt stmt) {
-        relevant = !Options.getInstance().allow_phantom_refs() || !stmt.getInvokeExpr().getMethodRef().declaringClass().isPhantom();
+        relevant = !Options.v().allow_phantom_refs() || !stmt.getInvokeExpr().getMethodRef().declaringClass().isPhantom();
     }
 
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt)

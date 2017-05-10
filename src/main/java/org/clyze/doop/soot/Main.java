@@ -196,16 +196,16 @@ public class Main {
     private static void produceFacts(SootParameters sootParameters) throws Exception {
         SootMethod dummyMain = null;
 
-        Options.getInstance().set_output_dir(sootParameters._outputDir);
+        Options.v().set_output_dir(sootParameters._outputDir);
 
         if (sootParameters._ssa) {
-            Options.getInstance().set_via_shimple(true);
-            Options.getInstance().set_output_format(Options.output_format_shimple);
+            Options.v().set_via_shimple(true);
+            Options.v().set_output_format(Options.output_format_shimple);
         } else {
-            Options.getInstance().set_output_format(Options.output_format_jimple);
+            Options.v().set_output_format(Options.output_format_jimple);
         }
-        //soot.options.Options.getInstance().set_drop_bodies_after_load(true);
-        Options.getInstance().set_keep_line_number(true);
+        //soot.options.Options.v().set_drop_bodies_after_load(true);
+        Options.v().set_keep_line_number(true);
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
@@ -222,8 +222,8 @@ public class Main {
             String apkLocation = sootParameters._inputs.get(0);
             apk = new File(apkLocation);
             SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
-            Options.getInstance().set_process_multiple_dex(true);
-            Options.getInstance().set_src_prec(Options.src_prec_apk);
+            Options.v().set_process_multiple_dex(true);
+            Options.v().set_src_prec(Options.src_prec_apk);
 
             if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
@@ -256,7 +256,7 @@ public class Main {
             }
 
         } else {
-            Options.getInstance().set_src_prec(Options.src_prec_class);
+            Options.v().set_src_prec(Options.src_prec_class);
 
             JarEntry entry;
 
@@ -283,22 +283,22 @@ public class Main {
             }
         }
 
-        Scene scene = Scene.getInstance();
+        Scene scene = Scene.v();
         scene.setSootClassPath(sootParameters._inputs.get(0));
         for (int i = 0; i < sootParameters._libraries.size(); i++) {
             scene.extendSootClassPath(sootParameters._libraries.get(i));
         }
 
         if (sootParameters._main != null) {
-            Options.getInstance().set_main_class(sootParameters._main);
+            Options.v().set_main_class(sootParameters._main);
         }
 
         if (sootParameters._mode == SootParameters.Mode.FULL) {
-            Options.getInstance().set_full_resolver(true);
+            Options.v().set_full_resolver(true);
         }
 
         if (sootParameters._allowPhantom) {
-            Options.getInstance().set_allow_phantom_refs(true);
+            Options.v().set_allow_phantom_refs(true);
         }
 
         if (sootParameters._android) {
@@ -358,7 +358,7 @@ public class Main {
 
         System.out.println("Total classes in Scene: " + classes.size());
         try {
-            new JimplePackManager().retrieveAllSceneClassesBodies();
+            PackManager.v().retrieveAllSceneClassesBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
@@ -431,7 +431,7 @@ public class Main {
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
-        if(new SourceLocator().getClassSource(className) != null) {
+        if( SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
     }

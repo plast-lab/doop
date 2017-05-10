@@ -95,7 +95,7 @@ class FactGenerator implements Runnable {
             } while (!success);
 
             if (_generateJimple) {
-                JimplePackManager.writeClass(_sootClass);
+                PackManager.v().writeClass(_sootClass);
                 for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
                     m.releaseActiveBody();
                 }
@@ -237,7 +237,7 @@ class FactGenerator implements Runnable {
             Body b = m.getActiveBody();
             if (b != null) {
                 if (_ssa) {
-                    b = new Shimple().newBody(b);
+                    b = Shimple.v().newBody(b);
                     m.setActiveBody(b);
                 }
                 DoopRenamer.transform(b);
