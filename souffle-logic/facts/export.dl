@@ -10,6 +10,8 @@
 .output CallGraphEdge()
 .output VarPointsTo()
 
+.output Stats_Metrics
+
 // It is possible to output facts in an sqlite3 db.
 // .output CallGraphEdge(IO=sqlite, dbname="test.db", name=CallGraphEdge)
 // .output VarPointsTo(IO=sqlite, dbname="test.db", name=VarPointsTo)

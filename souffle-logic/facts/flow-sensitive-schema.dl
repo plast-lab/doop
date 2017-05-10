@@ -439,9 +439,8 @@
 // Types potentially returned by a specific Class.forName invocation
 .decl Config_DynamicClass(?class:ReferenceType, ?invocation:MethodInvocation)
 
-// Predicates to store runtime metrics and statistics
-.decl Stats_Runtime(?attr:symbol, ?value:number)
-//.decl Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint[64](?value).
+// Predicate to store analysis statistics
+.decl Stats_Metrics(order:symbol, msg:symbol, c:number)
 
 
 //-----------------------------------------------------------------------------

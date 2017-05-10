@@ -1,12 +1,3 @@
-// Use an include guard to prevent double declaration of Stats_Metrics predicate
-// in case of multiple inclusion of this file.
-
-#ifndef STATS_METRICS
-#define STATS_METRICS
-.decl Stats_Metrics(order:symbol, msg:symbol, c:number)
-.output Stats_Metrics
-#endif
-
 #define NewMetricMacro(order, msg, body) \
   Stats_Metrics(order, msg, c) :- \
     c = count : body
