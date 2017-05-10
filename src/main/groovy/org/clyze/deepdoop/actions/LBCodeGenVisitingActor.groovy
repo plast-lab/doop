@@ -152,7 +152,19 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 			return "${n.name}[$middle] = ${m[n.constant]}"
 	}
 
-	String exit(Entity n, Map<IVisitable, String> m) { exit(n as Predicate, m) }
+	String exit(Entity n, Map<IVisitable, String> m) {
+		def entityStr = exit(n as Predicate, m)
+		def res
+		if (inDecl) {
+			def directive = new Directive("lang:entity", new Stub(n.name))
+			res = directive.accept(this) + ".\n" + entityStr
+		}
+		else {
+			res = entityStr
+		}
+		codeMap[n] = res
+		return res
+	}
 
 	String exit(Functional n, Map<IVisitable, String> m) {
 		def keyStr = n.keyExprs.collect { m[it] }.join(', ')

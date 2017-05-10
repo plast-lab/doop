@@ -45,7 +45,7 @@ class DatalogTest {
 		}
 		catch (DeepDoopException e) {
 			if (expectedErrorId == null || e.errorId != expectedErrorId)
-				Assert.fail(e.errorId + e.getMessage() + " on " + filename)
+				Assert.fail((e.errorId as String) + e.message + " on " + filename)
 			System.err.println("Expected failure on " + filename)
 			return
 		}
@@ -109,6 +109,14 @@ class DatalogTest {
 	@Test
 	void testT12() throws IOException {
 		test("t12.logic")
+	}
+	@Test
+	void testT13() throws IOException {
+		test("t13.logic")
+	}
+	@Test
+	void testT14() throws IOException {
+		test("t14.logic")
 	}
 	@Test
 	void testSample() throws IOException {
@@ -177,6 +185,7 @@ class DatalogTest {
 	}
 
 
+	/*
 	@Test
 	void testA01() throws IOException {
 		test("analysis/cfg-tests.logic")
@@ -213,4 +222,5 @@ class DatalogTest {
 	void testA09() throws IOException {
 		test("analysis/tamiflex.logic")
 	}
+	*/
 }

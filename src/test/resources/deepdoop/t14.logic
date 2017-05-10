@@ -10,7 +10,11 @@ Foo(z, y) <- y = "G".
 
 ///////////////////////////
 
+@Entity
 Animal(x) -> .
+
+@Entity
+Cat(x) -> Animal(x).
 
 @Constructor
 cons:Animal[x, y] = z -> string(x), int(y), Animal(z).

@@ -119,7 +119,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			if (ctx.predicateList()) {
 				values[ctx.predicateList()].each { type ->
 					def p = type as Predicate
-					assert p.exprs.size() == 1
+					assert p.arity == 1
 					if (Primitive.isPrimitive(p.name))
 						types << new Primitive(p.name, p.exprs.first())
 					else
@@ -131,12 +131,18 @@ class DatalogListenerImpl extends DatalogBaseListener {
 					assert atom instanceof Functional
 					atom = new Constructor(atom as Functional, types.last() as IAtom)
 				}
+				else if (annotation && annotation.kind == Annotation.Kind.ENTITY) {
+					assert atom instanceof Predicate
+					assert atom.arity == 1
+					def p = atom as Predicate
+					atom = new Entity(p.name, null, p.exprs.first())
+				}
 			}
 			// Entity declaration
 			else {
 				def p = atom as Predicate
-				assert p.exprs.size() == 1
-				atom = new Entity(p.name, p.stage, p.exprs.first())
+				assert p.arity == 1
+				atom = new Entity(p.name, null, p.exprs.first())
 			}
 
 			if (isConstraint(atom, types))
