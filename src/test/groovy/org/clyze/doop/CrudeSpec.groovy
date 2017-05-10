@@ -11,7 +11,7 @@ class CrudeSpec extends Specification {
 	@Unroll
 	def "Crude testing based on sample metrics similarity"() {
 		when:
-		def propertyFile = getClass().getResource("/scenarios/$scenario").getFile().toString()
+		def propertyFile = this.class.getResource("/scenarios/$scenario").file
 		Main.main((String[])["-p", propertyFile])
 		analysis = Main.analysis
 
@@ -30,10 +30,11 @@ class CrudeSpec extends Specification {
 		"antlr-insensitive-reflection.properties" | 8808591  | 1111250 | 77719  | 2499         | 1619
 	}
 
-	void equals(String metric, int expectedVal) {
-		int actualVal
-		analysis.connector.processQuery("_(v) <- Stats:Metrics(_, \"$metric\", v).")
-										{ line -> actualVal = line as int }
+	void equals(String metric, long expectedVal) {
+		long actualVal
+		analysis.connector.processQuery("_(v) <- Stats:Metrics(_, \"$metric\", v).") {
+			line -> actualVal = line as long
+		}
 		assert actualVal == expectedVal
 	}
 }
