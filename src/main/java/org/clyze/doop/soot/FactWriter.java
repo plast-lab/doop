@@ -697,7 +697,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$stringconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"));
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.String"), -1, -1);
         writeLocal(inMethod, l);
         writeAssignStringConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -707,7 +707,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$null";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, type);
+        Local l = new JimpleLocal(varname, type, -1, -1);
         writeLocal(inMethod, l);
         writeAssignNull(inMethod, stmt, l, session);
         return l;
@@ -717,7 +717,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$numconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, constant.getType());
+        Local l = new JimpleLocal(varname, constant.getType(), -1, -1);
         writeLocal(inMethod, l);
         writeAssignNumConstant(inMethod, stmt, l, constant, session);
         return l;
@@ -727,7 +727,7 @@ class FactWriter {
         // introduce a new temporary variable
         String basename = "$classconstant";
         String varname = basename + session.nextNumber(basename);
-        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"));
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.Class"), -1, -1);
         writeLocal(inMethod, l);
         writeAssignClassConstant(inMethod, stmt, l, constant, session);
         return l;
