@@ -151,10 +151,16 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				assert headAtoms.size() == 1
 				currComp.markEntity((firstAtom as Directive).backtick.name)
 			}
-			def head = new LogicalElement(LogicType.AND, headAtoms.collect() as Set)
+			def head = new LogicalElement(LogicType.AND, headAtoms as Set)
+			currComp.addRule(new Rule(head, null))
+		}
+		else if (ctx.predicateListExt()) {
+			def headAtoms = values[ctx.predicateListExt()]
+			def head = new LogicalElement(LogicType.AND, headAtoms as Set)
 			def body = values[ctx.compound()] as IElement
 			currComp.addRule(new Rule(head, body))
-		} else {
+		}
+		else {
 			LogicalElement head = new LogicalElement(values[ctx.functional()])
 			AggregationElement aggregation = (AggregationElement) values[ctx.aggregation()]
 			currComp.addRule(new Rule(head, aggregation))
@@ -255,14 +261,34 @@ class DatalogListenerImpl extends DatalogBaseListener {
 	void exitAggregation(AggregationContext ctx) {
 		recLoc(ctx)
 		values[ctx] = new AggregationElement(
-			new VariableExpr(ctx.IDENTIFIER().text),
-			values[ctx.predicate()] as Predicate,
-			values[ctx.compound()])
+				new VariableExpr(ctx.IDENTIFIER().text),
+				values[ctx.predicate()] as Predicate,
+				values[ctx.compound()])
+	}
+
+	void exitConstruction(ConstructionContext ctx) {
+		recLoc(ctx)
+		values[ctx] = new ConstructorElement(
+				values[ctx.functional()] as Functional,
+				new Stub(values[ctx.predicateName()]))
 	}
 
 	void exitPredicateList(PredicateListContext ctx) {
 		def atom = values[ctx.predicate()] as IAtom
 		def list = (values[ctx.predicateList()] ?: []) << atom
+		values[ctx] = list
+	}
+
+	void exitPredicateListExt(PredicateListExtContext ctx) {
+		def list = (values[ctx.predicateListExt()] ?: [])
+		if (ctx.predicate()) {
+			list << (values[ctx.predicate()] as IAtom)
+		}
+		else {
+			def construction = values[ctx.construction()] as ConstructorElement
+			list << construction.constructor
+			list << construction.type
+		}
 		values[ctx] = list
 	}
 

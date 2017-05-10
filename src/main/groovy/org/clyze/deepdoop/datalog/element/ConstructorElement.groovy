@@ -10,5 +10,11 @@ class ConstructorElement implements IElement {
 	@Delegate Functional constructor
 	IAtom type
 
+	def getType() {
+		if (type instanceof Stub)
+			type = new Entity(type.name, constructor.valueExpr)
+		return type
+	}
+
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

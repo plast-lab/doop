@@ -51,7 +51,7 @@ constraint
 
 rule_
 	: predicateList '.'
-	| predicateList '<-' compound '.'
+	| predicateListExt '<-' compound '.'
 	| functional '<-' aggregation '.'
 	;
 
@@ -93,9 +93,17 @@ functional
 aggregation
 	: AGG '<<' IDENTIFIER '=' predicate '>>' compound ;
 
+construction
+	: NEW '<<' functional AS predicateName '>>' ;
+
 predicateList
 	: predicate
 	| predicateList ',' predicate
+	;
+
+predicateListExt
+	: (predicate | construction)
+	| predicateListExt ',' (predicate | construction)
 	;
 
 compound
@@ -140,6 +148,9 @@ comparison
 
 AGG
 	: 'agg' ;
+
+NEW
+	: 'new' ;
 
 ALL
 	: '*' ;

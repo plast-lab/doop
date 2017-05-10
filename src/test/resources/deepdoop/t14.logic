@@ -1,0 +1,8 @@
+Person(x) -> .
+cons:Person[x, y] = z -> string(x), int(y), Person(z).
+lang:constructor(`cons:Person).
+
+Foo(x, y) -> Person(x), string(y).
+
+new<<cons:Person[y, 1] = z as Person>>,
+Foo(z, y) <- y = "G".
