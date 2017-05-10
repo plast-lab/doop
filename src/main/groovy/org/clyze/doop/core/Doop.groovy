@@ -28,6 +28,7 @@ class Doop {
     static String logicPath
     static String souffleLogicPath
     static String factsPath
+    static String souffleFactsPath
     static String addonsPath
     static String souffleAddonsPath
     static String analysesPath
@@ -54,6 +55,7 @@ class Doop {
         logicPath            = "$doopHome/logic"
         souffleLogicPath     = "$doopHome/souffle-logic"
         factsPath            = "$logicPath/facts"
+        souffleFactsPath     = "$souffleLogicPath/facts"
         addonsPath           = "$logicPath/addons"
         souffleAddonsPath    = "$souffleLogicPath/addons"
         analysesPath         = "$logicPath/analyses"
