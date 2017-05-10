@@ -76,12 +76,13 @@ class FlatteningActor implements IActor<IVisitable> {
 		return (e == n.element ? n : new NegationElement(e))
 	}
 
-	Directive exit(Directive n, Map<IVisitable, IVisitable> m)   { n }
-	Functional exit(Functional n, Map<IVisitable, IVisitable> m) { n }
-	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m)   { n }
-	Entity exit(Entity n, Map<IVisitable, IVisitable> m)         { n }
-	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m)   { n }
-	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m)       { n }
+	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) { n }
+	Directive exit(Directive n, Map<IVisitable, IVisitable> m)     { n }
+	Entity exit(Entity n, Map<IVisitable, IVisitable> m)           { n }
+	Functional exit(Functional n, Map<IVisitable, IVisitable> m)   { n }
+	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m)     { n }
+	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m)     { n }
+	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m)         { n }
 
 	void enter(Program n) {}
 
@@ -101,10 +102,11 @@ class FlatteningActor implements IActor<IVisitable> {
 	void enter(LogicalElement n) {}
 	void enter(NegationElement n) {}
 
+	void enter(Constructor n) {}
 	void enter(Directive n) {}
+	void enter(Entity n) {}
 	void enter(Functional n) {}
 	void enter(Predicate n) {}
-	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	void enter(RefMode n) {}
 	void enter(Stub n) {}

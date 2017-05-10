@@ -1,8 +1,9 @@
 package org.clyze.deepdoop.datalog.component
 
+import groovy.transform.InheritConstructors
+import groovy.transform.ToString
 import org.clyze.deepdoop.actions.*
 import org.clyze.deepdoop.datalog.Program
-import org.clyze.deepdoop.system.*
 
 class DependencyGraph {
 
@@ -32,8 +33,8 @@ class DependencyGraph {
 			// Propagate to global space
 			else
 				prop.preds.each{ pred ->
-					fromNode.addEdgeTo(getNode(pred.orig.name()))
-					handledGlobalAtoms.add(pred.orig.name())
+					fromNode.addEdgeTo(getNode(pred.orig.name))
+					handledGlobalAtoms.add(pred.orig.name)
 				}
 
 			// Dependencies from global space
@@ -63,7 +64,7 @@ class DependencyGraph {
 					layers << ([n] as Set)
 				else
 					layers[curLayer] << n
-				n.outEdges.each{ succ ->
+					n.outEdges.each{ succ ->
 					successorsExist = true
 					def newInDegree = inDegrees[succ] - 1
 					inDegrees[succ] = newInDegree
@@ -102,10 +103,9 @@ class DependencyGraph {
 
 
 	abstract static class Node {
-
 		String    name
-		Set<Node> inEdges
-		Set<Node> outEdges
+		Set<Node> inEdges  = []
+		Set<Node> outEdges = []
 
 		Node(String name) {
 			this.name     = name
@@ -118,16 +118,15 @@ class DependencyGraph {
 			toNode.inEdges << this
 		}
 	}
-	static class PredNode extends Node {
-		PredNode(String name) { super(name) }
-		String toString() { name }
-	}
-	static class CompNode extends Node {
-		CompNode(String name) { super(name) }
-		String toString() { "<$name>" }
-	}
-	static class CmdNode extends Node {
-		CmdNode(String name) { super(name) }
-		String toString() { "{$name}" }
-	}
+	@InheritConstructors
+	@ToString(includeSuper=true)
+	static class PredNode extends Node {}
+
+	@InheritConstructors
+	@ToString(includeSuper=true)
+	static class CompNode extends Node {}
+
+	@InheritConstructors
+	@ToString(includeSuper=true)
+	static class CmdNode  extends Node {}
 }

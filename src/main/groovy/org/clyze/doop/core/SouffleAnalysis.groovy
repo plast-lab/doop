@@ -14,6 +14,21 @@ import static org.apache.commons.io.FileUtils.*
 @TypeChecked
 class SouffleAnalysis extends DoopAnalysis {
 
+    /**
+     * The cache dir for the analysis executable
+     */
+    File analysisCacheDir
+
+    /**
+     * Total time for Souffle compilation phase
+     */
+    protected long compilationTime
+
+    /**
+     * Total time for analysis execution
+     */
+    protected long executionTime
+
     protected SouffleAnalysis(String id,
                               String name,
                               Map<String, AnalysisOption> options,
@@ -33,31 +48,32 @@ class SouffleAnalysis extends DoopAnalysis {
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
 
-
-        copyDirectoryToDirectory(new File(Doop.souffleLogicPath + File.separator + "facts"), outDir)
         initDatabase()
         basicAnalysis()
         mainAnalysis()
         produceStats()
-        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir)
+
+        // Actual compilation and execution of the analysis.
+        compileAnalysis()
+        executeAnalysis(Integer.parseInt(options.JOBS.value.toString()))
     }
 
     @Override
     protected void initDatabase() {
-        cpp.preprocess("${outDir}/${name}.dl", "${Doop.souffleLogicPath}/facts/to-flow-sensitive.dl",
-                                               "${Doop.souffleLogicPath}/facts/flow-sensitive-schema.dl",
-                                               "${Doop.souffleLogicPath}/facts/flow-insensitive-schema.dl",
-                                               "${Doop.souffleLogicPath}/facts/import-entities.dl",
-                                               "${Doop.souffleLogicPath}/facts/import-facts.dl",
-                                               "${Doop.souffleLogicPath}/facts/post-process.dl",
-                                               "${Doop.souffleLogicPath}/facts/mock-heap.dl",
-                                               "${Doop.souffleLogicPath}/facts/export.dl")
+        cpp.preprocess("${outDir}/${name}.dl", "${Doop.souffleFactsPath}/to-flow-sensitive.dl",
+                                               "${Doop.souffleFactsPath}/flow-sensitive-schema.dl",
+                                               "${Doop.souffleFactsPath}/flow-insensitive-schema.dl",
+                                               "${Doop.souffleFactsPath}/import-entities.dl",
+                                               "${Doop.souffleFactsPath}/import-facts.dl",
+                                               "${Doop.souffleFactsPath}/post-process.dl",
+                                               "${Doop.souffleFactsPath}/mock-heap.dl",
+                                               "${Doop.souffleFactsPath}/export.dl")
 
         if (options.TAMIFLEX.value) {
-            def tamiflexDir = "${Doop.souffleAddonsPath}/tamiflex"
-            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexDir}/fact-declarations.dl")
-            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexDir}/import.dl")
-            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexDir}/post-import.dl")
+            def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
+            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexPath}/fact-declarations.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexPath}/import.dl")
+            cpp.includeAtStart("${outDir}/${name}.dl", "${tamiflexPath}/post-import.dl")
         }
     }
 
@@ -115,6 +131,7 @@ class SouffleAnalysis extends DoopAnalysis {
             }
 
         }
+
         if (options.REFLECTION.value) {
             cpp.includeAtStart("${outDir}/${name}.dl", "${mainPath}/reflection/delta.dl")
         }
@@ -137,22 +154,22 @@ class SouffleAnalysis extends DoopAnalysis {
         }
     }
 
-    private void runSouffle(int jobs, File factsDir, File outDir) {
+    private void compileAnalysis() {
         def analysisFileChecksum = CheckSum.checksum(new File("${outDir}/${name}.dl"), DoopAnalysisFactory.HASH_ALGO)
-        def analysisChecksum = CheckSum.checksum(analysisFileChecksum + String.valueOf(options.SOUFFLE_PROFILE.value),
-                                                 DoopAnalysisFactory.HASH_ALGO)
-        def analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
+        def stringToHash = analysisFileChecksum + options.SOUFFLE_PROFILE.value.toString()
+        def analysisChecksum = CheckSum.checksum(stringToHash, DoopAnalysisFactory.HASH_ALGO)
+        analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
         if (!analysisCacheDir.exists() || options.SOUFFLE_DEBUG.value) {
             def compilationCommand = "souffle -c -o ${outDir}/${name} ${outDir}/${name}.dl"
 
             if (options.SOUFFLE_PROFILE.value)
-                compilationCommand += " -p$outDir.absolutePath/profile.txt"
+                compilationCommand += " -p${outDir}/profile.txt"
             if (options.SOUFFLE_DEBUG.value)
-                compilationCommand += " -r$outDir.absolutePath/report.html"
+                compilationCommand += " -r${outDir}/report.html"
 
-            logger.info "Compiling datalog to produce C++ program and executable with souffle"
-            logger.info "Souffle command: ${compilationCommand}"
+            logger.info "Compiling Datalog to C++ program and executable"
+            logger.debug "Compilation command: ${compilationCommand}"
 
             deleteQuietly(analysisCacheDir)
             analysisCacheDir.mkdirs()
@@ -162,34 +179,36 @@ class SouffleAnalysis extends DoopAnalysis {
             def subshellCommand = "(cd ${analysisCacheDir} && " + compilationCommand + ")"
 
             def ignoreCounter = 0
-            long t = timing {
+            compilationTime = timing {
                 executor.execute(subshellCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
                              line.startsWith("Warning: Deprecated output qualifier was used")) {
-                        println line
+                        logger.info line
                         ignoreCounter = 2
                     }
                     else if (line.startsWith("Warning: Record types in output relations are not printed verbatim")) ignoreCounter = 2
-                    else println line
+                    else logger.info line
                 }
             }
 
-            logger.info "Compilation time (sec): ${t}"
-            logger.info "Running analysis executable"
+            logger.info "Analysis compilation time (sec): $compilationTime"
+            logger.info "Caching analysis executable in $analysisCacheDir"
         }
         else {
-            logger.info "Running cached analysis executable"
+            logger.info "Using cached analysis executable ${analysisCacheDir}/${name}"
         }
+    }
 
+    private void executeAnalysis(int jobs) {
         deleteQuietly(database)
         database.mkdirs()
 
         def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir -D$database"
-
-        logger.info executionCommand
-        long t = timing { executor.execute(executionCommand) }
-        logger.info "Analysis execution time (sec): ${t}"
+        logger.debug "Execution command: $executionCommand"
+        logger.info "Running analysis"
+        executionTime = timing { executor.execute(executionCommand) }
+        logger.info "Analysis execution time (sec): $executionTime"
     }
 
     @Override

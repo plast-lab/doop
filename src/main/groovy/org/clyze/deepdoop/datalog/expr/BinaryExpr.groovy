@@ -1,23 +1,17 @@
 package org.clyze.deepdoop.datalog.expr
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.BinOperator
 
+@Canonical
 class BinaryExpr implements IExpr {
 
-	IExpr       left
+	IExpr left
 	BinOperator op
-	IExpr       right
+	IExpr right
 
-	BinaryExpr(IExpr left, BinOperator op, IExpr right) {
-		this.left  = left
-		this.op    = op
-		this.right = right
-	}
-
-	List<VariableExpr> getVars() { left.getVars() + right.getVars() }
+	List<VariableExpr> getVars() { left.vars + right.vars }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { "$left $op $right" }
 }

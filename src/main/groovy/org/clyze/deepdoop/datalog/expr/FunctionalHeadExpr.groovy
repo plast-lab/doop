@@ -1,8 +1,10 @@
 package org.clyze.deepdoop.datalog.expr
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.element.atom.Functional
 
+@Canonical
 class FunctionalHeadExpr implements IExpr {
 
 	Functional functional
@@ -15,9 +17,7 @@ class FunctionalHeadExpr implements IExpr {
 		this.functional = functional
 	}
 
-	List<VariableExpr> getVars() { functional.getVars() }
+	List<VariableExpr> getVars() { functional.vars }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
-
-	String toString() { functional.toString() }
 }

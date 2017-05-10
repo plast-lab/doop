@@ -1,13 +1,15 @@
 package org.clyze.deepdoop.datalog.component
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.*
 import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.system.*
 
+@Canonical
 class CmdComponent extends Component {
 
-	String        eval
+	String    eval
 	Set<Stub> exports
 	Set<Stub> imports
 

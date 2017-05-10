@@ -45,7 +45,7 @@ class AtomCollectingActor implements IActor<IVisitable> {
 
 		Set<String> importPreds = [] as Set
 		n.imports.each{ p ->
-			def pName = p.name()
+			def pName = p.name
 			importPreds << pName
 			if (declMap[pName] == null)
 				ErrorManager.error(ErrorId.CMD_NO_DECL, pName)
@@ -87,7 +87,7 @@ class AtomCollectingActor implements IActor<IVisitable> {
 	}
 
 	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> declMap = [(n.atom.name()) : n.atom]
+		Map<String, IAtom> declMap = [(n.atom.name) : n.atom]
 		declAtoms[n] = declMap
 		Map<String, IAtom> usedMap = [:]
 		n.types.each{ usedMap << getUsedAtoms(it) }
@@ -97,8 +97,8 @@ class AtomCollectingActor implements IActor<IVisitable> {
 
 	RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> declMap = [:]
-		declMap[n.atom.name()] = n.atom
-		declMap[n.types.first().name()] = n.types.first()
+		declMap[n.atom.name] = n.atom
+		declMap[n.types.first().name] = n.types.first()
 		declAtoms[n] = declMap
 		return n
 	}
@@ -110,7 +110,7 @@ class AtomCollectingActor implements IActor<IVisitable> {
 
 		// Atoms that appear in the head of the rule but have the @past stage
 		// are external
-		declMap.findAll{ name, atom -> atom.stage() == "@past" }
+		declMap.findAll{ name, atom -> atom.stage == "@past" }
 				.each{ name, atom ->
 					declMap.remove(name)
 					usedMap[name] = atom
@@ -147,28 +147,20 @@ class AtomCollectingActor implements IActor<IVisitable> {
 		return n
 	}
 
-	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
-		if (n.isPredicate) {
-			Map<String, IAtom> usedMap = [(n.backtick.name()) : n.backtick as IAtom]
-			usedAtoms[n] = usedMap
-		}
-		return n
-	}
-
-	Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
+	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = [:]
-		usedMap[n.name()] = n
+		usedMap[n.name] = n
 		n.keyExprs.each{ usedMap << getUsedAtoms(it) }
 		if (n.valueExpr) usedMap << getUsedAtoms(n.valueExpr)
 		usedAtoms[n] = usedMap
 		return n
 	}
 
-	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> usedMap = [:]
-		usedMap[n.name()] = n
-		n.exprs.each{ usedMap << getUsedAtoms(it) }
-		usedAtoms[n] = usedMap
+	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
+		if (n.isPredicate) {
+			Map<String, IAtom> usedMap = [(n.backtick.name) : n.backtick as IAtom]
+			usedAtoms[n] = usedMap
+		}
 		return n
 	}
 
@@ -177,9 +169,26 @@ class AtomCollectingActor implements IActor<IVisitable> {
 		return n
 	}
 
+	Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = [:]
+		usedMap[n.name] = n
+		n.keyExprs.each{ usedMap << getUsedAtoms(it) }
+		if (n.valueExpr) usedMap << getUsedAtoms(n.valueExpr)
+		usedAtoms[n] = usedMap
+		return n
+	}
+
+	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
+		Map<String, IAtom> usedMap = [:]
+		usedMap[n.name] = n
+		n.exprs.each{ usedMap << getUsedAtoms(it) }
+		usedAtoms[n] = usedMap
+		return n
+	}
+
 	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = [:]
-		usedMap[n.name()] = n
+		usedMap[n.name] = n
 		usedMap << getUsedAtoms(n.valueExpr)
 		usedAtoms[n] = usedMap
 		return n
@@ -218,10 +227,11 @@ class AtomCollectingActor implements IActor<IVisitable> {
 	void enter(LogicalElement n) {}
 	void enter(NegationElement n) {}
 
+	void enter(Constructor n) {}
 	void enter(Directive n) {}
+	void enter(Entity n) {}
 	void enter(Functional n) {}
 	void enter(Predicate n) {}
-	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	IVisitable exit(Primitive n, Map<IVisitable, IVisitable> m) { null }
 	void enter(RefMode n) {}

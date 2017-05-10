@@ -83,7 +83,7 @@ class SoundMayAnalysis extends ClassicAnalysis {
                 connector.queue()
                     .startTimer()
                     .transaction()
-                    .addBlockFile(result.file.getFileName().toString())
+                    .addBlockFile(result.file.name)
                     .commit()
                     .elapsedTime()
         }

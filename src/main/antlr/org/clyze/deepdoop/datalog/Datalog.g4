@@ -42,8 +42,8 @@ datalog
 
 
 declaration
-	: predicate '->' predicateList? '.'
-	| singleAtom ',' refmode '->' (primitiveType | singleAtom) '.'
+	: annotation? predicate '->' predicateList? '.'
+	| singleAtom ',' refmode '->' singleAtom '.'
 	;
 
 constraint
@@ -51,25 +51,24 @@ constraint
 
 rule_
 	: predicateList '.'
-	| predicateList '<-' compound? '.'
+	| predicateListExt '<-' compound '.'
 	| functional '<-' aggregation '.'
 	;
 
 lineMarker
 	: '#' INTEGER STRING INTEGER* ;
 
+annotation
+	: '@' IDENTIFIER ;
+
 
 predicate
-	: primitiveType
-	| directive
+	: directive
 	| refmode
 	| singleAtom
 	| atom
 	| functional
 	;
-
-primitiveType
-	: predicateName CAPACITY '(' IDENTIFIER ')' ;
 
 directive
 	: predicateName '(' BACKTICK predicateName ')'
@@ -97,9 +96,17 @@ functional
 aggregation
 	: AGG '<<' IDENTIFIER '=' predicate '>>' compound ;
 
+construction
+	: NEW '<<' functional AS predicateName '>>' ;
+
 predicateList
 	: predicate
 	| predicateList ',' predicate
+	;
+
+predicateListExt
+	: (predicate | construction)
+	| predicateListExt ',' (predicate | construction)
 	;
 
 compound
@@ -144,6 +151,9 @@ comparison
 
 AGG
 	: 'agg' ;
+
+NEW
+	: 'new' ;
 
 ALL
 	: '*' ;

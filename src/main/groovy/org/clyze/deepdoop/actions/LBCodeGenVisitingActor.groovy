@@ -1,10 +1,8 @@
 package org.clyze.deepdoop.actions
 
-import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
 import org.clyze.deepdoop.datalog.*
 import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.component.*
@@ -23,8 +21,10 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	Set<String>              handledAtoms
 
 	Path                     outDir
-	Path                     latestFile
+	File                     latestFile
 	List<Result>             results
+
+	boolean                  inDecl
 
 	LBCodeGenVisitingActor(String outDirName) {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -60,7 +60,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 			allUsedAtoms << acActor.getUsedAtoms(it)
 		}
 		allUsedAtoms.each{ usedAtomName, usedAtom ->
-			if (usedAtom.stage() == "@past") return
+			if (usedAtom.stage == "@past") return
 
 			if (!(usedAtomName in allDeclAtoms))
 				ErrorManager.warn(ErrorId.NO_DECL, usedAtomName)
@@ -91,7 +91,11 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		return res
 	}
 
+	void enter(Declaration n) {
+		inDecl = true
+	}
 	String exit(Declaration n, Map<IVisitable, String> m) {
+		inDecl = false
 		def typeStr = n.types.collect{ m[it] }.join(', ')
 		def res = "${m[n.atom]} -> ${typeStr}."
 		codeMap[n] = res
@@ -125,6 +129,21 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 	String exit(NegationElement n, Map<IVisitable, String> m) { "!${m[n.element]}" }
 
+	String exit(Constructor n, Map<IVisitable, String> m) {
+		def functionalStr = exit(n as Functional, m)
+		def res
+		if (inDecl) {
+			def directive = new Directive("lang:constructor", new Stub(n.type.name))
+			res = directive.accept(this) + ".\n" + functionalStr
+		}
+		else {
+			def entityStr = exit(n.type as Entity, m)
+			res = functionalStr + ", " + entityStr
+		}
+		codeMap[n] = res
+		return res
+	}
+
 	String exit(Directive n, Map<IVisitable, String> m) {
 		def middle = (n.backtick != null ? "`" + n.backtick.name : "")
 		if (n.isPredicate)
@@ -132,6 +151,8 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		else
 			return "${n.name}[$middle] = ${m[n.constant]}"
 	}
+
+	String exit(Entity n, Map<IVisitable, String> m) { exit(n as Predicate, m) }
 
 	String exit(Functional n, Map<IVisitable, String> m) {
 		def keyStr = n.keyExprs.collect { m[it] }.join(', ')
@@ -144,8 +165,6 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
 		return n.name + stage + "(" + str + ")"
 	}
-
-	String exit(Entity n, Map<IVisitable, String> m) { exit(n as Predicate, m) }
 
 	String exit(Primitive n, Map<IVisitable, String> m) { "${n.name}(${m[n.var]})" }
 
@@ -215,7 +234,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 			}
 
 			//for (Stub export : c.exports)
-			//	write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name()+" -exportDataDir . -exportDelimiter '\\t'");
+			//	write(_bashFile, "bloxbatch -db DB -keepDerivedPreds -exportCsv "+export.name+" -exportDataDir . -exportDelimiter '\\t'");
 
 			results << new Result(c.eval)
 
@@ -230,13 +249,13 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		}
 	}
 
-	void emitFilePredicate(IAtom atom, Declaration d, Path file) {
-		def atomName = atom.name()
-		def vars = VariableExpr.genTempVars(atom.arity())
+	void emitFilePredicate(IAtom atom, Declaration d, File file) {
+		def atomName = atom.name
+		def vars = VariableExpr.genTempVars(atom.arity)
 
 		def head = atomName + "(" + vars.collect{ it.name }.join(', ') + ")"
-		def body = (0..atom.arity()-1).collect{ i ->
-			(d != null ? d.types[i].name() : "string") + "(" + vars[i].name + ")"
+		def body = (0..atom.arity-1).collect{ i ->
+			(d != null ? d.types[i].name : "string") + "(" + vars[i].name + ")"
 		}.join(', ')
 		def decl = "_$head -> $body."
 		def rule = (d != null) ? "+$head <- _$head." : "+_$head <- $head."
@@ -252,28 +271,17 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	}
 
 
-	Path create(String prefix, String suffix) {
-		try {
-			return Files.createTempFile(outDir, prefix, suffix)
-		}
-		catch (IOException e) {
-			// TODO
-		}
-		return null
+	File create(String prefix, String suffix) {
+		Files.createTempFile(outDir, prefix, suffix).toFile()
 	}
-	void write(Path file, String data) {
-		write(file, [data])
+	void write(File file, String data) {
+		file << data << "\n"
 	}
-	void write(Path file, List<String> data) {
-		try {
-			Files.write(file, data, Charset.forName("UTF-8"), StandardOpenOption.APPEND)
-		}
-		catch (IOException e) {
-			// TODO
-		}
+	void write(File file, List<String> data) {
+		data.each { write file, it }
 	}
 
-	def <T extends IVisitable> void handle(Set<T> set, Path file) {
+	def <T extends IVisitable> void handle(Set<T> set, File file) {
 		Set<T> toRemove = []
 		set.each {
 			if (allHandledFor(it)) {
@@ -285,12 +293,13 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	}
 	boolean allHandledFor(IVisitable n) {
 		Set<String> atoms = []
-		acActor.getDeclaringAtoms(n).values().each { atoms << it.name() }
-		acActor.getUsedAtoms(n).values().each { atoms << it.name() }
+		acActor.getDeclaringAtoms(n).values().each { atoms << it.name }
+		acActor.getUsedAtoms(n).values().each { atoms << it.name }
 		atoms.retainAll(globalAtoms)
 
 		return atoms.every{ handledAtoms.contains(it) }
 	}
+
 
 	void enter(Program n) {}
 
@@ -300,7 +309,6 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	String exit(Component n, Map<IVisitable, String> m) { null }
 
 	void enter(Constraint n) {}
-	void enter(Declaration n) {}
 	void enter(RefModeDeclaration n) {}
 	void enter(Rule n) {}
 
@@ -310,10 +318,11 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	void enter(LogicalElement n) {}
 	void enter(NegationElement n) {}
 
+	void enter(Constructor n) {}
 	void enter(Directive n) {}
+	void enter(Entity n) {}
 	void enter(Functional n) {}
 	void enter(Predicate n) {}
-	void enter(Entity n) {}
 	void enter(Primitive n) {}
 	void enter(RefMode n) {}
 	void enter(Stub n) {}

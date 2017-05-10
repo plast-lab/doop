@@ -111,11 +111,27 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		return actor.exit(n, m)
 	}
 
+	T visit(Constructor n) {
+		actor.enter(n)
+		Map<IVisitable, T> m = [:]
+		n.keyExprs.each{ m[it] = it.accept(this) }
+		if (n.valueExpr != null) m[n.valueExpr] = n.valueExpr.accept(this)
+		m[n.type] = n.type.accept(this)
+		return actor.exit(n, m)
+	}
+
 	T visit(Directive n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		if (n.backtick != null) m[n.backtick] = n.backtick.accept(this)
 		if (n.constant != null) m[n.constant] = n.constant.accept(this)
+		return actor.exit(n, m)
+	}
+
+	T visit(Entity n) {
+		actor.enter(n)
+		Map<IVisitable, T> m = [:]
+		n.exprs.each{ m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -128,13 +144,6 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	}
 
 	T visit(Predicate n) {
-		actor.enter(n)
-		Map<IVisitable, T> m = [:]
-		n.exprs.each{ m[it] = it.accept(this) }
-		return actor.exit(n, m)
-	}
-
-	T visit(Entity n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		n.exprs.each{ m[it] = it.accept(this) }
