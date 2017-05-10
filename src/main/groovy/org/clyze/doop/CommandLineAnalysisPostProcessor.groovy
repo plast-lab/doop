@@ -19,15 +19,15 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
 
     protected void printStats(DoopAnalysis analysis) {
-        def filterOutLBWarn = { String line ->
-            line == '*******************************************************************' ||
-            line == 'Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.' ||
-            line == "Please use 'lb' instead of 'bloxbatch'."
-        }
-
         def lines = []
-        analysis.connector.processPredicate("Stats:Runtime") { String line ->
-            if (!filterOutLBWarn.call(line)) lines.add(line)
+
+        if (analysis.options.SOUFFLE.value) {
+
+        }
+        else {
+            analysis.connector.processPredicate("Stats:Runtime") { String line ->
+                if (!filterOutLBWarn(line)) lines.add(line)
+            }
         }
 
         logger.info "-- Runtime metrics --"
@@ -37,8 +37,15 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
         if (!analysis.options.X_STATS_NONE.value) {
             lines = []
-            analysis.connector.processPredicate("Stats:Metrics") { String line ->
-                if (!filterOutLBWarn.call(line)) lines.add(line)
+
+            if (analysis.options.SOUFFLE.value) {
+                def file = new File("${analysis.database}/Stats_Metrics.csv")
+                file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
+            }
+            else {
+                analysis.connector.processPredicate("Stats:Metrics") { String line ->
+                    if (!filterOutLBWarn(line)) lines.add(line)
+                }
             }
 
             logger.info "-- Statistics --"
@@ -67,5 +74,11 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
         analysis.executor.execute("ln -s -f -n ${analysis.database} \"$lastAnalysis\"")
+    }
+
+    protected boolean filterOutLBWarn(String line) {
+        return line == '*******************************************************************' ||
+            line == 'Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.' ||
+            line == "Please use 'lb' instead of 'bloxbatch'."
     }
 }

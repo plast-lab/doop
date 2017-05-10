@@ -1,0 +1,379 @@
+// Horrible hack, really (TODO: generalize and clean up). Just for
+// now. Redefines the meaning of VarPointsTo for this file, to
+// collapse for analyses that simultaneously compute multiple results
+// and need to combine them.
+#ifdef MULTIPLE_SEGREGATED_ANALYSES
+#define VarPointsTo(hctx, heap, ctx, var) CollapsedVarPointsTo(hctx, heap, ctx, var)
+#endif // MULTIPLE_SEGREGATED_ANALYSES
+
+#include "statistics-simple-declarations.dl"
+#include "macros.dl"
+
+/***************************************************
+ * Variables
+ ***************************************************/
+
+Stats_Simple_InsensVarPointsTo(?value, ?var) :-
+  VarPointsTo(_, ?value, _, ?var).
+
+Stats_Simple_AssignedVariable(?var) :-
+  Stats_Simple_InsensVarPointsTo(_, ?var).
+
+Stats_Simple_Application_InsensVarPointsTo(?value, ?var),
+Stats_Simple_Application_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  ApplicationVar(?var),
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+Stats_Simple_InsensReachableVar(?var),
+Stats_Simple_ReachableVar(?ctx, ?var) :-
+  Stats_Simple_AssignedVariable(?var),
+  Var_DeclaringMethod(?var, ?method),
+  ReachableContext(?ctx, ?method).
+
+#ifdef TRANSFORM_INPUT
+// Example of post-processing of set-based transform results for client analyses
+// that need it.
+Stats_Simple_InsensVarPointsTo(?value, ?var) :-
+  DupCopies(?var, ?var2),
+  VarPointsTo(_, ?value, _, ?var2).
+#endif
+
+/***************************************************
+ * Arrays
+ ***************************************************/
+
+Stats_Simple_InsensArrayIndexPointsTo(?value, ?basevalue) :-
+   ArrayIndexPointsTo(_, ?value, _, ?basevalue).
+
+Stats_Simple_Application_InsensArrayIndexPointsTo(?value, ?basevalue),
+Stats_Simple_Application_ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue) :-
+  ApplicationMethod(?meth),
+  AssignNormalHeapAllocation(?basevalue, _, ?meth),
+  ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue).
+
+/***************************************************
+ * Fields
+ ***************************************************/
+
+Stats_Simple_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue) :-
+  InstanceFieldPointsTo(_, ?value, ?sig, _, ?basevalue).
+
+Stats_Simple_InsensStaticFieldPointsTo(?value, ?sig) :-
+  StaticFieldPointsTo(_, ?value, ?sig).
+
+Stats_Simple_Application_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue),
+Stats_Simple_Application_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue) :-
+  ApplicationMethod(?meth),
+  AssignNormalHeapAllocation(?basevalue, _, ?meth),
+  InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+
+/***************************************************
+ * Call graph edges
+ ***************************************************/
+
+Stats_Simple_InsensCallGraphEdge(?from, ?to) :-
+   CallGraphEdge(_, ?from, _, ?to).
+
+Stats_Simple_VirtualCallGraphEdge(?from, ?to) :-
+   Stats_Simple_ReachableVirtualMethodInvocation(?from),
+   Stats_Simple_InsensCallGraphEdge(?from, ?to).
+
+/***************************************************
+ * Application methods
+ ***************************************************/
+
+Stats_Simple_InsensReachableApplicationMethod(?method),
+Stats_Simple_ReachableApplicationMethod(?ctx, ?method) :-
+  ApplicationMethod(?method),
+  ReachableContext(?ctx, ?method).
+
+Stats_Simple_ApplicationConcreteMethod(?method) :-
+  ApplicationMethod(?method),
+  !Method_Modifier("abstract", ?method).
+
+Stats_Simple_NonReachableApplicationConcreteMethod(?method) :-
+  Stats_Simple_ApplicationConcreteMethod(?method),
+  !Stats_Simple_InsensReachableApplicationMethod(?method).
+
+/***************************************************
+ * Virtual method invocations
+ ***************************************************/
+
+Stats_Simple_ReachableVirtualMethodInvocation(?invocation) :-
+  Reachable(?method),
+  Instruction_Method(?invocation, ?method),
+  isVirtualMethodInvocation_Insn(?invocation).
+
+Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation) :-
+  Stats_Simple_InsensReachableApplicationMethod(?method),
+  Instruction_Method(?invocation, ?method),
+  isVirtualMethodInvocation_Insn(?invocation).
+
+Stats_Simple_VirtualTargets(?from, ?c) :-
+  Stats_Simple_VirtualCallGraphEdge(?from, _),
+  ?c = count : Stats_Simple_VirtualCallGraphEdge(?from, _).
+
+Stats_Simple_PolymorphicCallSite(?from) :-
+  Stats_Simple_VirtualTargets(?from, ?size),
+  ?size > 1.
+
+Stats_Simple_NullVirtualMethodInvocation(?invocation) :-
+  Value_Null(?null),
+  Stats_Simple_InsensVarPointsTo(?null, ?base),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  Stats_Simple_ReachableVirtualMethodInvocation(?invocation).
+
+Stats_Simple_EmptyVirtualMethodInvocation(?invocation) :-
+  Stats_Simple_ReachableVirtualMethodInvocation(?invocation),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  !Stats_Simple_InsensVarPointsTo(_, ?base).
+
+Stats_Simple_Application_VirtualMethodInvocation(?invocation) :-
+  ApplicationMethod(?method),
+  Instruction_Method(?invocation, ?method),
+  isVirtualMethodInvocation_Insn(?invocation).
+
+Stats_Simple_Application_PolymorphicCallSite(?from) :-
+  Stats_Simple_PolymorphicCallSite(?from),
+  Stats_Simple_Application_ReachableVirtualMethodInvocation(?from).
+
+Stats_Simple_Application_NullVirtualMethodInvocation(?invocation) :-
+  Value_Null(?null),
+  Stats_Simple_InsensVarPointsTo(?null, ?base),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation).
+
+Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation) :-
+  Stats_Simple_Application_ReachableVirtualMethodInvocation(?invocation),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  !Stats_Simple_InsensVarPointsTo(_, ?base).
+
+/***************************************************
+ * Casts
+ ***************************************************/
+
+Stats_Simple_ReachableCast(?inmethod, ?type, ?to, ?from) :-
+  Stats_Simple_AssignedVariable(?from),
+  AssignCast(?type, ?from, ?to, ?inmethod),
+  Reachable(?inmethod).
+
+Stats_Simple_PotentiallyFailingCast(?type, ?from, ?to) :-
+  Stats_Simple_ReachableCast(_, ?type, ?to, ?from),
+  Stats_Simple_InsensVarPointsTo(?value, ?from),
+  Value_Type(?value, ?valuetype),
+  !SupertypeOf(?type, ?valuetype).
+
+Stats_Simple_Application_Cast(?type, ?from, ?to, ?inmethod) :-
+  ApplicationMethod(?inmethod),
+  AssignCast(?type, ?from, ?to, ?inmethod).
+
+Stats_Simple_Application_ReachableCast(?inmethod, ?type, ?to, ?from) :-
+  ApplicationMethod(?inmethod),
+  Stats_Simple_ReachableCast(?inmethod, ?type, ?to, ?from).
+
+Stats_Simple_Application_PotentiallyFailingCast(?type, ?from, ?to) :-
+  Stats_Simple_Application_ReachableCast(_, ?type, ?to, ?from),
+  Stats_Simple_InsensVarPointsTo(?value, ?from),
+  Value_Type(?value, ?valuetype),
+  !SupertypeOf(?type, ?valuetype).
+
+/***************************************************/
+
+NewMetricMacro( "1.0", "var points-to (INS)", Stats_Simple_InsensVarPointsTo(_, _)).
+NewMetricMacro( "1.5", "var points-to (SENS)", VarPointsTo(_, _, _, _)).
+NewMetricMacro( "5.0", "app var points-to (INS)", Stats_Simple_Application_InsensVarPointsTo(_, _)).
+NewMetricMacro( "5.5", "app var points-to (SENS)", Stats_Simple_Application_VarPointsTo(_, _, _, _)).
+NewMetricMacro("10.0", "reachable variables (INS)", Stats_Simple_InsensReachableVar(_)).
+NewMetricMacro("10.5", "reachable variables (SENS)", Stats_Simple_ReachableVar(_, _)).
+
+NewMetricMacro( "2.0", "array index points-to (INS)", Stats_Simple_InsensArrayIndexPointsTo(_, _)).
+NewMetricMacro( "2.5", "array index points-to (SENS)", ArrayIndexPointsTo(_, _, _, _)).
+NewMetricMacro( "6.0", "app array index points-to (INS)", Stats_Simple_Application_InsensArrayIndexPointsTo(_, _)).
+NewMetricMacro( "6.5", "app array index points-to (SENS)", Stats_Simple_Application_ArrayIndexPointsTo(_, _, _, _)).
+
+NewMetricMacro( "3.0", "instance field points-to (INS)", Stats_Simple_InsensInstanceFieldPointsTo(_, _, _)).
+NewMetricMacro( "3.5", "instance field points-to (SENS)", InstanceFieldPointsTo(_, _, _, _, _)).
+NewMetricMacro( "4.0", "static field points-to (INS)", Stats_Simple_InsensStaticFieldPointsTo(_, _)).
+NewMetricMacro( "4.5", "static field points-to (SENS)", StaticFieldPointsTo(_, _, _)).
+NewMetricMacro( "7.0", "app instance field points-to (INS)", Stats_Simple_Application_InsensInstanceFieldPointsTo(_, _, _)).
+NewMetricMacro( "7.5", "app instance field points-to (SENS)", Stats_Simple_Application_InstanceFieldPointsTo(_, _, _, _, _)).
+
+NewMetricMacro( "8.0", "call graph edges (INS)", Stats_Simple_InsensCallGraphEdge(_, _)).
+NewMetricMacro( "8.5", "call graph edges (SENS)", CallGraphEdge(_, _, _, _)).
+NewMetricMacro( "9.0", "non-reachable app concrete methods", Stats_Simple_NonReachableApplicationConcreteMethod(_)).
+NewMetricMacro("11.0", "reachable methods (INS)", Reachable(_)).
+NewMetricMacro("11.5", "reachable methods (SENS)", ReachableContext(_, _)).
+
+NewMetricMacro("12.0", "virtual call sites (statically)", isVirtualMethodInvocation_Insn(_)).
+NewMetricMacro("13.0", "reachable virtual call sites", Stats_Simple_ReachableVirtualMethodInvocation(_)).
+NewMetricMacro("14.0", "polymorphic virtual call sites", Stats_Simple_PolymorphicCallSite(_)).
+NewMetricMacro("15.0", "null virtual call sites", Stats_Simple_NullVirtualMethodInvocation(_)).
+NewMetricMacro("15.5", "empty virtual call sites", Stats_Simple_EmptyVirtualMethodInvocation(_)).
+NewMetricMacro("16.0", "app virtual call sites (statically)", Stats_Simple_Application_VirtualMethodInvocation(_)).
+NewMetricMacro("17.0", "app reachable virtual call sites", Stats_Simple_Application_ReachableVirtualMethodInvocation(_)).
+NewMetricMacro("18.0", "app polymorphic virtual call sites", Stats_Simple_Application_PolymorphicCallSite(_)).
+NewMetricMacro("19.0", "app null virtual call sites", Stats_Simple_Application_NullVirtualMethodInvocation(_)).
+NewMetricMacro("19.5", "app empty virtual call sites", Stats_Simple_Application_EmptyVirtualMethodInvocation(_)).
+
+NewMetricMacro("20.0", "casts (statically)", AssignCast(_, _, _, _)).
+NewMetricMacro("21.0", "reachable casts", Stats_Simple_ReachableCast(_, _, _, _)).
+NewMetricMacro("22.0", "reachable casts that may fail", Stats_Simple_PotentiallyFailingCast(_, _, _)).
+NewMetricMacro("23.0", "app casts (statically)", Stats_Simple_Application_Cast(_, _, _, _)).
+NewMetricMacro("24.0", "app reachable casts", Stats_Simple_Application_ReachableCast(_, _, _, _)).
+NewMetricMacro("25.0", "app reachable casts that may fail", Stats_Simple_Application_PotentiallyFailingCast(_, _, _)).
+
+//NewMetricMacro("50.0", "call sites that did (not) get refined", SiteToRefine(_)).
+//NewMetricMacro("51.0", "allocation sites that did (not) get refined", ValueToRefine(_)).
+
+/***************************************************
+ * Reflection
+ ***************************************************/
+
+#ifdef REFLECTION
+Stats_Simple_Reflection_InsensArrayIndexPointsTo(?value, ?basevalue),
+Stats_Simple_Reflection_ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue) :-
+  ReflectiveValue(?value),
+  ArrayIndexPointsTo(?hctx, ?value, ?baseHCtx, ?basevalue).
+
+Stats_Simple_Reflection_InsensVarPointsTo(?value, ?var),
+Stats_Simple_Reflection_VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+  ReflectiveValue(?value),
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+Stats_Simple_Reflection_InsensInstanceFieldPointsTo(?value, ?sig, ?basevalue),
+Stats_Simple_Reflection_InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue) :-
+  ReflectiveValue(?value),
+  InstanceFieldPointsTo(?hctx, ?value, ?sig, ?baseHCtx, ?basevalue).
+
+Stats_Simple_forName(?invocation) :-
+  java_lang_Class_forName(?invocation, ?inmethod),
+  Reachable(?inmethod).
+
+Stats_Simple_Class_newInstance(?invocation) :-
+  java_lang_Class_newInstance(?invocation, _, ?from),
+  Var_DeclaringMethod(?from, ?inmethod),
+  Reachable(?inmethod).
+
+Stats_Simple_Constructor_newInstance(?invocation) :-
+  java_lang_reflect_Constructor_newInstance(?invocation, _, ?from),
+  Var_DeclaringMethod(?from, ?inmethod),
+  Reachable(?inmethod).
+
+NewMetricMacro("30.0", "var points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensVarPointsTo(_, _)).
+NewMetricMacro("30.5", "var points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_VarPointsTo(_, _, _, _)).
+NewMetricMacro("31.0", "array index points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensArrayIndexPointsTo(_, _)).
+NewMetricMacro("31.5", "array index points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_ArrayIndexPointsTo(_, _, _, _)).
+NewMetricMacro("32.0", "instance field points-to (to a reflective value) (INS)", Stats_Simple_Reflection_InsensInstanceFieldPointsTo(_, _, _)).
+NewMetricMacro("32.5", "instance field points-to (to a reflective value) (SENS)", Stats_Simple_Reflection_InstanceFieldPointsTo(_, _, _, _, _)).
+NewMetricMacro("35.0", "reachable 'forName' (INS)", Stats_Simple_forName(_)).
+NewMetricMacro("36.0", "reachable 'Class.newInstance' (INS)", Stats_Simple_Class_newInstance(_)).
+NewMetricMacro("37.0", "reachable 'Constructor.newInstance' (INS)", Stats_Simple_Constructor_newInstance(_)).
+#endif
+
+/***************************************************
+ * Information Flow
+ ***************************************************/
+
+#ifdef INFORMATION_FLOW
+Stats_Simple_InsensTaintedVarPointsTo(?value, ?var) :-
+  TaintedVarPointsTo(?value, _, ?var).
+
+Stats_Simple_Application_InsensTaintedVarPointsTo(?value, ?var),
+Stats_Simple_Application_TaintedVarPointsTo(?value, ?ctx, ?var) :-
+  ApplicationMethod(?meth),
+  Var_DeclaringMethod(?var, ?meth),
+  TaintedVarPointsTo(?value, ?ctx, ?var).
+
+Stats_Simple_LeakingTaintedInformation(?invocation, ?objStr) :-
+  LeakingTaintedInformation(_, _, _, ?invocation, ?objStr).
+
+Stats_Simple_OriginalTaintedValue(?id) :-
+  SourceFromTaintedValue(_, ?id).
+
+NewMetricMacro("40.0", "tainted flows-to (INS)", Stats_Simple_InsensTaintedVarPointsTo(_, _)).
+NewMetricMacro("40.5", "tainted flows-to (SENS)", TaintedVarPointsTo(_, _, _)).
+NewMetricMacro("41.0", "app tainted flows-to (INS)", Stats_Simple_Application_InsensTaintedVarPointsTo(_, _)).
+NewMetricMacro("41.5", "app tainted flows-to (SENS)", Stats_Simple_Application_TaintedVarPointsTo(_, _, _)).
+NewMetricMacro("42.0", "total tainted values", TaintedValue(_)).
+NewMetricMacro("43.0", "original tainted values", Stats_Simple_OriginalTaintedValue(_)).
+NewMetricMacro("44.0", "sink variables (SENS)", LeakingSinkVariable(_, _, _, _)).
+NewMetricMacro("45.0", "total leaks", Stats_Simple_LeakingTaintedInformation(_, _)).
+#endif
+
+/***************************************************
+ * Open Programs
+ ***************************************************/
+
+#ifdef OPEN_PROGRAMS
+//Stats_Simple_ReachableFromEntryPoint(?method) :-
+//  MockReachableContext(_, ?method).
+
+NewMetricMacro("60.0", "Entry Points", EntryPoint(_)).
+NewMetricMacro("61.0", "Mock Objects", MockObject(_, _)).
+NewMetricMacro("61.1", "Mock Objects for Receivers", MockObjFromEntryPoint(_)).
+NewMetricMacro("61.2", "Mock Objects for Fields", MockObjFromField(_)).
+NewMetricMacro("61.3", "Mock Objects for Arrays", MockObjFromArray(_)).
+NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
+//NewMetricMacro("62.0", "Methods Reachable from open entry points (SENS)", MockReachableContext(_,_)).
+//NewMetricMacro("62.5", "Methods Reachable from open entry points (INS)", Stats_Simple_ReachableFromEntryPoint(_)).
+#endif
+
+/***************************************************
+ * Memory Dump
+ ***************************************************/
+
+#ifdef ANALYZE_MEMORY_DUMP
+NewMetricMacro("80.0", "Dynamic Heap Allocations (INS)", DynamicHeapAllocation(_,_)).
+NewMetricMacro("81.0", "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_)).
+NewMetricMacro("82.0", "Unmatched Heap Allocations..", UnmatchedDynamicNormalHeapAllocation(_,_,_,_)).
+NewMetricMacro("83.0", "..of which were reconstructed", ReconstructedUnmatchedDynamicHeapAllocation(_, _)).
+NewMetricMacro("84.0", "Contexts", DynamicContext(_)).
+
+NotLibraryHeapAllocation(?heap) :-
+  DynamicHeapAllocation(_, ?heap),
+  !AssignNormalHeapAllocation(?heap, _, _).
+
+// Instance fields
+Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap) :-
+  DynamicInstanceFieldPointsTo(?fld, _, ?heap, _, ?baseHeap).
+
+NotLibraryHeapAllocation(?heap) :-
+  ApplicationMethod(?meth),
+  AssignNormalHeapAllocation(?heap, _, ?meth).
+
+Stats_Simple_Application_InsensDynamicInstanceFieldPointsTo(?baseHeap, ?fld, ?heap) :-
+  NotLibraryHeapAllocation(?heap),
+  Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap).
+
+NewMetricMacro("85.0", "Dynamic instance field points-to (INS)", Stats_Simple_InsensDynamicInstanceFieldPointsTo(_,_,_)).
+NewMetricMacro("86.0", "Dynamic instance field points-to (SENS)", DynamicInstanceFieldPointsTo(_,_,_,_,_)).
+
+// Static fields
+Stats_Simple_InsensDynamicStaticFieldPointsTo(?fld, ?heap) :-
+  DynamicStaticFieldPointsTo(?fld, _, ?heap).
+
+Stats_Simple_Application_InsensDynamicStaticFieldPointsTo(?fld, ?heap) :-
+  Stats_Simple_InsensDynamicStaticFieldPointsTo(?fld, ?heap),
+  Field_DeclaringType(?fld, ?cls),
+  ApplicationClass(?cls).
+
+NewMetricMacro("87.0", "Dynamic static field points-to (INS)", Stats_Simple_InsensDynamicStaticFieldPointsTo(_,_)).
+NewMetricMacro("88.0", "Dynamic static field points-to (SENS)", DynamicStaticFieldPointsTo(_,_,_)).
+NewMetricMacro("89.0", "App Dynamic static field points-to (INS)", Stats_Simple_Application_InsensDynamicStaticFieldPointsTo(_,_)).
+
+// Array index
+Stats_Simple_InsensDynamicArrayIndexPointsTo(?heap, ?baseHeap) :-
+  DynamicArrayIndexPointsTo(_, ?heap, _, ?baseHeap).
+
+NewMetricMacro("90.0", "Dynamic array index points-to (INS)", Stats_Simple_InsensDynamicArrayIndexPointsTo(_,_)).
+NewMetricMacro("91.0", "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
+
+// Call graph and reachability
+Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) :-
+  DynamicCallGraphEdge(_, ?toMeth, ?invocation, _, ?fromMeth).
+
+NewMetricMacro("92.0", "Dynamic call graph edges (INS)", Stats_Simple_InsensDynamicCallGraphEdge(_,_,_)).
+NewMetricMacro("93.0", "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_,_,_)).
+NewMetricMacro("94.0", "Dynamic reachable methods (INS)", DynamicReachableMethod(_)).
+NewMetricMacro("95.0", "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).
+#endif

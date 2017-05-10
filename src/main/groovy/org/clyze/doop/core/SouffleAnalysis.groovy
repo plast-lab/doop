@@ -38,6 +38,8 @@ class SouffleAnalysis extends DoopAnalysis {
         initDatabase()
         basicAnalysis()
         mainAnalysis()
+        produceStats()
+        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir)
     }
 
     @Override
@@ -133,8 +135,6 @@ class SouffleAnalysis extends DoopAnalysis {
             def analysisFile = FileOps.findFileOrThrow("${outDir}/${name}.dl", "Missing ${outDir}/${name}.dl")
             analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
         }
-
-        runSouffle(Integer.parseInt(options.JOBS.value.toString()), factsDir, outDir)
     }
 
     private void runSouffle(int jobs, File factsDir, File outDir) {
@@ -154,9 +154,16 @@ class SouffleAnalysis extends DoopAnalysis {
             logger.info "Compiling datalog to produce C++ program and executable with souffle"
             logger.info "Souffle command: ${compilationCommand}"
 
+            deleteQuietly(analysisCacheDir)
+            analysisCacheDir.mkdirs()
+
+            // Create a subshell to temporarely cd to the analysis cache directory and execute the compilation
+            // command, as the analysis executable is created at the directory level of the command's invocation.
+            def subshellCommand = "(cd ${analysisCacheDir} && " + compilationCommand + ")"
+
             def ignoreCounter = 0
             long t = timing {
-                executor.execute(compilationCommand) { String line ->
+                executor.execute(subshellCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
                              line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -169,17 +176,16 @@ class SouffleAnalysis extends DoopAnalysis {
             }
 
             logger.info "Compilation time (sec): ${t}"
-
-            // The analysis executable is created at the directory level of the doop invocation so we have to move it under the outDir
-            analysisCacheDir.mkdirs()
-            executor.execute("mv ${name} ${analysisCacheDir}")
             logger.info "Running analysis executable"
         }
         else {
             logger.info "Running cached analysis executable"
         }
 
-        def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir.absolutePath -D$outDir.absolutePath"
+        deleteQuietly(database)
+        database.mkdirs()
+
+        def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir -D$database"
 
         logger.info executionCommand
         long t = timing { executor.execute(executionCommand) }
@@ -199,7 +205,7 @@ class SouffleAnalysis extends DoopAnalysis {
             return
         }
 
-        def macros    = "${Doop.souffleAnalysesPath}/${name}/macros.logic"
+        def macros    = "${Doop.souffleAnalysesPath}/${name}/macros.dl"
         def statsPath = "${Doop.souffleAddonsPath}/statistics"
         cpp.includeAtStart("${outDir}/${name}.dl", "${statsPath}/statistics-simple.dl", macros)
 
