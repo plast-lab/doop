@@ -1,16 +1,14 @@
 package org.clyze.deepdoop.system
 
-import java.nio.file.Path
-
 class Result {
 
 	enum Kind { LOGIC, IMPORT, EXPORT, CMD }
 
 	Kind kind
-	Path file
+	File file
 	String cmd
 
-	Result(Kind kind, Path file) {
+	Result(Kind kind, File file) {
 		this.kind = kind
 		this.file = file
 		this.cmd  = null

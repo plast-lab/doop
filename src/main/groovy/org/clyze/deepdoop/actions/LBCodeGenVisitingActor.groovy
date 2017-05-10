@@ -23,7 +23,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	Set<String>              handledAtoms
 
 	Path                     outDir
-	Path                     latestFile
+	File                     latestFile
 	List<Result>             results
 
 	LBCodeGenVisitingActor(String outDirName) {
@@ -230,7 +230,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 		}
 	}
 
-	void emitFilePredicate(IAtom atom, Declaration d, Path file) {
+	void emitFilePredicate(IAtom atom, Declaration d, File file) {
 		def atomName = atom.name
 		def vars = VariableExpr.genTempVars(atom.arity)
 
@@ -252,28 +252,17 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 	}
 
 
-	Path create(String prefix, String suffix) {
-		try {
-			return Files.createTempFile(outDir, prefix, suffix)
-		}
-		catch (IOException e) {
-			// TODO
-		}
-		return null
+	File create(String prefix, String suffix) {
+		Files.createTempFile(outDir, prefix, suffix).toFile()
 	}
-	void write(Path file, String data) {
-		write(file, [data])
+	void write(File file, String data) {
+		file << data << "\n"
 	}
-	void write(Path file, List<String> data) {
-		try {
-			Files.write(file, data, Charset.forName("UTF-8"), StandardOpenOption.APPEND)
-		}
-		catch (IOException e) {
-			// TODO
-		}
+	void write(File file, List<String> data) {
+		data.each { write file, it }
 	}
 
-	def <T extends IVisitable> void handle(Set<T> set, Path file) {
+	def <T extends IVisitable> void handle(Set<T> set, File file) {
 		Set<T> toRemove = []
 		set.each {
 			if (allHandledFor(it)) {
@@ -291,6 +280,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 		return atoms.every{ handledAtoms.contains(it) }
 	}
+
 
 	void enter(Program n) {}
 
