@@ -22,7 +22,8 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         def lines = []
 
         if (analysis.options.SOUFFLE.value) {
-
+            def file = new File("${analysis.database}/Stats_Runtime.csv")
+            file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
         }
         else {
             analysis.connector.processPredicate("Stats:Runtime") { String line ->

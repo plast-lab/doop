@@ -55,7 +55,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
-        touch(analysis)
+        analysis.createNewFile()
 
         initDatabase()
         basicAnalysis()
@@ -64,6 +64,14 @@ class SouffleAnalysis extends DoopAnalysis {
 
         compileAnalysis()
         executeAnalysis(Integer.parseInt(options.JOBS.value.toString()))
+
+        int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+        File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+        runtimeMetricsFile.createNewFile()
+        runtimeMetricsFile.append("analysis compilation time (sec)\t$compilationTime\n")
+        runtimeMetricsFile.append("analysis execution time (sec)\t$executionTime\n")
+        runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+        runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
     }
 
     @Override
