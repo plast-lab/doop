@@ -78,7 +78,7 @@ class SoundMayAnalysis extends ClassicAnalysis {
             .enableLineMarkers()
             .preprocess(outFile, "${analysisPath}/analysis.logic")
             .disableLineMarkers()
-        Compiler.compile(outDir.toString(), outFile).each { result ->
+        Compiler.compileToLB(outFile, outDir).each { result ->
             if (result.kind == Result.Kind.LOGIC)
                 connector.queue()
                     .startTimer()

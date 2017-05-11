@@ -1,7 +1,7 @@
 package org.clyze.deepdoop.actions
 
+import groovy.transform.InheritConstructors
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import org.clyze.deepdoop.datalog.*
 import org.clyze.deepdoop.datalog.clause.*
@@ -11,39 +11,21 @@ import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 import org.clyze.deepdoop.system.*
 
-class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String>, TDummyActor<String> {
+@InheritConstructors
+class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
-	AtomCollectingActor      acActor
 	Set<String>              globalAtoms
-	Map<IVisitable, String>  codeMap
 
 	Component                unhandledGlobal
-	Set<String>              handledAtoms
+	Set<String>              handledAtoms = [] as Set
 
-	Path                     outDir
 	File                     latestFile
-	List<Result>             results
 
 	boolean                  inDecl
 
-	LBCodeGenVisitingActor(String outDirName) {
-		// Implemented this way, because Java doesn't allow usage of "this"
-		// keyword before all implicit/explicit calls to super/this have
-		// returned
-		super(null)
-		actor        = this
-
-		acActor      = new AtomCollectingActor()
-		codeMap      = [:]
-
-		handledAtoms = [] as Set
-
-		results      = []
-		outDir       = Paths.get(outDirName)
-	}
-
-	String visit(Program flatP) {
+	String visit(Program p) {
 		// Transform program before visiting nodes
+		def flatP = p.accept(new PostOrderVisitor<IVisitable>(new NormalizingActor(p.comps))) as Program
 		def n = flatP.accept(new InitVisitingActor()) as Program
 		return super.visit(n)
 	}
@@ -284,7 +266,7 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 
 	File create(String prefix, String suffix) {
-		Files.createTempFile(outDir, prefix, suffix).toFile()
+		Files.createTempFile(Paths.get(outDir.name), prefix, suffix).toFile()
 	}
 	void write(File file, String data) {
 		file << data << "\n"

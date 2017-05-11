@@ -9,8 +9,16 @@ import org.clyze.deepdoop.datalog.*
 
 class Compiler {
 
-	static List<Result> compile(String outDir, String filename) {
-		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename")
+	static List<Result> compileToLB(String filename, File outDir) {
+		compile(filename, new LBCodeGenVisitingActor(outDir))
+	}
+
+	static List<Result> compileToSouffle(String filename, File outDir) {
+		compile(filename, new SouffleCodeGenVisitingActor(outDir))
+	}
+
+	private static List<Result> compile(String filename, DefaultCodeGenVisitingActor codeGenActor) {
+		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename with ${codeGenActor.class.name}")
 
 		def parser = new DatalogParser(
 				new CommonTokenStream(
@@ -19,11 +27,7 @@ class Compiler {
 		def listener = new DatalogListenerImpl(filename)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
-		def p = listener.program
-		def flatP = p.accept(new PostOrderVisitor<IVisitable>(new NormalizingActor(p.comps))) as Program
-
-		def codeGenActor = new LBCodeGenVisitingActor(outDir)
-		codeGenActor.visit(flatP)
-		return codeGenActor.getResults()
+		codeGenActor.visit(listener.program)
+		return codeGenActor.results
 	}
 }
