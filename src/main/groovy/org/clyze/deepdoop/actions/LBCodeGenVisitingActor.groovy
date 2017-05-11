@@ -11,7 +11,7 @@ import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 import org.clyze.deepdoop.system.*
 
-class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String> {
+class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<String>, TDummyActor<String> {
 
 	AtomCollectingActor      acActor
 	Set<String>              globalAtoms
@@ -311,37 +311,4 @@ class LBCodeGenVisitingActor extends PostOrderVisitor<String> implements IActor<
 
 		return atoms.every{ handledAtoms.contains(it) }
 	}
-
-
-	void enter(Program n) {}
-
-	void enter(CmdComponent n) {}
-	String exit(CmdComponent n, Map<IVisitable, String> m) { null }
-	void enter(Component n) {}
-	String exit(Component n, Map<IVisitable, String> m) { null }
-
-	void enter(Constraint n) {}
-	void enter(RefModeDeclaration n) {}
-	void enter(Rule n) {}
-
-	void enter(AggregationElement n) {}
-	void enter(ComparisonElement n) {}
-	void enter(GroupElement n) {}
-	void enter(LogicalElement n) {}
-	void enter(NegationElement n) {}
-
-	void enter(Constructor n) {}
-	void enter(Directive n) {}
-	void enter(Entity n) {}
-	void enter(Functional n) {}
-	void enter(Predicate n) {}
-	void enter(Primitive n) {}
-	void enter(RefMode n) {}
-	void enter(Stub n) {}
-
-	void enter(BinaryExpr n) {}
-	void enter(ConstantExpr n) {}
-	void enter(FunctionalHeadExpr n) {}
-	void enter(GroupExpr n) {}
-	void enter(VariableExpr n) {}
 }

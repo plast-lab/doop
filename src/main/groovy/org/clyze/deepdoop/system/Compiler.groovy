@@ -20,7 +20,7 @@ class Compiler {
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 
 		def p = listener.program
-		def flatP = p.accept(new PostOrderVisitor<IVisitable>(new FlatteningActor(p.comps))) as Program
+		def flatP = p.accept(new PostOrderVisitor<IVisitable>(new NormalizingActor(p.comps))) as Program
 
 		def codeGenActor = new LBCodeGenVisitingActor(outDir)
 		codeGenActor.visit(flatP)

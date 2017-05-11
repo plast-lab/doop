@@ -7,11 +7,11 @@ import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 
-class FlatteningActor implements IActor<IVisitable> {
+class NormalizingActor implements IActor<IVisitable> {
 
 	Map<String, Component> allComps
 
-	FlatteningActor(Map<String, Component> allComps) {
+	NormalizingActor(Map<String, Component> allComps) {
 		this.allComps = allComps
 	}
 

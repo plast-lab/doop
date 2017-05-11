@@ -8,20 +8,14 @@ import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 import org.clyze.deepdoop.system.*
 
-class AtomCollectingActor implements IActor<IVisitable> {
+class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
-	Map<IVisitable, Map<String, IAtom>> declAtoms
-	Map<IVisitable, Map<String, IAtom>> usedAtoms
-
-	AtomCollectingActor() {
-		declAtoms = [:]
-		usedAtoms = [:]
-	}
+	Map<IVisitable, Map<String, IAtom>> declAtoms = [:]
+	Map<IVisitable, Map<String, IAtom>> usedAtoms = [:]
 
 	Map<String, IAtom> getDeclaringAtoms(IVisitable n) {
 		declAtoms[n] ?: [:]
 	}
-
 	Map<String, IAtom> getUsedAtoms(IVisitable n) {
 		usedAtoms[n] ?: [:]
 	}
@@ -148,11 +142,7 @@ class AtomCollectingActor implements IActor<IVisitable> {
 	}
 
 	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> usedMap = [:]
-		usedMap[n.name] = n
-		n.keyExprs.each{ usedMap << getUsedAtoms(it) }
-		if (n.valueExpr) usedMap << getUsedAtoms(n.valueExpr)
-		usedAtoms[n] = usedMap
+		exit(n as Functional, m)
 		return n
 	}
 
@@ -211,38 +201,4 @@ class AtomCollectingActor implements IActor<IVisitable> {
 		usedAtoms[n] = getUsedAtoms(n.expr)
 		return n
 	}
-
-	void enter(Program n) {}
-	void enter(CmdComponent n) {}
-	void enter(Component n) {}
-
-	void enter(Constraint n) {}
-	void enter(Declaration n) {}
-	void enter(RefModeDeclaration n) {}
-	void enter(Rule n) {}
-
-	void enter(AggregationElement n) {}
-	void enter(ComparisonElement n) {}
-	void enter(GroupElement n) {}
-	void enter(LogicalElement n) {}
-	void enter(NegationElement n) {}
-
-	void enter(Constructor n) {}
-	void enter(Directive n) {}
-	void enter(Entity n) {}
-	void enter(Functional n) {}
-	void enter(Predicate n) {}
-	void enter(Primitive n) {}
-	IVisitable exit(Primitive n, Map<IVisitable, IVisitable> m) { null }
-	void enter(RefMode n) {}
-	void enter(Stub n) {}
-	IVisitable exit(Stub n, Map<IVisitable, IVisitable> m) { null }
-
-	void enter(BinaryExpr n) {}
-	void enter(ConstantExpr n) {}
-	IVisitable exit(ConstantExpr n, Map<IVisitable, IVisitable> m) { null }
-	void enter(FunctionalHeadExpr n) {}
-	void enter(GroupExpr n) {}
-	void enter(VariableExpr n) {}
-	IVisitable exit(VariableExpr n, Map<IVisitable, IVisitable> m) { null }
 }
