@@ -11,8 +11,7 @@ command Bar {
 	lang:cmd:import(`A).
 	lang:cmd:import(`B).
 	A(x, y) -> string(x), string(y).
-	B(x) -> int(x).
-	B(1).
+	lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
 }
 as S2
 

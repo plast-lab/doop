@@ -1,17 +1,11 @@
 component Foo {
-  A(x) -> .
+P(x) <- Q(x).
+Bar(x) <- P(x), Bar@past(x).
 }
-as S1
+as Foo1, Foo2
 
-component Baz {
-  A(x) -> .
-}
-as S2
+Q(1).
+Q(2).
 
-component FooBaz {
-  P(x, y) -> int(x), A@past(y).
-}
-as S3
-
-S1 {*}-> S3
-S2 {*}-> S3
+Foo1 {*} -> Foo2
+Foo2 {*} -> .

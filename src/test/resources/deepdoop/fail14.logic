@@ -1,7 +1,7 @@
 component Foo {
-	P(x) -> string(x).
-}
+  P(x) <- x = 10.
+  BaZ(x, y) <- P(x), P(y).
+  BarBaz(x) <- BaZ(_, x).
+} as Foo1
 
-Bar as S1
-
-S1 { * } -> .
+Foo1 { P, Bar } -> .

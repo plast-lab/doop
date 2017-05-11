@@ -1,9 +1,7 @@
-P(x) -> string(x).
-
 component Foo {
-	P1(x) <- P(x).
-	P1(x) -> string(x1).
+	P(x) -> string(x).
 }
-as S1
+
+Bar as S1
 
 S1 { * } -> .

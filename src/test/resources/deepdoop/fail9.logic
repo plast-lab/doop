@@ -1,30 +1,12 @@
 P(x) -> string(x).
-Q(x, y) -> string(x), int(y).
-
-Q(x, y) <- P(x), y = 10.
 
 component Foo {
 	P1(x) <- P(x).
-	P1(x) -> string(x).
 }
 as S1
-
-component Baz {
-	Final(x, y) <- A@past(x,_), B@past(y).
-}
-as S3
 
 command Bar {
 	lang:cmd:EVAL[] = "dir2/run.sh -flag1".
 	lang:cmd:export(`P1).
-	lang:cmd:import(`A).
-	lang:cmd:import(`B).
-	A(x, y) -> string(x), string(y).
-	B(x) -> int(x).
-	C(x) -> string(x).
 }
-as S2
-
-S1 { * } -> S2
-S2 { * } -> S3
-S3 { * } -> .
+as S2, S1
