@@ -128,6 +128,9 @@
 .decl Stats_Simple_Application_ReachableCast(?inmethod:Method, ?type:Type, ?to:Var, ?from:Var)
 .output Stats_Simple_Application_ReachableCast
 
+.decl Stats_Simple_Application_ReachableMethod(?method:Method)
+.output Stats_Simple_Application_ReachableMethod
+
 .decl Stats_Simple_Application_PotentiallyFailingCast(?type:Type, ?from:Var, ?to:Var)
 .output Stats_Simple_Application_PotentiallyFailingCast
 
@@ -216,6 +219,9 @@
 
 .decl Stats_Simple_InsensDynamicArrayIndexPointsTo(?heap:HeapAllocation, ?baseHeap:HeapAllocation)
 .output Stats_Simple_InsensDynamicArrayIndexPointsTo
+
+.decl Stats_Simple_Application_DynamicReachableMethod(?method:Method)
+.output Stats_Simple_Application_DynamicReachableMethod
 
 .decl Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth:Method, ?invocation:MethodInvocation, ?toMeth:Method)
 .output Stats_Simple_InsensDynamicCallGraphEdge
