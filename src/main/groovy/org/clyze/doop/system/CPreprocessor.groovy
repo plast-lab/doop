@@ -62,4 +62,23 @@ class CPreprocessor {
         FileUtils.copyFile(tmpFile, new File(output))
         FileUtils.deleteQuietly(tmpFile)
     }
+
+    void includeAtEnd(String output, String input, String... includes) {
+        _includeAtEnd(output, input, includes, this.&preprocess)
+    }
+
+    void includeAtEndIfExists(String output, String input, String... includes) {
+        _includeAtEnd(output, input, includes, this.&preprocessIfExists)
+    }
+
+    // Implementation method called by *includeAtEnd* and *includeAtEndIfExists* with the
+    // appropriate preprocess method (*preprocess* and *preprocessIfExists* respectively) as parameter.
+    private void _includeAtEnd(String output, String input, String... includes, Closure closure) {
+        def tmpFile = new File(FileUtils.getTempDirectory(), "outTmpFile")
+        closure(tmpFile.getCanonicalPath(), input, includes)
+        tmpFile.withInputStream { stream ->
+            new File(output) << stream
+        }
+        FileUtils.deleteQuietly(tmpFile)
+    }
 }
