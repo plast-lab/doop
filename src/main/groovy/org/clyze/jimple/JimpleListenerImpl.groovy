@@ -222,6 +222,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		}
 	}
 
+	void visitErrorNode(ErrorNode node) {
+		throw new RuntimeException("Parsing error in $filename")
+	}
+
 
 	Variable var(TerminalNode id, boolean isLocal) {
 		def line = id.symbol.line

@@ -57,7 +57,8 @@ class Parser {
 		path.mkdirs()
 		// XYZ/abc/def/Foo.jimple
 		def sourceFile = new File(path, "${className}.$extension")
-		FileUtils.copyFile(origFile, sourceFile)
+		if (origFile.canonicalPath != sourceFile.canonicalPath)
+			FileUtils.copyFile(origFile, sourceFile)
 		// abc/def/Foo.jimple
 		def sourceFileName = "${packageName}/${className}.${extension}" as String
 
