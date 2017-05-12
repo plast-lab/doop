@@ -9,7 +9,7 @@ import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 import org.clyze.deepdoop.system.*
 
-class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable> {
+class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
 	// For handling predicate names
 	String                   removeName
@@ -45,7 +45,8 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		n.accept(acVisitor)
 
 		// Global Component
-		def initP = Program.from(n.globalComp.accept(this) as Component, [:], [:], [] as Set)
+		def newg = n.globalComp.accept(this) as Component
+		def initP = Program.from(newg, [:], [:], [] as Set)
 
 
 		Map<String, Map<String, Set<String>>> reversePropsMap = [:]
@@ -362,36 +363,4 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		// * otherwise it is an external atom, thus leave the name unaltered
 		return new Tuple2(name, atom.stage)
 	}
-
-	void enter(Program n) {}
-	IVisitable exit(Program n, Map<IVisitable, IVisitable> m) { null }
-
-	void enter(CmdComponent n) {}
-	void enter(Component n) {}
-
-	void enter(Constraint n) {}
-	void enter(Declaration n) {}
-	void enter(RefModeDeclaration n) {}
-	void enter(Rule n) {}
-
-	void enter(AggregationElement n) {}
-	void enter(ComparisonElement n) {}
-	void enter(GroupElement n) {}
-	void enter(LogicalElement n) {}
-	void enter(NegationElement n) {}
-
-	void enter(Constructor n) {}
-	void enter(Directive n) {}
-	void enter(Entity n) {}
-	void enter(Functional n) {}
-	void enter(Predicate n) {}
-	void enter(Primitive n) {}
-	void enter(RefMode n) {}
-	void enter(Stub n) {}
-
-	void enter(BinaryExpr n) {}
-	void enter(ConstantExpr n) {}
-	void enter(FunctionalHeadExpr n) {}
-	void enter(GroupExpr n) {}
-	void enter(VariableExpr n) {}
 }

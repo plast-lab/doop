@@ -1,8 +1,6 @@
 package org.clyze.deepdoop.actions
 
 import groovy.transform.InheritConstructors
-import java.nio.file.Files
-import java.nio.file.Paths
 import org.clyze.deepdoop.datalog.*
 import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.component.*
@@ -35,7 +33,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		globalAtoms = acActor.getDeclaringAtoms(n.globalComp).keySet()
 
 		// Check that all used predicates have a declaration/definition
-		Set<String> allDeclAtoms        = [] + globalAtoms
+		def allDeclAtoms = globalAtoms
 		Map<String, IAtom> allUsedAtoms = [:]
 		n.comps.values().each{
 			allDeclAtoms += acActor.getDeclaringAtoms(it).keySet()
@@ -52,15 +50,15 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		def graph = new DependencyGraph(n)
 
 		unhandledGlobal  = new Component(n.globalComp)
-		Set<DependencyGraph.Node> currSet = []
+		def currSet = [] as Set
 		graph.getLayers().each{ layer ->
-			if (layer.any{ node -> node instanceof DependencyGraph.CmdNode }) {
+			if (layer.any{ it instanceof DependencyGraph.CmdNode }) {
 				emit(n, m, currSet)
 				emitCmd(n, m, layer)
 				currSet = [] as Set
 			}
 			else
-				currSet += layer
+				currSet << layer
 		}
 		emit(n, m, currSet)
 
@@ -68,32 +66,23 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	}
 
 	String exit(Constraint n, Map<IVisitable, String> m) {
-		def res = "${m[n.head]} -> ${m[n.body]}."
-		codeMap[n] = res
-		return res
+		"${m[n.head]} -> ${m[n.body]}."
 	}
 
-	void enter(Declaration n) {
-		inDecl = true
-	}
+	void enter(Declaration n) { inDecl = true }
+
 	String exit(Declaration n, Map<IVisitable, String> m) {
 		inDecl = false
 		def typeStr = n.types.collect{ m[it] }.join(', ')
-		def res = "${m[n.atom]} -> ${typeStr}."
-		codeMap[n] = res
-		return res
+		return "${m[n.atom]} -> ${typeStr}."
 	}
 
 	String exit(RefModeDeclaration n, Map<IVisitable, String> m) {
-		def res = "${m[n.types[0]]}, ${m[n.atom]} -> ${m[n.types[1]]}."
-		codeMap[n] = res
-		return res
+		"${m[n.types[0]]}, ${m[n.atom]} -> ${m[n.types[1]]}."
 	}
 
 	String exit(Rule n, Map<IVisitable, String> m) {
-		def res = m[n.head] + (n.body != null ? " <- " + m[n.body] : "") + "."
-		codeMap[n] = res
-		return res
+		m[n.head] + (n.body != null ? " <- " + m[n.body] : "") + "."
 	}
 
 	String exit(AggregationElement n, Map<IVisitable, String> m) {
@@ -113,21 +102,18 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(Constructor n, Map<IVisitable, String> m) {
 		def functionalStr = exit(n as Functional, m)
-		def res
 		if (inDecl) {
 			def directive = new Directive("lang:constructor", new Stub(n.type.name))
-			res = directive.accept(this) + ".\n" + functionalStr
+			return directive.accept(this) + ".\n" + functionalStr
 		}
 		else {
 			def entityStr = exit(n.type as Entity, m)
-			res = functionalStr + ", " + entityStr
+			return "$functionalStr, $entityStr"
 		}
-		codeMap[n] = res
-		return res
 	}
 
 	String exit(Directive n, Map<IVisitable, String> m) {
-		def middle = (n.backtick != null ? "`" + n.backtick.name : "")
+		def middle = (n.backtick ? "`" + n.backtick.name : "")
 		if (n.isPredicate)
 			return "${n.name}($middle)"
 		else
@@ -136,42 +122,39 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(Entity n, Map<IVisitable, String> m) {
 		def entityStr = exit(n as Predicate, m)
-		def res
 		if (inDecl) {
 			def directive = new Directive("lang:entity", new Stub(n.name))
-			res = directive.accept(this) + ".\n" + entityStr
+			return directive.accept(this) + ".\n" + entityStr
 		}
 		else {
-			res = entityStr
+			return entityStr
 		}
-		codeMap[n] = res
-		return res
 	}
 
 	String exit(Functional n, Map<IVisitable, String> m) {
 		def keyStr = n.keyExprs.collect { m[it] }.join(', ')
-		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
-		return n.name + stage + "[" + keyStr + "]" + (n.valueExpr != null ? " = " + m[n.valueExpr] : "")
+		def stage = ((n.stage == null || n.stage == "@past") ? "" : n.stage)
+		def valueStr = (n.valueExpr ? " = " + m[n.valueExpr] : "")
+		return "${n.name}$stage[$keyStr]$valueStr"
 	}
 
 	String exit(Predicate n, Map<IVisitable, String> m) {
 		def str = n.exprs.collect { m[it] }.join(', ')
-		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
-		return n.name + stage + "(" + str + ")"
+		def stage = ((n.stage == null || n.stage == "@past") ? "" : n.stage)
+		return "${n.name}$stage($str)"
 	}
 
 	String exit(Primitive n, Map<IVisitable, String> m) { "${n.name}(${m[n.var]})" }
 
 	String exit(RefMode n, Map<IVisitable, String> m) {
-		def stage = (n.stage == null || n.stage == "@past" ? "" : n.stage)
-		return n.name + stage + "(" + m[n.entityVar] + ":" + m[n.valueExpr] + ")"
+		def stage = ((n.stage == null || n.stage == "@past") ? "" : n.stage)
+		return "${n.name}$stage(${m[n.entityVar]}:${m[n.valueExpr]})"
 	}
 
-	String exit(Stub n, Map<IVisitable, String> m) { "STUB<${n.name}>" }
+	String exit(Stub n, Map<IVisitable, String> m) { throw UnsupportedOperationException() }
 
-	String exit(BinaryExpr n, Map<IVisitable, String> m) {
-		"${m[n.left]} ${n.op} ${m[n.right]}"
-	}
+
+	String exit(BinaryExpr n, Map<IVisitable, String> m) { "${m[n.left]} ${n.op} ${m[n.right]}" }
 
 	String exit(ConstantExpr n, Map<IVisitable, String> m) { n.value.toString() }
 
@@ -183,17 +166,17 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 
 	void emit(Program n, Map<IVisitable, String> m, Set<DependencyGraph.Node> nodes) {
-		latestFile = create("out_", ".logic")
+		latestFile = createUniqueFile("out_", ".logic")
 		results << new Result(Result.Kind.LOGIC, latestFile)
 
-		Set<String> currSet = []
+		def currSet = [] as Set
 		nodes.each { node ->
 			if (node instanceof DependencyGraph.CompNode) {
 				def c = n.comps[node.name]
 				List<String> l = []
-				c.declarations.each { l << codeMap[it] }
-				c.constraints.each { l << codeMap[it] }
-				c.rules.each { l << codeMap[it] }
+				c.declarations.each { l << m[it] }
+				c.constraints.each { l << m[it] }
+				c.rules.each { l << m[it] }
 				write(latestFile, l)
 			} else if (node instanceof DependencyGraph.CmdNode)
 				assert false
@@ -202,10 +185,11 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 				currSet << node.name
 			}
 		}
+		println handledAtoms
 
-		handle(unhandledGlobal.declarations, latestFile)
-		handle(unhandledGlobal.constraints,  latestFile)
-		handle(unhandledGlobal.rules,        latestFile)
+		handle(m, unhandledGlobal.declarations, latestFile)
+		handle(m, unhandledGlobal.constraints,  latestFile)
+		handle(m, unhandledGlobal.rules,        latestFile)
 	}
 
 	void emitCmd(Program n, Map<IVisitable, String> m, Set<DependencyGraph.Node> nodes) {
@@ -216,9 +200,9 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 			def c = n.comps[node.name] as CmdComponent
 
 			// Write frame rules from previous components
-			c.rules.each { write(latestFile, codeMap[it]) }
+			c.rules.each { write(latestFile, m[it]) }
 
-			latestFile = create("out_", "-export.logic")
+			latestFile = createUniqueFile("out_", "-export.logic")
 			results << new Result(Result.Kind.EXPORT, latestFile)
 
 			c.rules.each {
@@ -232,7 +216,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 			results << new Result(c.eval)
 
-			latestFile = create("out_", "-import.logic")
+			latestFile = createUniqueFile("out_", "-import.logic")
 			results << new Result(Result.Kind.IMPORT, latestFile)
 
 			c.declarations.each {
@@ -264,22 +248,11 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		])
 	}
 
-
-	File create(String prefix, String suffix) {
-		Files.createTempFile(Paths.get(outDir.name), prefix, suffix).toFile()
-	}
-	void write(File file, String data) {
-		file << data << "\n"
-	}
-	void write(File file, List<String> data) {
-		data.each { write file, it }
-	}
-
-	def <T extends IVisitable> void handle(Set<T> set, File file) {
+	def <T extends IVisitable> void handle(Map<IVisitable, String> m, Set<T> set, File file) {
 		Set<T> toRemove = []
 		set.each {
 			if (allHandledFor(it)) {
-				write(file, codeMap[it])
+				write(file, m[it])
 				toRemove << it
 			}
 		}

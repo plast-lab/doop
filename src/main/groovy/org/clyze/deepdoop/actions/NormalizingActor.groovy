@@ -5,9 +5,8 @@ import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.component.*
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
 
-class NormalizingActor implements IActor<IVisitable> {
+class NormalizingActor implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
 	Map<String, Component> allComps
 
@@ -83,43 +82,4 @@ class NormalizingActor implements IActor<IVisitable> {
 	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m)     { n }
 	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m)     { n }
 	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m)         { n }
-
-	void enter(Program n) {}
-
-	void enter(CmdComponent n) {}
-	void enter(Component n) {}
-
-	void enter(Constraint n) {}
-	void enter(Declaration n) {}
-	IVisitable exit(Declaration n, Map<IVisitable, IVisitable> m) { null }
-	void enter(RefModeDeclaration n) {}
-	IVisitable exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) { null }
-	void enter(Rule n) {}
-
-	void enter(AggregationElement n) {}
-	void enter(ComparisonElement n) {}
-	void enter(GroupElement n) {}
-	void enter(LogicalElement n) {}
-	void enter(NegationElement n) {}
-
-	void enter(Constructor n) {}
-	void enter(Directive n) {}
-	void enter(Entity n) {}
-	void enter(Functional n) {}
-	void enter(Predicate n) {}
-	void enter(Primitive n) {}
-	void enter(RefMode n) {}
-	void enter(Stub n) {}
-	IVisitable exit(Stub n, Map<IVisitable, IVisitable> m) { null }
-
-	void enter(BinaryExpr n) {}
-	IVisitable exit(BinaryExpr n, Map<IVisitable, IVisitable> m) { null }
-	void enter(ConstantExpr n) {}
-	IVisitable exit(ConstantExpr n, Map<IVisitable, IVisitable> m) { null }
-	void enter(FunctionalHeadExpr n) {}
-	IVisitable exit(FunctionalHeadExpr n, Map<IVisitable, IVisitable> m) { null }
-	void enter(GroupExpr n) {}
-	IVisitable exit(GroupExpr n, Map<IVisitable, IVisitable> m) { null }
-	void enter(VariableExpr n) {}
-	IVisitable exit(VariableExpr n, Map<IVisitable, IVisitable> m) { null }
 }

@@ -17,7 +17,7 @@ class Compiler {
 		compile(filename, new SouffleCodeGenVisitingActor(outDir))
 	}
 
-	private static List<Result> compile(String filename, DefaultCodeGenVisitingActor codeGenActor) {
+	private static List<Result> compile(String filename, def codeGenActor) {
 		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename with ${codeGenActor.class.name}")
 
 		def parser = new DatalogParser(

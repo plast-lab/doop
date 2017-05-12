@@ -26,10 +26,10 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(CmdComponent n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.exports.each{      m[it] = it.accept(this) }
-		n.imports.each{      m[it] = it.accept(this) }
+		n.exports.each{ m[it] = it.accept(this) }
+		n.imports.each{ m[it] = it.accept(this) }
 		n.declarations.each{ m[it] = it.accept(this) }
-		n.rules.each{        m[it] = it.accept(this) }
+		n.rules.each{ m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -37,8 +37,8 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		n.declarations.each{ m[it] = it.accept(this) }
-		n.constraints.each{  m[it] = it.accept(this) }
-		n.rules.each{        m[it] = it.accept(this) }
+		n.constraints.each{ m[it] = it.accept(this) }
+		n.rules.each{ m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -70,7 +70,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		m[n.head] = n.head.accept(this)
-		if (n.body != null) m[n.body] = n.body.accept(this)
+		if (n.body) m[n.body] = n.body.accept(this)
 		return actor.exit(n, m)
 	}
 
@@ -115,7 +115,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		n.keyExprs.each{ m[it] = it.accept(this) }
-		if (n.valueExpr != null) m[n.valueExpr] = n.valueExpr.accept(this)
+		if (n.valueExpr) m[n.valueExpr] = n.valueExpr.accept(this)
 		m[n.type] = n.type.accept(this)
 		return actor.exit(n, m)
 	}
@@ -123,8 +123,8 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(Directive n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		if (n.backtick != null) m[n.backtick] = n.backtick.accept(this)
-		if (n.constant != null) m[n.constant] = n.constant.accept(this)
+		if (n.backtick) m[n.backtick] = n.backtick.accept(this)
+		if (n.constant) m[n.constant] = n.constant.accept(this)
 		return actor.exit(n, m)
 	}
 
@@ -139,7 +139,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		n.keyExprs.each{ m[it] = it.accept(this) }
-		if (n.valueExpr != null) m[n.valueExpr] = n.valueExpr.accept(this)
+		if (n.valueExpr) m[n.valueExpr] = n.valueExpr.accept(this)
 		return actor.exit(n, m)
 	}
 
