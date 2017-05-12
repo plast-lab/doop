@@ -1,10 +1,12 @@
 package org.clyze.deepdoop.datalog.element.atom
 
 import groovy.transform.Canonical
+import groovy.transform.EqualsAndHashCode
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.expr.*
 
 @Canonical
+@EqualsAndHashCode(callSuper = true)
 class Entity extends Predicate {
 
 	Entity(String name, String stage=null, IExpr expr) {

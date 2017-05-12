@@ -1,12 +1,10 @@
 package org.clyze.deepdoop.datalog.element.atom
 
 import groovy.transform.Canonical
-import groovy.transform.EqualsAndHashCode
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.expr.*
 
 @Canonical
-@EqualsAndHashCode(includeFields=true)
 class Predicate implements IAtom {
 
 	String name

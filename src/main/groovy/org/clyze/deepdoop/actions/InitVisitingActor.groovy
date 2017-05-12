@@ -195,9 +195,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
-		def newTypes = []
-		n.types.each{ newTypes << (m[it] as IAtom) }
-		return new Declaration(m[n.atom] as IAtom, newTypes)
+		new Declaration(m[n.atom] as IAtom, n.types.collect{ m[it] as IAtom })
 	}
 
 	RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
