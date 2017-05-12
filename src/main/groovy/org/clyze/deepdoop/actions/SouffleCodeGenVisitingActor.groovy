@@ -3,7 +3,6 @@ package org.clyze.deepdoop.actions
 import groovy.transform.InheritConstructors
 import org.clyze.deepdoop.datalog.*
 import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
@@ -20,7 +19,7 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		results << new Result(Result.Kind.LOGIC, currentFile)
 
 		// Transform program before visiting nodes
-		def normalP = p.accept(new PostOrderVisitor<IVisitable>(new NormalizingActor(p.comps))) as Program
+		def normalP = p.accept(new NormalizeVisitingActor(p.comps)) as Program
 		def n = normalP.accept(new InitVisitingActor()) as Program
 		return super.visit(n)
 	}

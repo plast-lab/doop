@@ -3,10 +3,8 @@ package org.clyze.deepdoop
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
-import org.clyze.deepdoop.actions.NormalizingActor
-import org.clyze.deepdoop.actions.IVisitable
+import org.clyze.deepdoop.actions.NormalizeVisitingActor
 import org.clyze.deepdoop.actions.LBCodeGenVisitingActor
-import org.clyze.deepdoop.actions.PostOrderVisitor
 import org.clyze.deepdoop.datalog.DatalogLexer
 import org.clyze.deepdoop.datalog.DatalogListenerImpl
 import org.clyze.deepdoop.datalog.DatalogParser
@@ -96,7 +94,7 @@ class DatalogSpec extends Specification  {
 
 		def p = listener.program
 
-		def v = new PostOrderVisitor<IVisitable>(new NormalizingActor(p.comps))
+		def v = new NormalizeVisitingActor(p.comps)
 		def flatP = p.accept(v) as Program
 
 		flatP.accept(new LBCodeGenVisitingActor("build/"))

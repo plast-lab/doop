@@ -6,11 +6,17 @@ import org.clyze.deepdoop.datalog.component.*
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 
-class NormalizingActor implements IActor<IVisitable>, TDummyActor<IVisitable> {
+class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
 	Map<String, Component> allComps
 
-	NormalizingActor(Map<String, Component> allComps) {
+	NormalizeVisitingActor(Map<String, Component> allComps) {
+		// Implemented this way, because Java doesn't allow usage of "this"
+		// keyword before all implicit/explicit calls to super/this have
+		// returned
+		super(null)
+		actor = this
+
 		this.allComps = allComps
 	}
 

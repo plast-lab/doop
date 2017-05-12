@@ -23,7 +23,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String visit(Program p) {
 		// Transform program before visiting nodes
-		def flatP = p.accept(new PostOrderVisitor<IVisitable>(new NormalizingActor(p.comps))) as Program
+		def flatP = p.accept(new NormalizeVisitingActor(p.comps)) as Program
 		def n = flatP.accept(new InitVisitingActor()) as Program
 		return super.visit(n)
 	}
