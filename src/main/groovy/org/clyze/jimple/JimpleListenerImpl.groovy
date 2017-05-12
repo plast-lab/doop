@@ -193,14 +193,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (ctx.IDENTIFIER(1))
 			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 
-		def methodClass = ctx.methodSig(0).IDENTIFIER(0).text
-		def methodName  = ctx.methodSig(0).IDENTIFIER(2).text
+		def methodClass = ctx.methodSig().IDENTIFIER(0).text
+		def methodName  = ctx.methodSig().IDENTIFIER(2).text
 		def c = methodInvoCounters[methodName] ?: 0
 		methodInvoCounters[methodName] = c+1
 
-		def line = ctx.methodSig(0).IDENTIFIER(0).symbol.line
-		def startCol = ctx.methodSig(0).IDENTIFIER(0).symbol.charPositionInLine
-		def endCol = getLastToken(ctx.methodSig(0)).symbol.charPositionInLine + 1
+		def line = ctx.methodSig().IDENTIFIER(0).symbol.line
+		def startCol = ctx.methodSig().IDENTIFIER(0).symbol.charPositionInLine
+		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 1
 
 		metadata.invocations << new MethodInvocation(
 			new Position(line, line, startCol, endCol),
