@@ -1,3 +1,0 @@
-MockObjFromArray(?obj) -> Value(?obj).
-MockObjFromField(?obj) -> Value(?obj).
-MockObjFromFormal(?obj) -> Value(?obj).

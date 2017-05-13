@@ -1,6 +1,7 @@
 #include "../../commonMacros.logic"
-#include "declarations.logic"
 
+
+MockObjFromFormal(?obj) -> Value(?obj).
 
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").
