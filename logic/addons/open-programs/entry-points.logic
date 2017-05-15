@@ -27,17 +27,15 @@ TopLevelEntryPoint(?method) <-
    Method:DeclaringType[?method] = ?class,
    ClassWithTopLevelEntryPoint(?class).
 
-#ifndef OPEN_PROGRAMS
-// The definition we currently want as default
-EntryPoint(?method) <-
-   TopLevelEntryPoint(?method).
-
-#else
-
+#ifdef OPEN_PROGRAMS
 // The original definition that Neville had
 EntryPoint(?method) <-
    PossibleEntryPoint(?method),
    Method:DeclaringType[?method] = ?class,
    Type:Id(?class:?typename),
    string:substring[?typename, 0, 4] = "java".
-#endig
+#else
+// The definition we currently want as default
+EntryPoint(?method) <-
+   TopLevelEntryPoint(?method).
+#endif

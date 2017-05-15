@@ -171,6 +171,7 @@ ContextForEntryPoint(?calleeCtx, ?method)
    MockObjectForType(?value, ?class),
 #ifndef MergeOpenProgramEntryPointMacro
    ImmutableHContext(?immutablehctx),
+   ?immutablehctx = ?immutablehctx, // avoid warning if unused
 #endif
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
    ImmutableContext(?calleeCtx),
@@ -198,13 +199,16 @@ StaticToActualType(?class, ?staticType) <-
 StaticToActualType(?type, ?type) <-
    ConcreteType(?type).
 
-//
 
+// The key point where all the mock objects are created. Triggers all the rest.
 MockObject(?value, ?class),
 Value:Mock:Cons[(Type:Id[(?class)]) + " (Mock)"] = ?value,
 Value:Type[?value] = ?class,
 Value(?value),
 Value:DeclaringType[?value] = ?class  <-
+#ifndef OPEN_PROGRAMS
+   // If we are not in open-program mode, only trigger logic if no main method exists
+   !MainMethodDeclaration(_),
+#endif
    ObjToMock(?class).
-
 
