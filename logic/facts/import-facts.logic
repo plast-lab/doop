@@ -508,6 +508,29 @@ _VirtualMethodInvocation(?ref, ?index, ?signature, ?base, ?method) ->
    _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
 
+// Dynamic method invocation
+
+lang:physical:storageModel[`_DynamicMethodInvocation] = "DelimitedFile".
+lang:physical:filePath[`_DynamicMethodInvocation] = "facts/DynamicMethodInvocation.facts".
+lang:physical:delimiter[`_DynamicMethodInvocation] = "\t".
+lang:physical:hasColumnNames[`_DynamicMethodInvocation] = false.
+
+_DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?method) ->
+   string(?ref),
+   int[32](?index),
+   string(?bootSignature),
+   string(?dynName),
+   string(?method).
+
++DynamicMethodInvocation:Insn(?x),
++Instruction:Id(?x:?instruction),
++Instruction:Index[?x] = ?index,
++Instruction:Method[?x] = ?method,
++DynamicMethodInvocation:Bootstrap[?x] = ?bootSignature,
++DynamicMethodInvocation:DynMethod[?x] = ?dynName <-
+   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?method).
+
+
 // Throw
 
 lang:physical:storageModel[`_Throw] = "DelimitedFile".

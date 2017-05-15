@@ -201,6 +201,7 @@ lang:entity(`MethodInvocation).
 lang:entity(`SpecialMethodInvocation:Insn).
 lang:entity(`StaticMethodInvocation:Insn).
 lang:entity(`VirtualMethodInvocation:Insn).
+lang:entity(`DynamicMethodInvocation:Insn).
 
 lang:entity(`UnsupportedInstruction).
 lang:entity(`AssignPhantomInvoke).
@@ -246,6 +247,7 @@ MethodInvocation(?insn)                -> Instruction(?insn).
 VirtualMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 SpecialMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 StaticMethodInvocation:Insn(?insn)     -> MethodInvocation(?insn).
+DynamicMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 
 UnsupportedInstruction(?insn)          -> Instruction(?insn).
 AssignPhantomInvoke(?insn)             -> UnsupportedInstruction(?insn).
@@ -462,6 +464,13 @@ VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
 
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
    MethodInvocation(?invocation), MethodDescriptor(?descriptor).
+
+// Dynamic Method Invocation
+DynamicMethodInvocation:Bootstrap[?invocation] = ?bootSignature ->
+   DynamicMethodInvocation:Insn(?invocation), Method(?bootSignature).
+
+DynamicMethodInvocation:DynMethod[?invocation] = ?dynName ->
+   DynamicMethodInvocation:Insn(?invocation), string(?dynName).
 
 // Static Method Invocation
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename ->
