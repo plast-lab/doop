@@ -62,6 +62,7 @@ public enum PredicateFile
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
     IF_VAR("IfVar"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
+    DYNAMIC_METHOD_INV("DynamicMethodInvocation"),
     THROW("Throw"),
     THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),

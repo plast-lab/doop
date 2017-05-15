@@ -12,14 +12,26 @@ class IrrelevantStmtSwitch implements StmtSwitch
     {
         Value right = stmt.getRightOp();
 
+        // An assignment involving invokedynamic is irrelevant if the
+        // bootstrap method is declared in a phantom class
+        if (right instanceof DynamicInvokeExpr) {
+            relevant = !(Options.v().allow_phantom_refs()
+                    && (right instanceof DynamicInvokeExpr)
+                    && ((DynamicInvokeExpr) right).getBootstrapMethodRef()
+                         .declaringClass()
+                         .isPhantom());
+        }
+
         // An assignment instruction is irrelevant if the right
         // hand side is an invoke expression of a method of a
         // phantom class
-        relevant = !(Options.v().allow_phantom_refs()
-                && (right instanceof InvokeExpr)
-                && ((InvokeExpr) right).getMethodRef()
-                .declaringClass()
-                .isPhantom());
+        else {
+            relevant = !(Options.v().allow_phantom_refs()
+                     && (right instanceof InvokeExpr)
+                     && ((InvokeExpr) right).getMethodRef()
+                         .declaringClass()
+                         .isPhantom());
+        }
     }
 
     public void caseBreakpointStmt(BreakpointStmt stmt)

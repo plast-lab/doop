@@ -786,6 +786,10 @@ class FactWriter {
         else if (expr instanceof SpecialInvokeExpr) {
             _db.add(SPECIAL_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), _rep.local(inMethod, (Local) ((InstanceInvokeExpr) expr).getBase()), methodId);
         }
+        else if (expr instanceof DynamicInvokeExpr) {
+            DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
+            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(di.getBootstrapMethodRef().resolve()), di.getMethodRef().name(), methodId);
+        }
         else {
             throw new RuntimeException("Cannot handle invoke expr: " + expr);
         }
