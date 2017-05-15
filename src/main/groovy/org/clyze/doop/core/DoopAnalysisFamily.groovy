@@ -362,7 +362,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<String>(
 					id:"OPEN_PROGRAMS",
 					name:"open-programs",
-					description:"Create analysis entry points and environment using various strategies: servlets-only, concrete-types, or oracle.",
+					description:"Create analysis entry points and environment using various strategies: servlets-only or concrete-types.",
 					value:null,
 					argName:"strategy",
 					forPreprocessor:true
@@ -376,6 +376,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new AnalysisOption<Boolean>(
 					id:"OPEN_PROGRAMS_IMMUTABLE_HCTX",
 					name:"open-programs-heap-context-insensitive-entrypoints",
+					value:false,
+					forPreprocessor:true
+			),
+			new AnalysisOption<Boolean>(
+					id:"IGNORE_MAIN_METHOD",
+					name:"ignore-main-method",
+					description:"If main class is not given explicitly, do not try to discover it from jar/filename info. Open-program analysis variant will be triggered in this case.",
 					value:false,
 					forPreprocessor:true
 			),
