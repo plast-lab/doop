@@ -403,6 +403,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 if (jarFile.getJarEntry("${jarName}.class")) {
                     logger.debug "The main class is automatically set to ${jarName}"
                     options.MAIN_CLASS.value = jarName
+                } else {
+                    logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
                 }
             }
         }
