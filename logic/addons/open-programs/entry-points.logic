@@ -1,9 +1,43 @@
 EntryPoint(?method) -> Method(?method).
 
-EntryPoint(?method) <-
+ClassHasPossibleEntryPoint(?class),
+PossibleEntryPoint(?method) <-
    !Method:Modifier("static", ?method),
    Method:DeclaringType[?method] = ?class,
-   Type:Id(?class:?typename),
    Method:Modifier("public", ?method),
-   !ClassModifier("private", ?class),
+   !ClassModifier("private", ?class).
+
+// Find highest level in the naming hierarchy that contains public
+// methods.
+ClassIsAboveOtherInNamingHierarchy(?classAbove, ?classBelow) <-
+   ClassHasPossibleEntryPoint(?classAbove),
+   ClassHasPossibleEntryPoint(?classBelow),
+   Type:Id(?classAbove:?nameAbove), Type:Id(?classBelow:?nameBelow),
+   // One's prefix before "." is a proper prefix of the other's prefix before "."
+   string:substring[?nameAbove,0,LastDot[?classAbove]+1] = ?prefixAbove,
+   string:substring[?nameBelow,0,LastDot[?classBelow]] = ?prefixBelow,
+   string:substring[?prefixBelow,0,string:length[?prefixAbove]] = ?prefixAbove.
+
+ClassWithTopLevelEntryPoint(?class) <-
+   ClassHasPossibleEntryPoint(?class),
+   !ClassIsAboveOtherInNamingHierarchy(_, ?class).
+
+TopLevelEntryPoint(?method) <-
+   PossibleEntryPoint(?method),
+   Method:DeclaringType[?method] = ?class,
+   ClassWithTopLevelEntryPoint(?class).
+
+#ifndef OPEN_PROGRAMS
+// The definition we currently want as default
+EntryPoint(?method) <-
+   TopLevelEntryPoint(?method).
+
+#else
+
+// The original definition that Neville had
+EntryPoint(?method) <-
+   PossibleEntryPoint(?method),
+   Method:DeclaringType[?method] = ?class,
+   Type:Id(?class:?typename),
    string:substring[?typename, 0, 4] = "java".
+#endig
