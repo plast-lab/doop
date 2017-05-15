@@ -25,6 +25,7 @@ ClassWithTopLevelEntryPoint(?class) <-
 TopLevelEntryPoint(?method) <-
    PossibleEntryPoint(?method),
    Method:DeclaringType[?method] = ?class,
+   ApplicationClass(?class),
    ClassWithTopLevelEntryPoint(?class).
 
 #ifdef OPEN_PROGRAMS
