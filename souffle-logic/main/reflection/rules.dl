@@ -1,0 +1,33 @@
+*************************************************************
+ * Reflection analysis
+ *************************************************************
+ * Implementation of points-to propagation for concrete actions that
+ * have been discovered using reflection. Most often, the rest of the
+ * reflection logic sets things up, and the logic in this file actually
+ * does the invocations, field set/gets, etc. that affect points-to info.
+ *************************************************************
+ *
+ * NOTE
+ * This analysis currently does not support reflective use of reflection. If
+ * you really want to, you can hide uses of reflection in this way. The issue
+ * here is that the current code does not consider reflective method
+ * invocations, only virtual method invocations. For example:
+ *
+ *   Method:Id(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
+ *   VirtualMethodInvocation:Insn(?invocation),
+ *   MethodInvocation:Method[?invocation] = ?getClass,
+ *
+ * Only checks for invocations of getClass in source code, not in method
+ * invocations discovered during reflection analysis.
+ *************************************************************/
+
+#include "java.lang.Class.dl"
+//#include "java.lang.reflect.Array.dl"
+//#include "java.lang.reflect.Constructor.dl"
+//#include "java.lang.reflect.Field.dl"
+//#include "java.lang.reflect.Method.dl"
+
+/*************************************************************
+ * Give an arbitrary containing type for every reflection object,
+ * so that analyses that need it (e.g., type-sens) are covered.
+ *************************************************************/

@@ -1,0 +1,65 @@
+.decl ReifiedClass(?type:ReferenceType, ?value:Value)
+
+.decl ReifiedConstructor(?constructor:Method, ?value:Value)
+
+.decl ReifiedMethod(?method:Method, ?value:Value)
+
+.decl ReifiedField(?field:Field, ?value:Value)
+
+.decl ReflectiveValue(?value:Value)
+
+.decl java_lang_Object_getClass(?to:Var, ?from:Var)
+
+.decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)
+
+.decl java_lang_Class_getName(?to:Var, ?from:Var)
+
+.decl java_lang_Class_getComponentType(?to:Var, ?from:Var)
+
+.decl java_lang_Class_getSuperclass(?to:Var, ?from:Var)
+
+.decl java_lang_Class_getInterfaces(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getMethods(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getMethod(?to:Var, ?param:Var, ?from:Var)
+
+.decl java_lang_Class_getDeclaredMethods(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getDeclaredMethod(?to:Var, ?param:Var, ?from:Var)
+
+.decl java_lang_Class_getConstructors(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getConstructor(?to:Var, ?from:Var)
+
+.decl java_lang_Class_getDeclaredConstructors(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getDeclaredConstructor(?to:Var, ?from:Var)
+
+.decl java_lang_Class_getFields(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getField(?to:Var, ?param:Var, ?from:Var)
+
+.decl java_lang_Class_getDeclaredFields(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_Class_getDeclaredField(?to:Var, ?param:Var, ?from:Var)
+
+.decl java_lang_Class_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_reflect_Array_newInstance(?invocation:MethodInvocation, ?to:Var, ?param:Var)
+
+.decl java_lang_reflect_Constructor_newInstance(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_reflect_Field_get(?invocation:MethodInvocation, ?to:Var, ?field:Var)
+
+.decl java_lang_reflect_Field_get_base(?invocation:MethodInvocation, ?base:Var)
+
+.decl java_lang_reflect_Field_set(?invocation:MethodInvocation, ?from:Var, ?field:Var)
+
+.decl java_lang_reflect_Field_set_base(?invocation:MethodInvocation, ?base:Var)
+
+.decl java_lang_reflect_Method_invoke(?invocation:MethodInvocation, ?method:Var)
+
+.decl java_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl java_lang_ClassLoader_getResource(?invocation:MethodInvocation, ?to:Var, ?from:Var)
