@@ -7,19 +7,3 @@ Foo(x, y) -> Person(x), string(y).
 
 new<<cons:Person[y, 1] = z as Person>>,
 Foo(z, y) <- y = "G".
-
-///////////////////////////
-
-@Entity
-Animal(x) -> .
-
-@Entity
-Cat(x) -> Animal(x).
-
-@Constructor
-cons:Animal[x, y] = z -> string(x), int(y), Animal(z).
-
-Bar(x, y) -> Animal(x), string(y).
-
-new<<cons:Animal[y, 1] = z as Animal>>,
-Bar(z, y) <- y = "G".

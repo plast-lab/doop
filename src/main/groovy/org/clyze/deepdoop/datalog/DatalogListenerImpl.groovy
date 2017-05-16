@@ -164,13 +164,14 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				assert headAtoms.size() == 1
 				currComp.markEntity((firstAtom as Directive).backtick.name)
 			}
-			def head = new LogicalElement(LogicType.AND, headAtoms as Set)
+			def head = new LogicalElement(LogicType.AND, headAtoms)
 			currComp.addRule(new Rule(head, null))
 		}
 		else if (ctx.predicateListExt()) {
 			def headAtoms = values[ctx.predicateListExt()]
-			def head = new LogicalElement(LogicType.AND, headAtoms as Set)
-			def body = values[ctx.compound()] as IElement
+			def head = new LogicalElement(LogicType.AND, headAtoms)
+			def bodyElements = values[ctx.compound()] as IElement
+			def body = new LogicalElement(LogicType.AND, [bodyElements])
 			currComp.addRule(new Rule(head, body))
 		}
 		else {

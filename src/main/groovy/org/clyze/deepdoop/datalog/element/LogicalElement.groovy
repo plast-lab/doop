@@ -10,12 +10,9 @@ class LogicalElement implements IElement {
 	enum LogicType { AND, OR }
 
 	LogicType type
-	Set<? extends IElement> elements
+	List<IElement> elements
 
-	LogicalElement(LogicType type, List<? extends IElement> elements) {
-		this(type, [] + elements as Set)
-	}
-	LogicalElement(LogicType type, Set<? extends IElement> elements) {
+	LogicalElement(LogicType type, List<IElement> elements) {
 		this.type = type
 		this.elements = elements
 	}

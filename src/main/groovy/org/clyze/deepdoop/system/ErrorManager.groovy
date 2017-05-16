@@ -9,12 +9,9 @@ class ErrorManager {
 		LogFactory.getLog(ErrorManager.class).warn(msg)
 	}
 
-	static void error(ErrorId errorId, Object... values) {
-		error(null, errorId, values)
-	}
-	static void error(SourceLocation loc, ErrorId errorId, Object... values) {
+	static void error(SourceLocation loc=null, ErrorId errorId, Object... values) {
 		def msg = "[DD] ERROR: ${ErrorId.idToMsg(errorId, values)}"
-		if (loc != null) msg = "$msg\n$loc"
+		if (loc) msg = "$msg\n$loc"
 		throw new DeepDoopException(msg, errorId)
 	}
 }

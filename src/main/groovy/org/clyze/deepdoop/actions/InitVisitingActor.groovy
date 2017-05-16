@@ -45,9 +45,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		n.accept(acVisitor)
 
 		// Global Component
-		def newg = n.globalComp.accept(this) as Component
-		def initP = Program.from(newg, [:], [:], [] as Set)
-
+		def initP = new Program(n.globalComp.accept(this), [:], [:], [] as Set)
 
 		Map<String, Map<String, Set<String>>> reversePropsMap = [:]
 		n.props.each{ prop ->
@@ -182,7 +180,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Component exit(Component n, Map<IVisitable, IVisitable> m) {
-		Component newComp = new Component(initName as String)
+		Component newComp = new Component(name: initName as String)
 		n.declarations.each{ newComp.addDecl(m[it] as Declaration) }
 		autoGenDecls.each { newComp.addDecl(it.value) }
 		n.constraints.each{ newComp.constraints << (m[it] as Constraint) }
@@ -203,7 +201,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		new Rule(m[n.head] as LogicalElement, m[n.body] as IElement, false)
+		new Rule(m[n.head], m[n.body], false)
 	}
 
 	AggregationElement exit(AggregationElement n, Map<IVisitable, IVisitable> m) {
@@ -219,9 +217,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	LogicalElement exit(LogicalElement n, Map<IVisitable, IVisitable> m) {
-		Set<IElement> newElements = [] as Set
+		def newElements = []
 		n.elements.each{ newElements << (m[it] as IElement) }
-		return new LogicalElement(n.type, newElements)
+ 		return new LogicalElement(n.type, newElements)
 	}
 
 	NegationElement exit(NegationElement n, Map<IVisitable, IVisitable> m) {
@@ -242,7 +240,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			autoGenDecls[newName] = new Declaration(new Functional(newName, null, newKeyVars, newValueVar), decl.types)
 		}
 		def newFunctional = new Functional(newName, newStage, newKeyExprs, m[n.valueExpr] as IExpr)
-		return new Constructor(newFunctional, n.type)
+		return new Constructor(newFunctional, n.entity)
 	}
 
 	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {

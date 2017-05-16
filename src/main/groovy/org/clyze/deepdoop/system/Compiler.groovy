@@ -21,9 +21,9 @@ class Compiler {
 		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename with ${codeGenActor.class.name}")
 
 		def parser = new DatalogParser(
-				new CommonTokenStream(
-					new DatalogLexer(
-						new ANTLRFileStream(filename))))
+			new CommonTokenStream(
+				new DatalogLexer(
+					new ANTLRFileStream(filename))))
 		def listener = new DatalogListenerImpl(filename)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 

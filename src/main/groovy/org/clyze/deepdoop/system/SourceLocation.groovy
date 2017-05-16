@@ -15,7 +15,5 @@ class SourceLocation {
 
 	SourceLine[] lines
 
-	String toString() {
-		lines.collect{ "\tat ${it.file} : ${it.num}" }.join('\n')
-	}
+	String toString() { lines.collect{ "\tat ${it.file} : ${it.num}" }.join("\n") }
 }
