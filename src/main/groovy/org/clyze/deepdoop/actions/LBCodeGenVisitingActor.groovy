@@ -12,6 +12,10 @@ import org.clyze.deepdoop.system.*
 @InheritConstructors
 class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
+	boolean inDecl
+	File currentFile
+
+
 	Set<String>              globalAtoms
 
 	Component                unhandledGlobal
@@ -19,13 +23,15 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	File                     latestFile
 
-	boolean                  inDecl
 
 	String visit(Program p) {
+		currentFile = createUniqueFile("out_", ".dl")
+		results << new Result(Result.Kind.LOGIC, currentFile)
+
 		// Transform program before visiting nodes
-		def flatP = p.accept(new NormalizeVisitingActor(p.comps)) as Program
-		def n = flatP.accept(new InitVisitingActor()) as Program
-		return super.visit(n)
+		return p.accept(new NormalizeVisitingActor())
+				.accept(new InitVisitingActor())
+				.accept(this)
 	}
 
 	String exit(Program n, Map<IVisitable, String> m) {
@@ -103,11 +109,11 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(Constructor n, Map<IVisitable, String> m) {
 		def functionalStr = exit(n as Functional, m)
 		if (inDecl) {
-			def directive = new Directive("lang:constructor", new Stub(n.type.name))
+			def directive = new Directive("lang:constructor", new Stub(n.entity.name))
 			return directive.accept(this) + ".\n" + functionalStr
 		}
 		else {
-			def entityStr = exit(n.type as Entity, m)
+			def entityStr = exit(n.entity as Entity, m)
 			return "$functionalStr, $entityStr"
 		}
 	}

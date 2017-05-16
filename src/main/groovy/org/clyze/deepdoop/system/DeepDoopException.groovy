@@ -9,5 +9,5 @@ class DeepDoopException extends RuntimeException {
 		this.errorId = errorId
 	}
 
-	Throwable fillInStackTrace() { null }
+	synchronized Throwable fillInStackTrace() { null }
 }

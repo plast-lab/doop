@@ -10,8 +10,9 @@ class Annotation {
     String name
 
     def getKind() {
-        if (name == "Constructor") return Kind.CONSTRUCTOR
-        if (name == "Entity") return Kind.ENTITY
+        name = name.toLowerCase()
+        if (name == "constructor") return Kind.CONSTRUCTOR
+        if (name == "entity") return Kind.ENTITY
         return Kind.UNDEF
     }
 }

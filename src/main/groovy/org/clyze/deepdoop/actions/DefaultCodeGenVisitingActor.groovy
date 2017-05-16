@@ -24,6 +24,6 @@ class DefaultCodeGenVisitingActor extends PostOrderVisitor<String> implements IA
 		Files.createTempFile(Paths.get(outDir.name), prefix, suffix).toFile()
 	}
 
-	protected void write(File file, String data) { file << data << "\n" }
-	protected void write(File file, List<String> data) { data.each { write file, it } }
+	protected static void write(File file, String data) { file << data << "\n" }
+	protected static void write(File file, List<String> data) { data.each { write file, it } }
 }

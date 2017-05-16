@@ -19,7 +19,7 @@ class Functional implements IAtom {
 	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
 		assert arity == vars.size()
 		def varsCopy = [] << vars
-		def valueVar = varsCopy.pop()
+		def valueVar = varsCopy.pop() as VariableExpr
 		return new Functional(name, stage, varsCopy, valueVar)
 	}
 	List<VariableExpr> getVars() {

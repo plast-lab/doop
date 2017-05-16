@@ -9,18 +9,18 @@ import org.clyze.deepdoop.datalog.expr.VariableExpr
 @EqualsAndHashCode(callSuper = true)
 class Constructor extends Functional {
 
-	// The constructed type
-	IAtom type
+	// The constructed entity
+	IAtom entity
 
-	Constructor(Functional f, IAtom type) {
+	Constructor(Functional f, IAtom entity) {
 		super(f.name, f.stage, f.keyExprs, f.valueExpr)
-		this.type = type
+		this.entity = entity
 	}
 
-	def getType() {
-		if (type instanceof Stub)
-		type = new Entity(type.name, valueExpr)
-		return type
+	def getEntity() {
+		if (entity instanceof Stub)
+		entity = new Entity(entity.name, valueExpr)
+		return entity
 	}
 
 	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {

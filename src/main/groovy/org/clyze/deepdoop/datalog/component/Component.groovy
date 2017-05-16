@@ -1,49 +1,39 @@
 package org.clyze.deepdoop.datalog.component
 
-import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.*
 import org.clyze.deepdoop.datalog.clause.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.system.TSourceItem
 
-@Canonical
+//@Canonical
 class Component implements IVisitable, TSourceItem {
 
 	String           name
 	String           superComp
-	Set<Declaration> declarations
-	Set<Constraint>  constraints
-	Set<Rule>        rules
-	Set<String>      entities
+	Set<Declaration> declarations = [] as Set
+	Set<Constraint>  constraints  = [] as Set
+	Set<Rule>        rules        = [] as Set
+	Set<String>      entities     = [] as Set
 
-	Component(Component other) {
-		this.name         = other.name
-		this.superComp    = other.superComp
-		this.declarations = [] + other.declarations
-		this.constraints  = [] + other.constraints
-		this.rules        = [] + other.rules
-		this.entities     = [] + other.entities
-	}
+	Map<String, List<Tuple2<Declaration, Constructor>>> constructionInfo = [:]
 
-	Component(String name, String superComp, Set<Declaration> declarations, Set<Constraint> constraints, Set<Rule> rules) {
-		this.name         = name
-		this.superComp    = superComp
-		this.declarations = declarations
-		this.constraints  = constraints
-		this.rules        = rules
-		this.entities     = []
-	}
-	Component(String name, String superComp) {
-		this(name, superComp, [] as Set, [] as Set, [] as Set)
-	}
-	Component(String name) {
-		this(name, null, [] as Set, [] as Set, [] as Set)
-	}
-	Component() {
-		this(null, null, [] as Set, [] as Set, [] as Set)
+	Component clone() {
+		new Component(
+				name:name,
+				superComp:superComp,
+				declarations:[]+declarations,
+				rules:[]+rules,
+				entities:[]+entities,
+				constructionInfo:[:]<<constructionInfo)
 	}
 
 	void addDecl(Declaration d) {
+		if (d.atom instanceof Constructor) {
+			def c = d.atom as Constructor
+			def name = c.entity.name
+			if (!constructionInfo[name]) constructionInfo[name] = []
+			constructionInfo[name] << new Tuple2(d, c)
+		}
 		// forward patching
 		if (d.atom.name in entities) {
 			def p = d.atom as Predicate
