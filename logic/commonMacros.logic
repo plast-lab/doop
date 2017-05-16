@@ -8,6 +8,11 @@
    StringConstant(heap), \
    HeapAllocation:Type[heap] = type
 
+#define MethodHandleConstantConsMacro(id, type, heap) \
+   HeapAllocation:MethodHandleConstant:Cons[id] = heap, \
+   MethodHandleConstant(heap), \
+   HeapAllocation:Type[heap] = type
+
 #define ClassHeapConsMacro(id, type, heap) \
    HeapAllocation:Class:Cons[id] = heap, \
    ClassHeap(heap), \

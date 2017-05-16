@@ -472,6 +472,10 @@ DynamicMethodInvocation:Bootstrap[?invocation] = ?bootSignature ->
 DynamicMethodInvocation:DynMethod[?invocation] = ?dynName ->
    DynamicMethodInvocation:Insn(?invocation), string(?dynName).
 
+// The bootstrap parameters of a dynamic invocation.
+BootstrapParam[?index, ?invocation] = ?var ->
+   DynamicMethodInvocation:Insn(?invocation), ParamIndex(?index), Var(?var).
+
 // Static Method Invocation
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename ->
    MethodInvocation(?invocation), SimpleName(?simplename).
@@ -609,30 +613,35 @@ DynamicContextHeap2(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
 HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
 HeapAllocation0:String(?repr) -> string(?repr).
 HeapAllocation0:Class(?repr, ?instanceType) -> string(?repr), Type(?instanceType).
+HeapAllocation0:MethodHandleConstant(?repr) -> string(?repr).
 HeapAllocation0:EmptyArray(?repr) -> string(?repr).
 AssignHeapAllocation0(?instr, ?heapId) ->
    AssignHeapAllocation:Insn(?instr), string(?heapId).
 
 
-HeapAllocation(?heap) -> .
-NormalHeap(?heap)     -> HeapAllocation(?heap).
-StringConstant(?heap) -> HeapAllocation(?heap).
-ClassHeap(?heap)      -> HeapAllocation(?heap).
+HeapAllocation(?heap)   -> .
+NormalHeap(?heap)       -> HeapAllocation(?heap).
+StringConstant(?heap)   -> HeapAllocation(?heap).
+ClassHeap(?heap)        -> HeapAllocation(?heap).
+MethodHandleConstant(?heap) -> HeapAllocation(?heap).
 
 lang:physical:storageModel[`HeapAllocation] = "ScalableSparse".
 lang:entity(`HeapAllocation).
 lang:entity(`NormalHeap).
 lang:entity(`StringConstant).
 lang:entity(`ClassHeap).
+lang:entity(`MethodHandleConstant).
 
 HeapAllocation:Normal:Cons[?id] = ?heap -> string(?id), NormalHeap(?heap).
 HeapAllocation:String:Cons[?id] = ?heap -> string(?id), StringConstant(?heap).
 HeapAllocation:Class:Cons[?id]  = ?heap -> string(?id), ClassHeap(?heap).
+HeapAllocation:MethodHandleConstant:Cons[?id] = ?heap -> string(?id), MethodHandleConstant(?heap).
 HeapAllocation:Mock:Cons[?id]   = ?heap -> string(?id), HeapAllocation(?heap).
 
 lang:constructor(`HeapAllocation:Normal:Cons).
 lang:constructor(`HeapAllocation:String:Cons).
 lang:constructor(`HeapAllocation:Class:Cons).
+lang:constructor(`HeapAllocation:MethodHandleConstant:Cons).
 lang:constructor(`HeapAllocation:Mock:Cons).
 
 HeapAllocation:Id[?heap] = ?id -> HeapAllocation(?heap), string(?id).
@@ -648,6 +657,9 @@ MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
 
 ClassHeap:InstanceType[?classHeap] = ?instanceType ->
    ClassHeap(?classHeap), Type(?instanceType).
+
+MethodHandleConstant:InstanceType[?classHeap] = ?instanceType ->
+   MethodHandleConstant(?classHeap), Type(?instanceType).
 
 // Use an entity to represent raw strings since the engine is having problems
 // with huge strings as keys.
@@ -682,6 +694,7 @@ lang:physical:capacity[`HeapAllocation]      = 4194304.
 lang:physical:capacity[`NormalHeap]          = 4194304.
 lang:physical:capacity[`NumConstant]         = 4194304.
 lang:physical:capacity[`StringConstant]      = 4194304.
+lang:physical:capacity[`MethodHandleConstant]= 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
 lang:physical:capacity[`StringRaw]           = 4194304.
 
