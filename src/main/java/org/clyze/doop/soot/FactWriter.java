@@ -49,7 +49,7 @@ class FactWriter {
         return result;
     }
 
-    String writeMethod(SootMethod m) {
+    String writeMethodStringRaw(SootMethod m) {
         String methodRaw = _rep.signature(m);
         String result;
         if (methodRaw.length() <= 1024)
@@ -58,7 +58,23 @@ class FactWriter {
             result = "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
 
         _db.add(STRING_RAW, result, methodRaw);
+
+        return result;
+    }
+
+    String writeMethod(SootMethod m) {
+        String result = writeMethodStringRaw(m);
+
         _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
+
+        return result;
+    }
+
+    String writeMethodHandleConstant(SootMethod m) {
+
+        String result = writeMethodStringRaw(m);
+
+        _db.add(METHOD_HANDLE_CONSTANT, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
 
         return result;
     }
@@ -316,6 +332,20 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
+    }
+
+    void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
+        int index = session.calcUnitNumber(stmt);
+        String insn = _rep.instruction(m, stmt, session, index);
+        SootMethodRef mRef = constant.getMethodRef();
+
+        String s = mRef.toString();
+        String actualType = s;
+        String heap = _rep.methodHandleConstant(s);
+        String methodId = writeMethodHandleConstant(m);
+
+        _db.add(METHOD_HANDLE_HEAP, heap, actualType);
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
@@ -733,29 +763,65 @@ class FactWriter {
         return l;
     }
 
+    Local writeMethodHandleConstantExpression(SootMethod inMethod, Stmt stmt, MethodHandle constant, Session session) {
+        // introduce a new temporary variable
+        String basename = "$mhandleconstant";
+        String varname = basename + session.nextNumber(basename);
+        Local l = new JimpleLocal(varname, RefType.v("java.lang.invoke.MethodHandle"), -1, -1);
+        writeLocal(inMethod, l);
+        writeAssignMethodHandleConstant(inMethod, stmt, l, constant, session);
+        return l;
+    }
+
+    private Value writeActualParam(SootMethod inMethod, Stmt stmt, InvokeExpr expr, Session session, Value v, int idx) {
+	if (v instanceof StringConstant)
+	    return writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
+	else if (v instanceof ClassConstant)
+	    return writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
+	else if (v instanceof NumericConstant)
+	    return writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
+	else if (v instanceof MethodHandle)
+	    return writeMethodHandleConstantExpression(inMethod, stmt, (MethodHandle) v, session);
+	else if (v instanceof NullConstant) {
+	    // Giving the type of the formal argument to be used in the creation of
+	    // temporary var for the actual argument (whose value is null).
+	    Type argType = expr.getMethodRef().parameterType(idx);
+	    return writeNullExpression(inMethod, stmt, argType, session);
+	}
+	else if (v instanceof Constant)
+	    throw new RuntimeException("Value has unknown constant type: " + v);
+	return v;
+    }
+
     private void writeActualParams(SootMethod inMethod, Stmt stmt, InvokeExpr expr, String invokeExprRepr, Session session) {
         for(int i = 0; i < expr.getArgCount(); i++) {
-            Value v = expr.getArg(i);
-
-            if (v instanceof StringConstant)
-                v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
-            else if (v instanceof ClassConstant)
-                v = writeClassConstantExpression(inMethod, stmt, (ClassConstant) v, session);
-            else if (v instanceof NumericConstant)
-                v = writeNumConstantExpression(inMethod, stmt, (NumericConstant) v, session);
-            else if (v instanceof NullConstant) {
-                // Giving the type of the formal argument to be used in the creation of
-                // temporary var for the actual argument (whose value is null).
-                Type argType = expr.getMethodRef().parameterType(i);
-                v = writeNullExpression(inMethod, stmt, argType, session);
-            }
+            Value v = writeActualParam(inMethod, stmt, expr, session, expr.getArg(i), i);
 
             if (v instanceof Local) {
                 Local l = (Local) v;
                 _db.add(ACTUAL_PARAMETER, str(i), invokeExprRepr, _rep.local(inMethod, l));
             }
             else {
-                throw new RuntimeException("Unknown actual parameter: " + v + " " + v.getClass());
+                throw new RuntimeException("Actual parameter is not a local: " + v + " " + v.getClass());
+            }
+        }
+        if (expr instanceof DynamicInvokeExpr) {
+            DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
+            for (int j = 0; j < di.getBootstrapArgCount(); j++) {
+                Value v = di.getBootstrapArg(j);
+                if (v instanceof Constant) {
+                    Value vConst = writeActualParam(inMethod, stmt, expr, session, (Value)v, j);
+                    if (vConst instanceof Local) {
+                        Local l = (Local) vConst;
+                        _db.add(BOOTSTRAP_PARAMETER, str(j), invokeExprRepr, _rep.local(inMethod, l));
+                    }
+                    else {
+                        throw new RuntimeException("Unknown actual parameter: " + v + " of type " + v.getClass().getName());
+                    }
+                }
+                else {
+                    throw new RuntimeException("Found non-constant argument to bootstrap method: " + di);
+                }
             }
         }
     }

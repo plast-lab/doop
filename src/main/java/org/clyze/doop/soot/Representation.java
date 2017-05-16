@@ -219,5 +219,9 @@ public class Representation {
 
     }
 
+    String methodHandleConstant(String handleName) {
+        return "<handle " + handleName + ">";
+    }
+
 
 }
