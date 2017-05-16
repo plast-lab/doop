@@ -89,6 +89,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			0, //totalInvocations, missing?
 			0  //totalAllocations, missing?
 		)
+		def endline = getLastToken(ctx.methodBody()).symbol.line
+		method.outerPosition = new Position(line, endline, 0, 0)
 		metadata.methods << method
 
 		heapCounters = [:]
