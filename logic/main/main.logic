@@ -89,6 +89,7 @@ Value:DeclaringType[?value] = ?type <-
    Method:DeclaringType[?inmethod] = ?type,
    !StringConstant(?heap),
    !ClassHeap(?heap),
+   !MethodHandleConstant(?heap),
    Value:byHeap[?heap] = ?value.
 
 // Arbitrary, but would it matter?
@@ -105,6 +106,9 @@ Value:DeclaringType[?value] = "java.lang.Object" <-
    Value:byHeap[MainMethodArgArray[]] = ?value ;
    Value:byHeap[MainMethodArgArrayContent[]] = ?value.
 
+Value:DeclaringType[?value] = "java.lang.invoke.MethodHandle" <-
+   MethodHandleConstant(?heap),
+   Value:byHeap[?heap] = ?value.
 
 // Mark objects that are normal, i.e., not special
 NotSpecialObject(?value) <-

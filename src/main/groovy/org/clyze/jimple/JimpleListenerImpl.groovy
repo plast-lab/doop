@@ -44,6 +44,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			false  //isAnonymous, missing?
 		)
 		metadata.classes << klass
+
+		addTypeUsage(ctx.IDENTIFIER(1))
+		gatherIdentifiers(ctx.identifierList()).each{ addTypeUsage it }
 	}
 
 	void exitField(FieldContext ctx) {
@@ -73,8 +76,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def retType = ctx.IDENTIFIER(0).text
 		def name = ctx.IDENTIFIER(1).text
 		def position = new Position(line, line, startCol, startCol + name.length())
+
 		def paramTypes = gatherIdentifiers(ctx.identifierList(0))
-		def params = paramTypes.join(",")
+		def paramTypeNames = paramTypes.collect{ it.text }
+		def params = paramTypeNames.join(",")
 
 		method = new Method(
 			position,
@@ -84,17 +89,21 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			retType,
 			"<${klass.doopId}: $retType $name($params)>", //doopId
 			null, //params, TODO
-			paramTypes as String[],
+			paramTypeNames as String[],
 			ctx.modifier().any() { hasToken(it, "static") },
 			0, //totalInvocations, missing?
 			0  //totalAllocations, missing?
 		)
-		def endline = getLastToken(ctx.methodBody()).symbol.line
+		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 		method.outerPosition = new Position(line, endline, 0, 0)
 		metadata.methods << method
 
 		heapCounters = [:]
 		methodInvoCounters = [:]
+
+		addTypeUsage(ctx.IDENTIFIER(0))
+		paramTypes.each{ addTypeUsage it }
+		gatherIdentifiers(ctx.identifierList(1)).each{ addTypeUsage it }
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
@@ -114,6 +123,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			v.type = type
 			varTypes[v.doopId] = type
 		}
+		addTypeUsage(ctx.IDENTIFIER())
 	}
 
 	void exitComplexAssignmentStmt(ComplexAssignmentStmtContext ctx) {
@@ -139,6 +149,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			if (ctx.value(it)?.IDENTIFIER())
 				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
+
+		// Cast Assignment
+		if (hasToken(ctx, "(") && !hasToken(ctx, "Phi"))
+			addTypeUsage(ctx.IDENTIFIER(1))
+
+		addTypeUsage(ctx.IDENTIFIER(2))
 	}
 
 	void exitReturnStmt(ReturnStmtContext ctx) {
@@ -195,13 +211,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (ctx.IDENTIFIER(1))
 			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 
-		def methodClass = ctx.methodSig().IDENTIFIER(0).text
+		def methodClassId = ctx.methodSig().IDENTIFIER(0)
+		def methodClass = methodClassId.text
 		def methodName  = ctx.methodSig().IDENTIFIER(2).text
 		def c = methodInvoCounters[methodName] ?: 0
 		methodInvoCounters[methodName] = c+1
 
-		def line = ctx.methodSig().IDENTIFIER(0).symbol.line
-		def startCol = ctx.methodSig().IDENTIFIER(0).symbol.charPositionInLine
+		def line = methodClassId.symbol.line
+		def startCol = methodClassId.symbol.charPositionInLine
 		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 1
 
 		metadata.invocations << new MethodInvocation(
@@ -210,6 +227,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			"${method.doopId}/${methodClass}.$methodName/$c", //doopId
 			method.doopId //invokingMethodDoopId
 		)
+	}
+
+	void exitMethodSig(MethodSigContext ctx) {
+		addTypeUsage(ctx.IDENTIFIER(0))
+		addTypeUsage(ctx.IDENTIFIER(1))
+		gatherIdentifiers(ctx.identifierList()).each{ addTypeUsage it }
 	}
 
 	void exitValueList(ValueListContext ctx) {
@@ -281,9 +304,26 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 	}
 
-	List<String> gatherIdentifiers(IdentifierListContext ctx) {
+	void addTypeUsage(TerminalNode id) {
+		if (!id) return
+
+		def line = id.symbol.line
+		def startCol = id.symbol.charPositionInLine + 1
+		def name = id.text
+
+		if (name == "void") return
+
+		metadata.usages << new Usage(
+			new Position(line, line, startCol, startCol + name.length()),
+			filename,
+			name, //doopId
+			UsageKind.TYPE
+		)
+	}
+
+	List<TerminalNode> gatherIdentifiers(IdentifierListContext ctx) {
 		if (ctx == null) return []
-		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER().text]
+		return gatherIdentifiers(ctx.identifierList()) + [ctx.IDENTIFIER()]
 	}
 
 	TerminalNode findToken(ParserRuleContext ctx, String token) {

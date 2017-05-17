@@ -10,6 +10,7 @@ import soot.jimple.*;
 public class Representation {
     private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
+    private Map<SootMethodRef, String> _methodRefSigRepr = new ConcurrentHashMap<>();
     private Map<Trap, String> _trapRepr = new ConcurrentHashMap<>();
 
     // Make it a trivial singleton.
@@ -41,6 +42,18 @@ public class Representation {
         {
             result = m.getSignature();
             _methodSigRepr.put(m, result);
+        }
+
+        return result;
+    }
+
+    public String signature(SootMethodRef mRef) {
+        String result = _methodRefSigRepr.get(mRef);
+
+        if(result == null)
+        {
+            result = SootMethod.getSignature(mRef.declaringClass(), mRef.name(), mRef.parameterTypes(), mRef.returnType());
+            _methodRefSigRepr.put(mRef, result);
         }
 
         return result;

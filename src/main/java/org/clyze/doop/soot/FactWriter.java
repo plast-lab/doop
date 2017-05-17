@@ -49,32 +49,19 @@ class FactWriter {
         return result;
     }
 
-    String writeMethodStringRaw(SootMethod m) {
-        String methodRaw = _rep.signature(m);
-        String result;
+    String hashMethodNameIfLong(String methodRaw) {
         if (methodRaw.length() <= 1024)
-            result = methodRaw;
+            return methodRaw;
         else
-            result = "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
-
-        _db.add(STRING_RAW, result, methodRaw);
-
-        return result;
+            return "<<METHOD HASH:" + methodRaw.hashCode() + ">>";
     }
 
     String writeMethod(SootMethod m) {
-        String result = writeMethodStringRaw(m);
+        String methodRaw = _rep.signature(m);
+        String result = hashMethodNameIfLong(methodRaw);
 
+        _db.add(STRING_RAW, result, methodRaw);
         _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
-
-        return result;
-    }
-
-    String writeMethodHandleConstant(SootMethod m) {
-
-        String result = writeMethodStringRaw(m);
-
-        _db.add(METHOD_HANDLE_CONSTANT, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
 
         return result;
     }
@@ -338,13 +325,10 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         SootMethodRef mRef = constant.getMethodRef();
+        String heap = _rep.methodHandleConstant(mRef.toString());
+        String methodId = writeMethod(m);
 
-        String s = mRef.toString();
-        String actualType = s;
-        String heap = _rep.methodHandleConstant(s);
-        String methodId = writeMethodHandleConstant(m);
-
-        _db.add(METHOD_HANDLE_HEAP, heap, actualType);
+        _db.add(METHOD_HANDLE_CONSTANT, heap);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
     }
 
@@ -854,7 +838,7 @@ class FactWriter {
         }
         else if (expr instanceof DynamicInvokeExpr) {
             DynamicInvokeExpr di = (DynamicInvokeExpr)expr;
-            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(di.getBootstrapMethodRef().resolve()), di.getMethodRef().name(), methodId);
+            _db.add(DYNAMIC_METHOD_INV, insn, str(index), _rep.signature(di.getBootstrapMethodRef()), di.getMethodRef().name(), methodId);
         }
         else {
             throw new RuntimeException("Cannot handle invoke expr: " + expr);

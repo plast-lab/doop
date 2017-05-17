@@ -49,7 +49,6 @@ public enum PredicateFile
     NORMAL_HEAP("NormalHeap"),
     EMPTY_ARRAY("EmptyArray"),
     CLASS_HEAP("ClassHeap"),
-    METHOD_HANDLE_HEAP("MethodHandleHeap"),
     METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
     STRING_CONST("StringConstant"),
     STRING_RAW("StringRaw"),

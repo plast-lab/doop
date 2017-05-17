@@ -82,6 +82,26 @@ _ActualParam(?param1, ?param2, ?param3) ->
   _ActualParam(?index, ?param2, ?param3).
 
 
+// BootstrapParam
+
+lang:physical:storageModel[`_BootstrapParam] = "DelimitedFile".
+lang:physical:filePath[`_BootstrapParam] = "facts/BootstrapParam.facts".
+lang:physical:delimiter[`_BootstrapParam] = "\t".
+lang:physical:hasColumnNames[`_BootstrapParam] = false.
+
+_BootstrapParam(?param1, ?param2, ?param3) ->
+  int[64](?param1),
+  string(?param2),
+  string(?param3).
+
++Instruction:Id(?invocation:?param2),
++DynamicMethodInvocation:Insn(?invocation),
++Var:Id(?var:?param3),
++Var(?var),
++BootstrapParam[?index, ?invocation] = ?var <-
+  _BootstrapParam(?index, ?param2, ?param3).
+
+
 // DirectSuperinterface
 
 lang:physical:storageModel[`_DirectSuperinterface] = "DelimitedFile".
