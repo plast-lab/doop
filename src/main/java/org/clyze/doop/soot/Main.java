@@ -307,7 +307,7 @@ public class Main {
                 classes.add(c);
             }
 
-            System.out.println("Classes found  in apk: " + classesOfDex(apk).size());
+            System.out.println("Classes found in apk: " + classesOfDex(apk).size());
         } else {
             for (String className : classesInApplicationJar) {
                 SootClass c = scene.loadClass(className, SootClass.BODIES);
