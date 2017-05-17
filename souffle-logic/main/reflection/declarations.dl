@@ -8,6 +8,9 @@
 
 .decl ReflectiveValue(?value:Value)
 
+// A new object of this type is allocated via reflection actions at the instruction
+.decl ReflectiveAllocation(?instruction:Instruction, ?type:ReferenceType, ?value:Value)
+
 .decl java_lang_Object_getClass(?to:Var, ?from:Var)
 
 .decl java_lang_Class_forName(?invocation:MethodInvocation, ?inmethod:Method)
