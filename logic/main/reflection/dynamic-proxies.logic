@@ -205,7 +205,7 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) <-
    ArgArrayOfProxyMethod[?methSig, ProxyObject:Invocation[?proxyValue]] = ?argsArrValue.
 
 ReachableContext(?calleeCtx, ?callee) <-
-  ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
+   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
 ArgArrayAndActualArg(?argsArrValue, ?methSig, ?actual) <-
    ProxyCallArgArray(?invo, ?methSig, ?argsArrValue),
