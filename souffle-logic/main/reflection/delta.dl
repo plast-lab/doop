@@ -1,7 +1,7 @@
 LoadArrayIndex(?array, ?value, ?inmethod)/*,
 java_lang_reflect_Array_get(?invocation)*/ :-
   ?sig = "<java.lang.reflect.Array: java.lang.Object get(java.lang.Object,int)>",
-  Method(?sig),
+  isMethod(?sig),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
   ActualParam(0, ?invocation, ?array),
   AssignReturnValue(?invocation, ?value).
@@ -9,7 +9,7 @@ java_lang_reflect_Array_get(?invocation)*/ :-
 StoreArrayIndex(?value, ?array, ?inmethod)/*,
 java_lang_reflect_Array_set(?invocation)*/ :-
   ?sig = "<java.lang.reflect.Array: void set(java.lang.Object,int,java.lang.Object)>",
-  Method(?sig),
+  isMethod(?sig),
   StaticMethodInvocation(?invocation, ?sig, ?inmethod),
   ActualParam(0, ?invocation, ?array),
   ActualParam(2, ?invocation, ?value).

@@ -66,3 +66,5 @@
 .decl java_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?from:Var)
 
 .decl java_lang_ClassLoader_getResource(?invocation:MethodInvocation, ?to:Var, ?from:Var)
+
+.decl StringPrecisionThreshold(?t:number)
