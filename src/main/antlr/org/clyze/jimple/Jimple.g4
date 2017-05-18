@@ -31,7 +31,10 @@ field
 	: modifier* IDENTIFIER '[]'? IDENTIFIER ';' ;
 
 method
-	: modifier* IDENTIFIER IDENTIFIER '(' identifierList? ')' ('throws' identifierList)? (methodBody | ';') ;
+	: modifier* IDENTIFIER IDENTIFIER '(' identifierList? ')' throwsExceptions? (methodBody | ';') ;
+
+throwsExceptions
+	: 'throws' identifierList ;
 
 identifierList
 	: IDENTIFIER MARKER?

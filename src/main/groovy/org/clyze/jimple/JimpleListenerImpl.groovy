@@ -77,7 +77,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def name = ctx.IDENTIFIER(1).text
 		def position = new Position(line, line, startCol, startCol + name.length())
 
-		def paramTypes = gatherIdentifiers(ctx.identifierList(0))
+		def paramTypes = gatherIdentifiers(ctx.identifierList())
 		def paramTypeNames = paramTypes.collect{ it.text }
 		def params = paramTypeNames.join(",")
 
@@ -103,7 +103,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		addTypeUsage(ctx.IDENTIFIER(0))
 		paramTypes.each{ addTypeUsage it }
-		gatherIdentifiers(ctx.identifierList(1)).each{ addTypeUsage it }
+		gatherIdentifiers(ctx.throwsExceptions()?.identifierList()).each{ addTypeUsage it }
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
