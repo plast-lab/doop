@@ -47,18 +47,6 @@ public class Representation {
         return result;
     }
 
-    public String signature(SootMethodRef mRef) {
-        String result = _methodRefSigRepr.get(mRef);
-
-        if(result == null)
-        {
-            result = SootMethod.getSignature(mRef.declaringClass(), mRef.name(), mRef.parameterTypes(), mRef.returnType());
-            _methodRefSigRepr.put(mRef, result);
-        }
-
-        return result;
-    }
-
     String signature(SootField f) {
         return f.getSignature();
     }
