@@ -14,7 +14,7 @@ Server:CallGraphEdge(?invocation, ?toMethod) <-
 _IsAssignHeapAllocation(?heap) <-
   AssignHeapAllocation:Heap[_] = ?heap.
 
-Server:InstanceFieldPointsTo(?heapId, ?sig, ?baseheapId) <-
+Server:InstanceFieldPointsTo(?baseheapId, ?sig, ?heapId) <-
   InstanceFieldPointsTo(_, ?value, ?sig, _, ?basevalue),
   Value:Heap[?basevalue] = ?baseheap, 
   _IsAssignHeapAllocation(?baseheap),
