@@ -324,11 +324,11 @@ class FactWriter {
     void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
-        SootMethodRef mRef = constant.getMethodRef();
-        String heap = _rep.methodHandleConstant(mRef.toString());
+        String handleName = constant.getMethodRef().toString();
+        String heap = _rep.methodHandleConstant(handleName);
         String methodId = writeMethod(m);
 
-        _db.add(METHOD_HANDLE_CONSTANT, heap);
+        _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
         _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
     }
 

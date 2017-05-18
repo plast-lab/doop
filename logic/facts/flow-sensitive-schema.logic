@@ -613,7 +613,7 @@ DynamicContextHeap2(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
 HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
 HeapAllocation0:String(?repr) -> string(?repr).
 HeapAllocation0:Class(?repr, ?instanceType) -> string(?repr), Type(?instanceType).
-HeapAllocation0:MethodHandleConstant(?repr) -> string(?repr).
+HeapAllocation0:MethodHandleConstant(?repr, ?method) -> string(?repr), Method(?method).
 HeapAllocation0:EmptyArray(?repr) -> string(?repr).
 AssignHeapAllocation0(?instr, ?heapId) ->
    AssignHeapAllocation:Insn(?instr), string(?heapId).
@@ -658,8 +658,8 @@ MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
 ClassHeap:InstanceType[?classHeap] = ?instanceType ->
    ClassHeap(?classHeap), Type(?instanceType).
 
-MethodHandleConstant:InstanceType[?classHeap] = ?instanceType ->
-   MethodHandleConstant(?classHeap), Type(?instanceType).
+MethodHandleConstant:Method[?heap] = ?method ->
+   MethodHandleConstant(?heap), Method(?method).
 
 // Use an entity to represent raw strings since the engine is having problems
 // with huge strings as keys.

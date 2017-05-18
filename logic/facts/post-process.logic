@@ -16,9 +16,10 @@ StringConstantConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:String(?id),
    Type:Id(?type:"java.lang.String").
 
-MethodHandleConstantConsMacro(?id, ?type, ?heap) <-
-   HeapAllocation0:MethodHandleConstant(?id),
-   Type:Id(?type:"java.lang.invoke.MethodHandle").
+MethodHandleConstantConsMacro(?id, ?heap, ?method),
+MethodHandleConstant:Method[?heap] = ?method
+ <-
+   HeapAllocation0:MethodHandleConstant(?id, ?method).
 
 ClassHeapConsMacro(?id, ?type, ?heap),
 ClassHeap:InstanceType[?heap] = ?instanceType <-
