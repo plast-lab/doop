@@ -635,13 +635,13 @@ lang:entity(`MethodHandleConstant).
 HeapAllocation:Normal:Cons[?id] = ?heap -> string(?id), NormalHeap(?heap).
 HeapAllocation:String:Cons[?id] = ?heap -> string(?id), StringConstant(?heap).
 HeapAllocation:Class:Cons[?id]  = ?heap -> string(?id), ClassHeap(?heap).
-HeapAllocation:MethodHandleConstant:Cons[?id] = ?heap -> string(?id), MethodHandleConstant(?heap).
+HeapAllocation:MethodHandle:Cons[?id] = ?heap -> string(?id), MethodHandleConstant(?heap).
 HeapAllocation:Mock:Cons[?id]   = ?heap -> string(?id), HeapAllocation(?heap).
 
 lang:constructor(`HeapAllocation:Normal:Cons).
 lang:constructor(`HeapAllocation:String:Cons).
 lang:constructor(`HeapAllocation:Class:Cons).
-lang:constructor(`HeapAllocation:MethodHandleConstant:Cons).
+lang:constructor(`HeapAllocation:MethodHandle:Cons).
 lang:constructor(`HeapAllocation:Mock:Cons).
 
 HeapAllocation:Id[?heap] = ?id -> HeapAllocation(?heap), string(?id).

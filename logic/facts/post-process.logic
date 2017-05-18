@@ -4,6 +4,7 @@ HeapAllocation:byId[?id] = ?heap <-
    HeapAllocation:Normal:Cons[?id] = ?heap ;
    HeapAllocation:String:Cons[?id] = ?heap ;
    HeapAllocation:Class:Cons[?id]  = ?heap ;
+   HeapAllocation:MethodHandle:Cons[?id] = ?heap ;
    HeapAllocation:Mock:Cons[?id]   = ?heap.
 HeapAllocation:Id[?heap] = ?id <-
    HeapAllocation:byId[?id] = ?heap.
@@ -16,10 +17,11 @@ StringConstantConsMacro(?id, ?type, ?heap) <-
    HeapAllocation0:String(?id),
    Type:Id(?type:"java.lang.String").
 
-MethodHandleConstantConsMacro(?id, ?heap, ?method),
+MethodHandleConstantConsMacro(?id, ?type, ?heap, ?method),
 MethodHandleConstant:Method[?heap] = ?method
  <-
-   HeapAllocation0:MethodHandleConstant(?id, ?method).
+   HeapAllocation0:MethodHandleConstant(?id, ?method),
+   Type:Id(?type:"java.lang.invoke.MethodHandle").
 
 ClassHeapConsMacro(?id, ?type, ?heap),
 ClassHeap:InstanceType[?heap] = ?instanceType <-
