@@ -64,7 +64,8 @@ Value_DeclaringType(?heapValue, ?type) :-
   AssignHeapAllocation(?heapValue, _, ?inmethod),
   Method_DeclaringType(?inmethod, ?type),
   !isStringConstant(?heapValue),
-  !isClassHeap(?heapValue).
+  !isClassHeap(?heapValue),
+  !isMethodHandleConstant(?heapValue).
 
 Value_DeclaringType(?heapValue, "java.lang.System") :-
   isClassHeap(?heapValue).
@@ -76,6 +77,9 @@ Value_DeclaringType(?value, "java.lang.Object") :-
   Value_Null(?value);
   MainMethodArgArray(?value);
   MainMethodArgArrayContent(?value).
+
+Value_DeclaringType(?heapValue, "java.lang.invoke.MethodHandle") :-
+  isMethodHandleConstant(?heapValue).
 
 
 // Mark objects that are normal, i.e., not special

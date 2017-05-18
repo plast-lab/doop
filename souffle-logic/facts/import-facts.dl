@@ -47,6 +47,19 @@ ClassHeap_InstanceType(?id, ?instanceType),
 HeapAllocation_Type(?id, "java.lang.Class") :-
   _ClassHeap(?id, ?instanceType).
 
+// MethodHandleConstant
+
+.decl _MethodHandleConstant(?id:symbol)
+.input _MethodHandleConstant(IO="file", filename="MethodHandleConstant.facts", delimiter="\t")
+
+isType("java.lang.invoke.MethodHandle").
+isReferenceType("java.lang.invoke.MethodHandle").
+isClassType("java.lang.invoke.MethodHandle").
+
+isHeapAllocation(?id),
+isMethodHandleConstant(?id),
+HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
+  _MethodHandleConstant(?id).
 
 // EmptyArray
 
@@ -330,6 +343,7 @@ SpecialMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
   _SpecialMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
 
+
 // Virtual method invocation
 
 .decl _VirtualMethodInvocation(?instruction:symbol, ?index:number, ?signature:symbol, ?base:symbol, ?method:symbol)
@@ -344,6 +358,22 @@ Instruction_Method(?instruction, ?method),
 VirtualMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
   _VirtualMethodInvocation(?instruction, ?index, ?signature, ?base, ?method).
+
+
+// Dynamic method invocation
+
+.decl _DynamicMethodInvocation(?instruction:symbol, ?index:number, ?bootSignature:symbol, ?dynName:symbol, ?method:symbol)
+.input _DynamicMethodInvocation(IO="file", filename="DynamicMethodInvocation.facts", delimiter="\t")
+
+
+isInstruction(?instruction),
+isMethodInvocation(?instruction),
+isDynamicMethodInvocation_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?method),
+DynamicMethodInvocation_Bootstrap(?instruction, ?bootSignature),
+DynamicMethodInvocation_DynMethod(?instruction, ?dynName) :-
+  _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?method).
 
 
 // Throw

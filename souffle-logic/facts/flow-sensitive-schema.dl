@@ -112,14 +112,16 @@
 //-----------------------------------------------------------------------------
 
 .type HeapAllocation
-.type NormalHeap     = HeapAllocation
-.type StringConstant = HeapAllocation
-.type ClassHeap      = HeapAllocation
+.type NormalHeap           = HeapAllocation
+.type StringConstant       = HeapAllocation
+.type ClassHeap            = HeapAllocation
+.type MethodHandleConstant = HeapAllocation
 
 .decl isHeapAllocation(?h:HeapAllocation)
 .decl isNormalHeap(?h:NormalHeap)
 .decl isStringConstant(?h:StringConstant)
 .decl isClassHeap(?h:ClassHeap)
+.decl isMethodHandleConstant(?h:MethodHandleConstant)
 .decl isStringRaw(?id:symbol)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
@@ -131,7 +133,7 @@
 .decl MainMethodArgArrayContent(?heap:HeapAllocation)
 
 .decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)
-
+.decl MethodHandleConstant_InstanceType(?classHeap:MethodHandleConstant, ?instanceType:Type)
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
@@ -217,11 +219,13 @@
 .type VirtualMethodInvocation_Insn    = MethodInvocation
 .type SpecialMethodInvocation_Insn    = MethodInvocation
 .type StaticMethodInvocation_Insn     = MethodInvocation
+.type DynamicMethodInvocation_Insn    = MethodInvocation
 
 .decl isMethodInvocation(?insn:MethodInvocation)
 .decl isVirtualMethodInvocation_Insn(?insn:VirtualMethodInvocation_Insn)
 .decl isSpecialMethodInvocation_Insn(?insn:SpecialMethodInvocation_Insn)
 .decl isStaticMethodInvocation_Insn(?insn:StaticMethodInvocation_Insn)
+.decl isDynamicMethodInvocation_Insn(?insn:DynamicMethodInvocation_Insn)
 
 .type UnsupportedInstruction          = Instruction
 .type AssignPhantomInvoke             = UnsupportedInstruction
@@ -388,6 +392,13 @@
 .decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
 .decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
 .decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+
+// Dynamic Method Invocation
+.decl DynamicMethodInvocation_Bootstrap(?invocation:DynamicMethodInvocation_Insn, ?bootSignature:Method)
+.decl DynamicMethodInvocation_DynMethod(?invocation:DynamicMethodInvocation_Insn, ?dynName:symbol)
+
+// The bootstrap parameters of a dynamic invocation.
+.decl BootstrapParam(?index:number, ?invocation:DynamicMethodInvocation_Insn, ?var:Var)
 
 // Static Method Invocation
 .decl StaticMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
