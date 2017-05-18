@@ -573,13 +573,6 @@ HeapAllocation:ContextInsensitive(?heap) <-
   ClassHeap(?heap).
 
 /*************************************************************
- * MethodHandle constants
- *************************************************************/
-
-HeapAllocation:ContextInsensitive(?heap) <-
-  MethodHandleConstant(?heap).
-
-/*************************************************************
  * Merging allocation sites per method, per class, or per package.
  *************************************************************/
 

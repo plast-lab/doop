@@ -6,6 +6,7 @@
 #include "native.logic"
 #include "reference.logic"
 #include "string-constants.logic"
+#include "method-handles.logic"
 #include "threads.logic"
 
 #if defined(REFLECTION)

@@ -1,0 +1,7 @@
+/*************************************************************
+ * MethodHandle constants
+ *************************************************************/
+
+HeapAllocation:ContextInsensitive(?heap) <-
+  MethodHandleConstant(?heap).
+
