@@ -47,6 +47,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to the ?param.
 .decl ForwardReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
+.decl ForwardReflectiveAssignClassConstantString(?ctx:Context, ?invocation:MethodInvocation, ?type:Type, ?constantHeap:Value)
 
 ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
 ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap) :-
@@ -58,6 +59,8 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
   ClassNameMatchingStringConstant_Type(?type, ?constantHeap).
 
 // If it is a local and precise string, consider it a high-confidence inference
+.decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
+
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction_Method(?invocation, ?inmethod),
@@ -88,10 +91,10 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
   java_lang_Class_getName(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  OptReifiedClass(?className, ?classValue),
+  _OptReifiedClass(?className, ?classValue),
   isType(?className),
-  isStringConstant(?className),
-  Value_isHeap(?className).
+  isStringConstant(?classNameValue),
+  Value_isHeap(?classNameValue).
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
@@ -137,7 +140,7 @@ VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
   ReifiedClass(?superType, ?superClassValue).
 
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
-  ImmutableHContextFromContext(?callerCtxm, ?hctx),
+  ImmutableHContextFromContext(?callerCtx, ?hctx),
   java_lang_Class_getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue),
@@ -159,12 +162,18 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) :-
   ReifiedClass(?superInterface, ?superInterfaceValue).
 
 
+.decl _OptReifiedClass(?type:Type, ?classValue:Value)
+
 _OptReifiedClass(?type, ?classValue) :-
   ReifiedClass(?type, ?classValue).
 
+.decl _OptReflectiveAllocation(?arrayValue:Value, ?invocation:MethodInvocation)
+
 _OptReflectiveAllocation(?arrayValue, ?invocation) :-
   ReflectiveAllocation(?invocation, _, ?arrayValue).
-  
+
+.decl FillArray_Interfaces(?hctx:HContext, ?arrayValue:Value, ?type:Type)
+
 FillArray_Interfaces(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
@@ -194,6 +203,8 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
 // we assume the returned methods will be filtered by some string
 */
 
+.decl FillArray_PublicMethods(?hctx:HContext, ?arrayValue:Value, ?type:Type)
+
 FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getMethods(?invocation, ?to, ?from),
@@ -205,7 +216,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
 .decl ForwardReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
-.decl ForwardReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method, ?constantHeap:Value)
+.decl ForwardReflectiveAssignMethodConstantString(?ctx:Context, ?to:Var, ?signature:Method, ?constantHeap:Value)
 
 ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
 ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) :-
@@ -220,6 +231,8 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
   Method_Modifier("public", ?signature).
 
 // If it is a local and precise string, consider it a high-confidence inference
+.decl ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
+
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
    ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
 // Banning method propagation this way seems too restrictive
@@ -241,6 +254,8 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   ReifiedMethod[?signature] = ?value,
   MethodNameMatchingStringConstant_Signature(?signature, _).
 */
+
+.decl FillArray_Methods(?hctx:HContext, ?arrayValue:Value, ?type:Type)
 
 FillArray_Methods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
@@ -282,6 +297,8 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   ReifiedConstructor[?constructor] = ?value.
 */
 
+.decl FillArray_PublicConstructors(?hctx:HContext, ?arrayValue:Value, ?classValue:Value)
+
 FillArray_PublicConstructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
@@ -306,6 +323,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   OptClassToConstructor(?constructor, ?classValue),
   ReifiedConstructor[?constructor] = ?value.
 */
+.decl FillArray_Constructors(?hctx:HContext, ?arrayValue:Value, ?classValue:Value)
 
 FillArray_Constructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
@@ -353,6 +371,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   ReifiedField[?fld] = ?value,
   FieldNameMatchingStringConstant_Signature(?fld, _).
 */
+.decl FillArray_PublicFields(?hctx:HContext, ?arrayValue:Value, ?type:Type)
 
 FillArray_PublicFields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
@@ -380,7 +399,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
   Field_Modifier("public", ?signature).
 
 // If it is a local and precise string, consider it a high-confidence inference
-ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
+.decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
 
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
@@ -399,6 +418,8 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) _-
   ReifiedField(?fld, ?value),
   FieldNameMatchingStringConstant_Signature(?fld, _).
 */
+
+.decl FillArray_Fields(?hctx:HContext, ?arrayValue:Value, ?type:Type)
 
 FillArray_Fields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
@@ -439,10 +460,15 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
  *************************************************************/
 
 // Simple optimization predicate. It matters.
+.decl OptClassToConstructor(?constructor:Method, ?classValue:Value)
+
 OptClassToConstructor(?constructor, ?classValue) :-
   ReifiedClass(?type, ?classValue),
   Method_DeclaringType(?constructor, ?type),
   Method_SimpleName(?constructor, "<init>").
+
+.decl AssignReflectiveAllocation(?invocation:MethodInvocation, ?type:Type, ?ctx:Context, ?to:Var)
+.decl ReflectiveSpecialMethodInvocation(?invocation:MethodInvocation, ?constructor:Method, ?ctx:Context, ?to:Var)
 
 AssignReflectiveAllocation(?invocation, ?type, ?ctx, ?to),
 ReflectiveSpecialMethodInvocation(?invocation, ?constructor, ?ctx, ?to),
@@ -461,9 +487,13 @@ ReflectiveBaseVar(?invocation, ?to) :-
  * NOTE  
  * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
+.decl _OptVarToMethod(?var:Var, ?method:Method)
+
 _OptVarToMethod(?var, ?method) :-
   Var_DeclaringMethod(?var, ?method).
-  
+
+.decl _Optjava_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?method:Method)
+
 _Optjava_lang_Class_getClassLoader(?invocation, ?to, ?method) :-
   java_lang_Class_getClassLoader(?invocation, ?to, ?from),
   _OptVarToMethod(?from, ?method).
@@ -497,6 +527,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 /*************************************************************
  * Auxiliaries
  *************************************************************/
+.decl NumberOfClassesMatchingConstant(?constant:StringConstant, ?n:number)
+.decl NumberOfMethodsMatchingConstant(?constant:StringConstant, ?n:number)
+.decl NumberOfFieldsMatchingConstant(?constant:StringConstant, ?n:number)
+
 /*NumberOfClassesMatchingConstant[?constant] = ?n :-
   agg<<?n = count()>>(ClassNameMatchingStringConstant_Type(_, ?constant)).
 NumberOfMethodsMatchingConstant[?constant] = ?n :-
