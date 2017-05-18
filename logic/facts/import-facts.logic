@@ -530,11 +530,14 @@ lang:physical:filePath[`_DynamicMethodInvocation] = "facts/DynamicMethodInvocati
 lang:physical:delimiter[`_DynamicMethodInvocation] = "\t".
 lang:physical:hasColumnNames[`_DynamicMethodInvocation] = false.
 
-_DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?method) ->
+_DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method) ->
    string(?ref),
    int[32](?index),
    string(?bootSignature),
    string(?dynName),
+   string(?dynRetType),
+   int[32](?dynArity),
+   string(?dynParamTypes),
    string(?method).
 
 +DynamicMethodInvocation:Insn(?x),
@@ -542,8 +545,11 @@ _DynamicMethodInvocation(?ref, ?index, ?bootSignature, ?dynName, ?method) ->
 +Instruction:Index[?x] = ?index,
 +Instruction:Method[?x] = ?method,
 +DynamicMethodInvocation:Bootstrap[?x] = ?bootSignature,
-+DynamicMethodInvocation:DynMethod[?x] = ?dynName <-
-   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?method).
++DynamicMethodInvocation:DynName[?x] = ?dynName,
++DynamicMethodInvocation:DynReturnType[?x] = ?dynRetType,
++DynamicMethodInvocation:DynParamTypes[?x] = ?dynParamTypes,
++DynamicMethodInvocation:DynArity[?x] = ?dynArity <-
+   _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?method).
 
 
 // Throw

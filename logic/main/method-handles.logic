@@ -5,3 +5,80 @@
 HeapAllocation:ContextInsensitive(?heap) <-
   MethodHandleConstant(?heap).
 
+#define LAMBDA_METAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+
+#define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
+
+/* Method references are wrapped by calling invokedynamic with
+   boostrap method being the lambda metafactory and the second
+   bootstrap argument being a constant method handle. The result of
+   the invokedynamic (stored in 'var') is a lambda, which contains an
+   instance method calling static method 'realMethod'. */
+
+ConstantMethodHandleLambda(?var, ?dynName, ?dynRet, ?realMethod) ->
+   Var(?var), string(?dynName), string(?dynRet), Method(?realMethod).
+
+ConstantMethodHandleLambda(?var, ?dynName, ?dynRet, ?realMethod) <-
+   DynamicMethodInvocation:Insn(?i),
+   BootstrapParam[1, ?i] = ?handleVar,
+   DynamicMethodInvocation:Bootstrap[?i] = ?bootMethod,
+   Method:Id(?bootMethod:LAMBDA_METAFACTORY_ID),
+   VarPointsTo(_, ?handleVal, _, ?handleVar),
+   Value:Heap[?handleVal] = ?handle,
+   MethodHandleConstant:Method[?handle] = ?realMethod,
+   DynamicMethodInvocation:DynName[?i] = ?dynName,
+   DynamicMethodInvocation:DynReturnType[?i] = ?dynRet,
+   AssignReturnValue[?i] = ?var.
+
+/* Record invokedynamic invocations whose bootstrap methods are not
+   handled at all. */
+UnhandledInvokedynamic(?i, ?bootMethodId) ->
+   DynamicMethodInvocation:Insn(?i), string(?bootMethodId).
+
+UnhandledInvokedynamic(?i, ?bootMethodId) <-
+   DynamicMethodInvocation:Insn(?i),
+   DynamicMethodInvocation:Bootstrap[?i] = ?bootMethod,
+   Method:Id(?bootMethod:?bootMethodId),
+   // ?bootMethodId != LAMBDA_ALTMETAFACTORY_ID,
+   ?bootMethodId != LAMBDA_METAFACTORY_ID.
+
+/* When invokeinterface is called on a lambda object constructed by a
+   constant method handle, then its real static method is called. This
+   proxying converts the static method pointed to by the method handle
+   to an instance method. */
+
+InvokedynamicCalls(?i, ?m) -> VirtualMethodInvocation:Insn(?i), Method(?m).
+
+InvokedynamicCalls(?i, ?realMethod) <-
+   ConstantMethodHandleLambda(?var, ?dynName, _, ?realMethod),
+   VirtualMethodInvocation:Base[?i] = ?var,
+   VirtualMethodInvocation:SimpleName[?i] = ?dynName.
+
+/* Generate call graph edge. */
+
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?m) ->
+   Context(?callerCtx), VirtualMethodInvocation:Insn(?i),
+   Context(?calleeCtx), Method(?m).
+
+// If the method takes a parameter, use its context.
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) <-
+   InvokedynamicCalls(?i, ?realMethod),
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
+   ActualParam[0, ?i] = ?param, VarPointsTo(_, _, ?callerCtx, ?param).
+
+// TODO: what happens with 0-arity static methods wrapped as instance
+// methods?
+
+// InvokedynamicCallGraphEdge(?i, ?m) <-
+//    ConstantMethodHandleLambda(?var, ?dynName, ?dynRet, ?realMethod),
+//    InterfaceType(?t),
+//    Type:Id(?t:?dynRet),
+//    VirtualMethodInvocation:Base[?i] = ?var,
+//    VirtualMethodInvocation:SimpleName[?i] = ?dynName,
+//    InterfaceType(?intf), Type:Id(?intf:?dynRet),
+//    SupertypeOf(?intf, ?class),
+//    Method:DeclaringType[?m] = ?class,
+//    Method:SimpleName[?m] = ?dynName.
+
+ReachableContext(?calleeCtx, ?callee) <-
+   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).

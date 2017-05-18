@@ -469,8 +469,16 @@ VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
 DynamicMethodInvocation:Bootstrap[?invocation] = ?bootSignature ->
    DynamicMethodInvocation:Insn(?invocation), Method(?bootSignature).
 
-DynamicMethodInvocation:DynMethod[?invocation] = ?dynName ->
+// The following triplet is the dynamic method and can be anything
+// (these are parts of a single UTF-8 string in the bytecode).
+DynamicMethodInvocation:DynName[?invocation] = ?dynName ->
    DynamicMethodInvocation:Insn(?invocation), string(?dynName).
+DynamicMethodInvocation:DynReturnType[?invocation] = ?dynRetType ->
+   DynamicMethodInvocation:Insn(?invocation), string(?dynRetType).
+DynamicMethodInvocation:DynParamTypes[?invocation] = ?dynParamTypes ->
+   DynamicMethodInvocation:Insn(?invocation), string(?dynParamTypes).
+DynamicMethodInvocation:DynArity[?invocation] = ?dynArity ->
+   DynamicMethodInvocation:Insn(?invocation), int[32](?dynArity).
 
 // The bootstrap parameters of a dynamic invocation.
 BootstrapParam[?index, ?invocation] = ?var ->
