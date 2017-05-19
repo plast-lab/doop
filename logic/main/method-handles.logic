@@ -9,6 +9,8 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 #define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
+LambdaMetafactory[] = ?bootMethod <- Method:Id(?bootMethod:LAMBDA_METAFACTORY_ID).
+
 // Method references are wrapped by calling invokedynamic with
 // boostrap method being the lambda metafactory and the second
 // bootstrap argument being a constant method handle. The result
@@ -23,8 +25,7 @@ MockValueConsMacro(?valueId, ?interface, ?value),
 ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) <-
    DynamicMethodInvocation:Insn(?invo),
    BootstrapParam[1, ?invo] = ?handleVar,
-   DynamicMethodInvocation:Bootstrap[?invo] = ?bootMethod,
-   Method:Id(?bootMethod:LAMBDA_METAFACTORY_ID),
+   DynamicMethodInvocation:Bootstrap[?invo] = LambdaMetafactory[],
    VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
    Value:Heap[?handleVal] = ?handle,
    MethodHandleConstant:Method[?handle] = ?realMethod,
@@ -47,16 +48,18 @@ UnhandledInvokedynamic(?i, ?bootMethodId) <-
    // ?bootMethodId != LAMBDA_ALTMETAFACTORY_ID,
    ?bootMethodId != LAMBDA_METAFACTORY_ID.
 
-/* When invokeinterface is called on a lambda object constructed by a
-   constant method handle, then its real static method is called. This
-   proxying converts the static method pointed to by the method handle
-   to an instance method. */
+// When invokeinterface is called on a lambda object constructed by a
+// constant method handle, the real method is called. This can wrap a
+// static method call as an instance method call.
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?m) ->
    Context(?callerCtx), VirtualMethodInvocation:Insn(?i),
    Context(?calleeCtx), Method(?m).
 
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) <-
+// We create two call graph edges: one for the method called and one
+// for the bootstrap method.
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LambdaMetafactory[]) <-
    ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
    VirtualMethodInvocation:Base[?i] = ?var,
    VarPointsTo(_, ?value, ?callerCtx, ?var),
