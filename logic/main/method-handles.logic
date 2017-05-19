@@ -80,3 +80,10 @@ VarPointsTo(?hctx, ?val, ?ctx, ?formal) <-
    ActualParam[?idx, ?i] = ?actual,
    VarPointsTo(_, ?val, _, ?actual),
    ImmutableHContextFromContext[?ctx] = ?hctx.
+
+// Handle return values.
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) <-
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
+   ReturnVar(?realReturnVar, ?realMethod),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+   AssignReturnValue[?i] = ?ret.
