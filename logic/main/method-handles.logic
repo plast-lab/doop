@@ -33,8 +33,12 @@ ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) <-
    DynamicMethodInvocation:DynReturnType[?invo] = ?dynRet,
    InterfaceType(?interface), Type:Id(?interface:?dynRet),
    AssignReturnValue[?invo] = ?var,
+   // Generate friendly description for the generated wrapper.
    Instruction:Id(?invo:?invoId),
-   ?valueId = "<reference " + ?dynRet + "::" + ?dynName + " at " + ?invoId + ">".
+   Method:SimpleName[?realMethod] = ?handleMeth,
+   Method:DeclaringType[?realMethod] = ?handleType,
+   Type:Id(?handleType:?handleTypeId),
+   ?valueId = "<reference " + ?handleTypeId + "::" + ?handleMeth + " wrapped as " + ?dynRet + "." + ?dynName + " at " + ?invoId + ">".
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
