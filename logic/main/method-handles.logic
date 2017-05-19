@@ -68,3 +68,11 @@ InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LambdaMetafactory[]) <-
 
 ReachableContext(?calleeCtx, ?callee) <-
    InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+// Pass arguments to underlying method.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) <-
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?realMethod),
+   FormalParam[?idx, ?realMethod] = ?formal,
+   ActualParam[?idx, ?i] = ?actual,
+   VarPointsTo(_, ?val, _, ?actual),
+   ImmutableHContextFromContext[?ctx] = ?hctx.
