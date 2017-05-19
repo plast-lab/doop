@@ -1,6 +1,6 @@
 #include "common-transfer-methods.logic"
 
-InformationLabel("default").
+//InformationLabel("default").
 
 TaintSourceMethod("default", "<java.io.BufferedReader: java.lang.String readLine()>").
 
