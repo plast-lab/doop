@@ -34,7 +34,7 @@ ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) <-
    InterfaceType(?interface), Type:Id(?interface:?dynRet),
    AssignReturnValue[?invo] = ?var,
    Instruction:Id(?invo:?invoId),
-   ?valueId = "<lambda " + ?dynRet + "::" + ?dynName + " at " + ?invoId + ">".
+   ?valueId = "<reference " + ?dynRet + "::" + ?dynName + " at " + ?invoId + ">".
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
