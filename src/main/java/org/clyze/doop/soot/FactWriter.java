@@ -827,7 +827,6 @@ class FactWriter {
         }
 
         if (expr instanceof StaticInvokeExpr) {
-
             _db.add(STATIC_METHOD_INV, insn, str(index), _rep.signature(expr.getMethod()), methodId);
         }
         else if (expr instanceof VirtualInvokeExpr || expr instanceof InterfaceInvokeExpr) {
