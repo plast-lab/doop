@@ -3,7 +3,7 @@
  *************************************************************/
 
 HeapAllocation:ContextInsensitive(?heap) <-
-  MethodHandleConstant(?heap).
+   MethodHandleConstant(?heap).
 
 #define LAMBDA_METAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
 
