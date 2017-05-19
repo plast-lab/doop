@@ -1,10 +1,6 @@
-_HeapValueId[?value] = ?heapId <-
-  Value:isHeap(?value),
-  Value:Id[?value] = ?heapId.
-
 Server:VarPointsTo(?class, ?var, ?heapId) <-
   VarPointsTo(_, ?value, _, ?var),
-  _HeapValueId[?value] = ?heapId,
+  Value:Id[?value] = ?heapId,
   Var:DeclaringMethod(?var, ?method),
   Method:DeclaringType[?method] = ?class.
 
@@ -18,12 +14,12 @@ Server:InstanceFieldPointsTo(?baseheapId, ?sig, ?heapId) <-
   InstanceFieldPointsTo(_, ?value, ?sig, _, ?basevalue),
   Value:Heap[?basevalue] = ?baseheap, 
   _IsAssignHeapAllocation(?baseheap),
-  _HeapValueId[?value] = ?heapId,
-  _HeapValueId[?basevalue] = ?baseheapId.
+  Value:Id[?value] = ?heapId,
+  Value:Id[?basevalue] = ?baseheapId.
 
 Server:StaticFieldPointsTo(?sig, ?heapId) <-
   StaticFieldPointsTo(_, ?value, ?sig),
-  _HeapValueId[?value] = ?heapId.
+  Value:Id[?value] = ?heapId.
 
 _Class:DeclaresMethod(?method, ?class) <-
   Method:DeclaringType[?method] = ?class.
