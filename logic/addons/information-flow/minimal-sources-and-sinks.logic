@@ -3,5 +3,6 @@
 //InformationLabel("default").
 
 TaintSourceMethod("default", "<java.io.BufferedReader: java.lang.String readLine()>").
+TaintSourceMethod("default", "<java.io.BufferedReader: int read(char[],int,int)>").
 
 LeakingSinkMethodArg("default", 0, "<java.io.PrintWriter: void println(java.lang.String)>").

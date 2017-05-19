@@ -202,7 +202,7 @@ StaticToActualType(?type, ?type) <-
 
 // The key point where all the mock objects are created. Triggers all the rest.
 MockObject(?value, ?class),
-Value:Mock:Cons[(Type:Id[(?class)]) + ": (Mock)"] = ?value,
+Value:Mock:Cons[(Type:Id[(?class)]) + "::: (Mock)"] = ?value,
 Value:Type[?value] = ?class,
 Value(?value),
 Value:DeclaringType[?value] = ?class  <-
