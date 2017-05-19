@@ -9,11 +9,11 @@ HeapAllocation:ContextInsensitive(?heap) <-
 
 #define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
 
-/* Method references are wrapped by calling invokedynamic with
-   boostrap method being the lambda metafactory and the second
-   bootstrap argument being a constant method handle. The result
-   'value' of the invokedynamic is a lambda, which contains an
-   instance method calling static method 'realMethod'. */
+// Method references are wrapped by calling invokedynamic with
+// boostrap method being the lambda metafactory and the second
+// bootstrap argument being a constant method handle. The result
+// 'value' of the invokedynamic is a lambda, which contains an
+// instance method calling static method 'realMethod'.
 
 ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) ->
    Value(?value), string(?dynName), string(?dynRet), Method(?realMethod).
@@ -35,8 +35,8 @@ ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) <-
    Instruction:Id(?invo:?invoId),
    ?valueId = "<lambda " + ?dynRet + "::" + ?dynName + " at " + ?invoId + ">".
 
-/* Record invokedynamic invocations whose bootstrap methods are not
-   handled at all. */
+// Record invokedynamic invocations whose bootstrap methods are not
+// handled at all.
 UnhandledInvokedynamic(?i, ?bootMethodId) ->
    DynamicMethodInvocation:Insn(?i), string(?bootMethodId).
 
