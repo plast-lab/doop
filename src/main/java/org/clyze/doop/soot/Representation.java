@@ -183,7 +183,7 @@ public class Representation {
 
         return getMethodSignature(inMethod)
             + "/" + expr.getMethod().getDeclaringClass() + "." + name
-            + "/" + session.nextNumber(name);
+            + "/" + session.nextNumber(expr.getMethod().getDeclaringClass() + "." + name);
     }
 
 
