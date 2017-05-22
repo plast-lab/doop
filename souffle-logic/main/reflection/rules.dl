@@ -11,11 +11,11 @@
  * This analysis currently does not support reflective use of reflection. If
  * you really want to, you can hide uses of reflection in this way. The issue
  * here is that the current code does not consider reflective method
- * invocations, only virtual method invocations. For example:
+ * invocations, only virtual method invocations. For example_
  *
- *   Method:Id(?getClass:"<java.lang.Object: java.lang.Class getClass()>"),
- *   VirtualMethodInvocation:Insn(?invocation),
- *   MethodInvocation:Method[?invocation] = ?getClass,
+ *   Method_Id(?getClass_"<java.lang.Object_ java.lang.Class getClass()>"),
+ *   VirtualMethodInvocation_Insn(?invocation),
+ *   MethodInvocation_Method[?invocation] = ?getClass,
  *
  * Only checks for invocations of getClass in source code, not in method
  * invocations discovered during reflection analysis.
@@ -31,3 +31,1555 @@
  * Give an arbitrary containing type for every reflection object,
  * so that analyses that need it (e.g., type-sens) are covered.
  *************************************************************/
+
+// // REVIEW: the problem is that currently reflective allocations are not
+// // uniquely identified. This would produce way too many facts. So instead we
+// // cheat and use the type of the reflective allocation as the type *containing*
+// // the reflective allocation.  If we are to fix this in the future, it will
+// // look like this:
+
+// Value_DeclaringType[?value] = ?type <-
+//   ReflectiveAllocation[?invocation, _] = ?value,
+//   Instruction_Method[?invocation] = ?inmethod,
+//   Method_DeclaringType[?inmethod] = ?type.
+
+Value_DeclaringType(?value, ?type) :-
+  ReflectiveAllocation(_, ?type, ?value).
+
+Value_DeclaringType(?value, ?type) <-
+  (ReifiedConstructor(?value);
+   ReifiedMethod(?value);
+   ReifiedField(?value)),
+  Value_Type(?value, ?type),
+  ReferenceType(?type).
+
+Value_DeclaringType(?value, ?type) <-
+  ReifiedClass(?type, ?value),
+  !_TypeHasHeap(?type).
+
+/*************************************************************
+ * Create objects that are implicitly allocated in reflection calls.
+ * Typically these are the objects returned by each call
+ *************************************************************/
+
+#define CreateReflectiveAllocationMacro(invocation, valueType, valueStr) \
+  MockValueConsMacro(valueStr, valueType, ?value), \
+  ReflectiveValue(?value), \
+  ReflectiveAllocation(invocation, valueType, ?value)
+
+OptMethodInvocation_Method(?invocation, ?sig) <-
+  MethodInvocation_Method(?invocation, ?sig).
+
+
+// NOTE "?sig" is reserved for this macro
+#define VirtualMethodMacro(invocation, to, from, sigStr) \
+  Method_Id(?sig_sigStr), \
+  OptMethodInvocation_Method(invocation, ?sig), \
+  AssignReturnValue[invocation] = to, \
+  VirtualMethodInvocation_Base[invocation] = from
+
+
+// We assume that the array is allocated inside the method, before being returned.
+// NOTE "?invocationStr" and "?typeStr" are reserved for this macro
+#define ReflectiveArrayMacro(invocation, type, arrayType, arrayValueStr, arrayTypeStr) \
+  isInstruction(invocation), \
+  isType(type), \
+  isArrayType(arrayType), \
+  isType(arrayType), \
+  arrayValueStr = "<reflective "+ ?invocation +"/"+ ?type +"/new "+ arrayType +">"
+
+#define ReflectiveKnownArrayMacro(invocation, arrayType, arrayValueStr, arrayTypeStr) \
+  isInstruction(invocation), \
+  isArrayType(arrayType), \
+  isType(arrayType), \
+  arrayValueStr = "<reflective "+ ?invocation +"/new "+ arrayType +">"
+
+
+java_lang_Object_getClass(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Object_ java.lang.Class getClass()>").
+
+java_lang_Class_forName(?invocation, ?inmethod) :-
+  ( ?sig = "<java.lang.Class_ java.lang.Class forName(java.lang.String)>",
+    isMethod(?sig) ;
+    ?sig = "<java.lang.Class_ java.lang.Class forName(java.lang.String,boolean,java.lang.ClassLoader)>",
+    isMethod(?sig) ),
+  StaticMethodInvocation(?invocation, ?sig, ?inmethod).
+
+java_lang_Class_getName(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.String getName()>").
+
+java_lang_Class_getComponentType(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.Class getComponentType()>").
+
+java_lang_Class_getSuperclass(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.Class getSuperclass()>").
+
+// // (YS) Old style_ Makes no sense to me. The type should not be there. This is just
+// // allocating too many useless arrays. Changed it throughout.
+// CreateReflectiveAllocationMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr),
+// java_lang_Class_getInterfaces(?invocation, ?to, ?from) <-
+//   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.Class[] getInterfaces()>"),
+//   ReferenceType(?type),
+//   ReflectiveArrayMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr, "java.lang.Class[]").
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getInterfaces(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class[] getInterfaces()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.Class[]").
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getMethods(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method[] getMethods()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.reflect.Method[]").
+
+java_lang_Class_getMethod(?to, ?param, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>"),
+  ActualParam(0, ?invocation, ?param).
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getDeclaredMethods(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.reflect.Method[]").
+
+java_lang_Class_getDeclaredMethod(?to, ?param, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>"),
+  ActualParam[0, ?invocation] = ?param.
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getConstructors(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getConstructors()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.reflect.Constructor[]").
+
+java_lang_Class_getConstructor(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor getConstructor(java.lang.Class[])>").
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.reflect.Constructor[]").
+
+java_lang_Class_getDeclaredConstructor(?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>").
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getFields(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field[] getFields()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.reflect.Field[]").
+
+java_lang_Class_getField(?to, ?param, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>"),
+  ActualParam(0, ?invocation, ?param).
+
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_Class_getDeclaredFields(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, ?arrayValueStr, "java.lang.reflect.Field[]").
+
+java_lang_Class_getDeclaredField(?to, ?param, ?from) <-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>"),
+  ActualParam[0, ?invocation] = ?param.
+
+// TODO Better filtering of class types
+CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
+java_lang_Class_newInstance(?invocation, ?to, ?from) <-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
+  isClassType(?type),
+  isType(?type),
+#ifdef REFLECTION_REFINED_OBJECTS
+  Instruction_Id(?invocation_?invocationStr),
+  ?valueStr = "<reflective Class.newInstance/" + ?invocationStr + ?type + ">".
+#else
+// REVIEW_ Does this merging lose precision?
+  ?valueStr = "<reflective Class.newInstance/" + ?type + ">".
+#endif
+
+CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
+java_lang_Class_getClassLoader(?invocation, ?to, ?from) <-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.ClassLoader getClassLoader()>"),
+  // Use a single dummy value for any ClassLoader
+  ?type = "java.lang.ClassLoader",
+  isType(?type),
+  isReferenceType(?type),
+  ?valueStr = "<reflective dummy ClassLoader>".
+
+CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
+java_lang_ClassLoader_getResource(?invocation, ?to, ?from) <-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.ClassLoader: java.net.URL getResource(java.lang.String)>"),
+  // Use a single dummy value for any URL resource
+  ?type = "java.net.URL",
+  isType(?type),
+  isReferenceType(?type),
+  ?valueStr = "<reflective dummy URL resource>".
+
+// TODO Handle version for multiarray? If yes, add to ReifiedClass as well
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
+java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) <-
+  ?sig = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>",
+  isMethod(?sig),
+  MethodInvocation_Method[?invocation] = ?sig,
+  StaticMethodInvocation_Insn(?invocation),
+  AssignReturnValue[?invocation] = ?to,
+  ActualParam[0, ?invocation] = ?param,
+  isArrayType(?arrayType),
+  ReflectiveArrayMacro(?invocation, ?arrayType, ?arrayType, ?arrayValueStr, "").
+
+// TODO Better filtering of class types
+CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
+java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) <-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
+  isClassType(?type),
+  isType(?type),
+#ifdef REFLECTION_REFINED_OBJECTS
+  isInstruction(?invocationr),
+  ?valueStr = "<reflective Constructor.newInstance/" + ?invocation + ?type + ">".
+#else
+// REVIEW_ Does this merging lose precision?
+  ?valueStr = "<reflective Constructor.newInstance/" + ?type + ">".
+#endif
+
+// NOTE At this point, we cannot distinguish static from instance fields
+java_lang_reflect_Field_get(?invocation, ?to, ?field) :-
+  VirtualMethodMacro(?invocation, ?to, ?field, "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>").
+
+java_lang_reflect_Field_get_base[?invocation] = ?base :-
+  VirtualMethodMacro(?invocation, _, _, "<java.lang.reflect.Field: java.lang.Object get(java.lang.Object)>"),
+  ActualParam(0, ?invocation, ?base).
+
+java_lang_reflect_Field_set(?invocation, ?from, ?field) <-
+  ?signature = "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>",
+  isMethod(?signature),
+  MethodInvocation_Method(?invocation, ?signature),
+  VirtualMethodInvocation_Base(?invocation, ?field),
+  ActualParam(1, ?invocation, ?from).
+
+java_lang_reflect_Field_set_base(?invocation, ?base) <-
+  ?signature = "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>",
+  isMethod(?signature),
+  MethodInvocation_Method(?invocation, ?signature),
+  VirtualMethodInvocation_Insn(?invocation),
+  ActualParam(0, ?invocation, ?base).
+
+java_lang_reflect_Method_invoke(?invocation, ?method) <-
+  ?signature = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>",
+  isMethod(?signature),
+  MethodInvocation_Method(?invocation, ?signature),
+  VirtualMethodInvocation_Base(?invocation, ?method).
+
+
+
+// We use a distinct value abstraction for every java.lang.Class, i.e., for
+// every class type that appears in the bytecode, for example '<class
+// java.lang.String>'. The predicate ReifiedClass is used to look up the value
+// abstraction for a given type.
+
+// Many of these already have a meta-object representing them in the input.
+// This appears explicitly in the program source, e.g., "Foo.Class".
+ReifiedClass(?type, ?classHeap) :-
+  isReferenceType(?type),
+  ClassHeap_InstanceType(?classHeap, ?type),
+  isValue(?classHeap).
+
+_TypeHasHeap(?type) <-
+  isClassHeap_InstanceType(?type).
+
+// Perhaps others don't have a meta object and need one created. Both kinds
+// are represented as the ReifiedClass for the type. The ids will have
+// a different form (<class..> vs <<reified class..>>)
+MockValueConsMacro(?classValueId, ?javaLangClass, ?classValue),
+ReifiedClass(?type, ?classValue) <-
+  isReferenceType(?type),
+  !_TypeHasHeap(?type),
+  isType(?type),
+  ?classValue = "<<reified class " + ?type + ">>",
+  ?javaLangClass = "java.lang.Class",
+  isType(?javaLangClass).
+
+// Values for reified constructors (java.lang.reflect.Constructor)
+MockValueConsMacro(?id, ?type, ?value),
+ReifiedConstructor(?signature, ?value)
+<-
+  Method_SimpleName(?signature, "<init>"),
+  isMethod(?signature),
+  ?id = "<<reified constructor " + ?signature + ">>",
+  ?type = "java.lang.reflect.Constructor",
+  isType(?type).
+
+
+// Values for reified methods (java.lang.reflect.Method).
+// TODO_ contains temporary solution against huge method signatures.
+MockValueConsMacro(?id, ?type, ?value),
+ReifiedMethod[?signature] = ?value
+<-
+  Method_SimpleName(?signature, ?simplename),
+  ?simplename != "<init>",
+  ?simplename != "<clinit>",
+  isMethod(?signature),
+  ?id = "<<reified method " + ?strSignature + ">>",
+  ?type = "java.lang.reflect.Method"
+  isType(?type).
+
+
+// Values for reified fields (java.lang.reflect.Field).
+MockValueConsMacro(?id, ?type, ?value),
+ReifiedField(?signature, ?value)
+<-
+  isField(?signature),
+  ?id = "<<reified field " + ?signature + ">>",
+  ?type = "java.lang.reflect.Field",
+  isType(?type).
+
+/*************************************************************
+ * BEGIN forward reflection logic.
+ * Next we have the standard "forward" reflection logic, which considers
+ * which objects have been found to flow to arguments of a reflective call.
+ *************************************************************
+ *************************************************************
+ * Reflective method calls
+ *
+ * Issues in the documentation_
+ *   - Class.getDeclaredMethods does not specify that <init> is not returned.
+ *   - Method.invoke does not specify that private method calls do not do method lookup
+ *   - It is impossible to call an overridden method in a super class.
+ *
+ * Issues in Livshits' reflection analysis_
+ *   - no dynamic method lookup for instance methods (interface, abstract, overriden)
+ *   - no handling of exceptions
+ *   - unclear how to make context-sensitive
+ *   - not sound for reflective use of reflection
+ *   - no handling of boxing/unboxing
+ *
+ * Test_
+ *   - static initialization
+ *   - context-sensitivity
+ *   - virtual method lookup
+ *   - method declared in class of objParam
+ *
+ * TODO Boxing of primitive results
+ *
+ *************************************************************/
+
+
+// Method invocations resulting from propagating Method and
+// Constructor objects to reflective method invocations.
+
+// As opposed to method invocations in the input facts, these must be
+// context-sensitive for precision purposes_ for a reflective method
+// call sites, the invoked method can depend on the context.
+/*ReflectiveMethodInvocation(?ctx, ?invocation, ?signature) ->
+  Context(?ctx), MethodInvocation(?invocation),
+  Method(?signature).
+
+// The base variable of a reflective method call.
+ReflectiveBaseVar[?invocation] = ?base ->
+  MethodInvocation(?invocation),
+  Var(?base).
+
+// The return variable of a reflective method call.
+ReflectiveAssignReturnValue[?invocation] = ?base ->
+  MethodInvocation(?invocation),
+  Var(?base).
+
+// The variable that points-to an array of actual parameters of a
+// reflective method call.
+ReflectiveActualParams[?invocation] = ?actualParams ->
+  MethodInvocation(?invocation),
+  Var(?actualParams).
+
+// Specific reflective method invocations.
+// Reflective method invocations need to be specialized to determine
+// what kind of method call this is.
+ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) ->
+  Context(?ctx), MethodInvocation(?invocation),
+  Method(?signature), Var(?base).
+
+ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) ->
+  Context(?ctx), MethodInvocation(?invocation),
+  Method(?signature).
+
+ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) ->
+  Context(?ctx), MethodInvocation(?invocation),
+  Method(?signature), Var(?base).
+*/
+
+// Private method invocations are special methods, unless they are static.
+
+// Note that (for now) the other special method invocation cases are
+// not possible_ 1) instance initialization methods cannot be invoked
+// reflectively using Method.invoke and 2) overridden superclass
+// methods cannot be invoked through reflection.
+ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
+  ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
+  ?private = "private",
+  isModifier(?private),
+  Method_Modifier(?private, ?signature),
+  ?static = "static",
+  isModifier(?static),
+  ! Method_Modifier(?static, ?signature),
+  ReflectiveBaseVar(?invocation, ?base).
+
+// Static method invocations
+ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
+  ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
+  ?static = "static",
+  isModifier(?static),
+  Method_Modifier(?static, ?signature).
+
+// All others are virtual method invocations
+ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) <-
+  ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
+  ?private = "private",
+  isModifier(?private),
+  ! Method_Modifier(?private, ?signature),
+  Modifier_Id(?static_"static"),
+  ! Method_Modifier(?static, ?signature),
+  ReflectiveBaseVar[?invocation] = ?base.
+
+
+// Reflective call graph edges.
+// TODO Unfortunately we have to redo the implementation of method
+//      calls here. It might be a good idea to consider generation of
+//      method invocations (but those are input predicates).
+
+// A reflective call graph edge has specific details for propagating
+// parameters and handling return values, so we distinguish them from
+// native and normal call graph edges.
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) ->
+  Context(?callerCtx), MethodInvocation(?invocation),
+  Context(?calleeCtx), Method(?callee).
+
+ReachableContext(?calleeCtx, ?callee) <-
+  ReflectiveCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+
+// Static methods
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
+// REVIEW (YS)_ Could add back the refinement functionality, but given the
+// (currently) marginal value of both context-sensitive reflection and
+// refinement-based analyses, it just isn't worth the trouble.
+ReflectiveMergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
+  ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
+#else
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
+  ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+  ReflectiveStaticMethodInvocation(?callerCtx, ?invocation, ?callee).
+#endif
+
+
+// Special methods
+
+// Surprising as it may seem, this join is not always performed first if
+// inlined below.
+OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base).
+
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
+ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+  <-
+  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+  ThisVar(?callee, ?this),
+  Var_Type(?this, ?type),
+  Value_Type(?value, ?superType),
+  SupertypeOf(?type, ?superType).
+#else
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+  <-
+  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+  ThisVar(?callee, ?this),
+  ImmutableContextFromHContext(?hctx, ?calleeCtx),
+// Check if object is an instance of the class declaring the method. It's a
+// special method. Should they be identical types? Probably not. Can use
+// special reflective calls to call private superclass methods.
+  SupertypeOf(Var_Type[?this], Value_Type[?value]).
+#endif
+
+
+// Virtual methods
+
+// TODO Check if object is an instance of the class declaring the
+//      method (only overapproximation)
+
+OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base).
+
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
+ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+  <-
+  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+  Value_Type(?value, ?valuetype),
+  Method_DeclaringType(?signature, ?type),
+  SupertypeOf(?type, ?valuetype), // TODO need nicer check
+  Method_SimpleName(?signature, ?simplename),
+  Method_Descriptor(?signature, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
+  ThisVar(?tomethod, ?this).
+#else
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+  <-
+  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+  Value_Type(?value, ?valuetype),
+  Method_DeclaringType[?signature] = ?type,
+  SupertypeOf(?type, ?valuetype), // TODO need nicer check
+  Method_SimpleName(signature, ?simplename),
+  Method_Descriptor(?signature, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
+  ThisVar(?tomethod, ?this),
+  ImmutableContextFromHContext(?hctx, ?calleeCtx).
+#endif
+
+// Return values of reflective method invocations
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) <-
+  ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+  ReflectiveAssignReturnValue(?invocation, ?local),
+  ReturnVar(?return, ?callee).
+
+InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
+  ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
+  FormalParam[_, ?callee] = ?formal,
+  ReflectiveActualParams[?invocation] = ?actual.
+
+/*************************************************************
+ *
+ * Reflective values (meta-objects, implicitly allocated objects)
+ *
+ *************************************************************/
+
+/**
+ * ReflectiveAssignClassConstant(?ctx, ?invocation, ?type)_ This
+ * forName invocation, under the given context, is inferred to
+ * possibly return a meta-class for the type. MAJOR relation for the
+ * analysis--its inference point is moved later, since it can employ
+ * arbitrary sophistication.
+ */
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) ->
+  Context(?ctx), MethodInvocation(?invocation), Type(?type).
+
+/**
+ * Not every virtual method invocation has a return value, so we need
+ * to initialize classes separate from the VarPointsTo rule.
+ */
+InitializedClass(?type) <-
+  ReflectiveAssignClassConstant(_, _, ?type).
+
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
+  ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+  ReifiedClass(?type, ?value),
+  AssignReturnValue(?invocation, ?return).
+
+/**
+ * ReflectiveAssignMethodConstant(?ctx, ?to, ?sig)_ A
+ * getMethod/getDeclaredMethod invocation, assigning its result to
+ * ?to, under the given context, is inferred to possibly return a
+ * meta-object for the method with the given signature.
+ */
+
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) ->
+  Context(?ctx), Var(?to), Method(?signature).
+
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to) <-
+  ReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
+  ReifiedMethod(?signature, ?value).
+
+/**
+ * ReflectiveAssignFieldConstant(?ctx, ?to, ?fld)_ similar to methods.
+ */
+
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) ->
+  Context(?ctx), Var(?to), Field(?signature).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  ReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
+  ReifiedField(?signature, ?value).
+
+
+// Basically this is only used for special methods and it has very
+// clever logic_ we don't have a receiver var when we are calling
+// a constructor reflectively. So, instead, we remember in the
+// AssignReflectiveAllocation predicate the variable that the
+// result of the reflective construction will be assigned to! Then
+// we pretend the reflectively allocated object is already assigned
+// to that local variable and use that local variable to initialize
+// the "this" var of the constructor, as if this local variable (to
+// which the object will be assigned after it is constructed) is the
+// receiver object. It took me hours to thorougly convince myself this
+// works. (YS)
+AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var) ->
+  Context(?ctx), Var(?var), Type(?type), Instruction(?instruction).
+
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
+ReflectiveRecordMacro(?ctx, ?value, ?hctx),
+InitializedClass(?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+  ReflectiveAllocation(?instruction, ?type, ?value),
+  Var_Type(?var, ?vartype),
+  SubtypeOf(?type, ?vartype).
+#else
+InitializedClass(?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+  ReflectiveAllocation(?instruction, ?type, ?value),
+  Var_Type(?var, ?vartype),
+  SubtypeOf(?type, ?vartype).
+#endif
+
+
+//// There are hundreds of thousands of ReflectiveAllocation facts typically.
+//// I don't think it *ever* makes sense to treat them context-sensitively.(YS)
+//InitializedClass(?type),
+//RecordMacro(?ctx, ?value, ?hctx),
+//VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+//  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+//  ReflectiveAllocation[?instruction, ?type]  = ?value,
+//  ObjectShouldNotBeRefined(?value).
+//
+//#ifdef RecordRefinedMacro
+//InitializedClass(?type),
+//RecordRefinedMacro(?ctx, ?value, ?hctx),
+//VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+//  AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
+//  ReflectiveAllocation[?instruction, ?type]  = ?value,
+//  ObjectShouldBeRefined(?value).
+//#endif
+
+/*************************************************************
+ * Reflective load of array index.
+ * The array is the array of args of a reflective call (e.g.,
+ * Method.invoke(Object[] args) ).
+ *************************************************************/
+
+InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base) ->
+  Context(?calleeCtx), Var(?to),
+  Context(?callerCtx), Var(?base).
+
+/**
+ * It's unfortunate this code is so similar to normal LoadArrayIndex.
+ * But it's not identical because there are type casts performed silently
+ * when the array is just passing arguments to a reflective method call
+ */
+LoadReflectiveValueArrayIndex(?calleeCtx, ?to, ?basehctx, ?basevalue) <-
+  InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?callerCtx, ?base).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  LoadReflectiveValueArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
+  Var_Type(?to, ?type),
+  Value_Type(?value, ?valuetype),
+  SupertypeOf(?type, ?valuetype).
+
+/// This is unnecessary. It's already done by ArrayIndexPointsTo.
+//  // Additional type filtering based on array covariance
+//  Value_Type[?basevalue] = ?arraytype,
+//  ComponentType[?arraytype] = ?componenttype,
+//  SupertypeOf(?componenttype, ?valuetype).
+
+/*************************************************************
+ * Reflective load of a static field
+ *
+ * TODO does this trigger class initialization?
+ *************************************************************/
+
+ReflectiveLoadStaticField(?ctx, ?to, ?signature) ->
+  Field(?signature), Context(?ctx), Var(?to).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ReflectiveLoadStaticField(?ctx, ?to, ?signature),
+  StaticFieldPointsTo(?hctx, ?value, ?signature),
+  Value_Type(?value, ?valuetype),
+  Var_Type(?to, ?vartype),
+  SupertypeOf(?vartype, ?valuetype).
+
+/*************************************************************
+ * Reflective store of a static field
+ *
+ * TODO does this trigger class initialization?
+ *************************************************************/
+
+ReflectiveStoreStaticField(?signature, ?ctx, ?from) ->
+  Field(?signature), Context(?ctx), Var(?from).
+#ifndef FEATHERWEIGHT_ANALYSIS
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+  ReflectiveStoreStaticField(?signature, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?signature, ?fieldtype),
+  SupertypeOf(?fieldtype, ?valuetype).
+#endif
+/*************************************************************
+ * Reflective load of an instance field
+ *************************************************************/
+
+ReflectiveLoadInstanceField(?toCtx, ?to, ?signature, ?baseCtx, ?base) ->
+  Context(?baseCtx), Var(?base), Field(?signature),
+  Context(?toCtx), Var(?to).
+ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?signature, ?basehctx, ?basevalue) ->
+  HContext(?basehctx), Value(?basevalue), Field(?signature),
+  Context(?toCtx), Var(?to).
+
+ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) <-
+  ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
+  Value_Type(?basevalue, ?basevaluetype),
+  Field_DeclaringType(?sig, ?declaringClass),
+  SupertypeOf(?declaringClass, ?basevaluetype),
+  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base).
+
+// The code below is very similar to the logic in the main analysis,
+// however we split it out because of the need (here, but not for
+// normal value loads) to filter type-incorrect values.
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
+  Value_Type(?value, ?valuetype),
+  Var_Type(?to, ?vartype),
+  SupertypeOf(?vartype, ?valuetype).
+
+
+/*************************************************************
+ * Reflective store of an instance field
+ *************************************************************/
+
+ReflectiveStoreInstanceField(?fromCtx, ?from, ?signature, ?baseCtx, ?base) ->
+  Context(?fromCtx), Var(?from), Context(?baseCtx), Var(?base),
+  Field(?signature).
+ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?fromCtx, ?from) ->
+  Context(?fromCtx), Var(?from), Value(?basevalue), HContext(?basehctx),
+  Field(?signature).
+
+ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) <-
+  ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
+  Value_Type(?basevalue, ?basevaluetype),
+  Field_DeclaringType(?sig, ?declaringClass),
+  SupertypeOf(?declaringClass, ?basevaluetype),
+  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base).
+
+// The code below is very similar to the logic in the main analysis,
+// however we split it out because of the need (here, but not for
+// normal value loads) to filter type-incorrect values.
+#ifndef FEATHERWEIGHT_ANALYSIS
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
+  ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  !Value_Null(?basevalue),
+  NotSpecialObject(?value),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?signature, ?fieldtype),
+  SupertypeOf(?fieldtype, ?valuetype).
+#endif
+/*************************************************************
+ * END forward reflection logic
+ *************************************************************/
+
+/*************************************************************
+ * BEGIN tying together forward and backward reflection logic
+ * This is a major configuration point of the analysis.
+ *************************************************************/
+
+// Declare the concepts we will use in the combination
+ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) ->
+  Context(?ctx), MethodInvocation(?invocation), Type(?type).
+ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) ->
+  Context(?ctx), MethodInvocation(?invocation), Type(?type).
+BackwardReflectiveAssignClassConstant(?invocation, ?type) ->
+  MethodInvocation(?invocation), Type(?type).
+BackwardHighConfidenceReflectiveAssignClassConstant(?invocation, ?type) ->
+  MethodInvocation(?invocation), Type(?type).
+
+ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature) ->
+  Context(?ctx), Var(?to), Method(?signature).
+ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) ->
+  Context(?ctx), Var(?to), Method(?signature).
+BackwardReflectiveAssignMethodConstant(?to, ?signature) ->
+  Var(?to), Method(?signature).
+BackwardHighConfidenceReflectiveAssignMethodConstant(?to, ?signature) ->
+  Var(?to), Method(?signature).
+
+ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature) ->
+  Context(?ctx), Var(?to), Field(?signature).
+ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) ->
+  Context(?ctx), Var(?to), Field(?signature).
+BackwardReflectiveAssignFieldConstant(?to, ?signature) ->
+  Var(?to), Field(?signature).
+BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature) ->
+  Var(?to), Field(?signature).
+
+// Current policy_ high-confidence inferences can propagate unaided. All others
+// need to be confirmed using both forward and backward reasoning.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
+  BackwardReflectiveAssignClassConstant(?invocation, ?type).
+
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type).
+
+// REVIEW (for the far future)_ no context sensitivity from just backwards inference.
+// Would require storing contexts with special objects.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  BackwardHighConfidenceReflectiveAssignClassConstant(?invocation, ?type).
+
+// Same for methods
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
+  BackwardReflectiveAssignMethodConstant(?to, ?signature).
+
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
+
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  _OptVarToMethod(?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  BackwardHighConfidenceReflectiveAssignMethodConstant(?to, ?signature).
+
+// Same for fields
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
+  BackwardReflectiveAssignFieldConstant(?to, ?signature).
+
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
+
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  _OptVarToMethod(?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature).
+
+#if defined(REFLECTION_HIGH_SOUNDNESS_MODE) || defined(INFORMATION_FLOW_HIGH_SOUNDNESS)
+// If in high-soundness mode, don't require agreement or high-confidence
+// for inference.
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type).
+ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  BackwardReflectiveAssignClassConstant(?invocation, ?type).
+
+ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
+//// This may be a bit extreme, even for high-soundness mode.
+// ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
+//   _OptVarToMethod[?to] = ?inmethod,
+//   ReachableContext(?ctx, ?inmethod),
+//   BackwardReflectiveAssignMethodConstant(?to, ?signature).
+
+ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+  ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
+//// This may be a bit extreme, even for high-soundness mode.
+// ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
+//   _OptVarToMethod[?to] = ?inmethod,
+//   ReachableContext(?ctx, ?inmethod),
+//   BackwardReflectiveAssignFieldConstant(?to, ?signature).
+#endif   // REFLECTION_HIGH_SOUNDNESS_MODE
+
+/*************************************************************
+ * END tying together forward and backward reflection logic
+ *************************************************************/
+
+/*************************************************************
+ * BEGIN backward reflection logic ("use-based analysis")
+ * This examines where the values produced by reflection flow to,
+ * (e.g., to a cast, or to selection of a method with a specific
+ * name) and infers what these values must have been.
+ *************************************************************
+ *************************************************************
+ * First create objects for the backward logic
+ *************************************************************/
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingForNameValue(?invocation, ?value)
+<-
+  java_lang_Class_forName(?invocation, _),
+  Type_Id(?type_"java.lang.Class"),
+  Instruction_Id(?invocation_?strInvocation),
+  ?strValue = "<special object for missing forName values " + ?strInvocation + ">".
+
+// Note how the return type is that of newInstance (Object), although the relation remembers the forName
+// call that produced the Class on which newInstance got called.
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingNewInstanceValue(?invocation, ?value)
+<-
+  java_lang_Class_forName(?invocation, _),
+  ?type = "java.lang.Object",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing newInstance values " + ?invocation + ">".
+
+// Special value value that propagates through all constructor calls and remembers the original forName
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetConstructorValue(?invocation, ?value)
+<-
+  java_lang_Class_forName(?invocation, _),
+  ?type = "java.lang.reflect.Constructor",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing get[Declared]Constructor[s] values " + ?invocation + ">".
+
+// getMethods and getDeclaredMethods are handled the same in terms of detecting
+// where their unknown result flows to. Note how the return type is a single Method
+// and not an array. The array is always there, the special value just gets added to
+// its contents to represent all unknown methods collectively.
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetMethodsValue[?invocation] = ?value
+<-
+  (java_lang_Class_getMethods(?invocation, _, _);
+   java_lang_Class_getDeclaredMethods(?invocation, _, _)),
+  ?type = "java.lang.reflect.Method",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing get[Declared]Methods values " + ?invocation + ">".
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingInvokeValueFromGetMethods(?invocation, ?value)
+<-
+  (java_lang_Class_getMethods(?invocation, _, _);
+   java_lang_Class_getDeclaredMethods(?invocation, _, _)),
+  ?type = "java.lang.Object",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing invoke() values " + ?strInvocation + ">".
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetMethodValue(?invocation, ?value)
+<-
+  (?getMethod = "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>",
+   isMethod(?getMethod) ;
+   ?getMethod = "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>",
+   isMethod(?getMethod)),
+  MethodInvocation_Method(?invocation, ?getMethod),
+  isVirtualMethodInvocation_Insn(?invocation),
+  ?type = "java.lang.reflect.Method",
+  isType(?type),
+  isInstruction(?invocation),
+  ?strValue = "<special object for missing get[Declared]Method values " + ?invocation + ">".
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingInvokeValueFromGetMethod(?invocation, ?value)
+<-
+  (?getMethod = "<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>",
+   isMethod(?getMethod);
+   ?getMethod = "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>"
+   isMethod(?getMethod)),
+  MethodInvocation_Method(?invocation, ?getMethod),
+  isVirtualMethodInvocation_Insn(?invocation),
+  ?type = "java.lang.Object",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing invoke() values " + ?invocation + ">".
+
+// Special objects for get[Declared]Field[s]. Very similar to methods.
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetFieldsValue(?invocation, ?value)
+<-
+  (java_lang_Class_getDeclaredFields(?invocation, _, _);
+   java_lang_Class_getFields(?invocation, _, _)),
+  ?type = "java.lang.reflect.Field",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing get[Declared]Fields values " + ?invocation + ">".
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetValueFromGetFields[?invocation] = ?value
+<-
+  (java_lang_Class_getDeclaredFields(?invocation, _, _);
+   java_lang_Class_getFields(?invocation, _, _)),
+  ?type = "java.lang.Object",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing get() values " + ?invocation + ">".
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetFieldValue[?invocation] = ?value
+<-
+  (?getField = "<java.lang.Class_ java.lang.reflect.Field getField(java.lang.String)>",
+   isMethod(?getField) ;
+   ?getField = "<java.lang.Class_ java.lang.reflect.Field getDeclaredField(java.lang.String)>"
+   isMethod(?getField)),
+  isMethodInvocation_Method(?invocation, ?getField),
+  VirtualMethodInvocation_Insn(?invocation),
+  ?type = "java.lang.reflect.Field",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing get[Declared]Field values " + ?invocation + ">".
+
+SpecialValueConsMacro(?strValue, ?type, ?value),
+SpecialMissingGetValueFromGetField[?invocation] = ?value
+<-
+  (?getField = "<java.lang.Class_ java.lang.reflect.Field getField(java.lang.String)>",
+   isMethod(?getField) ;
+   ?getField = "<java.lang.Class_ java.lang.reflect.Field getDeclaredField(java.lang.String)>",
+   isMethod(?getField)),
+  MethodInvocation_Method(?invocation, ?getField),
+  isVirtualMethodInvocation_Insn(?invocation),
+  ?type = "java.lang.Object",
+  isType(?type),
+  isInstruction(?invocation),
+  ?value = "<special object for missing get() values " + ?invocation + ">".
+
+
+/*************************************************************
+ * Next come the real backward reflection analysis inferences
+ *************************************************************/
+
+// Logic to catch unknown results of Class.forName invocations.
+// These may flow to casts, so we'll get useful info back.
+VarPointsTo(, ?value, ?ctx, ?return) <-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  SpecialMissingForNameValue(?invocation, ?value),
+  AssignReturnValue(?invocation, ?return),
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+// Special object just to designate the unknown values returned by
+// Class.newInstance. At every newInstance to which an unknown object
+// created by forName flows, we return a new unknown object
+// (of type Object and not Class) that remembers the forName site.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
+  java_lang_Class_newInstance(_, ?to, ?var),
+  VarPointsTo(_, ?specialclass, ?ctx, ?var),
+  OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass),
+  SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue).
+
+// Similar flow of special object through get[Declared]Constructor
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialConstructorValue, ?ctx, ?to) <-
+  (java_lang_Class_getConstructor(?to, ?var);
+   java_lang_Class_getDeclaredConstructor(?to, ?var)),
+  VarPointsTo(_, ?specialclass, ?ctx, ?var),
+  OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass),
+  SpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructorValue).
+
+// Pretty similar for get[Declared]Constructors. The array that the
+// return var points to (established by forward logic) is populated
+// with the special Constructor object the call returns.
+ArrayIndexPointsTo(ImmutableHContextFromContext[?ctx], ?specialConstructorValue, ?hctx, ?arrayValue) <-
+  OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to),
+  VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to),
+  SpecialMissingGetConstructorValue[?forNameInvocation] = ?specialConstructorValue.
+
+OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) <-
+  (java_lang_Class_getConstructors(_, ?to, ?var);
+   java_lang_Class_getDeclaredConstructors(_, ?to, ?var)),
+  VarPointsTo(_, ?specialclass, ?ctx, ?var),
+  OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass).
+
+// Even though there was one more step in the special object propagation,
+// in the end Constructor.newInstance is handled similarly to Class.newInstance.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
+  java_lang_reflect_Constructor_newInstance(_, ?to, ?var),
+  VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
+  OptSpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructor),
+  SpecialMissingNewInstanceValue[?forNameInvocation] = ?specialvalue.
+
+
+// some auxiliary stuff
+_OptVarToMethod[?var] = ?method <-
+  Var_DeclaringMethod(?var, ?method).
+
+OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass) <-
+  SpecialMissingForNameValue[?forNameInvocation] = ?specialclass.
+
+OptSpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructor) <-
+  SpecialMissingGetConstructorValue[?forNameInvocation] = ?specialConstructor.
+
+// ... and next comes the logic to tie it all together. This is amazingly nice!
+// If a special unknown object o that got created from a newInstance
+// that was called on an unknown object that got returned by a forName
+// gets cast to T, then go back to the forName and make all subtypes
+// of T be possible returned types (their reified objects, anyway).
+
+OptSpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue) <-
+  SpecialMissingNewInstanceValue[?forNameInvocation] = ?specialvalue.
+
+ClassSubtype(?subtype, ?type) <-
+  SubtypeOf(?subtype, ?type),
+  ClassType(?subtype).
+
+NumberOfClassSubtypes[?type] = ?count <-
+  agg<<?count = count()>>(ClassSubtype(_, ?type)).
+
+_OptMethodWithVarCast(?subtype, ?inMethod, ?from) <-
+  AssignCast(?type, ?from, _, ?inMethod),
+  ClassSubtype(?subtype, ?type).
+
+SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, ?inMethod) <-
+  _OptMethodWithVarCast(?type, ?inMethod, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  OptSpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue).
+
+BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) <-
+  SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, _).
+
+// If it is a local (same method) and informative (low number of
+// potential class types) cast, consider it a high-confidence inference.
+BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type) <-
+  SpecialMissingNewInstanceValueFlowsToCast(?forNameInvocation, ?type, ?inMethod),
+  Instruction_Method[?forNameInvocation] = ?inMethod,
+  NumberOfClassSubtypes[?type] <= InferredTypesPrecisionThreshold[].
+
+InferredTypesPrecisionThreshold[] = 10.
+
+
+/**
+ * String-based backwards reasoning, applied to get[Declared]{Field,Method}
+ **/
+
+// Another important reasoning tool is to extract constant strings
+// from getMethod/getField calls and to use those to enhance what
+// forName must have returned.
+
+TypeMatchingMethod(?type, ?constant) ->
+  Type(?type), HeapAllocation(?constant).
+TypeMatchingMethod(?subtype, ?constant) <-
+  MethodNameMatchingStringConstant_Signature(?signature, ?constant),
+  Method_DeclaringType[?signature] = ?type,
+  SubtypeOf(?subtype, ?type).
+NumberOfTypesMatchingMethod[?constant] = ?n ->
+  HeapAllocation(?constant), int[64](?n).
+NumberOfTypesMatchingMethod[?constant] = ?n <-
+  agg<<?n = count()>>(TypeMatchingMethod(_,?constant)).
+FairlyInformativeMethodName(?constant) <-
+  NumberOfTypesMatchingMethod[?constant] <= InferredTypesPrecisionThreshold[].
+
+SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation, ?type, ?constantHeap, ?inMethod) <-
+  (java_lang_Class_getDeclaredMethod(_, ?param, ?from) ;
+   java_lang_Class_getMethod(_, ?param, ?from)),
+  VarPointsTo(_, ?specialvalue, ?ctx, ?from),
+  OptSpecialMissingForNameValue(?forNameInvocation, ?specialvalue),
+  VarPointsTo(_, ?constant, ?ctx, ?param),
+  Value_Heap[?constant] = ?constantHeap,
+  TypeMatchingMethod(?type, ?constantHeap),
+  _OptVarToMethod[?from] = ?inMethod.
+
+BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) <-
+  SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation, ?type, _, _).
+
+// If the use (in getMethod) is in the same method, and if it is an informative method
+// name, then treat this as a high-confidence inference
+BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  <-
+  SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation, ?type, ?constantHeap, ?inMethod),
+  Instruction_Method[?forNameInvocation] = ?inMethod,
+  FairlyInformativeMethodName(?constantHeap).
+
+TypeMatchingFieldName(?type, ?constant) ->
+  Type(?type), HeapAllocation(?constant).
+TypeMatchingFieldName(?subtype, ?constant) <-
+  FieldNameMatchingStringConstant_Signature(?signature, ?constant),
+  Field_DeclaringType[?signature] = ?type,
+  SubtypeOf(?subtype, ?type).
+NumberOfTypesMatchingFieldName[?constant] = ?n ->
+  HeapAllocation(?constant), int[64](?n).
+NumberOfTypesMatchingFieldName[?constant] = ?n <-
+  agg<<?n = count()>>(TypeMatchingFieldName(_,?constant)).
+FairlyInformativeFieldName(?constant) <-
+  NumberOfTypesMatchingFieldName[?constant] <= InferredTypesPrecisionThreshold[].
+
+SpecialMissingForNameValueFlowsToGetField(?forNameInvocation, ?type, ?constantHeap, ?inMethod) <-
+  (java_lang_Class_getDeclaredField(_, ?param, ?from) ;
+   java_lang_Class_getField(_, ?param, ?from)),
+  VarPointsTo(_, ?specialvalue, ?ctx, ?from),
+  OptSpecialMissingForNameValue(?forNameInvocation, ?specialvalue),
+  VarPointsTo(_, ?constant, ?ctx, ?param),
+  Value_Heap[?constant] = ?constantHeap,
+  FairlyInformativeFieldName(?constantHeap),
+  TypeMatchingFieldName(?type, ?constantHeap),
+  _OptVarToMethod[?from] = ?inMethod.
+
+BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) <-
+  SpecialMissingForNameValueFlowsToGetField(?forNameInvocation, ?type, _, _).
+
+// If the use (in getField) is in the same method, and if it is an informative method
+// name, then treat this as a high-confidence inference
+BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  <-
+  SpecialMissingForNameValueFlowsToGetField(?forNameInvocation, ?type, ?constantHeap, ?inMethod),
+  Instruction_Method[?forNameInvocation] = ?inMethod,
+  FairlyInformativeFieldName(?constantHeap).
+
+
+/**
+ * Handling of getMethod/getDeclaredMethod. These also accept strings, which
+ * can be highly imprecise. See if we can verify what these strings might
+ * have been, by checking where the result of the call is used. Namely,
+ * if a method is invoked and it returns a value whose type is cast, we
+ * know it must have been a method returing a compatible type.
+ **/
+
+OptSpecialMissingGetMethodValue(?getMethodInvocation, ?specialmethod) <-
+  SpecialMissingGetMethodValue[?getMethodInvocation] = ?specialmethod.
+
+OptSpecialMissingInvokeValueFromGetMethod(?getMethodInvocation, ?specialvalue) <-
+  SpecialMissingInvokeValueFromGetMethod[?getMethodInvocation] = ?specialvalue.
+
+OptReifiedClass(?type, ?classValue) ->
+  Type(?type), Value(?classValue).
+OptReifiedClass(?type, ?classValue) <-
+  ReifiedClass[?type] = ?classValue.
+
+OptMethodType(?signature, ?classtype) ->
+  Method(?signature), Type(?classtype).
+OptMethodType(?signature, ?classtype) <-
+  Method_DeclaringType[?signature] = ?classtype.
+
+// A getMethod returns a special value that marks where it came from, so
+// we can track all uses of results returned by that getMethod invocation
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
+  SpecialMissingGetMethodValue[?invocation] = ?value,
+  AssignReturnValue[?invocation] = ?return,
+  Instruction_Method[?invocation] = ?inmethod,
+  ReachableContext(?ctx, ?inmethod).
+
+// At the site of an invoke over a special method object (that marks
+// its "getMethod" origin), return a new special object that remembers
+// the original getMethod invocation site.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
+  java_lang_reflect_Method_invoke(?invocation, ?methodVar),
+  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
+  OptSpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
+  SpecialMissingInvokeValueFromGetMethod[?getMethodInvocation] = ?specialvalue,
+  AssignReturnValue[?invocation] = ?var.
+
+// a cast (to ?type) receives the result of an invoke call on a value
+// returned from a getMethod.
+Opt2SpecialInvokeValueCast(?type, ?getMethodInvocation) <-
+  OptAssignCast(?type, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  OptSpecialMissingInvokeValueFromGetMethod(?getMethodInvocation, ?specialvalue).
+
+// REVIEW this!
+//  -refine to also get a high-confidence version?
+//  -indexing is horrible. Does it matter?
+//  -we are not taking into account the different semantics of
+//   getMethod vs. getDeclaredMethod in backward analysis (we do
+//   in forward)
+
+BackwardReflectiveAssignMethodConstant(?return, ?signature) <-
+  Opt2SpecialInvokeValueCast(?castType, ?getMethodInvocation),
+  VirtualMethodInvocation_Base[?getMethodInvocation] = ?from,
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?classType, ?classValue),
+  OptMethodType(?signature, ?classType),
+  AssignReturnValue[?getMethodInvocation] = ?return,
+  Method_ReturnType[?signature] = ?retType,
+  (SubtypeOf(?retType, ?castType); SupertypeOf(?retType, ?castType)).
+  // REVIEW_ strictly speaking, the return type should merely be
+  // possibly-compatible with the cast type. But practically, they
+  // are often the same.
+
+
+/**
+ * Handling of getField/getDeclaredField. Similar to getMethod/getDeclaredMethod
+ **/
+
+OptSpecialMissingGetFieldValue(?getFieldInvocation, ?specialfield) <-
+  SpecialMissingGetFieldValue[?getFieldInvocation] = ?specialfield.
+
+OptSpecialMissingGetValueFromGetField(?getInvocation, ?specialvalue) <-
+  SpecialMissingGetValueFromGetField[?getInvocation] = ?specialvalue.
+
+OptFieldType(?type, ?signature, ?declaringClassType) ->
+   Field(?signature), Type(?declaringClassType), Type(?type).
+OptFieldType(?type, ?signature, ?declaringClassType) <-
+   Field_DeclaringType[?signature] = ?declaringClassType,
+   Field_Type[?signature] = ?type.
+
+// special value returned by a getField
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
+  SpecialMissingGetFieldValue[?invocation] = ?value,
+  AssignReturnValue[?invocation] = ?return,
+  Instruction_Method[?invocation] = ?inmethod,
+  ReachableContext(?ctx, ?inmethod).
+
+// Make a "get" call over a special field (which knows its getField origin)
+// return a special object that also remembers the original getField call.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
+  java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
+  VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
+  OptSpecialMissingGetFieldValue(?getFieldInvocation, ?specialFieldValue),
+  SpecialMissingGetValueFromGetField[?getFieldInvocation] = ?specialvalue,
+  AssignReturnValue[?invocation] = ?var.
+
+// a cast gets the special value returned from a "get". The value marks
+// the original getField
+Opt2SpecialGetValueCast(?type, ?getFieldInvocation) <-
+  OptAssignCast(?type, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  OptSpecialMissingGetValueFromGetField(?getFieldInvocation, ?specialvalue).
+
+BackwardReflectiveAssignFieldConstant(?return, ?signature) <-
+  Opt2SpecialGetValueCast(?castType, ?getFieldInvocation),
+  VirtualMethodInvocation_Base[?getFieldInvocation] = ?from,
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?classType, ?classValue),
+  OptFieldType(?fieldType, ?signature, ?classType),
+  (SubtypeOf(?fieldType, ?castType); SupertypeOf(?fieldType, ?castType)),
+  // REVIEW. Could be ?fieldType = ?castType. Precision/soundness tradeoff.
+  AssignReturnValue[?getFieldInvocation] = ?return.
+
+
+#ifdef REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS
+
+/*************************************************************
+ * Backward reflection analysis also has a speculative part, which
+ * only helps enhance soundness when the forward inference is missing.
+ * (Much like the "invent unknown objects" functionality, in this
+ * aspect.)
+ *************************************************************/
+
+/**
+ * Handling of getMethods/getDeclaredMethods. Basically this obviates
+ * the need for forward analysis of getMethods/getDeclaredMethods_ the
+ * subset of the methods that will be useful are inferred from the
+ * later uses. The forward analysis yields no extra information.
+ **/
+OptSpecialMissingGetMethodsValue(?getMethodsInvocation, ?specialmethod) <-
+  SpecialMissingGetMethodsValue[?getMethodsInvocation] = ?specialmethod.
+
+OptSpecialMissingInvokeValueFromGetMethods(?getMethodInvocation, ?specialvalue) <-
+  SpecialMissingInvokeValueFromGetMethods[?getMethodInvocation] = ?specialvalue.
+
+// The array that the return var points to (established by forward logic)
+// is populated with the special Method object the call returns.
+ArrayIndexPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?hctx, ?arrayValue) <-
+  SpecialMissingGetMethodsValue[?invocation] = ?value,
+  AssignReturnValue[?invocation] = ?return,
+  VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
+  Context(?ctx). // hack to avoid warning
+
+// Is this slow? We've already done it in forward logic. Maybe store/reuse.
+OptGetMethodsClass(?type, ?getMethodsInvocation) <-
+  (java_lang_Class_getMethods(?getMethodsInvocation, _, ?from);
+   java_lang_Class_getDeclaredMethods(?getMethodsInvocation, _, ?from)),
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?type, ?classValue).
+
+
+OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocation) <-
+  java_lang_reflect_Method_invoke(?invocation, ?methodVar),
+  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
+  OptSpecialMissingGetMethodsValue(?getMethodsInvocation, ?specialMethodValue).
+
+
+// Make an invoke return a special object that remembers the method it's
+// supposed to be called on.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
+  OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocation),
+  SpecialMissingInvokeValueFromGetMethods[?getMethodsInvocation] = ?specialvalue,
+  AssignReturnValue[?invocation] = ?var.
+//// Does nothing but incur cost_ filtering to ensure that the base of
+//// the reflective invocation is compatible with what we know about
+//// the class the reflective method came from.
+//  ActualParam[0, ?invocation] = ?base,
+//  VarPointsTo(_, ?value, ?ctx, ?base),
+//  OptGetMethodsClass(?type, ?getMethodsInvocation),
+//  Value_Type[?value] = ?valueType,
+//  SupertypeOf(?type, ?valueType).
+
+// The clincher_ if we see the cast of a result that came
+// from an invoke, over a method that came from a getMethods, match
+// the cast type to the class the methods came from to populate
+// the return array of getMethods with the matching ones.
+
+OptSpecialInvokeValueCast(?type, ?getMethodsInvocation) <-
+  OptAssignCast(?type, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  OptSpecialMissingInvokeValueFromGetMethods(?getMethodsInvocation, ?specialvalue).
+
+OptMethodObjectFromInvoke(?methodValue, ?return) <-
+  OptSpecialInvokeValueCast(?type, ?getMethodsInvocation),
+  OptGetMethodsClass(?classtype, ?getMethodsInvocation),
+  OptMethodType(?signature, ?classtype),
+  Method_ReturnType[?signature] = ?type,
+  AssignReturnValue[?getMethodsInvocation] = ?return,
+  ReifiedMethod[?signature] = ?methodValue.
+
+// REVIEW_ why reuse the hctx? Just for lack of anything better?
+ArrayIndexPointsTo(?hctx, ?methodValue, ?hctx, ?arrayValue) <-
+  OptMethodObjectFromInvoke(?methodValue, ?return),
+  VarPointsTo(?hctx, ?arrayValue, _, ?return).
+
+/**
+ *  Handling of getFields/getDeclaredFields. Very similar to methods.
+ **/
+
+OptSpecialMissingGetFieldsValue(?getFieldsInvocation, ?specialfield) <-
+  SpecialMissingGetFieldsValue[?getFieldsInvocation] = ?specialfield.
+
+OptSpecialMissingGetValueFromGetFields(?getInvocation, ?specialvalue) <-
+  SpecialMissingGetValueFromGetFields[?getInvocation] = ?specialvalue.
+
+// The array that the return var points to (established by forward logic)
+// is populated with the special Field object the call returns.
+ArrayIndexPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?hctx, ?arrayValue) <-
+  SpecialMissingGetFieldsValue[?invocation] = ?value,
+  AssignReturnValue[?invocation] = ?return,
+  VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
+  Context(?ctx). // hack to avoid warning
+
+// Is this slow? We've already done it in forward logic. Maybe store/reuse.
+OptGetFieldsClass(?type, ?getFieldsInvocation) <-
+  (java_lang_Class_getFields(?getFieldsInvocation, _, ?from);
+   java_lang_Class_getDeclaredFields(?getFieldsInvocation, _, ?from)),
+  VarPointsTo(_, ?classValue, _, ?from),
+  OptReifiedClass(?type, ?classValue).
+
+OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation , ?ctx, ?invocation) <-
+  java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
+  VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
+  OptSpecialMissingGetFieldsValue(?getFieldsInvocation, ?specialFieldValue).
+
+
+// Make a get return a special object that remembers the field it's
+// supposed to be called on.
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
+  OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation , ?ctx, ?invocation),
+  SpecialMissingGetValueFromGetFields[?getFieldsInvocation] = ?specialvalue,
+  AssignReturnValue[?invocation] = ?var.
+//// Does nothing but incur cost_ filtering to ensure that the base of
+//// the reflective invocation is compatible with what we know about
+//// the class the reflective field came from.
+//  ActualParam[0, ?invocation] = ?base,
+//  VarPointsTo(_, ?value, ?ctx, ?base),
+//  OptGetFieldsClass(?type, ?getFieldsInvocation),
+//  Value_Type[?value] = ?valueType,
+//  SupertypeOf(?type, ?valueType).
+
+// The clincher_ if we see the cast of a result that came
+// from a get, over a field that came from a getFields, match
+// the cast type to the class the fields came from to populate
+// the return array of getFields with the matching ones.
+
+OptSpecialGetValueCast(?type, ?getFieldsInvocation) <-
+  OptAssignCast(?type, _, ?from),
+  VarPointsTo(_, ?specialvalue, _, ?from),
+  OptSpecialMissingGetValueFromGetFields(?getFieldsInvocation, ?specialvalue).
+
+OptFieldObjectFromGet(?fieldValue, ?return) <-
+  OptSpecialGetValueCast(?type, ?getFieldsInvocation),
+  OptGetFieldsClass(?classtype, ?getFieldsInvocation),
+  OptFieldType(?type, ?signature, ?classtype),
+  // REVIEW_ the real test shouldn't be for type identity
+  AssignReturnValue[?getFieldsInvocation] = ?return,
+  ReifiedField[?signature] = ?fieldValue.
+
+// REVIEW_ why reuse the hctx? Just for lack of anything better?
+ArrayIndexPointsTo(?hctx, ?fieldValue, ?hctx, ?arrayValue) <-
+  OptFieldObjectFromGet(?fieldValue, ?return),
+  VarPointsTo(?hctx, ?arrayValue, _, ?return).
+
+#endif // REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS
+
+/*************************************************************
+ * END backward reflection logic ("use-based analysis")
+ *************************************************************/
+
+/*************************************************************
+ * BEGIN invention of objects
+ * This analysis idea consists of inventing artificial objects
+ * at the point of a use of a result of reflection analysis,
+ * when the reflection operation produced nothing.
+ *************************************************************/
+#ifdef REFLECTION_INVENT_UNKNOWN_OBJECTS
+
+/*************************************************************
+ * First, create marker objects for the use of this analysis
+ *************************************************************/
+
+// This is the representative of an unknown reflective object, after it has been cast.
+// Has a real type. We pre-generate for all types and casts in the universe.
+MockValueConsMacro(?strValue, ?type, ?value),
+UnknownReflectiveObject[?type, ?invocation] = ?value
+<-
+  AssignCast(?type, _, _, _),
+  ClassType(?type),
+  Type_Id(?type_?strType),
+  (java_lang_Class_newInstance(?invocation, _, _);
+   java_lang_reflect_Constructor_newInstance(?invocation, _, _);
+   java_lang_reflect_Method_invoke(?invocation, _);
+   java_lang_reflect_Field_get(?invocation, _, _)),
+  Instruction_Id(?invocation_?strInvocation),
+  ?strValue = "<<unknown object of type " + ?strType + " returned by call " + ?strInvocation + ">>".
+
+// This is the representative of an unknown reflective object that flows from the reflection
+// operation to a cast.
+MockValueConsMacro(?strValue, ?type, ?value),
+MarkerReflectiveObject[?invocation] = ?value
+<-
+  (java_lang_Class_newInstance(?invocation, _, _);
+   java_lang_reflect_Constructor_newInstance(?invocation, _, _);
+   java_lang_reflect_Method_invoke(?invocation, _);
+   java_lang_reflect_Field_get(?invocation, _, _)),
+  Type_Id(?type_"java.lang.Object"),
+  Instruction_Id(?invocation_?strInvocation),
+  ?strValue = "<special object for missing reflective values " + ?strInvocation + ">".
+
+/*************************************************************
+ * Next comes the main "invention of objects" analysis
+ *************************************************************/
+// Propagate the marker object everywhere
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
+  (java_lang_Class_newInstance(?invocation, _, _);
+   java_lang_reflect_Constructor_newInstance(?invocation, _, _);
+   java_lang_reflect_Method_invoke(?invocation, _);
+   java_lang_reflect_Field_get(?invocation, _, _)),
+  Instruction_Method[?invocation] = ?inmethod,
+  ReachableContext(?ctx, ?inmethod),
+  AssignReturnValue[?invocation] = ?return,
+  MarkerReflectiveObject[?invocation] = ?value.
+
+Opt2AssignCast(?inmethod, ?type, ?to, ?from) ->
+  Method(?inmethod), Var(?from), Var(?to), Type(?type).
+Opt2AssignCast(?inmethod, ?supertype, ?to, ?from) <-
+  AssignCast(?supertype, ?from, ?to, ?inmethod).
+
+OptMarkerReflectiveObject(?invocation, ?value) ->
+  MethodInvocation(?invocation), Value(?value).
+OptMarkerReflectiveObject(?invocation, ?value) <-
+  MarkerReflectiveObject[?invocation] = ?value.
+
+// The idea is that at every cast that sees a reflectively produced object
+// flow to it, we invent a new object (with the cast's type) and let if flow
+// from the cast!
+// REVIEW_ the reuse of hctx is arbitrary
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
+  Opt2AssignCast(_, ?type, ?to, ?from),
+  VarPointsTo(?hctx, ?markervalue, ?ctx, ?from),
+  OptMarkerReflectiveObject(?invocation, ?markervalue),
+  UnknownReflectiveObject[?type, ?invocation] = ?value.
+
+//// Not sure this pays off. Even worse, it is too slow to generate
+//// all possible unknown objects via delta logic.
+//  UnknownReflectiveObject[?subtype, ?invocation] = ?value,
+//  OptFilteredCastSubtype(?subtype, ?type).
+//
+// MaximumSubtypesForInvented[] = 10.
+//
+// OptFilteredCastSubtype(?subtype, ?type) ->
+//   Type(?type), Type(?subtype).
+// OptFilteredCastSubtype(?type, ?type) <-
+//   Opt2AssignCast(_, ?type, _, _),
+//   ClassType(?type).
+// OptFilteredCastSubtype(?subtype, ?type) <-
+//   Opt2AssignCast(_, ?type, _, _),
+//   SubtypeOf(?subtype, ?type),
+//   ClassType(?subtype),
+//   NumberOfSubtypes[?type] <= MaximumSubtypesForInvented[].
+
+#endif // REFLECTION_INVENT_UNKNOWN_OBJECTS
+
+/*************************************************************
+ * END invention of objects
+ *************************************************************/
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+#include "dynamic-proxies.logic"
+#endif
+
