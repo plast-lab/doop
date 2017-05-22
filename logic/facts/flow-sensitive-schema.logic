@@ -477,6 +477,7 @@ DynamicMethodInvocation:DynReturnType[?invocation] = ?dynRetType ->
    DynamicMethodInvocation:Insn(?invocation), string(?dynRetType).
 DynamicMethodInvocation:DynParamTypes[?invocation] = ?dynParamTypes ->
    DynamicMethodInvocation:Insn(?invocation), string(?dynParamTypes).
+// Arity of the dynamic method (calculated by the front-end).
 DynamicMethodInvocation:DynArity[?invocation] = ?dynArity ->
    DynamicMethodInvocation:Insn(?invocation), int[32](?dynArity).
 
