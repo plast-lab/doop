@@ -219,7 +219,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def line = methodClassId.symbol.line
 		def startCol = methodClassId.symbol.charPositionInLine
-		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 1
+		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 2
 
 		metadata.invocations << new MethodInvocation(
 			new Position(line, line, startCol, endCol),
