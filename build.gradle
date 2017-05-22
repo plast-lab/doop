@@ -64,7 +64,7 @@ dependencies {
             "org.ow2.asm:asm-debug-all:5.1",                    // Java Bytecode library
             "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
-            "org.clyze:clue-common:1.+",
+            "org.clyze:clue-common:1.20.+",
             "com.google.guava:guava:21.0",
             // Soot is a compile time dependency
             "ext:AXMLPrinter:2.0"
@@ -214,7 +214,7 @@ if (project.hasProperty('artifactory_user')) {
         failOnSnapshotDependencies = false
         failOnUnversionedFiles = false
         failOnCommitNeeded = false
-    
+
         git {
            commitVersionFileOnly = true
         }
