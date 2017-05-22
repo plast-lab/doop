@@ -20,9 +20,14 @@ LambdaMetafactory[] = ?bootMethod <- Method:Id(?bootMethod:LAMBDA_METAFACTORY_ID
 ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) ->
    Value(?value), string(?dynName), string(?dynRet), Method(?realMethod).
 
+InvokedynamicBootstrap(?invo, ?ctx) ->
+   DynamicMethodInvocation:Insn(?invo), Context(?ctx).
+
 VarPointsTo(?hctx, ?value, ?ctx, ?var),
 MockValueConsMacro(?valueId, ?interface, ?value),
-ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) <-
+ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod),
+InvokedynamicBootstrap(?invo, ?ctx)
+ <-
    DynamicMethodInvocation:Insn(?invo),
    BootstrapParam[1, ?invo] = ?handleVar,
    DynamicMethodInvocation:Bootstrap[?invo] = LambdaMetafactory[],
@@ -54,21 +59,23 @@ UnhandledInvokedynamic(?i, ?bootMethodId) <-
 
 // When invokeinterface is called on a lambda object constructed by a
 // constant method handle, the real method is called. This can wrap a
-// static method call as an instance method call.
+// static method call as an instance method call. We create two call
+// graph edges: (1) invokeinterface on the method handle lambda calls
+// the real method and (2) invokedynamic calls the bootstrap method.
 
 InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?m) ->
-   Context(?callerCtx), VirtualMethodInvocation:Insn(?i),
+   Context(?callerCtx), MethodInvocation(?i),
    Context(?calleeCtx), Method(?m).
 
-// We create two call graph edges: one for the method called and one
-// for the bootstrap method.
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
-InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LambdaMetafactory[]) <-
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) <-
    ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
    VirtualMethodInvocation:Base[?i] = ?var,
    VarPointsTo(_, ?value, ?callerCtx, ?var),
    ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
    VirtualMethodInvocation:SimpleName[?i] = ?dynName.
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LambdaMetafactory[]) <-
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
+   InvokedynamicBootstrap(?i, ?callerCtx).
 
 ReachableContext(?calleeCtx, ?callee) <-
    InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
