@@ -137,12 +137,18 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * Cast assignments
  */
 
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+.decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)
+
+OptAssignCast(?type, ?to, ?from) :-
   Reachable(?inmethod),
-  AssignCast(?type, ?from, ?to, ?inmethod),
+  AssignCast(?type, ?from, ?to, ?inmethod).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  OptAssignCast(?type, ?to, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value_Type(?value, ?valuetype),
   SupertypeOf(?type, ?valuetype).
+  .plan 2:(3,4,2,1)
 
 /**
  * Load instance fields
@@ -360,7 +366,7 @@ VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
   ThisVar(?tomethod, ?this),
   SiteShouldNotBeRefined(?invocation),
   MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?newCtx).
-
+  .plan 2:(3,2,1,4,5,6)
 #else /* there is optimized behavior available */
 
 // The optimization/advanced merge treatment is as follows: the main
