@@ -10,8 +10,6 @@
  * because we know the type of every heap allocation.
  *************************************************************/
 
-.decl ReifiedClas(?type:Type, ?classValue:Value)
-
 /**
  * Evaluate Object.getClass
  */
