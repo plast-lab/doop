@@ -210,7 +210,7 @@ java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
   ?value = "<reflective dummy URL resource>".
 
 // TODO Handle version for multiarray? If yes, add to ReifiedClass as well
-CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat(cat(cat("<reflective ", ?invocation), "/"), ?arrayType), "/new "), ""), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat(cat("<reflective ", ?invocation), "/"), ?arrayType), "/new "), ">")),
 java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
   ?sig = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>",
   isMethod(?sig),
