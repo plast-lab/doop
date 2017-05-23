@@ -529,11 +529,14 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 .decl NumberOfMethodsMatchingConstant(?constant:StringConstant, ?n:number)
 .decl NumberOfFieldsMatchingConstant(?constant:StringConstant, ?n:number)
 
-/*NumberOfClassesMatchingConstant[?constant] = ?n :-
-  agg<<?n = count()>>(ClassNameMatchingStringConstant_Type(_, ?constant)).
-NumberOfMethodsMatchingConstant[?constant] = ?n :-
-  agg<<?n = count()>>(MethodNameMatchingStringConstant_Signature(_, ?constant)).
-NumberOfFieldsMatchingConstant[?constant] = ?n :-
-  agg<<?n = count()>>(FieldNameMatchingStringConstant_Signature(_, ?constant)).
-*/
+NumberOfClassesMatchingConstant(?constant, ?n) :-
+  isStringConstant(?constant),
+  ?n = count : ClassNameMatchingStringConstant_Type(_, ?constant).
+NumberOfMethodsMatchingConstant(?constant, ?n) :-
+  isStringConstant(?constant),
+  ?n = count : MethodNameMatchingStringConstant_Signature(_, ?constant).
+NumberOfFieldsMatchingConstant(?constant, ?n) :-
+  isStringConstant(?constant),
+  ?n = count : FieldNameMatchingStringConstant_Signature(_, ?constant).
+
 StringPrecisionThreshold(10).

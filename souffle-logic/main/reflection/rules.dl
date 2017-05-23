@@ -103,19 +103,19 @@ java_lang_Class_forName(?invocation, ?inmethod) :-
   StaticMethodInvocation(?invocation, ?sig, ?inmethod).
 
 java_lang_Class_getName(?to, ?from) :-
-  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.String getName()>").
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.String getName()>").
 
 java_lang_Class_getComponentType(?to, ?from) :-
-  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.Class getComponentType()>").
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class getComponentType()>").
 
 java_lang_Class_getSuperclass(?to, ?from) :-
-  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.Class getSuperclass()>").
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class getSuperclass()>").
 
 // // (YS) Old style_ Makes no sense to me. The type should not be there. This is just
 // // allocating too many useless arrays. Changed it throughout.
 // CreateReflectiveAllocationMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr),
 // java_lang_Class_getInterfaces(?invocation, ?to, ?from) :-
-//   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class_ java.lang.Class[] getInterfaces()>"),
+//   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class[] getInterfaces()>"),
 //   ReferenceType(?type),
 //   ReflectiveArrayMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr, "java.lang.Class[]").
 
@@ -947,9 +947,9 @@ SpecialMissingGetValueFromGetFields(?invocation, cat(cat("<special object for mi
 SpecialValueConsMacro(cat(cat("<special object for missing get[Declared]Field values ", ?invocation), ">"), ?type),
 SpecialMissingGetFieldValue(?invocation, cat(cat("<special object for missing get[Declared]Field values ", ?invocation), ">"))
 :-
-  (?getField = "<java.lang.Class_ java.lang.reflect.Field getField(java.lang.String)>",
+  (?getField = "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>",
    isMethod(?getField) ;
-   ?getField = "<java.lang.Class_ java.lang.reflect.Field getDeclaredField(java.lang.String)>",
+   ?getField = "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>",
    isMethod(?getField)),
   MethodInvocation_Method(?invocation, ?getField),
   isVirtualMethodInvocation_Insn(?invocation),
@@ -960,9 +960,9 @@ SpecialMissingGetFieldValue(?invocation, cat(cat("<special object for missing ge
 SpecialValueConsMacro(cat(cat("<special object for missing get() values ", ?invocation), ">"), ?type),
 SpecialMissingGetValueFromGetField(?invocation, cat(cat("<special object for missing get() values ", ?invocation), ">"))
 :-
-  (?getField = "<java.lang.Class_ java.lang.reflect.Field getField(java.lang.String)>",
+  (?getField = "<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>",
    isMethod(?getField) ;
-   ?getField = "<java.lang.Class_ java.lang.reflect.Field getDeclaredField(java.lang.String)>",
+   ?getField = "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>",
    isMethod(?getField)),
   MethodInvocation_Method(?invocation, ?getField),
   isVirtualMethodInvocation_Insn(?invocation),
