@@ -43,7 +43,8 @@ InvokedynamicBootstrap(?invo, ?ctx)
    Method:SimpleName[?realMethod] = ?handleMeth,
    Method:DeclaringType[?realMethod] = ?handleType,
    Type:Id(?handleType:?handleTypeId),
-   ?valueId = "<reference " + ?handleTypeId + "::" + ?handleMeth + " wrapped as " + ?dynRet + "." + ?dynName + " at " + ?invoId + ">".
+   ?desc = "<reference " + ?handleTypeId + "::" + ?handleMeth + " wrapped as " + ?dynRet + "." + ?dynName,
+   ?valueId = ?invoId + "::: " + ?dynRet + "::: (Mock)::: " + ?desc.
 
 // Record invokedynamic invocations whose bootstrap methods are not
 // handled at all.
