@@ -53,11 +53,11 @@ Value_DeclaringType(?value, ?type) :-
   Value_Type(?value, ?type),
   isReferenceType(?type).
 
-.decl _TypeHasHeap(?type:Type)
+.decl TypeHasHeap(?type:Type)
 
 Value_DeclaringType(?value, ?type) :-
   ReifiedClass(?type, ?value),
-  !_TypeHasHeap(?type).
+  !TypeHasHeap(?type).
 
 /*************************************************************
  * Create objects that are implicitly allocated in reflection calls.
@@ -93,7 +93,7 @@ Value_DeclaringType(?value, ?type) :-
   isType(arrayType)
 
 java_lang_Object_getClass(?to, ?from) :-
-  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Object_ java.lang.Class getClass()>").
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Object: java.lang.Class getClass()>").
 
 java_lang_Class_forName(?invocation, ?inmethod) :-
   ( ?sig = "<java.lang.Class: java.lang.Class forName(java.lang.String)>",
@@ -111,7 +111,7 @@ java_lang_Class_getComponentType(?to, ?from) :-
 java_lang_Class_getSuperclass(?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Class getSuperclass()>").
 
-// // (YS) Old style_ Makes no sense to me. The type should not be there. This is just
+// // (YS) Old style: Makes no sense to me. The type should not be there. This is just
 // // allocating too many useless arrays. Changed it throughout.
 // CreateReflectiveAllocationMacro(?invocation, ?type, ?arrayType, ?arrayHeapStr),
 // java_lang_Class_getInterfaces(?invocation, ?to, ?from) :-
@@ -179,11 +179,10 @@ java_lang_Class_getDeclaredField(?to, ?param, ?from) :-
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS
-CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat("<reflective Class.newInstance/", ?invocationStr), ?type), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat("<reflective Class.newInstance/", ?invocation), ?type), ">")),
 #else
 CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.newInstance/", ?type), ">")),
 #endif
-
 java_lang_Class_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
   isClassType(?type),
@@ -211,7 +210,7 @@ java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
   ?value = "<reflective dummy URL resource>".
 
 // TODO Handle version for multiarray? If yes, add to ReifiedClass as well
-CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat(cat(cat("<reflective ", ?invocation), "/"), ?arrayType), "/new "), ?arrayType), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat(cat(cat("<reflective ", ?invocation), "/"), ?arrayType), "/new "), ""), ">")),
 java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
   ?sig = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>",
   isMethod(?sig),
