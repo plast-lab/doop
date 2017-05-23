@@ -5,7 +5,6 @@ import org.antlr.v4.runtime.tree.*
 import org.clyze.persistent.Position
 import org.clyze.persistent.doop.*
 import static org.clyze.jimple.JimpleParser.*
-import soot.SootClass
 
 class JimpleListenerImpl extends JimpleBaseListener {
 
@@ -228,8 +227,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			int idx2 = dynMeth.length() - 1
 			if ((dynMeth.charAt(0) == '"') && (dynMeth.charAt(idx2) == '"'))
 				dynMeth = dynMeth.substring(1, idx2)
-			System.out.println(dynMeth)
-			def sootMagic = SootClass.INVOKEDYNAMIC_DUMMY_CLASS_NAME
+			// Constant taken from SootClass.
+			def sootMagic = "soot.dummy.InvokeDynamic"
 			gDoopId = "${method.doopId}/${sootMagic}.${dynMeth}/$c"
 		}
 		else
