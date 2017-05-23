@@ -278,7 +278,7 @@ ReifiedClass(?type, ?classHeap) :-
   ClassHeap_InstanceType(?classHeap, ?type),
   isValue(?classHeap).
 
-_TypeHasHeap(?type) :-
+TypeHasHeap(?type) :-
   ClassHeap_InstanceType(_, ?type).
 
 // Perhaps others don't have a meta object and need one created. Both kinds
@@ -287,7 +287,7 @@ _TypeHasHeap(?type) :-
 MockValueConsMacro(cat(cat("<<reified class ", ?type), ">>"), ?javaLangClass),
 ReifiedClass(?type, cat(cat("<<reified class ", ?type), ">>")) :-
   isReferenceType(?type),
-  !_TypeHasHeap(?type),
+  !TypeHasHeap(?type),
   isType(?type),
   ?javaLangClass = "java.lang.Class",
   isType(?javaLangClass).
