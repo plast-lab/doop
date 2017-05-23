@@ -5,6 +5,7 @@ _MergedHeap(h) <- HeapAllocation:Merge[_] = h.
 _MockValue(o) <- Value:Mock:Cons[_] = o.
 _MockHeap(h) <- HeapAllocation:Mock:Cons[_] = h.
 _ClassHeap(h) <- HeapAllocation:Class:Cons[_] = h.
+_MethodHandle(h) <- HeapAllocation:MethodHandle:Cons[_] = h.
 _VPTOpt(v,o) <- VarPointsTo(_,o,_,v).
 
 // Normal objects with allocation instructions
@@ -38,12 +39,16 @@ VPTCIandClass(v,o) <- VPTCI(v,o), VPTClassHeap(v,o).
 VPTNum(v,o) <- _VPTOpt(v,o), Value:Num[o] = _.
 VPTCIandNum(v,o) <- VPTCI(v,o), VPTNum(v,o).
 
+// Method handles and their constant-pool entries
+VPTMethodHandle(v,o) <- _VPTOpt(v, o), Value:Heap[o] = h, _MethodHandle(h).
+VPTMethodHandleConstant(v,o) <- _VPTOpt(v,o), Value:Heap[o] = h, MethodHandleConstant(h).
+
 // Mock values (not to be confused with mock heaps): taint values, etc.
 VPTMockVal(v,o) <- _VPTOpt(v,o), _MockValue(o).
 VPTCIandMockVal(v,o) <- VPTCI(v,o), VPTMockVal(v,o).
 
 // All others: merged string constants that still arise reflectively, layout control objects
-VPTOther(v,o) <- _VPTOpt(v,o), !VPTNormal(v,o), !VPTCI(v,o), !VPTNum(v,o), !VPTMerged(v,o), !VPTMockVal(v,o), !VPTMockHeap(v,o), !VPTClassHeap(v,o).
+VPTOther(v,o) <- _VPTOpt(v,o), !VPTNormal(v,o), !VPTCI(v,o), !VPTNum(v,o), !VPTMerged(v,o), !VPTMockVal(v,o), !VPTMockHeap(v,o), !VPTClassHeap(v,o), !VPTMethodHandle(v,o).
 
 Var:DeclaringType(Method:DeclaringType[?method], ?var) <- Var:DeclaringMethod(?var, ?method).
 
