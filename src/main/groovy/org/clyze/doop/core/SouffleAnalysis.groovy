@@ -222,6 +222,9 @@ class SouffleAnalysis extends DoopAnalysis {
         database.mkdirs()
 
         def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir -D$database"
+        if (options.SOUFFLE_PROFILE.value)
+            executionCommand += " -p${outDir}/profile.txt"
+
         logger.debug "Execution command: $executionCommand"
         logger.info "Running analysis"
         executionTime = timing { executor.execute(executionCommand) }
