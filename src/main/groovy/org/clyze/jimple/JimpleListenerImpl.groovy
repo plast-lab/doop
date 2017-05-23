@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.tree.*
 import org.clyze.persistent.Position
 import org.clyze.persistent.doop.*
 import static org.clyze.jimple.JimpleParser.*
+import soot.SootClass
 
 class JimpleListenerImpl extends JimpleBaseListener {
 
@@ -221,10 +222,23 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def startCol = methodClassId.symbol.charPositionInLine
 		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 2
 
+		String gDoopId
+		if (ctx.dynamicMethodSig()) {
+			def dynMeth = ctx.STRING().toString()
+			int idx2 = dynMeth.length() - 1
+			if ((dynMeth.charAt(0) == '"') && (dynMeth.charAt(idx2) == '"'))
+				dynMeth = dynMeth.substring(1, idx2)
+			System.out.println(dynMeth)
+			def sootMagic = SootClass.INVOKEDYNAMIC_DUMMY_CLASS_NAME
+			gDoopId = "${method.doopId}/${sootMagic}.${dynMeth}/$c"
+		}
+		else
+			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
+
 		metadata.invocations << new MethodInvocation(
 			new Position(line, line, startCol, endCol),
 			filename,
-			"${method.doopId}/${methodClass}.$methodName/$c", //doopId
+			gDoopId, //doopId
 			method.doopId //invokingMethodDoopId
 		)
 	}
