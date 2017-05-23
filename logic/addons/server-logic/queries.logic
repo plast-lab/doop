@@ -7,6 +7,9 @@ Server:VarPointsTo(?class, ?var, ?heapId) <-
 Server:CallGraphEdge(?invocation, ?toMethod) <-
   CallGraphEdge(_, ?invocation, _, ?toMethod).
 
+Server:CallGraphEdge(?invocation, ?toMethod) <-
+  InvokedynamicCallGraphEdge(_, ?invocation, _, ?toMethod).
+
 _IsAssignHeapAllocation(?heap) <-
   AssignHeapAllocation:Heap[_] = ?heap.
 
