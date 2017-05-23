@@ -77,7 +77,6 @@ Value_DeclaringType(?value, ?type) :-
   AssignReturnValue(invocation, to), \
   VirtualMethodInvocation_Base(invocation, from)
 
-
 // We assume that the array is allocated inside the method, before being returned.
 // NOTE "?invocationStr" and "?typeStr" are reserved for this macro
 #define ReflectiveArrayMacro(invocation, type, arrayType) \
@@ -212,14 +211,14 @@ java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
 // TODO Handle version for multiarray? If yes, add to ReifiedClass as well
 CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat(cat("<reflective ", ?invocation), "/"), ?arrayType), "/new "), ">")),
 java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
-  ?sig = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>",
-  isMethod(?sig),
-  MethodInvocation_Method(?invocation, ?sig),
+  isMethod("<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
+  MethodInvocation_Method(?invocation, "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   isStaticMethodInvocation_Insn(?invocation),
   AssignReturnValue(?invocation, ?to),
   ActualParam(0, ?invocation, ?param),
   isArrayType(?arrayType),
   ReflectiveArrayMacro(?invocation, ?arrayType, ?arrayType).
+
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS
@@ -245,23 +244,20 @@ java_lang_reflect_Field_get_base(?invocation, ?base) :-
   ActualParam(0, ?invocation, ?base).
 
 java_lang_reflect_Field_set(?invocation, ?from, ?field) :-
-  ?signature = "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>",
-  isMethod(?signature),
-  MethodInvocation_Method(?invocation, ?signature),
+  isMethod("<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+  MethodInvocation_Method(?invocation, "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
   VirtualMethodInvocation_Base(?invocation, ?field),
   ActualParam(1, ?invocation, ?from).
 
 java_lang_reflect_Field_set_base(?invocation, ?base) :-
-  ?signature = "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>",
-  isMethod(?signature),
-  MethodInvocation_Method(?invocation, ?signature),
+  isMethod("<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
+  MethodInvocation_Method(?invocation, "<java.lang.reflect.Field: void set(java.lang.Object,java.lang.Object)>"),
   isVirtualMethodInvocation_Insn(?invocation),
   ActualParam(0, ?invocation, ?base).
 
 java_lang_reflect_Method_invoke(?invocation, ?method) :-
-  ?signature = "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>",
-  isMethod(?signature),
-  MethodInvocation_Method(?invocation, ?signature),
+  isMethod("<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+  MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   VirtualMethodInvocation_Base(?invocation, ?method).
 
 
