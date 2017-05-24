@@ -16,6 +16,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	Method        method
 	Map           methodInvoCounters
 	boolean       inDecl
+	Map           values = [:]
 
 	BasicMetadata metadata = new BasicMetadata()
 
@@ -221,17 +222,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		String gDoopId
 		if (ctx.dynamicMethodSig()) {
-			def dynMeth = ctx.STRING().text
-			int idx2 = dynMeth.length() - 1
-			if ((dynMeth.charAt(0) == '"') && (dynMeth.charAt(idx2) == '"'))
-				dynMeth = dynMeth.substring(1, idx2)
-			def c = methodInvoCounters[methodName] ?: 0
-			methodInvoCounters[methodName] = c+1
-			// Constant taken from SootClass.
-			def sootMagic = "soot.dummy.InvokeDynamic"
-			gDoopId = "${method.doopId}/${sootMagic}.${dynMeth}/$c"
+			gDoopId = dynamicInvokeMiddlePart(ctx)
 		}
-		else {
+		if (gDoopId == null) {
 			def c = methodInvoCounters["$methodClass|$methodName"] ?: 0
 			methodInvoCounters["$methodClass|$methodName"] = c+1
 			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
@@ -245,6 +238,36 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 	}
 
+	// This follows how Representation.dynamicInvokeMiddlePart()
+	// works. Returns null for unsupported bootstrap methods, so
+	// that a default path can be followed instead in the caller.
+	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
+		def bootName = ctx.methodSig().IDENTIFIER(0).text + "." +
+			       ctx.methodSig().IDENTIFIER(2).text
+		def bootArgs = values[ctx.valueList(0)]
+		if (bootArgs.size() > 1) {
+			def v = bootArgs[1]?.methodSig();
+			if (v != null) {
+				def declClass = v.IDENTIFIER(0).text
+				def mName = v.IDENTIFIER(2).text
+				def mHandle = declClass + "::" + mName
+				if ((bootName.equals("java.lang.invoke.LambdaMetafactory.metafactory")) ||
+				    (bootName.equals("java.lang.invoke.LambdaMetafactory.altMetafactory"))) {
+					def c = methodInvoCounters[mHandle] ?: 0
+					methodInvoCounters[mHandle] = c+1
+					return "${method.doopId}/invokedynamic_${mHandle}/$c"
+				}
+				else
+					println("Warning: unsupported invokedynamic, unknown boot method: " + bootName + " in class " + klass.name)
+			}
+			else
+				println("Warning: unsupported invokedynamic, unknown boot argument 2: " + v + " in class " + klass.name)
+		}
+		else
+			println("Warning: unsupported invokedynamic, unknown boot arguments of arity " + bootArgs.size() + " in class " + klass.name)
+		return null
+	}
+
 	void exitMethodSig(MethodSigContext ctx) {
 		addTypeUsage(ctx.IDENTIFIER(0))
 		addTypeUsage(ctx.IDENTIFIER(1))
@@ -252,6 +275,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitValueList(ValueListContext ctx) {
+		def value = ctx.value()
+		values[ctx] = ((values[ctx.valueList()] ?: []) << value)
 		if (ctx.value().IDENTIFIER())
 			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
