@@ -78,6 +78,11 @@ OptMethodInvocation:Method(?invocation, ?sig) <-
   AssignReturnValue[invocation] = to, \
   VirtualMethodInvocation:Base[invocation] = from
 
+#define ReflectiveArrayMacro(invocation, type, arrayType, arrayValueStr, arrayTypeStr) \
+  Instruction:Id(invocation:?invocationStr), \
+  Type:Id(type:?typeStr), \
+  ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
+  arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
 
 // We assume that the array is allocated inside the method, before being returned.
 // NOTE "?invocationStr" and "?typeStr" are reserved for this macro
@@ -213,13 +218,9 @@ java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
   AssignReturnValue[?invocation] = ?to,
   ActualParam[0, ?invocation] = ?param,
   ArrayType(?arrayType),
-  ReflectiveArrayMacro(?invocation, ?arrayType, ?arrayType, ?arrayValueStr, "").
-
-#define ReflectiveArrayMacro(invocation, type, arrayType, arrayValueStr, arrayTypeStr) \
-  Instruction:Id(invocation:?invocationStr), \
-  Type:Id(type:?typeStr), \
-  ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
-  arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
+  Instruction:Id(?invocation:?invocationStr),
+  Type:Id(?arrayType:?arrayTypeStr),
+  ?arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?arrayTypeStr +"/new "+ ?arrayTypeStr +">".
 
 // TODO Better filtering of class types
 CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
