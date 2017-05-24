@@ -185,9 +185,7 @@ CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.n
 java_lang_Class_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
   isClassType(?type),
-#ifdef REFLECTION_REFINED_OBJECTS
   isInstruction(?invocation),
-#endif
   isType(?type).
 
 CreateReflectiveAllocationMacro(?invocation, ?type, ?value),
@@ -214,11 +212,11 @@ java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
   isMethod("<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   isStaticMethodInvocation_Insn(?invocation),
+  isInstruction(?invocation),
   AssignReturnValue(?invocation, ?to),
   ActualParam(0, ?invocation, ?param),
   isArrayType(?arrayType),
-  ReflectiveArrayMacro(?invocation, ?arrayType, ?arrayType).
-
+  isType(?arrayType).
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS
@@ -228,9 +226,7 @@ CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Constru
 #endif
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
-  #ifdef REFLECTION_REFINED_OBJECTS
-    isInstruction(?invocation),
-  #endif
+  isInstruction(?invocation),
   isClassType(?type),
   isType(?type).
 
@@ -259,8 +255,6 @@ java_lang_reflect_Method_invoke(?invocation, ?method) :-
   isMethod("<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
   VirtualMethodInvocation_Base(?invocation, ?method).
-
-
 
 // We use a distinct value abstraction for every java.lang.Class, i.e., for
 // every class type that appears in the bytecode, for example '<class
