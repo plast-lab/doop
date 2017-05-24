@@ -17,9 +17,6 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	boolean inDecl
 	boolean inRuleHead
 
-	def cacheTypes   = [:]
-	def pendingTypes = [:]
-
 	String visit(Program p) {
 		currentFile = createUniqueFile("out_", ".dl")
 		results << new Result(Result.Kind.LOGIC, currentFile)
@@ -30,39 +27,19 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		return super.visit(n as Program)
 	}
 
-	void enter(Component n) {
-		n.declarations.each{
-			def entity = it.atom.name
-			if (it.atom instanceof Entity && !cacheTypes[entity]) {
-				pendingTypes = [:]
-				cacheTypes[entity] = inferConstructorTypes(n.constructionInfo[entity])
-				pendingTypes.each { id, types ->
-					emit ".type $id = ${types.join('|')}"
-				}
-			}
-		}
-	}
-
 	void enter(Declaration n) { inDecl = true }
 
 	String exit(Declaration n, Map<IVisitable, String> m) {
 		inDecl = false
 		if (n.atom instanceof Entity) {
 			def entityName = n.atom.name
-			def generalConstructor = cacheTypes[entityName]
-			if (generalConstructor) {
-				def types = generalConstructor.join(", ")
-				emit ".type ${entityName} = [$types]"
-			}
-			else {
-				def rest = (n.types.isEmpty() ? "" : " = ${n.types.first().name}")
-				emit ".type ${entityName}$rest"
-			}
-			emit ".decl is${entityName}(?x:${entityName})"
-		}
-		else {
-			def params = n.types.collect{ m[it] }.join(", ")
-			emit ".decl ${n.atom.name}($params)"
+			def rest = (n.types.isEmpty() ? "" : " = ${n.types.first().name}")
+			def params = "x:$entityName"
+			emit ".type ${entityName}$rest"
+			emit ".decl ${type(entityName, params)}"
+		} else {
+			def params = n.types.collect { m[it] }.join(", ")
+			emit ".decl ${pred(n.atom.name, params)}"
 		}
 		return null
 	}
@@ -75,7 +52,7 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		m[n.head] = n.head.accept(this)
 		inRuleHead = false
 
-		def constructors = n.head.elements.findAll{ it instanceof Constructor }
+		def constructors = n.head.elements.findAll { it instanceof Constructor }
 		def newBody = n.body
 		if (!newBody) newBody = new LogicalElement(AND, [])
 		constructors.each { newBody.elements << it }
@@ -99,21 +76,14 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(NegationElement n, Map<IVisitable, String> m) { "!${m[n.element]}" }
 
 	String exit(Constructor n, Map<IVisitable, String> m) {
-		if (inRuleHead) {
-			def params = (n.keyExprs + [n.valueExpr]).collect{ m[it] }.join(", ")
-			return "is${n.entity.name}(${m[n.valueExpr]}), $n.name($params)"
-		}
-		else if (!inDecl) {
-			def generalConstructor = cacheTypes[n.entity.name]
-			def params = n.keyExprs.collect{ m[it] }
-			def rest = generalConstructor.size() - params.size()
-			(0..<rest).each{ params << "nil" }
-			if (params.size() == 1)
-				return "${m[n.valueExpr]} = ${params.join(', ')}"
-			else
-				return "${m[n.valueExpr]} = [${params.join(', ')}]"
-		}
-		return null
+		def params = (n.keyExprs + [n.valueExpr]).collect { m[it] }.join(", ")
+
+		if (inRuleHead)
+			return "${type(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}, ${pred(n.name+":HeadMacro", params)}"
+		else if (!inDecl)
+			return "${pred(n.name+":BodyMacro", params)}"
+		else
+			return null
 	}
 
 	String exit(Entity n, Map<IVisitable, String> m) {
@@ -121,12 +91,12 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	}
 
 	String exit(Functional n, Map<IVisitable, String> m) {
-		def params = (n.keyExprs + [n.valueExpr]).collect{ m[it] }.join(", ")
+		def params = (n.keyExprs + [n.valueExpr]).collect { m[it] }.join(", ")
 		return "${n.name}($params)"
 	}
 
 	String exit(Predicate n, Map<IVisitable, String> m) {
-		def params = n.exprs.collect{ m[it] }.join(", ")
+		def params = n.exprs.collect { m[it] }.join(", ")
 		return "${n.name}($params)"
 	}
 
@@ -144,43 +114,17 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(VariableExpr n, Map<IVisitable, String> m) { n.name }
 
-
 	def emit(def data) { write currentFile, data }
+
+	static def pred(def name, def params) { "${mini(name)}($params)" }
+
+	static def type(def name, def params) { "is${mini(name)}($params)" }
+
+	static def mini(def name) { name.replace ":", "_" }
 
 	static def mapPrimitive(def name) {
 		if (name == "string") return "symbol"
 		else if (name == "int") return "number"
 		else return name
-	}
-
-	static def minify(def name) {
-		if (name == "symbol") return "S"
-		else if (name == "number") return "N"
-		else return name
-	}
-
-	def inferConstructorTypes(List<Tuple2<Declaration,Constructor>> constructionInfo) {
-		if (!constructionInfo) return
-
-		def maxLen = constructionInfo.max{ it.second.keyExprs.size() }.second.keyExprs.size()
-		def types = []
-		(0..<maxLen).each{ index ->
-			def mergeTypes = [] as Set
-			constructionInfo.each{
-				def (Declaration declaration, Constructor constructor) = it
-				if (index < constructor.keyExprs.size())
-					mergeTypes << mapPrimitive(declaration.types.get(index).name)
-			}
-
-			if (mergeTypes.size() > 1) {
-				def typeId = "T_"
-				mergeTypes.each{ typeId += minify it }
-				types << typeId
-				pendingTypes[typeId] = mergeTypes
-			}
-			else
-				types << mergeTypes.first()
-		}
-		return types
 	}
 }
