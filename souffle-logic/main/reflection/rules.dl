@@ -184,39 +184,30 @@ CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.n
 #endif
 java_lang_Class_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
-  isClassType(?type),
-  isInstruction(?invocation),
-  isType(?type).
-
-CreateReflectiveAllocationMacro(?invocation, ?type, ?value),
+  isClassType(?type).
+  
+CreateReflectiveAllocationMacro(?invocation, ?type, "<reflective dummy ClassLoader>"),
 java_lang_Class_getClassLoader(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.ClassLoader getClassLoader()>"),
   // Use a single dummy value for any ClassLoader
   ?type = "java.lang.ClassLoader",
-  isType(?type),
-  isReferenceType(?type),
-  ?value = "<reflective dummy ClassLoader>".
+  isReferenceType(?type).
 
-CreateReflectiveAllocationMacro(?invocation, ?type, ?value),
+CreateReflectiveAllocationMacro(?invocation, ?type, "<reflective dummy URL resource>"),
 java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.ClassLoader: java.net.URL getResource(java.lang.String)>"),
   // Use a single dummy value for any URL resource
   ?type = "java.net.URL",
-  isType(?type),
-  isReferenceType(?type),
-  ?value = "<reflective dummy URL resource>".
+  isReferenceType(?type).
 
 // TODO Handle version for multiarray? If yes, add to ReifiedClass as well
 CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat(cat("<reflective ", ?invocation), "/"), ?arrayType), "/new "), ">")),
 java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
-  isMethod("<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
   isStaticMethodInvocation_Insn(?invocation),
-  isInstruction(?invocation),
   AssignReturnValue(?invocation, ?to),
   ActualParam(0, ?invocation, ?param),
-  isArrayType(?arrayType),
-  isType(?arrayType).
+  isArrayType(?arrayType).
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS
@@ -226,9 +217,7 @@ CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Constru
 #endif
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
-  isInstruction(?invocation),
-  isClassType(?type),
-  isType(?type).
+  isClassType(?type).
 
 
 // NOTE At this point, we cannot distinguish static from instance fields
