@@ -214,8 +214,6 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def methodClassId = ctx.methodSig().IDENTIFIER(0)
 		def methodClass = methodClassId.text
 		def methodName  = ctx.methodSig().IDENTIFIER(2).text
-		def c = methodInvoCounters[methodName] ?: 0
-		methodInvoCounters[methodName] = c+1
 
 		def line = methodClassId.symbol.line
 		def startCol = methodClassId.symbol.charPositionInLine
@@ -223,16 +221,21 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		String gDoopId
 		if (ctx.dynamicMethodSig()) {
-			def dynMeth = ctx.STRING().toString()
+			def dynMeth = ctx.STRING().text
 			int idx2 = dynMeth.length() - 1
 			if ((dynMeth.charAt(0) == '"') && (dynMeth.charAt(idx2) == '"'))
 				dynMeth = dynMeth.substring(1, idx2)
+			def c = methodInvoCounters[methodName] ?: 0
+			methodInvoCounters[methodName] = c+1
 			// Constant taken from SootClass.
 			def sootMagic = "soot.dummy.InvokeDynamic"
 			gDoopId = "${method.doopId}/${sootMagic}.${dynMeth}/$c"
 		}
-		else
+		else {
+			def c = methodInvoCounters["$methodClass|$methodName"] ?: 0
+			methodInvoCounters["$methodClass|$methodName"] = c+1
 			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
+		}
 
 		metadata.invocations << new MethodInvocation(
 			new Position(line, line, startCol, endCol),
