@@ -179,13 +179,46 @@ public class Representation {
 
     String invoke(SootMethod inMethod, InvokeExpr expr, Session session)
     {
-        String name = expr.getMethod().getName();
+        SootMethod exprMethod = expr.getMethod();
+        String defaultMid = exprMethod.getDeclaringClass() + "." + exprMethod.getName();
+        String midPart = (expr instanceof DynamicInvokeExpr)?
+            dynamicInvokeMiddlePart((DynamicInvokeExpr)expr, defaultMid) : defaultMid;
 
-        return getMethodSignature(inMethod)
-            + "/" + expr.getMethod().getDeclaringClass() + "." + name
-            + "/" + session.nextNumber(expr.getMethod().getDeclaringClass() + "." + name);
+        return getMethodSignature(inMethod) +
+               "/" + midPart + "/" + session.nextNumber(midPart);
     }
 
+    // Create a middle part for invokedynamic ids. It currently
+    // supports the LambdaMetafactory machinery, returning a default
+    // value for other (or missing) bootstrap methods.
+    private String dynamicInvokeMiddlePart(DynamicInvokeExpr expr, String defaultResult) {
+
+        // The signatures of the two lambda metafactories we currently support.
+        final String DEFAULT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>";
+        final String ALT_L_METAFACTORY = "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>";
+
+        SootMethodRef bootMethRef = expr.getBootstrapMethodRef();
+        if (bootMethRef != null) {
+            String bootMethName = bootMethRef.resolve().toString();
+            int bootArity = expr.getBootstrapArgCount();
+            if (bootArity > 1) {
+                Value val1 = expr.getBootstrapArg(1);
+                if ((val1 instanceof MethodHandle) &&
+                    ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
+                     (bootMethName.equals(ALT_L_METAFACTORY)))) {
+                    SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
+                    return "invokedynamic_" + smr.declaringClass() + "::" + smr.name();
+                }
+                else
+                    System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
+            }
+            else
+                System.out.println("Representation: Unsupported invokedynamic (unknown boot method of arity 0)");
+        }
+        else
+            System.out.println("Representation: Malformed invokedynamic (null bootmethod)");
+        return defaultResult;
+    }
 
     String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
