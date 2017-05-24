@@ -24,7 +24,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 
 	DatalogListenerImpl(String filename) {
 		currComp = program.globalComp
-		SourceManager.v().setOutputFile(new File(filename).getAbsolutePath())
+		SourceManager.instance.setOutputFile(new File(filename).getAbsolutePath())
 	}
 
 	void enterComp(CompContext ctx) {
@@ -198,10 +198,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		def t = (ctx.INTEGER(1) != null ? Integer.parseInt(ctx.INTEGER(1).text) : 0)
 		// 1 - Start of a new file
 		if (t == 0 || t == 1)
-			SourceManager.v().lineMarkerStart(markerLine, markerActualLine, sourceFile)
+			SourceManager.instance.lineMarkerStart(markerLine, markerActualLine, sourceFile)
 		// 2 - Returning to previous file
 		else if (t == 2)
-			SourceManager.v().lineMarkerEnd()
+			SourceManager.instance.lineMarkerEnd()
 		// 3 - Following text comes from a system header file (#include <> vs #include "")
 		// 4 - Following text should be treated as being wrapped in an implicit extern "C" block.
 		else
@@ -439,6 +439,6 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		return (atom.arity != bodyCount)
 	}
 	static void recLoc(ParserRuleContext ctx) {
-		SourceManager.v().recLoc(ctx.start.getLine())
+		SourceManager.instance.recLoc(ctx.start.getLine())
 	}
 }
