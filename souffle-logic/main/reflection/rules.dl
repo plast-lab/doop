@@ -898,10 +898,8 @@ SpecialMissingInvokeValueFromGetMethod(?invocation, cat(cat("<special object for
    ?getMethod = "<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>",
    isMethod(?getMethod)),
   MethodInvocation_Method(?invocation, ?getMethod),
-  isVirtualMethodInvocation_Insn(?invocation),
   ?type = "java.lang.Object",
-  isType(?type),
-  isInstruction(?invocation).
+  isType(?type).
 
 // Special objects for get[Declared]Field[s]. Very similar to methods.
 SpecialValueConsMacro(cat(cat("<special object for missing get[Declared]Fields values ", ?invocation), ">"), ?type),
@@ -910,17 +908,15 @@ SpecialMissingGetFieldsValue(?invocation, cat(cat("<special object for missing g
   (java_lang_Class_getDeclaredFields(?invocation, _, _);
    java_lang_Class_getFields(?invocation, _, _)),
   ?type = "java.lang.reflect.Field",
-  isType(?type),
-  isInstruction(?invocation).
-
+  isType(?type).
+  
 SpecialValueConsMacro(cat(cat("<special object for missing get() values ", ?invocation), ">"), ?type),
 SpecialMissingGetValueFromGetFields(?invocation, cat(cat("<special object for missing get() values ", ?invocation), ">"))
 :-
   (java_lang_Class_getDeclaredFields(?invocation, _, _);
    java_lang_Class_getFields(?invocation, _, _)),
   ?type = "java.lang.Object",
-  isType(?type),
-  isInstruction(?invocation).
+  isType(?type).
 
 SpecialValueConsMacro(cat(cat("<special object for missing get[Declared]Field values ", ?invocation), ">"), ?type),
 SpecialMissingGetFieldValue(?invocation, cat(cat("<special object for missing get[Declared]Field values ", ?invocation), ">"))
@@ -930,10 +926,8 @@ SpecialMissingGetFieldValue(?invocation, cat(cat("<special object for missing ge
    ?getField = "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>",
    isMethod(?getField)),
   MethodInvocation_Method(?invocation, ?getField),
-  isVirtualMethodInvocation_Insn(?invocation),
   ?type = "java.lang.reflect.Field",
-  isType(?type),
-  isInstruction(?invocation).
+  isType(?type).
 
 SpecialValueConsMacro(cat(cat("<special object for missing get() values ", ?invocation), ">"), ?type),
 SpecialMissingGetValueFromGetField(?invocation, cat(cat("<special object for missing get() values ", ?invocation), ">"))
@@ -943,10 +937,8 @@ SpecialMissingGetValueFromGetField(?invocation, cat(cat("<special object for mis
    ?getField = "<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>",
    isMethod(?getField)),
   MethodInvocation_Method(?invocation, ?getField),
-  isVirtualMethodInvocation_Insn(?invocation),
   ?type = "java.lang.Object",
-  isType(?type),
-  isInstruction(?invocation).
+  isType(?type).
 
 
 /*************************************************************
@@ -1354,12 +1346,6 @@ ArrayIndexPointsTo(?hctx, ?methodValue, ?hctx, ?arrayValue) :-
 /**
  *  Handling of getFields/getDeclaredFields. Very similar to methods.
  **/
-
-OptSpecialMissingGetFieldsValue(?getFieldsInvocation, ?specialfield) :-
-  SpecialMissingGetFieldsValue(?getFieldsInvocation, ?specialfield).
-
-OptSpecialMissingGetValueFromGetFields(?getInvocation, ?specialvalue) :-
-  SpecialMissingGetValueFromGetFields(?getInvocation, ?specialvalue).
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Field object the call returns.
