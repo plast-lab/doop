@@ -42,7 +42,7 @@ datalog
 
 
 declaration
-	: annotation? predicate '->' predicateList? '.'
+	: annotation? predicate ('->' predicateList)? '.'
 	| singleAtom ',' refmode '->' singleAtom '.'
 	;
 
