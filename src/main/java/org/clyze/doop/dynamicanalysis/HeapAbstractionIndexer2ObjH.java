@@ -1,10 +1,10 @@
 package org.clyze.doop.dynamicanalysis;
 
 import com.sun.tools.hat.internal.model.*;
+import org.apache.tools.ant.taskdefs.Java;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import static org.clyze.doop.dynamicanalysis.DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame;
@@ -16,6 +16,8 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
 
     public static final String HCTX_RECORDER_CLASS_NAME = "Instrumentation.Recorder.Recorder$ObjectAndContext";
     public static final String EDGE_CTXS_RECORDER_CLASS_NAME = "Instrumentation.Recorder.Recorder$EdgeContexts";
+
+    public static final Map<Long,DynamicHeapObject> dynamicHeapObjectCache = new ConcurrentHashMap<>(0x1000);
 
 
     public HeapAbstractionIndexer2ObjH(Snapshot snapshot) {

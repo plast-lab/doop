@@ -6,6 +6,7 @@ import soot.jimple.infoflow.collect.ConcurrentHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static org.clyze.doop.dynamicanalysis.DumpParsingUtil.fullyQualifiedMethodSignatureFromFrame;
 
@@ -15,6 +16,7 @@ import static org.clyze.doop.dynamicanalysis.DumpParsingUtil.fullyQualifiedMetho
 class HeapAbstractionIndexer {
     private static final String UNKNOWN = "Unknown";
     final Map<Long, DynamicHeapObject> heapIndex = new ConcurrentHashMap<>();
+    final Map<AllocationKey, DynamicHeapObject> frameIndex = new ConcurrentHashMap<>();
     final Snapshot snapshot;
 
     private final Set<DynamicFact> dynamicFacts = new ConcurrentHashSet<>();
@@ -55,16 +57,34 @@ class HeapAbstractionIndexer {
     DynamicHeapObject getHeapRepresentation(JavaHeapObject obj, Context hctx) {
         JavaClass cls = obj.getClazz();
 
+        if (cls.isString() && obj.toString().length() < 50) {
+            // Strings are treated differently throughout, important for reflection analysis
+            JavaThing value = ((JavaObject)obj).getField("value");
+            String strValue = value instanceof JavaValueArray?((JavaValueArray)value).valueString():UNKNOWN;
+            return new DynamicStringHeapObject(strValue);
+        }
+
         StackFrame frame = getAllocationFrame(obj);
+
+        Function<AllocationKey, DynamicHeapObject> heapObjectFromFrame = k -> {
+            StackFrame f = k.getFrame();
+
+            String fullyQualifiedMethodName = fullyQualifiedMethodSignatureFromFrame(f);
+
+            return new DynamicNormalHeapObject(f.getLineNumber(), fullyQualifiedMethodName, cls.getName(), hctx.getRepresentation());
+        };
+
+        final AllocationKey allocationKey = new AllocationKey(frame, cls);
+        // This is the point to perform caching
+        
+        if (hctx.equals(ContextInsensitive.get()) && frame != null) {
+            return frameIndex.computeIfAbsent(allocationKey, heapObjectFromFrame) ;
+        }
+
 
         if (frame == null) return new DynamicNormalHeapObject(UNKNOWN, UNKNOWN, cls.getName(), hctx.getRepresentation());
 
-        String fullyQualifiedMethodName = fullyQualifiedMethodSignatureFromFrame(frame);
-
-
-        return new DynamicNormalHeapObject(frame.getLineNumber(), fullyQualifiedMethodName, cls.getName(), hctx.getRepresentation());
-
-
+        return heapObjectFromFrame.apply(allocationKey);
     }
 
     Set<DynamicFact> getDynamicFacts() {

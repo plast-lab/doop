@@ -12,6 +12,7 @@ public class DynamicStringHeapObject implements DynamicHeapObject {
     private final String representation;
 
     public DynamicStringHeapObject(String stringValue) {
+        stringValue = stringValue.replace("\n", "").replace("\t", "").replace("\r", "");
         this.representation = FactEncoders.encodeStringConstant(stringValue);
     }
 
@@ -32,17 +33,16 @@ public class DynamicStringHeapObject implements DynamicHeapObject {
 
     public String getRepresentation() {
         return representation;
-
     }
 
     @Override
     public String getContextRepresentation() {
-        return null;
+        return ContextInsensitive.get().getRepresentation();
     }
 
     @Override
     public String getHeapRepresentation() {
-        return null;
+        return representation;
     }
 
     @Override
@@ -52,9 +52,7 @@ public class DynamicStringHeapObject implements DynamicHeapObject {
 
     @Override
     public void write_fact(Database db) {
-        // To think about, keeping track of all raw strings is infeasable for now.
-        //db.add(STRING_RAW, representation, representation);
-        //db.add(STRING_CONST, representation);
-        db.add(DYNAMIC_STRING_HEAP_OBJECT, representation);
+        db.add(STRING_RAW, representation, representation);
+        db.add(STRING_CONST, representation);
     }
 }
