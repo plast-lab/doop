@@ -7,6 +7,7 @@ import org.clyze.persistent.Position
 import org.clyze.persistent.doop.*
 
 import static org.clyze.jimple.JimpleParser.*
+import org.clyze.persistent.doop.DynamicMethodInvocation
 
 class JimpleListenerImpl extends JimpleBaseListener {
 
@@ -252,13 +253,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			if (v) {
 				def declClass = v.IDENTIFIER(0).text
 				def mName = v.IDENTIFIER(2).text
-				def mHandle = "$declClass::$mName"
+				def invoId = DynamicMethodInvocation.genId(declClass, mName)
 				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
-						bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
-					def c = methodInvoCounters[mHandle] ?: 0
-					methodInvoCounters[mHandle] = c + 1
-					return "${method.doopId}/invokedynamic_${mHandle}/$c"
-				} else
+				    bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
+					def c = methodInvoCounters[invoId] ?: 0
+					methodInvoCounters[invoId] = c+1
+					return "${method.doopId}/${invoId}/$c"
+				}
+				else
 					println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
 			} else
 				println("Warning: unsupported invokedynamic, unknown boot argument 2: ${bootArgs[1].text} in $filename")

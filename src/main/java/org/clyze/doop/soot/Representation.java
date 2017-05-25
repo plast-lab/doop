@@ -6,6 +6,8 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.clyze.persistent.doop.DynamicMethodInvocation;
+
 public class Representation {
     private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
     private Map<SootMethod, String> _methodSigRepr = new ConcurrentHashMap<>();
@@ -206,7 +208,8 @@ public class Representation {
                     ((bootMethName.equals(DEFAULT_L_METAFACTORY)) ||
                      (bootMethName.equals(ALT_L_METAFACTORY)))) {
                     SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
-                    return "invokedynamic_" + smr.declaringClass() + "::" + smr.name();
+                    return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
+                                                         smr.name().toString());
                 }
                 else
                     System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);
