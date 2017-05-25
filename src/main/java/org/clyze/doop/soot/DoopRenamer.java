@@ -2,10 +2,10 @@ package org.clyze.doop.soot;
 
 import soot.*;
 import soot.jimple.DefinitionStmt;
-import soot.util.Chain;
-import soot.shimple.*;
+import soot.shimple.Shimple;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DoopRenamer {
     static protected void transform(Body body) {

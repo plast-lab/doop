@@ -6,15 +6,14 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-
 import org.clyze.persistent.doop.BasicMetadata
 
 class Parser {
 
 	static def getClassInfo(String qualifiedName) {
 		def i = qualifiedName.lastIndexOf(".")
-		def packageName = i >= 0 ? qualifiedName[0..(i-1)] : ''
-		def className = i >= 0 ? qualifiedName[(i+1)..-1] : qualifiedName
+		def packageName = i >= 0 ? qualifiedName[0..(i - 1)] : ''
+		def className = i >= 0 ? qualifiedName[(i + 1)..-1] : qualifiedName
 		[packageName, className]
 	}
 
@@ -41,13 +40,12 @@ class Parser {
 		if (outPath == null) {
 			dir = origFile.getParentFile()
 			dir = dir ?: new File(".")
-		}
-		else {
+		} else {
 			dir = outPath
 		}
-		def extension = FilenameUtils.getExtension( FilenameUtils.getName(filename) )
+		def extension = FilenameUtils.getExtension(FilenameUtils.getName(filename))
 		// abc.def.Foo
-		def simplename = FilenameUtils.removeExtension( FilenameUtils.getName(filename) )
+		def simplename = FilenameUtils.removeExtension(FilenameUtils.getName(filename))
 		def (packageName, className) = getClassInfo(simplename)
 
 		// abc/def
@@ -64,8 +62,8 @@ class Parser {
 
 		def parser = new JimpleParser(
 				new CommonTokenStream(
-					new JimpleLexer(
-						new ANTLRFileStream(sourceFile as String))))
+						new JimpleLexer(
+								new ANTLRFileStream(sourceFile as String))))
 		def listener = new JimpleListenerImpl(sourceFileName)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 

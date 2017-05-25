@@ -4,9 +4,12 @@ import com.sun.tools.hat.internal.model.*;
 import org.clyze.doop.common.Database;
 import soot.jimple.infoflow.collect.ConcurrentHashSet;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Set;
 
 // Z                        boolean
 // B                        byte

@@ -1,22 +1,24 @@
 package org.clyze.jimple
 
 import org.antlr.v4.runtime.ParserRuleContext
-import org.antlr.v4.runtime.tree.*
+import org.antlr.v4.runtime.tree.ErrorNode
+import org.antlr.v4.runtime.tree.TerminalNode
 import org.clyze.persistent.Position
 import org.clyze.persistent.doop.*
+
 import static org.clyze.jimple.JimpleParser.*
 
 class JimpleListenerImpl extends JimpleBaseListener {
 
-	String        filename
-	List<Map>     pending
-	Map           varTypes = [:]
-	Map           heapCounters
-	Class         klass
-	Method        method
-	Map           methodInvoCounters
-	Map           values = [:]
-	boolean       inDecl
+	String filename
+	List<Map> pending
+	Map varTypes = [:]
+	Map heapCounters
+	Class klass
+	Method method
+	Map methodInvoCounters
+	Map values = [:]
+	boolean inDecl
 
 	BasicMetadata metadata = new BasicMetadata()
 
@@ -33,21 +35,21 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def (packageName, className) = Parser.getClassInfo(qualifiedName)
 
 		klass = new Class(
-			position,
-			filename,
-			className,
-			packageName,
-			qualifiedName,
-			hasToken(ctx, "interface"),
-			ctx.modifier().any() { hasToken(it, "enum") },
-			ctx.modifier().any() { hasToken(it, "static") },
-			false, //isInner, missing?
-			false  //isAnonymous, missing?
+				position,
+				filename,
+				className,
+				packageName,
+				qualifiedName,
+				hasToken(ctx, "interface"),
+				ctx.modifier().any() { hasToken(it, "enum") },
+				ctx.modifier().any() { hasToken(it, "static") },
+				false, //isInner, missing?
+				false  //isAnonymous, missing?
 		)
 		metadata.classes << klass
 
 		addTypeUsage(ctx.IDENTIFIER(1))
-		gatherIdentifiers(ctx.identifierList()).each{ addTypeUsage it }
+		gatherIdentifiers(ctx.identifierList()).each { addTypeUsage it }
 	}
 
 	void exitField(FieldContext ctx) {
@@ -59,13 +61,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def position = new Position(line, line, startCol, startCol + name.length())
 
 		def f = new Field(
-			position,
-			filename,
-			name,
-			"<$klass: $type $name>", //doopId
-			type,
-			klass.doopId, //declaringClassDoopId
-			ctx.modifier().any() { hasToken(it, "static") }
+				position,
+				filename,
+				name,
+				"<$klass: $type $name>", //doopId
+				type,
+				klass.doopId, //declaringClassDoopId
+				ctx.modifier().any() { hasToken(it, "static") }
 		)
 		metadata.fields << f
 	}
@@ -79,21 +81,21 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def position = new Position(line, line, startCol, startCol + name.length())
 
 		def paramTypes = gatherIdentifiers(ctx.identifierList())
-		def paramTypeNames = paramTypes.collect{ it.text }
+		def paramTypeNames = paramTypes.collect { it.text }
 		def params = paramTypeNames.join(",")
 
 		method = new Method(
-			position,
-			filename,
-			name,
-			klass.doopId, //declaringClassDoopId
-			retType,
-			"<${klass.doopId}: $retType $name($params)>", //doopId
-			null, //params, TODO
-			paramTypeNames as String[],
-			ctx.modifier().any() { hasToken(it, "static") },
-			0, //totalInvocations, missing?
-			0  //totalAllocations, missing?
+				position,
+				filename,
+				name,
+				klass.doopId, //declaringClassDoopId
+				retType,
+				"<${klass.doopId}: $retType $name($params)>", //doopId
+				null, //params, TODO
+				paramTypeNames as String[],
+				ctx.modifier().any() { hasToken(it, "static") },
+				0, //totalInvocations, missing?
+				0  //totalAllocations, missing?
 		)
 		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 		method.outerPosition = new Position(line, endline, 0, 0)
@@ -103,8 +105,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		methodInvoCounters = [:]
 
 		addTypeUsage(ctx.IDENTIFIER(0))
-		paramTypes.each{ addTypeUsage it }
-		gatherIdentifiers(ctx.throwsExceptions()?.identifierList()).each{ addTypeUsage it }
+		paramTypes.each { addTypeUsage it }
+		gatherIdentifiers(ctx.throwsExceptions()?.identifierList()).each { addTypeUsage it }
 	}
 
 	void exitIdentifierList(IdentifierListContext ctx) {
@@ -180,29 +182,27 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if ((newToken = findToken(ctx, "new"))) {
 			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = typeId.symbol.charPositionInLine + 1 + type.length()
-		}
-		else if ((newToken = findToken(ctx, "newarray"))) {
+		} else if ((newToken = findToken(ctx, "newarray"))) {
 			type = "$type[]" as String
 			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + 2
-		}
-		else if ((newToken = findToken(ctx, "newmultiarray"))) {
+		} else if ((newToken = findToken(ctx, "newmultiarray"))) {
 			def lastIsEmpty = lastToken.text == "[]"
 			def dimensions = ctx.value().size() + (lastIsEmpty ? 1 : 0)
-			type = type + (1..dimensions).collect{"[]"}.join()
+			type = type + (1..dimensions).collect { "[]" }.join()
 			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + (lastIsEmpty ? 3 : 2)
 		}
 
 		def c = heapCounters[type] ?: 0
-		heapCounters[type] = c+1
+		heapCounters[type] = c + 1
 
 		metadata.heapAllocations << new HeapAllocation(
-			new Position(line, line, startCol, endCol),
-			filename,
-			"${method.doopId}/new $type/$c", //doopId
-			type,
-			method.doopId //allocatingMethodDoopId
+				new Position(line, line, startCol, endCol),
+				filename,
+				"${method.doopId}/new $type/$c", //doopId
+				type,
+				method.doopId //allocatingMethodDoopId
 		)
 	}
 
@@ -214,7 +214,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		def methodClassId = ctx.methodSig().IDENTIFIER(0)
 		def methodClass = methodClassId.text
-		def methodName  = ctx.methodSig().IDENTIFIER(2).text
+		def methodName = ctx.methodSig().IDENTIFIER(2).text
 
 		def line = methodClassId.symbol.line
 		def startCol = methodClassId.symbol.charPositionInLine
@@ -226,15 +226,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 		if (!gDoopId) {
 			def c = methodInvoCounters["$methodClass|$methodName"] ?: 0
-			methodInvoCounters["$methodClass|$methodName"] = c+1
+			methodInvoCounters["$methodClass|$methodName"] = c + 1
 			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
 		}
 
 		metadata.invocations << new MethodInvocation(
-			new Position(line, line, startCol, endCol),
-			filename,
-			gDoopId, //doopId
-			method.doopId //invokingMethodDoopId
+				new Position(line, line, startCol, endCol),
+				filename,
+				gDoopId, //doopId
+				method.doopId //invokingMethodDoopId
 		)
 	}
 
@@ -254,18 +254,15 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				def mName = v.IDENTIFIER(2).text
 				def mHandle = "$declClass::$mName"
 				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
-				    bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
+						bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
 					def c = methodInvoCounters[mHandle] ?: 0
-					methodInvoCounters[mHandle] = c+1
+					methodInvoCounters[mHandle] = c + 1
 					return "${method.doopId}/invokedynamic_${mHandle}/$c"
-				}
-				else
+				} else
 					println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
-			}
-			else
+			} else
 				println("Warning: unsupported invokedynamic, unknown boot argument 2: ${bootArgs[1].text} in $filename")
-		}
-		else
+		} else
 			println("Warning: unsupported invokedynamic, unknown boot arguments of arity ${bootArgs.size()} in $filename")
 		return null
 	}
@@ -273,7 +270,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	void exitMethodSig(MethodSigContext ctx) {
 		addTypeUsage(ctx.IDENTIFIER(0))
 		addTypeUsage(ctx.IDENTIFIER(1))
-		gatherIdentifiers(ctx.identifierList()).each{ addTypeUsage it }
+		gatherIdentifiers(ctx.identifierList()).each { addTypeUsage it }
 	}
 
 	void exitValueList(ValueListContext ctx) {
@@ -301,14 +298,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def name = id.text
 
 		def v = new Variable(
-			new Position(line, line, startCol, startCol + name.length()),
-			filename,
-			name,
-			"${method.doopId}/$name", //doopId
-			null, //type, provided later
-			method.doopId, //declaringMethodDoopId
-			isLocal,
-			!isLocal
+				new Position(line, line, startCol, startCol + name.length()),
+				filename,
+				name,
+				"${method.doopId}/$name", //doopId
+				null, //type, provided later
+				method.doopId, //declaringMethodDoopId
+				isLocal,
+				!isLocal
 		)
 
 		if (varTypes[v.doopId])
@@ -324,26 +321,27 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def name = id.text
 
 		def u = new Usage(
-			new Position(line, line, startCol, startCol + name.length()),
-			filename,
-			"${method.doopId}/$name", //doopId
-			kind
+				new Position(line, line, startCol, startCol + name.length()),
+				filename,
+				"${method.doopId}/$name", //doopId
+				kind
 		)
 	}
+
 	Usage fieldUsage(FieldSigContext ctx, UsageKind kind) {
 		def klass = ctx.IDENTIFIER(0).text
-		def type  = ctx.IDENTIFIER(1).text
-		def name  = ctx.IDENTIFIER(2).text
+		def type = ctx.IDENTIFIER(1).text
+		def name = ctx.IDENTIFIER(2).text
 
 		def line = ctx.IDENTIFIER(0).symbol.line
 		def startCol = ctx.IDENTIFIER(0).symbol.charPositionInLine
 		def endCol = getLastToken(ctx).symbol.charPositionInLine + 1
 
 		def u = new Usage(
-			new Position(line, line, startCol, endCol),
-			filename,
-			"<$klass: $type $name>", //doopId
-			kind
+				new Position(line, line, startCol, endCol),
+				filename,
+				"<$klass: $type $name>", //doopId
+				kind
 		)
 	}
 
@@ -357,10 +355,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (name == "void") return
 
 		metadata.usages << new Usage(
-			new Position(line, line, startCol, startCol + name.length()),
-			filename,
-			name, //doopId
-			UsageKind.TYPE
+				new Position(line, line, startCol, startCol + name.length()),
+				filename,
+				name, //doopId
+				UsageKind.TYPE
 		)
 	}
 
@@ -375,6 +373,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				return ctx.getChild(i) as TerminalNode
 		return null
 	}
+
 	boolean hasToken(ParserRuleContext ctx, String token) {
 		findToken(ctx, token) != null
 	}

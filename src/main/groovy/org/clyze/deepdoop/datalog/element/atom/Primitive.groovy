@@ -11,14 +11,18 @@ class Primitive implements IAtom {
 	VariableExpr var
 
 	String getStage() { null }
+
 	int getArity() { 1 }
+
 	IAtom newAtom(String stage, List<VariableExpr> vars) {
 		assert arity == vars.size()
 		return this
 	}
+
 	IAtom newAlias(String name, String stage, List<VariableExpr> vars) {
 		throw new UnsupportedOperationException()
 	}
+
 	List<VariableExpr> getVars() { [var] }
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }

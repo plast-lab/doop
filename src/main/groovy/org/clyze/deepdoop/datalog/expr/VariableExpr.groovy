@@ -12,9 +12,9 @@ class VariableExpr implements IExpr {
 
 	List<VariableExpr> getVars() { [this] }
 
-	def <T> T accept(IVisitor<T> v) { v.visit(this)  }
+	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	static List<VariableExpr> genTempVars(int n) {
-		(0..<n).collect{ new VariableExpr("var$it") }
+		(0..<n).collect { new VariableExpr("var$it") }
 	}
 }

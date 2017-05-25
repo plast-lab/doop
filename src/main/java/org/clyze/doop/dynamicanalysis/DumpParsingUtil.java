@@ -1,11 +1,10 @@
 package org.clyze.doop.dynamicanalysis;
 
-import com.google.common.collect.Lists;
-import com.sun.tools.hat.internal.model.*;
+import com.sun.tools.hat.internal.model.Snapshot;
+import com.sun.tools.hat.internal.model.StackFrame;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 /**

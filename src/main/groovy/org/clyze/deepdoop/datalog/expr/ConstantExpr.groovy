@@ -6,25 +6,30 @@ import org.clyze.deepdoop.actions.IVisitor
 @Canonical
 class ConstantExpr implements IExpr {
 
-	enum Type { INTEGER, REAL, BOOLEAN, STRING }
+	enum Type {
+		INTEGER, REAL, BOOLEAN, STRING
+	}
 
 	Type type
 	Object value
 
 	ConstantExpr(Long l) {
-		type  = Type.INTEGER
+		type = Type.INTEGER
 		value = l
 	}
+
 	ConstantExpr(Double r) {
-		type  = Type.REAL
+		type = Type.REAL
 		value = r
 	}
+
 	ConstantExpr(Boolean b) {
-		type  = Type.BOOLEAN
+		type = Type.BOOLEAN
 		value = b
 	}
+
 	ConstantExpr(String s) {
-		type  = Type.STRING
+		type = Type.STRING
 		value = s
 	}
 

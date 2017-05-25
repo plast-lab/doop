@@ -2,8 +2,6 @@ package org.clyze.doop.soot;
 
 import soot.SootClass;
 
-import java.io.File;
-import java.io.PrintWriter;
 import java.util.Set;
 
 public class ThreadFactory {

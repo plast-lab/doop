@@ -1,12 +1,19 @@
 package org.clyze.deepdoop.actions
 
-import org.clyze.deepdoop.datalog.*
-import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
+import org.clyze.deepdoop.datalog.Program
+import org.clyze.deepdoop.datalog.clause.Constraint
+import org.clyze.deepdoop.datalog.clause.Declaration
+import org.clyze.deepdoop.datalog.clause.RefModeDeclaration
+import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.component.CmdComponent
+import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
+import org.clyze.deepdoop.datalog.expr.BinaryExpr
+import org.clyze.deepdoop.datalog.expr.FunctionalHeadExpr
+import org.clyze.deepdoop.datalog.expr.GroupExpr
+import org.clyze.deepdoop.system.ErrorId
+import org.clyze.deepdoop.system.ErrorManager
 
 class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
@@ -16,6 +23,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 	Map<String, IAtom> getDeclaringAtoms(IVisitable n) {
 		declAtoms[n] ?: [:]
 	}
+
 	Map<String, IAtom> getUsedAtoms(IVisitable n) {
 		usedAtoms[n] ?: [:]
 	}
@@ -23,7 +31,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 	Program exit(Program n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> declMap = [:] << getDeclaringAtoms(n.globalComp)
 		Map<String, IAtom> usedMap = [:] << getUsedAtoms(n.globalComp)
-		n.comps.values().each{
+		n.comps.values().each {
 			declMap << getDeclaringAtoms(it)
 			usedMap << getUsedAtoms(it)
 		}
@@ -38,7 +46,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 		declAtoms[n] = declMap
 
 		Set<String> importPreds = [] as Set
-		n.imports.each{ p ->
+		n.imports.each { p ->
 			def pName = p.name
 			importPreds << pName
 			if (declMap[pName] == null)
@@ -49,7 +57,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 				ErrorManager.error(ErrorId.CMD_NO_IMPORT, declName)
 		}
 		Map<String, IAtom> usedMap = [:]
-		n.exports.each{ usedMap[it.name] = it }
+		n.exports.each { usedMap[it.name] = it }
 		usedAtoms[n] = usedMap
 		return n
 	}
@@ -60,14 +68,14 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 		// lang:entity declarations that use a Stub instead of the actual
 		// Atom. Map.putAll overwrites existing keys and we want to keep the
 		// one belonging to the actual declaration.
-		n.rules.each{        declMap << getDeclaringAtoms(it) }
-		n.declarations.each{ declMap << getDeclaringAtoms(it) }
+		n.rules.each { declMap << getDeclaringAtoms(it) }
+		n.declarations.each { declMap << getDeclaringAtoms(it) }
 		declAtoms[n] = declMap
 
 		Map<String, IAtom> usedMap = [:]
-		n.declarations.each{ usedMap << getUsedAtoms(it) }
-		n.constraints.each{  usedMap << getUsedAtoms(it) }
-		n.rules.each{        usedMap << getUsedAtoms(it) }
+		n.declarations.each { usedMap << getUsedAtoms(it) }
+		n.constraints.each { usedMap << getUsedAtoms(it) }
+		n.rules.each { usedMap << getUsedAtoms(it) }
 		usedAtoms[n] = usedMap
 		return n
 	}
@@ -81,10 +89,10 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 	}
 
 	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
-		Map<String, IAtom> declMap = [(n.atom.name) : n.atom]
+		Map<String, IAtom> declMap = [(n.atom.name): n.atom]
 		declAtoms[n] = declMap
 		Map<String, IAtom> usedMap = [:]
-		n.types.each{ usedMap << getUsedAtoms(it) }
+		n.types.each { usedMap << getUsedAtoms(it) }
 		usedAtoms[n] = usedMap
 		return n
 	}
@@ -104,11 +112,11 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 
 		// Atoms that appear in the head of the rule but have the @past stage
 		// are external
-		declMap.findAll{ name, atom -> atom.stage == "@past" }
-				.each{ name, atom ->
-					declMap.remove(name)
-					usedMap[name] = atom
-				}
+		declMap.findAll { name, atom -> atom.stage == "@past" }
+				.each { name, atom ->
+			declMap.remove(name)
+			usedMap[name] = atom
+		}
 		declAtoms[n] = declMap
 		usedAtoms[n] = usedMap
 		return n
@@ -131,7 +139,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 
 	LogicalElement exit(LogicalElement n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = [:]
-		n.elements.each{ usedMap << getUsedAtoms(it) }
+		n.elements.each { usedMap << getUsedAtoms(it) }
 		usedAtoms[n] = usedMap
 		return n
 	}
@@ -148,7 +156,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 
 	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
 		if (n.isPredicate) {
-			Map<String, IAtom> usedMap = [(n.backtick.name) : n.backtick as IAtom]
+			Map<String, IAtom> usedMap = [(n.backtick.name): n.backtick as IAtom]
 			usedAtoms[n] = usedMap
 		}
 		return n
@@ -162,7 +170,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 	Functional exit(Functional n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = [:]
 		usedMap[n.name] = n
-		n.keyExprs.each{ usedMap << getUsedAtoms(it) }
+		n.keyExprs.each { usedMap << getUsedAtoms(it) }
 		if (n.valueExpr) usedMap << getUsedAtoms(n.valueExpr)
 		usedAtoms[n] = usedMap
 		return n
@@ -171,7 +179,7 @@ class AtomCollectingActor implements IActor<IVisitable>, TDummyActor<IVisitable>
 	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) {
 		Map<String, IAtom> usedMap = [:]
 		usedMap[n.name] = n
-		n.exprs.each{ usedMap << getUsedAtoms(it) }
+		n.exprs.each { usedMap << getUsedAtoms(it) }
 		usedAtoms[n] = usedMap
 		return n
 	}

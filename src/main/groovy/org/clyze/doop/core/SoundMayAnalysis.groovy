@@ -3,14 +3,11 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
-import org.clyze.analysis.*
+import org.clyze.analysis.AnalysisOption
+import org.clyze.deepdoop.system.Compiler
+import org.clyze.deepdoop.system.Result
+import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.datalog.*
-import org.clyze.doop.system.*
-import org.clyze.deepdoop.system.*
 
 @CompileStatic
 @TypeChecked

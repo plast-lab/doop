@@ -1,13 +1,20 @@
 package org.clyze.deepdoop.actions
 
 import groovy.transform.InheritConstructors
-import org.clyze.deepdoop.datalog.*
-import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
+import org.clyze.deepdoop.datalog.Program
+import org.clyze.deepdoop.datalog.clause.Constraint
+import org.clyze.deepdoop.datalog.clause.Declaration
+import org.clyze.deepdoop.datalog.clause.RefModeDeclaration
+import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.component.CmdComponent
+import org.clyze.deepdoop.datalog.component.Component
+import org.clyze.deepdoop.datalog.component.DependencyGraph
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
+import org.clyze.deepdoop.system.ErrorId
+import org.clyze.deepdoop.system.ErrorManager
+import org.clyze.deepdoop.system.Result
 
 @InheritConstructors
 class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
@@ -16,12 +23,12 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	File currentFile
 
 
-	Set<String>              globalAtoms
+	Set<String> globalAtoms
 
-	Component                unhandledGlobal
-	Set<String>              handledAtoms = [] as Set
+	Component unhandledGlobal
+	Set<String> handledAtoms = [] as Set
 
-	File                     latestFile
+	File latestFile
 
 
 	String visit(Program p) {
@@ -41,11 +48,11 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		// Check that all used predicates have a declaration/definition
 		def allDeclAtoms = globalAtoms
 		Map<String, IAtom> allUsedAtoms = [:]
-		n.comps.values().each{
+		n.comps.values().each {
 			allDeclAtoms += acActor.getDeclaringAtoms(it).keySet()
 			allUsedAtoms << acActor.getUsedAtoms(it)
 		}
-		allUsedAtoms.each{ usedAtomName, usedAtom ->
+		allUsedAtoms.each { usedAtomName, usedAtom ->
 			if (usedAtom.stage == "@past") return
 
 			if (!(usedAtomName in allDeclAtoms))
@@ -55,15 +62,14 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		// Compute dependency graph for components (and global predicates)
 		def graph = new DependencyGraph(n)
 
-		unhandledGlobal  = new Component(n.globalComp)
+		unhandledGlobal = new Component(n.globalComp)
 		def currSet = [] as Set
-		graph.getLayers().each{ layer ->
-			if (layer.any{ it instanceof DependencyGraph.CmdNode }) {
+		graph.getLayers().each { layer ->
+			if (layer.any { it instanceof DependencyGraph.CmdNode }) {
 				emit(n, m, currSet)
 				emitCmd(n, m, layer)
 				currSet = [] as Set
-			}
-			else
+			} else
 				currSet << layer
 		}
 		emit(n, m, currSet)
@@ -79,7 +85,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(Declaration n, Map<IVisitable, String> m) {
 		inDecl = false
-		def typeStr = n.types.collect{ m[it] }.join(', ')
+		def typeStr = n.types.collect { m[it] }.join(', ')
 		return "${m[n.atom]} -> ${typeStr}."
 	}
 
@@ -111,8 +117,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		if (inDecl) {
 			def directive = new Directive("lang:constructor", new Stub(n.entity.name))
 			return directive.accept(this) + ".\n" + functionalStr
-		}
-		else {
+		} else {
 			def entityStr = exit(n.entity as Entity, m)
 			return "$functionalStr, $entityStr"
 		}
@@ -131,8 +136,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		if (inDecl) {
 			def directive = new Directive("lang:entity", new Stub(n.name))
 			return directive.accept(this) + ".\n" + entityStr
-		}
-		else {
+		} else {
 			return entityStr
 		}
 	}
@@ -194,8 +198,8 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		println handledAtoms
 
 		handle(m, unhandledGlobal.declarations, latestFile)
-		handle(m, unhandledGlobal.constraints,  latestFile)
-		handle(m, unhandledGlobal.rules,        latestFile)
+		handle(m, unhandledGlobal.constraints, latestFile)
+		handle(m, unhandledGlobal.rules, latestFile)
 	}
 
 	void emitCmd(Program n, Map<IVisitable, String> m, Set<DependencyGraph.Node> nodes) {
@@ -237,20 +241,20 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		def atomName = atom.name
 		def vars = VariableExpr.genTempVars(atom.arity)
 
-		def head = atomName + "(" + vars.collect{ it.name }.join(', ') + ")"
-		def body = (0..atom.arity-1).collect{ i ->
+		def head = atomName + "(" + vars.collect { it.name }.join(', ') + ")"
+		def body = (0..atom.arity - 1).collect { i ->
 			(d != null ? d.types[i].name : "string") + "(" + vars[i].name + ")"
 		}.join(', ')
 		def decl = "_$head -> $body."
 		def rule = (d != null) ? "+$head <- _$head." : "+_$head <- $head."
 
 		write(file, [
-			"lang:physical:storageModel[`_$atomName] = \"DelimitedFile\".",
-			"lang:physical:filePath[`_$atomName] = \"${atomName}.facts\".",
-			"lang:physical:delimiter[`$atomName] = \"\\t\".",
-			"lang:physical:hasColumnNames[`_$atomName] = false.",
-			decl,
-			rule
+				"lang:physical:storageModel[`_$atomName] = \"DelimitedFile\".",
+				"lang:physical:filePath[`_$atomName] = \"${atomName}.facts\".",
+				"lang:physical:delimiter[`$atomName] = \"\\t\".",
+				"lang:physical:hasColumnNames[`_$atomName] = false.",
+				decl,
+				rule
 		])
 	}
 
@@ -264,12 +268,13 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		}
 		toRemove.each { set.remove(it) }
 	}
+
 	boolean allHandledFor(IVisitable n) {
 		Set<String> atoms = []
 		acActor.getDeclaringAtoms(n).values().each { atoms << it.name }
 		acActor.getUsedAtoms(n).values().each { atoms << it.name }
 		atoms.retainAll(globalAtoms)
 
-		return atoms.every{ handledAtoms.contains(it) }
+		return atoms.every { handledAtoms.contains(it) }
 	}
 }

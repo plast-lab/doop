@@ -1,11 +1,10 @@
 package org.clyze.doop.soot;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import soot.*;
 import soot.jimple.*;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Representation {
     private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();

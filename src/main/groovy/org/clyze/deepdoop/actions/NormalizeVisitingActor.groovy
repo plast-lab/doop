@@ -1,8 +1,10 @@
 package org.clyze.deepdoop.actions
 
-import org.clyze.deepdoop.datalog.*
-import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
+import org.clyze.deepdoop.datalog.Program
+import org.clyze.deepdoop.datalog.clause.Constraint
+import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.component.CmdComponent
+import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 
@@ -21,7 +23,7 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 	void enter(Program n) { allComps = n.comps }
 
 	Program exit(Program n, Map<IVisitable, IVisitable> m) {
-		def newComps = n.comps.collectEntries{ [it.key, m[it.value]] }
+		def newComps = n.comps.collectEntries { [it.key, m[it.value]] }
 		return new Program(m[n.globalComp], newComps, n.inits, n.props)
 	}
 
@@ -55,7 +57,7 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 	// Flatten LogicalElement "trees"
 	LogicalElement exit(LogicalElement n, Map<IVisitable, IVisitable> m) {
 		def newElements = []
-		n.elements.each{ e ->
+		n.elements.each { e ->
 			def flatE = m[e] as IElement
 			if (flatE instanceof LogicalElement && (flatE as LogicalElement).type == n.type)
 				newElements << (flatE as LogicalElement).elements
@@ -70,12 +72,20 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 	}
 
 	CmdComponent exit(CmdComponent n, Map<IVisitable, IVisitable> m) { n }
+
 	ComparisonElement exit(ComparisonElement n, Map<IVisitable, IVisitable> m) { n }
+
 	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) { n }
+
 	Directive exit(Directive n, Map<IVisitable, IVisitable> m) { n }
+
 	Entity exit(Entity n, Map<IVisitable, IVisitable> m) { n }
+
 	Functional exit(Functional n, Map<IVisitable, IVisitable> m) { n }
+
 	Predicate exit(Predicate n, Map<IVisitable, IVisitable> m) { n }
+
 	Primitive exit(Primitive n, Map<IVisitable, IVisitable> m) { n }
+
 	RefMode exit(RefMode n, Map<IVisitable, IVisitable> m) { n }
 }

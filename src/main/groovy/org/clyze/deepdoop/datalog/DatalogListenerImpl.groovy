@@ -3,14 +3,21 @@ package org.clyze.deepdoop.datalog
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
+import org.clyze.deepdoop.datalog.clause.Constraint
+import org.clyze.deepdoop.datalog.clause.Declaration
+import org.clyze.deepdoop.datalog.clause.RefModeDeclaration
+import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.component.CmdComponent
+import org.clyze.deepdoop.datalog.component.Component
+import org.clyze.deepdoop.datalog.component.Propagation
 import org.clyze.deepdoop.datalog.component.Propagation.Alias
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.LogicalElement.LogicType
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
+import org.clyze.deepdoop.system.ErrorId
+import org.clyze.deepdoop.system.ErrorManager
+import org.clyze.deepdoop.system.SourceManager
 
 import static org.clyze.deepdoop.datalog.DatalogParser.*
 

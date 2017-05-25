@@ -1,7 +1,8 @@
 package org.clyze.deepdoop.datalog.clause
 
 import groovy.transform.Canonical
-import org.clyze.deepdoop.actions.*
+import org.clyze.deepdoop.actions.IVisitable
+import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.element.IElement
 import org.clyze.deepdoop.system.TSourceItem
 

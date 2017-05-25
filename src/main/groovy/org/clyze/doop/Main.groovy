@@ -1,14 +1,19 @@
 package org.clyze.doop
 
 import groovy.transform.CompileStatic
-import java.util.concurrent.*
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.clyze.analysis.Analysis
-import org.clyze.doop.core.*
+import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysis
+import org.clyze.doop.core.Helper
 import org.clyze.doop.system.FileOps
+
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * The entry point for the standalone doop app.

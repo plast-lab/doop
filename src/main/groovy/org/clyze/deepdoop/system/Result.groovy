@@ -2,7 +2,9 @@ package org.clyze.deepdoop.system
 
 class Result {
 
-	enum Kind { LOGIC, IMPORT, EXPORT, CMD }
+	enum Kind {
+		LOGIC, IMPORT, EXPORT, CMD
+	}
 
 	Kind kind
 	File file
@@ -11,12 +13,13 @@ class Result {
 	Result(Kind kind, File file) {
 		this.kind = kind
 		this.file = file
-		this.cmd  = null
+		this.cmd = null
 	}
+
 	Result(String cmd) {
 		this.kind = Kind.CMD
 		this.file = null
-		this.cmd  = cmd
+		this.cmd = cmd
 	}
 
 	String toString() { "($kind) " + (file ?: cmd) }

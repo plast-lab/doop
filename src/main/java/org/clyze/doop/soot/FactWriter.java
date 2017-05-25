@@ -1,7 +1,7 @@
 package org.clyze.doop.soot;
 
-import org.clyze.doop.common.FactEncoders;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.common.FactEncoders;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
-import static soot.coffi.Util.*;
 
 /**
  * FactWriter determines the format of a fact and adds it to a
@@ -959,7 +958,7 @@ class FactWriter {
         String valueString = f.getInitialValueString();
         if (valueString != null && !valueString.equals("")) {
             int pos = valueString.indexOf('@');
-            if (pos < 0) 
+            if (pos < 0)
                 System.err.println("Unexpected format (no @) in initial field value");
             else {
                 try {

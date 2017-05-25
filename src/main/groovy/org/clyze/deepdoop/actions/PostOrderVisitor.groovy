@@ -1,8 +1,12 @@
 package org.clyze.deepdoop.actions
 
-import org.clyze.deepdoop.datalog.*
-import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
+import org.clyze.deepdoop.datalog.Program
+import org.clyze.deepdoop.datalog.clause.Constraint
+import org.clyze.deepdoop.datalog.clause.Declaration
+import org.clyze.deepdoop.datalog.clause.RefModeDeclaration
+import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.component.CmdComponent
+import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
@@ -19,26 +23,26 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		m[n.globalComp] = n.globalComp.accept(this)
-		n.comps.values().each{ m[it] = it.accept(this) }
+		n.comps.values().each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
 	T visit(CmdComponent n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.exports.each{ m[it] = it.accept(this) }
-		n.imports.each{ m[it] = it.accept(this) }
-		n.declarations.each{ m[it] = it.accept(this) }
-		n.rules.each{ m[it] = it.accept(this) }
+		n.exports.each { m[it] = it.accept(this) }
+		n.imports.each { m[it] = it.accept(this) }
+		n.declarations.each { m[it] = it.accept(this) }
+		n.rules.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
 	T visit(Component n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.declarations.each{ m[it] = it.accept(this) }
-		n.constraints.each{ m[it] = it.accept(this) }
-		n.rules.each{ m[it] = it.accept(this) }
+		n.declarations.each { m[it] = it.accept(this) }
+		n.constraints.each { m[it] = it.accept(this) }
+		n.rules.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -54,7 +58,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		m[n.atom] = n.atom.accept(this)
-		n.types.each{ m[it] = it.accept(this) }
+		n.types.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -62,7 +66,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
 		m[n.atom] = n.atom.accept(this)
-		n.types.each{ m[it] = it.accept(this) }
+		n.types.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -100,7 +104,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(LogicalElement n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.elements.each{ m[it] = it.accept(this) }
+		n.elements.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
@@ -114,7 +118,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(Constructor n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.keyExprs.each{ m[it] = it.accept(this) }
+		n.keyExprs.each { m[it] = it.accept(this) }
 		if (n.valueExpr) m[n.valueExpr] = n.valueExpr.accept(this)
 		m[n.entity] = n.entity.accept(this)
 		return actor.exit(n, m)
@@ -131,14 +135,14 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(Entity n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.exprs.each{ m[it] = it.accept(this) }
+		n.exprs.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 
 	T visit(Functional n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.keyExprs.each{ m[it] = it.accept(this) }
+		n.keyExprs.each { m[it] = it.accept(this) }
 		if (n.valueExpr) m[n.valueExpr] = n.valueExpr.accept(this)
 		return actor.exit(n, m)
 	}
@@ -146,7 +150,7 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(Predicate n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
-		n.exprs.each{ m[it] = it.accept(this) }
+		n.exprs.each { m[it] = it.accept(this) }
 		return actor.exit(n, m)
 	}
 

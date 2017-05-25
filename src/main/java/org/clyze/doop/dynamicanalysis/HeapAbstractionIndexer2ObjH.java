@@ -1,9 +1,11 @@
 package org.clyze.doop.dynamicanalysis;
 
 import com.sun.tools.hat.internal.model.*;
-import org.apache.tools.ant.taskdefs.Java;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 

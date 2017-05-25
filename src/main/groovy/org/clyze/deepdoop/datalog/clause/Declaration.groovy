@@ -1,10 +1,13 @@
 package org.clyze.deepdoop.datalog.clause
 
 import groovy.transform.Canonical
-import org.clyze.deepdoop.actions.*
+import org.clyze.deepdoop.actions.IVisitable
+import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.Annotation
 import org.clyze.deepdoop.datalog.element.atom.IAtom
-import org.clyze.deepdoop.system.*
+import org.clyze.deepdoop.system.ErrorId
+import org.clyze.deepdoop.system.ErrorManager
+import org.clyze.deepdoop.system.TSourceItem
 
 @Canonical
 class Declaration implements IVisitable, TSourceItem {
@@ -19,7 +22,7 @@ class Declaration implements IVisitable, TSourceItem {
 		this.annotations = annotations
 
 		def varsInHead = atom.getVars()
-		types.each{ t ->
+		types.each { t ->
 			def vars = t.getVars()
 			assert vars.size() == 1
 			def index = varsInHead.indexOf(vars.get(0))

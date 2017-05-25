@@ -19,7 +19,7 @@ class Constructor extends Functional {
 
 	def getEntity() {
 		if (entity instanceof Stub)
-		entity = new Entity(entity.name, valueExpr)
+			entity = new Entity(entity.name, valueExpr)
 		return entity
 	}
 

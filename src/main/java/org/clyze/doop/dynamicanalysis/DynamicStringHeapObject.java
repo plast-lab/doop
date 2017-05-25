@@ -3,7 +3,8 @@ package org.clyze.doop.dynamicanalysis;
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
 
-import static org.clyze.doop.common.PredicateFile.*;
+import static org.clyze.doop.common.PredicateFile.STRING_CONST;
+import static org.clyze.doop.common.PredicateFile.STRING_RAW;
 
 /**
  * Created by neville on 15/02/2017.

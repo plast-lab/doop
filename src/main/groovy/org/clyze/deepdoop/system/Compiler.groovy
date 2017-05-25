@@ -4,8 +4,11 @@ import org.antlr.v4.runtime.ANTLRFileStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.apache.commons.logging.LogFactory
-import org.clyze.deepdoop.actions.*
-import org.clyze.deepdoop.datalog.*
+import org.clyze.deepdoop.actions.LBCodeGenVisitingActor
+import org.clyze.deepdoop.actions.SouffleCodeGenVisitingActor
+import org.clyze.deepdoop.datalog.DatalogLexer
+import org.clyze.deepdoop.datalog.DatalogListenerImpl
+import org.clyze.deepdoop.datalog.DatalogParser
 
 class Compiler {
 
@@ -21,9 +24,9 @@ class Compiler {
 		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename with ${codeGenActor.class.name}")
 
 		def parser = new DatalogParser(
-			new CommonTokenStream(
-				new DatalogLexer(
-					new ANTLRFileStream(filename))))
+				new CommonTokenStream(
+						new DatalogLexer(
+								new ANTLRFileStream(filename))))
 		def listener = new DatalogListenerImpl(filename)
 		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
 

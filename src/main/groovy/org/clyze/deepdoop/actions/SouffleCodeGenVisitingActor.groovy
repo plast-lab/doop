@@ -1,14 +1,18 @@
 package org.clyze.deepdoop.actions
 
 import groovy.transform.InheritConstructors
-import org.clyze.deepdoop.datalog.*
-import org.clyze.deepdoop.datalog.clause.*
-import org.clyze.deepdoop.datalog.component.*
-import org.clyze.deepdoop.datalog.element.*
+import org.clyze.deepdoop.datalog.Program
+import org.clyze.deepdoop.datalog.clause.Declaration
+import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.element.ComparisonElement
+import org.clyze.deepdoop.datalog.element.GroupElement
+import org.clyze.deepdoop.datalog.element.LogicalElement
+import org.clyze.deepdoop.datalog.element.NegationElement
 import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
-import org.clyze.deepdoop.system.*
-import static org.clyze.deepdoop.datalog.element.LogicalElement.LogicType.*
+import org.clyze.deepdoop.system.Result
+
+import static org.clyze.deepdoop.datalog.element.LogicalElement.LogicType.AND
 
 @InheritConstructors
 class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {

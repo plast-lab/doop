@@ -5,7 +5,8 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -76,11 +77,11 @@ class FactGenerator implements Runnable {
                             //         System.err.println("\tat " + trace[j]);
                             //     }
                             // }
-                    
+
                             System.err.println("Error while processing method: " + m);
                             throw exc;
                         }
-                    }                 
+                    }
                 } catch (Exception exc) {
                     numRetries++;
                     if (numRetries > maxRetries) {

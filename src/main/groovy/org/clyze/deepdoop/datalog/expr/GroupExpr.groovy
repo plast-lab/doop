@@ -6,7 +6,8 @@ import org.clyze.deepdoop.actions.IVisitor
 @Canonical
 class GroupExpr implements IExpr {
 
-	@Delegate IExpr expr
+	@Delegate
+	IExpr expr
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

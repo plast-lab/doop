@@ -2,7 +2,8 @@ package org.clyze.doop.system
 
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
-import org.clyze.analysis.*
+import org.clyze.analysis.Analysis
+import org.clyze.analysis.AnalysisOption
 
 @TypeChecked
 class CPreprocessor {

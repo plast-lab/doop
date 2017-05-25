@@ -1,16 +1,20 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.apache.commons.io.FilenameUtils
-import org.clyze.analysis.*
-import org.clyze.doop.datalog.*
+import org.clyze.analysis.Analysis
+import org.clyze.analysis.AnalysisOption
+import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.dynamicanalysis.MemoryAnalyser
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.system.*
+import org.clyze.doop.system.CPreprocessor
+import org.clyze.doop.system.Executor
+import org.clyze.doop.system.FileOps
 
-import static org.apache.commons.io.FileUtils.*
+import static org.apache.commons.io.FileUtils.deleteQuietly
+import static org.apache.commons.io.FileUtils.touch
 
 /**
  * A DOOP analysis that holds all the relevant options (vars, paths, etc) and implements all the relevant steps.

@@ -1,12 +1,12 @@
 package org.clyze.doop.core
 
+import org.apache.commons.cli.Option
+import org.apache.commons.io.FilenameUtils
+import org.clyze.analysis.AnalysisOption
+
 import java.lang.reflect.Method
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-import org.apache.commons.cli.Option
-import org.apache.log4j.*
-import org.apache.commons.io.FilenameUtils
-import org.clyze.analysis.*
 
 /**
  * Various helper methods.

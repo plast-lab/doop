@@ -2,10 +2,11 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
-import org.clyze.analysis.*
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.AnalysisPhase
+import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.datalog.*
-import org.clyze.doop.system.*
+import org.clyze.doop.system.FileOps
 
 import static org.apache.commons.io.FileUtils.*
 
@@ -256,7 +257,7 @@ class ClassicAnalysis extends DoopAnalysis {
         touch(addons)
 
         String echo_analysis = "Pointer Analysis"
-        
+
         if (options.INFORMATION_FLOW.value || options.MINIMAL_INFORMATION_FLOW.value) {
             echo_analysis = "Pointer and Information-flow Analysis"
             cpp.preprocess("${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")

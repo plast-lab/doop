@@ -1,8 +1,13 @@
 package org.clyze.doop
 
 import org.apache.commons.cli.Option
-import org.clyze.doop.core.*
-import org.clyze.analysis.*
+import org.clyze.analysis.AnalysisFamily
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.Helper
+import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysis
+import org.clyze.doop.core.DoopAnalysisFactory
+import org.clyze.doop.core.DoopAnalysisFamily
 
 /**
  * A factory for creating Analysis objects from the command line.

@@ -2,13 +2,13 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
-import org.apache.commons.io.FilenameUtils
 import org.clyze.analysis.AnalysisOption
+import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.CheckSum
 import org.clyze.doop.system.FileOps
-import org.clyze.doop.input.InputResolutionContext
 
-import static org.apache.commons.io.FileUtils.*
+import static org.apache.commons.io.FileUtils.deleteQuietly
+import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
 @CompileStatic
 @TypeChecked

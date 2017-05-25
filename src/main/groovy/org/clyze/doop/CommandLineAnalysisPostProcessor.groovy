@@ -3,8 +3,10 @@ package org.clyze.doop
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.analysis.*
-import org.clyze.doop.core.*
+import org.clyze.analysis.Analysis
+import org.clyze.analysis.AnalysisPostProcessor
+import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysis
 
 class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis> {
 
