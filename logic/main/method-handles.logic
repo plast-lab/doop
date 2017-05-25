@@ -95,3 +95,15 @@ VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) <-
    ReturnVar(?realReturnVar, ?realMethod),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
    AssignReturnValue[?i] = ?ret.
+
+// Constructor references are special: according to Soot, constructors
+// are void <init> methods that set "this" but according to Java 8
+// method references, A::new(...) is equivalent to a method taking
+// arguments (...) and returning A. This rule makes the connection.
+
+VarPointsTo(?hctx, ?thisVal, ?callerCtx, ?var) <-
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
+   Method:SimpleName[?realMethod] = "<init>",
+   ThisVar[?realMethod] = ?this,
+   VarPointsTo(?hctx, ?thisVal, ?calleeCtx, ?this),
+   AssignReturnValue[?i] = ?var.
