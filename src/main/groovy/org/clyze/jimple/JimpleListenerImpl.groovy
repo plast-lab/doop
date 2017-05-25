@@ -254,14 +254,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				def declClass = v.IDENTIFIER(0).text
 				def mName = v.IDENTIFIER(2).text
 				def invoId = DynamicMethodInvocation.genId(declClass, mName)
-				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
-				    bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
-					def c = methodInvoCounters[invoId] ?: 0
-					methodInvoCounters[invoId] = c+1
-					return "${method.doopId}/${invoId}/$c"
-				}
-				else
-					println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
+                                if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
+                                    bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
+                                        def c = methodInvoCounters[invoId] ?: 0
+                                        methodInvoCounters[invoId] = c+1
+                                        return "${method.doopId}/${invoId}/$c"
+                                }
+                                else
+                                        println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
 			} else
 				println("Warning: unsupported invokedynamic, unknown boot argument 2: ${bootArgs[1].text} in $filename")
 		} else
