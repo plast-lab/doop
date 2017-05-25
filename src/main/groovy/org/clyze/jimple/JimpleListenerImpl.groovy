@@ -258,13 +258,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 					return "${method.doopId}/invokedynamic_${mHandle}/$c"
 				}
 				else
-					println("Warning: unsupported invokedynamic, unknown boot method: " + bootName + " in class " + klass.name)
+					println("Warning: unsupported invokedynamic, unknown boot method: " + bootName + " in " + filename)
 			}
 			else
-				println("Warning: unsupported invokedynamic, unknown boot argument 2: " + v + " in class " + klass.name)
+				println("Warning: unsupported invokedynamic, unknown boot argument 2: " + bootArgs[1].text + " in " + filename)
 		}
 		else
-			println("Warning: unsupported invokedynamic, unknown boot arguments of arity " + bootArgs.size() + " in class " + klass.name)
+			println("Warning: unsupported invokedynamic, unknown boot arguments of arity " + bootArgs.size() + " in " + filename)
 		return null
 	}
 
