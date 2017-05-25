@@ -7,7 +7,3 @@
 // This is emulated by creating a single HContext object,
 // which is used everywhere.
 .type HContext
-.decl GlobalHContext(?hctx:HContext)
-
-GlobalHContext("<<global-hcontext>>").
-

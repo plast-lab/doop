@@ -30,13 +30,8 @@
   newCtx = [value]
 
 
-#define InitContextMacro(valueId) \
-  isContext(ctx) :- \
-  isValue(valueId), \
-  ctx = [valueId]
+#define InitContextMacro(value) \
+  isContext(ctx) :- ctx = [value]
 
-#define InitHContextMacro(valueId) \
-  isHContext(hctx) :- \
-  isValue(valueId), \
-  hctx = [valueId]
-
+#define InitHContextMacro(value) \
+  isHContext(hctx) :- hctx = [value]

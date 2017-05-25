@@ -30,11 +30,7 @@
 
 
 #define InitContextMacro(invocation) \
-  isContext(ctx) \
-  :- ctx = [invocation, invocation], \
-     isMethodInvocation(invocation)
+  isContext(ctx) :- ctx = [invocation, invocation]
 
 #define InitHContextMacro(invocation) \
-  isHContext(hctx) \
-  :- hctx = [invocation, invocation], \
-     isMethodInvocation(invocation)
+  isHContext(hctx) :- hctx = [invocation, invocation]

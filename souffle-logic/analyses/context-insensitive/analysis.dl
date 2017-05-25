@@ -5,10 +5,3 @@
 // object, which are used everywhere.
 .type Context
 .type HContext
-
-.decl GlobalContext(?ctx:Context)
-.decl GlobalHContext(?hctx:HContext)
-
-GlobalContext("<<global-context>>").
-GlobalHContext("<<global-hcontext>>").
-

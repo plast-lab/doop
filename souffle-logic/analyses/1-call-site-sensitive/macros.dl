@@ -1,8 +1,11 @@
 // Each rule that uses merge and/or record macros should add
 // the created contexts into the respective relations, since
 // the product of the macro goes to the body of a rule.
+
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
 #define RecordMacro(ctx, value, hctx) \
-  GlobalHContext(hctx)
+  hctx = UNIQUE_HCONTEXT
 
 
 // For this analysis the context of a method call corresponds to the
@@ -26,9 +29,7 @@
 
 
 #define InitContextMacro(invocation) \
-  isContext(ctx) :- \
-  isMethodInvocation(invocation), \
-  ctx = [invocation]
+  isContext(ctx) :- ctx = [invocation]
 
 #define InitHContextMacro(valueId) \
-  isHContext(hctx) :- GlobalHContext(hctx)
+  isHContext(hctx) :- hctx = UNIQUE_HCONTEXT

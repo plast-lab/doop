@@ -1,8 +1,11 @@
 // Each rule that uses merge and/or record macros should add
 // the created contexts into the respective relations, since
 // the product of the macro goes to the body of a rule.
+
+#define UNIQUE_HCONTEXT "<<unique-hcontext>>"
+
 #define RecordMacro(ctx, value, hctx) \
-  GlobalHContext(hctx)
+  hctx = UNIQUE_HCONTEXT
 
 // This analysis treats arrays specially (deeper context).
 #define RecordArrayMacro(ctx, value, hctx) \
@@ -32,11 +35,8 @@
   newCtx = [value]
 
 
-#define InitContextMacro(valueId) \
-  isContext(ctx) :- \
-  isValue(valueId), \
-  ctx = [valueId]
+#define InitContextMacro(value) \
+  isContext(ctx) :- ctx = [value]
 
-#define InitHContextMacro(valueId) \
-  isHContext(hctx) :- GlobalHContext(hctx)
-
+#define InitHContextMacro(value) \
+  isHContext(hctx) :- hctx = UNIQUE_HCONTEXT

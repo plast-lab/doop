@@ -50,11 +50,7 @@
 
 
 #define InitContextMacro(value) \
-  isContext(ctx) :- \
-    isValue(value), \
-    ctx = ["java.lang.String", value]
+  isContext(ctx) :- ctx = ["java.lang.String", value]
 
 #define InitHContextMacro(value) \
-  isHContext(hctx) :- \
-    isValue(value), \
-    hctx = [value]
+  isHContext(hctx) :- hctx = [value]

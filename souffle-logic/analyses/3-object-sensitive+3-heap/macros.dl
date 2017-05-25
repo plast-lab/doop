@@ -41,11 +41,7 @@
 
 
 #define InitContextMacro(value) \
-  isContext(ctx) :- \
-    isValue(value), \
-    ctx = [value, value, value]
+  isContext(ctx) :- ctx = [value, value, value]
 
 #define InitHContextMacro(value) \
-  isHContext(hctx) :- \
-    isValue(value), \
-    hctx = [value, value, value]
+  isHContext(hctx) :- hctx = [value, value, value]
