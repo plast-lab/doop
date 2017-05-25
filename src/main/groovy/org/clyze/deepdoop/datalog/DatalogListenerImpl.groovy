@@ -160,8 +160,6 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				atom = new Constructor(atom as Functional, types.last())
 			}
 
-			if (Annotation.Kind.CONSTRUCTOR in annotations) println "##########"
-
 			currComp.addDecl(new Declaration(atom, types, annotations))
 
 			//if (isConstraint(atom, types))

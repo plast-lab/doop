@@ -1,6 +1,7 @@
 package org.clyze.deepdoop.actions
 
 import groovy.transform.InheritConstructors
+import org.clyze.deepdoop.datalog.Annotation
 import org.clyze.deepdoop.datalog.Program
 import org.clyze.deepdoop.datalog.clause.Declaration
 import org.clyze.deepdoop.datalog.clause.Rule
@@ -45,6 +46,11 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 			def params = n.types.collect { m[it] }.join(", ")
 			emit ".decl ${pred(n.atom.name, params)}"
 		}
+
+		if (n.annotations.any {it.kind == Annotation.Kind.OUTPUT}) {
+			emit ".output ${mini(n.atom.name)}"
+		}
+
 		return null
 	}
 
