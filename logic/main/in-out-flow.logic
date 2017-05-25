@@ -1,25 +1,40 @@
+//// Heuristic pre-analysis to tell us when there (likely) is a flow
+//// from a method's arguments to its return.
+
+// There is a flow (of any kind) between two local vars
 LocalVarFlow(?to, ?from) <-
   AssignLocal(?from, ?to, _);
   AssignCast(_, ?from, ?to, _).
 
-InFlowTo(?index, ?inVar, ?inVar) <-
+// There is a flow from a method formal, at a given index, to a method local
+InFlowTo(?index, ?inVar) <-
   FormalParam[?index, _] = ?inVar.
-// HACK: use 10 to designate receiver
-InFlowTo(?index, ?inVar, ?inVar) <-
-  ParamIndex:Id(?index:10),
+// HACK: use 7 to designate receiver
+InFlowTo(?index, ?inVar) <-
+  ParamIndex:Id(?index:7),
   ThisVar[_] = ?inVar.
 
-InFlowTo(?index, ?inVar, ?toVar) <-
-  InFlowTo(?index, ?inVar, ?someVar),
+InFlowTo(?index, ?toVar) <-
+  InFlowTo(?index, ?someVar),
   LocalVarFlow(?toVar, ?someVar).
 
 _OptReturnVar(?method, ?return) <-
   ReturnVar(?return, ?method).
 
-// Method that has its in-values (from its formal params) flow to returns.
+_OptStoreInstanceField(?base, ?from) <-
+  StoreInstanceField(?from, ?base, _, _).
+
+InFlowTo(?index, ?toVar) <-
+  InFlowTo(?index, ?someVar),
+  _OptStoreInstanceField(?toVar, ?someVar).
+
+// Method that has its in-value (from a given-index formal param) flow to returns.
 InOutFlowMethod(?index, ?method) <-
-  InFlowTo(?index, _, ?outVar),
+  InFlowTo(?index, ?outVar),
   _OptReturnVar(?method, ?outVar).
+
+IsInOutFlowMethod(?method) <-
+  InOutFlowMethod(_, ?method).
 
 // Now more deeply recursive logic: define LocalVarFlow itself based
 // on InOutFlowMethod: a local var has values flow to another through
@@ -28,15 +43,18 @@ LocalVarFlow(?to, ?from) <-
   InOutFlowMethodInvocationParam(?from, ?invo),
   AssignReturnValue[?invo] = ?to.
 
+// Adding virtual is a heuristic, but it seems to be useful
 InOutFlowMethodInvocationParam(?param, ?invo) <-
   (SpecialMethodInvocation:Insn(?invo);
-   StaticMethodInvocation:Insn(?invo)),
+   StaticMethodInvocation:Insn(?invo);
+   VirtualMethodInvocation:Insn(?invo)),
   MethodInvocation:Method[?invo] = ?toMeth,
   InOutFlowMethod(?index, ?toMeth),
   ActualParam[?index, ?invo] = ?param.
 
 InOutFlowMethodInvocationParam(?param, ?invo) <-
-  SpecialMethodInvocation:Base[?invo] = ?param,
+  (SpecialMethodInvocation:Base[?invo] = ?param;
+   VirtualMethodInvocation:Base[?invo] = ?param),
   MethodInvocation:Method[?invo] = ?toMeth,
-  ParamIndex:Id(?index:10),
+  ParamIndex:Id(?index:7),
   InOutFlowMethod(?index, ?toMeth).
