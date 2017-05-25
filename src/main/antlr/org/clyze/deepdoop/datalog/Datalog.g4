@@ -38,7 +38,7 @@ propagationList
 
 
 datalog
-	: declaration | constraint | rule_ | lineMarker ;
+	: declaration | declarationBlock | constraint | rule_ | lineMarker ;
 
 
 annotationList
@@ -51,6 +51,9 @@ declaration
 	| annotationList? predicate '->' predicateList '.'
 	| singleAtom ',' refmode '->' singleAtom '.'
 	;
+
+declarationBlock
+	: annotationList '{' declaration+ '}' ;
 
 constraint
 	: compound '->' compound '.' ;

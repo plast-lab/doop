@@ -7,3 +7,14 @@ Foo(x, y) -> AP(x), string(y).
 Foo(ap, x) <- x = "J", ap = x.
 
 @Output, @Entity Bar.
+
+@Output {
+	FooBar(x, y) -> AP(x), string(y).
+
+	@Entity Baz.
+}
+
+@Output, @Entity {
+	Dog.
+	Cat.
+}

@@ -120,7 +120,8 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		recLoc(ctx)
 		inDecl = false
 
-		def annotations = values[ctx.annotationList()]
+		Declaration d
+		def annotations = values[ctx.annotationList()] ?: []
 
 		if (ctx.refmode()) {
 			def p = values[ctx.singleAtom(0)] as Predicate
@@ -128,7 +129,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			def refmode = values[ctx.refmode()] as RefMode
 			p = values[ctx.singleAtom(1)] as Predicate
 			def primitive = new Primitive(p.name, p.exprs.first())
-			currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive))
+			d = new RefModeDeclaration(refmode, entity, primitive)
 		}
 		// Entity declaration
 		else if (ctx.predicateName()) {
@@ -136,7 +137,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				ErrorManager.error(ErrorId.INVALID_ANNOTATION)
 
 			def entity = new Entity(values[ctx.predicateName()], new VariableExpr("x"))
-			currComp.addDecl(new Declaration(entity, [], annotations))
+			d = new Declaration(entity, [], annotations)
 		}
 		// Normal predicate declaration
 		else {
@@ -160,11 +161,21 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				atom = new Constructor(atom as Functional, types.last())
 			}
 
-			currComp.addDecl(new Declaration(atom, types, annotations))
+			d = new Declaration(atom, types, annotations)
 
 			//if (isConstraint(atom, types))
 			//	currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)))
 		}
+		values[ctx] = d
+		currComp.addDecl(d)
+	}
+
+	void exitDeclarationBlock(DeclarationBlockContext ctx) {
+		def annotations = values[ctx.annotationList()] ?: []
+		if (annotations.any { !it.kind in [Annotation.Kind.ENTITY, Annotation.Kind.OUTPUT] })
+			ErrorManager.error(ErrorId.INVALID_ANNOTATION)
+
+		ctx.declaration().each{ declCtx -> values[declCtx].annotations += annotations }
 	}
 
 	void exitConstraint(ConstraintContext ctx) {
