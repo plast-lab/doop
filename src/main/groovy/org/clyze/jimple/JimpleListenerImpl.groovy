@@ -15,8 +15,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	Class         klass
 	Method        method
 	Map           methodInvoCounters
-	boolean       inDecl
 	Map           values = [:]
+	boolean       inDecl
 
 	BasicMetadata metadata = new BasicMetadata()
 
@@ -221,10 +221,10 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def endCol = getLastToken(ctx.methodSig()).symbol.charPositionInLine + 2
 
 		String gDoopId
-		if (ctx.dynamicMethodSig()) {
+		if (ctx.dynamicMethodSig())
 			gDoopId = dynamicInvokeMiddlePart(ctx)
-		}
-		if (gDoopId == null) {
+
+		if (!gDoopId) {
 			def c = methodInvoCounters["$methodClass|$methodName"] ?: 0
 			methodInvoCounters["$methodClass|$methodName"] = c+1
 			gDoopId = "${method.doopId}/${methodClass}.$methodName/$c"
@@ -242,31 +242,31 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	// works. Returns null for unsupported bootstrap methods, so
 	// that a default path can be followed instead in the caller.
 	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
-		def bootName = ctx.methodSig().IDENTIFIER(0).text + "." +
-			       ctx.methodSig().IDENTIFIER(2).text
+		def bootName = "${ctx.methodSig().IDENTIFIER(0).text}.${ctx.methodSig().IDENTIFIER(2).text}"
+
 		def bootArgs = values[ctx.bootValueList().valueList()]
-		if (bootArgs == null)
-			println("Warning: invokedynamic with null bootArgs in " + filename)
+		if (!bootArgs)
+			println("Warning: invokedynamic with null bootArgs in $filename")
 		else if (bootArgs.size() > 1) {
-			def v = bootArgs[1].methodSig();
-			if (v != null) {
+			def v = bootArgs[1].methodSig()
+			if (v) {
 				def declClass = v.IDENTIFIER(0).text
 				def mName = v.IDENTIFIER(2).text
-				def mHandle = declClass + "::" + mName
-				if ((bootName.equals("java.lang.invoke.LambdaMetafactory.metafactory")) ||
-				    (bootName.equals("java.lang.invoke.LambdaMetafactory.altMetafactory"))) {
+				def mHandle = "$declClass::$mName"
+				if (bootName == "java.lang.invoke.LambdaMetafactory.metafactory" ||
+				    bootName == "java.lang.invoke.LambdaMetafactory.altMetafactory") {
 					def c = methodInvoCounters[mHandle] ?: 0
 					methodInvoCounters[mHandle] = c+1
 					return "${method.doopId}/invokedynamic_${mHandle}/$c"
 				}
 				else
-					println("Warning: unsupported invokedynamic, unknown boot method: " + bootName + " in " + filename)
+					println("Warning: unsupported invokedynamic, unknown boot method: $bootName in $filename")
 			}
 			else
-				println("Warning: unsupported invokedynamic, unknown boot argument 2: " + bootArgs[1].text + " in " + filename)
+				println("Warning: unsupported invokedynamic, unknown boot argument 2: ${bootArgs[1].text} in $filename")
 		}
 		else
-			println("Warning: unsupported invokedynamic, unknown boot arguments of arity " + bootArgs.size() + " in " + filename)
+			println("Warning: unsupported invokedynamic, unknown boot arguments of arity ${bootArgs.size()} in $filename")
 		return null
 	}
 
@@ -277,8 +277,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitValueList(ValueListContext ctx) {
-		def value = ctx.value()
-		values[ctx] = ((values[ctx.valueList()] ?: []) << value)
+		values[ctx] = ((values[ctx.valueList()] ?: []) << ctx.value())
+
 		if (ctx.value().IDENTIFIER())
 			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
