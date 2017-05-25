@@ -18,7 +18,8 @@ enum ErrorId {
 	UNKNOWN_VAR,
 	UNUSED_VAR,
 	UNKNOWN_COMP,
-	MULTIPLE_ENT_DECLS
+	MULTIPLE_ENT_DECLS,
+	INVALID_ANNOTATION
 
 	static Map<ErrorId, String> msgMap
 	static {
@@ -39,6 +40,7 @@ enum ErrorId {
 		msgMap[UNUSED_VAR] = "Unused var `{0}`"
 		msgMap[UNKNOWN_COMP] = "Unknown component `{0}`"
 		msgMap[MULTIPLE_ENT_DECLS] = "Multiple declarations for Entity `{0}` in previous components"
+		msgMap[INVALID_ANNOTATION] = "Invalid annotation"
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {

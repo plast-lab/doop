@@ -16,11 +16,11 @@ import static org.clyze.deepdoop.datalog.DatalogParser.*
 
 class DatalogListenerImpl extends DatalogBaseListener {
 
-	def       values = [:]
-	def       inDecl = false
+	def values = [:]
+	def inDecl = false
 	Component currComp
-	String    currCompName
-	def       program = new Program()
+	String currCompName
+	def program = new Program()
 
 	DatalogListenerImpl(String filename) {
 		currComp = program.globalComp
@@ -34,6 +34,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			currComp = new Component(currCompName, (ctx.IDENTIFIER(1) == null ? null : ctx.IDENTIFIER(1).text))
 		}
 	}
+
 	void exitComp(CompContext ctx) {
 		if (ctx.identifierList()) {
 			def inits = values[ctx.identifierList()]
@@ -44,6 +45,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			currComp = program.globalComp
 		}
 	}
+
 	void enterCmd(CmdContext ctx) {
 		currCompName = ctx.IDENTIFIER().text
 		if (ctx.L_BRACK()) {
@@ -51,57 +53,67 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			currComp = new CmdComponent(currCompName)
 		}
 	}
+
 	void exitCmd(CmdContext ctx) {
 		if (ctx.identifierList()) {
 			def inits = values[ctx.identifierList()]
-			inits.each{ id -> program.addInit(id, currCompName) }
+			inits.each { id -> program.addInit(id, currCompName) }
 		}
 		if (ctx.L_BRACK()) {
 			program.addComponent(currComp)
 			currComp = program.globalComp
 		}
 	}
+
 	void exitInitialize(InitializeContext ctx) {
 		def compName = ctx.IDENTIFIER().text
 		def inits = values[ctx.identifierList()]
-		inits.each{ program.addInit(it, compName) }
+		inits.each { program.addInit(it, compName) }
 	}
+
 	void exitPropagate(PropagateContext ctx) {
 		program.addPropagation(new Propagation(
-			ctx.IDENTIFIER(0).text,
-			(values[ctx.propagationList()] + []) as Set,
-			ctx.IDENTIFIER(1)?.text ))
+				ctx.IDENTIFIER(0).text,
+				(values[ctx.propagationList()] + []) as Set,
+				ctx.IDENTIFIER(1)?.text))
 	}
+
 	void exitIdentifierList(IdentifierListContext ctx) {
 		def id = ctx.IDENTIFIER().text
 		def list = (values[ctx.identifierList()] ?: []) << id
 		values[ctx] = list
 	}
+
 	void exitPropagationElement(PropagationElementContext ctx) {
 		if (ctx.ALL())
 			values[ctx] = new Alias(orig: null, alias: null)
 		else if (ctx.AS()) {
-			def orig  = values[ctx.predicateName(0)]
+			def orig = values[ctx.predicateName(0)]
 			def alias = values[ctx.predicateName(1)]
 			values[ctx] = new Alias(orig: new Stub(orig), alias: new Stub(alias))
-		}
-		else {
-			def orig  = values[ctx.predicateName(0)]
+		} else {
+			def orig = values[ctx.predicateName(0)]
 			values[ctx] = new Alias(orig: new Stub(orig), alias: null)
 		}
 	}
+
 	void exitPropagationList(PropagationListContext ctx) {
-		def propElement = values[ctx.propagationElement()]
-		def list = (values[ctx.propagationList()] ?: []) << propElement
-		values[ctx] = list
+		values[ctx] = ((values[ctx.propagationList()] ?: []) << values[ctx.propagationElement()])
+	}
+
+	void exitAnnotationList(AnnotationListContext ctx) {
+		values[ctx] = ((values[ctx.annotationList()] ?: []) << values[ctx.annotation()])
 	}
 
 	void enterDeclaration(DeclarationContext ctx) {
 		inDecl = true
 	}
+
 	void exitDeclaration(DeclarationContext ctx) {
 		recLoc(ctx)
 		inDecl = false
+
+		def annotations = values[ctx.annotationList()]
 
 		if (ctx.refmode()) {
 			def p = values[ctx.singleAtom(0)] as Predicate
@@ -111,50 +123,50 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			def primitive = new Primitive(p.name, p.exprs.first())
 			currComp.addDecl(new RefModeDeclaration(refmode, entity, primitive))
 		}
+		// Entity declaration
+		else if (ctx.predicateName()) {
+			if (annotations.any { !it.kind in [Annotation.Kind.ENTITY, Annotation.Kind.OUTPUT] })
+				ErrorManager.error(ErrorId.INVALID_ANNOTATION)
+
+			def entity = new Entity(values[ctx.predicateName()], new VariableExpr("x"))
+			currComp.addDecl(new Declaration(entity, [], annotations))
+		}
+		// Normal predicate declaration
 		else {
+			if (annotations.any { !it.kind in [Annotation.Kind.CONSTRUCTOR, Annotation.Kind.OUTPUT] })
+				ErrorManager.error(ErrorId.INVALID_ANNOTATION)
+
 			def atom = values[ctx.predicate()] as IAtom
+
 			def types = []
-
-			// Normal predicate declaration
-			if (ctx.predicateList()) {
-				values[ctx.predicateList()].each { type ->
-					def p = type as Predicate
-					assert p.arity == 1
-					if (Primitive.isPrimitive(p.name))
-						types << new Primitive(p.name, p.exprs.first())
-					else
-						types << new Entity(p.name, p.stage, p.exprs.first())
-				}
-
-				def annotation = values[ctx.annotation()] as Annotation
-				if (annotation && annotation.kind == Annotation.Kind.CONSTRUCTOR) {
-					assert atom instanceof Functional
-					atom = new Constructor(atom as Functional, types.last() as IAtom)
-				}
-				else if (annotation && annotation.kind == Annotation.Kind.ENTITY) {
-					assert atom instanceof Predicate
-					assert atom.arity == 1
-					def p = atom as Predicate
-					atom = new Entity(p.name, null, p.exprs.first())
-				}
-			}
-			// Entity declaration
-			else {
-				def p = atom as Predicate
+			values[ctx.predicateList()].each { type ->
+				def p = type as Predicate
 				assert p.arity == 1
-				atom = new Entity(p.name, null, p.exprs.first())
+				if (Primitive.isPrimitive(p.name))
+					types << new Primitive(p.name, p.exprs.first())
+				else
+					types << new Entity(p.name, p.stage, p.exprs.first())
 			}
 
-			if (isConstraint(atom, types))
-				currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)))
-			else
-				currComp.addDecl(new Declaration(atom, types))
+			if (annotations.any { it.kind == Annotation.Kind.CONSTRUCTOR }) {
+				assert atom instanceof Functional
+				atom = new Constructor(atom as Functional, types.last())
+			}
+
+			if (Annotation.Kind.CONSTRUCTOR in annotations) println "##########"
+
+			currComp.addDecl(new Declaration(atom, types, annotations))
+
+			//if (isConstraint(atom, types))
+			//	currComp.addCons(new Constraint(atom, new LogicalElement(LogicType.AND, types)))
 		}
 	}
+
 	void exitConstraint(ConstraintContext ctx) {
 		recLoc(ctx)
 		currComp.addCons(new Constraint(values[ctx.compound(0)], values[ctx.compound(1)]))
 	}
+
 	void exitRule_(Rule_Context ctx) {
 		recLoc(ctx)
 		if (ctx.predicateList()) {
@@ -166,20 +178,19 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			}
 			def head = new LogicalElement(LogicType.AND, headAtoms)
 			currComp.addRule(new Rule(head, null))
-		}
-		else if (ctx.predicateListExt()) {
+		} else if (ctx.predicateListExt()) {
 			def headAtoms = values[ctx.predicateListExt()]
 			def head = new LogicalElement(LogicType.AND, headAtoms)
 			def bodyElements = values[ctx.compound()] as IElement
 			def body = new LogicalElement(LogicType.AND, [bodyElements])
 			currComp.addRule(new Rule(head, body))
-		}
-		else {
+		} else {
 			LogicalElement head = new LogicalElement(values[ctx.functional()])
 			AggregationElement aggregation = (AggregationElement) values[ctx.aggregation()]
 			currComp.addRule(new Rule(head, aggregation))
 		}
 	}
+
 	void enterLineMarker(LineMarkerContext ctx) {
 		// Line number of the original file (emitted by C-Preprocessor)
 		def markerLine = Integer.parseInt(ctx.INTEGER(0).text)
@@ -188,7 +199,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		// Name of the original file (emitted by C-Preprocessor)
 		def sourceFile = ctx.STRING().text
 		// Remove quotes from file values
-		sourceFile = sourceFile.substring(1, sourceFile.length()-1)
+		sourceFile = sourceFile.substring(1, sourceFile.length() - 1)
 
 		// Ignore first line of output. It reports the values of the C-Preprocessed file
 		if (markerActualLine == 1) return
@@ -205,7 +216,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		// 3 - Following text comes from a system header file (#include <> vs #include "")
 		// 4 - Following text should be treated as being wrapped in an implicit extern "C" block.
 		else
-			// TODO handle in a different way (report it)
+		// TODO handle in a different way (report it)
 			println "Weird line marker flag: $t"
 	}
 
@@ -214,58 +225,64 @@ class DatalogListenerImpl extends DatalogBaseListener {
 	}
 
 	void exitPredicate(PredicateContext ctx) {
-		if (ctx.directive())       values[ctx] = values[ctx.directive()]
-		else if (ctx.refmode())    values[ctx] = values[ctx.refmode()]
+		if (ctx.directive()) values[ctx] = values[ctx.directive()]
+		else if (ctx.refmode()) values[ctx] = values[ctx.refmode()]
 		else if (ctx.singleAtom()) values[ctx] = values[ctx.singleAtom()]
-		else if (ctx.atom())       values[ctx] = values[ctx.atom()]
+		else if (ctx.atom()) values[ctx] = values[ctx.atom()]
 		else if (ctx.functional()) values[ctx] = values[ctx.functional()]
 	}
+
 	void exitDirective(DirectiveContext ctx) {
 		assert !inDecl
 		recLoc(ctx)
 		if (ctx.expr())
 			values[ctx] = new Directive(
-				values[ctx.predicateName(0)],
-				new Stub(values[ctx.predicateName(1)]),
-				values[ctx.expr()] as ConstantExpr)
+					values[ctx.predicateName(0)],
+					new Stub(values[ctx.predicateName(1)]),
+					values[ctx.expr()] as ConstantExpr)
 		else
 			values[ctx] = new Directive(
-				values[ctx.predicateName(0)],
-				new Stub(values[ctx.predicateName(1)]))
+					values[ctx.predicateName(0)],
+					new Stub(values[ctx.predicateName(1)]))
 	}
+
 	void exitRefmode(RefmodeContext ctx) {
 		recLoc(ctx)
 		values[ctx] = new RefMode(
-			values[ctx.predicateName()],
-			ctx.AT_STAGE()?.text,
-			new VariableExpr(ctx.IDENTIFIER().text),
-			values[ctx.expr()])
+				values[ctx.predicateName()],
+				ctx.AT_STAGE()?.text,
+				new VariableExpr(ctx.IDENTIFIER().text),
+				values[ctx.expr()])
 	}
+
 	void exitSingleAtom(SingleAtomContext ctx) {
 		recLoc(ctx)
 		def name = values[ctx.predicateName()]
-		values[ctx] = new Predicate(name, ctx.AT_STAGE()?.text, [values[ctx.expr()] ])
+		values[ctx] = new Predicate(name, ctx.AT_STAGE()?.text, [values[ctx.expr()]])
 	}
+
 	void exitAtom(AtomContext ctx) {
 		recLoc(ctx)
 		if (ctx.expr())
 			values[ctx] = new Predicate(
-				values[ctx.predicateName()],
-				ctx.AT_STAGE()?.text,
-				[values[ctx.expr()] ] + values[ctx.exprList()])
+					values[ctx.predicateName()],
+					ctx.AT_STAGE()?.text,
+					[values[ctx.expr()]] + values[ctx.exprList()])
 		else
 			values[ctx] = new Predicate(
-				values[ctx.predicateName()],
-				ctx.AT_STAGE()?.text,
-				[])
+					values[ctx.predicateName()],
+					ctx.AT_STAGE()?.text,
+					[])
 	}
+
 	void exitFunctionalHead(FunctionalHeadContext ctx) {
 		recLoc(ctx)
 		values[ctx] = new FunctionalHeadExpr(
-			values[ctx.predicateName()],
-			ctx.AT_STAGE()?.text,
-			ctx.exprList() ? values[ctx.exprList()] : [])
+				values[ctx.predicateName()],
+				ctx.AT_STAGE()?.text,
+				ctx.exprList() ? values[ctx.exprList()] : [])
 	}
+
 	void exitFunctional(FunctionalContext ctx) {
 		recLoc(ctx)
 		def fHead = (values[ctx.functionalHead()] as FunctionalHeadExpr).functional
@@ -318,7 +335,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			result = new GroupElement(values[ctx.compound(0)])
 		else {
 			def token = getTerminalToken(ctx, 0)
-			List<IElement> list = [values[ctx.compound(0)], values[ctx.compound(1)] ]
+			List<IElement> list = [values[ctx.compound(0)], values[ctx.compound(1)]]
 			result = new LogicalElement(token.equals(",") ? LogicType.AND : LogicType.OR, list)
 		}
 
@@ -344,23 +361,19 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			if (str.startsWith("0x") || str.startsWith("0X")) {
 				str = str.substring(2)
 				constant = Long.parseLong(str, 16)
-			}
-			else if (str.startsWith("0") && str.length() > 1) {
+			} else if (str.startsWith("0") && str.length() > 1) {
 				str = str.substring(1)
 				constant = Long.parseLong(str, 8)
-			}
-			else if (str.startsWith("2^")) {
+			} else if (str.startsWith("2^")) {
 				str = str.substring(2)
 				constant = 1L << Integer.parseInt(str)
-			}
-			else {
+			} else {
 				constant = Long.parseLong(str, 10)
 			}
 			values[ctx] = new ConstantExpr(constant)
-		}
-		else if (ctx.REAL())    values[ctx] = new ConstantExpr(Double.parseDouble(ctx.REAL().text))
+		} else if (ctx.REAL()) values[ctx] = new ConstantExpr(Double.parseDouble(ctx.REAL().text))
 		else if (ctx.BOOLEAN()) values[ctx] = new ConstantExpr(Boolean.parseBoolean(ctx.BOOLEAN().text))
-		else if (ctx.STRING())  values[ctx] = new ConstantExpr(ctx.STRING().text)
+		else if (ctx.STRING()) values[ctx] = new ConstantExpr(ctx.STRING().text)
 	}
 
 	void exitExpr(ExprContext ctx) {
@@ -377,15 +390,14 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				def left = values[exprs.get(0)]
 				BinOperator op = null
 				switch (getTerminalToken(ctx, 0)) {
-					case "+": op = BinOperator.PLUS ; break
+					case "+": op = BinOperator.PLUS; break
 					case "-": op = BinOperator.MINUS; break
-					case "*": op = BinOperator.MULT ; break
-					case "/": op = BinOperator.DIV  ; break
+					case "*": op = BinOperator.MULT; break
+					case "/": op = BinOperator.DIV; break
 				}
 				def right = values[exprs.get(1)]
 				e = new BinaryExpr(left, op, right)
-			}
-			else
+			} else
 				e = new GroupExpr(values[exprs.get(0)])
 		}
 
@@ -404,10 +416,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		def right = values[ctx.expr(1)] as IExpr
 		BinOperator op = null
 		switch (token) {
-			case "=" : op = BinOperator.EQ ; break
-			case "<" : op = BinOperator.LT ; break
+			case "=": op = BinOperator.EQ; break
+			case "<": op = BinOperator.LT; break
 			case "<=": op = BinOperator.LEQ; break
-			case ">" : op = BinOperator.GT ; break
+			case ">": op = BinOperator.GT; break
 			case ">=": op = BinOperator.GEQ; break
 			case "!=": op = BinOperator.NEQ; break
 		}
@@ -424,6 +436,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 				.findAll { ctx.getChild(it) instanceof TerminalNode }[index]
 		return i != null ? ctx.getChild(i).text : null
 	}
+
 	static boolean isConstraint(IAtom atom, List<IAtom> types) {
 		if (atom.vars.any { it.isDontCare() }) return true
 
@@ -435,9 +448,10 @@ class DatalogListenerImpl extends DatalogBaseListener {
 			return vars.size() != 1 || vars.get(0).isDontCare()
 		}) return true
 
-		def bodyCount = types.sum{ it.vars.size() }
+		def bodyCount = types.sum { it.vars.size() }
 		return (atom.arity != bodyCount)
 	}
+
 	static void recLoc(ParserRuleContext ctx) {
 		SourceManager.instance.recLoc(ctx.start.getLine())
 	}

@@ -1,5 +1,5 @@
-@Entity Animal(x).
-@Entity AP(x).
+@Entity Animal.
+@Entity AP.
 
 @Constructor
 cons:byA[x,y] = a -> string(x), int(y), AP(a).
@@ -10,3 +10,7 @@ cons:byB[x,y,z] = a -> string(x), string(y), int(z), AP(a).
 Foo(x, y) -> AP(x), string(y).
 
 new<<cons:byA[y,1] = z as AP>>, Foo(z, y) <- y = "J".
+
+@Output Baz(x, y) -> string(x), string(y).
+
+@Output, @Entity Bar.

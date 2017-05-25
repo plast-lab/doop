@@ -41,8 +41,14 @@ datalog
 	: declaration | constraint | rule_ | lineMarker ;
 
 
+annotationList
+	: annotation
+	| annotationList ',' annotation
+	;
+
 declaration
-	: annotation? predicate ('->' predicateList)? '.'
+	: annotationList? predicateName '.'
+	| annotationList? predicate '->' predicateList '.'
 	| singleAtom ',' refmode '->' singleAtom '.'
 	;
 

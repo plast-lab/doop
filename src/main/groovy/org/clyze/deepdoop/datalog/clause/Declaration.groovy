@@ -2,6 +2,7 @@ package org.clyze.deepdoop.datalog.clause
 
 import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.*
+import org.clyze.deepdoop.datalog.Annotation
 import org.clyze.deepdoop.datalog.element.atom.IAtom
 import org.clyze.deepdoop.system.*
 
@@ -10,10 +11,12 @@ class Declaration implements IVisitable, TSourceItem {
 
 	IAtom atom
 	List<IAtom> types
+	List<Annotation> annotations
 
-	Declaration(IAtom atom, List<IAtom> types) {
+	Declaration(IAtom atom, List<IAtom> types, annotations = []) {
 		this.atom = atom
 		this.types = []
+		this.annotations = annotations
 
 		def varsInHead = atom.getVars()
 		types.each{ t ->

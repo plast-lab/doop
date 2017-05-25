@@ -79,9 +79,9 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		def params = (n.keyExprs + [n.valueExpr]).collect { m[it] }.join(", ")
 
 		if (inRuleHead)
-			return "${type(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}, ${pred(n.name+":HeadMacro", params)}"
+			return "${type(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}, ${pred("$n.name:HeadMacro", params)}"
 		else if (!inDecl)
-			return "${pred(n.name+":BodyMacro", params)}"
+			return "${pred("$n.name:BodyMacro", params)}"
 		else
 			return null
 	}

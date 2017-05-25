@@ -193,7 +193,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) {
-		new Declaration(m[n.atom] as IAtom, n.types.collect{ m[it] as IAtom })
+		new Declaration(m[n.atom] as IAtom, n.types.collect{ m[it] as IAtom }, n.annotations)
 	}
 
 	RefModeDeclaration exit(RefModeDeclaration n, Map<IVisitable, IVisitable> m) {
