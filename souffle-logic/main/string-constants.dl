@@ -558,13 +558,9 @@ FieldNamePrefix(substr(?fieldName, 0, ?length), ?sig) :-
  * Analysis of reflection strings flowing through String Factories
  *************************************************************/
 
-.decl StringFactoryVar(?var:Var)
-
 StringFactoryVar(?var) :-
   StringFactoryType(?type),
   Var_Type(?var, ?type).
-
-.decl StringFactoryVarPointsTo(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
 
 StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) :-
   StringFactoryVar(?var),
@@ -885,6 +881,9 @@ StringFactoryType(?type) :-
 StringFactoryHeap(?heap) :-
   HeapAllocation_Type(?heap, ?heaptype),
   StringFactoryType(?heaptype).
+
+.decl StringFactoryVar(?var:Var)
+.decl StringFactoryVarPointsTo(?factoryHctx:HContext, ?factoryValue:Value, ?ctx:Context, ?var:Var)
 
 #ifndef DISTINGUISH_ALL_STRING_BUFFERS
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS

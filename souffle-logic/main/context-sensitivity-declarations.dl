@@ -103,8 +103,6 @@
 
 .decl MainThread(?hctx:HContext, ?value:Value)
 
-.decl TaintedValue(?value:Value)
-
 
 /**
  * Filter predicate for refinement-based/adaptive analyses

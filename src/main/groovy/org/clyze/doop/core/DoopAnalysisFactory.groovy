@@ -367,6 +367,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.REFLECTION.value = false
         }
 
+        if (options.MINIMAL_INFORMATION_FLOW.value) {
+            options.INFORMATION_FLOW.value = options.MINIMAL_INFORMATION_FLOW.value
+        }
+
         if (options.NO_SSA.value) {
             options.SSA.value = false
         }

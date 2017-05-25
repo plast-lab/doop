@@ -1,0 +1,47 @@
+//ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.Object)>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.String)>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.StringBuffer)>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.CharSequence)>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(char[])>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuffer append(char)>").
+
+BaseToRetTaintTransferMethod("<java.util.Enumeration: java.lang.Object nextElement()>").
+BaseToRetTaintTransferMethod("<java.lang.String: char charAt(int)>").
+
+/*
+BaseToRetTaintTransferMethod("<java.lang.String: int codePointAt(int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: int codePointBefore(int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: int codePointCount(int,int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: int offsetByCodePoints(int,int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes(java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes(java.nio.charset.Charset)>").
+BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
+BaseToRetTaintTransferMethod("<java.lang.String: int compareTo(java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: int compareToIgnoreCase(java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String substring(int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String substring(int,int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.CharSequence subSequence(int,int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String concat(java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String replace(char,char)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String replaceFirst(java.lang.String,java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String replace(java.lang.CharSequence,java.lang.CharSequence)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String[] split(java.lang.String,int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String[] split(java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toLowerCase(java.util.Locale)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toLowerCase()>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toUpperCase(java.util.Locale)>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toUpperCase()>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String trim()>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String toString()>").
+BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String intern()>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
+BaseToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
+*/
+
+BaseToRetTaintTransferMethod("<java.util.Iterator: java.lang.Object next()>").
+BaseToRetTaintTransferMethod("<java.util.Map: java.util.Set entrySet()>").
+BaseToRetTaintTransferMethod("<java.util.Set: java.util.Iterator iterator()>").
+BaseToRetTaintTransferMethod("<java.util.Map$Entry: java.lang.Object getValue()>").

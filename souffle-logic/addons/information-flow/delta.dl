@@ -1,0 +1,10 @@
+isInformationLabel("default").
+isInformationLabel("Location").
+isInformationLabel("Telephony").
+isInformationLabel("Bundle").
+isInformationLabel("OS").
+isInformationLabel("Personal").
+isInformationLabel("IPC").
+isInformationLabel("Persistence").
+isInformationLabel("IO").
+isInformationLabel("Net").

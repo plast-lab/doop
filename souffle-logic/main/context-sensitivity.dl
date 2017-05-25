@@ -371,6 +371,7 @@ VarPointsTo(?hctx, ?value, ?newCtx, ?this) :-
 #ifdef INFORMATION_FLOW
   .plan 2:(3,2,1,4,5,6)
 #endif
+
 #else /* there is optimized behavior available */
 
 // The optimization/advanced merge treatment is as follows: the main
