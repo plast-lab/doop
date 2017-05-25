@@ -83,7 +83,7 @@ returnStmt
 invokeStmt
 	: (IDENTIFIER '=')? ('specialinvoke'|'virtualinvoke'|'interfaceinvoke') IDENTIFIER '.' methodSig '(' valueList? ')'
 	| (IDENTIFIER '=')? 'staticinvoke' methodSig '(' valueList? ')'
-	| (IDENTIFIER '=')? 'dynamicinvoke' STRING dynamicMethodSig '(' valueList? ')' methodSig '(' valueList? ')'
+	| (IDENTIFIER '=')? 'dynamicinvoke' STRING dynamicMethodSig '(' valueList? ')' methodSig '(' bootValueList? ')'
 	;
 
 allocationStmt
@@ -114,6 +114,9 @@ valueList
 	: value
 	| valueList ',' value
 	;
+
+bootValueList
+	: valueList;
 
 jumpStmt
 	: ('if' value ('==' | '!=' | '<' | '<=' | '>' | '>=') value)? 'goto' IDENTIFIER ;

@@ -244,9 +244,11 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	String dynamicInvokeMiddlePart(InvokeStmtContext ctx) {
 		def bootName = ctx.methodSig().IDENTIFIER(0).text + "." +
 			       ctx.methodSig().IDENTIFIER(2).text
-		def bootArgs = values[ctx.valueList(0)]
-		if (bootArgs.size() > 1) {
-			def v = bootArgs[1]?.methodSig();
+		def bootArgs = values[ctx.bootValueList().valueList()]
+		if (bootArgs == null)
+			println("Warning: invokedynamic with null bootArgs in " + filename)
+		else if (bootArgs.size() > 1) {
+			def v = bootArgs[1].methodSig();
 			if (v != null) {
 				def declClass = v.IDENTIFIER(0).text
 				def mName = v.IDENTIFIER(2).text
