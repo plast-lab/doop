@@ -1,0 +1,73 @@
+// Analysis that stays context insensitive, except for in-out-flow methods,
+// for which it tries to get to 2objH.
+
+#include "../../main/in-out-flow.logic"
+
+ContextFromRealContext[?value1, ?value2] = ?ctx ->
+  Context(?ctx), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
+RealContext1FromContext[?ctx] = ?value1,
+RealContext2FromContext[?ctx] = ?value2 <-
+  ContextFromRealContext[?value1, ?value2] = ?ctx.
+
+HContextFromRealHContext[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?value <-
+  HContextFromRealHContext[?value] = ?hctx.
+
+DummyContextElement[] = ?value <-
+  Value:byId["<<immutable-context>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?value, ?value] = ?ctx,
+EmptyContext[] = ?ctx <-
+  DummyContextElement[] = ?value.
+
+HContext(?hctx),
+HContextFromRealHContext[?value] = ?hctx,
+EmptyHContext[] = ?hctx <-
+  DummyContextElement[] = ?value.
+
+MyMergeBasis(?hctx, ?value, ?valuetype, ?invo) <-
+  MergeBasis(_, ?invo, ?hctx, ?value),
+  Value:Type[?value] = ?valuetype.
+
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, ?valuetype, ?invo),
+  ResolveInvocation[?valuetype, ?invo] = ?tomethod,
+  IsInOutFlowMethod(?tomethod).
+
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, ?valuetype, ?invo),
+  ResolveInvocation[?valuetype, ?invo] = ?tomethod,
+  !IsInOutFlowMethod(?tomethod),
+  EmptyContext[] = ?calleeCtx.
+
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, _, ?invo),
+  SpecialMethodInvocation:Insn(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  IsInOutFlowMethod(?tomethod).
+
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, _, ?invo),
+  SpecialMethodInvocation:Insn(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  !IsInOutFlowMethod(?tomethod),
+  EmptyContext[] = ?calleeCtx.
+
+CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  IsInOutFlowMethod(?tomethod).
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  !IsInOutFlowMethod(?tomethod),
+  EmptyContext[] = ?calleeCtx.
+
+
