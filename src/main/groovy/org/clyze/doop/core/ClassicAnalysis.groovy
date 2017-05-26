@@ -3,7 +3,6 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.clyze.analysis.AnalysisOption
-import org.clyze.analysis.AnalysisPhase
 import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.doop.system.FileOps
@@ -438,6 +437,4 @@ class ClassicAnalysis extends DoopAnalysis {
             .commit()
             .elapsedTime()
     }
-
-    Iterable<AnalysisPhase> phases() { return null }
 }
