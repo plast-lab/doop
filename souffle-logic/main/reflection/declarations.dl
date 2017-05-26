@@ -1,4 +1,4 @@
-.decl ReifiedClass(?type:ReferenceType, ?value:Value)
+.decl ReifiedClass(?type:symbol, ?value:Value)
 
 .decl ReifiedConstructor(?constructor:Method, ?value:Value)
 

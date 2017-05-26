@@ -13,6 +13,7 @@
 /**
  * Evaluate Object.getClass
  */
+B1(?hctx, ?classValue, ?ctx, ?to),
 VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Object:getClass(?to, ?from),
@@ -77,7 +78,7 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
  *
  *   public String getName()
  *************************************************************/
-
+B2(?hctx, ?classNameValue, ?callerCtx, ?to),
 VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getName(?to, ?from),
@@ -100,7 +101,7 @@ VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) <-
  *
  *   public Class<?> getComponentType()
  *************************************************************/
-
+B3(?hctx, ?componentClassValue, ?callerCtx, ?to),
 VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getComponentType(?to, ?from),
@@ -120,7 +121,7 @@ VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) <-
  *
  * TODO should (can?) we handle null (for NullPointerException)?
  *************************************************************/
-
+B4(?hctx, ?superClassValue, ?callerCtx, ?to),
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
@@ -129,6 +130,7 @@ VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
   ClassType(?type), DirectSuperclass[?type] = ?superType,
   ReifiedClass[?superType] = ?superClassValue.
 
+B5(?hctx, ?superClassValue, ?callerCtx, ?to),
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
   java:lang:Class:getSuperclass(?to, ?from),
@@ -154,7 +156,8 @@ _OptReifiedClass(?type, ?classValue) <-
 
 _OptReflectiveAllocation(?arrayValue, ?invocation) <-
   ReflectiveAllocation[?invocation, _] = ?arrayValue.
-  
+
+B6(?hctx, ?arrayValue, ?callerCtx, ?to),
 FillArray:Interfaces(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) <-
   ImmutableHContextFromContext[?callerCtx] = ?hctx,
@@ -184,6 +187,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
 // we assume the returned methods will be filtered by some string
 */
 
+B7(?hctx, ?arrayValue, ?ctx, ?to),
 FillArray:PublicMethods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   java:lang:Class:getMethods(?invocation, ?to, ?from),
@@ -225,7 +229,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
   ReifiedMethod[?signature] = ?value,
   MethodNameMatchingStringConstant:Signature(?signature, _).
 */
-
+B8(?hctx, ?arrayValue, ?ctx, ?to),
 FillArray:Methods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
@@ -264,7 +268,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
   Method:Modifier("public", ?constructor),
   ReifiedConstructor[?constructor] = ?value.
 */
-
+B9(?hctx, ?arrayValue, ?ctx, ?to),
 FillArray:PublicConstructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
@@ -274,6 +278,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
+B10(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getConstructor(?to, ?from),
@@ -289,7 +294,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
   OptClassToConstructor(?constructor, ?classValue),
   ReifiedConstructor[?constructor] = ?value.
 */
-
+B11(?hctx, ?arrayValue, ?ctx, ?to),
 FillArray:Constructors(?hctx, ?arrayValue, ?classValue),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
@@ -300,6 +305,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
+B12(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:Class:getDeclaredConstructor(?to, ?from),
@@ -336,7 +342,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
   ReifiedField[?fld] = ?value,
   FieldNameMatchingStringConstant:Signature(?fld, _).
 */
-
+B13(?hctx, ?arrayValue, ?ctx, ?to),
 FillArray:PublicFields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
@@ -374,7 +380,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) <-
   ReifiedField[?fld] = ?value,
   FieldNameMatchingStringConstant:Signature(?fld, _).
 */
-
+B14(?hctx, ?arrayValue, ?ctx, ?to),
 FillArray:Fields(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
@@ -441,7 +447,8 @@ _OptVarToMethod[?var] = ?method <-
 _Optjava:lang:Class:getClassLoader(?invocation, ?to, ?method) <-
   java:lang:Class:getClassLoader(?invocation, ?to, ?from),
   _OptVarToMethod[?from] = ?method.
-  
+
+B15(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   _Optjava:lang:Class:getClassLoader(?invocation, ?to, ?method),
@@ -457,6 +464,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
  * NOTE  
  * We just create a dummy value to represent the URL resource returned.
  *************************************************************/
+B16(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),

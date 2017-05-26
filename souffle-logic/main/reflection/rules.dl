@@ -424,10 +424,11 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
   OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
   ThisVar(?callee, ?this),
-  Var_Type(?this, ?type),
-  Value_Type(?value, ?superType),
-  SupertypeOf(?type, ?superType).
+  Var_Type(?this, ?varType),
+  Value_Type(?value, ?valueType),
+  SupertypeOf(?varType, ?valueType).
 #else
+/** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
@@ -467,6 +468,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this).
 #else
+/** This VarPointsTo is ok **/
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   :-
@@ -514,6 +516,7 @@ InvokeArgLoadArrayIndex(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
 InitializedClass(?type) :-
   ReflectiveAssignClassConstant(_, _, ?type).
 
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
@@ -529,6 +532,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 
 .decl ReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
 
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   ReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
@@ -567,6 +571,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   Var_Type(?var, ?vartype),
   SubtypeOf(?type, ?vartype).
 #else
+/** This VarPointsTo is ok **/
 InitializedClass(?type),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
@@ -614,6 +619,7 @@ LoadReflectiveValueArrayIndex(?calleeCtx, ?to, ?basehctx, ?basevalue) :-
   InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?callerCtx, ?base).
 
+/** This VarPointsTo is PROBABLY ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadReflectiveValueArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
@@ -633,6 +639,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  * TODO does this trigger class initialization?
  *************************************************************/
 
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ReflectiveLoadStaticField(?ctx, ?to, ?signature),
   StaticFieldPointsTo(?hctx, ?value, ?signature),
@@ -670,6 +677,8 @@ ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
 // normal value loads) to filter type-incorrect values.
+
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
@@ -947,6 +956,8 @@ SpecialMissingGetValueFromGetField(?invocation, cat(cat("<special object for mis
 
 // Logic to catch unknown results of Class.forName invocations.
 // These may flow to casts, so we'll get useful info back.
+
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   SpecialMissingForNameValue(?invocation, ?value),
@@ -958,6 +969,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 // Class.newInstance. At every newInstance to which an unknown object
 // created by forName flows, we return a new unknown object
 // (of type Object and not Class) that remembers the forName site.
+
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_newInstance(_, ?to, ?var),
@@ -966,6 +979,8 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
   SpecialMissingNewInstanceValue(?forNameInvocation, ?specialvalue).
 
 // Similar flow of special object through get[Declared]Constructor
+
+/** This VarPointsTo is NOT ok, but produces FEWER tuples **/
 VarPointsTo(?hctx, ?specialConstructorValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   (java_lang_Class_getConstructor(?to, ?var);
@@ -993,6 +1008,8 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) :-
 
 // Even though there was one more step in the special object propagation,
 // in the end Constructor.newInstance is handled similarly to Class.newInstance.
+
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Constructor_newInstance(_, ?to, ?var),
@@ -1166,6 +1183,8 @@ OptMethodType(?signature, ?classtype) :-
 
 // A getMethod returns a special value that marks where it came from, so
 // we can track all uses of results returned by that getMethod invocation
+
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   SpecialMissingGetMethodValue(?invocation, ?value),
@@ -1176,6 +1195,8 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 // At the site of an invoke over a special method object (that marks
 // its "getMethod" origin), return a new special object that remembers
 // the original getMethod invocation site.
+
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
@@ -1225,6 +1246,7 @@ OptFieldType(?type, ?signature, ?declaringClassType) :-
    Field_Type(?signature, ?type).
 
 // special value returned by a getField
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   SpecialMissingGetFieldValue(?invocation, ?value),
@@ -1234,6 +1256,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
 
 // Make a "get" call over a special field (which knows its getField origin)
 // return a special object that also remembers the original getField call.
+/** This VarPointsTo is ok **/
 VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
@@ -1429,8 +1452,8 @@ ArrayIndexPointsTo(?hctx, ?fieldValue, ?hctx, ?arrayValue) :-
 
 // This is the representative of an unknown reflective object, after it has been cast.
 // Has a real type. We pre-generate for all types and casts in the universe.
-MockValueConsMacro(?value, ?type),
-UnknownReflectiveObject(?type, ?invocation, ?value)
+MockValueConsMacro(cat(cat(cat(cat("<<unknown object of type ", ?type), " returned by call) "), ?invocation), ">>"), ?type),
+UnknownReflectiveObject(?type, ?invocation, cat(cat(cat(cat("<<unknown object of type ", ?type), " returned by call) "), ?invocation), ">>"))
 :-
   AssignCast(?type, _, _, _),
   isClassType(?type),
@@ -1440,12 +1463,12 @@ UnknownReflectiveObject(?type, ?invocation, ?value)
    java_lang_reflect_Method_invoke(?invocation, _);
    java_lang_reflect_Field_get(?invocation, _, _)),
   isInstruction(?invocation),
-  ?value = "<<unknown object of type " + ?type + " returned by call " + ?invocation + ">>".
+  ?value = .
 
 // This is the representative of an unknown reflective object that flows from the reflection
 // operation to a cast.
-MockValueConsMacro(?value, ?type),
-MarkerReflectiveObject(?invocation, ?value)
+MockValueConsMacro(cat(cat("<special object for missing reflective values ", ?invocation), ">"), ?type),
+MarkerReflectiveObject(?invocation, cat(cat("<special object for missing reflective values ", ?invocation), ">"))
 :-
   (java_lang_Class_newInstance(?invocation, _, _);
    java_lang_reflect_Constructor_newInstance(?invocation, _, _);
@@ -1454,7 +1477,7 @@ MarkerReflectiveObject(?invocation, ?value)
   ?type = "java.lang.Object",
   isType(?type),
   isInstruction(?invocation_?invocation),
-  ?value = "<special object for missing reflective values " + ?invocation + ">".
+  ?value = .
 
 /*************************************************************
  * Next comes the main "invention of objects" analysis

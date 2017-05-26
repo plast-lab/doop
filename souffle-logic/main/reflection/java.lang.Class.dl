@@ -85,14 +85,13 @@ ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
  *   public String getName()
  *************************************************************/
 
-VarPointsTo(?hctx, ?classNameValue, ?callerCtx, ?to) :-
+VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
   java_lang_Class_getName(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  _OptReifiedClass(?className, ?classValue),
-  isType(?className),
-  isStringConstant(?classNameValue),
-  Value_isHeap(?classNameValue).
+  ReifiedClass(?className, ?classValue),
+  isStringConstant(?className),
+  Value_isHeap(?className).
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
@@ -160,11 +159,6 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) :-
   ReifiedClass(?superInterface, ?superInterfaceValue).
 
 
-.decl _OptReifiedClass(?type:Type, ?classValue:Value)
-
-_OptReifiedClass(?type, ?classValue) :-
-  ReifiedClass(?type, ?classValue).
-
 .decl _OptReflectiveAllocation(?arrayValue:Value, ?invocation:MethodInvocation)
 
 _OptReflectiveAllocation(?arrayValue, ?invocation) :-
@@ -177,7 +171,7 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
   java_lang_Class_getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  _OptReifiedClass(?type, ?classValue),
+  OptReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 
@@ -207,7 +201,7 @@ FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  _OptReifiedClass(?type, ?classValue),
+  OptReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation),
   ImmutableHContextFromContext(?ctx, ?hctx).
 
@@ -260,7 +254,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  _OptReifiedClass(?type, ?classValue),
+  OptReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 // getDeclaredMethod has two differences from getMethod: it retrieves
@@ -376,7 +370,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  _OptReifiedClass(?type, ?classValue),
+  OptReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
@@ -424,7 +418,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  _OptReifiedClass(?type, ?classValue),
+  OptReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
