@@ -55,6 +55,7 @@ statement
 	| switchStmt
 	| catchStmt
 	| monitorStmt
+	| nopStmt
 	;
 
 declarationStmt
@@ -135,6 +136,9 @@ monitorStmt
 	| 'entermonitor' IDENTIFIER
 	| 'exitmonitor' IDENTIFIER
 	;
+
+nopStmt
+	: 'nop' ;
 
 
 // Lexer
