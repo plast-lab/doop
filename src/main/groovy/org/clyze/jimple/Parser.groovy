@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import org.clyze.persistent.doop.BasicMetadata
+import org.clyze.persistent.model.doop.BasicMetadata
 
 class Parser {
 

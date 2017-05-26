@@ -6,7 +6,7 @@ import soot.jimple.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.clyze.persistent.doop.DynamicMethodInvocation;
+import org.clyze.persistent.model.doop.DynamicMethodInvocation;
 
 public class Representation {
     private Map<SootMethod, String> _methodRepr = new ConcurrentHashMap<>();
