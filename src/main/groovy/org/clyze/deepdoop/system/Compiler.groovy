@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.ANTLRFileStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.Helper
 import org.clyze.deepdoop.actions.LBCodeGenVisitingActor
 import org.clyze.deepdoop.actions.SouffleCodeGenVisitingActor
 import org.clyze.deepdoop.datalog.DatalogLexer
@@ -21,16 +22,24 @@ class Compiler {
 	}
 
 	private static List<Result> compile(String filename, def codeGenActor) {
-		LogFactory.getLog(Compiler.class).info("[DD] COMPILE: $filename with ${codeGenActor.class.name}")
+		Helper.initLogging("INFO", System.getenv("DOOP_HOME") + "/build/logs", true)
 
-		def parser = new DatalogParser(
-				new CommonTokenStream(
-						new DatalogLexer(
-								new ANTLRFileStream(filename))))
-		def listener = new DatalogListenerImpl(filename)
-		ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+		def log = LogFactory.getLog(Compiler.class)
+		log.info("[DD] COMPILE: $filename with ${codeGenActor.class.name}")
 
-		codeGenActor.visit(listener.program)
-		return codeGenActor.results
+		try {
+			def parser = new DatalogParser(
+					new CommonTokenStream(
+							new DatalogLexer(
+									new ANTLRFileStream(filename))))
+			def listener = new DatalogListenerImpl(filename)
+			ParseTreeWalker.DEFAULT.walk(listener, parser.program())
+
+			codeGenActor.visit(listener.program)
+			return codeGenActor.results
+		} catch (e) {
+			log.error(e.message)
+		}
+		return null
 	}
 }
