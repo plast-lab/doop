@@ -9,8 +9,9 @@ import org.clyze.analysis.AnalysisFamily
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.system.CheckSum
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.CheckSum
+import org.clyze.utils.FileOps
+import org.clyze.utils.Helper
 
 import java.util.jar.Attributes
 import java.util.jar.JarFile

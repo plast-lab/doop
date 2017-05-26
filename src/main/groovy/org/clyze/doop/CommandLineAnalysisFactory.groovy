@@ -117,7 +117,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
         }
 
-        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
+        addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
         return cli
     }
@@ -138,7 +138,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             width:  WIDTH,
         )
 
-        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
+        addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
         return cli
     }
@@ -226,5 +226,30 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         if (option.description) w.write "#${option.description} \n"
         w.write "#\n"
         w.write "$id = \n\n"
+    }
+
+    /**
+     * Adds the list of analysis options to the cli builder.
+     * @param options - the list of AnalysisOption items to add.
+     * @param cli - the cli builder.
+     */
+    private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
+        options.collect { AnalysisOption option ->
+            if (option.id == "DYNAMIC") {
+                //Special handling of DYNAMIC option
+                Option o = new Option('d', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                return o
+            } else if (option.argName) {
+                //Option accepts a String value
+                Option o = new Option(null, option.name, true, option.description)
+                o.setArgName(option.argName)
+                return o
+            } else {
+                //Option is a boolean
+                return new Option(null, option.name, false, option.description)
+            }
+        }.each { cli << it }
     }
 }

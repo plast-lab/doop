@@ -4,8 +4,9 @@ import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.system.CheckSum
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.CheckSum
+import org.clyze.utils.FileOps
+import org.clyze.utils.Helper
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
@@ -209,7 +210,7 @@ class SouffleAnalysis extends DoopAnalysis {
             def subshellCommand = "(cd $analysisCacheDir && " + compilationCommand + ")"
 
             def ignoreCounter = 0
-            compilationTime = timing {
+            compilationTime = Helper.timing {
                 executor.execute(subshellCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
@@ -240,7 +241,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         logger.debug "Execution command: $executionCommand"
         logger.info "Running analysis"
-        executionTime = timing { executor.execute(executionCommand) }
+        executionTime = Helper.timing { executor.execute(executionCommand) }
         logger.info "Analysis execution time (sec): $executionTime"
     }
 

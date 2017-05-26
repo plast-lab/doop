@@ -2,7 +2,7 @@ package org.clyze.doop.core
 
 import org.apache.log4j.Logger
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.FileOps
 
 /**
  * Doop initialization and supported options.

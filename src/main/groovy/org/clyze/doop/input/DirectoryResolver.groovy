@@ -1,6 +1,6 @@
 package org.clyze.doop.input
 
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.FileOps
 
 /**
  * Resolves the input as a directory that contains jar files.

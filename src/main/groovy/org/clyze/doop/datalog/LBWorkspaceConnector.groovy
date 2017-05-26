@@ -2,8 +2,8 @@ package org.clyze.doop.datalog
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.doop.system.CPreprocessor
-import org.clyze.doop.system.Executor
+import org.clyze.utils.CPreprocessor
+import org.clyze.utils.Executor
 
 class LBWorkspaceConnector implements IWorkspaceAPI {
 

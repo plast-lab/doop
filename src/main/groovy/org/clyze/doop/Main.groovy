@@ -8,7 +8,8 @@ import org.apache.log4j.Logger
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.core.Helper
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.FileOps
+import org.clyze.utils.Helper as CommonHelper
 
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -30,7 +31,7 @@ class Main {
     static void main(String[] args) {
 
         Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
-        Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
+        CommonHelper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
 
         try {
 
@@ -111,7 +112,7 @@ class Main {
                 analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
             }
 
-            int timeout = Helper.parseTimeout(userTimeout, DEFAULT_TIMEOUT)
+            int timeout = parseTimeout(userTimeout, DEFAULT_TIMEOUT)
             ExecutorService executorService = Executors.newSingleThreadExecutor()
             try {
                 executorService.submit(new Runnable() {
@@ -154,6 +155,26 @@ class Main {
                 default:
                     logger.info "Invalid log level: $logLevel - using default (info)"
             }
+        }
+    }
+
+    private static int parseTimeout(String userTimeout, int defaultTimeout) {
+        int timeout = defaultTimeout
+        try {
+            timeout = Integer.parseInt(userTimeout)
+        }
+        catch(ex) {
+            println "Using the default timeout ($timeout min)."
+            return defaultTimeout
+        }
+
+        if (timeout <= 0) {
+            println "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
+            return defaultTimeout
+        }
+        else {
+            println "Using a timeout of $timeout min."
+            return timeout
         }
     }
 }

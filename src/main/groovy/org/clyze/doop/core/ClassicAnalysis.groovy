@@ -5,7 +5,8 @@ import groovy.transform.TypeChecked
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.FileOps
+import org.clyze.utils.Helper
 
 import static org.apache.commons.io.FileUtils.*
 
@@ -69,7 +70,7 @@ class ClassicAnalysis extends DoopAnalysis {
         }
 
         logger.info "\nAnalysis START"
-        long t = timing { connector.processQueue() }
+        long t = Helper.timing { connector.processQueue() }
         logger.info "Analysis END\n"
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()
         connector

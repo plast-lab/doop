@@ -1,6 +1,6 @@
 package org.clyze.doop.datalog
 
-import org.clyze.doop.system.CPreprocessor
+import org.clyze.utils.CPreprocessor
 
 class LBCommandQueue implements IWorkspaceAPI {
 

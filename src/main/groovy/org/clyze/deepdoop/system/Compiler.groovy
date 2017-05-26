@@ -4,12 +4,12 @@ import org.antlr.v4.runtime.ANTLRFileStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import org.apache.commons.logging.LogFactory
-import org.clyze.analysis.Helper
 import org.clyze.deepdoop.actions.LBCodeGenVisitingActor
 import org.clyze.deepdoop.actions.SouffleCodeGenVisitingActor
 import org.clyze.deepdoop.datalog.DatalogLexer
 import org.clyze.deepdoop.datalog.DatalogListenerImpl
 import org.clyze.deepdoop.datalog.DatalogParser
+import org.clyze.utils.Helper
 
 class Compiler {
 

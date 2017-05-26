@@ -8,6 +8,7 @@ import org.clyze.deepdoop.system.Compiler
 import org.clyze.deepdoop.system.Result
 import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.utils.Helper
 
 @CompileStatic
 @TypeChecked
@@ -49,7 +50,7 @@ class SoundMayAnalysis extends ClassicAnalysis {
         }
 
         logger.info "\nAnalysis START"
-        long t = timing { connector.processQueue() }
+        long t = Helper.timing { connector.processQueue() }
         logger.info "Analysis END\n"
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
         connector

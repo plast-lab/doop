@@ -9,9 +9,10 @@ import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.dynamicanalysis.MemoryAnalyser
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.system.CPreprocessor
-import org.clyze.doop.system.Executor
-import org.clyze.doop.system.FileOps
+import org.clyze.utils.CPreprocessor
+import org.clyze.utils.Executor
+import org.clyze.utils.FileOps
+import org.clyze.utils.Helper
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.touch
@@ -252,7 +253,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
-        sootTime = timing {
+        sootTime = Helper.timing {
             //We invoke soot reflectively using a separate class-loader to be able
             //to support multiple soot invocations in the same JVM @ server-side.
             //TODO: Investigate whether this approach may lead to memory leaks,
@@ -419,18 +420,5 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-
-    static long timing(Closure c) {
-        long now = System.currentTimeMillis()
-        try {
-            c.call()
-        }
-        catch(e) {
-            throw e
-        }
-        // We measure time only in error-free cases
-        return ((System.currentTimeMillis() - now) / 1000).longValue()
     }
 }
