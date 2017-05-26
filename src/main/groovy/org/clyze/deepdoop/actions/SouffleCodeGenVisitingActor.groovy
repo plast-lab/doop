@@ -13,6 +13,7 @@ import org.clyze.deepdoop.datalog.element.atom.*
 import org.clyze.deepdoop.datalog.expr.*
 import org.clyze.deepdoop.system.Result
 
+import static org.clyze.deepdoop.datalog.Annotation.Kind.*
 import static org.clyze.deepdoop.datalog.element.LogicalElement.LogicType.AND
 
 @InheritConstructors
@@ -47,9 +48,10 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 			emit ".decl ${pred(n.atom.name, params)}"
 		}
 
-		if (n.annotations.any {it.kind == Annotation.Kind.OUTPUT}) {
+		if (n.annotations.any { it.kind == INPUT })
+			emit ".input ${mini(n.atom.name)}"
+		if (n.annotations.any { it.kind == OUTPUT })
 			emit ".output ${mini(n.atom.name)}"
-		}
 
 		return null
 	}

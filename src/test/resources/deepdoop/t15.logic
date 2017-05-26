@@ -18,3 +18,9 @@ Foo(ap, x) <- x = "J", ap = x.
 	Dog.
 	Cat.
 }
+
+@Input {
+	P1(x) -> string(x).
+	P2(x) -> int(x).
+	P3(x) -> string(x).
+}

@@ -19,6 +19,7 @@ import org.clyze.deepdoop.system.ErrorId
 import org.clyze.deepdoop.system.ErrorManager
 import org.clyze.deepdoop.system.SourceManager
 
+import static org.clyze.deepdoop.datalog.Annotation.Kind.*
 import static org.clyze.deepdoop.datalog.DatalogParser.*
 
 class DatalogListenerImpl extends DatalogBaseListener {
@@ -133,19 +134,15 @@ class DatalogListenerImpl extends DatalogBaseListener {
 		}
 		// Entity declaration
 		else if (ctx.predicateName()) {
-			if (annotations.any { !it.kind in [Annotation.Kind.ENTITY, Annotation.Kind.OUTPUT] })
-				ErrorManager.error(ErrorId.INVALID_ANNOTATION)
-
+			validateAnnotations("Entity", annotations)
 			def entity = new Entity(values[ctx.predicateName()], new VariableExpr("x"))
 			d = new Declaration(entity, [], annotations)
 		}
 		// Normal predicate declaration
 		else {
-			if (annotations.any { !it.kind in [Annotation.Kind.CONSTRUCTOR, Annotation.Kind.OUTPUT] })
-				ErrorManager.error(ErrorId.INVALID_ANNOTATION)
+			validateAnnotations("Declaration", annotations)
 
 			def atom = values[ctx.predicate()] as IAtom
-
 			def types = []
 			values[ctx.predicateList()].each { type ->
 				def p = type as Predicate
@@ -172,10 +169,8 @@ class DatalogListenerImpl extends DatalogBaseListener {
 
 	void exitDeclarationBlock(DeclarationBlockContext ctx) {
 		def annotations = values[ctx.annotationList()] ?: []
-		if (annotations.any { !it.kind in [Annotation.Kind.ENTITY, Annotation.Kind.OUTPUT] })
-			ErrorManager.error(ErrorId.INVALID_ANNOTATION)
-
-		ctx.declaration().each{ declCtx -> values[declCtx].annotations += annotations }
+		validateAnnotations("Decl Block", annotations)
+		ctx.declaration().each { declCtx -> values[declCtx].annotations += annotations }
 	}
 
 	void exitConstraint(ConstraintContext ctx) {
@@ -470,5 +465,19 @@ class DatalogListenerImpl extends DatalogBaseListener {
 
 	static void recLoc(ParserRuleContext ctx) {
 		SourceManager.instance.recLoc(ctx.start.getLine())
+	}
+
+	static void validateAnnotations(def key, def annotations) {
+		def allowedAnnotations = [
+				"Entity"     : EnumSet.of(ENTITY, OUTPUT),
+				"Declaration": EnumSet.of(CONSTRUCTOR, INPUT, OUTPUT),
+				"Decl Block" : EnumSet.of(ENTITY, INPUT, OUTPUT)
+		]
+		def expectedAnnotations = allowedAnnotations[key]
+
+		annotations.each {
+			if (!(it.kind in expectedAnnotations))
+				ErrorManager.error(ErrorId.INVALID_ANNOTATION, it.kind, key)
+		}
 	}
 }
