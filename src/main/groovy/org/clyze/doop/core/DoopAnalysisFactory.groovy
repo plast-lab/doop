@@ -386,7 +386,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         if (options.X_DRY_RUN.value) {
             options.X_STATS_NONE.value = true
-            options.RUN_SERVER_LOGIC.value = true
+            options.X_SERVER_LOGIC.value = true
             if (options.CACHE.value) {
                 logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
             }

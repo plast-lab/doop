@@ -108,12 +108,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
-            l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
+            l(longOpt: 'level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
             a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
             id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
             i(longOpt: 'inputFiles', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputFiles")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
-            t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
+            t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'TIMEOUT')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
         }
 

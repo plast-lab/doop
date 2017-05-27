@@ -342,10 +342,12 @@ class ClassicAnalysis extends DoopAnalysis {
                 .elapsedTime()
         }
 
-        if (!options.X_STOP_AT_FACTS.value && options.RUN_SERVER_LOGIC.value) {
+        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
+            cpp.preprocess("${outDir}/server.logic", "${Doop.addonsPath}/server-logic/queries.logic")
+
             connector.queue()
                 .timedTransaction("-- Server Logic --")
-                .addBlockFile("${Doop.addonsPath}/server-logic/queries.logic")
+                .addBlockFile("server.logic")
                 .commit()
                 .elapsedTime()
         }
