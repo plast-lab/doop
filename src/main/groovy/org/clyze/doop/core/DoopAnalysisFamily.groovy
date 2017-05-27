@@ -469,6 +469,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value:false,
 					nonStandard:true
 			),
+			new AnalysisOption<Integer>(
+					id:"X_SERVER_LOGIC_THRESHOLD",
+					name:"Xserver-logic-threshold",
+					argName:"THRESHOLD",
+					description:"Threshold when reporting point-to information in server logic (per points-to set). default: 1000",
+					value:1000,
+					nonStandard:true,
+					webUI:true,
+					forPreprocessor: true,
+					isAdvanced:true
+			),
 			/* End of non-standard flags */
 
 

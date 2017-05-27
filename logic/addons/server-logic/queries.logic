@@ -1,28 +1,58 @@
-Server:VarPointsTo(?class, ?var, ?heapId) <-
-  VarPointsTo(_, ?value, _, ?var),
-  Value:Id[?value] = ?heapId,
+_VPT(?value, ?var) <-
+  VarPointsTo(_, ?value, _, ?var).
+
+_IFPT(?value, ?field, ?basevalue) <-
+  InstanceFieldPointsTo(_, ?value, ?field, _, ?basevalue).
+
+_SFPT(?value, ?field) <-
+  StaticFieldPointsTo(_, ?value, ?field).
+
+_VPT:Count[?var] = ?n <-
+  agg<<?n = count()>> _VPT(_, ?var).
+
+_IFPT:Count[?field, ?basevalue] = ?n <-
+  agg<<?n = count()>> _IFPT(_, ?field, ?basevalue).
+
+_SFPT:Count[?field] = ?n <-
+  agg<<?n = count()>> _SFPT(_, ?field).
+
+
+Server:VarPointsTo(?class, ?var, ?valueId) <-
+  _VPT(?value, ?var),
+  _VPT:Count[?var] <= X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?value] = ?valueId,
   Var:DeclaringMethod(?var, ?method),
   Method:DeclaringType[?method] = ?class.
+
+Server:VarPointsTo(?class, ?var, "<<XL-pt-set>>") <-
+  _VPT:Count[?var] > X_SERVER_LOGIC_THRESHOLD,
+  Var:DeclaringMethod(?var, ?method),
+  Method:DeclaringType[?method] = ?class.
+
+Server:InstanceFieldPointsTo(?basevalueId, ?field, ?valueId) <-
+  _IFPT(?value, ?field, ?basevalue),
+  _IFPT:Count[?field, ?basevalue] <= X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?basevalue] = ?basevalueId,
+  Value:Id[?value] = ?valueId.
+
+Server:InstanceFieldPointsTo(?basevalueId, ?field, "<<XL-pt-set>>") <-
+  _IFPT:Count[?field, ?basevalue] > X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?basevalue] = ?basevalueId.
+
+Server:StaticFieldPointsTo(?field, ?valueId) <-
+  _SFPT(?value, ?field),
+  _SFPT:Count[?field] <= X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?value] = ?valueId.
+
+Server:StaticFieldPointsTo(?field, "<<XL-pt-set>>") <-
+  _SFPT:Count[?field] > X_SERVER_LOGIC_THRESHOLD.
+
 
 Server:CallGraphEdge(?invocation, ?toMethod) <-
   CallGraphEdge(_, ?invocation, _, ?toMethod).
 
 Server:CallGraphEdge(?invocation, ?toMethod) <-
   InvokedynamicCallGraphEdge(_, ?invocation, _, ?toMethod).
-
-_IsAssignHeapAllocation(?heap) <-
-  AssignHeapAllocation:Heap[_] = ?heap.
-
-Server:InstanceFieldPointsTo(?baseheapId, ?sig, ?heapId) <-
-  InstanceFieldPointsTo(_, ?value, ?sig, _, ?basevalue),
-  Value:Heap[?basevalue] = ?baseheap, 
-  _IsAssignHeapAllocation(?baseheap),
-  Value:Id[?value] = ?heapId,
-  Value:Id[?basevalue] = ?baseheapId.
-
-Server:StaticFieldPointsTo(?sig, ?heapId) <-
-  StaticFieldPointsTo(_, ?value, ?sig),
-  Value:Id[?value] = ?heapId.
 
 _Class:DeclaresMethod(?method, ?class) <-
   Method:DeclaringType[?method] = ?class.
