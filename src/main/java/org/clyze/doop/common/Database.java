@@ -10,14 +10,15 @@ public class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
     private File directory = null;
+    // Flag to control the uniqueness of the generated facts.
+    private boolean uniques;
 
     private final Map<PredicateFile, Writer> _writers;
     private final EnumMap<PredicateFile, HashSet<String>> _sets;
-    // Flag to control the uniqueness of the generated facts.
-    private boolean uniques = false;
 
-    public Database(File directory) throws IOException {
+    public Database(File directory, boolean uniques) throws IOException {
         this.directory = directory;
+        this.uniques = uniques;
         this._writers = new EnumMap<>(PredicateFile.class);
         this._sets = new EnumMap<>(PredicateFile.class);
 

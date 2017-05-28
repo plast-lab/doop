@@ -99,6 +99,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID:true
 			),
 			new AnalysisOption<Boolean>(
+					id:"UNIQUE_FACTS",
+					name:"unique-facts",
+					description:"Eliminate redundancy from .facts files.",
+					value:false
+			),
+			new AnalysisOption<Boolean>(
 					id:"GENERATE_JIMPLE",
 					name:"generate-jimple",
 					description:"Generate Jimple/Shimple files along with .facts files",

@@ -113,7 +113,7 @@ public class MemoryAnalyser {
     }
 
     public int getAndOutputFactsToDB(File factDir) throws IOException, InterruptedException {
-        Database db = new Database(factDir);
+        Database db = new Database(factDir, false);
 
         try {
             long startTime = System.nanoTime();

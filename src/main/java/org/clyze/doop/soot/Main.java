@@ -125,6 +125,9 @@ public class Main {
                     case "--noFacts":
                         sootParameters._noFacts = true;
                         break;
+                    case "--uniqueFacts":
+                        sootParameters._uniqueFacts = true;
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -139,6 +142,7 @@ public class Main {
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
+                        System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
 
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
@@ -364,7 +368,7 @@ public class Main {
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters._outputDir));
+        Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
         Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple);
