@@ -141,7 +141,7 @@ public class Main {
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
 
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
-                        System.err.println("  --generate-jimple-help                 Show help information regarding bytecode2jimple");
+                        System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
                         System.exit(0);
                     case "--generate-jimple-help":
                         System.err.println("\nusage: [options] file");
