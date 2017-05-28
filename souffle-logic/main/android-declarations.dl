@@ -17,7 +17,6 @@
 .decl PublicOnMethodOfLayoutControl(?meth:Method)
 .decl ProtectedOnMethodOfLayoutControl(?meth:Method)
 .decl OverridingProtectedOnMethodOfLayoutControl(?meth:Method)
-.decl _OptMethodFromVar(?var:Var, ?method:Method)
 .decl ReachableApplicationObjectOfType(?hctx:HContext, ?value:Value, ?type:Type)
 .decl ApplicationObjectFlowingToLibrary(?hctx:HContext, ?value:Value, ?ofType:Type)
 .decl PublicOnMethodOfReachableListener(?meth:Method)

@@ -55,9 +55,8 @@ ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" o
 
 // Also instantiate implicitly some library objects
 ImplicitlyInstantiatedLibraryType(?type) :-
-  ?type = "android.content.Intent",
-  isType(?type);
-  ?type = "android.os.Bundle",
+  (?type = "android.content.Intent";
+   ?type = "android.os.Bundle"),
   isType(?type).
 
 MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
@@ -93,34 +92,34 @@ AndroidLibraryListenerType(?type) :-
    contains("Callback", ?type)).
 
 ListenerType(?type) :-
-  SubtypeOf(?type, ?listenerType),
-  AndroidLibraryListenerType(?listenerType).
+  AndroidLibraryListenerType(?listenerType),
+  SubtypeOf(?type, ?listenerType).
 
 AndroidApplicationListenerClass(?class) :-
   AndroidApplicationClass(?class),
   ListenerType(?class).
 
 MethodDeclaredOrInherited(?meth, ?class) :-
-  Method_DeclaringType(?meth, ?class),
-  isClassType(?class).
+  isClassType(?class),
+  Method_DeclaringType(?meth, ?class).
 
 // This keeps the signature of the method in the superclass, if
 // lookup returns that method (and not an overriding one).
 MethodDeclaredOrInherited(?meth, ?class) :-
-  DirectSuperclass(?class, ?superClass),
   MethodDeclaredOrInherited(?meth, ?superClass),
   Method_Descriptor(?meth, ?descriptor),
   Method_SimpleName(?meth, ?simplename),
+  DirectSuperclass(?class, ?superClass),
   MethodLookup(?simplename, ?descriptor, ?class, ?meth).
 
 PublicMethodOfComponent(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?type),
   AndroidAppComponent(?type),
+  MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) :-
-  MethodDeclaredOrInherited(?meth, ?type),
   AndroidAppComponent(?type),
+  MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
 AppMethodOverridesAndroidLibraryMethod(?meth) :-
@@ -179,11 +178,6 @@ ReachableContext(?ctx, ?meth) :-
 // REVIEW: this is currently liberal. It checks that the app class
 // subtypes a library listener and that it has an "on*" method,
 // but that doesn't mean that method overrides one of the listener.
-
-
-// Currently, library code = an android.app class
-_OptMethodFromVar(?var, ?meth) :-
-  Var_DeclaringMethod(?var, ?meth).
 
 // ... all analysis-reachable objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
@@ -253,10 +247,11 @@ ReifiedAndroidObjectValue(?value, ?type) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ForcedReachableAndroidContext(?ctx, ?meth),
+  ImmutableHContextFromContext(?ctx, ?hctx),
   Method_DeclaringType(?meth, ?class),
   ReifiedAndroidObjectValue(?value, ?class),
-  ThisVar(?meth, ?this),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  ThisVar(?meth, ?this).
+  .plan 1:(2,1,3,4,5)
 
 // a reachable object can always be the receiver for its own methods
 VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
@@ -265,6 +260,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) :-
   ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
 //  ReachableApplicationObjectOfType(?hctx, ?value, ?ofType),
   ThisVar(?meth, ?this).
+  .plan 1:(3,2,1,4)
 
 // ... and do the same for argument objects.
 // REVIEW: this is imprecise. It assigns any argument to a
@@ -279,35 +275,36 @@ FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  ImmutableHContextFromContext(?ctx, ?hctx),
   SubtypeOf(?type, ?formalType),
-  ReifiedAndroidObjectValue(?value, ?type),
-  ImmutableHContextFromContext(?ctx, ?hctx).
+  ReifiedAndroidObjectValue(?value, ?type).
+  .plan 1:(2,1,3,4)
 
 
 // Do the same (use as arguments everywhere applicable) for application
 // listeners that flow into library code.
 ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?possibleType) :-
-  SupertypeOf(?possibleType, ?ofType),
-  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType).
+  ApplicationObjectFlowingToLibrary(?hctx, ?value, ?ofType),
+  SupertypeOf(?possibleType, ?ofType).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
   FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
   ApplicationObjectFlowingToLibraryStaticType(?hctx, ?value, ?formalType).
-
+  .plan 1:(2,1)
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
 
 
 ViewRetrievalByArg0MethodInvocation(?invo) :-
-  MethodInvocation_Method(?invo, ?method),
-  Method_SimpleName(?method, ?calleeName),
   (?calleeName = "inflate";
    ?calleeName = "getView";
    ?calleeName = "findViewById"),
-  Method_ReturnType(?method, ?retType),
+  Method_SimpleName(?method, ?calleeName),
   ?retType = "android.view.View",
-  isType(?retType).
+  Method_ReturnType(?method, ?retType),
+  isType(?retType),
+  MethodInvocation_Method(?invo, ?method).
 // Lots of wrapper methods. Let's do more liberal matching.
   // (Method:Id(?signature:"<android.view.LayoutInflater: android.view.View inflate(int,android.view.ViewGroup,boolean)>");
   //  Method:Id(?signature:"<android.widget.Adapter: android.view.View getView(int,android.view.View,android.view.ViewGroup)>");
