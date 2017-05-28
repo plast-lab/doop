@@ -1,0 +1,57 @@
+//// Heuristic pre-analysis to tell us when there (likely) is a flow
+//// from a method's arguments to its return.
+
+// There is a flow (of any kind) between two local vars
+.decl LocalVarFlow(?to:Var, ?from:Var)
+
+LocalVarFlow(?to, ?from) :-
+  AssignLocal(?from, ?to, _);
+  AssignCast(_, ?from, ?to, _).
+
+// There is a flow from a method formal, at a given index, to a method local
+.decl InFlowTo(?index:number, ?var:Var)
+
+InFlowTo(?index, ?inVar) :-
+  FormalParam(?index, _, ?inVar).
+// HACK: use 7 to designate receiver
+InFlowTo(7, ?inVar) :-
+  ThisVar(_, ?inVar).
+
+InFlowTo(?index, ?toVar) :-
+  InFlowTo(?index, ?someVar),
+  LocalVarFlow(?toVar, ?someVar).
+
+InFlowTo(?index, ?toVar) :-
+  StoreInstanceField(?someVar, ?toVar, _, _),
+  InFlowTo(?index, ?someVar).
+
+// Method that has its in-value (from a given-index formal param) flow to returns.
+.decl InOutFlowMethod(?index:number, ?method:Method)
+
+InOutFlowMethod(?index, ?method) :-
+  InFlowTo(?index, ?outVar),
+  ReturnVar(?outVar, ?method).
+
+// Now more deeply recursive logic: define LocalVarFlow itself based
+// on InOutFlowMethod: a local var has values flow to another through
+// a method call that has its params flow to its returns.
+LocalVarFlow(?to, ?from) :-
+  InOutFlowMethodInvocationParam(?from, ?invo),
+  AssignReturnValue(?invo, ?to).
+
+.decl InOutFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)
+
+// Adding virtual is a heuristic, but it seems to be useful
+InOutFlowMethodInvocationParam(?param, ?invo) :-
+  (isSpecialMethodInvocation_Insn(?invo);
+   isStaticMethodInvocation_Insn(?invo);
+   isVirtualMethodInvocation_Insn(?invo)),
+  MethodInvocation_Method(?invo, ?toMeth),
+  InOutFlowMethod(?index, ?toMeth),
+  ActualParam(?index, ?invo, ?param).
+
+InOutFlowMethodInvocationParam(?param, ?invo) :-
+  (SpecialMethodInvocation_Base(?invo, ?param);
+   VirtualMethodInvocation_Base(?invo, ?param)),
+  MethodInvocation_Method(?invo, ?toMeth),
+  InOutFlowMethod(7, ?toMeth).
