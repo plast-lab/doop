@@ -243,10 +243,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
                 return o
-            } else if (option.id == "USER_SUPPLIED_ID") {
-                Option o = new Option('id', option.name, true, option.description)
-                o.setArgName(option.argName)
-                return o
             } else if (option.id == "DYNAMIC") {
                 Option o = new Option('d', option.name, true, option.description)
                 o.setArgs(Option.UNLIMITED_VALUES)

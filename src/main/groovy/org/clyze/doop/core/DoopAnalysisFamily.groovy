@@ -56,7 +56,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 				),
 				new AnalysisOption<String>(
 						id: "USER_SUPPLIED_ID",
-						name: "identifier",
+						name: "id",
 						argName: "ID",
 						value: null,
 						webUI: true
