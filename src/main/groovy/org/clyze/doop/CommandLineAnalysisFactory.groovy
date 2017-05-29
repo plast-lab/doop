@@ -233,6 +233,14 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
      * @param cli - the cli builder.
      */
     private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
+        convertAnalysisOptionsToCliOptions(options).each { cli << it }
+    }
+
+    private static String desc(AnalysisOption option) {
+        option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
+    }
+
+    static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
         options.collect { AnalysisOption option ->
             if (option.id == "ANALYSIS") {
                 Option o = new Option('a', option.name, true, desc(option))
@@ -257,10 +265,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                 //Option is a boolean
                 return new Option(null, option.name, false, option.description)
             }
-        }.each { cli << it }
-    }
-
-    private static String desc(AnalysisOption option) {
-        option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
+        }
     }
 }

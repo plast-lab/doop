@@ -571,10 +571,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 
 	private static List<String> analysesNames(String doopAnalysesDir) {
 		List<String> analyses = []
-		new File(doopAnalysesDir).eachDir { File dir ->
-			def f = new File(dir, "analysis.logic")
-			if (f.exists() && f.isFile()) analyses << dir.name
-		}
+		if (!doopAnalysesDir)
+			new File(doopAnalysesDir).eachDir { File dir ->
+				def f = new File(dir, "analysis.logic")
+				if (f.exists() && f.isFile()) analyses << dir.name
+			}
 		return analyses.sort()
 	}
 }
