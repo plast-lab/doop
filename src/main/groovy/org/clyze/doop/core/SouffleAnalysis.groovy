@@ -127,7 +127,7 @@ class SouffleAnalysis extends DoopAnalysis {
         if (name == "sound-may-point-to") {
             cpp.includeAtEnd("$analysis", "${mainPath}/string-constants.dl")
             cpp.includeAtEnd("$analysis", "${mainPath}/exceptions.dl")
-            cpp.includeAtEnd("$analysis", "${analysisPath}/declarations.dl",
+            cpp.includeAtEndIfExists("$analysis", "${analysisPath}/declarations.dl",
                     "${mainPath}/context-sensitivity-declarations.dl")
             cpp.includeAtEnd("$analysis", "${analysisPath}/analysis.dl")
         }
