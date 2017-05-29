@@ -12,7 +12,6 @@ public class SootParameters {
      List<String> _libraries = new ArrayList<>();
      String _outputDir = null;
      String _main = null;
-     boolean _classicFactGen = false;
      boolean _ssa = false;
      boolean _android = false;
      String _androidJars = null;

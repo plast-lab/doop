@@ -119,9 +119,6 @@ public class Main {
                     case "--stdout":
                         sootParameters._toStdout = true;
                         break;
-                    case "--sequential":
-                        sootParameters._classicFactGen = true;
-                        break;
                     case "--noFacts":
                         sootParameters._noFacts = true;
                         break;
