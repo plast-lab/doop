@@ -1,5 +1,5 @@
 // Analysis that stays context insensitive, except for in-out-flow methods,
-// for which it tries to get to 2objH.
+// for which it tries to get to S2objH.
 
 #include "../../main/in-out-flow.logic"
 
