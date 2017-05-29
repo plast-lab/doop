@@ -11,7 +11,9 @@
 // Again, this may trigger creation of a new object.
 #define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
 
 #define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(callerCtx, invocation, hctx, value)
@@ -22,10 +24,12 @@
 // For this analysis, static calls just keep the same context as the
 // caller. *Not* creating a new one, but pretending to, nonetheless,
 // so the engine doesn't barf.
-#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+#define MergeStaticMacro(callerCtx, invo, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealContext1FromContext[callerCtx], \
-                         RealContext2FromContext[callerCtx]] = calleeCtx
+  SpecialContextFromRealContext[RealContext1FromContext[callerCtx], invoComp, \
+                                RealContext2FromContext[callerCtx]] = calleeCtx, \
+  ContextComponent(invoComp), \
+  ContextComponent:MethodInvocation[invo] = invoComp
 
 #define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
   MergeStaticBasis(callerCtx, invocation)
@@ -37,11 +41,21 @@
 // have the same logic as plain Merge for this analysis.
 #define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], value] = newCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], valueComp] = newCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
 
 #define MergeStartupMacro(hctx, value, calleeCtx) \
   Context(calleeCtx), \
-  ContextFromRealContext[RealHContextFromHContext[hctx], value] = calleeCtx
+  ContextFromRealContext[RealHContextFromHContext[hctx], valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
+
+#define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[valueComp, valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp                                   
 
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
@@ -54,22 +68,16 @@
 // hctx) is a hint for avoiding this problem.
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
-  ContextFromRealContext[RealContext2FromContext[callerCtx], value] = newCtx
-
+  ContextFromRealContext[RealContext2FromContext[callerCtx], valueComp] = newCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp
 
 #define InitContextMacro(valueId) \
-  Context(ctx), ContextFromRealContext[value, value] = ctx \
-  <- DummyContextElement[] = value
+  Context(ctx), ContextFromRealContext[valueComp, valueComp] = ctx \
+  <- DummyContextComponent[] = valueComp
 
 #define InitHContextMacro(valueId) \
-  HContext(hctx), HContextFromRealHContext[value] = hctx \
-  <- DummyContextElement[] = value
+  HContext(hctx), HContextFromRealHContext[valueComp] = hctx \
+  <- DummyContextComponent[] = valueComp
 
-// #define InitContextMacro(valueId) \
-//   Context(ctx), ContextFromRealContext[value, value] = ctx \
-//   <- Value:byId[valueId] = value
-
-// #define InitHContextMacro(valueId) \
-//   HContext(hctx), HContextFromRealHContext[value] = hctx \
-//   <- Value:byId[valueId] = value
   
