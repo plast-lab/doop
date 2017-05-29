@@ -97,7 +97,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     vars.platformFiles,
                     commandsEnv)
         } else {
-            if (name != "sound-may-point-to")
+            if (name != "sound-may-point-to") {
+                options.CFG_ANALYSIS.value = false
                 analysis = new ClassicAnalysis(
                         analysisId,
                         name.replace(File.separator, "-"),
@@ -108,8 +109,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         vars.inputFiles,
                         vars.platformFiles,
                         commandsEnv)
-            else {
-                options.CFG_ANALYSIS.value = true
+            } else {
                 analysis = new SoundMayAnalysis(
                         analysisId,
                         name.replace(File.separator, "-"),
@@ -243,7 +243,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     throw new RuntimeException("Invalid JRE version: $version")
                 }
                 // generate the JRE constant for the preprocessor
-                AnalysisOption<Boolean> jreOption = new AnalysisOption<Boolean>(
+                def jreOption = new BooleanAnalysisOption(
                         id:"JRE1"+version,
                         value:true,
                         forPreprocessor: true
@@ -446,6 +446,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             } else {
                 logger.warn "\nWARNING: Handling of Java reflection is disabled!\n"
             }
+        }
+
+        options.values().each {
+            if (it.argName && it.value && it.validValues && !(it.value in it.validValues))
+                throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
         }
 
         logger.debug "---------------"

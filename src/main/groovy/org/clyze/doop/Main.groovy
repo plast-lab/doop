@@ -34,7 +34,6 @@ class Main {
         CommonHelper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
 
         try {
-
             // The builder for displaying usage should not include non-standard flags
             CliBuilder usageBuilder = CommandLineAnalysisFactory.createCliBuilder(false)
             // The builder for displaying usage of non-standard flags
@@ -53,10 +52,9 @@ class Main {
             if (index == -1) {
                 argsToParse = args
                 bloxOptions = null
-            }
-            else {
-                argsToParse = args[0..(index-1)]
-                bloxOptions = args[(index+1)..(args.length-1)].join(' ')
+            } else {
+                argsToParse = args[0..(index - 1)]
+                bloxOptions = args[(index + 1)..(args.length - 1)].join(' ')
             }
 
             OptionAccessor cli = builder.parse(argsToParse)
@@ -64,23 +62,19 @@ class Main {
             if (!cli) {
                 usageBuilder.usage()
                 return
-            }
-            else if (cli.arguments().size() != 0) {
-                println "Invalid argument specified: " + cli.arguments()[0]
+            } else if (cli.arguments().size() != 0) {
+                logger.info "Invalid argument specified: " + cli.arguments()[0]
                 usageBuilder.usage()
                 return
-            }
-            else if (cli['h']) {
+            } else if (cli['h']) {
                 usageBuilder.usage()
                 return
-            }
-            else if (cli['X']) {
+            } else if (cli['X']) {
                 nonStandardUsageBuilder.usage()
                 return
             }
 
             String userTimeout
-            analysis
             if (cli['p']) {
                 //create analysis from the properties file & the cli options
                 String file = cli['p'] as String
@@ -93,13 +87,12 @@ class Main {
                 userTimeout = cli['t'] ?: props.getProperty("timeout")
 
                 analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
-            }
-            else {
+            } else {
                 //create analysis from the cli options
                 try {
                     Helper.checkMandatoryArgs(cli)
                 }
-                catch(e) {
+                catch (e) {
                     println e.getMessage()
                     usageBuilder.usage()
                     return
@@ -163,17 +156,16 @@ class Main {
         try {
             timeout = Integer.parseInt(userTimeout)
         }
-        catch(ex) {
-            println "Using the default timeout ($timeout min)."
+        catch (ex) {
+            logger.info "Using the default timeout ($timeout min)."
             return defaultTimeout
         }
 
         if (timeout <= 0) {
-            println "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
+            logger.info "Invalid user supplied timeout: $timeout - using the default ($defaultTimeout min)."
             return defaultTimeout
-        }
-        else {
-            println "Using a timeout of $timeout min."
+        } else {
+            logger.info "Using a timeout of $timeout min."
             return timeout
         }
     }
