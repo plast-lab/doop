@@ -75,34 +75,31 @@ class Main {
             }
 
             String userTimeout
-            if (cli['p']) {
-                //create analysis from the properties file & the cli options
-                String file = cli['p'] as String
-                File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
-                File propsBaseDir = f.getAbsoluteFile().getParentFile()
-                Properties props = FileOps.loadProperties(f)
+            try {
+                if (cli['p']) {
+                    //create analysis from the properties file & the cli options
+                    String file = cli['p'] as String
+                    File f = FileOps.findFileOrThrow(file, "Not a valid file: $file")
+                    File propsBaseDir = f.getAbsoluteFile().getParentFile()
+                    Properties props = FileOps.loadProperties(f)
 
-                changeLogLevel(cli['l'] ?: props.getProperty("level"))
+                    changeLogLevel(cli['l'] ?: props.getProperty("level"))
 
-                userTimeout = cli['t'] ?: props.getProperty("timeout")
+                    userTimeout = cli['t'] ?: props.getProperty("timeout")
 
-                analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
-            } else {
-                //create analysis from the cli options
-                try {
-                    Helper.checkMandatoryArgs(cli)
+                    analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
+                } else {
+                    changeLogLevel(cli['l'])
+
+                    userTimeout = cli['t']
+
+                    analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
                 }
-                catch (e) {
-                    println e.getMessage()
-                    usageBuilder.usage()
-                    return
-                }
-
-                changeLogLevel(cli['l'])
-
-                userTimeout = cli['t']
-
-                analysis = new CommandLineAnalysisFactory().newAnalysis(cli)
+            }
+            catch (e) {
+                println e.getMessage()
+                usageBuilder.usage()
+                return
             }
 
             int timeout = parseTimeout(userTimeout, DEFAULT_TIMEOUT)

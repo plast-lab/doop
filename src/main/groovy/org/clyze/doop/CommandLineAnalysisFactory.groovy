@@ -94,8 +94,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
 
-        def list = Helper.namesOfAvailableAnalyses(Doop.analysesPath).sort().join(', ')
-
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),
             usage:  USAGE,
@@ -108,9 +106,6 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
             l(longOpt: 'level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
-            a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
-            id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            i(longOpt: 'inputFiles', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputFiles")
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'TIMEOUT')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
@@ -240,15 +235,27 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
      */
     private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
         options.collect { AnalysisOption option ->
-            if (option.id == "DYNAMIC") {
-                //Special handling of DYNAMIC option
+            if (option.id == "ANALYSIS") {
+                Option o = new Option('a', option.name, true, desc(option))
+                o.setArgName(option.argName)
+                return o
+            } else if (option.id == "INPUTS") {
+                Option o = new Option('i', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                return o
+            } else if (option.id == "USER_SUPPLIED_ID") {
+                Option o = new Option('id', option.name, true, option.description)
+                o.setArgName(option.argName)
+                return o
+            } else if (option.id == "DYNAMIC") {
                 Option o = new Option('d', option.name, true, option.description)
                 o.setArgs(Option.UNLIMITED_VALUES)
                 o.setArgName(option.argName)
                 return o
             } else if (option.argName) {
                 //Option accepts a String value
-                Option o = new Option(null, option.name, true, option.description)
+                Option o = new Option(null, option.name, true, desc(option))
                 o.setArgName(option.argName)
                 return o
             } else {
@@ -256,5 +263,9 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
                 return new Option(null, option.name, false, option.description)
             }
         }.each { cli << it }
+    }
+
+    private static String desc(AnalysisOption option) {
+        option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
     }
 }

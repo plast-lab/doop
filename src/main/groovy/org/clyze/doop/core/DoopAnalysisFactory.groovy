@@ -451,6 +451,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 throw new RuntimeException("Invalid value `$it.value` for option: $it.name")
         }
 
+        options.values().findAll { it.isMandatory }.each {
+            if (!it.value) throw new RuntimeException("Missing mandatory argument: $it.name")
+        }
+
         logger.debug "---------------"
         AnalysisVars vars = new AnalysisVars(
                 name:              name,
