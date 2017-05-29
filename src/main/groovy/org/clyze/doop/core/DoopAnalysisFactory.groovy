@@ -84,6 +84,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         DoopAnalysis analysis
         if (options.SOUFFLE.value) {
+            options.CFG_ANALYSIS.value = false
             analysis = new SouffleAnalysis(
                     analysisId,
                     name.replace(File.separator, "-"),
