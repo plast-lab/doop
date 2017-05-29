@@ -1,7 +1,7 @@
 package org.clyze.doop.core
 
 import org.apache.log4j.Logger
-import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.*
 import org.clyze.utils.FileOps
 
 /**
@@ -80,7 +80,7 @@ class Doop {
         new DoopAnalysisFamily().supportedOptions().each {
             AnalysisOption option ->
             defaultOptionsMap.put(option.id, option)
-            options.put(option.id, AnalysisOption.newInstance(option))
+            options.put(option.id, option.clone())
         }
         return options
     }
@@ -175,9 +175,14 @@ class Doop {
                         // If the cl option has an arg, its value defines the value of the
                         // respective analysis option
                         else if (option.argName) {
-                            option.value = cli[(option.name)]
+                            if (option instanceof BooleanAnalysisOption)
+                                option.value = optionValue.toBoolean()
+                            else if (option instanceof IntegerAnalysisOption)
+                                option.value = optionValue.toInteger()
+                            else
+                                option.value = optionValue
                         }
-                        // If the cl option has no arg and it's a boolean flag. Toggle the
+                        // If the cl option has no arg and it's a boolean flag toggle the
                         // default value of the respective analysis option
                         else {
                             def defaultOption = defaultOptionsMap.get(option.id)

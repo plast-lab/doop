@@ -1,8 +1,7 @@
 package org.clyze.doop
 
 import org.apache.commons.cli.Option
-import org.clyze.analysis.AnalysisFamily
-import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.*
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.core.DoopAnalysisFactory
@@ -213,6 +212,12 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         if (option.isFile) {
             type = "(file)"
+        }
+        else if (option.argName && option instanceof BooleanAnalysisOption) {
+            type = "(boolean)"
+        }
+        else if (option.argName && option instanceof IntegerAnalysisOption) {
+            type = "(boolean)"
         }
         else if (option.argName) {
             type = "(string)"

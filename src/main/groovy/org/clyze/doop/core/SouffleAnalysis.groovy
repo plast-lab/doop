@@ -64,7 +64,7 @@ class SouffleAnalysis extends DoopAnalysis {
         produceStats()
 
         compileAnalysis()
-        executeAnalysis(Integer.parseInt(options.JOBS.value.toString()))
+        executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
 
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()
         File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
