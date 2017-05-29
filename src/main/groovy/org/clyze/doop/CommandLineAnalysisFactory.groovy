@@ -6,7 +6,6 @@ import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.core.DoopAnalysisFactory
 import org.clyze.doop.core.DoopAnalysisFamily
-import org.clyze.doop.core.Helper
 
 /**
  * A factory for creating Analysis objects from the command line.

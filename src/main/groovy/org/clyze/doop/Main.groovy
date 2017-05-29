@@ -7,9 +7,8 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
-import org.clyze.doop.core.Helper
 import org.clyze.utils.FileOps
-import org.clyze.utils.Helper as CommonHelper
+import org.clyze.utils.Helper
 
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -31,7 +30,7 @@ class Main {
     static void main(String[] args) {
 
         Doop.initDoop(System.getenv("DOOP_HOME"), System.getenv("DOOP_OUT"), System.getenv("DOOP_CACHE"))
-        CommonHelper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
+        Helper.initLogging("INFO", "${Doop.doopHome}/build/logs", true)
 
         try {
             // The builder for displaying usage should not include non-standard flags
