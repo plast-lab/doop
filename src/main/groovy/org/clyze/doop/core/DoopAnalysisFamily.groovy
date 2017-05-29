@@ -54,6 +54,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI:true,
 					forPreprocessor:true                                                
 			),
+			new AnalysisOption<String>(
+					id: "IMPORT_PARTITIONS",
+					name: "import-partitions",
+					argName: "file",
+					description: "Specify the partitions.",
+					value: null,
+					webUI: false,
+					forPreprocessor: true
+			),
 			new AnalysisOption<Boolean>(
 					id:"SANITY",
 					name:"sanity",

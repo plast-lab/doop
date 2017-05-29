@@ -71,3 +71,5 @@ SCCWithMaxCountOfTypes(?idType) <-
 NumberOfRelevantTypes[] = ?num <-
   agg<<?num = count()>>(SCCType(_)).
   
+
+TypeToPartitionId[?inClass] = ?sccId <- TypeToSCCId[?inClass] = ?sccId.

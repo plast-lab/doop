@@ -1,4 +1,6 @@
-#include "../../main/classes-scc.logic"
+#ifndef IMPORT_PARTITIONS
+ #include "../../main/classes-scc.logic"
+#endif
 #include "../../main/in-out-flow.logic"
 
 EmptyContext[] = ?ctx -> Context(?ctx).
@@ -398,8 +400,8 @@ UninterestingInvocation(?invo) <-
 PossiblyInterestingMethod(?inmethod),
 InterestingAllocation(?heap) <-
   AssignHeapAllocation(?heap, _, ?inmethod),
-  TypeToSCCId[HeapAllocation:Type[?heap]] = ?sccIdOfHeap,
-  TypeToSCCId[Method:DeclaringType[?inmethod]] = ?sccIdOfMethod,
+  TypeToPartitionId[HeapAllocation:Type[?heap]] = ?sccIdOfHeap,
+  TypeToPartitionId[Method:DeclaringType[?inmethod]] = ?sccIdOfMethod,
   ?sccIdOfHeap != ?sccIdOfMethod.
 
 InterestingMethod(?method) <-
@@ -407,17 +409,17 @@ InterestingMethod(?method) <-
   !UninterestingMethod(?method).
 
 // Convenience mappings from all usual concepts (invo-sites, contexts, methods) to SCC
-SCCForInvocation[?invo] = ?sccId <-
+PartitionForInvocation[?invo] = ?sccId <-
   Instruction:Method[?invo] = ?inmethod,
   Method:DeclaringType[?inmethod] = ?inClass,
-  TypeToSCCId[?inClass] = ?sccId.
+  TypeToPartitionId[?inClass] = ?sccId.
 
-SCCForMethod[?method] = ?sccId <-
+PartitionForMethod[?method] = ?sccId <-
   Method:DeclaringType[?method] = ?inClass,
-  TypeToSCCId[?inClass] = ?sccId.
+  TypeToPartitionId[?inClass] = ?sccId.
    
-SCCForValue[?value] = ?sccId <-
+PartitionForValue[?value] = ?sccId <-
   Value:DeclaringType[?value] = ?type,
-  TypeToSCCId[?type] = ?sccId.
+  TypeToPartitionId[?type] = ?sccId.
 
 
