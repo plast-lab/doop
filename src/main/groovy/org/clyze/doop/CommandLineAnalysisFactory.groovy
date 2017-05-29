@@ -213,10 +213,10 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         if (option.isFile) {
             type = "(file)"
         }
-        else if (option.argName && options instanceof BooleanAnalysisOption) {
+        else if (option.argName && option instanceof BooleanAnalysisOption) {
             type = "(boolean)"
         }
-        else if (option.argName && options instanceof IntegerAnalysisOption) {
+        else if (option.argName && option instanceof IntegerAnalysisOption) {
             type = "(boolean)"
         }
         else if (option.argName) {
