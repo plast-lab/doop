@@ -285,9 +285,20 @@ public class Main {
         }
 
         Scene scene = Scene.v();
-        scene.setSootClassPath(sootParameters._inputs.get(0));
-        for (int i = 0; i < sootParameters._libraries.size(); i++) {
-            scene.extendSootClassPath(sootParameters._libraries.get(i));
+        scene.setSootClassPath("");
+        for (String input : sootParameters._inputs) {
+            if (input.endsWith(".jar") || input.endsWith(".jar")) {
+                System.out.println("Adding archive: " + input);
+            }
+            else {
+                System.out.println("Adding file: " + input);
+            }
+            scene.extendSootClassPath(input);
+        }
+
+        for (String lib : sootParameters._libraries) {
+            System.out.println("Adding archive for resolving: " + lib);
+            scene.extendSootClassPath(lib);
         }
 
         if (sootParameters._main != null) {
