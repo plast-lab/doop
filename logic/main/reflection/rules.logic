@@ -471,7 +471,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   SupertypeOf(Var:Type[?this], Value:Type[?value]).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
-A1(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
   OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
@@ -508,7 +507,6 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   ThisVar[?tomethod] = ?this.
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-A2(?hctx, ?value, ?calleeCtx, ?this),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   <-
   OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
@@ -556,7 +554,6 @@ ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) ->
 InitializedClass(?type) <-
   ReflectiveAssignClassConstant(_, _, ?type).
 
-A3(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   ReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
   ReifiedClass[?type] = ?value,
@@ -572,7 +569,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) ->
   Context(?ctx), Var(?to), Method(?signature).
 
-A4(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to) <-
   ReflectiveAssignMethodConstant(?ctx, ?to, ?signature),
   ReifiedMethod[?signature] = ?value.
@@ -584,7 +580,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to) <-
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) ->
   Context(?ctx), Var(?to), Field(?signature).
 
-A5(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to) <-
   ReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
   ReifiedField[?signature] = ?value.
@@ -614,7 +609,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   SubtypeOf(?type, ?vartype).
 #else
 InitializedClass(?type),
-A6(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?var),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?var) <-
   AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var), // recursive
   ReflectiveAllocation[?instruction, ?type]  = ?value,
@@ -660,7 +654,6 @@ LoadReflectiveValueArrayIndex(?calleeCtx, ?to, ?basehctx, ?basevalue) <-
   InvokeArgLoadArrayIndex(?calleeCtx, ?to, ?callerCtx, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?callerCtx, ?base).
 
-A7(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   LoadReflectiveValueArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
@@ -683,7 +676,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
 ReflectiveLoadStaticField(?ctx, ?to, ?signature) ->
   Field(?signature), Context(?ctx), Var(?to).
 
-A8(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ReflectiveLoadStaticField(?ctx, ?to, ?signature),
   StaticFieldPointsTo(?hctx, ?value, ?signature),
@@ -728,7 +720,6 @@ ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) <-
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
 // normal value loads) to filter type-incorrect values.
-A9(?hctx, ?value, ?ctx, ?to),
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ReflectiveLoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue),
@@ -1007,7 +998,6 @@ SpecialMissingGetValueFromGetField[?invocation] = ?value
 
 // Logic to catch unknown results of Class.forName invocations.
 // These may flow to casts, so we'll get useful info back.
-A10(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   SpecialMissingForNameValue[?invocation] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -1018,7 +1008,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
 // Class.newInstance. At every newInstance to which an unknown object
 // created by forName flows, we return a new unknown object 
 // (of type Object and not Class) that remembers the forName site.
-A11(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
   java:lang:Class:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
@@ -1026,7 +1015,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
   SpecialMissingNewInstanceValue[?forNameInvocation] = ?specialvalue.
 
 // Similar flow of special object through get[Declared]Constructor
-A12(ImmutableHContextFromContext[?ctx], ?specialConstructorValue, ?ctx, ?to),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialConstructorValue, ?ctx, ?to) <-
   (java:lang:Class:getConstructor(?to, ?var);
    java:lang:Class:getDeclaredConstructor(?to, ?var)),
@@ -1050,7 +1038,6 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) <-
 
 // Even though there was one more step in the special object propagation,
 // in the end Constructor.newInstance is handled similarly to Class.newInstance.
-A13(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
   java:lang:reflect:Constructor:newInstance(_, ?to, ?var),
   VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
@@ -1208,7 +1195,6 @@ OptMethodType(?signature, ?classtype) <-
 
 // A getMethod returns a special value that marks where it came from, so
 // we can track all uses of results returned by that getMethod invocation
-A21(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   SpecialMissingGetMethodValue[?invocation] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -1218,8 +1204,7 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
 // At the site of an invoke over a special method object (that marks
 // its "getMethod" origin), return a new special object that remembers
 // the original getMethod invocation site.
-A14(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var),
-VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-  
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
   java:lang:reflect:Method:invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
   OptSpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
@@ -1271,7 +1256,6 @@ OptFieldType(?type, ?signature, ?declaringClassType) <-
    Field:Type[?signature] = ?type.
 
 // special value returned by a getField
-A15(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   SpecialMissingGetFieldValue[?invocation] = ?value,
   AssignReturnValue[?invocation] = ?return,
@@ -1280,7 +1264,6 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
 
 // Make a "get" call over a special field (which knows its getField origin)
 // return a special object that also remembers the original getField call.
-A16(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
   java:lang:reflect:Field:get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
@@ -1351,7 +1334,6 @@ OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocati
 
 // Make an invoke return a special object that remembers the method it's
 // supposed to be called on.
-A17(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
   OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocation),
   SpecialMissingInvokeValueFromGetMethods[?getMethodsInvocation] = ?specialvalue,
@@ -1421,7 +1403,6 @@ OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation , ?ctx, ?invocation) <
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
-A18(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
   OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation , ?ctx, ?invocation),
   SpecialMissingGetValueFromGetFields[?getFieldsInvocation] = ?specialvalue,
@@ -1508,7 +1489,6 @@ MarkerReflectiveObject[?invocation] = ?value
  * Next comes the main "invention of objects" analysis
  *************************************************************/
 // Propagate the marker object everywhere
-A19(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return),
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   (java:lang:Class:newInstance(?invocation, _, _);
    java:lang:reflect:Constructor:newInstance(?invocation, _, _);
@@ -1533,8 +1513,7 @@ OptMarkerReflectiveObject(?invocation, ?value) <-
 // flow to it, we invent a new object (with the cast's type) and let if flow
 // from the cast!
 // REVIEW: the reuse of hctx is arbitrary
-A20(?hctx, ?value, ?ctx, ?to),
-VarPointsTo(?hctx, ?value, ?ctx, ?to) <-  
+VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   Opt2AssignCast(_, ?type, ?to, ?from),
   VarPointsTo(?hctx, ?markervalue, ?ctx, ?from),
   OptMarkerReflectiveObject(?invocation, ?markervalue),
