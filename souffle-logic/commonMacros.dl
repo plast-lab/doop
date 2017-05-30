@@ -27,6 +27,10 @@
    isValue(value), \
    Value_Type(value, type)
 
+#define SpecialValueConsMacro(value, type) \
+   isValue(value), \
+   Value_Type(value, type)
+
 #define PlusVar(var, method, type) \
    isVar(var), \
    Var_Type(var, type), \
