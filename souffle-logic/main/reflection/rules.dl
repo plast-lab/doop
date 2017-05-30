@@ -351,12 +351,8 @@ ReifiedField(?signature, cat(cat("<<reified field ", ?signature), ">>"))
 // methods cannot be invoked through reflection.
 ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) :-
   ReflectiveMethodInvocation(?ctx, ?invocation, ?signature),
-  ?private = "private",
-  isModifier(?private),
-  Method_Modifier(?private, ?signature),
-  ?static = "static",
-  isModifier(?static),
-  ! Method_Modifier(?static, ?signature),
+  Method_Modifier("private", ?signature),
+  ! Method_Modifier("static", ?signature),
   ReflectiveBaseVar(?invocation, ?base).
 
 // Static method invocations
@@ -1036,7 +1032,7 @@ ClassSubtype(?subtype, ?type) :-
 .decl NumberOfClassSubtypes(?type:ClassType, ?count:number)
 
 NumberOfClassSubtypes(?type, ?count) :-
-  isClassType(?type),
+  ClassSubtype(_, ?type),
   ?count = count : ClassSubtype(_, ?type).
 
 .decl _OptMethodWithVarCast(?subtype:Type, ?inMethod:Method, ?from:Var)
@@ -1087,8 +1083,8 @@ TypeMatchingMethod(?subtype, ?constant) :-
 .decl NumberOfTypesMatchingMethod(?constant:HeapAllocation, ?n:number)
 
 NumberOfTypesMatchingMethod(?constant, ?n) :-
-  isHeapAllocation(?constant),
-  ?n = count : TypeMatchingMethod(_,?constant).
+  TypeMatchingMethod(_, ?constant),
+  ?n = count : TypeMatchingMethod(_, ?constant).
 
 .decl FairlyInformativeMethodName(?constant:Value)
 
@@ -1129,8 +1125,8 @@ TypeMatchingFieldName(?subtype, ?constant) :-
 .decl NumberOfTypesMatchingFieldName(?constant:HeapAllocation, ?n:number)
 
 NumberOfTypesMatchingFieldName(?constant, ?n) :-
-  isHeapAllocation(?constant),
-  ?n = count : TypeMatchingFieldName(_,?constant).
+  TypeMatchingFieldName(_, ?constant),
+  ?n = count : TypeMatchingFieldName(_, ?constant).
 
 .decl FairlyInformativeFieldName(?constant:Value)
 
