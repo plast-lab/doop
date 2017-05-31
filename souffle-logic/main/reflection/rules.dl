@@ -1299,7 +1299,7 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) :-
 
 // The array that the return var points to (established by forward logic)
 // is populated with the special Method object the call returns.
-ArrayIndexPointsTo(, ?value, ?hctx, ?arrayValue) :-
+ArrayIndexPointsTo(?hctx1, ?value, ?hctx, ?arrayValue) :-
   ImmutableHContextFromContext(?ctx, ?hctx1),
   SpecialMissingGetMethodsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
@@ -1313,14 +1313,14 @@ OptGetMethodsClass(?type, ?getMethodsInvocation) :-
   (java_lang_Class_getMethods(?getMethodsInvocation, _, ?from);
    java_lang_Class_getDeclaredMethods(?getMethodsInvocation, _, ?from)),
   VarPointsTo(_, ?classValue, _, ?from),
-  OptReifiedClass(?type, ?classValue).
+  ReifiedClass(?type, ?classValue).
 
-.decl OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation:MethodInvocatoin, ?ctx:Context, ?invocation:MethodInvocation)
+.decl OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation:MethodInvocation, ?ctx:Context, ?invocation:MethodInvocation)
 
 OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation, ?ctx, ?invocation) :-
   java_lang_reflect_Method_invoke(?invocation, ?methodVar),
   VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
-  OptSpecialMissingGetMethodsValue(?getMethodsInvocation, ?specialMethodValue).
+  SpecialMissingGetMethodsValue(?getMethodsInvocation, ?specialMethodValue).
 
 
 // Make an invoke return a special object that remembers the method it's
@@ -1343,11 +1343,14 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
 // from an invoke, over a method that came from a getMethods, match
 // the cast type to the class the methods came from to populate
 // the return array of getMethods with the matching ones.
+.decl OptSpecialInvokeValueCast(?type:Type, ?getMethodsInvocation:MethodInvocation)
 
 OptSpecialInvokeValueCast(?type, ?getMethodsInvocation) :-
   OptAssignCast(?type, _, ?from),
   VarPointsTo(_, ?specialvalue, _, ?from),
-  OptSpecialMissingInvokeValueFromGetMethods(?getMethodsInvocation, ?specialvalue).
+  SpecialMissingInvokeValueFromGetMethods(?getMethodsInvocation, ?specialvalue).
+
+.decl OptMethodObjectFromInvoke(?methodValue:Value, ?return:Var)
 
 OptMethodObjectFromInvoke(?methodValue, ?return) :-
   OptSpecialInvokeValueCast(?type, ?getMethodsInvocation),
@@ -1373,28 +1376,34 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?arrayValue) :-
   SpecialMissingGetFieldsValue(?invocation, ?value),
   AssignReturnValue(?invocation, ?return),
   VarPointsTo(?hctx, ?arrayValue, ?ctx, ?return),
-  Context(?ctx). // hack to avoid warning
+  isContext(?ctx). // hack to avoid warning
 
 // Is this slow? We've already done it in forward logic. Maybe store/reuse.
+.decl OptGetFieldsClass(?type:Type, ?getFieldsInvocation:MethodInvocation)
+
 OptGetFieldsClass(?type, ?getFieldsInvocation) :-
   (java_lang_Class_getFields(?getFieldsInvocation, _, ?from);
    java_lang_Class_getDeclaredFields(?getFieldsInvocation, _, ?from)),
   VarPointsTo(_, ?classValue, _, ?from),
   OptReifiedClass(?type, ?classValue).
 
-OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation , ?ctx, ?invocation) :-
+.decl OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation:MethodInvocation, ?ctx:Context, ?invocation:MethodInvocation)
+
+OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation) :-
   java_lang_reflect_Field_get(?invocation, _, ?fieldVar),
   VarPointsTo(_, ?specialFieldValue, ?ctx, ?fieldVar),
-  OptSpecialMissingGetFieldsValue(?getFieldsInvocation, ?specialFieldValue).
+  SpecialMissingGetFieldsValue(?getFieldsInvocation, ?specialFieldValue).
 
 
 // Make a get return a special object that remembers the field it's
 // supposed to be called on.
-VarPointsTo(, ?specialvalue, ?ctx, ?var) :-
+VarPointsTo(?hctx, ?specialvalue, ?ctx, ?var) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
-  OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation , ?ctx, ?invocation),
+  OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation, ?ctx, ?invocation),
   SpecialMissingGetValueFromGetFields(?getFieldsInvocation, ?specialvalue),
   AssignReturnValue(?invocation, ?var).
+
+
 //// Does nothing but incur cost_ filtering to ensure that the base of
 //// the reflective invocation is compatible with what we know about
 //// the class the reflective field came from.
@@ -1404,17 +1413,19 @@ VarPointsTo(, ?specialvalue, ?ctx, ?var) :-
 //  Value_Type[?value] = ?valueType,
 //  SupertypeOf(?type, ?valueType).
 
-// The clincher_ if we see the cast of a result that came
+// The clincher: if we see the cast of a result that came
 // from a get, over a field that came from a getFields, match
 // the cast type to the class the fields came from to populate
 // the return array of getFields with the matching ones.
 
+.decl OptSpecialGetValueCast(?type:Type, ?getFieldsInvocation:MethodInvocation)
 
 OptSpecialGetValueCast(?type, ?getFieldsInvocation) :-
   OptAssignCast(?type, _, ?from),
-
   VarPointsTo(_, ?specialvalue, _, ?from),
-  OptSpecialMissingGetValueFromGetFields(?getFieldsInvocation, ?specialvalue).
+  SpecialMissingGetValueFromGetFields(?getFieldsInvocation, ?specialvalue).
+
+.decl OptFieldObjectFromGet(?fieldValue:Value, ?return:Var)
 
 OptFieldObjectFromGet(?fieldValue, ?return) :-
   OptSpecialGetValueCast(?type, ?getFieldsInvocation),
