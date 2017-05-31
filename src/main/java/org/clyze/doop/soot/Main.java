@@ -44,7 +44,8 @@ public class Main {
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
-                System.exit(0);
+                systemExitIfNoServer(0);
+                return;
             }
 
             for (int i = 0; i < args.length; i++) {
@@ -52,7 +53,8 @@ public class Main {
                     case "--full":
                         if (sootParameters._mode != null) {
                             System.err.println("error: duplicate mode argument");
-                            System.exit(1);
+                            systemExitIfNoServer(1);
+                            return;
                         }
                         sootParameters._mode = SootParameters.Mode.FULL;
                         break;
@@ -89,10 +91,12 @@ public class Main {
                         File f = new File(folderName);
                         if (!f.exists()) {
                             System.err.println("Dependency folder " + folderName + " does not exist");
-                            System.exit(0);
+                            systemExitIfNoServer(0);
+                            return;
                         } else if (!f.isDirectory()) {
                             System.err.println("Dependency folder " + folderName + " is not a directory");
-                            System.exit(0);
+                            systemExitIfNoServer(0);
+                            return;
                         }
                         for (File file : f.listFiles()) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
@@ -143,7 +147,8 @@ public class Main {
 
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
-                        System.exit(0);
+                        systemExitIfNoServer(0);
+                        return;
                     case "--generate-jimple-help":
                         System.err.println("\nusage: [options] file");
                         System.err.println("options:");
@@ -154,11 +159,13 @@ public class Main {
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
-                        System.exit(0);
+                        systemExitIfNoServer(0);
+                        return;
                     default:
                         if (args[i].charAt(0) == '-') {
                             System.err.println("error: unrecognized option: " + args[i]);
-                            System.exit(0);
+                            systemExitIfNoServer(0);
+                            return;
                         } else {
                             sootParameters._inputs.add(args[i]);
                         }
@@ -172,16 +179,19 @@ public class Main {
 
             if (sootParameters._toStdout && !sootParameters._generateJimple) {
                 System.err.println("error: --stdout must be used with --generate-jimple");
-                System.exit(1);
+                systemExitIfNoServer(1);
+                return;
             }
             if (sootParameters._toStdout && sootParameters._outputDir != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
-                System.exit(2);
+                systemExitIfNoServer(2);
+                return;
             }
             else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk inputs");
-                System.exit(3);
+                systemExitIfNoServer(3);
+                return;
             }
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
@@ -190,7 +200,7 @@ public class Main {
         }
         catch(Exception exc) {
             exc.printStackTrace();
-            System.exit(1);
+            systemExitIfNoServer(1);
         }
     }
 
@@ -446,5 +456,16 @@ public class Main {
         if( SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
+    }
+
+    // Helper method that calls System.exit(n) when Doop runs outside
+    // the server, otherwise it just prints an error message.
+    public static void systemExitIfNoServer(int n) {
+	try {
+	    Class c = Class.forName("org.clyze.server.web.ServerSideAnalysis");
+	    System.err.println("Error: exit condition with error code " + n);
+	} catch (ClassNotFoundException ex) {
+	    System.exit(n);
+	}
     }
 }
