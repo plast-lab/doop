@@ -39,7 +39,7 @@ public class Main {
         return sootParameters.applicationClassFilter.matches(klass.getName());
     }
 
-    public static void main(String[] args) throws DoopErrorCodeException {
+    public static void main(String[] args) {
         SootParameters sootParameters = new SootParameters();
         try {
             if (args.length == 0) {
