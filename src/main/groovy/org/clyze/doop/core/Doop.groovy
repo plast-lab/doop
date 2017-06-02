@@ -77,7 +77,7 @@ class Doop {
     static Map<String, AnalysisOption> createDefaultAnalysisOptions() {
         defaultOptionsMap = [:]
         Map<String, AnalysisOption> options = [:]
-        new DoopAnalysisFamily().supportedOptions().each {
+        DoopAnalysisFamily.instance.supportedOptions().each {
             AnalysisOption option ->
             defaultOptionsMap.put(option.id, option)
             options.put(option.id, option.clone())

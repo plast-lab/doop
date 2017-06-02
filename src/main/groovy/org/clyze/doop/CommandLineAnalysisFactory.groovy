@@ -25,7 +25,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
     static final String USAGE            = "doop [OPTION]... -- [BLOXBATCH OPTION]..."
     static final int    WIDTH            = 120
 
-    static final AnalysisFamily FAMILY   = new DoopAnalysisFamily()
+    static final AnalysisFamily FAMILY   = DoopAnalysisFamily.instance
 
     /**
      * Processes the cli args and generates a new analysis.

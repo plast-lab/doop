@@ -91,7 +91,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                            List<File> inputFiles,
                            List<File> platformLibs,
                            Map<String, String> commandsEnvironment) {
-        super(new DoopAnalysisFamily(), id, name, options, outDir, inputFiles)
+        super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles)
         this.ctx = ctx
         this.cacheDir = cacheDir
         this.platformLibs = platformLibs
