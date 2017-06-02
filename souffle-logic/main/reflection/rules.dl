@@ -1,3 +1,4 @@
+
 /*************************************************************
  * Reflection analysis
  *************************************************************
@@ -410,8 +411,8 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) :-
 .decl OptReflectiveSpecialMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?callee:Method)
 
 OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) :-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base).
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
@@ -665,10 +666,10 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
 
 ReflectiveLoadHeapInstanceField(?toCtx, ?to, ?sig, ?basehctx, ?basevalue) :-
   ReflectiveLoadInstanceField(?toCtx, ?to, ?sig, ?baseCtx, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base),
   Value_Type(?basevalue, ?basevaluetype),
   Field_DeclaringType(?sig, ?declaringClass),
-  SupertypeOf(?declaringClass, ?basevaluetype),
-  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base).
+  SupertypeOf(?declaringClass, ?basevaluetype).
 
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
@@ -691,10 +692,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 ReflectiveStoreHeapInstanceField(?sig, ?basehctx, ?basevalue, ?fromCtx, ?from) :-
   ReflectiveStoreInstanceField(?fromCtx, ?from, ?sig, ?baseCtx, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base),
   Value_Type(?basevalue, ?basevaluetype),
   Field_DeclaringType(?sig, ?declaringClass),
-  SupertypeOf(?declaringClass, ?basevaluetype),
-  VarPointsTo(?basehctx, ?basevalue, ?baseCtx, ?base).
+  SupertypeOf(?declaringClass, ?basevaluetype).
 
 // The code below is very similar to the logic in the main analysis,
 // however we split it out because of the need (here, but not for
@@ -787,9 +788,9 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type).
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
+  BackwardReflectiveAssignClassConstant(?invocation, ?type),
   Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  BackwardReflectiveAssignClassConstant(?invocation, ?type).
+  ReachableContext(?ctx, ?inmethod).
 
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
