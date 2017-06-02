@@ -1,5 +1,6 @@
 package org.clyze.deepdoop.actions
 
+import org.clyze.deepdoop.datalog.Annotation
 import org.clyze.deepdoop.datalog.Program
 import org.clyze.deepdoop.datalog.clause.Constraint
 import org.clyze.deepdoop.datalog.clause.Declaration
@@ -12,13 +13,14 @@ import org.clyze.deepdoop.datalog.expr.BinaryExpr
 import org.clyze.deepdoop.datalog.expr.GroupExpr
 import org.clyze.deepdoop.datalog.expr.VariableExpr
 
-class InfoCollectingVisitingActor extends PostOrderVisitor<Void> implements IActor<Void>, TDummyActor<Void> {
+class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IActor<Void>, TDummyActor<Void> {
 
 	Map<IVisitable, List<IAtom>> declaringAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<IAtom>> usedAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<VariableExpr>> vars = [:].withDefault { [] }
+	Map<String, List<IAtom>> subtypes = [:].withDefault { [] }
 
-	InfoCollectingVisitingActor() {
+	InfoCollectionVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
@@ -72,6 +74,9 @@ class InfoCollectingVisitingActor extends PostOrderVisitor<Void> implements IAct
 	Void exit(Declaration n, Map m) {
 		declaringAtoms[n] = [n.atom]
 		usedAtoms[n] = n.types
+
+		if (n.annotations.any { it.kind == Annotation.Kind.ENTITY } && !n.types.isEmpty())
+			subtypes[n.types.first().name] << n.atom
 		null
 	}
 

@@ -30,7 +30,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	Component curComp
 	Map<String, Declaration> autoGenDecls
 
-	InfoCollectingVisitingActor acActor
+	InfoCollectionVisitingActor acActor
 
 	InitVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -39,7 +39,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		super(null)
 		actor = this
 
-		acActor = new InfoCollectingVisitingActor()
+		acActor = new InfoCollectionVisitingActor()
 		autoGenDecls = [:]
 	}
 
