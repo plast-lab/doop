@@ -152,8 +152,8 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 				def stage = (prop.toId == null ? null : "@past")
 				def vars = VariableExpr.genTempVars(origAtom.arity)
 				def head = origAtom.newAlias(atom.name, stage, vars).accept(this) as IAtom
-				def body = origAtom.newAtom(null, vars) as IAtom
-				toComp.addRule(new Rule(new LogicalElement(head), body, false))
+				def body = origAtom.newAtom(null, vars) as LogicalElement
+				toComp.addRule(new Rule(new LogicalElement(head), body))
 			}
 		}
 		return initP
@@ -205,7 +205,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		new Rule(m[n.head], m[n.body], false)
+		new Rule(m[n.head], m[n.body])
 	}
 
 	AggregationElement exit(AggregationElement n, Map<IVisitable, IVisitable> m) {

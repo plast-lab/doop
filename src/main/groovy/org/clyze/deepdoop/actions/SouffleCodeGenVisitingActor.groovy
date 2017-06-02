@@ -33,8 +33,8 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		// Transform program before visiting nodes
 		def n = p.accept(new NormalizeVisitingActor())
 				.accept(new InitVisitingActor())
-
-		n.accept(new PostOrderVisitor<IVisitable>(infoActor))
+		n.accept(infoActor)
+		n.accept(new ValidationVisitingActor(infoActor))
 
 		return super.visit(n as Program)
 	}
