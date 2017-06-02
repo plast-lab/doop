@@ -171,7 +171,7 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
   java_lang_Class_getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  OptReifiedClass(?type, ?classValue),
+  ReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 
@@ -201,7 +201,7 @@ FillArray_PublicMethods(?hctx, ?arrayValue, ?type),
 VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  OptReifiedClass(?type, ?classValue),
+  ReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation),
   ImmutableHContextFromContext(?ctx, ?hctx).
 
@@ -254,7 +254,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  OptReifiedClass(?type, ?classValue),
+  ReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 // getDeclaredMethod has two differences from getMethod: it retrieves
@@ -370,7 +370,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  OptReifiedClass(?type, ?classValue),
+  ReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
@@ -395,7 +395,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
-  _OptVarToMethod(?to, ?inmethod),
+  Var_DeclaringMethod(?to, ?inmethod),
   AssignHeapAllocation(?constantHeap, _, ?inmethod),
   (NumberOfFieldsMatchingConstant(?constantHeap, ?num),
    StringPrecisionThreshold(?t),
@@ -418,7 +418,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  OptReifiedClass(?type, ?classValue),
+  ReifiedClass(?type, ?classValue),
   _OptReflectiveAllocation(?arrayValue, ?invocation).
 
 ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
@@ -479,16 +479,12 @@ ReflectiveBaseVar(?invocation, ?to) :-
  * NOTE  
  * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
-.decl _OptVarToMethod(?var:Var, ?method:Method)
-
-_OptVarToMethod(?var, ?method) :-
-  Var_DeclaringMethod(?var, ?method).
 
 .decl _Optjava_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?method:Method)
 
 _Optjava_lang_Class_getClassLoader(?invocation, ?to, ?method) :-
   java_lang_Class_getClassLoader(?invocation, ?to, ?from),
-  _OptVarToMethod(?from, ?method).
+  Var_DeclaringMethod(?from, ?method).
   
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),

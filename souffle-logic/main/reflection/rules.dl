@@ -765,7 +765,7 @@ ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
   ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature).
 
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-
-  _OptVarToMethod(?to, ?inmethod),
+  Var_DeclaringMethod(?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignMethodConstant(?to, ?signature).
 
@@ -778,7 +778,7 @@ ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature).
 
 ReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
-  _OptVarToMethod(?to, ?inmethod),
+  Var_DeclaringMethod(?to, ?inmethod),
   ReachableContext(?ctx, ?inmethod),
   BackwardHighConfidenceReflectiveAssignFieldConstant(?to, ?signature).
 
@@ -1016,8 +1016,6 @@ VarPointsTo(?hctx, ?specialvalue, ?ctx, ?to) :-
 
 
 // some auxiliary stuff
-_OptVarToMethod(?var, ?method) :-
-  Var_DeclaringMethod(?var, ?method).
 
 // ... and next comes the logic to tie it all together. This is amazingly nice!
 // If a special unknown object o that got created from a newInstance
@@ -1104,7 +1102,7 @@ SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation, ?type, ?constant,
   VarPointsTo(_, ?constant, ?ctx, ?param),
   Value_isHeap(?constant),
   TypeMatchingMethod(?type, ?constant),
-  _OptVarToMethod(?from, ?inMethod).
+  Var_DeclaringMethod(?from, ?inMethod).
 
 BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) :-
   SpecialMissingForNameValueFlowsToGetMethod(?forNameInvocation, ?type, _, _).
@@ -1147,7 +1145,7 @@ SpecialMissingForNameValueFlowsToGetField(?forNameInvocation, ?type, ?constant, 
   Value_isHeap(?constant),
   FairlyInformativeFieldName(?constant),
   TypeMatchingFieldName(?type, ?constant),
-  _OptVarToMethod(?from, ?inMethod).
+  Var_DeclaringMethod(?from, ?inMethod).
 
 BackwardReflectiveAssignClassConstant(?forNameInvocation, ?type) :-
   SpecialMissingForNameValueFlowsToGetField(?forNameInvocation, ?type, _, _).
@@ -1167,16 +1165,6 @@ BackwardHighConfidenceReflectiveAssignClassConstant(?forNameInvocation, ?type)  
  * if a method is invoked and it returns a value whose type is cast, we
  * know it must have been a method returing a compatible type.
  **/
-
-.decl OptReifiedClass(?type:Type, ?classValue:Value)
-
-OptReifiedClass(?type, ?classValue) :-
-  ReifiedClass(?type, ?classValue).
-
-.decl OptMethodType(?signature:Method, ?classtype:Type)
-
-OptMethodType(?signature, ?classtype) :-
-  Method_DeclaringType(?signature, ?classtype).
 
 // A getMethod returns a special value that marks where it came from, so
 // we can track all uses of results returned by that getMethod invocation
@@ -1222,8 +1210,8 @@ BackwardReflectiveAssignMethodConstant(?return, ?signature) :-
   Opt2SpecialInvokeValueCast(?castType, ?getMethodInvocation),
   VirtualMethodInvocation_Base(?getMethodInvocation, ?from),
   VarPointsTo(_, ?classValue, _, ?from),
-  OptReifiedClass(?classType, ?classValue),
-  OptMethodType(?signature, ?classType),
+  ReifiedClass(?classType, ?classValue),
+  Method_DeclaringType(?signature, ?classType),
   AssignReturnValue(?getMethodInvocation, ?return),
   Method_ReturnType(?signature, ?retType),
   (SubtypeOf(?retType, ?castType); SupertypeOf(?retType, ?castType)).
@@ -1239,8 +1227,8 @@ BackwardReflectiveAssignMethodConstant(?return, ?signature) :-
 .decl OptFieldType(?type:Type, ?signature:Field, ?declaringClassType:Type)
 
 OptFieldType(?type, ?signature, ?declaringClassType) :-
-   Field_DeclaringType(?signature, ?declaringClassType),
-   Field_Type(?signature, ?type).
+  Field_DeclaringType(?signature, ?declaringClassType),
+  Field_Type(?signature, ?type).
 
 // special value returned by a getField
 /** This VarPointsTo is ok **/
@@ -1275,7 +1263,7 @@ BackwardReflectiveAssignFieldConstant(?return, ?signature) :-
   Opt2SpecialGetValueCast(?castType, ?getFieldInvocation),
   VirtualMethodInvocation_Base(?getFieldInvocation, ?from),
   VarPointsTo(_, ?classValue, _, ?from),
-  OptReifiedClass(?classType, ?classValue),
+  ReifiedClass(?classType, ?classValue),
   OptFieldType(?fieldType, ?signature, ?classType),
   (SubtypeOf(?fieldType, ?castType); SupertypeOf(?fieldType, ?castType)),
   // REVIEW. Could be ?fieldType = ?castType. Precision/soundness tradeoff.
@@ -1356,7 +1344,7 @@ OptSpecialInvokeValueCast(?type, ?getMethodsInvocation) :-
 OptMethodObjectFromInvoke(?methodValue, ?return) :-
   OptSpecialInvokeValueCast(?type, ?getMethodsInvocation),
   OptGetMethodsClass(?classtype, ?getMethodsInvocation),
-  OptMethodType(?signature, ?classtype),
+  Method_DeclaringType(?signature, ?classtype),
   Method_ReturnType(?signature, ?type),
   AssignReturnValue(?getMethodsInvocation, ?return),
   ReifiedMethod(?signature, ?methodValue).
@@ -1386,7 +1374,7 @@ OptGetFieldsClass(?type, ?getFieldsInvocation) :-
   (java_lang_Class_getFields(?getFieldsInvocation, _, ?from);
    java_lang_Class_getDeclaredFields(?getFieldsInvocation, _, ?from)),
   VarPointsTo(_, ?classValue, _, ?from),
-  OptReifiedClass(?type, ?classValue).
+  ReifiedClass(?type, ?classValue).
 
 .decl OptGetOnSpecialMissingGetFieldsValue(?getFieldsInvocation:MethodInvocation, ?ctx:Context, ?invocation:MethodInvocation)
 
