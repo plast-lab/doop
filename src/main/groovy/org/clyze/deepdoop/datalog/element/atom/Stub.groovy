@@ -18,7 +18,5 @@ class Stub implements IAtom {
 
 	IAtom newAlias(String name, String stage, List<VariableExpr> vars) { throw new UnsupportedOperationException() }
 
-	List<VariableExpr> getVars() { throw new UnsupportedOperationException() }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

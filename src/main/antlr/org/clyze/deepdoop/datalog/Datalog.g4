@@ -5,20 +5,77 @@ package org.clyze.deepdoop.datalog;
 }
 
 program
-	: (comp | cmd | initialize | propagate | datalog)* ;
+	: (component | cmd | initialize | propagate | datalog)* ;
 
 
-comp
-	: COMP IDENTIFIER (':' IDENTIFIER)? L_BRACK datalog* R_BRACK (AS identifierList)? ;
+component
+	: COMP IDENTIFIER (':' IDENTIFIER)? '{' datalog* '}' (AS identifierList)? ;
 
 cmd
-	: CMD IDENTIFIER L_BRACK datalog* R_BRACK (AS identifierList)? ;
+	: CMD IDENTIFIER '{' datalog* '}' (AS identifierList)? ;
 
 initialize
 	: IDENTIFIER AS identifierList ;
 
 propagate
 	: IDENTIFIER '{' propagationList '}' '->' (IDENTIFIER | GLOBAL) ;
+
+datalog
+	: rightArrow | rightArrowBlock | leftArrow | lineMarker ;
+
+
+rightArrow
+    : annotationList? predicateName '.'
+    | annotationList? compound '->' compound '.'
+    | normalPredicate ',' refmode '->' normalPredicate '.'
+    ;
+
+rightArrowBlock
+    : annotationList '{' rightArrow+ '}' ;
+
+leftArrow
+	: predicateListExt ('<-' compound)? '.'
+	| functional '<-' aggregation '.'
+	;
+
+
+predicate
+	: refmode
+	| functional
+	| normalPredicate
+	;
+
+refmode
+	: predicateName AT_STAGE? '(' IDENTIFIER ':' expr ')' ;
+
+functional
+	: predicateName AT_STAGE? '[' exprList? ']' '=' expr ;
+
+normalPredicate
+	: predicateName AT_STAGE? '(' exprList? ')' ;
+
+aggregation
+	: AGG '<<' IDENTIFIER '=' predicate '>>' compound ;
+
+construction
+	: NEW '<<' functional AS predicateName '>>' ;
+
+predicateListExt
+	: (predicate | construction)
+	| predicateListExt ',' (predicate | construction)
+	;
+
+compoundElement
+	: predicate
+	| comparison
+	| '!' compoundElement
+	| '(' compoundElement ')'
+	;
+
+compound
+	: compoundElement
+	| compound (',' | ';') compoundElement
+	;
 
 identifierList
 	: IDENTIFIER
@@ -36,96 +93,16 @@ propagationList
 	| propagationList ',' propagationElement
 	;
 
-
-datalog
-	: declaration | declarationBlock | constraint | rule_ | lineMarker ;
-
+annotation
+	: '@' IDENTIFIER ;
 
 annotationList
 	: annotation
 	| annotationList ',' annotation
 	;
 
-declaration
-	: annotationList? predicateName '.'
-	| annotationList? predicate '->' predicateList '.'
-	| singleAtom ',' refmode '->' singleAtom '.'
-	;
-
-declarationBlock
-	: annotationList '{' declaration+ '}' ;
-
-constraint
-	: compound '->' compound '.' ;
-
-rule_
-	: predicateList '.'
-	| predicateListExt '<-' compound '.'
-	| functional '<-' aggregation '.'
-	;
-
 lineMarker
 	: '#' INTEGER STRING INTEGER* ;
-
-annotation
-	: '@' IDENTIFIER ;
-
-
-predicate
-	: directive
-	| refmode
-	| singleAtom
-	| atom
-	| functional
-	;
-
-directive
-	: predicateName '(' BACKTICK predicateName ')'
-	| predicateName '[' BACKTICK predicateName ']' '=' expr
-	;
-
-refmode
-	: predicateName AT_STAGE? '(' IDENTIFIER ':' expr ')' ;
-
-singleAtom
-	: predicateName AT_STAGE? '(' expr ')' ;
-
-atom
-	: predicateName AT_STAGE? '(' ')'
-	| predicateName AT_STAGE? '(' expr ',' exprList ')'
-	;
-
-functionalHead
-	: predicateName AT_STAGE? '[' exprList? ']' ;
-
-functional
-	: functionalHead '=' expr ;
-
-
-aggregation
-	: AGG '<<' IDENTIFIER '=' predicate '>>' compound ;
-
-construction
-	: NEW '<<' functional AS predicateName '>>' ;
-
-predicateList
-	: predicate
-	| predicateList ',' predicate
-	;
-
-predicateListExt
-	: (predicate | construction)
-	| predicateListExt ',' (predicate | construction)
-	;
-
-compound
-	: comparison
-	| '!'? predicate
-	| '!'? '(' compound ')'
-	| compound ',' compound
-	| compound ';' compound
-	;
-
 
 predicateName
 	: '$'? IDENTIFIER
@@ -141,7 +118,6 @@ constant
 
 expr
 	: IDENTIFIER
-	| functionalHead
 	| constant
 	| expr ('+' | '-' | '*' | '/') expr
 	| '(' expr ')'
@@ -156,6 +132,7 @@ comparison
 	: expr ('=' | '<' | '<=' | '>' | '>=' | '!=') expr ;
 
 
+
 // Lexer
 
 AGG
@@ -168,7 +145,7 @@ ALL
 	: '*' ;
 
 AS
-	: 'as' ;
+	: [aA][sS] ;
 
 AT_STAGE
 	: '@init'
@@ -177,9 +154,6 @@ AT_STAGE
 	| '@previous'
 	| '@past'
 	;
-
-BACKTICK
-	: '`' ;
 
 CAPACITY
 	: '[' ('32' | '64' | '128') ']' ;
@@ -192,12 +166,6 @@ COMP
 
 GLOBAL
 	: '.' ;
-
-L_BRACK
-	: '{' ;
-
-R_BRACK
-	: '}' ;
 
 INTEGER
 	: [0-9]+

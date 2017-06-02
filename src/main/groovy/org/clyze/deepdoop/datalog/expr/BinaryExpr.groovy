@@ -11,7 +11,5 @@ class BinaryExpr implements IExpr {
 	BinOperator op
 	IExpr right
 
-	List<VariableExpr> getVars() { left.vars + right.vars }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

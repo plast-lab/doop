@@ -30,7 +30,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	Component curComp
 	Map<String, Declaration> autoGenDecls
 
-	AtomCollectingActor acActor
+	InfoCollectingVisitingActor acActor
 
 	InitVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -39,7 +39,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		super(null)
 		actor = this
 
-		acActor = new AtomCollectingActor()
+		acActor = new InfoCollectingVisitingActor()
 		autoGenDecls = [:]
 	}
 
@@ -98,7 +98,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 			removeName = null
 			this.initName = initName
 			inRuleHead = false
-			declaredAtoms = acActor.getDeclaringAtoms(comp).keySet()
+			declaredAtoms = acActor.declaringAtoms[comp].collect { it.name }
 			reverseProps = reversePropsMap[initName]
 			curComp = comp
 			initP.addComponent(comp.accept(this) as Component)
@@ -106,9 +106,9 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		initP.accept(acVisitor)
 
 
-		Set<String> globalDeclAtoms = acActor.getDeclaringAtoms(n.globalComp).keySet().collect() as Set
+		Set<String> globalDeclAtoms = acActor.declaringAtoms[n.globalComp].collect() as Set
 		Set<String> globalAtoms = globalDeclAtoms.collect() as Set
-		globalAtoms.addAll(acActor.getUsedAtoms(n.globalComp).keySet())
+		globalAtoms.addAll(acActor.usedAtoms[n.globalComp].collect { it.name })
 
 		inFrameRules = true
 		// Propagations
@@ -132,7 +132,7 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 					ErrorManager.error(ErrorId.UNKNOWN_PRED, alias.orig.name)
 
 				// Ignore lang directives and entities
-				if (origAtom instanceof Directive || origAtom instanceof Entity) return
+				if (origAtom instanceof Entity) return
 
 				def atom = alias.alias ?: alias.orig
 
@@ -247,13 +247,6 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 		return new Constructor(newFunctional, n.entity)
 	}
 
-	Directive exit(Directive n, Map<IVisitable, IVisitable> m) {
-		if (n.isPredicate)
-			return new Directive(n.name, m[n.backtick] as Stub)
-		else
-			return new Directive(n.name, m[n.backtick] as Stub, m[n.constant] as ConstantExpr)
-	}
-
 	Entity exit(Entity n, Map<IVisitable, IVisitable> m) {
 		def (newName, newStage) = rename(n)
 		def newExpr = m[n.exprs.first()] as IExpr
@@ -307,10 +300,6 @@ class InitVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<I
 	}
 
 	ConstantExpr exit(ConstantExpr n, Map<IVisitable, IVisitable> m) { n }
-
-	FunctionalHeadExpr exit(FunctionalHeadExpr n, Map<IVisitable, IVisitable> m) {
-		new FunctionalHeadExpr(m[n.functional] as Functional)
-	}
 
 	GroupExpr exit(GroupExpr n, Map<IVisitable, IVisitable> m) {
 		new GroupExpr(m[n.expr] as IExpr)

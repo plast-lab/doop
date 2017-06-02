@@ -9,7 +9,10 @@ import org.clyze.deepdoop.datalog.component.CmdComponent
 import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
+import org.clyze.deepdoop.datalog.expr.BinaryExpr
+import org.clyze.deepdoop.datalog.expr.ConstantExpr
+import org.clyze.deepdoop.datalog.expr.GroupExpr
+import org.clyze.deepdoop.datalog.expr.VariableExpr
 
 interface IVisitor<T> {
 	T visit(Program n)
@@ -38,8 +41,6 @@ interface IVisitor<T> {
 
 	T visit(Constructor n)
 
-	T visit(Directive n)
-
 	T visit(Entity n)
 
 	T visit(Functional n)
@@ -55,8 +56,6 @@ interface IVisitor<T> {
 	T visit(BinaryExpr n)
 
 	T visit(ConstantExpr n)
-
-	T visit(FunctionalHeadExpr n)
 
 	T visit(GroupExpr n)
 

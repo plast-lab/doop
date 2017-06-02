@@ -10,8 +10,6 @@ class VariableExpr implements IExpr {
 
 	def isDontCare() { name == '_' }
 
-	List<VariableExpr> getVars() { [this] }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	static List<VariableExpr> genTempVars(int n) {

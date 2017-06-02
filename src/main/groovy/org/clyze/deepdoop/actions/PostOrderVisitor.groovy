@@ -9,7 +9,10 @@ import org.clyze.deepdoop.datalog.component.CmdComponent
 import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
+import org.clyze.deepdoop.datalog.expr.BinaryExpr
+import org.clyze.deepdoop.datalog.expr.ConstantExpr
+import org.clyze.deepdoop.datalog.expr.GroupExpr
+import org.clyze.deepdoop.datalog.expr.VariableExpr
 
 class PostOrderVisitor<T> implements IVisitor<T> {
 
@@ -124,14 +127,6 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 		return actor.exit(n, m)
 	}
 
-	T visit(Directive n) {
-		actor.enter(n)
-		Map<IVisitable, T> m = [:]
-		if (n.backtick) m[n.backtick] = n.backtick.accept(this)
-		if (n.constant) m[n.constant] = n.constant.accept(this)
-		return actor.exit(n, m)
-	}
-
 	T visit(Entity n) {
 		actor.enter(n)
 		Map<IVisitable, T> m = [:]
@@ -185,13 +180,6 @@ class PostOrderVisitor<T> implements IVisitor<T> {
 	T visit(ConstantExpr n) {
 		actor.enter(n)
 		return actor.exit(n, [:])
-	}
-
-	T visit(FunctionalHeadExpr n) {
-		actor.enter(n)
-		Map<IVisitable, T> m = [:]
-		m[n.functional] = n.functional.accept(this)
-		return actor.exit(n, m)
 	}
 
 	T visit(GroupExpr n) {

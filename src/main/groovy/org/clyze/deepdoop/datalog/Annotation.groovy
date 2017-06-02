@@ -6,6 +6,7 @@ import groovy.transform.Canonical
 class Annotation {
 
 	enum Kind {
+		CONSTRAINT,
 		CONSTRUCTOR,
 		ENTITY,
 		INPUT,
@@ -18,6 +19,7 @@ class Annotation {
 	def getKind() {
 		name = name.toLowerCase()
 		switch (name) {
+			case "constraint": return Kind.CONSTRAINT
 			case "constructor": return Kind.CONSTRUCTOR
 			case "entity": return Kind.ENTITY
 			case "input": return Kind.INPUT

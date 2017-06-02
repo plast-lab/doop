@@ -32,11 +32,11 @@ class CmdComponent extends Component {
 	void addCons(Constraint c) { ErrorManager.error(ErrorId.CMD_CONSTRAINT) }
 
 	void addRule(Rule r) {
-		if (!r.isDirective) {
-			super.addRule(r)
-			return
-		}
-
+		//if (!r.isDirective) {
+		super.addRule(r)
+		return
+		//}
+/*
 		def d = r.getDirective()
 		switch (d.name) {
 			case "lang:cmd:EVAL":
@@ -49,6 +49,7 @@ class CmdComponent extends Component {
 			default:
 				ErrorManager.error(ErrorId.CMD_DIRECTIVE, name)
 		}
+		*/
 	}
 
 	void addAll(Component other) {

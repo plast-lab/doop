@@ -24,7 +24,5 @@ class RefMode implements IAtom {
 		throw new UnsupportedOperationException()
 	}
 
-	List<VariableExpr> getVars() { [entityVar] + valueExpr.vars }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

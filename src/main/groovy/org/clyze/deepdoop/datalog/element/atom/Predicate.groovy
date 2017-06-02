@@ -23,7 +23,5 @@ class Predicate implements IAtom {
 		return new Predicate(name, stage, [] + vars)
 	}
 
-	List<VariableExpr> getVars() { exprs.collect { it.vars }.flatten() }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

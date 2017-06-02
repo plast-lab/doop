@@ -9,7 +9,10 @@ import org.clyze.deepdoop.datalog.component.CmdComponent
 import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
+import org.clyze.deepdoop.datalog.expr.BinaryExpr
+import org.clyze.deepdoop.datalog.expr.ConstantExpr
+import org.clyze.deepdoop.datalog.expr.GroupExpr
+import org.clyze.deepdoop.datalog.expr.VariableExpr
 
 interface IActor<T> {
 	void enter(Program n)
@@ -64,10 +67,6 @@ interface IActor<T> {
 
 	T exit(Constructor n, Map<IVisitable, T> m)
 
-	void enter(Directive n)
-
-	T exit(Directive n, Map<IVisitable, T> m)
-
 	void enter(Entity n)
 
 	T exit(Entity n, Map<IVisitable, T> m)
@@ -99,10 +98,6 @@ interface IActor<T> {
 	void enter(ConstantExpr n)
 
 	T exit(ConstantExpr n, Map<IVisitable, T> m)
-
-	void enter(FunctionalHeadExpr n)
-
-	T exit(FunctionalHeadExpr n, Map<IVisitable, T> m)
 
 	void enter(GroupExpr n)
 

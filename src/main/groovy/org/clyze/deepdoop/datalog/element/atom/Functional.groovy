@@ -26,11 +26,5 @@ class Functional implements IAtom {
 		return new Functional(name, stage, varsCopy, valueVar)
 	}
 
-	List<VariableExpr> getVars() {
-		def list = keyExprs.collect { it.vars }.flatten()
-		if (valueExpr) list += valueExpr.vars
-		return list
-	}
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

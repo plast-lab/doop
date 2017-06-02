@@ -1,7 +1,6 @@
 package org.clyze.deepdoop.actions
 
 import groovy.transform.InheritConstructors
-import org.clyze.deepdoop.datalog.Annotation
 import org.clyze.deepdoop.datalog.Program
 import org.clyze.deepdoop.datalog.clause.Declaration
 import org.clyze.deepdoop.datalog.clause.Rule
@@ -10,10 +9,14 @@ import org.clyze.deepdoop.datalog.element.GroupElement
 import org.clyze.deepdoop.datalog.element.LogicalElement
 import org.clyze.deepdoop.datalog.element.NegationElement
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
+import org.clyze.deepdoop.datalog.expr.BinaryExpr
+import org.clyze.deepdoop.datalog.expr.ConstantExpr
+import org.clyze.deepdoop.datalog.expr.GroupExpr
+import org.clyze.deepdoop.datalog.expr.VariableExpr
 import org.clyze.deepdoop.system.Result
 
-import static org.clyze.deepdoop.datalog.Annotation.Kind.*
+import static org.clyze.deepdoop.datalog.Annotation.Kind.INPUT
+import static org.clyze.deepdoop.datalog.Annotation.Kind.OUTPUT
 import static org.clyze.deepdoop.datalog.element.LogicalElement.LogicType.AND
 
 @InheritConstructors
@@ -30,6 +33,9 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		// Transform program before visiting nodes
 		def n = p.accept(new NormalizeVisitingActor())
 				.accept(new InitVisitingActor())
+
+		n.accept(new PostOrderVisitor<IVisitable>(infoActor))
+
 		return super.visit(n as Program)
 	}
 
@@ -119,8 +125,6 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(BinaryExpr n, Map<IVisitable, String> m) { "${m[n.left]} ${n.op} ${m[n.right]}" }
 
 	String exit(ConstantExpr n, Map<IVisitable, String> m) { n.value as String }
-
-	String exit(FunctionalHeadExpr n, Map<IVisitable, String> m) { m[n.functional] }
 
 	String exit(GroupExpr n, Map<IVisitable, String> m) { "(${m[n.expr]})" }
 

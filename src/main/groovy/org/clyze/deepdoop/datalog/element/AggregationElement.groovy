@@ -12,7 +12,5 @@ class AggregationElement implements IElement {
 	Predicate predicate
 	IElement body
 
-	List<VariableExpr> getVars() { body.vars + predicate.vars + [var] }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

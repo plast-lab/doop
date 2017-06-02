@@ -11,7 +11,10 @@ import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.component.DependencyGraph
 import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
-import org.clyze.deepdoop.datalog.expr.*
+import org.clyze.deepdoop.datalog.expr.BinaryExpr
+import org.clyze.deepdoop.datalog.expr.ConstantExpr
+import org.clyze.deepdoop.datalog.expr.GroupExpr
+import org.clyze.deepdoop.datalog.expr.VariableExpr
 import org.clyze.deepdoop.system.ErrorId
 import org.clyze.deepdoop.system.ErrorManager
 import org.clyze.deepdoop.system.Result
@@ -42,15 +45,15 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	}
 
 	String exit(Program n, Map<IVisitable, String> m) {
-		n.accept(new PostOrderVisitor<IVisitable>(acActor))
-		globalAtoms = acActor.getDeclaringAtoms(n.globalComp).keySet()
+		n.accept(new PostOrderVisitor<IVisitable>(infoActor))
+		globalAtoms = infoActor.declaringAtoms[n.globalComp].collect { it.name }
 
 		// Check that all used predicates have a declaration/definition
 		def allDeclAtoms = globalAtoms
 		Map<String, IAtom> allUsedAtoms = [:]
 		n.comps.values().each {
-			allDeclAtoms += acActor.getDeclaringAtoms(it).keySet()
-			allUsedAtoms << acActor.getUsedAtoms(it)
+			allDeclAtoms += infoActor.declaringAtoms[it].collect { it.name }
+			allUsedAtoms << infoActor.getUsedAtoms(it)
 		}
 		allUsedAtoms.each { usedAtomName, usedAtom ->
 			if (usedAtom.stage == "@past") return
@@ -114,31 +117,23 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(Constructor n, Map<IVisitable, String> m) {
 		def functionalStr = exit(n as Functional, m)
-		if (inDecl) {
-			def directive = new Directive("lang:constructor", new Stub(n.entity.name))
-			return directive.accept(this) + ".\n" + functionalStr
-		} else {
-			def entityStr = exit(n.entity as Entity, m)
-			return "$functionalStr, $entityStr"
-		}
-	}
-
-	String exit(Directive n, Map<IVisitable, String> m) {
-		def middle = (n.backtick ? "`" + n.backtick.name : "")
-		if (n.isPredicate)
-			return "${n.name}($middle)"
-		else
-			return "${n.name}[$middle] = ${m[n.constant]}"
+		//if (inDecl) {
+		//	def directive = new Directive("lang:constructor", new Stub(n.entity.name))
+		//	return directive.accept(this) + ".\n" + functionalStr
+		//} else {
+		def entityStr = exit(n.entity as Entity, m)
+		return "$functionalStr, $entityStr"
+		//}
 	}
 
 	String exit(Entity n, Map<IVisitable, String> m) {
 		def entityStr = exit(n as Predicate, m)
-		if (inDecl) {
-			def directive = new Directive("lang:entity", new Stub(n.name))
-			return directive.accept(this) + ".\n" + entityStr
-		} else {
-			return entityStr
-		}
+		//if (inDecl) {
+		//	def directive = new Directive("lang:entity", new Stub(n.name))
+		//	return directive.accept(this) + ".\n" + entityStr
+		//} else {
+		return entityStr
+		//}
 	}
 
 	String exit(Functional n, Map<IVisitable, String> m) {
@@ -167,8 +162,6 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(BinaryExpr n, Map<IVisitable, String> m) { "${m[n.left]} ${n.op} ${m[n.right]}" }
 
 	String exit(ConstantExpr n, Map<IVisitable, String> m) { n.value.toString() }
-
-	String exit(FunctionalHeadExpr n, Map<IVisitable, String> m) { m[n.functional] }
 
 	String exit(GroupExpr n, Map<IVisitable, String> m) { "(${m[n.expr]})" }
 
@@ -231,7 +224,7 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 			c.declarations.each {
 				assert !(it instanceof RefModeDeclaration)
-				def atom = acActor.getDeclaringAtoms(it).values().first() as IAtom
+				def atom = infoActor.getDeclaringAtoms(it).values().first() as IAtom
 				emitFilePredicate(atom, it, latestFile)
 			}
 		}
@@ -271,8 +264,8 @@ class LBCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	boolean allHandledFor(IVisitable n) {
 		Set<String> atoms = []
-		acActor.getDeclaringAtoms(n).values().each { atoms << it.name }
-		acActor.getUsedAtoms(n).values().each { atoms << it.name }
+		infoActor.declaringAtoms[n].each { atoms << it.name }
+		infoActor.usedAtoms[n].each { atoms << it.name }
 		atoms.retainAll(globalAtoms)
 
 		return atoms.every { handledAtoms.contains(it) }

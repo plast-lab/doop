@@ -2,6 +2,7 @@ package org.clyze.deepdoop.actions
 
 import org.clyze.deepdoop.datalog.Program
 import org.clyze.deepdoop.datalog.clause.Constraint
+import org.clyze.deepdoop.datalog.clause.Declaration
 import org.clyze.deepdoop.datalog.clause.Rule
 import org.clyze.deepdoop.datalog.component.CmdComponent
 import org.clyze.deepdoop.datalog.component.Component
@@ -9,8 +10,6 @@ import org.clyze.deepdoop.datalog.element.*
 import org.clyze.deepdoop.datalog.element.atom.*
 
 class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable>, TDummyActor<IVisitable> {
-
-	def allComps
 
 	NormalizeVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -20,27 +19,39 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 		actor = this
 	}
 
-	void enter(Program n) { allComps = n.comps }
-
 	Program exit(Program n, Map<IVisitable, IVisitable> m) {
-		def newComps = n.comps.collectEntries { [it.key, m[it.value]] }
-		return new Program(m[n.globalComp], newComps, n.inits, n.props)
+		// Flatten components that extend other components
+		def newComps = [:]
+		n.comps.values().each {
+			Component currComp = m[it] as Component
+			Component flatComp
+			if (currComp.superComp) {
+				flatComp = currComp.clone()
+				while (currComp.superComp) {
+					currComp = m[n.comps[currComp.superComp]] as Component
+					flatComp.addAll(currComp)
+				}
+			} else
+				flatComp = currComp
+
+			newComps[flatComp.name] = flatComp
+		}
+		return new Program(m[n.globalComp] as Component, newComps, n.inits, n.props)
 	}
 
-	// Flatten components that extend other components
 	Component exit(Component n, Map<IVisitable, IVisitable> m) {
-		Component currComp = n
-		Component flatComp = currComp.clone()
-		while (currComp.superComp) {
-			currComp = allComps[currComp.superComp]
-			flatComp.addAll(currComp)
-		}
-		return flatComp
+		def newComp = new Component(n.name, n.superComp)
+		n.declarations.each { newComp.addDecl(m[it] as Declaration) }
+		//n.constraints.each { newComp.addCons(m[it] as Constraint) }
+		n.rules.each { newComp.addRule(m[it] as Rule) }
+		return newComp
 	}
 
 	Constraint exit(Constraint n, Map<IVisitable, IVisitable> m) {
 		new Constraint(m[n.head], m[n.body])
 	}
+
+	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) { n }
 
 	Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
 		new Rule(m[n.head], m[n.body], false)
@@ -60,7 +71,7 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 		n.elements.each { e ->
 			def flatE = m[e] as IElement
 			if (flatE instanceof LogicalElement && (flatE as LogicalElement).type == n.type)
-				newElements << (flatE as LogicalElement).elements
+				newElements += (flatE as LogicalElement).elements
 			else
 				newElements << flatE
 		}
@@ -76,8 +87,6 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 	ComparisonElement exit(ComparisonElement n, Map<IVisitable, IVisitable> m) { n }
 
 	Constructor exit(Constructor n, Map<IVisitable, IVisitable> m) { n }
-
-	Directive exit(Directive n, Map<IVisitable, IVisitable> m) { n }
 
 	Entity exit(Entity n, Map<IVisitable, IVisitable> m) { n }
 

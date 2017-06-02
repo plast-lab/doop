@@ -1,5 +1,6 @@
 package org.clyze.deepdoop.datalog.component
 
+import groovy.transform.Canonical
 import org.clyze.deepdoop.actions.IVisitable
 import org.clyze.deepdoop.actions.IVisitor
 import org.clyze.deepdoop.datalog.clause.Constraint
@@ -10,7 +11,7 @@ import org.clyze.deepdoop.datalog.element.atom.Entity
 import org.clyze.deepdoop.datalog.element.atom.Predicate
 import org.clyze.deepdoop.system.TSourceItem
 
-//@Canonical
+@Canonical
 class Component implements IVisitable, TSourceItem {
 
 	String name
@@ -59,7 +60,7 @@ class Component implements IVisitable, TSourceItem {
 		rules += other.rules
 	}
 
-	void markEntity(String entityName) {
+	/*void markEntity(String entityName) {
 		entities << entityName
 		// backwards patching
 		def decl = declarations.find { it.atom.name == entityName }
@@ -70,7 +71,7 @@ class Component implements IVisitable, TSourceItem {
 			declarations.remove(decl)
 			declarations << new Declaration(entity, decl.types)
 		}
-	}
+	}*/
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

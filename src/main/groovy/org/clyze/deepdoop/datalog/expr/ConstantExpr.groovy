@@ -33,7 +33,5 @@ class ConstantExpr implements IExpr {
 		value = s
 	}
 
-	List<VariableExpr> getVars() { [] }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }

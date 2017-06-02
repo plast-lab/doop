@@ -9,7 +9,7 @@ class DefaultCodeGenVisitingActor extends PostOrderVisitor<String> implements IA
 
 	File outDir
 
-	AtomCollectingActor acActor = new AtomCollectingActor()
+	InfoCollectingVisitingActor infoActor = new InfoCollectingVisitingActor()
 	List<Result> results = []
 
 	DefaultCodeGenVisitingActor(File outDir) {

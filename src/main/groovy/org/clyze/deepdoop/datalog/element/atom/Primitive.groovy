@@ -23,8 +23,6 @@ class Primitive implements IAtom {
 		throw new UnsupportedOperationException()
 	}
 
-	List<VariableExpr> getVars() { [var] }
-
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 
 	static boolean isPrimitive(String name) {
