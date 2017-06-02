@@ -89,10 +89,11 @@ class DatalogListenerImpl extends DatalogBaseListener {
 
 		def annotations = gatherAnnotations(ctx.annotationList()) + pendingAnnotations
 
-		if (ctx.predicateName()) {
+		if (ctx.predicateName(0)) {
 			validateAnnotations("Entity", annotations)
-			def entity = new Entity(values[ctx.predicateName()] as String, new VariableExpr("x"))
-			def d = new Declaration(entity, [], annotations)
+			def entity = new Entity(values[ctx.predicateName(0)] as String, new VariableExpr("x"))
+			def supertype = ctx.predicateName(1) ? [new Stub(values[ctx.predicateName(1)] as String)] : []
+			def d = new Declaration(entity, supertype, annotations)
 			values[ctx] = d
 			currComp.addDecl(d)
 		} else if (ctx.refmode()) {

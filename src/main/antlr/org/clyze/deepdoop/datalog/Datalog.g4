@@ -25,7 +25,7 @@ datalog
 
 
 rightArrow
-    : annotationList? predicateName '.'
+    : annotationList? predicateName ('->' predicateName)? '.'
     | annotationList? compound '->' compound '.'
     | normalPredicate ',' refmode '->' normalPredicate '.'
     ;

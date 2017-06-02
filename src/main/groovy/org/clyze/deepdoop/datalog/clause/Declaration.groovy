@@ -12,7 +12,7 @@ class Declaration implements IVisitable, TSourceItem {
 
 	IAtom atom
 	List<IAtom> types
-	List<Annotation> annotations = []
+	List<Annotation> annotations
 
 	def <T> T accept(IVisitor<T> v) { v.visit(this) }
 }
