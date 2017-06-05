@@ -406,7 +406,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forPreprocessor: true
 			),
-			new BooleanAnalysisOption(
+			new AnalysisOption(
 					id: "OPEN_PROGRAMS",
 					name: "open-programs",
 					argName: "STRATEGY",
