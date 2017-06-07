@@ -73,3 +73,46 @@ NumberOfRelevantTypes[] = ?num <-
   
 
 TypeToPartitionId[?inClass] = ?sccId <- TypeToSCCId[?inClass] = ?sccId.
+
+
+SCCRefersToType(?typeTo, TypeToSCCId[?typeFrom], TypeToSCCId[?typeTo]) <-
+   TypeRefersToOther(?typeFrom, ?typeTo).
+
+CountOfReferencesBetweenSCCs[?sccFrom, ?sccTo] = ?cnt <-
+   agg<<?cnt = count()>>(SCCRefersToType(_, ?sccFrom, ?sccTo), ?sccFrom != ?sccTo).
+
+SCCKnowsAboutOther(?sccFrom, ?sccTo) <-
+   CountOfReferencesBetweenSCCs[?sccFrom, ?sccTo] = ?cntForward,
+   CountOfReferencesBetweenSCCs[?sccTo, ?sccFrom] = ?cntReverse,
+   ?cntForward > ?cntReverse.
+
+SCCKnowsAboutOther(?sccFrom, ?sccTo) <-
+   CountOfReferencesBetweenSCCs[?sccFrom, ?sccTo] = _,
+   !CountOfReferencesBetweenSCCs[?sccTo, ?sccFrom] = _.
+   
+SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo) <-
+   SCCKnowsAboutOther(?sccInter, ?sccTo),
+   SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccInter).
+
+SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo) <-
+   SCCKnowsAboutOther(?sccFrom, ?sccTo).
+
+SCCTransitivelyKnowsAboutApplicationClass(?class, ?sccFrom) <-
+   ApplicationClass(?class),
+   TypeToSCCId[?class] = ?sccTo,
+   SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo),
+   CountOfTypesPerSCC[?sccFrom] > 10.
+
+CountOfApplicationClassesTransitivelyKnownBySCC[?idType] = ?num <-
+  agg<<?num = count()>>(SCCTransitivelyKnowsAboutApplicationClass(_, ?idType)).
+
+MaxCountOfApplicationClassesTransitivelyKnownBySCC[] = ?maxNum <-
+   agg<<?maxNum = max(?num)>>(CountOfApplicationClassesTransitivelyKnownBySCC[_] = ?num).
+
+SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType) <-
+   CountOfApplicationClassesTransitivelyKnownBySCC(?idType, MaxCountOfApplicationClassesTransitivelyKnownBySCC[]).
+
+SpecialLibrary(?class) <-
+   !SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType),
+   !CollectionLibraryClass(?class),
+   TypeToSCCId[?class] = ?idType.
