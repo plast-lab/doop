@@ -29,15 +29,18 @@ import java.util.Set;
  */
 public class MemoryAnalyser {
 
+    static boolean EXTRACT_STRING_CONSTANTS = false;
+
     private static String filename;
 
     private Set<DynamicFact> dynamicFacts = new ConcurrentHashSet<>();
 
     private HeapAbstractionIndexer heapAbstractionIndexer = null;
 
-    public MemoryAnalyser(String filename) {
+    public MemoryAnalyser(String filename, boolean uniqueStings) {
 
         this.filename = filename;
+        EXTRACT_STRING_CONSTANTS = uniqueStings;
     }
 
 

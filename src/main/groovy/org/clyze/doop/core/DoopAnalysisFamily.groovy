@@ -445,6 +445,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
+					id: "ANALYZE_MEMORY_DUMP_STRINGS",
+					name: "analyze-memory-dump-strings",
+					description: "model string values uniquely in heap dump.",
+					value: false,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
 					argName: "FACTS_FILE",
