@@ -40,7 +40,7 @@ ProxyClassOfInterface(?iface, ?class) :-
 
 java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
    StaticMethodInvocation_SimpleName(?invo, "newProxyInstance"),
-   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy_ java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"),
+   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"),
    ActualParam(1, ?invo, ?interfaces),
    ActualParam(2, ?invo, ?handler),
    AssignReturnValue(?invo, ?ret).
@@ -60,7 +60,7 @@ ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) :-
 
 java_lang_reflect_Proxy_getProxyClass(?invo, ?ret, ?interfaces) :-
    StaticMethodInvocation_SimpleName(?invo, "getProxyClass"),
-   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy_ java.lang.Class getProxyClass(java.lang.ClassLoader,java.lang.Class[])>"),
+   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy: java.lang.Class getProxyClass(java.lang.ClassLoader,java.lang.Class[])>"),
    ActualParam(1, ?invo, ?interfaces),
    AssignReturnValue(?invo, ?ret).
 
@@ -77,11 +77,6 @@ VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
 //    Value_Heap[?arrayObj] = ?arrayHeap,
 //    ArrayType(HeapAllocation_Type[?arrayHeap]).
 
-.decl Optjava_lang_reflect_Proxy_newProxyInstance(?ret:Var, ?handler:Var, ?interfaces:Var, ?invo:MethodInvocation)
-
-Optjava_lang_reflect_Proxy_newProxyInstance(?ret, ?handler, ?interfaces, ?invo) :-
-   java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces).
-
 // Create a new heap allocation per
 // (newProxyInstance call, interface type) pair.
 //// REVIEW_ ideally these should be allocated context sensitively, i.e.,
@@ -89,9 +84,8 @@ Optjava_lang_reflect_Proxy_newProxyInstance(?ret, ?handler, ?interfaces, ?invo) 
 .decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)
 
 MockValueConsMacro(cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">"), ?proxyClass),
-ProxyClassInstance(?iface, ?invo, cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">"))
-:-
-   Optjava_lang_reflect_Proxy_newProxyInstance(_, _, _, ?invo),
+ProxyClassInstance(?iface, ?invo, cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">")) :-
+   java_lang_reflect_Proxy_newProxyInstance(?invo, _, _, _),
    isInterfaceType(?iface),
    ProxyClassOfInterface(?iface, ?proxyClass).
 
@@ -104,8 +98,7 @@ MethodOfInterface(?meth, ?iface) :-
 .decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)
 
 MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">"), "java.lang.Object[]"),
-ArgArrayOfProxyMethod(?meth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">"))
-:-
+ArgArrayOfProxyMethod(?meth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">")) :-
    ProxyClassInstance(?iface, ?invo, _),
    MethodOfInterface(?meth, ?iface).
 
@@ -155,11 +148,6 @@ VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
    ProxyClassInstance(?iface, ?invo, ?value),
    ImmutableHContextFromContext(?ctx, ?hctxImmutable).
 
-.decl Opt2java_lang_reflect_Proxy_newProxyInstance(?ret:Var, ?interfaces:Var, ?invo:MethodInvocation, ?handler:Var)
-
-Opt2java_lang_reflect_Proxy_newProxyInstance(?ret, ?interfaces, ?invo, ?handler) :-
-   java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces).
-
 .decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)
 .decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)
 .decl ProxyObject_HandlerHctx(?hctxHandler:HContext, ?value:Value)
@@ -171,7 +159,7 @@ ProxyObject_Handler(?handlerObj, ?value),
 ProxyObject_HandlerHctx(?hctxHandler, ?value),
 ProxyObject_Interface(?value, ?iface)
 :-
-   Opt2java_lang_reflect_Proxy_newProxyInstance(_, _, ?invo, ?handler),
+   java_lang_reflect_Proxy_newProxyInstance(?invo, _, ?handler, _),
    VarPointsTo(?hctxHandler, ?handlerObj, _, ?handler),
    ProxyClassInstance(?iface, ?invo, ?value).
 
@@ -201,8 +189,9 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this)
    ProxyObject_Handler(?handlerObj, ?value),
    ProxyObject_HandlerHctx(?hctxHandler, ?value),
    Value_Type(?handlerObj, ?handlerType),
-   Method_SimpleName("<java.lang.reflect.InvocationHandler_ java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>", ?invokeMethName),
-   Method_Descriptor("<java.lang.reflect.InvocationHandler_ java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>", ?invokeMethDescriptor),
+   ?invoke = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
+   Method_SimpleName(?invoke, ?invokeMethName),
+   Method_Descriptor(?invoke, ?invokeMethDescriptor),
    MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
    ThisVar(?handlerInvokeMeth, ?this).
 
