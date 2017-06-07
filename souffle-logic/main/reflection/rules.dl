@@ -1530,6 +1530,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
  *************************************************************/
 
 #ifdef REFLECTION_DYNAMIC_PROXIES
-#include "dynamic-proxies.logic"
+#include "dynamic-proxies.dl"
 #endif
 

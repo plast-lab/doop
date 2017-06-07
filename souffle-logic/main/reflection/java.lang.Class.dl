@@ -158,12 +158,6 @@ ArrayIndexPointsTo(?hctx, ?superInterfaceValue, ?hctx, ?arrayValue) :-
   DirectSuperinterface(?type, ?superInterface),
   ReifiedClass(?superInterface, ?superInterfaceValue).
 
-
-.decl _OptReflectiveAllocation(?arrayValue:Value, ?invocation:MethodInvocation)
-
-_OptReflectiveAllocation(?arrayValue, ?invocation) :-
-  ReflectiveAllocation(?invocation, _, ?arrayValue).
-
 .decl FillArray_Interfaces(?hctx:HContext, ?arrayValue:Value, ?type:Type)
 
 FillArray_Interfaces(?hctx, ?arrayValue, ?type),
@@ -172,7 +166,7 @@ VarPointsTo(?hctx, ?arrayValue, ?callerCtx, ?to) :-
   java_lang_Class_getInterfaces(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
   ReifiedClass(?type, ?classValue),
-  _OptReflectiveAllocation(?arrayValue, ?invocation).
+  ReflectiveAllocation(?invocation, _, ?arrayValue).
 
 
 /*************************************************************
@@ -202,7 +196,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
-  _OptReflectiveAllocation(?arrayValue, ?invocation),
+  ReflectiveAllocation(?invocation, _, ?arrayValue),
   ImmutableHContextFromContext(?ctx, ?hctx).
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
@@ -255,7 +249,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getDeclaredMethods(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
-  _OptReflectiveAllocation(?arrayValue, ?invocation).
+  ReflectiveAllocation(?invocation, _, ?arrayValue).
 
 // getDeclaredMethod has two differences from getMethod: it retrieves
 // all methods, not just public ones, but it does not retrieve inherited
@@ -296,7 +290,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  _OptReflectiveAllocation(?arrayValue, ?invocation).
+  ReflectiveAllocation(?invocation, _, ?arrayValue).
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
 // we assume that any constructor might be returned here.
@@ -322,7 +316,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
-  _OptReflectiveAllocation(?arrayValue, ?invocation).
+  ReflectiveAllocation(?invocation, _, ?arrayValue).
 
 
 // NOTE Because of the inherent imprecision in array handling (the argument),
@@ -371,7 +365,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
-  _OptReflectiveAllocation(?arrayValue, ?invocation).
+  ReflectiveAllocation(?invocation, _, ?arrayValue).
 
 // NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
 // mode. The constant will never flow to ?param.
@@ -419,7 +413,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   java_lang_Class_getDeclaredFields(?invocation, ?to, ?from),
   VarPointsTo(_, ?classValue, ?ctx, ?from),
   ReifiedClass(?type, ?classValue),
-  _OptReflectiveAllocation(?arrayValue, ?invocation).
+  ReflectiveAllocation(?invocation, _, ?arrayValue).
 
 ForwardReflectiveAssignFieldConstant(?ctx, ?to, ?signature),
 ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap) :-
