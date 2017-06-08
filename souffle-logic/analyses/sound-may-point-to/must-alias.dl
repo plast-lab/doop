@@ -4,14 +4,16 @@
 // For use when we don't want to incur the cost (typical case)
 .comp DummyMustAlias {
   // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
-  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
-  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output MustAlias, Before_MustAlias
 }
 
 .comp SoundMustAlias {
   // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
-  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
-  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output MustAlias, Before_MustAlias
 
   // invariant: all access paths involved are "computed", i.e., have been created.
 

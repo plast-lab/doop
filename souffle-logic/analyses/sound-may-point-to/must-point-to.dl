@@ -21,11 +21,13 @@
   // same concrete one! In fact, since this is a must-point-to
   // analysis, if a variable points to two abstract objects, they
   // *have* to be the same concrete object at run time.
-  .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var) output
+  .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var)
+  .output MustPointTo
 
   // Same for instance-field must-point-to.
-  .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction) output
-  .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction) output
+  .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  .output FieldMustPointTo, Before_FieldMustPointTo
 
   // There is no need to handle allocations or assignment of
   // null. Every local variable by definition points to the abstract
@@ -133,7 +135,9 @@
   // //// ====================================
   // //// Our final client: MustAlias relations. Maybe too demanding and computed lazily in the future
 
-  .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) output
+  .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext)
+  .output VarMustAlias
+
   VarMustAlias(?var1, ?var2, ?ctx) :-
     MustPointTo(?hctx, ?heap, ?ctx, ?var1),
     MustPointTo(?hctx, ?heap, ?ctx, ?var2).
@@ -149,7 +153,8 @@
     ?var1 != ?var2,
     ThisVar(?method, ?var2).
 
-  .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext) output
+  .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)
+  .output VarMustAliasRepresentative
 
   VarMustAliasRepresentative(?var, ?varRepr, ?ctx) :-
     VarMustAlias(?var, ?varRepr, ?ctx),
@@ -158,7 +163,9 @@
 
 
 /*
-  .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output VarMustAliasAP
+
   VarMustAliasAP(?var, ?ap, ?ctx, ?insn) :-
     MustPointTo(?hctx, ?heap, ?ctx, ?var),
     MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),

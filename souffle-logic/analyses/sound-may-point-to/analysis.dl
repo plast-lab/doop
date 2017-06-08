@@ -26,9 +26,10 @@
                                                      ?ctx:MayContext, ?insn:Instruction)
 
   // output relations
-  .decl IntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?var:Var) output
-  .decl IntraproceduralCertainMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation) output
-  .decl AppAllCtxIntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var) output
+  .decl IntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?var:Var)
+  .decl IntraproceduralCertainMethodBase(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?invo:MethodInvocation)
+  .decl AppAllCtxIntraproceduralMustPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var)
+  .output IntraproceduralMustPointTo, IntraproceduralCertainMethodBase, AppAllCtxIntraproceduralMustPointTo
 
   IntraproceduralMustPointTo(?hctx, ?heap, ?ctx, ?var) :-
     AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
@@ -118,15 +119,16 @@
   // Whenever (if) it is reached under context ?ctx, variable ?var may point to an object
   // allocated at site ?heap. Since we assume SSA and variables are ensured initialized before use,
   // there is no point in keeping this information per-instruction.
-  .decl MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?var:Var) output
+  .decl MayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ctx:MayContext, ?var:Var)
+  .output MayPointTo
 
   // Only for access paths that are not plain local vars. Distinguished
   // from above, since MayPointTo doesn't need ?insn (SSA form
   // assumed). Represents relationships that hold *after* the
   // instruction. There is also a Before_ version.
-  .decl AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
-
-  .decl Before_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_AccessPathMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output Before_AccessPathMayPointTo, AccessPathMayPointTo
 
   #include "must-alias.dl"
   .init MustAliasAnalysis = DummyMustAlias
@@ -135,7 +137,9 @@
   //// =====================================
   //// BEGIN final relations for stats
 
-  .decl AppAllCtxMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var) output
+  .decl AppAllCtxMayPointTo(?hctx:MayHeapContext, ?heap:HeapAllocation, ?var:Var)
+  .output AppAllCtxMayPointTo
+
   AppAllCtxMayPointTo(?hctx, ?heap, ?var) :-
     MayReachableMethodUnderMayContext(?ctx, ?meth),
 	InitialMayContext(?ctx),
@@ -151,13 +155,15 @@
   // analysis, instead of blindly applying it to all available code.
   .decl MayReachableMethodUnderMayContext(?ctx:MayContext, ?meth:Method)
   .decl MayReachableMayContext(?ctx:MayContext)
-  .decl RootMethodForMayAnalysis(?meth:Method) output
-  .decl MayCallGraphEdge(?ctx:MayContext, ?meth:Method, ?callerCtx:MayContext, ?invo:MethodInvocation) output
-  .decl MethodMayAssignField(?fld:Field, ?ctx: MayContext, ?toMethod:Method) output
-  .decl MethodHasUnresolvedInvocation(?ctx: MayContext, ?toMethod:Method) output
+  .decl RootMethodForMayAnalysis(?meth:Method)
+  .decl MayCallGraphEdge(?ctx:MayContext, ?meth:Method, ?callerCtx:MayContext, ?invo:MethodInvocation)
+  .decl MethodMayAssignField(?fld:Field, ?ctx: MayContext, ?toMethod:Method)
+  .decl MethodHasUnresolvedInvocation(?ctx: MayContext, ?toMethod:Method)
+  .output RootMethodForMayAnalysis, MayCallGraphEdge, MethodMayAssignField, MethodHasUnresolvedInvocation
 
-  .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:Method, ?callerCtx:MayContext, ?invo:MethodInvocation) output
-  .decl MayReachableMethodUnderMayContext_Prev(?ctx:MayContext, ?meth:Method) output
+  .decl MayCallGraphEdge_Prev(?ctx:MayContext, ?meth:Method, ?callerCtx:MayContext, ?invo:MethodInvocation)
+  .decl MayReachableMethodUnderMayContext_Prev(?ctx:MayContext, ?meth:Method)
+  .output MayCallGraphEdge_Prev, MayReachableMethodUnderMayContext_Prev
 
   MayReachableMethodUnderMayContext(?ctx, ?meth) :-
     RootMethodForMayAnalysis(?meth),
@@ -645,7 +651,9 @@
     //   .decl OptAccessPathWithVarExists(?fld:Field, ?base:Var, ?ctx:MayContext)
     //   OptAccessPathWithVarExists(?fld, ?base, ?ctx) :-
     //     OptAccessPathWithVarMayPointTo(_, _, ?base, ?fld, ?ctx, _).
-    //   .decl ComputedVarFieldAP(?var:Var, ?fld:Field) output
+    //   .decl ComputedVarFieldAP(?var:Var, ?fld:Field)
+    //   .output ComputedVarFieldAP
+    //
     //   ComputedVarFieldAP(?base2, ?fld) :-
     //     OptAccessPathWithVarExists(?fld, ?base1, ?ctx),
     //     MustPointToAnalysis.VarMustAlias(?base2, ?base1, ?ctx).
@@ -694,8 +702,8 @@
   //   AllPredecessors_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn).
 
   //// Establishing Before_AccessPathMayPointTo at beginning of basic block.
-
-  .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl AccessPathMayPointToAtSomePredecessor(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output AccessPathMayPointToAtSomePredecessor
   
   AccessPathMayPointToAtSomePredecessor(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?tail),
@@ -826,7 +834,9 @@
     MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?ctx, ?insn),
     MethodHasUnresolvedInvocation(?calleeCtx, ?toMethod).
 
-  .decl Temp1(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl Temp1(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output Temp1
+
   Temp1(?hctx, ?heap, ?ap, ?ctx, ?insn),
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
@@ -836,7 +846,9 @@
     !CalleeHasUnresolvedInvocation(?ctx, ?insn).
    .plan 1: (2,1,3)
 
-  .decl Temp2(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl Temp2(?hctx:MayHeapContext, ?heap:HeapAllocation, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output Temp2
+
   Temp2(?hctx, ?heap, ?ap, ?ctx, ?insn),
   AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
@@ -1156,7 +1168,8 @@
   //       collection access paths.
 
   // does the first one have *some* access path points-to info, or is irrelevant?
-  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) output
+  .decl HasAccessPathMayPointToUpToRelevantPredecessor(?pred:Instruction, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output HasAccessPathMayPointToUpToRelevantPredecessor
 
   HasAccessPathMayPointToUpToRelevantPredecessor(?pred, ?ap, ?ctx, ?insn) :-
 //// Remove? Seems completely unnecessary
@@ -1165,7 +1178,9 @@
     MayPredecessorBBModuloThrow(?pred, ?insn),
     !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
 
-  .decl OptAccessPathUnaffectedByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath) output
+  .decl OptAccessPathUnaffectedByInsnPredecessorBB(?pred:Instruction, ?insn:Instruction, ?ap:AccessPath)
+  .output OptAccessPathUnaffectedByInsnPredecessorBB
+
   OptAccessPathUnaffectedByInsnPredecessorBB(?pred, ?insn, ?ap) :-
     AccessPathUnaffectedByPredecessorBB(?ap, ?pred),
     MaySuccessorBBModuloThrow(?insn, ?pred).
@@ -1230,7 +1245,8 @@
   // lazy creation is what makes access path concepts be
   // analysis-phase-specific, as opposed to having a single global
   // definition
-  .decl ComputedAccessPath(?ap:AccessPath) output
+  .decl ComputedAccessPath(?ap:AccessPath)
+  .output ComputedAccessPath
   
   // These are computed uniformly:
   .decl AccessPath_IsSimple(?ap:AccessPath)
@@ -1249,7 +1265,8 @@
   // static or var.instance
   .decl SingleFieldAccessPath(?fld:Field, ?ap:AccessPath)
   .decl DoubleFieldAccessPath(?fld1:Field, ?fld2:Field, ?ap:AccessPath)
-  .decl AccessPath_BaseVar(?ap:AccessPath, ?var:Var) output
+  .decl AccessPath_BaseVar(?ap:AccessPath, ?var:Var)
+  .output AccessPath_BaseVar
   
   
   AccessPath_IsSimple(?ap) :-
@@ -1261,7 +1278,9 @@
     ?ap = [ ?base, [ ?fld, ?rest] ],
     ?base = ?base, ?fld = ?fld, ?rest = ?rest.
 
-  .decl ComputedFieldList(?fldList:AccessPathSuffix) output
+  .decl ComputedFieldList(?fldList:AccessPathSuffix)
+  .output ComputedFieldList
+
   ComputedFieldList(?fldList) :-
     ComputedAccessPath(?ap),
     ?ap = [ ?base, ?fldList ], ?base = ?base. // suppress warning
@@ -1330,9 +1349,10 @@
   ComputedAccessPath(?ap) :- InitialComputedAccessPath(?ap).
   
   // implies it's computed
-  .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var) output
-  .decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath) output
-    
+  .decl AccessPathShouldBeRebased(?ap:AccessPath, ?from:Var, ?to:Var)
+  .decl RebaseCompositeAccessPath(?ap:AccessPath, ?from:Var, ?to:Var, ?newAp:AccessPath)
+  .output AccessPathShouldBeRebased, RebaseCompositeAccessPath
+
   // If some access path is to be rebased, its non-var prefixes are as well.
   AccessPathShouldBeRebased(?newAp, ?from, ?to) :-
     AccessPathShouldBeRebased(?ap, ?from, ?to),
@@ -1411,7 +1431,9 @@
     Before_AccessPathMayPointTo(?hctx2, ?heap2, ?ap, ?ctx, ?insn).
   
   // now loads
-  .decl TempMayPointTo(?heap:HeapAllocation, ?ctx:MayContext, ?to:Var) output
+  .decl TempMayPointTo(?heap:HeapAllocation, ?ctx:MayContext, ?to:Var)
+  .output TempMayPointTo
+
   TempMayPointTo(?heap, ?ctx, ?to),
   MayPointTo(?hctx, ?heap, ?ctx, ?to) :-
     Before_AccessPathMayPointTo(?hctx, ?heap, ?ap, ?ctx, ?insn),
@@ -1493,7 +1515,9 @@
   
   
 .decl LibraryCollectionRoot(?type:Type)
-.decl LibraryCollectionType(?type:Type) output 
+.decl LibraryCollectionType(?type:Type)
+.output LibraryCollectionType
+
 LibraryCollectionRoot(?type) :-
   ?type = "java.util.AbstractCollection";
   ?type = "java.util.AbstractMap".
