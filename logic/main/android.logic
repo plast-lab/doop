@@ -57,9 +57,9 @@ ReifiedLayoutControl[?type,?id] = ?value
   Type:Id(?type:?typeStr),
   ?valueId = "<layout control object " + int32:string:convert[?id] + " of type " + ?typeStr + ">".
 
-SensitiveLayoutControlHeap(?heap) <-
-   ReifiedLayoutControl[?type, ?id] = ?heap,
-   SensitiveLayoutControl(?id, ?type).                        
+SensitiveLayoutControlValue(?value) <-
+   ReifiedLayoutControl[?type, ?id] = ?value,
+   SensitiveLayoutControl(?id, ?type, _).                        
 
 // Also instantiate implicitly some library objects
 ImplicitlyInstantiatedLibraryType(?type) <-
