@@ -205,6 +205,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			/* End Main options */
 			/* Start preprocessor normal flags */
 			new BooleanAnalysisOption(
+					id: "NO_MERGES",
+					name: "no-merges",
+					description: "No merges for string constants",
+					value: false,
+					webUI: true,
+					forPreprocessor: true,
+					isAdvanced: true
+			),
+			new BooleanAnalysisOption(
 					id: "DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS",
 					name: "distinguish-reflection-only-string-constants",
 					description: "Merge all string constants except those useful for reflection",

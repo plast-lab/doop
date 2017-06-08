@@ -72,9 +72,11 @@ AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
 HeapIsMergedString(?heap) :-
   HeapRepresentative("<<string-constant>>", ?heap).
 // Rule split in two since it needs to be stratified differently
+#ifndef NO_MERGES
 HeapAllocation_Merge(?heap, ?heapRepr) :-
   ?heapRepr = "<<string-constant>>",
   HeapRepresentative(?heapRepr, ?heap).
+
 
 .decl HeapIsMergedStringFactory(?heap:HeapAllocation)
 
@@ -106,7 +108,7 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
   isHeapAllocation(?mergeHeap),
   ord(?mergeHeap) = ?minHeapReprOrd,
   MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
-
+#endif
 /*************************************************************
  * String constants
  *************************************************************/
@@ -117,11 +119,13 @@ HeapAllocation_Merge(?heap, ?mergeHeap) :-
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #define DISTINGUISH_NO_STRING_CONSTANTS
+#ifndef NO_MERGES
 HeapRepresentative(?constant, ?heap) :-
   isStringConstant(?heap),
   ?constant = "<<string-constant>>",
   isHeapAllocation(?constant),
   !HeapAllocation_Keep(?heap).
+#endif
 #endif
 #endif // DISTINGUISH_NO_STRING_CONSTANTS mode
 
@@ -137,11 +141,14 @@ ReflectionSubstringObject(?heap) :-
   PreMethodNameMatchingStringConstantInexact_Signature(_,?heap);
   PreFieldNameMatchingStringConstantInexact_Signature(_,?heap).
 
+#ifndef NO_MERGES
+
 HeapRepresentative("<<string-constant>>", ?heap) :-
   isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
 
+#endif
 //#ifdef GROUP_REFLECTION_STRINGS
 
 // ///// Naive Merging strategy: all strings that map to same reflection object
@@ -253,10 +260,11 @@ StringRepresentativeForColor(?color, ?mergeHeap) :-
   isHeapAllocation(?mergeHeap),
   ord(?mergeHeap) = ?minHeapOrd.
 
+#ifndef NO_MERGES
 HeapRepresentative(?mergeHeap, ?heap) :-
   StringColorForHeap(?heap, ?color),
   StringRepresentativeForColor(?color, ?mergeHeap).
-
+#endif
 ///// End coloring strategy
 
 // Make the representative play (at a minimum) the same role as the
@@ -708,10 +716,11 @@ MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
   MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth),
   ord(?representativeHeap) = ?minHeapOrd.
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap),
   MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
-
+#endif
 // Now, per-class merging. This is more rare and should be requested
 // explicitly for a given type. Again, does not apply to types with
 // special merging policies.
@@ -747,10 +756,11 @@ ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
   MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class),
   ord(?representativeHeap) = ?minHeapOrd.
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap),
   ClassAndTypeToMergedHeap(?heap, ?type, ?class).
-
+#endif
 // Same for per-package merging.
 #include "package-heuristic.dl"
 
@@ -786,10 +796,11 @@ PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
   MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
   ord(?representativeHeap) = ?minHeapOrd.
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap),
   PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
-
+#endif
 // And the ultimate: universal per-type merging
 .decl TypeToHeap(?heap:HeapAllocation, ?heaptype:Type)
 .decl AllocationsPerType(?type:Type, ?n:number)
@@ -822,10 +833,11 @@ TypeToRepresentative(?type, ?representativeHeap) :-
   MinHeapOrdinalPerType(?minHeapOrd, ?type),
   ord(?representativeHeap) = ?minHeapOrd.
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   TypeToRepresentative(?type, ?representativeHeap),
   TypeToMergedHeap(?heap, ?type).
-
+#endif
 /*************************************************************
  * Coarse-grained allocation policy
  *************************************************************/
@@ -911,10 +923,11 @@ PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representative
   ord(?representativeHeap) = ?minHeapOrd.
 
 // current policy: all string builders merged per-package
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName),
   PackageAndTypeToStringFactoryRepresentative(?type, ?packageName, ?representativeHeap).
-
+#endif
 //// Used to be all are merged per-class:
 // // all string buffers (and builders) in the same class are merged
 // AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
@@ -926,6 +939,7 @@ HeapRepresentative(?representativeHeap, ?heap) :-
 //   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
 //   StringFactoryType(?heaptype).
 #else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE, i.e., merge them all
+#ifndef NO_MERGES
 HeapRepresentative("<<string-buffer>>", ?heap) :-
   HeapAllocation_Type(?heap, "java.lang.StringBuffer"),
   !HeapAllocation_Keep(?heap).
@@ -933,6 +947,7 @@ HeapRepresentative("<<string-buffer>>", ?heap) :-
 HeapRepresentative("<<string-builder>>", ?heap) :-
   HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
   !HeapAllocation_Keep(?heap).
+#endif
 #endif
 #endif
 #endif
@@ -978,12 +993,13 @@ ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
   ExceptionTypeToHeap(_, ?type),
   ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) :-
   ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
   ExceptionTypeToHeap(?heap, ?heaptype),
   ord(?representativeHeap) = ?representativeHeapOrd,
   isHeapAllocation(?representativeHeap).
-
+#endif
 #endif // SEPARATE_EXCEPTION_OBJECTS
 /*
 // An intermediate option is to only merge exception objects of the
@@ -999,7 +1015,6 @@ SameTypeAndMethod(?heap1, ?heap2) <-
 // Similarly quadratic but efficient.
 HeapRepresentative(?representativeHeap, ?heap) <-
   agg<<?representativeHeap = min(?otherHeap)>>(SameTypeAndMethod(?otherHeap,?heap)).
-
 */
 
 /*************************************************************

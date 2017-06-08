@@ -473,17 +473,12 @@ ReflectiveBaseVar(?invocation, ?to) :-
  * NOTE  
  * We just create a dummy value to represent the ClassLoader returned.
  *************************************************************/
-
-.decl _Optjava_lang_Class_getClassLoader(?invocation:MethodInvocation, ?to:Var, ?method:Method)
-
-_Optjava_lang_Class_getClassLoader(?invocation, ?to, ?method) :-
-  java_lang_Class_getClassLoader(?invocation, ?to, ?from),
-  Var_DeclaringMethod(?from, ?method).
   
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
-  _Optjava_lang_Class_getClassLoader(?invocation, ?to, ?method),
+  java_lang_Class_getClassLoader(?invocation, ?to, ?from),
+  Var_DeclaringMethod(?from, ?method),
   ReachableContext(?ctx, ?method),
+  ImmutableHContextFromContext(?ctx, ?hctx),
   isType(?type),
   ?type = "java.lang.ClassLoader",
   ReflectiveAllocation(?invocation, ?type, ?value).
