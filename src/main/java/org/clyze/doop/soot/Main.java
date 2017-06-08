@@ -428,12 +428,11 @@ public class Main {
                     }
                 }
 
-                    for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
-                        for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
-                            writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName());
-                            if (possibleLayoutControl.isSensitive()) {
-                                writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                            }
+                for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
+                    for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
+                        writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                        if (possibleLayoutControl.isSensitive()) {
+                            writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                         }
                     }
                 }

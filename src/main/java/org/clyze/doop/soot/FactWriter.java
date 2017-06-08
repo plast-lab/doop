@@ -953,8 +953,8 @@ class FactWriter {
         _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
     
-    void writeSensitiveLayoutControl(Integer id, String layoutControl) {
-        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl);
+    void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
+        _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
     void writeFieldInitialValue(SootField f) {
