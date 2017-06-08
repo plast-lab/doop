@@ -27,14 +27,17 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	boolean inRuleHead
 
 	String visit(Program p) {
-		currentFile = createUniqueFile("out_", ".dl")
+		//currentFile = createUniqueFile("out_", ".dl")
 		results << new Result(Result.Kind.LOGIC, currentFile)
 
 		// Transform program before visiting nodes
 		def n = p.accept(new NormalizeVisitingActor())
 				.accept(new InitVisitingActor())
+		n.accept(infoActor)
+		n.accept(new ValidationVisitingActor(infoActor))
 
-		n.accept(new PostOrderVisitor<IVisitable>(infoActor))
+		def inferenceActor = new TypeInferenceVisitingActor(infoActor)
+		n.accept(inferenceActor)
 
 		return super.visit(n as Program)
 	}
@@ -130,7 +133,7 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(VariableExpr n, Map<IVisitable, String> m) { n.name }
 
-	def emit(def data) { write currentFile, data }
+	def emit(def data) { /*write currentFile, data*/ }
 
 	static def pred(def name, def params) { "${mini(name)}($params)" }
 

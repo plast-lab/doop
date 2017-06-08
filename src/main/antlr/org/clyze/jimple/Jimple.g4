@@ -182,7 +182,7 @@ STRING_CHAR
 
 fragment
 IDENTIFIER_BASE
-	: [$@a-zA-Z_][$@a-zA-Z0-9_]*
+	: [$@a-zA-Z_][$@a-zA-Z0-9_-]*
 	| '\'annotation\''
 	;
 

@@ -3,7 +3,7 @@ package org.clyze.deepdoop.datalog
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.ErrorNode
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.clyze.deepdoop.actions.InfoCollectingVisitingActor
+import org.clyze.deepdoop.actions.InfoCollectionVisitingActor
 import org.clyze.deepdoop.actions.NormalizeVisitingActor
 import org.clyze.deepdoop.datalog.clause.Constraint
 import org.clyze.deepdoop.datalog.clause.Declaration
@@ -29,7 +29,7 @@ class DatalogListenerImpl extends DatalogBaseListener {
 	def values = [:]
 	def inRArrow = false
 	Component currComp
-	InfoCollectingVisitingActor infoActor = new InfoCollectingVisitingActor()
+	InfoCollectionVisitingActor infoActor = new InfoCollectionVisitingActor()
 	List<Annotation> pendingAnnotations = []
 
 	def program = new Program()

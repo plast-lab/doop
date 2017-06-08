@@ -54,7 +54,7 @@ class NormalizeVisitingActor extends PostOrderVisitor<IVisitable> implements IAc
 	Declaration exit(Declaration n, Map<IVisitable, IVisitable> m) { n }
 
 	Rule exit(Rule n, Map<IVisitable, IVisitable> m) {
-		new Rule(m[n.head], m[n.body], false)
+		new Rule(m[n.head], m[n.body])
 	}
 
 	AggregationElement exit(AggregationElement n, Map<IVisitable, IVisitable> m) {

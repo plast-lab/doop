@@ -3,7 +3,7 @@ package org.clyze.deepdoop.datalog.component
 import groovy.transform.InheritConstructors
 import groovy.transform.ToString
 import org.clyze.deepdoop.actions.IVisitable
-import org.clyze.deepdoop.actions.InfoCollectingVisitingActor
+import org.clyze.deepdoop.actions.InfoCollectionVisitingActor
 import org.clyze.deepdoop.actions.PostOrderVisitor
 import org.clyze.deepdoop.datalog.Program
 
@@ -16,7 +16,7 @@ class DependencyGraph {
 		nodes = [:]
 		layers = []
 
-		def acActor = new InfoCollectingVisitingActor()
+		def acActor = new InfoCollectionVisitingActor()
 		def acVisitor = new PostOrderVisitor<IVisitable>(acActor)
 		p.accept(acVisitor)
 

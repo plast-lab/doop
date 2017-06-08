@@ -5,7 +5,7 @@ enum BinOperator {
 	EQ("="), LT("<"), LEQ("<="),
 	GT(">"), GEQ(">="), NEQ("!="),
 	// Arithmetic
-			PLUS("+"), MINUS("-"), MULT("*"), DIV("/")
+	PLUS("+"), MINUS("-"), MULT("*"), DIV("/")
 
 	private String op
 

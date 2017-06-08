@@ -2,6 +2,8 @@
 @Entity AP.
 
 @Entity Cat -> Animal.
+@Entity Dog -> Animal.
+@Entity PersianCat -> Cat.
 
 @Output
 Foo(x, y) -> AP(x), string(y).

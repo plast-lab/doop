@@ -1,5 +1,6 @@
 package org.clyze.deepdoop.actions
 
+import org.clyze.deepdoop.datalog.Annotation
 import org.clyze.deepdoop.datalog.Program
 import org.clyze.deepdoop.datalog.clause.Constraint
 import org.clyze.deepdoop.datalog.clause.Declaration
@@ -12,13 +13,21 @@ import org.clyze.deepdoop.datalog.expr.BinaryExpr
 import org.clyze.deepdoop.datalog.expr.GroupExpr
 import org.clyze.deepdoop.datalog.expr.VariableExpr
 
-class InfoCollectingVisitingActor extends PostOrderVisitor<Void> implements IActor<Void>, TDummyActor<Void> {
+class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IActor<Void>, TDummyActor<Void> {
 
 	Map<IVisitable, List<IAtom>> declaringAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<IAtom>> usedAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<VariableExpr>> vars = [:].withDefault { [] }
 
-	InfoCollectingVisitingActor() {
+	List<String> allTypes = []
+	// TODO need to be ordered
+	Map<String, List<String>> superTypes = [:].withDefault { [] }
+	// Predicate Name x Set of Predicates
+	Map<String, Set<Rule>> affectedRules = [:].withDefault { [] as Set }
+	// TODO better having Constructor appear in rules instead of Functional
+	List<String> allConstructors = []
+
+	InfoCollectionVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
 		// keyword before all implicit/explicit calls to super/this have
 		// returned
@@ -72,6 +81,10 @@ class InfoCollectingVisitingActor extends PostOrderVisitor<Void> implements IAct
 	Void exit(Declaration n, Map m) {
 		declaringAtoms[n] = [n.atom]
 		usedAtoms[n] = n.types
+
+		allTypes << n.atom.name
+		if (n.annotations.any { it.kind == Annotation.Kind.ENTITY } && !n.types.isEmpty())
+			superTypes[n.atom.name] << n.types.first().name
 		null
 	}
 
@@ -91,6 +104,12 @@ class InfoCollectingVisitingActor extends PostOrderVisitor<Void> implements IAct
 		//	declMap.remove(name)
 		//	usedMap[name] = atom
 		//}
+		//def headPredicates = n.head.elements
+		//		.findAll { !(it instanceof Constructor) }
+		//		.collect { (it as IAtom).name }
+		n.body.elements
+				.findAll { it instanceof IAtom }
+				.each { affectedRules[(it as IAtom).name] += n }
 		null
 	}
 
@@ -129,6 +148,7 @@ class InfoCollectingVisitingActor extends PostOrderVisitor<Void> implements IAct
 
 	Void exit(Constructor n, Map m) {
 		exit(n as Functional, m)
+		allConstructors << n.name
 		null
 	}
 
