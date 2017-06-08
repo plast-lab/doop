@@ -72,6 +72,39 @@ Server:KeepClass(?interface) <-
   SupertypeOf(?interface, ?class).
 
 
+_AppVirtual(?invo) <-
+  VirtualMethodInvocation:Insn(?invo),
+  Instruction:Method[?invo] = ?method,
+  ApplicationMethod(?method).
+
+_AppVirtual:Resolved(?invo) <-
+  _AppVirtual(?invo),
+  CallGraphEdge(_, ?invo, _, _).
+
+_AppVirtual:Count[] = ?n <-
+  agg<<?n = count()>> _AppVirtual(_).
+
+_AppVirtual:Resolved:Count[] = ?n <-
+  agg<<?n = count()>> _AppVirtual:Resolved(_).
+
+_AppReachable(?method) <-
+  Reachable(?method),
+  ApplicationMethod(?method).
+
+_AppMethod:Count[] = ?n <-
+  agg<<?n = count()>> ApplicationMethod(_).
+
+_AppReachable:Count[] = ?n <-
+  agg<<?n = count()>> _AppReachable(_).
+
+Server:Metrics("AppVirtual (static)", ?n) <- _AppVirtual:Count[] = ?n.
+Server:Metrics("AppVirtual (resolved)", ?n) <- _AppVirtual:Resolved:Count[] = ?n.
+Server:Metrics("AppVirtual (%)", ?n) <- ?n = (1.0 * _AppVirtual:Resolved:Count[]) / _AppVirtual:Count[].
+Server:Metrics("AppMethod (static)", ?n) <- _AppMethod:Count[] = ?n.
+Server:Metrics("AppMethod (reachable)", ?n) <- _AppReachable:Count[] = ?n.
+Server:Metrics("AppMethod (%)", ?n) <- ?n = (1.0 * _AppReachable:Count[]) / _AppMethod:Count[].
+
+
 /*
 //// The code below is well-optimized, but we don't want it to burden our
 //// current timings, plus the concepts may need to be revisited, especially
