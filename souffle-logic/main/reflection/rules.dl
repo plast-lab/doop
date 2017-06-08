@@ -448,8 +448,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 .decl OptReflectiveVirtualMethodInvocationBaseValue(?hctx:HContext, ?value:Value, ?callerCtx:Context, ?invocation:MethodInvocation, ?signature:Method)
 
 OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) :-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base).
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
 
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
