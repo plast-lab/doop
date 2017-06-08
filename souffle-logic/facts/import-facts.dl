@@ -48,7 +48,7 @@ HeapAllocation_Type(?id, "java.lang.Class") :-
   _ClassHeap(?id, ?instanceType).
 
 // MethodHandleConstant
-/*
+
 .decl _MethodHandleConstant(?id:symbol)
 .input _MethodHandleConstant(IO="file", filename="MethodHandleConstant.facts", delimiter="\t")
 
@@ -60,7 +60,7 @@ isHeapAllocation(?id),
 isMethodHandleConstant(?id),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
   _MethodHandleConstant(?id).
-*/
+
 // EmptyArray
 
 .decl _EmptyArray(?id:symbol)

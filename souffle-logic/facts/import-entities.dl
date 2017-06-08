@@ -56,7 +56,7 @@ ActualParam(?index, ?invocation, ?var) :-
   _ActualParam(?index, ?invocation, ?var).
 
 // BootstrapParam
-/*
+
 .decl _BootstrapParam(?index:number, ?invocation:symbol, ?var:symbol)
 .input _BootstrapParam(IO="file", filename="BootstrapParam.facts", delimiter="\t")
 
@@ -66,7 +66,7 @@ isDynamicMethodInvocation_Insn(?invocation),
 isVar(?var),
 BootstrapParam(?index, ?invocation, ?var) :-
   _BootstrapParam(?index, ?invocation, ?var).
-*/
+
 // DirectSuperinterface
 
 .decl _DirectSuperinterface(?class:symbol, ?interface:symbol)
