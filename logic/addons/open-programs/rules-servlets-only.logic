@@ -1,7 +1,10 @@
 #include "../../commonMacros.logic"
 
-
-MockObjFromFormal(?obj) -> Value(?obj).
+// The following 3 predicate declarations are essential in case statistics
+// logic is enabled.
+MockObjFromArray(?type) -> ReferenceType(?type).
+MockObjFromField(?type) -> ReferenceType(?type).
+MockObjFromFormal(?type) -> ReferenceType(?type).
 
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").
