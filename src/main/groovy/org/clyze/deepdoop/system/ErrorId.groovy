@@ -19,7 +19,12 @@ enum ErrorId {
 	UNUSED_VAR,
 	UNKNOWN_COMP,
 	MULTIPLE_ENT_DECLS,
-	INVALID_ANNOTATION
+	INVALID_ANNOTATION,
+	UNSUPPORTED_TYPE,
+	UNKNOWN_TYPE,
+	CONSTRUCTOR_RULE,
+	CONSTRUCTOR_INCOMPATIBLE,
+	INCOMPATIBLE_TYPES,
 
 	static Map<ErrorId, String> msgMap
 	static {
@@ -41,6 +46,11 @@ enum ErrorId {
 		msgMap[UNKNOWN_COMP] = "Unknown component `{0}`"
 		msgMap[MULTIPLE_ENT_DECLS] = "Multiple declarations for Entity `{0}` in previous components"
 		msgMap[INVALID_ANNOTATION] = "Invalid annotation `{0}` for `{1}`"
+		msgMap[UNSUPPORTED_TYPE] = "Type `{0}` is currently unsupported"
+		msgMap[UNKNOWN_TYPE] = "Unknown type `{0}`"
+		msgMap[CONSTRUCTOR_RULE] = "Constructor `{0}` used as a normal predicate in rule head"
+		msgMap[CONSTRUCTOR_INCOMPATIBLE] = "Constructor `{0}` used with incompatible type `{1}`"
+		msgMap[INCOMPATIBLE_TYPES] = "Incompatible types for predicate `{0}` (at index {1})"
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {

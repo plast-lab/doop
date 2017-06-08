@@ -18,7 +18,14 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 	Map<IVisitable, List<IAtom>> declaringAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<IAtom>> usedAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<VariableExpr>> vars = [:].withDefault { [] }
-	Map<String, List<IAtom>> subtypes = [:].withDefault { [] }
+
+	List<String> allTypes = []
+	// TODO need to be ordered
+	Map<String, List<String>> superTypes = [:].withDefault { [] }
+	// Predicate Name x Set of Predicates
+	Map<String, Set<Rule>> affectedRules = [:].withDefault { [] as Set }
+	// TODO better having Constructor appear in rules instead of Functional
+	List<String> allConstructors = []
 
 	InfoCollectionVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -75,8 +82,9 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 		declaringAtoms[n] = [n.atom]
 		usedAtoms[n] = n.types
 
+		allTypes << n.atom.name
 		if (n.annotations.any { it.kind == Annotation.Kind.ENTITY } && !n.types.isEmpty())
-			subtypes[n.types.first().name] << n.atom
+			superTypes[n.atom.name] << n.types.first().name
 		null
 	}
 
@@ -96,6 +104,12 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 		//	declMap.remove(name)
 		//	usedMap[name] = atom
 		//}
+		//def headPredicates = n.head.elements
+		//		.findAll { !(it instanceof Constructor) }
+		//		.collect { (it as IAtom).name }
+		n.body.elements
+				.findAll { it instanceof IAtom }
+				.each { affectedRules[(it as IAtom).name] += n }
 		null
 	}
 
@@ -134,6 +148,7 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 
 	Void exit(Constructor n, Map m) {
 		exit(n as Functional, m)
+		allConstructors << n.name
 		null
 	}
 
