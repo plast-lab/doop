@@ -57,7 +57,7 @@ class HeapAbstractionIndexer {
     DynamicHeapObject getHeapRepresentation(JavaHeapObject obj, Context hctx) {
         JavaClass cls = obj.getClazz();
 
-        if (cls.isString() && obj.toString().length() < 50) {
+        if (MemoryAnalyser.EXTRACT_STRING_CONSTANTS && cls.isString() && obj.toString().length() < 50) {
             // Strings are treated differently throughout, important for reflection analysis
             JavaThing value = ((JavaObject)obj).getField("value");
             String strValue = value instanceof JavaValueArray?((JavaValueArray)value).valueString():UNKNOWN;

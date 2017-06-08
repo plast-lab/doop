@@ -1,7 +1,13 @@
 #ifndef IMPORT_PARTITIONS
- #include "../../main/classes-scc.logic"
+// #include "../../main/classes-scc.logic"
 #endif
 #include "../../main/in-out-flow.logic"
+
+Instruction:DeclaringType[?instruction] = ?declaringType <-
+   Method:DeclaringType[Instruction:Method[?instruction]] = ?declaringType.
+
+MethodInvocation:ToType[?invo] =  Method:DeclaringType[?method] <-
+   MethodInvocation:Method[?invo] = ?method.
 
 EmptyContext[] = ?ctx -> Context(?ctx).
 lang:constructor(`EmptyContext).
@@ -221,6 +227,14 @@ CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
   HContextLength[?hctx] >= 2.
 */
 
+// static, forward, 012
+TempoStaticForward012(?callerCtx),
+CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
+   MergeStaticBasis(?callerCtx, ?invo),
+   StaticMethodInvocation:Insn(?invo),
+   InvocationToForwardContext(?invo).   
+
+
 // static, reset, 0
 // static, reset, 1
 // static, reset, 2
@@ -318,12 +332,6 @@ CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
   ContextLength[?callerCtx] = 3.
 */
 
-// static, forward, 012
-TempoStaticKeep012(?callerCtx),
-CachedMergeStatic[?callerCtx, ?invo] = ?callerCtx <-
-   MergeStaticBasis(?callerCtx, ?invo),
-   UnambiguousInvocation(?invo).   
-
 HContext(?hctx), 
 HContextFromOne[FirstFromContext[?ctx]] = ?hctx,
 CachedRecord[?ctx, ?value] = ?hctx <-
@@ -345,24 +353,29 @@ CachedRecord[?ctx, ?value] = ?hctx <-
 
 // Final output: derivative concepts
 
-// Virtual
-PointToIncreaseContext(?invo, ?value) <-
-  MergeBasis(_, _, ?invo, ?value),
-  VirtualMethodInvocation:Insn(?invo),
-  Value:Type[?value] = ?valuetype,
-  PreciseInvocationAndType(?valuetype, ?invo).
+// Notice the precidence helping here: reset > increase > forward > update
 
+// Virtual
 PointToResetContext(?invo, ?value) <-
   MergeBasis(_, _, ?invo, ?value),
   VirtualMethodInvocation:Insn(?invo),
   Value:Type[?value] = ?valuetype,
   ImpreciseInvocationAndType(?valuetype, ?invo).
 
+PointToIncreaseContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  VirtualMethodInvocation:Insn(?invo),
+  Value:Type[?value] = ?valuetype,
+  PreciseInvocationAndType(?valuetype, ?invo),
+  !ImpreciseInvocationAndType(?valuetype, ?invo).
+
 PointToForwardContext(?invo, ?value) <-
   MergeBasis(_, _, ?invo, ?value),
   VirtualMethodInvocation:Insn(?invo),
   Value:Type[?value] = ?valuetype,
-  UnambiguousInvocationAndType(?valuetype, ?invo).  
+  UnambiguousInvocationAndType(?valuetype, ?invo),
+  !PreciseInvocationAndType(?valuetype, ?invo),
+  !ImpreciseInvocationAndType(?valuetype, ?invo).
 
 PointToUpdateContext(?invo, ?value) <-
   MergeBasis(_, _, ?invo, ?value),
@@ -372,20 +385,26 @@ PointToUpdateContext(?invo, ?value) <-
   !ImpreciseInvocationAndType(?valuetype, ?invo),
   !UnambiguousInvocationAndType(?valuetype, ?invo).
 
-// Special
-PointToIncreaseContext(?invo, ?value) <-
-  MergeBasis(_, _, ?invo, ?value),
-  SpecialMethodInvocation:Insn(?invo),
-  PreciseInvocation(?invo).
+// Notice the precidence helping here: reset > increase > forward > update
 
+// Special
 PointToResetContext(?invo, ?value) <-
   MergeBasis(_, _, ?invo, ?value),
   SpecialMethodInvocation:Insn(?invo),
   ImpreciseInvocation(?invo).
 
+
+PointToIncreaseContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  SpecialMethodInvocation:Insn(?invo),
+  PreciseInvocation(?invo),
+  !ImpreciseInvocation(?invo).
+
 PointToForwardContext(?invo, ?value) <-
   MergeBasis(_, _, ?invo, ?value),
-  SpecialMethodInvocation:Insn(?invo),   
+  SpecialMethodInvocation:Insn(?invo),
+  !ImpreciseInvocation(?invo),
+  !PreciseInvocation(?invo),
   UnambiguousInvocation(?invo).
 
 PointToUpdateContext(?invo, ?value) <-  
@@ -396,17 +415,29 @@ PointToUpdateContext(?invo, ?value) <-
   !UnambiguousInvocation(?invo).
 
 // Static
-InvocationToIncreaseContext(?invo) <-
-  StaticMethodInvocation:Insn(?invo),
-  PreciseInvocation(?invo).
+
+InvocationToResetContext(?invo) -> StaticMethodInvocation:Insn(?invo).
 
 InvocationToResetContext(?invo) <-
-  StaticMethodInvocation:Insn(?invo),
-  ImpreciseInvocation(?invo).
+   StaticMethodInvocation:Insn(?invo),
+   ImpreciseInvocation(?invo).
+
+InvocationToIncreaseContext(?invo) -> StaticMethodInvocation:Insn(?invo).
+
+InvocationToIncreaseContext(?invo) <-
+   StaticMethodInvocation:Insn(?invo),
+   PreciseInvocation(?invo),
+   !ImpreciseInvocation(?invo).
+
+InvocationToForwardContext(?invo) -> StaticMethodInvocation:Insn(?invo).
 
 InvocationToForwardContext(?invo) <-
-  StaticMethodInvocation:Insn(?invo),
-  UnambiguousInvocation(?invo).
+   StaticMethodInvocation:Insn(?invo),
+   !ImpreciseInvocation(?invo),
+   !PreciseInvocation(?invo),
+   UnambiguousInvocation(?invo).
+
+InvocationToUpdateContext(?invo) -> StaticMethodInvocation:Insn(?invo).
 
 InvocationToUpdateContext(?invo) <-
   StaticMethodInvocation:Insn(?invo),
@@ -414,46 +445,12 @@ InvocationToUpdateContext(?invo) <-
   !ImpreciseInvocation(?invo),
   !UnambiguousInvocation(?invo).
 
-/// More primitive concepts
-// TODO: also add methods allocating objects that escape, based on quick analysis?
 
-MethodWithReferenceArguments(?method) <-
-  FormalParam[_, ?method] = ?formal,
-  Var:Type[?formal] = ?formalType,
-  ReferenceType(?formalType).
-
-StaticMethodWithNoReferenceArguments(?method) <-
-  Method(?method),
-  !MethodWithReferenceArguments(?method),
-  Method:Modifier("static", ?method).
-
-UnambiguousInvocation(?invo) <-
-   StaticMethodInvocation:Insn(?invo),
-   !PreciseInvocation(?invo),
-   !ImpreciseInvocation(?invo).
-
-PreciseInvocation(?method) <-
-   StaticMethodInvocation:Insn(?invo),
-   InOutFlowMethod(_, MethodInvocation:Method[?invo]),
-   !ImpreciseInvocation(?invo).
-
-ImpreciseInvocation(?invo) <-
-   StaticMethodInvocation:Insn(?invo),
-   StaticMethodWithNoReferenceArguments(MethodInvocation:Method[?invo]).
-   
-PreciseInvocation(?invo) <- SpecialMethodInvocation:Insn(?invo).
-
-
-PreciseInvocationAndType(?type, ?invo) <-
-   ResolveInvocation[?type, ?invo] = _.
-
-
-UnambiguousInvocation(?invo).
-
-// We should discard the null context element rather than propagate it
-UnambiguousInvocationAndType(Type:null[], ?invo) <-
-   VirtualMethodInvocation:Insn(?invo).
+UnambiguousInvocationAndType(?type, ?invo) -> Type(?type), MethodInvocation(?invo).
 
 ImpreciseInvocation(?invo) -> MethodInvocation(?invo).
 
 ImpreciseInvocationAndType(?type, ?invo) -> Type(?type), MethodInvocation(?invo).
+
+//#include "inoutscc.logic"
+#include "appownscontext.logic"

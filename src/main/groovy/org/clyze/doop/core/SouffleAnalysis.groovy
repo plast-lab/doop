@@ -23,7 +23,7 @@ class SouffleAnalysis extends DoopAnalysis {
     /**
      * The cache dir for the analysis executable
      */
-    File analysisCacheDir
+    File souffleAnalysesCache
 
     /**
      * Total time for Souffle compilation phase
@@ -34,6 +34,7 @@ class SouffleAnalysis extends DoopAnalysis {
      * Total time for analysis execution
      */
     protected long executionTime
+    File souffleAnalysisCacheFile
 
     protected SouffleAnalysis(String id,
                               String name,
@@ -189,9 +190,11 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisFileChecksum = CheckSum.checksum(analysis, DoopAnalysisFactory.HASH_ALGO)
         def stringToHash = analysisFileChecksum + options.SOUFFLE_PROFILE.value.toString()
         def analysisChecksum = CheckSum.checksum(stringToHash, DoopAnalysisFactory.HASH_ALGO)
-        analysisCacheDir = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
+        souffleAnalysesCache = new File("${Doop.souffleAnalysesCache}")
+        souffleAnalysesCache.mkdirs()
+        souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
-        if (!analysisCacheDir.exists() || options.SOUFFLE_DEBUG.value) {
+        if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
             def compilationCommand = "souffle -c -o ${outDir}/${name} $analysis"
 
             if (options.SOUFFLE_PROFILE.value)
@@ -202,12 +205,11 @@ class SouffleAnalysis extends DoopAnalysis {
             logger.info "Compiling Datalog to C++ program and executable"
             logger.debug "Compilation command: $compilationCommand"
 
-            deleteQuietly(analysisCacheDir)
-            analysisCacheDir.mkdirs()
-
             // Create a subshell to temporarely cd to the analysis cache directory and execute the compilation
             // command, as the analysis executable is created at the directory level of the command's invocation.
-            def subshellCommand = "(cd $analysisCacheDir && " + compilationCommand + ")"
+            def subshellCommand = "(cd ${souffleAnalysesCache} && ${compilationCommand} && cp ${souffleAnalysesCache}/${name} ${souffleAnalysisCacheFile.canonicalPath} 2>/dev/null" + ")"
+
+            logger.debug "Setup subshell command: $subshellCommand"
 
             def ignoreCounter = 0
             compilationTime = Helper.timing {
@@ -224,10 +226,10 @@ class SouffleAnalysis extends DoopAnalysis {
             }
 
             logger.info "Analysis compilation time (sec): $compilationTime"
-            logger.info "Caching analysis executable in $analysisCacheDir"
+            logger.info "Caching analysis executable in $souffleAnalysesCache"
         }
         else {
-            logger.info "Using cached analysis executable ${analysisCacheDir}/${name}"
+            logger.info "Using cached analysis executable ${souffleAnalysesCache}"
         }
     }
 
@@ -235,7 +237,7 @@ class SouffleAnalysis extends DoopAnalysis {
         deleteQuietly(database)
         database.mkdirs()
 
-        def executionCommand = "${analysisCacheDir}/${name} -j$jobs -F$factsDir -D$database"
+        def executionCommand = "${souffleAnalysisCacheFile} -j$jobs -F$factsDir -D$database"
         if (options.SOUFFLE_PROFILE.value)
             executionCommand += " -p${outDir}/profile.txt"
 
