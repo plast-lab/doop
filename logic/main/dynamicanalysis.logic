@@ -28,11 +28,12 @@ DynamicContextToHContext(?hctx, ?dctx) <-
 HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
-   HeapAllocation:Merge[?heap] = ?mergeHeap,
+   (HeapAllocation:Merge[?heap] = ?mergeHeap ; HeapRepresentative(?mergeHeap, ?heap)),
    HeapAllocation:Dynamic(?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
    !HeapAllocation:Merge[?heap] = _,
+   !HeapRepresentative(_, ?heap),
    HeapAllocation:Dynamic(?heap).
 
 // Context sensitive allocations
@@ -73,7 +74,7 @@ InitializedClass(?class) <-
    OptClassInitializer(?class, ?method).
 
 ProbablyReachable(?method) <-
-   DynamicCallGraphEdge(_, ?method, _, _, _).
+   SanitizedDynamicCallGraphEdge(_, ?method, _, _, _).
 
 ProbablyReachable(?tomethod) <-
    StaticMethodInvocation(_, ?tomethod, ?fromMethod),
@@ -102,6 +103,10 @@ SanitizedDynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMet
 SanitizedDynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod) <-
    DynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod),
    MethodInvocation:Method[?invocation] = ?toMethod.
+
+SanitizedDynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod) <-
+   DynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod),      
+   DynamicMethodInvocation:Insn(?invocation).
 
    
 #ifdef DYNAMIC_CONTEXT_SENSITIVITY

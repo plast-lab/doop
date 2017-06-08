@@ -41,6 +41,7 @@ public class MemoryAnalyser {
 
         this.filename = filename;
         EXTRACT_STRING_CONSTANTS = uniqueStings;
+        if (uniqueStings) System.out.println("(Experimental) Strings in Heap dump will be analyzed.");
     }
 
 

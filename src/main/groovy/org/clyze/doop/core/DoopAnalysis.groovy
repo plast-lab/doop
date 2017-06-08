@@ -418,7 +418,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     protected void analyseMemoryDump(String filename) {
         try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.ANALYZE_MEMORY_DUMP_STRINGS.asBoolean())
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.ANALYZE_MEMORY_DUMP_STRINGS.value ? true : false)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir)
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {
