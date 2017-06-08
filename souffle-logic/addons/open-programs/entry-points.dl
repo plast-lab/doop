@@ -1,0 +1,56 @@
+.decl EntryPoint(?method:Method)
+.decl PossibleEntryPoint(?method:Method)
+.decl ClassHasPossibleEntryPoint(?class:ReferenceType)
+
+ClassHasPossibleEntryPoint(?class),
+PossibleEntryPoint(?method) :-
+  Method_DeclaringType(?method, ?class),
+  Method_Modifier("public", ?method),
+  !ClassModifier("private", ?class),
+  !Method_Modifier("static", ?method).
+
+// Find highest level in the naming hierarchy that contains public
+// methods.
+.decl PrefixAbove(class:ReferenceType, str:symbol, ?len:number)
+.decl PrefixBelow(class:ReferenceType, str:symbol)
+
+PrefixAbove(?classAbove, substr(?classAbove, 0, ?lastDotPos+1), ?lastDotPos+1) :-
+  ClassHasPossibleEntryPoint(?classAbove),
+  LastDot(?classAbove, ?lastDotPos).
+
+PrefixBelow(?classBelow, substr(?classBelow, 0, ?lastDotPos)) :-
+  ClassHasPossibleEntryPoint(?classBelow),
+  LastDot(?classBelow, ?lastDotPos).
+
+.decl ClassIsAboveOtherInNamingHierarchy(?classAbove:ReferenceType, ?classBelow:ReferenceType)
+
+ClassIsAboveOtherInNamingHierarchy(?classAbove, ?classBelow) :-
+  // One's prefix before "." is a proper prefix of the other's prefix before "."
+  PrefixAbove(?classAbove, ?prefixAbove, ?prefixLen),
+  PrefixBelow(?classBelow, ?prefixBelow),
+  substr(?prefixBelow, 0, ?prefixLen) = ?prefixAbove.
+
+.decl ClassWithTopLevelEntryPoint(?class:ReferenceType)
+.decl TopLevelEntryPoint(?method:Method)
+
+ClassWithTopLevelEntryPoint(?class) :-
+  ClassHasPossibleEntryPoint(?class),
+  !ClassIsAboveOtherInNamingHierarchy(_, ?class).
+
+TopLevelEntryPoint(?method) :-
+  PossibleEntryPoint(?method),
+  Method_DeclaringType(?method, ?class),
+  ApplicationClass(?class),
+  ClassWithTopLevelEntryPoint(?class).
+
+#ifdef OPEN_PROGRAMS
+// The original definition that Neville had
+EntryPoint(?method) :-
+  PossibleEntryPoint(?method),
+  Method_DeclaringType(?method, ?class),
+  substr(?class, 0, 4) = "java".
+#else
+// The definition we currently want as default
+EntryPoint(?method) :-
+  TopLevelEntryPoint(?method).
+#endif

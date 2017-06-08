@@ -1,0 +1,228 @@
+#include "entry-points.dl"
+
+.decl AllConcreteImplementations(?class:ClassType, ?type:Type)
+.decl ConcreteType(?class:ClassType)
+
+AllConcreteImplementations(?class, ?staticType) :-
+  isClassType(?class),
+  SubtypeOf(?class, ?staticType),
+  !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) :-
+  isClassType(?class),
+  !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?type, ?type) :-
+  isArrayType(?type).
+
+ConcreteType(?type) :-
+  AllConcreteImplementations(?type, _).
+
+.decl ObjToMock(?class:ReferenceType)
+.decl MockObjFromEntryPoint(?class:ReferenceType)
+.decl MockObjFromArray(?class:ReferenceType)
+
+MockObjFromEntryPoint(?class),
+ObjToMock(?class) :-
+  EntryPoint(?method),
+  Method_DeclaringType(?method, ?class),
+  isReferenceType(?class),
+  !ClassModifier("abstract", ?class).
+
+MockObjFromArray(?class),
+ObjToMock(?class) :-
+  ObjToMock(?type),
+  isArrayType(?type),
+  ComponentType(?type, ?componentType),
+  StaticToActualType(?class, ?componentType).
+
+
+.decl MockObjFromField(?fieldType:ReferenceType)
+
+#ifdef MOCK_OBJECTS_FOR_FIELDS
+MockObjFromField(?fieldType),
+ObjToMock(?fieldType) :-
+  ObjToMock(?class),
+  FieldInformation(_, ?fieldType, ?class),
+  isReferenceType(?fieldType),
+  !ClassModifier("abstract", ?fieldType).
+
+.decl FieldInformation(?signature:Field, ?fieldtype:Type, ?class:ReferenceType)
+
+FieldInformation(?signature, ?fieldtype, ?class) :-
+  Field_Type(?signature, ?fieldtype),
+  Field_DeclaringType(?signature, ?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) :-
+  FieldInformation(?signature, ?fieldtype, ?staticType),
+  AllConcreteImplementations(?class, ?staticType).
+
+FieldInformation(?signature, ?fieldConcreteType, ?class) :-
+  FieldInformation(?signature, ?fieldStaticType, ?class),
+  StaticToActualType(?fieldConcreteType, ?fieldStaticType).
+
+.decl FieldTypeForMockObject(?signature:Field, ?basevalue:Value, ?fieldtype:Type)
+
+FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) :-
+  FieldInformation(?signature, ?fieldtype, ?class),
+  MockObject(?basevalue, ?class).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) :-
+  isImmutableHContext(?hctx), //TODO: hctx
+  FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
+  MockObjectForType(?value, ?fieldtype).
+#endif
+
+
+// Arrays
+.decl MockObjectForType(?value:Value, ?staticType:Type)
+
+MockObjectForType(?value, ?staticType) :-
+  MockObject(?value, ?class),
+  StaticToActualType(?class, ?staticType).
+
+.decl MockObjectForComponentType(?value:Value, ?arrayType:ArrayType)
+
+MockObjectForComponentType(?value, ?arrayType) :-
+  ComponentType(?arrayType, ?componentType),
+  MockObjectForType(?value, ?componentType).
+
+ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) :-
+  MockObjectContext(?hctx, ?arrayValue, ?arrayType),
+  isArrayType(?arrayType),
+  MockObjectForComponentType(?componentValue, ?arrayType).
+
+// *****************
+// Formal parameters
+// *****************
+.decl FormalsForEntryPoints(?method:Method, ?formal:Var)
+
+FormalsForEntryPoints(?method, ?formal) :-
+  EntryPoint(?method),
+  FormalParam(_, ?method, ?formal).
+
+.decl MockObjFromFormal(?type:ReferenceType)
+.decl TypeForFormals(?formal:Var, ?method:Method, ?type:ReferenceType)
+
+ObjToMock(?subtype),
+MockObjFromFormal(?subtype),
+TypeForFormals(?formal, ?method, ?subtype) :-
+  FormalsForEntryPoints(?method, ?formal),
+  Var_Type(?formal, ?staticType),
+  StaticToActualType(?subtype, ?staticType).
+
+.decl MockForFormal(?value:Value, ?formal:Var, ?type:ReferenceType, ?method:Method)
+
+MockForFormal(?value, ?formal, ?type, ?method) :-
+  TypeForFormals(?formal, ?method, ?type),
+// When running a mutliple segregated analysis, we want to restrict the program
+// so that we avoid data flowing from classes in different partitions.
+// We should select formal parameters with this intuition in mind.
+#ifdef MULTIPLE_SEGREGATED_ANALYSES
+  Method_DeclaringType(?method, ?class),
+  TypeToPartitionId(?class, ?id),
+  TypeToPartitionId(?type, ?id),
+#endif
+  MockObject(?value, ?type).
+
+.decl MockObject(?value:Value, ?class:ReferenceType)
+.decl MockObjectContext(?hctx:HContext, ?value:Value, ?class:ReferenceType)
+
+.decl ContextForEntryPoint(?ctx:Context, ?method:Method)
+.decl HContextForEntryPoint(?hctx:HContext, ?method:Method)
+
+// bind mock objects to formals
+MockObjectContext(?hctx, ?value, ?class),
+VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
+  ContextForEntryPoint(?ctx, ?method),
+  HContextForEntryPoint(?hctx, ?method),
+  MockForFormal(?value, ?formal, ?class, ?method).
+
+// TODO: do we need all these options?
+// feel free to remove/collapse some
+
+// receivers for entry points
+.decl ReceiverPointsTo(?value:Value, ?ctx:Context, ?receiver:Var, ?class:ReferenceType, ?method:Method)
+
+HContextForEntryPoint(?hctx, ?method),
+MockObjectContext(?hctx, ?value, ?class),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) :-
+#ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
+  ImmutableHContextFromContext(?calleeCtx, ?hctx),
+#else
+  RecordMacro(?calleeCtx, ?value, ?hctx),
+#endif
+  ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
+
+// Important: The MergeOpenProgramEntryPointMacro can be defined
+// in such a way as to retreive some of the precision lost
+// due to having mock objects flowing everywhere,
+// see implementation in 2objH
+// see scalable (but less sound) implementation in partioned-2objH
+
+// TODO: feel free to simplify options here
+ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
+ContextForEntryPoint(?calleeCtx, ?method) :-
+  ThisVar(?method, ?receiver),
+  Method_DeclaringType(?method, ?class),
+  MockObjectForType(?value, ?class),
+#ifndef MergeOpenProgramEntryPointMacro
+  isImmutableHContext(?immutablehctx),
+#endif
+#ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
+  isImmutableContext(?calleeCtx),
+#endif
+#ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
+#ifdef MergeOpenProgramEntryPointMacro
+  MergeOpenProgramEntryPointMacro(?method, ?value, ?calleeCtx),
+#else
+  MergeStartupMacro(?immutablehctx, ?value, ?calleeCtx),
+#endif
+#endif
+  EntryPoint(?method).
+
+
+ReachableContext(?ctx, ?method) :-
+  ContextForEntryPoint(?ctx, ?method).
+
+.decl TypeToConcreteImplementationOrd(?staticType:Type, ?classOrd:number)
+.decl ConcreteImplementations(?staticType:Type, ?class:ClassType)
+
+// Here we "randomly" select a concrete implementation for each type.
+// In a segregated analysis we try to select one from the same partition.
+TypeToConcreteImplementationOrd(?staticType, ?classOrd) :-
+  AllConcreteImplementations(_, ?staticType),
+  ?classOrd = min ord(?allClasses) : {
+     #ifdef MULTIPLE_SEGREGATED_ANALYSES
+     TypeToPartitionId(?allClasses, ?id),
+     TypeToPartitionId(?staticType, ?id),
+     #endif
+     AllConcreteImplementations(?allClasses, ?staticType)
+   }.
+
+ConcreteImplementations(?staticType, ?class) :-
+  TypeToConcreteImplementationOrd(?staticType, ?classOrd),
+  isType(?class),
+  ord(?class) = ?classOrd.
+
+// gives us a concrete implementation of a type, preferably itself
+.decl StaticToActualType(?class:ClassType, ?staticType:Type)
+
+StaticToActualType(?class, ?staticType) :-
+  ConcreteImplementations(?staticType, ?class),
+  !ConcreteType(?staticType).
+
+StaticToActualType(?type, ?type) :-
+  ConcreteType(?type).
+
+
+// The key point where all the mock objects are created. Triggers all the rest.
+MockObject(cat(?class, "::: (Mock)"), ?class),
+MockValueConsMacro(cat(?class, "::: (Mock)"), ?class),
+Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
+#ifndef OPEN_PROGRAMS
+  // If we are not in open-program mode, only trigger logic if no main method exists
+  !MainMethodDeclaration(_),
+  !AndroidAppComponent(_),
+#endif
+  ObjToMock(?class).

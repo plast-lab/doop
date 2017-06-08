@@ -168,6 +168,14 @@ class SouffleAnalysis extends DoopAnalysis {
             }
         }
 
+        if (options.OPEN_PROGRAMS.value) {
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
+        } else {
+            // This needs cleaning up. We are including one version by default, but distinguishing
+            // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
+        }
+
         if (options.DACAPO.value || options.DACAPO_BACH.value)
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/dacapo/rules.dl", commonMacros)
 
