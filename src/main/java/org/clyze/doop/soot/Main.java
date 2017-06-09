@@ -406,20 +406,22 @@ public class Main {
                 db.close();
                 return;
             } else {
+                String apkLocation = sootParameters._inputs.get(0);
+                ProcessManifest processMan = new ProcessManifest(apkLocation);
                 for (AXmlNode node : appActivities) {
-                    writer.writeActivity(node.getAttribute("name").getValue().toString());
+                    writer.writeActivity(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
                 }
 
                 for (AXmlNode node : appServices) {
-                    writer.writeService(node.getAttribute("name").getValue().toString());
+                    writer.writeService(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
                 }
 
                 for (AXmlNode node : appContentProviders) {
-                    writer.writeContentProvider(node.getAttribute("name").getValue().toString());
+                    writer.writeContentProvider(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
                 }
 
                 for (AXmlNode node : appBroadcastReceivers) {
-                    writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                    writer.writeBroadcastReceiver(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
                 }
 
                 for (Set<String> callBackMethods : appCallbackMethods.values()) {
