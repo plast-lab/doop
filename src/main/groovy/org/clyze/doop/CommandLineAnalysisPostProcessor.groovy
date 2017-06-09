@@ -16,6 +16,8 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
     void process(DoopAnalysis analysis) {
         if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
             printStats(analysis)
+        if (analysis.options.SOUFFLE.value && analysis.options.SANITY.value)
+            printSanityResults(analysis)
         linkResult(analysis)
     }
 
@@ -55,6 +57,14 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
             lines.sort()*.split(", ").each {
                 printf("%-80s %,d\n", it[1], it[2] as long)
             }
+        }
+    }
+
+    protected void printSanityResults(Analysis analysis) {
+        def file = new File("${analysis.database}/Sanity.csv")
+        logger.info "-- Sanity Results --"
+        file.readLines().sort()*.split("\t").each {
+            printf("%-80s %,d\n", it[1], it[2] as long)
         }
     }
 

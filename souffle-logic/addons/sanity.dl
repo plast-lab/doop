@@ -1,44 +1,44 @@
-.decl Sanity(s:symbol, c:number)
+.decl Sanity(?n:symbol, ?s:symbol, ?c:number)
 .output Sanity
 
 // Every var has a type
-Sanity("Var has no type", ?c) :-
+Sanity("1", "Var has no type", ?c) :-
   ?c = count : VarHasNoType(_).
 
 // Every var in VarPointsTo is reachable
-Sanity("Var in VarPointsTo is not reachable", ?c) :-
+Sanity("2", "Var in VarPointsTo is not reachable", ?c) :-
   ?c = count : NotReachableVarPointsTo(_, _).
 
 // Every var in VarPointsTo points to correctly typed values
-Sanity("Var in VarPointsTo points to wrongly typed values", ?c) :-
+Sanity("3", "Var in VarPointsTo points to wrongly typed values", ?c) :-
   ?c = count : VarPointsToWronglyTypedValue(_, _, _, _).
 
 // No VarPointsTo is ever inferred for objects that should have been
 // merged. Suggests omission in the "Keep" predicate.
-Sanity("VarPointsTo for merged objects", ?c) :-
+Sanity("4", "VarPointsTo for merged objects", ?c) :-
   ?c = count : VarPointsToMergedHeap(_, _).
 
-Sanity("HeapAllocation has no type", ?c) :-
+Sanity("5", "HeapAllocation has no type", ?c) :-
   ?c = count : HeapAllocationHasNoType(_).
 
-Sanity("Value has no type", ?c) :-
+Sanity("6", "Value has no type", ?c) :-
   ?c = count : ValueHasNoType(_).
 
-Sanity("Value is neither heap nor nonheap", ?c) :-
+Sanity("7", "Value is neither heap nor nonheap", ?c) :-
   ?c = count : ValueIsNeitherHeapNorNonHeap(_).
 
-Sanity("ClassType is InterfaceType", ?c) :-
+Sanity("8", "ClassType is InterfaceType", ?c) :-
   ?c = count : ClassTypeIsInterfaceType(_).
 
-Sanity("PrimitiveType is ReferenceType", ?c) :-
+Sanity("9", "PrimitiveType is ReferenceType", ?c) :-
   ?c = count : PrimitiveTypeIsReferenceType(_).
 
 // Every type is a concrete type
-Sanity("Type is not a concrete type", ?c) :-
+Sanity("10", "Type is not a concrete type", ?c) :-
   ?c = count : TypeIsNotConcreteType(_).
 
 // Every instruction is a concrete instruction
-Sanity("Instruction is not a concrete instruction", ?c) :-
+Sanity("11", "Instruction is not a concrete instruction", ?c) :-
   ?c = count : InstructionIsNotConcreteInstruction(_).
 
 
