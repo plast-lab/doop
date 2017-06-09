@@ -57,7 +57,6 @@ InitializedClass(?class) :-
 
 /**
  * T is a class and an instance of T is created
- * TODO Same join is performed in VarPointsTo. Maybe fold.
  * TODO Consider to add strings?
  */
 InitializedClass(?class) :-
@@ -97,6 +96,5 @@ InitializedClass(?classOrInterface) :-
 /**
  * T is a top-level class, and an assert statement lexically nested within T is
  * executed
- * TODO: No idea how a statement can ever be executed in a class that has not
- * been initialized
+ * TODO: http://stackoverflow.com/questions/17800829/what-does-t-is-a-top-level-class-and-an-assert-statement-lexically-nested-with
  */

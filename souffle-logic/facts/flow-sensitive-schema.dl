@@ -318,7 +318,6 @@
 
 .decl ComponentType(?arrayType:ArrayType, ?componentType:Type)
 
-// TODO: replace LoadArrayIndex:Base, StoreArrayIndex:Base with ArrayInstruction:Base
 .decl LoadArrayIndex_Base(?insn:LoadArrayIndex_Insn, ?var:Var)
 .decl LoadArrayIndex_To(?insn:LoadArrayIndex_Insn, var:Var)
 
