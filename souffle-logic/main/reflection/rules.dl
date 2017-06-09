@@ -1447,6 +1447,8 @@ ArrayIndexPointsTo(?hctx, ?fieldValue, ?hctx, ?arrayValue) :-
  * First, create marker objects for the use of this analysis
  *************************************************************/
 
+.decl UnknownReflectiveObject(?type:Type, ?invocation:MethodInvocation, ?value:Value)
+
 // This is the representative of an unknown reflective object, after it has been cast.
 // Has a real type. We pre-generate for all types and casts in the universe.
 MockValueConsMacro(cat(cat(cat(cat("<<unknown object of type ", ?type), " returned by call) "), ?invocation), ">>"), ?type),
@@ -1460,6 +1462,9 @@ UnknownReflectiveObject(?type, ?invocation, cat(cat(cat(cat("<<unknown object of
    java_lang_reflect_Method_invoke(?invocation, _);
    java_lang_reflect_Field_get(?invocation, _, _)),
   isInstruction(?invocation).
+
+.decl MarkerReflectiveObject(?invocation:MethodInvocation, ?value:Value)
+
 
 // This is the representative of an unknown reflective object that flows from the reflection
 // operation to a cast.
@@ -1487,7 +1492,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
   AssignReturnValue(?invocation, ?return),
   MarkerReflectiveObject(?invocation, ?value).
 
-.decl Opt2AssignCast(?inmethod:Method, ?from:Var, ?to:Var, ?type:Type)
+.decl Opt2AssignCast(?inmethod:Method, ?supertype:Type, ?to:Var, ?from:Var)
 Opt2AssignCast(?inmethod, ?supertype, ?to, ?from) :-
   AssignCast(?supertype, ?from, ?to, ?inmethod).
 
