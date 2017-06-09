@@ -192,8 +192,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 /**
  * Store static fields
- *
- * TODO: I don't think context actually matters. double check.
  */
 
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
