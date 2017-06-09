@@ -142,12 +142,10 @@ ReflectionSubstringObject(?heap) :-
   PreFieldNameMatchingStringConstantInexact_Signature(_,?heap).
 
 #ifndef NO_MERGES
-
 HeapRepresentative("<<string-constant>>", ?heap) :-
   isStringConstant(?heap),
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
-
 #endif
 //#ifdef GROUP_REFLECTION_STRINGS
 

@@ -7,6 +7,9 @@
  * useful for a points-to analysis, so handling them in a less precise
  * way is beneficial.
  *************************************************************/
+HeapRepresentative(?heapRepr, ?heap) ->
+    HeapAllocation(?heapRepr),
+    HeapAllocation(?heap).
 
 /**
  * Objects that should not be allocated as normal.
@@ -109,10 +112,12 @@ ReflectionSubstringObject(?heap) -> HeapAllocation(?heap).
 #ifndef DISTINGUISH_ALL_STRING_CONSTANTS
 #ifndef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 #define DISTINGUISH_NO_STRING_CONSTANTS
+#ifndef NO_MERGES
 HeapRepresentative(?constant, ?heap) <-
   StringConstant(?heap),
   HeapAllocation:byId["<<string-constant>>"] = ?constant,
   !HeapAllocation:Keep(?heap).
+#endif
 #endif
 #endif // DISTINGUISH_NO_STRING_CONSTANTS mode
 
@@ -127,12 +132,13 @@ ReflectionSubstringObject(?heap) <-
   PreMethodNameMatchingStringConstantInexact:Signature(_,?heap);
   PreFieldNameMatchingStringConstantInexact:Signature(_,?heap).
 
+#ifndef NO_MERGES
 HeapRepresentative(?constant, ?heap) <-
   StringConstant(?heap),
   !ReflectionStringConstant(?heap), 
   HeapAllocation:byId["<<string-constant>>"] = ?constant,
   !HeapAllocation:Keep(?heap).
-
+#endif
 //#ifdef GROUP_REFLECTION_STRINGS
 
 // ///// Naive Merging strategy: all strings that map to same reflection object
@@ -221,10 +227,11 @@ StringColorAndHeap(?heap, ?color) <-
 StringRepresentativeForColor[?color] = ?mergeHeap <-
   agg<<?mergeHeap = min(?heap)>>(StringColorAndHeap(?heap, ?color)).
 
+#ifndef NO_MERGES
 HeapRepresentative(?mergeHeap, ?heap) <-
   StringColorForHeap[?heap] = ?color,
   StringRepresentativeForColor[?color] = ?mergeHeap.
-  
+#endif
 ///// End coloring strategy
 
 // Make the representative play (at a minimum) the same role as the
@@ -618,11 +625,12 @@ MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) <-
 
 MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap <-
   agg<<?representativeHeap = min(?heap)>>(MethodAndTypeToMergedHeap(?heap, ?type, ?meth)).
-  
+
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) <-
   MethodAndTypeToRepresentative[?type, ?meth] = ?representativeHeap,
   MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
-  
+#endif
 
 // Now, per-class merging. This is more rare and should be requested
 // explicitly for a given type. Again, does not apply to types with
@@ -644,10 +652,11 @@ ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) <-
 ClassAndTypeToRepresentative[?type, ?class] = ?representativeHeap <-
   agg<<?representativeHeap = min(?heap)>>(ClassAndTypeToMergedHeap(?heap, ?type, ?class)).
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) <-
   ClassAndTypeToRepresentative[?type, ?class] = ?representativeHeap,
   ClassAndTypeToMergedHeap(?heap, ?type, ?class).
-
+#endif
 
 // Same for per-package merging.
 #include "package-heuristic.logic"
@@ -668,10 +677,11 @@ PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) <-
 PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap <-
   agg<<?representativeHeap = min(?heap)>>(PackageAndTypeToMergedHeap(?heap, ?type, ?packageName)).
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) <-
   PackageAndTypeToRepresentative[?type, ?packageName] = ?representativeHeap,
   PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
-
+#endif
 // And the ultimate: universal per-type merging
 TypeToHeap(?heap, ?heaptype) <-
   ClassAndTypeToHeap(?heap, ?heaptype, _).
@@ -689,10 +699,11 @@ TypeToMergedHeap(?heap, ?heaptype) <-
 TypeToRepresentative[?type] = ?representativeHeap <-
   agg<<?representativeHeap = min(?heap)>>(TypeToMergedHeap(?heap, ?type)).
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) <-
   TypeToRepresentative[?type] = ?representativeHeap,
   TypeToMergedHeap(?heap, ?type).
-
+#endif
 
 /*************************************************************
  * Coarse-grained allocation policy
@@ -759,10 +770,11 @@ PackageAndTypeToStringFactoryRepresentative[?type, ?packageName] = ?representati
   agg<<?representativeHeap = min(?heap)>>(PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName)).
 
 // current policy: all string builders merged per-package
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) <-
   PackageAndTypeToStringFactoryHeap(?heap, ?type, ?packageName),
   PackageAndTypeToStringFactoryRepresentative[?type, ?packageName] = ?representativeHeap.
-
+#endif
 //// Used to be all are merged per-class:
 // // all string buffers (and builders) in the same class are merged
 // AllocationShouldBeMergedPerClass(?heaptype, ?class) <-
@@ -774,6 +786,7 @@ HeapRepresentative(?representativeHeap, ?heap) <-
 //   AllocationsPerMethodAndType[?heaptype, ?meth] > 1,
 //   StringFactoryType(?heaptype).
 #else // not DISTINGUISH_STRING_BUFFERS_PER_PACKAGE, i.e., merge them all
+#ifndef NO_MERGES
 HeapRepresentative(?mergeHeap, ?heap) <-
   HeapAllocation:Type[?heap] = ?type,
   Type:Id(?type:"java.lang.StringBuffer"),
@@ -785,6 +798,7 @@ HeapRepresentative(?mergeHeap, ?heap) <-
   Type:Id(?type:"java.lang.StringBuilder"),
   HeapAllocation:byId["<<string-builder>>"] = ?mergeHeap,
   !HeapAllocation:Keep(?heap).
+#endif
 #endif
 #endif
 #endif
@@ -823,10 +837,11 @@ ExceptionTypeToHeap(?heap, ?heaptype) <-
 ExceptionHeapTypeRepresentative[?type] = ?representativeHeap <-
   agg<<?representativeHeap = min(?otherHeap)>>(ExceptionTypeToHeap(?otherHeap, ?type)).
 
+#ifndef NO_MERGES
 HeapRepresentative(?representativeHeap, ?heap) <-
   ExceptionTypeToHeap(?heap, ?heaptype),
   ExceptionHeapTypeRepresentative[?heaptype] = ?representativeHeap.
-
+#endif
 #endif // SEPARATE_EXCEPTION_OBJECTS
 /*
 // An intermediate option is to only merge exception objects of the
