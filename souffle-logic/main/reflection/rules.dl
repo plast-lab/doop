@@ -473,7 +473,7 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   Value_Type(?value, ?valuetype),
   Method_DeclaringType(?signature, ?type),
   SupertypeOf(?type, ?valuetype), // TODO need nicer check
-  Method_SimpleName(signature, ?simplename),
+  Method_SimpleName(?signature, ?simplename),
   Method_Descriptor(?signature, ?descriptor),
   MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
   ThisVar(?tomethod, ?this),
