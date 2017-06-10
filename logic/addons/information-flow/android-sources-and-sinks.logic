@@ -1,5 +1,6 @@
 #include "common-transfer-methods.logic"
 #include "android.logic"
+#include "android-taint-wrappers.logic"
 
 LeakingSinkMethodArg(?label, ?index, ?method) <- LeakingSinkMethod(?label, ?method), FormalParam[?index, ?method] = _.
 
