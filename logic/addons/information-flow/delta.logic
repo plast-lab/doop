@@ -8,3 +8,4 @@
 +InformationLabel("Persistence").
 +InformationLabel("IO").
 +InformationLabel("Net").
++InformationLabel("PASSWORD").
