@@ -17,7 +17,9 @@
 // For every interface, we create a dummy dynamic proxy class.
 // TODO Proxy classes are public only if all their interfaces are
 // public, otherwise they are non-public (i.e. no modifier).
-+Type:Id(?proxyClass:?proxyClassId), +ProxyClass(?proxyClass),
++Type:Id(?proxyClass:?proxyClassId),
++ClassType(?proxyClass),
++ProxyClass(?proxyClass),
 +ClassModifier("final", ?proxyClass),
 +DirectSuperclass[?proxyClass] = ?proxySuperclass,
 +DirectSuperinterface(?proxyClass, ?interface) <-
