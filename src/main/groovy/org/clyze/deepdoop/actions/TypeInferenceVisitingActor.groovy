@@ -31,7 +31,7 @@ import org.clyze.deepdoop.system.ErrorManager
 
 import static org.clyze.deepdoop.datalog.expr.ConstantExpr.Type.*
 
-class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActor<Void>, TDummyActor<Void> {
+class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
 	// Predicate Name x Parameter Index x Possible Types
 	Map<String, Map<Integer, Set<String>>> possibleTypes = [:].withDefault { [:].withDefault { [] as Set } }
@@ -57,7 +57,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		this.infoActor = infoActor
 	}
 
-	Void visit(Component n) {
+	IVisitable visit(Component n) {
 		oldDeltaRules = n.rules
 		// Implemented this way because Groovy doesn't support do-while blocks
 		while (true) {
@@ -78,13 +78,13 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		null
 	}
 
-	Void exit(Program n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(Program n, Map m) { n }
 
-	Void exit(CmdComponent n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(CmdComponent n, Map m) { null }
 
-	Void exit(Component n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(Component n, Map m) { null }
 
-	Void exit(Constraint n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(Constraint n, Map m) { null }
 
 	void enter(Declaration n) {
 		varTypes.clear()
@@ -92,7 +92,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		values.clear()
 	}
 
-	Void exit(Declaration n, Map<IVisitable, Void> m) {
+	IVisitable exit(Declaration n, Map m) {
 		if (!n.annotations.any { it.kind == Annotation.Kind.ENTITY })
 			n.types.eachWithIndex { type, i ->
 				possibleTypes[n.atom.name][i] << type.name
@@ -100,7 +100,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		null
 	}
 
-	Void exit(RefModeDeclaration n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(RefModeDeclaration n, Map m) { null }
 
 	void enter(Rule n) {
 		varTypes.clear()
@@ -108,7 +108,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		values.clear()
 	}
 
-	Void exit(Rule n, Map<IVisitable, Void> m) {
+	IVisitable exit(Rule n, Map m) {
 		n.head.elements.each {
 			def predName = (it as IAtom).name
 			varIndices[predName].each { var, i ->
@@ -129,9 +129,9 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		null
 	}
 
-	Void exit(AggregationElement n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(AggregationElement n, Map m) { null }
 
-	Void exit(ComparisonElement n, Map<IVisitable, Void> m) {
+	IVisitable exit(ComparisonElement n, Map m) {
 		VariableExpr var
 		if (n.expr.left instanceof VariableExpr) var = n.expr.left as VariableExpr
 		else if (n.expr.right instanceof VariableExpr) var = n.expr.right as VariableExpr
@@ -144,47 +144,47 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 		null
 	}
 
-	Void exit(GroupElement n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(GroupElement n, Map m) { null }
 
-	Void exit(LogicalElement n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(LogicalElement n, Map m) { null }
 
-	Void exit(NegationElement n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(NegationElement n, Map m) { null }
 
-	Void exit(Constructor n, Map<IVisitable, Void> m) {
+	IVisitable exit(Constructor n, Map m) {
 		//exit(n as Functional, m)
 		varTypes[n.valueExpr as VariableExpr] << n.entity.name
 		null
 	}
 
-	Void exit(Entity n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(Entity n, Map m) { null }
 
-	Void exit(Functional n, Map<IVisitable, Void> m) {
+	IVisitable exit(Functional n, Map m) {
 		(n.keyExprs + n.valueExpr).eachWithIndex { expr, i -> varWithIndex(n.name, expr, i) }
 		null
 	}
 
-	Void exit(Predicate n, Map<IVisitable, Void> m) {
+	IVisitable exit(Predicate n, Map m) {
 		n.exprs.eachWithIndex { expr, i -> varWithIndex(n.name, expr, i) }
 		null
 	}
 
-	Void exit(Primitive n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(Primitive n, Map m) { null }
 
-	Void exit(RefMode n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(RefMode n, Map m) { null }
 
-	Void exit(Stub n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(Stub n, Map m) { null }
 
-	Void exit(BinaryExpr n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(BinaryExpr n, Map m) { null }
 
-	Void exit(ConstantExpr n, Map<IVisitable, Void> m) {
+	IVisitable exit(ConstantExpr n, Map m) {
 		if (n.type == INTEGER) values[n] = "int"
 		else if (n.type == STRING) values[n] = "string"
 		null
 	}
 
-	Void exit(GroupExpr n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(GroupExpr n, Map m) { null }
 
-	Void exit(VariableExpr n, Map<IVisitable, Void> m) { null }
+	IVisitable exit(VariableExpr n, Map m) { null }
 
 	private void varWithIndex(String name, IExpr expr, int i) {
 		if (expr instanceof VariableExpr) {
@@ -196,42 +196,38 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<Void> implements IActo
 	}
 
 	private String coalesce(Set<String> types, String predName, int index) {
-		def resultTypes = [] as Set
+		def resultTypes = []
 		// Phase 1: Include types that don't have a better representative already in the set
 		types.each { t ->
-			def superTypes = infoActor.superTypes[t]
-			if (!superTypes.any { it in types })
-				resultTypes << t
+			def superTypes = infoActor.superTypesOrdered[t]
+			if (!superTypes.any { it in types }) resultTypes << t
 		}
-
 		String coalescedType
 
 		// Phase 2: Find first common supertype for types in the same hierarchy
 		if (resultTypes.size() != 1) {
-			String t1
-			resultTypes.each { t2 ->
-				// First element
-				if (!t1) {
-					t1 = t2
-					return
-				}
+			String t1 = resultTypes[0]
+			resultTypes.removeAt(0)
+			while(resultTypes) {
+				// Iterate types in pairs
+				String t2 = resultTypes[0]
+				resultTypes.removeAt(0)
+
+				def superTypesOfT1 = infoActor.superTypesOrdered[t1]
+				def superTypesOfT2 = infoActor.superTypesOrdered[t2]
+				// Move upwards in the hierarchy until a common type is found
 				String superT
-				def superTypesOfT1 = infoActor.superTypes[t1]
-				def superTypesOfT2 = infoActor.superTypes[t2]
 				superTypesOfT1.each {
 					if (!superT && it in superTypesOfT2) superT = it
 				}
 				t1 = superT
+
+				if (!superT)
+					ErrorManager.error(ErrorId.INCOMPATIBLE_TYPES, predName, index)
 			}
-			// TODO: JUST A HACK (WRONG ONE)
 			coalescedType = t1
 		} else
 			coalescedType = resultTypes.first()
-
-		//if (resultTypes.size() != 1) {
-		//	println resultTypes
-		//	ErrorManager.error(ErrorId.INCOMPATIBLE_TYPES, predName, index)
-		//}
 
 		return coalescedType
 	}
