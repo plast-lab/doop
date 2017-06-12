@@ -31,7 +31,6 @@
 //     public methods whose name starts with "on" be reachable (REVIEW:
 //     with what arguments?)
 **/
-
 AndroidAppComponent(?type) <-
   Activity(?type);
   Service(?type);
@@ -187,6 +186,7 @@ ReachableContext(?ctx, ?meth) <-
 // Currently, library code = an android.app class
 _OptMethodFromVar[?var] = ?meth <-
   Var:DeclaringMethod(?var, ?meth).
+
 
 // ... all analysis-reachable objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) <-
