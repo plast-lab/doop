@@ -140,6 +140,25 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) <-
   !AssignReturnValue[?invocation] = _.
 
 
+MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) <-
+   Instruction:Method[?invocation] = ?fromMethod,
+   MethodInvocationInContext(?ctx, ?invocation, ?method),
+   ApplicationClass(Method:DeclaringType[?fromMethod]).
+
+ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) <-
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
+   ActualParam[0, ?invocation] = ?param,
+   ParamToRetTaintTransferMethod(?taintTransferMethod),
+   TypeForReturnValue(?type, ?ret, ?invocation).
+
+TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
+VarPointsTo(?hctx, ?newvalue, ?ctx, ?to) <-
+   ParamTaintTransferredToRet(?type, ?to, ?ctx, ?from),
+   TaintedVarPointsTo(?value, ?ctx, ?from),
+   ImmutableHContext(?hctx).
+
+
+
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 ValueTaintedFromValue(?newvalue, ?baseObj) <- 
    BaseValueTaintedFromParamValue(?newvalue, ?baseObj),

@@ -30,14 +30,14 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		//currentFile = createUniqueFile("out_", ".dl")
 		results << new Result(Result.Kind.LOGIC, currentFile)
 
+		def inferenceActor = new TypeInferenceVisitingActor(infoActor)
+
 		// Transform program before visiting nodes
 		def n = p.accept(new NormalizeVisitingActor())
 				.accept(new InitVisitingActor())
-		n.accept(infoActor)
-		n.accept(new ValidationVisitingActor(infoActor))
-
-		def inferenceActor = new TypeInferenceVisitingActor(infoActor)
-		n.accept(inferenceActor)
+				.accept(infoActor)
+				.accept(new ValidationVisitingActor(infoActor))
+				.accept(inferenceActor)
 
 		return super.visit(n as Program)
 	}

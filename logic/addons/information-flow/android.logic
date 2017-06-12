@@ -1,13 +1,12 @@
 #include "macros.logic"
 
-RecordMacro(?ctx, ?value, ?hctx),
 TaintedValueIntroduced(?declaringType, ?invocation, "java.lang.String", "PASSWORD", ?value),
-TaintedContextValue(?hctx, ?value),  
 VarPointsTo(?hctx, ?value, ?ctx, ?to)
  <-
   PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base),
   Method:DeclaringType[Instruction:Method[?invocation]] = ?declaringType,
   VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
+  ImmutableHContext(?hctx),
   SensitiveLayoutControlValue(?layoutControlValue).
 
 

@@ -13,19 +13,20 @@ import org.clyze.deepdoop.datalog.expr.BinaryExpr
 import org.clyze.deepdoop.datalog.expr.GroupExpr
 import org.clyze.deepdoop.datalog.expr.VariableExpr
 
-class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IActor<Void>, TDummyActor<Void> {
+class InfoCollectionVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
 	Map<IVisitable, List<IAtom>> declaringAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<IAtom>> usedAtoms = [:].withDefault { [] }
 	Map<IVisitable, List<VariableExpr>> vars = [:].withDefault { [] }
 
-	List<String> allTypes = []
-	// TODO need to be ordered
-	Map<String, List<String>> superTypes = [:].withDefault { [] }
-	// Predicate Name x Set of Predicates
-	Map<String, Set<Rule>> affectedRules = [:].withDefault { [] as Set }
-	// TODO better having Constructor appear in rules instead of Functional
+	Set<String> allTypes = [] as Set
+	Map<String, String> directSuperType = [:]
+	Map<String, Set<String>> superTypesOrdered = [:]
 	List<String> allConstructors = []
+	Map<String, String> constructorBaseType = [:]
+
+	// Predicate Name x Set of Rules
+	Map<String, Set<Rule>> affectedRules = [:].withDefault { [] as Set }
 
 	InfoCollectionVisitingActor() {
 		// Implemented this way, because Java doesn't allow usage of "this"
@@ -35,16 +36,35 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 		actor = this
 	}
 
-	Void exit(Program n, Map m) {
+	IVisitable exit(Program n, Map m) {
 		declaringAtoms[n] = declaringAtoms[n.globalComp] + (n.comps.values().collect {
 			declaringAtoms[it]
 		}.flatten() as List<IAtom>)
-		usedAtoms[n] = usedAtoms[n.globalComp] + (n.comps.values().collect { usedAtoms[it] }.flatten() as List<IAtom>)
-		null
+		usedAtoms[n] = usedAtoms[n.globalComp] +
+				(n.comps.collect { usedAtoms[it.value] }.flatten() as List<IAtom>)
+
+		// Base case for supertypes
+		allTypes.each { type ->
+			def superType = directSuperType[type]
+			superTypesOrdered[type] = (superType ? [superType] : []) as Set
+		}
+		// Transitive closure on supertypes
+		def oldDeltaTypes = superTypesOrdered.keySet()
+		while(!oldDeltaTypes.isEmpty()) {
+			def deltaTypes = [] as Set
+			oldDeltaTypes.each { type ->
+				def newSuperTypes = [] as Set
+				superTypesOrdered[type].each { superType -> newSuperTypes += superTypesOrdered[superType] }
+				if (superTypesOrdered[type].addAll(newSuperTypes)) deltaTypes << type
+			}
+			oldDeltaTypes = deltaTypes
+		}
+
+		return n
 	}
 
 	/*
-	Void exit(CmdComponent n, Map m) {
+	IVisitable exit(CmdComponent n, Map m) {
 		Map<String, IAtom> declMap = [:]
 		n.declarations.each { declMap << getDeclaringAtoms(it) }
 		declaringAtoms[n] = declMap
@@ -67,33 +87,39 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 	}
 	*/
 
-	Void exit(Component n, Map m) {
+	IVisitable exit(Component n, Map m) {
 		declaringAtoms[n] = (n.declarations + n.rules).collect { declaringAtoms[it] }.flatten() as List<IAtom>
 		usedAtoms[n] = (n.declarations + n.constraints + n.rules).collect { usedAtoms[it] }.flatten() as List<IAtom>
 		null
 	}
 
-	Void exit(Constraint n, Map m) {
+	IVisitable exit(Constraint n, Map m) {
 		usedAtoms[n] = usedAtoms[n.head] + usedAtoms[n.body]
 		null
 	}
 
-	Void exit(Declaration n, Map m) {
+	IVisitable exit(Declaration n, Map m) {
 		declaringAtoms[n] = [n.atom]
 		usedAtoms[n] = n.types
 
-		allTypes << n.atom.name
-		if (n.annotations.any { it.kind == Annotation.Kind.ENTITY } && !n.types.isEmpty())
-			superTypes[n.atom.name] << n.types.first().name
+		if (n.annotations.any { it.kind == Annotation.Kind.ENTITY }) {
+			def type = n.atom.name
+			allTypes << type
+			if (!n.types.isEmpty()) directSuperType[type] = n.types.first().name
+		}
+
+		if (n.annotations.any { it.kind == Annotation.Kind.CONSTRUCTOR })
+			constructorBaseType[n.atom.name] = n.types.last().name
+
 		null
 	}
 
-	Void exit(RefModeDeclaration n, Map m) {
+	IVisitable exit(RefModeDeclaration n, Map m) {
 		declaringAtoms[n] = [n.atom, n.types.first()]
 		null
 	}
 
-	Void exit(Rule n, Map m) {
+	IVisitable exit(Rule n, Map m) {
 		// Atoms used in the head, are declared in the rule
 		declaringAtoms[n] = usedAtoms[n.head]
 		usedAtoms[n] = usedAtoms[n.body]
@@ -109,90 +135,90 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<Void> implements IAct
 		//		.collect { (it as IAtom).name }
 		n.body.elements
 				.findAll { it instanceof IAtom }
-				.each { affectedRules[(it as IAtom).name] += n }
+				.each { affectedRules[(it as IAtom).name] << n }
 		null
 	}
 
-	Void exit(AggregationElement n, Map m) {
+	IVisitable exit(AggregationElement n, Map m) {
 		usedAtoms[n] = usedAtoms[n.body]
 
 		vars[n] = vars[n.body]
 		null
 	}
 
-	Void exit(ComparisonElement n, Map m) {
+	IVisitable exit(ComparisonElement n, Map m) {
 		vars[n] = vars[n.expr]
 		null
 	}
 
-	Void exit(GroupElement n, Map m) {
+	IVisitable exit(GroupElement n, Map m) {
 		usedAtoms[n] = usedAtoms[n.element]
 
 		vars[n] = vars[n.element]
 		null
 	}
 
-	Void exit(LogicalElement n, Map m) {
+	IVisitable exit(LogicalElement n, Map m) {
 		usedAtoms[n] = n.elements.collect { usedAtoms[it] }.flatten() as List<IAtom>
 
 		vars[n] = n.elements.collect { vars[it] }.flatten() as List<VariableExpr>
 		null
 	}
 
-	Void exit(NegationElement n, Map m) {
+	IVisitable exit(NegationElement n, Map m) {
 		usedAtoms[n] = usedAtoms[n.element]
 
 		vars[n] = vars[n.element]
 		null
 	}
 
-	Void exit(Constructor n, Map m) {
+	IVisitable exit(Constructor n, Map m) {
 		exit(n as Functional, m)
 		allConstructors << n.name
 		null
 	}
 
-	Void exit(Entity n, Map m) {
+	IVisitable exit(Entity n, Map m) {
 		exit(n as Predicate, m)
 	}
 
-	Void exit(Functional n, Map m) {
+	IVisitable exit(Functional n, Map m) {
 		usedAtoms[n] = [n]
 
 		vars[n] = (n.keyExprs + [n.valueExpr]).collect { vars[it] }.flatten() as List<VariableExpr>
 		null
 	}
 
-	Void exit(Predicate n, Map m) {
+	IVisitable exit(Predicate n, Map m) {
 		usedAtoms[n] = [n]
 
 		vars[n] = n.exprs.collect { vars[it] }.flatten() as List<VariableExpr>
 		null
 	}
 
-	Void exit(Primitive n, Map m) {
+	IVisitable exit(Primitive n, Map m) {
 		vars[n] = [n.var]
 		null
 	}
 
-	Void exit(RefMode n, Map m) {
+	IVisitable exit(RefMode n, Map m) {
 		usedAtoms[n] = [n]
 
 		vars[n] = [n.entityVar] + vars[n.valueExpr]
 		null
 	}
 
-	Void exit(BinaryExpr n, Map m) {
+	IVisitable exit(BinaryExpr n, Map m) {
 		vars[n] = vars[n.left] + vars[n.right]
 		null
 	}
 
-	Void exit(GroupExpr n, Map m) {
+	IVisitable exit(GroupExpr n, Map m) {
 		vars[n] = vars[n.expr]
 		null
 	}
 
-	Void exit(VariableExpr n, Map m) {
+	IVisitable exit(VariableExpr n, Map m) {
 		vars[n] = [n]
 		null
 	}
