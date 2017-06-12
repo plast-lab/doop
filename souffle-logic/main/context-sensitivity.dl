@@ -317,16 +317,16 @@ OptStoreArrayIndex(?from, ?base) :-
 
 OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) :-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
-  FormalParam(?index, ?method, ?formal),
-  ActualParam(?index, ?invocation, ?actual).
+  ActualParam(?index, ?invocation, ?actual),
+  FormalParam(?index, ?method, ?formal).
 
 OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
-  ReturnVar(?return, ?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
 #ifdef INFORMATION_FLOW
   !SanitizationMethod(?method),
 #endif
-  AssignReturnValue(?invocation, ?local).
+  AssignReturnValue(?invocation, ?local),
+  ReturnVar(?return, ?method).
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
