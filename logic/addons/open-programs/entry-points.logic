@@ -22,11 +22,18 @@ ClassWithTopLevelEntryPoint(?class) <-
    ClassHasPossibleEntryPoint(?class),
    !ClassIsAboveOtherInNamingHierarchy(_, ?class).
 
+ClassToConsider(?class) <-
+   ClassWithTopLevelEntryPoint(?class).
+
+ClassToConsider(?applicationClass) <-
+   !ClassWithTopLevelEntryPoint(?class),
+   ApplicationClass(?applicationClass).
+
 TopLevelEntryPoint(?method) <-
    PossibleEntryPoint(?method),
    Method:DeclaringType[?method] = ?class,
    ApplicationClass(?class),
-   ClassWithTopLevelEntryPoint(?class).
+   ClassToConsider(?class).
 
 #ifdef OPEN_PROGRAMS
 // The original definition that Neville had
