@@ -928,6 +928,7 @@ class FactWriter {
 
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
     }
+    void writeApplication(String applicationName) { _db.add(ANDROID_APPLICATION, applicationName); }
 
     void writeActivity(String activity) {
         _db.add(ACTIVITY, activity);

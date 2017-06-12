@@ -9,6 +9,7 @@ import java.io.Writer;
 
 public enum PredicateFile
 {
+    ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     ACTIVITY("Activity"),
     SERVICE("Service"),

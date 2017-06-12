@@ -714,6 +714,6 @@ lang:physical:capacity[`StringRaw]           = 4194304.
 //-----------------------------------------------------------------------------
 
 AndroidEntryPoint(?m) -> Method(?m).
-
+AndroidApplication(?t) -> ClassType(?t).
 
 Dacapo0(?id, ?method) -> string(?id), Method(?method).

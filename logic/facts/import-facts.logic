@@ -120,6 +120,18 @@ _AndroidEntryPoint(?method) ->
 +AndroidEntryPoint(?method) <-
    _AndroidEntryPoint(?method).
 
+// AndroidApplication
+
+lang:physical:storageModel[`_AndroidApplication] = "DelimitedFile".
+lang:physical:filePath[`_AndroidApplication] = "facts/AndroidApplication.facts".
+lang:physical:delimiter[`_AndroidApplication] = "\t".
+lang:physical:hasColumnNames[`_AndroidApplication] = false.
+
+_AndroidApplication(?method) ->
+   string(?method).
+
++AndroidApplication(?method) <-
+   _AndroidApplication(?method).
 
 // AssignLocal
 

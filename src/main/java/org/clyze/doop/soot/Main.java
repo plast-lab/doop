@@ -408,6 +408,8 @@ public class Main {
             } else {
                 String apkLocation = sootParameters._inputs.get(0);
                 ProcessManifest processMan = new ProcessManifest(apkLocation);
+
+                writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
                 for (AXmlNode node : appActivities) {
                     writer.writeActivity(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
                 }
