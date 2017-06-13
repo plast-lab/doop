@@ -100,10 +100,10 @@
  * TODO should return a clone of the heap allocation (not
  *      identity). The behaviour implemented here is based on Soot.
  */
-PlusAssignLocal(
-  "java.lang.Object.clone/@this",
-  "java.lang.Object.clone/@native-return",
-  "<java.lang.Object: java.lang.Object clone()>").
++AssignLocal(ThisVar[?method], ?ret, ?method) <-
+   Method:Id(?method:"<java.lang.Object: java.lang.Object clone()>"),
+   ReturnVar(?ret, ?method).
+
 
 /**********************************************************************************
  *
