@@ -336,3 +336,29 @@ VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) <-
   Value:Num[?value] = ?numString,
   string:int32:convert[?numString] = ?numId,
   ViewObjectValueFromId(?viewValue, ?numId).
+
+// TODO: AsyncTask.execute should call AsyncTask.doInBackground
+
+
+// Special handling for multi-dimensional arrays
+NotSpecialObject(?value),
+NotEmptyArrayValue(?value),
+MockValueConsMacro((Instruction:Id[?invocation] + ":" + Type:Id[?type]), ?type, ?value),
+UninitialisedArray(?hctx, ?value, ?invocation, ?type),
+RecordMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?from) <-
+   Method:Id(?method:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>"),
+   StaticMethodInvocation(?invocation, ?method, ?inmethod),
+   ReachableContext(?ctx, ?inmethod),
+   AssignReturnValue(?invocation, ?from),
+   OptAssignCast(?type, _, ?from).
+
+NotSpecialObject(?value),
+NotEmptyArrayValue(?value),
+MockValueConsMacro((Instruction:Id[?invocation] + ":" + Type:Id[?arrayType]), ?arrayType, ?value),
+UninitialisedArray(?hctx, ?value, ?invocation, ?arrayType),
+ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue)
+ <-
+  ComponentType[?type] = ?arrayType,
+  ArrayType(?arrayType),
+  UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
