@@ -100,6 +100,7 @@ VarIsTaintedFromValue(?componentType, ?basevalue, ?ctx, ?to) <-
    ComponentType[?arrayType] = ?componentType,
    TaintedValue(?basevalue).
 
+
 Iaminterested7(?type, ?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
    MethodInvocationInContext(?ctx, ?invocation, ?method),
@@ -251,3 +252,9 @@ TaintedVarPointsTo(?value, ?ctx, ?var) <-
 
 VarPointsToOpt(?ctx, ?var, ?value) <-
   VarPointsTo(_, ?value, ?ctx, ?var).
+
+Foo(?value),
+TaintedValue(?value),
+TaintedValue(?basevalue) <-
+  (TaintedValue(?value) ; TaintedValue(?basevalue)),
+  InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).

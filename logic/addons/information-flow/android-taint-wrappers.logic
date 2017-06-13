@@ -190,6 +190,8 @@ ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.String toString(java
 BaseToRetTaintTransferMethod("<android.widget.EditText: android.text.Editable getText()>").
 BaseToRetTaintTransferMethod("<android.text.Editable: java.lang.String toString()>").
 
+
+ParamToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte)>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte[])>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte[],int,int)>").

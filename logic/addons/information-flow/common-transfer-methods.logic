@@ -8,6 +8,7 @@ ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuff
 
 BaseToRetTaintTransferMethod("<java.util.Enumeration: java.lang.Object nextElement()>").
 BaseToRetTaintTransferMethod("<java.lang.String: char charAt(int)>").
+BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes(java.lang.String)>").
 
 /*
 
@@ -15,7 +16,6 @@ BaseToRetTaintTransferMethod("<java.lang.String: int codePointAt(int)>").
 BaseToRetTaintTransferMethod("<java.lang.String: int codePointBefore(int)>").
 BaseToRetTaintTransferMethod("<java.lang.String: int codePointCount(int,int)>").
 BaseToRetTaintTransferMethod("<java.lang.String: int offsetByCodePoints(int,int)>").
-BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes(java.lang.String)>").
 BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes(java.nio.charset.Charset)>").
 BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
 BaseToRetTaintTransferMethod("<java.lang.String: int compareTo(java.lang.String)>").
@@ -47,3 +47,4 @@ BaseToRetTaintTransferMethod("<java.util.Map: java.util.Set entrySet()>").
 BaseToRetTaintTransferMethod("<java.util.Set: java.util.Iterator iterator()>").
 BaseToRetTaintTransferMethod("<java.util.Map$Entry: java.lang.Object getValue()>").
 
+// TODO: System.arrayCopy
