@@ -32,7 +32,7 @@ VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
 CallTaintingMethod(?label, ?ctx, ?invocation) <-
    TaintSourceMethod(?label, ?tomethod),
    Instruction:Method[?invocation] = ?inmethod,
-   ApplicationClass(Method:DeclaringType[?inmethod]),
+   ApplicationMethod(?inmethod),
    MethodInvocationInContext(?ctx, ?invocation, ?tomethod).
 
 /**
