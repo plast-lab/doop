@@ -33,6 +33,7 @@ import static org.clyze.deepdoop.datalog.expr.ConstantExpr.Type.*
 
 class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements IActor<IVisitable>, TDummyActor<IVisitable> {
 
+	Map<String, List<String>> inferredTypes = [:]
 	// Predicate Name x Parameter Index x Possible Types
 	Map<String, Map<Integer, Set<String>>> possibleTypes = [:].withDefault { [:].withDefault { [] as Set } }
 	// Variable x Possible Types (for current clause)
@@ -43,8 +44,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 	Map<IVisitable, String> values = [:]
 
 	// Implementing fix-point computation
-	Set<Rule> oldDeltaRules = [] as Set
-	Set<Rule> deltaRules = [] as Set
+	Set<Rule> deltaRules
 
 	InfoCollectionVisitingActor infoActor
 
@@ -58,33 +58,29 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 	}
 
 	IVisitable visit(Component n) {
-		oldDeltaRules = n.rules
-		// Implemented this way because Groovy doesn't support do-while blocks
-		while (true) {
+		Set<Rule> oldDeltaRules = n.rules
+		while (!oldDeltaRules.isEmpty()) {
+			deltaRules = [] as Set
 			actor.enter(n)
 			n.declarations.each { it.accept(this) }
 			n.constraints.each { it.accept(this) }
 			oldDeltaRules.each { it.accept(this) }
 			actor.exit(n, null)
-
-			if (deltaRules.isEmpty()) break
 			oldDeltaRules = deltaRules
-			deltaRules = [] as Set
 		}
 		possibleTypes.each { pred, map ->
-			def types = map.collect { i, types -> coalesce(types, pred, i) }.join(" x ")
-			println "$pred:\t$types"
+			inferredTypes[pred] = map.collect { i, types -> coalesce(types, pred, i) }
 		}
 		null
 	}
 
 	IVisitable exit(Program n, Map m) { n }
 
-	IVisitable exit(CmdComponent n, Map m) { null }
+	//IVisitable exit(CmdComponent n, Map m) { null }
 
-	IVisitable exit(Component n, Map m) { null }
+	//IVisitable exit(Component n, Map m) { null }
 
-	IVisitable exit(Constraint n, Map m) { null }
+	//IVisitable exit(Constraint n, Map m) { null }
 
 	void enter(Declaration n) {
 		varTypes.clear()
@@ -100,7 +96,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 		null
 	}
 
-	IVisitable exit(RefModeDeclaration n, Map m) { null }
+	//IVisitable exit(RefModeDeclaration n, Map m) { null }
 
 	void enter(Rule n) {
 		varTypes.clear()
@@ -129,7 +125,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 		null
 	}
 
-	IVisitable exit(AggregationElement n, Map m) { null }
+	//IVisitable exit(AggregationElement n, Map m) { null }
 
 	IVisitable exit(ComparisonElement n, Map m) {
 		VariableExpr var
@@ -144,11 +140,11 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 		null
 	}
 
-	IVisitable exit(GroupElement n, Map m) { null }
+	//IVisitable exit(GroupElement n, Map m) { null }
 
-	IVisitable exit(LogicalElement n, Map m) { null }
+	//IVisitable exit(LogicalElement n, Map m) { null }
 
-	IVisitable exit(NegationElement n, Map m) { null }
+	//IVisitable exit(NegationElement n, Map m) { null }
 
 	IVisitable exit(Constructor n, Map m) {
 		//exit(n as Functional, m)
@@ -156,7 +152,7 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 		null
 	}
 
-	IVisitable exit(Entity n, Map m) { null }
+	//IVisitable exit(Entity n, Map m) { null }
 
 	IVisitable exit(Functional n, Map m) {
 		(n.keyExprs + n.valueExpr).eachWithIndex { expr, i -> varWithIndex(n.name, expr, i) }
@@ -168,13 +164,13 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 		null
 	}
 
-	IVisitable exit(Primitive n, Map m) { null }
+	//IVisitable exit(Primitive n, Map m) { null }
 
-	IVisitable exit(RefMode n, Map m) { null }
+	//IVisitable exit(RefMode n, Map m) { null }
 
-	IVisitable exit(Stub n, Map m) { null }
+	//IVisitable exit(Stub n, Map m) { null }
 
-	IVisitable exit(BinaryExpr n, Map m) { null }
+	//IVisitable exit(BinaryExpr n, Map m) { null }
 
 	IVisitable exit(ConstantExpr n, Map m) {
 		if (n.type == INTEGER) values[n] = "int"
@@ -182,9 +178,9 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 		null
 	}
 
-	IVisitable exit(GroupExpr n, Map m) { null }
+	//IVisitable exit(GroupExpr n, Map m) { null }
 
-	IVisitable exit(VariableExpr n, Map m) { null }
+	//IVisitable exit(VariableExpr n, Map m) { null }
 
 	private void varWithIndex(String name, IExpr expr, int i) {
 		if (expr instanceof VariableExpr) {

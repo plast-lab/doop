@@ -19,8 +19,8 @@ Foo(ap, x) <- x = "J", ap = x.
 }
 
 @Output, @Entity {
-	Dog.
-	Cat.
+	Dog1.
+	Cat1.
 }
 
 @Input {

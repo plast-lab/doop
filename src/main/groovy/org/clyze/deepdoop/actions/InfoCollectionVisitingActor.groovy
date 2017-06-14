@@ -24,6 +24,7 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<IVisitable> implement
 	Map<String, Set<String>> superTypesOrdered = [:]
 	List<String> allConstructors = []
 	Map<String, String> constructorBaseType = [:]
+	Map<String, List<String>> constructorsPerType = [:].withDefault { [] }
 
 	// Predicate Name x Set of Rules
 	Map<String, Set<Rule>> affectedRules = [:].withDefault { [] as Set }
@@ -102,14 +103,18 @@ class InfoCollectionVisitingActor extends PostOrderVisitor<IVisitable> implement
 		declaringAtoms[n] = [n.atom]
 		usedAtoms[n] = n.types
 
+		def predName = n.atom.name
+
 		if (n.annotations.any { it.kind == Annotation.Kind.ENTITY }) {
-			def type = n.atom.name
-			allTypes << type
-			if (!n.types.isEmpty()) directSuperType[type] = n.types.first().name
+			allTypes << predName
+			if (!n.types.isEmpty()) directSuperType[predName] = n.types.first().name
 		}
 
-		if (n.annotations.any { it.kind == Annotation.Kind.CONSTRUCTOR })
-			constructorBaseType[n.atom.name] = n.types.last().name
+		if (n.annotations.any { it.kind == Annotation.Kind.CONSTRUCTOR }) {
+			def entity = n.types.last().name
+			constructorBaseType[predName] = entity
+			constructorsPerType[entity] << predName
+		}
 
 		null
 	}
