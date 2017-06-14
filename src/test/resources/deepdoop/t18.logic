@@ -1,0 +1,17 @@
+@Entity AP.
+@Constructor
+byVar[x] = y -> string(x), AP(y).
+@Constructor
+byFld[x, y] = z -> string(x), string(y), AP(z).
+//@Constructor
+//byI[x] = z -> int(x), AP(z).
+
+new<<byVar[x] = y as AP>>,
+Foo(y) <- x = "x1".
+
+new<<byFld[x, y] = z as AP>>,
+Foo(z) <- x = "x2", y = "f1".
+
+@Entity Animal.
+@Constructor
+byName[x] = y -> string(x), Animal(y).

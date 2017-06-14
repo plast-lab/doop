@@ -71,6 +71,15 @@ Server:KeepClass(?interface) <-
   Server:KeepClass(?class),
   SupertypeOf(?interface, ?class).
 
+Server:MethodFromInterface(?interfaceMethod, ?method) <-
+  Method:DeclaringType[?interfaceMethod] = ?type,
+  InterfaceType(?type),
+  SubtypeOf(?subtype, ?type),
+  Method:DeclaringType[?method] = ?subtype,
+  Method:SimpleName[?interfaceMethod] = Method:SimpleName[?method],
+  Method:Descriptor[?interfaceMethod] = Method:Descriptor[?method],
+  !Method:Modifier("abstract", ?method).
+
 
 _AppVirtual(?invo) <-
   VirtualMethodInvocation:Insn(?invo),

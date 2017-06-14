@@ -4,6 +4,7 @@ import groovy.transform.InheritConstructors
 import org.clyze.deepdoop.datalog.Program
 import org.clyze.deepdoop.datalog.clause.Declaration
 import org.clyze.deepdoop.datalog.clause.Rule
+import org.clyze.deepdoop.datalog.component.Component
 import org.clyze.deepdoop.datalog.element.ComparisonElement
 import org.clyze.deepdoop.datalog.element.GroupElement
 import org.clyze.deepdoop.datalog.element.LogicalElement
@@ -13,7 +14,7 @@ import org.clyze.deepdoop.datalog.expr.BinaryExpr
 import org.clyze.deepdoop.datalog.expr.ConstantExpr
 import org.clyze.deepdoop.datalog.expr.GroupExpr
 import org.clyze.deepdoop.datalog.expr.VariableExpr
-import org.clyze.deepdoop.system.Result
+import org.clyze.deepdoop.system.*
 
 import static org.clyze.deepdoop.datalog.Annotation.Kind.INPUT
 import static org.clyze.deepdoop.datalog.Annotation.Kind.OUTPUT
@@ -23,14 +24,14 @@ import static org.clyze.deepdoop.datalog.element.LogicalElement.LogicType.AND
 class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	File currentFile
-	boolean inDecl
-	boolean inRuleHead
+	TypeInferenceVisitingActor inferenceActor
+	Map<String, List<String>> typesStructure = [:]
 
 	String visit(Program p) {
-		//currentFile = createUniqueFile("out_", ".dl")
+		currentFile = createUniqueFile("out_", ".dl")
 		results << new Result(Result.Kind.LOGIC, currentFile)
 
-		def inferenceActor = new TypeInferenceVisitingActor(infoActor)
+		inferenceActor = new TypeInferenceVisitingActor(infoActor)
 
 		// Transform program before visiting nodes
 		def n = p.accept(new NormalizeVisitingActor())
@@ -39,23 +40,37 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 				.accept(new ValidationVisitingActor(infoActor))
 				.accept(inferenceActor)
 
+		inferTypeStructure()
+
 		return super.visit(n as Program)
 	}
 
-	void enter(Declaration n) { inDecl = true }
+	void enter(Component n) {
+		inferenceActor.inferredTypes.each { predName, types ->
+			def params = types.withIndex().collect { type, i -> "x$i:${mapType(type)}" }.join(", ")
+			emit ".decl ${pred(predName, params)}"
+		}
+	}
 
 	String exit(Declaration n, Map<IVisitable, String> m) {
-		inDecl = false
 		if (n.atom instanceof Entity) {
-			def entityName = n.atom.name
-			def rest = (n.types.isEmpty() ? "" : " = ${n.types.first().name}")
-			def params = "x:$entityName"
-			emit ".type ${entityName}$rest"
-			emit ".decl ${type(entityName, params)}"
-		} else {
-			def params = n.types.collect { m[it] }.join(", ")
-			emit ".decl ${pred(n.atom.name, params)}"
-		}
+			def structure = typesStructure[n.atom.name]
+			if (structure.size() == 1)
+				emit ".decl ${pred(n.atom.name, "x:${structure.first()}")}"
+			else {
+				def params = structure.withIndex().collect { "x${it[1]}:${it[0]}" }.join(", ")
+				emit ".type T?? = [$params]"
+				emit ".decl ${pred(n.atom.name, "x:T1")}"
+			}
+			//def entityName = n.atom.name
+			//def rest = (n.types.isEmpty() ? "" : " = ${n.types.first().name}")
+			//def params = "x:$entityName"
+			//emit ".type ${entityName}$rest"
+			//emit ".decl ${type(entityName, params)}"
+		}// else {
+			//def params = n.types.collect { m[it] }.join(", ")
+			//emit ".decl ${pred(n.atom.name, params)}"
+		//}
 
 		if (n.annotations.any { it.kind == INPUT })
 			emit ".input ${mini(n.atom.name)}"
@@ -65,7 +80,7 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		return null
 	}
 
-	String visit(Rule n) {
+	/*String visit(Rule n) {
 		actor.enter(n)
 		def m = [:]
 
@@ -79,7 +94,7 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		constructors.each { newBody.elements << it }
 		m[n.body] = newBody.accept(this)
 		return actor.exit(n, m)
-	}
+	}*/
 
 	String exit(Rule n, Map<IVisitable, String> m) {
 		emit "${m[n.head]} :- ${m[n.body]}."
@@ -90,8 +105,7 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(GroupElement n, Map<IVisitable, String> m) { "(${m[n.element]})" }
 
 	String exit(LogicalElement n, Map<IVisitable, String> m) {
-		def delim = (n.type == AND ? ", " : "; ")
-		return n.elements.collect { m[it] }.join(delim)
+		return n.elements.collect { m[it] }.join(n.type == AND ? ", " : "; ")
 	}
 
 	String exit(NegationElement n, Map<IVisitable, String> m) { "!${m[n.element]}" }
@@ -99,16 +113,18 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(Constructor n, Map<IVisitable, String> m) {
 		def params = (n.keyExprs + [n.valueExpr]).collect { m[it] }.join(", ")
 
-		if (inRuleHead)
-			return "${type(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}, ${pred("$n.name:HeadMacro", params)}"
-		else if (!inDecl)
-			return "${pred("$n.name:BodyMacro", params)}"
-		else
-			return null
+		//if (inRuleHead)
+		return "${pred(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}"
+			//return "${pred(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}, ${pred("$n.name:HeadMacro", params)}"
+		//else if (!inDecl)
+		//	return "${pred("$n.name:BodyMacro", params)}"
+		//else
+		//	return null
 	}
 
 	String exit(Entity n, Map<IVisitable, String> m) {
-		inDecl ? "${m[n.exprs.first()]}:${n.name}" : null
+		//inDecl ? "${m[n.exprs.first()]}:${n.name}" : null
+		null
 	}
 
 	String exit(Functional n, Map<IVisitable, String> m) {
@@ -122,7 +138,8 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	}
 
 	String exit(Primitive n, Map<IVisitable, String> m) {
-		inDecl ? "${m[n.var]}:${mapPrimitive(n.name)}" : null
+		//inDecl ? "${m[n.var]}:${mapPrimitive(n.name)}" : null
+		null
 	}
 
 	String exit(BinaryExpr n, Map<IVisitable, String> m) { "${m[n.left]} ${n.op} ${m[n.right]}" }
@@ -133,17 +150,51 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 
 	String exit(VariableExpr n, Map<IVisitable, String> m) { n.name }
 
-	def emit(def data) { /*write currentFile, data*/ }
+	void inferTypeStructure() {
+		// For each type that has constructors
+		infoActor.constructorsPerType.each { type, constructors ->
+			def maxElement = constructors.max { inferenceActor.inferredTypes[it].size() }
+			// Decrease by one to ignore the entity at the end of the list
+			def maxSize = inferenceActor.inferredTypes[maxElement].size() - 1
+
+			def finalType = constructors
+			// Collect types found in key positions
+					.collect {
+				def keyTypes = inferenceActor.inferredTypes[it].dropRight(1)
+				def padLength = maxSize - keyTypes.size()
+				keyTypes += (0..<padLength).collect { null }
+				return keyTypes
+			}
+			// Transpose elements from each list
+					.transpose()
+			// Find a single type for each position
+					.withIndex().collect { typesForIndex ->
+				if (typesForIndex[0].every { !it || it == "string" }) return mapType("string")
+				if (typesForIndex[0].every { !it || it == "int" }) return mapType("int")
+				ErrorManager.error(ErrorId.INCOMPATIBLE_TYPES, type, typesForIndex[1])
+				return null
+			}
+			typesStructure[type] = finalType
+		}
+	}
+
+	def emit(def data) { write currentFile, data }
 
 	static def pred(def name, def params) { "${mini(name)}($params)" }
 
-	static def type(def name, def params) { "is${mini(name)}($params)" }
+	//static def type(def name, def params) { "is${mini(name)}($params)" }
 
 	static def mini(def name) { name.replace ":", "_" }
 
-	static def mapPrimitive(def name) {
+	//static def mapPrimitive(def name) {
+	//	if (name == "string") return "symbol"
+	//	else if (name == "int") return "number"
+	//	else return name
+	//}
+
+	static def mapType(def name) {
 		if (name == "string") return "symbol"
 		else if (name == "int") return "number"
-		else return name
+		else return "symbol"
 	}
 }
