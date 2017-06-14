@@ -133,6 +133,7 @@ catchStmt
 
 monitorStmt
 	: 'entermonitor' 'class' STRING
+	| 'exitmonitor' 'class' STRING
 	| 'entermonitor' IDENTIFIER
 	| 'exitmonitor' IDENTIFIER
 	;
