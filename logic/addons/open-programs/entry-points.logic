@@ -2,7 +2,8 @@ EntryPoint(?method) -> Method(?method).
 
 ClassHasPossibleEntryPoint(?class),
 PossibleEntryPoint(?method) <-
-   !Method:Modifier("static", ?method),
+//// Remove comment for original behavior
+//   !Method:Modifier("static", ?method),
    Method:DeclaringType[?method] = ?class,
    Method:Modifier("public", ?method),
    !ClassModifier("private", ?class).
@@ -48,5 +49,6 @@ EntryPoint(?method) <-
 #else
 // The definition we currently want as default
 EntryPoint(?method) <-
-   TopLevelEntryPoint(?method).
+   PossibleEntryPoint(?method).
+//   TopLevelEntryPoint(?method).
 #endif
