@@ -26,6 +26,10 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	File currentFile
 	TypeInferenceVisitingActor inferenceActor
 	Map<String, List<String>> typesStructure = [:]
+	Map<String, String> originalTypeToGenType = [:]
+	int lastGenTypeCounter
+	List<String> pendingRecords
+	boolean inRule = false
 
 	String visit(Program p) {
 		currentFile = createUniqueFile("out_", ".dl")
@@ -59,8 +63,10 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 				emit ".decl ${pred(n.atom.name, "x:${structure.first()}")}"
 			else {
 				def params = structure.withIndex().collect { "x${it[1]}:${it[0]}" }.join(", ")
-				emit ".type T?? = [$params]"
-				emit ".decl ${pred(n.atom.name, "x:T1")}"
+				def genType = "T${lastGenTypeCounter++}"
+				originalTypeToGenType[n.atom.name] = genType
+				emit ".type $genType = [$params]"
+				emit ".decl ${pred(n.atom.name, "x:$genType")}"
 			}
 			//def entityName = n.atom.name
 			//def rest = (n.types.isEmpty() ? "" : " = ${n.types.first().name}")
@@ -95,9 +101,15 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 		m[n.body] = newBody.accept(this)
 		return actor.exit(n, m)
 	}*/
+	void enter(Rule n) {
+		pendingRecords = []
+		inRule = true
+	}
 
 	String exit(Rule n, Map<IVisitable, String> m) {
-		emit "${m[n.head]} :- ${m[n.body]}."
+		inRule = false
+		def body = m[n.body] + (pendingRecords.isEmpty() ? "" : ", ${pendingRecords.join(", ")}")
+		emit "${m[n.head]} :- ${body}."
 	}
 
 	String exit(ComparisonElement n, Map<IVisitable, String> m) { m[n.expr] }
@@ -111,10 +123,15 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	String exit(NegationElement n, Map<IVisitable, String> m) { "!${m[n.element]}" }
 
 	String exit(Constructor n, Map<IVisitable, String> m) {
+		if (inRule) {
+			def nilTypes = (typesStructure[infoActor.constructorBaseType[n.name]].size() - n.keyExprs.size())
+			def record = n.keyExprs.collect { m[it] } + (0..<nilTypes).collect { "nil" }
+			pendingRecords << "${m[n.valueExpr]} = [${record.join(", ")}]"
+		}
 		def params = (n.keyExprs + [n.valueExpr]).collect { m[it] }.join(", ")
+		return "${pred(n.name, params)}, ${pred(n.entity.name, m[n.valueExpr])}"
 
 		//if (inRuleHead)
-		return "${pred(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}"
 			//return "${pred(n.entity.name, m[n.valueExpr])}, ${pred(n.name, params)}, ${pred("$n.name:HeadMacro", params)}"
 		//else if (!inDecl)
 		//	return "${pred("$n.name:BodyMacro", params)}"
@@ -174,6 +191,11 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 				ErrorManager.error(ErrorId.INCOMPATIBLE_TYPES, type, typesForIndex[1])
 				return null
 			}
+
+			if (finalType.size() != 1 && !originalTypeToGenType[type]) {
+				def genType = "T${lastGenTypeCounter++}"
+				originalTypeToGenType[type] = genType
+			}
 			typesStructure[type] = finalType
 		}
 	}
@@ -192,9 +214,11 @@ class SouffleCodeGenVisitingActor extends DefaultCodeGenVisitingActor {
 	//	else return name
 	//}
 
-	static def mapType(def name) {
+	def mapType(def name) {
+		def genType = originalTypeToGenType[name]
 		if (name == "string") return "symbol"
 		else if (name == "int") return "number"
+		else if (genType) return genType
 		else return "symbol"
 	}
 }

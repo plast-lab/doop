@@ -12,6 +12,18 @@ Foo(y) <- x = "x1".
 new<<byFld[x, y] = z as AP>>,
 Foo(z) <- x = "x2", y = "f1".
 
+//Bar(1).
+Bar(x) <- x = 1.
+
+/*
+@Entity Shape.
+@Constructor
+byLen[x] = y -> int(x), Shape(y).
+
+@Constructor
+byPoints[x,y] = z -> int(x), int(y), Shape(z).
+
 @Entity Animal.
 @Constructor
 byName[x] = y -> string(x), Animal(y).
+*/
