@@ -411,6 +411,15 @@ public class Main {
 
                 if (processMan.getApplicationName() != null)
                     writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
+                else {
+                    // If no application name, use Android's Application:
+                    // "The fully qualified name of an Application subclass
+                    // implemented for the application. ... In the absence of a
+                    // subclass, Android uses an instance of the base
+                    // Application class."
+                    // https://developer.android.com/guide/topics/manifest/application-element.html
+                    writer.writeApplication("android.app.Application");
+                }
                 for (AXmlNode node : appActivities) {
                     writer.writeActivity(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
                 }
