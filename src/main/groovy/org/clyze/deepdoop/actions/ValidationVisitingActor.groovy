@@ -88,6 +88,9 @@ class ValidationVisitingActor extends PostOrderVisitor<IVisitable> implements IA
 			ErrorManager.error(ErrorId.UNKNOWN_TYPE, n.entity.name)
 
 		def baseType = infoActor.constructorBaseType[n.name]
+		// TODO should be more general check for predicates
+		if (!baseType)
+			ErrorManager.error(ErrorId.CONSTRUCTOR_UNKNOWN, n.name)
 		if (n.entity.name != baseType && !(baseType in infoActor.superTypesOrdered[n.entity.name]))
 			ErrorManager.error(ErrorId.CONSTRUCTOR_INCOMPATIBLE, n.name, n.entity.name)
 
@@ -96,9 +99,17 @@ class ValidationVisitingActor extends PostOrderVisitor<IVisitable> implements IA
 
 	IVisitable exit(Entity n, Map m) { null }
 
-	IVisitable exit(Functional n, Map m) { null }
+	IVisitable exit(Functional n, Map m) {
+		if (n.name.endsWith("__pArTiAl"))
+			ErrorManager.error(ErrorId.RESERVED_SUFFIX)
+		null
+	}
 
-	IVisitable exit(Predicate n, Map m) { null }
+	IVisitable exit(Predicate n, Map m) {
+		if (n.name.endsWith("__pArTiAl"))
+			ErrorManager.error(ErrorId.RESERVED_SUFFIX)
+		null
+	}
 
 	IVisitable exit(Primitive n, Map m) { null }
 

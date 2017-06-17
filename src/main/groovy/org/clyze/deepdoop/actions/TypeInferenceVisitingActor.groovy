@@ -58,19 +58,21 @@ class TypeInferenceVisitingActor extends PostOrderVisitor<IVisitable> implements
 	}
 
 	IVisitable visit(Component n) {
+		actor.enter(n)
+		n.declarations.each { it.accept(this) }
+		n.constraints.each { it.accept(this) }
+
 		Set<Rule> oldDeltaRules = n.rules
 		while (!oldDeltaRules.isEmpty()) {
 			deltaRules = [] as Set
-			actor.enter(n)
-			n.declarations.each { it.accept(this) }
-			n.constraints.each { it.accept(this) }
 			oldDeltaRules.each { it.accept(this) }
-			actor.exit(n, null)
 			oldDeltaRules = deltaRules
 		}
 		possibleTypes.each { pred, map ->
 			inferredTypes[pred] = map.collect { i, types -> coalesce(types, pred, i) }
 		}
+
+		actor.exit(n, null)
 		null
 	}
 

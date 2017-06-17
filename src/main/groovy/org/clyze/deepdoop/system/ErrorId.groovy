@@ -22,9 +22,11 @@ enum ErrorId {
 	INVALID_ANNOTATION,
 	UNSUPPORTED_TYPE,
 	UNKNOWN_TYPE,
+	CONSTRUCTOR_UNKNOWN,
 	CONSTRUCTOR_RULE,
 	CONSTRUCTOR_INCOMPATIBLE,
 	INCOMPATIBLE_TYPES,
+	RESERVED_SUFFIX,
 
 	static Map<ErrorId, String> msgMap
 	static {
@@ -48,9 +50,11 @@ enum ErrorId {
 		msgMap[INVALID_ANNOTATION] = "Invalid annotation `{0}` for `{1}`"
 		msgMap[UNSUPPORTED_TYPE] = "Type `{0}` is currently unsupported"
 		msgMap[UNKNOWN_TYPE] = "Unknown type `{0}`"
+		msgMap[CONSTRUCTOR_UNKNOWN] = "Unknown constructor `{0}`"
 		msgMap[CONSTRUCTOR_RULE] = "Constructor `{0}` used as a normal predicate in rule head"
 		msgMap[CONSTRUCTOR_INCOMPATIBLE] = "Constructor `{0}` used with incompatible type `{1}`"
 		msgMap[INCOMPATIBLE_TYPES] = "Incompatible types for predicate `{0}` (at index {1})"
+		msgMap[RESERVED_SUFFIX] = "Suffix `__pArTiAl` is reserved and cannot appear in predicate names"
 	}
 
 	static String idToMsg(ErrorId errorId, Object[] values) {
