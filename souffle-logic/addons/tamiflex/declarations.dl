@@ -1,0 +1,15 @@
+.decl Tamiflex_Class_NewInstance(?invocation:MethodInvocation, ?value:Value)
+
+.decl Tamiflex_Constructor_NewInstance(?invocation:MethodInvocation, ?constructor:Method, ?value:Value)
+
+.decl Tamiflex_Array_NewInstance(?invocation:MethodInvocation, ?value:Value)
+
+.decl Tamiflex_Invoke(?callerCtx:Context, ?invocation:MethodInvocation, ?method:Method)
+
+.decl Tamiflex_ReifiedField(?fld:Field, ?value:Value, ?invocation:MethodInvocation)
+
+.decl Tamiflex_ReifiedFieldArray(?type:Type, ?value:Value, ?invocation:MethodInvocation)
+
+.decl Tamiflex_ReifiedMethod(?method:Method, ?value:Value, ?invocation:MethodInvocation)
+
+.decl Tamiflex_ReifiedMethodArray(?type:Type, ?value:Value, ?invocation:MethodInvocation)

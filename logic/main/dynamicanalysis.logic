@@ -1,0 +1,126 @@
+/**
+ * Dynamic analysis
+ */
+
+/*
+ Default handling of context sensitivity
+*/
+
+DynamicContextToContext(?ctx, ?dctx) -> Context(?ctx), DynamicContext(?dctx).
+DynamicContextToHContext(?hctx, ?dctx) -> HContext(?hctx), DynamicContext(?dctx).
+
+#ifndef DYNAMIC_CONTEXT_SENSITIVITY
+DynamicContextToContext(?ctx, ?dctx) <-
+   ImmutableContext(?ctx),
+   DynamicContext(?dctx).
+
+DynamicContextToHContext(?hctx, ?dctx) <-
+   DynamicContext(?dctx),
+   ImmutableHContext(?hctx).
+#endif
+
+
+/*
+ matching dynamic facts
+*/
+
+
+HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
+
+Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
+   (HeapAllocation:Merge[?heap] = ?mergeHeap ; HeapRepresentative(?mergeHeap, ?heap)),
+   HeapAllocation:Dynamic(?heap).
+
+Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
+   !HeapAllocation:Merge[?heap] = _,
+   !HeapRepresentative(_, ?heap),
+   HeapAllocation:Dynamic(?heap).
+
+// Context sensitive allocations
+
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+   DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
+   FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap).
+   
+InstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) <-
+   DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
+   FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
+   FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
+   
+ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseValue) <-
+   DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap),
+   FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
+   FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
+
+// Context insensitive allocations
+FromDynamicHeapObject(?hctx, Value:byHeap[?mergeHeap], ?dctx, ?dheap) <-
+   ImmutableHContext(?hctx),
+   HeapAllocation:Merge[?dheap] = ?mergeHeap,
+   DynamicHeapObject(?dctx, ?dheap).
+
+
+FromDynamicHeapObject(?hctx, Value:byHeap[?dheap], ?dctx, ?dheap) <-
+   DynamicContextToHContext(?hctx, ?dctx),
+   !HeapAllocation:Merge[?dheap] = _,
+   DynamicHeapObject(?dctx, ?dheap).
+
+
+OptClassInitializer(?class, ?method) <- ClassInitializer[?class] = ?method.
+
+
+InitializedClass(?class) <-
+   (TamiflexDynamicallyReachableMethod(?method) ;
+   DynamicReachableMethod(?method)),
+   OptClassInitializer(?class, ?method).
+
+ProbablyReachable(?method) <-
+   SanitizedDynamicCallGraphEdge(_, ?method, _, _, _).
+
+ProbablyReachable(?tomethod) <-
+   StaticMethodInvocation(_, ?tomethod, ?fromMethod),
+   ProbablyReachable(?fromMethod).
+
+ForcedImplicitReachable(?method),
+ReachableContext(?ctx, ?method) <-
+   (TamiflexDynamicallyReachableMethod(?method) ;
+   DynamicReachableMethod(?method)),
+   !ProbablyReachable(?method),
+   !OptClassInitializer(_, ?method),
+   ImmutableContext(?ctx).
+
+TamiflexDynamicallyReachableMethod(?inmethod) -> Method(?inmethod).
+
+#ifdef TAMIFLEX
+TamiflexDynamicallyReachableMethod(?inmethod) <-
+    Tamiflex:ReflectionMap(_, ?invocation),
+    Instruction:Method[?invocation] = ?inmethod.
+#endif
+
+SanitizedDynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod) <-
+   DynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod),
+   ResolveInvocation[_, ?invocation] = ?toMethod.
+
+SanitizedDynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod) <-
+   DynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod),
+   MethodInvocation:Method[?invocation] = ?toMethod.
+
+SanitizedDynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod) <-
+   DynamicCallGraphEdge(?ctxFrom, ?toMethod, ?invocation, ?ctxTo, ?fromMethod),      
+   DynamicMethodInvocation:Insn(?invocation).
+
+   
+#ifdef DYNAMIC_CONTEXT_SENSITIVITY
+CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
+   !StaticMethodInvocation:Insn(?invocation),
+   DynamicContextToContext(?ctxTo, ?dctxTo),
+   DynamicContextToContext(?ctxFrom, ?dctxFrom),
+   SanitizedDynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, _).
+#else
+CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) <-
+   ReachableContext(?ctxFrom, ?fromMethod),
+   ImmutableContextFromContext[?ctxFrom] = ?ctxTo,
+   !StaticMethodInvocation:Insn(?invocation),
+   SanitizedDynamicCallGraphEdge(_, ?toMethod, ?invocation, _, ?fromMethod).
+#endif
+
+

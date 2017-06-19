@@ -1,0 +1,4 @@
+// In this analysis, the real context and the real heap context are a Type and
+// a Value.
+.type Context  = [ type:Type, value:Value ]
+.type HContext = [ type:Type, value:Value ]

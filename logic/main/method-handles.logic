@@ -1,0 +1,116 @@
+/*************************************************************
+ * MethodHandle constants
+ *************************************************************/
+
+HeapAllocation:ContextInsensitive(?heap) <-
+   MethodHandleConstant(?heap).
+
+#define LAMBDA_METAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+
+#define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
+
+LambdaMetafactory[] = ?bootMethod <- Method:Id(?bootMethod:LAMBDA_METAFACTORY_ID).
+
+// Method references are wrapped by calling invokedynamic with
+// boostrap method being the lambda metafactory and the second
+// bootstrap argument being a constant method handle. The result
+// 'value' of the invokedynamic is a lambda, which contains an
+// instance method calling static method 'realMethod'.
+
+ConstantMethodHandleLambda(?value, ?dynName, ?dynRet, ?realMethod) ->
+   Value(?value), string(?dynName), Type(?dynRet), Method(?realMethod).
+
+InvokedynamicBootstrap(?invo, ?ctx) ->
+   DynamicMethodInvocation:Insn(?invo), Context(?ctx).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
+MockValueConsMacro(?valueId, ?interface, ?value),
+ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod),
+InvokedynamicBootstrap(?invo, ?ctx)
+ <-
+   DynamicMethodInvocation:Insn(?invo),
+   BootstrapParam[1, ?invo] = ?handleVar,
+   DynamicMethodInvocation:Bootstrap[?invo] = LambdaMetafactory[],
+   VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
+   Value:Heap[?handleVal] = ?handle,
+   MethodHandleConstant:Method[?handle] = ?realMethod,
+   DynamicMethodInvocation:DynName[?invo] = ?dynName,
+   DynamicMethodInvocation:DynReturnType[?invo] = ?dynRet,
+   InterfaceType(?interface), Type:Id(?interface:?dynRet),
+   AssignReturnValue[?invo] = ?var,
+   // Generate friendly description for the generated wrapper.
+   Instruction:Id(?invo:?invoId),
+   Method:SimpleName[?realMethod] = ?handleMeth,
+   Method:DeclaringType[?realMethod] = ?handleType,
+   Type:Id(?handleType:?handleTypeId),
+   ?desc = "reference " + ?handleTypeId + "::" + ?handleMeth + " wrapped as " + ?dynRet + "." + ?dynName,
+   ?valueId = ?invoId + "::: " + ?dynRet + "::: (Mock)::: " + ?desc.
+
+// Record invokedynamic invocations whose bootstrap methods are not
+// handled at all.
+UnhandledInvokedynamic(?i, ?bootMethodId) ->
+   DynamicMethodInvocation:Insn(?i), string(?bootMethodId).
+
+UnhandledInvokedynamic(?i, ?bootMethodId) <-
+   DynamicMethodInvocation:Insn(?i),
+   DynamicMethodInvocation:Bootstrap[?i] = ?bootMethod,
+   Method:Id(?bootMethod:?bootMethodId),
+   // ?bootMethodId != LAMBDA_ALTMETAFACTORY_ID,
+   ?bootMethodId != LAMBDA_METAFACTORY_ID.
+
+// When invokeinterface is called on a lambda object constructed by a
+// constant method handle, the real method is called. This can wrap a
+// static method call as an instance method call. We create two call
+// graph edges: (1) invokeinterface on the method handle lambda calls
+// the real method and (2) invokedynamic calls the bootstrap method.
+
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?m) ->
+   Context(?callerCtx), MethodInvocation(?i),
+   Context(?calleeCtx), Method(?m).
+
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) <-
+   ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
+   VirtualMethodInvocation:Base[?i] = ?var,
+   VarPointsTo(_, ?value, ?callerCtx, ?var),
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
+   VirtualMethodInvocation:SimpleName[?i] = ?dynName.
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LambdaMetafactory[]) <-
+   ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
+   InvokedynamicBootstrap(?i, ?callerCtx).
+
+ReachableContext(?calleeCtx, ?callee) <-
+   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+// Pass arguments to underlying method.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) <-
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?realMethod),
+   FormalParam[?idx, ?realMethod] = ?formal,
+   ActualParam[?idx, ?i] = ?actual,
+   VarPointsTo(_, ?val, _, ?actual),
+   ImmutableHContextFromContext[?ctx] = ?hctx.
+
+// Handle return values.
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) <-
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
+   ReturnVar(?realReturnVar, ?realMethod),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+   AssignReturnValue[?i] = ?ret.
+
+Lambda:Method[?value] = ?realMethod -> Value(?value), Method(?realMethod).
+Lambda:Method[?value] = ?realMethod <-
+   ConstantMethodHandleLambda(?value, _, _, ?realMethod).
+
+// Applicationw of constructor references construct values. However,
+// these values do not come from a 'new' instruction in the code but
+// are created here as special values, one per type.
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
+ConstructorReference(?var, ?value, ?i, ?realMethod),
+MockValueConsMacro(?valueId, ?type, ?value) <-
+   VirtualMethodInvocation:Base[?i] = ?base,
+   VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
+   Lambda:Method[?baseVal] = ?realMethod,
+   Method:SimpleName[?realMethod] = "<init>",
+   Method:DeclaringType[?realMethod] = ?type,
+   AssignReturnValue[?i] = ?var,
+   Type:Id(?type:?typeId),
+   ?valueId = ?typeId + "::: (Mock)".

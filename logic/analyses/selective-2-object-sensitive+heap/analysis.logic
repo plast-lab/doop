@@ -1,6 +1,24 @@
 // Context-sensitive pointer analysis with context of 2 objects
 // (AND for static calls 1 call-site).
 
+// The real context is a pair of Value AND a MethodInvocation (for
+// static calls) sometimes.  The real heap context is a single Value.
+// Keeping mapping functions is the way to handle analyses where HContext =
+// Context (since the language considers them different types).
+ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx ->
+  Context(?ctx), ContextComponent(?valueComp1), ContextComponent(?valueComp2).
+lang:constructor(`ContextFromRealContext).
+
+// NOTE: Use the following when using both the normal (caller's) context and
+// the invoComp site for static calls.
+SpecialContextFromRealContext[?valueComp1, ?invoComp, ?valueComp2] = ?ctx ->
+  ContextComponent(?valueComp1), ContextComponent(?valueComp2),
+  ContextComponent(?invoComp), Context(?ctx).
+lang:constructor(`SpecialContextFromRealContext).
+RealContext1FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+RealContext2FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
 RealContext1FromContext[?ctx] = ?valueComp1,
 RealContext2FromContext[?ctx] = ?valueComp2 <-
   ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx.
@@ -10,48 +28,13 @@ RealContext1FromContext[?ctx] = ?invoComp,
 RealContext2FromContext[?ctx] = ?valueComp2 <-
   SpecialContextFromRealContext[_, ?invoComp, ?valueComp2] = ?ctx.
 
+HContextFromRealHContext[?valueComp] = ?hctx ->
+  HContext(?hctx), ContextComponent(?valueComp).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?valueComp ->
+  HContext(?hctx), ContextComponent(?valueComp).
 RealHContextFromHContext[?hctx] = ?valueComp <-
   HContextFromRealHContext[?valueComp] = ?hctx.
-
-Context(?ctx),
-ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-ImmutableContext(?ctx) <-
-  Value:byId["<<immutable-context>>"] = ?value.
-
-HContext(?hctx),
-HContextFromRealHContext[?valueComp] = ?hctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-ImmutableHContext(?hctx) <-
-  Value:byId["<<immutable-hcontext>>"] = ?value.
-
-
-// Create initial objects with their value contexts
-HContext(?hctx),
-HContextFromRealHContext[?valueComp] = ?hctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-SystemThreadGroup(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<system-thread-group>>"] = ?alloc.
-
-HContext(?hctx),
-HContextFromRealHContext[?valueComp] = ?hctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-MainThreadGroup(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<main-thread-group>>"] = ?alloc.
-
-HContext(?hctx),
-HContextFromRealHContext[?valueComp] = ?hctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-MainThread(?hctx, ?alloc) <-
-  Value:byId["<<jvm-startup>>"] = ?value,
-  Value:byId["<<main-thread>>"] = ?alloc.
 
 
 // Merge optimization hack
@@ -67,32 +50,5 @@ Context(?calleeCtx),
 ContextFromRealContext[RealHContextFromHContext[?hctx],?valueComp] = ?calleeCtx,
 ContextComponent(?valueComp),
 ContextComponent:Value[?value] = ?valueComp,
-OptimizeMerge[?hctx, ?value] = ?calleeCtx <-
+CachedMerge[?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?hctx, ?value).
-
-
-// Initially reachable methods
-Context(?ctx),
-ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-ReachableContext(?ctx, ?method) <-
-  MainMethodDeclaration(?method),
-  Value:byId["<<initial-context>>"] = ?value.
-
-Context(?ctx),
-ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-ReachableContext(?ctx, ?method) <-
-  ImplicitReachable(?method),
-  Value:byId["<<jvm-startup>>"] = ?value.
-
-Context(?ctx),
-ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
-ContextComponent(?valueComp),
-ContextComponent:Value[?value] = ?valueComp,
-ReachableContext(?ctx, ?clinit) <-
-  InitializedClass(?class),
-  ClassInitializer[?class] = ?clinit,
-  Value:byId["<<class-initialization>>"] = ?value.

@@ -1,0 +1,25 @@
+// Convert from the representation used (in some places) in Tamiflex to the one
+// used in Doop
+.decl _Tamiflex_ToDoopFormat(?orig:symbol, ?formatted:symbol)
+
+_Tamiflex_ToDoopFormat("Class", "java.lang.Class").
+_Tamiflex_ToDoopFormat("Constructor", "java.lang.reflect.Constructor").
+_Tamiflex_ToDoopFormat("Field", "java.lang.reflect.Field").
+_Tamiflex_ToDoopFormat("Method", "java.lang.reflect.Method").
+_Tamiflex_ToDoopFormat("Array", "java.lang.reflect.Array").
+
+_Tamiflex_ToDoopFormat("get*", "get").
+_Tamiflex_ToDoopFormat("set*", "set").
+
+// Import data from the reflection log generated from tamiflex
+.decl _Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol,
+                               ?inMethodStr:symbol, ?lineNumber:number)
+
+.input _Tamiflex_ReflectionData(IO="file", filename="Tamiflex.facts", delimiter="\t")
+
+Tamiflex_ReflectionData(?classStr, ?methodStr, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber) :-
+  _Tamiflex_ReflectionData(?classStr0, ?methodStr0, ?mapped, ?inClassStr, ?inMethodStr, ?lineNumber),
+  _Tamiflex_ToDoopFormat(?classStr0, ?classStr),
+  (_Tamiflex_ToDoopFormat(?methodStr0, ?methodStr) ;
+   ?methodStr0 = ?methodStr).
+

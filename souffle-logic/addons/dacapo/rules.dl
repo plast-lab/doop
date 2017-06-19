@@ -1,0 +1,20 @@
+.decl Dacapo(?classNameHeap:StringConstant, method:Method)
+
+StringConstantConsMacro(?heap, "java.lang.String"),
+HeapAllocation_Keep(?heap),
+Dacapo(?heap, ?method) :-
+  _Dacapo(?heap, ?method).
+
+/**
+ * Extra logic to handle a specific value read from a configuration file for
+ * the DaCapo benchmarks. The value is used afterwards reflectively to create a
+ * new object.
+ */
+VarPointsTo(?hctx, ?classNameHeap, ?ctx, ?to) :-
+  Dacapo(?classNameHeap, ?dacapoMethod),
+  MethodInvocation_Method(?invo, ?dacapoMethod),
+  VirtualMethodInvocation_Base(?invo, ?base),
+  Var_DeclaringMethod(?base, ?method),
+  ReachableContext(?ctx, ?method),
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  ActualParam(0, ?invo, ?to).

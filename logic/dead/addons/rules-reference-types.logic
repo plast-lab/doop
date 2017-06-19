@@ -1,0 +1,248 @@
+#include "macros.logic"
+#include "entry-points.logic"
+
+FormalParamOpt(?index, ?method, ?formal) <- FormalParam[?index, ?method] = ?formal.
+
+AllConcreteImplementations(?class, ?staticType) <-
+   SubtypeOf(?class, ?staticType),
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) <-
+   ClassType(?class),
+   !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?type, ?type) <-
+   ArrayType(?type).
+
+ConcreteType(?type) <- AllConcreteImplementations(?type, _).
+
+ObjToMock(?class) -> ReferenceType(?class).
+
+MockObjFromEntryPoint(?class),
+ObjToMock(?class) <-
+   EntryPoint(?method),
+   Method:DeclaringType[?method] = ?class,
+   !ClassModifier("abstract", ?class),
+   ReferenceType(?class).
+
+MockObjFromArray(?class),
+ObjToMock(?class) <-
+   ObjToMock(?type),
+   ArrayType(?type),
+   ComponentType[?type] = ?componentType,
+   StaticToActualType(?class, ?componentType).
+
+
+MockObjFromField(?fieldType) -> ReferenceType(?fieldType).
+
+#ifdef MOCK_OBJECTS_FOR_FIELDS
+MockObjFromField(?fieldType),
+ObjToMock(?fieldType) <-
+   FieldInformationOpt(_, ?class, ?fieldType),
+   !ClassModifier("abstract", ?fieldType),
+   ReferenceType(?fieldType),
+   ObjToMock(?class).
+ 
+FieldInformation(?signature, ?fieldtype, ?class) ->
+   Field(?signature), Type(?fieldtype), Type(?class).
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   Field:Type[?signature] = ?fieldtype,
+   Field:DeclaringType[?signature] = ?class.
+
+FieldInformation(?signature, ?fieldtype, ?class) <-
+   FieldInformation(?signature, ?fieldtype, ?staticType),
+   AllConcreteImplementations(?class, ?staticType).
+
+FieldInformation(?signature, ?fieldConcreteType, ?class) <-
+   FieldInformationOpt(?signature, ?class, ?fieldStaticType),
+   StaticToActualType(?fieldConcreteType, ?fieldStaticType).
+
+FieldInformationOpt(?signature, ?class, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class).
+   
+FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) ->
+   Field(?signature), Type(?fieldtype), Value(?basevalue).
+
+FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype) <-
+   FieldInformation(?signature, ?fieldtype, ?class),
+   MockObject(?basevalue, ?class).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?hctx, ?basevalue) <-
+   ImmutableHContext(?hctx), //TODO: hctx 
+   FieldTypeForMockObject(?signature, ?basevalue, ?fieldtype),
+   MockObjectForType(?value, ?fieldtype).
+#endif
+
+StaticToActualTypeOpt(?staticType, ?class) <- StaticToActualType(?class, ?staticType).
+
+MockObjectForType(?value, ?staticType) <-
+   MockObject(?value, ?class),
+   StaticToActualTypeOpt(?staticType, ?class).
+
+ComponentTypeOpt(?arrayType, ?componentType) <-
+   ComponentType[?arrayType] = ?componentType.
+
+MockObjectForComponentType(?value, ?arrayType) <-
+   ComponentTypeOpt(?arrayType, ?componentType),
+   MockObjectForType(?value, ?componentType).
+
+ArrayIndexPointsTo(?hctx, ?componentValue, ?hctx, ?arrayValue) <-
+   MockObjectContext(?hctx, ?arrayValue, ?arrayType),
+   ArrayType(?arrayType),
+   MockObjectForComponentType(?componentValue, ?arrayType).
+
+FormalsForEntryPoints(?method, ?formal) -> Method(?method), Var(?formal).
+
+FormalsForEntryPoints(?method, ?formal) <-
+   FormalParam[_, ?method] = ?formal,
+   EntryPoint(?method).
+
+
+MockObjFromFormal(?subtype),
+ObjToMock(?subtype),
+TypeForFormals(?formal, ?method, ?subtype) <-
+   FormalsForEntryPoints(?method, ?formal),
+   Var:Type[?formal] = ?staticType,
+   StaticToActualType(?subtype, ?staticType).
+
+MockForFormal(?value, ?formal, ?type, ?method) <-
+   TypeForFormals(?formal, ?method, ?type),
+#ifdef MULTIPLE_SEGREGATED_ANALYSES
+   Method:DeclaringType[?method] = ?class,
+   TypeToPartitionId[?class] = TypeToPartitionId[?type],
+#endif
+   MockObject(?value, ?type).
+   
+   
+
+// bind mock objects to formals
+MockObjectContext(?hctx, ?value, ?class),
+VarPointsTo(?hctx, ?value, ?ctx, ?formal)
+ <-
+   ContextForEntryPoint(?ctx, ?method),
+   HContextForEntryPoint(?hctx, ?method),
+   MockForFormal(?value, ?formal, ?class, ?method).
+
+// receivers for entry points
+
+HContextForEntryPoint(?hctx, ?method),
+#ifndef OPEN_PROGRAMS_IMMUTABLE_HCTX
+RecordMacro(?calleeCtx, ?value, ?hctx),
+#endif
+MockObjectContext(?hctx, ?value, ?class),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) <-
+#ifdef OPEN_PROGRAMS_IMMUTABLE_HCTX
+   ImmutableHContextFromContext[?calleeCtx] = ?hctx,
+#endif
+   ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
+
+
+// REVIEW: clean up
+ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method),
+#ifndef OPEN_PROGRAMS_IMMUTABLE_CTX
+#ifdef MergeOpenProgramEntryPointMacro
+MergeOpenProgramEntryPointMacro(?method, ?value, ?calleeCtx),
+#else
+MergeStartupMacro(?immutablehctx, ?value, ?calleeCtx),
+#endif
+#endif
+ContextForEntryPoint(?calleeCtx, ?method)
+ <-
+   ThisVar[?method] = ?receiver,
+   Method:DeclaringType[?method] = ?class,
+   MockObjectForType(?value, ?class),
+#ifndef MergeOpenProgramEntryPointMacro
+   ImmutableHContext(?immutablehctx),
+#endif
+#ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
+   ImmutableContext(?calleeCtx),
+#endif
+   EntryPoint(?method).
+
+
+ReachableContext(?ctx, ?method) <-  ContextForEntryPoint(?ctx, ?method).
+
+StaticToActualType(?type, ?type) <- ReferenceType(?type).
+
+MockObjectIntroduced(?class, ?value) <-
+   ObjToMock(?class).
+
+VirtualMethodInvocationSignature(?tomethod, ?callsite) <-
+    VirtualMethodInvocation(?callsite, ?tomethod, _).
+
+VirtualMethodInvocationOpt2(?callsite, ?tomethod, ?base) <-
+  VirtualMethodInvocation:Base[?callsite] = ?base,
+  VirtualMethodInvocationSignature(?tomethod, ?callsite).
+
+
+// Overridable methods on tainted objects return tainted objects
+
+VirtualMethodBasePointsTo(?ctx, ?callsite, ?tomethod, ?value) <-
+  VirtualMethodInvocationOpt2(?callsite, ?tomethod, ?base),
+  VarPointsTo(_, ?value, ?ctx, ?base).
+
+MockObjectOpt(?type, ?value) <- MockObject(?value, ?type).
+
+PotentialCallToExternalOverridableMethod(?ctx, ?valuetype, ?callsite) <-
+  MockObjectOpt(?valuetype, ?value),
+  VirtualMethodBasePointsTo(?ctx, ?callsite, _, ?value).
+
+CallToMethodOfExternalInterface(?ctx, ?callsite, ?tomethod) <-
+  VirtualMethodBasePointsTo(?ctx, ?callsite, ?tomethod, ?value),
+  MockObjectOpt(?type, ?value),
+  InterfaceType(?type).
+
+
+VarPointsToExternalValueForType(?ctx, ?var, ?type) <-
+  CallToMethodOfExternalInterface(?ctx, ?callsite, ?tomethod),
+  ReturnVar(?retVar, ?tomethod),
+  Var:Type(?retVar, ?type),
+  AssignReturnValue(?callsite, ?var).
+
+PossibleOverridableMethodByCallSite(?tomethod, ?valuetype, ?callsite) <-
+  VirtualMethodInvocation:SimpleName(?callsite, ?simplename),
+  VirtualMethodInvocation:Descriptor(?callsite, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?valuetype, ?tomethod),
+  OverridableMethod(?valuetype, ?tomethod).
+
+CallToExternalOverridableMethod(?callerCtx, ?callsite, ?tomethod) <-
+  PotentialCallToExternalOverridableMethod(?callerCtx, ?valuetype, ?callsite),
+  PossibleOverridableMethodByCallSite(?tomethod, ?valuetype, ?callsite).
+
+VarPointsToExternalValueForType(?ctx, ?var, ?type) <-
+  CallToExternalOverridableMethod(?ctx, ?callsite, ?tomethod),
+  ReturnVar(?retVar, ?tomethod),
+  Var:Type(?retVar, ?type),
+  AssignReturnValue(?callsite, ?var).
+
+
+/* Adds a tuple (value, var) when value is ExternalValue 
+   and the type of value matches the type of var. 
+*/
+RecordMacro(?ctx, ?value, ?hctx),
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <- 
+  VarPointsToExternalValueForType(?ctx, ?var, ?type),
+  MockObject(?value, ?type).
+
+/* Adds a tuple (value, var) to VarPointsTo even if the types 
+  of value and var do not match,... but there is an assign-cast 
+  and the type of value matches the cast type
+*/
+//RecordMacro(?ctx, ?value, ?hctx),
+//VarPointsTo(?hctx, ?value, ?ctx, ?var) <- // TODO: fix 
+//   VarPointsToExternalValueForType(?ctx, ?var, ?type),
+//   CompatibleAssignCast(_, ?var, ?type2),
+//   AssignCompatible(?type, ?type2),
+//   MockObject(?value, ?type2).
+
+
+OptAssignCast3(?to, ?from, ?castType) <- OptAssignCast(?castType, ?to, ?from).
+
+// (REVIEW) YS: I'm not sure this is the correct direction of the
+// subtyping check, but it's currently dead code. I'll let its author
+// revise if needed.
+CompatibleAssignCast(?to, ?from, ?type) <-
+   OptAssignCast3(?to, ?from, ?castType),
+   SupertypeOf(?type, ?castType). 

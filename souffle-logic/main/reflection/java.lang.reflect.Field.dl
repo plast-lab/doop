@@ -1,0 +1,71 @@
+/*************************************************************
+ * java.lang.reflect.Field.get
+ *
+ *   public Object get(Object obj)
+ *
+ * If the underlying field is a static field, the obj argument is ignored; it
+ * may be null.  Otherwise, the underlying field is an instance field. If the
+ * specified obj argument is null, the method throws a NullPointerException.
+ *
+ * If the underlying field is static, the class that declared the field is
+ * initialized if it has not already been initialized.
+ *************************************************************/
+
+// Reflective load of a field (static or instance)
+.decl ReflectiveLoadField(?invocation:MethodInvocation, ?ctx:Context, ?to:Var, ?signature:Field)
+
+ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature) :-
+  java_lang_reflect_Field_get(?invocation, ?to, ?field),
+  VarPointsTo(_, ?fieldValue, ?ctx, ?field),
+  ReifiedField(?signature, ?fieldValue).
+
+// Load of a static field
+// TODO Check if class initialization handled by reflective.logic
+.decl ReflectiveLoadStaticField(?ctx:Context, ?to:Var, ?signature:Field)
+
+ReflectiveLoadStaticField(?ctx, ?to, ?signature) :-
+  ReflectiveLoadField(_, ?ctx, ?to, ?signature),
+  Field_Modifier("static", ?signature).
+
+// Load of an instance field
+.decl ReflectiveLoadInstanceField(?ctx1:Context, ?to:Var, ?signature:Field, ?ctx2:Context, ?base:Var)
+
+ReflectiveLoadInstanceField(?ctx, ?to, ?signature, ?ctx, ?base) :-
+  ReflectiveLoadField(?invocation, ?ctx, ?to, ?signature),
+  ! Field_Modifier("static", ?signature),
+  java_lang_reflect_Field_get_base(?invocation, ?base).
+
+
+/*************************************************************
+ * java.lang.reflect.Field.set
+ *
+ *   public void set(Object obj, Object value)
+ *
+ * If the underlying field is a static field, the obj argument is ignored; it
+ * may be null.  Otherwise, the underlying field is an instance field. If the
+ * specified obj argument is null, the method throws a NullPointerException.
+ *************************************************************/
+
+// Reflective store of a field (static or instance)
+.decl ReflectiveStoreField(?invocation:MethodInvocation, ?signature:Field, ?ctx:Context, ?from:Var)
+
+ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from) :-
+  java_lang_reflect_Field_set(?invocation, ?from, ?field),
+  VarPointsTo(_, ?fieldValue, ?ctx, ?field),
+  ReifiedField(?signature, ?fieldValue).
+
+// Store of a static field
+// TODO Check if class initialization handled by reflective.logic
+.decl ReflectiveStoreStaticField(?signature:Field, ?ctx:Context, ?from:Var)
+
+ReflectiveStoreStaticField(?signature, ?ctx, ?from) :-
+  ReflectiveStoreField(_, ?signature, ?ctx, ?from),
+  Field_Modifier("static", ?signature).
+
+// Store of an instance field
+.decl ReflectiveStoreInstanceField(?ctx1:Context, ?from:Var, ?signature:Field, ?ctx2:Context, ?base:Var)
+
+ReflectiveStoreInstanceField(?ctx, ?from, ?signature, ?ctx, ?base) :-
+  ReflectiveStoreField(?invocation, ?signature, ?ctx, ?from),
+  ! Field_Modifier("static", ?signature),
+  java_lang_reflect_Field_set_base(?invocation, ?base).

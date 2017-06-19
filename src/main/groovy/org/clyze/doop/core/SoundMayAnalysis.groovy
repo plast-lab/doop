@@ -3,28 +3,27 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
+import org.clyze.analysis.AnalysisOption
+import org.clyze.deepdoop.system.Compiler
+import org.clyze.deepdoop.system.Result
+import org.clyze.doop.datalog.LBWorkspaceConnector
 import org.clyze.doop.input.InputResolutionContext
-import org.clyze.doop.datalog.*
-import org.clyze.doop.system.*
-import org.clyze.deepdoop.system.*
+import org.clyze.utils.Helper
 
 @CompileStatic
 @TypeChecked
 class SoundMayAnalysis extends ClassicAnalysis {
 
     protected SoundMayAnalysis(String id,
-                       String outDirPath,
-                       String cacheDirPath,
-                       String name,
-                       Map<String, AnalysisOption> options,
-                       InputResolutionContext ctx,
-                       List<File> inputs,
-                       List<File> platformLibs,
-                       Map<String, String> commandsEnvironment) {
-        super(id, outDirPath, cacheDirPath, name, options, ctx, inputs, platformLibs, commandsEnvironment)
+                               String name,
+                               Map<String, AnalysisOption> options,
+                               InputResolutionContext ctx,
+                               File outDir,
+                               File cacheDir,
+                               List<File> inputFiles,
+                               List<File> platformLibs,
+                               Map<String, String> commandsEnvironment) {
+        super(id, name, options, ctx, outDir, cacheDir, inputFiles, platformLibs, commandsEnvironment)
     }
 
     @Override
@@ -45,11 +44,13 @@ class SoundMayAnalysis extends ClassicAnalysis {
             if (!options.X_STOP_AT_BASIC.value) {
 
                 mainAnalysis()
+
+                produceStats()
             }
         }
 
         logger.info "\nAnalysis START"
-        long t = timing { connector.processQueue() }
+        long t = Helper.timing { connector.processQueue() }
         logger.info "Analysis END\n"
         int dbSize = (FileUtils.sizeOfDirectory(database) / 1024).intValue()
         connector
@@ -62,17 +63,25 @@ class SoundMayAnalysis extends ClassicAnalysis {
     protected void mainAnalysis() {
         def analysisPath = "${Doop.analysesPath}/${name}"
         def outFile = "${outDir}/sound.logic"
+        cpp.preprocess("${outDir}/string-constants.logic", "${Doop.logicPath}/main/string-constants.logic")
 
         connector.queue()
+            .timedTransaction("-- String Constants --")
+            .addBlockFile("${outDir}/string-constants.logic")
+            .commit()
+            .elapsedTime()
             .echo("-- Sound May Pointer Analysis --")
 
-        cpp.preprocess(outFile, "${analysisPath}/analysis.logic")
-        Compiler.compile(outDir.toString(), outFile).each { result ->
+        cpp
+            .enableLineMarkers()
+            .preprocess(outFile, "${analysisPath}/analysis.logic")
+            .disableLineMarkers()
+        Compiler.compileToLB(outFile, outDir).each { result ->
             if (result.kind == Result.Kind.LOGIC)
                 connector.queue()
                     .startTimer()
                     .transaction()
-                    .addBlockFile(result.file.toString())
+                    .addBlockFile(result.file.name)
                     .commit()
                     .elapsedTime()
         }

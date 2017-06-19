@@ -1,0 +1,89 @@
+Clock(?clock) -> .
+lang:entity(`Clock).
+lang:physical:storageModel[`Clock]="ScalableSparse".
+lang:physical:capacity[`Clock] = 32.
+
+Clock:Zero[] = ?clock -> Clock(?clock).
+Clock:AddOne[?clock] = ?nextClock -> Clock(?clock), Clock(?nextClock).
+lang:constructor(`Clock:Zero).
+lang:constructor(`Clock:AddOne).
+
+Clock(?clock), Clock:Zero[] = ?clock <- .
+
+Clock(?one), Clock:AddOne[?zero] = ?one, Clock:One[] = ?one <-
+   Clock:Zero[] = ?zero.
+Clock(?two), Clock:AddOne[?one] = ?two, Clock:Two[] = ?two <-
+   Clock:One[] = ?one.
+Clock(?three), Clock:AddOne[?two] = ?three, Clock:Three[] = ?three <-
+   Clock:Two[] = ?two.
+
+// Current stuttering step
+Clock:Limit[] = ?clockLimit <-
+   Clock:One[] = ?clockLimit.
+
+
+ContextFromRealContext[?clock, ?value1, ?value2] = ?ctx ->
+   Context(?ctx), Clock(?clock), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromRealContext).
+
+RealContext1FromContext[?ctx] = ?value1,
+RealContext2FromContext[?ctx] = ?value2,
+ClockFromCtx[?ctx] = ?clock <-
+   ContextFromRealContext[?clock, ?value1, ?value2] = ?ctx.
+
+HContextFromRealHContext[?value] = ?hctx ->
+   HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?value <-
+   HContextFromRealHContext[?value] = ?hctx.
+
+
+// If it's reached limit, do normal context creation ...
+MergeMacro(?callerCtx, ?invo, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?calleeCtx <-
+   MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+   ClockFromCtx[?callerCtx] = ?clock,
+   ?clock = Clock:Limit[].
+
+// ... otherwise propagate with clock incremented
+Context(?calleeCtx),
+ContextFromRealContext[Clock:AddOne[?clock], RealContext1FromContext[?callerCtx],
+                       RealContext2FromContext[?callerCtx]] = ?calleeCtx,
+CachedMerge[?callerCtx, ?invo, ?hctx, ?value] = ?callerCtx <-
+   MergeBasis(?callerCtx, ?invo, ?hctx, ?value),
+   ClockFromCtx[?callerCtx] = ?clock,
+   ?clock != Clock:Limit[].
+   
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx -> Context(?callerCtx), Instruction(?invo), Context(?calleeCtx).
+
+MergeStaticMacro(?callerCtx, ?invo, ?calleeCtx),
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+   MergeStaticBasis(?callerCtx, ?invo),
+   ClockFromCtx[?callerCtx] = ?clock,
+   ?clock = Clock:Limit[].
+
+// ... otherwise propagate with clock incremented
+Context(?calleeCtx),
+ContextFromRealContext[Clock:AddOne[?clock], RealContext1FromContext[?callerCtx],
+                       RealContext2FromContext[?callerCtx]] = ?calleeCtx,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+   MergeStaticBasis(?callerCtx, ?invo),
+   ClockFromCtx[?callerCtx] = ?clock,
+   ?clock != Clock:Limit[].
+
+
+
+MyRecordBasis(?ctx, ?value) <-
+  RecordBasis(_, ?ctx, ?value).
+
+RecordMacro(?ctx, ?value, ?hctx),
+CachedRecord[?ctx, ?value] = ?hctx <-
+  MyRecordBasis(?ctx, ?value).
+
+
+
+
+
+
+

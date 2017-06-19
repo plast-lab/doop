@@ -22,11 +22,11 @@
   Context(calleeCtx), \
   ContextFromRealContext[RealContext2FromContext[callerCtx], invocation] = calleeCtx
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, heap) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, heap) \
   MergeBasis(hctx, heap, callerCtx, invocation)
 
-#define OptimizeMergeRefinedMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
-  OptimizeMergeRefined[callerCtx, invocation] = calleeCtx
+#define CachedMergeRefinedMacro(callerCtx, invocation, hctx, heap, calleeCtx) \
+  CachedMergeRefined[callerCtx, invocation] = calleeCtx
 
 #define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
   Context(calleeCtx), \

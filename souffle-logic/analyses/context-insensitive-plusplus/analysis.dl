@@ -1,0 +1,71 @@
+// Context-insensitive with an enhancement for low-hanging fruit:
+// methods that have their params flow to their return value get a
+// 1-obj treatment (or 1-call for static calls).
+
+#include "../../main/in-out-flow.dl"
+
+.type Component = MethodInvocation | Value
+.type Context  = [ c:Component ]
+.type HContext = [ c:Component ]
+
+
+.decl MergeBasis(?ctx:Context, ?hctx:HContext, ?invo:MethodInvocation, ?value:Value)
+.decl MergeStaticBasis(?ctx:Context, ?invo:MethodInvocation)
+
+.decl CachedMerge(?invo:MethodInvocation, ?value:Value, ?ctx:Context)
+.decl CachedMergeStatic(?invo:MethodInvocation, ?ctx:Context)
+
+// For this analysis we only need one or two of the parameters that
+// may influence the new context
+.decl MyMergeBasis(?value:Value, ?valuetype:Type, ?invo:MethodInvocation)
+
+MyMergeBasis(?value, ?valuetype, ?invo) :-
+  MergeBasis(_, _, ?invo, ?value),
+  Value_Type(?value, ?valuetype).
+// Effort to optimize. Probably not worth it.
+
+.decl MyMergeStaticBasis(?invo:MethodInvocation)
+
+MyMergeStaticBasis(?invo) :-
+  MergeStaticBasis(_, ?invo).
+
+isContext(?calleeCtx),
+CachedMerge(?invo, ?value, ?calleeCtx) :-
+  MyMergeBasis(?value, ?valuetype, ?invo),
+  ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  InOutFlowMethod(_, ?tomethod),
+  OneObjContext(?value, ?calleeCtx).
+
+CachedMerge(?invo, ?value, ?calleeCtx) :-
+  MyMergeBasis(?value, ?valuetype, ?invo),
+  ResolveInvocation(?valuetype, ?invo, ?tomethod),
+  !InOutFlowMethod(_, ?tomethod),
+  MergeMacro(?notused, ?notused, ?notused, ?notused, ?calleeCtx).
+
+isContext(?calleeCtx),
+CachedMerge(?invo, ?value, ?calleeCtx) :-
+  MyMergeBasis(?value, _, ?invo),
+  isSpecialMethodInvocation_Insn(?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  InOutFlowMethod(_, ?tomethod),
+  OneObjContext(?value, ?calleeCtx).
+
+CachedMerge(?invo, ?value, ?calleeCtx) :-
+  MyMergeBasis(?value, _, ?invo),
+  isSpecialMethodInvocation_Insn(?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  !InOutFlowMethod(_, ?tomethod),
+  MergeMacro(?notused, ?notused, ?notused, ?notused, ?calleeCtx).
+
+isContext(?calleeCtx),
+CachedMergeStatic(?invo, ?calleeCtx) :-
+  MyMergeStaticBasis(?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  InOutFlowMethod(_, ?tomethod),
+  OneCallContext(?invo, ?calleeCtx).
+
+CachedMergeStatic(?invo, ?calleeCtx) :-
+  MyMergeStaticBasis(?invo),
+  MethodInvocation_Method(?invo, ?tomethod),
+  !InOutFlowMethod(_, ?tomethod),
+  MergeStaticMacro(?notused, ?notused, ?calleeCtx).

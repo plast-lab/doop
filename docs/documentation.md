@@ -227,14 +227,13 @@ Finally, the `Doop` class provides the following helper methods for initializing
 * `createDefaultAnalysisOptions()`: obtains a `Map<String, AnalysisOption>` using
 the default values defined in the `ANALYSIS_OPTIONS` list.
 * `overrideDefaultOptionsWithCLI(cli, filter)`: overrides the default options with the values contained in the CLI.
-* `createOptionsFromCLI(cli, filter)`: creates the analysis options using the values contained in the CLI (without using the defaults).
-* `overrideDefaultOptionsWithProperties(properties, filter)`: overrides the default options with the values contained in the properties.
-* `createOptionsFromProperties(properties, filter)`: creates the analysis options using the values contained in the properties (without using the defaults).
+* `overrideDefaultOptionsWithPropertiesAndCLI(properties, cli, filter)`: overrides the default options with the values contained in the properties and the CLI.
+  An option in the CLI superseeds a property one.
 
-The filter accepted by the last four methods is a closure that filters the options that should be set. For
+The filter accepted by the last two methods is a closure that filters the options that should be set. For
  example, the following invocation:
   
-    Doop.overrideDefaultOptionsWithProperties(properties) { AnalysisOption option ->
+    Doop.overrideDefaultOptionsWithPropertiesAndCLI(properties, cli) { AnalysisOption option ->
         option.cli == true
     }
     

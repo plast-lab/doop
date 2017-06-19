@@ -1,0 +1,81 @@
+// The following 3 predicate declarations are needed in case that
+// statistics are enabled.
+.decl MockObjFromArray(?type:ReferenceType)
+.decl MockObjFromField(?type:ReferenceType)
+.decl MockObjFromFormal(?type:ReferenceType)
+
+.decl ServletEntryMethodName(?method:Method)
+
+ServletEntryMethodName("doGet").
+ServletEntryMethodName("doPost").
+
+.decl AllConcreteImplementations(?type1:Type, ?type2:Type)
+
+AllConcreteImplementations(?class, ?staticType) :-
+  isClassType(?class),
+  SubtypeOf(?class, ?staticType),
+  !ClassModifier("abstract", ?class).
+
+AllConcreteImplementations(?class, ?class) :-
+  isClassType(?class),
+  !ClassModifier("abstract", ?class).
+
+.decl ConcreteImplementationsOrd(?staticType:Type, ?classOrd:number)
+.decl ConcreteImplementations(?staticType:Type, ?class:Type)
+
+ConcreteImplementationsOrd(?staticType, ?classOrd) :-
+  AllConcreteImplementations(_, ?staticType),
+  ?classOrd = min ord(?allClasses): AllConcreteImplementations(?allClasses, ?staticType).
+
+ConcreteImplementations(?staticType, ?class) :-
+  ConcreteImplementationsOrd(?staticType, ?classOrd),
+  isClassType(?class),
+  ord(?class) = ?classOrd.
+
+.decl ServletClass(?class:Type)
+
+ServletClass(?class) :-
+  isClassType(?class),
+  AllConcreteImplementations(?class, "javax.servlet.http.HttpServlet").
+
+.decl EntryPoint(?method:Method)
+.decl MockEntryPoint(?class:Type, ?method:Method)
+.decl PossibleEntryPoint(?class:Type, ?method:Method)
+
+EntryPoint(?method) :-
+  MockEntryPoint(_, ?method).
+
+PossibleEntryPoint(?class, cat(cat("<", ?class), ": void <init>()>")),
+PossibleEntryPoint(?class, cat(cat(cat(cat("<", ?class), ": void "), ?serviceMethodName), "(javax.servlet.http.HttpServletRequest,javax.servlet.http.HttpServletResponse)>")) :-
+  ServletClass(?class),
+  ServletEntryMethodName(?serviceMethodName).
+
+// Servlet service methods
+MockEntryPoint(?class, ?entry) :-
+  PossibleEntryPoint(?class, ?entry),
+  isMethod(?entry).
+
+ImplicitReachable(?method) :-
+  MockEntryPoint(_, ?method).
+
+// The following two rules were originally separated to stratify negation (no longer needed)
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver) :-
+  ImmutableHContextFromContext(?ctx, ?hctx),
+  ValueForReceiverInContext(?ctx, ?receiver, ?value).
+  .plan 1:(2,1)
+
+.decl MockObject(?value:Value, ?type:Type)
+.decl MockObjFromEntryPoint(?value:Value)
+
+MockValueConsMacro(cat(cat("<Mock receiver ", ?class), " >"), ?class),
+MockObjFromEntryPoint(cat(cat("<Mock receiver ", ?class), " >")),
+MockObject(cat(cat("<Mock receiver ", ?class), " >"), ?class) :-
+  MockEntryPoint(?class, _).
+
+.decl ValueForReceiverInContext(?ctx:Context, ?receiver:Var, ?value:Value)
+
+ValueForReceiverInContext(?ctx, ?receiver, ?value) :-
+  ReachableContext(?ctx, ?method),
+  ThisVar(?method, ?receiver),
+  Method_DeclaringType(?method, ?class),
+  MockObject(?value, ?class).

@@ -1,0 +1,105 @@
+/*
+This stage must be executed before any basic analysis but *AFTER* Heap Allocations have been resolved.
+*/
+
+//-----------------------------------------------------------------------------
+// [Dynamic analysis related]
+//-----------------------------------------------------------------------------
+
+
+// DynamicNormalHeapAllocation
+lang:physical:storageModel[`_DynamicNormalHeapAllocation] = "DelimitedFile".
+lang:physical:filePath[`_DynamicNormalHeapAllocation] = "facts/DynamicNormalHeapAllocation.facts".
+lang:physical:delimiter[`_DynamicNormalHeapAllocation] = "\t".
+lang:physical:hasColumnNames[`_DynamicNormalHeapAllocation] = false.
+_DynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+  string(?param1),
+  string(?param2),
+  string(?param3),
+  string(?param4).
+
+// optimized relation to map heapallocation by lineNumber, method and type
+_HeapAllocationInformation(?lineNumber, ?methodId, ?typeStr, ?heap) <-
+   Instruction:Line[?insn] = ?lineNumber,
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   HeapAllocation:Type[?heap] = ?type,
+   Type:Id(?type:?typeStr),
+   Instruction:Method[?insn] = ?method,
+   Method:Id[?method] = ?methodId.
+
+// optimized relation to map heapallocation by method and type
+_HeapAllocationInformationNoLine(?methodId, ?typeStr, ?heap) <-
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   HeapAllocation:Type[?heap] = ?type,
+   Type:Id(?type:?typeStr),
+   Instruction:Method[?insn] = ?method,
+   Method:Id[?method] = ?methodId.
+
+_OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+
+// 1) let's try to map by method name, type and line number
+_MatchedHeapAllocation1(?representation, ?heap) <-
+   _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+
+_UnmatchedDynamicNormalHeapAllocation1(?inMethod, ?type, ?representation) <-
+   !_MatchedHeapAllocation1(?representation, _),
+   _OptDynamicNormalHeapAllocation(?representation, ?type, _, ?inMethod).
+
+// 2) let's try to map by method name and type
+_MatchedHeapAllocation2(?representation, ?heap) <-
+   _HeapAllocationInformationNoLine(?inMethod, ?type, ?heap),
+   _UnmatchedDynamicNormalHeapAllocation1(?inMethod, ?type, ?representation).
+
+// 3) create dynamic heap allocations
++DynamicHeapAllocation(?representation, ?heap) <-
+   _MatchedHeapAllocation1(?representation, ?heap) ;
+   _MatchedHeapAllocation2(?representation, ?heap).
+// For unmatched heap allocations, we record the shallowest (most specific) level of the stack trace
+// This is used to create fake allocations in a subsequent step.
+
+// 4) store dynamic heap allocations that still have not been mapped 
++UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?linenumber, ?inMethod) <-
+   !_MatchedHeapAllocation1(?representation, _),
+   !_MatchedHeapAllocation2(?representation, _),
+   _OptDynamicNormalHeapAllocation(?representation, ?type, ?linenumber, ?inMethod).
+
+                                      
+// We also keep track of statically inferred heap allocations that do not match
+// with dynamic heap allocations for debugging.
++UnmatchedStaticNormalHeapAllocation(?methodId, ?lineNumber, ?type) <-
+   _HeapAllocationInformation(?lineNumber, ?methodId, ?type, _),
+   !_DynamicNormalHeapAllocation(?lineNumber, ?methodId, ?type, _).
+
+
+// TODO: DynamicStringHeapAllocation 
+//lang:physical:storageModel[`_DynamicStringHeapAllocation] = "DelimitedFile".
+//lang:physical:filePath[`_DynamicStringHeapAllocation] = "facts/DynamicStringHeapAllocation.facts".
+//lang:physical:delimiter[`_DynamicStringHeapAllocation] = "\t".
+//lang:physical:hasColumnNames[`_DynamicStringHeapAllocation] = false.
+//_DynamicStringHeapAllocation(?param1) ->
+//  string(?param1).
+//
+//+DynamicHeapAllocation(?representation, ?heap) <-
+//   _DynamicStringHeapAllocation(?representation),
+//   HeapAllocation:byId[?representation] = ?heap.
+
+
+// DynamicReachableMethod
+lang:physical:storageModel[`_DynamicReachableMethod] = "DelimitedFile".
+lang:physical:filePath[`_DynamicReachableMethod] = "facts/DynamicReachableMethod.facts".
+lang:physical:delimiter[`_DynamicReachableMethod] = "\t".
+lang:physical:hasColumnNames[`_DynamicReachableMethod] = false.
+_DynamicReachableMethod(?param1) ->
+  string(?param1).
+
+// Dynamic call graph edges are found by taking stack trace elements in the heap dump.
+
++DynamicReachableMethod(?method) <-
+   _DynamicReachableMethod(?representation),
+   Method:Id(?method:?representation).
+
++UnmatchedDynamicReachableMethod(?representation) <-
+   _DynamicReachableMethod(?representation),
+   !Method:Id(_:?representation).

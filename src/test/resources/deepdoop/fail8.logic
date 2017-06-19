@@ -1,0 +1,12 @@
+P(x) -> string(x).
+
+command Bar {
+	lang:cmd:EVAL[] = "dir2/run.sh -flag1".
+	lang:cmd:export(`P).
+	lang:cmd:import(`A).
+	A(x, y) -> string(x), string(y).
+	lang:cmd:EVAL[] = "dir2/run2.sh -flag1".
+}
+as S
+
+S { * } -> .

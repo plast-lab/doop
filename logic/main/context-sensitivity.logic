@@ -55,7 +55,7 @@ lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
  * Heap allocation
  */
 
-#ifndef OptimizeRecordMacro
+#ifndef AdvancedRecordBasisMacro
 RecordMacro(?ctx, ?value, ?hctx),
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
@@ -66,29 +66,21 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 #endif
   ObjectShouldNotBeRefined(?value).
 
-#else /* there is optimized behavior available */
-RecordBasisMacro(?ctx, ?var, ?value) <-
+#else /* there is advanced behavior available */
+AdvancedRecordBasisMacro(?ctx, ?var, ?value) <-
   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
   Value:byHeap[?heap] = ?value,
   ReachableContext(?ctx, ?inmethod).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
-  RecordBasisMacro(?ctx, ?var, ?value),
-  OptimizeRecordMacro(?ctx, ?value, ?hctx),
+  AdvancedRecordBasisMacro(?ctx, ?var, ?value),
+  CachedRecordMacro(?ctx, ?value, ?hctx),
 #ifdef RecordArrayMacro
-  !ArrayType(HeapAllocation:Type[?value]),
+  !ArrayType(Value:Type[?value]),
 #endif
   ObjectShouldNotBeRefined(?value).
-#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifndef AdvancedRecordBasisMacro */
 
-
-// There is scarcely any logical explanation, but breaking up the rule
-// as above results in faster execution!
-//RecordMacro(?ctx, ?heap, ?hctx),
-//VarPointsTo(?hctx, ?heap, ?ctx, ?var) <-
-//  AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-//  ReachableContext(?ctx, ?inmethod),
-//  ObjectShouldNotBeRefined(?heap).
 
 #ifdef RecordArrayMacro
 // This doesn't seem to pay off usually. So few analyses (e.g., 1-obj,
@@ -127,6 +119,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 /**
  * Null assignments
  */
+
 VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
    ImmutableHContextFromContext[?toCtx] = ?hctx,
    AssignNull(?to, ?inmethod),
@@ -134,12 +127,30 @@ VarPointsTo(?hctx, ?null, ?toCtx, ?to) <-
    ReachableContext(?toCtx, ?inmethod).
 
 /**
- * Local assignments
-Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
-  AssignLocal(?from, ?to, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  Var:Type[?to] = ?type.
-*/
+ * Assignment of numeric constant. Currently context-insensitive and
+ * only used for android analyses, hence the ad hoc logic to match
+ * a specific host class (R).
+ */
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
+   (AssignNumConstant:Id[?insn] = ?const;
+    AssignCastNumConstant:Id[?insn] = ?const), // TODO: check the cast?
+   AssignInstruction:To[?insn] = ?to,
+   Value:byNum[?const] = ?value,
+   Instruction:Method[?insn] = ?inmethod,
+   ReachableContext(?toCtx, ?inmethod),
+   ImmutableHContextFromContext[?toCtx] = ?hctx.
+
+
+// /**
+//  * Local assignments
+//  */
+//
+// Assign(?type, ?ctx, ?to, ?ctx, ?from) <-
+//   AssignLocal(?from, ?to, ?inmethod),
+//   ReachableContext(?ctx, ?inmethod),
+//   Var:Type[?to] = ?type.
+
 
 // No need to check if type compatible: check is done at original
 // inputs to VarPointsTo
@@ -155,6 +166,7 @@ OptAssignLocal(?to, ?from) <-
 /**
  * Cast assignments
  */
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   OptAssignCast(?type, ?to, ?from),
@@ -169,7 +181,6 @@ OptAssignCast(?type, ?to, ?from) <-
 
 /**
  * Load instance fields
- *
  */
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
@@ -180,30 +191,26 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) <-
   OptLoadInstanceField(?to, ?sig, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
-//
-// TODO eliminate by reordering the input fact.
-//
 OptLoadInstanceField(?to, ?sig, ?base) <-
   LoadInstanceField(?base, ?sig, ?to, _).
 
 /**
  * Store instance fields
  */
+
+#ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   Value:Null[] != ?basevalue,
-  NotSpecialValue(?value).
-
-NotSpecialValue(?value) <- (Value:Heap[?value] = ?heap, !SpecialObject(?heap)) ; Value:isNonHeap(?value).
+  NotSpecialObject(?value).
+#endif
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
   OptStoreInstanceField(?from, ?signature, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
-/**
- * TODO eliminate
- */
 OptStoreInstanceField(?from, ?signature, ?base) <-
   StoreInstanceField(?from, ?base, ?signature, _).
 
@@ -221,13 +228,14 @@ OptLoadStaticField(?ctx, ?to, ?sig) <-
 
 /**
  * Store static fields
- *
- * TODO: I don't think context actually matters. double check.
  */
+
+#ifndef FEATHERWEIGHT_ANALYSIS
 StaticFieldPointsTo(?hctx, ?value, ?signature) <-
   ReachableStoreStaticFieldFrom(?from),
   OptStoreStaticField(?signature, ?from),
   VarPointsTo(?hctx, ?value, _, ?from).
+#endif
 
 OptStoreStaticField(?signature, ?from) <-
   StoreStaticField(?from, ?signature, _).
@@ -238,33 +246,38 @@ ReachableStoreStaticFieldFrom(?from) <-
   Reachable(?inmethod).
 
 
+/**
+ * Store default value in static field (android-only!)
+ */
+
+StaticFieldPointsTo(?hctx, ?value, ?signature) <-
+  FieldInitialValue[?signature] = ?const,
+  Value:byNum[?const] = ?value,
+  ImmutableHContext(?hctx).
+
 
 /**
  * Load array index
  */
+
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
-   NotEmptyArrayValue(?basevalue),
-   LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
-   ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
-   // this used to be necessary when this rule also handled the
-   // arguments of Method.invoke() etc:
-   // HeapAllocation:Type[?baseheap] = ?baseheaptype,
-   // Var:Type[?to] = ?type,
-   // ComponentType[?baseheaptype] = ?basecomponenttype,
-   // SupertypeOf(?type, ?basecomponenttype).
+  NotEmptyArrayValue(?basevalue),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue),
+  // this is necessary to handle untyped array operations, e.g., the
+  // simulation of arrayCopy calls as Load/Stores
+  Value:Type[?basevalue] = ?basevaluetype,
+  Var:Type[?to] = ?type,
+  ComponentType[?basevaluetype] = ?basecomponenttype,
+  SupertypeOf(?type, ?basecomponenttype).
 
 
 NotEmptyArrayValue(?value) -> Value(?value).
 
 NotEmptyArrayValue(?value) <-
-   (Value:Heap[?value] = ?heap,
-    !HeapAllocation:EmptyArray(?heap)) ;
-   Value:isNonHeap(?value).
-
-/* YANNIS: used to be the much less precise:
-  HeapAllocation:Type[?heap] = ?heaptype,
-  SupertypeOf(?type, ?heaptype).
-*/
+  (Value:Heap[?value] = ?heap,
+   !HeapAllocation:EmptyArray(?heap)) ;
+  Value:isNonHeap(?value).
 
 LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) <-
   ReachableLoadArrayIndexBase(?base),
@@ -283,20 +296,26 @@ ReachableLoadArrayIndexBase(?base) <-
  * Store array index
  */
 
-ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
+OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value) <-
   StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
-  VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  NotSpecialValue(?value),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from).
+
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) <-
+  OptStoreIntoArray(?hctx, ?basehctx, ?basevalue, ?value),     
+  NotSpecialObject(?value),
   NotEmptyArrayValue(?basevalue),
   Value:Type[?value] = ?valuetype,
   Value:Type[?basevalue] = ?basevaluetype,
   ComponentType[?basevaluetype] = ?componenttype,
   SupertypeOf(?componenttype, ?valuetype).
 
+#ifndef FEATHERWEIGHT_ANALYSIS
 StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) <-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+#endif
+StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) <- StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from).
 
 ReachableStoreArrayIndexBase(?base) -> Var(?base).
 ReachableStoreArrayIndexBase(?base) <-
@@ -314,32 +333,22 @@ OptStoreArrayIndex(?from, ?base) <-
 OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from) ->
   Context(?toCtx), Var(?to), Context(?fromCtx), Var(?from).
 
-OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual)
-  <-
+OptInterproceduralAssign(?calleeCtx, ?formal, ?callerCtx, ?actual) <-
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
   FormalParam[?index, ?method] = ?formal,
   ActualParam[?index, ?invocation] = ?actual.
 
-OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return)
-  <-
+OptInterproceduralAssign(?callerCtx, ?local, ?calleeCtx, ?return) <-
   ReturnVar(?return, ?method),
   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+#ifdef INFORMATION_FLOW
+ !SanitizationMethod(?method),
+#endif
   AssignReturnValue[?invocation] = ?local.
-//  !SanitizationMethod(?method). // Neville (todo)
 
 VarPointsTo(?hctx, ?value, ?toCtx, ?to) <-
   VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
   OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from).
-
-
-/**
- * Static method invocations
- */
-
-MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
-CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
-  ReachableContext(?callerCtx, ?inmethod),
-  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
 
 /**
  * Virtual Method Invocation
@@ -355,76 +364,53 @@ OptVirtualMethodInvocationBase(?invocation, ?base) <-
   Instruction:Method[?invocation] = ?inmethod,
   VirtualMethodInvocation:Base[?invocation] = ?base.
 
-/*
-// Beginnings of something promising. Currently doesn't work
-// because we are implicitly assuming any var points at least to null.
-ViableInvocation0(?callerCtx, ?invocation) <-
-  (!ActualParam[0, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
-  (ActualParam[0, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
-
-ViableInvocation1(?callerCtx, ?invocation) <-
-  (!ActualParam[1, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
-  (ActualParam[1, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
-
-ViableInvocation2(?callerCtx, ?invocation) <-
-  (!ActualParam[2, ?invocation] = _, MethodInvocation(?invocation), Context(?callerCtx)) ;
-  (ActualParam[2, ?invocation] = ?param, VarPointsTo(_, _, ?callerCtx, ?param)).
-
-ViableInvocation(?callerCtx, ?invocation) <-
-  ViableInvocation0(?callerCtx, ?invocation),
-  ViableInvocation1(?callerCtx, ?invocation),
-  ViableInvocation2(?callerCtx, ?invocation).
-*/
 
 // This rule is the default logic for the majority of analyses
 
-#ifndef OptimizeMergeMacro
+#ifndef AdvancedMergeBasisMacro
 // This is the "proper" form of the rule. We diverge from it
-// only for reasons of optimization. Skolem object creation
-// is currently very slow and we shouldn't invoke it for
-// all the different combinations that will yield the same object.
+// to enable more advanced merging logic.
 
 MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
- <-
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base),
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
 
-#else /* there is optimized behavior available */
+#else /* there is advanced behavior available */
 
-// The optimization is as follows: the main analysis (this file)
-// first creates all the possible bindings that the Merge logic
-// might need to create a new context. Then each individual analysis
-// creates new context objects carefully by invoking the skolem
-// functions as rarely as possible.
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+// The optimization/advanced merge treatment is as follows: the main
+// analysis (this file) first creates all the possible bindings that
+// the Merge logic might need to create a new context. (It uses
+// AdvancedMergeBasisMacro to communicate these bindings to the individual
+// context-sensitive analysis.) Then each individual analysis creates
+// new context objects by employing arbitrary logic, and communicates
+// back to the main analysis the results of context creation using
+// CachedMergeMacro.
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
-// Finally, the step of the main analysis that should be creating the
-// new objects is merely looking up the previously created context
-// objects.
+// The main analysis is merely looking up the previously created
+// context objects.
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldNotBeRefined(?invocation).
-#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifndef AdvancedMergeBasisMacro */
 
 
 #ifdef MergeRefinedMacro
-#ifndef OptimizeMergeRefinedMacro
-// Default, unoptimized behavior
+#ifndef CachedMergeRefinedMacro
+// Default behavior
 /**
  * This logic applies to refinement-based (or "adaptive") analyses. The
  * analysis is first run with the filter predicate (SiteToRefine) empty,
@@ -441,29 +427,50 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
 
-#else /* there is optimized behavior available */
+#else /* there is advanced behavior available */
 
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptVirtualMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
   Value:Type[?value] = ?valuetype,
   ResolveInvocation[?valuetype, ?invocation] = ?tomethod,
   ThisVar[?tomethod] = ?this,
-//  ViableInvocation(?callerCtx, ?invocation),
   SiteShouldBeRefined(?invocation).
-#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifndef CachedMergeRefinedMacro */
 #endif /* #ifdef MergeRefinedMacro */
 
 /**
- * Special method invocations. Optimized much like virtual methods.
+ * Static method invocations
+ */
+
+#ifndef AdvancedMergeStaticBasisMacro
+MergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod).
+
+#else
+
+AdvancedMergeStaticBasisMacro(?callerCtx, ?invocation) <-
+  ReachableContext(?callerCtx, ?inmethod),
+  StaticMethodInvocation(?invocation, _, ?inmethod).
+
+CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  AdvancedMergeStaticBasisMacro(?callerCtx, ?invocation),
+  CachedMergeStaticMacro(?callerCtx, ?invocation, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod.
+
+#endif /* #ifndef AdvancedMergeStaticBasisMacro */
+
+/**
+ * Special method invocations
  */
 
 OptSpecialMethodInvocationBase(?invocation, ?base) ->
@@ -476,68 +483,68 @@ OptSpecialMethodInvocationBase(?invocation, ?base) <-
   Instruction:Method[?invocation] = ?inmethod,
   SpecialMethodInvocation:Base[?invocation] = ?base.
 
-#ifndef OptimizeMergeMacro
-// Default, unoptimized behavior
+#ifndef AdvancedMergeBasisMacro
+// Default behavior
 MergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value,  ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
+#else /* there is advanced behavior available */
 
-#else /* there is optimized behavior available */
-
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  OptimizeMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldNotBeRefined(?invocation).
-#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifndef AdvancedMergeBasisMacro */
 
 #ifdef MergeRefinedMacro
-#ifndef OptimizeMergeRefinedMacro
-// Default, unoptimized behavior
+#ifndef CachedMergeRefinedMacro
+// Default behavior
 MergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
 
-#else /* there is optimized behavior available */
+#else /* there is advanced behavior available */
 
-MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
+AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   OptSpecialMethodInvocationBase(?invocation, ?base).
 
 CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
-  MergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
-  OptimizeMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
-  MethodInvocation:Signature[?invocation] = ?tomethod,
+  AdvancedMergeBasisMacro(?callerCtx, ?invocation, ?hctx, ?value),
+  CachedMergeRefinedMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
+  MethodInvocation:Method[?invocation] = ?tomethod,
   SpecialMethodInvocation:Insn(?invocation),
   ThisVar[?tomethod] = ?this,
   SiteShouldBeRefined(?invocation).
-#endif /* #ifndef OptimizeMergeMacro */
+#endif /* #ifndef CachedMergeRefinedMacro */
 #endif /* #ifdef MergeRefinedMacro
 
 
 /**
  * Reachable
  */
+
 ReachableContext(?ctx, ?method) <-
   CallGraphEdge(_, _, ?ctx, ?method).
 

@@ -5,7 +5,8 @@ import soot.jimple.*;
 import soot.shimple.PhiExpr;
 import soot.shimple.Shimple;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * Traverses Soot classes and invokes methods in FactWriter to
@@ -76,11 +77,11 @@ class FactGenerator implements Runnable {
                             //         System.err.println("\tat " + trace[j]);
                             //     }
                             // }
-                    
+
                             System.err.println("Error while processing method: " + m);
                             throw exc;
                         }
-                    }                 
+                    }
                 } catch (Exception exc) {
                     numRetries++;
                     if (numRetries > maxRetries) {
@@ -137,7 +138,7 @@ class FactGenerator implements Runnable {
 
 
     /* Check if a Type refers to a phantom class */
-    public static boolean phantomBased(Type t) {
+    private static boolean phantomBased(Type t) {
         if (t instanceof RefLikeType) {
             if (t instanceof RefType)
                 return ((RefType) t).getSootClass().isPhantom();
@@ -240,11 +241,11 @@ class FactGenerator implements Runnable {
                     b = Shimple.v().newBody(b);
                     m.setActiveBody(b);
                 }
+                DoopRenamer.transform(b);
+                generate(m, b, session);
                 if (!_generateJimple) {
                     m.releaseActiveBody();
                 }
-                DoopRenamer.transform(b);
-                generate(m, b, session);
             }
         }
     }

@@ -72,7 +72,7 @@ MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    Instruction:Method[?invo] = ?inmethod,
    ReachableMethodUnderMustContext(?ctx, ?inmethod),
    MustContextDepth[?ctx] < MaxContextDepth[],
-   MethodInvocation:Signature[?invo] = ?signature.
+   MethodInvocation:Method[?invo] = ?signature.
 
 #ifdef MUST_AFTER_MAY
 // Virtual method invocations. Note that this logic does NOT
@@ -137,17 +137,20 @@ MustPointTo[?var2, ?ctx, ?insn] = ?value <-
 */
 
 MustPointTo[?var, ?ctx] = ?value <-
-   AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
+   AssignHeapAllocation:Heap[?insn] = ?heap,
+   Instruction:Method[?insn] = ?inMeth,
+   AssignInstruction:To[?insn] = ?var,
+   //AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
    Value:byHeap[?heap] = ?value,
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
-
+/*
 MustPointTo[?var, ?ctx] = ?value <-
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
    (!(HeapAllocation:Merge[?heap] = _);
     HeapAllocation:Merge[?heap] = ?heap),
    Value:byHeap[?heap] = ?value,
    ReachableMethodUnderMustContext(?ctx, ?inMeth).
-
+*/
 InstructionInsensitiveMustAlias(?ap1, ?ap2, ?ctx) <-
    MustAlias(?ap1, ?ap2, ?ctx, _).
 

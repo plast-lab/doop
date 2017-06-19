@@ -40,3 +40,12 @@
   ContextFromRealContext[valueComp] = newCtx, \
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
+
+
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[valueComp] = ctx, \
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp \
+  <- Value:byId[valueId] = value
+
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[] = hctx

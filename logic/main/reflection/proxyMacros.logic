@@ -1,0 +1,2 @@
+// Generates the signature of the constructor of a proxy class.
+#define ConstrIdMacro(proxyClassId) "<" + proxyClassId + ": void <init>(java.lang.reflect.InvocationHandler)>"

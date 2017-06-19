@@ -203,8 +203,8 @@ _SameVirtualInvocationBaseAndSig(?invocation2, ?invocation)
 <-
    VirtualMethodInvocation:Base[?invocation] = 
       VirtualMethodInvocation:Base[?invocation2],
-   MethodInvocation:Signature[?invocation] = 
-      MethodInvocation:Signature[?invocation2],
+   MethodInvocation:Method[?invocation] = 
+      MethodInvocation:Method[?invocation2],
    ?invocation != ?invocation2.
 
 _SameStaticInvocationSig(?invocation2, ?invocation) <-
@@ -216,8 +216,8 @@ _SameSpecialInvocationBaseAndSig(?invocation2, ?invocation)
 <-
    SpecialMethodInvocation:Base[?invocation] = 
       SpecialMethodInvocation:Base[?invocation2],
-   MethodInvocation:Signature[?invocation] = 
-      MethodInvocation:Signature[?invocation2],
+   MethodInvocation:Method[?invocation] = 
+      MethodInvocation:Method[?invocation2],
    ?invocation != ?invocation2.
 
 _SameInvocationExceptArgs(?invocation2, ?invocation) <-

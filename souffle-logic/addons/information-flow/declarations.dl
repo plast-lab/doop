@@ -1,0 +1,47 @@
+/**
+ * Definitions of sources and sinks
+ */
+
+.type InformationLabel
+.decl isInformationLabel(?id:symbol)
+
+.decl TaintSourceMethod(?label:InformationLabel, ?method:Method)
+.decl LeakingSinkMethod(?lable:InformationLabel, ?method:Method)
+
+.decl LeakingSinkMethodArg(?label:InformationLabel, ?index:number, ?method:Method)
+.decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:Context, ?var:Var)
+.decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:Context,
+                                ?invocation:MethodInvocation, ?value:symbol)
+
+.decl VarIsCast(?var:Var)
+.decl VarDef(?var:Var, ?inst:Instruction)
+.decl VarUse(?var:Var, ?inst:Instruction)
+
+.decl SanitizationMethod(?method:Method)
+.decl SanitizedValue(?value:Value)
+
+.decl TaintedValue(?value:Value)
+.decl CallTaintingMethod(?label:InformationLabel, ?ctx:Context, ?invocation:MethodInvocation)
+
+.decl SourceFromTaintedValue(?value:Value, ?id:symbol)
+.decl LabelFromSource(?source:symbol, ?label:InformationLabel)
+
+.decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
+.decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
+.decl MethodInvocationInContext(?ctx:Context, ?invocation:MethodInvocation, ?tomethod:Method)
+.decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
+.decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
+
+.decl VarIsTaintedFromVar(?type:Type, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
+.decl VarIsTaintedFromValue(?type:Type, ?value:Value, ?ctx:Context, ?var:Var)
+.decl TaintedVarTaintedFromVar(?toCtx:Context, ?to:Var, ?value:Value, ?type:Type)
+
+.decl MethodReturningStringFactory(?tomethod:Method)
+.decl StringFactoryReturnInvocation(?invocation:MethodInvocation)
+
+.decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)
+.decl BaseToRetTaintTransferMethod(?method:Method)
+.decl TaintTransferMethodInvocationInContext(?ctx:Context, ?index:number, ?invocation:MethodInvocation)
+.decl ParamTaintTransferredToBase(?param:Var, ?ctx:Context, ?base:Var)
+
+.decl TaintedVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)

@@ -1,1 +1,11 @@
-// see gatekeeper paper (ben livshits)
++InformationLabel("default").
++InformationLabel("Location").
++InformationLabel("Telephony").
++InformationLabel("Bundle").
++InformationLabel("OS").
++InformationLabel("Personal").
++InformationLabel("IPC").
++InformationLabel("Persistence").
++InformationLabel("IO").
++InformationLabel("Net").
++InformationLabel("PASSWORD").

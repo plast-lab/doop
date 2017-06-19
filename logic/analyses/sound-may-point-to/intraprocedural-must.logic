@@ -1,0 +1,86 @@
+// Just for baseline comparisons. Should be very cheap to compute.
+component IntraproceduralMust {
+	// output relations
+	VarPointsTo(hctx, heap, ctx, var) ->
+		MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), Var(var).
+	InvocationBasePointsTo(hctx, heap, ctx, invo) ->
+		MayHeapContext(hctx), HeapAllocation(heap), MayContext(ctx), MethodInvocation(invo).
+	VarPointsTo:App:AllCtx(hctx, heap, var) ->
+		MayHeapContext(hctx), HeapAllocation(heap), Var(var).
+
+
+	VarPointsTo(hctx, heap, ctx, var) <-
+		AssignNormalHeapAllocation(heap, var, inMethod), // TODO this is not present
+		ReachableContext:May(ctx, inMethod),
+		cons:MayHeapContext:Empty[] = hctx.
+
+	// strings and others
+	VarPointsTo(hctx, heap, ctx, var) <-
+		AssignContextInsensitiveHeapAllocation(heap, var, inMethod),
+		!HeapAllocation:Merge[heap] = _, // TODO this is not present
+		cons:MayHeapContext:Empty[] = hctx,
+		ReachableContext:May(ctx, inMethod).
+
+	VarPointsTo(hctx, heap, ctx, var) <-
+		AssignContextInsensitiveHeapAllocation(heap, var, inMethod), // TODO this is not present
+		HeapAllocation:Merge[heap] = heap,
+		cons:MayHeapContext:Empty[] = hctx,
+		ReachableContext:May(ctx, inMethod).
+
+	// null assignments
+
+	//RecordMacroMay(ctx, heap, hctx),
+	VarPointsTo(hctx, heap, ctx, var) <-
+		AssignNull:Insn(insn),
+		AssignInstruction:To[insn] = var,
+		HeapAllocation:Null[] = heap,
+		Instruction:Method[insn] = inMethod,
+		ReachableContext:May(ctx, inMethod),
+		cons:MayHeapContext:Empty[] = hctx.
+
+	VarPointsTo(hctx, heap, ctx, to) <-
+		VarPointsTo(hctx, heap, ctx, from),
+		AssignLocal:From[insn] = from,
+		!PhiNodeHead[insn] = _,
+		AssignInstruction:To[insn] = to.
+
+	VarPointsTo(hctx, heap, ctx, to) <-
+		AssignCast:From[insn] = from,
+		VarPointsTo(hctx, heap, ctx, from),
+		AssignInstruction:To[insn] = to.
+
+	VarPointsTo(hctx, heap, ctx, var) <-
+		PointsToUpToPhiInstruction(hctx, heap, ctx, lastInsn),
+		!NextInSamePhiNode[lastInsn] = _,
+		AssignInstruction:To[lastInsn] = var.
+
+	InvocationBasePointsTo(hctx, heap, ctx, invo) <-
+		(SpecialMethodInvocation:Base[invo] = base;
+		 VirtualMethodInvocation:Base[invo] = base),
+		VarPointsTo(hctx, heap, ctx, base).
+
+	VarPointsTo:AllCtx(hctx, heap, var, method) <-
+		cons:MayContext:Initial[] = initCtx,
+		VarPointsTo(hctx, heap, initCtx, var),
+		Var:DeclaringMethod[var] = method.
+
+	VarPointsTo(hctx, heap, ctx, var) <-
+		ReachableContext:May(ctx, method),
+		VarPointsTo:AllCtx(hctx, heap, var, method).
+
+	PointsToUpToPhiInstruction(hctx, heap, ctx, headInsn) <-
+		PhiNodeHead[_] = headInsn,
+		AssignLocal:From[headInsn] = from,
+		VarPointsTo(hctx, heap, ctx, from).
+
+	PointsToUpToPhiInstruction(hctx, heap, ctx, nextInsn) <-
+		PointsToUpToPhiInstruction(hctx, heap, ctx, insn),
+		NextInSamePhiNode[insn] = nextInsn,
+		AssignLocal:From[nextInsn] = from,
+		VarPointsTo(hctx, heap, ctx, from).
+
+	// for final stats
+	VarPointsTo:App:AllCtx(hctx, heap, var) <-
+		VarPointsTo:AllCtx(hctx, heap, var, method),
+		ApplicationMethod(method).
+}

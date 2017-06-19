@@ -1,0 +1,20 @@
+P(x) -> string(x).
+
+component Foo {
+	P1(x) <- P(x).
+}
+as S1
+
+command Bar {
+	lang:cmd:EVAL[] = "dir2/run.sh -flag1".
+	lang:cmd:export(`P1).
+	lang:cmd:import(`A).
+	lang:cmd:import(`B).
+	A(x, y) -> string(x), string(y).
+	B(x) -> int(x).
+	A(x, y) -> x != y.
+}
+as S2
+
+S1 { * } -> S2
+S2 { * } -> .

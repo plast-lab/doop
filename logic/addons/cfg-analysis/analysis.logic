@@ -1,5 +1,10 @@
 // See the declarations of the predicates for comments on their use and meaning.
 
+Method:FirstInstruction[?method] = ?insn <-
+   Instruction:Method[?insn] = ?method,
+   !Instruction:Prev[?insn] = _,
+   !IsJumpTarget(?insn).
+
 OptInstructionFromMethodIndex[?method, ?index] = ?insn <-
    Instruction:Method[?insn] = ?method,
    Instruction:Index[?insn] = ?index.
@@ -115,7 +120,10 @@ CFGRoot(?insn, ?method) <-
 // or... could also be beginning of exception handler
 CFGRoot(?insn, ?method) <-
    BBHeadInMethod(?insn, ?method),
-   !(MayPredecessorBBModuloThrow(_, ?insn)).
+   !ExistsMayPredecessorBBModuloThrow(?insn).
+
+ExistsMayPredecessorBBModuloThrow(?insn) <-
+    MayPredecessorBBModuloThrow(_, ?insn).
 
 // DoesNotDominate(?dominatorCandidate, ?insn): ?insn (which is a
 // basic block head) is NOT dominated by ?dominatorCandidate

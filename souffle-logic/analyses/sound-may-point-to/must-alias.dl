@@ -1,0 +1,322 @@
+// A sound must-alias analysis, for use in sound-may-point-to. Imports a sound
+// call-graph, computed by the sound-may-point-to analysis.
+
+// For use when we don't want to incur the cost (typical case)
+.comp DummyMustAlias {
+  // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
+  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output MustAlias, Before_MustAlias
+}
+
+.comp SoundMustAlias {
+  // Must-Alias relation between access paths, i.e., v(.fi)* expressions.
+  .decl MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_MustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output MustAlias, Before_MustAlias
+
+  // invariant: all access paths involved are "computed", i.e., have been created.
+
+  //// Local assignments, non-phi
+  MustAlias([?from, nil], [?to, nil], ?ctx, ?insn) :-
+    AssignLocal_From(?insn, ?from),
+    !PhiNodeHead(?insn, _),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    AssignInstruction_To(?insn, ?to).
+
+  MustAlias(?fromAp, ?toAp, ?ctx, ?insn) :-
+    AssignLocal_From(?insn, ?from),
+    !PhiNodeHead(?insn, _),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    AccessPath_BaseVar(?fromAp, ?from),
+    AssignInstruction_To(?insn, ?to),
+    RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).
+
+  MustAlias([?from, nil], [?to, nil], ?ctx, ?insn) :-
+    AssignCast_From(?insn, ?from),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    AssignInstruction_To(?insn, ?to).	
+
+  MustAlias(?fromAp, ?toAp, ?ctx, ?insn) :-
+    isAssignCast_Insn(?insn),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    AssignInstruction_To(?insn, ?to),
+    AssignCast_From(?insn, ?from),
+    AccessPath_BaseVar(?fromAp, ?from),
+    RebaseCompositeAccessPath(?fromAp, ?from, ?to, ?toAp).	
+
+  //// Load and store instructions
+  MustAlias(?apTo, ?apFrom, ?ctx, ?insn) :-
+    LoadInstanceField_Base(?insn, ?base),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    LoadInstanceField_To(?insn, ?to),
+    FieldInstruction_Signature(?insn, ?fld),
+	?base != ?to,
+    ?apFrom = [?base, [nil, ?fld]],
+    ?apTo = [?to, nil].
+
+  MustAlias(?apTo, ?apFrom, ?ctx, ?insn) :-
+    LoadStaticField_To(?insn, ?to),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    FieldInstruction_Signature(?insn, ?fld),
+    ?apFrom = [ ?fld, nil ],
+    ?apTo = [ ?to, nil].
+
+  MustAlias(?apTo, ?apFrom, ?ctx, ?insn) :-
+    StoreInstanceField_Base(?insn, ?base),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    FieldInstruction_Signature(?insn, ?fld),
+    StoreInstanceField_From(?insn, ?from),
+    ?apTo = [?base, [nil, ?fld]],
+    ?apFrom = [?from, nil].
+
+  MustAlias(?apTo, ?apFrom, ?ctx, ?insn) :-
+    StoreStaticField_From(?insn, ?from),
+    Instruction_Method(?insn, ?inMeth),
+    MayReachableMethodUnderMayContext(?ctx, ?inMeth),
+    FieldInstruction_Signature(?insn, ?fld),
+    ?apTo = [?fld, nil],
+    ?apFrom = [?from, nil].
+
+  //// Weakening 
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap1, ?ap2, ?initCtx, ?insn),
+    InitialMayContext(?initCtx),
+    Instruction_Method(?insn, ?method),
+    MayReachableMethodUnderMayContext(?ctx, ?method).
+	.plan 1: (4,3,2,1)
+
+  //// Propagation across instructions logic.
+
+  // control-flow join
+  Before_MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+    AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn).
+
+  // Intra-BB
+  Before_MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+    MustAlias(?ap2, ?ap1, ?ctx, ?prev),
+    PrevInSameBasicBlock(?insn, ?prev).
+
+  // Frame rules: unchanged information
+  .decl MustAliasBaseInvalidated(?ap1:AccessPath, ?ap2:AccessPath, ?insn:Instruction)
+  MustAliasBaseInvalidated(?ap1, ?ap2, ?insn) :-
+    Before_MustAlias(?ap1, ?ap2, _, ?insn),
+	?ap1 = [ ?base1, ?rest1 ], ?rest1 = ?rest1,
+	?ap2 = [ ?base2, ?rest2 ], ?rest2 = ?rest2,
+	(AssignInstruction_To(?insn, ?base1);
+     AssignInstruction_To(?insn, ?base2)).
+
+  // single variable access paths
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    Before_MustAlias(?ap1, ?ap2, ?ctx, ?insn),
+    ?ap1 = [ ?base1, nil ],
+    ?ap2 = [ ?base2, nil ],
+    !MustAliasBaseInvalidated(?ap1, ?ap2, ?insn).
+
+  // non-collection access paths
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    Before_MustAlias(?ap1, ?ap2, ?ctx, ?insn),
+	!AccessPath_IsCollection(?ap1),
+	!AccessPath_IsCollection(?ap2),
+    !MustAliasBaseInvalidated(?ap1, ?ap2, ?insn),
+	!isMonitorInstruction(?insn),
+    (!MethodInvocation(?insn);
+     IgnorableMethodInvocation(?insn);
+     IgnorableForNonCollectionsMethodInvocation(?insn)),
+    !StoreInstruction(?insn).
+
+
+// // now painstaking case analysis of store instruction cases.
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    FieldInstruction_Signature[?insn] != ?fld.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld1, ?ap1),
+//    SingleFieldAccessPath(?fld2, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    SingleFieldAccessPath(?fld3, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3.
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
+//    FieldInstruction_Signature(?insn, ?fld),
+//    ?fld != ?fld1, ?fld != ?fld2, ?fld != ?fld3, ?fld != ?fld4.
+
+// //// and still, we only covered up to 3.
+
+// TODO extend to longer access paths
+
+
+
+  //// Auxiliary, forall emulations
+  
+  // Does the predecessor BB (?pred) of ?insn establish (at its end) a must-alias?
+  .decl MustAliasAtPredecessor(?pred:Instruction, ?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  MustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap1, ?ap2, ?ctx, ?tail),
+    BasicBlockEnd(?tail),
+    BasicBlockHead(?tail, ?pred),
+    MaySuccessorBBModuloThrow(?insn, ?pred).
+
+  // does the first one have *some* access path points-to info, or is irrelevant?
+  .decl MustAliasUpToRelevantPredecessor(?pred:Instruction, ?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+  MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAliasAtPredecessor(_, ?ap1, ?ap2, ?ctx, ?insn),
+    !ExistsPreviousPredecessorToSameBB(?pred, ?insn),
+    AccessPathUnaffectedByPredecessorBB(?ap1, ?pred),
+    AccessPathUnaffectedByPredecessorBB(?ap2, ?pred).
+
+  MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAliasUpToRelevantPredecessor(?prevPred, ?ap1, ?ap2, ?ctx, ?insn),
+    NextPredecessorToSameBB(?insn, ?prevPred, ?pred),
+    (MustAliasAtPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn);
+     (AccessPathUnaffectedByPredecessorBB(?ap1, ?pred),
+      AccessPathUnaffectedByPredecessorBB(?ap2, ?pred))).
+
+  .decl AllRelevantPredecessorsMustAlias(?ap1:AccessPath, ?ap2:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  AllRelevantPredecessorsMustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAliasUpToRelevantPredecessor(?pred, ?ap1, ?ap2, ?ctx, ?insn),
+    !(NextPredecessorToSameBB(?insn, ?pred, _)),
+    !ExceptionHandlerFirstInstruction(?insn).
+
+  //// Algebraic rules
+  
+  // MustAlias is symmetrically and transitively closed. The explicit
+  // representation (and computation of TC) is too wasteful, but
+  // hopefully won't matter since this is an intra-procedural concept.
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap2, ?ap1, ?ctx, ?insn).
+
+  MustAlias(?ap1, ?ap2, ?ctx, ?insn) :-
+    MustAlias(?ap1, ?ap3, ?ctx, ?insn),
+    MustAlias(?ap2, ?ap3, ?ctx, ?insn).
+
+  // // Key rule. Extend access paths, if aliased one has extension,
+  // // establish aliasing.
+  // MustAlias(?ap3, ?ap, ?ctx, ?insn) :-
+  //    _OptMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+  //    AccessPath_ByFieldAccess(?fld, ?ap1, ?ap3),
+  //    _ExpandedAccessPath(?fld, ?ap2, ?ap).
+
+// MustAliasSomewhere(?ap2, ?ap1) :-
+//    MustAlias(?ap2, ?ap1, _, _).
+
+// // Place an order to the AP factory.
+// AccessPathShouldBeExpanded(?fld, ?ap2) :-
+//    MustAliasSomewhere(?ap2, ?ap1),
+//    AccessPath_ByFieldAccess(?fld, ?ap1, _),
+//    AccessPath_Length(?ap2, ?len2),
+//    ?len2 < ?maxLen,
+//    AccessPath_MaxLength(?maxLen).
+
+
+
+// // Now method calls. Painstaking.
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    SingleFieldAccessPath(?fld1, ?ap1),
+//    SingleFieldAccessPath(?fld2, ?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    AccessPath_IsVariable(?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    SingleFieldAccessPath(?fld3, ?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodMayAssignField(?fld3, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+// MustAlias(?ap2, ?ap1, ?ctx, ?insn) :-
+//    OptBeforeMustAlias(?ctx, ?insn, ?ap2, ?ap1),
+//    _DoubleFieldAccessPath(?fld1, ?fld2, ?ap1),
+//    _DoubleFieldAccessPath(?fld3, ?fld4, ?ap2),
+//    May_MustCallGraphEdge_ToMethod(?ctx, ?insn, ?toMethod),
+//    !MethodMayAssignField(?fld1, ?toMethod),
+//    !MethodMayAssignField(?fld2, ?toMethod),
+//    !MethodMayAssignField(?fld3, ?toMethod),
+//    !MethodMayAssignField(?fld4, ?toMethod),
+//    !MethodHasUnresolvedInvocation(?toMethod).
+
+
+
+  // // *MustAlias*
+  // // Access path expansion factory. Trivial but avoids repeat expensive
+  // // access path creation.
+  // AccessPath(?newAp),
+  // AccessPath_ByFieldAccess(?fld, ?ap, ?newAp),
+  // AccessPath_Length(?newAp, ?len) + 1,
+  // _ExpandedAccessPath(?fld, ?ap, ?newAp) :-
+  //    AccessPathShouldBeExpanded(?fld, ?ap),
+  //    AccessPath_Length(?ap, ?len).
+  
+  
+  // // limited to access paths that should be compared
+  // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
+  //    AccessPathsShouldBeCompared(?ap1, ?ap2),
+  //    AccessPath_LastField(?ap1, AccessPath_LastField)[?ap2],
+  //    AccessPath_IsVariable(AccessPath_Base[?ap1]),
+  //    AccessPath_IsVariable(AccessPath_Base[?ap2]).
+  
+  // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
+  //    AccessPathsShouldBeCompared(?ap1, ?ap2),
+  //    AccessPath_ByCollectionVarInv(?ap1, _),
+  //    AccessPath_ByCollectionVarInv(?ap2, _).
+  
+  // CompositeAccessPath_SameFields(?ap1, ?ap2) :-
+  //    CompositeAccessPath_SameFields(?baseAp1, ?baseAp2),
+  //    AccessPath_ByFieldAccess(?fld, ?baseAp1, ?ap1),
+  //    AccessPath_ByColleFieldAccess(?fld, ?baseAp2, ?ap2).
+  
+}

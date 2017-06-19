@@ -1,30 +1,36 @@
 package org.clyze.doop
 
 import org.apache.commons.cli.Option
-import org.clyze.doop.core.*
+import org.clyze.analysis.*
+import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysis
+import org.clyze.doop.core.DoopAnalysisFactory
+import org.clyze.doop.core.DoopAnalysisFamily
 
 /**
  * A factory for creating Analysis objects from the command line.
  */
-class CommandLineAnalysisFactory extends AnalysisFactory {
+class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
     static final String LOGLEVEL         = 'Set the log level: debug, info or error (default: info).'
     static final String ANALYSIS         = 'The name of the analysis.'
-    static final String INPUTS           = 'The jar files to analyze. Separate multiple jars with a space. ' +
-                                           ' If the argument is a directory, all its *.jar files will be included.'
+    static final String INPUTS           = 'The input files to analyze. Separate multiple files with a space. ' +
+                                           'If the argument is a directory, all its *.jar files will be included.'
     static final String PROPS            = 'The path to a properties file containing analysis options. This ' +
                                            'option can be mixed with any other and is processed first.'
-    static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 180 - 3 hours).'
+    static final String TIMEOUT          = 'The analysis execution timeout in minutes (default: 90 minutes).'
     static final String USER_SUPPLIED_ID = "The id of the analysis (if not specified, the id will be created " +
                                            "automatically). Permitted characters include letters, digits, " +
                                            "${EXTRA_ID_CHARACTERS.collect{"'$it'"}.join(', ')}."
     static final String USAGE            = "doop [OPTION]... -- [BLOXBATCH OPTION]..."
     static final int    WIDTH            = 120
 
+    static final AnalysisFamily FAMILY   = DoopAnalysisFamily.instance
+
     /**
      * Processes the cli args and generates a new analysis.
      */
-    Analysis newAnalysis(OptionAccessor cli) {
+    DoopAnalysis newAnalysis(OptionAccessor cli) {
 
         //Get the name of the analysis (short option: a)
         String name = cli.a
@@ -38,36 +44,43 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
-        return newAnalysis(id, name, options, inputs)
+        return newAnalysis(FAMILY, id, name, options, inputs)
     }
 
     /**
      * Processes the properties and the cli and generates a new analysis.
      */
-    Analysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
+    DoopAnalysis newAnalysis(File propsBaseDir, Properties props, OptionAccessor cli) {
 
         //Get the name of the analysis
         String name = cli.a ?: props.getProperty("analysis")
 
         //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
-        List<String> inputs = cli.is
-        if (!inputs) {
-            inputs = props.getProperty("jar").split().collect { String s -> s.trim() }
-            //The inputFiles, if relative, are being resolved via the propsBaseDir
+        List<String> inputs
+        if (!cli.is) {
+            inputs = props.getProperty("inputFiles").split().collect { String s -> s.trim() }
+            // The inputFiles, if relative, are being resolved via the propsBaseDir or later if they are URLs
             inputs = inputs.collect { String input ->
+                try {
+                    // If it is not a valid URL an exception is thrown
+                    URL url = new URL(input)
+                    return input
+                }
+                catch (e) {}
                 File f = new File(input)
                 return f.isAbsolute() ? input : new File(propsBaseDir, input).getCanonicalFile().getAbsolutePath()
             }
         }
+        else
+            inputs = cli.is
 
         //Get the optional id of the analysis
         String id = cli.id ?: props.getProperty("id")
 
-        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithProperties(props) { AnalysisOption option ->
+        Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithPropertiesAndCLI(props, cli) { AnalysisOption option ->
             option.cli
         }
-        Doop.overrideOptionsWithCLI(options, cli) { AnalysisOption option -> option.cli }
-        return newAnalysis(id, name, options, inputs)
+        return newAnalysis(FAMILY, id, name, options, inputs)
     }
 
     /**
@@ -76,11 +89,9 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
      */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
 
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+        List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
             option.cli && (includeNonStandard || !option.nonStandard) //all options with cli property
         }
-
-        def list = Helper.namesOfAvailableAnalyses(Doop.analysesPath).sort().join(', ')
 
         CliBuilder cli = new CliBuilder(
             parser: new org.apache.commons.cli.GnuParser (),
@@ -93,16 +104,13 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
-            l(longOpt: 'level', LOGLEVEL, args:1, argName: 'loglevel')
-            a(longOpt: 'analysis', "$ANALYSIS Allowed values: $list.", args:1, argName:"name")
-            id(longOpt:'identifier', USER_SUPPLIED_ID, args:1, argName: 'identifier')
-            i(longOpt: 'inputFiles', INPUTS, args:Option.UNLIMITED_VALUES, argName: "inputFiles")
+            l(longOpt: 'level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
-            t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'timeout')
+            t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'TIMEOUT')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
         }
 
-        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
+        addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
         return cli
     }
@@ -112,7 +120,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
      */
     static CliBuilder createNonStandardCliBuilder() {
 
-        List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+        List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
             option.nonStandard //all options with nonStandard property
         }
 
@@ -123,7 +131,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
             width:  WIDTH,
         )
 
-        Helper.addAnalysisOptionsToCliBuilder(cliOptions, cli)
+        addAnalysisOptionsToCliBuilder(cliOptions, cli)
 
         return cli
     }
@@ -158,10 +166,10 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                     id =
 
                     #
-                    #jar (file)
+                    #inputFiles (file(s))
                     #$INPUTS
                     #
-                    jar =
+                    inputFiles =
 
                     #
                     #level (string)
@@ -178,7 +186,7 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
                     """.stripIndent()
 
             //Find all cli options and sort them by id
-            List<AnalysisOption> cliOptions = Doop.ANALYSIS_OPTIONS.findAll { AnalysisOption option ->
+            List<AnalysisOption> cliOptions = FAMILY.supportedOptions().findAll { AnalysisOption option ->
                 option.cli
             }.sort{ AnalysisOption option ->
                 option.id
@@ -199,6 +207,12 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         if (option.isFile) {
             type = "(file)"
         }
+        else if (option.argName && option instanceof BooleanAnalysisOption) {
+            type = "(boolean)"
+        }
+        else if (option.argName && option instanceof IntegerAnalysisOption) {
+            type = "(boolean)"
+        }
         else if (option.argName) {
             type = "(string)"
         }
@@ -211,5 +225,46 @@ class CommandLineAnalysisFactory extends AnalysisFactory {
         if (option.description) w.write "#${option.description} \n"
         w.write "#\n"
         w.write "$id = \n\n"
+    }
+
+    /**
+     * Adds the list of analysis options to the cli builder.
+     * @param options - the list of AnalysisOption items to add.
+     * @param cli - the cli builder.
+     */
+    private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {
+        convertAnalysisOptionsToCliOptions(options).each { cli << it }
+    }
+
+    private static String desc(AnalysisOption option) {
+        option.validValues ? "$option.description Valid values: ${option.validValues.join(", ")}" : option.description
+    }
+
+    static List<Option> convertAnalysisOptionsToCliOptions(List<AnalysisOption> options) {
+        options.collect { AnalysisOption option ->
+            if (option.id == "ANALYSIS") {
+                Option o = new Option('a', option.name, true, desc(option))
+                o.setArgName(option.argName)
+                return o
+            } else if (option.id == "INPUTS") {
+                Option o = new Option('i', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                return o
+            } else if (option.id == "DYNAMIC") {
+                Option o = new Option('d', option.name, true, option.description)
+                o.setArgs(Option.UNLIMITED_VALUES)
+                o.setArgName(option.argName)
+                return o
+            } else if (option.argName) {
+                //Option accepts a String value
+                Option o = new Option(null, option.name, true, desc(option))
+                o.setArgName(option.argName)
+                return o
+            } else {
+                //Option is a boolean
+                return new Option(null, option.name, false, option.description)
+            }
+        }
     }
 }

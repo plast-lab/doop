@@ -40,7 +40,6 @@ lang:entity(`ArrayType).
 lang:entity(`ClassType).
 lang:entity(`InterfaceType).
 
-
 // Inheritance and Subtyping
 
 DirectSuperclass[?class] = ?superclass ->
@@ -53,6 +52,7 @@ DirectSuperinterface(?ref, ?interface) ->
 // Important class subsets
 
 ApplicationClass(?ref) -> ReferenceType(?ref).
+ConcreteClass(?ref)    -> ReferenceType(?ref).
 
 MainClass(?class) -> ClassType(?class).
 
@@ -144,6 +144,8 @@ Var:Type[?var] = ?type ->
 Var:DeclaringMethod(?var, ?method) ->
    Var(?var), Method(?method).
 
+ApplicationVar(?var) -> Var(?var).
+
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
@@ -156,6 +158,10 @@ Instruction:Index[?insn] = ?index ->
 
 Instruction:Method[?insn] = ?inMethod ->
    Instruction(?insn), Method(?inMethod).
+
+Instruction:Line[?insn] = ?line ->
+   Instruction(?insn), string(?line).
+
 
 lang:entity(`Throw:Insn).
 lang:entity(`ThrowNull:Insn).
@@ -195,6 +201,7 @@ lang:entity(`MethodInvocation).
 lang:entity(`SpecialMethodInvocation:Insn).
 lang:entity(`StaticMethodInvocation:Insn).
 lang:entity(`VirtualMethodInvocation:Insn).
+lang:entity(`DynamicMethodInvocation:Insn).
 
 lang:entity(`UnsupportedInstruction).
 lang:entity(`AssignPhantomInvoke).
@@ -240,6 +247,7 @@ MethodInvocation(?insn)                -> Instruction(?insn).
 VirtualMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 SpecialMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 StaticMethodInvocation:Insn(?insn)     -> MethodInvocation(?insn).
+DynamicMethodInvocation:Insn(?insn)    -> MethodInvocation(?insn).
 
 UnsupportedInstruction(?insn)          -> Instruction(?insn).
 AssignPhantomInvoke(?insn)             -> UnsupportedInstruction(?insn).
@@ -354,7 +362,6 @@ ArrayInsnIndex[?insn] = ?index ->
 ComponentType[?arrayType] = ?componentType ->
    ArrayType(?arrayType), Type(?componentType).
 
-// TODO: replace LoadArrayIndex:Base, StoreArrayIndex:Base with ArrayInstruction:Base
 LoadArrayIndex:Base[?insn] = ?var ->
    LoadArrayIndex:Insn(?insn), Var(?var).
 
@@ -431,7 +438,10 @@ MethodInvocation:Line[?invocation] = ?line ->
    MethodInvocation(?invocation), int[64](?line).
 
 // The signature of the method being called
-MethodInvocation:Signature[?invocation] = ?signature ->
+MethodInvocation:Method[?invocation] = ?signature ->
+   MethodInvocation(?invocation), Method(?signature).
+
+MethodInvocation:Method:Opt(?invocation, ?signature) ->
    MethodInvocation(?invocation), Method(?signature).
 
 ApplicationMethod(?method) -> Method(?method).
@@ -454,6 +464,26 @@ VirtualMethodInvocation:SimpleName[?invocation] = ?simplename ->
 
 VirtualMethodInvocation:Descriptor[?invocation] = ?descriptor ->
    MethodInvocation(?invocation), MethodDescriptor(?descriptor).
+
+// Dynamic Method Invocation
+DynamicMethodInvocation:Bootstrap[?invocation] = ?bootSignature ->
+   DynamicMethodInvocation:Insn(?invocation), Method(?bootSignature).
+
+// The following triplet is the dynamic method and can be anything
+// (these are parts of a single UTF-8 string in the bytecode).
+DynamicMethodInvocation:DynName[?invocation] = ?dynName ->
+   DynamicMethodInvocation:Insn(?invocation), string(?dynName).
+DynamicMethodInvocation:DynReturnType[?invocation] = ?dynRetType ->
+   DynamicMethodInvocation:Insn(?invocation), string(?dynRetType).
+DynamicMethodInvocation:DynParamTypes[?invocation] = ?dynParamTypes ->
+   DynamicMethodInvocation:Insn(?invocation), string(?dynParamTypes).
+// Arity of the dynamic method (calculated by the front-end).
+DynamicMethodInvocation:DynArity[?invocation] = ?dynArity ->
+   DynamicMethodInvocation:Insn(?invocation), int[32](?dynArity).
+
+// The bootstrap parameters of a dynamic invocation.
+BootstrapParam[?index, ?invocation] = ?var ->
+   DynamicMethodInvocation:Insn(?invocation), ParamIndex(?index), Var(?var).
 
 // Static Method Invocation
 StaticMethodInvocation:SimpleName[?invocation] = ?simplename ->
@@ -524,9 +554,68 @@ Config:DynamicClass(?class, ?invocation) ->
   ReferenceType(?class), MethodInvocation(?invocation).
 
 // Predicates to store runtime metrics and statistics
-Stats:Runtime(?attr, ?value) -> string(?attr), decimal[64](?value).
-Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
+Stats:Runtime(?attr, ?value) -> string(?attr), uint[64](?value).
+Stats:Metrics(?index, ?attr, ?value) -> decimal[64](?index), string(?attr), uint[64](?value).
 
+
+//-----------------------------------------------------------------------------
+// [Android-related]
+//-----------------------------------------------------------------------------
+
+Activity(?x) -> Type(?x).
+Service(?x) -> Type(?x).
+ContentProvider(?x) -> Type(?x).
+BroadcastReceiver(?x) -> Type(?x).
+CallbackMethod(?x) -> Method(?x).
+LayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
+LayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
+SensitiveLayoutControl(?id, ?type, ?parent) -> int[32](?id), Type(?type), string(?parent).
+SensitiveLayoutControl0(?id, ?typename, ?parent) -> int[32](?id), string(?typename), string(?parent).
+FieldInitialValue[?fld] = ?valueString -> Field(?fld), string(?valueString).
+
+//-----------------------------------------------------------------------------
+// [Dynamic analysis related]
+//-----------------------------------------------------------------------------
+lang:entity(`DynamicContext).
+DynamicContext(?ctx), DynamicContext:Id(?ctx:?id) -> string(?id).
+DynamicStaticFieldPointsTo(?fld, ?ctx, ?heap) ->
+   DynamicContext(?ctx), HeapAllocation(?heap), Field(?fld).
+DynamicInstanceFieldPointsTo(?fieldname, ?ctx, ?heap, ?baseCtx, ?baseHeap) ->
+   DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?baseHeap), Field(?fieldname), HeapAllocation(?heap).
+DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) ->
+   DynamicContext(?ctx), DynamicContext(?baseCtx), HeapAllocation(?heap), HeapAllocation(?baseHeap).
+DynamicHeapAllocation(?representation, ?heap) -> HeapAllocation(?heap), string(?representation).
+
+DynamicHeapObject(?dynamicContext, ?heap) ->  HeapAllocation(?heap), DynamicContext(?dynamicContext).
+
+UnmatchedDynamicNormalHeapAllocation(?param1, ?param2, ?param3, ?param4) ->
+  string(?param1),
+  string(?param2),
+  string(?param3),
+  string(?param4).
+
+UnmatchedStaticNormalHeapAllocation(?param1, ?param2, ?param3) ->
+  string(?param1),
+  string(?param2),
+  string(?param3).
+
+DynamicReachableMethod(?x) -> Method(?x).
+
+UnmatchedDynamicReachableMethod(?methodId) -> string(?methodId).
+
+DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) ->
+   Method(?fromMethod),
+   Method(?toMethod),
+   MethodInvocation(?invocation),
+   DynamicContext(?ctxTo),
+   DynamicContext(?ctxFrom).
+
+UnmatchedDynamicCallGraphEdgeNode(?method) -> Method(?method).
+
+DynamicContextInvo1(?invo, ?ctx) -> MethodInvocation(?invo), DynamicContext(?ctx).
+DynamicContextInvo2(?invo, ?ctx) -> MethodInvocation(?invo), DynamicContext(?ctx).
+DynamicContextHeap1(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
+DynamicContextHeap2(?heap, ?ctx) -> HeapAllocation(?heap), DynamicContext(?ctx).
 
 //-----------------------------------------------------------------------------
 // [Heap Allocation]
@@ -535,30 +624,35 @@ Stats:Metrics(?attr, ?value) -> string(?attr), uint[64](?value).
 HeapAllocation0:Normal(?repr, ?type) -> string(?repr), Type(?type).
 HeapAllocation0:String(?repr) -> string(?repr).
 HeapAllocation0:Class(?repr, ?instanceType) -> string(?repr), Type(?instanceType).
+HeapAllocation0:MethodHandleConstant(?repr, ?method) -> string(?repr), Method(?method).
 HeapAllocation0:EmptyArray(?repr) -> string(?repr).
 AssignHeapAllocation0(?instr, ?heapId) ->
    AssignHeapAllocation:Insn(?instr), string(?heapId).
 
 
-HeapAllocation(?heap) -> .
-NormalHeap(?heap)     -> HeapAllocation(?heap).
-StringConstant(?heap) -> HeapAllocation(?heap).
-ClassHeap(?heap)      -> HeapAllocation(?heap).
+HeapAllocation(?heap)   -> .
+NormalHeap(?heap)       -> HeapAllocation(?heap).
+StringConstant(?heap)   -> HeapAllocation(?heap).
+ClassHeap(?heap)        -> HeapAllocation(?heap).
+MethodHandleConstant(?heap) -> HeapAllocation(?heap).
 
 lang:physical:storageModel[`HeapAllocation] = "ScalableSparse".
 lang:entity(`HeapAllocation).
 lang:entity(`NormalHeap).
 lang:entity(`StringConstant).
 lang:entity(`ClassHeap).
+lang:entity(`MethodHandleConstant).
 
 HeapAllocation:Normal:Cons[?id] = ?heap -> string(?id), NormalHeap(?heap).
 HeapAllocation:String:Cons[?id] = ?heap -> string(?id), StringConstant(?heap).
 HeapAllocation:Class:Cons[?id]  = ?heap -> string(?id), ClassHeap(?heap).
+HeapAllocation:MethodHandle:Cons[?id] = ?heap -> string(?id), MethodHandleConstant(?heap).
 HeapAllocation:Mock:Cons[?id]   = ?heap -> string(?id), HeapAllocation(?heap).
 
 lang:constructor(`HeapAllocation:Normal:Cons).
 lang:constructor(`HeapAllocation:String:Cons).
 lang:constructor(`HeapAllocation:Class:Cons).
+lang:constructor(`HeapAllocation:MethodHandle:Cons).
 lang:constructor(`HeapAllocation:Mock:Cons).
 
 HeapAllocation:Id[?heap] = ?id -> HeapAllocation(?heap), string(?id).
@@ -575,6 +669,9 @@ MainMethodArgArrayContent[] = ?heap -> HeapAllocation(?heap).
 ClassHeap:InstanceType[?classHeap] = ?instanceType ->
    ClassHeap(?classHeap), Type(?instanceType).
 
+MethodHandleConstant:Method[?heap] = ?method ->
+   MethodHandleConstant(?heap), Method(?method).
+
 // Use an entity to represent raw strings since the engine is having problems
 // with huge strings as keys.
 StringRaw(?x), StringRaw:Id(?x:?id) -> string(?id).
@@ -588,9 +685,9 @@ String:toRaw[?id] = ?raw -> string(?id), StringRaw(?raw).
 lang:physical:capacity[`Field]               = 524288.
 lang:physical:capacity[`Method]              = 1048576. /* 2 ^ 20 */
 lang:physical:capacity[`MethodDescriptor]    = 1048576.
-lang:physical:capacity[`Instruction]         = 8388608. /* 2^23 */
-lang:physical:capacity[`Throw:Insn]          = 8388608. /* = instruction */
-lang:physical:capacity[`MethodInvocation]    = 8388608. /* = instruction */
+lang:physical:capacity[`Instruction]         = 134217728. /* 2^27 */
+lang:physical:capacity[`Throw:Insn]          = 134217728. /* = instruction */
+lang:physical:capacity[`MethodInvocation]    = 134217728. /* = instruction */
 lang:physical:capacity[`JVMDescriptor]       = 524288.
 lang:physical:capacity[`SimpleName]          = 131072.
 lang:physical:capacity[`ExceptionHandler]    = 524288.
@@ -608,12 +705,15 @@ lang:physical:capacity[`HeapAllocation]      = 4194304.
 lang:physical:capacity[`NormalHeap]          = 4194304.
 lang:physical:capacity[`NumConstant]         = 4194304.
 lang:physical:capacity[`StringConstant]      = 4194304.
+lang:physical:capacity[`MethodHandleConstant]= 4194304.
 lang:physical:capacity[`ClassHeap]           = 4194304.
 lang:physical:capacity[`StringRaw]           = 4194304.
-
 
 //-----------------------------------------------------------------------------
 // [Android]
 //-----------------------------------------------------------------------------
 
 AndroidEntryPoint(?m) -> Method(?m).
+AndroidApplication(?t) -> ClassType(?t).
+
+Dacapo0(?id, ?method) -> string(?id), Method(?method).

@@ -1,0 +1,118 @@
+// Define a straightforward SCC decomposition of classes, based on
+// constant-pool information.
+
+// REVIEW: this is very similar to the partitioning logic, yet with
+// important differences. There is no distinction between application
+// and library classes, no special classes (collections, etc.). In the
+// future, we should try to merge the two.
+  
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  DirectSubclass[?typeFrom] = ?typeTo.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  DirectSuperinterface(?typeFrom, ?typeTo).
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  Field:Type[?field] = ?typeTo,
+  Field:DeclaringType[?field] = ?typeFrom.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  MethodInvocation:Method[?invo] = ?method,
+  Instruction:Method[?invo] = ?fromMethod,
+  Method:DeclaringType[?method] = ?typeTo,
+  Method:DeclaringType[?fromMethod] = ?typeFrom.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  Var:Type[?var] = ?typeTo,
+  Var:DeclaringMethod(?var, ?method),
+  Method:DeclaringType[?method] = ?typeFrom.
+
+TypeRefersToOther(?typeFrom, ?typeTo) <-
+  ExceptionHandler:Method[?handler] = ?inmethod,
+  ExceptionHandler:Type[?handler] = ?typeTo,
+  Method:DeclaringType[?inmethod] = ?typeFrom.
+
+// Now reflexively-transitively close it.
+OptTypeRefersToOther(?typeTo, ?typeFrom) <-
+  TypeRefersToOther(?typeFrom, ?typeTo).
+
+TypeTransitivelyRefersToOther(?typeFrom, ?typeTo) <-
+  TypeRefersToOther(?typeFrom, ?typeTo).
+
+TypeTransitivelyRefersToOther(?typeFrom, ?typeTo) <-
+  TypeTransitivelyRefersToOther(?typeFrom, ?typeInterm),
+  OptTypeRefersToOther(?typeTo, ?typeInterm).
+
+SCCType(?type) <-
+  ClassType(?type).
+
+SCCTypesInSameSCC(?type1, ?type2) <-
+  TypeTransitivelyRefersToOther(?type1, ?type2),
+  TypeTransitivelyRefersToOther(?type2, ?type1).
+
+SCCTypesInSameSCC(?type, ?type) <-
+  SCCType(?type).
+
+TypeToSCCId[?type] = ?idType <-
+  agg<<?idType = min(?t)>>(SCCTypesInSameSCC(?type, ?t)).
+
+CountOfTypesPerSCC[?idType] = ?num <-
+  agg<<?num = count()>>(TypeToSCCId[_] = ?idType).
+
+SCCPerCountOfTypes(?idType, ?num) <-
+  CountOfTypesPerSCC[?idType] = ?num.
+
+MaxCountOfTypesPerSCC[] = ?maxNum <-
+  agg<<?maxNum = max(?num)>>(CountOfTypesPerSCC[_] = ?num).
+
+SCCWithMaxCountOfTypes(?idType) <-
+  SCCPerCountOfTypes(?idType, MaxCountOfTypesPerSCC[]).
+
+NumberOfRelevantTypes[] = ?num <-
+  agg<<?num = count()>>(SCCType(_)).
+  
+
+TypeToPartitionId[?inClass] = ?sccId <- TypeToSCCId[?inClass] = ?sccId.
+
+
+SCCRefersToType(?typeTo, TypeToSCCId[?typeFrom], TypeToSCCId[?typeTo]) <-
+   TypeRefersToOther(?typeFrom, ?typeTo).
+
+CountOfReferencesBetweenSCCs[?sccFrom, ?sccTo] = ?cnt <-
+   agg<<?cnt = count()>>(SCCRefersToType(_, ?sccFrom, ?sccTo), ?sccFrom != ?sccTo).
+
+SCCKnowsAboutOther(?sccFrom, ?sccTo) <-
+   CountOfReferencesBetweenSCCs[?sccFrom, ?sccTo] = ?cntForward,
+   CountOfReferencesBetweenSCCs[?sccTo, ?sccFrom] = ?cntReverse,
+   ?cntForward > ?cntReverse.
+
+SCCKnowsAboutOther(?sccFrom, ?sccTo) <-
+   CountOfReferencesBetweenSCCs[?sccFrom, ?sccTo] = _,
+   !CountOfReferencesBetweenSCCs[?sccTo, ?sccFrom] = _.
+   
+SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo) <-
+   SCCKnowsAboutOther(?sccInter, ?sccTo),
+   SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccInter).
+
+SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo) <-
+   SCCKnowsAboutOther(?sccFrom, ?sccTo).
+
+SCCTransitivelyKnowsAboutApplicationClass(?class, ?sccFrom) <-
+   ApplicationClass(?class),
+   TypeToSCCId[?class] = ?sccTo,
+   SCCTransitivelyKnowsAboutOther(?sccFrom, ?sccTo),
+   CountOfTypesPerSCC[?sccFrom] > 10.
+
+CountOfApplicationClassesTransitivelyKnownBySCC[?idType] = ?num <-
+  agg<<?num = count()>>(SCCTransitivelyKnowsAboutApplicationClass(_, ?idType)).
+
+MaxCountOfApplicationClassesTransitivelyKnownBySCC[] = ?maxNum <-
+   agg<<?maxNum = max(?num)>>(CountOfApplicationClassesTransitivelyKnownBySCC[_] = ?num).
+
+SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType) <-
+   CountOfApplicationClassesTransitivelyKnownBySCC(?idType, MaxCountOfApplicationClassesTransitivelyKnownBySCC[]).
+
+SpecialLibrary(?class) <-
+   !SCCWithMaxCountOfTransitivelyKnownApplicationClasses(?idType),
+   !CollectionLibraryClass(?class),
+   TypeToSCCId[?class] = ?idType.
