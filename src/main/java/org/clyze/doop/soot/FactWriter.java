@@ -296,7 +296,6 @@ class FactWriter {
         String content = constant.substring(1, constant.length() - 1);
         String heapId = writeStringConstant(content);
 
-
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
@@ -928,6 +927,7 @@ class FactWriter {
 
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
     }
+
     void writeApplication(String applicationName) { _db.add(ANDROID_APPLICATION, applicationName); }
 
     void writeActivity(String activity) {
@@ -953,7 +953,7 @@ class FactWriter {
     void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
         _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
-    
+
     void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }

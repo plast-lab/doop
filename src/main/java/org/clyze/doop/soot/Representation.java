@@ -1,5 +1,9 @@
 package org.clyze.doop.soot;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import soot.*;
 import soot.jimple.*;
 
@@ -222,6 +226,7 @@ public class Representation {
         return defaultResult;
     }
 
+
     String heapAlloc(SootMethod inMethod, AnyNewExpr expr, Session session)
     {
         if(expr instanceof NewExpr || expr instanceof NewArrayExpr)
@@ -258,6 +263,5 @@ public class Representation {
     String methodHandleConstant(String handleName) {
         return "<handle " + handleName + ">";
     }
-
 
 }

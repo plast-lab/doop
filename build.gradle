@@ -34,7 +34,9 @@ task wrapper(type: Wrapper) {
 
 repositories {
     mavenLocal()
+
     mavenCentral()
+
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }

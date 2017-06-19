@@ -148,7 +148,7 @@ class FactGenerator implements Runnable {
         return false;
     }
 
-    private static boolean phantomBased(SootMethod m) {
+    public static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
         if (m.isPhantom())
@@ -230,6 +230,7 @@ class FactGenerator implements Runnable {
                 // This instruction is the bottleneck of
                 // soot-fact-generation.
                 // synchronized(Scene.v()) {
+                System.out.println("You should never see this anymore");
                 m.retrieveActiveBody();
                 // } // synchronizing so broadly = giving up on Soot's races
             }

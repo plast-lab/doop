@@ -104,7 +104,7 @@ _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?inmethod, ?linenumber) 
 +Instruction:Line[?instr] = ?linenumber,
 +AssignInstruction:To[?instr] = ?to,
 +AssignHeapAllocation0(?instr, ?heapId) <-
-   _AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method, ?linenumber).
+_AssignHeapAllocation(?instrId, ?index, ?heapId, ?to, ?method, ?linenumber).
 
 
 // AndroidEntryPoints

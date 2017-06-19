@@ -391,7 +391,6 @@ class ClassicAnalysis extends DoopAnalysis {
             .elapsedTime()
     }
 
-
     @Override
     protected void runTransformInput() {
         cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
