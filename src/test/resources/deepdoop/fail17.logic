@@ -1,5 +1,0 @@
-@Entity Shape.
-@Constructor
-cons:Shape[x] = y -> string(x), Shape(y).
-
-cons:Shape[x] = y <- Ble(a, b).

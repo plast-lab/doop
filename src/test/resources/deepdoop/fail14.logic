@@ -1,7 +1,0 @@
-component Foo {
-  P(x) <- x = 10.
-  BaZ(x, y) <- P(x), P(y).
-  BarBaz(x) <- BaZ(_, x).
-} as Foo1
-
-Foo1 { P, Bar } -> .
