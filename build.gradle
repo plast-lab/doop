@@ -57,7 +57,7 @@ configurations.all {
 
 dependencies {
 
-    compile "org.clyze:clue-common:1.25.+",
+    compile "org.clyze:clue-common:2.0.+",
             "org.codehaus.groovy:groovy-all:2.4.7",             // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
