@@ -464,6 +464,8 @@
 .decl CallbackMethod(?x:Method)
 .decl LayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
 .decl LayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
+.decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
+.decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl FieldInitialValue(?fld:Field, ?valueString:symbol)
 
 

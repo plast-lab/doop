@@ -53,6 +53,10 @@ ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" o
   LayoutControl(?id, ?type, _),
   isType(?type).
 
+SensitiveLayoutControlValue(?value) :-
+  ReifiedLayoutControl(?type, ?id, ?value),
+  SensitiveLayoutControl(?id, ?type, _).
+
 // Also instantiate implicitly some library objects
 ImplicitlyInstantiatedLibraryType(?type) :-
   (?type = "android.content.Intent";

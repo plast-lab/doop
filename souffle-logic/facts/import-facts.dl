@@ -755,6 +755,14 @@ LayoutControl0(?id, ?typename, ?parent) :-
   _LayoutControl(?id, ?typename, ?parent).
 
 
+// SensitiveLayoutControl
+.decl _SensitiveLayoutControl(?param1:NumConstant, ?param2:symbol, ?param3:symbol)
+.input _SensitiveLayoutControl(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
+
+SensitiveLayoutControl0(?id, ?typename, ?parent) :-
+  _SensitiveLayoutControl(?id, ?typename, ?parent).
+
+
 // FieldInitialValue
 
 .decl _FieldInitialValue(?fld:symbol, ?valueString:symbol)
