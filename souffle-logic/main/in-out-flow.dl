@@ -21,37 +21,99 @@ InFlowTo(?index, ?toVar) :-
   InFlowTo(?index, ?someVar),
   LocalVarFlow(?toVar, ?someVar).
 
+.decl StoreFlowThroughHeap(?to:Var, from:Var)
+
+StoreFlowThroughHeap(?to, ?from) :-
+  StoreInstanceField(?from, ?to, _, _). // ?to is base
+
 InFlowTo(?index, ?toVar) :-
-  StoreInstanceField(?someVar, ?toVar, _, _),
+  StoreFlowThroughHeap(?someVar, ?toVar),
   InFlowTo(?index, ?someVar).
 
 // Method that has its in-value (from a given-index formal param) flow to returns.
-.decl InOutFlowMethod(?index:number, ?method:Method)
 
-InOutFlowMethod(?index, ?method) :-
+// Method that has its in-value (from a given-index formal param) flow to returns.
+.decl InFlowToReturn(?index:number, ?method:Method)
+.decl InOutFlowMethod(?index:number, ?method:Method)
+.decl IsInOutFlowMethod(?method:Method)
+
+InFlowToReturn(?index, ?method) :-
   InFlowTo(?index, ?outVar),
   ReturnVar(?outVar, ?method).
+
+InOutFlowMethod(?index, ?method) :-
+  InFlowToReturn(?index, ?method).
+
+IsInOutFlowMethod(?method) :-
+  InOutFlowMethod(_, ?method).
+
 
 // Now more deeply recursive logic: define LocalVarFlow itself based
 // on InOutFlowMethod: a local var has values flow to another through
 // a method call that has its params flow to its returns.
-LocalVarFlow(?to, ?from) :-
-  InOutFlowMethodInvocationParam(?from, ?invo),
-  AssignReturnValue(?invo, ?to).
-
-.decl InOutFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)
+.decl ReturnFlowMethodInvocationParam(?param:Var, ?invo:MethodInvocation)
 
 // Adding virtual is a heuristic, but it seems to be useful
-InOutFlowMethodInvocationParam(?param, ?invo) :-
-  (isSpecialMethodInvocation_Insn(?invo);
-   isStaticMethodInvocation_Insn(?invo);
-   isVirtualMethodInvocation_Insn(?invo)),
+ReturnFlowMethodInvocationParam(?param, ?invo) :-
+  // (isSpecialMethodInvocation_Insn(?invo);
+  //  isStaticMethodInvocation_Insn(?invo));
   MethodInvocation_Method(?invo, ?toMeth),
-  InOutFlowMethod(?index, ?toMeth),
+  InFlowToReturn(?index, ?toMeth),
   ActualParam(?index, ?invo, ?param).
 
-InOutFlowMethodInvocationParam(?param, ?invo) :-
+ReturnFlowMethodInvocationParam(?param, ?invo) :-
   (SpecialMethodInvocation_Base(?invo, ?param);
    VirtualMethodInvocation_Base(?invo, ?param)),
   MethodInvocation_Method(?invo, ?toMeth),
   InOutFlowMethod(7, ?toMeth).
+
+LocalVarFlow(?to, ?from) :-
+  ReturnFlowMethodInvocationParam(?from, ?invo),
+  AssignReturnValue(?invo, ?to).
+
+/*
+//// Possible extensions. Did not find right balance yet.
+
+// LoadFlowThroughHeap(?to, ?from) <-
+//   LoadInstanceField(?from, _, ?to, _). // ?from is base
+
+// InFlowTo(?index, ?toVar) <-
+//   InFlowTo(?index, ?someVar),
+//   LoadFlowThroughHeap(?toVar, ?someVar).
+
+// _OptMethodFromVar[?var] = ?method <-
+//   Var:DeclaringMethod(?var, ?method).
+
+// InFlowToOtherArgsHeap(?index, ?indexBase, ?method) <-
+//   InFlowTo(?index, ?fromVar),
+//   InFlowTo(?indexBase, ?baseVar),
+//   StoreFlowThroughHeap(?baseVar, ?fromVar),
+//   _OptMethodFromVar[?fromVar] = ?method.
+
+// InOutFlowMethod(?index, ?method) <-
+//   InFlowToOtherArgsHeap(?index, _, ?method).
+
+
+// // Also interprocedural handling for flow through heap
+// HeapFlowMethodInvocationParam(?param, ?indexBase, ?invo) <-
+//   MethodInvocation:Method[?invo] = ?toMeth,
+//   InFlowToOtherArgsHeap(?index, ?indexBase, ?toMeth),
+//   ActualParam[?index, ?invo] = ?param.
+
+// HeapFlowMethodInvocationParam(?param, ?indexBase, ?invo) <-
+//   (SpecialMethodInvocation:Base[?invo] = ?param;
+//    VirtualMethodInvocation:Base[?invo] = ?param),
+//   MethodInvocation:Method[?invo] = ?toMeth,
+//   ParamIndex:Id(?index:7),
+//   InFlowToOtherArgsHeap(?index, ?indexBase, ?toMeth).
+
+// StoreFlowThroughHeap(?to, ?from) <-
+//   HeapFlowMethodInvocationParam(?from, ?indexBase, ?invo),
+//   ActualParam[?indexBase, ?invo] = ?to.
+
+// StoreFlowThroughHeap(?to, ?from) <-
+//   (SpecialMethodInvocation:Base[?invo] = ?to;
+//    VirtualMethodInvocation:Base[?invo] = ?to),
+//   HeapFlowMethodInvocationParam(?from, ?indexBase, ?invo),
+//   ParamIndex:Id(?indexBase:7).
+*/
