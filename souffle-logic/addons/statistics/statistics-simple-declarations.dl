@@ -107,7 +107,7 @@
 .output Stats_Simple_Application_PolymorphicCallSite
 
 .decl Stats_Simple_Application_NullVirtualMethodInvocation(?invocation:MethodInvocation)
-.output Stats_Simple_Application_NullVirtualMethodInvocatiom
+.output Stats_Simple_Application_NullVirtualMethodInvocation
 
 .decl Stats_Simple_Application_EmptyVirtualMethodInvocation(?invocation:MethodInvocation)
 .output Stats_Simple_Application_EmptyVirtualMethodInvocation

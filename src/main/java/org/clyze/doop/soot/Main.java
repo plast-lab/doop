@@ -6,7 +6,6 @@ import org.objectweb.asm.ClassReader;
 import soot.*;
 import soot.SourceLocator.FoundFile;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
@@ -19,6 +18,9 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
+
+import org.clyze.doop.soot.android.*;
+import static org.clyze.doop.soot.android.AndroidManifest.*;
 
 import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
@@ -215,10 +217,10 @@ public class Main {
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
         Set<String> classesInApplicationJar = new HashSet<>();
-        List<AXmlNode> appServices = null;
-        List<AXmlNode> appActivities = null;
-        List<AXmlNode> appContentProviders = null;
-        List<AXmlNode> appBroadcastReceivers = null;
+        Set<String> appServices = null;
+        Set<String> appActivities = null;
+        Set<String> appContentProviders = null;
+        Set<String> appBroadcastReceivers = null;
         Map<String, Set<String>> appCallbackMethods = null;
         Map<String, Set<PossibleLayoutControl>> appUserControls = null;
         File apk = null;
@@ -239,7 +241,7 @@ public class Main {
                     throw new RuntimeException("Dummy main null");
                 }
             } else {
-                ProcessManifest processMan = new ProcessManifest(apkLocation);
+                AndroidManifest processMan = getAndroidManifest(apkLocation);
                 String appPackageName = processMan.getPackageName();
                 ARSCFileParser resParser = new ARSCFileParser();
                 resParser.parse(apkLocation);
@@ -407,7 +409,7 @@ public class Main {
                 return;
             } else {
                 String apkLocation = sootParameters._inputs.get(0);
-                ProcessManifest processMan = new ProcessManifest(apkLocation);
+                AndroidManifest processMan = getAndroidManifest(apkLocation);
 
                 if (processMan.getApplicationName() != null)
                     writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
@@ -420,20 +422,20 @@ public class Main {
                     // https://developer.android.com/guide/topics/manifest/application-element.html
                     writer.writeApplication("android.app.Application");
                 }
-                for (AXmlNode node : appActivities) {
-                    writer.writeActivity(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
+                for (String s : appActivities) {
+                    writer.writeActivity(processMan.expandClassName(s));
                 }
 
-                for (AXmlNode node : appServices) {
-                    writer.writeService(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
+                for (String s : appServices) {
+                    writer.writeService(processMan.expandClassName(s));
                 }
 
-                for (AXmlNode node : appContentProviders) {
-                    writer.writeContentProvider(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
+                for (String s : appContentProviders) {
+                    writer.writeContentProvider(processMan.expandClassName(s));
                 }
 
-                for (AXmlNode node : appBroadcastReceivers) {
-                    writer.writeBroadcastReceiver(processMan.expandClassName(node.getAttribute("name").getValue().toString()));
+                for (String s : appBroadcastReceivers) {
+                    writer.writeBroadcastReceiver(processMan.expandClassName(s));
                 }
 
                 for (Set<String> callBackMethods : appCallbackMethods.values()) {

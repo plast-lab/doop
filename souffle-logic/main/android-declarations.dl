@@ -1,6 +1,7 @@
 .decl AndroidAppComponent(?type:symbol)
 .decl ReifiedComponent(?type:Type, ?value:Value)
 .decl ReifiedLayoutControl(?type:Type, ?id:NumConstant, ?value:Value)
+.decl SensitiveLayoutControlValue(?value:Value)
 .decl ImplicitlyInstantiatedLibraryType(?type:Type)
 .decl AndroidLibraryType(?type:Type)
 .decl AndroidApplicationClass(?class:ClassType)

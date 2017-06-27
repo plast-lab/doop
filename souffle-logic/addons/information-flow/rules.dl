@@ -35,8 +35,7 @@ CallTaintingMethod(?label, ?ctx, ?invocation) :-
   TaintSourceMethod(?label, ?tomethod),
   MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
   Instruction_Method(?invocation, ?inmethod),
-  Method_DeclaringType(?inmethod, ?type),
-  ApplicationClass(?type).
+  ApplicationMethod(?inmethod).
 
 /**
  * Information flow through complex relations

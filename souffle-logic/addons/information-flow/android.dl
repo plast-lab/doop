@@ -1,0 +1,19 @@
+#include "macros.dl"
+
+TaintedValueIntroduced(?declaringType, ?invocation, "java.lang.String", "PASSWORD", ?value),
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base),
+  Instruction_Method(?invocation, ?method)
+  Method_DeclaringType(?method, ?declaringType),
+  VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
+  ImmutableHContext(?hctx),
+  SensitiveLayoutControlValue(?layoutControlValue).
+
+
+PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
+  AndroidViewType(?base),
+  Var_Type(?base, ?type),
+  MethodInvocationInContext(?ctx, ?invocation, _),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VirtualMethodInvocation_SimpleName(?invocation, "getText"),
+  AssignReturnValue(?invocation, ?to).
