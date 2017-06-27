@@ -28,7 +28,7 @@ DynamicContextToHContext(?hctx, ?dctx) <-
 HeapAllocation:Dynamic(?heap) <- DynamicHeapAllocation(_, ?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?mergeHeap] <-
-   (HeapAllocation:Merge[?heap] = ?mergeHeap ; HeapRepresentative(?mergeHeap, ?heap)),
+   HeapAllocation:Merge[?heap] = ?mergeHeap,
    HeapAllocation:Dynamic(?heap).
 
 Value:byDynamicHeap[?heap] = Value:byHeap[?heap] <-
