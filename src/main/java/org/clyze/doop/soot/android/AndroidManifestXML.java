@@ -150,7 +150,6 @@ public class AndroidManifestXML implements AndroidManifest {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            return ret;
         }
         return ret;
     }
