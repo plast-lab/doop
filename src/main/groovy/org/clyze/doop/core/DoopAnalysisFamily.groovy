@@ -343,6 +343,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
+					id: "DISABLE_METHOD_HANDLES",
+					name: "disable-method-handles",
+					value: false,
+					webUI: false,
+					forPreprocessor: true,
+					isAdvanced: true
+			),
+			new BooleanAnalysisOption(
 					id: "REFLECTION_REFINED_OBJECTS",
 					name: "reflection-refined-objects",
 					value: false,
