@@ -74,7 +74,8 @@ InitializedClass(?class) <-
    OptClassInitializer(?class, ?method).
 
 ProbablyReachable(?method) <-
-   SanitizedDynamicCallGraphEdge(_, ?method, _, _, _).
+   !DynamicMethodInvocation:Insn(?invocation),
+   SanitizedDynamicCallGraphEdge(_, ?method, ?invocation, _, _).
 
 ProbablyReachable(?tomethod) <-
    StaticMethodInvocation(_, ?tomethod, ?fromMethod),
