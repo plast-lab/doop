@@ -261,3 +261,8 @@ VarPointsTo(?hctx, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
   VarPointsTo(_, ?value, ?ctx, ?var).
+
+TaintedValue(?value),
+TaintedValue(?basevalue) :-
+  (TaintedValue(?value) ; TaintedValue(?basevalue)),
+  InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).
