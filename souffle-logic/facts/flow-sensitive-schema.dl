@@ -474,3 +474,4 @@
 //-----------------------------------------------------------------------------
 
 .decl AndroidEntryPoint(?m:Method)
+.decl AndroidApplication(?t:ClassType)
