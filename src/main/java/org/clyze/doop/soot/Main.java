@@ -6,9 +6,6 @@ import org.objectweb.asm.ClassReader;
 import soot.*;
 import soot.SourceLocator.FoundFile;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.manifest.ProcessManifest;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
-import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 import soot.options.Options;
 
@@ -221,8 +218,8 @@ public class Main {
         Set<String> appActivities = null;
         Set<String> appContentProviders = null;
         Set<String> appBroadcastReceivers = null;
-        Map<String, Set<String>> appCallbackMethods = null;
-        Map<String, Set<PossibleLayoutControl>> appUserControls = null;
+        Set<String> appCallbackMethods = null;
+        Set<PossibleLayoutControl> appUserControls = null;
         File apk = null;
 
         if (sootParameters._android) {
@@ -243,23 +240,19 @@ public class Main {
             } else {
                 AndroidManifest processMan = getAndroidManifest(apkLocation);
                 String appPackageName = processMan.getPackageName();
-                ARSCFileParser resParser = new ARSCFileParser();
-                resParser.parse(apkLocation);
-                DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
-                lfp.registerLayoutFilesDirect(apkLocation);
-                lfp.parseLayoutFileDirect(apkLocation);
 
                 // now collect the facts we need
                 appServices = processMan.getServices();
                 appActivities = processMan.getActivities();
                 appContentProviders = processMan.getProviders();
                 appBroadcastReceivers = processMan.getReceivers();
-                appCallbackMethods = lfp.getCallbackMethods();
-                appUserControls = lfp.getUserControls();
+                appCallbackMethods = processMan.getCallbackMethods();
+                appUserControls = processMan.getUserControls();
 
 //            System.out.println("All entry points:\n" + appEntrypoints);
 //            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
 //            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
+                processMan.printManifestInfo();
             }
 
         } else {
@@ -438,18 +431,14 @@ public class Main {
                     writer.writeBroadcastReceiver(processMan.expandClassName(s));
                 }
 
-                for (Set<String> callBackMethods : appCallbackMethods.values()) {
-                    for (String callbackMethod : callBackMethods) {
-                        writer.writeCallbackMethod(callbackMethod);
-                    }
+                for (String callbackMethod : appCallbackMethods) {
+                    writer.writeCallbackMethod(callbackMethod);
                 }
 
-                for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
-                    for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
-                        writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                        if (possibleLayoutControl.isSensitive()) {
-                            writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
-                        }
+                for (PossibleLayoutControl possibleLayoutControl : appUserControls) {
+                    writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                    if (possibleLayoutControl.isSensitive()) {
+                        writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                     }
                 }
             }

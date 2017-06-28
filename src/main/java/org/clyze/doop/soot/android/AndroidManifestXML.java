@@ -12,9 +12,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.*;
 
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+
 import static org.clyze.doop.soot.android.AndroidManifest.*;
 
 public class AndroidManifestXML implements AndroidManifest {
+    private File archive;
     private String applicationName, packageName;
     private Set<String> activities = new HashSet<>();
     private Set<String> providers  = new HashSet<>();
@@ -24,7 +27,8 @@ public class AndroidManifestXML implements AndroidManifest {
     public AndroidManifestXML(String archiveLocation) {
         Document doc = null;
         try {
-            InputStream is = getInputStream(new File(archiveLocation), "AndroidManifest.xml");
+            this.archive = new File(archiveLocation);
+            InputStream is = getZipEntryInputStream("AndroidManifest.xml");
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             doc = dbf.newDocumentBuilder().parse(is);
         } catch (Exception ex) {
@@ -66,7 +70,6 @@ public class AndroidManifestXML implements AndroidManifest {
                 }
             }
         }
-        printManifestInfo();
     }
 
     private void registerAppNode(Node appElem, NamedNodeMap attrs) {
@@ -93,8 +96,8 @@ public class AndroidManifestXML implements AndroidManifest {
     public Set<String> getProviders()  { return providers;       }
     public Set<String> getReceivers()  { return receivers;       }
 
-    static InputStream getInputStream(File zip, String entry) throws IOException {
-        ZipInputStream zin = new ZipInputStream(new FileInputStream(zip));
+    private InputStream getZipEntryInputStream(String entry) throws IOException {
+        ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
         for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
             if (e.getName().equals(entry)) {
                 return zin;
@@ -102,4 +105,58 @@ public class AndroidManifestXML implements AndroidManifest {
         }
         throw new RuntimeException("Cannot find " + entry);
     }
+
+    private void findOnClickHandlers(Node e, Set<String> accumulator) {
+        NamedNodeMap attrs = e.getAttributes();
+        if (attrs != null) {
+            Node n = attrs.getNamedItem("android:onClick");
+            if (n != null)
+                accumulator.add(n.getNodeValue());
+        }
+        NodeList children = e.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++)
+            findOnClickHandlers(children.item(i), accumulator);
+    }
+
+    public Set<String> getCallbackMethods() throws IOException {
+        // We assume all callback methods are defined as
+        // 'android:onClick' attributes in XML files under /res.
+
+        Set<String> ret = new HashSet<>();
+        ZipInputStream zin = null;
+        try {
+            zin = new ZipInputStream(new FileInputStream(archive));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ret;
+        }
+
+        // Find all xml files under /res in the archive.
+        Set<String> resXMLs = new HashSet<>();
+        for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
+            String name = e.getName();
+            if (name.startsWith("res/") &&
+                (name.endsWith(".xml") || name.endsWith(".XML")))
+                resXMLs.add(name);
+        }
+
+        // Parse each XML to find possible callbacks.
+        try {
+            for (String resXML : resXMLs) {
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                InputStream is = getZipEntryInputStream(resXML);
+                Document doc = dbf.newDocumentBuilder().parse(is);
+                findOnClickHandlers(doc.getDocumentElement(), ret);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return ret;
+    }
+
+    public Set<PossibleLayoutControl> getUserControls() {
+        System.out.println("WARNING: getUserControls() not yet implemented for plain-text XML files.");
+        return new HashSet<>();
+    }
+
 }

@@ -2,8 +2,9 @@
 
 package org.clyze.doop.soot.android;
 
+import java.io.IOException;
 import java.util.Set;
-import soot.jimple.infoflow.android.manifest.ProcessManifest;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 public interface AndroidManifest {
     String getApplicationName();
@@ -12,6 +13,8 @@ public interface AndroidManifest {
     Set<String> getActivities();
     Set<String> getProviders();
     Set<String> getReceivers();
+    Set<String> getCallbackMethods() throws IOException;
+    Set<PossibleLayoutControl> getUserControls() throws IOException;
 
     // Adapted from Soot's ProcessManifest.
     default String expandClassName(String className) {
@@ -38,13 +41,18 @@ public interface AndroidManifest {
         System.out.println("content providers: " + getProviders());
         System.out.println("broadcast receivers: " + getReceivers());
         System.out.println("services: " + getServices());
+        try {
+            System.out.println("callbacks: " + getCallbackMethods());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
     static AndroidManifest getAndroidManifest(String archiveLocation) {
         try {
-            return new AndroidManifestAXML(new ProcessManifest(archiveLocation));
+            return new AndroidManifestAXML(archiveLocation);
         } catch (Exception ex) {
             return new AndroidManifestXML(archiveLocation);
         }
