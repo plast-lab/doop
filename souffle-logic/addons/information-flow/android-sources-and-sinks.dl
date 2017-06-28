@@ -1,5 +1,6 @@
 #include "common-transfer-methods.dl"
 #include "android.dl"
+#include "android-taint-wrappers.dl"
 
 LeakingSinkMethodArg(?label, ?index, ?method) :-
   LeakingSinkMethod(?label, ?method),

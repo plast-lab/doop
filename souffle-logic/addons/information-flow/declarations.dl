@@ -29,6 +29,8 @@
 .decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
 .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContext(?ctx:Context, ?invocation:MethodInvocation, ?tomethod:Method)
+.decl MethodInvocationInContextInApplication(?ctx:Context, ?invocation:MethodInvocation, ?method:Method)
+
 .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
 .decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
 
@@ -43,5 +45,6 @@
 .decl BaseToRetTaintTransferMethod(?method:Method)
 .decl TaintTransferMethodInvocationInContext(?ctx:Context, ?index:number, ?invocation:MethodInvocation)
 .decl ParamTaintTransferredToBase(?param:Var, ?ctx:Context, ?base:Var)
+.decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:Context, ?param:Var)
 
 .decl TaintedVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)
