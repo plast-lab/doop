@@ -1,73 +1,61 @@
-ReifiedClass[?type] = ?heap ->
-  ReferenceType(?type), HeapAllocation(?heap).
-
-ReifiedConstructor[?constructor] = ?heap ->
-  Method(?constructor), HeapAllocation(?heap).
-
-ReifiedMethod[?method] = ?heap ->
-  Method(?method), HeapAllocation(?heap).
-
-ReifiedField[?field] = ?heap ->
-  Field(?field), HeapAllocation(?heap).
-
-
-ReifiedClass:Value[?type] = ?value ->
+ReifiedClass[?type] = ?value ->
   ReferenceType(?type), Value(?value).
 
-ReifiedConstructor:Value[?constructor] = ?value ->
+ReifiedConstructor[?constructor] = ?value ->
   Method(?constructor), Value(?value).
 
-ReifiedMethod:Value[?method] = ?value ->
+ReifiedMethod[?method] = ?value ->
   Method(?method), Value(?value).
 
-ReifiedField:Value[?field] = ?value ->
+ReifiedField[?field] = ?value ->
   Field(?field), Value(?value).
 
 
 ReflectiveValue(?value) -> Value(?value).
 
-ReflectiveAllocation[?instruction, ?type] = ?heap ->
-  Instruction(?instruction), ReferenceType(?type), HeapAllocation(?heap).
+// A new object of this type is allocated via reflection actions at the instruction
+ReflectiveAllocation[?instruction, ?type] = ?value ->
+  Instruction(?instruction), ReferenceType(?type), Value(?value).
 
 // Special objects to signify unknown results of reflective calls
-SpecialMissingForNameHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingForNameValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingNewInstanceHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingNewInstanceValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetConstructorHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetConstructorValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetMethodHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetMethodValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetMethodsHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetMethodsValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingInvokeHeapFromGetMethod[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingInvokeValueFromGetMethod[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingInvokeHeapFromGetMethods[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingInvokeValueFromGetMethods[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetFieldHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetFieldValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetFieldsHeap[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetFieldsValue[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetHeapFromGetField[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetValueFromGetField[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-SpecialMissingGetHeapFromGetFields[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+SpecialMissingGetValueFromGetFields[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
-UnknownReflectiveObject[?class, ?invocation] = ?heap ->
-  Type(?class), MethodInvocation(?invocation), HeapAllocation(?heap).
+UnknownReflectiveObject[?class, ?invocation] = ?value ->
+  Type(?class), MethodInvocation(?invocation), Value(?value).
 
-MarkerReflectiveObject[?invocation] = ?heap ->
-  MethodInvocation(?invocation), HeapAllocation(?heap).
+MarkerReflectiveObject[?invocation] = ?value ->
+  MethodInvocation(?invocation), Value(?value).
 
 
 java:lang:Object:getClass(?to, ?from) ->
@@ -154,6 +142,3 @@ java:lang:Class:getClassLoader(?invocation, ?to, ?from) ->
 java:lang:ClassLoader:getResource(?invocation, ?to, ?from) ->
   MethodInvocation(?invocation), Var(?to), Var(?from).
 
-
-//TempDelta(?invocation, ?classType, ?heapType, ?heapStr) ->
-//  MethodInvocation(?invocation), ReferenceType(?classType), Type(?heapType), string(?heapStr).

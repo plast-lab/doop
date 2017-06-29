@@ -1,0 +1,59 @@
+#define NormalHeapConsMacro(heap, type) \
+   isHeapAllocation(heap), \
+   isNormalHeap(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define StringConstantConsMacro(heap, type) \
+   isHeapAllocation(heap), \
+   isStringConstant(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define MethodHandleConstantConsMacro(heap, type) \
+   isHeapAllocation(heap) \
+   isMethodHandleConstant(heap) \
+   HeapAllocation_Type(heap, type)
+
+#define ClassHeapConsMacro(heap, type) \
+   isHeapAllocation(heap) \
+   isClassHeap(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define MockHeapConsMacro(heap, type) \
+   isHeapAllocation(heap), \
+   HeapAllocation_Type(heap, type)
+
+#define MockValueConsMacro(value, type) \
+   Value_isMock(value), \
+   isValue(value), \
+   Value_Type(value, type)
+
+#define SpecialValueConsMacro(value, type) \
+   isValue(value), \
+   Value_Type(value, type)
+
+#define PlusVar(var, method, type) \
+   isVar(var), \
+   Var_Type(var, type), \
+   Var_DeclaringMethod(var, method)
+
+#define PlusType(type) \
+   isType(type) \
+
+#define PlusMethodInvocation(invocation) \
+   isInstruction(invocation), \
+   isMethodInvocation(invocation)
+
+#define PlusVirtualMethodInvocation(ins) \
+   isInstruction(ins), \
+   isMethodInvocation(ins), \
+   isVirtualMethodInvocation_Insn(ins)
+
+#define PlusSpecialMethodInvocation(ins) \
+   isInstruction(ins), \
+   isMethodInvocation(ins), \
+   isSpecialMethodInvocation_Insn(ins)
+
+#define PlusStaticMethodInvocation(ins) \
+   isInstruction(ins), \
+   isMethodInvocation(ins), \
+   isStaticMethodInvocation_Insn(ins)

@@ -1,0 +1,3 @@
+#define NewMetricMacro(order, msg, body) \
+  Stats_Metrics(order, msg, c) :- \
+    c = count : { body }

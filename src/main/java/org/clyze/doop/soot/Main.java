@@ -6,11 +6,8 @@ import org.objectweb.asm.ClassReader;
 import soot.*;
 import soot.SourceLocator.FoundFile;
 import soot.jimple.infoflow.android.SetupApplication;
-import soot.jimple.infoflow.android.axml.AXmlNode;
-import soot.jimple.infoflow.android.manifest.ProcessManifest;
-import soot.jimple.infoflow.android.resources.ARSCFileParser;
-import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+import soot.options.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,9 +16,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
+import org.clyze.doop.soot.android.*;
+import static org.clyze.doop.soot.android.AndroidManifest.*;
+
 import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
-import static soot.options.Options.*;
 
 public class Main {
 
@@ -30,7 +29,6 @@ public class Main {
             System.err.println("error: option " + args[index] + " requires an argument");
             System.exit(1);
         }
-
         return index + 1;
     }
 
@@ -45,7 +43,7 @@ public class Main {
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
-                System.exit(0);
+                throw new DoopErrorCodeException(0);
             }
 
             for (int i = 0; i < args.length; i++) {
@@ -53,9 +51,8 @@ public class Main {
                     case "--full":
                         if (sootParameters._mode != null) {
                             System.err.println("error: duplicate mode argument");
-                            System.exit(1);
+                            throw new DoopErrorCodeException(1);
                         }
-
                         sootParameters._mode = SootParameters.Mode.FULL;
                         break;
                     case "-d":
@@ -91,10 +88,10 @@ public class Main {
                         File f = new File(folderName);
                         if (!f.exists()) {
                             System.err.println("Dependency folder " + folderName + " does not exist");
-                            System.exit(0);
+                            throw new DoopErrorCodeException(0);
                         } else if (!f.isDirectory()) {
                             System.err.println("Dependency folder " + folderName + " is not a directory");
-                            System.exit(0);
+                            throw new DoopErrorCodeException(0);
                         }
                         for (File file : f.listFiles()) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
@@ -121,11 +118,11 @@ public class Main {
                     case "--stdout":
                         sootParameters._toStdout = true;
                         break;
-                    case "--sequential":
-                        sootParameters._classicFactGen = true;
-                        break;
                     case "--noFacts":
                         sootParameters._noFacts = true;
+                        break;
+                    case "--uniqueFacts":
+                        sootParameters._uniqueFacts = true;
                         break;
                     case "-h":
                     case "--help":
@@ -141,10 +138,11 @@ public class Main {
                         System.err.println("  --deps <directory>                    Add jars in this directory to the class lookup path");
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
+                        System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
 
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
-                        System.err.println("  --generate-jimple-help                 Show help information regarding bytecode2jimple");
-                        System.exit(0);
+                        System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
+                        throw new DoopErrorCodeException(0);
                     case "--generate-jimple-help":
                         System.err.println("\nusage: [options] file");
                         System.err.println("options:");
@@ -155,11 +153,11 @@ public class Main {
                         System.err.println("  -l <archive>                          Find classes in jar/zip archive");
                         System.err.println("  -lsystem                              Find classes in default system classes");
                         System.err.println("  --android-jars <archive>              The main android library jar (for android apks). The same jar should be provided in the -l option");
-                        System.exit(0);
+                        throw new DoopErrorCodeException(0);
                     default:
                         if (args[i].charAt(0) == '-') {
                             System.err.println("error: unrecognized option: " + args[i]);
-                            System.exit(0);
+                            throw new DoopErrorCodeException(0);
                         } else {
                             sootParameters._inputs.add(args[i]);
                         }
@@ -173,65 +171,63 @@ public class Main {
 
             if (sootParameters._toStdout && !sootParameters._generateJimple) {
                 System.err.println("error: --stdout must be used with --generate-jimple");
-                System.exit(1);
+                throw new DoopErrorCodeException(1);
             }
             if (sootParameters._toStdout && sootParameters._outputDir != null) {
                 System.err.println("error: --stdout and -d options are not compatible");
-                System.exit(2);
+                throw new DoopErrorCodeException(2);
             }
             else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk inputs");
-                System.exit(3);
+                throw new DoopErrorCodeException(3);
             }
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
-
             produceFacts(sootParameters);
+        }
+        catch(DoopErrorCodeException errCode) {
+            int n = errCode.getErrorCode();
+            if (n != 0)
+                System.err.println("Exiting with code " + n);
         }
         catch(Exception exc) {
             exc.printStackTrace();
-            System.exit(1);
         }
     }
 
     private static void produceFacts(SootParameters sootParameters) throws Exception {
         SootMethod dummyMain = null;
 
-        soot.options.Options.v().set_output_dir(sootParameters._outputDir);
+        Options.v().set_output_dir(sootParameters._outputDir);
 
         if (sootParameters._ssa) {
-            soot.options.Options.v().set_via_shimple(true);
-            soot.options.Options.v().set_output_format(output_format_shimple);
+            Options.v().set_via_shimple(true);
+            Options.v().set_output_format(Options.output_format_shimple);
         } else {
-            soot.options.Options.v().set_output_format(output_format_jimple);
+            Options.v().set_output_format(Options.output_format_jimple);
         }
-        //soot.options.Options.v().set_debug_resolver(true);
         //soot.options.Options.v().set_drop_bodies_after_load(true);
-        soot.options.Options.v().set_asm_backend(true);
-        soot.options.Options.v().setPhaseOption("jb", "use-original-names:true");
-        soot.options.Options.v().setPhaseOption("jb.lp", "enabled:false");
-        soot.options.Options.v().set_keep_line_number(true);
+        Options.v().set_keep_line_number(true);
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
         Set<String> classesInApplicationJar = new HashSet<>();
-        List<AXmlNode> appServices = null;
-        List<AXmlNode> appActivities = null;
-        List<AXmlNode> appContentProviders = null;
-        List<AXmlNode> appBroadcastReceivers = null;
-        Map<String, Set<String>> appCallbackMethods = null;
-        Map<String, Set<PossibleLayoutControl>> appUserControls = null;
+        Set<String> appServices = null;
+        Set<String> appActivities = null;
+        Set<String> appContentProviders = null;
+        Set<String> appBroadcastReceivers = null;
+        Set<String> appCallbackMethods = null;
+        Set<PossibleLayoutControl> appUserControls = null;
         File apk = null;
 
         if (sootParameters._android) {
             String apkLocation = sootParameters._inputs.get(0);
             apk = new File(apkLocation);
             SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
-            //soot.options.Options.v().set_debug(true);
-            soot.options.Options.v().set_process_multiple_dex(true);
-            soot.options.Options.v().set_src_prec(src_prec_apk_class_jimple);
+            Options.v().set_process_multiple_dex(true);
+            Options.v().set_src_prec(Options.src_prec_apk);
 
             if (sootParameters._runFlowdroid) {
                 app.getConfig().setCallbackAnalyzer(Fast);
@@ -242,38 +238,29 @@ public class Main {
                     throw new RuntimeException("Dummy main null");
                 }
             } else {
-
-                ProcessManifest processMan = new ProcessManifest(apkLocation);
+                AndroidManifest processMan = getAndroidManifest(apkLocation);
                 String appPackageName = processMan.getPackageName();
-                ARSCFileParser resParser = new ARSCFileParser();
-                resParser.parse(apkLocation);
-                List<ARSCFileParser.ResPackage> resourcePackages = resParser.getPackages();
-                DirectLayoutFileParser lfp = new DirectLayoutFileParser(appPackageName, resParser);
-                lfp.registerLayoutFilesDirect(apkLocation);
-                lfp.parseLayoutFileDirect(apkLocation);
 
                 // now collect the facts we need
-                Set<String> appEntrypoints = processMan.getEntryPointClasses();
                 appServices = processMan.getServices();
                 appActivities = processMan.getActivities();
                 appContentProviders = processMan.getProviders();
                 appBroadcastReceivers = processMan.getReceivers();
-                appCallbackMethods = lfp.getCallbackMethods();
-                appUserControls = lfp.getUserControls();
+                appCallbackMethods = processMan.getCallbackMethods();
+                appUserControls = processMan.getUserControls();
 
 //            System.out.println("All entry points:\n" + appEntrypoints);
 //            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
 //            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
+                processMan.printManifestInfo();
             }
 
         } else {
-            soot.options.Options.v().set_src_prec(src_prec_java);
+            Options.v().set_src_prec(Options.src_prec_class);
 
-            JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0)));
             JarEntry entry;
-            JarFile jarFile = new JarFile(sootParameters._inputs.get(0));
 
-            try {
+            try (JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0))); JarFile jarFile = new JarFile(sootParameters._inputs.get(0))) {
                 /* List all JAR entries */
                 while ((entry = jin.getNextJarEntry()) != null) {
                     /* Skip directories */
@@ -293,28 +280,36 @@ public class Main {
                         propertyProvider.addProperties((new FoundFile(sootParameters._inputs.get(0), entry.getName())));
                     }
                 }
-            } finally {
-                jarFile.close();
-                jin.close();
             }
         }
 
         Scene scene = Scene.v();
-        scene.setSootClassPath(sootParameters._inputs.get(0));
-        for (int i = 0; i < sootParameters._libraries.size(); i++) {
-            scene.extendSootClassPath(sootParameters._libraries.get(i));
+        scene.setSootClassPath("");
+        for (String input : sootParameters._inputs) {
+            if (input.endsWith(".jar") || input.endsWith(".jar")) {
+                System.out.println("Adding archive: " + input);
+            }
+            else {
+                System.out.println("Adding file: " + input);
+            }
+            scene.extendSootClassPath(input);
+        }
+
+        for (String lib : sootParameters._libraries) {
+            System.out.println("Adding archive for resolving: " + lib);
+            scene.extendSootClassPath(lib);
         }
 
         if (sootParameters._main != null) {
-            soot.options.Options.v().set_main_class(sootParameters._main);
+            Options.v().set_main_class(sootParameters._main);
         }
 
         if (sootParameters._mode == SootParameters.Mode.FULL) {
-            soot.options.Options.v().set_full_resolver(true);
+            Options.v().set_full_resolver(true);
         }
 
         if (sootParameters._allowPhantom) {
-            soot.options.Options.v().set_allow_phantom_refs(true);
+            Options.v().set_allow_phantom_refs(true);
         }
 
         if (sootParameters._android) {
@@ -323,7 +318,7 @@ public class Main {
                 classes.add(c);
             }
 
-            System.out.println("Classes found  in apk: " + classesOfDex(apk).size());
+            System.out.println("Classes found in apk: " + classesOfDex(apk).size());
         } else {
             for (String className : classesInApplicationJar) {
                 SootClass c = scene.loadClass(className, SootClass.BODIES);
@@ -374,13 +369,13 @@ public class Main {
 
         System.out.println("Total classes in Scene: " + classes.size());
         try {
-            soot.PackManager.v().retrieveAllSceneClassesBodies();
+            PackManager.v().retrieveAllSceneClassesBodies();
             System.out.println("Retrieved all bodies");
         }
         catch (Exception ex) {
             System.out.println("Not all bodies retrieved");
         }
-        Database db = new Database(new File(sootParameters._outputDir));
+        Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa, sootParameters._generateJimple);
         Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple);
@@ -406,31 +401,44 @@ public class Main {
                 db.close();
                 return;
             } else {
-                for (AXmlNode node : appActivities) {
-                    writer.writeActivity(node.getAttribute("name").getValue().toString());
+                String apkLocation = sootParameters._inputs.get(0);
+                AndroidManifest processMan = getAndroidManifest(apkLocation);
+
+                if (processMan.getApplicationName() != null)
+                    writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
+                else {
+                    // If no application name, use Android's Application:
+                    // "The fully qualified name of an Application subclass
+                    // implemented for the application. ... In the absence of a
+                    // subclass, Android uses an instance of the base
+                    // Application class."
+                    // https://developer.android.com/guide/topics/manifest/application-element.html
+                    writer.writeApplication("android.app.Application");
+                }
+                for (String s : appActivities) {
+                    writer.writeActivity(processMan.expandClassName(s));
                 }
 
-                for (AXmlNode node : appServices) {
-                    writer.writeService(node.getAttribute("name").getValue().toString());
+                for (String s : appServices) {
+                    writer.writeService(processMan.expandClassName(s));
                 }
 
-                for (AXmlNode node : appContentProviders) {
-                    writer.writeContentProvider(node.getAttribute("name").getValue().toString());
+                for (String s : appContentProviders) {
+                    writer.writeContentProvider(processMan.expandClassName(s));
                 }
 
-                for (AXmlNode node : appBroadcastReceivers) {
-                    writer.writeBroadcastReceiver(node.getAttribute("name").getValue().toString());
+                for (String s : appBroadcastReceivers) {
+                    writer.writeBroadcastReceiver(processMan.expandClassName(s));
                 }
 
-                for (Set<String> callBackMethods : appCallbackMethods.values()) {
-                    for (String callbackMethod : callBackMethods) {
-                        writer.writeCallbackMethod(callbackMethod);
-                    }
+                for (String callbackMethod : appCallbackMethods) {
+                    writer.writeCallbackMethod(callbackMethod);
                 }
 
-                for (Set<PossibleLayoutControl> possibleLayoutControls : appUserControls.values()) {
-                    for (PossibleLayoutControl possibleLayoutControl : possibleLayoutControls) {
-                        writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                for (PossibleLayoutControl possibleLayoutControl : appUserControls) {
+                    writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+                    if (possibleLayoutControl.isSensitive()) {
+                        writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
                     }
                 }
             }
@@ -447,7 +455,7 @@ public class Main {
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {
-        if(SourceLocator.v().getClassSource(className) != null) {
+        if( SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
         }
     }

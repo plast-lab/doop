@@ -1,0 +1,92 @@
+MethodWithReferenceArguments(?method) <-
+  FormalParam[_, ?method] = ?formal,
+  Var:Type[?formal] = ?formalType,
+  ReferenceType(?formalType).
+
+StaticMethodWithNoReferenceArguments(?method) <-
+  Method(?method),
+  !MethodWithReferenceArguments(?method),
+  Method:Modifier("static", ?method).
+
+UnambiguousInvocation(?invo) ->
+   MethodInvocation(?invo).
+
+ImpreciseInvocation(?invo) <-
+   StaticMethodInvocation:Insn(?invo),
+   StaticMethodWithNoReferenceArguments(MethodInvocation:Method[?invo]).
+
+
+// TODO: retest
+//PreciseInvocation(?invo) <-
+//   StaticMethodInvocation:Insn(?invo),
+//   InOutFlowMethod(_, MethodInvocation:Method[?invo]).
+
+
+
+
+ImpreciseInvocation(?invo) -> MethodInvocation(?invo).
+
+ImpreciseInvocationAndType(?type, ?invo) -> Type(?type), MethodInvocation(?invo).
+
+// We should discard the null context element rather than propagate it
+UnambiguousInvocationAndType(Type:null[], ?invo) <-
+   VirtualMethodInvocation:Insn(?invo).
+
+
+// Precise invocations on object create
+PossiblyInterestingMethod(?inmethod) <-
+  AssignHeapAllocation(?heap, _, ?inmethod),
+  TypeToSCCId[HeapAllocation:Type[?heap]] = ?sccIdOfHeap,
+  TypeToSCCId[Method:DeclaringType[?inmethod]] = ?sccIdOfMethod,
+  SCCKnowsAboutOther(?sccIdOfMethod, ?sccIdOfHeap),  
+  ?sccIdOfHeap != ?sccIdOfMethod.
+
+InterestingMethod(?method) <-
+   PossiblyInterestingMethod(?method).
+
+_OptResolveInvocation(?type, ?invo, ?tomethod) <-
+  ResolveInvocation[?type, ?invo] = ?tomethod.
+  
+PreciseInvocationAndType(?type, ?invo) <-
+  _OptResolveInvocation(?type, ?invo, ?tomethod),
+  InterestingMethod(?tomethod).
+
+PreciseInvocation(?invo) <-
+   MethodInvocation:Method[?invo] = ?tomethod,
+   InterestingMethod(?tomethod).
+
+// Precise invocations on calls
+/*
+PreciseInvocation(?invo) <-
+   Instruction:DeclaringType[?invo] = ?inType,
+   MethodInvocation:ToType[?invo] = ?toType,
+   SCCKnowsAboutOther(TypeToSCCId[?inType], TypeToSCCId[?toType]).
+
+PreciseInvocationAndType(?valueType, ?invo) <-
+   Instruction:DeclaringType[?invo] = ?invoType,
+   ResolveInvocation[?valueType, ?invo] = _,
+   SCCKnowsAboutOther(TypeToSCCId[?invoType], TypeToSCCId[?valueType]).
+*/
+
+ImpreciseInvocationAndType(?valueType, ?invo) <-
+   Instruction:DeclaringType[?invo] = ?invoType,
+   ResolveInvocation[?valueType, ?invo] = ?tomethod,
+   !SCCKnowsAboutOther(TypeToSCCId[?invoType], TypeToSCCId[Method:DeclaringType[?tomethod]]).
+
+
+//TODO change precedence
+ImpreciseInvocation(?invo) <-
+   Instruction:DeclaringType[?invo] = ?inType,
+   MethodInvocation:ToType[?invo] = ?toType,
+   !SCCKnowsAboutOther(TypeToSCCId[?inType], TypeToSCCId[?toType]).   
+
+
+
+PreciseInvocation(?invo) -> MethodInvocation(?invo).
+
+//PreciseInvocation(?invo) <- SpecialMethodInvocation:Insn(?invo).
+
+
+//PreciseInvocationAndType(?type, ?invo) <-
+//   ResolveInvocation[?type, ?invo] = _.
+

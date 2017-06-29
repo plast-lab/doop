@@ -1,15 +1,16 @@
 #include "class-initialization-declarations.logic"
-#include "exceptions-declarations.logic"
 #include "implicit-reachable-declarations.logic"
 #include "string-constants-declarations.logic"
 #include "threads-declarations.logic"
 
-#if defined(ENABLE_REFLECTION)
+#if defined(REFLECTION)
 #include "reflection/declarations.logic" 
 #endif
 
-FakeInvocation:RegisterFinalize[?heap] = ?invo ->
+FakeInvocation:RegisterFinalize0[?heap] = ?invo ->
    HeapAllocation(?heap), MethodInvocation(?invo).
+FakeInvocation:RegisterFinalize[?value] = ?invo ->
+   Value(?value), MethodInvocation(?invo).
 
 //-----------------------------------------------------------------------------
 // [Value - artificially created]
@@ -21,13 +22,20 @@ lang:physical:storageModel[`Value] = "ScalableSparse".
 lang:physical:capacity[`Value] = 4194304.
 
 Value:Heap:Cons[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
+Value:Num:Cons[?const] = ?value -> NumConstant(?const), Value(?value).
 Value:Mock:Cons[?id]   = ?value -> string(?id), Value(?value).
+Value:Special:Cons[?id]   = ?value -> string(?id), Value(?value).
 
 lang:constructor(`Value:Heap:Cons).
+lang:constructor(`Value:Num:Cons).
 lang:constructor(`Value:Mock:Cons).
+lang:constructor(`Value:Special:Cons).
 
 Value:Heap[?value] = ?heap -> Value(?value), HeapAllocation(?heap).
 Value:byHeap[?heap] = ?value -> HeapAllocation(?heap), Value(?value).
+
+Value:Num[?value] = ?const -> Value(?value), NumConstant(?const).
+Value:byNum[?const] = ?value -> NumConstant(?const), Value(?value).
 
 Value:Id[?value] = ?id -> Value(?value), string(?id).
 Value:byId[?id] = ?value -> string(?id), Value(?value).
@@ -35,8 +43,21 @@ Value:byId[?id] = ?value -> string(?id), Value(?value).
 Value:isHeap(?value) -> Value(?value).
 Value:isNonHeap(?value) -> Value(?value).
 
+// Special value objects are just artificial ones that we use to find where the
+// result of a reflective call can flow to. We don't want to track them
+// through the heap.
+NotSpecialObject(?value) -> Value(?value).
+
 Value:Type[?value] = ?type -> Value(?value), Type(?type).
 Value:DeclaringType[?value] = ?type -> Value(?value), Type(?type).
 
 // [Miscellaneous]
 Value:Null[] = ?null -> Value(?null).
+
+//-----------------------------------------------------------------------------
+// [Proxy classes and methods - artificially created]
+//-----------------------------------------------------------------------------
+
+ProxyClass(?t) -> ClassType(?t).
+lang:entity(`ProxyClass).
+lang:physical:capacity[`ProxyClass] = 131072.

@@ -9,6 +9,7 @@ import java.io.Writer;
 
 public enum PredicateFile
 {
+    ANDROID_APPLICATION("AndroidApplication"),
     ANDROID_ENTRY_POINT("AndroidEntryPoint"),
     ACTIVITY("Activity"),
     SERVICE("Service"),
@@ -16,6 +17,7 @@ public enum PredicateFile
     BROADCAST_RECEIVER("BroadcastReceiver"),
     CALLBACK_METHOD("CallbackMethod"),
     LAYOUT_CONTROL("LayoutControl"),
+    SENSITIVE_LAYOUT_CONTROL("SensitiveLayoutControl"),
     FIELD_INITIAL_VALUE("FieldInitialValue"),
     CLASS_TYPE("ClassType"),
     CLASS_MODIFIER("ClassModifier"),
@@ -23,6 +25,7 @@ public enum PredicateFile
     INTERFACE_TYPE("InterfaceType"),
     COMPONENT_TYPE("ComponentType"),
     ACTUAL_PARAMETER("ActualParam"),
+    BOOTSTRAP_PARAMETER("BootstrapParam"),
     DIRECT_SUPER_IFACE("DirectSuperinterface"),
     DIRECT_SUPER_CLASS("DirectSuperclass"),
     FIELD_MODIFIER("Field-Modifier"),
@@ -48,6 +51,7 @@ public enum PredicateFile
     NORMAL_HEAP("NormalHeap"),
     EMPTY_ARRAY("EmptyArray"),
     CLASS_HEAP("ClassHeap"),
+    METHOD_HANDLE_CONSTANT("MethodHandleConstant"),
     STRING_CONST("StringConstant"),
     STRING_RAW("StringRaw"),
     FIELD_SIGNATURE("Field"),
@@ -62,6 +66,7 @@ public enum PredicateFile
     SPECIAL_METHOD_INV("SpecialMethodInvocation"),
     IF_VAR("IfVar"),
     VIRTUAL_METHOD_INV("VirtualMethodInvocation"),
+    DYNAMIC_METHOD_INV("DynamicMethodInvocation"),
     THROW("Throw"),
     THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),

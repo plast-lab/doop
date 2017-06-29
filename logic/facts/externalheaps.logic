@@ -1,0 +1,10 @@
+
+ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap) ->
+   string(?representation), HeapAllocation(?heap).
+
+
+MockHeapConsMacro((?inMethod + ?type), ?type, ?heap),
+ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap) <-
+//  !Method:Id[_] = ?inMethod,
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod).
+

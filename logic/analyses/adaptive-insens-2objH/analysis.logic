@@ -1,0 +1,425 @@
+#ifndef IMPORT_PARTITIONS
+ #include "../../main/classes-scc.logic"
+#endif
+#include "../../main/in-out-flow.logic"
+
+EmptyContext[] = ?ctx -> Context(?ctx).
+lang:constructor(`EmptyContext).
+
+// First element is most important
+ContextFromOne[?comp] = ?ctx -> Context(?ctx), ContextComponent(?comp).
+lang:constructor(`ContextFromOne).
+FirstFromContext[?ctx] = ?comp <-
+  ContextFromOne[?comp] = ?ctx.
+
+ContextFromTwo[?comp1, ?comp2] = ?ctx -> Context(?ctx), ContextComponent(?comp1), ContextComponent(?comp2).
+lang:constructor(`ContextFromTwo).
+FirstFromContext[?ctx] = ?comp1,
+SecondFromContext[?ctx] = ?comp2 <-
+  ContextFromTwo[?comp1, ?comp2] = ?ctx.
+
+/*
+///// RESTRICT TO 2 MAX!
+ContextFromThree[?comp1, ?comp2, ?comp3] = ?ctx ->
+  Context(?ctx), ContextComponent(?comp1), ContextComponent(?comp2), ContextComponent(?comp3).
+lang:constructor(`ContextFromThree).
+FirstFromContext[?ctx] = ?comp1,
+SecondFromContext[?ctx] = ?comp2,
+ThirdFromContext[?ctx] = ?comp3 <-
+  ContextFromThree[?comp1, ?comp2, ?comp3] = ?ctx.
+*/
+
+/*
+//// Used to create an HContext per Context but this yields HContexts of length +1
+HContextFromContext[?ctx] = ?hctx ->
+  HContext(?hctx), Context(?ctx).
+lang:constructor(`HContextFromContext).
+
+FirstFromHContext[?hctx] = ?comp1 <-
+  HContextFromContext[?ctx] = ?hctx,
+  FirstFromContext[?ctx] = ?comp1.
+SecondFromHContext[?hctx] = ?comp2 <-
+  HContextFromContext[?ctx] = ?hctx,
+  SecondFromContext[?ctx] = ?comp2.
+*/
+
+EmptyHContext[] = ?hctx -> HContext(?hctx).
+lang:constructor(`EmptyHContext).
+
+// First element is most important
+HContextFromOne[?comp] = ?hctx -> HContext(?hctx), ContextComponent(?comp).
+lang:constructor(`HContextFromOne).
+FirstFromHContext[?hctx] = ?comp <-
+  HContextFromOne[?comp] = ?hctx.
+
+/*
+HContextFromTwo[?comp1, ?comp2] = ?hctx -> HContext(?hctx), ContextComponent(?comp1), ContextComponent(?comp2).
+lang:constructor(`HContextFromTwo).
+FirstFromHContext[?hctx] = ?comp1,
+SecondFromHContext[?hctx] = ?comp2 <-
+  HContextFromTwo[?comp1, ?comp2] = ?hctx.
+*/
+
+ContextLength[?ctx] = ?len -> Context(?ctx), int[32](?len).
+HContextLength[?hctx] = ?len -> HContext(?hctx), int[32](?len).
+ContextLength[?ctx] = 0 <-
+  EmptyContext[] = ?ctx.
+ContextLength[?ctx] = 1 <-
+  ContextFromOne[_] = ?ctx.
+ContextLength[?ctx] = 2 <-
+  ContextFromTwo[_, _] = ?ctx.
+HContextLength[?hctx] = 0 <-
+  EmptyHContext[] = ?hctx.
+HContextLength[?hctx] = 1 <-
+  HContextFromOne[_] = ?hctx.
+/*
+HContextLength[?hctx] = 2 <-
+  HContextFromTwo[_, _] = ?hctx.
+*/
+/*
+///// RESTRICT TO 2 MAX!
+ContextLength[?ctx] = 3 <-
+  ContextFromThree[_, _, _] = ?ctx.
+*/
+/*
+HContextLength[?hctx] = ?len <-
+  HContextFromContext[?ctx] = ?hctx,
+  ContextLength[?ctx] = ?len.
+*/
+
+
+// General idea:
+//  -HContexts are however precise the current calling context allows
+//  -At "interesting points":
+//     Calling contexts get as precise as they can be, based on hcontext,value of receiver, up to limit
+//  -At "uninteresting points":
+//     Calling contexts are updated but keep the same overall length as they had in the caller
+
+Context(?calleeCtx), EmptyContext[] = ?calleeCtx,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToResetContext(?invo, ?value).
+
+Tempo1(?calleeCtx),
+Context(?calleeCtx), ContextFromOne[?valueComp] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToIncreaseContext(?invo, ?value),
+  HContextLength[?hctx] = 0.
+
+Context(?calleeCtx), ContextFromTwo[?valueComp, FirstFromHContext[?hctx]] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToIncreaseContext(?invo, ?value),
+  HContextLength[?hctx] >= 1.
+
+/*
+///// RESTRICT TO 2 MAX!
+Tempo2(?calleeCtx),
+Context(?calleeCtx), ContextFromTwo[?valueComp, FirstFromHContext[?hctx]] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToIncreaseContext(?invo, ?value),
+  HContextLength[?hctx] = 1.
+
+// Doesn't get longer than three
+Tempo3(?calleeCtx),
+Context(?calleeCtx),
+ContextFromThree[?valueComp, FirstFromHContext[?hctx], SecondFromHContext[?hctx]] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToIncreaseContext(?invo, ?value),
+  HContextLength[?hctx] > 1.
+*/
+
+Tempo4(?calleeCtx),
+Context(?calleeCtx), EmptyContext[] = ?calleeCtx,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToUpdateContext(?invo, ?value),
+  ContextLength[?callerCtx] = 0.
+
+Tempo5(?calleeCtx),
+Context(?calleeCtx), ContextFromOne[?valueComp] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToUpdateContext(?invo, ?value),
+  (ContextLength[?callerCtx] = 1;
+   (HContextLength[?hctx] = 0, ContextLength[?callerCtx] > 1)).
+  // if we either just want a 1-deep context, or that's the best we can offer, do that
+
+Context(?calleeCtx),
+ContextFromTwo[?valueComp, FirstFromHContext[?hctx]] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToUpdateContext(?invo, ?value),
+  ContextLength[?callerCtx] >= 2,
+  HContextLength[?hctx] >= 1.
+
+/*
+///// RESTRICT TO 2 MAX!
+Tempo6(?calleeCtx),
+Context(?calleeCtx),
+ContextFromTwo[?valueComp, FirstFromHContext[?hctx]] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToUpdateContext(?invo, ?value),
+  ((ContextLength[?callerCtx] = 2, HContextLength[?hctx] >= 1);
+   (ContextLength[?callerCtx] = 3, HContextLength[?hctx] = 1)).
+  // if we want 2-deep, or we want 3, but can only get two
+
+Tempo7(?calleeCtx),
+Context(?calleeCtx),
+ContextFromThree[?valueComp, FirstFromHContext[?hctx], SecondFromHContext[?hctx]] = ?calleeCtx,
+ContextComponent(?valueComp), ContextComponent:Value[?value] = ?valueComp,
+CachedMerge[?callerCtx, ?hctx, ?invo, ?value] = ?calleeCtx <-
+  MergeBasis(?callerCtx, ?hctx, ?invo, ?value),
+  PointToUpdateContext(?invo, ?value),
+  ContextLength[?callerCtx] = 3,
+  HContextLength[?hctx] >= 2.
+*/
+
+/// Now the same for static. Use invo when possible
+Context(?calleeCtx), EmptyContext[] = ?calleeCtx,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToResetContext(?invo).
+
+Tempo8(?calleeCtx),
+Context(?calleeCtx), ContextFromOne[?invoComp] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToIncreaseContext(?invo),
+  ContextLength[?callerCtx] = 0.
+
+Tempo9(?calleeCtx),
+Context(?calleeCtx), ContextFromTwo[?invoComp, FirstFromContext[?callerCtx]] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToIncreaseContext(?invo),
+  ContextLength[?callerCtx] >= 1.
+
+/*
+///// RESTRICT TO 2 MAX!
+Tempo9(?calleeCtx),
+Context(?calleeCtx), ContextFromTwo[?invoComp, FirstFromContext[?callerCtx]] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToIncreaseContext(?invo),
+  ContextLength[?callerCtx] = 1.
+
+Tempo10(?calleeCtx),
+Context(?calleeCtx),
+ContextFromThree[?invoComp, FirstFromContext[?callerCtx], SecondFromContext[?callerCtx]] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToIncreaseContext(?invo),
+  ContextLength[?callerCtx] >= 2.
+*/
+
+Tempo11(?calleeCtx),
+Context(?calleeCtx), EmptyContext[] = ?calleeCtx,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToUpdateContext(?invo),
+  ContextLength[?callerCtx] = 0.
+
+Tempo12(?calleeCtx),
+Context(?calleeCtx),
+ContextFromOne[?invoComp] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToUpdateContext(?invo),
+  ContextLength[?callerCtx] = 1.
+
+Tempo13(?calleeCtx),
+Context(?calleeCtx),
+ContextFromTwo[?invoComp, FirstFromContext[?callerCtx]] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToUpdateContext(?invo),
+  ContextLength[?callerCtx] >= 2.
+
+/*
+///// RESTRICT TO 2 MAX!
+Tempo13(?calleeCtx),
+Context(?calleeCtx),
+ContextFromTwo[?invoComp, FirstFromContext[?callerCtx]] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToUpdateContext(?invo),
+  ContextLength[?callerCtx] = 2.
+
+Tempo14(?calleeCtx),
+Context(?calleeCtx),
+ContextFromThree[?invoComp, FirstFromContext[?callerCtx], SecondFromContext[?callerCtx]] = ?calleeCtx,
+ContextComponent(?invoComp), ContextComponent:MethodInvocation[?invo] = ?invoComp,
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  InvocationToUpdateContext(?invo),
+  ContextLength[?callerCtx] = 3.
+*/
+
+HContext(?hctx), 
+HContextFromOne[FirstFromContext[?ctx]] = ?hctx,
+CachedRecord[?ctx, ?value] = ?hctx <-
+   RecordBasis(?ctx, ?var, ?value),
+   ?var = ?var, // no warning
+   ContextLength[?ctx] >= 1.
+
+HContext(?hctx), 
+EmptyHContext[] = ?hctx,
+CachedRecord[?ctx, ?value] = ?hctx <-
+   RecordBasis(?ctx, ?var, ?value),
+   ?var = ?var, // no warning
+   ContextLength[?ctx] = 0.
+
+
+///// ===========================================
+// Base concepts: allocation sites or methods that require more context sensitivity.
+// Currently use in-out flow and SCC info.
+
+// Final output: derivative concepts
+
+// Virtual
+PointToIncreaseContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  VirtualMethodInvocation:Insn(?invo),
+  Value:Type[?value] = ?valuetype,
+  InterestingInvocationAndType(?valuetype, ?invo).
+
+PointToResetContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  VirtualMethodInvocation:Insn(?invo),
+  Value:Type[?value] = ?valuetype,
+  UninterestingInvocationAndType(?valuetype, ?invo).
+
+PointToUpdateContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  VirtualMethodInvocation:Insn(?invo),
+  Value:Type[?value] = ?valuetype,
+  !InterestingInvocationAndType(?valuetype, ?invo),
+  !UninterestingInvocationAndType(?valuetype, ?invo).
+
+// Special
+PointToIncreaseContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  SpecialMethodInvocation:Insn(?invo),
+  InterestingInvocation(?invo).
+
+PointToResetContext(?invo, ?value) <-
+  MergeBasis(_, _, ?invo, ?value),
+  SpecialMethodInvocation:Insn(?invo),
+  UninterestingInvocation(?invo).
+
+PointToUpdateContext(?invo, ?value) <-  
+  MergeBasis(_, _, ?invo, ?value),
+  SpecialMethodInvocation:Insn(?invo),
+  !InterestingInvocation(?invo),
+  !UninterestingInvocation(?invo).
+
+// Static
+InvocationToIncreaseContext(?invo) <-
+  StaticMethodInvocation:Insn(?invo),
+  InterestingInvocation(?invo).
+
+InvocationToResetContext(?invo) <-
+  StaticMethodInvocation:Insn(?invo),
+  UninterestingInvocation(?invo).
+
+InvocationToUpdateContext(?invo) <-
+  StaticMethodInvocation:Insn(?invo),
+  !InterestingInvocation(?invo),
+  !UninterestingInvocation(?invo).
+
+/// More primitive concepts
+// TODO: also add methods allocating objects that escape, based on quick analysis?
+
+MethodWithReferenceArguments(?method) <-
+  FormalParam[_, ?method] = ?formal,
+  Var:Type[?formal] = ?formalType,
+  ReferenceType(?formalType).
+
+StaticMethodWithNoReferenceArguments(?method) <-
+  Method(?method),
+  !MethodWithReferenceArguments(?method),
+  Method:Modifier("static", ?method).
+
+// This is probably not too useful. Certainly the method can still
+// benefit from context sensitivity, due to operations over "this".
+InstanceMethodWithNoReferenceArguments(?method) <-
+  Method(?method),
+  !MethodWithReferenceArguments(?method),
+  !Method:Modifier("static", ?method).
+
+UninterestingMethod(?method) <-
+  StaticMethodWithNoReferenceArguments(?method).
+  
+InterestingMethod(?method) <-
+  InOutFlowMethod(_, ?method),
+  !UninterestingMethod(?method).
+
+_OptResolveInvocation(?type, ?invo, ?tomethod) <-
+  ResolveInvocation[?type, ?invo] = ?tomethod.
+  
+InterestingInvocationAndType(?type, ?invo) <-
+  _OptResolveInvocation(?type, ?invo, ?tomethod),
+  InterestingMethod(?tomethod).
+
+UninterestingInvocationAndType(?type, ?invo) <-
+  _OptResolveInvocation(?type, ?invo, ?tomethod),
+  UninterestingMethod(?tomethod).
+
+InterestingInvocation(?invo) <-
+  (SpecialMethodInvocation:Insn(?invo); StaticMethodInvocation:Insn(?invo)),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  InterestingMethod(?tomethod).
+
+UninterestingInvocation(?invo) <-
+  (SpecialMethodInvocation:Insn(?invo); StaticMethodInvocation:Insn(?invo)),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  UninterestingMethod(?tomethod).
+
+// E.g., app code is allocating a library object. Should keep more heap context,
+// so that any future calls on this object are not confused. To do this, we should
+// have maintained calling context in the surrounding method.
+PossiblyInterestingMethod(?inmethod),
+InterestingAllocation(?heap) <-
+  AssignHeapAllocation(?heap, _, ?inmethod),
+  TypeToPartitionId[HeapAllocation:Type[?heap]] = ?sccIdOfHeap,
+  TypeToPartitionId[Method:DeclaringType[?inmethod]] = ?sccIdOfMethod,
+  ?sccIdOfHeap != ?sccIdOfMethod.
+
+InterestingMethod(?method) <-
+  PossiblyInterestingMethod(?method),
+  !UninterestingMethod(?method).
+
+// Convenience mappings from all usual concepts (invo-sites, contexts, methods) to SCC
+PartitionForInvocation[?invo] = ?sccId <-
+  Instruction:Method[?invo] = ?inmethod,
+  Method:DeclaringType[?inmethod] = ?inClass,
+  TypeToPartitionId[?inClass] = ?sccId.
+
+PartitionForMethod[?method] = ?sccId <-
+  Method:DeclaringType[?method] = ?inClass,
+  TypeToPartitionId[?inClass] = ?sccId.
+   
+PartitionForValue[?value] = ?sccId <-
+  Value:DeclaringType[?value] = ?type,
+  TypeToPartitionId[?type] = ?sccId.
+
+

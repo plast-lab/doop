@@ -2,6 +2,7 @@ package org.clyze.doop.soot;
 
 import soot.Value;
 import soot.jimple.*;
+import soot.options.Options;
 
 class IrrelevantStmtSwitch implements StmtSwitch
 {
@@ -11,14 +12,26 @@ class IrrelevantStmtSwitch implements StmtSwitch
     {
         Value right = stmt.getRightOp();
 
+        // An assignment involving invokedynamic is irrelevant if the
+        // bootstrap method is declared in a phantom class
+        if (right instanceof DynamicInvokeExpr) {
+            relevant = !(Options.v().allow_phantom_refs()
+                    && (right instanceof DynamicInvokeExpr)
+                    && ((DynamicInvokeExpr) right).getBootstrapMethodRef()
+                         .declaringClass()
+                         .isPhantom());
+        }
+
         // An assignment instruction is irrelevant if the right
         // hand side is an invoke expression of a method of a
         // phantom class
-        relevant = !(soot.options.Options.v().allow_phantom_refs()
+        else {
+            relevant = !(Options.v().allow_phantom_refs()
                      && (right instanceof InvokeExpr)
                      && ((InvokeExpr) right).getMethodRef()
-                                            .declaringClass()
-                                            .isPhantom());
+                         .declaringClass()
+                         .isPhantom());
+        }
     }
 
     public void caseBreakpointStmt(BreakpointStmt stmt)
@@ -51,12 +64,8 @@ class IrrelevantStmtSwitch implements StmtSwitch
         relevant = true;
     }
 
-    public void caseInvokeStmt(InvokeStmt stmt)
-    {
-        if (soot.options.Options.v().allow_phantom_refs())
-            relevant = !stmt.getInvokeExpr().getMethodRef().declaringClass().isPhantom();
-        else
-            relevant = true;
+    public void caseInvokeStmt(InvokeStmt stmt) {
+        relevant = !Options.v().allow_phantom_refs() || !stmt.getInvokeExpr().getMethodRef().declaringClass().isPhantom();
     }
 
     public void caseLookupSwitchStmt(LookupSwitchStmt stmt)

@@ -1,24 +1,29 @@
 /**
  * Definitions of sources and sinks
  */
-TaintSourceMethod(?method) -> Method(?method).
 
-LeakingSinkMethod(?index, ?method) -> Method(?method), int[32](?index).
+lang:entity(`InformationLabel).
 
-LeakingSinkVariable(?tomethod, ?ctx, ?var) ->
-  MethodInvocation(?tomethod), Var(?var), Context(?ctx).
+InformationLabel(?x), InformationLabel:Id(?x:?id) -> string(?id).
 
-LeakingTaintedInformation(?ctx, ?tomethod, ?hctx, ?value)->
-  Context(?ctx), MethodInvocation(?tomethod),
-  HContext(?hctx), string(?value).
+TaintSourceMethod(?label, ?method) -> Method(?method), InformationLabel(?label).
+
+LeakingSinkMethodArg(?label, ?index, ?method) ->
+   InformationLabel(?label), Method(?method), ParamIndex(?index).
+
+LeakingSinkVariable(?label, ?tomethod, ?ctx, ?var) ->
+  InformationLabel(?label), MethodInvocation(?tomethod), Var(?var), Context(?ctx).
+
+LeakingTaintedInformation(?fromLabel, ?toLabel, ?ctx, ?invocation, ?value) ->
+   InformationLabel(?fromLabel), InformationLabel(?toLabel),
+   Context(?ctx), MethodInvocation(?invocation), string(?value).
 
 VarDef(?var, ?inst) -> Instruction(?inst), Var(?var).
 VarUse(?var, ?inst) -> Instruction(?inst), Var(?var).
 
 SanitizationMethod(?method) -> Method(?method).
 
-SanitizedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
-
-TaintedContextValue(?hctx, ?value) -> HContext(?hctx), Value(?value).
+SanitizedValue(?value) -> Value(?value).
 
 TaintedValue(?value) -> Value(?value).
+

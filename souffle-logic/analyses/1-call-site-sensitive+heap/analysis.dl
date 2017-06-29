@@ -1,0 +1,12 @@
+// Context-sensitive pointer analysis with context of 1 call site and a
+// context-sensnitive heap abstraction of 1 call site.
+
+// In this analysis, both the real context and the real heap context are
+// MethodInvocations.
+.type Context  = [ invocation:MethodInvocation ]
+.type HContext = [ invocation:MethodInvocation ]
+
+
+.decl StartupInvocation(?invocation:MethodInvocation)
+
+StartupInvocation("<<jvm-startup-context>>").

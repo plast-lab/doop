@@ -1,0 +1,60 @@
+#include "common-transfer-methods.dl"
+
+#define TaintSourceMethodPattern(pattern) \
+  TaintSourceMethod("default", method) :- \
+    isMethod(method), \
+    match(pattern, method)
+
+#define LeakingSinkMethodPattern(n, pattern) \
+  LeakingSinkMethodArg("default", n, method) :- \
+    isMethod(method), \
+    match(pattern, method)
+
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<javax.servlet.ServletContext: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<javax.servlet.ServletConfig: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<javax.servlet.http.Cookie: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpServletRequest: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpSession: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<javax.servlet.ServletRequest: .* get.*\(.*\)>").
+TaintSourceMethodPattern("<java.io.BufferedReader: java.lang.String readLine\(\)>").
+TaintSourceMethodPattern("<java.net.URLDecoder: java.lang.String decode\(java.lang.String,java.lang.String\)>").
+TaintSourceMethodPattern("<com.oreilly.servlet.MultipartRequest: java.lang.String getParameter\(java.lang.String\)>").
+TaintSourceMethodPattern("<javax.servlet.http.HttpServletResponse: java.io.PrintWriter getWriter\(\)>").
+LeakingSinkMethodPattern(0, "<java.io.Print.*: void println\(.*\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Statement: .* execute.*\(.*\)>").
+LeakingSinkMethodPattern(0, "<javax.servlet.http.HttpServletResponse: void sendRedirect\(.*\)>").
+LeakingSinkMethodPattern(0, "<java.io.File: void <init>\(.*\)>").
+LeakingSinkMethodPattern(0, "<java.io.File.*er: void <init>\(.*\)>").
+LeakingSinkMethodPattern(0, "<java.io.File.*Stream: void <init>\(.*\)>").
+LeakingSinkMethodPattern(0, "<java.sql.Connection: java.sql.PreparedStatement prepareStatement\(.*\)>").
+
+TaintSourceMethod(?label, ?overriddenMethod) :-
+   TaintSourceMethod(?label, ?method),
+   Method_DeclaringType(?method, ?superclass),
+   Method_SimpleName(?method, ?name),
+   Method_Descriptor(?method, ?descriptor),
+   SubtypeOf(?class, ?superclass),
+   isClassType(?class),
+   Method_DeclaringType(?overriddenMethod, ?class),
+   Method_SimpleName(?overriddenMethod, ?name),
+   Method_Descriptor(?overriddenMethod, ?descriptor).
+
+LeakingSinkMethodArg(?label, ?n, ?overriddenMethod) :-
+   LeakingSinkMethodArg(?label, ?n, ?method),
+   Method_DeclaringType(?method, ?superclass),
+   Method_SimpleName(?method, ?name),
+   Method_Descriptor(?method, ?descriptor),
+   SubtypeOf(?class, ?superclass),
+   isClassType(?class),
+   Method_DeclaringType(?overriddenMethod, ?class),
+   Method_SimpleName(?overriddenMethod, ?name),
+   Method_Descriptor(?overriddenMethod, ?descriptor).
+
+
+SanitizationMethod(?method) :-
+  (?method = "<securibench.micro.sanitizers.Sanitizers1: java.lang.String clean(java.lang.String)>" ;
+   ?method = "<securibench.micro.sanitizers.Sanitizers2: java.lang.String clean(java.lang.String)>" ;
+   ?method = "<java.net.URLEncoder: java.lang.String encode(java.lang.String,java.lang.String)>" ;
+   ?method = "<securibench.micro.sanitizers.Sanitizers6: java.lang.String clean(java.lang.String)>"),
+  isMethod(?method).

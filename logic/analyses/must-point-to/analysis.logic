@@ -100,7 +100,7 @@ MustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
    Instruction:Method[?invo] = ?inMethod,
    ReachableMethodUnderMustContext(?ctx, ?inMethod),
    MustContextDepth[?ctx] < MaxContextDepth[],
-   MethodInvocation:Signature[?invo] = ?signature.
+   MethodInvocation:Method[?invo] = ?signature.
 
 #ifdef MUST_AFTER_MAY
 // Virtual method invocations. Note that this logic does NOT

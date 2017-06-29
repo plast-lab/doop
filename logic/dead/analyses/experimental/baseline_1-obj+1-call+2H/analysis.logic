@@ -84,7 +84,7 @@ MainThread(?hctx, ?alloc) <-
 // We also cache them, so they can be looked up without a join.
 //Context(?calleeCtx),
 //ContextFromRealContext[?heap, ?invocation] = ?calleeCtx,
-//OptimizeMerge[?heap, ?invocation] = ?calleeCtx <-
+//CachedMerge[?heap, ?invocation] = ?calleeCtx <-
 //  MyMergeBasis(?heap, ?invocation).
   
 

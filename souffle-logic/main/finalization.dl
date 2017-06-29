@@ -1,0 +1,20 @@
+/**
+ * For a heap allocation of an object that overrides Object.finalize, invoke
+ * the method Finalizer.register to register the object for finalization. The
+ * allocated object becomes the actual parameter to Finalizer.register.
+ */
+isContext(?newCtx),
+isHContext(?newHCtx),
+CallGraphEdge(?callerCtx, ?fakeinvo, ?newCtx, ?register),
+VarPointsTo(?newHCtx, ?heapValue, ?newCtx, ?formal) :-
+  FakeInvocation_RegisterFinalize(?heapValue, ?fakeinvo),
+  AllocatedObjectSupportsFinalize(?heapValue, ?inmethod),
+  (!(HeapAllocation_Merge(?heapValue, _));
+   HeapAllocation_Merge(?heapValue, ?heapValue)),  // the object retains its identity
+  ReachableContext(?callerCtx, ?inmethod),
+  ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
+  isMethod(?register),
+  FormalParam(0, ?register, ?formal),
+  RecordMacro(?callerCtx, ?heapValue, ?newHCtx),
+  MergeFinalizerRegisterContextMacro(?callerCtx, ?inmethod, ?heapValue, ?newCtx).
+  //ObjectShouldNotBeRefined(?heapValue).

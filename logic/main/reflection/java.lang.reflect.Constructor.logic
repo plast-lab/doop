@@ -10,7 +10,7 @@ ReflectiveBaseVar[?invocation] = ?to,
 ReflectiveActualParams[?invocation] = ?initargs <-
   java:lang:reflect:Constructor:newInstance(?invocation, ?to, ?from),
   VarPointsTo(_, ?constructor, ?ctx, ?from),
-  ReifiedConstructor:Value[?signature] = ?constructor,
+  ReifiedConstructor[?signature] = ?constructor,
   Method:DeclaringType[?signature] = ?type,
   ActualParam[0, ?invocation] = ?initargs.
 

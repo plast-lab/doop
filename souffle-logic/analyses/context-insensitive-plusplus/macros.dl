@@ -1,0 +1,64 @@
+/**
+ * Context construction macros resembling LB constructors
+ */
+#define EmptyContext(ctx) \
+  ctx = ["<<empty-context>>"]
+
+#define EmptyHContext(hctx) \
+  hctx = ["<<empty-hcontext>>"]
+
+#define OneObjContext(value, ctx) \
+  ctx = [value]
+
+#define OneCallContext(invocation, ctx) \
+  ctx = [invocation]
+
+#define HContextFromContext(ctx, hctx) \
+  ctx = [context], \
+  hctx = [content]
+
+
+/**
+ * Standard analysis macros
+ */
+#define RecordMacro(ctx, value, hctx) \
+  EmptyHContext(hctx)
+//// For a context-sensitive heap, whenever context exists:
+//  HContextFromContext(ctx, hctx)
+
+
+#define MergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  EmptyContext(calleeCtx)
+
+#define MergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  EmptyContext(calleeCtx)
+
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
+  MergeBasis(callerCtx, hctx, invocation, value)
+
+#define AdvancedMergeStaticBasisMacro(callerCtx, invocation) \
+  MergeStaticBasis(callerCtx, invocation)
+
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge(invocation, value, calleeCtx)
+
+#define CachedMergeStaticMacro(callerCtx, invocation, calleeCtx) \
+  CachedMergeStatic(invocation, calleeCtx)
+
+// MergeThreadStart, MergeStartup, and MergeFinalizerRegisterContext
+// have the same logic as plain Merge for this analysis.
+#define MergeThreadStartMacro(hctx, value, callerCtx, newCtx) \
+  EmptyContext(newCtx)
+
+#define MergeStartupMacro(hctx, value, calleeCtx) \
+  EmptyContext(calleeCtx)
+
+#define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
+  EmptyContext(newCtx)
+
+
+#define InitContextMacro(valueId) \
+  isContext(ctx) :- EmptyContext(ctx)
+
+#define InitHContextMacro(valueId) \
+  isHContext(hctx) :- EmptyHContext(hctx)

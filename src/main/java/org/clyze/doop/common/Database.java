@@ -1,27 +1,31 @@
 package org.clyze.doop.common;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.Flushable;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 
 public class Database implements Closeable, Flushable {
     private static final char SEP = '\t';
     private static final char EOL = '\n';
     private File directory = null;
+    // Flag to control the uniqueness of the generated facts.
+    private boolean uniques;
 
     private final Map<PredicateFile, Writer> _writers;
+    private final EnumMap<PredicateFile, HashSet<String>> _sets;
 
-    public Database(File directory) throws IOException {
+    public Database(File directory, boolean uniques) throws IOException {
         this.directory = directory;
+        this.uniques = uniques;
         this._writers = new EnumMap<>(PredicateFile.class);
+        this._sets = new EnumMap<>(PredicateFile.class);
 
-        for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class))
+        for(PredicateFile predicateFile : EnumSet.allOf(PredicateFile.class)) {
             _writers.put(predicateFile, predicateFile.getWriter(this.directory, ".facts"));
+            _sets.put(predicateFile, new HashSet<String>());
+        }
     }
 
     @Override
@@ -58,7 +62,10 @@ public class Database implements Closeable, Flushable {
             line.append(EOL);
             Writer writer = _writers.get(predicateFile);
             synchronized(predicateFile) {
-                writer.write(line.toString());
+                String s = line.toString();
+                if (uniques && !(_sets.get(predicateFile).add(s)))
+                    return;
+                writer.write(s);
             }
         } catch(IOException exc) {
             throw new RuntimeException(exc);

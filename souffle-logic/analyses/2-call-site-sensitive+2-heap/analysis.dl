@@ -1,0 +1,14 @@
+// Context-sensitive pointer analysis with context of 2 call site and
+// a context-sensitive heap abstraction of 2 call sites
+
+// In this analysis, the real context and the real heap context are pairs of
+// MethodInvocations. Keeping mapping functions is the way to handle analyses
+// where HContext = Context (since the language considers them different
+// types).
+.type Context = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
+.type HContext = [ invocation1:MethodInvocation, invocation2:MethodInvocation ]
+
+.decl StartupInvocation(?startupInvocation:MethodInvocation)
+StartupInvocation(?startupInvocation) :-
+     ?startupInvocation = "<<jvm-startup-context>>",
+     isMethodInvocation(?startupInvocation).

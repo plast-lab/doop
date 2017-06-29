@@ -1,0 +1,99 @@
+// Analysis that stays context insensitive, except for in-out-flow methods,
+// for which it tries to get to S2objH.
+
+#include "../../main/in-out-flow.logic"
+
+// The real context is a pair of Value AND a MethodInvocation (for
+// static calls) sometimes.  The real heap context is a single Value.
+// Keeping mapping functions is the way to handle analyses where HContext =
+// Context (since the language considers them different types).
+ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx ->
+  Context(?ctx), ContextComponent(?valueComp1), ContextComponent(?valueComp2).
+lang:constructor(`ContextFromRealContext).
+
+// NOTE: Use the following when using both the normal (caller's) context and
+// the invoComp site for static calls.
+SpecialContextFromRealContext[?valueComp1, ?invoComp, ?valueComp2] = ?ctx ->
+  ContextComponent(?valueComp1), ContextComponent(?valueComp2),
+  ContextComponent(?invoComp), Context(?ctx).
+lang:constructor(`SpecialContextFromRealContext).
+RealContext1FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+RealContext2FromContext[?ctx] = ?valueComp ->
+  Context(?ctx), ContextComponent(?valueComp).
+RealContext1FromContext[?ctx] = ?valueComp1,
+RealContext2FromContext[?ctx] = ?valueComp2 <-
+  ContextFromRealContext[?valueComp1, ?valueComp2] = ?ctx.
+// NOTE: Use the following when using both the normal (caller's) context
+// and the invocation site for static calls.
+RealContext1FromContext[?ctx] = ?invoComp,
+RealContext2FromContext[?ctx] = ?valueComp2 <-
+  SpecialContextFromRealContext[_, ?invoComp, ?valueComp2] = ?ctx.
+
+HContextFromRealHContext[?valueComp] = ?hctx ->
+  HContext(?hctx), ContextComponent(?valueComp).
+lang:constructor(`HContextFromRealHContext).
+RealHContextFromHContext[?hctx] = ?valueComp ->
+  HContext(?hctx), ContextComponent(?valueComp).
+RealHContextFromHContext[?hctx] = ?valueComp <-
+  HContextFromRealHContext[?valueComp] = ?hctx.
+
+ContextComponent(?valueComp), 
+ContextComponent:Value[?value] = ?valueComp,
+DummyContextComponent[] = ?valueComp
+<-
+  Value:byId["<<immutable-context>>"] = ?value.
+
+Context(?ctx),
+ContextFromRealContext[?valueComp, ?valueComp] = ?ctx,
+EmptyContext[] = ?ctx <-
+  DummyContextComponent[] = ?valueComp.
+
+HContext(?hctx),
+HContextFromRealHContext[?valueComp] = ?hctx,
+EmptyHContext[] = ?hctx <-
+  DummyContextComponent[] = ?valueComp.
+
+MyMergeBasis(?hctx, ?value, ?valuetype, ?invo) <-
+  MergeBasis(_, ?invo, ?hctx, ?value),
+  Value:Type[?value] = ?valuetype.
+
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, ?valuetype, ?invo),
+  ResolveInvocation[?valuetype, ?invo] = ?tomethod,
+  IsInOutFlowMethod(?tomethod).
+
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, ?valuetype, ?invo),
+  ResolveInvocation[?valuetype, ?invo] = ?tomethod,
+  !IsInOutFlowMethod(?tomethod),
+  EmptyContext[] = ?calleeCtx.
+
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, _, ?invo),
+  SpecialMethodInvocation:Insn(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  IsInOutFlowMethod(?tomethod).
+
+CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value, _, ?invo),
+  SpecialMethodInvocation:Insn(?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  !IsInOutFlowMethod(?tomethod),
+  EmptyContext[] = ?calleeCtx.
+
+MergeStaticMacro(?callerCtx, ?invo, ?calleeCtx),
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  IsInOutFlowMethod(?tomethod).
+
+CachedMergeStatic[?callerCtx, ?invo] = ?calleeCtx <-
+  MergeStaticBasis(?callerCtx, ?invo),
+  MethodInvocation:Method[?invo] = ?tomethod,
+  !IsInOutFlowMethod(?tomethod),
+  EmptyContext[] = ?calleeCtx.
+
+

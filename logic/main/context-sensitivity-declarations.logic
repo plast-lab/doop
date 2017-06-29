@@ -15,8 +15,12 @@ lang:physical:capacity[`HContext] = 8388608.
 
 // These are normally unique, but for partitioned analyses there may be
 // one per partition.
-ImmutableContext(?ctx) -> Context(?ctx).
-ImmutableHContext(?hctx) -> HContext(?hctx).
+ImmutableContext(?ctx)       -> Context(?ctx).
+InitialContext(?ctx)  -> Context(?ctx).
+JVMStartupContext(?ctx)  -> Context(?ctx).
+ClinitContext(?ctx)  -> Context(?ctx).
+ImmutableHContext(?hctx)     -> HContext(?hctx).
+JVMStartupHContext(?hctx) -> HContext(?hctx).
 // If we have many, get a compatible one from the other kind of context.
 ImmutableContextFromHContext[?hctx] = ?ctx -> Context(?ctx), HContext(?hctx).
 ImmutableHContextFromContext[?ctx] = ?hctx -> Context(?ctx), HContext(?hctx).
@@ -36,12 +40,6 @@ lang:constructor(`ContextComponent:MethodInvocation).
 ContextComponent:Value[?value] = ?comp ->
    Value(?value), ContextComponent(?comp).
 lang:constructor(`ContextComponent:Value).
-
-
-// Special heap objects are just artificial ones that we use to find where the
-// result of a reflective call can flow to. We don't want to track them
-// through the heap.
-SpecialObject(?heap) -> HeapAllocation(?heap).
 
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) ->

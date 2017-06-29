@@ -1,0 +1,267 @@
+.type MustAbstractObject = [ ?var:Var, ?label:String ]
+
+// For use when we don't want to incur the cost
+.comp DummyMustPointTo {
+  .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var) 
+  .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext) 
+  .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)
+  .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)
+  .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction) 
+}
+
+.comp SoundMustPointTo {
+
+  // A strange "must-point-to" relation, used only to compute
+  // must-alias information: the abstract objects (pointed-to) are not
+  // abstractions of concrete objects, but representatives of concepts
+  // such as "whatever object x would point to at this instruction".
+  // In this way, two different abstract objects may correspond to the
+  // same concrete one! In fact, since this is a must-point-to
+  // analysis, if a variable points to two abstract objects, they
+  // *have* to be the same concrete object at run time.
+  .decl MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?var:Var)
+  .output MustPointTo
+
+  // Same for instance-field must-point-to.
+  .decl FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  .decl Before_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  .output FieldMustPointTo, Before_FieldMustPointTo
+
+  // There is no need to handle allocations or assignment of
+  // null. Every local variable by definition points to the abstract
+  // object corresponding to the variable itself.
+
+  // RecordMacroMay...
+  MustPointTo(?hctx, ?heap, ?ctx, ?var) :-
+    MayReachableMethodUnderMayContext_Prev(?ctx, ?inMeth),
+    Var_DeclaringMethod(?var, ?inMeth),
+    Var_Type(?var, ?type),
+    isReferenceType(?type),
+    EmptyHeapContext(?hctx),
+    ?heap = [?var, "var-object"].
+
+  // Move, but not Phi nodes, which are also represented as local assignments.
+  MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignLocal_From(?insn, ?from),
+    !PhiNodeHead(?insn, _),
+    AssignInstruction_To(?insn, ?to).
+  
+  // Cast assignments, handled similarly
+  MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignCast_From(?insn, ?from),
+    AssignInstruction_To(?insn, ?to).
+
+  // Phi: shows that this is a must and not a may analysis
+  MustPointTo(?hctx, ?heap, ?ctx, ?var) :-
+    MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?lastInsn),
+    !(NextInSamePhiNode(?lastInsn, _)),
+    AssignInstruction_To(?lastInsn, ?var).
+
+  // TODO: FieldMustPointTo correctly maintained at Phi instructions
+
+  // Store instructions: pretty much like in a may-point-to analysis
+  FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    StoreInstanceField_From(?insn, ?from),
+    StoreInstanceField_Base(?insn, ?base),
+    MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
+    FieldInstruction_Signature(?insn, ?fld).
+   .plan 1: (4,3,2,1,5)
+
+  // TODO: static loads, stores
+
+  // Load instructions
+  MustPointTo(?hctx, ?heap, ?ctx, ?to) :-
+    Before_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
+    FieldInstruction_Signature(?insn, ?fld),
+    LoadInstanceField_Base(?insn, ?base),
+    MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
+    LoadInstanceField_To(?insn, ?to).
+   .plan 1: (4,3,2,1,5)
+
+  // Calls
+  // TODO: prime/unprime access paths
+  MustPointTo(?hctxBase, ?heapBase, ?calleeCtx, ?this) :-
+    MustPointTo(?hctxBase, ?heapBase, ?callerCtx, ?base),
+	OptVirtualOrSpecialMethodInvocation_Base(?invo, ?base),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    ThisVar(?toMethod, ?this).
+
+  MustPointTo(?hctx, ?heap, ?calleeCtx, ?formal) :-
+    MustPointTo(?hctx, ?heap, ?callerCtx, ?actual),
+    ActualParam(?index, ?invo, ?actual),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    FormalParam(?index, ?toMethod, ?formal).
+
+  Before_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?firstInsn) :-
+    FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?callerCtx, ?invo),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo),
+    FirstInstructionOfMethod(?toMethod, ?firstInsn).
+
+  MustPointTo(?hctx, ?heap, ?callerCtx, ?to) :-
+    AllCallee_ReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?toMethod),
+    ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod).
+
+  FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?callerCtx, ?invo) :-
+    AllCallee_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?toMethod),
+    MayCallGraphEdge_Prev(?calleeCtx, ?toMethod, ?callerCtx, ?invo).
+  
+  // //// ====================================
+  // //// frame rules, control-flow join rules
+
+  Before_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-
+    FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?prev),
+    PrevInSameBasicBlock(?insn, ?prev).
+
+  // TODO: all-predecessor join (or all-relevant-predecessor)
+
+  //// Infer info after instruction from info before it
+  FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-
+    Before_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
+    !isMonitorInstruction(?insn),
+    !isMethodInvocation(?insn),
+    !StoreInstruction(?insn).
+
+  //// Infer info after instruction from info before it
+  FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn) :-
+    Before_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
+    StoreInstruction(?insn),
+    !FieldInstruction_Signature(?insn, ?fld).    
+
+  // //// ====================================
+  // //// Our final client: MustAlias relations. Maybe too demanding and computed lazily in the future
+
+  .decl VarMustAlias(?var1:Var, ?var2:Var, ?ctx:MayContext)
+  .output VarMustAlias
+
+  VarMustAlias(?var1, ?var2, ?ctx) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?var1),
+    MustPointTo(?hctx, ?heap, ?ctx, ?var2).
+  .plan 1: (2,1)
+
+  VarMustAlias(?var1, ?var2, ?ctx) :-
+    (MustPointTo(?hctx, [?var2, "var-object"], ?ctx, ?var1);
+     MustPointTo(?hctx, [?var1, "var-object"], ?ctx, ?var2)).
+
+  .decl VarMustAliasThis(?var1:Var, ?method:Method, ?ctx:MayContext)
+  VarMustAliasThis(?var1, ?method, ?ctx) :-
+    VarMustAlias(?var1, ?var2, ?ctx),
+    ?var1 != ?var2,
+    ThisVar(?method, ?var2).
+
+  .decl VarMustAliasRepresentative(?var:Var, ?varRepr:Var, ?ctx:MayContext)
+  .output VarMustAliasRepresentative
+
+  VarMustAliasRepresentative(?var, ?varRepr, ?ctx) :-
+    VarMustAlias(?var, ?varRepr, ?ctx),
+    ?valRepr = ord(?varRepr),
+    ?valRepr = max ord(v) : VarMustAlias(?var, v, ?ctx).
+
+
+/*
+  .decl VarMustAliasAP(?var:Var, ?ap:AccessPath, ?ctx:MayContext, ?insn:Instruction)
+  .output VarMustAliasAP
+
+  VarMustAliasAP(?var, ?ap, ?ctx, ?insn) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?var),
+    MustPointTo(?hctxBase, ?heapBase, ?ctx, ?base),
+    FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?insn),
+    ?ap = [?base, [?fld, nil]].
+  .plan 1: (2,3,1)
+  .plan 2: (3,2,1)
+*/
+
+  // //// ====================================
+  // //// AUXILIARY. Helper relations, "forall" emulations.
+
+  // For all Phi node instructions, the "to" var (implicit in the
+  // predicate) must point to...
+  .decl MustPointToUpToPhiInstruction(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?lastInsn:Instruction)
+
+  MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?headInsn) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?from),
+    AssignLocal_From(?headInsn, ?from),
+    PhiNodeHead(_, ?headInsn).
+
+  MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?nextInsn) :-
+    MustPointToUpToPhiInstruction(?hctx, ?heap, ?ctx, ?insn),
+    NextInSamePhiNode(?insn, ?nextInsn),
+    AssignLocal_From(?nextInsn, ?from),
+    MustPointTo(?hctx, ?heap, ?ctx, ?from).
+   .plan 1: (4,1,2,3)
+
+  // for all returns of a method, the return variable must point to the same object
+  .decl UpToReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?return:Instruction)
+  UpToReturnMustPointTo(?hctx, ?heap, ?ctx, ?return) :-
+    MustPointTo(?hctx, ?heap, ?ctx, ?var),
+    ReturnNonvoid_Var(?return, ?var),
+    isReturnInstruction(?return),
+    !ExistsPreviousReturn(?return).
+
+  UpToReturnMustPointTo(?hctx, ?heap, ?ctx, ?return) :-
+    UpToReturnMustPointTo(?hctx, ?heap, ?ctx, ?prevReturn),
+    NextReturn(?prevReturn, ?return),
+    ReturnNonvoid_Var(?return, ?var),
+    MustPointTo(?hctx, ?heap, ?ctx, ?var).
+
+  .decl AllReturn_MustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?method:Method)
+  AllReturn_MustPointTo(?hctx, ?heap, ?ctx, ?method) :-
+    UpToReturnMustPointTo(?hctx, ?heap, ?ctx, ?return),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  .decl UpToCalleeReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)
+  UpToCalleeReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+	AllReturn_MustPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
+	FirstCalleeFromCallsite(?calleeCtx, ?meth).
+
+  UpToCalleeReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+    UpToCalleeReturnMustPointTo(?hctx, ?heap, ?prevCalleeCtx, ?prevMeth),
+    NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
+	AllReturn_MustPointTo(?hctx, ?heap, ?calleeCtx, ?meth).
+
+  .decl AllCallee_ReturnMustPointTo(?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)
+  AllCallee_ReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?meth) :-
+    UpToCalleeReturnMustPointTo(?hctx, ?heap, ?calleeCtx, ?meth),
+    !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
+
+
+  .decl UpToReturnFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?insn:Instruction)
+  UpToReturnFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?return) :-
+    FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?return),
+    isReturnInstruction(?return),
+    !ExistsPreviousReturn(?return).
+
+  UpToReturnFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?return) :-
+    UpToReturnFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?prevReturn),
+    NextReturn(?prevReturn, ?return),
+    FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?return).
+
+  .decl AllReturn_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?method:Method)
+  AllReturn_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?method) :-
+    UpToReturnFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?ctx, ?return),
+    !(NextReturn(?return, _)),
+    Instruction_Method(?return, ?method).
+
+  .decl UpToCalleeFieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?ctx:MayContext, ?meth:Method)
+  UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth) :- 
+    AllReturn_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth),
+    MayCallGraphEdge_Prev(?calleeCtx, ?meth, _, _),
+	FirstCalleeFromCallsite(?calleeCtx, ?meth).
+
+  UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth) :- 
+    UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?prevCalleeCtx, ?prevMeth),
+    NextCalleeFromCallsite(?prevCalleeCtx, ?prevMeth, ?calleeCtx, ?meth),
+    AllReturn_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth).
+
+  .decl AllCallee_FieldMustPointTo(?hctxBase:MayHeapContext, ?heapBase:MustAbstractObject, ?fld:Field, ?hctx:MayHeapContext, ?heap:MustAbstractObject, ?calleeCtx:MayContext, ?meth:Method)
+  AllCallee_FieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth) :- 
+    UpToCalleeFieldMustPointTo(?hctxBase, ?heapBase, ?fld, ?hctx, ?heap, ?calleeCtx, ?meth),
+    !NextCalleeFromCallsite(?calleeCtx, ?meth, _, _).
+
+}

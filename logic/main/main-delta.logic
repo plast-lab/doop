@@ -1,6 +1,6 @@
 #include "native-delta.logic"
 
-+FakeInvocation:RegisterFinalize[?heap] = ?invo,
++FakeInvocation:RegisterFinalize0[?heap] = ?invo,
 PlusMethodInvocation(?invo, ?str) <-
    AllocatedObjectSupportsFinalize(?heap, ?inmethod),
    Method:Id@prev(?inmethod:?val1),

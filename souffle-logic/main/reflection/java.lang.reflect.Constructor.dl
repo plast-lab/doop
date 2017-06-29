@@ -1,0 +1,15 @@
+/*************************************************************
+ * java.lang.reflect.Constructor.newInstance
+ *
+ *   public Object newInstance(Object[] initargs)
+ *************************************************************/
+
+AssignReflectiveAllocation(?invocation, ?type, ?ctx, ?to),
+ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?to),
+ReflectiveBaseVar(?invocation, ?to),
+ReflectiveActualParams(?invocation, ?initargs) :-
+  java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from),
+  VarPointsTo(_, ?constructor, ?ctx, ?from),
+  ReifiedConstructor(?signature, ?constructor),
+  Method_DeclaringType(?signature, ?type),
+  ActualParam(0, ?invocation, ?initargs).

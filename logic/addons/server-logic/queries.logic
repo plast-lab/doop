@@ -1,0 +1,252 @@
+_VPT(?value, ?var) <-
+  VarPointsTo(_, ?value, _, ?var).
+
+_IFPT(?value, ?field, ?basevalue) <-
+  InstanceFieldPointsTo(_, ?value, ?field, _, ?basevalue).
+
+_SFPT(?value, ?field) <-
+  StaticFieldPointsTo(_, ?value, ?field).
+
+_VPT:Count[?var] = ?n <-
+  agg<<?n = count()>> _VPT(_, ?var).
+
+_IFPT:Count[?field, ?basevalue] = ?n <-
+  agg<<?n = count()>> _IFPT(_, ?field, ?basevalue).
+
+_SFPT:Count[?field] = ?n <-
+  agg<<?n = count()>> _SFPT(_, ?field).
+
+
+Server:VarPointsTo(?class, ?var, ?valueId) <-
+  _VPT(?value, ?var),
+  _VPT:Count[?var] <= X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?value] = ?valueId,
+  Var:DeclaringMethod(?var, ?method),
+  Method:DeclaringType[?method] = ?class.
+
+Server:VarPointsTo(?class, ?var, "<<XL-pt-set>>") <-
+  _VPT:Count[?var] > X_SERVER_LOGIC_THRESHOLD,
+  Var:DeclaringMethod(?var, ?method),
+  Method:DeclaringType[?method] = ?class.
+
+Server:InstanceFieldPointsTo(?basevalueId, ?field, ?valueId) <-
+  _IFPT(?value, ?field, ?basevalue),
+  _IFPT:Count[?field, ?basevalue] <= X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?basevalue] = ?basevalueId,
+  Value:Id[?value] = ?valueId.
+
+Server:InstanceFieldPointsTo(?basevalueId, ?field, "<<XL-pt-set>>") <-
+  _IFPT:Count[?field, ?basevalue] > X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?basevalue] = ?basevalueId.
+
+Server:StaticFieldPointsTo(?field, ?valueId) <-
+  _SFPT(?value, ?field),
+  _SFPT:Count[?field] <= X_SERVER_LOGIC_THRESHOLD,
+  Value:Id[?value] = ?valueId.
+
+Server:StaticFieldPointsTo(?field, "<<XL-pt-set>>") <-
+  _SFPT:Count[?field] > X_SERVER_LOGIC_THRESHOLD.
+
+
+Server:CallGraphEdge(?invocation, ?toMethod) <-
+  CallGraphEdge(_, ?invocation, _, ?toMethod).
+
+Server:CallGraphEdge(?invocation, ?toMethod) <-
+  InvokedynamicCallGraphEdge(_, ?invocation, _, ?toMethod).
+
+_Class:DeclaresMethod(?method, ?class) <-
+  Method:DeclaringType[?method] = ?class.
+
+// All application types
+Server:KeepClass(?class) <-
+  ApplicationClass(?class).
+
+// All classes with a reachable method
+Server:KeepClass(?class) <-
+  _Class:DeclaresMethod(?method, ?class),
+  Reachable(?method).
+
+// Transitively, everything up the hierarchy
+Server:KeepClass(?interface) <-
+  Server:KeepClass(?class),
+  SupertypeOf(?interface, ?class).
+
+Server:MethodFromInterface(?interfaceMethod, ?method) <-
+  Method:DeclaringType[?interfaceMethod] = ?type,
+  InterfaceType(?type),
+  SubtypeOf(?subtype, ?type),
+  Method:DeclaringType[?method] = ?subtype,
+  Method:SimpleName[?interfaceMethod] = Method:SimpleName[?method],
+  Method:Descriptor[?interfaceMethod] = Method:Descriptor[?method],
+  !Method:Modifier("abstract", ?method).
+
+
+_AppVirtual(?invo) <-
+  VirtualMethodInvocation:Insn(?invo),
+  Instruction:Method[?invo] = ?method,
+  ApplicationMethod(?method).
+
+_AppVirtual:Resolved(?invo) <-
+  _AppVirtual(?invo),
+  CallGraphEdge(_, ?invo, _, _).
+
+_AppVirtual:Count[] = ?n <-
+  agg<<?n = count()>> _AppVirtual(_).
+
+_AppVirtual:Resolved:Count[] = ?n <-
+  agg<<?n = count()>> _AppVirtual:Resolved(_).
+
+_AppReachable(?method) <-
+  Reachable(?method),
+  ApplicationMethod(?method).
+
+_AppMethod:Count[] = ?n <-
+  agg<<?n = count()>> ApplicationMethod(_).
+
+_AppReachable:Count[] = ?n <-
+  agg<<?n = count()>> _AppReachable(_).
+
+Server:Metrics("AppVirtual (static)", ?n) <- _AppVirtual:Count[] = ?n.
+Server:Metrics("AppVirtual (resolved)", ?n) <- _AppVirtual:Resolved:Count[] = ?n.
+Server:Metrics("AppVirtual (%)", ?n) <- ?n = (1.0 * _AppVirtual:Resolved:Count[]) / _AppVirtual:Count[].
+Server:Metrics("AppMethod (static)", ?n) <- _AppMethod:Count[] = ?n.
+Server:Metrics("AppMethod (reachable)", ?n) <- _AppReachable:Count[] = ?n.
+Server:Metrics("AppMethod (%)", ?n) <- ?n = (1.0 * _AppReachable:Count[]) / _AppMethod:Count[].
+
+
+/*
+//// The code below is well-optimized, but we don't want it to burden our
+//// current timings, plus the concepts may need to be revisited, especially
+//// the transitive reachability ones (e.g., ReachableFromMethod and derivatives).
+
+// All the methods reachable from a method (transitive call-graph)
+
+ReachableFromMethod(?fromMethod, ?toMethod) -> Method(?fromMethod), Method(?toMethod).
+
+_MethodCallsMethod(?fromMethod, ?toMethod) -> Method(?fromMethod), Method(?toMethod).
+
+_MethodCallsMethod(?fromMethod, ?toMethod) <-
+  SimpleCallGraphEdge(?toMethod, ?invocation),
+  Instruction:Method[?invocation] = ?fromMethod.
+
+ReachableFromMethod(?fromMethod, ?toMethod) <-
+  _MethodCallsMethod(?fromMethod, ?toMethod).
+  
+ReachableFromMethod(?fromMethod, ?toMethod) <-
+  ReachableFromMethod(?fromMethod, ?midMethod),
+  _MethodCallsMethod(?toMethod, ?midMethod).
+
+
+// Recursive methods
+RecursiveMethod(?method) -> Method(?method).
+
+RecursiveMethod(?method) <-
+  ReachableFromMethod(?method, ?method).
+
+// Total number of heap allocations inside method body. It DOES NOT
+// take heap allocation in methods invoked therein into account.
+AllocInMethod(?insn, ?method) <-
+  AssignHeapAllocation:Insn(?insn),
+  Instruction:Method[?insn] = ?method.
+
+// Aggregations 
+
+TotalIndirectAllocationsInMethodEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalIndirectAllocationsInMethodNonEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalIndirectAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
+
+TotalDirectAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
+
+TotalDirectAllocationsInMethodEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalDirectAllocationsInMethodNonEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
+
+_MethodHasAlloc(?method) <-
+  AllocInMethod(_, ?method).
+  
+TotalDirectAllocationsInMethodNonEmpty[?method] = n <-
+  agg<<n = count()>>
+  _MethodHasAlloc(?method).
+
+TotalDirectAllocationsInMethodEmpty[?method] = 0 <-
+  Method(?method),
+  !_MethodHasAlloc(?method).
+
+TotalDirectAllocationsInMethod[?method] = n <-
+  TotalDirectAllocationsInMethodEmpty[?method] = n.
+
+TotalDirectAllocationsInMethod[?method] = n <-
+  TotalDirectAllocationsInMethodNonEmpty[?method] = n.
+
+_MethodReachesOther(?method, ?toMethod) <-
+  ReachableFromMethod(?method, ?toMethod),
+  ?method != ?toMethod.
+   
+_MethodReachesAllocator(?method) <-
+  _MethodReachesOther(?method, ?toMethod),
+  _MethodHasAlloc(?toMethod).
+  
+TotalIndirectAllocationsInMethodNonEmpty[?method] = n <-
+  agg<<n = count()>>
+   _MethodReachesAllocator(?method).
+
+TotalIndirectAllocationsInMethodEmpty[?method] = 0 <-
+  Method(?method),
+  !ReachesAllocator(?method).
+
+TotalIndirectAllocationsInMethod[?method] = n <-
+  TotalIndirectAllocationsInMethodNonEmpty[?method] = n.
+
+TotalIndirectAllocationsInMethod[?method] = n <-
+  TotalIndirectAllocationsInMethodEmpty[?method] = n.
+
+// very similar to earlier but also reflexive
+ReachesAllocator(?method) <-
+  ReachableFromMethod(?method, ?toMethod),
+  _MethodHasAlloc(?toMethod).
+
+TotalAllocationsInMethod[?method] = n <-
+  n = i + j,
+  TotalDirectAllocationsInMethod[?method] = i,
+  TotalIndirectAllocationsInMethod[?method] = j.
+
+TotalAllocationsFromNonRecursiveMethods[?method] = n <-
+  TotalAllocationsInMethod[?method] = n,
+  !RecursiveMethod(?method).
+
+TotalDirectInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
+
+TotalDirectInvocationsInMethod[?method] = n <-
+  agg<<n = count()>>
+  (MethodInvocation(?invocation),
+   Instruction:Method[?invocation] = ?method).
+
+TotalIndirectInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
+
+_MethodWithInvo(?method) <-
+  Instruction:Method[?invo] = ?method,
+  MethodInvocation(?invo).
+
+_MethodReachesOtherWithInvo(?method) <-
+  _MethodReachesOther(?method, ?toMethod),
+  _MethodWithInvo(?toMethod).
+
+TotalIndirectInvocationsInMethod[?method] = n <-
+  agg<<n = count()>>
+  _MethodReachesOtherWithInvo(?method).
+  
+TotalInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
+
+TotalInvocationsInMethod[?method] = n <-
+  n = i + j,
+  TotalDirectInvocationsInMethod[?method] = i,
+  TotalIndirectInvocationsInMethod[?method] = j.
+
+TotalInvocationsFromNonRecursiveMethods[?method] = n <-
+  TotalInvocationsInMethod[?method] = n,
+  !RecursiveMethod(?method).
+*/

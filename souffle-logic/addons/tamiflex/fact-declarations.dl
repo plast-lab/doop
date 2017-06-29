@@ -1,0 +1,4 @@
+.decl Tamiflex_ReflectionData(?classStr:symbol, ?methodStr:symbol, ?mapped:symbol, ?inClassStr:symbol,
+                              ?inMethodStr:symbol, ?lineNumber:number)
+
+.decl Tamiflex_ReflectionMap(?mapped:symbol, ?invocation:MethodInvocation)

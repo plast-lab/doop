@@ -20,11 +20,11 @@
  * ContextFromRealContext[Value:Type[RealHContext2FromHContext[hctx]], value] = calleeCtx
  */
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(callerCtx, invocation, hctx, value)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  OptimizeMerge[hctx, value] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[hctx, value] = calleeCtx
 
 // For this analysis, static calls just keep the same context as the
 // caller. *Not* creating a new one, but pretending to, nonetheless,
@@ -56,3 +56,12 @@
 #define MergeFinalizerRegisterContextMacro(callerCtx, inmethod, value, newCtx) \
   Context(newCtx), \
   ContextFromRealContext[Value:DeclaringType[RealContext2FromContext[callerCtx]], value] = newCtx
+
+
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[type, value] = ctx \
+  <- ClassTypeValue(type, "java.lang.String"), Value:byId[valueId] = value
+
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[type, value] = hctx \
+  <- ClassTypeValue(type, "java.lang.String"), Value:byId[valueId] = value

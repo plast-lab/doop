@@ -79,9 +79,9 @@
 +VirtualMethodInvocation(?invocation, ?signature, ?inmethod) <-
    VirtualMethodInvocation:Insn(?invocation),
    Instruction:Method[?invocation] = ?inmethod,
-   MethodInvocation:Signature[?invocation] = ?signature.
+   MethodInvocation:Method[?invocation] = ?signature.
 
 +StaticMethodInvocation(?invocation, ?signature, ?inmethod) <-
    StaticMethodInvocation:Insn(?invocation),
    Instruction:Method[?invocation] = ?inmethod,
-   MethodInvocation:Signature[?invocation] = ?signature.
+   MethodInvocation:Method[?invocation] = ?signature.

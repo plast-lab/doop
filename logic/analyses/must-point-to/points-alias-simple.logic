@@ -1,0 +1,613 @@
+// A strange "must-point-to" relation, used only to compute
+// must-alias information: the abstract objects (pointed-to) are not
+// abstractions of concrete objects, but representatives of concepts
+// such as "whatever object x would point to at this instruction".
+// In this way, two different abstract objects may correspond to the
+// same concrete one! In fact, since this is a must-point-to
+// analysis, if a variable points to two abstract objects, they
+// *have* to be the same concrete object at run time.
+
+PTMustPointTo(?obj, ?ctx, ?var) -> PTAbstractObject(?obj), PTMustContext(?ctx), Var(?var).
+
+PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) ->
+  PTAbstractObject(?objBase), Field(?fld), PTAbstractObject(?obj), PTMustContext(?ctx), Instruction (?insn).
+
+AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) ->
+  PTAbstractObject(?objBase), Field(?fld), PTAbstractObject(?obj), PTMustContext(?ctx), Instruction (?insn).
+
+// Ignore verification of calculation in head
+lang:compiler:warning:SPECIFIC_STARRED_EDGE_IN_SAFETY_GRAPH_CYCLE[] = false.
+
+// There is no need to handle allocations or assignment of
+// null. Every local variable by definition points to the abstract
+// object corresponding to the variable itself.
+
+PTAbstractObject(?obj),
+PTAbstractObject:ByVar[?var] = ?obj,
+PTMustPointTo(?obj, ?ctx, ?var) <-
+  Var:DeclaringMethod(?var, ?inMeth),
+  ReachableMethodUnderPTMustContext(?ctx, ?inMeth),
+  Var:Type(?var, ?type),
+  ReferenceType(?type).
+
+// Move, but not Phi nodes, which are also represented as local assignments.
+TempPT1(?obj, ?ctx, ?to) ,
+PTMustPointTo(?obj, ?ctx, ?to) <-
+  AssignLocal:From(?insn, ?from),
+  PTMustPointTo(?obj, ?ctx, ?from),
+  !PhiNodeHead(?insn, _),
+  !AssignNull:Insn(?insn),
+  AssignInstruction:To(?insn, ?to).
+
+// Cast assignments, handled similarly
+TempPT2(?obj, ?ctx, ?to) ,
+PTMustPointTo(?obj, ?ctx, ?to) <-
+  AssignCast:From(?insn, ?from),
+  PTMustPointTo(?obj, ?ctx, ?from),
+  AssignInstruction:To(?insn, ?to).
+
+// Phi: shows that this is a must and not a may analysis
+TempPT3(?obj, ?ctx, ?var) ,
+PTMustPointTo(?obj, ?ctx, ?var) <-
+  PTMustPointToUpToPhiInstruction(?obj, ?ctx, ?lastInsn),
+  !(NextInSamePhiNode(?lastInsn, _)),
+  AssignInstruction:To(?lastInsn, ?var).
+
+// Load instructions
+TempPT4(?obj, ?ctx, ?to) ,
+PTMustPointTo(?obj, ?ctx, ?to) <-
+  AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn),
+  FieldInstruction:Signature(?insn, ?fld),
+  LoadInstanceField:Base(?insn, ?base),
+  PTMustPointTo(?objBase, ?ctx, ?base),
+  LoadInstanceField:To(?insn, ?to).
+
+// Store instructions: pretty much like in a may-point-to analysis
+TempPT5(?objBase, ?fld, ?obj, ?ctx, ?insn) ,
+PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) <-
+  StoreInstanceField:From(?insn, ?from),
+  PTMustPointTo(?obj, ?ctx, ?from),
+  StoreInstanceField:Base(?insn, ?base),
+  PTMustPointTo(?objBase, ?ctx, ?base),
+  FieldInstruction:Signature(?insn, ?fld).
+
+// TODO: static loads, stores
+
+// Calls
+PTMustPointTo(?primedObj, ?calleeCtx, ?this) <-
+  PTMustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+  PTMustCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+   (VirtualMethodInvocation:Base[?invo] = ?base;
+    SpecialMethodInvocation:Base[?invo] = ?base),
+  ThisVar(?toMethod, ?this),
+  PTMustPointTo(?objBase, ?callerCtx, ?base),
+  PTAbstractObject:Prime[?objBase] = ?primedObj.
+
+PTMustPointTo(?primedObj, ?calleeCtx, ?formal) <-
+  PTMustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+  PTMustCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+  FormalParam(?index, ?toMethod, ?formal),
+  ActualParam(?index, ?invo, ?actual),
+  PTMustPointTo(?obj, ?callerCtx, ?actual),
+  PTAbstractObject:Prime[?obj] = ?primedObj.
+
+AllPredecessors:PTFieldMustPointTo(?primedObjBase, ?fld, ?primedObj, ?calleeCtx, ?firstInsn) <-
+  PTMustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+  PTMustCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+  PTFieldMustPointTo(?objBase, ?fld, ?obj, ?callerCtx, ?invo),
+  PTAbstractObject:Prime[?objBase] = ?primedObjBase,
+  PTAbstractObject:Prime[?obj] = ?primedObj,
+  OptInstructionFromMethodIndex[?toMethod, 1] = ?firstInsn,
+  !IsJumpTarget(?firstInsn).
+
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
+PTMustPointTo(?obj, ?callerCtx, ?to) <-
+  ReturnValueOfResolvedCallAssignedTo(?callerCtx, ?to, ?calleeCtx, ?toMethod),
+  AllReturn:PTMustPointTo(?obj, ?calleeCtx, ?toMethod).
+*/
+
+TempPT9(?objBase, ?fld, ?obj, ?callerCtx, ?invo) ,
+PTFieldMustPointTo(PTAbstractObject:Unprime[?objBase], ?fld, PTAbstractObject:Unprime[?obj], ?callerCtx, ?invo) <-
+  PTMustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+  PTMustCallGraphEdge:Context[?callerCtx, ?invo] = ?calleeCtx,
+  AllReturn:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?calleeCtx, ?toMethod).
+
+// //// ====================================
+// //// frame rules, control-flow join rules
+
+// TODO: MustPointTo (for vars) is maintained at all instructions (no
+// flow-sensitivity). Is this equivalent with handling in must-alias?
+
+//// Infer info after instruction from info before it
+PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) <-
+  AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn),
+//  !MonitorInstruction(?insn),
+  !MethodInvocation(?insn),
+  !StoreInstanceField:Insn(?insn),
+  !StoreStaticField:Insn(?insn).
+
+/*
+//// REMOVED FOR SIMPLE ANALYSIS!
+//// Infer info after instruction from info before it
+PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) <-
+  AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn),
+  StoreInstruction(?insn),
+  !FieldInstruction:Signature(?insn, ?fld).    
+*/
+
+// //// ====================================
+
+// TODO: is a function
+PTMustPointToHeap(?value, ?var, ?ctx) <-
+  AssignNormalHeapAllocation(?heap, ?var, ?inMeth),
+  Value:byHeap[?heap] = ?value,
+  ReachableMethodUnderPTMustContext(?ctx, ?inMeth).
+
+PTMustPointToHeap(?value, ?var, ?ctx) <-
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inMeth),
+  (!(HeapAllocation:Merge[?heap] = _);
+   HeapAllocation:Merge[?heap] = ?heap),
+  Value:byHeap[?heap] = ?value,
+  ReachableMethodUnderPTMustContext(?ctx, ?inMeth).
+
+TempPT10(?value, ?var1, ?ctx),
+PTMustPointToHeap(?value, ?var1, ?ctx) <-
+  PTMustPointToHeap(?value, ?var2, ?ctx),
+  PTAccessPath:ByVar[?var1] = ?ap1,
+  PTAccessPath:ByVar[?var2] = ?ap2,
+  VarPTMustAlias(?ap1, ?ap2, ?ctx).
+
+TempPT12(?value, ?var1, ?ctx2),
+PTMustPointToHeap(?value, ?var1, ?ctx2) <-
+  PTMustPointToHeap(?value, ?var2, ?ctx1),
+  PTAccessPath:ByVarInv[PTAccessPath:Unprime[?ap2]] = ?var2,
+  PTAccessPath:ByVarInv[?ap1] = ?var1,
+  VarPTMustAlias(?ap1, ?ap2, ?ctx2),
+  PopPTMustContext[?ctx2] = ?ctx1.  
+
+OptPTMustPointTo(?var, ?ctx, ?obj) <-
+  PTMustPointTo(?obj, ?ctx, ?var).
+
+VarPTMustAlias(?ap1, ?ap2, ?ctx) -> PTAccessPath(?ap1), PTAccessPath(?ap2), PTMustContext(?ctx).
+VarPTMustAlias(?ap1, ?ap2, ?ctx) <-
+  OptPTMustPointTo(?var1, ?ctx, ?obj),
+  OptPTMustPointTo(?var2, ?ctx, ?obj),
+  PTAccessPath:ByVar[?var1] = ?ap1,
+  PTAccessPath:ByVar[?var2] = ?ap2,
+  ?var1 != ?var2.
+
+TempPT11(?ap2, ?ap1, ?ctx2),
+VarPTMustAlias(?ap2, ?ap1, ?ctx2),
+VarPTMustAlias(?ap1, ?ap2, ?ctx2) <-
+  OptPTMustPointTo(?var1, ?ctx1, PTAbstractObject:Unprime[?obj]),
+  OptPTMustPointTo(?var2, ?ctx2, ?obj),
+  PopPTMustContext[?ctx2] = ?ctx1,
+  PTAccessPath:Prime[PTAccessPath:ByVar[?var1]] = ?ap1,
+  PTAccessPath:ByVar[?var2] = ?ap2,
+  ?var1 != ?var2.
+
+// //// ====================================
+// //// AUXILIARY. Helper relations, "forall" emulations.
+
+// For all Phi node instructions, the "to" var (implicit in the
+// predicate) must point to...
+PTMustPointToUpToPhiInstruction(?obj, ?ctx, ?lastInsn) ->
+  PTAbstractObject(?obj), PTMustContext(?ctx), Instruction(?lastInsn).
+
+PTMustPointToUpToPhiInstruction(?obj, ?ctx, ?headInsn) <-
+  PhiNodeHead(_, ?headInsn),
+  AssignLocal:From(?headInsn, ?from),
+  PTMustPointTo(?obj, ?ctx, ?from).
+
+PTMustPointToUpToPhiInstruction(?obj, ?ctx, ?nextInsn) <-
+  PTMustPointToUpToPhiInstruction(?obj, ?ctx, ?insn),
+  NextInSamePhiNode(?insn, ?nextInsn),
+  AssignLocal:From(?nextInsn, ?from),
+  PTMustPointTo(?obj, ?ctx, ?from).
+
+// for all returns of a method, the return variable must point to the same object
+UpToReturnPTMustPointTo(?obj, ?ctx, ?return) ->
+  PTAbstractObject(?obj), PTMustContext(?ctx), Instruction(?return).
+UpToReturnPTMustPointTo(?obj, ?ctx, ?return) <-
+  PTMustPointTo(?obj, ?ctx, ?var),
+  ReturnNonvoid:Var(?return, ?var),
+  ReturnInstruction(?return),
+  !ExistsPreviousReturn(?return).
+
+UpToReturnPTMustPointTo(?obj, ?ctx, ?return) <-
+  UpToReturnPTMustPointTo(?obj, ?ctx, ?prevReturn),
+  NextReturn(?prevReturn, ?return),
+  ReturnNonvoid:Var(?return, ?var),
+  PTMustPointTo(?obj, ?ctx, ?var).
+
+AllReturn:PTMustPointTo(?obj, ?ctx, ?method) ->
+  PTAbstractObject(?obj), PTMustContext(?ctx), Method(?method).
+AllReturn:PTMustPointTo(?obj, ?ctx, ?method) <-
+  UpToReturnPTMustPointTo(?obj, ?ctx, ?return),
+  !(NextReturn(?return, _)),
+  Instruction:Method(?return, ?method).
+
+UpToReturnPTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) ->
+  PTAbstractObject(?objBase), Field(?fld), PTAbstractObject(?obj),
+  PTMustContext(?ctx), Instruction(?insn).
+UpToReturnPTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?return) <-
+  PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?return),
+  ReturnInstruction(?return),
+  !ExistsPreviousReturn(?return).
+
+UpToReturnPTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?return) <-
+  UpToReturnPTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?prevReturn),
+  NextReturn(?prevReturn, ?return),
+  PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?return).
+
+AllReturn:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?method) ->
+  PTAbstractObject(?objBase), Field(?fld), PTAbstractObject(?obj),
+  PTMustContext(?ctx), Method(?method).
+AllReturn:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?method) <-
+  UpToReturnPTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?return),
+  !(NextReturn(?return, _)),
+  Instruction:Method(?return, ?method).
+
+
+AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) ->
+  PTAbstractObject(?objBase), Field(?fld), PTAbstractObject(?obj),
+  PTMustContext(?ctx), Instruction(?insn).
+   
+AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) <-
+  PTFieldMustPointToUpToPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?pred),
+  !(NextPredecessorToSameBB[?insn, ?pred] = _),
+  !ExceptionHandlerFirstInstruction(?insn).
+
+// Not a control-flow join point
+AllPredecessors:PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?insn) <-
+  PrevInSameBasicBlock[?insn] = ?prev,
+  PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?prev).
+
+PTFieldMustPointToUpToPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?pred) ->
+  PTAbstractObject(?objBase), Field(?fld), PTAbstractObject(?obj),
+  PTMustContext(?ctx), Instruction(?insn), Instruction(?pred).
+
+PTFieldMustPointToUpToPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?pred) <-
+  MaySuccessorBBModuloThrow(?insn, ?pred),
+  BasicBlockEnd(?tail),
+  BasicBlockHead[?tail] = ?pred,
+  PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?tail),
+  !ExistsPreviousPredecessorToSameBB(?pred, ?insn).
+
+OptPTFieldMustPointToAtNextPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?prevPred) <-
+  BasicBlockEnd(?tail),
+  BasicBlockHead[?tail] = ?pred,
+  PTFieldMustPointTo(?objBase, ?fld, ?obj, ?ctx, ?tail),
+  PreviousPredecessorToSameBB[?insn, ?pred] = ?prevPred.
+
+PTFieldMustPointToUpToPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?pred) <-
+  PTFieldMustPointToUpToPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?prevPred),
+  OptPTFieldMustPointToAtNextPredecessor(?objBase, ?fld, ?obj, ?ctx, ?insn, ?prevPred),
+  NextPredecessorToSameBB[?insn, ?prevPred] = ?pred.
+
+//// ====================================
+
+//// BEGIN context management
+PTMustContext(?ctx) ->.
+lang:entity(`PTMustContext).
+lang:physical:storageModel[`PTMustContext]="ScalableSparse".
+lang:physical:capacity[`PTMustContext] = 33554432.
+
+EmptyPTContext[] = ?ctx -> PTMustContext(?ctx).
+lang:constructor(`EmptyPTContext).
+EmptyPTContext[] = ?ctx, PTMustContext(?ctx)  <- .
+
+PushAllOntoPTContext[?ctx] = ?pushedCtx -> 
+   PTMustContext(?ctx), PTMustContext(?pushedCtx).
+lang:constructor(`PushAllOntoPTContext).
+
+SingleAllPTContext[] = ?ctx -> PTMustContext(?ctx).
+SingleAllPTContext[] = ?ctx,
+PushAllOntoPTContext[?emptyCtx] = ?ctx,
+PTMustContext(?ctx) <-
+   EmptyPTContext[] = ?emptyCtx.
+
+PushPTMustContext[?invo, ?ctx] = ?pushedCtx ->
+   PTMustContext(?pushedCtx), PTMustContext(?ctx), MethodInvocation(?invo).
+lang:constructor(`PushPTMustContext).
+PopPTMustContext[?ctx] = ?poppedCtx ->
+   PTMustContext(?poppedCtx), PTMustContext(?ctx).
+PopPTMustContext[?ctx] = ?poppedCtx <-
+   PushPTMustContext[_, ?poppedCtx] = ?ctx.
+// PopAllFromPTMustContext[?ctx] = ?poppedCtx ->
+//    PTMustContext(?poppedCtx), PTMustContext(?ctx).
+// PopAllFromPTMustContext[?ctx] = ?poppedCtx,
+// PopPTMustContext[?ctx] = ?poppedCtx <-
+//    PushAllOntoContext[?poppedCtx] = ?ctx.
+
+InvoFromPTContext[?ctx] = ?invocation ->
+   PTMustContext(?ctx), MethodInvocation(?invocation).
+InvoFromPTContext[?ctx] = ?invocation <- 
+   PushPTMustContext[?invocation, _] = ?ctx.
+
+PTMustContextDepth[?ctx] = ?depth ->
+   PTMustContext(?ctx), int[32](?depth).
+PTMustContextDepth[?ctx] = ?depth+1 <-
+   PushPTMustContext[_, ?poppedCtx] = ?ctx,
+   PTMustContextDepth[?poppedCtx] = ?depth.
+PTMustContextDepth[?ctx] = ?depth+1 <-
+   PushAllOntoPTContext[?poppedCtx] = ?ctx,
+   PTMustContextDepth[?poppedCtx] = ?depth.
+PTMustContextDepth[?ctx] = 0 <-
+   SingleAllPTContext[] = ?ctx.
+
+MeetPTContexts[?ctx, ?ctx] = ?ctx <-
+   PTMustContext(?ctx).
+
+//lang:derivationType[`MeetPTContexts] = "Derived".
+
+MeetPTContexts[?ctx1, ?ctx2] = ?ctx1,
+MeetPTContexts[?ctx2, ?ctx1] = ?ctx1 <-
+   StrongerPTContext(?ctx1, ?ctx2).
+
+StrongerPTContext(?ctx, ?strongerCtx) <-
+   SingleAllPTContext[] = ?strongerCtx,
+   PushPTMustContext[_, _] = ?ctx.
+
+// TODO: Make MaxDepth configurable.
+MaxPTContextDepth[] = ?num -> int[32](?num).
+MaxPTContextDepth[] = 2 <- .
+
+//// END context management
+
+//// ====================================
+
+//// ====================================
+//// BEGIN Call graph and reachability relations
+
+// Need to identify relevant (i.e., reachable) methods for the must
+// analysis, instead of blindly applying it to all available code.
+ReachableMethodUnderPTMustContext(?ctx, ?meth) ->
+   PTMustContext(?ctx), Method(?meth).
+
+ReachableMethodUnderPTMustContext(?ctx, ?meth) <-
+   SingleAllPTContext[] = ?ctx,
+   RootMethodForMustAnalysis(?meth).
+
+ReachableMethodUnderPTMustContext(?ctx, ?meth) <-
+   PTMustCallGraphEdge:Context[_, ?invo] = ?ctx,
+   PTMustCallGraphEdge:ToMethod[?invo] = ?meth.
+
+PTMustReachable(?meth) -> Method(?meth).
+PTMustReachable(?meth) <- ReachableMethodUnderPTMustContext(_, ?meth).
+
+// For some caller context, the call at ?invocation will get
+// dispatched to ?toMethod, with the ?calleeCtx uniquely determining
+// ?invocation. In this way, information can be passed to the callee,
+// but only qualified by ?calleeCtx.
+PTMustCallGraphEdge:ToMethod[?invocation] = ?toMethod ->
+   MethodInvocation(?invocation), 
+   Method(?toMethod).
+PTMustCallGraphEdge:Context[?ctx, ?invocation] = ?calleeCtx ->
+   MethodInvocation(?invocation), 
+   PTMustContext(?calleeCtx), PTMustContext(?ctx).
+
+// static or special method invocation without "this" value
+PushPTMustContext[?invo, ?ctx] = ?calleeCtx, PTMustContext(?calleeCtx),
+PTMustCallGraphEdge:ToMethod[?invo] = ?signature,
+PTMustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
+   (SpecialMethodInvocation:Insn(?invo);
+    StaticMethodInvocation:Insn(?invo)),
+   Instruction:Method[?invo] = ?inmethod,
+   ReachableMethodUnderPTMustContext(?ctx, ?inmethod),
+   PTMustContextDepth[?ctx] < MaxContextDepth[],
+   MethodInvocation:Method[?invo] = ?signature.
+
+//#ifdef MUST_AFTER_MAY
+// Virtual method invocations. Note that this logic does NOT
+// bind "this". We don't discover the receiver object, only
+// which method gets invoked.
+PushPTMustContext[?invo, ?ctx] = ?calleeCtx, PTMustContext(?calleeCtx),
+PTMustCallGraphEdge:ToMethod[?invo] = ?toMethod,
+PTMustCallGraphEdge:Context[?ctx, ?invo] = ?calleeCtx <-
+   VirtualMethodInvocation:Insn(?invo),
+   Instruction:Method[?invo] = ?inmethod,
+   ReachableMethodUnderPTMustContext(?ctx, ?inmethod),
+   PTMustContextDepth[?ctx] < MaxContextDepth[],
+   VirtualMethodInvocation:Base[?invo] = ?base,
+   TypeResolvedVar(?base),
+   VPTTypeForVarModNull(?valuetype, ?base),
+   // REVIEW: the predicates below introduce dependency to
+   // method-resolution.logic.
+   VirtualMethodInvocation:SimpleName[?invo] = ?simplename,
+   VirtualMethodInvocation:Descriptor[?invo] = ?descriptor,
+   MethodLookup[?simplename, ?descriptor, ?valuetype] = ?toMethod.
+//#endif
+
+//// END Call graph and reachability relations
+
+//// ====================================
+
+//// BEGIN abstract object definitions
+
+PTAbstractObject(?obj) -> .
+lang:entity(`PTAbstractObject).
+lang:physical:storageModel[`PTAbstractObject] = "ScalableSparse".
+lang:physical:capacity[`PTAbstractObject] = 33554432.
+
+// Constructor from variable.
+PTAbstractObject:ByVar[?var] = ?obj ->
+   Var(?var), PTAbstractObject(?obj).
+lang:constructor(`PTAbstractObject:ByVar).
+
+PTAbstractObject:ByVarInv[?obj] = ?var ->
+   PTAbstractObject(?obj), Var(?var).
+
+PTAbstractObject:ByVarInv[?obj] = ?var <-
+   PTAbstractObject:ByVar[?var] = ?obj.
+
+// DoPrime and DoUnprime are the constructors. For reasoning (with
+// both positive and negative prime values) one needs to use
+// Prime/Unprime, not the Do* versions
+
+PTAbstractObject:DoPrime[?originalObj] = ?primedObj ->
+   PTAbstractObject(?originalObj), PTAbstractObject(?primedObj).
+lang:constructor(`PTAbstractObject:DoPrime).
+
+PTAbstractObject:DoUnprime[?originalObj] = ?primedObj ->
+   PTAbstractObject(?originalObj), PTAbstractObject(?primedObj).
+lang:constructor(`PTAbstractObject:DoUnprime).
+
+PTAbstractObject:PrimeDepth[?primeObj] = ?depth -> PTAbstractObject(?primeObj), int[32](?depth).
+
+PTAbstractObject(?primeObj),
+PTAbstractObject:DoPrime[?obj] = ?primeObj,
+PTAbstractObject:Prime[?obj] = ?primeObj,
+PTAbstractObject:PrimeDepth[?primeObj] = 1 <-
+   PTAbstractObject:ByVar[_] = ?obj.
+
+PTAbstractObject(?primeObj),
+PTAbstractObject:DoPrime[?obj] = ?primeObj,
+PTAbstractObject:Prime[?obj] = ?primeObj,
+PTAbstractObject:PrimeDepth[?primeObj] = ?depth + 1 <-
+   PTAbstractObject:DoPrime[_] = ?obj,
+   PTAbstractObject:PrimeDepth[?obj] = ?depth,
+   ?depth < MaxContextDepth[].
+
+PTAbstractObject(?primeObj),
+PTAbstractObject:DoUnprime[?obj] = ?primeObj,
+PTAbstractObject:Prime[?primeObj] = ?obj,
+PTAbstractObject:PrimeDepth[?primeObj] = -1 <-
+   PTAbstractObject:ByVar[_] = ?obj.
+
+PTAbstractObject(?primeObj),
+PTAbstractObject:DoUnprime[?obj] = ?primeObj,
+PTAbstractObject:Prime[?primeObj] = ?obj,
+PTAbstractObject:PrimeDepth[?primeObj] = ?depth - 1 <-
+   PTAbstractObject:DoUnprime[_] = ?obj,
+   PTAbstractObject:PrimeDepth[?obj] = ?depth,
+   ?depth + MaxContextDepth[] > 0.
+
+PTAbstractObject:Unprime[?primedObj] = ?originalObj <-
+   PTAbstractObject:Prime[?originalObj] = ?primedObj.
+
+//// ====================================
+
+// Trivial (var only, but primed to represent "caller's local var")
+// access paths
+
+PTAccessPath(?ap) -> .
+lang:entity(`PTAccessPath).
+lang:physical:storageModel[`PTAccessPath] = "ScalableSparse".
+lang:physical:capacity[`PTAccessPath] = 33554432.
+
+NullPTAccessPath[] = ?nullAp -> PTAccessPath(?nullAp).
+lang:constructor(`NullPTAccessPath).
+
+NullPTAccessPath[] = ?nullAp, PTAccessPath(?nullAp) <- .
+
+// Constructor from variable.
+PTAccessPath:ByVar[?var] = ?ap ->
+   Var(?var), PTAccessPath(?ap).
+lang:constructor(`PTAccessPath:ByVar).
+
+PTAccessPath:ByVarInv[?ap] = ?var ->
+   PTAccessPath(?ap), Var(?var).
+
+PTAccessPath:ByVarInv[?ap] = ?var <-
+   PTAccessPath:ByVar[?var] = ?ap.
+
+PTAccessPath:Prime[?originalAp] = ?primedAp ->
+   PTAccessPath(?originalAp), PTAccessPath(?primedAp).
+lang:constructor(`PTAccessPath:Prime).
+
+PTAccessPath:PrimeDepth[?primeAp] = ?depth -> PTAccessPath(?primeAp), int[32](?depth).
+
+PTAccessPath(?primeAp),
+PTAccessPath:Prime[?ap] = ?primeAp,
+PTAccessPath:PrimeDepth[?primeAp] = 1 <-
+   PTAccessPath:ByVar[_] = ?ap.
+
+PTAccessPath(?primeAp),
+PTAccessPath:Prime[?ap] = ?primeAp,
+PTAccessPath:PrimeDepth[?primeAp] = ?depth + 1 <-
+   PTAccessPath:Prime[_] = ?ap,
+   PTAccessPath:PrimeDepth[?ap] = ?depth,
+   ?depth < MaxContextDepth[].
+
+PTAccessPath:Unprime[?primedAp] = ?originalAp <-
+   PTAccessPath:Prime[?originalAp] = ?primedAp.
+
+// Initialize for all variables
+// The rules below create access paths from all variables
+// and all access fields in the program.
+PTAccessPath(?ap),
+PTAccessPath:ByVar[?var] = ?ap <-
+   Var(?var),
+   Var:DeclaringMethod(?var, ?method),
+//#ifdef MUST_AFTER_MAY
+   Reachable(?method),
+//#endif
+   Var:Type[?var] = ?type,
+   ReferenceType(?type),
+   !NullVar(?var).
+
+//// ====================================
+
+// Trivial (var only, but primed to represent "caller's local var")
+// access paths
+
+PTAccessPath(?ap) -> .
+lang:entity(`PTAccessPath).
+lang:physical:storageModel[`PTAccessPath] = "ScalableSparse".
+lang:physical:capacity[`PTAccessPath] = 33554432.
+
+NullPTAccessPath[] = ?nullAp -> PTAccessPath(?nullAp).
+lang:constructor(`NullPTAccessPath).
+
+NullPTAccessPath[] = ?nullAp, PTAccessPath(?nullAp) <- .
+
+// Constructor from variable.
+PTAccessPath:ByVar[?var] = ?ap ->
+   Var(?var), PTAccessPath(?ap).
+lang:constructor(`PTAccessPath:ByVar).
+
+PTAccessPath:ByVarInv[?ap] = ?var ->
+   PTAccessPath(?ap), Var(?var).
+
+PTAccessPath:ByVarInv[?ap] = ?var <-
+   PTAccessPath:ByVar[?var] = ?ap.
+
+PTAccessPath:Prime[?originalAp] = ?primedAp ->
+   PTAccessPath(?originalAp), PTAccessPath(?primedAp).
+lang:constructor(`PTAccessPath:Prime).
+
+PTAccessPath:PrimeDepth[?primeAp] = ?depth -> PTAccessPath(?primeAp), int[32](?depth).
+
+PTAccessPath(?primeAp),
+PTAccessPath:Prime[?ap] = ?primeAp,
+PTAccessPath:PrimeDepth[?primeAp] = 1 <-
+   PTAccessPath:ByVar[_] = ?ap.
+
+PTAccessPath(?primeAp),
+PTAccessPath:Prime[?ap] = ?primeAp,
+PTAccessPath:PrimeDepth[?primeAp] = ?depth + 1 <-
+   PTAccessPath:Prime[_] = ?ap,
+   PTAccessPath:PrimeDepth[?ap] = ?depth,
+   ?depth < MaxContextDepth[].
+
+PTAccessPath:Unprime[?primedAp] = ?originalAp <-
+   PTAccessPath:Prime[?originalAp] = ?primedAp.
+
+// Initialize for all variables
+// The rules below create access paths from all variables
+// and all access fields in the program.
+PTAccessPath(?ap),
+PTAccessPath:ByVar[?var] = ?ap <-
+   Var(?var),
+   Var:DeclaringMethod(?var, ?method),
+//#ifdef MUST_AFTER_MAY
+   Reachable(?method),
+//#endif
+   Var:Type[?var] = ?type,
+   ReferenceType(?type),
+   !NullVar(?var).
+
+//// ====================================
+

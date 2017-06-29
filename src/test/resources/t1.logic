@@ -1,3 +1,0 @@
-__f:oo:bar[] = x -> string(x).
-__f:oo:bar[] = "abc".
-f:oo:bar2[y] = ?x -> string(?x), int[64](y).

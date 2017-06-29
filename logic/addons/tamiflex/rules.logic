@@ -1,22 +1,20 @@
 Value:DeclaringType[?value] = ?type <-
-   (Tamiflex:Class:NewInstance(?invocation, ?heap) ;
-    Tamiflex:Constructor:NewInstance(?invocation, _, ?heap) ;
-    Tamiflex:Array:NewInstance(?invocation, ?heap)),
-   Value:byHeap[?heap] = ?value,
+   (Tamiflex:Class:NewInstance(?invocation, ?value) ;
+    Tamiflex:Constructor:NewInstance(?invocation, _, ?value) ;
+    Tamiflex:Array:NewInstance(?invocation, ?value)),
    Instruction:Method[?invocation] = ?meth,
    Method:DeclaringType[?meth] = ?type.
 
 Value:DeclaringType[?value] = ?type <-
-   (Tamiflex:ReifiedField(_, ?heap, _) ;
-    Tamiflex:ReifiedFieldArray(_, ?heap, _) ;
-    Tamiflex:ReifiedMethod(_, ?heap, _) ;
-    Tamiflex:ReifiedMethodArray(_, ?heap, _)),
-   Value:byHeap[?heap] = ?value,
+   (Tamiflex:ReifiedField(_, ?value, _) ;
+    Tamiflex:ReifiedFieldArray(_, ?value, _) ;
+    Tamiflex:ReifiedMethod(_, ?value, _) ;
+    Tamiflex:ReifiedMethodArray(_, ?value, _)),
    Value:Type[?value] = ?type.
 
 
-MockHeapConsMacro(?id, ?type, ?heap),
-Tamiflex:Class:NewInstance(?invocation, ?heap)
+MockValueConsMacro(?id, ?type, ?value),
+Tamiflex:Class:NewInstance(?invocation, ?value)
 <-
    Method:Id(?sig:"<java.lang.Class: java.lang.Object newInstance()>"),
    VirtualMethodInvocation(?invocation, ?sig, _),
@@ -25,8 +23,8 @@ Tamiflex:Class:NewInstance(?invocation, ?heap)
    Type:Id(?type:?typeStr),
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
-MockHeapConsMacro(?id, ?type, ?heap),
-Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
+MockValueConsMacro(?id, ?type, ?value),
+Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?value)
 <-
    Method:Id(?sig:"<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
    VirtualMethodInvocation(?invocation, ?sig, _),
@@ -37,8 +35,8 @@ Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap)
    Type:Id(?type:?typeStr),
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
-MockHeapConsMacro(?id, ?type, ?heap),
-Tamiflex:Array:NewInstance(?invocation, ?heap)
+MockValueConsMacro(?id, ?type, ?value),
+Tamiflex:Array:NewInstance(?invocation, ?value)
 <-
    Method:Id(?sig:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
    StaticMethodInvocation(?invocation, ?sig, _),
@@ -47,8 +45,8 @@ Tamiflex:Array:NewInstance(?invocation, ?heap)
    Type:Id(?type:?typeStr),
    ?id = "<(Tamiflex) " + ?invocationStr + "/" + ?typeStr + ">".
 
-MockHeapConsMacro(?id, ?type, ?heap),
-Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
+MockValueConsMacro(?id, ?type, ?value),
+Tamiflex:ReifiedField(?fld, ?value, ?invocation)
 <-
    (Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Field getDeclaredField(java.lang.String)>") ;
     Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Field getField(java.lang.String)>") ),
@@ -58,8 +56,8 @@ Tamiflex:ReifiedField(?fld, ?heap, ?invocation)
    Type:Id(?type:"java.lang.reflect.Field"),
    ?id = "<(Tamiflex) " + ?fldStr + ">".
 
-MockHeapConsMacro(?id, ?javaFieldArrayType, ?heap),
-Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
+MockValueConsMacro(?id, ?javaFieldArrayType, ?value),
+Tamiflex:ReifiedFieldArray(?type, ?value, ?invocation)
 <-
    (Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Field[] getDeclaredFields()>") ;
     Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Field[] getFields()>") ),
@@ -69,8 +67,8 @@ Tamiflex:ReifiedFieldArray(?type, ?heap, ?invocation)
    Type:Id(?javaFieldArrayType:"java.lang.reflect.Field[]"),
    ?id = "<(Tamiflex) " + ?typeStr + "/Field[]>".
 
-MockHeapConsMacro(?id, ?type, ?heap),
-Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
+MockValueConsMacro(?id, ?type, ?value),
+Tamiflex:ReifiedMethod(?method, ?value, ?invocation)
 <-
    (Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Method getDeclaredMethod(java.lang.String,java.lang.Class[])>") ;
     Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Method getMethod(java.lang.String,java.lang.Class[])>") ),
@@ -80,8 +78,8 @@ Tamiflex:ReifiedMethod(?method, ?heap, ?invocation)
    Type:Id(?type:"java.lang.reflect.Method"),
    ?id = "<(Tamiflex) " + ?methodStr + ">".
 
-MockHeapConsMacro(?id, ?javaMethodArrayType, ?heap),
-Tamiflex:ReifiedMethodArray(?type, ?heap, ?invocation)
+MockValueConsMacro(?id, ?javaMethodArrayType, ?value),
+Tamiflex:ReifiedMethodArray(?type, ?value, ?invocation)
 <-
    (Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Method[] getDeclaredMethods()>") ;
     Method:Id(?sig:"<java.lang.Class: java.lang.reflect.Method[] getMethods()>") ),
@@ -129,9 +127,8 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?return) <-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
    ImmutableHContextFromContext[?ctx] = ?hctx,
-   (Tamiflex:Class:NewInstance(?invocation, ?heap) ;
-    Tamiflex:Array:NewInstance(?invocation, ?heap) ),
-   Value:byHeap[?heap] = ?value,
+   (Tamiflex:Class:NewInstance(?invocation, ?value) ;
+    Tamiflex:Array:NewInstance(?invocation, ?value) ),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.
@@ -144,21 +141,26 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 <-
    ImmutableHContextFromContext[?callerCtx] = ?hctx,
    ImmutableContextFromContext[?callerCtx] = ?calleeCtx,
-   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?heap),
-   Value:byHeap[?heap] = ?value,
+   Tamiflex:Constructor:NewInstance(?invocation, ?constructor, ?value),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?callerCtx, ?inmethod),
    AssignReturnValue[?invocation] = ?return,
    ThisVar[?constructor] = ?this.
 
 
-Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
-<-
-   Method:Id(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>"),
+Java:lang:reflect:Method:invoke(?invocation) <-
    VirtualMethodInvocation(?invocation, ?sig, _),
+   Method:Id(?sig:"<java.lang.reflect.Method: java.lang.Object invoke(java.lang.Object,java.lang.Object[])>").
+                                
+InsensTamiflexInvoke(?invocation, ?method, ?inmethod) <-
+   Java:lang:reflect:Method:invoke(?invocation),
    Tamiflex:ReflectionMap(?methodStr, ?invocation),
    Method:Id(?method:?methodStr),
-   Instruction:Method[?invocation] = ?inmethod,
+   Instruction:Method[?invocation] = ?inmethod.
+   
+Tamiflex:Invoke(?callerCtx, ?invocation, ?method)
+<-
+   InsensTamiflexInvoke(?invocation, ?method, ?inmethod),
    ReachableContext(?callerCtx, ?inmethod).
 
 
@@ -225,11 +227,10 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?formal) <-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?return) <-
    ImmutableHContextFromContext[?ctx] = ?hctx,
-   (Tamiflex:ReifiedField(_, ?heap, ?invocation) ;
-    Tamiflex:ReifiedFieldArray(_, ?heap, ?invocation) ;
-    Tamiflex:ReifiedMethod(_, ?heap, ?invocation) ;
-    Tamiflex:ReifiedMethodArray(_, ?heap, ?invocation) ),
-   Value:byHeap[?heap] = ?value,
+   (Tamiflex:ReifiedField(_, ?value, ?invocation) ;
+    Tamiflex:ReifiedFieldArray(_, ?value, ?invocation) ;
+    Tamiflex:ReifiedMethod(_, ?value, ?invocation) ;
+    Tamiflex:ReifiedMethodArray(_, ?value, ?invocation) ),
    Instruction:Method[?invocation] = ?inmethod,
    ReachableContext(?ctx, ?inmethod),
    AssignReturnValue[?invocation] = ?return.

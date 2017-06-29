@@ -1,0 +1,255 @@
+/* Models the dynamic proxies of Java.
+
+   There are two ways to create a dynamic proxy instance_
+
+   (1) G obj = (G)Proxy.newProxyInstance(c, i, h);
+   (2) G obj = (G)Proxy.getProxyClass(c, i)
+                       .getConstructor(InvocationHandler.class)
+                       .newInstance(h);
+
+   Compared to the spec, we have the following restrictions_
+
+   (a) We create a single proxy per interface; if the user passes many
+   interfaces, the analysis generates all possible single-interface
+   proxies as a result.
+
+   (b) We don't distinguish between different positions in the
+   interface array and thus we don't use these Proxy properties
+   (http_//docs.oracle.com/javase/8/docs/api/java/lang/reflect/Proxy.html)_
+
+     - "No two elements in the interfaces array may refer to identical
+       Class objects."
+
+     - "the order of the specified proxy interfaces is significant_
+       two requests for a proxy class with the same combination of
+       interfaces but in a different order will result in two distinct
+       proxy classes"
+
+     - Resolution of duplicate methods in interfaces according to the
+       order of values in the interfaces array.
+
+*/
+.decl ProxyClassOfInterface(?iface:InterfaceType, ?class:ClassType)
+.decl ProxyClass(?class:ClassType)
+
+ProxyClassOfInterface(?iface, ?class) :-
+   DirectSuperinterface(?class, ?iface),
+   ProxyClass(?class).
+
+.decl java_lang_reflect_Proxy_newProxyInstance(?invo:MethodInvocation, ?ret:Var, ?handler:Var, ?interfaces:Var)
+
+java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
+   StaticMethodInvocation_SimpleName(?invo, "newProxyInstance"),
+   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"),
+   ActualParam(1, ?invo, ?interfaces),
+   ActualParam(2, ?invo, ?handler),
+   AssignReturnValue(?invo, ?ret).
+
+.decl ArrayContentsPointToInterface(?iface:ClassType, ?hctx:HContext, ?arrayValue:Value)
+
+ArrayContentsPointToInterface(?iface, ?hctx, ?arrayValue) :-
+   ArrayIndexPointsTo(_, ?interfaceVal, ?hctx, ?arrayValue),
+   ReifiedClass(?iface, ?interfaceVal),
+//// Old version_ syntactic meta-object instead of semantic
+//   ClassHeap_InstanceType[Value_Heap[?interfaceVal]] = ?iface,
+   isInterfaceType(?iface).
+
+// Proxy.getProxyClass() is simpler than Proxy.newProxyInstance(): it
+// does not allocate a proxy instance and takes no handler.
+.decl java_lang_reflect_Proxy_getProxyClass(?invo:MethodInvocation, ?ret:Var, ?interfaces:Var)
+
+java_lang_reflect_Proxy_getProxyClass(?invo, ?ret, ?interfaces) :-
+   StaticMethodInvocation_SimpleName(?invo, "getProxyClass"),
+   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy: java.lang.Class getProxyClass(java.lang.ClassLoader,java.lang.Class[])>"),
+   ActualParam(1, ?invo, ?interfaces),
+   AssignReturnValue(?invo, ?ret).
+
+VarPointsTo(?hctxImmutable, ?proxyClassObj, ?ctx, ?ret) :-
+   java_lang_reflect_Proxy_getProxyClass(_, ?ret, ?interfaces),
+   VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
+   ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
+   ProxyClassOfInterface(?iface, ?proxyClass),
+   ReifiedClass(?proxyClass, ?proxyClassObj),
+   ImmutableHContextFromContext(?ctx, ?hctxImmutable).
+
+// _OptVarPointsToForArray(?ctx, ?interfaces, ?hctx, ?interfacesValue) :-
+//    VarPointsTo(?hctx, ?arrayObj, ?ctx, ?arrayVar),
+//    Value_Heap[?arrayObj] = ?arrayHeap,
+//    ArrayType(HeapAllocation_Type[?arrayHeap]).
+
+// Create a new heap allocation per
+// (newProxyInstance call, interface type) pair.
+//// REVIEW_ ideally these should be allocated context sensitively, i.e.,
+//// call RecordMacro, and use the calling ?ctx as argument.
+.decl ProxyClassInstance(?iface:InterfaceType, ?invo:MethodInvocation, ?value:Value)
+
+MockValueConsMacro(cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">"), ?proxyClass),
+ProxyClassInstance(?iface, ?invo, cat(cat(cat(cat("<proxy object for interface ", ?iface), " at "), ?invo), ">")) :-
+   java_lang_reflect_Proxy_newProxyInstance(?invo, _, _, _),
+   isInterfaceType(?iface),
+   ProxyClassOfInterface(?iface, ?proxyClass).
+
+.decl MethodOfInterface(?meth:Method, ?iface:InterfaceType)
+
+MethodOfInterface(?meth, ?iface) :-
+   isInterfaceType(?iface),
+   Method_DeclaringType(?meth, ?iface).
+
+.decl ArgArrayOfProxyMethod(?meth:Method, ?invo:MethodInvocation, ?value:Value)
+
+MockValueConsMacro(cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">"), "java.lang.Object[]"),
+ArgArrayOfProxyMethod(?meth, ?invo, cat(cat(cat(cat("<argument array for proxied method ", ?meth), " at "), ?invo), ">")) :-
+   ProxyClassInstance(?iface, ?invo, _),
+   MethodOfInterface(?meth, ?iface).
+
+// JLS 5.1.7 (Java 8).
+// TODO Misses null-to-null boxing (is it useful for proxies?).
+.decl PrimitiveType_Boxed(?type:Type, ?boxedType:Type)
+
+PrimitiveType_Boxed("boolean", "java.lang.Boolean").
+PrimitiveType_Boxed("byte"   , "java.lang.Byte").
+PrimitiveType_Boxed("short"  , "java.lang.Short").
+PrimitiveType_Boxed("char"   , "java.lang.Character").
+PrimitiveType_Boxed("int"    , "java.lang.Integer").
+PrimitiveType_Boxed("long"   , "java.lang.Long").
+PrimitiveType_Boxed("float"  , "java.lang.Float").
+PrimitiveType_Boxed("double" , "java.lang.Double").
+
+.decl PrimitiveFormalOfInterface(?meth:Method, ?formal:Var, ?formalType:PrimitiveType)
+
+PrimitiveFormalOfInterface(?meth, ?formal, ?formalType) :-
+   MethodOfInterface(?meth, _),
+   FormalParam(_, ?meth, ?formal),
+   Var_Type(?formal, ?formalType),
+   isPrimitiveType(?formalType).
+
+// Primitive values passed as arguments to proxied methods, are boxed
+// to be passed to the args array. Thus, for every primitive argument
+// of a proxied method, we create a new value to show where
+// boxing occurs in the method. This simulates codeWrapArgument() of
+// sun.misc.ProxyGenerator, which calls the valueOf() method of the
+// appropriate wrapper type for every argument of a primitive type.
+// REVIEW_ contexts (as above)?
+.decl BoxAllocationOfPrimitiveFormal(?formal:Var, ?value:Value)
+
+MockValueConsMacro(cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"), ?boxType),
+BoxAllocationOfPrimitiveFormal(?formal, cat(cat(cat(cat(cat(cat("<boxed ", ?boxType), " argument for proxied method "), ?meth), " and formal "), ?formal), ">"))
+ :-
+   PrimitiveFormalOfInterface(?meth, ?formal, ?formalType),
+   PrimitiveType_Boxed(?formalType, ?boxType).
+
+// Return var of newProxyInstance should point to the appropriate
+// dynamic proxy object.
+//// REVIEW_ as above, have a real heap context instead of immutable?
+VarPointsTo(?hctxImmutable, ?value, ?ctx, ?ret) :-
+   java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, _, ?interfaces),
+   VarPointsTo(?hctx, ?interfacesVal, ?ctx, ?interfaces),
+   ArrayContentsPointToInterface(?iface, ?hctx, ?interfacesVal),
+   ProxyClassInstance(?iface, ?invo, ?value),
+   ImmutableHContextFromContext(?ctx, ?hctxImmutable).
+
+.decl ProxyObject_Invocation(?value:Value, ?invo:MethodInvocation)
+.decl ProxyObject_Handler(?handlerObj:Value, ?value:Value)
+.decl ProxyObject_HandlerHctx(?hctxHandler:HContext, ?value:Value)
+.decl ProxyObject_Interface(?value:Value, ?iface:InterfaceType)
+
+
+ProxyObject_Invocation(?value, ?invo),
+ProxyObject_Handler(?handlerObj, ?value),
+ProxyObject_HandlerHctx(?hctxHandler, ?value),
+ProxyObject_Interface(?value, ?iface)
+:-
+   java_lang_reflect_Proxy_newProxyInstance(?invo, _, ?handler, _),
+   VarPointsTo(?hctxHandler, ?handlerObj, _, ?handler),
+   ProxyClassInstance(?iface, ?invo, ?value).
+
+
+// And the clincher_ if a method gets invoked on a proxy object, simulate
+// a call to the proxy object handler's "invoke" method, with the right
+// arguments passed in.
+.decl CallToMethodOfProxyObject(?value:Value, ?ctx:Context, ?invo:MethodInvocation)
+
+CallToMethodOfProxyObject(?value, ?ctx, ?invo) :-
+   isVirtualMethodInvocation_Insn(?invo),
+   VirtualMethodInvocation_Base(?invo, ?base),
+   VarPointsTo(_, ?value, ?ctx, ?base),
+   ProxyObject_Invocation(?value, _).
+
+
+//// REVIEW
+// #ifdef REFLECTION_CONTEXT_SENSITIVITY
+// ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx), ...
+.decl ProxyCallGraphEdge(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context, ?handlerInvokeMeth:Method)
+
+ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
+VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this)
+:-
+   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+   CallToMethodOfProxyObject(?value, ?callerCtx, ?invo),
+   ProxyObject_Handler(?handlerObj, ?value),
+   ProxyObject_HandlerHctx(?hctxHandler, ?value),
+   Value_Type(?handlerObj, ?handlerType),
+   ?invoke = "<java.lang.reflect.InvocationHandler: java.lang.Object invoke(java.lang.Object,java.lang.reflect.Method,java.lang.Object[])>",
+   Method_SimpleName(?invoke, ?invokeMethName),
+   Method_Descriptor(?invoke, ?invokeMethDescriptor),
+   MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
+   ThisVar(?handlerInvokeMeth, ?this).
+
+//// TODO From spec_ if method has same name/signature as Object's
+//// hashCode(), equals(), or toString(), then the reified Method
+//// always comes from Object.
+.decl ProxyCallArgArray(?invo:MethodInvocation, ?methSig:Method, ?argsArrValue:Value)
+
+VarPointsTo(?hctx, ?proxyValue, ?calleeCtx, ?proxyArg),
+VarPointsTo(?hctx, ?methValue, ?calleeCtx, ?methArg),
+VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
+ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
+   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
+   CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
+   FormalParam(0, ?handlerInvokeMeth,?proxyArg),
+   FormalParam(1, ?handlerInvokeMeth, ?methArg),
+   FormalParam(2, ?handlerInvokeMeth, ?argsArg),
+   ImmutableHContextFromContext(?calleeCtx, ?hctx),
+   MethodInvocation_Method(?invo, ?methSig),
+   ReifiedMethod(?methSig, ?methValue),
+   ProxyObject_Invocation(?proxyValue, ?invocation),
+   ArgArrayOfProxyMethod(?methSig, ?invocation, ?argsArrValue).
+
+ReachableContext(?calleeCtx, ?callee) :-
+   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+.decl ArgArrayAndActualArg(?argsArrValue:Value, ?methSig:Method, ?actual:Var)
+
+ArgArrayAndActualArg(?argsArrValue, ?methSig, ?actual) :-
+   ProxyCallArgArray(?invo, ?methSig, ?argsArrValue),
+   ActualParam(_, ?invo, ?actual).
+
+// Populate args array_
+// (a) Reference-type arguments go in directly.
+ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx2, ?arrValue) :-
+   ArgArrayAndActualArg(?arrValue, _, ?actual),
+   VarPointsTo(?hctx, ?actualVal, ?ctx, ?actual),
+   Var_Type(?actual, ?actualType),
+   isReferenceType(?actualType),
+   ImmutableHContextFromContext(?ctx, ?hctx2).
+// (b) Primitive arguments are boxed first.
+ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) :-
+   ArgArrayAndActualArg(?arrValue, ?methSig, _),
+   FormalParam(_, ?methSig, ?formal),
+   BoxAllocationOfPrimitiveFormal(?formal, ?actualVal),
+   isImmutableHContext(?hctx).
+// REVIEW_ contexts.
+
+// Handle return values_ connect the return value of handler.invoke()
+// to the return value of the wrapped method. The exceptions mandated
+// by the spec are handled elsewhere (in exceptions.logic); here only
+// we record the internal invoke() return variable for use there.
+.decl ProxyInvokeResult(?callerCtx:Context, ?invo:MethodInvocation, ?calleeCtx:Context, ?handlerReturnVar:Var)
+
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret),
+ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
+:-
+   ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
+   ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
+   AssignReturnValue(?invo, ?ret).

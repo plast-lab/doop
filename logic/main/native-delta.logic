@@ -32,7 +32,7 @@
   \
   +SpecialMethodInvocation:Base[?invocation] = ?return, \
   +Instruction:Method[?invocation] = ?method, \
-  +MethodInvocation:Signature[?invocation] = ?constructor, \
+  +MethodInvocation:Method[?invocation] = ?constructor, \
   PlusSpecialMethodInvocation(?invocation, ?strInvocation), \
   +Instruction:Index[?invocation] = ?index \
     <- \
@@ -67,7 +67,7 @@
   +VirtualMethodInvocation(?invocation, ?signature, ?inmethod), \
   +VirtualMethodInvocation:Base[?invocation] = ?base, \
   +Instruction:Method[?invocation] = ?inmethod, \
-  +MethodInvocation:Signature[?invocation] = ?signature, \
+  +MethodInvocation:Method[?invocation] = ?signature, \
   +Instruction:Index[?invocation] = ?index \
     <- \
       Method:Id(?inmethod:strMethod), \
@@ -100,10 +100,10 @@
  * TODO should return a clone of the heap allocation (not
  *      identity). The behaviour implemented here is based on Soot.
  */
-PlusAssignLocal(
-  "java.lang.Object.clone/@this",
-  "java.lang.Object.clone/@native-return",
-  "<java.lang.Object: java.lang.Object clone()>").
++AssignLocal(ThisVar[?method], ?ret, ?method) <-
+   Method:Id(?method:"<java.lang.Object: java.lang.Object clone()>"),
+   ReturnVar(?ret, ?method).
+
 
 /**********************************************************************************
  *
@@ -149,6 +149,35 @@ PlusVar(?tmp, ?inmethod, ?tmpStr, ?tmpType),
       MethodInvocationValue(?invocation, ?strInvocation),
       ?tmpStr =  ?strInvocation + "/@tmp-arraycopy",
       Type:Id(?tmpType:"java.lang.Object").
+
+/**********************************************************************************
+ *
+ * sun.misc.Unsafe
+ *
+ **********************************************************************************/
+// For now handle these as array operations, not as field operations
++StoreArrayIndex(?from, ?base, ?inmethod) <-
+      Method:Id(?casObject:"<sun.misc.Unsafe: boolean compareAndSwapObject(java.lang.Object,long,java.lang.Object,java.lang.Object)>"),
+      VirtualMethodInvocation(?invocation, ?casObject, ?inmethod),
+      ActualParam@previous[0, ?invocation] = ?base,
+      ActualParam@previous[3, ?invocation] = ?from.
+
++StoreArrayIndex(?from, ?base, ?inmethod) <-
+      (Method:Id(?putObj:"<sun.misc.Unsafe: void putObject(java.lang.Object,long,java.lang.Object)>");
+       Method:Id(?putObj:"<sun.misc.Unsafe: void putObject(java.lang.Object,int,java.lang.Object)>");
+       Method:Id(?putObj:"<sun.misc.Unsafe: void putObjectVolatile(java.lang.Object,long,java.lang.Object)>");
+       Method:Id(?putObj:"<sun.misc.Unsafe: void putOrderedObject(java.lang.Object,long,java.lang.Object)>")),
+      VirtualMethodInvocation(?invocation, ?putObj, ?inmethod),
+      ActualParam@previous[0, ?invocation] = ?base,
+      ActualParam@previous[2, ?invocation] = ?from.
+
++LoadArrayIndex(?base, ?to, ?inmethod) <-
+      (Method:Id(?getObj:"<sun.misc.Unsafe: java.lang.Object getObjectVolatile(java.lang.Object,long)>");
+       Method:Id(?getObj:"<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,long)>");
+       Method:Id(?getObj:"<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,int)>")),
+      VirtualMethodInvocation(?invocation, ?getObj, ?inmethod),
+      ActualParam@previous[0, ?invocation] = ?base,
+      AssignReturnValue@previous[?invocation] = ?to.
 
 /**********************************************************************************
  *

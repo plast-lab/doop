@@ -1,0 +1,29 @@
+Value_DeclaringType(?value, "java.lang.System") :-
+   ?value = "<<string-constant>>",
+   isValue(?value) ;
+   ?value = "<<reflection-string-constant>>",
+   isValue(?value) ;
+   ?value = "<<string-buffer>>",
+   isValue(?value) ;
+   ?value = "<<string-builder>>",
+   isValue(?value) ;
+   ?value = "<<initial-context>>",
+   isValue(?value) ;
+   ?value = "<<jvm-startup-context>>",
+   isValue(?value) ;
+   ?value = "<<jvm-startup-hcontext>>",
+   isValue(?value) ;
+   ?value = "<<clinit-context>>",
+   isValue(?value) ;
+   ?value = "<<system-thread-group>>",
+   isValue(?value) ;
+   ?value = "<<main-thread-group>>",
+   isValue(?value) ;
+   ?value = "<<main-thread>>",
+   isValue(?value) ;
+   ?value = "<<immutable-context>>",
+   isValue(?value) ;
+   ?value = "<<immutable-hcontext>>",
+   isValue(?value) ;
+   ?value = "<<immutable>>",
+   isValue(?value).

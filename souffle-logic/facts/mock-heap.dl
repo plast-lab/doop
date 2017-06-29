@@ -1,0 +1,65 @@
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
+   ?type = "java.io.UnixFileSystem".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="java.io.UnixFileSystem.list/new java.lang.String[]",
+   ?type = "java.lang.String[]".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="java.io.UnixFileSystem.list/new java.lang.String",
+   ?type = "java.lang.String".
+
+MockHeapConsMacro(?heap, ?type) :-
+   (?heap ="<<string-constant>>";
+    ?heap ="<<reflection-string-constant>>"),
+   ?type = "java.lang.String".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<string-buffer>>",
+   ?type = "java.lang.StringBuffer".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<string-builder>>",
+   ?type = "java.lang.StringBuilder".
+
+MockHeapConsMacro(?heap, ?type) :-
+   (?heap ="<<system-thread-group>>";
+    ?heap ="<<main-thread-group>>"),
+   ?type = "java.lang.ThreadGroup".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<main-thread>>",
+   ?type = "java.lang.Thread".
+
+// Special heaps for contexts
+// Note: the type is necessary (java.lang.Object), but never used. It could be
+// anything. It also needs to be an existing type, otherwise the sanity checks
+// will barf.
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<initial-context>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<jvm-startup-context>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<jvm-startup-hcontext>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<clinit-context>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<immutable-context>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<immutable-hcontext>>",
+   ?type = "java.lang.Object".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap ="<<immutable>>",
+   ?type = "java.lang.Object".

@@ -1,0 +1,33 @@
+// Recognize packages
+DotsInClassName(?type, ?pos) <-
+  ClassType(?type), Type:Id(?type:?name), string:substring[?name, ?pos, 1] = ".".
+
+NotLastDot(?pos, ?type) <-
+  DotsInClassName(?type, ?pos), DotsInClassName(?type, ?pos2), ?pos2 > ?pos.
+
+NotSecondLastDot(?pos, ?type) <-
+  DotsInClassName(?type, ?pos), DotsInClassName(?type, ?pos2), ?pos2 > ?pos, NotLastDot(?pos2, ?type).
+NotSecondLastDot(?pos, ?type) <-
+  LastDot[?type] = ?pos.
+
+LastDot[?type] = ?pos <-
+  DotsInClassName(?type, ?pos), !NotLastDot(?pos, ?type).
+
+SecondLastDot[?type] = ?pos <-
+  DotsInClassName(?type, ?pos), !NotSecondLastDot(?pos, ?type).
+
+// Heuristically assign a class to a package
+Class:PackageHack[?type] = ?packageName <-
+  SecondLastDot[?type] = ?secondLastPos,
+  ClassType(?type), Type:Id(?type:?name),
+  string:substring[?name,0,?secondLastPos] = ?packageName.
+
+Class:PackageHack[?type] = ?packageName <-
+  !(SecondLastDot[?type] = _), // there are fewer than two dots
+  ClassType(?type), Type:Id(?type:?name),
+  string:substring[?name,0,LastDot[?type]] = ?packageName.
+
+Class:PackageHack[?type] = ?packageName <-
+  !(LastDot[?type] = _), // there are no dots
+  ClassType(?type), Type:Id(?type:?packageName).
+

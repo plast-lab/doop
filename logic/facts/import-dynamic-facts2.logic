@@ -1,0 +1,152 @@
++DynamicHeapAllocation(?representation, ?heap) <-
+   ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).
+
+
+// DynamicContext
+lang:physical:storageModel[`_DynamicContext] = "DelimitedFile".
+lang:physical:filePath[`_DynamicContext] = "facts/DynamicContext.facts".
+lang:physical:delimiter[`_DynamicContext] = "\t".
+lang:physical:hasColumnNames[`_DynamicContext] = false.
+_DynamicContext(?representation, ?heap1rep, ?heap2rep, ?site1inMeth, ?site1line, ?site2inMeth, ?site2line) ->
+  string(?heap1rep),
+  string(?heap2rep),
+  string(?site1inMeth),
+  int[64](?site1line),
+  string(?site2inMeth),
+  int[64](?site2line),
+  string(?representation).
+
++DynamicContext(?ctx),
++DynamicContext:Id(?ctx:?representation)
+ <- _DynamicContext(?representation, _, _, _, _, _, _).
+
++DynamicContextHeap1(?heap, ?ctx) <-
+   DynamicContext:Id(?ctx:?ctxrep),
+   _DynamicContext(?ctxrep, ?obj1rep, _, _, _, _, _),
+   DynamicHeapAllocation(?obj1rep, ?heap).
+
++DynamicContextHeap2(?heap, ?ctx) <-
+   DynamicContext:Id(?ctx:?ctxrep),
+   _DynamicContext(?ctxrep, _, ?obj2rep, _, _, _, _),
+   DynamicHeapAllocation(?obj2rep, ?heap).
+
++DynamicContext("<Immutable dctx>").
+
+               
+//TODO
+//+DynamicContextInvo1(?invo, ?ctx) <-
+//   DynamicContext(?ctx),
+//   _DynamicContext(_, _, _, _, ?ctx),
+//   DynamicHeapAllocation(?obj1rep, ?heap).
+
+
+// DynamicNormalHeapObject
+lang:physical:storageModel[`_DynamicNormalHeapObject] = "DelimitedFile".
+lang:physical:filePath[`_DynamicNormalHeapObject] = "facts/DynamicNormalHeapObject.facts".
+lang:physical:delimiter[`_DynamicNormalHeapObject] = "\t".
+lang:physical:hasColumnNames[`_DynamicNormalHeapObject] = false.
+_DynamicNormalHeapObject(?param1, ?param2, ?param3) ->
+  string(?param1),
+  string(?param2),
+  string(?param3).
+
+
++DynamicHeapObject(?dynamicContext, ?heap) <- _DynamicHeapObjectRep(_, ?heap, ?dynamicContext).
+
+_DynamicHeapObjectRep(?representation, ?heap, ?dynamicContext) <-
+   DynamicHeapAllocation(?heapRepresentation, ?heap),
+   DynamicContext(?dynamicContext),
+   DynamicContext:Id(?dynamicContext:?contextRepresentation),
+   _DynamicNormalHeapObject(?heapRepresentation, ?contextRepresentation, ?representation).
+
+
+// DynamicStaticFieldPointsTo
+lang:physical:storageModel[`_DynamicStaticFieldPointsTo] = "DelimitedFile".
+lang:physical:filePath[`_DynamicStaticFieldPointsTo] = "facts/DynamicStaticFieldPointsTo.facts".
+lang:physical:delimiter[`_DynamicStaticFieldPointsTo] = "\t".
+lang:physical:hasColumnNames[`_DynamicStaticFieldPointsTo] = false.
+_DynamicStaticFieldPointsTo(?param1, ?param2, ?param3) ->
+   string(?param1),
+   string(?param2),
+   string(?param3).
+
+
+
+// DynamicInstanceFieldPointsTo
+lang:physical:storageModel[`_DynamicInstanceFieldPointsTo] = "DelimitedFile".
+lang:physical:filePath[`_DynamicInstanceFieldPointsTo] = "facts/DynamicInstanceFieldPointsTo.facts".
+lang:physical:delimiter[`_DynamicInstanceFieldPointsTo] = "\t".
+lang:physical:hasColumnNames[`_DynamicInstanceFieldPointsTo] = false.
+_DynamicInstanceFieldPointsTo(?param1, ?param2, ?param3, ?param4) ->
+  string(?param1),
+  string(?param2),
+  string(?param3),
+  string(?param4).
+
+
+// DynamicArrayIndexPointsTo
+lang:physical:storageModel[`_DynamicArrayIndexPointsTo] = "DelimitedFile".
+lang:physical:filePath[`_DynamicArrayIndexPointsTo] = "facts/DynamicArrayIndexPointsTo.facts".
+lang:physical:delimiter[`_DynamicArrayIndexPointsTo] = "\t".
+lang:physical:hasColumnNames[`_DynamicArrayIndexPointsTo] = false.
+_DynamicArrayIndexPointsTo(?param1, ?param2) ->
+  string(?param1),
+  string(?param2).
+
+_DynamicHeapObjectRep(?heapStr, ?heap, ?ctx) <-
+   HeapAllocation:byId[?heapStr] = ?heap, DynamicContext:Id(?ctx:"<Immutable dctx>").
+
++DynamicStaticFieldPointsTo(?fld, ?dynamicContext, ?heap) <-
+   Field:SimpleName[?fld] = ?fldSimpleName,
+   Field:DeclaringType[?fld] = ?fldDeclaringClass,
+   _DynamicHeapObjectRep(?objString, ?heap, ?dynamicContext),
+   _DynamicStaticFieldPointsTo(?fldSimpleName, ?fldDeclaringClass, ?objString).
+
++DynamicInstanceFieldPointsTo(?fld, ?ctx, ?heap, ?baseCtx, ?baseHeap) <-
+   _DynamicHeapObjectRep(?objString, ?heap, ?ctx),
+   _DynamicHeapObjectRep(?baseObjString, ?baseHeap, ?baseCtx),
+   Field:SimpleName[?fld] = ?fldSimpleName,
+   Field:DeclaringType[?fld] = ?fldDeclaringClass,
+   _DynamicInstanceFieldPointsTo(?baseObjString, ?fldSimpleName, ?fldDeclaringClass, ?objString).
+
++DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) <-
+   _DynamicHeapObjectRep(?objString, ?heap, ?ctx),
+   _DynamicHeapObjectRep(?baseObjString, ?baseHeap, ?baseCtx),
+   _DynamicArrayIndexPointsTo(?baseObjString, ?objString).
+
+
+// DynamicCallGraphEdge
+lang:physical:storageModel[`_DynamicCallGraphEdge] = "DelimitedFile".
+lang:physical:filePath[`_DynamicCallGraphEdge] = "facts/DynamicCallGraphEdge.facts".
+lang:physical:delimiter[`_DynamicCallGraphEdge] = "\t".
+lang:physical:hasColumnNames[`_DynamicCallGraphEdge] = false.
+_DynamicCallGraphEdge(?param1, ?param2, ?param3, ?param4, ?param5) ->
+   string(?param1),
+   int[64](?param2),
+   string(?param3),
+   string(?param4),
+   string(?param5).
+
+// Dynamic call graph edges are found by combining successive
+// stack trace elements in the heap dump.
+
+_InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod) <-
+   MethodInvocation:Line[?invocation] = ?lineNumber,
+   MethodInvocation:SimpleName[?invocation] = ?name,   
+   Instruction:Method[?invocation] = ?fromMethod,
+   Method:Id(?fromMethod:?fromMethodId).
+
++DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) <-
+   _DynamicCallGraphEdge(?fromMethodId, ?lineNumber, ?toMethodId, ?ctxFromId, ?ctxToId),
+   _InvocationMethodAndLine(?fromMethodId, ?lineNumber, ?name, ?invocation, ?fromMethod),
+   DynamicContext:Id(?ctxFrom:?ctxFromId),
+   DynamicContext:Id(?ctxTo:?ctxToId),
+   Method:SimpleName[?toMethod] = ?name,
+   Method:Id(?toMethod:?toMethodId).
+
++UnmatchedDynamicCallGraphEdgeNode(?method) <-
+   (_DynamicCallGraphEdge(?methodId, _, _, _, _) ;
+    _DynamicCallGraphEdge(_, _, ?methodId, _, _)),
+    Method:Id(?method:?methodId),
+   !(DynamicCallGraphEdge(_, ?method, _,  _, _) ;
+     DynamicCallGraphEdge(_, _, _, _, ?method)).

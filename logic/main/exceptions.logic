@@ -1,54 +1,184 @@
-/*****************************************************************************
- * Throw statements
- *****************************************************************************/
+Instruction:Throws(?hctx, ?value, ?ctx, ?insn) <-
+  Throw(?insn, ?var),
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+Instruction:Throws(?hctx, ?value, ?callerCtx, ?invocation) <-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+  ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod).
 
 /**
- * A method throws an exception in a context if there is a throw statement in
- * the method, and the thrown variable points to an object in this context, but
- * this object is not immediately caught by an exception handler (ThrowPointsTo
- * rule).
- * If the object is a caught, then it is assigned to the formal parameter of
- * the exeception handler (VarPointsTo rule).
+ * Represents the exceptions a method can throw
+ * TODO Implicitly thrown exceptions are not included
  */
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) <-
+  Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
+  Instruction:Method[?insn] = ?method,
+  !ExceptionHandler:InRange(_, ?insn).
 
 ThrowPointsTo(?hctx, ?value, ?ctx, ?method) <-
-   Throw(?ref, ?var),
-   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-   Value:Type[?value] = ?valuetype,
-   !(ExceptionHandler:At[?valuetype, ?ref] = _),
-   Instruction:Method[?ref] = ?method.
+  Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
+  Instruction:Method[?insn] = ?method,
+  ExceptionHandler:SameInsn:Repr[?insn] = ?repr,
+  ExceptionHandler:SameBlock:Repr[?repr] = ?block,
+  !ExceptionHandler:TypeIsCaught(Value:Type[?value], ?block).
 
 VarPointsTo(?hctx, ?value, ?ctx, ?param) <-
-   Throw(?ref, ?var),
-   VarPointsTo(?hctx, ?value, ?ctx, ?var),
-   Value:Type[?value] = ?valuetype,
-   ExceptionHandler:At[?valuetype, ?ref] = ?handler,
-   ExceptionHandler:FormalParam[?handler] = ?param.
+  Instruction:Throws(?hctx, ?value, ?ctx, ?insn),
+  Value:Type[?value] = ?valueType,
+  ExceptionHandler:InRange(?handler, ?insn),
+  ExceptionHandler:Type[?handler] = ?handlerType,
+  SubtypeOf(?valueType, ?handlerType),
+  ConcreteClass(?valueType), // filtering null_type
+  !ExceptionHandler:Impossible(?valueType, ?handler, ?insn),
+  ExceptionHandler:FormalParam[?handler] = ?param.
 
-/*****************************************************************************
- * Method invocations
- *****************************************************************************/
+///////////////////////////////////////////////////////////////////////////////
 
-/**
- * A method M1 throws an exception in a context if there is a call graph edge
- * from an invocation in M1 to some method M2 and the method M2 throws a an
- * exception for this specific (context-sensitive) call graph edge. Also, the
- * exception should not be caught immediately by an exception handler in M1
- * (ThrowPointsTo rule).
- * If there is such an exception handler, then the exception object is assigned
- * to the formal parameter of the exception handler (VarPointsTo rule).
+/*
+ * This will only used to check that an exception is *not* caught (negated).
+ * Merge handlers with the same catch block for further optimization.
  */
+ExceptionHandler:TypeIsCaught(?type, ?block) <-
+  ExceptionHandler:InRange(?handler, ?insn),
+  ExceptionHandler:SameInsn:Repr[?insn] = ?repr,
+  ExceptionHandler:SameBlock:Repr[?repr] = ?block,
+  SubtypeOf(?type, ExceptionHandler:Type[?handler]),
+  ConcreteClass(?type).
 
-ThrowPointsTo(?hctx, ?value, ?callerCtx, ?callerMethod) <-
-   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-   ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
-   Value:Type[?value] = ?valuetype,
-   !(ExceptionHandler:At[?valuetype, ?invocation] = _),
-   Instruction:Method[?invocation] = ?callerMethod.
+/*
+ * Inclusion of instruction is important. E.g. handler1 covers indices 20-30,
+ * handler2 covers indices 10-40. Also, Previous(handler1, handler2).
+ * Instruction #25 may infer Impossible(T1, handler2). Subsequently, when
+ * checking instruction #15, we would (falsely) have that handler2 is
+ * impossible for type T1.
+ */
+ExceptionHandler:Impossible(?type, ?h2, ?insn) <-
+  ExceptionHandler:InRange(?h1, ?insn),
+  ExceptionHandler:InRange(?h2, ?insn),
+  ExceptionHandler:Before(?h1, ?h2),
+  ExceptionHandler:Type[?h1] = ?h1Type,
+  ExceptionHandler:Type[?h2] = ?h2Type,
+  SubtypeOf(?type, ?h1Type),
+  SubtypeOf(?type, ?h2Type),
+  ConcreteClass(?type).
 
-VarPointsTo(?hctx, ?value, ?callerCtx, ?param) <-
-   CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
-   ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
-   Value:Type[?value] = ?valuetype,
-   ExceptionHandler:At[?valuetype,?invocation] = ?handler,
-   ExceptionHandler:FormalParam[?handler] = ?param.
+///////////////////////////////////////////////////////////////////////////////
+
+// An "exception handler" has a separate identity and the following information:
+//  -where it starts being active
+//  -where it stops
+//  -which type it handles
+//  -where it jumps when an appropriate exception is caught ("catch block"). This is
+//   independent from the instructions the handler covers and has no semantics
+//   (e.g., no priority of handlers based on locations of catch blocks).
+//  -in which order it appears in the program text. This is important for priority.
+
+ExceptionHandler:Method:Opt(?handler, ?method) <-
+  ExceptionHandler:Method[?handler] = ?method.
+
+ExceptionHandler:InRange(?handler, ?instruction) <-
+  Instruction:Method[?instruction] = ?method,
+  Instruction:Index[?instruction] = ?index,
+  ExceptionHandler:Method:Opt(?handler, ?method),
+  ExceptionHandler:Begin[?handler] <= ?index,
+  ExceptionHandler:End[?handler] > ?index.
+
+ExceptionHandler:Before(?previous, ?handler) <-
+  ExceptionHandler:Previous[?handler] = ?previous.
+
+ExceptionHandler:Before(?before, ?handler) <-
+  ExceptionHandler:Before(?middle, ?handler),
+  ExceptionHandler:Previous[?middle] = ?before.
+
+/*
+ * An instruction may be in range of multiple handlers. Pick the first one as a
+ * representative and have it handling all (concrete) types of those handlers.
+ */
+ExceptionHandler:SameInsn:PartialOrder(?h1, ?h2, ?insn) <-
+  ExceptionHandler:InRange(?h1, ?insn),
+  ExceptionHandler:InRange(?h2, ?insn),
+  ExceptionHandler:Before(?h1, ?h2).
+
+ExceptionHandler:SameInsn:Repr[?insn] = ?handler <-
+  ExceptionHandler:InRange(?handler, ?insn),
+  !ExceptionHandler:SameInsn:PartialOrder(_, ?handler, ?insn).
+
+/*
+ * In Jimple, multiple handlers share the same catch block. Also, additional
+ * handlers/catch blocks might be added (e.g., to handle exitmonitor commands).
+ */
+ExceptionHandler:SameBlock:PartialOrder(?h1, ?h2) <-
+  ExceptionHandler:Before(?h1, ?h2),
+  ExceptionHandler:Index[?h1] = ExceptionHandler:Index[?h2].
+
+ExceptionHandler:SameBlock:Repr[?handler] = ?handler <-
+  ExceptionHandler(?handler),
+  !ExceptionHandler:SameBlock:PartialOrder(_, ?handler).
+
+ExceptionHandler:SameBlock:Repr[?handler] = ?repr <-
+  ExceptionHandler:SameBlock:PartialOrder(?repr, ?handler),
+  !ExceptionHandler:SameBlock:PartialOrder(_, ?repr).
+
+#ifdef REFLECTION_DYNAMIC_PROXIES
+/* Dynamic proxies have some special exception semantics, since the
+   single invoke() method must pose as any method and thus is declared
+   to throw a Throwable. */
+
+// Case (a): If invoke() has to throw an exception e that is not a
+// checked exception of the interface method, then e is wrapped as
+// UndeclaredThrowableException(e) and thrown. The actual rule below
+// is a bit simpler than the spec, as we do not provide the inner
+// exception e, so we use a global exception object.
+
+MockValueConsMacro(?valueId, ?UTEClass, ?value),
+ProxyUTE[] = ?value <-
+  ?valueId = "<UndeclaredThrowableException thrown by proxy call>",
+  Type:Id(?UTEClass:"java.lang.reflect.UndeclaredThrowableException").
+
+Instruction:Throws(?hctx, ProxyUTE[], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+
+// Case (b): "If the value returned by invoke is null and the
+// interface method's return type is primitive, then a
+// NullPointerException will be thrown by the method invocation on the
+// proxy instance." For performance, we use a single global
+// object.
+
+MockValueConsMacro(?valueId, ?NPEClass, ?value),
+ProxyNPE[] = ?value <-
+  ?valueId = "<NullPointerException thrown by proxy call>",
+  Type:Id(?NPEClass:"java.lang.NullPointerException").
+
+ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx) <-
+  ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar),
+  VarPointsTo(_, Value:Null[], _, ?handlerReturnVar).
+
+Instruction:Throws(?hctx, ProxyNPE[], ?callerCtx, ?invo) <-
+  ProxyNullInvokeResult(?callerCtx, ?invo, ?calleeCtx),
+  AssignReturnValue[?invo] = ?return,
+  PrimitiveType(Var:Type[?return]),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+
+// Case (c): "If the value returned by invoke is otherwise not
+// compatible with the method's declared return type as described
+// above, a ClassCastException will be thrown by the proxy instance."
+// If invoke() returns B and the interface method returns A, then A
+// and B are not compatible if (a) they are different primitive types
+// or (b) B is not a subtype of A.
+
+// In practice, this is usually true due to the variety of return
+// types appearing in interface methods, se we can just assume that
+// proxy calls may throw ClassCastException and we use a single object
+// for all such exceptions.
+
+MockValueConsMacro(?valueId, ?CCEClass, ?value),
+ProxyCCE[] = ?value <-
+  ?valueId = "<ClassCastException thrown by proxy call>",
+  Type:Id(?CCEClass:"java.lang.ClassCastException").
+
+Instruction:Throws(?hctx, ProxyCCE[], ?callerCtx, ?invo) <-
+  ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, _),
+  ImmutableHContextFromContext[?calleeCtx] = ?hctx.
+
+#endif /* REFLECTION_DYNAMIC_PROXIES */

@@ -5,8 +5,6 @@
   HContext(hctx), \
   HContextFromRealHContext[RealContext2FromContext[ctx]] = hctx
 
-
-
 // For this analysis the context of a method call corresponds to the
 // identity of the receiver object and the receiver object of the caller.
 // Again, this may trigger creation of a new object.
@@ -16,11 +14,11 @@
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
 
-#define MergeBasisMacro(callerCtx, invocation, hctx, value) \
+#define AdvancedMergeBasisMacro(callerCtx, invocation, hctx, value) \
   MergeBasis(callerCtx, invocation, hctx, value)
 
-#define OptimizeMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
-  OptimizeMerge[hctx, value] = calleeCtx
+#define CachedMergeMacro(callerCtx, invocation, hctx, value, calleeCtx) \
+  CachedMerge[hctx, value] = calleeCtx
 
 // For this analysis, static calls use additionally the invocation site as a context.
 #define MergeStaticMacro(callerCtx, invo, calleeCtx) \
@@ -44,6 +42,12 @@
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
 
+#define MergeOpenProgramEntryPointMacro(method, value, calleeCtx) \
+  Context(calleeCtx), \
+  ContextFromRealContext[valueComp, valueComp] = calleeCtx, \
+  ContextComponent(valueComp), \
+  ContextComponent:Value[value] = valueComp                                   
+
 // This is exactly equivalent to the regular merge logic, but written
 // differently. At finalization, we create a new hctx, based on the
 // callerCtx, and then use this new hctx as we would in regular Merge.
@@ -58,3 +62,14 @@
   ContextFromRealContext[RealContext2FromContext[callerCtx], valueComp] = newCtx, \
   ContextComponent(valueComp), \
   ContextComponent:Value[value] = valueComp
+
+
+#define InitContextMacro(valueId) \
+  Context(ctx), ContextFromRealContext[valueComp, valueComp] = ctx, \
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp \
+  <- Value:byId[valueId] = value
+
+#define InitHContextMacro(valueId) \
+  HContext(hctx), HContextFromRealHContext[valueComp] = hctx, \
+  ContextComponent(valueComp), ContextComponent:Value[value] = valueComp \
+  <- Value:byId[valueId] = value

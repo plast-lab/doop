@@ -1,5 +1,11 @@
 #include "../../commonMacros.logic"
- 
+
+// The following 3 predicate declarations are essential in case statistics
+// logic is enabled.
+MockObjFromArray(?type) -> ReferenceType(?type).
+MockObjFromField(?type) -> ReferenceType(?type).
+MockObjFromFormal(?type) -> ReferenceType(?type).
+
 ServletEntryMethodName("doGet").
 ServletEntryMethodName("doPost").
 
@@ -23,6 +29,9 @@ ServletClass(?class) <-
    ClassType(?class),
    Type:Id(?staticType:"javax.servlet.http.HttpServlet").
 
+EntryPoint(?method) <- MockEntryPoint(_, ?method).
+
+
 // Servlet service methods
 MockEntryPoint(?class, ?entry) <-
    ServletClass(?class),
@@ -37,7 +46,7 @@ ImplicitReachable(?method) <- MockEntryPoint(_, ?method).
 
 // The following two rules were originally separated to stratify negation (no longer needed)
 VarPointsTo(?hctx, ?value, ?ctx, ?receiver) <-
-   ImmutableHContext(?hctx),
+   ImmutableHContextFromContext[?ctx] = ?hctx,
    ValueForReceiverInContext(?ctx, ?receiver, ?value).
 
 
@@ -46,6 +55,7 @@ MockObject(?value, ?type) -> Value(?value), Type(?type).
 Value(?value),
 MockValueConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?value),
 //MockHeapConsMacro("<Mock receiver " + ?classStr + " >", ?class, ?heap),
+MockObjFromEntryPoint(?value),
 MockObject(?value, ?class)
 <-
    MockEntryPoint(?class, _),

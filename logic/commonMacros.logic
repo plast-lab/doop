@@ -8,6 +8,12 @@
    StringConstant(heap), \
    HeapAllocation:Type[heap] = type
 
+#define MethodHandleConstantConsMacro(id, type, heap, method) \
+   HeapAllocation:MethodHandle:Cons[id] = heap, \
+   MethodHandleConstant(heap), \
+   MethodHandleConstant:Method[heap] = method, \
+   HeapAllocation:Type[heap] = type
+
 #define ClassHeapConsMacro(id, type, heap) \
    HeapAllocation:Class:Cons[id] = heap, \
    ClassHeap(heap), \
@@ -20,6 +26,11 @@
 
 #define MockValueConsMacro(id, type, value) \
    Value:Mock:Cons[id] = value, \
+   Value(value), \
+   Value:Type[value] = type
+
+#define SpecialValueConsMacro(id, type, value) \
+   Value:Special:Cons[id] = value, \
    Value(value), \
    Value:Type[value] = type
 

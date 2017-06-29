@@ -3,44 +3,68 @@ package org.clyze.doop
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.doop.core.*
+import org.clyze.analysis.Analysis
+import org.clyze.analysis.AnalysisPostProcessor
+import org.clyze.doop.core.Doop
+import org.clyze.doop.core.DoopAnalysis
 
-class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
+class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnalysis> {
 
     protected Log logger = LogFactory.getLog(getClass())
 
     @Override
-    void process(Analysis analysis) {
+    void process(DoopAnalysis analysis) {
         if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
             printStats(analysis)
+        if (analysis.options.SOUFFLE.value && analysis.options.SANITY.value)
+            printSanityResults(analysis)
         linkResult(analysis)
     }
 
 
-    protected void printStats(Analysis analysis) {
-        def lines = [] as List<String>
-        analysis.connector.processPredicate("Stats:Runtime") { String line ->
-            lines.add(line)
+    protected void printStats(DoopAnalysis analysis) {
+        def lines = []
+
+        if (analysis.options.SOUFFLE.value) {
+            def file = new File("${analysis.database}/Stats_Runtime.csv")
+            file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
+        }
+        else {
+            analysis.connector.processPredicate("Stats:Runtime") { String line ->
+                if (!filterOutLBWarn(line)) lines.add(line)
+            }
         }
 
         logger.info "-- Runtime metrics --"
         lines.sort()*.split(", ").each {
-            printf("%-80s %,.2f\n", it[0], it[1] as float)
+            printf("%-80s %,d\n", it[0], it[1] as long)
         }
 
         if (!analysis.options.X_STATS_NONE.value) {
-            lines = [] as List<String>
-            analysis.connector.processPredicate("Stats:Metrics") { String line ->
-                lines.add(line)
-            }
+            lines = []
 
-            // We have to first sort (numerically) by the 1st column and
-            // then erase it
+            if (analysis.options.SOUFFLE.value) {
+                def file = new File("${analysis.database}/Stats_Metrics.csv")
+                file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
+            }
+            else {
+                analysis.connector.processPredicate("Stats:Metrics") { String line ->
+                    if (!filterOutLBWarn(line)) lines.add(line)
+                }
+            }
 
             logger.info "-- Statistics --"
-            lines.sort()*.replaceFirst(/^[0-9]+[ab]?@ /, "")*.split(", ").each {
-                printf("%-80s %,d\n", it[0], it[1] as int)
+            lines.sort()*.split(", ").each {
+                printf("%-80s %,d\n", it[1], it[2] as long)
             }
+        }
+    }
+
+    protected void printSanityResults(Analysis analysis) {
+        def file = new File("${analysis.database}/Sanity.csv")
+        logger.info "-- Sanity Results --"
+        file.readLines().sort()*.split("\t").each {
+            printf("%-80s %,d\n", it[1], it[2] as long)
         }
     }
 
@@ -48,12 +72,12 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         if (analysis.options.X_STOP_AT_FACTS.value) {
             def facts = new File(analysis.options.X_STOP_AT_FACTS.value)
             logger.info "Making facts available at $facts"
-            analysis.executor.execute("ln -s -f ${analysis.facts} \"$facts\"")
+            analysis.executor.execute("ln -s -f ${analysis.factsDir} \"$facts\"")
             return
         }
 
         def platform = analysis.options.PLATFORM.value
-        def inputName = FilenameUtils.getBaseName(analysis.inputs[0].toString())
+        def inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()
@@ -63,5 +87,11 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor {
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
         analysis.executor.execute("ln -s -f -n ${analysis.database} \"$lastAnalysis\"")
+    }
+
+    protected boolean filterOutLBWarn(String line) {
+        return line == '*******************************************************************' ||
+            line == 'Warning: BloxBatch is deprecated and will not be supported in LogicBlox 4.0.' ||
+            line == "Please use 'lb' instead of 'bloxbatch'."
     }
 }

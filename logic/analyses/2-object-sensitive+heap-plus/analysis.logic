@@ -1,0 +1,144 @@
+#include "../../main/classes-scc.logic"
+
+// This analysis switches from 2objH to 3obj2H by allocating some
+// objects with deeper context (at special points) and treating
+// methods called on those objects with the full precision afforded by
+// the abstract object + heap context. Whenever the analysis needs to
+// fall back to 2objH (e.g., for further allocations of non-special
+// objects, for static method calls, or generally for any handling
+// that is oblivious of the special 3objH mode) it just transparently
+// picks the most important context elements.
+ContextFromValuePair[?value1, ?value2] = ?ctx ->
+  Context(?ctx), Value(?value1), Value(?value2).
+lang:constructor(`ContextFromValuePair).
+Value1FromContext[?ctx] = ?value1,
+Value2FromContext[?ctx] = ?value2 <-
+  ContextFromValuePair[?value1, ?value2] = ?ctx.
+
+// We can also form Contexts from HContexts (which can have either one
+// or two elements) and values. We pretend that these contexts always
+// have just two values, when needed.
+ContextFromHContextAndValue[?hctx, ?value] = ?ctx ->
+  HContext(?hctx), Context(?ctx), Value(?value).
+lang:constructor(`ContextFromHContextAndValue).
+Value1FromContext[?ctx] = ValueFromHContext[?hctx],
+Value2FromContext[?ctx] = ?value <-
+  ContextFromHContextAndValue[?hctx, ?value] = ?ctx.
+
+HContextFromValue[?value] = ?hctx ->
+  HContext(?hctx), Value(?value).
+lang:constructor(`HContextFromValue).
+ValueFromHContext[?hctx] = ?value <-
+  HContextFromValue[?value] = ?hctx.
+
+HContextFromValuePair[?value1, ?value2] = ?hctx ->
+  HContext(?hctx), Value(?value1), Value(?value2).
+lang:constructor(`HContextFromValuePair).
+// If it's an artificially longer HContext, pretend it's only the second element.
+ValueFromHContext[?hctx] = ?value2 <-
+  HContextFromValuePair[_, ?value2] = ?hctx.
+
+// Convenience mappings from all usual concepts (invo-sites, contexts, methods) to SCC
+SCCForInvocation[?invo] = ?sccId <-
+  Instruction:Method[?invo] = ?inmethod,
+  Method:DeclaringType[?inmethod] = ?inClass,
+  TypeToSCCId[?inClass] = ?sccId.
+
+SCCForMethod[?method] = ?sccId <-
+  Method:DeclaringType[?method] = ?inClass,
+  TypeToSCCId[?inClass] = ?sccId.
+   
+SCCForContext1[?ctx] = ?sccId <-
+  Value:DeclaringType[Value1FromContext[?ctx]] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+SCCForContext2[?ctx] = ?sccId <-
+  Value:DeclaringType[Value2FromContext[?ctx]] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+SCCForHContext[?hctx] = ?sccId <-
+  Value:DeclaringType[ValueFromHContext[?hctx]] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+SCCForValue[?value] = ?sccId <-
+  Value:DeclaringType[?value] = ?type,
+  TypeToSCCId[?type] = ?sccId.
+
+_ContextInSCCTransition(?ctx) <-
+  SCCForContext1[?ctx] != SCCForContext2[?ctx].
+
+_NotContextInSCCTransition(?ctx) <-
+  SCCForContext1[?ctx] = SCCForContext2[?ctx].
+
+/*
+_VarInConstructor(?var) <-
+  Var:DeclaringMethod(?var, ?method),
+  Method:SimpleName[?method] = "<init>".
+*/
+/*
+  (Method:Id(?method:"<java.util.HashSet: void <init>()>");
+   Method:Id(?method:"<java.util.HashSet: void <init>(java.util.Collection)>");
+   Method:Id(?method:"<java.util.HashSet: void <init>(int,float)>");
+   Method:Id(?method:"<java.util.HashSet: void <init>(int)>");
+   Method:Id(?method:"<java.util.HashSet: void <init>(int,float,boolean)>");
+   Method:Id(?method:"<java.util.AbstractMap: void <init>()>");
+   Method:Id(?method:"<java.util.LinkedHashMap: void <init>(int,float)>");
+   Method:Id(?method:"<java.util.HashMap: void <init>(int,float)>");
+   Method:Id(?method:"<java.util.HashMap: void <init>(int)>");
+   Method:Id(?method:"<java.util.HashMap: void <init>(java.util.Map)>");
+   Method:Id(?method:"<java.util.HashMap: void <init>()>")).
+*/
+
+// For this analysis, we only need two of the parameters that may influence the
+// new context object.
+MyMergeBasis(?hctx, ?value) <-
+  MergeBasis(_, _, ?hctx, ?value).
+
+MergeMacro(?notused, ?notused, ?hctx, ?value, ?calleeCtx),
+CachedMerge[?hctx, ?value] = ?calleeCtx <-
+  MyMergeBasis(?hctx, ?value).
+
+// TODO: optimize the "basis" predicates
+
+// For an object allocation that should be treated specially, take both
+// parts of the context (not just the receiver object) as heap context
+HContext(?hctx),
+HContextFromValuePair[Value1FromContext[?ctx], Value2FromContext[?ctx]] = ?hctx,
+CachedRecord[?ctx, ?value] = ?hctx <-
+   RecordBasis(?ctx, ?var, ?value),
+   ?var = ?var, // no warning
+   _ContextInSCCTransition(?ctx).
+//    _VarInConstructor(?var)).
+
+// For a non-special object allocation, do what 2objH would: take
+// the receiver object's id as heap context.
+HContext(?hctx),
+HContextFromValue[Value2FromContext[?ctx]] = ?hctx,
+CachedRecord[?ctx, ?value] = ?hctx <-
+   RecordBasis(?ctx, ?var, ?value),
+   ?var = ?var, // no warning
+//   !_VarInConstructor(?var),
+   _NotContextInSCCTransition(?ctx).
+
+// Dynamic analysis
+#ifdef ANALYZE_MEMORY_DUMP
+#define DYNAMIC_CONTEXT_SENSITIVITY
+ContextFromValuePair[Value:byDynamicHeap[?heap1], Value:byDynamicHeap[?heap2]] = ?ctx,
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   DynamicContextHeap2(?heap2, ?dynCtx).
+
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   ImmutableContext(?ctx),
+   DynamicContext(?dynCtx),
+   !DynamicContextHeap2(_, ?dynCtx).
+
+HContextFromValue[Value:byDynamicHeap[?heap1]] = ?hctx,
+DynamicContextToHContext(?hctx, ?dynCtx) <-
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToHContext(?hctx, ?dynCtx) <-
+   ImmutableHContext(?hctx),
+   DynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx).
+#endif                    

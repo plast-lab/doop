@@ -45,7 +45,6 @@ InitializedClass(?class) <-
 
 /**
  * T is a class and an instance of T is created
- * TODO Same join is performed in VarPointsTo. Maybe fold.
  * TODO Consider to add strings?
  */
 InitializedClass(?class) <-
@@ -60,7 +59,7 @@ InitializedClass(?class) <-
    Reachable(?inmethod),
    Instruction:Method[?invocation] = ?inmethod,
    StaticMethodInvocation:Insn(?invocation),
-   MethodInvocation:Signature[?invocation] = ?signature,
+   MethodInvocation:Method[?invocation] = ?signature,
    Method:DeclaringType[?signature] = ?class.
 
 /**
@@ -85,6 +84,5 @@ InitializedClass(?classOrInterface) <-
 /**
  * T is a top-level class, and an assert statement lexically nested within T is
  * executed
- * TODO: No idea how a statement can ever be executed in a class that has not
- * been initialized
+ * http://stackoverflow.com/questions/17800829/what-does-t-is-a-top-level-class-and-an-assert-statement-lexically-nested-with
  */
