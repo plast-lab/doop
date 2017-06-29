@@ -149,6 +149,8 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?receiver) <-
 #endif
    ReceiverPointsTo(?value, ?calleeCtx, ?receiver, ?class, ?method).
 
+
+
 // Important: The MergeOpenProgramEntryPointMacro can be defined
 // in such a way as to retreive some of the precision lost
 // due to having mock objects flowing everywhere,
@@ -176,6 +178,17 @@ ContextForEntryPoint(?calleeCtx, ?method)
 #ifdef OPEN_PROGRAMS_IMMUTABLE_CTX
    ImmutableContext(?calleeCtx),
 #endif
+   EntryPoint(?method).
+
+
+// TODO: requires major tweaking for context sensitive analyses
+// Consider a recency abstraction for context in static methods
+HContextForEntryPoint(?hctx, ?method),
+ContextForEntryPoint(?calleeCtx, ?method)
+ <-
+   ImmutableHContext(?hctx),
+   ImmutableContext(?calleeCtx),
+   Method:Modifier("static", ?method),
    EntryPoint(?method).
 
 

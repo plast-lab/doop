@@ -52,3 +52,7 @@ SpecialMethodInvocation_Descriptor(?invocation, ?descriptor) :-
 LayoutControl(?id, ?type, ?parent) :-
   LayoutControl0(?id, ?type, ?parent),
   isType(?type).
+
+SensitiveLayoutControl(?id, ?type, ?parent) :-
+  SensitiveLayoutControl0(?id, ?type, ?parent),
+  isType(?type).

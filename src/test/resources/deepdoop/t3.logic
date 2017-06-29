@@ -1,4 +1,0 @@
-foo(x) -> string(x).
-bar0(x)->.
-bar(x,y) -> string(x),bar0(y).
-foobaz(x) -> int(x).

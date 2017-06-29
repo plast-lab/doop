@@ -57,7 +57,8 @@ configurations.all {
 
 dependencies {
 
-    compile "org.clyze:clue-common:1.25.+",
+    compile "org.clyze:clue-common:2.0.+",
+            "org.clyze:deepdoop:0.9.+",
             "org.codehaus.groovy:groovy-all:2.4.7",             // Groovy
             "commons-logging:commons-logging:1.1",              // Logging wrapper
             "log4j:log4j:1.2.14",                               // Logging implementation
@@ -86,7 +87,7 @@ dependencies {
             "ext:axml:2.0",
             "org.smali:util:2.2b4"                              // Dexlib2 utilities
 
-    // DeepDoop
+    // JimpleParser
     antlr   "org.antlr:antlr4:4.5.1-1"
     compile "org.antlr:antlr4-runtime:4.5.1-1"
     testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
@@ -144,17 +145,6 @@ task jimple2json(type: JavaExec) {
     group = 'Other'
     main = 'org.clyze.jimple.Main'
     classpath = sourceSets.main.runtimeClasspath
-    if (project.hasProperty("args")) {
-        args project.property("args").split()
-    }
-}
-
-task deepdoop(type: JavaExec) {
-    description 'Run DeepDoop'
-    group = 'Other'
-    main = 'org.clyze.deepdoop.Main'
-    classpath = sourceSets.main.runtimeClasspath
-    enableAssertions = true
     if (project.hasProperty("args")) {
         args project.property("args").split()
     }

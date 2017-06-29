@@ -131,45 +131,47 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	void exitComplexAssignmentStmt(ComplexAssignmentStmtContext ctx) {
 		if (ctx.IDENTIFIER())
-			metadata.usages << varUsage(ctx.IDENTIFIER(), UsageKind.DATA_READ)
+			addVarUsage(ctx.IDENTIFIER(), UsageKind.DATA_READ)
 
 		if (ctx.fieldSig())
 			metadata.usages << fieldUsage(ctx.fieldSig(), UsageKind.DATA_WRITE)
 
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
-				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
+				addVarUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
 
 	void exitAssignmentStmt(AssignmentStmtContext ctx) {
 		if (ctx.IDENTIFIER(0))
-			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		if (ctx.IDENTIFIER(1))
-			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
-				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
+				addVarUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 
 		// Cast Assignment
 		if (hasToken(ctx, "(") && !hasToken(ctx, "Phi"))
 			addTypeUsage(ctx.IDENTIFIER(1))
+		else if (hasToken(ctx, "Phi"))
+			gatherIdentifiers(ctx.identifierList()).each { addVarUsage(it, UsageKind.DATA_READ) }
 
 		addTypeUsage(ctx.IDENTIFIER(2))
 	}
 
 	void exitReturnStmt(ReturnStmtContext ctx) {
 		if (ctx.value()?.IDENTIFIER())
-			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
+			addVarUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
 
 	void exitAllocationStmt(AllocationStmtContext ctx) {
-		metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+		addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		ctx.value().each {
 			if (it.IDENTIFIER())
-				metadata.usages << varUsage(it.IDENTIFIER(), UsageKind.DATA_READ)
+				addVarUsage(it.IDENTIFIER(), UsageKind.DATA_READ)
 		}
 
 		def typeId = ctx.IDENTIFIER(1)
@@ -208,9 +210,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
 		if (ctx.IDENTIFIER(0))
-			metadata.usages << varUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		if (ctx.IDENTIFIER(1))
-			metadata.usages << varUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 
 		def methodClassId = ctx.methodSig().IDENTIFIER(0)
 		def methodClass = methodClassId.text
@@ -277,13 +279,13 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		values[ctx] = ((values[ctx.valueList()] ?: []) << ctx.value())
 
 		if (ctx.value().IDENTIFIER())
-			metadata.usages << varUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
+			addVarUsage(ctx.value().IDENTIFIER(), UsageKind.DATA_READ)
 	}
 
 	void exitJumpStmt(JumpStmtContext ctx) {
 		(0..1).each {
 			if (ctx.value(it)?.IDENTIFIER())
-				metadata.usages << varUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
+				addVarUsage(ctx.value(it).IDENTIFIER(), UsageKind.DATA_READ)
 		}
 	}
 
@@ -315,12 +317,12 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		return v
 	}
 
-	Usage varUsage(TerminalNode id, UsageKind kind) {
+	void addVarUsage(TerminalNode id, UsageKind kind) {
 		def line = id.symbol.line
 		def startCol = id.symbol.charPositionInLine + 1
 		def name = id.text
 
-		def u = new Usage(
+		metadata.usages << new Usage(
 				new Position(line, line, startCol, startCol + name.length()),
 				filename,
 				"${method.doopId}/$name", //doopId

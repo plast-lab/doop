@@ -127,11 +127,11 @@ lang:physical:filePath[`_AndroidApplication] = "facts/AndroidApplication.facts".
 lang:physical:delimiter[`_AndroidApplication] = "\t".
 lang:physical:hasColumnNames[`_AndroidApplication] = false.
 
-_AndroidApplication(?method) ->
-   string(?method).
+_AndroidApplication(?type) ->
+   string(?type).
 
-+AndroidApplication(?method) <-
-   _AndroidApplication(?method).
++AndroidApplication(?type) <-
+   _AndroidApplication(?type).
 
 // AssignLocal
 
@@ -1143,7 +1143,7 @@ _LayoutControl(?param1, ?param2, ?param3) ->
 
 // SensitiveLayoutControl
 lang:physical:storageModel[`_SensitiveLayoutControl] = "DelimitedFile".
-lang:physical:filePath[`_SensitiveLayoutControl] = "facts/LayoutControl.facts".
+lang:physical:filePath[`_SensitiveLayoutControl] = "facts/SensitiveLayoutControl.facts".
 lang:physical:delimiter[`_SensitiveLayoutControl] = "\t".
 lang:physical:hasColumnNames[`_SensitiveLayoutControl] = false.
 _SensitiveLayoutControl(?param1, ?param2, ?param3) ->

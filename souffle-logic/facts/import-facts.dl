@@ -94,6 +94,15 @@ AndroidEntryPoint(?method) :-
   _AndroidEntryPoint(?method).
 
 
+// AndroidApplication
+
+.decl _AndroidApplication(?type:symbol)
+.input _AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
+
+AndroidApplication(?type) :-
+   _AndroidApplication(?type).
+
+
 // AssignLocal
 
 .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)
@@ -753,6 +762,14 @@ CallbackMethod(?id) :-
 
 LayoutControl0(?id, ?typename, ?parent) :-
   _LayoutControl(?id, ?typename, ?parent).
+
+
+// SensitiveLayoutControl
+.decl _SensitiveLayoutControl(?param1:NumConstant, ?param2:symbol, ?param3:symbol)
+.input _SensitiveLayoutControl(IO="file", filename="SensitiveLayoutControl.facts", delimiter="\t")
+
+SensitiveLayoutControl0(?id, ?typename, ?parent) :-
+  _SensitiveLayoutControl(?id, ?typename, ?parent).
 
 
 // FieldInitialValue

@@ -31,13 +31,12 @@
 //     public methods whose name starts with "on" be reachable (REVIEW:
 //     with what arguments?)
 **/
-
-
 AndroidAppComponent(?type) :-
   Activity(?type);
   Service(?type);
   BroadcastReceiver(?type);
-  ContentProvider(?type).
+  ContentProvider(?type);
+  AndroidApplication(?type).
 
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
@@ -52,6 +51,10 @@ MockValueConsMacro(cat("<layout control object ", cat(?id, cat(" of type ", cat(
 ReifiedLayoutControl(?type, ?id, cat("<layout control object ", cat(?id, cat(" of type ", cat(?type, ">"))))) :-
   LayoutControl(?id, ?type, _),
   isType(?type).
+
+SensitiveLayoutControlValue(?value) :-
+  ReifiedLayoutControl(?type, ?id, ?value),
+  SensitiveLayoutControl(?id, ?type, _).
 
 // Also instantiate implicitly some library objects
 ImplicitlyInstantiatedLibraryType(?type) :-
@@ -178,6 +181,7 @@ ReachableContext(?ctx, ?meth) :-
 // REVIEW: this is currently liberal. It checks that the app class
 // subtypes a library listener and that it has an "on*" method,
 // but that doesn't mean that method overrides one of the listener.
+
 
 // ... all analysis-reachable objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-

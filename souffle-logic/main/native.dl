@@ -97,10 +97,12 @@ ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
  * TODO should return a clone of the heap allocation (not
  *      identity). The behaviour implemented here is based on Soot.
  */
-PlusAssignLocal(
-  "java.lang.Object.clone/@this",
-  "java.lang.Object.clone/@native-return",
-  "<java.lang.Object: java.lang.Object clone()>").
+AssignLocal(?this, ?ret, ?method) :-
+  ?method = "<java.lang.Object: java.lang.Object clone()>",
+  isMethod(?method),
+  ThisVar(?method, ?this),
+  ReturnVar(?ret, ?method).
+
 
 /**********************************************************************************
  *
