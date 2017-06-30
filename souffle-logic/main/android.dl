@@ -83,9 +83,9 @@ AndroidApplicationClass(?class) :-
 
 AndroidViewType(?type) :-
   SubtypeOf(?type, ?supertype),
-  (?superType = "android.view.View",
+  (?supertype = "android.view.View",
    isType(?supertype);
-   ?superType = "android.view.ViewGroup",
+   ?supertype = "android.view.ViewGroup",
    isType(?supertype)).
 
 AndroidLibraryListenerType(?type) :-
