@@ -339,3 +339,31 @@ VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   Value_Num(?value, ?numId),
   ViewObjectValueFromId(?viewValue, ?numId).
+
+// TODO: AsyncTask.execute should call AsyncTask.doInBackground
+
+
+// Special handling for multi-dimensional arrays
+NotSpecialObject(cat(cat(?invocation, ":"), ?type)),
+NotEmptyArrayValue(cat(cat(?invocation, ":"), ?type)),
+MockValueConsMacro(cat(cat(?invocation, ":"), ?type), ?type),
+MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type, ?ctx, ?from) :-
+  ?method = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>",
+  StaticMethodInvocation(?invocation, ?method, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  AssignReturnValue(?invocation, ?from),
+  OptAssignCast(?type, _, ?from).
+
+UninitialisedArray(?hctx, ?value, ?invocation, ?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
+  MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
+  RecordMacro(?ctx, ?value, ?hctx).
+
+NotSpecialObject(cat(cat(?invocation, ":"), ?arrayType)),
+NotEmptyArrayValue(cat(cat(?invocation, ":"), ?arrayType)),
+MockValueConsMacro(cat(cat(?invocation, ":"), ?arrayType), ?arrayType),
+UninitialisedArray(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?invocation, ?arrayType),
+ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?basevalue) :-
+  ComponentType(?type, ?arrayType),
+  isArrayType(?arrayType),
+  UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
