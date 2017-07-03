@@ -32,3 +32,5 @@
 .decl ViewRetrievalByArg0MethodInvocation(?invo:MethodInvocation)
 .decl VarsAtInvocationRetrievingView(?ret:Var, ?var:Var)
 .decl ViewObjectValueFromId(?viewValue:Value, ?numId:NumConstant)
+.decl UninitialisedArray(?hctx:HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)
+.decl MultiDimensionalArrayTemp(?value:Value, ?invocation:MethodInvocation, ?type:Type, ?ctx:Context, ?from:Var)

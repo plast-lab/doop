@@ -6,8 +6,9 @@ ClassHasPossibleEntryPoint(?class),
 PossibleEntryPoint(?method) :-
   Method_DeclaringType(?method, ?class),
   Method_Modifier("public", ?method),
-  !ClassModifier("private", ?class),
-  !Method_Modifier("static", ?method).
+//// Remove comment for original behavior
+//   !Method_Modifier("static", ?method),
+  !ClassModifier("private", ?class).
 
 // Find highest level in the naming hierarchy that contains public
 // methods.
@@ -31,17 +32,29 @@ ClassIsAboveOtherInNamingHierarchy(?classAbove, ?classBelow) :-
   substr(?prefixBelow, 0, ?prefixLen) = ?prefixAbove.
 
 .decl ClassWithTopLevelEntryPoint(?class:ReferenceType)
+.decl TopLevelApplicationClass(?class:ReferenceType)
+.decl ClassToConsider(?class:ReferenceType)
 .decl TopLevelEntryPoint(?method:Method)
 
 ClassWithTopLevelEntryPoint(?class) :-
   ClassHasPossibleEntryPoint(?class),
   !ClassIsAboveOtherInNamingHierarchy(_, ?class).
 
+TopLevelApplicationClass(?class) :-
+  ClassWithTopLevelEntryPoint(?class),
+  ApplicationClass(?class).
+
+ClassToConsider(?class) :-
+  TopLevelApplicationClass(?class).
+
+ClassToConsider(?class) :-
+  ApplicationClass(?class),
+  !TopLevelApplicationClass(_).
+
 TopLevelEntryPoint(?method) :-
   PossibleEntryPoint(?method),
   Method_DeclaringType(?method, ?class),
-  ApplicationClass(?class),
-  ClassWithTopLevelEntryPoint(?class).
+  ClassToConsider(?class).
 
 #ifdef OPEN_PROGRAMS
 // The original definition that Neville had
@@ -52,5 +65,6 @@ EntryPoint(?method) :-
 #else
 // The definition we currently want as default
 EntryPoint(?method) :-
-  TopLevelEntryPoint(?method).
+  PossibleEntryPoint(?method).
+//  TopLevelEntryPoint(?method).
 #endif
