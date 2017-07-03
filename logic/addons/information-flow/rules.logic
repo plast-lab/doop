@@ -144,7 +144,7 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) <-
 MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) <-
    Instruction:Method[?invocation] = ?fromMethod,
    MethodInvocationInContext(?ctx, ?invocation, ?method),
-   ApplicationClass(Method:DeclaringType[?fromMethod]).
+   ApplicationMethod(?fromMethod).
 
 ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) <-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),

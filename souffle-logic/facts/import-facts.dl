@@ -94,6 +94,15 @@ AndroidEntryPoint(?method) :-
   _AndroidEntryPoint(?method).
 
 
+// AndroidApplication
+
+.decl _AndroidApplication(?type:symbol)
+.input _AndroidApplication(IO="file", filename="AndroidApplication.facts", delimiter="\t")
+
+AndroidApplication(?type) :-
+   _AndroidApplication(?type).
+
+
 // AssignLocal
 
 .decl _AssignLocal(?instruction:symbol, ?index:number, ?from:symbol, ?to:symbol, ?inmethod:symbol)

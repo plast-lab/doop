@@ -147,6 +147,26 @@ ParamTaintTransferredToBase(?param, ?ctx, ?base) :-
   MethodInvocation_Base(?invocation, ?base),
   !AssignReturnValue(?invocation, _).
 
+MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) :-
+  ApplicationMethod(?fromMethod),
+  Instruction_Method(?invocation, ?fromMethod),
+  MethodInvocationInContext(?ctx, ?invocation, ?method).
+
+ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
+  ParamToRetTaintTransferMethod(?taintTransferMethod),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
+  ActualParam(0, ?invocation, ?param),
+  TypeForReturnValue(?type, ?ret, ?invocation).
+
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  SourceFromTaintedValue(?value, ?source),
+  Value_DeclaringType(?value, ?declaringType),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  ParamTaintTransferredToRet(?type, ?to, ?ctx, ?from),
+  isImmutableHContext(?hctx).
+
+
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 .decl ValueTaintedFromValue(?v1:Value, ?v2:Value)
 
@@ -241,3 +261,8 @@ VarPointsTo(?hctx, ValueIdMacro(?invo, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
 TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
   VarPointsTo(_, ?value, ?ctx, ?var).
+
+TaintedValue(?value),
+TaintedValue(?basevalue) :-
+  (TaintedValue(?value) ; TaintedValue(?basevalue)),
+  InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).

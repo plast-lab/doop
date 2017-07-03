@@ -181,6 +181,14 @@ ContextForEntryPoint(?calleeCtx, ?method) :-
 #endif
   EntryPoint(?method).
 
+// TODO: requires major tweaking for context sensitive analyses
+// Consider a recency abstraction for context in static methods
+HContextForEntryPoint(?hctx, ?method),
+ContextForEntryPoint(?calleeCtx, ?method) :-
+  isImmutableHContext(?hctx),
+  isImmutableContext(?calleeCtx),
+  Method_Modifier("static", ?method),
+  EntryPoint(?method).
 
 ReachableContext(?ctx, ?method) :-
   ContextForEntryPoint(?ctx, ?method).

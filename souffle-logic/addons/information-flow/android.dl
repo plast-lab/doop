@@ -1,19 +1,22 @@
 #include "macros.dl"
 
-TaintedValueIntroduced(?declaringType, ?invocation, "java.lang.String", "PASSWORD", ?value),
-VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+TaintedValueIntroduced(?declaringType, ?invocation, ?type, "PASSWORD", ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB)),
+VarPointsTo(?hctx, ValueIdMacro(?invocation, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  ?type = "java.lang.String",
   PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base),
-  Instruction_Method(?invocation, ?method)
+  Instruction_Method(?invocation, ?method),
   Method_DeclaringType(?method, ?declaringType),
   VarPointsTo(_, ?layoutControlValue, ?ctx, ?base),
-  ImmutableHContext(?hctx),
+  isImmutableHContext(?hctx),
   SensitiveLayoutControlValue(?layoutControlValue).
 
 
+.decl PossibleLayoutGetText(?to:Var, ?invocation:MethodInvocation, ?ctx:Context, ?base:Var)
+
 PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
-  AndroidViewType(?base),
-  Var_Type(?base, ?type),
-  MethodInvocationInContext(?ctx, ?invocation, _),
-  VirtualMethodInvocation_Base(?invocation, ?base),
   VirtualMethodInvocation_SimpleName(?invocation, "getText"),
-  AssignReturnValue(?invocation, ?to).
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  AssignReturnValue(?invocation, ?to),
+  Var_Type(?base, ?type),
+  AndroidViewType(?type),
+  MethodInvocationInContext(?ctx, ?invocation, _).

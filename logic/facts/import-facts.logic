@@ -127,11 +127,11 @@ lang:physical:filePath[`_AndroidApplication] = "facts/AndroidApplication.facts".
 lang:physical:delimiter[`_AndroidApplication] = "\t".
 lang:physical:hasColumnNames[`_AndroidApplication] = false.
 
-_AndroidApplication(?method) ->
-   string(?method).
+_AndroidApplication(?type) ->
+   string(?type).
 
-+AndroidApplication(?method) <-
-   _AndroidApplication(?method).
++AndroidApplication(?type) <-
+   _AndroidApplication(?type).
 
 // AssignLocal
 

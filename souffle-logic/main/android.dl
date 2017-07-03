@@ -31,13 +31,12 @@
 //     public methods whose name starts with "on" be reachable (REVIEW:
 //     with what arguments?)
 **/
-
-
 AndroidAppComponent(?type) :-
   Activity(?type);
   Service(?type);
   BroadcastReceiver(?type);
-  ContentProvider(?type).
+  ContentProvider(?type);
+  AndroidApplication(?type).
 
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
@@ -84,9 +83,9 @@ AndroidApplicationClass(?class) :-
 
 AndroidViewType(?type) :-
   SubtypeOf(?type, ?supertype),
-  (?superType = "android.view.View",
+  (?supertype = "android.view.View",
    isType(?supertype);
-   ?superType = "android.view.ViewGroup",
+   ?supertype = "android.view.ViewGroup",
    isType(?supertype)).
 
 AndroidLibraryListenerType(?type) :-
@@ -182,6 +181,7 @@ ReachableContext(?ctx, ?meth) :-
 // REVIEW: this is currently liberal. It checks that the app class
 // subtypes a library listener and that it has an "on*" method,
 // but that doesn't mean that method overrides one of the listener.
+
 
 // ... all analysis-reachable objects
 ReachableApplicationObjectOfType(?hctx, ?value, ?ofType) :-
@@ -339,3 +339,31 @@ VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) :-
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   Value_Num(?value, ?numId),
   ViewObjectValueFromId(?viewValue, ?numId).
+
+// TODO: AsyncTask.execute should call AsyncTask.doInBackground
+
+
+// Special handling for multi-dimensional arrays
+NotSpecialObject(cat(cat(?invocation, ":"), ?type)),
+NotEmptyArrayValue(cat(cat(?invocation, ":"), ?type)),
+MockValueConsMacro(cat(cat(?invocation, ":"), ?type), ?type),
+MultiDimensionalArrayTemp(cat(cat(?invocation, ":"), ?type), ?invocation, ?type, ?ctx, ?from) :-
+  ?method = "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>",
+  StaticMethodInvocation(?invocation, ?method, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  AssignReturnValue(?invocation, ?from),
+  OptAssignCast(?type, _, ?from).
+
+UninitialisedArray(?hctx, ?value, ?invocation, ?type),
+VarPointsTo(?hctx, ?value, ?ctx, ?from) :-
+  MultiDimensionalArrayTemp(?value, ?invocation, ?type, ?ctx, ?from),
+  RecordMacro(?ctx, ?value, ?hctx).
+
+NotSpecialObject(cat(cat(?invocation, ":"), ?arrayType)),
+NotEmptyArrayValue(cat(cat(?invocation, ":"), ?arrayType)),
+MockValueConsMacro(cat(cat(?invocation, ":"), ?arrayType), ?arrayType),
+UninitialisedArray(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?invocation, ?arrayType),
+ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?basevalue) :-
+  ComponentType(?type, ?arrayType),
+  isArrayType(?arrayType),
+  UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
