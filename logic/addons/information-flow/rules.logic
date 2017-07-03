@@ -252,9 +252,14 @@ TaintedVarPointsTo(?value, ?ctx, ?var) <-
 
 VarPointsToOpt(?ctx, ?var, ?value) <-
   VarPointsTo(_, ?value, ?ctx, ?var).
+/*
+TODO:
 
-Foo(?value),
-TaintedValue(?value),
 TaintedValue(?basevalue) <-
-  (TaintedValue(?value) ; TaintedValue(?basevalue)),
+  TaintedValue(?value),
   InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).
+
+Transfer(?value) <-
+   VirtualMethodInvocation("ObjectOutputStream.writeObject"),
+   InstanceFieldPointsTo(nonpri
+*/
