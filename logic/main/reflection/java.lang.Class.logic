@@ -206,8 +206,8 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
    ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
    // Banning method propagation this way seems too restrictive
-#ifndef(REFLECTION_HIGH_SOUNDNESS_MODE)
-#ifndef(INFORMATION_FLOW_HIGH_SOUNDNESS)
+#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
+#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
    _OptVarToMethod[?to] = ?inmethod,
    AssignHeapAllocation(?constantHeap, _, ?inmethod),
 #endif

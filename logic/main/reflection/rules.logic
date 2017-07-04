@@ -195,6 +195,7 @@ java:lang:ClassLoader:getResource(?invocation, ?to, ?from) <-
   ReferenceType(?type),
   ?valueStr = "<reflective dummy URL resource>".
 
+#ifdef REFLECTION_HIGH_SOUNDNESS_MODE
 // TODO Handle version for multiarray? If yes, add to ReifiedClass as well
 CreateReflectiveAllocationMacro(?invocation, ?arrayType, ?arrayValueStr),
 java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
@@ -207,6 +208,7 @@ java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
   Instruction:Id(?invocation:?invocationStr),
   Type:Id(?arrayType:?arrayTypeStr),
   ?arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?arrayTypeStr +"/new "+ ?arrayTypeStr +">".
+#endif
 
 // TODO Better filtering of class types
 CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
