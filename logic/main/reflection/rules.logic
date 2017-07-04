@@ -78,20 +78,6 @@ OptMethodInvocation:Method(?invocation, ?sig) <-
   AssignReturnValue[invocation] = to, \
   VirtualMethodInvocation:Base[invocation] = from
 
-#define ReflectiveArrayMacro(invocation, type, arrayType, arrayValueStr, arrayTypeStr) \
-  Instruction:Id(invocation:?invocationStr), \
-  Type:Id(type:?typeStr), \
-  ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
-  arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
-
-// We assume that the array is allocated inside the method, before being returned.
-// NOTE "?invocationStr" and "?typeStr" are reserved for this macro
-#define ReflectiveArrayMacro(invocation, type, arrayType, arrayValueStr, arrayTypeStr) \
-  Instruction:Id(invocation:?invocationStr), \
-  Type:Id(type:?typeStr), \
-  ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
-  arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?typeStr +"/new "+ arrayTypeStr +">"
-
 #define ReflectiveKnownArrayMacro(invocation, arrayType, arrayValueStr, arrayTypeStr) \
   Instruction:Id(invocation:?invocationStr), \
   ArrayType(arrayType), Type:Id(arrayType:arrayTypeStr), \
