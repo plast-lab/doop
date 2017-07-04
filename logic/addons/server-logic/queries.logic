@@ -80,6 +80,15 @@ Server:MethodFromInterface(?interfaceMethod, ?method) <-
   Method:Descriptor[?interfaceMethod] = Method:Descriptor[?method],
   !Method:Modifier("abstract", ?method).
 
+Server:ClassField(?class, ?field) <-
+  Field:DeclaringType[?field] = ?class,
+  ?class != Type:null[].
+
+Server:ClassField(?class, ?field) <-
+  Field:DeclaringType[?field] = ?supertype,
+  SupertypeOf(?supertype, ?class),
+  ?class != Type:null[].
+
 
 _AppVirtual(?invo) <-
   VirtualMethodInvocation:Insn(?invo),
