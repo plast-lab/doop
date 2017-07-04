@@ -238,6 +238,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                             throw new RuntimeException("Invalid JRE version: $version")
                     }
                 }
+                else if (platformInfo.size == 3 && platformInfo[2] != "debug") {
+                    String minorVersion = platformInfo[2]
+
+                    switch (version) {
+                        case 8:
+                            String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}.0_${minorVersion}/lib"
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid JRE version: $version")
+                    }
+                }
                 else {
                     throw new RuntimeException("Invalid JRE version: $version")
                 }
