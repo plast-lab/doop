@@ -64,7 +64,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				position,
 				filename,
 				name,
-				"<$klass: $type $name>", //doopId
+				"<${klass.doopId}: $type $name>", //doopId
 				type,
 				klass.doopId, //declaringClassDoopId
 				ctx.modifier().any() { hasToken(it, "static") }
@@ -331,7 +331,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	Usage fieldUsage(FieldSigContext ctx, UsageKind kind) {
-		def klass = ctx.IDENTIFIER(0).text
+		def klassStr = ctx.IDENTIFIER(0).text
 		def type = ctx.IDENTIFIER(1).text
 		def name = ctx.IDENTIFIER(2).text
 
@@ -342,7 +342,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def u = new Usage(
 				new Position(line, line, startCol, endCol),
 				filename,
-				"<$klass: $type $name>", //doopId
+				"<$klassStr: $type $name>", //doopId
 				kind
 		)
 	}
