@@ -143,6 +143,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitAssignmentStmt(AssignmentStmtContext ctx) {
+		// "@parameter" vars have no explicit definition
+		if (ctx.IDENTIFIER(1) && ctx.IDENTIFIER(1).text.startsWith("@parameter")) {
+			def v = var(ctx.IDENTIFIER(1), true)
+			v.type = ctx.IDENTIFIER(2).text
+			pending.pop()
+			metadata.variables << v
+		}
+
 		if (ctx.IDENTIFIER(0))
 			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 		if (ctx.IDENTIFIER(1))
