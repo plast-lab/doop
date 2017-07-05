@@ -205,10 +205,14 @@ java:lang:reflect:Array:newInstance(?invocation, ?to, ?param) <-
   AssignReturnValue[?invocation] = ?to,
   ActualParam[0, ?invocation] = ?param,
   ArrayType(?arrayType),
-  Instruction:Id(?invocation:?invocationStr),
   Type:Id(?arrayType:?arrayTypeStr),
-  ?arrayValueStr = "<reflective "+ ?invocationStr +"/"+ ?arrayTypeStr +"/new "+ ?arrayTypeStr +">".
-#endif
+#ifdef REFLECTION_REFINED_OBJECTS
+  Instruction:Id(?invocation:?invocationStr),
+  ?arrayValueStr = "<reflective "+ ?invocationStr +"/new "+ ?arrayTypeStr +">".
+#else
+  ?arrayValueStr = "<reflective /new "+ ?arrayTypeStr +">".
+#endif // REFLECTION_REFINED_OBJECTS
+#endif // REFLECTION_HIGH_SOUNDNESS_MODE
 
 // TODO Better filtering of class types
 CreateReflectiveAllocationMacro(?invocation, ?type, ?valueStr),
@@ -573,20 +577,15 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?to) <-
   ReifiedField[?signature] = ?value.
 
 
-// Basically this is only used for special methods and it has very
-// clever logic: we don't have a receiver var when we are calling
-// a constructor reflectively. So, instead, we remember in the
-// AssignReflectiveAllocation predicate the variable that the
-// result of the reflective construction will be assigned to! Then
-// we pretend the reflectively allocated object is already assigned
-// to that local variable and use that local variable to initialize
-// the "this" var of the constructor, as if this local variable (to
-// which the object will be assigned after it is constructed) is the
-// receiver object. It took me hours to thorougly convince myself this
-// works. (YS)
+// Objects that are allocated reflectively, e.g., through Class.newInstance,
+// Constructor.newInstance, Array.newInstance.
 AssignReflectiveAllocation(?instruction, ?type, ?ctx, ?var) ->
   Context(?ctx), Var(?var), Type(?type), Instruction(?instruction).
 
+// REVIEW: need to improve this in the future. The SubtypeOf check is
+// basically a no-op: the return value will always be of type Object.
+// We need to have these rules establish a forward-only result, and then
+// also do a backwards analysis to see what type this gets cast to.
 #ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveRecordMacro(?ctx, ?value, ?hctx),
 InitializedClass(?type),
