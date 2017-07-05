@@ -215,11 +215,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         case 4:
                         case 5:
                         case 6:
-                        case 7:
                         case 8:
                             files = ["${path}/rt.jar",
                                      "${path}/jce.jar",
                                      "${path}/jsse.jar"]
+                            break
+                        case 7:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar",
+                                     "${path}/tools.jar"]
                             break
                         default:
                             throw new RuntimeException("Invalid JRE version: $version")
