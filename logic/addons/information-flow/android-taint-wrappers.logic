@@ -264,3 +264,8 @@ ParamToRetTaintTransferMethod("<java.lang.ProcessBuilder: java.lang.ProcessBuild
 ParamToRetTaintTransferMethod("<android.telephony.SmsMessage: android.telephony.SmsMessage createFromPdu(byte[])>").
 ParamToRetTaintTransferMethod("<android.telephony.gsm.SmsMessage: android.telephony.gsm.SmsMessage createFromPdu(byte[])>").
 
+
+
+// For serialization (TODO):
+// BaseToParamTaintTransferMethod(ObjectOutputStream void <init>)
+
