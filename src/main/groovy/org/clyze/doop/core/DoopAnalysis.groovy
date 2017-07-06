@@ -396,6 +396,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "1.7":
                 return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
+            case "1.8":
+                return ["${path}/jce.jar", "${path}/jsse.jar"] as List<String>
             case "system":
                 String javaHome = System.getProperty("java.home")
                 return ["$javaHome/lib/jce.jar", "$javaHome/lib/jsse.jar"] as List<String>
