@@ -146,8 +146,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		if (ctx.IDENTIFIER(0))
 			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
 
-		// "@parameter" vars have no explicit definition
-		if (ctx.IDENTIFIER(1) && ctx.IDENTIFIER(1).text.startsWith("@parameter")) {
+		// "@parameter"/"@this" vars have no explicit definition
+		if (ctx.IDENTIFIER(1) && (ctx.IDENTIFIER(1).text.startsWith("@parameter") || (ctx.IDENTIFIER(1).text.startsWith("@this")))) {
 			def v = var(ctx.IDENTIFIER(1), true)
 			v.type = ctx.IDENTIFIER(2).text
 			pending.pop()
