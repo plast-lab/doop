@@ -33,7 +33,6 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         else {
             def file = new File("${analysis.database}/Stats_Runtime.csv")
             file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
-
         }
 
         logger.info "-- Runtime metrics --"

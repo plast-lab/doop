@@ -446,6 +446,6 @@ class ClassicAnalysis extends DoopAnalysis {
 
     @Override
     void processRelation(String query, Closure outputLineProcessor) {
-        connector.processPredicate(query, outputLineProcessor)
+        connector.processRelation(query, outputLineProcessor)
     }
 }
