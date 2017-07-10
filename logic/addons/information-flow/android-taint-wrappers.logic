@@ -266,6 +266,16 @@ ParamToRetTaintTransferMethod("<android.telephony.gsm.SmsMessage: android.teleph
 
 
 
-// For serialization (TODO):
-// BaseToParamTaintTransferMethod(ObjectOutputStream void <init>)
+// For serialization:
+BaseToParamTaintTransferMethod("<java.io.ObjectOutputStream: void <init>(java.io.OutputStream)>").
+
+BaseToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: byte[] toByteArray()>").
+
+ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayInputStream: void <init>(byte[])>").
+
+ParamToBaseTaintTransferMethod(0, "<java.io.ObjectInputStream: void <init>(java.io.InputStream)>").
+
+BaseToRetTaintTransferMethod("<java.io.ObjectInputStream: java.lang.Object readObject()>").
+
+
 

@@ -93,20 +93,25 @@ VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
 
 VarIsTaintedFromValue(?type, ?value, ?ctx, ?var) -> Type(?type), Value(?value), Context(?ctx), Var(?var).
 
-Iaminterested(?componentType, ?basevalue, ?ctx, ?to),
 VarIsTaintedFromValue(?componentType, ?basevalue, ?ctx, ?to) <-
    LoadHeapArrayIndex(?ctx, ?to, _, ?basevalue),
    Value:Type[?basevalue] = ?arrayType,
    ComponentType[?arrayType] = ?componentType,
    TaintedValue(?basevalue).
 
-
-Iaminterested7(?type, ?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
    MethodInvocationInContext(?ctx, ?invocation, ?method),
    BaseToRetTaintTransferMethod(?method),
    MethodInvocation:Base[?invocation] = ?base,
    TypeForReturnValue(?type, ?ret, ?invocation).
+
+foobar(?type, ?param, ?base),
+VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) <-
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
+   BaseToParamTaintTransferMethod(?method),
+   MethodInvocation:Base[?invocation] = ?base,
+   ActualParam[_, ?invocation] = ?param,
+   Var:Type[?param] = ?type.
 
 
 MethodInvocationInfo(?invocation, ?type, ?ret) <-
@@ -258,11 +263,51 @@ TaintedValue(?basevalue) <-
   TaintedValue(?value),
   InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).
 
-/*
-TODO:
+// Serialization
 
+SerializeObjectInvocation(?base, ?ctx, ?var) <-
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
+  Method:Id(?method:"<java.io.ObjectOutputStream: void writeObject(java.lang.Object)>"),
+  ActualParam[_, ?invocation] = ?var,
+  MethodInvocation:Base[?invocation] = ?base.
 
-Transfer(?value) <-
-   VirtualMethodInvocation("ObjectOutputStream.writeObject"),
-   InstanceFieldPointsTo(nonpri
-*/
+ObjectSerializedToBase(?ctx, ?base, ?obj) <-
+  SerializeObjectInvocation(?base, ?ctx, ?var),
+  VarPointsTo(_, ?obj, ?ctx, ?var),
+  SerializableValue(?obj).
+
+SerializableValue(?obj) <-
+   Value:Type[?obj] = ?type,
+   SupertypeOf("java.io.Serializable", ?type).
+
+SerializableVar(?obj) <-
+   Var:Type[?obj] = ?type,
+   SupertypeOf("java.io.Serializable", ?type).
+
+TaintedValueTransferred(?obj, ?type, DEFAULT_BREADCRUMB, ?newvalue),
+VarPointsTo(?hctx, ?newvalue, ?ctx, ?base) <-
+  ObjectSerializedToBase(?ctx, ?base, ?baseobj),
+  InstanceFieldPointsTo(_, ?obj, ?field, _, ?baseobj),
+  TaintedValue(?obj),
+  Var:Type[?base] = ?type,
+  !Field:Modifier("transient", ?field),
+  ImmutableHContext(?hctx).
+
+VarIsTaintedFromValue(?type, ?basevalue, ?ctx, ?to) <-
+   OptLoadInstanceField(?to, ?sig, ?base),
+   TaintedVarPointsTo(?basevalue, ?ctx, ?base),
+   !Field:Modifier("transient", ?sig),
+   Var:Type[?to] = ?type,
+   MaybeDeserializedValue(?basevalue).
+
+BaseToRetTaintTransferMethod("<java.io.ObjectInputStream: java.lang.Object readObject()>").
+
+OptDeserializeInvoke(?ret) <-
+   Method:Id(?method:"<java.io.ObjectInputStream: java.lang.Object readObject()>"),
+   MethodInvocationInContextInApplication(_, ?invocation, ?method),
+   AssignReturnValue[?invocation] = ?ret.
+
+MaybeDeserializedValue(?value) <-
+   OptDeserializeInvoke(?ret),
+   TaintedVarPointsTo(?value, _, ?ret),
+   SerializableValue(?value).

@@ -20,6 +20,7 @@ Modifier:final[]    = ?mod -> Modifier(?mod).
 Modifier:public[]   = ?mod -> Modifier(?mod).
 Modifier:private[]  = ?mod -> Modifier(?mod).
 Modifier:static[]   = ?mod -> Modifier(?mod).
+Modifier:transient[]   = ?mod -> Modifier(?mod).
 
 
 // Java Type Hierarchy
