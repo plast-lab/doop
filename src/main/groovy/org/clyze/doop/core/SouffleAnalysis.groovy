@@ -286,6 +286,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     void processRelation(String query, Closure outputLineProcessor) {
+        query = query.replaceAll(":", "_")
         def file = new File(this.outDir, "database/${query}.csv")
         if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
         file.eachLine { outputLineProcessor.call(it) }
