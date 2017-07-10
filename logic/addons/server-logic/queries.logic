@@ -80,12 +80,18 @@ Server:MethodFromInterface(?interfaceMethod, ?method) <-
   Method:Descriptor[?interfaceMethod] = Method:Descriptor[?method],
   !Method:Modifier("abstract", ?method).
 
-Server:ClassField(?class, ?field) <-
+
+_ValidField(?field, ?class) <-
+  Field:Modifier(?mod, ?field),
+  ?mod != Modifier:private[],
   Field:DeclaringType[?field] = ?class,
-  ?class != Type:null[].
+  Server:KeepClass(?class).
 
 Server:ClassField(?class, ?field) <-
-  Field:DeclaringType[?field] = ?supertype,
+  _ValidField(?field, ?class).
+
+Server:ClassField(?class, ?field) <-
+  _ValidField(?field, ?supertype),
   SupertypeOf(?supertype, ?class),
   ?class != Type:null[].
 
@@ -140,7 +146,7 @@ _MethodCallsMethod(?fromMethod, ?toMethod) <-
 
 ReachableFromMethod(?fromMethod, ?toMethod) <-
   _MethodCallsMethod(?fromMethod, ?toMethod).
-  
+
 ReachableFromMethod(?fromMethod, ?toMethod) <-
   ReachableFromMethod(?fromMethod, ?midMethod),
   _MethodCallsMethod(?toMethod, ?midMethod).
@@ -158,7 +164,7 @@ AllocInMethod(?insn, ?method) <-
   AssignHeapAllocation:Insn(?insn),
   Instruction:Method[?insn] = ?method.
 
-// Aggregations 
+// Aggregations
 
 TotalIndirectAllocationsInMethodEmpty[?method] = n -> Method(?method), uint[32](n).
 
@@ -176,7 +182,7 @@ TotalAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
 
 _MethodHasAlloc(?method) <-
   AllocInMethod(_, ?method).
-  
+
 TotalDirectAllocationsInMethodNonEmpty[?method] = n <-
   agg<<n = count()>>
   _MethodHasAlloc(?method).
@@ -194,11 +200,11 @@ TotalDirectAllocationsInMethod[?method] = n <-
 _MethodReachesOther(?method, ?toMethod) <-
   ReachableFromMethod(?method, ?toMethod),
   ?method != ?toMethod.
-   
+
 _MethodReachesAllocator(?method) <-
   _MethodReachesOther(?method, ?toMethod),
   _MethodHasAlloc(?toMethod).
-  
+
 TotalIndirectAllocationsInMethodNonEmpty[?method] = n <-
   agg<<n = count()>>
    _MethodReachesAllocator(?method).
@@ -247,7 +253,7 @@ _MethodReachesOtherWithInvo(?method) <-
 TotalIndirectInvocationsInMethod[?method] = n <-
   agg<<n = count()>>
   _MethodReachesOtherWithInvo(?method).
-  
+
 TotalInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
 
 TotalInvocationsInMethod[?method] = n <-
