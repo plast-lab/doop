@@ -192,6 +192,10 @@ class SouffleAnalysis extends DoopAnalysis {
             def analysisFile = FileOps.findFileOrThrow("$analysis", "Missing $analysis")
             analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
         }
+
+        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
+        }
     }
 
     private void compileAnalysis() {
@@ -279,4 +283,12 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void runTransformInput() {}
+
+    @Override
+    void processRelation(String query, Closure outputLineProcessor) {
+        query = query.replaceAll(":", "_")
+        def file = new File(this.outDir, "database/${query}.csv")
+        if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
+        file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+    }
 }

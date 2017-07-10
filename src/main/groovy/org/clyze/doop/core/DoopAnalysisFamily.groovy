@@ -40,6 +40,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End LogicBlox related options */
 			/* Start Main options */
+			new BooleanAnalysisOption(
+					id: "LB3",
+					name: "lb",
+					value: false
+			),
 			new AnalysisOption<String>(
 					id: "ANALYSIS",
 					name: "analysis",
@@ -369,11 +374,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
-			new BooleanAnalysisOption(
-					id: "SOUFFLE",
-					name: "souffle",
-					value: false
-			),
 			new IntegerAnalysisOption(
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",

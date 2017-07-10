@@ -1,0 +1,327 @@
+.decl _VPT(?value:Value, ?var:Var)
+
+_VPT(?value, ?var) :-
+  VarPointsTo(_, ?value, _, ?var).
+
+.decl _IFPT(?value:Value, ?field:Field, ?baseValue:Value)
+
+_IFPT(?value, ?field, ?basevalue) :-
+  InstanceFieldPointsTo(_, ?value, ?field, _, ?basevalue).
+
+.decl _SFPT(?value:Value, ?field:Field)
+
+_SFPT(?value, ?field) :-
+  StaticFieldPointsTo(_, ?value, ?field).
+
+.decl _VPT_Count(?var:Var, ?n:number)
+
+_VPT_Count(?var, ?n) :-
+  ?n = count:{_VPT(_, ?var)}.
+
+.decl _IFPT_Count(?field:Field, ?baseValue:Value, ?n:number)
+
+_IFPT_Count(?field, ?basevalue, ?n) :-
+  ?n = count:{_IFPT(_, ?field, ?basevalue)}.
+
+.decl _SFPT_Count(?field:Field, ?n:number)
+
+_SFPT_Count(?field, ?n) :-
+  ?n = count:{_SFPT(_, ?field)}.
+
+.decl Server_VarPointsTo(?class:ClassType, ?var:Var, ?value:Value)
+.output Server_VarPointsTo
+
+Server_VarPointsTo(?class, ?var, ?value) :-
+  _VPT(?value, ?var),
+  _VPT_Count(?var, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  isValue(?value),
+  Var_DeclaringMethod(?var, ?method),
+  Method_DeclaringType(?method, ?class).
+
+Server_VarPointsTo(?class, ?var, "<<XL-pt-set>>") :-
+  _VPT_Count(?var, ?count),
+  ?count > X_SERVER_LOGIC_THRESHOLD,
+  Var_DeclaringMethod(?var, ?method),
+  Method_DeclaringType(?method, ?class).
+
+.decl Server_InstanceFieldPointsTo(?basevalue:Value, ?field:Field, ?value:Value)
+.output Server_InstanceFieldPointsTo
+
+Server_InstanceFieldPointsTo(?basevalue, ?field, ?value) :-
+  _IFPT(?value, ?field, ?basevalue),
+  _IFPT_Count(?field, ?basevalue, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  isValue(?basevalue),
+  isValue(?value).
+
+Server_InstanceFieldPointsTo(?basevalue, ?field, "<<XL-pt-set>>") :-
+  _IFPT_Count(?field, ?basevalue, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  isValue(?basevalue).
+
+.decl Server_StaticFieldPointsTo(?field:Field, ?value:Value)
+.output Server_StaticFieldPointsTo
+
+Server_StaticFieldPointsTo(?field, ?value) :-
+  _SFPT(?value, ?field),
+  _SFPT_Count(?field, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  isValue(?value).
+
+Server_StaticFieldPointsTo(?field, "<<XL-pt-set>>") :-
+  _SFPT_Count(?field, ?count),
+  ?count > X_SERVER_LOGIC_THRESHOLD.
+
+.decl Server_CallGraphEdge(?invocation:MethodInvocation, ?toMethod:Method)
+.output Server_CallGraphEdge
+
+Server_CallGraphEdge(?invocation, ?toMethod) :-
+  CallGraphEdge(_, ?invocation, _, ?toMethod).
+
+/*Server_CallGraphEdge(?invocation, ?toMethod) :-
+  InvokedynamicCallGraphEdge(_, ?invocation, _, ?toMethod).
+*/
+.decl _Class_DeclaresMethod(?method:Method, ?class:ClassType)
+
+_Class_DeclaresMethod(?method, ?class) :-
+  Method_DeclaringType(?method, ?class).
+
+.decl Server_KeepClass(?class:ClassType)
+.output Server_KeepClass
+
+
+// All application types
+Server_KeepClass(?class) :-
+  ApplicationClass(?class).
+
+// All classes with a reachable method
+Server_KeepClass(?class) :-
+  _Class_DeclaresMethod(?method, ?class),
+  Reachable(?method).
+
+// Transitively, everything up the hierarchy
+Server_KeepClass(?interface) :-
+  Server_KeepClass(?class),
+  SupertypeOf(?interface, ?class).
+
+.decl Server_MethodFromInterface(?interfaceMethod:Method, ?method:Method)
+.output Server_MethodFromInterface
+
+
+Server_MethodFromInterface(?interfaceMethod, ?method) :-
+  Method_DeclaringType(?interfaceMethod, ?type),
+  isInterfaceType(?type),
+  SubtypeOf(?subtype, ?type),
+  Method_DeclaringType(?method, ?subtype),
+  Method_SimpleName(?method, ?simplename),
+  Method_Descriptor(?method, ?descriptor),
+  Method_SimpleName(?interfaceMethod, ?simplename),
+  Method_Descriptor(?interfaceMethod, ?descriptor),
+  !Method_Modifier("abstract", ?method).
+
+.decl _ValidField(?field:Field, ?class:ClassType)
+
+_ValidField(?field, ?class) :-
+  Field_Modifier(?mod, ?field),
+  !Modifier_private(?mod),
+  Field_DeclaringType(?field, ?class),
+  Server_KeepClass(?class).
+
+.decl Server_ClassField(?class:ClassType, ?field:Field)
+.output Server_ClassField
+
+Server_ClassField(?class, ?field) :-
+  _ValidField(?field, ?class).
+
+Server_ClassField(?class, ?field) :-
+  _ValidField(?field, ?supertype),
+  SupertypeOf(?supertype, ?class),
+  !Type_null(?class).
+
+.decl _AppVirtual(?invo:MethodInvocation)
+
+_AppVirtual(?invo) :-
+  isVirtualMethodInvocation_Insn(?invo),
+  Instruction_Method(?invo, ?method),
+  ApplicationMethod(?method).
+
+.decl _AppVirtual_Resolved(?invo:MethodInvocation)
+
+_AppVirtual_Resolved(?invo) :-
+  _AppVirtual(?invo),
+  CallGraphEdge(_, ?invo, _, _).
+
+.decl _AppVirtual_Count(?n:number)
+
+_AppVirtual_Count(?n) :-
+  ?n = count:{_AppVirtual(_)}.
+
+.decl _AppVirtual_Resolved_Count(?n:number)
+
+_AppVirtual_Resolved_Count(?n) :-
+  ?n = count:{_AppVirtual_Resolved(_)}.
+
+.decl _AppReachable(?method:Method)
+
+_AppReachable(?method) :-
+  Reachable(?method),
+  ApplicationMethod(?method).
+
+.decl _AppMethod_Count(?n:number)
+
+_AppMethod_Count(?n) :-
+  ?n = count:{ApplicationMethod(_)}.
+
+.decl _AppReachable_Count(?n:number)
+
+_AppReachable_Count(?n) :-
+  ?n = count:{_AppReachable(_)}.
+
+.decl Server_Metrics(?metric:symbol, ?n:number)
+.output Server_Metrics
+
+Server_Metrics("AppVirtual (static)", ?n) :- _AppVirtual_Count(?n).
+Server_Metrics("AppVirtual (resolved)", ?n) :- _AppVirtual_Resolved_Count(?n).
+//Server_Metrics("AppVirtual (%)", ?n) :- ?n = (1.0 * _AppVirtual_Resolved_Count(?c1)) / _AppVirtual_Count(?c2).
+Server_Metrics("AppMethod (static)", ?n) :- _AppMethod_Count(?n).
+Server_Metrics("AppMethod (reachable)", ?n) :- _AppReachable_Count(?n).
+//Server_Metrics("AppMethod (%)", ?n) :- ?n = (1.0 * _AppReachable_Count(?c1)) / _AppMethod_Count(?c2).
+
+
+/*
+//// The code below is well-optimized, but we don't want it to burden our
+//// current timings, plus the concepts may need to be revisited, especially
+//// the transitive reachability ones (e.g., ReachableFromMethod and derivatives).
+
+// All the methods reachable from a method (transitive call-graph)
+
+.decl ReachableFromMethod(?fromMethod:Method, ?toMethod:Method)
+
+.decl _MethodCallsMethod(?fromMethod:Method, ?toMethod:Method)
+
+_MethodCallsMethod(?fromMethod, ?toMethod) :-
+  SimpleCallGraphEdge(?toMethod, ?invocation),
+  Instruction_Method(?invocation, ?fromMethod).
+
+ReachableFromMethod(?fromMethod, ?toMethod) :-
+  _MethodCallsMethod(?fromMethod, ?toMethod).
+
+ReachableFromMethod(?fromMethod, ?toMethod) :-
+  ReachableFromMethod(?fromMethod, ?midMethod),
+  _MethodCallsMethod(?toMethod, ?midMethod).
+
+
+// Recursive methods
+.decl RecursiveMethod(?method:Method)
+
+RecursiveMethod(?method) :-
+  ReachableFromMethod(?method, ?method).
+
+// Total number of heap allocations inside method body. It DOES NOT
+// take heap allocation in methods invoked therein into account.
+AllocInMethod(?insn, ?method) :-
+  AssignHeapAllocation:Insn(?insn),
+  Instruction:Method[?insn] = ?method.
+
+// Aggregations
+
+TotalIndirectAllocationsInMethodEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalIndirectAllocationsInMethodNonEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalIndirectAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
+
+TotalDirectAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
+
+TotalDirectAllocationsInMethodEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalDirectAllocationsInMethodNonEmpty[?method] = n -> Method(?method), uint[32](n).
+
+TotalAllocationsInMethod[?method] = n -> Method(?method), uint[32](n).
+
+_MethodHasAlloc(?method) :-
+  AllocInMethod(_, ?method).
+
+TotalDirectAllocationsInMethodNonEmpty[?method] = n :-
+  agg<<n = count()>>
+  _MethodHasAlloc(?method).
+
+TotalDirectAllocationsInMethodEmpty[?method] = 0 :-
+  Method(?method),
+  !_MethodHasAlloc(?method).
+
+TotalDirectAllocationsInMethod[?method] = n :-
+  TotalDirectAllocationsInMethodEmpty[?method] = n.
+
+TotalDirectAllocationsInMethod[?method] = n :-
+  TotalDirectAllocationsInMethodNonEmpty[?method] = n.
+
+_MethodReachesOther(?method, ?toMethod) :-
+  ReachableFromMethod(?method, ?toMethod),
+  ?method != ?toMethod.
+
+_MethodReachesAllocator(?method) :-
+  _MethodReachesOther(?method, ?toMethod),
+  _MethodHasAlloc(?toMethod).
+
+TotalIndirectAllocationsInMethodNonEmpty[?method] = n :-
+  agg<<n = count()>>
+   _MethodReachesAllocator(?method).
+
+TotalIndirectAllocationsInMethodEmpty[?method] = 0 :-
+  Method(?method),
+  !ReachesAllocator(?method).
+
+TotalIndirectAllocationsInMethod[?method] = n :-
+  TotalIndirectAllocationsInMethodNonEmpty[?method] = n.
+
+TotalIndirectAllocationsInMethod[?method] = n :-
+  TotalIndirectAllocationsInMethodEmpty[?method] = n.
+
+// very similar to earlier but also reflexive
+ReachesAllocator(?method) :-
+  ReachableFromMethod(?method, ?toMethod),
+  _MethodHasAlloc(?toMethod).
+
+TotalAllocationsInMethod[?method] = n :-
+  n = i + j,
+  TotalDirectAllocationsInMethod[?method] = i,
+  TotalIndirectAllocationsInMethod[?method] = j.
+
+TotalAllocationsFromNonRecursiveMethods[?method] = n :-
+  TotalAllocationsInMethod[?method] = n,
+  !RecursiveMethod(?method).
+
+TotalDirectInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
+
+TotalDirectInvocationsInMethod[?method] = n :-
+  agg<<n = count()>>
+  (MethodInvocation(?invocation),
+   Instruction:Method[?invocation] = ?method).
+
+TotalIndirectInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
+
+_MethodWithInvo(?method) :-
+  Instruction:Method[?invo] = ?method,
+  MethodInvocation(?invo).
+
+_MethodReachesOtherWithInvo(?method) :-
+  _MethodReachesOther(?method, ?toMethod),
+  _MethodWithInvo(?toMethod).
+
+TotalIndirectInvocationsInMethod[?method] = n :-
+  agg<<n = count()>>
+  _MethodReachesOtherWithInvo(?method).
+
+TotalInvocationsInMethod[?method] = n -> Method(?method), int[64](n).
+
+TotalInvocationsInMethod[?method] = n :-
+  n = i + j,
+  TotalDirectInvocationsInMethod[?method] = i,
+  TotalIndirectInvocationsInMethod[?method] = j.
+
+TotalInvocationsFromNonRecursiveMethods[?method] = n :-
+  TotalInvocationsInMethod[?method] = n,
+  !RecursiveMethod(?method).
+*/

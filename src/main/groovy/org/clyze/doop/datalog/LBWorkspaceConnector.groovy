@@ -99,16 +99,14 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
         throw new UnsupportedOperationException("include")
     }
 
-
-    void processQuery(String logiqlString, String printOpt, Closure outputLineProcessor) {
-        exec("$_bloxbatch -db $_workspace -query '$logiqlString' $printOpt", outputLineProcessor)
-    }
     void processQuery(String logiqlString, Closure outputLineProcessor) {
-        processQuery(logiqlString, "", outputLineProcessor)
+        exec("$_bloxbatch -db $_workspace -query '$logiqlString'", outputLineProcessor)
     }
-    void processPredicate(String predicate, Closure outputLineProcessor) {
-        processQuery(predicate, "", outputLineProcessor)
+
+    void processRelation(String predicate, Closure outputLineProcessor) {
+        exec("$_bloxbatch -db $_workspace -query $predicate", outputLineProcessor)
     }
+
     Map<String, Integer> popCount(String... predicates) {
         def counters = [:]
         exec("$_bloxbatch -db $_workspace -popCount ${predicates.join(',')}") { String line ->
@@ -119,6 +117,7 @@ class LBWorkspaceConnector implements IWorkspaceAPI {
 
         return counters.asImmutable()
     }
+
     List<String> listPredicates() {
         def predicates = []
         exec("$_bloxbatch -db $_workspace -list") { String line -> predicates.add(line) }
