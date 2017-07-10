@@ -279,4 +279,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void runTransformInput() {}
+
+    @Override
+    void processRelation(String query, Closure outputLineProcessor) {}
 }
