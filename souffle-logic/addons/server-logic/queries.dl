@@ -16,16 +16,19 @@ _SFPT(?value, ?field) :-
 .decl _VPT_Count(?var:Var, ?n:number)
 
 _VPT_Count(?var, ?n) :-
+  _VPT(_, ?var),
   ?n = count:{_VPT(_, ?var)}.
 
 .decl _IFPT_Count(?field:Field, ?baseValue:Value, ?n:number)
 
 _IFPT_Count(?field, ?basevalue, ?n) :-
+  _IFPT(_, ?field, ?basevalue),
   ?n = count:{_IFPT(_, ?field, ?basevalue)}.
 
 .decl _SFPT_Count(?field:Field, ?n:number)
 
 _SFPT_Count(?field, ?n) :-
+  _SFPT(_, ?field),
   ?n = count:{_SFPT(_, ?field)}.
 
 .decl Server_VarPointsTo(?class:ClassType, ?var:Var, ?value:Value)
