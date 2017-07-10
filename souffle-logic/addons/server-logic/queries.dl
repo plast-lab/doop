@@ -88,6 +88,8 @@ _Class_DeclaresMethod(?method, ?class) :-
   Method_DeclaringType(?method, ?class).
 
 .decl Server_KeepClass(?class:ClassType)
+.output Server_KeepClass
+
 
 // All application types
 Server_KeepClass(?class) :-
@@ -104,6 +106,8 @@ Server_KeepClass(?interface) :-
   SupertypeOf(?interface, ?class).
 
 .decl Server_MethodFromInterface(?interfaceMethod:Method, ?method:Method)
+.output Server_MethodFromInterface
+
 
 Server_MethodFromInterface(?interfaceMethod, ?method) :-
   Method_DeclaringType(?interfaceMethod, ?type),
@@ -125,6 +129,7 @@ _ValidField(?field, ?class) :-
   Server_KeepClass(?class).
 
 .decl Server_ClassField(?class:ClassType, ?field:Field)
+.output Server_ClassField
 
 Server_ClassField(?class, ?field) :-
   _ValidField(?field, ?class).
@@ -174,6 +179,7 @@ _AppReachable_Count(?n) :-
   ?n = count:{_AppReachable(_)}.
 
 .decl Server_Metrics(?metric:symbol, ?n:number)
+.output Server_Metrics
 
 Server_Metrics("AppVirtual (static)", ?n) :- _AppVirtual_Count(?n).
 Server_Metrics("AppVirtual (resolved)", ?n) :- _AppVirtual_Resolved_Count(?n).
