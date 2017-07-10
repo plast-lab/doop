@@ -65,7 +65,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def vars = processOptions(name, options, context)
 
         checkAnalysis(name)
-        if (!options.SOUFFLE.value)
+        if (options.LB3.value)
             checkLogicBlox(vars)
 
         checkAppGlob(vars)
@@ -83,19 +83,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def cacheDir = new File("${Doop.doopCache}/$cacheId")
 
         DoopAnalysis analysis
-        if (options.SOUFFLE.value) {
-            options.CFG_ANALYSIS.value = false
-            analysis = new SouffleAnalysis(
-                    analysisId,
-                    name.replace(File.separator, "-"),
-                    options,
-                    context,
-                    outDir,
-                    cacheDir,
-                    vars.inputFiles,
-                    vars.platformFiles,
-                    commandsEnv)
-        } else {
+        if (options.LB3.value) {
             if (name != "sound-may-point-to") {
                 options.CFG_ANALYSIS.value = false
                 analysis = new ClassicAnalysis(
@@ -120,6 +108,18 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         vars.platformFiles,
                         commandsEnv)
             }
+        } else {
+            options.CFG_ANALYSIS.value = false
+            analysis = new SouffleAnalysis(
+                    analysisId,
+                    name.replace(File.separator, "-"),
+                    options,
+                    context,
+                    outDir,
+                    cacheDir,
+                    vars.inputFiles,
+                    vars.platformFiles,
+                    commandsEnv)
         }
         logger.debug "Created new analysis"
         return analysis

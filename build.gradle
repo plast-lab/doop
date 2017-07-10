@@ -97,6 +97,10 @@ applicationDistribution.from(file("$projectDir/logic")) {
     into 'logic'
 }
 
+applicationDistribution.from(file("$projectDir/souffle-logic")) {
+    into 'souffle-logic'
+}
+
 applicationDistribution.from(projectDir) {
     include 'docs', 'COLLABORATORS', 'LICENSE', 'README.md'
 }
@@ -178,6 +182,10 @@ if (project.hasProperty('artifactory_user')) {
         from "$projectDir/logic"
     }
 
+    task souffleLogicJar(type:Jar) {
+        from "$projectDir/souffle-logic"
+    }
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
@@ -185,6 +193,10 @@ if (project.hasProperty('artifactory_user')) {
 
                 artifact logicJar {
                     classifier "logic"
+                }
+
+                artifact souffleLogicJar {
+                    classifier "souffle-logic"
                 }
             }
         }

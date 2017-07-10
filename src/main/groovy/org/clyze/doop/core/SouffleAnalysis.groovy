@@ -192,6 +192,10 @@ class SouffleAnalysis extends DoopAnalysis {
             def analysisFile = FileOps.findFileOrThrow("$analysis", "Missing $analysis")
             analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
         }
+
+        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
+        }
     }
 
     private void compileAnalysis() {
