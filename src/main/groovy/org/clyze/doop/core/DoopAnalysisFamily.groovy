@@ -378,7 +378,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
 					argName: "NUMBER",
-					value: 1
+					value: 4
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
