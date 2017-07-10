@@ -339,7 +339,7 @@ class FactWriter {
            types seem to have been translated to a syntax with the initial
            L, but arrays are still represented as [, for example [C for
            char[] */
-        if (s.charAt(0) == '[' /*|| (s.charAt(0) == 'L' && s.endsWith(";"))*/ ) {
+        if (s.charAt(0) == '[' || (s.charAt(0) == 'L' && s.endsWith(";")) ) {
             // array type
             Type t = soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(s);
 

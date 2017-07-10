@@ -44,7 +44,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
             lines = []
 
             if (analysis.options.LB3.value) {
-                analysis.processRelation("Stats:Runtime") { String line ->
+                analysis.processRelation("Stats:Metrics") { String line ->
                     if (!filterOutLBWarn(line)) lines.add(line)
                 }
             }
