@@ -65,8 +65,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def vars = processOptions(name, options, context)
 
         checkAnalysis(name)
-
-        checkLogicBlox(vars)
+        if (!options.SOUFFLE.value)
+            checkLogicBlox(vars)
 
         checkAppGlob(vars)
 
