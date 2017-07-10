@@ -192,8 +192,6 @@ ContextForEntryPoint(?calleeCtx, ?method)
    EntryPoint(?method).
 
 
-ReachableContext(?ctx, ?method) <-  ContextForEntryPoint(?ctx, ?method).
-
 // Here we "randomly" select a concrete implementation for each type.
 // In a segregated analysis we try to select one from the same partition.
 ConcreteImplementations[?staticType] = ?class <-
@@ -225,4 +223,14 @@ Value:DeclaringType[?value] = ?class  <-
    !AndroidAppComponent(_),
 #endif
    ObjToMock(?class).
+
+
+// Similar for ReachableContext. If not in open program mode, add extra conditions.
+ReachableContext(?ctx, ?method) <-
+#ifndef OPEN_PROGRAMS
+   // If we are not in open-program mode, only trigger logic if no main method exists
+   !MainMethodDeclaration(_),
+   !AndroidAppComponent(_),
+#endif
+   ContextForEntryPoint(?ctx, ?method).
 

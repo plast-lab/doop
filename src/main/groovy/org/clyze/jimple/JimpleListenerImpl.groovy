@@ -64,7 +64,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				position,
 				filename,
 				name,
-				"<$klass: $type $name>", //doopId
+				"<${klass.doopId}: $type $name>", //doopId
 				type,
 				klass.doopId, //declaringClassDoopId
 				ctx.modifier().any() { hasToken(it, "static") }
@@ -145,7 +145,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	void exitAssignmentStmt(AssignmentStmtContext ctx) {
 		if (ctx.IDENTIFIER(0))
 			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
-		if (ctx.IDENTIFIER(1))
+
+		// "@parameter"/"@this" vars have no explicit definition
+		if (ctx.IDENTIFIER(1) && (ctx.IDENTIFIER(1).text.startsWith("@parameter") || (ctx.IDENTIFIER(1).text.startsWith("@this")))) {
+			def v = var(ctx.IDENTIFIER(1), true)
+			v.type = ctx.IDENTIFIER(2).text
+			pending.pop()
+			metadata.variables << v
+		} else if (ctx.IDENTIFIER(1))
 			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
 
 		(0..1).each {
@@ -331,7 +338,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	Usage fieldUsage(FieldSigContext ctx, UsageKind kind) {
-		def klass = ctx.IDENTIFIER(0).text
+		def klassStr = ctx.IDENTIFIER(0).text
 		def type = ctx.IDENTIFIER(1).text
 		def name = ctx.IDENTIFIER(2).text
 
@@ -342,7 +349,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def u = new Usage(
 				new Position(line, line, startCol, endCol),
 				filename,
-				"<$klass: $type $name>", //doopId
+				"<$klassStr: $type $name>", //doopId
 				kind
 		)
 	}

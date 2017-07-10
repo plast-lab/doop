@@ -65,8 +65,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def vars = processOptions(name, options, context)
 
         checkAnalysis(name)
-
-        checkLogicBlox(vars)
+        if (!options.SOUFFLE.value)
+            checkLogicBlox(vars)
 
         checkAppGlob(vars)
 
@@ -215,11 +215,16 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         case 4:
                         case 5:
                         case 6:
-                        case 7:
                         case 8:
                             files = ["${path}/rt.jar",
                                      "${path}/jce.jar",
                                      "${path}/jsse.jar"]
+                            break
+                        case 7:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar",
+                                     "${path}/tools.jar"]
                             break
                         default:
                             throw new RuntimeException("Invalid JRE version: $version")
@@ -230,6 +235,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     switch (version) {
                         case 7:
                         case 8:
+                            files = ["${path}/rt.jar",
+                                     "${path}/jce.jar",
+                                     "${path}/jsse.jar"]
+                            break
+                        default:
+                            throw new RuntimeException("Invalid JRE version: $version")
+                    }
+                }
+                else if (platformInfo.size == 3 && platformInfo[2] != "debug") {
+                    String minorVersion = platformInfo[2]
+
+                    switch (version) {
+                        case 8:
+                            String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}.0_${minorVersion}/lib"
                             files = ["${path}/rt.jar",
                                      "${path}/jce.jar",
                                      "${path}/jsse.jar"]

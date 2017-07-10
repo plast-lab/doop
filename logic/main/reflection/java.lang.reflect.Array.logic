@@ -4,13 +4,11 @@
  *   public static Object newInstance(Class<?> componentType, int length)
  *************************************************************/
 
-VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) <-
-  ImmutableHContextFromContext[?ctx] = ?hctx,
+AssignReflectiveAllocation(?invocation, ?arrayType, ?ctx, ?to) <-
   java:lang:reflect:Array:newInstance(?invocation, ?to, ?param),
   VarPointsTo(_, ?componentClass, ?ctx, ?param),
   ReifiedClass[?componentType] = ?componentClass,
-  ComponentType[?arrayType] = ?componentType,
-  ReflectiveAllocation[?invocation, ?arrayType] = ?arrayValue.
+  ComponentType[?arrayType] = ?componentType.
 
 /*************************************************************
  * java.lang.reflect.Array.get

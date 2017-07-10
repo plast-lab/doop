@@ -96,7 +96,7 @@ public class Representation {
 
     String param(SootMethod m, int i)
     {
-        return getMethodSignature(m) + "/@param" + i;
+        return getMethodSignature(m) + "/@parameter" + i;
     }
 
     String local(SootMethod m, Local l)
