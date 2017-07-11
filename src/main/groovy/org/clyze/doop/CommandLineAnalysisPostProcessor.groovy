@@ -14,7 +14,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
     @Override
     void process(DoopAnalysis analysis) {
-        if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
+        if (!analysis.options.X_SERVER_LOGIC.value && !analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
             printStats(analysis)
         if (analysis.options.SANITY.value)
             printSanityResults(analysis)
@@ -44,7 +44,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
             lines = []
 
             if (analysis.options.LB3.value) {
-                analysis.processRelation("Stats:Runtime") { String line ->
+                analysis.processRelation("Stats:Metrics") { String line ->
                     if (!filterOutLBWarn(line)) lines.add(line)
                 }
             }

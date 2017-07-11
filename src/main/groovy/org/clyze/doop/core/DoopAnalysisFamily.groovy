@@ -378,7 +378,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
 					argName: "NUMBER",
-					value: 1
+					value: 4
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
@@ -536,7 +536,8 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xserver-logic",
 					description: "Run server queries under addons/server-logic",
 					value: false,
-					nonStandard: true
+					nonStandard: true,
+					forPreprocessor: true
 			),
 			new IntegerAnalysisOption(
 					id: "X_SERVER_LOGIC_THRESHOLD",
