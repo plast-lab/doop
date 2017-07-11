@@ -82,7 +82,7 @@ Server:MethodFromInterface(?interfaceMethod, ?method) <-
 
 
 Server:ClassField(?class, ?field) <-
-  Field:DeclaringType[?field] = ?class.
+  Field:DeclaringType[?field] = ?class,
   Server:KeepClass(?class).
 
 Server:ClassField(?class, ?field) <-
