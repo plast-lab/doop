@@ -123,22 +123,17 @@ Server_MethodFromInterface(?interfaceMethod, ?method) :-
   Method_Descriptor(?interfaceMethod, ?descriptor),
   !Method_Modifier("abstract", ?method).
 
-.decl _ValidField(?field:Field, ?class:ClassType)
-
-_ValidField(?field, ?class) :-
-  Field_Modifier(?mod, ?field),
-  !Modifier_private(?mod),
-  Field_DeclaringType(?field, ?class).
-
 .decl Server_ClassField(?class:ClassType, ?field:Field)
 .output Server_ClassField
 
 Server_ClassField(?class, ?field) :-
-  _ValidField(?field, ?class),
+  Field_DeclaringType(?field, ?class),
   Server_KeepClass(?class).
 
 Server_ClassField(?class, ?field) :-
-  _ValidField(?field, ?supertype),
+  Field_DeclaringType(?field, ?supertype),
+  Field_Modifier(?mod, ?field),
+  !Modifier_private(?mod),
   SupertypeOf(?supertype, ?class),
   !Type_null(?class),
   Server_KeepClass(?supertype),

@@ -81,17 +81,14 @@ Server:MethodFromInterface(?interfaceMethod, ?method) <-
   !Method:Modifier("abstract", ?method).
 
 
-_ValidField(?field, ?class) <-
-  Field:Modifier(?mod, ?field),
-  ?mod != Modifier:private[],
-  Field:DeclaringType[?field] = ?class.
-
 Server:ClassField(?class, ?field) <-
-  _ValidField(?field, ?class),
+  Field:DeclaringType[?field] = ?class.
   Server:KeepClass(?class).
 
 Server:ClassField(?class, ?field) <-
-  _ValidField(?field, ?supertype),
+  Field:DeclaringType[?field] = ?supertype,
+  Field:Modifier(?mod, ?field),
+  ?mod != Modifier:private[],
   SupertypeOf(?supertype, ?class),
   ?class != Type:null[],
   Server:KeepClass(?supertype),
