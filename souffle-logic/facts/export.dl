@@ -10,10 +10,9 @@
 #ifndef X_SERVER_LOGIC
 .output CallGraphEdge()
 .output VarPointsTo()
-.output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 .output Stats_Metrics
 #endif
-
+.output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
 // It is possible to output facts in an sqlite3 db.
 // .output CallGraphEdge(IO=sqlite, dbname="test.db", name=CallGraphEdge)
 // .output VarPointsTo(IO=sqlite, dbname="test.db", name=VarPointsTo)
