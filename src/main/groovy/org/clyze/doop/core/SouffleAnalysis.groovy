@@ -62,18 +62,21 @@ class SouffleAnalysis extends DoopAnalysis {
         initDatabase()
         basicAnalysis()
         mainAnalysis()
-        produceStats()
+        if (!options.X_SERVER_LOGIC.value)
+            produceStats()
 
         compileAnalysis()
         executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
 
-        int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-        File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-        runtimeMetricsFile.createNewFile()
-        runtimeMetricsFile.append("analysis compilation time (sec)\t$compilationTime\n")
-        runtimeMetricsFile.append("analysis execution time (sec)\t$executionTime\n")
-        runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-        runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
+        if (!options.X_SERVER_LOGIC.value) {
+            int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+            File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+            runtimeMetricsFile.createNewFile()
+            runtimeMetricsFile.append("analysis compilation time (sec)\t$compilationTime\n")
+            runtimeMetricsFile.append("analysis execution time (sec)\t$executionTime\n")
+            runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+            runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
+        }
     }
 
     @Override

@@ -378,7 +378,6 @@
 .decl MethodInvocation_Method(?invocation:MethodInvocation, ?signature:Method)
 
 .decl ApplicationMethod(?method:Method)
-.output ApplicationMethod(IO="file",filename="ApplicationMethod.csv",delimiter="\t")
 
 // The (call-site) variable that holds the result of the invocation
 .decl AssignReturnValue(?invocation:MethodInvocation, ?to:Var)
