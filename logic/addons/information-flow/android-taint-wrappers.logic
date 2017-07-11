@@ -19,6 +19,7 @@ ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.u
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
 
 BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
+BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
 
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String replace(java.lang.CharSequence,java.lang.CharSequence)>").
@@ -91,6 +92,9 @@ ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger modPo
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger multiply(java.math.BigInteger)>").
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger or(java.math.BigInteger)>").
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger xor(java.math.BigInteger)>").
+
+ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
+
 /*
 <java.io.FileInputStream: void <init>(java.io.File)>
 <java.io.FileOutputStream: void <init>(java.lang.String)>
@@ -99,7 +103,7 @@ ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger xor(j
 <java.io.InputStreamReader: void <init>(java.io.InputStream,java.lang.String)>
 <java.io.BufferedReader: void <init>(java.io.Reader)>
 
-<java.io.ByteArrayOutputStream: void write(byte[],int,int)>
+
 
 <java.io.ObjectOutputStream: void writeObject(java.lang.Object>
 
@@ -192,6 +196,8 @@ BaseToRetTaintTransferMethod("<android.text.Editable: java.lang.String toString(
 
 
 ParamToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
+BaseToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: java.lang.String toString()>").
+
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte)>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte[])>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte[],int,int)>").
