@@ -128,19 +128,21 @@ Server_MethodFromInterface(?interfaceMethod, ?method) :-
 _ValidField(?field, ?class) :-
   Field_Modifier(?mod, ?field),
   !Modifier_private(?mod),
-  Field_DeclaringType(?field, ?class),
-  Server_KeepClass(?class).
+  Field_DeclaringType(?field, ?class).
 
 .decl Server_ClassField(?class:ClassType, ?field:Field)
 .output Server_ClassField
 
 Server_ClassField(?class, ?field) :-
-  _ValidField(?field, ?class).
+  _ValidField(?field, ?class),
+  Server_KeepClass(?class).
 
 Server_ClassField(?class, ?field) :-
   _ValidField(?field, ?supertype),
   SupertypeOf(?supertype, ?class),
-  !Type_null(?class).
+  !Type_null(?class),
+  Server_KeepClass(?supertype),
+  Server_KeepClass(?class).
 
 .decl _AppVirtual(?invo:MethodInvocation)
 
