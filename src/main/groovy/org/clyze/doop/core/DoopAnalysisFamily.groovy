@@ -43,7 +43,9 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "LB3",
 					name: "lb",
-					value: false
+					value: false,
+					webUI: true,
+					isAdvanced: true
 			),
 			new AnalysisOption<String>(
 					id: "ANALYSIS",
