@@ -54,7 +54,7 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
             }
 
             logger.info "-- Statistics --"
-            for (it in lines.sort()*.split(", ")) {
+            lines.sort()*.split(", ").each {
                 printf("%-80s %,d\n", it[1], it[2] as long)
             }
         }
