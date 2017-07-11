@@ -212,7 +212,7 @@ ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer putShor
 
 ParamToRetTaintTransferMethod("<java.util.regex.Pattern: java.util.regex.Matcher matcher(java.lang.CharSequence)>").
 
-ParamToBaseTaintTransferMethod("<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.lang.String[])>").
+ParamToBaseTaintTransferMethod(0, "<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.lang.String[])>").
 
 /*
 <android.os.Parcel: void writeArray(java.lang.Object[])>
