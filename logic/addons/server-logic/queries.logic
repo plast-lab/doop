@@ -66,6 +66,19 @@ Server:KeepClass(?class) <-
   _Class:DeclaresMethod(?method, ?class),
   Reachable(?method).
 
+// Types of class heaps used
+Server:KeepClass(?type) <-
+  VarPointsTo(_, ?value, _, _),
+  Value:Heap[?value] = ?classHeap,
+  ClassHeap:InstanceType[?classHeap] = ?type.
+
+#ifdef REFLECTION
+// Reified types used
+Server:KeepClass(?type) <-
+  VarPointsTo(_, ?value, _, _),
+  ReifiedClass[?type] = ?value.
+#endif
+
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
 Server:KeepClass(?iface) <-

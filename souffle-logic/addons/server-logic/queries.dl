@@ -103,6 +103,18 @@ Server_KeepClass(?class) :-
   _Class_DeclaresMethod(?method, ?class),
   Reachable(?method).
 
+// Types of class heaps used
+Server_KeepClass(?type) :-
+  VarPointsTo(_, ?classHeap, _, _),
+  ClassHeap_InstanceType(?classHeap, ?type).
+
+#ifdef REFLECTION
+// Reified types used
+Server_KeepClass(?type) :-
+  VarPointsTo(_, ?value, _, _),
+  ReifiedClass(?type, ?value).
+#endif
+
 #ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
 Server_KeepClass(?iface) :-
