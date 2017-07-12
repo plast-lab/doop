@@ -258,11 +258,21 @@ TaintedVarPointsTo(?value, ?ctx, ?var) <-
 VarPointsToOpt(?ctx, ?var, ?value) <-
   VarPointsTo(_, ?value, ?ctx, ?var).
 
-
+// Generic string internal tainting
+#ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 TaintedValue(?basevalue) <-
   TaintedValue(?value),
   InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).
 
+
+VarPointsTo(?hctx, ?newvalue, ?ctx, ?to),
+TaintedValueTransferred(?obj, "char[]", DEFAULT_BREADCRUMB, ?newvalue) <-
+  LoadHeapInstanceField(?ctx, ?to, "<java.lang.String: char[] value>", _, ?basevalue),
+  ImmutableHContext(?hctx),
+  TaintedValue(?basevalue).
+
+#endif
+ 
 // Serialization
 
 SerializeObjectInvocation(?base, ?ctx, ?var) <-

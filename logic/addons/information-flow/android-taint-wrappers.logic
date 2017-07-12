@@ -17,6 +17,7 @@ ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String concat(java.l
 
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
+ParamToRetTaintTransferMethod("<java.util.Formatter: java.lang.CharSequence transform(java.util.Formatter$FormatToken,java.lang.Object)>").
 
 BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
 BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
