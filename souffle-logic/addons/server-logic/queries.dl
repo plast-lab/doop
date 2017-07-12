@@ -103,9 +103,11 @@ Server_KeepClass(?class) :-
   _Class_DeclaresMethod(?method, ?class),
   Reachable(?method).
 
+#ifdef REFLECTION_DYNAMIC_PROXIES
 // Proxied interfaces
 Server_KeepClass(?iface) :-
   ProxyObject_Interface(_, ?iface).
+#endif
 
 // Transitively, everything up the hierarchy
 Server_KeepClass(?interface) :-
