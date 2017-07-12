@@ -66,6 +66,12 @@ Server:KeepClass(?class) <-
   _Class:DeclaresMethod(?method, ?class),
   Reachable(?method).
 
+#ifdef REFLECTION_DYNAMIC_PROXIES
+// Proxied interfaces
+Server:KeepClass(?iface) <-
+   ProxyObject:Interface[_] = ?iface.
+#endif
+
 // Transitively, everything up the hierarchy
 Server:KeepClass(?interface) <-
   Server:KeepClass(?class),

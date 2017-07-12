@@ -103,6 +103,10 @@ Server_KeepClass(?class) :-
   _Class_DeclaresMethod(?method, ?class),
   Reachable(?method).
 
+// Proxied interfaces
+Server_KeepClass(?iface) :-
+  ProxyObject_Interface(_, ?iface).
+
 // Transitively, everything up the hierarchy
 Server_KeepClass(?interface) :-
   Server_KeepClass(?class),
