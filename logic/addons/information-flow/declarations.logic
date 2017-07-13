@@ -28,3 +28,4 @@ SanitizedValue(?value) -> Value(?value).
 TaintedValue(?value) -> Value(?value).
 
 ParamToRetTaintTransferMethod(?method) -> Method(?method).
+

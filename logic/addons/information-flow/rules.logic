@@ -6,6 +6,9 @@ AnyMethodInvocation(?invocation, ?tomethod) <-
 AnyMethodInvocation(?invocation, ?tomethod) <-
    VirtualMethodInvocation(?invocation, ?tomethod, _).
 
+
+
+
 AnyMethodInvocation(?invocation, ?tomethod) <-
    MethodInvocation:Method[?invocation] = ?tomethod,
    SpecialMethodInvocation:Insn(?invocation).
@@ -13,6 +16,8 @@ AnyMethodInvocation(?invocation, ?tomethod) <-
 AnyMethodInvocationOpt(?tomethod, ?invocation) <- AnyMethodInvocation(?invocation, ?tomethod).
 
 VarUse(?from, ?insn) <- AssignOper:From(?insn, ?from).
+
+VarIsTaintedFromVar(?type, ?ctx, ?var, ?ctx, ?var) -> Type(?type), Context(?ctx), Var(?var), Context(?ctx), Var(?var).
 
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) <-
    VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
@@ -27,7 +32,8 @@ TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
    VarIsTaintedFromValue(?type, ?value, ?toCtx, ?to),
    ImmutableHContext(?hctx).
-   
+
+
 
 CallTaintingMethod(?label, ?ctx, ?invocation) <-
    TaintSourceMethod(?label, ?tomethod),
@@ -270,7 +276,6 @@ TaintedValueTransferred(?obj, "char[]", DEFAULT_BREADCRUMB, ?newvalue) <-
   LoadHeapInstanceField(?ctx, ?to, "<java.lang.String: char[] value>", _, ?basevalue),
   ImmutableHContext(?hctx),
   TaintedValue(?basevalue).
-
 #endif
  
 // Serialization

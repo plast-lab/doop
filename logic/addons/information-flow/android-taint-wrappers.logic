@@ -192,9 +192,12 @@ ParamToRetTaintTransferMethod("<java.util.Arrays: java.util.List asList(java.lan
 ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>").
 ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.String toString(java.lang.Object[])>").
 
+/*
 BaseToRetTaintTransferMethod("<android.widget.EditText: android.text.Editable getText()>").
 BaseToRetTaintTransferMethod("<android.text.Editable: java.lang.String toString()>").
-
+BaseToRetTaintTransferMethod("<android.widget.EditText: java.lang.String toString()>").
+BaseToRetTaintTransferMethod("<android.view.View: java.lang.String toString()>").
+*/
 
 ParamToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
 BaseToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: java.lang.String toString()>").
