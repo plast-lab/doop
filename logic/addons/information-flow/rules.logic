@@ -159,7 +159,7 @@ MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) <-
 
 ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) <-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
-   ActualParam[0, ?invocation] = ?param,
+   ActualParam[_, ?invocation] = ?param,
    ParamToRetTaintTransferMethod(?taintTransferMethod),
    TypeForReturnValue(?type, ?ret, ?invocation).
 
