@@ -135,36 +135,36 @@ ParamToRetTaintTransferMethod("<java.net.URI: java.net.URI create(java.lang.Stri
 <android.content.ContentValues: void putAll(android.content.ContentValues)>
 <android.content.ContentValues: void putNull(java.lang.String)>
 */
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent addFlags(int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent setFlags(int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent parseIntent(android.content.res.Resources,org.xmlpull.v1.XmlPullParser,android.util.AttributeSet)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent parseUri(java.lang.String,int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,char)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,short)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,long)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,float)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,double)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.io.Serializable)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,short[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,char[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,int[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,long[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,float[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,double[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Bundle)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtras(android.content.Intent)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtras(android.os.Bundle)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent addFlags(int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent setFlags(int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent parseIntent(android.content.res.Resources,org.xmlpull.v1.XmlPullParser,android.util.AttributeSet)>"). 
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent parseUri(java.lang.String,int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,char)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,short)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,long)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,float)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,double)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.io.Serializable)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,short[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,char[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,int[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,long[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,float[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,double[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Bundle)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtras(android.content.Intent)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtras(android.os.Bundle)>").
 /*
 <android.content.IntentFilter: void addAction(java.lang.String)>
 
