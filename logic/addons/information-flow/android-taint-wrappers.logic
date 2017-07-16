@@ -96,6 +96,8 @@ ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger xor(j
 
 ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
 
+ParamToRetTaintTransferMethod("<android.os.Message: android.os.Message obtain(android.os.Handler,int,int,int)>").
+
 /*
 <java.io.FileInputStream: void <init>(java.io.File)>
 <java.io.FileOutputStream: void <init>(java.lang.String)>
