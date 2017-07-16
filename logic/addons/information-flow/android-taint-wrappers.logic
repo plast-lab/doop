@@ -17,7 +17,7 @@ ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String concat(java.l
 
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
-ParamToRetTaintTransferMethod("<java.util.Formatter: java.lang.CharSequence transform(java.util.Formatter$FormatToken,java.lang.Object)>").
+//BaseToParamTaintTransferMethod(0, "<java.util.Formatter: void <init>(java.lang.Appendable)>").
 
 BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
 BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
@@ -272,7 +272,10 @@ ParamToBaseTaintTransferMethod(0, "<java.lang.ProcessBuilder: java.lang.ProcessB
 <android.graphics.PointF: void <init>(float,float)>
 <android.graphics.PointF: void <init>(android.graphics.Point)>
 <android.app.DownloadManager$Request: void <init>(android.net.Uri)>
-*/                  
+*/
+
+BaseToRetTaintTransferMethod("<android.os.Parcel: void unmarshall()>").
+
 ParamToRetTaintTransferMethod("<android.telephony.SmsMessage: android.telephony.SmsMessage createFromPdu(byte[])>").
 ParamToRetTaintTransferMethod("<android.telephony.gsm.SmsMessage: android.telephony.gsm.SmsMessage createFromPdu(byte[])>").
 

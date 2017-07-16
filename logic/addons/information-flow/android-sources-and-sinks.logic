@@ -17,6 +17,8 @@ TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: java.lang.String to
 TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity,java.lang.String)>").
 TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: byte[] toByteArray(org.apache.http.HttpEntity)>").
 TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: java.lang.String getContentCharSet(org.apache.http.HttpEntity)>").
+TaintSourceMethod("Bundle", "<android.content.Intent: android.os.Bundle getExtras()>").
+
 LeakingSinkMethod("Net", "<org.apache.http.message.BasicNameValuePair: void <init>(java.lang.String,java.lang.String)>").
 TaintSourceMethod("Bundle", "<android.os.Bundle: java.lang.Object get(java.lang.String)>").
 TaintSourceMethod("Bundle", "<android.os.Bundle: boolean getBoolean(java.lang.String)>").

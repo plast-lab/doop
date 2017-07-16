@@ -236,9 +236,16 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) <-
  * Sinks and leaks
  */
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
   LeakingSinkMethodArg(?label, ?index, ?tomethod),
   ActualParam[?index, ?invocation] = ?var.
+
+// in case method has no arguments, assume base variable 
+LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) <-
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
+   !FormalParam[_, ?tomethod] = _,
+   LeakingSinkMethod(?label, ?tomethod),
+   MethodInvocation:Base[?invocation] = ?var.
 
 LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) <-
   TaintedVarPointsTo(?value, ?ctx, ?var),

@@ -38,6 +38,21 @@ AndroidAppComponent(?type) <-
   ContentProvider(?type);
   AndroidApplication(?type).
 
+RegisterBroadCastReceiverVar(?var) <-
+   Method:SimpleName[?method] = "registerReceiver",
+   MethodInvocation:Method[?invocation] = ?method,
+   ActualParam[0, ?invocation] = ?var,
+   ApplicationVar(?var),
+   Var:Type[?var] = ?type,
+   SupertypeOf("android.content.BroadcastReceiver", ?type).
+
+ExtraAndroidAppComponent(?type),
+ReifiedAndroidObjectValue(?value, ?type) <-
+   VarPointsTo(_, ?value, _, ?var),
+   RegisterBroadCastReceiverVar(?var),
+   Value:Type[?value] = ?type,
+   !AndroidAppComponent(?type).
+
 ReifiedComponent[?type] = ?value -> Type(?type), Value(?value).
 ReifiedLayoutControl[?type,?id] = ?value -> int[32](?id), Type(?type), Value(?value).
 
@@ -120,12 +135,12 @@ MethodDeclaredOrInherited(?meth, ?class) <-
 
 PublicMethodOfComponent(?meth) <-
   MethodDeclaredOrInherited(?meth, ?type),
-  AndroidAppComponent(?type),
+  (AndroidAppComponent(?type) ; ExtraAndroidAppComponent(?type)),
   Method:Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) <-
   MethodDeclaredOrInherited(?meth, ?type),
-  AndroidAppComponent(?type),
+  (AndroidAppComponent(?type) ; ExtraAndroidAppComponent(?type)),
   Method:Modifier("protected", ?meth).
 
 AppMethodOverridesAndroidLibraryMethod(?meth) <-
@@ -262,6 +277,7 @@ VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ThisVar[?meth] = ?this,
   ImmutableHContextFromContext[?ctx] = ?hctx.
 
+
 // a reachable object can always be the receiver for its own methods
 VarPointsTo(?hctx, ?value, ?ctx, ?this) <-
   ForcedReachableAndroidContext(?ctx, ?meth),
@@ -362,3 +378,41 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue)
   ComponentType[?type] = ?arrayType,
   ArrayType(?arrayType),
   UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
+
+
+
+// Being liberal ... Any Activity parameter inside a class that is
+// bound with a fragment .. hack ?
+VarInType(?var, ?type) <-
+   Var:DeclaringMethod(?var, ?method),
+   Method:DeclaringType[?method] = ?type.
+
+OptAssignCast("android.app.Activity", ?varAcc, ?thisActivity) <-
+   VarInType(?varAcc, ?type),
+   Value:Type[?value] = ?type,
+   VarPointsTo(_, ?value, _, ?fragmentParam),
+   BindFragment(?thisActivity, ?fragmentParam).
+
+
+// Binding fragment's parent
+BindFragment(?thisActivity, ?fragmentParam) <-
+   Method:DeclaringType[?method] = "android.app.FragmentTransaction",
+   Method:SimpleName[?method] = "add",
+   ActualParam[_, ?invocation] = ?fragmentParam,
+   Instruction:Method[?invocation] = ?method,
+   ThisVar[?method] = ?thisActivity.
+
+
+// TODO: currently a hack, generalize this by
+// 1) getting info from factgen (Application, Component).
+// 2) Be more liberal with variable types.
+VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+   ImmutableHContext(?hctx),
+   ReifiedApplicationAndCompatibleVar(?value, ?var),
+   Var:DeclaringMethod(?var, ?method),
+   ForcedReachableAndroidContext(?ctx, ?method).
+
+ReifiedApplicationAndCompatibleVar(?value, ?var) <-
+   ReifiedComponent[?type] = ?value,
+   AndroidApplication(?type),
+   Var:Type[?var] = ?type.
