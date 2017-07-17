@@ -378,42 +378,44 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             context.resolve()
             inputFiles = context.getAll()
             platformFiles = resolve(platformFilePaths)
+        }
 
-            if (options.MAIN_CLASS.value) {
-                logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
-            } else {
-                if (!options.IGNORE_MAIN_METHOD.value) {
-                    JarFile jarFile = new JarFile(inputFiles[0])
-                    //Try to read the main class from the manifest contained in the jar
-                    def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
-                    if (main) {
-                        logger.debug "The main class is automatically set to ${main}"
-                        options.MAIN_CLASS.value = main
+        if (options.MAIN_CLASS.value) {
+            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+        } else {
+            if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+                JarFile jarFile = new JarFile(inputFiles[0])
+                //Try to read the main class from the manifest contained in the jar
+                def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
+                if (main) {
+                    logger.debug "The main class is automatically set to ${main}"
+                    options.MAIN_CLASS.value = main
+                } else {
+                    //Check whether the jar contains a class with the same name
+                    def jarName = FilenameUtils.getBaseName(jarFile.getName())
+                    if (jarFile.getJarEntry("${jarName}.class")) {
+                        logger.debug "The main class is automatically set to ${jarName}"
+                        options.MAIN_CLASS.value = jarName
                     } else {
-                        //Check whether the jar contains a class with the same name
-                        def jarName = FilenameUtils.getBaseName(jarFile.getName())
-                        if (jarFile.getJarEntry("${jarName}.class")) {
-                            logger.debug "The main class is automatically set to ${jarName}"
-                            options.MAIN_CLASS.value = jarName
-                        } else {
-                            logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
-                        }
+                        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
                     }
                 }
             }
-            if (options.DYNAMIC.value) {
-                List<String> dynFiles = options.DYNAMIC.value as List<String>
-                dynFiles.each { String dynFile ->
-                    FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-                    logger.debug "The DYNAMIC option has been set to ${dynFile}"
-                }
-            }
+        }
 
-            if (options.TAMIFLEX.value) {
-                def tamFile = options.TAMIFLEX.value.toString()
-                FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+        if (options.DYNAMIC.value) {
+            List<String> dynFiles = options.DYNAMIC.value as List<String>
+            dynFiles.each { String dynFile ->
+                FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+                logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
         }
+
+        if (options.TAMIFLEX.value && !options.TAMIFLEX.value != "dummy") {
+            def tamFile = options.TAMIFLEX.value.toString()
+            FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+        }
+
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
                 options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
