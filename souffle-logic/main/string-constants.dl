@@ -517,7 +517,7 @@ MethodNameSuffix(substr(?methodName, strlen(?methodName) - ?length, ?length), ?s
   strlen(?methodName) > ?length,
   StringChangesCaseBeforePosition(strlen(?methodName) - ?length, ?methodName).
 
-MethodNamePrefix(substr(?methodName, 0, ?length), ?sig) :-
+MethodNamePrefix(substr(?methodName, 0, ?length+1), ?sig) :-
   Method_SimpleName(?sig, ?methodName),
   MemberPrefixIterationTrick(?length),
   strlen(?methodName) > ?length,

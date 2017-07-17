@@ -14,9 +14,9 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
     @Override
     void process(DoopAnalysis analysis) {
-        if (!analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
+        if (!analysis.options.X_SERVER_LOGIC.value && !analysis.options.X_STOP_AT_FACTS.value && !analysis.options.X_STOP_AT_INIT.value && !analysis.options.X_STOP_AT_BASIC.value)
             printStats(analysis)
-        if (analysis.options.SOUFFLE.value && analysis.options.SANITY.value)
+        if (analysis.options.SANITY.value)
             printSanityResults(analysis)
         linkResult(analysis)
     }
@@ -25,14 +25,14 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
     protected void printStats(DoopAnalysis analysis) {
         def lines = []
 
-        if (analysis.options.SOUFFLE.value) {
-            def file = new File("${analysis.database}/Stats_Runtime.csv")
-            file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
-        }
-        else {
-            analysis.connector.processPredicate("Stats:Runtime") { String line ->
+        if (analysis.options.LB3.value) {
+            analysis.processRelation("Stats:Runtime") { String line ->
                 if (!filterOutLBWarn(line)) lines.add(line)
             }
+        }
+        else {
+            def file = new File("${analysis.database}/Stats_Runtime.csv")
+            file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
         }
 
         logger.info "-- Runtime metrics --"
@@ -43,14 +43,14 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         if (!analysis.options.X_STATS_NONE.value) {
             lines = []
 
-            if (analysis.options.SOUFFLE.value) {
-                def file = new File("${analysis.database}/Stats_Metrics.csv")
-                file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
-            }
-            else {
-                analysis.connector.processPredicate("Stats:Metrics") { String line ->
+            if (analysis.options.LB3.value) {
+                analysis.processRelation("Stats:Metrics") { String line ->
                     if (!filterOutLBWarn(line)) lines.add(line)
                 }
+            }
+            else {
+                def file = new File("${analysis.database}/Stats_Metrics.csv")
+                file.eachLine { String line -> lines.add(line.replace("\t", ", ")) }
             }
 
             logger.info "-- Statistics --"
@@ -76,8 +76,13 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
             return
         }
 
+        def inputName
         def platform = analysis.options.PLATFORM.value
-        def inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
+
+        if (analysis.options.X_START_AFTER_FACTS.value)
+            inputName = analysis.id
+        else
+            inputName = FilenameUtils.getBaseName(analysis.inputFiles[0].toString())
 
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()

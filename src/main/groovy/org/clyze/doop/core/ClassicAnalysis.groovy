@@ -443,4 +443,9 @@ class ClassicAnalysis extends DoopAnalysis {
             .commit()
             .elapsedTime()
     }
+
+    @Override
+    void processRelation(String query, Closure outputLineProcessor) {
+        connector.processRelation(query, outputLineProcessor)
+    }
 }

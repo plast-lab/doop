@@ -40,6 +40,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End LogicBlox related options */
 			/* Start Main options */
+			new BooleanAnalysisOption(
+					id: "LB3",
+					name: "lb",
+					value: false,
+					webUI: true,
+					isAdvanced: true
+			),
 			new AnalysisOption<String>(
 					id: "ANALYSIS",
 					name: "analysis",
@@ -55,7 +62,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "inputFiles",
 					argName: "FILES",
 					value: null,
-					isMandatory: true,
+					isMandatory: false,
 					webUI: true
 			),
 			new AnalysisOption<String>(
@@ -184,7 +191,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "PLATFORM",
 					name: "platform",
 					argName: "PLATFORM",
-					description: "The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22_stubs, android_24_fulljars). For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
+					description: "The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22_stubs, android_22_fulljars). For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
 					value: "java_7",
 					webUI: true,
 					forCacheID: true
@@ -369,16 +376,11 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
-			new BooleanAnalysisOption(
-					id: "SOUFFLE",
-					name: "souffle",
-					value: false
-			),
 			new IntegerAnalysisOption(
 					id: "SOUFFLE_JOBS",
 					name: "souffle-jobs",
 					argName: "NUMBER",
-					value: 1
+					value: 4
 			),
 			new BooleanAnalysisOption(
 					id: "SOUFFLE_DEBUG",
@@ -536,7 +538,17 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xserver-logic",
 					description: "Run server queries under addons/server-logic",
 					value: false,
-					nonStandard: true
+					nonStandard: true,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "X_START_AFTER_FACTS",
+					name: "Xstart-after-facts",
+					description: "Import facts from OUT_DIR and start the analysis",
+					argName: "OUT_DIR",
+					isDir: true,
+					nonStandard: true,
+					forPreprocessor: true
 			),
 			new IntegerAnalysisOption(
 					id: "X_SERVER_LOGIC_THRESHOLD",

@@ -35,15 +35,18 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         //Get the name of the analysis (short option: a)
         String name = cli.a
 
-        //Get the inputFiles of the analysis (short option: i)
-        List<String> inputs = cli.is
-
         //Get the id of the analysis (short option: id)
         String id = cli.id ?: null
 
         Map<String, AnalysisOption> options = Doop.overrideDefaultOptionsWithCLI(cli) { AnalysisOption option ->
             option.cli
         }
+
+        List<String> inputs = []
+        //Get the inputFiles of the analysis (short option: i)
+        if (!options.X_START_AFTER_FACTS.value)
+            inputs = cli.is
+
         return newAnalysis(FAMILY, id, name, options, inputs)
     }
 

@@ -19,6 +19,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	Map methodInvoCounters
 	Map values = [:]
 	boolean inDecl
+	boolean inInterface
 
 	BasicMetadata metadata = new BasicMetadata()
 
@@ -33,6 +34,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def qualifiedName = ctx.IDENTIFIER(0).text
 		def position = new Position(line, line, startCol, startCol + qualifiedName.length())
 		def (packageName, className) = Parser.getClassInfo(qualifiedName)
+		inInterface = hasToken(ctx, "interface")
 
 		klass = new Class(
 				position,
@@ -40,7 +42,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				className,
 				packageName,
 				qualifiedName,
-				hasToken(ctx, "interface"),
+				inInterface,
 				ctx.modifier().any() { hasToken(it, "enum") },
 				ctx.modifier().any() { hasToken(it, "static") },
 				false, //isInner, missing?
@@ -97,6 +99,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				0, //totalInvocations, missing?
 				0  //totalAllocations, missing?
 		)
+		method.isInterface = inInterface
+		method.isAbstract = ctx.modifier()?.any { it.text == "abstract" }
+
 		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 		method.outerPosition = new Position(line, endline, 0, 0)
 		metadata.methods << method

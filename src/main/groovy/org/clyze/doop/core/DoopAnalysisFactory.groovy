@@ -65,10 +65,8 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def vars = processOptions(name, options, context)
 
         checkAnalysis(name)
-        if (!options.SOUFFLE.value)
+        if (options.LB3.value)
             checkLogicBlox(vars)
-
-        checkAppGlob(vars)
 
         //init the environment used for executing commands
         Map<String, String> commandsEnv = initExternalCommandsEnvironment(vars)
@@ -80,22 +78,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         def outDir = createOutputDirectory(vars, analysisId)
 
-        def cacheDir = new File("${Doop.doopCache}/$cacheId")
+        def cacheDir
+
+        if (options.X_START_AFTER_FACTS.value) {
+            cacheDir = new File(options.X_START_AFTER_FACTS.value)
+            FileOps.findDirOrThrow(cacheDir, "Invalid user-provided facts directory: $cacheDir")
+        }
+        else {
+            cacheDir = new File("${Doop.doopCache}/$cacheId")
+            checkAppGlob(vars)
+        }
 
         DoopAnalysis analysis
-        if (options.SOUFFLE.value) {
-            options.CFG_ANALYSIS.value = false
-            analysis = new SouffleAnalysis(
-                    analysisId,
-                    name.replace(File.separator, "-"),
-                    options,
-                    context,
-                    outDir,
-                    cacheDir,
-                    vars.inputFiles,
-                    vars.platformFiles,
-                    commandsEnv)
-        } else {
+        if (options.LB3.value) {
             if (name != "sound-may-point-to") {
                 options.CFG_ANALYSIS.value = false
                 analysis = new ClassicAnalysis(
@@ -120,6 +115,18 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         vars.platformFiles,
                         commandsEnv)
             }
+        } else {
+            options.CFG_ANALYSIS.value = false
+            analysis = new SouffleAnalysis(
+                    analysisId,
+                    name.replace(File.separator, "-"),
+                    options,
+                    context,
+                    outDir,
+                    cacheDir,
+                    vars.inputFiles,
+                    vars.platformFiles,
+                    commandsEnv)
         }
         logger.debug "Created new analysis"
         return analysis
@@ -185,7 +192,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
-        if (vars.options.TAMIFLEX.value)
+        if (vars.options.TAMIFLEX.value && vars.options.TAMIFLEX.value != "dummy")
             checksums += [CheckSum.checksum(new File(vars.options.TAMIFLEX.value.toString()), HASH_ALGO)]
 
         idComponents = checksums + idComponents
@@ -338,9 +345,75 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         logger.debug "Processing analysis options"
 
-        def inputFilePaths = context.inputs()
-        def platformFilePaths = platform(options)
+        def inputFilePaths
+        def platformFilePaths
+        def inputFiles
+        def platformFiles
 
+        if (options.DACAPO.value || options.DACAPO_BACH.value) {
+            if (!options.X_START_AFTER_FACTS.value) {
+                def inputJarName = inputFilePaths[0]
+                def deps = inputJarName.replace(".jar", "-deps.jar")
+                if (!inputFilePaths.contains(deps))
+                    inputFilePaths.add(deps)
+            }
+
+            if (!options.REFLECTION.value && !options.TAMIFLEX.value) {
+                if (!options.X_START_AFTER_FACTS.value)
+                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
+                else
+                    options.TAMIFLEX.value = "dummy"
+            }
+
+            if (!options.X_START_AFTER_FACTS.value) {
+                def benchmark = FilenameUtils.getBaseName(inputJarName)
+                logger.info "Running " + (options.DACAPO.value ? "dacapo" : "dacapo-bach") + " benchmark: $benchmark"
+            }
+        }
+
+        if (!options.X_START_AFTER_FACTS.value) {
+            inputFilePaths = context.inputs()
+            platformFilePaths = platform(options)
+
+            context.resolve()
+            inputFiles = context.getAll()
+            platformFiles = resolve(platformFilePaths)
+
+            if (options.MAIN_CLASS.value) {
+                logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
+            } else {
+                if (!options.IGNORE_MAIN_METHOD.value) {
+                    JarFile jarFile = new JarFile(inputFiles[0])
+                    //Try to read the main class from the manifest contained in the jar
+                    def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
+                    if (main) {
+                        logger.debug "The main class is automatically set to ${main}"
+                        options.MAIN_CLASS.value = main
+                    } else {
+                        //Check whether the jar contains a class with the same name
+                        def jarName = FilenameUtils.getBaseName(jarFile.getName())
+                        if (jarFile.getJarEntry("${jarName}.class")) {
+                            logger.debug "The main class is automatically set to ${jarName}"
+                            options.MAIN_CLASS.value = jarName
+                        } else {
+                            logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
+                        }
+                    }
+                }
+            }
+            if (options.DYNAMIC.value) {
+                List<String> dynFiles = options.DYNAMIC.value as List<String>
+                dynFiles.each { String dynFile ->
+                    FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
+                    logger.debug "The DYNAMIC option has been set to ${dynFile}"
+                }
+            }
+
+            if (options.TAMIFLEX.value) {
+                def tamFile = options.TAMIFLEX.value.toString()
+                FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
+            }
+        }
 
         if (options.DISTINGUISH_ALL_STRING_BUFFERS.value &&
                 options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value) {
@@ -373,19 +446,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
         }
 
-        if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            def inputJarName = inputFilePaths[0]
-            def deps = inputJarName.replace(".jar", "-deps.jar")
-            if (!inputFilePaths.contains(deps))
-                inputFilePaths.add(deps)
-
-            if (!options.REFLECTION.value && !options.TAMIFLEX.value)
-               options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
-
-            def benchmark = FilenameUtils.getBaseName(inputJarName)
-            logger.info "Running "+(options.DACAPO.value ? "dacapo" : "dacapo-bach")+" benchmark: $benchmark"
-        }
-
         if (options.TAMIFLEX.value) {
             options.REFLECTION.value = false
         }
@@ -408,46 +468,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             if (options.CACHE.value) {
                 logger.warn "\nWARNING: Doing a dry run of the analysis while using cached facts might be problematic!\n"
             }
-        }
-
-        context.resolve()
-        def inputFiles = context.getAll()
-        def platformFiles = resolve(platformFilePaths)
-
-        if (options.MAIN_CLASS.value) {
-            logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
-        } else {
-            if (!options.IGNORE_MAIN_METHOD.value) {
-                JarFile jarFile = new JarFile(inputFiles[0])
-                //Try to read the main class from the manifest contained in the jar
-                def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
-                if (main) {
-                    logger.debug "The main class is automatically set to ${main}"
-                    options.MAIN_CLASS.value = main
-                } else {
-                    //Check whether the jar contains a class with the same name
-                    def jarName = FilenameUtils.getBaseName(jarFile.getName())
-                    if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically set to ${jarName}"
-                        options.MAIN_CLASS.value = jarName
-                    } else {
-                        logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
-                    }
-                }
-            }
-        }
-
-        if (options.DYNAMIC.value) {
-            List<String> dynFiles = options.DYNAMIC.value as List<String>
-            dynFiles.each { String dynFile ->
-                FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-                logger.debug "The DYNAMIC option has been set to ${dynFile}"
-            }
-        }
-
-        if (options.TAMIFLEX.value) {
-            def tamFile = options.TAMIFLEX.value.toString()
-            FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }
 
         if (!options.REFLECTION.value) {

@@ -17,6 +17,8 @@ TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: java.lang.String to
 TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: java.lang.String toString(org.apache.http.HttpEntity,java.lang.String)>").
 TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: byte[] toByteArray(org.apache.http.HttpEntity)>").
 TaintSourceMethod("Net", "<org.apache.http.util.EntityUtils: java.lang.String getContentCharSet(org.apache.http.HttpEntity)>").
+TaintSourceMethod("Bundle", "<android.content.Intent: android.os.Bundle getExtras()>").
+
 LeakingSinkMethod("Net", "<org.apache.http.message.BasicNameValuePair: void <init>(java.lang.String,java.lang.String)>").
 TaintSourceMethod("Bundle", "<android.os.Bundle: java.lang.Object get(java.lang.String)>").
 TaintSourceMethod("Bundle", "<android.os.Bundle: boolean getBoolean(java.lang.String)>").
@@ -190,6 +192,7 @@ LeakingSinkMethod("Net", "<java.net.URL: void <init>(java.net.URL,java.lang.Stri
 LeakingSinkMethod("Net", "<java.net.URL: void <init>(java.net.URL,java.lang.String,java.net.URLStreamHandler)>").
 LeakingSinkMethod("IPC", "<android.content.Context: void startActivity(android.content.Intent)>").
 LeakingSinkMethod("IPC", "<android.content.ContextWrapper: void startActivity(android.content.Intent)>").
+LeakingSinkMethod("IPC", "<android.content.ContextWrapper: void sendBroadcast(android.content.Intent)>").
 LeakingSinkMethod("IPC", "<android.content.Context: void startActivity(android.content.Intent,android.os.Bundle)>").
 LeakingSinkMethod("IPC", "<android.content.Context: void startActivities(android.content.Intent[])>").
 LeakingSinkMethod("IPC", "<android.content.Context: void startActivities(android.content.Intent[],android.os.Bundle)>").
@@ -223,6 +226,7 @@ LeakingSinkMethod("Net", "<android.app.Activity: void sendOrderedBroadcastAsUser
 LeakingSinkMethod("Net", "<android.app.Activity: void sendStickyBroadcast(android.content.Intent)>").
 LeakingSinkMethod("Net", "<android.app.Activity: void sendStickyBroadcastAsUser(android.content.Intent,android.os.UserHandle)>").
 LeakingSinkMethod("Net", "<android.app.Activity: void sendStickyOrderedBroadcast(android.content.Intent,android.content.BroadcastReceiver,android.os.Handler,int,java.lang.String,android.os.Bundle)>").
+LeakingSinkMethod("IPC", "<android.os.Messenger: void send(android.os.Message)>").
 LeakingSinkMethod("Net", "<android.app.Activity: void sendStickyOrderedBroadcastAsUser(android.content.Intent,android.os.UserHandle,android.content.BroadcastReceiver,android.os.Handler,int,java.lang.String,android.os.Bundle)>").
 LeakingSinkMethod("Net", "<android.content.ContentResolver: android.net.Uri insert(android.net.Uri,android.content.ContentValues)>").
 LeakingSinkMethod("Net", "<android.content.ContentResolver: int delete(android.net.Uri,java.lang.String,java.lang.String[])>").

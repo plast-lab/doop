@@ -62,18 +62,21 @@ class SouffleAnalysis extends DoopAnalysis {
         initDatabase()
         basicAnalysis()
         mainAnalysis()
-        produceStats()
+        if (!options.X_SERVER_LOGIC.value)
+            produceStats()
 
         compileAnalysis()
         executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
 
-        int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-        File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
-        runtimeMetricsFile.createNewFile()
-        runtimeMetricsFile.append("analysis compilation time (sec)\t$compilationTime\n")
-        runtimeMetricsFile.append("analysis execution time (sec)\t$executionTime\n")
-        runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
-        runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
+        if (!options.X_SERVER_LOGIC.value) {
+            int dbSize = (sizeOfDirectory(database) / 1024).intValue()
+            File runtimeMetricsFile = new File(database, "Stats_Runtime.csv")
+            runtimeMetricsFile.createNewFile()
+            runtimeMetricsFile.append("analysis compilation time (sec)\t$compilationTime\n")
+            runtimeMetricsFile.append("analysis execution time (sec)\t$executionTime\n")
+            runtimeMetricsFile.append("disk footprint (KB)\t$dbSize\n")
+            runtimeMetricsFile.append("soot-fact-generation time (sec)\t$sootTime\n")
+        }
     }
 
     @Override
@@ -192,6 +195,10 @@ class SouffleAnalysis extends DoopAnalysis {
             def analysisFile = FileOps.findFileOrThrow("$analysis", "Missing $analysis")
             analysisFile.append("""MainClass("${options.MAIN_CLASS.value}").\n""")
         }
+
+        if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
+        }
     }
 
     private void compileAnalysis() {
@@ -224,7 +231,7 @@ class SouffleAnalysis extends DoopAnalysis {
                 executor.execute(subshellCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
-                             line.startsWith("Warning: Deprecated output qualifier was used")) {
+                            line.startsWith("Warning: Deprecated output qualifier was used")) {
                         logger.info line
                         ignoreCounter = 2
                     }
@@ -279,4 +286,12 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void runTransformInput() {}
+
+    @Override
+    void processRelation(String query, Closure outputLineProcessor) {
+        query = query.replaceAll(":", "_")
+        def file = new File(this.outDir, "database/${query}.csv")
+        if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
+        file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+    }
 }
