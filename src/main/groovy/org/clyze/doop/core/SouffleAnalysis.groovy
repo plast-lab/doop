@@ -231,7 +231,7 @@ class SouffleAnalysis extends DoopAnalysis {
                 executor.execute(subshellCommand) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
-                             line.startsWith("Warning: Deprecated output qualifier was used")) {
+                            line.startsWith("Warning: Deprecated output qualifier was used")) {
                         logger.info line
                         ignoreCounter = 2
                     }

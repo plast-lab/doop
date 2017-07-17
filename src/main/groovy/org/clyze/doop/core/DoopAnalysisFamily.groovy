@@ -62,7 +62,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "inputFiles",
 					argName: "FILES",
 					value: null,
-					isMandatory: true,
+					isMandatory: false,
 					webUI: true
 			),
 			new AnalysisOption<String>(
@@ -538,6 +538,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "Xserver-logic",
 					description: "Run server queries under addons/server-logic",
 					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "X_START_AFTER_FACTS",
+					name: "Xstart-after-facts",
+					description: "Import facts from OUT_DIR and start the analysis",
+					argName: "OUT_DIR",
+					isDir: true,
 					nonStandard: true,
 					forPreprocessor: true
 			),
