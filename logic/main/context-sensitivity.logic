@@ -552,6 +552,9 @@ Reachable(?method) <-
   ReachableContext(_, ?method).
 
 
+// Utility function
+Var:DeclaringType(Method:DeclaringType[?method], ?var) <- Var:DeclaringMethod(?var, ?method).
+
 /**
  * EXPERIMENTS ONLY below this point
  */

@@ -45,9 +45,11 @@ CallTaintingMethod(?label, ?ctx, ?invocation) <-
  * Information flow through complex relations
  */
 StringFactoryType(?type) <-
-  Type:Id(?type:"java.lang.String") ;
-  Type:Id(?type:"java.lang.StringBuffer") ;
-  Type:Id(?type:"java.lang.StringBuilder").
+  Type:Id(?type:"java.lang.Appendable").
+
+StringFactoryType(?type) <-
+   SubtypeOf(?type, ?sft),
+   StringFactoryType(?sft).
 
 StringFactoryVar(?var) <-
   Var:Type[?var] = ?type,
@@ -111,7 +113,6 @@ VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) <-
    MethodInvocation:Base[?invocation] = ?base,
    TypeForReturnValue(?type, ?ret, ?invocation).
 
-foobar(?type, ?param, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) <-
    MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
    BaseToParamTaintTransferMethod(?method),
@@ -333,3 +334,14 @@ MaybeDeserializedValue(?value) <-
    OptDeserializeInvoke(?ret),
    TaintedVarPointsTo(?value, _, ?ret),
    SerializableValue(?value).
+
+// Special handling for Java's processbuilder
+ParamTaintTransferredToBase(?param, ?ctx, ?this) <-
+   MethodInvocation:Base[?invocation] = ?var,
+   MethodInvocation:SimpleName[?invocation] = "add",
+   ActualParam[0, ?invocation] = ?param,
+   ReachableContext(?ctx, ?method),
+   ThisVar[?method] = ?this,
+   Method:DeclaringType[?method] = "java.lang.ProcessBuilder",
+   Var:DeclaringType("java.lang.ProcessBuilder", ?var).
+
