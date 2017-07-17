@@ -36,6 +36,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * The cache dir for the input facts
      */
+
     protected File cacheDir
 
     /**
@@ -121,6 +122,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (cacheDir.exists() && options.CACHE.value) {
             logger.info "Using cached facts from $cacheDir"
+            FileOps.copyDirContents(cacheDir, factsDir)
+        }
+        else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
+            logger.info "Using user-provided facts from $factsDir"
             FileOps.copyDirContents(cacheDir, factsDir)
         }
         else {
