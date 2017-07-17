@@ -44,12 +44,17 @@ CallTaintingMethod(?label, ?ctx, ?invocation) <-
 /**
  * Information flow through complex relations
  */
-StringFactoryType(?type) <-
+AppendableType(?type) <-
   Type:Id(?type:"java.lang.Appendable").
 
-StringFactoryType(?type) <-
+AppendableType(?type) <-
    SubtypeOf(?type, ?sft),
-   StringFactoryType(?sft).
+   AppendableType(?sft).
+
+StringFactoryType(?type) <-
+   Type:Id(?type:"java.lang.String"),
+   AppendableType(?type).
+   
 
 StringFactoryVar(?var) <-
   Var:Type[?var] = ?type,
