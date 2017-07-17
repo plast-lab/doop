@@ -52,7 +52,7 @@ AppendableType(?type) <-
    AppendableType(?sft).
 
 StringFactoryType(?type) <-
-   Type:Id(?type:"java.lang.String"),
+   Type:Id(?type:"java.lang.String") ;
    AppendableType(?type).
    
 
