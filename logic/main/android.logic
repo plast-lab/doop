@@ -398,12 +398,13 @@ OptAssignCast("android.app.Activity", ?varAcc, ?thisActivity) <-
 BindFragment(?thisActivity, ?fragmentParam) <-
    Method:DeclaringType[?method] = "android.app.FragmentTransaction",
    Method:SimpleName[?method] = "add",
+   MethodInvocation:Method[?invocation] = ?method,
    ActualParam[_, ?invocation] = ?fragmentParam,
-   Instruction:Method[?invocation] = ?method,
-   ThisVar[?method] = ?thisActivity.
+   Instruction:Method[?invocation] = ?inmethod,
+   ThisVar[?inmethod] = ?thisActivity.
 
 
-// TODO: currently a hack, generalize this by
+// TODO: generalize this by
 // 1) getting info from factgen (Application, Component).
 // 2) Be more liberal with variable types.
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
@@ -416,3 +417,28 @@ ReifiedApplicationAndCompatibleVar(?value, ?var) <-
    ReifiedComponent[?type] = ?value,
    AndroidApplication(?type),
    Var:Type[?var] = ?type.
+
+// Asynchronous tasks are treated as synchronous method calls
+AsynchTaskExecute(?param, ?base) <-   
+   Method:DeclaringType[?method] = "android.os.AsyncTask",
+   Method:SimpleName[?method] = "execute",
+   MethodInvocation:Method[?invocation] = ?method,
+   ActualParam[_, ?invocation] = ?param,
+   ArrayType(Var:Type[?param]),
+   MethodInvocation:Base[?invocation] = ?base.
+
+AsynchTaskExecuteVal(?param, ?hctx, ?callerCtx, ?basevalue) <-
+    AsynchTaskExecute(?param, ?base),
+    VarPointsTo(?hctx, ?basevalue, ?callerCtx, ?base).
+
+
+ReachableContext(?ctx, ?method),
+OptInterProceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
+VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) <-
+   ImmutableContextFromContext[?callerCtx] = ?ctx,
+   FormalParam[0, ?method] = ?formal,
+   Method:SimpleName[?method] = "doInBackground",
+   // TODO: requires proper method resolution
+   Method:DeclaringType[?method] = Value:Type[?baseValue],
+   AsynchTaskExecuteVal(?actual, ?hctx, ?callerCtx, ?baseValue),
+   ThisVar[?method] = ?this.
