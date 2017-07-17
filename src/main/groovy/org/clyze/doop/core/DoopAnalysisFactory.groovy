@@ -345,31 +345,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         logger.debug "Processing analysis options"
 
+
         def inputFilePaths
         def platformFilePaths
         def inputFiles
         def platformFiles
-
-        if (options.DACAPO.value || options.DACAPO_BACH.value) {
-            if (!options.X_START_AFTER_FACTS.value) {
-                def inputJarName = inputFilePaths[0]
-                def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!inputFilePaths.contains(deps))
-                    inputFilePaths.add(deps)
-            }
-
-            if (!options.REFLECTION.value && !options.TAMIFLEX.value) {
-                if (!options.X_START_AFTER_FACTS.value)
-                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
-                else
-                    options.TAMIFLEX.value = "dummy"
-            }
-
-            if (!options.X_START_AFTER_FACTS.value) {
-                def benchmark = FilenameUtils.getBaseName(inputJarName)
-                logger.info "Running " + (options.DACAPO.value ? "dacapo" : "dacapo-bach") + " benchmark: $benchmark"
-            }
-        }
 
         if (!options.X_START_AFTER_FACTS.value) {
             inputFilePaths = context.inputs()
@@ -378,6 +358,24 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             context.resolve()
             inputFiles = context.getAll()
             platformFiles = resolve(platformFilePaths)
+        }
+
+        if (options.DACAPO.value || options.DACAPO_BACH.value) {
+            if (!options.X_START_AFTER_FACTS.value) {
+                def inputJarName = inputFilePaths[0]
+                def deps = inputJarName.replace(".jar", "-deps.jar")
+                if (!inputFilePaths.contains(deps))
+                    inputFilePaths.add(deps)
+
+                if (!options.REFLECTION.value && !options.TAMIFLEX.value)
+                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
+
+                def benchmark = FilenameUtils.getBaseName(inputJarName)
+                logger.info "Running " + (options.DACAPO.value ? "dacapo" : "dacapo-bach") + " benchmark: $benchmark"
+            }
+            else {
+                options.TAMIFLEX.value = "dummy"
+            }
         }
 
         if (options.MAIN_CLASS.value) {
@@ -411,7 +409,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             }
         }
 
-        if (options.TAMIFLEX.value && !options.TAMIFLEX.value != "dummy") {
+        if (options.TAMIFLEX.value && options.TAMIFLEX.value != "dummy") {
             def tamFile = options.TAMIFLEX.value.toString()
             FileOps.findFileOrThrow(tamFile, "The TAMIFLEX option is invalid: ${tamFile}")
         }

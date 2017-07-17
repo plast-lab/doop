@@ -160,7 +160,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             else {
                 touch(new File(factsDir, "Dacapo.facts"))
             }
-
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
