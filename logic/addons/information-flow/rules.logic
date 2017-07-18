@@ -125,6 +125,19 @@ VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) <-
    ActualParam[_, ?invocation] = ?param,
    Var:Type[?param] = ?type.
 
+VarIsTaintedFromVarIndex(?base, ?ctx, ?param) <-
+   MethodInvocationInContext(?ctx, ?invocation, ?method),
+   ParamIndexToBaseTaintTransferMethod(?index, ?method),
+   MethodInvocation:Base[?invocation] = ?base,
+   ActualParam[?index, ?invocation] = ?param.
+
+VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value) <-
+   VarIsTaintedFromVarIndex(?base, ?ctx, ?param),
+   VarPointsTo(?hctx, ?value, ?ctx, ?param).
+
+VarIsTaintedFromValue(Var:Type[?base], ?valueIndex, ?ctx, ?base) <-
+  VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value),
+  ArrayIndexPointsTo(_, ?valueIndex, ?hctx, ?value).
 
 MethodInvocationInfo(?invocation, ?type, ?ret) <-
   AnyMethodInvocationOpt(?method, ?invocation),
@@ -339,14 +352,4 @@ MaybeDeserializedValue(?value) <-
    OptDeserializeInvoke(?ret),
    TaintedVarPointsTo(?value, _, ?ret),
    SerializableValue(?value).
-
-// Special handling for Java's processbuilder
-ParamTaintTransferredToBase(?param, ?ctx, ?this) <-
-   MethodInvocation:Base[?invocation] = ?var,
-   MethodInvocation:SimpleName[?invocation] = "add",
-   ActualParam[0, ?invocation] = ?param,
-   ReachableContext(?ctx, ?method),
-   ThisVar[?method] = ?this,
-   Method:DeclaringType[?method] = "java.lang.ProcessBuilder",
-   Var:DeclaringType("java.lang.ProcessBuilder", ?var).
 

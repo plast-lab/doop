@@ -382,13 +382,17 @@ ArrayIndexPointsTo(?hctx, ?value, ?hctx, ?basevalue)
 
 
 // Being liberal ... Any Activity parameter inside a class that is
-// bound with a fragment .. hack ?
-VarInType(?var, ?type) <-
+// TODO: this is only partial support for fragments, and Doop fails to
+// pass DroidBench's FragmentLifecycle2 benchmark
+ActivityVarInType(?var, ?ctx, ?type) <-
    Var:DeclaringMethod(?var, ?method),
+   ReachableContext(?ctx, ?method),
+   SupertypeOf("android.app.Activity", Var:Type[?var]),
    Method:DeclaringType[?method] = ?type.
 
-OptAssignCast("android.app.Activity", ?varAcc, ?thisActivity) <-
-   VarInType(?varAcc, ?type),
+OptInterproceduralAssign(?ctxTo, ?varAcc, ?ctxFrom, ?thisActivity) <-
+   ImmutableContext(?ctxFrom),
+   ActivityVarInType(?varAcc, ?ctxTo, ?type),
    Value:Type[?value] = ?type,
    VarPointsTo(_, ?value, _, ?fragmentParam),
    BindFragment(?thisActivity, ?fragmentParam).
@@ -397,7 +401,7 @@ OptAssignCast("android.app.Activity", ?varAcc, ?thisActivity) <-
 // Binding fragment's parent
 BindFragment(?thisActivity, ?fragmentParam) <-
    Method:DeclaringType[?method] = "android.app.FragmentTransaction",
-   Method:SimpleName[?method] = "add",
+   (Method:SimpleName[?method] = "add" ; Method:SimpleName[?method] = "replace"),
    MethodInvocation:Method[?invocation] = ?method,
    ActualParam[_, ?invocation] = ?fragmentParam,
    Instruction:Method[?invocation] = ?inmethod,
@@ -433,7 +437,7 @@ AsynchTaskExecuteVal(?param, ?hctx, ?callerCtx, ?basevalue) <-
 
 
 ReachableContext(?ctx, ?method),
-OptInterProceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
+OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
 VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) <-
    ImmutableContextFromContext[?callerCtx] = ?ctx,
    FormalParam[0, ?method] = ?formal,
@@ -442,3 +446,4 @@ VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) <-
    Method:DeclaringType[?method] = Value:Type[?baseValue],
    AsynchTaskExecuteVal(?actual, ?hctx, ?callerCtx, ?baseValue),
    ThisVar[?method] = ?this.
+
