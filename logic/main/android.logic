@@ -429,7 +429,8 @@ AsynchTaskExecute(?param, ?base) <-
    MethodInvocation:Method[?invocation] = ?method,
    ActualParam[_, ?invocation] = ?param,
    ArrayType(Var:Type[?param]),
-   MethodInvocation:Base[?invocation] = ?base.
+   (SpecialMethodInvocation:Base[?invocation] = ?base;
+    VirtualMethodInvocation:Base[?invocation] = ?base).
 
 AsynchTaskExecuteVal(?param, ?hctx, ?callerCtx, ?basevalue) <-
     AsynchTaskExecute(?param, ?base),
