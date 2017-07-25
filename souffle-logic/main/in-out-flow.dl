@@ -27,10 +27,8 @@ StoreFlowThroughHeap(?to, ?from) :-
   StoreInstanceField(?from, ?to, _, _). // ?to is base
 
 InFlowTo(?index, ?toVar) :-
-  StoreFlowThroughHeap(?someVar, ?toVar),
+  StoreFlowThroughHeap(?toVar, ?someVar),
   InFlowTo(?index, ?someVar).
-
-// Method that has its in-value (from a given-index formal param) flow to returns.
 
 // Method that has its in-value (from a given-index formal param) flow to returns.
 .decl InFlowToReturn(?index:number, ?method:Method)
