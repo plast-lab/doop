@@ -2,10 +2,14 @@
  * Heaps and Values
  ***************************************************************/
 
-Stats:ReflectiveHeap(?heap) <- ReflectiveHeapAllocation[_, _] = ?heap.
+// TODO: Fix, ReflectiveHeapAllocation predicate doesn't exist anymore
+//Stats:ReflectiveHeap(?heap) <- ReflectiveHeapAllocation[_, _] = ?heap.
+
 Stats:ApplicationHeap(?heap) <- AssignNormalHeapAllocation(?heap, _, ?method), ApplicationMethod(?method).
 Stats:ApplicationHeap(?heap) <- AssignContextInsensitiveHeapAllocation(?heap, _, ?method), ApplicationMethod(?method).
-Stats:ApplicationHeap(?heap) <- ReflectiveHeapAllocation[?instr, _] = ?heap, Instruction:Method[?instr] = ?method, ApplicationMethod(?method).
+
+// TODO: Fix, ReflectiveHeapAllocation predicate doesn't exist anymore
+//Stats:ApplicationHeap(?heap) <- ReflectiveHeapAllocation[?instr, _] = ?heap, Instruction:Method[?instr] = ?method, ApplicationMethod(?method).
 /*
 Stats:ReachableValue(?value),
 Stats:ReachableValueWithContext(?hctx, ?value) <- VarPointsTo(?hctx, ?value, _, _).
