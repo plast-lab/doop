@@ -1,18 +1,6 @@
 /**
  * TODO: this is not efficient
  */
-/**
- * If a class needs to be initialized, then its class initializer is
- * invoked.
- *
- * Note that InitializedClass already deals with superclasses that
- * needs to be initialized as well, so we don't need to invoke class
- * initializers of the super class here.
- */
-Reachable(?clinit) :-
-   InitializedClass(?class),
-   ClassInitializer(?class, ?clinit).
-
 ClassInitializer(?type, ?method) :-
    MethodImplemented("<clinit>", "void()", ?type, ?method).
 
