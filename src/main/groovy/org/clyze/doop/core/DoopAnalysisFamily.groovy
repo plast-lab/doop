@@ -374,6 +374,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true,
 					isAdvanced: true
 			),
+			new BooleanAnalysisOption(
+					id: "GENERATE_PROGUARD_KEEP_DIRECTIVES",
+					name: "gen-proguard-keep",
+					description: "Generate keep directives for proguard",
+					value: false,
+					webUI: true,
+					isAdvanced: true
+			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
 			new IntegerAnalysisOption(
