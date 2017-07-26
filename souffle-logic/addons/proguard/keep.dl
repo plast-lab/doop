@@ -1,4 +1,5 @@
-.output KeepMethod(?m:Method)
+.decl KeepMethod(?m:Method)
+.output KeepMethod
 
 KeepMethod(cat("-keepclassMembers class ", cat(?m, cat("{ ", cat(?m, " }"))))) :-
     Reachable(?m).
