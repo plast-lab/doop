@@ -11,20 +11,20 @@ MainMethodDeclaration(?method) ->
  */
 
 ArrayIndexPointsTo(?baseheap, ?value) ->
-   Value(?baseheap),
-   Value(?value).
+   HeapAllocation(?baseheap),
+   HeapAllocation(?value).
 
 VarPointsTo(?value, ?var) ->
-   Value(?value),
+   HeapAllocation(?value),
    Var(?var).
 
 InstanceFieldPointsTo(?heap, ?signature, ?baseheap) ->
-   Value(?heap),
+   HeapAllocation(?heap),
    Field(?signature),
-   Value(?baseheap).
+   HeapAllocation(?baseheap).
 
 StaticFieldPointsTo(?heap, ?signature) ->
-   Value(?heap),
+   HeapAllocation(?heap),
    Field(?signature).
 
 Assign(?type, ?from, ?to) ->

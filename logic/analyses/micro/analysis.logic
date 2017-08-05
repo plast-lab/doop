@@ -8,36 +8,33 @@
  * Var points to Value
  */
 
-VarPointsTo(?value, ?var) <-
+VarPointsTo(?heap, ?var) <-
    AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
-   Value:byHeap[?heap] = ?value,
    Reachable(?inmethod).
 
-VarPointsTo(?value, ?var) <-
+VarPointsTo(?heap, ?var) <-
    AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
-   Value:byHeap[?heap] = ?value,
    Reachable(?inmethod).
 
-VarPointsTo(?value, ?var) <-
+VarPointsTo(?heap, ?var) <-
    AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
-   Value:byHeap[?heap] = ?value,
    Reachable(?inmethod).
 
 
-VarPointsTo(?value, ?to) <-
-   VarPointsTo(?value, ?from),
+VarPointsTo(?heap, ?to) <-
+   VarPointsTo(?heap, ?from),
    Assign(?type, ?from, ?to),
-   Value:Type[?value] = ?valuetype,
-   SupertypeOf(?type, ?valuetype).
+   HeapAllocation:Type[?heap] = ?heaptype,
+   SupertypeOf(?type, ?heaptype).
 
 /**
  *  Local Assignments 
  */
 
-VarPointsTo(?value, ?to) <-
+VarPointsTo(?heap, ?to) <-
    Reachable(?inmethod),
    AssignLocal(?from, ?to, ?inmethod),
-   VarPointsTo(?value, ?from).
+   VarPointsTo(?heap, ?from).
 
 /**
  * Cast assignments
@@ -73,8 +70,8 @@ ArrayIndexPointsTo(?baseheap, ?heap) <-
    StoreArrayIndex(?from, ?base, ?inmethod),
    VarPointsTo(?baseheap, ?base),
    VarPointsTo(?heap, ?from),
-   Value:Type[?heap] = ?heaptype,
-   Value:Type[?baseheap] = ?baseheaptype,
+   HeapAllocation:Type[?heap] = ?heaptype,
+   HeapAllocation:Type[?baseheap] = ?baseheaptype,
    ComponentType[?baseheaptype] = ?componenttype,
    SupertypeOf(?componenttype, ?heaptype). 
 
@@ -84,7 +81,7 @@ VarPointsTo(?heap, ?to) <-
    VarPointsTo(?baseheap, ?base),
    ArrayIndexPointsTo(?baseheap, ?heap),
    Var:Type[?to] = ?type,
-   Value:Type[?baseheap] = ?baseheaptype,
+   HeapAllocation:Type[?baseheap] = ?baseheaptype,
    ComponentType[?baseheaptype] = ?basecomponenttype,
    SupertypeOf(?type, ?basecomponenttype). 
 
@@ -143,7 +140,7 @@ VarPointsTo(?heap, ?this) <-
    VirtualMethodInvocation( ?invocation, ?signature, ?inmethod ),
    VirtualMethodInvocation:Base[?invocation] = ?base,
    VarPointsTo( ?heap, ?base ),
-   Value:Type[?heap] = ?type,
+   HeapAllocation:Type[?heap] = ?type,
    Method:SimpleName[?signature] = ?simplename,
    Method:Descriptor[?signature] = ?descriptor,
    ThisVar[?tomethod] = ?this,

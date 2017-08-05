@@ -13,19 +13,17 @@ Stats:ReachableVar(?var) <-
 /***************************************************
  * Arrays
  ***************************************************/
-Stats:Application:ArrayIndexPointsTo(?heap, ?basevalue) <-
-   ArrayIndexPointsTo(?heap, ?basevalue),
+Stats:Application:ArrayIndexPointsTo(?heap, ?baseheap) <-
+   ArrayIndexPointsTo(?heap, ?baseheap),
    AssignNormalHeapAllocation(?baseheap, _, ?meth),
-   Value:byHeap[?baseheap] = ?basevalue,
    ApplicationMethod(?meth).
 
 /***************************************************
  * Fields
  ***************************************************/
-Stats:Application:InstanceFieldPointsTo(?heap, ?sig, ?basevalue) <-
-   InstanceFieldPointsTo(?heap, ?sig, ?basevalue),
+Stats:Application:InstanceFieldPointsTo(?heap, ?sig, ?baseheap) <-
+   InstanceFieldPointsTo(?heap, ?sig, ?baseheap),
    AssignNormalHeapAllocation(?baseheap, _, ?meth),
-   Value:byHeap[?baseheap] = ?basevalue,
    ApplicationMethod(?meth).
 
 /***************************************************
@@ -73,7 +71,7 @@ Stats:PolymorphicCallSite(?from) <-
 Stats:NullVirtualMethodInvocation(?invocation) <-
    Stats:ReachableVirtualMethodInvocation(?invocation),
    VirtualMethodInvocation:Base[?invocation] = ?base,
-   VarPointsTo(Value:Null[], ?base).
+   VarPointsTo(HeapAllocation:Null[], ?base).
 
 Stats:EmptyVirtualMethodInvocation(?invocation) <-
    Stats:ReachableVirtualMethodInvocation(?invocation),
@@ -92,7 +90,7 @@ Stats:Application:PolymorphicCallSite(?from) <-
 Stats:Application:NullVirtualMethodInvocation(?invocation) <-
    Stats:Application:ReachableVirtualMethodInvocation(?invocation),
    VirtualMethodInvocation:Base[?invocation] = ?base,
-   VarPointsTo(Value:Null[], ?base).
+   VarPointsTo(HeapAllocation:Null[], ?base).
 
 Stats:Application:EmptyVirtualMethodInvocation(?invocation) <-
    Stats:Application:ReachableVirtualMethodInvocation(?invocation),
@@ -108,7 +106,7 @@ Stats:ReachableCast(?inmethod, ?type, ?to, ?from) <-
 Stats:PotentiallyFailingCast(?type, ?from, ?to) <-
    Stats:ReachableCast(_, ?type, ?to, ?from),
    VarPointsTo(?heap, ?from),
-   Value:Type[?heap] = ?heaptype,
+   HeapAllocation:Type[?heap] = ?heaptype,
    !SupertypeOf(?type, ?heaptype).
 
 Stats:Application:Cast(?type, ?from, ?to, ?inmethod) <-
@@ -121,7 +119,7 @@ Stats:Application:ReachableCast(?inmethod, ?type, ?to, ?from) <-
 Stats:Application:PotentiallyFailingCast(?type, ?from, ?to) <-
    Stats:Application:ReachableCast(_, ?type, ?to, ?from),
    VarPointsTo(?heap, ?from),
-   Value:Type[?heap] = ?heaptype,
+   HeapAllocation:Type[?heap] = ?heaptype,
    !SupertypeOf(?type, ?heaptype).
 
 
