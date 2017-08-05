@@ -1,57 +1,163 @@
+#include "../../commonMacros.logic"
+#include "../../main/class-initialization.logic"
+#include "../../main/implicit-reachable.logic"
+#include "../../main/string-constants.logic"
+
 Reachable(?method) <-
    MainMethodDeclaration(?method).
-
-Assign(?to, ?from) <-
-   AssignLocal(?from, ?to, _).
-
-Assign(?formal, ?actual) <-
-   CallGraphEdge(?invocation, ?toMethod),
-   FormalParam[?index, ?toMethod] = ?formal,
-   ActualParam[?index, ?invocation] = ?actual.
-
-Assign(?local, ?return) <-
-   CallGraphEdge(?invocation, ?toMethod),
-   ReturnVar(?return, ?toMethod),
-   AssignReturnValue[?invocation] = ?local.
 
 /**
  * Var points to Value
  */
 
-VarPointsTo(?var, ?value) <-
+VarPointsTo(?heap, ?var) <-
    AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
    Reachable(?inmethod).
 
-VarPointsTo(?var, ?value) <-
-   AssignAuxiliaryHeapAllocation(?value, ?var, ?inmethod),
+VarPointsTo(?heap, ?var) <-
+   AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod),
    Reachable(?inmethod).
 
-VarPointsTo(?var, ?value) <-
-   AssignContextInsensitiveHeapAllocation(?value, ?var, ?inmethod),
+VarPointsTo(?heap, ?var) <-
+   AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
    Reachable(?inmethod).
 
-VarPointsTo(?to, ?value) <-
+VarPointsTo(?heap, ?to) <-
+   VarPointsTo(?heap, ?from),
+   Assign(?type, ?from, ?to),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   SupertypeOf(?type, ?heaptype).
+
+/**
+ *  Local Assignments
+ */
+
+VarPointsTo(?heap, ?to) <-
    Reachable(?inmethod),
    AssignLocal(?from, ?to, ?inmethod),
-   VarPointsTo(?value, ?from).
+   VarPointsTo(?heap, ?from).
 
-FieldPointsTo(?basevalue, ?fld, ?value) <-
-   StoreInstanceField(?from, ?base, ?fld, _),
-   VarPointsTo(?base, ?basevalue),
-   VarPointsTo(?from, ?value).
+/**
+ * Cast assignments
+ */
 
-VarPointsTo(?to, ?value) <-
-   LoadInstanceField(?base, ?fld, ?to, _),
-   VarPointsTo(?base, ?basevalue),
-   FieldPointsTo(?basevalue, ?fld, ?value).
+Assign(?type, ?from, ?to) <-
+   Reachable(?inmethod),
+   AssignCast(?type, ?from, ?to, ?inmethod).
+
+/**
+ * Invocation assignments
+ */
+
+Assign(?type, ?actual, ?formal) <-
+   FormalParam[?index, ?method] = ?formal,
+   ActualParam[?index, ?invocation] = ?actual,
+   Var:Type[?formal] = ?type,
+   CallGraphEdge(?invocation, ?method).
+
+Assign(?type, ?return, ?local) <-
+   ReturnVar(?return, ?method),
+   CallGraphEdge(?invocation, ?method),
+   Var:Type[?local] = ?type,
+   AssignReturnValue[?invocation] = ?local.
+
+/**
+ * Arrays
+ *
+ */
+
+ArrayIndexPointsTo(?baseheap, ?heap) <-
+   Reachable(?inmethod),
+   StoreArrayIndex(?from, ?base, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   VarPointsTo(?heap, ?from),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   HeapAllocation:Type[?baseheap] = ?baseheaptype,
+   ComponentType[?baseheaptype] = ?componenttype,
+   SupertypeOf(?componenttype, ?heaptype).
+
+VarPointsTo(?heap, ?to) <-
+   Reachable(?inmethod),
+   LoadArrayIndex(?base, ?to, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   ArrayIndexPointsTo(?baseheap, ?heap),
+   Var:Type[?to] = ?type,
+   HeapAllocation:Type[?baseheap] = ?baseheaptype,
+   ComponentType[?baseheaptype] = ?basecomponenttype,
+   SupertypeOf(?type, ?basecomponenttype).
+
+/**
+ * Load instance fields
+ *
+ */
+
+VarPointsTo(?heap, ?to) <-
+   Reachable(?inmethod),
+   LoadInstanceField(?base, ?signature, ?to, ?inmethod),
+   VarPointsTo(?baseheap, ?base),
+   InstanceFieldPointsTo(?heap, ?signature, ?baseheap).
+
+/**
+ * Store instance fields
+ */
+
+InstanceFieldPointsTo(?heap, ?signature, ?baseheap) <-
+   Reachable(?inmethod),
+   StoreInstanceField(?from, ?base, ?signature, ?inmethod),
+   VarPointsTo(?heap, ?from),
+   VarPointsTo(?baseheap, ?base).
+
+/**
+ * Load static fields
+ */
+
+VarPointsTo(?heap, ?to) <-
+   Reachable(?inmethod),
+   LoadStaticField(?signature, ?to, ?inmethod),
+   StaticFieldPointsTo(?heap, ?signature).
+
+/**
+ * Store static fields
+ */
+
+StaticFieldPointsTo(?heap, ?signature) <-
+   Reachable(?inmethod),
+   StoreStaticField(?from, ?signature, ?inmethod),
+   VarPointsTo(?heap, ?from).
+
 
 Reachable(?toMethod),
 CallGraphEdge(?invocation, ?toMethod),
-VarPointsTo(?this, ?value) <-
+VarPointsTo(?heap, ?this) <-
    Reachable(?inMethod),
    Instruction:Method[?invocation] = ?inMethod,
    VirtualMethodInvocation:Base[?invocation] = ?base,
-   VarPointsTo(?base, ?value),
-   Value:Type[?value] = ?valuetype,
-   ResolveInvocation[?valuetype, ?invocation] = ?toMethod,
+   VarPointsTo(?heap, ?base),
+   HeapAllocation:Type[?heap] = ?heaptype,
+   ResolveInvocation[?heaptype, ?invocation] = ?toMethod,
    ThisVar[?toMethod] = ?this.
+
+/**
+ * Reachable methods. Main method, for sure.
+ */
+Reachable(?method) <-
+   MainMethodDeclaration(?method).
+
+/**
+ * Implicitly reachable methods are invoked by the JVM on startup.
+ */
+Reachable(?method) <-
+   ImplicitReachable(?method).
+
+/**
+ * If a class needs to be initialized, then its class initializer is
+ * invoked.
+ *
+ * Note that InitializedClass already deals with superclasses that
+ * needs to be initialized as well, so we don't need to invoke class
+ * initializers of the super class here.
+ */
+Reachable(?clinit) <-
+   InitializedClass(?class),
+   ClassInitializer[?class] = ?clinit.
+

@@ -1,31 +1,46 @@
+#include "../../main/class-initialization-declarations.logic"
+#include "../../main/implicit-reachable-declarations.logic"
+#include "../../main/string-constants-declarations.logic"
+
+
+MainMethodDeclaration(?method) ->
+   Method(?method).
+
 /*
  * Declarations
  */
 
-ArrayIndexPointsTo(?baseheap, ?heap) ->
-   Value(?baseheap),
-   Value(?heap).
+ArrayIndexPointsTo(?baseheap, ?value) ->
+   HeapAllocation(?baseheap),
+   HeapAllocation(?value).
+
+VarPointsTo(?value, ?var) ->
+   HeapAllocation(?value),
+   Var(?var).
 
 InstanceFieldPointsTo(?heap, ?signature, ?baseheap) ->
-   Value(?heap),
+   HeapAllocation(?heap),
    Field(?signature),
-   Value(?baseheap).
+   HeapAllocation(?baseheap).
 
 StaticFieldPointsTo(?heap, ?signature) ->
-   Value(?heap),
+   HeapAllocation(?heap),
    Field(?signature).
 
-AssignNormalHeapAllocation(?heap, ?var, ?inmethod) ->
-   Value(?heap),
-   Var(?var),
-   Method(?inmethod).
+Assign(?type, ?from, ?to) ->
+   Type(?type),
+   Var(?from),
+   Var(?to).
+
+Reachable(?method) ->
+   Method( ?method ).
+
+CallGraphEdge(?invocation, ?tomethod) ->
+   MethodInvocation(?invocation),
+   Method(?tomethod).
 
 AssignAuxiliaryHeapAllocation(?heap, ?var, ?inmethod) ->
-   Value(?heap), Var(?var), Method(?inmethod).
-
-AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) ->
-   Value(?heap), Var(?var), Method(?inmethod).
-
+   HeapAllocation(?heap), Var(?var), Method(?inmethod).
 
 //-----------------------------------------------------------------------------
 // [Value - artificially created]
