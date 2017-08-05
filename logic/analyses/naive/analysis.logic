@@ -14,31 +14,44 @@ Assign(?local, ?return) <-
    ReturnVar(?return, ?toMethod),
    AssignReturnValue[?invocation] = ?local.
 
-VarPointsTo(?var, ?heap) <-
-   AssignHeapAllocation(?heap, ?var, ?inMethod),
-   Reachable(?inMethod).
+/**
+ * Var points to Value
+ */
 
-VarPointsTo(?to, ?heap) <-
-   Assign(?to, ?from),
-   VarPointsTo(?from, ?heap).
+VarPointsTo(?var, ?value) <-
+   AssignNormalHeapAllocation(?heap, ?var, ?inmethod),
+   Reachable(?inmethod).
 
-FieldPointsTo(?baseheap, ?fld, ?heap) <-
+VarPointsTo(?var, ?value) <-
+   AssignAuxiliaryHeapAllocation(?value, ?var, ?inmethod),
+   Reachable(?inmethod).
+
+VarPointsTo(?var, ?value) <-
+   AssignContextInsensitiveHeapAllocation(?value, ?var, ?inmethod),
+   Reachable(?inmethod).
+
+VarPointsTo(?to, ?value) <-
+   Reachable(?inmethod),
+   AssignLocal(?from, ?to, ?inmethod),
+   VarPointsTo(?value, ?from).
+
+FieldPointsTo(?basevalue, ?fld, ?value) <-
    StoreInstanceField(?from, ?base, ?fld, _),
-   VarPointsTo(?base, ?baseheap),
-   VarPointsTo(?from, ?heap).
+   VarPointsTo(?base, ?basevalue),
+   VarPointsTo(?from, ?value).
 
-VarPointsTo(?to, ?heap) <-
+VarPointsTo(?to, ?value) <-
    LoadInstanceField(?base, ?fld, ?to, _),
-   VarPointsTo(?base, ?baseheap),
-   FieldPointsTo(?baseheap, ?fld, ?heap).
+   VarPointsTo(?base, ?basevalue),
+   FieldPointsTo(?basevalue, ?fld, ?value).
 
 Reachable(?toMethod),
 CallGraphEdge(?invocation, ?toMethod),
-VarPointsTo(?this, ?heap) <-
+VarPointsTo(?this, ?value) <-
    Reachable(?inMethod),
    Instruction:Method[?invocation] = ?inMethod,
    VirtualMethodInvocation:Base[?invocation] = ?base,
-   VarPointsTo(?base, ?heap),
-   HeapAllocation:Type[?heap] = ?heaptype,
-   ResolveInvocation[?heaptype, ?invocation] = ?toMethod,
+   VarPointsTo(?base, ?value),
+   Value:Type[?value] = ?valuetype,
+   ResolveInvocation[?valuetype, ?invocation] = ?toMethod,
    ThisVar[?toMethod] = ?this.
