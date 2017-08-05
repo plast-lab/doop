@@ -254,6 +254,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     String minorVersion = platformInfo[2]
 
                     switch (version) {
+                        case 7:
                         case 8:
                             String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}.0_${minorVersion}/lib"
                             files = ["${path}/rt.jar",

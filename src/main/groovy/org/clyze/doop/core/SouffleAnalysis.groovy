@@ -199,6 +199,10 @@ class SouffleAnalysis extends DoopAnalysis {
         if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/server-logic/queries.dl")
         }
+
+        if (options.GENERATE_PROGUARD_KEEP_DIRECTIVES.value) {
+            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/proguard/keep.dl")
+        }
     }
 
     private void compileAnalysis() {
