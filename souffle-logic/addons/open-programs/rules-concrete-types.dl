@@ -228,7 +228,9 @@ Value_DeclaringType(cat(?class, "::: (Mock)"), ?class) :-
 #ifndef OPEN_PROGRAMS
   // If we are not in open-program mode, only trigger logic if no main method exists
   !MainMethodDeclaration(_),
+#ifdef ANDROID
   !AndroidAppComponent(_),
+#endif
 #endif
   ObjToMock(?class).
 
@@ -237,7 +239,9 @@ ReachableContext(?ctx, ?method) :-
 #ifndef OPEN_PROGRAMS
   // If we are not in open-program mode, only trigger logic if no main method exists
   !MainMethodDeclaration(_),
+#ifdef ANDROID
   !AndroidAppComponent(_),
+#endif
 #endif
   ContextForEntryPoint(?ctx, ?method).
 

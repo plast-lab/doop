@@ -456,6 +456,8 @@
 // [Android-related]
 //-----------------------------------------------------------------------------
 
+#ifdef ANDROID
+
 .decl Activity(?x:Type)
 .decl Service(?x:Type)
 .decl ContentProvider(?x:Type)
@@ -466,11 +468,7 @@
 .decl SensitiveLayoutControl(?id:NumConstant, ?type:Type, ?parent:symbol)
 .decl SensitiveLayoutControl0(?id:NumConstant, ?typename:symbol, ?parent:symbol)
 .decl FieldInitialValue(?fld:Field, ?valueString:symbol)
-
-
-//-----------------------------------------------------------------------------
-// [Android]
-//-----------------------------------------------------------------------------
-
 .decl AndroidEntryPoint(?m:Method)
 .decl AndroidApplication(?t:ClassType)
+
+#endif

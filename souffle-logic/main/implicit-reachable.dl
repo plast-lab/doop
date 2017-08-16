@@ -3,8 +3,12 @@
 /**
  * Implicitly reachable methods are invoked by the JVM on startup.
  */
+#ifdef ANDROID
+
 ImplicitReachable(sig) :-
     AndroidEntryPoint(sig).
+
+#endif
 
 ImplicitReachable(?m) :-
   ?m = "<java.lang.System: void initializeSystemClass()>",

@@ -268,7 +268,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
     @Override
     protected void produceStats() {
-        if (options.X_STATS_NONE.value) return;
+        if (options.X_STATS_NONE.value) return
 
         if (options.X_STATS_AROUND.value) {
         }
