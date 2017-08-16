@@ -194,7 +194,15 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					description: "The platform and platform version to perform the analysis on (e.g. java_3, java_4 etc., android_22_stubs, android_22_fulljars). For Android, the plaftorm suffix can either be 'stubs' (provided by the Android SDK) or 'fulljars' (a custom Android build). default: java_7",
 					value: "java_7",
 					webUI: true,
-					forCacheID: true
+					forCacheID: true,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
+					id: "ANDROID",
+					name: "android",
+					description: "If true the analysis is ran on an Android app",
+					value: false,
+					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "PLATFORMS_LIB",

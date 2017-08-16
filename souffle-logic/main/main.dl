@@ -1,4 +1,7 @@
+#ifdef ANDROID
 #include "android.dl"
+#endif
+
 #include "class-initialization.dl"
 #include "exceptions.dl"
 #include "finalization.dl"
@@ -42,6 +45,7 @@ Value_Type(cat("num-constant-", ?const), ?type) :-
   contains(".R$", ?className),
   Type_int(?type).
 
+#ifdef ANDROID
 Value_Num(cat("num-constant-", ?const), ?const),
 isValue(cat("num-constant-", ?const)),
 Value_Type(cat("num-constant-", ?const), ?type) :-
@@ -51,6 +55,8 @@ Value_Type(cat("num-constant-", ?const), ?type) :-
   isType(?className),
   contains(".R$", ?className),
   Type_int(?type).
+#endif
+
 
 Value_isNonHeap(?value) :-
   Value_isMock(?value) ;

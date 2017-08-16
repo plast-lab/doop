@@ -49,6 +49,7 @@ SpecialMethodInvocation_Descriptor(?invocation, ?descriptor) :-
 // Note that this is more than a straightforward import of generated
 // facts into a DB relation. It filters out the guessed control
 // types that do not correspond to existing types.
+#ifdef ANDROID
 LayoutControl(?id, ?type, ?parent) :-
   LayoutControl0(?id, ?type, ?parent),
   isType(?type).
@@ -56,3 +57,4 @@ LayoutControl(?id, ?type, ?parent) :-
 SensitiveLayoutControl(?id, ?type, ?parent) :-
   SensitiveLayoutControl0(?id, ?type, ?parent),
   isType(?type).
+#endif
