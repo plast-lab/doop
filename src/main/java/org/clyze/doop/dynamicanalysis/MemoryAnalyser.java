@@ -61,9 +61,6 @@ public class MemoryAnalyser {
                 ClassNotFoundException | InvocationTargetException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        } catch (RuntimeException e1) {
-            e1.printStackTrace();
-            throw new RuntimeException(e1);
         }
 
 
@@ -95,7 +92,7 @@ public class MemoryAnalyser {
                         dynamicArrayIndexPointsToSet.add(new DynamicArrayIndexPointsTo(baseHeap, heapAbstractionIndexer.getAllocationAbstraction(value)));
                 }
             } else if (heap instanceof  JavaValueArray) {
-                // TODO
+                // Nothing to do here
             } else if (heap instanceof JavaClass) {
                 JavaClass obj = (JavaClass) heap;
                 for (JavaStatic javaStatic : obj.getStatics()) {

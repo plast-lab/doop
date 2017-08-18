@@ -6,9 +6,6 @@ AnyMethodInvocation(?invocation, ?tomethod) <-
 AnyMethodInvocation(?invocation, ?tomethod) <-
    VirtualMethodInvocation(?invocation, ?tomethod, _).
 
-
-
-
 AnyMethodInvocation(?invocation, ?tomethod) <-
    MethodInvocation:Method[?invocation] = ?tomethod,
    SpecialMethodInvocation:Insn(?invocation).
@@ -32,8 +29,6 @@ TaintedValueTransferred(?value, ?type, DEFAULT_BREADCRUMB, ?newvalue),
 VarPointsTo(?hctx, ?newvalue, ?toCtx, ?to) <-
    VarIsTaintedFromValue(?type, ?value, ?toCtx, ?to),
    ImmutableHContext(?hctx).
-
-
 
 CallTaintingMethod(?label, ?ctx, ?invocation) <-
    TaintSourceMethod(?label, ?tomethod),
@@ -156,10 +151,6 @@ TypeForReturnValue(?type, ?ret, ?invocation) <-
 
 // Taint transfer through aliasing
 
-MethodInvocation:Base[?invocation] = ?base <-
-  VirtualMethodInvocation:Base[?invocation] = ?base ;
-  SpecialMethodInvocation:Base[?invocation] = ?base.
-
 TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) <-
   MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
   ParamToBaseTaintTransferMethod(?index, ?taintTransferMethod).
@@ -187,8 +178,6 @@ VarPointsTo(?hctx, ?newvalue, ?ctx, ?to) <-
    ParamTaintTransferredToRet(?type, ?to, ?ctx, ?from),
    TaintedVarPointsTo(?value, ?ctx, ?from),
    ImmutableHContext(?hctx).
-
-
 
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 ValueTaintedFromValue(?newvalue, ?baseObj) <- 
@@ -352,4 +341,3 @@ MaybeDeserializedValue(?value) <-
    OptDeserializeInvoke(?ret),
    TaintedVarPointsTo(?value, _, ?ret),
    SerializableValue(?value).
-

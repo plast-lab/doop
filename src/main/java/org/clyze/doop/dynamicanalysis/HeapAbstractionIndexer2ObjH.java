@@ -35,11 +35,12 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
                 HCTX_RECORDER_CLASS_NAME,
                 "WARNING: heap context info not found",
                 "hctx", "obj").forEach(a -> {
-                Context hctxFact =  getHContextFromDumpObject(a[0]);
+                // Note, original object is at index 0
+                Context hctxFact =  getHContextFromDumpObject(a[1]);
                 addFact(hctxFact);
-                DynamicHeapObject objFact = getHeapRepresentation(a[1], hctxFact);
+                DynamicHeapObject objFact = getHeapRepresentation(a[2], hctxFact);
                 addFact(objFact);
-                heapIndex.put(a[0].getId(), objFact);
+                heapIndex.put(a[2].getId(), objFact);
 
         });
 
@@ -53,8 +54,10 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
                 "ctxFrom", "ctxTo").forEach(a -> {
                     // get edge
                     StackFrame[] frames = a[0].getAllocatedFrom().getFrames();
-                    StackFrame fromFrame = frames[3];
-                    StackFrame toFrame = frames[2];
+                    if (frames.length < 5)
+                        return;
+                    StackFrame fromFrame = frames[4];
+                    StackFrame toFrame = frames[3];
                     Context ctxFrom = getContextFromDumpObject(a[1]);
                     Context ctxTo = getContextFromDumpObject(a[2]);
                     addFact(ctxFrom);
@@ -71,7 +74,9 @@ public class HeapAbstractionIndexer2ObjH extends HeapAbstractionIndexer {
 
     }
 
+    // Note, original object is at index 0, output array is size(fieldNames) + 1
     private Stream<JavaHeapObject[]> getAllocationAbstractionTuple(String tupleClassName, String warningMessage, String... fieldNames) {
+
         JavaClass clazz = snapshot.findClass(tupleClassName);
         if (clazz == null) {
             System.err.println(warningMessage);

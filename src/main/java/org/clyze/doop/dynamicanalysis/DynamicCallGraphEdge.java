@@ -27,16 +27,22 @@ public class DynamicCallGraphEdge implements DynamicFact {
 
         DynamicCallGraphEdge that = (DynamicCallGraphEdge) o;
 
-        if (!getMethodFrom().equals(that.getMethodFrom())) return false;
-        if (!getLineNumberFrom().equals(that.getLineNumberFrom())) return false;
+        if (!methodFrom.equals(that.methodFrom)) return false;
+        if (!lineNumberFrom.equals(that.lineNumberFrom)) return false;
+        if (!contextFrom.equals(that.contextFrom)) return false;
+        if (!contextTo.equals(that.contextTo)) return false;
+
         return getMethodTo().equals(that.getMethodTo());
     }
 
     @Override
     public int hashCode() {
-        int result = getMethodFrom().hashCode();
+
+        int result = methodFrom.hashCode();
         result = 31 * result + getLineNumberFrom().hashCode();
         result = 31 * result + getMethodTo().hashCode();
+        result = 31 * result + contextFrom.hashCode();
+        result = 31 * result + contextTo.hashCode();
         return result;
     }
 
@@ -78,11 +84,6 @@ public class DynamicCallGraphEdge implements DynamicFact {
                 ", lineNumberFrom='" + lineNumberFrom + '\'' +
                 ", methodTo='" + methodTo + '\'' +
                 '}';
-    }
-
-    public String getMethodFrom() {
-
-        return methodFrom;
     }
 
     public String getLineNumberFrom() {

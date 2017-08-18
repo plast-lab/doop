@@ -54,7 +54,7 @@ public class ContextObj implements ComposableContext {
             db.add(PredicateFile.DYNAMIC_NORMAL_HEAP_ALLOCATION, lineNumber, inMethod, type, representation);
     }
 
-    public int getStartIndex() { return 2; }
+    public int getStartIndex() { return 0; }
 
     public String[] getComponents() {
         return new String[] { representation };

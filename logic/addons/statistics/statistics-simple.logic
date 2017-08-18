@@ -337,9 +337,9 @@ NewMetricMacro(91.0, _t91, "Dynamic array index points-to (SENS)", DynamicArrayI
 Stats:Simple:Application:DynamicReachableMethod(?method) <-
    DynamicReachableMethod(?method),
    ApplicationMethod(?method).
-Stats:Simple:InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) <- SanitizedDynamicCallGraphEdge(_,?toMeth,?invocation,_, ?fromMeth).
+Stats:Simple:InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) <- MostPreciseDynamicCallGraphEdge(_,?toMeth,?invocation,_, ?fromMeth).
 NewMetricMacro(92.0, _t92, "Dynamic call graph edges (INS)", Stats:Simple:InsensDynamicCallGraphEdge(_,_,_)).
-NewMetricMacro(93.0, _t93, "Dynamic call graph edges (SENS)", SanitizedDynamicCallGraphEdge(_,_,_,_,_)).
+NewMetricMacro(93.0, _t93, "Dynamic call graph edges (SENS)", MostPreciseDynamicCallGraphEdge(_,_,_,_,_)).
 NewMetricMacro(94.0, _t94, "Dynamic reachable methods (INS)", DynamicReachableMethod(_)).
 NewMetricMacro(95.0, _t95, "App Dynamic reachable methods (INS)", Stats:Simple:Application:DynamicReachableMethod(_)).
 NewMetricMacro(96.0, _t96, "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).

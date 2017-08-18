@@ -37,19 +37,21 @@ CachedMerge[?hctx, ?value] = ?calleeCtx <-
 
 // Dynamic analysis
 #ifdef ANALYZE_MEMORY_DUMP
-#define DYNAMIC_CONTEXT_SENSITIVITY
-ContextFromRealContext[Value:byDynamicHeap[?heap1], Value:byDynamicHeap[?heap2]] = ?ctx,
-DynamicContextToContext(?ctx, ?dynCtx) <-
+DynamicContextToContext(ContextFromRealContext[Value:byDynamicHeap[?heap1], Value:byDynamicHeap[?heap2]], ?dynCtx) <-
    DynamicContextHeap1(?heap1, ?dynCtx),
    DynamicContextHeap2(?heap2, ?dynCtx).
 
 DynamicContextToContext(?ctx, ?dynCtx) <-
-   ImmutableContext(?ctx),
-   DynamicContext(?dynCtx),
+   RealContext1FromContext[?ctx] = Value:byDynamicHeap[?heap1],
+   DynamicContextHeap1(?heap1, ?dynCtx),
    !DynamicContextHeap2(_, ?dynCtx).
 
-HContextFromRealHContext[Value:byDynamicHeap[?heap1]] = ?hctx,
-DynamicContextToHContext(?hctx, ?dynCtx) <-
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   !DynamicContextHeap1(_, ?dynCtx),
+   ImmutableContext(?ctx),
+   DynamicContext(?dynCtx).
+
+DynamicContextToHContext(HContextFromRealHContext[Value:byDynamicHeap[?heap1]], ?dynCtx) <-
    DynamicContextHeap1(?heap1, ?dynCtx).
 
 DynamicContextToHContext(?hctx, ?dynCtx) <-

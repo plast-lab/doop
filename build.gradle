@@ -50,9 +50,9 @@ task printClasspath {
 
 configurations.all {
     //This is required for SNAPSHOT dependencies
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy.cacheChangingModulesFor 10, 'days'
     //This is required for dependencies using the "+" notation
-    resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    resolutionStrategy.cacheDynamicVersionsFor 10, 'days'
 }
 
 dependencies {
@@ -106,6 +106,7 @@ applicationDistribution.from(projectDir) {
 }
 
 run {
+    //debug true
     //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {

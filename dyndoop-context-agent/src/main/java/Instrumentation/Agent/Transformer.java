@@ -1,5 +1,6 @@
 package Instrumentation.Agent;
 
+import javassist.bytecode.ClassFile;
 import javassist.expr.*;
 import javassist.*;
 
@@ -11,19 +12,23 @@ import java.util.Arrays;
 
 public class Transformer implements ClassFileTransformer {
 
-    static boolean optInstrumentCGE = false;
-
-
-    public static synchronized void agentmain(String args, Instrumentation inst) {
-
+    private boolean optInstrumentCGE = true;
+    public Transformer(boolean optInstrumentCGE) {
+        this.optInstrumentCGE = optInstrumentCGE;
     }
 
-    public static synchronized void premain(String args, Instrumentation inst) throws ClassNotFoundException, IOException {
-        inst.addTransformer(new Transformer());
+    public static synchronized void premain(String args, Instrumentation inst) throws ClassNotFoundException, IOException, NotFoundException {
+        ClassPool cp = ClassPool.getDefault();
+        cp.insertClassPath("/home/neville/doop-benchmarks/dacapo-bach/avrora.jar");
+        cp.insertClassPath("/home/neville/doop-benchmarks/dacapo-bach/avrora-deps.jar");
+        inst.addTransformer(new Transformer(
+                args.contains("cg")
+        ));
+
     }
 
     private static boolean isLibraryClass(String name) {
-        return name.startsWith("java") || name.startsWith("Instrumentation/");
+        return name == null || name.startsWith("java") || name.startsWith("Instrumentation") || name.startsWith("sun");
     }
 
     private static boolean isInterestingClass(String name) {
@@ -39,15 +44,26 @@ public class Transformer implements ClassFileTransformer {
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
                             ProtectionDomain pd, byte[] classFile) throws IllegalClassFormatException {
         CtClass cls = null;
+        if (isLibraryClass(className)) return null;
         try {
-            cls = getCtClass(className);
-        } catch (Exception e) {
+            ClassPool cp = ClassPool.getDefault();
+            cp.appendClassPath("/home/neville/doop-benchmarks/dacapo-bach/avrora.jar");
+            cp.appendClassPath("/home/neville/doop-benchmarks/dacapo-bach/avrora-deps.jar");
+            //cp.insertClassPath(new ByteArrayClassPath(className.replace("/","."), classFile));
+            cls = cp.get(className.replace("/","."));
+
+            //cls = getCtClass(className);
+        } catch (Throwable e) {
+            //e.printStackTrace();
             return null;
         }
-        if (isLibraryClass(className)) return null;
+
+        final CtClass finalCls = cls;
 
         Arrays.stream(cls.getDeclaredMethods()).forEach((CtMethod m) -> {
             try {
+                if (Modifier.isNative(m.getModifiers()))
+                    return;
                 if (!Modifier.isStatic(m.getModifiers()) && !Modifier.isAbstract(m.getModifiers()) && optInstrumentCGE) {
                     m.insertBefore("Instrumentation.Recorder.Recorder.recordCall($0);");
                 }
@@ -55,7 +71,7 @@ public class Transformer implements ClassFileTransformer {
                 m.instrument(new ExprEditor() {
                     public void edit(NewExpr newExpr) throws CannotCompileException {
                         if (!isInterestingClass(newExpr.getClassName()))
-                            return;
+                           return;
                         if (Modifier.isStatic(m.getModifiers())) {
                             newExpr.replace("{ $_ = $proceed($$);   Instrumentation.Recorder.Recorder.recordStatic($_); }");
                         } else {
@@ -87,12 +103,15 @@ public class Transformer implements ClassFileTransformer {
                     }
                 });
 
+
             } catch (Exception e) {
                 // fail silently
                 //e.printStackTrace();
             }
         });
         try {
+            cls.debugWriteFile("tmp");
+            //System.out.println(cls.getName());
             return cls.toBytecode();
         } catch (Exception e) {
             //e.printStackTrace();

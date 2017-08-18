@@ -16,3 +16,23 @@ RealContextFromContext[?ctx] = ?value <-
 HContextFromRealHContext[?value] = ?hctx ->
   HContext(?hctx), Value(?value).
 lang:constructor(`HContextFromRealHContext).
+
+// Dynamic analysis
+#ifdef ANALYZE_MEMORY_DUMP
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   RealContextFromContext[?ctx] = Value:byDynamicHeap[?heap1],
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   !DynamicContextHeap1(_, ?dynCtx),
+   ImmutableContext(?ctx),
+   DynamicContext(?dynCtx).
+
+DynamicContextToHContext(HContextFromRealHContext[Value:byDynamicHeap[?heap1]], ?dynCtx) <-
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToHContext(?hctx, ?dynCtx) <-
+   ImmutableHContext(?hctx),
+   DynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx).
+#endif
