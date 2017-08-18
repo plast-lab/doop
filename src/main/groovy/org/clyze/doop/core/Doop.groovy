@@ -68,6 +68,9 @@ class Doop {
         f = new File(doopCache)
         f.mkdirs()
         FileOps.findDirOrThrow(f, "Could not create cache directory: $doopCache")
+        f = new File(souffleAnalysesCache)
+        f.mkdirs()
+        FileOps.findDirOrThrow(f, "Could not create cache directory: $souffleAnalysesCache")
     }
 
     /**
