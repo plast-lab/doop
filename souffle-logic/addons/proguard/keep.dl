@@ -1,7 +1,7 @@
 .decl KeepMethod(?m:Method)
 .output KeepMethod
 
-KeepMethod(cat("-keepclassmembers class ", cat(?type, cat(" { ", cat(?retType, cat(" ", cat(?simpleName, cat(substr(?descriptor, strlen(?retType), strlen(?descriptor)), " }")))))))) :-
+KeepMethod(cat("-keepclassmembers class ", cat(?type, cat(" { ", cat(?retType, cat(" ", cat(?simpleName, cat(substr(?descriptor, strlen(?retType), strlen(?descriptor)), "; }")))))))) :-
 	Reachable(?m),
 	MethodLookup(?simpleName, _, _, ?m),
 	Method_Descriptor(?m, ?descriptor),
