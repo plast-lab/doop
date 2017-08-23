@@ -40,6 +40,8 @@ repositories {
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
+
+    maven { url 'https://jitpack.io' }
 }
 
 task printClasspath {
@@ -50,9 +52,9 @@ task printClasspath {
 
 configurations.all {
     //This is required for SNAPSHOT dependencies
-    resolutionStrategy.cacheChangingModulesFor 10, 'days'
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     //This is required for dependencies using the "+" notation
-    resolutionStrategy.cacheDynamicVersionsFor 10, 'days'
+    resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
 }
 
 dependencies {
@@ -69,7 +71,8 @@ dependencies {
             "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             // Soot is a compile time dependency
-            "ext:AXMLPrinter:2.0"
+            "ext:AXMLPrinter:2.0",
+            'com.github.plast-lab:HeapDL:master-SNAPSHOT'
 
 
     // Soot is a compile time dependency
@@ -78,7 +81,6 @@ dependencies {
             "ext:soot-infoflow:1.2.+",
             "ext:soot-infoflow-android:1.2.+"
 
-    compile(group: "sun", name: "jhat", version: "PATCHED")
 
     // JPhantom is a runtime dependency
     runtime "org.clyze:jphantom:1.2",
@@ -212,7 +214,9 @@ if (project.hasProperty('artifactory_user')) {
                 url version.endsWith("-SNAPSHOT") ?
                         "$artifactory_contextUrl/libs-snapshot-local" :
                         "$artifactory_contextUrl/libs-release-local"
+
             }
+            maven { url 'https://jitpack.io' }
         }
     }
 
