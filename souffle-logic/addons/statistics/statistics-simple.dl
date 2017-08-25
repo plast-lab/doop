@@ -329,10 +329,10 @@ NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
 
 #ifdef ANALYZE_MEMORY_DUMP
 NewMetricMacro("80.0", "Dynamic Heap Allocations (INS)", DynamicHeapAllocation(_,_)).
-NewMetricMacro("81.0", "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_)).
+NewMetricMacro("81.0", "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_,_)).
 NewMetricMacro("82.0", "Unmatched Heap Allocations..", UnmatchedDynamicNormalHeapAllocation(_,_,_,_)).
 NewMetricMacro("83.0", "..of which were reconstructed", ReconstructedUnmatchedDynamicHeapAllocation(_, _)).
-NewMetricMacro("84.0", "Contexts", DynamicContext(_)).
+NewMetricMacro("84.0", "Contexts", isDynamicContext(_)).
 
 NotLibraryHeapAllocation(?heap) :-
   DynamicHeapAllocation(_, ?heap),

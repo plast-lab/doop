@@ -2,6 +2,7 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
+import heapdl.core.MemoryAnalyser
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
@@ -90,6 +91,10 @@ class SouffleAnalysis extends DoopAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/post-process.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/export.dl")
+
+        if (options.ANALYZE_MEMORY_DUMP.value || options.IMPORT_DYNAMIC_FACTS.value) {
+            cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
+        }
 
         if (options.TAMIFLEX.value) {
             def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
@@ -297,5 +302,15 @@ class SouffleAnalysis extends DoopAnalysis {
         def file = new File(this.outDir, "database/${query}.csv")
         if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
         file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+    }
+
+    protected void analyseMemoryDump(String filename) {
+        try {
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.ANALYZE_MEMORY_DUMP_STRINGS.value ? true : false)
+            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
+            logger.info("Generated " + n + " addditional facts from memory dump")
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

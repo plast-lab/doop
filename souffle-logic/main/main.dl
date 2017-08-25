@@ -17,6 +17,10 @@
 #include "reflection/rules.dl" 
 #endif
 
+#if defined(ANALYZE_MEMORY_DUMP) || defined(IMPORT_DYNAMIC_FACTS)
+#include "dynamicanalysis.dl"
+#endif                            
+
 FakeInvocation_RegisterFinalize(?heapValue, ?invo) :-
   FakeInvocation_RegisterFinalize0(?heapValue, ?invo).
 

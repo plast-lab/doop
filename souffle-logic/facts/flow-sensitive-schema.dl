@@ -125,6 +125,7 @@
 .decl isStringRaw(?id:symbol)
 
 .decl HeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
+.decl OriginalHeapAllocation_Type(?heap:HeapAllocation, ?type:Type)
 
 // [Miscellaneous]
 .decl HeapAllocation_EmptyArray(?heap:HeapAllocation)
@@ -143,6 +144,7 @@
 .decl isInstruction(?insn:Instruction)
 
 .decl Instruction_Index(?insn:Instruction, ?index:number)
+.decl Instruction_Line(?insn:Instruction, ?index:number)
 .decl Instruction_Method(?insn:Instruction, ?inMethod:Method)
 
 .type Throw_Insn                      = Instruction

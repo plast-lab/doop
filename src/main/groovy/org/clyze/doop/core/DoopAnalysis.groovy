@@ -174,7 +174,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 }
             }
 
-            if (options.ANALYZE_MEMORY_DUMP.value) {
+            if (options.ANALYZE_MEMORY_DUMP.value && !options.X_DRY_RUN.value) {
                 analyseMemoryDump(options.ANALYZE_MEMORY_DUMP.value.toString())
             }
 

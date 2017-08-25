@@ -191,18 +191,17 @@ class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, getLineNumberFromStmt(stmt));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
     }
 
-    private static String getLineNumberFromStmt(Stmt stmt) {
+    private static int getLineNumberFromStmt(Stmt stmt) {
         LineNumberTag tag = (LineNumberTag) stmt.getTag("LineNumberTag");
         String lineNumber;
         if (tag == null) {
-            lineNumber = "unknown";
+            return  0;
         } else {
-            lineNumber = "" + tag.getLineNumber();
+            return tag.getLineNumber();
         }
-        return lineNumber;
     }
 
     Type getComponentType(ArrayType type) {
@@ -230,7 +229,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(NORMAL_HEAP, heap, writeType(arrayType));
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, getLineNumberFromStmt(stmt));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, assignTo, methodId, ""+getLineNumberFromStmt(stmt));
 
         Type componentType = getComponentType(arrayType);
         if (componentType instanceof ArrayType) {
@@ -300,7 +299,7 @@ class FactWriter {
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, getLineNumberFromStmt(stmt));
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heapId, _rep.local(m, l), methodId, ""+getLineNumberFromStmt(stmt));
     }
 
     void writeAssignNull(SootMethod m, Stmt stmt, Local l, Session session) {
@@ -327,7 +326,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         _db.add(METHOD_HANDLE_CONSTANT, heap, handleName);
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 
     void writeAssignClassConstant(SootMethod m, Stmt stmt, Local l, ClassConstant constant, Session session) {
@@ -371,7 +370,7 @@ class FactWriter {
         String methodId = writeMethod(m);
 
         // REVIEW: the class object is not explicitly written. Is this always ok?
-        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "unknown");
+        _db.add(ASSIGN_HEAP_ALLOC, insn, str(index), heap, _rep.local(m, l), methodId, "0");
     }
 
     void writeAssignCast(SootMethod m, Stmt stmt, Local to, Local from, Type t, Session session) {
