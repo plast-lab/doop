@@ -9,15 +9,13 @@
 .decl DynamicContextToContext(?ctx:Context, ?dctx:DynamicContext)
 .decl DynamicContextToHContext(?hctx:HContext, ?dctx:DynamicContext)
 
-#ifndef DYNAMIC_CONTEXT_SENSITIVITY
-//DynamicContextToContext(?ctx, ?dctx) :-
-//   isImmutableContext(?ctx),
-//   DynamicContext(?dctx).
+DynamicContextToContext(?ctx, ?dctx) :-
+   isImmutableDCTX(?dctx),
+   isImmutableContext(?ctx).
 
-//DynamicContextToHContext(?hctx, ?dctx) :-
-//   DynamicContext(?dctx),
-//   isImmutableHContext(?hctx).
-#endif
+DynamicContextToHContext(?hctx, ?dctx) :-
+   isImmutableDCTX(?dctx),
+   isImmutableHContext(?hctx).
 
 
 /*
@@ -78,6 +76,7 @@ ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseValue) :-
 
 // Context insensitive allocations
 .decl FromDynamicHeapObject(?hctx:HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
+
 
 FromDynamicHeapObject(?hctx, ?value, ?dctx, ?value) :-
    DynamicHeapObject(_, ?value, ?dctx),
