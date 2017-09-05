@@ -56,13 +56,19 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
   Value_isHeap(?constantHeap),
   ClassNameMatchingStringConstant_Type(?type, ?constantHeap).
 
+.decl HighConfidenceAssign(?value:Value, ?inmethod:Method)
+
+HighConfidenceAssign(?value, ?inmethod) :-
+  AssignHeapAllocation(?value, _, ?inmethod).
+
+
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
 
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction_Method(?invocation, ?inmethod),
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  HighConfidenceAssign(?constantHeap, ?inmethod),
   (NumberOfClassesMatchingConstant(?constantHeap, ?num),
    StringPrecisionThreshold(?t),
    ?num < ?t;
@@ -387,10 +393,12 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
 
+.output HighConfidenceAssign
+
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
   Var_DeclaringMethod(?to, ?inmethod),
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  HighConfidenceAssign(?value, ?inmethod),
   (NumberOfFieldsMatchingConstant(?constantHeap, ?num),
    StringPrecisionThreshold(?t),
    ?num < ?t;

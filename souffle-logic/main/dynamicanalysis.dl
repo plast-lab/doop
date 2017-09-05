@@ -41,7 +41,10 @@ ImpreciseDynamicStaticFieldPointsTo(?signature, ?immutableDCTX, ?heap) :-
   isImmutableDCTX(?immutableDCTX),
   DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
   ?dctx != ?immutableDCTX.
-  
+
+.decl InsStaticFieldPointsToFromDynamic(?value:Value, ?signature:Field)
+
+InsStaticFieldPointsToFromDynamic(?value, ?signature),
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
    DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
    !ImpreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
@@ -63,17 +66,47 @@ ImpreciseDynamicInstanceFieldPointsTo(?fld, ?DCTX2, ?heap, ?immutableDCTX, ?base
    ?dctx != ?immutableDCTX,
    ?baseDCtx != ?immutableDCTX.
 
+.decl InsInstanceFieldPointsToFromDynamic(?value:Value, ?fld:Field, ?baseValue:Value)
+
+InsInstanceFieldPointsToFromDynamic(?value, ?fld, ?baseValue),
 InstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) :-
    DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
    !ImpreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
    FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
    FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
-   
+
+.decl InsArrayIndexPointsToFromDynamic(?value:Value, ?baseValue:Value)
+
+InsArrayIndexPointsToFromDynamic(?value, ?baseValue),
 ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseValue) :-
    DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap),
    FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
    FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
 
+
+#ifdef REFLECTION
+.decl HighConfidenceLoadFromDynamicInference(?value:Value, ?inmethod:Method)
+
+HighConfidenceLoadFromDynamicInference(?value, ?inmethod) :-
+  InsArrayIndexPointsToFromDynamic(?value, ?baseValue),
+  LoadHeapArrayIndex(_, ?to, _, ?baseValue),
+  Var_DeclaringMethod(?to, ?inmethod).
+
+HighConfidenceLoadFromDynamicInference(?value, ?inmethod) :-
+  InsInstanceFieldPointsToFromDynamic(?value, ?fld, ?baseValue),
+  LoadHeapInstanceField(_, ?to, ?fld, _, ?baseValue),
+  Var_DeclaringMethod(?to, ?inmethod).
+      
+HighConfidenceLoadFromDynamicInference(?value, ?inmethod) :-
+  InsStaticFieldPointsToFromDynamic(?value, ?sig),
+  LoadStaticField(?sig, ?to, ?inmethod),
+  Var_DeclaringMethod(?to, ?inmethod).
+
+HighConfidenceAssign(?value, ?inmethod) :-
+  HighConfidenceLoadFromDynamicInference(?value, ?inmethod).
+
+#endif
+ 
 // Context insensitive allocations
 .decl FromDynamicHeapObject(?hctx:HContext, ?value:Value, ?dctx:DynamicContext, ?dheap:HeapAllocation)
 
