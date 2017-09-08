@@ -409,6 +409,8 @@
 .decl SpecialMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
 .decl SpecialMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
 
+.decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
+
 
 //-----------------------------------------------------------------------------
 // [Exception Handlers]

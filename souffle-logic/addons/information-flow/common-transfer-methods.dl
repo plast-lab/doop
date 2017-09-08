@@ -9,6 +9,7 @@ ParamToBaseTaintTransferMethod(0, "<java.lang.StringBuffer: java.lang.StringBuff
 BaseToRetTaintTransferMethod("<java.util.Enumeration: java.lang.Object nextElement()>").
 BaseToRetTaintTransferMethod("<java.lang.String: char charAt(int)>").
 BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes(java.lang.String)>").
+BaseToRetTaintTransferMethod("<java.lang.Float: float floatValue()>").
 
 /*
 BaseToRetTaintTransferMethod("<java.lang.String: int codePointAt(int)>").

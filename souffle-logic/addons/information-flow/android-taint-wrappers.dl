@@ -1,5 +1,6 @@
 .decl ParamToRetTaintTransferMethod(?method:Method)
 
+
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String valueOf(boolean)>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String valueOf(char)>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String valueOf(char[])>").
@@ -17,8 +18,10 @@ ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String concat(java.l
 
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.util.Locale,java.lang.String,java.lang.Object[])>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>").
+//BaseToParamTaintTransferMethod(0, "<java.util.Formatter: void <init>(java.lang.Appendable)>").
 
-ParamToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
+BaseToRetTaintTransferMethod("<java.lang.String: char[] toCharArray()>").
+BaseToRetTaintTransferMethod("<java.lang.String: byte[] getBytes()>").
 
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String replaceAll(java.lang.String,java.lang.String)>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String replace(java.lang.CharSequence,java.lang.CharSequence)>").
@@ -91,6 +94,11 @@ ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger modPo
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger multiply(java.math.BigInteger)>").
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger or(java.math.BigInteger)>").
 ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger xor(java.math.BigInteger)>").
+
+ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
+
+ParamToRetTaintTransferMethod("<android.os.Message: android.os.Message obtain(android.os.Handler,int,int,int)>").
+
 /*
 <java.io.FileInputStream: void <init>(java.io.File)>
 <java.io.FileOutputStream: void <init>(java.lang.String)>
@@ -99,7 +107,7 @@ ParamToRetTaintTransferMethod("<java.math.BigInteger: java.math.BigInteger xor(j
 <java.io.InputStreamReader: void <init>(java.io.InputStream,java.lang.String)>
 <java.io.BufferedReader: void <init>(java.io.Reader)>
 
-<java.io.ByteArrayOutputStream: void write(byte[],int,int)>
+
 
 <java.io.ObjectOutputStream: void writeObject(java.lang.Object>
 
@@ -130,36 +138,36 @@ ParamToRetTaintTransferMethod("<java.net.URI: java.net.URI create(java.lang.Stri
 <android.content.ContentValues: void putAll(android.content.ContentValues)>
 <android.content.ContentValues: void putNull(java.lang.String)>
 */
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent addFlags(int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent setFlags(int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent parseIntent(android.content.res.Resources,org.xmlpull.v1.XmlPullParser,android.util.AttributeSet)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent parseUri(java.lang.String,int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,char)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,short)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,long)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,int)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,float)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,double)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.io.Serializable)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,short[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,char[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,int[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,long[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,float[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,double[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence[])>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Bundle)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtras(android.content.Intent)>").
-ParamToRetTaintTransferMethod("<android.content.Intent: android.content.Intent putExtras(android.os.Bundle)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent addFlags(int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent setFlags(int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent parseIntent(android.content.res.Resources,org.xmlpull.v1.XmlPullParser,android.util.AttributeSet)>"). 
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent parseUri(java.lang.String,int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,char)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,short)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,long)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,int)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,float)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,double)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.io.Serializable)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,byte[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,short[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,char[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,int[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,long[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,float[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,double[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.CharSequence[])>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Bundle)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtras(android.content.Intent)>").
+ParamToBaseTaintTransferMethod(1, "<android.content.Intent: android.content.Intent putExtras(android.os.Bundle)>").
 /*
 <android.content.IntentFilter: void addAction(java.lang.String)>
 
@@ -187,11 +195,16 @@ ParamToRetTaintTransferMethod("<java.util.Arrays: java.util.List asList(java.lan
 ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.Object[] copyOf(java.lang.Object[],int)>").
 ParamToRetTaintTransferMethod("<java.util.Arrays: java.lang.String toString(java.lang.Object[])>").
 
+/*
 BaseToRetTaintTransferMethod("<android.widget.EditText: android.text.Editable getText()>").
 BaseToRetTaintTransferMethod("<android.text.Editable: java.lang.String toString()>").
-
+BaseToRetTaintTransferMethod("<android.widget.EditText: java.lang.String toString()>").
+BaseToRetTaintTransferMethod("<android.view.View: java.lang.String toString()>").
+*/
 
 ParamToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: void write(byte[],int,int)>").
+BaseToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: java.lang.String toString()>").
+
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte)>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte[])>").
 ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer put(byte[],int,int)>").
@@ -212,7 +225,7 @@ ParamToRetTaintTransferMethod("<java.nio.ByteBuffer: java.nio.ByteBuffer putShor
 
 ParamToRetTaintTransferMethod("<java.util.regex.Pattern: java.util.regex.Matcher matcher(java.lang.CharSequence)>").
 
-ParamToRetTaintTransferMethod("<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.lang.String[])>").
+ParamIndexToBaseTaintTransferMethod(0, "<java.lang.ProcessBuilder: java.lang.ProcessBuilder command(java.lang.String[])>").
 
 /*
 <android.os.Parcel: void writeArray(java.lang.Object[])>
@@ -261,5 +274,20 @@ ParamToRetTaintTransferMethod("<java.lang.ProcessBuilder: java.lang.ProcessBuild
 <android.graphics.PointF: void <init>(android.graphics.Point)>
 <android.app.DownloadManager$Request: void <init>(android.net.Uri)>
 */
+
+BaseToRetTaintTransferMethod("<android.os.Parcel: void unmarshall()>").
+
 ParamToRetTaintTransferMethod("<android.telephony.SmsMessage: android.telephony.SmsMessage createFromPdu(byte[])>").
 ParamToRetTaintTransferMethod("<android.telephony.gsm.SmsMessage: android.telephony.gsm.SmsMessage createFromPdu(byte[])>").
+
+
+
+// For serialization:
+BaseToParamTaintTransferMethod("<java.io.ObjectOutputStream: void <init>(java.io.OutputStream)>").
+
+BaseToRetTaintTransferMethod("<java.io.ByteArrayOutputStream: byte[] toByteArray()>").
+
+ParamToBaseTaintTransferMethod(0, "<java.io.ByteArrayInputStream: void <init>(byte[])>").
+
+ParamToBaseTaintTransferMethod(0, "<java.io.ObjectInputStream: void <init>(java.io.InputStream)>").
+

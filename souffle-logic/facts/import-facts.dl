@@ -308,6 +308,11 @@ isMethodInvocation(?instruction),
 MethodInvocation_Line(?instruction, ?line) :-
   _MethodInvocation_Line(?instruction, ?line).
 
+MethodInvocation_Base(?invocation, ?base) :-
+  VirtualMethodInvocation_Base(?invocation, ?base) ;
+  SpecialMethodInvocation_Base(?invocation, ?base).
+
+
 
 // Static method invocation
 

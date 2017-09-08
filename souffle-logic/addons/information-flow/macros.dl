@@ -3,7 +3,7 @@
 #define DEFAULT_BREADCRUMB "ASSIGN"
 
 #define ValueIdMacro(id, type, breadcrumb) \
-  cat(cat(cat(cat(id, "::: "), type), "::: "), breadcrumb)
+  cat(cat(cat(cat(id, ":: "), type), ":: "), breadcrumb)
 
 #define TaintedValueIntroduced(declaringType, id, type, label, value) \
   MockValueConsMacro(value, type), \
@@ -17,3 +17,4 @@
   TaintedValue(value), \
   SourceFromTaintedValue(value, id), \
   Value_DeclaringType(value, declaringType)
+

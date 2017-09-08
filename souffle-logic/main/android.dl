@@ -31,12 +31,35 @@
 //     public methods whose name starts with "on" be reachable (REVIEW:
 //     with what arguments?)
 **/
+
 AndroidAppComponent(?type) :-
   Activity(?type);
   Service(?type);
   BroadcastReceiver(?type);
   ContentProvider(?type);
   AndroidApplication(?type).
+
+
+.decl RegisterBroadCastReceiverVar(?var:Var)
+
+RegisterBroadCastReceiverVar(?var) :-
+   Method_SimpleName(?method, "registerReceiver"),
+   MethodInvocation_Method(?invocation, ?method),
+   ActualParam(0, ?invocation, ?var),
+   ApplicationVar(?var),
+   Var_Type(?var, ?type),
+   SupertypeOf("android.content.BroadcastReceiver", ?type).
+
+.decl ExtraAndroidAppComponent(?type:Type)
+
+ExtraAndroidAppComponent(?type),
+ReifiedAndroidObjectValue(?value, ?type) :-
+   RegisterBroadCastReceiverVar(?var),
+   VarPointsTo(_, ?value, _, ?var),
+   Value_Type(?value, ?type),
+   !AndroidAppComponent(?type).
+
+
 
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
@@ -116,12 +139,12 @@ MethodDeclaredOrInherited(?meth, ?class) :-
   MethodLookup(?simplename, ?descriptor, ?class, ?meth).
 
 PublicMethodOfComponent(?meth) :-
-  AndroidAppComponent(?type),
+  (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
   MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("public", ?meth).
 
 ProtectedMethodOfComponent(?meth) :-
-  AndroidAppComponent(?type),
+  (AndroidAppComponent(?type); ExtraAndroidAppComponent(?type)),
   MethodDeclaredOrInherited(?meth, ?type),
   Method_Modifier("protected", ?meth).
 
@@ -340,7 +363,6 @@ VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) :-
   Value_Num(?value, ?numId),
   ViewObjectValueFromId(?viewValue, ?numId).
 
-// TODO: AsyncTask.execute should call AsyncTask.doInBackground
 
 
 // Special handling for multi-dimensional arrays
@@ -367,3 +389,78 @@ ArrayIndexPointsTo(?hctx, cat(cat(?invocation, ":"), ?arrayType), ?hctx, ?baseva
   ComponentType(?type, ?arrayType),
   isArrayType(?arrayType),
   UninitialisedArray(?hctx, ?basevalue, ?invocation, ?type).
+
+
+// Being liberal ... Any Activity parameter inside a class that is
+// TODO: this is only partial support for fragments, and we fail
+// DroidBench's FragmentLifecycle2 benchmark
+
+.decl ActivityVarInType(?var:Var, ?ctx:Context, ?type:Type)
+
+ActivityVarInType(?var, ?ctx, ?type) :-
+   Var_DeclaringMethod(?var, ?method),
+   Var_Type(?var, ?vartype),
+   SupertypeOf("android.app.Activity", ?vartype),
+   ReachableContext(?ctx, ?method),
+   Method_DeclaringType(?method, ?type).
+
+OptInterproceduralAssign(?ctxTo, ?varAcc, ?ctxFrom, ?thisActivity) :-
+   ActivityVarInType(?varAcc, ?ctxTo, ?type),
+   Value_Type(?value, ?type),
+   VarPointsTo(_, ?value, _, ?fragmentParam),
+   BindFragment(?thisActivity, ?fragmentParam),
+   isImmutableContext(?ctxFrom).
+
+
+.decl BindFragment(?thisActivity:Var, ?fragmentParam:Var)
+
+// Binding fragment's parent
+BindFragment(?thisActivity, ?fragmentParam) :-
+   Method_DeclaringType(?method, "android.app.FragmentTransaction"),
+   (Method_SimpleName(?method, "add") ; Method_SimpleName(?method, "replace")),
+   MethodInvocation_Method(?invocation, ?method),
+   ActualParam(_, ?invocation, ?fragmentParam),
+   Instruction_Method(?invocation, ?inmethod),
+   ThisVar(?inmethod, ?thisActivity).
+
+
+// TODO: generalize this by
+// 1) getting info from factgen (Application, Component).
+// 2) Be more liberal with variable types.
+VarPointsTo(?hctx, ?value, ?ctx, ?var) :-
+   ReifiedApplicationAndCompatibleVar(?value, ?var),
+   Var_DeclaringMethod(?var, ?method),
+   ForcedReachableAndroidContext(?ctx, ?method),
+   isImmutableHContext(?hctx).
+
+.decl ReifiedApplicationAndCompatibleVar(?value:Value, ?var:Var)
+
+ReifiedApplicationAndCompatibleVar(?value, ?var) :-
+   ReifiedComponent(?type, ?value),
+   AndroidApplication(?type),
+   Var_Type(?var, ?type).
+
+// Asynchronous tasks are treated as synchronous method calls
+.decl AsynchTaskExecute(?param:Var, ?base:Var)
+
+AsynchTaskExecute(?param, ?base) :-
+   Method_DeclaringType(?method, "android.os.AsyncTask"),
+   Method_SimpleName(?method, "execute"),
+   MethodInvocation_Method(?invocation, ?method),
+   ActualParam(_, ?invocation, ?param),
+   Var_Type(?param, ?type),
+   isArrayType(?type),
+   MethodInvocation_Base(?invocation, ?base).
+
+ReachableContext(?ctx, ?method),
+OptInterproceduralAssign(?ctx, ?formal, ?callerCtx, ?actual),
+VarPointsTo(?hctx, ?baseValue, ?ctx, ?this) :-
+   AsynchTaskExecute(?actual, ?base),
+   VarPointsTo(?hctx, ?basevalue, ?callerCtx, ?base),
+   Value_Type(?baseValue, ?type),
+   Method_DeclaringType(?method, ?type),
+   Method_SimpleName(?method, "doInBackground"),
+   FormalParam(0, ?method, ?formal),
+   // TODO: requires proper method resolution
+   ThisVar(?method, ?this),
+   ImmutableContextFromContext(?callerCtx, ?ctx).

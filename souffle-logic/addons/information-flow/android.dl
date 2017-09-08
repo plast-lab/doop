@@ -20,3 +20,14 @@ PossibleLayoutGetText(?to, ?invocation, ?ctx, ?base) :-
   Var_Type(?base, ?type),
   AndroidViewType(?type),
   MethodInvocationInContext(?ctx, ?invocation, _).
+
+
+
+VarIsTaintedFromVar("java.lang.String", ?ctx, ?to, ?ctx, ?base) :-
+  SupertypeOf("android.text.Editable", ?type),
+  Var_Type(?base, ?type),
+  VirtualMethodInvocation_Base(?invocation, ?base),
+  VirtualMethodInvocation_SimpleName(?invocation, "toString"),
+  AssignReturnValue(?invocation, ?to),
+  Instruction_Method(?invocation, ?method),
+  ReachableContext(?ctx, ?method).
