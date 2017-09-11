@@ -24,6 +24,7 @@ VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to
   SourceFromTaintedValue(?value, ?source),
   Value_DeclaringType(?value, ?declaringType),
   isImmutableHContext(?hctx).
+  .plan 2:(3,1,2,4)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-

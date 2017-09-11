@@ -20,6 +20,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
   Value_Type(?value, ?type),
   ReifiedClass(?type, ?classValue).
   .plan 2:(3,2,1,4,5)
+  .plan 1:(2,3,1,4,5)
 
 /*************************************************************
  * java.lang.Class.forName
