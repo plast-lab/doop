@@ -16,12 +16,13 @@ VarUse(?from, ?insn) :-
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
   VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
   TaintedVarPointsTo(?value, ?fromCtx, ?from).
+  .plan 1:(2,1)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
+  TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
   SourceFromTaintedValue(?value, ?source),
   Value_DeclaringType(?value, ?declaringType),
-  TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
   isImmutableHContext(?hctx).
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
@@ -194,6 +195,7 @@ VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) :-
   ValueTaintedFromValue(?newvalue, ?existingvalue),
   VarPointsTo(_, ?existingvalue, ?ctx, ?var),
   isImmutableHContext(?hctx).
+  .plan 1:(2,1,3)
 
 .decl XYZ(?value:Value, ?ctx:Context, ?param:Var)
 
@@ -210,6 +212,10 @@ BaseValueTaintedFromParamValue(ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB),
   TaintedVarPointsTo(?value, ?ctx, ?param),
   SourceFromTaintedValue(?value, ?source),
   Value_DeclaringType(?value, ?declaringType).
+  .plan 1:(2,1,3,4,5)
+  .plan 2:(3,1,2,4,5)
+  .plan 3:(4,3,1,2,5)
+  .plan 4:(5,3,1,2,4)
 #else
 .decl XYZ2(?type:Type, ?value:Value, ?ctx:Context, ?param:Var)
 
@@ -292,8 +298,8 @@ TaintedValue(?basevalue) :-
   TaintedValue(?value),
   InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).
 
-TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
-VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+TaintedValueTransferred(?declaringType, ?source, "char[]", ValueIdMacro(?source, "char[]", DEFAULT_BREADCRUMB)),
+VarPointsTo(?hctx, ValueIdMacro(?source, "char[]", DEFAULT_BREADCRUMB), ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, "<java.lang.String: char[] value>", _, ?basevalue),
   TaintedValue(?basevalue),
   Value_DeclaringType(?basevalue, ?declaringType),

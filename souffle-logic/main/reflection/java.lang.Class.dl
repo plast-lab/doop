@@ -19,6 +19,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
   VarPointsTo(_, ?value, ?ctx, ?from),
   Value_Type(?value, ?type),
   ReifiedClass(?type, ?classValue).
+  .plan 2:(3,2,1,4,5)
 
 /*************************************************************
  * java.lang.Class.forName
@@ -98,6 +99,7 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ReifiedClass(?className, ?classValue),
   isStringConstant(?className),
   Value_isHeap(?className).
+  .plan 2:(3,2,1,4,5,6)
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 

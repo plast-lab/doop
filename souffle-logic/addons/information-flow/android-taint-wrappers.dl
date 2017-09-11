@@ -1,6 +1,3 @@
-.decl ParamToRetTaintTransferMethod(?method:Method)
-
-
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String valueOf(boolean)>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String valueOf(char)>").
 ParamToRetTaintTransferMethod("<java.lang.String: java.lang.String valueOf(char[])>").

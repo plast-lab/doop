@@ -12,6 +12,7 @@
 .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:Context, ?var:Var)
 .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:Context,
                                 ?invocation:MethodInvocation, ?value:symbol)
+.output LeakingTaintedInformation                                
 
 .decl VarIsCast(?var:Var)
 .decl VarDef(?var:Var, ?inst:Instruction)
@@ -46,6 +47,7 @@
 .decl ParamTaintTransferredToBase(?param:Var, ?ctx:Context, ?base:Var)
 .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:Context, ?param:Var)
 .decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)
+.decl ParamToRetTaintTransferMethod(?method:Method)
 
 
 .decl TaintedVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)

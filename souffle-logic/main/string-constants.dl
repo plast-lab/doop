@@ -131,6 +131,8 @@ HeapRepresentative(?constant, ?heap) :-
 
 #ifdef DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
+.output ReflectionStringConstant
+
 ReflectionStringConstant(?heap) :-
   PreClassNameMatchingStringConstant(?heap);
   PreMethodNameMatchingStringConstant(?heap);
