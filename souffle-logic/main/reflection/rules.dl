@@ -206,7 +206,7 @@ java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
 #ifdef REFLECTION_REFINED_OBJECTS
 CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat("<reflective ", ?invocation), "/new "), ?arrayType), ">")),
 #else
-CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat("<reflective /new "), ?arrayType), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat("<reflective /new ", ?arrayType), ">")),
 #endif // REFLECTION_REFINED_OBJECTS
 java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
   MethodInvocation_Method(?invocation, "<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int)>"),
