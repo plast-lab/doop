@@ -312,6 +312,7 @@ VarPointsTo(?hctx, ValueIdMacro(?source, "char[]", DEFAULT_BREADCRUMB), ?ctx, ?t
  
 // Serialization
 .decl SerializeObjectInvocation(?base:Var, ?ctx:Context, ?var:Var)
+.output SerializeObjectInvocation
 
 SerializeObjectInvocation(?base, ?ctx, ?var) :-
   MethodInvocationInContextInApplication(?ctx, ?invocation, "<java.io.ObjectOutputStream: void writeObject(java.lang.Object)>"),
@@ -319,6 +320,7 @@ SerializeObjectInvocation(?base, ?ctx, ?var) :-
   ActualParam(_, ?invocation, ?var).
 
 .decl ObjectSerializedToBase(?ctx:Context, ?base:Var, ?obj:Value)
+.output ObjectSerializedToBase
 
 ObjectSerializedToBase(?ctx, ?base, ?obj) :-
   SerializeObjectInvocation(?base, ?ctx, ?var),
@@ -326,12 +328,14 @@ ObjectSerializedToBase(?ctx, ?base, ?obj) :-
   SerializableValue(?obj).
 
 .decl SerializableValue(?obj:Value)
+.output SerializableValue
 
 SerializableValue(?obj) :-
    Value_Type(?obj, ?type),
    SupertypeOf("java.io.Serializable", ?type).
 
 .decl SerializableVar(?var:Var)
+.output SerializableVar
 
 SerializableVar(?var) :-
    Var_Type(?var, ?type),
@@ -346,27 +350,35 @@ VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base
   Var_Type(?base, ?type),
   Value_DeclaringType(?obj, ?declaringType),
   SourceFromTaintedValue(?obj, ?source),
-  isImmutableHContext(?hctx).
+  ImmutableHContextFromContext(?ctx, ?hctx).
   .plan 2: (3,2,1,4,5,6,7)
 
 VarIsTaintedFromValue(?type, ?basevalue, ?ctx, ?to) :-
    MaybeDeserializedValue(?basevalue),
    TaintedVarPointsTo(?basevalue, ?ctx, ?base),
-   OptLoadInstanceField(?to, ?sig, ?base),
+   LoadInstanceField(?base, ?sig, ?to, _),
    !Field_Modifier("transient", ?sig),
    Var_Type(?to, ?type).
 
 BaseToRetTaintTransferMethod("<java.io.ObjectInputStream: java.lang.Object readObject()>").
 
 .decl OptDeserializeInvoke(?ret:Var)
+.output OptDeserializeInvoke
 
 OptDeserializeInvoke(?ret) :-
    MethodInvocationInContextInApplication(_, ?invocation, "<java.io.ObjectInputStream: java.lang.Object readObject()>"),
    AssignReturnValue(?invocation, ?ret).
 
 .decl MaybeDeserializedValue(?value:Value)
+.output MaybeDeserializedValue
 
 MaybeDeserializedValue(?value) :-
    OptDeserializeInvoke(?ret),
    TaintedVarPointsTo(?value, _, ?ret),
    SerializableValue(?value).
+
+.decl AppTaintedVar(?var:Var)
+.output AppTaintedVar
+
+AppTaintedVar(?var) :-
+  TaintedVarPointsTo(_, _, ?var), ApplicationVar(?var).
