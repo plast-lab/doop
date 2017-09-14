@@ -6,3 +6,37 @@
 //arrays currently being a non-class subtype of Object.
 .type Context  = [ type1:Type, type2:Type ]
 .type HContext = [ type:Type ]
+
+
+#ifdef ANALYZE_MEMORY_DUMP
+DynamicContextToContext([?type1, ?type2], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value1),
+   Value_Type(?value1, ?type1),
+   DynamicContextHeap2(?heap2, ?dynCtx),
+   Value_byDynamicHeap(?heap2, ?value2),
+   Value_Type(?value2, ?type2).
+
+
+DynamicContextToContext([?type, ?any], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type),
+   !DynamicContextHeap2(_, ?dynCtx),
+   isContext([?type, ?any]).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableContext(?ctx).
+
+DynamicContextToHContext([?type], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type).
+
+DynamicContextToHContext(?hctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableHContext(?hctx).
+#endif

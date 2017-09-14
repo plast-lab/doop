@@ -5,3 +5,24 @@
 // Values.
 .type Context  = [ value:Value ]
 .type HContext = [ value:Value ]
+
+// Dynamic analysis
+#ifdef ANALYZE_MEMORY_DUMP
+DynamicContextToContext([ ?value ], ?dynCtx) :-
+   Value_byDynamicHeap(?heap1, ?value),
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableContext(?ctx),
+   isDynamicContext(?dynCtx).
+
+DynamicContextToHContext([ ?value ], ?dynCtx) :-
+   Value_byDynamicHeap(?heap1, ?value),
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToHContext(?hctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableHContext(?hctx).
+#endif
