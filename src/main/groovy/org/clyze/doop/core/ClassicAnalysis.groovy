@@ -135,7 +135,7 @@ class ClassicAnalysis extends DoopAnalysis {
             copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
         }
 
-        if (options.ANALYZE_MEMORY_DUMP.value || options.IMPORT_DYNAMIC_FACTS.value) {
+        if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
             cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
             cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
