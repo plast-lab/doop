@@ -51,16 +51,24 @@ MatchingMethodForInvocationAndType[?type, ?invocation] = ?tomethod <-
   SubtypeOf(?type, ?basetype).
 
 PartitionForValue[?value] = ?partitionId <-
-  Value:DeclaringType[?value] = ?valueClass,
+  Value:Type[?value] = ?valueClass,
   TypeToPartitionId[?valueClass] = ?partitionId.
 
 ValueInAllPartitions(?value) <-
   Value:DeclaringType[?value] = ?valueClass,
   TypeInAllPartitions(?valueClass).
 
+NotValueInAllPartitions(?value) <-
+  Value:DeclaringType[?value] = ?valueClass,
+  NotTypeInAllPartitions(?valueClass).
+
 TypeInAllPartitions(?type) <-
   Type:Id(?type:?typeName),
   string:substring[?typeName, 0, _] = "java.util".
+
+NotTypeInAllPartitions(?type) <-
+   Type(?type),
+   !TypeInAllPartitions(?type).
 
 PartitionForInvocation[?invo] = ?partitionId <-
   Instruction:Method[?invo] = ?inmethod,
@@ -152,7 +160,7 @@ CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
 CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   MyMergeBasis(?invo, ?hctx, ?value),
   !(PartitionForValue[?value] = _),
-  !ValueInAllPartitions(?value),
+  NotValueInAllPartitions(?value),
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 
 CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
@@ -160,7 +168,7 @@ CachedMerge[?invo, ?hctx, ?value] = ?calleeCtx <-
   PartitionForValue[?value] = ?partId,
   (?partId != PartitionForInvocation[?invo];
    !(PartitionForInvocation[?invo] = _)),
-  !ValueInAllPartitions(?value),
+  NotValueInAllPartitions(?value),
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 */
 
@@ -174,19 +182,13 @@ CachedRecord[?ctx, ?value] = ?hctx <-
   (PartitionFromContext[?ctx] = PartitionForValue[?value];
    ValueInAllPartitions(?value)).
 
-CachedRecord[?ctx, ?value] = ?hctx <-
-  MyRecordBasis(?ctx, ?value),
-  !(PartitionForValue[?value] = _),
-  !ValueInAllPartitions(?value),
-  ImmutableHContextFromContext[?ctx] = ?hctx.
 
 CachedRecord[?ctx, ?value] = ?hctx <-
   MyRecordBasis(?ctx, ?value),
   PartitionForValue[?value] = ?partId,
   ?partId != PartitionFromContext[?ctx],
-  !ValueInAllPartitions(?value),
+  NotValueInAllPartitions(?value),
   ImmutableHContextFromContext[?ctx] = ?hctx.
-
 
 // Post-processing
 _ValidCtxVar(?ctx, ?var)
