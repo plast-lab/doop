@@ -290,12 +290,12 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
 
         } else {
-            if (!(name == "naive" || name == "micro")) {
+            //if (!(name == "naive" || name == "micro")) {
                 // This needs cleaning up. We are including one version by default, but distinguishing
                 // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
-                cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-            }
+            //    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
+            //    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
+            //}
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
