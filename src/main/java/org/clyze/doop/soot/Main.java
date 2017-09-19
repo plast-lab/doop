@@ -261,8 +261,6 @@ public class Main {
                 if (input0.endsWith(".aar")) {
                     String classesJar = populateClassesInAppJar(input0, classesInApplicationJar, propertyProvider, true);
                     sootParameters._inputs.add(classesJar);
-                    // System.out.println("TODO: overwrite aar?");
-                    // System.exit(-1);
                 }
             }
 
