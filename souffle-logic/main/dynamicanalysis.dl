@@ -201,6 +201,11 @@ ImpreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMet
   SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
   isStaticMethodInvocation_Insn(?invocation).
 
+// Recording context in constructors is problematic
+ImpreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
+    (contains(?toMethod, "<init>") ; contains(?fromMethod, "<init>")),
+    (isImmutableDCTX(?ctxTo) ; isImmutableDCTX(?ctxFrom)).
+
 // For comparison only, the following implementation ignores context information in call graphs
 //MostPreciseDynamicCallGraphEdge(?immutableDCTX, ?toMethod, ?invocation, ?immutableDCTX, ?fromMethod) :-
 //   SanitizedDynamicCallGraphEdge(_, ?toMethod, ?invocation, _, ?fromMethod),
