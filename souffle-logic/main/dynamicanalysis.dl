@@ -203,6 +203,7 @@ ImpreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMet
 
 // Recording context in constructors is problematic
 ImpreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
+    SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
     (contains(?toMethod, "<init>") ; contains(?fromMethod, "<init>")),
     (isImmutableDCTX(?ctxTo) ; isImmutableDCTX(?ctxFrom)).
 
