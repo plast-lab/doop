@@ -342,6 +342,11 @@ NotLibraryHeapAllocation(?heap) :-
 Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap) :-
   MostPreciseDynamicInstanceFieldPointsTo(?fld, _, ?heap, _, ?baseHeap).
 
+.output MostPreciseDynamicInstanceFieldPointsTo
+.output MostPreciseDynamicStaticFieldPointsTo
+.output MostPreciseDynamicCallGraphEdge
+.output MostPreciseDynamicArrayIndexPointsTo
+
 NotLibraryHeapAllocation(?heap) :-
   ApplicationMethod(?meth),
   AssignNormalHeapAllocation(?heap, _, ?meth).
