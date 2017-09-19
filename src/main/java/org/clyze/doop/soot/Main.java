@@ -201,6 +201,7 @@ public class Main {
         SootMethod dummyMain = null;
 
         Options.v().set_output_dir(sootParameters._outputDir);
+        Options.v().setPhaseOption("jb", "use-original-names:true");
 
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);
