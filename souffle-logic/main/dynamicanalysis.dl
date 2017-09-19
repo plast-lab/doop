@@ -42,12 +42,17 @@ ImpreciseDynamicStaticFieldPointsTo(?signature, ?immutableDCTX, ?heap) :-
   DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
   ?dctx != ?immutableDCTX.
 
+.decl MostPreciseDynamicStaticFieldPointsTo(?signature:Field, ?immutableDCTX:DynamicContext, ?heap:HeapAllocation)
+
+MostPreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap) :-
+   DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
+   !ImpreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap).
+   
 .decl InsStaticFieldPointsToFromDynamic(?value:Value, ?signature:Field)
 
 InsStaticFieldPointsToFromDynamic(?value, ?signature),
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
-   DynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
-   !ImpreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
+   MostPreciseDynamicStaticFieldPointsTo(?signature, ?dctx, ?heap),
    FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap).
 
 .decl ImpreciseDynamicInstanceFieldPointsTo(?fld:Field, ?immutableDCTX1:DynamicContext,  ?heap:HeapAllocation, ?immutableDCTX2:DynamicContext, ?baseHeap:HeapAllocation)
@@ -68,15 +73,29 @@ ImpreciseDynamicInstanceFieldPointsTo(?fld, ?DCTX2, ?heap, ?immutableDCTX, ?base
 
 .decl InsInstanceFieldPointsToFromDynamic(?value:Value, ?fld:Field, ?baseValue:Value)
 
+.decl MostPreciseDynamicInstanceFieldPointsTo(
+          ?fld:Field, ?dctx:DynamicContext,
+          ?heap:HeapAllocation, ?baseDCtx:DynamicContext,
+          ?baseHeap:HeapAllocation
+      )
+      
+MostPreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap) :-
+   DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
+   !ImpreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap).
+
 InsInstanceFieldPointsToFromDynamic(?value, ?fld, ?baseValue),
 InstanceFieldPointsTo(?hctx, ?value, ?fld, ?baseHctx, ?baseValue) :-
-   DynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
-   !ImpreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
+   MostPreciseDynamicInstanceFieldPointsTo(?fld, ?dctx, ?heap, ?baseDCtx, ?baseHeap),
    FromDynamicHeapObject(?hctx, ?value, ?dctx, ?heap),
    FromDynamicHeapObject(?baseHctx, ?baseValue, ?baseDCtx, ?baseHeap).
 
 .decl InsArrayIndexPointsToFromDynamic(?value:Value, ?baseValue:Value)
 
+.decl MostPreciseDynamicArrayIndexPointsTo(?dctx:DynamicContext, ?heap:HeapAllocation, ?baseDCtx:DynamicContext, ?baseHeap:HeapAllocation)
+      
+MostPreciseDynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap) :-
+   DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap).
+ 
 InsArrayIndexPointsToFromDynamic(?value, ?baseValue),
 ArrayIndexPointsTo(?hctx, ?value, ?baseHctx, ?baseValue) :-
    DynamicArrayIndexPointsTo(?dctx, ?heap, ?baseDCtx, ?baseHeap),

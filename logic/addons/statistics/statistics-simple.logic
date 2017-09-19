@@ -292,7 +292,7 @@ NewMetricMacro(61.4, _t75, "Mock Objects for Formals", MockObjFromFormal(_)).
 //NewMetricMacro(62.5, _t77, "Methods Reachable from open entry points (INS)", Stats:Simple:ReachableFromEntryPoint(_)).
 #endif
 
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 NewMetricMacro(80.0, _t80, "Dynamic Heap Allocations (INS)", DynamicHeapAllocation(_,_)).
 NewMetricMacro(81.0, _t81, "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_)).
 NewMetricMacro(82.0, _t82, "Unmatched Heap Allocations..", UnmatchedDynamicNormalHeapAllocation(_,_,_,_)).

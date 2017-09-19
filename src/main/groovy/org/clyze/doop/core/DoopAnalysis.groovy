@@ -174,8 +174,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 }
             }
 
-            if (options.ANALYZE_MEMORY_DUMP.value && !options.X_DRY_RUN.value) {
-                analyseMemoryDump(options.ANALYZE_MEMORY_DUMP.value.toString())
+            if (options.HEAPDL.value && !options.X_DRY_RUN.value) {
+                runHeapDL(options.HEAPDL.value.toString())
             }
 
             logger.info "Caching facts in $cacheDir"
@@ -422,7 +422,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         return "$path/rt.jar"
     }
 
-    protected void analyseMemoryDump(String filename) {
+    protected void runHeapDL(String filename) {
         try {
             MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.ANALYZE_MEMORY_DUMP_STRINGS.value ? true : false)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")

@@ -121,7 +121,7 @@ CachedRecord[?ctx, ?value] = ?hctx <-
    _NotContextInSCCTransition(?ctx).
 
 // Dynamic analysis
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 #define DYNAMIC_CONTEXT_SENSITIVITY
 ContextFromValuePair[Value:byDynamicHeap[?heap1], Value:byDynamicHeap[?heap2]] = ?ctx,
 DynamicContextToContext(?ctx, ?dynCtx) <-

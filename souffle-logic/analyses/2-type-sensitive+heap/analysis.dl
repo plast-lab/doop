@@ -8,7 +8,7 @@
 .type HContext = [ type:Type ]
 
 
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 DynamicContextToContext([?type1, ?type2], ?dynCtx) :-
    DynamicContextHeap1(?heap1, ?dynCtx),
    Value_byDynamicHeap(?heap1, ?value1),

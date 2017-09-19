@@ -36,7 +36,7 @@ CachedMerge[?hctx, ?value] = ?calleeCtx <-
 
 
 // Dynamic analysis
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 DynamicContextToContext(ContextFromRealContext[Value:byDynamicHeap[?heap1], Value:byDynamicHeap[?heap2]], ?dynCtx) <-
    DynamicContextHeap1(?heap1, ?dynCtx),
    DynamicContextHeap2(?heap2, ?dynCtx).

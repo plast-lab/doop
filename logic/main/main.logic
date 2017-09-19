@@ -15,7 +15,7 @@
 #include "reflection/rules.logic" 
 #endif
 
-#if defined(ANALYZE_MEMORY_DUMP) || defined(IMPORT_DYNAMIC_FACTS)
+#if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
 #include "dynamicanalysis.logic"
 #endif                            
 

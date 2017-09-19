@@ -6,7 +6,7 @@
 .type Context
 .type HContext
 
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 DynamicContextToHContext(?hctx, ?dynCtx) :-
    isDynamicContext(?dynCtx),
    isImmutableHContext(?hctx).

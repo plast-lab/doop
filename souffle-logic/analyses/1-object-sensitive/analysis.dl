@@ -17,7 +17,7 @@ ContextToHContext(?ctx, cat("<<constructed-hctx-", cat(?value, ">>"))) :-
   isContext(?ctx),
   ?ctx = [?value].
 
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 DynamicContextToContext([ ?value ], ?dynCtx) :-
    Value_byDynamicHeap(?heap1, ?value),
    DynamicContextHeap1(?heap1, ?dynCtx).

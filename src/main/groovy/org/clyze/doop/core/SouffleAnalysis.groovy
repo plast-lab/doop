@@ -92,7 +92,8 @@ class SouffleAnalysis extends DoopAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/export.dl")
 
-        if (options.ANALYZE_MEMORY_DUMP.value || options.IMPORT_DYNAMIC_FACTS.value) {
+        if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
+
             cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
         }
 
@@ -304,9 +305,9 @@ class SouffleAnalysis extends DoopAnalysis {
         file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
     }
 
-    protected void analyseMemoryDump(String filename) {
+    protected void runHeapDL(String filename) {
         try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.ANALYZE_MEMORY_DUMP_STRINGS.value ? true : false)
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {
