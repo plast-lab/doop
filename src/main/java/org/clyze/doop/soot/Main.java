@@ -308,10 +308,8 @@ public class Main {
                 }
                 System.out.println("Classes found in apk: " + classesOfDex(apk).size());
             } else if (input0.endsWith(".aar")) {
-                // File apk = new File(input0);
                 System.out.println("Android mode, AAR = " + input0);
                 addClasses(classesInApplicationJar, classes, scene);
-                // System.exit(-1);
             } else {
                 // We do not accept standard JARs, they don't contain
                 // AndroidManifest.xml.
