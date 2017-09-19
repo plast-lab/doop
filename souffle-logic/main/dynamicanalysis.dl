@@ -197,6 +197,7 @@ ImpreciseDynamicCallGraphEdge(?immutableDCTX, ?toMethod, ?invocation, ?immutable
    SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
    !(?ctxFrom = ?immutableDCTX,  ?ctxTo = ?immutableDCTX).
 
+// Recording context for static methods is problematic
 ImpreciseDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
   SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod),
   isStaticMethodInvocation_Insn(?invocation).
@@ -235,14 +236,11 @@ SanitizedDynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMet
 CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) :-
    DynamicContextToContext(?ctxTo, ?dctxTo),
    DynamicContextToContext(?ctxFrom, ?dctxFrom),
-   !(?dctxTo = ?immutableDCTX, ?dctxFrom = ?immutableDCTX),
-   isImmutableDCTX(?immutableDCTX),
+   !isImmutableDCTX(?dctxFrom),
    MostPreciseDynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, _).
 
 CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) :-
-   ?dctxTo = ?immutableDCTX,
-   ?dctxFrom = ?immutableDCTX,
-   isImmutableDCTX(?immutableDCTX),
+   isImmutableDCTX(?dctxFrom),
    ReachableContext(?ctxFrom, ?fromMethod),
-   ImmutableContextFromContext(?ctxFrom, ?ctxTo),
+   DynamicContextToContext(?ctxTo, ?dctxTo),
    MostPreciseDynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, ?fromMethod).
