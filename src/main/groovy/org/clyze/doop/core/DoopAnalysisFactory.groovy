@@ -385,6 +385,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             logger.debug "The main class is set to ${options.MAIN_CLASS.value}"
         } else {
             if (!options.X_START_AFTER_FACTS.value && !options.IGNORE_MAIN_METHOD.value) {
+                if (inputFiles[0] == null) {
+                    throw new RuntimeException("Error: no input files")
+                }
                 JarFile jarFile = new JarFile(inputFiles[0])
                 //Try to read the main class from the manifest contained in the jar
                 def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
