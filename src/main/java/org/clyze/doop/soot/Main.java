@@ -492,10 +492,9 @@ public class Main {
                     Path tmpFile = Files.createTempFile("classes", ".jar");
                     String tmpFileName = tmpFile.toString();
                     System.out.println("Extracting classes.jar to " + tmpFileName);
-                    InputStream jis = jarFile.getInputStream(entry);
-                    byte[] buf = new byte[jis.available()];
-                    jis.read(buf);
-                    (new FileOutputStream(tmpFileName)).write(buf);
+                    try (final InputStream jis = jarFile.getInputStream(entry); ) {
+                        Files.copy(jis, tmpFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
                     // Recursive call to add the classes in classes.jar.
                     return populateClassesInAppJar(tmpFileName, classesInApplicationJar,
                                                    propertyProvider, androidMode);
