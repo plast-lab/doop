@@ -472,6 +472,7 @@ public class Main {
                                           boolean androidMode) throws Exception {
         JarEntry entry;
 
+        System.out.println("Processing application JAR: " + jarFileName);
         try (JarInputStream jin = new JarInputStream(new FileInputStream(jarFileName));
              JarFile jarFile = new JarFile(jarFileName)) {
 
