@@ -28,6 +28,11 @@ group = "org.clyze"
 //For the doop app
 mainClassName = "org.clyze.doop.Main"
 
+//def heapDLVersion = "master-SNAPSHOT"
+def heapDLVersion = "1.0.0"
+if (project.hasProperty('heapDLVersion'))
+    heapDLVersion = project.property('heapDLVersion')
+
 task wrapper(type: Wrapper) {
     gradleVersion = "3.1"
 }
@@ -41,7 +46,8 @@ repositories {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
 
-    maven { url 'https://jitpack.io' }
+    if (heapDLVersion == "master-SNAPSHOT")
+        maven { url 'https://jitpack.io' }
 }
 
 task printClasspath {
@@ -72,7 +78,7 @@ dependencies {
             "com.google.code.gson:gson:2.4",                    // GSON library
             // Soot is a compile time dependency
             "ext:AXMLPrinter:2.0",
-            'com.github.plast-lab:HeapDL:master-SNAPSHOT'
+            "com.github.plast-lab:HeapDL:$heapDLVersion"
 
 
     // Soot is a compile time dependency
@@ -162,9 +168,9 @@ compileJava {
 }
 
 test {
-	testLogging {
-		exceptionFormat = 'full'
-	}
+    testLogging {
+        exceptionFormat = 'full'
+    }
 }
 
 task veryClean << {
@@ -216,7 +222,6 @@ if (project.hasProperty('artifactory_user')) {
                         "$artifactory_contextUrl/libs-release-local"
 
             }
-            maven { url 'https://jitpack.io' }
         }
     }
 
