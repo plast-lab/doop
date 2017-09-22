@@ -1,38 +1,19 @@
 // Class-- //
 
-.decl Server_Class_Allocation(?class:ReferenceType, ?insn:Instruction)
-// ?class is implemented/extended by ?subType
-.decl Server_Class_Subtype(?class:ReferenceType, ?subType:ReferenceType)
-.decl Server_Class_FieldOfType(?class:ReferenceType, ?fld:Field)
-.decl Server_Class_VarOfType(?class:ReferenceType, ?var:Var)
+// ?class is implemented/extended by ?subClass
+.decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
 .decl Server_Class_Keep(?class:ReferenceType)
-// A class has access to field (either it is declared in the class, or in a superclass)
+// ?class has access to ?field (either it is declared in the class, or in a superclass)
 .decl Server_Class_ReachesField(?class:ClassType, ?fld:Field)
-.output Server_Class_Allocation
 .output Server_Class_Subtype
-.output Server_Class_FieldOfType
-.output Server_Class_VarOfType
 .output Server_Class_Keep
 .output Server_Class_ReachesField
 
-Server_Class_Allocation(?class, ?insn) :-
-  AssignHeapAllocation_Heap(?insn, ?heap),
-  HeapAllocation_Type(?heap, ?class),
-  isReferenceType(?class).
-
-Server_Class_Subtype(?class, ?subType) :-
-  SubtypeOf(?subType, ?class),
+Server_Class_Subtype(?class, ?subClass) :-
+  SubtypeOf(?subClass, ?class),
   isReferenceType(?class),
-  !Type_null(?subType),
+  !Type_null(?subClass),
   !Type_null(?class).
-
-Server_Class_FieldOfType(?class, ?fld) :-
-  Field_Type(?fld, ?class),
-  isReferenceType(?class).
-
-Server_Class_VarOfType(?class, ?var) :-
-  Var_Type(?var, ?class),
-  isReferenceType(?class).
 
 // All application types
 Server_Class_Keep(?class) :-
@@ -66,7 +47,6 @@ Server_Class_Keep(?interface) :-
   Server_Class_Keep(?class),
   SupertypeOf(?interface, ?class).
 
-
 Server_Class_ReachesField(?class, ?fld) :-
   Field_DeclaringType(?fld, ?class),
   Server_Class_Keep(?class).
@@ -86,13 +66,11 @@ Server_Class_ReachesField(?class, ?fld) :-
 // Field-- //
 
 .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)
-.decl Server_IField_ReadBy(?baseValue:Value, ?fld:Field, ?insn:Instruction)
-.decl Server_IField_WrittenBy(?baseValue:Value, ?fld:Field, ?insn:Instruction)
+.decl Server_IField_AccessedBy(?baseValue:Value, ?fld:Field, ?insn:Instruction, ?kind:symbol)
 .decl Server_IField_Values(?baseValue:Value, ?fld:Field, ?value:Value)
 .decl Server_SField_Values(?fld:Field, ?value:Value)
 .output Server_Field_ShadowedBy
-.output Server_IField_ReadBy
-.output Server_IField_WrittenBy
+.output Server_IField_AccessedBy
 .output Server_IField_Values
 .output Server_SField_Values
 
@@ -122,12 +100,12 @@ _SFPT_Count(?fld, ?n) :-
   _SFPT(?fld, _),
   ?n = count:{_SFPT(?fld, _)}.
 
-Server_IField_ReadBy(?baseValue, ?fld, ?insn) :-
+Server_IField_AccessedBy(?baseValue, ?fld, ?insn, "R") :-
   FieldInstruction_Signature(?insn, ?fld),
   LoadInstanceField_Base(?insn, ?base),
   _VPT(?base, ?baseValue).
 
-Server_IField_WrittenBy(?baseValue, ?fld, ?insn) :-
+Server_IField_AccessedBy(?baseValue, ?fld, ?insn, "W") :-
   FieldInstruction_Signature(?insn, ?fld),
   StoreInstanceField_Base(?insn, ?base),
   _VPT(?base, ?baseValue).
