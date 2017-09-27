@@ -11,6 +11,7 @@
 
 Server_Class_Subtype(?class, ?subClass) :-
   SubtypeOf(?subClass, ?class),
+  ?subClass != ?class,
   isReferenceType(?class),
   !Type_null(?subClass),
   !Type_null(?class).
@@ -78,6 +79,7 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_DeclaringType(?fld, ?class),
   Field_SimpleName(?fld, ?name),
   SubtypeOf(?subClass, ?class),
+  ?subClass != ?class,
   Field_DeclaringType(?shadowFld, ?subClass),
   Field_SimpleName(?shadowFld, ?name).
 
@@ -171,11 +173,7 @@ Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
 
 // ?method is implemented/overriden by ?subMethod
 .decl Server_Method_Subtype(?method:Method, ?subMethod:Method)
-.decl Server_Method_DirectAllocation(?method:Method, ?insn:Instruction)
-.decl Server_Method_DirectMethodCall(?method:Method, ?toMethod:Method)
 .output Server_Method_Subtype
-.output Server_Method_DirectAllocation
-.output Server_Method_DirectMethodCall
 
 Server_Method_Subtype(?method, ?subMethod) :-
   Method_DeclaringType(?method, ?type),
@@ -186,14 +184,6 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_DeclaringType(?subMethod, ?subType),
   Method_SimpleName(?subMethod, ?name),
   Method_Descriptor(?subMethod, ?desc).
-
-Server_Method_DirectAllocation(?method, ?insn) :-
-  isAssignHeapAllocation_Insn(?insn),
-  Instruction_Method(?insn, ?method).
-
-Server_Method_DirectMethodCall(?method, ?toMethod) :-
-  CallGraphEdge(_, ?invo, _, ?toMethod),
-  Instruction_Method(?invo, ?method).
 
 
 // All the methods reachable from a method (transitive call-graph)
@@ -229,11 +219,12 @@ Server_Method_DirectMethodCall(?method, ?toMethod) :-
 
 // Invocation-- //
 
-.decl Server_Invocation_Values(?invo:MethodInvocation, ?toMethod:Method)
+.decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method)
 .output Server_Invocation_Values
 
-Server_Invocation_Values(?invo, ?toMethod) :-
-  CallGraphEdge(_, ?invo, _, ?toMethod).
+Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
+  CallGraphEdge(_, ?invo, _, ?toMethod),
+  Instruction_Method(?invo, ?fromMethod).
 
 /*Server_Invocation_Values(?invo, ?toMethod) :-
   InvokedynamicCallGraphEdge(_, ?invo, _, ?toMethod).
