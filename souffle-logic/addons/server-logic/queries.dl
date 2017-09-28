@@ -67,11 +67,9 @@ Server_Class_ReachesField(?class, ?fld) :-
 // Field-- //
 
 .decl Server_Field_ShadowedBy(?fld:Field, ?shadowFld:Field)
-.decl Server_IField_AccessedBy(?baseValue:Value, ?fld:Field, ?insn:Instruction, ?kind:symbol)
 .decl Server_IField_Values(?baseValue:Value, ?fld:Field, ?value:Value)
 .decl Server_SField_Values(?fld:Field, ?value:Value)
 .output Server_Field_ShadowedBy
-.output Server_IField_AccessedBy
 .output Server_IField_Values
 .output Server_SField_Values
 
@@ -101,16 +99,6 @@ _SFPT(?fld, ?value) :-
 _SFPT_Count(?fld, ?n) :-
   _SFPT(?fld, _),
   ?n = count:{_SFPT(?fld, _)}.
-
-Server_IField_AccessedBy(?baseValue, ?fld, ?insn, "R") :-
-  FieldInstruction_Signature(?insn, ?fld),
-  LoadInstanceField_Base(?insn, ?base),
-  _VPT(?base, ?baseValue).
-
-Server_IField_AccessedBy(?baseValue, ?fld, ?insn, "W") :-
-  FieldInstruction_Signature(?insn, ?fld),
-  StoreInstanceField_Base(?insn, ?base),
-  _VPT(?base, ?baseValue).
 
 Server_IField_Values(?baseValue, ?fld, ?value) :-
   _IFPT(?baseValue, ?fld, ?value),
@@ -179,6 +167,8 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_DeclaringType(?method, ?type),
   Method_SimpleName(?method, ?name),
   Method_Descriptor(?method, ?desc),
+  ?desc != "<clinit>",
+  ?desc != "<init>",
   SubtypeOf(?subType, ?type),
   ?subType != ?type,
   Method_DeclaringType(?subMethod, ?subType),
