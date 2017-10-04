@@ -584,36 +584,25 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         Map<String, String> env = [:]
         env.putAll(System.getenv())
 
-        String lbHome = vars.options.LOGICBLOX_HOME.value
-        env.LOGICBLOX_HOME = lbHome
-        //We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
-        env.LB_PAGER_FORCE_START = "true"
-        env.LB_MEM_NOWARN = "true"
-        env.DOOP_HOME = Doop.doopHome
-
-        //We add the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
-        //PATH
-        String path = env.PATH
-        if (path) {
-            path = "${lbHome}/bin:${path}"
-        }
-        else {
-            path = "${lbHome}/bin"
-        }
-        env.PATH = path
-
-        //LD_LIBRARY_PATH
-        String ldLibraryPath = vars.options.LD_LIBRARY_PATH.value
-        if (ldLibraryPath) {
-            ldLibraryPath = "${lbHome}/lib/cpp:${ldLibraryPath}"
-        }
-        else {
-            ldLibraryPath = "${lbHome}/lib/cpp"
-        }
-        env.LD_LIBRARY_PATH = ldLibraryPath
-
-        //LC_ALL
         env.LC_ALL = "en_US.UTF-8"
+
+        if (vars.options.LB3.value) {
+            String lbHome = vars.options.LOGICBLOX_HOME.value
+            env.LOGICBLOX_HOME = lbHome
+            //We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
+            env.LB_PAGER_FORCE_START = "true"
+            env.LB_MEM_NOWARN = "true"
+            env.DOOP_HOME = Doop.doopHome
+
+            //We add the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
+            //PATH
+            String path = env.PATH
+            env.PATH = "${lbHome}/bin:${path ?: ""}"
+
+            //LD_LIBRARY_PATH
+            String ldLibraryPath = vars.options.LD_LIBRARY_PATH.value
+            env.LD_LIBRARY_PATH = "${lbHome}/lib/cpp:${ldLibraryPath ?: ""}"
+        }
 
         return env
     }
