@@ -595,13 +595,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             env.DOOP_HOME = Doop.doopHome
 
             //We add the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
-            //PATH
             String path = env.PATH
-            env.PATH = "${lbHome}/bin:${path ?: ""}"
+            env.PATH = "${lbHome}/bin:${path ?: ""}" as String
 
-            //LD_LIBRARY_PATH
             String ldLibraryPath = vars.options.LD_LIBRARY_PATH.value
-            env.LD_LIBRARY_PATH = "${lbHome}/lib/cpp:${ldLibraryPath ?: ""}"
+            env.LD_LIBRARY_PATH = "${lbHome}/lib/cpp:${ldLibraryPath ?: ""}" as String
         }
 
         return env
