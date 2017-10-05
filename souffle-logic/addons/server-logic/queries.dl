@@ -219,7 +219,8 @@ Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
 Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 1) :-
   ResolveInvocation(_, ?invo, ?toMethod),
   !CallGraphEdge(_, ?invo, _, _),
-  Instruction_Method(?invo, ?fromMethod).
+  Instruction_Method(?invo, ?fromMethod),
+  Reachable(?fromMethod).
 
 /*Server_Invocation_Values(?invo, ?toMethod) :-
   InvokedynamicCallGraphEdge(_, ?invo, _, ?toMethod).
