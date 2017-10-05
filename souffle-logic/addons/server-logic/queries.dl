@@ -109,7 +109,7 @@ Server_IField_Values(?baseValue, ?fld, ?value) :-
 
 Server_IField_Values(?baseValue, ?fld, "<<XL-pt-set>>") :-
   _IFPT_Count(?baseValue, ?fld, ?count),
-  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  ?count > X_SERVER_LOGIC_THRESHOLD,
   isValue(?baseValue).
 
 Server_SField_Values(?fld, ?value) :-
