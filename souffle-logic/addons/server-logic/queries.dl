@@ -209,11 +209,16 @@ Server_Method_Subtype(?method, ?subMethod) :-
 
 // Invocation-- //
 
-.decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method)
+.decl Server_Invocation_Values(?fromMethod:Method, ?invo:MethodInvocation, ?toMethod:Method, ?isCHA:number)
 .output Server_Invocation_Values
 
-Server_Invocation_Values(?fromMethod, ?invo, ?toMethod) :-
+Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 0) :-
   CallGraphEdge(_, ?invo, _, ?toMethod),
+  Instruction_Method(?invo, ?fromMethod).
+
+Server_Invocation_Values(?fromMethod, ?invo, ?toMethod, 1) :-
+  ResolveInvocation(_, ?invo, ?toMethod),
+  !CallGraphEdge(_, ?invo, _, _),
   Instruction_Method(?invo, ?fromMethod).
 
 /*Server_Invocation_Values(?invo, ?toMethod) :-
