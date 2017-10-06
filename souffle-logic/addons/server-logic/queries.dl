@@ -11,6 +11,8 @@
 
 Server_Class_Subtype(?class, ?subClass) :-
   SubtypeOf(?subClass, ?class),
+  Server_Class_Keep(?class),
+  Server_Class_Keep(?subClass),
   ?subClass != ?class,
   isReferenceType(?class),
   !Type_null(?subClass),
