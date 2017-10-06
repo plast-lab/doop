@@ -81,7 +81,9 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   SubtypeOf(?subClass, ?class),
   ?subClass != ?class,
   Field_DeclaringType(?shadowFld, ?subClass),
-  Field_SimpleName(?shadowFld, ?name).
+  Field_SimpleName(?shadowFld, ?name),
+  Server_Class_Keep(?class),
+  Server_Class_Keep(?subClass).
 
 .decl _IFPT(?baseValue:Value, ?fld:Field, ?value:Value)
 .decl _IFPT_Count(?baseValue:Value, ?fld:Field, ?n:number)
@@ -175,7 +177,9 @@ Server_Method_Subtype(?method, ?subMethod) :-
   ?subType != ?type,
   Method_DeclaringType(?subMethod, ?subType),
   Method_SimpleName(?subMethod, ?name),
-  Method_Descriptor(?subMethod, ?desc).
+  Method_Descriptor(?subMethod, ?desc),
+  Server_Class_Keep(?type),
+  Server_Class_Keep(?subType).
 
 
 // All the methods reachable from a method (transitive call-graph)
