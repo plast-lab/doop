@@ -1,5 +1,13 @@
 // Class-- //
 
+.decl _Valid_Type(?type:ReferenceType)
+_Valid_Type(?type) :-
+  isReferenceType(?type),
+  !Type_null(?type),
+  !isArrayType(?type),
+  Server_Class_Keep(?type).
+
+
 // ?class is implemented/extended by ?subClass
 .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
 .decl Server_Class_Keep(?class:ReferenceType)
@@ -11,12 +19,9 @@
 
 Server_Class_Subtype(?class, ?subClass) :-
   SubtypeOf(?subClass, ?class),
-  Server_Class_Keep(?class),
-  Server_Class_Keep(?subClass),
   ?subClass != ?class,
-  isReferenceType(?class),
-  !Type_null(?subClass),
-  !Type_null(?class).
+  _Valid_Type(?class),
+  _Valid_Type(?subClass).
 
 // All application types
 Server_Class_Keep(?class) :-
@@ -59,9 +64,9 @@ Server_Class_ReachesField(?class, ?fld) :-
   Field_Modifier(?mod, ?fld),
   !Modifier_private(?mod),
   SupertypeOf(?supertype, ?class),
-  !Type_null(?class),
-  Server_Class_Keep(?supertype),
-  Server_Class_Keep(?class).
+  ?supertype != ?class,
+  _Valid_Type(?class),
+  _Valid_Type(?supertype).
 
 // --Class //
 
@@ -80,10 +85,10 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_SimpleName(?fld, ?name),
   SubtypeOf(?subClass, ?class),
   ?subClass != ?class,
+  _Valid_Type(?class),
+  _Valid_Type(?subClass),
   Field_DeclaringType(?shadowFld, ?subClass),
-  Field_SimpleName(?shadowFld, ?name),
-  Server_Class_Keep(?class),
-  Server_Class_Keep(?subClass).
+  Field_SimpleName(?shadowFld, ?name).
 
 .decl _IFPT(?baseValue:Value, ?fld:Field, ?value:Value)
 .decl _IFPT_Count(?baseValue:Value, ?fld:Field, ?n:number)
@@ -175,11 +180,11 @@ Server_Method_Subtype(?method, ?subMethod) :-
   ?name != "<init>",
   SubtypeOf(?subType, ?type),
   ?subType != ?type,
+  _Valid_Type(?type),
+  _Valid_Type(?subType),
   Method_DeclaringType(?subMethod, ?subType),
   Method_SimpleName(?subMethod, ?name),
-  Method_Descriptor(?subMethod, ?desc),
-  Server_Class_Keep(?type),
-  Server_Class_Keep(?subType).
+  Method_Descriptor(?subMethod, ?desc).
 
 
 // All the methods reachable from a method (transitive call-graph)
