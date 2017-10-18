@@ -2,6 +2,7 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
+import heapdl.core.MemoryAnalyser
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
@@ -91,6 +92,11 @@ class SouffleAnalysis extends DoopAnalysis {
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/mock-heap.dl", commonMacros)
         cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/export.dl")
 
+        if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
+
+            cpp.includeAtEnd("$analysis", "${Doop.souffleFactsPath}/import-dynamic-facts.dl", commonMacros)
+        }
+
         if (options.TAMIFLEX.value) {
             def tamiflexPath = "${Doop.souffleAddonsPath}/tamiflex"
             cpp.includeAtEnd("$analysis", "${tamiflexPath}/fact-declarations.dl")
@@ -173,7 +179,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (options.OPEN_PROGRAMS.value) {
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
-        } else {
+        } else if (name != "sound-may-point-to") {
             // This needs cleaning up. We are including one version by default, but distinguishing
             // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
             cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
@@ -297,5 +303,15 @@ class SouffleAnalysis extends DoopAnalysis {
         def file = new File(this.outDir, "database/${query}.csv")
         if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
         file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
+    }
+
+    protected void runHeapDL(String filename) {
+        try {
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
+            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
+            logger.info("Generated " + n + " addditional facts from memory dump")
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

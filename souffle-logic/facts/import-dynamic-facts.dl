@@ -1,0 +1,238 @@
+/*
+This stage must be executed before any basic analysis but *AFTER* Heap Allocations have been resolved.
+*/
+
+//-----------------------------------------------------------------------------
+// [Dynamic analysis related]
+//-----------------------------------------------------------------------------
+
+
+// DynamicNormalHeapAllocation
+.input _DynamicNormalHeapAllocation(IO="file", filename="DynamicNormalHeapAllocation.facts", delimiter="\t")
+
+.decl _DynamicNormalHeapAllocation(?param1:number, ?param2:symbol, ?param3:symbol, ?param4:symbol)
+
+.decl _HeapAllocationInformation(?lineNumber:number, ?method:Method, ?type:Type, ?heap:HeapAllocation)
+
+      
+// 0) try to map by representation
+.decl _MatchedHeapAllocation0(?representation:symbol, ?heap:HeapAllocation)
+
+_MatchedHeapAllocation0(?representation, ?representation) :-
+  _DynamicNormalHeapAllocation(_, _, _, ?representation),
+  OriginalHeapAllocation_Type(?representation, _).
+
+
+// optimized relation to map heapallocation by lineNumber, method and type
+_HeapAllocationInformation(?lineNumber, ?method, ?type, ?heap) :-
+   AssignHeapAllocation_Heap(?insn, ?heap),
+   Instruction_Line(?insn, ?lineNumber),
+   OriginalHeapAllocation_Type(?heap, ?type),
+   Instruction_Method(?insn, ?method).
+
+.decl _MatchedHeapAllocation1(?representation:symbol, ?heap:HeapAllocation)
+
+// 1) let's try to map by method name, type and line number
+_MatchedHeapAllocation1(?representation, ?heap) :-
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation),
+   !_MatchedHeapAllocation0(?representation, _),
+   _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap).
+
+.decl _UnmatchedDynamicNormalHeapAllocation1(?inMethod:Method, ?type:Type, ?representation:symbol)
+
+_UnmatchedDynamicNormalHeapAllocation1(?inMethod, ?type, ?representation) :-
+   _DynamicNormalHeapAllocation(_, ?inMethod, ?type, ?representation),
+   !_MatchedHeapAllocation0(?representation, _),
+   !_MatchedHeapAllocation1(?representation, _).
+
+
+.decl _MatchedHeapAllocation2(?representation:symbol, ?heap:HeapAllocation)
+
+// 2) let's try to map by method name and type
+_MatchedHeapAllocation2(?representation, ?heap) :-
+   _UnmatchedDynamicNormalHeapAllocation1(?inMethod, ?type, ?representation),
+   _HeapAllocationInformation(_, ?inMethod, ?type, ?heap).
+
+.decl DynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)
+
+// 3) create dynamic heap allocations
+DynamicHeapAllocation(?representation, ?heap) :-
+  _MatchedHeapAllocation0(?representation, ?heap).
+
+DynamicHeapAllocation(?representation, ?heap) :-
+   _MatchedHeapAllocation1(?representation, ?heap).
+
+DynamicHeapAllocation(?representation, ?heap) :-
+   _MatchedHeapAllocation2(?representation, ?heap).
+
+
+// For unmatched heap allocations, we record the shallowest (most specific) level of the stack trace
+// This is used to create fake allocations in a subsequent step.
+
+.decl UnmatchedDynamicNormalHeapAllocation(?type:Type, ?representation:symbol, ?linenumber:number, ?inMethod:Method)
+
+// 4) store dynamic heap allocations that still have not been mapped 
+UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?linenumber, ?inMethod) :-
+  _DynamicNormalHeapAllocation(?linenumber, ?inMethod, ?type, ?representation),
+  !_MatchedHeapAllocation0(?representation, _),
+  !_MatchedHeapAllocation1(?representation, _),
+  !_MatchedHeapAllocation2(?representation, _).
+
+   
+.decl UnmatchedStaticNormalHeapAllocation(?method:Method, ?lineNumber:number, ?type:Type)
+
+// We also keep track of statically inferred heap allocations that do not match
+// with dynamic heap allocations for debugging.
+UnmatchedStaticNormalHeapAllocation(?method, ?lineNumber, ?type) :-
+   _HeapAllocationInformation(?lineNumber, ?method, ?type, _),
+   !_DynamicNormalHeapAllocation(?lineNumber, ?method, ?type, _).
+
+
+// DynamicReachableMethod
+
+.input _DynamicReachableMethod(IO="file", filename="DynamicReachableMethod.facts", delimiter="\t")
+
+.decl _DynamicReachableMethod(?param1:symbol)
+
+// Dynamic call graph edges are found by taking stack trace elements in the heap dump.
+
+.decl DynamicReachableMethod(?method:Method)
+
+DynamicReachableMethod(?method) :-
+   _DynamicReachableMethod(?method),
+   isMethod(?method).
+
+.decl UnmatchedDynamicReachableMethod(?param:symbol)
+
+UnmatchedDynamicReachableMethod(?method) :-
+   _DynamicReachableMethod(?method),
+   !isMethod(?method).
+
+.decl ReconstructedUnmatchedDynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)
+
+
+MockHeapConsMacro(cat(?inMethod, ?type), ?type),
+ReconstructedUnmatchedDynamicHeapAllocation(?representation, cat(?inMethod, ?type)) :-
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod).
+
+
+DynamicHeapAllocation(?representation, ?heap) :-
+   ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).
+
+// DynamicContext
+.input _DynamicContext(IO="file", filename="DynamicContext.facts", delimiter="\t")
+
+.decl _DynamicContext(?representation:symbol, ?heap1rep:symbol, ?heap2rep:symbol, ?site1inMeth:symbol, ?site1line:number, ?site2inMeth:symbol, ?site2line:number)
+
+.type DynamicContext
+
+.decl isDynamicContext(?ctx:DynamicContext)
+
+isDynamicContext(?representation) :-
+  _DynamicContext(?representation, _, _, _, _, _, _).
+
+.decl DynamicContextHeap1(?heap:HeapAllocation, ?ctx:DynamicContext)
+
+DynamicContextHeap1(?heap, ?ctx) :-
+   isDynamicContext(?ctx),
+   _DynamicContext(?ctx, ?obj1rep, _, _, _, _, _),
+   DynamicHeapAllocation(?obj1rep, ?heap).
+
+.decl DynamicContextHeap2(?heap:HeapAllocation, ?ctx:DynamicContext)
+
+DynamicContextHeap2(?heap, ?ctx) :-
+   isDynamicContext(?ctx),
+   _DynamicContext(?ctx, _, ?obj2rep, _, _, _, _),
+   DynamicHeapAllocation(?obj2rep, ?heap).
+
+isDynamicContext("<Immutable dctx>").
+
+               
+// TODO call site sensitivity
+
+// DynamicNormalHeapObject
+.input _DynamicNormalHeapObject(IO="file", filename="DynamicNormalHeapObject.facts", delimiter="\t")
+
+.decl _DynamicNormalHeapObject(?param1:symbol, ?param2:symbol, ?param3:symbol)
+
+.decl DynamicHeapObject(?representation:symbol, ?heap:HeapAllocation, ?dynamicContext:DynamicContext)
+
+DynamicHeapObject(?representation, ?heap, ?dynamicContext) :-
+   isDynamicContext(?dynamicContext),
+   _DynamicNormalHeapObject(?heapRepresentation, ?dynamicContext, ?representation),
+   DynamicHeapAllocation(?heapRepresentation, ?heap).
+
+DynamicHeapObject(?heapRepresentation, ?heap, "<Immutable dctx>") :-
+  DynamicHeapAllocation(?heapRepresentation, ?heap),
+  !_DynamicNormalHeapObject(?heapRepresentation, _, _).
+
+
+// DynamicStaticFieldPointsTo
+.input _DynamicStaticFieldPointsTo(IO="file", filename="DynamicStaticFieldPointsTo.facts", delimiter="\t")
+
+.decl _DynamicStaticFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol)
+
+// DynamicInstanceFieldPointsTo
+.input _DynamicInstanceFieldPointsTo(IO="file", filename="DynamicInstanceFieldPointsTo.facts", delimiter="\t")
+
+.decl _DynamicInstanceFieldPointsTo(?param1:symbol, ?param2:symbol, ?param3:symbol, ?param4:symbol)
+
+
+// DynamicArrayIndexPointsTo
+.input _DynamicArrayIndexPointsTo(IO="file", filename="DynamicArrayIndexPointsTo.facts", delimiter="\t")
+
+.decl _DynamicArrayIndexPointsTo(?param1:symbol, ?param2:symbol)
+
+//DynamicHeapObject(?heap, ?heap, ?ctx) :-
+//   HeapAllocation:byId[?heapStr] = ?heap, DynamicContext:Id(?ctx:"<Immutable dctx>").
+
+.decl DynamicStaticFieldPointsTo(?fld:Field, ?dynamicContext:DynamicContext, ?heap:HeapAllocation)
+
+DynamicStaticFieldPointsTo(?fld, ?dynamicContext, ?heap) :-
+   _DynamicStaticFieldPointsTo(?fldSimpleName, ?fldDeclaringClass, ?objString),
+   DynamicHeapObject(?objString, ?heap, ?dynamicContext),
+   Field_SimpleName(?fld, ?fldSimpleName),
+   Field_DeclaringType(?fld, ?fldDeclaringClass).
+
+.decl DynamicInstanceFieldPointsTo(?fld:Field, ?ctx:DynamicContext, ?heap:HeapAllocation, ?baseCtx:DynamicContext, ?baseHeap:HeapAllocation)
+
+DynamicInstanceFieldPointsTo(?fld, ?ctx, ?heap, ?baseCtx, ?baseHeap) :-
+   _DynamicInstanceFieldPointsTo(?baseObjString, ?fldSimpleName, ?fldDeclaringClass, ?objString),
+   DynamicHeapObject(?objString, ?heap, ?ctx),
+   DynamicHeapObject(?baseObjString, ?baseHeap, ?baseCtx),
+   Field_SimpleName(?fld, ?fldSimpleName),
+   Field_DeclaringType(?fld, ?fldDeclaringClass).
+
+.decl DynamicArrayIndexPointsTo(?ctx:DynamicContext, ?heap:HeapAllocation, ?baseCtx:DynamicContext, ?baseHeap:HeapAllocation)
+
+DynamicArrayIndexPointsTo(?ctx, ?heap, ?baseCtx, ?baseHeap) :-
+   _DynamicArrayIndexPointsTo(?baseObjString, ?objString),
+   DynamicHeapObject(?objString, ?heap, ?ctx),
+   DynamicHeapObject(?baseObjString, ?baseHeap, ?baseCtx).
+
+
+// DynamicCallGraphEdge
+.input _DynamicCallGraphEdge(IO="file", filename="DynamicCallGraphEdge.facts", delimiter="\t")
+
+.decl _DynamicCallGraphEdge(?param1:symbol, ?param2:number, ?param3:symbol, ?param4:symbol, ?param5:symbol)
+
+// Dynamic call graph edges are found by combining successive
+// stack trace elements in the heap dump.
+
+.decl _InvocationMethodAndLine(?lineNumber:number, ?name:symbol, ?invocation:Instruction, ?fromMethod:Method)
+
+_InvocationMethodAndLine(?lineNumber, ?name, ?invocation, ?fromMethod) :-
+   MethodInvocation_Line(?invocation, ?lineNumber),
+   MethodInvocation_SimpleName(?invocation, ?name),
+   Instruction_Method(?invocation, ?fromMethod).
+
+.decl DynamicCallGraphEdge(?ctxTo:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?ctxFrom:DynamicContext, ?fromMethod:Method)
+
+DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
+   _DynamicCallGraphEdge(?fromMethod, ?lineNumber, ?toMethod, ?ctxFrom, ?ctxTo),
+   Method_SimpleName(?toMethod, ?name),
+   _InvocationMethodAndLine(?lineNumber, ?name, ?invocation, ?fromMethod),
+   isDynamicContext(?ctxFrom),
+   isDynamicContext(?ctxTo),
+   isMethod(?toMethod).
+

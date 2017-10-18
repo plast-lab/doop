@@ -14,12 +14,14 @@
  * Evaluate Object.getClass
  */
 VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
-  ImmutableHContextFromContext(?ctx, ?hctx),
   java_lang_Object_getClass(?to, ?from),
   VarPointsTo(_, ?value, ?ctx, ?from),
+  ImmutableHContextFromContext(?ctx, ?hctx),
   Value_Type(?value, ?type),
   ReifiedClass(?type, ?classValue).
-
+  #ifdef INFORMATION_FLOW
+  .plan 2:(4,2,1,3,5)
+  #endif
 /*************************************************************
  * java.lang.Class.forName
  *
@@ -56,13 +58,19 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
   Value_isHeap(?constantHeap),
   ClassNameMatchingStringConstant_Type(?type, ?constantHeap).
 
+.decl HighConfidenceAssign(?value:Value, ?inmethod:Method)
+
+HighConfidenceAssign(?value, ?inmethod) :-
+  AssignHeapAllocation(?value, _, ?inmethod).
+
+
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
 
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction_Method(?invocation, ?inmethod),
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  HighConfidenceAssign(?constantHeap, ?inmethod),
   (NumberOfClassesMatchingConstant(?constantHeap, ?num),
    StringPrecisionThreshold(?t),
    ?num < ?t;
@@ -92,6 +100,10 @@ VarPointsTo(?hctx, ?className, ?callerCtx, ?to) :-
   ReifiedClass(?className, ?classValue),
   isStringConstant(?className),
   Value_isHeap(?className).
+  #ifdef INFORMATION_FLOW
+  .plan 2:(6,5,4,3,2,1)
+  #endif
+  .plan 1:(3,2,1,4,5,6)
 
 // REVIEW: Note how unsound this rule is: it returns a string only
 // if the string exists in the input. 
@@ -127,20 +139,24 @@ VarPointsTo(?hctx, ?componentClassValue, ?callerCtx, ?to) :-
  * TODO should (can?) we handle null (for NullPointerException)?
  *************************************************************/
 
-VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
+.decl FromGetSuperClassType(?callerCtx:Context, ?hctx:HContext, ?type:Type, ?to:Var)
+
+FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to) :-
   ImmutableHContextFromContext(?callerCtx, ?hctx),
   java_lang_Class_getSuperclass(?to, ?from),
   VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  ReifiedClass(?type, ?classValue),
+  ReifiedClass(?type, ?classValue).
+  .plan 1:(3,2,4,1)
+
+
+VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
+  FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to),
   isClassType(?type),
   DirectSuperclass(?type, ?superType),
   ReifiedClass(?superType, ?superClassValue).
 
 VarPointsTo(?hctx, ?superClassValue, ?callerCtx, ?to) :-
-  ImmutableHContextFromContext(?callerCtx, ?hctx),
-  java_lang_Class_getSuperclass(?to, ?from),
-  VarPointsTo(_, ?classValue, ?callerCtx, ?from),
-  ReifiedClass(?type, ?classValue),
+  FromGetSuperClassType(?callerCtx, ?hctx, ?type, ?to),
   isArrayType(?type),
   isType(?superType),
   ?superType = "java.lang.Object",
@@ -387,10 +403,12 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 // If it is a local and precise string, consider it a high-confidence inference
 .decl ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
 
+.output HighConfidenceAssign
+
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) :-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
   Var_DeclaringMethod(?to, ?inmethod),
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  HighConfidenceAssign(?value, ?inmethod),
   (NumberOfFieldsMatchingConstant(?constantHeap, ?num),
    StringPrecisionThreshold(?t),
    ?num < ?t;

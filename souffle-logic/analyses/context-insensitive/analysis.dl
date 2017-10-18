@@ -5,3 +5,13 @@
 // object, which are used everywhere.
 .type Context
 .type HContext
+
+#ifdef HEAPDL
+DynamicContextToHContext(?hctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   isImmutableHContext(?hctx).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   isImmutableContext(?ctx).
+#endif

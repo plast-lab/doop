@@ -6,6 +6,7 @@
 isType(?type),
 isHeapAllocation(?id),
 isNormalHeap(?id),
+OriginalHeapAllocation_Type(?id, ?type),
 HeapAllocation_Type(?id, ?type) :-
   _NormalHeap(?id, ?type).
 
@@ -19,6 +20,7 @@ isClassType("java.lang.String").
 
 isHeapAllocation(?id),
 isStringConstant(?id),
+OriginalHeapAllocation_Type(?id, "java.lang.String"),
 HeapAllocation_Type(?id, "java.lang.String") :-
   _StringConstant(?id).
 
@@ -44,6 +46,7 @@ isType(?instanceType),
 isHeapAllocation(?id),
 isClassHeap(?id),
 ClassHeap_InstanceType(?id, ?instanceType),
+OriginalHeapAllocation_Type(?id, "java.lang.Class"),
 HeapAllocation_Type(?id, "java.lang.Class") :-
   _ClassHeap(?id, ?instanceType).
 
@@ -58,6 +61,7 @@ isClassType("java.lang.invoke.MethodHandle").
 
 isHeapAllocation(?id),
 isMethodHandleConstant(?id),
+OriginalHeapAllocation_Type(?id, "java.lang.invoke.MethodHandle"),
 HeapAllocation_Type(?id, "java.lang.invoke.MethodHandle") :-
   _MethodHandleConstant(?id).
 
@@ -72,17 +76,18 @@ HeapAllocation_EmptyArray(?id) :-
 
 // AssignHeapAllocation
 
-.decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol)
+.decl _AssignHeapAllocation(?instruction:symbol, ?index:number, ?heap:symbol, ?to:symbol, ?inmethod:symbol, ?linenumber:number)
 .input _AssignHeapAllocation(IO="file", filename="AssignHeapAllocation.facts", delimiter="\t")
 
 isInstruction(?instruction),
 isAssignInstruction(?instruction),
 isAssignHeapAllocation_Insn(?instruction),
 Instruction_Index(?instruction, ?index),
+Instruction_Line(?instruction, ?linenumber),
 Instruction_Method(?instruction, ?method),
 AssignInstruction_To(?instruction, ?to),
 AssignHeapAllocation_Heap(?instruction, ?heap) :-
-  _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method).
+  _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?method, ?linenumber).
 
 
 // AssignLocal
@@ -302,6 +307,11 @@ ExitMonitor_Var(?instruction, ?var) :-
 isMethodInvocation(?instruction),
 MethodInvocation_Line(?instruction, ?line) :-
   _MethodInvocation_Line(?instruction, ?line).
+
+MethodInvocation_Base(?invocation, ?base) :-
+  VirtualMethodInvocation_Base(?invocation, ?base) ;
+  SpecialMethodInvocation_Base(?invocation, ?base).
+
 
 
 // Static method invocation

@@ -16,13 +16,15 @@ VarUse(?from, ?insn) :-
 TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type) :-
   VarIsTaintedFromVar(?type, ?toCtx, ?to, ?fromCtx, ?from),
   TaintedVarPointsTo(?value, ?fromCtx, ?from).
+  .plan 1:(2,1)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
+  TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
   SourceFromTaintedValue(?value, ?source),
   Value_DeclaringType(?value, ?declaringType),
-  TaintedVarTaintedFromVar(?toCtx, ?to, ?value, ?type),
   isImmutableHContext(?hctx).
+  .plan 2:(3,1,2,4)
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
 VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to) :-
@@ -30,6 +32,31 @@ VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?toCtx, ?to
   Value_DeclaringType(?value, ?declaringType),
   VarIsTaintedFromValue(?type, ?value, ?toCtx, ?to),
   isImmutableHContext(?hctx).
+
+VarIsTaintedFromVar(?type, ?ctx, ?param, ?ctx, ?base) :-
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?method),
+   BaseToParamTaintTransferMethod(?method),
+   MethodInvocation_Base(?invocation, ?base),
+   ActualParam(_, ?invocation, ?param),
+   Var_Type(?param, ?type).
+
+VarIsTaintedFromVarIndex(?base, ?ctx, ?param) :-
+   MethodInvocationInContext(?ctx, ?invocation, ?method),
+   ParamIndexToBaseTaintTransferMethod(?index, ?method),
+   MethodInvocation_Base(?invocation, ?base),
+   ActualParam(?index, ?invocation, ?param).
+
+// I expect the first rel to be very small, smaller than
+// the deltas of VPT or AIPT
+VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value) :-
+   VarIsTaintedFromVarIndex(?base, ?ctx, ?param),
+   VarPointsTo(?hctx, ?value, ?ctx, ?param).
+
+VarIsTaintedFromValue(?type, ?valueIndex, ?ctx, ?base) :-
+  VarIsTaintedFromValueIndex(?ctx, ?base, ?hctx, ?value),
+  ArrayIndexPointsTo(_, ?valueIndex, ?hctx, ?value),
+  Var_Type(?base, ?type).
+
 
 CallTaintingMethod(?label, ?ctx, ?invocation) :-
   TaintSourceMethod(?label, ?tomethod),
@@ -40,10 +67,20 @@ CallTaintingMethod(?label, ?ctx, ?invocation) :-
 /**
  * Information flow through complex relations
  */
+.decl AppendableType(?type:Type)
+
+AppendableType("java.lang.Appendable").
+
+AppendableType(?type) :-
+   SubtypeOf(?type, ?sft),
+   AppendableType(?sft).
+
+StringFactoryType("java.lang.String").
+
 StringFactoryType(?type) :-
-  ?type = "java.lang.String" ;
-  ?type = "java.lang.StringBuffer" ;
-  ?type = "java.lang.StringBuilder".
+   AppendableType(?type).
+   
+
 
 StringFactoryVar(?var) :-
   StringFactoryType(?type),
@@ -59,9 +96,6 @@ AppendInvocation_Base(?invocation, ?base) :-
   VirtualMethodInvocation_SimpleName(?invocation, "append"),
   VirtualMethodInvocation_Base(?invocation, ?base).
 
-.decl Iaminterested6(?type:Type, ?ctx1:Context, ?ret:Var, ?ctx2:Context, ?param:Var)
-
-Iaminterested6(?type, ?ctx, ?ret, ?ctx, ?param),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?param) :-
   AppendInvocation_Base(?invocation, ?base),
@@ -70,9 +104,6 @@ VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?param) :-
   Var_Type(?ret, ?type),
   ActualParam(0, ?invocation, ?param).
 
-.decl Iaminterested10(?type:Type, ?ctx1:Context, ?base:Var, ?ctx2:Context, ?param:Var)
-
-Iaminterested10(?type, ?ctx, ?base, ?ctx, ?param),
 VarIsTaintedFromVar(?type, ?ctx, ?base, ?ctx, ?param) :-
   AppendInvocation_Base(?invocation, ?base),
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
@@ -87,9 +118,6 @@ StringFactoryReturnInvocation(?invocation) :-
   MethodReturningStringFactory(?tomethod),
   VirtualMethodInvocation(?invocation, ?tomethod, _).
 
-.decl Iaminterested8(?type:Type, ?ctx1:Context, ?ret:Var, ?ctx2:Context, ?base:Var)
-
-Iaminterested8(?type, ?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
   StringFactoryVarPointsTo(_, _, ?ctx, ?base),
   VirtualMethodInvocation_Base(?invocation, ?base),
@@ -97,18 +125,12 @@ VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
   AssignReturnValue(?invocation, ?ret),
   Var_Type(?ret, ?type).
 
-.decl Iaminterested(?componentType:Type, ?basevalue:Value, ?ctx:Context, ?to:Var)
-
-Iaminterested(?componentType, ?basevalue, ?ctx, ?to),
 VarIsTaintedFromValue(?componentType, ?basevalue, ?ctx, ?to) :-
   TaintedValue(?basevalue),
   Value_Type(?basevalue, ?arrayType),
   ComponentType(?arrayType, ?componentType),
   LoadHeapArrayIndex(?ctx, ?to, _, ?basevalue).
 
-.decl Iaminterested7(?type:Type, ?ctx1:Context, ?ret:Var, ?ctx2:Context, ?base:Var)
-
-Iaminterested7(?type, ?ctx, ?ret, ?ctx, ?base),
 VarIsTaintedFromVar(?type, ?ctx, ?ret, ?ctx, ?base) :-
   BaseToRetTaintTransferMethod(?method),
   MethodInvocationInContext(?ctx, ?invocation, ?method),
@@ -133,10 +155,6 @@ TypeForReturnValue(?type, ?ret, ?invocation) :-
 
 // Taint transfer through aliasing
 
-MethodInvocation_Base(?invocation, ?base) :-
-  VirtualMethodInvocation_Base(?invocation, ?base) ;
-  SpecialMethodInvocation_Base(?invocation, ?base).
-
 TaintTransferMethodInvocationInContext(?ctx, ?index, ?invocation) :-
   MethodInvocationInContext(?ctx, ?invocation, ?taintTransferMethod),
   ParamToBaseTaintTransferMethod(?index, ?taintTransferMethod).
@@ -155,7 +173,7 @@ MethodInvocationInContextInApplication(?ctx, ?invocation, ?method) :-
 ParamTaintTransferredToRet(?type, ?ret, ?ctx, ?param) :-
   ParamToRetTaintTransferMethod(?taintTransferMethod),
   MethodInvocationInContextInApplication(?ctx, ?invocation, ?taintTransferMethod),
-  ActualParam(0, ?invocation, ?param),
+  ActualParam(_, ?invocation, ?param),
   TypeForReturnValue(?type, ?ret, ?invocation).
 
 TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
@@ -178,6 +196,7 @@ VarPointsTo(?hctx, ?newvalue, ?ctx, ?var) :-
   ValueTaintedFromValue(?newvalue, ?existingvalue),
   VarPointsTo(_, ?existingvalue, ?ctx, ?var),
   isImmutableHContext(?hctx).
+  .plan 1:(2,1,3)
 
 .decl XYZ(?value:Value, ?ctx:Context, ?param:Var)
 
@@ -194,6 +213,10 @@ BaseValueTaintedFromParamValue(ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB),
   TaintedVarPointsTo(?value, ?ctx, ?param),
   SourceFromTaintedValue(?value, ?source),
   Value_DeclaringType(?value, ?declaringType).
+  .plan 1:(2,1,3,4,5)
+  .plan 2:(3,1,2,4,5)
+  .plan 3:(4,3,1,2,5)
+  .plan 4:(5,3,1,2,4)
 #else
 .decl XYZ2(?type:Type, ?value:Value, ?ctx:Context, ?param:Var)
 
@@ -238,8 +261,15 @@ MethodInvocationInContext(?ctx, ?invocation, ?tomethod) :-
  */
 LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
   LeakingSinkMethodArg(?label, ?index, ?tomethod),
-  MethodInvocationInContext(?ctx, ?invocation, ?tomethod),
+  MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
   ActualParam(?index, ?invocation, ?var).
+
+// in case method has no arguments, assume base variable 
+LeakingSinkVariable(?label, ?invocation, ?ctx, ?var) :-
+   LeakingSinkMethod(?label, ?tomethod),
+   !FormalParam(_, ?tomethod, _),
+   MethodInvocationInContextInApplication(?ctx, ?invocation, ?tomethod),
+   MethodInvocation_Base(?invocation, ?var).
 
 LeakingTaintedInformation(?sourceLabel, ?destLabel, ?ctx, ?invocation, ?source) :-
   SourceFromTaintedValue(?value, ?source),
@@ -262,7 +292,87 @@ TaintedVarPointsTo(?value, ?ctx, ?var) :-
   TaintedValue(?value),
   VarPointsTo(_, ?value, ?ctx, ?var).
 
-TaintedValue(?value),
+
+// Generic string internal tainting
+#ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 TaintedValue(?basevalue) :-
-  (TaintedValue(?value) ; TaintedValue(?basevalue)),
+  TaintedValue(?value),
   InstanceFieldPointsTo(_, ?value, "<java.lang.String: char[] value>", _, ?basevalue).
+
+TaintedValueTransferred(?declaringType, ?source, "char[]", ValueIdMacro(?source, "char[]", DEFAULT_BREADCRUMB)),
+VarPointsTo(?hctx, ValueIdMacro(?source, "char[]", DEFAULT_BREADCRUMB), ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, "<java.lang.String: char[] value>", _, ?basevalue),
+  TaintedValue(?basevalue),
+  Value_DeclaringType(?basevalue, ?declaringType),
+  SourceFromTaintedValue(?basevalue, ?source),
+  isImmutableHContext(?hctx).
+  .plan 1:(2,1,3,4,5)
+
+#endif
+ 
+// Serialization
+.decl SerializeObjectInvocation(?base:Var, ?ctx:Context, ?var:Var)
+
+SerializeObjectInvocation(?base, ?ctx, ?var) :-
+  MethodInvocationInContextInApplication(?ctx, ?invocation, "<java.io.ObjectOutputStream: void writeObject(java.lang.Object)>"),
+  MethodInvocation_Base(?invocation, ?base),
+  ActualParam(_, ?invocation, ?var).
+
+.decl ObjectSerializedToBase(?ctx:Context, ?base:Var, ?obj:Value)
+
+ObjectSerializedToBase(?ctx, ?base, ?obj) :-
+  SerializeObjectInvocation(?base, ?ctx, ?var),
+  VarPointsTo(_, ?obj, ?ctx, ?var),
+  SerializableValue(?obj).
+
+.decl SerializableValue(?obj:Value)
+
+SerializableValue(?obj) :-
+   Value_Type(?obj, ?type),
+   SupertypeOf("java.io.Serializable", ?type).
+
+.decl SerializableVar(?var:Var)
+
+SerializableVar(?var) :-
+   Var_Type(?var, ?type),
+   SupertypeOf("java.io.Serializable", ?type).
+
+TaintedValueTransferred(?declaringType, ?source, ?type, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB)),
+VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?base) :-
+  ObjectSerializedToBase(?ctx, ?base, ?baseobj),
+  (InstanceFieldPointsTo(_, ?obj, ?field, _, ?baseobj),
+  !Field_Modifier("transient", ?field)),
+  TaintedValue(?obj),
+  Var_Type(?base, ?type),
+  Value_DeclaringType(?obj, ?declaringType),
+  SourceFromTaintedValue(?obj, ?source),
+  ImmutableHContextFromContext(?ctx, ?hctx).
+  .plan 2: (3,2,1,4,5,6,7)
+
+VarIsTaintedFromValue(?type, ?basevalue, ?ctx, ?to) :-
+   MaybeDeserializedValue(?basevalue),
+   TaintedVarPointsTo(?basevalue, ?ctx, ?base),
+   LoadInstanceField(?base, ?sig, ?to, _),
+   !Field_Modifier("transient", ?sig),
+   Var_Type(?to, ?type).
+
+BaseToRetTaintTransferMethod("<java.io.ObjectInputStream: java.lang.Object readObject()>").
+
+.decl OptDeserializeInvoke(?ret:Var)
+
+OptDeserializeInvoke(?ret) :-
+   MethodInvocationInContextInApplication(_, ?invocation, "<java.io.ObjectInputStream: java.lang.Object readObject()>"),
+   AssignReturnValue(?invocation, ?ret).
+
+.decl MaybeDeserializedValue(?value:Value)
+
+MaybeDeserializedValue(?value) :-
+   OptDeserializeInvoke(?ret),
+   TaintedVarPointsTo(?value, _, ?ret),
+   SerializableValue(?value).
+
+.decl AppTaintedVar(?var:Var)
+.output AppTaintedVar
+
+AppTaintedVar(?var) :-
+  TaintedVarPointsTo(_, _, ?var), ApplicationVar(?var).

@@ -5,3 +5,31 @@
 // heap context a single Value.
 .type Context  = [ value1:Value, value2:Value ]
 .type HContext = [ value:Value ]
+
+#ifdef HEAPDL
+DynamicContextToContext([?value1, ?value2], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value1),
+   DynamicContextHeap2(?heap2, ?dynCtx),
+   Value_byDynamicHeap(?heap2, ?value2).
+
+DynamicContextToContext([?value, ?any], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   !DynamicContextHeap2(_, ?dynCtx),
+   isContext([?value, ?any]).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableContext(?ctx).
+
+DynamicContextToHContext([?value], ?dynCtx) :-
+   Value_byDynamicHeap(?heap1, ?value), 
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToHContext(?hctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableHContext(?hctx).
+#endif

@@ -1,0 +1,9 @@
+// Context-sensitive pointer analysis with context of 2 objects
+// (AND for static calls 1 call-site).
+
+// The real context is a pair of Value AND a MethodInvocation (for
+// static calls) sometimes.  The real heap context is a single Value.
+// Keeping mapping functions is the way to handle analyses where HContext =
+// Context (since the language considers them different types).
+.type Context  = [ elem1:symbol, elem2:symbol, value:Value ]
+.type HContext = [ value:Value ]

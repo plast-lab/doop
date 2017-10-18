@@ -22,3 +22,15 @@ lang:constructor(`HContextFromRealHContext).
 HContextFromContext[?ctx] = ?hctx ->
   Context(?ctx), HContext(?hctx).
 lang:constructor(`HContextFromContext).
+
+// Dynamic analysis
+#ifdef HEAPDL
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   RealContextFromContext[?ctx] = Value:byDynamicHeap[?heap1],
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToContext(?ctx, ?dynCtx) <-
+   !DynamicContextHeap1(_, ?dynCtx),
+   ImmutableContext(?ctx),
+   DynamicContext(?dynCtx).
+#endif             

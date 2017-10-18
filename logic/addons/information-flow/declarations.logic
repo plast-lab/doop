@@ -29,3 +29,6 @@ TaintedValue(?value) -> Value(?value).
 
 ParamToRetTaintTransferMethod(?method) -> Method(?method).
 
+BaseToParamTaintTransferMethod(?method) -> Method(?method).
+ParamIndexToBaseTaintTransferMethod(?index, ?method) -> ParamIndex(?index), Method(?method).
+LeakingSinkMethod(?label, ?tomethod) -> InformationLabel(?label), Method(?tomethod).

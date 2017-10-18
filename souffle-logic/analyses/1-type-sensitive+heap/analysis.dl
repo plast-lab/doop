@@ -6,3 +6,26 @@
 // non-class subtype of Object
 .type Context  = [ type:Type ]
 .type HContext = [ type:Type ]
+
+// Dynamic analysis
+#ifdef HEAPDL
+DynamicContextToContext([?type], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableContext(?ctx).
+
+DynamicContextToHContext([?type], ?dynCtx) :-
+   DynamicContextHeap1(?heap1, ?dynCtx),
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type).
+
+DynamicContextToHContext(?hctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableHContext(?hctx).
+#endif

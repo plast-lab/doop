@@ -1,0 +1,86 @@
+.number_type Partition
+
+.decl isPartition(partition: Partition)
+.decl PartitionedType(type: Type)
+.decl TypeRefersToOther(typeFrom: Type, typeTo: Type)
+.decl TypeTransitivelyRefersToOther(typeFrom: Type, typeTo: Type)
+.decl TypesInSameSCC(type1: Type, type2: Type)
+.decl TypeToSCCId(type: Type, id: Partition)
+.decl CountOfTypesPerSCC(id: Partition, cnt: number)
+.decl NumberOfRelevantTypes(cnt: number)
+.decl TypeToPartitionId(type: Type, id: Partition)
+.decl TypeInGenericPartition(type: Type)
+.decl IdTypeOfGenericPartition(id: Partition)
+
+// Which types should be partitioned? 
+PartitionedType(type) :-
+  ApplicationClass(type).
+
+TypeRefersToOther(typeFrom, typeTo) :-
+  PartitionedType(typeFrom), PartitionedType(typeTo),
+  DirectSubclass(typeFrom, typeTo).
+
+TypeRefersToOther(typeFrom, typeTo) :-
+  PartitionedType(typeFrom), PartitionedType(typeTo),
+  Field_DeclaringType(field, typeFrom),
+  Field_Type(field, typeTo).
+
+TypeRefersToOther(typeFrom, typeTo) :-
+  PartitionedType(typeFrom), PartitionedType(typeTo),
+  Method_DeclaringType(fromMethod, typeFrom),
+  Instruction_Method(invo, fromMethod),
+  MethodInvocation_Method(invo, method),
+  Method_DeclaringType(method, typeTo).
+
+TypeRefersToOther(typeFrom, typeTo) :-
+  PartitionedType(typeFrom), PartitionedType(typeTo),
+  Method_DeclaringType(method, typeFrom),
+  Var_DeclaringMethod(var, method),
+  Var_Type(var, typeTo).
+
+TypeTransitivelyRefersToOther(typeFrom, typeTo) :-
+  TypeRefersToOther(typeFrom, typeTo).
+
+TypeTransitivelyRefersToOther(typeFrom, typeTo) :-
+  TypeTransitivelyRefersToOther(typeFrom, typeInterm),
+  TypeRefersToOther(typeInterm, typeTo).
+
+TypesInSameSCC(type1, type2) :-
+  TypeTransitivelyRefersToOther(type1, type2),
+  TypeTransitivelyRefersToOther(type2, type1).
+
+TypesInSameSCC(type, type) :-
+  PartitionedType(type),
+  isType(type).
+
+TypeToSCCId(type, scc) :-
+  PartitionedType(type),
+  scc = min ord(x) : TypesInSameSCC(type, x).
+
+CountOfTypesPerSCC(scc, cnt) :-
+  TypeToSCCId(_, scc),
+  cnt = count : TypeToSCCId(_, scc).
+
+NumberOfRelevantTypes(num) :-
+  num = count : PartitionedType(_).
+
+isPartition(id),
+TypeToPartitionId(type, id) :-
+  TypeToSCCId(type, id),
+  CountOfTypesPerSCC(id, cnt),
+  NumberOfRelevantTypes(relNum),
+  cnt*cnt > relNum.
+
+TypeInGenericPartition(type) :-
+  TypeToSCCId(type, idType),
+  CountOfTypesPerSCC(idType, num),
+  NumberOfRelevantTypes(relNum),
+  num*num <= relNum.
+
+isPartition(idType),
+IdTypeOfGenericPartition(idType) :-
+  idType = min ord(x) : TypeInGenericPartition(x).
+
+TypeToPartitionId(type, idType) :-
+  TypeInGenericPartition(type),
+  IdTypeOfGenericPartition(idType).

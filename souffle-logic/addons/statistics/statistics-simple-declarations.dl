@@ -201,7 +201,7 @@
  * Memory Dump
  ***************************************************/
 
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 .decl NotLibraryHeapAllocation(?heap:HeapAllocation)
 .output NotLibraryHeapAllocation
 

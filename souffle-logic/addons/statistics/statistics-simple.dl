@@ -327,12 +327,12 @@ NewMetricMacro("61.4", "Mock Objects for Formals", MockObjFromFormal(_)).
  * Memory Dump
  ***************************************************/
 
-#ifdef ANALYZE_MEMORY_DUMP
+#ifdef HEAPDL
 NewMetricMacro("80.0", "Dynamic Heap Allocations (INS)", DynamicHeapAllocation(_,_)).
-NewMetricMacro("81.0", "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_)).
+NewMetricMacro("81.0", "Dynamic Heap Object (SENS)", DynamicHeapObject(_,_,_)).
 NewMetricMacro("82.0", "Unmatched Heap Allocations..", UnmatchedDynamicNormalHeapAllocation(_,_,_,_)).
 NewMetricMacro("83.0", "..of which were reconstructed", ReconstructedUnmatchedDynamicHeapAllocation(_, _)).
-NewMetricMacro("84.0", "Contexts", DynamicContext(_)).
+NewMetricMacro("84.0", "Contexts", isDynamicContext(_)).
 
 NotLibraryHeapAllocation(?heap) :-
   DynamicHeapAllocation(_, ?heap),
@@ -340,7 +340,12 @@ NotLibraryHeapAllocation(?heap) :-
 
 // Instance fields
 Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap) :-
-  DynamicInstanceFieldPointsTo(?fld, _, ?heap, _, ?baseHeap).
+  MostPreciseDynamicInstanceFieldPointsTo(?fld, _, ?heap, _, ?baseHeap).
+
+.output MostPreciseDynamicInstanceFieldPointsTo
+.output MostPreciseDynamicStaticFieldPointsTo
+.output MostPreciseDynamicCallGraphEdge
+.output MostPreciseDynamicArrayIndexPointsTo
 
 NotLibraryHeapAllocation(?heap) :-
   ApplicationMethod(?meth),
@@ -351,11 +356,11 @@ Stats_Simple_Application_InsensDynamicInstanceFieldPointsTo(?baseHeap, ?fld, ?he
   Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap).
 
 NewMetricMacro("85.0", "Dynamic instance field points-to (INS)", Stats_Simple_InsensDynamicInstanceFieldPointsTo(_,_,_)).
-NewMetricMacro("86.0", "Dynamic instance field points-to (SENS)", DynamicInstanceFieldPointsTo(_,_,_,_,_)).
+NewMetricMacro("86.0", "Dynamic instance field points-to (SENS)", MostPreciseDynamicInstanceFieldPointsTo(_,_,_,_,_)).
 
 // Static fields
 Stats_Simple_InsensDynamicStaticFieldPointsTo(?fld, ?heap) :-
-  DynamicStaticFieldPointsTo(?fld, _, ?heap).
+  MostPreciseDynamicStaticFieldPointsTo(?fld, _, ?heap).
 
 Stats_Simple_Application_InsensDynamicStaticFieldPointsTo(?fld, ?heap) :-
   Stats_Simple_InsensDynamicStaticFieldPointsTo(?fld, ?heap),
@@ -363,15 +368,15 @@ Stats_Simple_Application_InsensDynamicStaticFieldPointsTo(?fld, ?heap) :-
   ApplicationClass(?cls).
 
 NewMetricMacro("87.0", "Dynamic static field points-to (INS)", Stats_Simple_InsensDynamicStaticFieldPointsTo(_,_)).
-NewMetricMacro("88.0", "Dynamic static field points-to (SENS)", DynamicStaticFieldPointsTo(_,_,_)).
+NewMetricMacro("88.0", "Dynamic static field points-to (SENS)", MostPreciseDynamicStaticFieldPointsTo(_,_,_)).
 NewMetricMacro("89.0", "App Dynamic static field points-to (INS)", Stats_Simple_Application_InsensDynamicStaticFieldPointsTo(_,_)).
 
 // Array index
 Stats_Simple_InsensDynamicArrayIndexPointsTo(?heap, ?baseHeap) :-
-  DynamicArrayIndexPointsTo(_, ?heap, _, ?baseHeap).
+  MostPreciseDynamicArrayIndexPointsTo(_, ?heap, _, ?baseHeap).
 
 NewMetricMacro("90.0", "Dynamic array index points-to (INS)", Stats_Simple_InsensDynamicArrayIndexPointsTo(_,_)).
-NewMetricMacro("91.0", "Dynamic array index points-to (SENS)", DynamicArrayIndexPointsTo(_,_,_,_)).
+NewMetricMacro("91.0", "Dynamic array index points-to (SENS)", MostPreciseDynamicArrayIndexPointsTo(_,_,_,_)).
 
 // Call graph and reachability
 Stats_Simple_Application_DynamicReachableMethod(?method) :-
@@ -379,10 +384,10 @@ Stats_Simple_Application_DynamicReachableMethod(?method) :-
   DynamicReachableMethod(?method).
 
 Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) :-
-  DynamicCallGraphEdge(_, ?toMeth, ?invocation, _, ?fromMeth).
+  MostPreciseDynamicCallGraphEdge(_, ?toMeth, ?invocation, _, ?fromMeth).
 
 NewMetricMacro("92.0", "Dynamic call graph edges (INS)", Stats_Simple_InsensDynamicCallGraphEdge(_,_,_)).
-NewMetricMacro("93.0", "Dynamic call graph edges (SENS)", DynamicCallGraphEdge(_,_,_,_,_)).
+NewMetricMacro("93.0", "Dynamic call graph edges (SENS)", MostPreciseDynamicCallGraphEdge(_,_,_,_,_)).
 NewMetricMacro("94.0", "Dynamic reachable methods (INS)", DynamicReachableMethod(_)).
 NewMetricMacro("95.0", "App Dynamic reachable methods (INS)", Stats_Simple_Application_DynamicReachableMethod(_)).
 NewMetricMacro("96.0", "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).

@@ -135,7 +135,7 @@ class ClassicAnalysis extends DoopAnalysis {
             copyFileToDirectory(new File(options.IMPORT_DYNAMIC_FACTS.value.toString()), factsDir)
         }
 
-        if (options.ANALYZE_MEMORY_DUMP.value || options.IMPORT_DYNAMIC_FACTS.value) {
+        if (options.HEAPDL.value || options.IMPORT_DYNAMIC_FACTS.value) {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
             cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
             cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
@@ -290,12 +290,12 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
 
         } else {
-            if (!(name == "naive" || name == "micro")) {
+            //if (!(name == "naive" || name == "micro")) {
                 // This needs cleaning up. We are including one version by default, but distinguishing
                 // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
-                cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-            }
+            //    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
+            //    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
+            //}
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)

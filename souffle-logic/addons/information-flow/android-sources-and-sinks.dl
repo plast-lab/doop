@@ -6,6 +6,10 @@ LeakingSinkMethodArg(?label, ?index, ?method) :-
   LeakingSinkMethod(?label, ?method),
   FormalParam(?index, ?method, _).
 
+TaintSourceMethod("Bundle", "<android.content.Intent: android.os.Bundle getExtras()>").
+LeakingSinkMethod("IPC", "<android.content.ContextWrapper: void sendBroadcast(android.content.Intent)>").
+LeakingSinkMethod("IPC", "<android.os.Messenger: void send(android.os.Message)>").
+
 TaintSourceMethod("Location", "<android.location.Location: double getLatitude()>").
 TaintSourceMethod("Location", "<android.location.Location: double getLongitude()>").
 TaintSourceMethod("Telephony", "<android.telephony.TelephonyManager: java.lang.String getDeviceId()>").

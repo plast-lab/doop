@@ -59,7 +59,6 @@ _DynamicHeapObjectRep(?representation, ?heap, ?dynamicContext) <-
    DynamicContext:Id(?dynamicContext:?contextRepresentation),
    _DynamicNormalHeapObject(?heapRepresentation, ?contextRepresentation, ?representation).
 
-
 // DynamicStaticFieldPointsTo
 lang:physical:storageModel[`_DynamicStaticFieldPointsTo] = "DelimitedFile".
 lang:physical:filePath[`_DynamicStaticFieldPointsTo] = "facts/DynamicStaticFieldPointsTo.facts".

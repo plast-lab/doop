@@ -12,6 +12,7 @@
 .decl LeakingSinkVariable(?label:InformationLabel, ?tomethod:MethodInvocation, ?ctx:Context, ?var:Var)
 .decl LeakingTaintedInformation(?fromLabel:InformationLabel, ?toLabel:InformationLabel, ?ctx:Context,
                                 ?invocation:MethodInvocation, ?value:symbol)
+.output LeakingTaintedInformation                                
 
 .decl VarIsCast(?var:Var)
 .decl VarDef(?var:Var, ?inst:Instruction)
@@ -26,7 +27,6 @@
 .decl SourceFromTaintedValue(?value:Value, ?id:symbol)
 .decl LabelFromSource(?source:symbol, ?label:InformationLabel)
 
-.decl MethodInvocation_Base(?invocation:MethodInvocation, ?base:Var)
 .decl AnyMethodInvocation(?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContext(?ctx:Context, ?invocation:MethodInvocation, ?tomethod:Method)
 .decl MethodInvocationInContextInApplication(?ctx:Context, ?invocation:MethodInvocation, ?method:Method)
@@ -34,7 +34,6 @@
 .decl MethodInvocationInfo(?invocation:MethodInvocation, ?type:Type, ?var:Var)
 .decl TypeForReturnValue(?type:Type, ?ret:Var, ?invocation:MethodInvocation)
 
-.decl VarIsTaintedFromVar(?type:Type, ?toCtx:Context, ?to:Var, ?fromCtx:Context, ?from:Var)
 .decl VarIsTaintedFromValue(?type:Type, ?value:Value, ?ctx:Context, ?var:Var)
 .decl TaintedVarTaintedFromVar(?toCtx:Context, ?to:Var, ?value:Value, ?type:Type)
 
@@ -43,8 +42,16 @@
 
 .decl ParamToBaseTaintTransferMethod(?index:number, ?method:Method)
 .decl BaseToRetTaintTransferMethod(?method:Method)
+.decl BaseToParamTaintTransferMethod(?method:Method)
 .decl TaintTransferMethodInvocationInContext(?ctx:Context, ?index:number, ?invocation:MethodInvocation)
 .decl ParamTaintTransferredToBase(?param:Var, ?ctx:Context, ?base:Var)
 .decl ParamTaintTransferredToRet(?type:Type, ?ret:Var, ?ctx:Context, ?param:Var)
+.decl ParamIndexToBaseTaintTransferMethod(?index:number, ?method:Method)
+.decl ParamToRetTaintTransferMethod(?method:Method)
+
 
 .decl TaintedVarPointsTo(?value:Value, ?ctx:Context, ?var:Var)
+.decl VarIsTaintedFromVar(?type:Type, ?ctx1:Context, ?var1:Var, ?ctx2:Context, ?var2:Var)
+.decl VarIsTaintedFromVarIndex(?base:Var, ?ctx1:Context, ?param:Var)
+.decl VarIsTaintedFromValueIndex(?ctx:Context, ?base:Var, ?hctx:HContext, ?value:Value)
+

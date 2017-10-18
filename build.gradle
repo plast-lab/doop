@@ -28,6 +28,11 @@ group = "org.clyze"
 //For the doop app
 mainClassName = "org.clyze.doop.Main"
 
+//def heapDLVersion = "master-SNAPSHOT"
+def heapDLVersion = "1.0.0"
+if (project.hasProperty('heapDLVersion'))
+    heapDLVersion = project.property('heapDLVersion')
+
 task wrapper(type: Wrapper) {
     gradleVersion = "3.1"
 }
@@ -40,6 +45,9 @@ repositories {
     maven {
         url "http://centauri.di.uoa.gr:8081/artifactory/plast-public"
     }
+
+    if (heapDLVersion == "master-SNAPSHOT")
+        maven { url 'https://jitpack.io' }
 }
 
 task printClasspath {
@@ -69,7 +77,8 @@ dependencies {
             "org.smali:dexlib2:2.2b4",                          // Dexlib2: library for reading/modifying/writing Android dex files
             "com.google.code.gson:gson:2.4",                    // GSON library
             // Soot is a compile time dependency
-            "ext:AXMLPrinter:2.0"
+            "ext:AXMLPrinter:2.0",
+            "com.github.plast-lab:HeapDL:$heapDLVersion"
 
 
     // Soot is a compile time dependency
@@ -78,7 +87,6 @@ dependencies {
             "ext:soot-infoflow:1.2.+",
             "ext:soot-infoflow-android:1.2.+"
 
-    compile(group: "sun", name: "jhat", version: "PATCHED")
 
     // JPhantom is a runtime dependency
     runtime "org.clyze:jphantom:1.2",
@@ -106,6 +114,7 @@ applicationDistribution.from(projectDir) {
 }
 
 run {
+    //debug true
     //We set the DOOP_HOME environment variable (see org.clyze.doop.Main)
     environment.DOOP_HOME = projectDir
     if (project.hasProperty('args')) {
@@ -159,9 +168,9 @@ compileJava {
 }
 
 test {
-	testLogging {
-		exceptionFormat = 'full'
-	}
+    testLogging {
+        exceptionFormat = 'full'
+    }
 }
 
 task veryClean << {
@@ -211,6 +220,7 @@ if (project.hasProperty('artifactory_user')) {
                 url version.endsWith("-SNAPSHOT") ?
                         "$artifactory_contextUrl/libs-snapshot-local" :
                         "$artifactory_contextUrl/libs-release-local"
+
             }
         }
     }

@@ -9,8 +9,12 @@ import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 import soot.options.Options;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -177,7 +181,7 @@ public class Main {
                 System.err.println("error: --stdout and -d options are not compatible");
                 throw new DoopErrorCodeException(2);
             }
-            else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk")).count() > 0) &&
+            else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
                     (!sootParameters._android)) {
                 System.err.println("error: the --platform parameter is mandatory for .apk inputs");
                 throw new DoopErrorCodeException(3);
@@ -201,6 +205,7 @@ public class Main {
         SootMethod dummyMain = null;
 
         Options.v().set_output_dir(sootParameters._outputDir);
+        Options.v().setPhaseOption("jb", "use-original-names:true");
 
         if (sootParameters._ssa) {
             Options.v().set_via_shimple(true);
@@ -220,12 +225,11 @@ public class Main {
         Set<String> appBroadcastReceivers = null;
         Set<String> appCallbackMethods = null;
         Set<PossibleLayoutControl> appUserControls = null;
-        File apk = null;
 
+        String input0 = sootParameters._inputs.get(0);
         if (sootParameters._android) {
-            String apkLocation = sootParameters._inputs.get(0);
-            apk = new File(apkLocation);
-            SetupApplication app = new SetupApplication(sootParameters._androidJars, apkLocation);
+            File apk = new File(input0);
+            SetupApplication app = new SetupApplication(sootParameters._androidJars, input0);
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
 
@@ -238,7 +242,7 @@ public class Main {
                     throw new RuntimeException("Dummy main null");
                 }
             } else {
-                AndroidManifest processMan = getAndroidManifest(apkLocation);
+                AndroidManifest processMan = getAndroidManifest(input0);
                 String appPackageName = processMan.getPackageName();
 
                 // now collect the facts we need
@@ -253,34 +257,16 @@ public class Main {
 //            System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
 //            System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
                 processMan.printManifestInfo();
+
+                if (input0.endsWith(".aar")) {
+                    String classesJar = populateClassesInAppJar(input0, classesInApplicationJar, propertyProvider, true);
+                    sootParameters._inputs.add(classesJar);
+                }
             }
 
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-
-            JarEntry entry;
-
-            try (JarInputStream jin = new JarInputStream(new FileInputStream(sootParameters._inputs.get(0))); JarFile jarFile = new JarFile(sootParameters._inputs.get(0))) {
-                /* List all JAR entries */
-                while ((entry = jin.getNextJarEntry()) != null) {
-                    /* Skip directories */
-                    if (entry.isDirectory())
-                        continue;
-
-                    /* Skip non-class files and non-property files */
-                    if (!entry.getName().endsWith(".class") && !entry.getName().endsWith(".properties"))
-                        continue;
-
-                    if (entry.getName().endsWith(".class")) {
-                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                        classesInApplicationJar.add(reader.getClassName().replace("/", "."));
-                    }
-
-                    if (entry.getName().endsWith(".properties")) {
-                        propertyProvider.addProperties((new FoundFile(sootParameters._inputs.get(0), entry.getName())));
-                    }
-                }
-            }
+            populateClassesInAppJar(input0, classesInApplicationJar, propertyProvider, false);
         }
 
         Scene scene = Scene.v();
@@ -313,17 +299,25 @@ public class Main {
         }
 
         if (sootParameters._android) {
-            for (String className : classesOfDex(apk)) {
-                SootClass c = scene.loadClass(className, SootClass.BODIES);
-                classes.add(c);
+            if (input0.endsWith(".apk")) {
+                File apk = new File(input0);
+                System.out.println("Android mode, APK = " + input0);
+                for (String className : classesOfDex(apk)) {
+                    SootClass c = scene.loadClass(className, SootClass.BODIES);
+                    classes.add(c);
+                }
+                System.out.println("Classes found in apk: " + classesOfDex(apk).size());
+            } else if (input0.endsWith(".aar")) {
+                System.out.println("Android mode, AAR = " + input0);
+                addClasses(classesInApplicationJar, classes, scene);
+            } else {
+                // We do not accept standard JARs, they don't contain
+                // AndroidManifest.xml.
+                System.out.println("JAR inputs are not yet supported as Android inputs.");
+                System.exit(-1);
             }
-
-            System.out.println("Classes found in apk: " + classesOfDex(apk).size());
         } else {
-            for (String className : classesInApplicationJar) {
-                SootClass c = scene.loadClass(className, SootClass.BODIES);
-                classes.add(c);
-            }
+            addClasses(classesInApplicationJar, classes, scene);
 
             System.out.println("Classes in application jar: " + classesInApplicationJar.size());
 
@@ -401,8 +395,7 @@ public class Main {
                 db.close();
                 return;
             } else {
-                String apkLocation = sootParameters._inputs.get(0);
-                AndroidManifest processMan = getAndroidManifest(apkLocation);
+                AndroidManifest processMan = getAndroidManifest(input0);
 
                 if (processMan.getApplicationName() != null)
                     writer.writeApplication(processMan.expandClassName(processMan.getApplicationName()));
@@ -457,6 +450,67 @@ public class Main {
     private static void addCommonDynamicClass(Scene scene, String className) {
         if( SourceLocator.v().getClassSource(className) != null) {
             scene.addBasicClass(className);
+        }
+    }
+
+    /**
+     * Helper method to read classes and property files from JAR/AAR files.
+     *
+     * @param jarFileName              the name of the JAR to read
+     * @param classesInApplicationJAR  the set to populate
+     * @param propertyProvider         the provider to use for .properties files
+     * @param androidMode              if set, process classes.jar in .aar files
+     *
+     * @return the name of the JAR file that was processed; this is
+     * either the original first parameter, or the locally saved
+     * classes.jar found in the .aar file (if such a file was given)
+     *
+     */
+    static String populateClassesInAppJar(String jarFileName,
+                                          Set<String> classesInApplicationJar,
+                                          PropertyProvider propertyProvider,
+                                          boolean androidMode) throws Exception {
+        JarEntry entry;
+
+        System.out.println("Processing application JAR: " + jarFileName);
+        try (JarInputStream jin = new JarInputStream(new FileInputStream(jarFileName));
+             JarFile jarFile = new JarFile(jarFileName)) {
+
+            /* List all JAR entries */
+            while ((entry = jin.getNextJarEntry()) != null) {
+                /* Skip directories */
+                if (entry.isDirectory())
+                    continue;
+
+                String entryName = entry.getName();
+                if (entryName.endsWith(".class")) {
+                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                    classesInApplicationJar.add(reader.getClassName().replace("/", "."));
+                } else if (entryName.endsWith(".properties")) {
+                    propertyProvider.addProperties((new FoundFile(jarFileName, entryName)));
+                } else if ("classes.jar".equals(entryName) && androidMode) {
+                    Path tmpFile = Files.createTempFile("classes", ".jar");
+                    String tmpFileName = tmpFile.toString();
+                    System.out.println("Extracting classes.jar to " + tmpFileName);
+                    try (final InputStream jis = jarFile.getInputStream(entry); ) {
+                        Files.copy(jis, tmpFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    // Recursive call to add the classes in classes.jar.
+                    return populateClassesInAppJar(tmpFileName, classesInApplicationJar,
+                                                   propertyProvider, androidMode);
+                } else {
+                    /* Skip non-class files and non-property files */
+                    continue;
+                }
+            }
+            return jarFileName;
+        }
+    }
+
+    private static void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
+        for (String className : classesInApplicationJar) {
+            SootClass c = scene.loadClass(className, SootClass.BODIES);
+            classes.add(c);
         }
     }
 }

@@ -46,7 +46,8 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				ctx.modifier().any() { hasToken(it, "enum") },
 				ctx.modifier().any() { hasToken(it, "static") },
 				false, //isInner, missing?
-				false  //isAnonymous, missing?
+				false, //isAnonymous, missing?
+				hasToken(ctx, "abstract")
 		)
 		metadata.classes << klass
 

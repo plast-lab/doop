@@ -7,3 +7,15 @@
 // This is emulated by creating a single HContext object,
 // which is used everywhere.
 .type HContext
+
+#ifdef HEAPDL
+DynamicContextToContext([ ?type ], ?dynCtx) :-
+   Value_byDynamicHeap(?heap1, ?value),
+   Value_Type(?value, ?type),
+   DynamicContextHeap1(?heap1, ?dynCtx).
+
+DynamicContextToContext(?ctx, ?dynCtx) :-
+   isDynamicContext(?dynCtx),
+   !DynamicContextHeap1(_, ?dynCtx),
+   isImmutableContext(?ctx).
+#endif           
