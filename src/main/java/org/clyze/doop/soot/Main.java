@@ -183,7 +183,7 @@ public class Main {
             }
             else if ((sootParameters._inputs.stream().filter(s -> s.endsWith(".apk") || s.endsWith(".aar")).count() > 0) &&
                     (!sootParameters._android)) {
-                System.err.println("error: the --platform parameter is mandatory for .apk inputs");
+                System.err.println("error: the --platform parameter is mandatory for .apk/.aar inputs");
                 throw new DoopErrorCodeException(3);
             }
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
