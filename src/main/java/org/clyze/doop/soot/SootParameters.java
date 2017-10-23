@@ -24,4 +24,16 @@ public class SootParameters {
      boolean _uniqueFacts = false;
      boolean _generateJimple = false;
      boolean _toStdout = false;
+
+     public void setInputs(List<String> inputs) {
+          this._inputs = inputs;
+     }
+
+     public List<String> getInputs() {
+          return this._inputs;
+     }
+
+     public boolean getRunFlowdroid() {
+          return this._runFlowdroid;
+     }
 }

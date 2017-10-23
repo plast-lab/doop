@@ -18,7 +18,7 @@ import static org.clyze.doop.common.PredicateFile.*;
  * FactWriter determines the format of a fact and adds it to a
  * database.
  */
-class FactWriter {
+public class FactWriter {
     private Database _db;
     private Representation _rep;
     private Map<String, Type> _varTypeMap;
@@ -927,33 +927,33 @@ class FactWriter {
         _db.add(BREAKPOINT_STMT, insn, str(index), methodId);
     }
 
-    void writeApplication(String applicationName) { _db.add(ANDROID_APPLICATION, applicationName); }
+    public void writeApplication(String applicationName) { _db.add(ANDROID_APPLICATION, applicationName); }
 
-    void writeActivity(String activity) {
+    public void writeActivity(String activity) {
         _db.add(ACTIVITY, activity);
     }
 
-    void writeService(String service) {
+    public void writeService(String service) {
         _db.add(SERVICE, service);
     }
 
-    void writeContentProvider(String contentProvider) {
+    public void writeContentProvider(String contentProvider) {
         _db.add(CONTENT_PROVIDER, contentProvider);
     }
 
-    void writeBroadcastReceiver(String broadcastReceiver) {
+    public void writeBroadcastReceiver(String broadcastReceiver) {
         _db.add(BROADCAST_RECEIVER, broadcastReceiver);
     }
 
-    void writeCallbackMethod(String callbackMethod) {
+    public void writeCallbackMethod(String callbackMethod) {
         _db.add(CALLBACK_METHOD, callbackMethod);
     }
 
-    void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
+    public void writeLayoutControl(Integer id, String layoutControl, Integer parentID) {
         _db.add(LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
-    void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
+    public void writeSensitiveLayoutControl(Integer id, String layoutControl, Integer parentID) {
         _db.add(SENSITIVE_LAYOUT_CONTROL, id.toString(), layoutControl, parentID.toString());
     }
 
