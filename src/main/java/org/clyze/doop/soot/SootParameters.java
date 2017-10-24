@@ -33,6 +33,13 @@ public class SootParameters {
           return this._inputs;
      }
 
+     public List<String> getInputsAndLibraries() {
+          List<String> ret = new ArrayList<>();
+          ret.addAll(this._inputs);
+          ret.addAll(this._libraries);
+          return ret;
+     }
+
      public boolean getRunFlowdroid() {
           return this._runFlowdroid;
      }

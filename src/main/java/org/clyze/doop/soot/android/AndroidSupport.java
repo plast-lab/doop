@@ -2,6 +2,7 @@ package org.clyze.doop.soot.android;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.clyze.doop.soot.FactWriter;
@@ -23,12 +24,12 @@ public class AndroidSupport {
     SootParameters sootParameters;
     SootMethod dummyMain;
 
-    Set<String> appServices;
-    Set<String> appActivities;
-    Set<String> appContentProviders;
-    Set<String> appBroadcastReceivers;
-    Set<String> appCallbackMethods;
-    Set<PossibleLayoutControl> appUserControls;
+    Set<String> appServices = new HashSet<>();
+    Set<String> appActivities = new HashSet<>();
+    Set<String> appContentProviders = new HashSet<>();
+    Set<String> appBroadcastReceivers = new HashSet<>();
+    Set<String> appCallbackMethods = new HashSet<>();
+    Set<PossibleLayoutControl> appUserControls = new HashSet<>();
 
     public AndroidSupport(String appInput, SootParameters sootParameters) {
         this.appInput = appInput;
@@ -59,32 +60,36 @@ public class AndroidSupport {
                 throw new RuntimeException("Dummy main null");
             }
         } else {
-            AndroidManifest processMan = getAndroidManifest(appInput);
-            String appPackageName = processMan.getPackageName();
+            // We merge the information from all manifests, not just
+            // the application's. There are Android apps that use
+            // components (e.g. activities) from AAR libraries.
+            for (String i : sootParameters.getInputsAndLibraries()) {
+                if (i.endsWith(".aar")) {
+                    System.out.println("Processing manifest in " + i);
 
-            // now collect the facts we need
-            appServices = processMan.getServices();
-            appActivities = processMan.getActivities();
-            appContentProviders = processMan.getProviders();
-            appBroadcastReceivers = processMan.getReceivers();
-            try {
-                appCallbackMethods = processMan.getCallbackMethods();
-            } catch (IOException ex) {
-                System.err.println("Error while reading callbacks:");
-                ex.printStackTrace();
+                    AndroidManifest processMan = getAndroidManifest(i);
+                    String appPackageName = processMan.getPackageName();
+
+                    appServices.addAll(processMan.getServices());
+                    appActivities.addAll(processMan.getActivities());
+                    appContentProviders.addAll(processMan.getProviders());
+                    appBroadcastReceivers.addAll(processMan.getReceivers());
+                    try {
+                        appCallbackMethods.addAll(processMan.getCallbackMethods());
+                    } catch (IOException ex) {
+                        System.err.println("Error while reading callbacks:");
+                        ex.printStackTrace();
+                    }
+                    try {
+                        appUserControls.addAll(processMan.getUserControls());
+                    } catch (IOException ex) {
+                        System.err.println("Error while reading user controls:");
+                        ex.printStackTrace();
+                    }
+
+                    processMan.printManifestInfo();
+                }
             }
-            try {
-                appUserControls = processMan.getUserControls();
-            } catch (IOException ex) {
-                System.err.println("Error while reading user controls:");
-                ex.printStackTrace();
-            }
-
-            // System.out.println("All entry points:\n" + appEntrypoints);
-            // System.out.println("\nServices:\n" + appServices + "\nActivities:\n" + appActivities + "\nProviders:\n" + appContentProviders + "\nCallback receivers:\n" +appBroadcastReceivers);
-            // System.out.println("\nCallback methods:\n" + appCallbackMethods + "\nUser controls:\n" + appUserControls);
-            processMan.printManifestInfo();
-
             // If inputs are in AAR format, extract and use their JAR entries.
             sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false));
             // appInput = sootParameters._inputs.get(0);
