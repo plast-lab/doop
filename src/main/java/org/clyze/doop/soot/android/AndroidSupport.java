@@ -2,8 +2,7 @@ package org.clyze.doop.soot.android;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import org.clyze.doop.soot.FactWriter;
 import org.clyze.doop.soot.Main;
@@ -60,15 +59,20 @@ public class AndroidSupport {
                 throw new RuntimeException("Dummy main null");
             }
         } else {
+            List<String> inputsAndLibs = sootParameters.getInputsAndLibraries();
+            // Map AAR files to their package name.
+            Map<String, String> pkgs = new HashMap<>();
+
             // We merge the information from all manifests, not just
             // the application's. There are Android apps that use
             // components (e.g. activities) from AAR libraries.
-            for (String i : sootParameters.getInputsAndLibraries()) {
+            for (String i : inputsAndLibs) {
                 if (i.endsWith(".aar")) {
                     System.out.println("Processing manifest in " + i);
 
                     AndroidManifest processMan = getAndroidManifest(i);
                     String appPackageName = processMan.getPackageName();
+                    pkgs.put(i, appPackageName);
 
                     appServices.addAll(processMan.getServices());
                     appActivities.addAll(processMan.getActivities());
@@ -90,9 +94,18 @@ public class AndroidSupport {
                     processMan.printManifestInfo();
                 }
             }
+
+            // Process the R.txt entries in AAR files.
+            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs);
+            if (generatedR != null) {
+                System.out.println("Adding " + generatedR + "...");
+                sootParameters.getLibraries().add(generatedR);
+            }
+
             // If inputs are in AAR format, extract and use their JAR entries.
             sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false));
             // appInput = sootParameters._inputs.get(0);
+
             Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
         }
     }

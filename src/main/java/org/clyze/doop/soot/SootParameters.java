@@ -33,6 +33,14 @@ public class SootParameters {
           return this._inputs;
      }
 
+     public void setLibraries(List<String> libraries) {
+          this._libraries = libraries;
+     }
+
+     public List<String> getLibraries() {
+          return this._libraries;
+     }
+
      public List<String> getInputsAndLibraries() {
           List<String> ret = new ArrayList<>();
           ret.addAll(this._inputs);
