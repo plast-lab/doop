@@ -104,7 +104,7 @@ public class AndroidSupport {
 
             // If inputs are in AAR format, extract and use their JAR entries.
             sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false));
-            // appInput = sootParameters._inputs.get(0);
+            sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false));
 
             Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
         }
