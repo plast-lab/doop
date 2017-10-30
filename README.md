@@ -128,8 +128,7 @@ Soufflé supports multithreading so you can select the number of threads the ana
 
 ### Soufflé profile
 
-    You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. 
-    In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
     $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
 
