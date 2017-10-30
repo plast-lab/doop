@@ -120,13 +120,18 @@ You can also override the options from a properties file with options from the c
 
     $ ./doop -p /path/to/file.properties -a context-insensitive --platform java_6
 
+### Soufflé multithreading
 
-### Using Soufflé as the Datalog engine of choice
+Soufflé supports multithreading so you can select the number of threads the analysis will run on by providing the --souffle-jobs argument to doop. For example:
 
-In order to use Soufflé instead of the LogicBlox engine you can provide the --souffle argument. Soufflé supports multithreading so you can select the number of threads the analysis will run on by providing the --souffle-jobs argument to doop. For example:
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle-jobs 12
 
-    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle --souffle-jobs 12
+### Using LogicBlox as the Datalog engine of choice
 
+In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. 
+
+    $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
+    
 You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
 
     $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
