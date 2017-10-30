@@ -386,7 +386,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
         assert platform == "java"
 
-        String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
+        String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
 
         //Not using if/else for readability
         switch(version) {
@@ -418,7 +418,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def (platform, version) = [platformLibsValue[0], platformLibsValue[1]]
         assert platform == "java"
 
-        String path = "${options.DOOP_PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
+        String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
         return "$path/rt.jar"
     }
 

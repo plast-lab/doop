@@ -24,4 +24,31 @@ public class SootParameters {
      boolean _uniqueFacts = false;
      boolean _generateJimple = false;
      boolean _toStdout = false;
+
+     public void setInputs(List<String> inputs) {
+          this._inputs = inputs;
+     }
+
+     public List<String> getInputs() {
+          return this._inputs;
+     }
+
+     public void setLibraries(List<String> libraries) {
+          this._libraries = libraries;
+     }
+
+     public List<String> getLibraries() {
+          return this._libraries;
+     }
+
+     public List<String> getInputsAndLibraries() {
+          List<String> ret = new ArrayList<>();
+          ret.addAll(this._inputs);
+          ret.addAll(this._libraries);
+          return ret;
+     }
+
+     public boolean getRunFlowdroid() {
+          return this._runFlowdroid;
+     }
 }
