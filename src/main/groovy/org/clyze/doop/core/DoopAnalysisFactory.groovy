@@ -230,8 +230,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         case 7:
                             files = ["${path}/rt.jar",
                                      "${path}/jce.jar",
-                                     "${path}/jsse.jar",
-                                     "${path}/tools.jar"]
+                                     "${path}/jsse.jar"]
+                            // Add optional tools.jar.
+                            String toolsJar = "${path}/tools.jar"
+                            if ((new File(toolsJar)).exists()) {
+                                files << toolsJar
+                            }
                             break
                         default:
                             throw new RuntimeException("Invalid JRE version: $version")
