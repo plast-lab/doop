@@ -22,7 +22,7 @@ For trouble-free configuration:
 
 For a variety of benchmarks, you could clone (or download) the [doop-benchmarks](https://bitbucket.org/yanniss/doop-benchmarks) repository.
 
-One important directory in that repository is `JREs`. It can be used for the `PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/. Use the `--platform-lib` option to overwrite the default behavior.
+One important directory in that repository is `JREs`. It can be used for the `DOOP_PLATFORMS_LIB` environment variable. It contains certain java library files for different JRE versions, necessary for analysis purposes. If you would like to provide a custom DOOP_PLATFORMS_LIB directory (e.g., to run analyses using different minor versions), you should follow the same file structure. For example, in order to analyze with JRE version 1.6, you need a `jre1.6` directory containing at least `jce.jar`, `jsse.jar` and `rt.jar`. In order to run an an analysis on an android apk ideally you could create a link to your android sdk installation. The currently supported structure is Android/Sdk/. Use the `--platform-lib` option to overwrite the default behavior.
 
 ## Running Doop
 
@@ -126,16 +126,17 @@ Soufflé supports multithreading so you can select the number of threads the ana
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id souffle-antlr --souffle-jobs 12
 
+### Soufflé profile
+
+    You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
+
+    $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
+
 ### Using LogicBlox as the Datalog engine of choice
 
 In order to use LogicBlox instead of the Soufflé engine you can provide the --lb argument. 
 
     $ ./doop -i ../doop-benchmarks/dacapo-2006/antlr.jar -a context-insensitive --platform java_7 --dacapo --id lb-antlr --lb
-    
-You can then inspect the analysis results by using the souffle-profile command and providing the profile.txt file produced by Souffle under the output directory of the analysis. In order to inspect the profile.txt of the above doop invocation with --souffle you would use the following command:
-
-    $ souffle-profile out/context-insensitive/souffle-antlr/profile.txt
-
    
 ## License
 UPL (see [LICENSE](LICENSE)).
