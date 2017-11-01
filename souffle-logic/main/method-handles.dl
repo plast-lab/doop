@@ -1,0 +1,121 @@
+/*************************************************************
+ * MethodHandle constants
+ *************************************************************/
+
+HeapAllocation_ContextInsensitive(?heap) :-
+   isMethodHandleConstant(?heap).
+
+#define LAMBDA_METAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"
+
+#define LAMBDA_ALTMETAFACTORY_ID "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>"
+
+// Method references are wrapped by calling invokedynamic with
+// boostrap method being the lambda metafactory and the second
+// bootstrap argument being a constant method handle. The result
+// 'value' of the invokedynamic is a lambda, which contains an
+// instance method calling static method 'realMethod'.
+
+.decl ConstantMethodHandleLambda(?value:Value, ?dynName:symbol, ?dynRet:Type, ?realMethod:Method)
+
+.decl InvokedynamicBootstrap(?invo:DynamicMethodInvocation_Insn, ?ctx:Context)
+
+#define MHDesc(type, method, ret, name) \
+   cat("reference ", cat(type, cat ("::", cat(method, cat(" wrapped as ", cat(ret, cat(".", name)))))))
+
+#define MHValue(invo, ret, desc) \
+   cat(invo, cat("::: ", cat(ret, cat("::: (Mock)::: ", desc))))
+
+// Intermediate relation to make rules easier to read.
+.decl ConstantMHLambdaVPT(?hctx:HContext, ?value:Value, ?ctx:Context, ?var:Var, ?interface:InterfaceType, ?dynName:symbol, ?realMethod:Method, ?invo:MethodInvocation)
+
+ConstantMHLambdaVPT(?hctx, MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?interface, ?dynName)), ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo) :-
+   isDynamicMethodInvocation_Insn(?invo),
+   BootstrapParam(1, ?invo, ?handleVar),
+   DynamicMethodInvocation_Bootstrap(?invo, LAMBDA_METAFACTORY_ID),
+   VarPointsTo(?hctx, ?handleVal, ?ctx, ?handleVar),
+   MethodHandleConstant_Method(?handleVal, ?realMethod),
+   DynamicMethodInvocation_DynName(?invo, ?dynName),
+   DynamicMethodInvocation_DynReturnType(?invo, ?interface),
+   isInterfaceType(?interface),
+   AssignReturnValue(?invo, ?var),
+   // Used to generate friendly description for the generated wrapper.
+   Method_SimpleName(?realMethod, ?handleMeth),
+   Method_DeclaringType(?realMethod, ?handleType).
+   // ?desc = MHDesc(?handleType, ?handleMeth, ?interface, ?dynName),
+   // ?value = MHValue(?invo, ?interface, ?desc).
+   // ?value = MHValue(?invo, ?interface, MHDesc(?handleType, ?handleMeth, ?interface, ?dynName)).
+
+// Unpack the information gathered above and populate appropriate relations.
+VarPointsTo(?hctx, ?value, ?ctx, ?var),
+MockValueConsMacro(?value, ?interface),
+ConstantMethodHandleLambda(?value, ?dynName, ?interface, ?realMethod),
+InvokedynamicBootstrap(?invo, ?ctx) :-
+   ConstantMHLambdaVPT(?hctx, ?value, ?ctx, ?var, ?interface, ?dynName, ?realMethod, ?invo).
+
+// Record invokedynamic invocations whose bootstrap methods are not
+// handled at all.
+.decl UnhandledInvokedynamic(?i:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
+
+UnhandledInvokedynamic(?i, ?bootMethodId) :-
+   isDynamicMethodInvocation_Insn(?i),
+   DynamicMethodInvocation_Bootstrap(?i, ?bootMethodId),
+   // ?bootMethodId != LAMBDA_ALTMETAFACTORY_ID,
+   ?bootMethodId != LAMBDA_METAFACTORY_ID.
+
+// When invokeinterface is called on a lambda object constructed by a
+// constant method handle, the real method is called. This can wrap a
+// static method call as an instance method call. We create two call
+// graph edges: (1) invokeinterface on the method handle lambda calls
+// the real method and (2) invokedynamic calls the bootstrap method.
+
+.decl InvokedynamicCallGraphEdge(?callerCtx:Context, ?i:MethodInvocation, ?calleeCtx:Context, ?m:Method)
+
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod) :-
+   ConstantMethodHandleLambda(?value, ?dynName, _, ?realMethod),
+   VirtualMethodInvocation_Base(?i, ?var),
+   VarPointsTo(_, ?value, ?callerCtx, ?var),
+   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+   VirtualMethodInvocation_SimpleName(?i, ?dynName).
+InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, LAMBDA_METAFACTORY_ID) :-
+   ImmutableContextFromContext(?callerCtx, ?calleeCtx),
+   InvokedynamicBootstrap(?i, ?callerCtx).
+
+ReachableContext(?calleeCtx, ?callee) :-
+   InvokedynamicCallGraphEdge(_, _, ?calleeCtx, ?callee).
+
+// Pass arguments to underlying method.
+VarPointsTo(?hctx, ?val, ?ctx, ?formal) :-
+   InvokedynamicCallGraphEdge(_, ?i, ?ctx, ?realMethod),
+   FormalParam(?idx, ?realMethod, ?formal),
+   ActualParam(?idx, ?i, ?actual),
+   VarPointsTo(_, ?val, _, ?actual),
+   ImmutableHContextFromContext(?ctx, ?hctx).
+
+// Handle return values.
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
+   InvokedynamicCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?realMethod),
+   ReturnVar(?realReturnVar, ?realMethod),
+   VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+   AssignReturnValue(?i, ?ret).
+
+.decl Lambda_Method(?value:Value, ?realMethod:Method)
+Lambda_Method(?value, ?realMethod) :-
+   ConstantMethodHandleLambda(?value, _, _, ?realMethod).
+
+.decl ConstructorReference(?var:Var, ?value:Value, ?i:MethodInvocation, ?realMethod:Method)
+
+// Applications of constructor references construct values. However,
+// these values do not come from a 'new' instruction in the code but
+// are created here as special values, one per type.
+
+#define ConstructorReferenceValue(type) cat(type, "::: (Mock)")
+
+VarPointsTo(?hctx, ConstructorReferenceValue(?type), ?ctx, ?var),
+ConstructorReference(?var, ConstructorReferenceValue(?type), ?i, ?realMethod),
+MockValueConsMacro(ConstructorReferenceValue(?type), ?type) :-
+   VirtualMethodInvocation_Base(?i, ?base),
+   VarPointsTo(?hctx, ?baseVal, ?ctx, ?base),
+   Lambda_Method(?baseVal, ?realMethod),
+   Method_SimpleName(?realMethod, "<init>"),
+   Method_DeclaringType(?realMethod, ?type),
+   AssignReturnValue(?i, ?var).

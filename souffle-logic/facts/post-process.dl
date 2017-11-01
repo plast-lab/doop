@@ -1,3 +1,6 @@
+MethodHandleConstantConsMacro(?heap, ?method, "java.lang.invoke.MethodHandle") :-
+   MethodHandleConstant_Method(?heap, ?method).
+
 MockHeapConsMacro(?null, ?type),
 HeapAllocation_Null(?null) :-
   ?null = "<<null pseudo heap>>",
