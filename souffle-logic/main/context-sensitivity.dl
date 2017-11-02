@@ -157,8 +157,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-  .plan 1:(2,1)
+   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+#ifndef FEATHERWEIGHT_ANALYSIS
+   .plan 1:(2,1)
+#endif      
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
   LoadInstanceField(?base, ?sig, ?to, _),
@@ -304,7 +306,6 @@ StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
-  Var_DeclaringMethod(?to, ?inmethod).
 #endif
 
 .decl ReachableStoreArrayIndexBase(?base:Var)
