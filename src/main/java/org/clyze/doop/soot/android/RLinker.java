@@ -31,11 +31,12 @@ public class RLinker {
      *  package names. Returns the path of the generated JAR (or null
      *  if no code generation was done).
      */
-    public static String linkRs(List<String> archives, Map<String, String> pkgs) {
+    public static String linkRs(List<String> archives, Map<String, String> pkgs,
+                                Set<String> tmpDirs) {
         // The basic data that guide code generation: a map from
         // package names to R nested class names, to contents.
         Map<String, Map<String, List<String> > > rs = new HashMap<>();
-        final String tmpDir = AARUtils.createTmpDir();
+        final String tmpDir = AARUtils.createTmpDir(tmpDirs);
 
         for (String ar : archives) {
             if (ar.endsWith(".aar")) {

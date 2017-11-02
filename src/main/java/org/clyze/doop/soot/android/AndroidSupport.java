@@ -39,7 +39,7 @@ public class AndroidSupport {
         return dummyMain;
     }
 
-    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars) throws Exception {
+    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars, Set<String> tmpDirs) throws Exception {
         File apk = new File(appInput);
         SetupApplication app = new SetupApplication(androidJars, appInput);
         Options.v().set_process_multiple_dex(true);
@@ -96,15 +96,15 @@ public class AndroidSupport {
             }
 
             // Process the R.txt entries in AAR files.
-            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs);
+            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs, tmpDirs);
             if (generatedR != null) {
                 System.out.println("Adding " + generatedR + "...");
                 sootParameters.getLibraries().add(generatedR);
             }
 
             // If inputs are in AAR format, extract and use their JAR entries.
-            sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false));
-            sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false));
+            sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false, tmpDirs));
+            sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
             Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
         }
