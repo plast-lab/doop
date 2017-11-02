@@ -54,6 +54,7 @@ _MatchedHeapAllocation2(?representation, ?heap) :-
    _HeapAllocationInformation(_, ?inMethod, ?type, ?heap).
 
 .decl DynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)
+.output DynamicHeapAllocation
 
 // 3) create dynamic heap allocations
 DynamicHeapAllocation(?representation, ?heap) :-
@@ -97,6 +98,7 @@ UnmatchedStaticNormalHeapAllocation(?method, ?lineNumber, ?type) :-
 // Dynamic call graph edges are found by taking stack trace elements in the heap dump.
 
 .decl DynamicReachableMethod(?method:Method)
+.output DynamicReachableMethod
 
 DynamicReachableMethod(?method) :-
    _DynamicReachableMethod(?method),
@@ -227,6 +229,7 @@ _InvocationMethodAndLine(?lineNumber, ?name, ?invocation, ?fromMethod) :-
    Instruction_Method(?invocation, ?fromMethod).
 
 .decl DynamicCallGraphEdge(?ctxTo:DynamicContext, ?toMethod:Method, ?invocation:Instruction, ?ctxFrom:DynamicContext, ?fromMethod:Method)
+.output DynamicCallGraphEdge
 
 DynamicCallGraphEdge(?ctxTo, ?toMethod, ?invocation, ?ctxFrom, ?fromMethod) :-
    _DynamicCallGraphEdge(?fromMethod, ?lineNumber, ?toMethod, ?ctxFrom, ?ctxTo),

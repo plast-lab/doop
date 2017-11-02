@@ -1,5 +1,13 @@
 // Class-- //
 
+.decl _Valid_Type(?type:ReferenceType)
+_Valid_Type(?type) :-
+  isReferenceType(?type),
+  !Type_null(?type),
+  !isArrayType(?type),
+  Server_Class_Keep(?type).
+
+
 // ?class is implemented/extended by ?subClass
 .decl Server_Class_Subtype(?class:ReferenceType, ?subClass:ReferenceType)
 .decl Server_Class_Keep(?class:ReferenceType)
@@ -12,9 +20,8 @@
 Server_Class_Subtype(?class, ?subClass) :-
   SubtypeOf(?subClass, ?class),
   ?subClass != ?class,
-  isReferenceType(?class),
-  !Type_null(?subClass),
-  !Type_null(?class).
+  _Valid_Type(?class),
+  _Valid_Type(?subClass).
 
 // All application types
 Server_Class_Keep(?class) :-
@@ -57,9 +64,9 @@ Server_Class_ReachesField(?class, ?fld) :-
   Field_Modifier(?mod, ?fld),
   !Modifier_private(?mod),
   SupertypeOf(?supertype, ?class),
-  !Type_null(?class),
-  Server_Class_Keep(?supertype),
-  Server_Class_Keep(?class).
+  ?supertype != ?class,
+  _Valid_Type(?class),
+  _Valid_Type(?supertype).
 
 // --Class //
 
@@ -78,6 +85,8 @@ Server_Field_ShadowedBy(?fld, ?shadowFld) :-
   Field_SimpleName(?fld, ?name),
   SubtypeOf(?subClass, ?class),
   ?subClass != ?class,
+  _Valid_Type(?class),
+  _Valid_Type(?subClass),
   Field_DeclaringType(?shadowFld, ?subClass),
   Field_SimpleName(?shadowFld, ?name).
 
@@ -109,7 +118,7 @@ Server_IField_Values(?baseValue, ?fld, ?value) :-
 
 Server_IField_Values(?baseValue, ?fld, "<<XL-pt-set>>") :-
   _IFPT_Count(?baseValue, ?fld, ?count),
-  ?count <= X_SERVER_LOGIC_THRESHOLD,
+  ?count > X_SERVER_LOGIC_THRESHOLD,
   isValue(?baseValue).
 
 Server_SField_Values(?fld, ?value) :-
@@ -167,10 +176,12 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_DeclaringType(?method, ?type),
   Method_SimpleName(?method, ?name),
   Method_Descriptor(?method, ?desc),
-  ?desc != "<clinit>",
-  ?desc != "<init>",
+  ?name != "<clinit>",
+  ?name != "<init>",
   SubtypeOf(?subType, ?type),
   ?subType != ?type,
+  _Valid_Type(?type),
+  _Valid_Type(?subType),
   Method_DeclaringType(?subMethod, ?subType),
   Method_SimpleName(?subMethod, ?name),
   Method_Descriptor(?subMethod, ?desc).

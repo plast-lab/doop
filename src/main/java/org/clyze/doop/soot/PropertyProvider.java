@@ -8,7 +8,7 @@ import java.util.Properties;
 
 import static soot.SourceLocator.FoundFile;
 
-class PropertyProvider {
+public class PropertyProvider {
     private Map<String, Properties> _properties;
 
     public PropertyProvider() {
