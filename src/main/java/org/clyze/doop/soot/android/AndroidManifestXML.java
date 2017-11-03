@@ -84,7 +84,7 @@ public class AndroidManifestXML implements AndroidManifest {
             providers.add(n.getNodeValue());
         } else if (appElem.getNodeName().equals("receiver")) {
             receivers.add(n.getNodeValue());
-        } else if (appElem.getNodeName().equals("services")) {
+        } else if (appElem.getNodeName().equals("service")) {
             services.add(n.getNodeValue());
         }
     }
