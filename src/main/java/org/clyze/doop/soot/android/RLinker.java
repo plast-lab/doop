@@ -35,7 +35,7 @@ public class RLinker {
                                 Set<String> tmpDirs) {
         // The basic data that guide code generation: a map from
         // package names to R nested class names, to contents.
-        Map<String, Map<String, List<String> > > rs = new HashMap<>();
+        Map<String, Map<String, Set<String> > > rs = new HashMap<>();
         final String tmpDir = AARUtils.createTmpDir(tmpDirs);
 
         for (String ar : archives) {
@@ -43,8 +43,7 @@ public class RLinker {
                 try {
                     String rText = getZipEntry(new ZipFile(ar), "R.txt");
                     if (rText != null) {
-                        Set<String> lines = new HashSet<>(Arrays.asList(rText.split("\n|\r")));
-                        for (String line : lines)
+                        for (String line : rText.split("\n|\r"))
                             if (line.length() != 0)
                                 processRLine(ar, line, pkgs, rs);
                     }
@@ -66,7 +65,7 @@ public class RLinker {
     }
 
     private static void processRLine(String ar, String line, Map<String, String> pkgs,
-                                     Map<String, Map<String, List<String> > > rs) {
+                                     Map<String, Map<String, Set<String> > > rs) {
         final String delim = " ";
         String[] parts = line.split(delim);
         if (parts.length < 2) {
@@ -76,9 +75,9 @@ public class RLinker {
             if (pkg == null) {
                 System.err.println("Warning: no package: " + ar);
             } else {
-                Map<String, List<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, List<String>>());
+                Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, Set<String>>());
                 String nestedR = parts[1];
-                List<String> list = pkgEntry.getOrDefault(nestedR, new ArrayList<>());
+                Set<String> set = pkgEntry.getOrDefault(nestedR, new HashSet<>());
                 String rName = pkg + "." + "R$" + nestedR;
                 String[] newParts = new String[parts.length];
                 newParts[0] = parts[0];
@@ -87,8 +86,8 @@ public class RLinker {
                 for (int i = 3; i < parts.length; i++) {
                     newParts[i] = parts[i];
                 }
-                list.add("        public static " + String.join(delim, newParts) + ";");
-                pkgEntry.put(nestedR, list);
+                set.add("        public static " + String.join(delim, newParts) + ";");
+                pkgEntry.put(nestedR, set);
                 rs.put(pkg, pkgEntry);
             }
         }
@@ -109,7 +108,7 @@ public class RLinker {
     }
 
     private static String genR(String tmpDir, String pkg,
-                               Map<String, List<String>> rData) {
+                               Map<String, Set<String>> rData) {
         String subdir = tmpDir + "/" + pkg.replaceAll("\\.", "/");
         new File(subdir).mkdirs();
         String rFile = subdir + "/R.java";
@@ -130,7 +129,7 @@ public class RLinker {
         return rFile;
     }
 
-    private static void genNestedR(String nestedName, List<String> data,
+    private static void genNestedR(String nestedName, Set<String> data,
                                    List<String> lines) {
         lines.add("    public static final class " + nestedName + "{\n");
         lines.addAll(data);
