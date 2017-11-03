@@ -40,12 +40,10 @@ public class AndroidSupport {
     }
 
     public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars, Set<String> tmpDirs) throws Exception {
-        File apk = new File(appInput);
-        SetupApplication app = new SetupApplication(androidJars, appInput);
-        Options.v().set_process_multiple_dex(true);
-        Options.v().set_src_prec(Options.src_prec_apk);
-
         if (sootParameters.getRunFlowdroid()) {
+            SetupApplication app = new SetupApplication(androidJars, appInput);
+            Options.v().set_process_multiple_dex(true);
+            Options.v().set_src_prec(Options.src_prec_apk);
             app.getConfig().setCallbackAnalyzer(Fast);
             String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
             try {
