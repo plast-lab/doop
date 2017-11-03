@@ -67,7 +67,7 @@ public class AndroidSupport {
             // the application's. There are Android apps that use
             // components (e.g. activities) from AAR libraries.
             for (String i : inputsAndLibs) {
-                if (i.endsWith(".aar")) {
+                if (i.endsWith(".apk") || i.endsWith(".aar")) {
                     System.out.println("Processing manifest in " + i);
 
                     AndroidManifest processMan = getAndroidManifest(i);
