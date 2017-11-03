@@ -384,7 +384,7 @@ Stats_Simple_Application_DynamicReachableMethod(?method) :-
   DynamicReachableMethod(?method).
 
 Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth, ?invocation, ?toMeth) :-
-  MostPreciseDynamicCallGraphEdge(_, ?toMeth, ?invocation, _, ?fromMeth).
+  SanitizedDynamicCallGraphEdge(_, ?toMeth, ?invocation, _, ?fromMeth).
 
 NewMetricMacro("92.0", "Dynamic call graph edges (INS)", Stats_Simple_InsensDynamicCallGraphEdge(_,_,_)).
 NewMetricMacro("93.0", "Dynamic call graph edges (SENS)", MostPreciseDynamicCallGraphEdge(_,_,_,_,_)).
@@ -405,8 +405,8 @@ Stats_Simple_Application_InsensCallGraphEdge(?invocation, ?toMeth) :-
 .output Stats_Simple_Application_DynamicCallGraphEdge
 
 Stats_Simple_Application_DynamicCallGraphEdge(?invocation, ?toMeth) :-
-  Stats_Simple_InsensDynamicCallGraphEdge(?invocation, ?toMeth),
-  isApplicationMethod(?toMeth),
+  Stats_Simple_InsensDynamicCallGraphEdge(_, ?invocation, ?toMeth),
+  ApplicationMethod(?toMeth),
   Instruction_Method(?invocation, ?fromMeth),
   ApplicationMethod(?fromMeth).
 
