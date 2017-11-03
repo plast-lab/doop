@@ -42,10 +42,12 @@ public class RLinker {
             if (ar.endsWith(".aar")) {
                 try {
                     String rText = getZipEntry(new ZipFile(ar), "R.txt");
-                    if (rText != null)
-                        for (String line : rText.split("\n|\r"))
+                    if (rText != null) {
+                        Set<String> lines = new HashSet<>(Arrays.asList(rText.split("\n|\r")));
+                        for (String line : lines)
                             if (line.length() != 0)
                                 processRLine(ar, line, pkgs, rs);
+                    }
                 } catch (IOException ex) {
                     System.err.println("Error while reading R.txt: " + ar);
                     System.err.println(ex.getMessage());
