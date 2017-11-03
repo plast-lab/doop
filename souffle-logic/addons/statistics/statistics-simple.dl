@@ -391,4 +391,23 @@ NewMetricMacro("93.0", "Dynamic call graph edges (SENS)", MostPreciseDynamicCall
 NewMetricMacro("94.0", "Dynamic reachable methods (INS)", DynamicReachableMethod(_)).
 NewMetricMacro("95.0", "App Dynamic reachable methods (INS)", Stats_Simple_Application_DynamicReachableMethod(_)).
 NewMetricMacro("96.0", "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).
+
+.decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)
+.output Stats_Simple_Application_InsensCallGraphEdge
+
+Stats_Simple_Application_InsensCallGraphEdge(?invocation, ?toMeth) :-
+  Stats_Simple_InsensCallGraphEdge(?invocation, ?toMeth),
+  ApplicationMethod(?toMeth),
+  Instruction_Method(?invocation, ?fromMeth),
+  ApplicationMethod(?fromMeth).
+
+.decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)
+.output Stats_Simple_Application_DynamicCallGraphEdge
+
+Stats_Simple_Application_DynamicCallGraphEdge(?invocation, ?toMeth) :-
+  Stats_Simple_InsensDynamicCallGraphEdge(?invocation, ?toMeth),
+  isApplicationMethod(?toMeth),
+  Instruction_Method(?invocation, ?fromMeth),
+  ApplicationMethod(?fromMeth).
+
 #endif
