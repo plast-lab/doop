@@ -10,6 +10,7 @@
 #ifndef X_SERVER_LOGIC
 .output CallGraphEdge()
 .output VarPointsTo()
+.output Reachable()        
 .output Stats_Metrics
 #endif
 .output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
