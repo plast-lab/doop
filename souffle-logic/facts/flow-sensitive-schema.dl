@@ -134,7 +134,7 @@
 .decl MainMethodArgArrayContent(?heap:HeapAllocation)
 
 .decl ClassHeap_InstanceType(?classHeap:ClassHeap, ?instanceType:Type)
-.decl MethodHandleConstant_InstanceType(?classHeap:MethodHandleConstant, ?instanceType:Type)
+.decl MethodHandleConstant_Method(?heap:MethodHandleConstant, ?method:Method)
 
 //-----------------------------------------------------------------------------
 // [Bytecode Instructions]
@@ -395,7 +395,14 @@
 
 // Dynamic Method Invocation
 .decl DynamicMethodInvocation_Bootstrap(?invocation:DynamicMethodInvocation_Insn, ?bootSignature:Method)
-.decl DynamicMethodInvocation_DynMethod(?invocation:DynamicMethodInvocation_Insn, ?dynName:symbol)
+
+// The following triplet is the dynamic method and can be anything
+// (these are parts of a single UTF-8 string in the bytecode).
+.decl DynamicMethodInvocation_DynName(?invocation:DynamicMethodInvocation_Insn, ?dynName:symbol)
+.decl DynamicMethodInvocation_DynReturnType(?invocation:DynamicMethodInvocation_Insn, ?dynRetType:symbol)
+.decl DynamicMethodInvocation_DynParamTypes(?invocation:DynamicMethodInvocation_Insn, ?dynParamTypes:symbol)
+// Arity of the dynamic method (calculated by the front-end).
+.decl DynamicMethodInvocation_DynArity(?invocation:DynamicMethodInvocation_Insn, ?dynArity:number)
 
 // The bootstrap parameters of a dynamic invocation.
 .decl BootstrapParam(?index:number, ?invocation:DynamicMethodInvocation_Insn, ?var:Var)

@@ -20,6 +20,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 
+import org.apache.commons.io.FileUtils;
+
 import org.clyze.doop.soot.android.AndroidSupport;
 
 public class Main {
@@ -216,9 +218,12 @@ public class Main {
 
         String input0 = sootParameters._inputs.get(0);
         AndroidSupport android = null;
+
+        // Set of temporary directories to be cleaned up after analysis ends.
+        Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
             android = new AndroidSupport(input0, sootParameters);
-            android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars);
+            android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
             populateClassesInAppJar(input0, classesInApplicationJar, propertyProvider);
@@ -236,7 +241,7 @@ public class Main {
             scene.extendSootClassPath(input);
         }
 
-        for (String lib : AARUtils.toJars(sootParameters._libraries, false)) {
+        for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
             System.out.println("Adding archive for resolving: " + lib);
             scene.extendSootClassPath(lib);
         }
@@ -354,6 +359,12 @@ public class Main {
         }
 
         db.close();
+
+        // Clean up any temporary directories used for AAR extraction.
+        for (String tmpDir : tmpDirs) {
+            FileUtils.deleteQuietly(new File(tmpDir));
+        }
+
     }
 
     private static void addCommonDynamicClass(Scene scene, String className) {

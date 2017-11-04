@@ -8,9 +8,10 @@
    isStringConstant(heap), \
    HeapAllocation_Type(heap, type)
 
-#define MethodHandleConstantConsMacro(heap, type) \
-   isHeapAllocation(heap) \
-   isMethodHandleConstant(heap) \
+#define MethodHandleConstantConsMacro(heap, method, type) \
+   isHeapAllocation(heap), \
+   isMethodHandleConstant(heap), \
+   MethodHandleConstant_Method(heap, method), \
    HeapAllocation_Type(heap, type)
 
 #define ClassHeapConsMacro(heap, type) \

@@ -27,13 +27,30 @@ class Driver {
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
         _generateJimple = generateJimple;
-        _cores = Runtime.getRuntime().availableProcessors();
+        _cores = readCores();
 
         if (_cores > 2) {
             _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         } else {
             _executor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         }
+    }
+
+    // Read number of cores from environment variable. If the variable
+    // doesn't exist or its value is invalid, use all processors.
+    private static int readCores() {
+        String coresEnvVar = "DOOP_FACTGEN_CORES";
+        String coresEnvVal = System.getenv(coresEnvVar);
+        if (coresEnvVal != null) {
+            try {
+                int c = Integer.parseInt(coresEnvVal);
+                System.out.println("Using " + coresEnvVar + " = " + coresEnvVal);
+                return c;
+            } catch (NumberFormatException nfe) {
+                System.out.println("Invalid " + coresEnvVar + " = " + coresEnvVal);
+            }
+        }
+        return Runtime.getRuntime().availableProcessors();
     }
 
     void doInParallel(Set<SootClass> classesToProcess) {

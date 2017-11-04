@@ -124,6 +124,13 @@ HighConfidenceLoadFromDynamicInference(?value, ?inmethod) :-
 HighConfidenceAssign(?value, ?inmethod) :-
   HighConfidenceLoadFromDynamicInference(?value, ?inmethod).
 
+#ifdef FEATHERWEIGHT_ANALYSIS
+HighConfidenceAssign(?value, ?inmethod) :-
+  VarPointsTo(_, ?value, _, ?to),
+  Var_DeclaringMethod(?to, ?inmethod),
+  isMethod(?inmethod).
+#endif
+
 #endif
  
 // Context insensitive allocations

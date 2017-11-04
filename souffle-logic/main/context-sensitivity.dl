@@ -157,8 +157,10 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
   LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
-  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
-  .plan 1:(2,1)
+   InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+#ifndef FEATHERWEIGHT_ANALYSIS
+   .plan 1:(2,1)
+#endif      
 
 LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
   LoadInstanceField(?base, ?sig, ?to, _),
@@ -167,13 +169,14 @@ LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
 /**
  * Store instance fields
  */
-
+#ifndef FEATHERWEIGHT_ANALYSIS
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
   NotSpecialObject(?value),
   !Value_Null(?basevalue).
   .plan 1:(2,1,3)
+#endif      
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
   StoreInstanceField(?from, ?base, ?signature, _),
@@ -193,11 +196,12 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 /**
  * Store static fields
  */
-
+#ifndef FEATHERWEIGHT_ANALYSIS
 StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReachableStoreStaticFieldFrom(?from),
   StoreStaticField(?from, ?signature, _),
   VarPointsTo(?hctx, ?value, _, ?from).
+#endif
 
 .decl ReachableStoreStaticFieldFrom(?from:Var)
 
@@ -297,10 +301,12 @@ ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
   ComponentType(?basevaluetype, ?componenttype),
   SupertypeOf(?componenttype, ?valuetype).
 
+#ifndef FEATHERWEIGHT_ANALYSIS
 StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
   ReachableStoreArrayIndexBase(?base),
   OptStoreArrayIndex(?from, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+#endif
 
 .decl ReachableStoreArrayIndexBase(?base:Var)
 

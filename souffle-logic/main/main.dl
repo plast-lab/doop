@@ -9,6 +9,9 @@
 #include "native.dl"
 #include "reference.dl"
 #include "string-constants.dl"
+#ifndef DISABLE_METHOD_HANDLES
+#include "method-handles.dl"
+#endif
 #include "threads.dl"
 
 #include "main-delta.dl"

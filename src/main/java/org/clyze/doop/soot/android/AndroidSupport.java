@@ -39,13 +39,11 @@ public class AndroidSupport {
         return dummyMain;
     }
 
-    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars) throws Exception {
-        File apk = new File(appInput);
-        SetupApplication app = new SetupApplication(androidJars, appInput);
-        Options.v().set_process_multiple_dex(true);
-        Options.v().set_src_prec(Options.src_prec_apk);
-
+    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
+            SetupApplication app = new SetupApplication(androidJars, appInput);
+            Options.v().set_process_multiple_dex(true);
+            Options.v().set_src_prec(Options.src_prec_apk);
             app.getConfig().setCallbackAnalyzer(Fast);
             String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
             try {
@@ -67,7 +65,7 @@ public class AndroidSupport {
             // the application's. There are Android apps that use
             // components (e.g. activities) from AAR libraries.
             for (String i : inputsAndLibs) {
-                if (i.endsWith(".aar")) {
+                if (i.endsWith(".apk") || i.endsWith(".aar")) {
                     System.out.println("Processing manifest in " + i);
 
                     AndroidManifest processMan = getAndroidManifest(i);
@@ -96,15 +94,15 @@ public class AndroidSupport {
             }
 
             // Process the R.txt entries in AAR files.
-            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs);
+            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs, tmpDirs);
             if (generatedR != null) {
                 System.out.println("Adding " + generatedR + "...");
                 sootParameters.getLibraries().add(generatedR);
             }
 
             // If inputs are in AAR format, extract and use their JAR entries.
-            sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false));
-            sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false));
+            sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false, tmpDirs));
+            sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
             Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
         }
