@@ -70,3 +70,13 @@ CachedMergeStatic(?invo, ?calleeCtx) :-
   MethodInvocation_Method(?invo, ?tomethod),
   !_InOutFlowMethod(?tomethod),
   MergeStaticMacro(?notused, ?notused, ?calleeCtx).
+
+#ifdef HEAPDL
+ DynamicContextToContext(?ctx, ?dctx) :-
+   isDynamicContext(?dctx),
+   isImmutableContext(?ctx).
+
+DynamicContextToHContext(?hctx, ?dctx) :-
+   isDynamicContext(?dctx),
+   isImmutableHContext(?hctx).
+#endif
