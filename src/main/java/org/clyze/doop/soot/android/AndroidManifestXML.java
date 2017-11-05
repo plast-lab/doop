@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.zip.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.commons.io.IOUtils;
 import org.w3c.dom.*;
 
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
@@ -155,8 +156,109 @@ public class AndroidManifestXML implements AndroidManifest {
     }
 
     public Set<PossibleLayoutControl> getUserControls() {
-        System.out.println("WARNING: getUserControls() not yet implemented for plain-text XML files.");
-        return new HashSet<>();
+        Set<String> layoutFiles = new HashSet<>();
+        Set<PossibleLayoutControl> controls = new HashSet<>();
+        try {
+            ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
+            for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
+                String name = e.getName();
+                if (name.startsWith("res/layout") && name.endsWith(".xml"))
+                    layoutFiles.add(name);
+            }
+            for (String layoutFile : layoutFiles)
+                getUserControlsForLayoutFile(layoutFile, -1, controls);
+        } catch (Exception ex) {
+            System.err.println("Error while reading user controls:");
+            ex.printStackTrace();
+        }
+        return controls;
+    }
+
+    void getUserControlsForLayoutFile(String layoutFile, int parentId,
+                                      Set<PossibleLayoutControl> controls) throws Exception {
+        InputStream is = getZipEntryInputStream(layoutFile);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        Document doc = dbf.newDocumentBuilder().parse(is);
+        Element docElem = doc.getDocumentElement();
+        NodeList l0 = docElem.getChildNodes();
+        for (int i0 = 0; i0 < l0.getLength(); i0++) {
+            getUserControlsForNode(l0.item(i0), parentId, controls);
+        }
+    }
+
+    // Layout controls are triplets (id, control name, parent id) and
+    // can be sensitive.
+    private void getUserControlsForNode(Node node, int parentId,
+                                        Set<PossibleLayoutControl> controls) throws Exception {
+        String name = node.getNodeName();
+        if (name.equals("dummy") || name.equals("#comment") || name.equals("#text")) {
+            return;
+        } else if (name.equals("include")) {
+            String includedLayout = attrOrDefault(node, "layout", null);
+            if (includedLayout != null) {
+                if (includedLayout.startsWith("@layout/")) {
+                    String layoutFile = "res/" + includedLayout.substring(1);
+                    getUserControlsForLayoutFile(layoutFile, parentId, controls);
+                } else {
+                    System.err.println("unsupported include: " + includedLayout);
+                }
+            }
+            return;
+        }
+
+        // Default control id, if no matching R entry is found.
+        int intId = -1;
+        // 'Merge' elements don't represent controls, skip to process children.
+        if (!name.equals("merge")) {
+            if (name.equals("fragment"))
+                name = attrOrDefault(node, "android:name", "-1");
+            String id = attrOrDefault(node, "android:id", "-1");
+            if (id.startsWith("@+"))
+                id = id.substring(2);
+            if (id.indexOf("/") != -1) {
+                String[] parts = id.split("/");
+                Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
+                if (c != null)
+                    intId = c;
+                else
+                    System.out.println("lookupConst() failed for " + id);
+            }
+
+            // Add a layout control with empty attributes and sensitive = false.
+            controls.add(new PossibleLayoutControl(intId, name, false, new HashMap<String, Object>(), parentId));
+        }
+
+        NodeList l1 = node.getChildNodes();
+        for (int i1 = 0; i1 < l1.getLength(); i1++)
+            getUserControlsForNode(l1.item(i1), intId, controls);
+    }
+
+    // Read XML element attribute. On failure, return last default value.
+    private static String attrOrDefault(Node node, String attr, String val) {
+        NamedNodeMap attrs = node.getAttributes();
+        if (attrs != null) {
+            Node n = attrs.getNamedItem("android:id");
+            if (n != null)
+                return n.getNodeValue();
+        }
+        return val;
+    }
+
+    public static String getZipEntry(ZipFile zip, String entryName) {
+        try {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while(entries.hasMoreElements()) {
+                ZipEntry e = entries.nextElement();
+                if (e.getName().equals(entryName)) {
+                    InputStream is = zip.getInputStream(e);
+                    return IOUtils.toString(is, StandardCharsets.UTF_8);
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("Error reading " + entryName + " from " + zip.getName());
+            System.err.println(ex.getMessage());
+        }
+        return null;
     }
 
 }

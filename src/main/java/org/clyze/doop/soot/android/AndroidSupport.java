@@ -61,6 +61,9 @@ public class AndroidSupport {
             // Map AAR files to their package name.
             Map<String, String> pkgs = new HashMap<>();
 
+            // R class linker used for AAR inputs.
+            RLinker rLinker = RLinker.getInstance();
+
             // We merge the information from all manifests, not just
             // the application's. There are Android apps that use
             // components (e.g. activities) from AAR libraries.
@@ -82,19 +85,18 @@ public class AndroidSupport {
                         System.err.println("Error while reading callbacks:");
                         ex.printStackTrace();
                     }
-                    try {
-                        appUserControls.addAll(processMan.getUserControls());
-                    } catch (IOException ex) {
-                        System.err.println("Error while reading user controls:");
-                        ex.printStackTrace();
-                    }
+
+                    // Read R ids and then read controls. The
+                    // order is important (controls read R ids).
+                    rLinker.readRConstants(i, pkgs.get(i));
+                    appUserControls.addAll(processMan.getUserControls());
 
                     processMan.printManifestInfo();
                 }
             }
 
-            // Process the R.txt entries in AAR files.
-            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs, tmpDirs);
+            // Produce a JAR of the missing R classes.
+            String generatedR = rLinker.linkRs(tmpDirs);
             if (generatedR != null) {
                 System.out.println("Adding " + generatedR + "...");
                 sootParameters.getLibraries().add(generatedR);
