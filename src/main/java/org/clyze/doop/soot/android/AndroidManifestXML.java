@@ -224,13 +224,24 @@ public class AndroidManifestXML implements AndroidManifest {
                     System.out.println("lookupConst() failed for " + id);
             }
 
-            // Add a layout control with empty attributes and sensitive = false.
-            controls.add(new PossibleLayoutControl(intId, name, false, new HashMap<String, Object>(), parentId));
+            // Add a layout control with empty attributes.
+            controls.add(new PossibleLayoutControl(intId, name, isSensitive(node), new HashMap<String, Object>(), parentId));
         }
 
         NodeList l1 = node.getChildNodes();
         for (int i1 = 0; i1 < l1.getLength(); i1++)
             getUserControlsForNode(l1.item(i1), intId, controls);
+    }
+
+    private static boolean isSensitive(Node node) {
+        String androidPassword = attrOrDefault(node, "android:password", null);
+        if ((androidPassword != null) && androidPassword.equals("true"))
+            return true;
+        String inputT = attrOrDefault(node, "android:inputType", null);
+        return (inputT != null) && (inputT.equals("textPassword") ||
+                                    inputT.equals("textVisiblePassword") ||
+                                    inputT.equals("textWebPassword") ||
+                                    inputT.equals("numberPassword"));
     }
 
     // Read XML element attribute. On failure, return last default value.
