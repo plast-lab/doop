@@ -126,6 +126,10 @@ public class Main {
                     case "--uniqueFacts":
                         sootParameters._uniqueFacts = true;
                         break;
+                    case "--R-out-dir":
+                        i = shift(args, i);
+                        sootParameters._rOutDir = args[i];
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -141,6 +145,7 @@ public class Main {
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
+                        System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
 
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
@@ -222,7 +227,8 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
-            android = new AndroidSupport(input0, sootParameters);
+            String rOutDir = sootParameters._rOutDir;
+            android = new AndroidSupport(rOutDir, input0, sootParameters);
             android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);

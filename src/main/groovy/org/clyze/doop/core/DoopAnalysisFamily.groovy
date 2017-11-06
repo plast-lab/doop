@@ -577,6 +577,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true,
 					isAdvanced: true
 			),
+			new AnalysisOption<String>(
+					id: "X_R_OUT_DIR",
+					name: "XR-out-dir",
+					description: "When linking AAR inputs, place generated R code in R_OUT_DIR",
+					argName: "R_OUT_DIR",
+					isDir: true,
+					nonStandard: true
+			),
 			/* End non-standard flags */
 
 			/* TODO: deprecated or broken? */

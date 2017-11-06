@@ -257,6 +257,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--uniqueFacts"]
         }
 
+        if (options.X_R_OUT_DIR.value) {
+            params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
+        }
+
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"

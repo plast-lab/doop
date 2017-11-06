@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.*;
 
+import org.apache.commons.io.FileUtils;
+
+import org.clyze.Constants;
 import org.clyze.utils.AARUtils;
 import static org.clyze.doop.soot.android.AndroidManifestXML.getZipEntry;
 
@@ -66,17 +69,32 @@ public class RLinker {
      * package names. Returns the path of the generated JAR (or null
      * if no code generation was done).
      *
+     * @param rDir     The directory to place the generated R code. Can
+     *                 be null (in which case a temporary location is used).
+     *
      * @param tmpDirs  The temporary directory will be added to this set.
      */
-    public String linkRs(Set<String> tmpDirs) {
+    public String linkRs(String rDir, Set<String> tmpDirs) {
         if ((rs == null) || rs.isEmpty()) {
             return null;
         } else {
             final String tmpDir = AARUtils.createTmpDir(tmpDirs);
             rs.forEach ((k, v) -> runProcess("javac " + genR(tmpDir, k, v)));
-            String jarName = tmpDir + "/doop-autogen-R.jar";
-            runProcess("jar cf " + jarName + " -C " + tmpDir + " .");
-            return jarName;
+
+            // Compile JAR and optionally copy to output directory.
+            String tmpJarName = tmpDir + "/" + Constants.R_AUTOGEN_JAR;
+            runProcess("jar cf " + tmpJarName + " -C " + tmpDir + " .");
+            if (rDir != null) {
+                String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
+                try {
+                    FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
+                    return outJarName;
+                } catch (IOException ex) {
+                    System.err.println("Failed to copy " + tmpJarName + " to " + outJarName + " : " + ex.getMessage());
+                }
+            }
+
+            return tmpJarName;
         }
     }
 

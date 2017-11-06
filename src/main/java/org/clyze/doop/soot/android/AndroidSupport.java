@@ -19,6 +19,7 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 
 public class AndroidSupport {
 
+    String rOutDir;
     String appInput;
     SootParameters sootParameters;
     SootMethod dummyMain;
@@ -30,7 +31,8 @@ public class AndroidSupport {
     Set<String> appCallbackMethods = new HashSet<>();
     Set<PossibleLayoutControl> appUserControls = new HashSet<>();
 
-    public AndroidSupport(String appInput, SootParameters sootParameters) {
+    public AndroidSupport(String rOutDir, String appInput, SootParameters sootParameters) {
+        this.rOutDir = rOutDir;
         this.appInput = appInput;
         this.sootParameters = sootParameters;
     }
@@ -96,7 +98,7 @@ public class AndroidSupport {
             }
 
             // Produce a JAR of the missing R classes.
-            String generatedR = rLinker.linkRs(tmpDirs);
+            String generatedR = rLinker.linkRs(rOutDir, tmpDirs);
             if (generatedR != null) {
                 System.out.println("Adding " + generatedR + "...");
                 sootParameters.getLibraries().add(generatedR);
