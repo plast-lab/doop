@@ -100,7 +100,7 @@ public class AndroidManifestXML implements AndroidManifest {
     private InputStream getZipEntryInputStream(String entry) throws IOException {
         ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
         for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
-            if (e.getName().equals(entry)) {
+            if (e.getName().equals(entry) || e.getName().equals(entry + ".xml")) {
                 return zin;
             }
         }
