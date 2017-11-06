@@ -248,7 +248,7 @@ public class AndroidManifestXML implements AndroidManifest {
     private static String attrOrDefault(Node node, String attr, String val) {
         NamedNodeMap attrs = node.getAttributes();
         if (attrs != null) {
-            Node n = attrs.getNamedItem("android:id");
+            Node n = attrs.getNamedItem(attr);
             if (n != null)
                 return n.getNodeValue();
         }
