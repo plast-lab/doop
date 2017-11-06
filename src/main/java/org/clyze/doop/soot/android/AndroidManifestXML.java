@@ -225,7 +225,16 @@ public class AndroidManifestXML implements AndroidManifest {
             }
 
             // Add a layout control with empty attributes.
-            controls.add(new PossibleLayoutControl(intId, name, isSensitive(node), new HashMap<String, Object>(), parentId));
+            Map<String, Object> attrs = new HashMap<String, Object>();
+            controls.add(new PossibleLayoutControl(intId, name, isSensitive(node), attrs, parentId));
+
+            // Heuristic: if the name is unqualified, it comes from
+            // android.view or android.widget ("Android Programming:
+            // The Big Nerd Ranch Guide", chapter 32).
+            if (name.lastIndexOf(".") == -1) {
+                controls.add(new PossibleLayoutControl(intId, "android.view." + name, isSensitive(node), attrs, parentId));
+                controls.add(new PossibleLayoutControl(intId, "android.widget." + name, isSensitive(node), attrs, parentId));
+            }
         }
 
         NodeList l1 = node.getChildNodes();
