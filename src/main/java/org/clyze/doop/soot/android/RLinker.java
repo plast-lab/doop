@@ -160,7 +160,7 @@ public class RLinker {
             // Generate Java code.
             Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, Set<String>>());
             Set<String> set = pkgEntry.getOrDefault(nestedR, new HashSet<>());
-            set.add("        public static final " + String.join(delim, newParts) + ";");
+            set.add("        public static " + String.join(delim, newParts) + ";");
             pkgEntry.put(nestedR, set);
             rs.put(pkg, pkgEntry);
         }
@@ -205,6 +205,7 @@ public class RLinker {
         String rFile = subdir + "/R.java";
         System.out.println("Generating " + rFile);
         List<String> lines = new ArrayList<>();
+        lines.add("// Auto-generated R.java by Doop.\n");
         lines.add("package " + pkg + ";\n");
         lines.add("public final class R {");
         rData.forEach ((k, v) -> genNestedR(k, v, lines));
@@ -222,7 +223,7 @@ public class RLinker {
 
     private static void genNestedR(String nestedName, Set<String> data,
                                    List<String> lines) {
-        lines.add("    public static final class " + nestedName + "{\n");
+        lines.add("    public static final class " + nestedName + " {\n");
         lines.addAll(data);
         lines.add("    }\n");
     }
