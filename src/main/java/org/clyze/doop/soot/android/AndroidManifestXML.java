@@ -235,8 +235,6 @@ public class AndroidManifestXML implements AndroidManifest {
                 Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
                 if (c != null)
                     intId = c;
-                else
-                    System.out.println("lookupConst() failed for " + id);
             }
 
             // Add a layout control with empty attributes.
