@@ -103,7 +103,6 @@ public class AndroidManifestXML implements AndroidManifest {
             final String[] altLayouts = { "v11", "v16", "v17", "v21", "v22" };
             for (String v : altLayouts ) {
                 String l = entry.replaceAll("res/layout/", "res/layout-"+v+"/");
-                System.out.println("Trying: " + l + ", entry = " + entry);
                 try {
                     return getZipEntryInputStream(l);
                 } catch (Exception ex0) { }

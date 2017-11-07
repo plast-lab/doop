@@ -93,9 +93,11 @@ public class AndroidSupport {
                     rLinker.readRConstants(i, pkgs.get(i));
                     appUserControls.addAll(processMan.getUserControls());
 
-                    processMan.printManifestInfo();
+                    processMan.printManifestHeader();
                 }
             }
+
+            printCollectedComponents();
 
             // Produce a JAR of the missing R classes.
             String generatedR = rLinker.linkRs(rOutDir, tmpDirs);
@@ -110,6 +112,16 @@ public class AndroidSupport {
 
             Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
         }
+    }
+
+    private void printCollectedComponents() {
+        System.out.println("Collected components:");
+        System.out.println("activities: " + appActivities);
+        System.out.println("content providers: " + appContentProviders);
+        System.out.println("broadcast receivers: " + appBroadcastReceivers);
+        System.out.println("services: " + appServices);
+        System.out.println("callbacks: " + appCallbackMethods);
+        System.out.println("possible layout controls: " + appUserControls.size());
     }
 
     public void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {

@@ -48,6 +48,11 @@ public interface AndroidManifest {
         }
     }
 
+    default void printManifestHeader() {
+        System.out.println("application name: " + getApplicationName() +
+                           " (package name: " + getPackageName() + ")");
+    }
+
     // Parses Android manifests. Supports binary and plain-text XML
     // files (found in .apk and .aar files respectively).
     static AndroidManifest getAndroidManifest(String archiveLocation) {
