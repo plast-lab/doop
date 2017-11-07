@@ -9,10 +9,10 @@ import java.util.*;
 import java.util.zip.*;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 import org.clyze.Constants;
 import org.clyze.utils.AARUtils;
-import static org.clyze.doop.soot.android.AndroidManifestXML.getZipEntry;
 
 /** A linker of R-class data.
  *
@@ -227,4 +227,22 @@ public class RLinker {
         lines.addAll(data);
         lines.add("    }\n");
     }
+
+    private static String getZipEntry(ZipFile zip, String entryName) {
+        try {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while(entries.hasMoreElements()) {
+                ZipEntry e = entries.nextElement();
+                if (e.getName().equals(entryName)) {
+                    InputStream is = zip.getInputStream(e);
+                    return IOUtils.toString(is, StandardCharsets.UTF_8);
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("Error reading " + entryName + " from " + zip.getName());
+            System.err.println(ex.getMessage());
+        }
+        return null;
+    }
+
 }

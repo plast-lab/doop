@@ -10,7 +10,6 @@ import java.util.zip.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.commons.io.IOUtils;
 import org.w3c.dom.*;
 
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
@@ -262,23 +261,6 @@ public class AndroidManifestXML implements AndroidManifest {
                 return n.getNodeValue();
         }
         return val;
-    }
-
-    public static String getZipEntry(ZipFile zip, String entryName) {
-        try {
-            Enumeration<? extends ZipEntry> entries = zip.entries();
-            while(entries.hasMoreElements()) {
-                ZipEntry e = entries.nextElement();
-                if (e.getName().equals(entryName)) {
-                    InputStream is = zip.getInputStream(e);
-                    return IOUtils.toString(is, StandardCharsets.UTF_8);
-                }
-            }
-        } catch (IOException ex) {
-            System.err.println("Error reading " + entryName + " from " + zip.getName());
-            System.err.println(ex.getMessage());
-        }
-        return null;
     }
 
 }
