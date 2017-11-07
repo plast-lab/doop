@@ -96,6 +96,22 @@ public class AndroidManifestXML implements AndroidManifest {
     public Set<String> getProviders()  { return providers;       }
     public Set<String> getReceivers()  { return receivers;       }
 
+    private InputStream getZipEntryInputStreamLayout(String entry) {
+        try {
+            return getZipEntryInputStream(entry);
+        } catch (Exception ex) {
+            final String[] altLayouts = { "v11", "v16", "v17", "v21", "v22" };
+            for (String v : altLayouts ) {
+                String l = entry.replaceAll("res/layout/", "res/layout-"+v+"/");
+                System.out.println("Trying: " + l + ", entry = " + entry);
+                try {
+                    return getZipEntryInputStream(l);
+                } catch (Exception ex0) { }
+            }
+        }
+        throw new RuntimeException("Cannot find layout " + entry);
+    }
+
     private InputStream getZipEntryInputStream(String entry) throws IOException {
         ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
         for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
@@ -175,7 +191,7 @@ public class AndroidManifestXML implements AndroidManifest {
 
     void getUserControlsForLayoutFile(String layoutFile, int parentId,
                                       Set<PossibleLayoutControl> controls) throws Exception {
-        InputStream is = getZipEntryInputStream(layoutFile);
+        InputStream is = getZipEntryInputStreamLayout(layoutFile);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         Document doc = dbf.newDocumentBuilder().parse(is);
         Element docElem = doc.getDocumentElement();
