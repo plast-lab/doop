@@ -115,7 +115,7 @@ AssignLocal(?this, ?ret, ?method) :-
  */
 PlusStoreStaticField(
   "<java.lang.System: void setIn0(java.io.InputStream)>",
-  "java.lang.System.setIn0/@param0",
+  "<java.lang.System: void setIn0(java.io.InputStream)>/@parameter0",
   "<java.lang.System: java.io.InputStream in>").
 
 /**
@@ -123,7 +123,7 @@ PlusStoreStaticField(
  */
 PlusStoreStaticField(
   "<java.lang.System: void setOut0(java.io.PrintStream)>",
-  "java.lang.System.setOut0/@param0",
+  "<java.lang.System: void setOut0(java.io.PrintStream)>/@parameter0",
   "<java.lang.System: java.io.PrintStream out>").
 
 /**
@@ -131,7 +131,7 @@ PlusStoreStaticField(
  */
 PlusStoreStaticField(
   "<java.lang.System: void setErr0(java.io.PrintStream)>",
-  "java.lang.System.setErr0/@param0",
+  "<java.lang.System: void setErr0(java.io.PrintStream)>/@parameter0",
   "<java.lang.System: java.io.PrintStream err>").
 
 /**
