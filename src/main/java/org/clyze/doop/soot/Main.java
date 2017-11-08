@@ -238,7 +238,7 @@ public class Main {
         Scene scene = Scene.v();
         scene.setSootClassPath("");
         for (String input : sootParameters._inputs) {
-            if (input.endsWith(".jar") || input.endsWith(".jar")) {
+            if (input.endsWith(".jar")) {
                 System.out.println("Adding archive: " + input);
             }
             else {
