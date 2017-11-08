@@ -208,6 +208,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected List<String> platform(Map<String, AnalysisOption> options) {
         def platformInfo = options.PLATFORM.value.toString().tokenize("_")
+        if (platformInfo.size() < 2) {
+            throw new RuntimeException("Invalid platform ${platformInfo}")
+        }
         def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
         def files = []
