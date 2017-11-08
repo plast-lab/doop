@@ -248,6 +248,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		metadata.invocations << new MethodInvocation(
 				new Position(line, line, startCol, endCol),
 				filename,
+				methodName,
 				gDoopId, //doopId
 				method.doopId //invokingMethodDoopId
 		)
