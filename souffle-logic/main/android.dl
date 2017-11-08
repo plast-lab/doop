@@ -321,8 +321,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
-
-
 ViewRetrievalByArg0MethodInvocation(?invo) :-
   (?calleeName = "inflate";
    ?calleeName = "getView";
@@ -338,30 +336,40 @@ ViewRetrievalByArg0MethodInvocation(?invo) :-
   //  Method:Id(?signature:"<android.view.View: android.view.View findViewById(int)>")
   // ).
 
-// the variables holding the view id and the retrieved view at one of
-// these invocations.
+// Support fragment retrieval by id (similar to rule about view retrieval).
+FragmentRetrievalByArg0MethodInvocation(?invo) :-
+  Method_SimpleName(?method, "findFragmentById"),
+  (?retType = "android.app.Fragment";
+   ?retType = "android.support.v4.app.Fragment"),
+  Method_ReturnType(?method, ?retType),
+  isType(?retType),
+  MethodInvocation_Method(?invo, ?method).
 
-VarsAtInvocationRetrievingView(?ret, ?var) :-
-  ViewRetrievalByArg0MethodInvocation(?invo),
+// The variables holding the layout control id and the retrieved
+// layout control at one of these invocations.
+
+VarsAtInvocationRetrievingLayoutControl(?ret, ?var) :-
+  (FragmentRetrievalByArg0MethodInvocation(?invo);
+   ViewRetrievalByArg0MethodInvocation(?invo)),
   AssignReturnValue(?invo, ?ret),
   ActualParam(0, ?invo, ?var).
 
 
-ViewObjectValueFromId(?viewValue, ?numId) :-
+LayoutControlObjectValueFromId(?controlValue, ?numId) :-
   LayoutControl(?numId, ?type, _),
-  ReifiedLayoutControl(?type, ?numId, ?viewValue).
+  ReifiedLayoutControl(?type, ?numId, ?controlValue).
 
-// ... and the clincher: given an id for a view object, at one of the
-// invocation sites of methods retrieving views, return the
-// appropriate view object. REVIEW: the ?hctx is a hack, which
-// currently doesn't matter since it's the immutable hctx anyway.
-// I can't see why we'd need to RecordMacro-create a new hctxt, since
-// these layout objects are unique.
-VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) :-
-  VarsAtInvocationRetrievingView(?ret, ?var),
+// ... and the clincher: given an id for a layout control object, at
+// one of the invocation sites of methods retrieving layout controls,
+// return the appropriate layout control object. REVIEW: the ?hctx is
+// a hack, which currently doesn't matter since it's the immutable
+// hctx anyway.  I can't see why we'd need to RecordMacro-create a new
+// hctxt, since these layout objects are unique.
+VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
+  VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   Value_Num(?value, ?numId),
-  ViewObjectValueFromId(?viewValue, ?numId).
+  LayoutControlObjectValueFromId(?controlValue, ?numId).
 
 
 
