@@ -82,6 +82,13 @@ class FactGenerator implements Runnable {
                             throw exc;
                         }
                     }
+
+                    if (_generateJimple) {
+                        PackManager.v().writeClass(_sootClass);
+                        for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
+                            m.releaseActiveBody();
+                        }
+                    }
                 } catch (Exception exc) {
                     numRetries++;
                     if (numRetries > maxRetries) {
@@ -95,12 +102,6 @@ class FactGenerator implements Runnable {
                 }
             } while (!success);
 
-            if (_generateJimple) {
-                PackManager.v().writeClass(_sootClass);
-                for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                    m.releaseActiveBody();
-                }
-            }
         }
     }
 
