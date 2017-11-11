@@ -358,6 +358,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
+					id: "GROUP_REFLECTION_STRINGS",
+					name: "reflection-coloring",
+					value: false,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DISABLE_METHOD_HANDLES",
 					name: "disable-method-handles",
 					value: false,
