@@ -477,11 +477,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: null,
 					isFile: true,
 					webUI: true,
+					forCacheID: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "HEAPDL_NOSTRINGS",
 					name: "heapdl-nostrings",
+					forCacheID: true,
 					description: "don't model string values uniquely in heap dump.",
 					value: false,
 					forPreprocessor: true
