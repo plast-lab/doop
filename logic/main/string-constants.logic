@@ -139,7 +139,7 @@ HeapRepresentative(?constant, ?heap) <-
   HeapAllocation:byId["<<string-constant>>"] = ?constant,
   !HeapAllocation:Keep(?heap).
 #endif
-//#ifdef GROUP_REFLECTION_STRINGS
+#ifdef GROUP_REFLECTION_STRINGS
 
 // ///// Naive Merging strategy: all strings that map to same reflection object
 // ///// are merged. Not too effective.
@@ -259,7 +259,7 @@ MethodNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
 FieldNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
-//#endif // GROUP_REFLECTION_STRINGS
+#endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 HeapAllocation:ContextInsensitive(?heap) <-

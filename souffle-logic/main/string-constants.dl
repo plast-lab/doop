@@ -149,7 +149,7 @@ HeapRepresentative("<<string-constant>>", ?heap) :-
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
 #endif
-//#ifdef GROUP_REFLECTION_STRINGS
+#ifdef GROUP_REFLECTION_STRINGS
 
 // ///// Naive Merging strategy: all strings that map to same reflection object
 // ///// are merged. Not too effective.
@@ -283,7 +283,7 @@ MethodNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
 FieldNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
   HeapAllocation_Merge(?heap, ?heapRepr),
   PreFieldNameMatchingStringConstant_Signature(?sig, ?heap).
-//#endif // GROUP_REFLECTION_STRINGS
+#endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 HeapAllocation_ContextInsensitive(?heap) :-
