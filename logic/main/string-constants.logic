@@ -179,17 +179,22 @@ HeapRepresentative(?constant, ?heap) <-
 //   methods (and similar for fields), not with any member.
 //  -we lose precision because we may merge strings that match different class
 //   names.
-MemberOfClassMatchesString(?heap, ?type) <-
+MethodOfClassMatchesString(?heap, ?type) <-
   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap),
   Method:DeclaringType[?sig] = ?type.
   
-MemberOfClassMatchesString(?heap, ?type) <- 
+FieldOfClassMatchesString(?heap, ?type) <- 
   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap),
   Field:DeclaringType[?sig] = ?type.
 
 // Important to not forget NullType: it derives from everything!
-MemberOfClassMatchesString(?heap, ?type) <-
-  MemberOfClassMatchesString(?heap, ?superType),
+MethodOfClassMatchesString(?heap, ?type) <-
+  MethodOfClassMatchesString(?heap, ?superType),
+  SubtypeOf(?type, ?superType),
+  !NullType(?type).
+// Important to not forget NullType: it derives from everything!
+FieldOfClassMatchesString(?heap, ?type) <-
+  FieldOfClassMatchesString(?heap, ?superType),
   SubtypeOf(?type, ?superType),
   !NullType(?type).
 
@@ -199,8 +204,13 @@ MemberOfClassMatchesString(?heap, ?type) <-
 
 // Arbitrary ordering relation to determine coloring
 StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) <-
-  MemberOfClassMatchesString(?heap1, ?type),
-  MemberOfClassMatchesString(?heap2, ?type),
+  FieldOfClassMatchesString(?heap1, ?type),
+  FieldOfClassMatchesString(?heap2, ?type),
+  HeapAllocation:Id[?heap1] > HeapAllocation:Id[?heap2].
+
+StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) <-
+  MethodOfClassMatchesString(?heap1, ?type),
+  MethodOfClassMatchesString(?heap2, ?type),
   HeapAllocation:Id[?heap1] > HeapAllocation:Id[?heap2].
 
 StringImmediatelyLessThanOtherInClass[?heap, ?type] = ?heapGreater <-
@@ -212,7 +222,7 @@ StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater, ?heap) <-
 StringColorGreaterThan(?num, ?heap) -> int[32](?num), HeapAllocation(?heap).
 
 StringColorGreaterThan(0, ?heap) <-
-  MemberOfClassMatchesString(?heap, _).
+  FieldOfClassMatchesString(?heap, _); MethodOfClassMatchesString(?heap, _).
 
 StringColorGreaterThan(?num + 1, ?heap) <-
   StringImmediatelyGreaterThanOtherInSomeClass(?heap, ?heapLower),
