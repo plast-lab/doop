@@ -457,6 +457,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
             options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
+            options.TAMIFLEX.value = null
         }
 
         if (options.TAMIFLEX.value) {
