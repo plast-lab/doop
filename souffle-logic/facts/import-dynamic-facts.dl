@@ -115,8 +115,13 @@ UnmatchedDynamicReachableMethod(?method) :-
 
 MockHeapConsMacro(cat(?inMethod, ?type), ?type),
 ReconstructedUnmatchedDynamicHeapAllocation(?representation, cat(?inMethod, ?type)) :-
-   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod).
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod),
+   ?inMethod != "Unknown".
 
+MockHeapConsMacro(cat(?inMethod, ?type), ?type),
+ReconstructedUnmatchedDynamicHeapAllocation(?representation, cat("<Unknown dynamic object of type ", cat(?type, ">"))) :-
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod),
+   ?inMethod = "Unknown".
 
 DynamicHeapAllocation(?representation, ?heap) :-
    ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).
