@@ -102,6 +102,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		)
 		method.isInterface = inInterface
 		method.isAbstract = ctx.modifier()?.any { it.text == "abstract" }
+		method.isNative = ctx.modifier()?.any { it.text == "native" }
 
 		def endline = ctx.methodBody() ? getLastToken(ctx.methodBody()).symbol.line : line
 		method.outerPosition = new Position(line, endline, 0, 0)
