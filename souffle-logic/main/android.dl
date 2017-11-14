@@ -88,7 +88,7 @@ ImplicitlyInstantiatedLibraryType(?type) :-
 MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
 ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
   ImplicitlyInstantiatedLibraryType(?type),
-  isType(?type).
+  isType(?type)
 
 
 // Main logic
@@ -262,6 +262,17 @@ ReachableContext(?ctx, ?meth) :-
   (PublicOnMethodOfReachableListener(?meth);
    OverridingProtectedOnMethodOfReachableListener(?meth)),
   isImmutableContext(?ctx).
+
+// anantoni: Make the getters and setters of classes extending View reachable
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+    Method_SimpleName(?meth, ?simplename),
+    (match("set.*", ?simplename);
+     match("get.*", ?simplename),
+    Method_DeclaringType(?meth, ?viewType),
+    AndoidViewType(?viewType),
+    isImmutableContext(?ctx).
+
 
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type

@@ -71,6 +71,7 @@ public enum PredicateFile
     THROW_NULL("ThrowNull"),
     EXCEPTION_HANDLER("ExceptionHandler"),
     METHOD("Method"),
+    METHOD_ANNOTATION("Method-Annotation"),
     STORE_INST_FIELD("StoreInstanceField"),
     LOAD_INST_FIELD("LoadInstanceField"),
     STORE_STATIC_FIELD("StoreStaticField"),

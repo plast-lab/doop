@@ -6,7 +6,9 @@ import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
 import soot.jimple.toolkits.typing.fast.BottomType;
+import soot.tagkit.AnnotationTag;
 import soot.tagkit.LineNumberTag;
+import soot.tagkit.VisibilityAnnotationTag;
 import soot.util.backend.ASMBackendUtils;
 
 import java.util.Map;
@@ -61,7 +63,12 @@ public class FactWriter {
 
         _db.add(STRING_RAW, result, methodRaw);
         _db.add(METHOD, result, _rep.simpleName(m), _rep.descriptor(m), writeType(m.getDeclaringClass()), writeType(m.getReturnType()), ASMBackendUtils.toTypeDesc(m.makeRef()));
-
+        if (m.getTag("VisibilityAnnotationTag") != null) {
+            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
+            for (AnnotationTag aTag : vTag.getAnnotations()) {
+                _db.add(METHOD_ANNOTATION, result, aTag.getType());
+            }
+        }
         return result;
     }
 
