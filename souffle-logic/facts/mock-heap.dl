@@ -2,13 +2,28 @@ MockHeapConsMacro(?heap, ?type) :-
    ?heap = "java.io.FileSystem.getFileSystem/new java.io.UnixFileSystem",
    ?type = "java.io.UnixFileSystem".
 
+// Native UnixFileSystem objects, different in Android and OpenJDK.
+#ifdef ANDROID
+
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="java.io.UnixFileSystem.list/new java.lang.String[]",
+   ?heap = "<java.io.UnixFileSystem: java.lang.String[] list0(java.io.File)>/new java.lang.String[]/0",
    ?type = "java.lang.String[]".
 
 MockHeapConsMacro(?heap, ?type) :-
-   ?heap ="java.io.UnixFileSystem.list/new java.lang.String",
+   ?heap = "<java.io.UnixFileSystem: java.lang.String[] list0(java.io.File)>/new java.lang.String/0",
    ?type = "java.lang.String".
+
+#else
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap = "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0",
+   ?type = "java.lang.String[]".
+
+MockHeapConsMacro(?heap, ?type) :-
+   ?heap = "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0",
+   ?type = "java.lang.String".
+
+#endif /* ANDROID */
 
 MockHeapConsMacro(?heap, ?type) :-
    (?heap ="<<string-constant>>";
