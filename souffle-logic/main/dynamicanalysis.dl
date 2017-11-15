@@ -251,3 +251,15 @@ CallGraphEdge(?ctxFrom, ?invocation, ?ctxTo, ?toMethod) :-
    ReachableContext(?ctxFrom, ?fromMethod),
    DynamicContextToContext(?ctxTo, ?dctxTo),
    MostPreciseDynamicCallGraphEdge(?dctxTo, ?toMethod, ?invocation, ?dctxFrom, ?fromMethod).
+
+// Heuristic: if a dynamic object is allocated inside a native method
+// and that object is type-compatible with the return type of the
+// method, then it can be returned by the method. TODO: contexts.
+VarPointsTo(?hctx, ?heap, ?ctx, ?return) :-
+   _DynamicNormalHeapAllocation(_, ?method, ?type, ?representation),
+   DynamicHeapAllocation(?representation, ?heap),
+   Method_Modifier("native", ?method),
+   NativeReturnVar(?return, ?method),
+   Method_ReturnType(?method, ?retType),
+   SubtypeOf(?type, ?retType),
+   isImmutableHContext(?hctx), isImmutableContext(?ctx).
