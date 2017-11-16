@@ -1,6 +1,8 @@
 package org.clyze.doop.core
 
 import org.clyze.analysis.*
+import static org.apache.commons.io.FilenameUtils.*
+import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
 
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
@@ -430,6 +432,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
 					value: null,
+					validValues: informationFlowPlatforms(Doop.addonsPath, Doop.souffleAddonsPath),
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -649,4 +652,39 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			}
 		return analyses.sort()
 	}
+
+    private static List<String> informationFlowPlatforms(String lbDir,
+                                                         String souffleDir) {
+        List<String> platforms_LB = []
+        List<String> platforms_Souffle = []
+
+        Closure scan = { ifDir ->
+            if (ifDir) {
+                new File("${ifDir}/information-flow")?.eachFile { File f ->
+                    String n = f.getName()
+                    String base = removeExtension(n)
+                    int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
+                    if (platformEndIdx != -1) {
+                        String ext = getExtension(n)
+                        if (ext.equals("logic")) {
+                            platforms_LB << base.substring(0, platformEndIdx)
+                        } else if (ext.equals("dl")) {
+                            platforms_Souffle << base.substring(0, platformEndIdx)
+                        }
+                    }
+                }
+            }
+        }
+
+        scan(lbDir)
+        scan(souffleDir)
+
+        List<String> platforms =
+            (platforms_Souffle.collect {
+                it + ((it in platforms_LB) ? "" : " (Souffle-only)")
+            }) +
+            (platforms_LB.findAll { !(it in platforms_Souffle) }
+                         .collect { it + " (LB-only)"})
+        return platforms.sort()
+    }
 }
