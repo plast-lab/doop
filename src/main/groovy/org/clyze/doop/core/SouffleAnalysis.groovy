@@ -171,9 +171,9 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl", macros)
 
             if (options.MINIMAL_INFORMATION_FLOW.value) {
-                cpp.includeAtEnd("$analysis", "${infoFlowPath}/minimal-sources-and-sinks.dl", macros)
+                cpp.includeAtEnd("$analysis", "${infoFlowPath}/minimal${INFORMATION_FLOW_SUFFIX}.dl", macros)
             } else {
-                cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}-sources-and-sinks.dl", macros)
+                cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
             }
         }
 

@@ -79,6 +79,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
      */
     protected long sootTime
 
+    /**
+     * The suffix of information flow platforms.
+     */
+    static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
+
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
      * in order to ensure that internal state is initialized at one point and the init method is no longer required.
