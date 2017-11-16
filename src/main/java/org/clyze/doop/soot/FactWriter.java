@@ -11,6 +11,7 @@ import soot.tagkit.LineNumberTag;
 import soot.tagkit.VisibilityAnnotationTag;
 import soot.util.backend.ASMBackendUtils;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,7 +67,7 @@ public class FactWriter {
         if (m.getTag("VisibilityAnnotationTag") != null) {
             VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) m.getTag("VisibilityAnnotationTag");
             for (AnnotationTag aTag : vTag.getAnnotations()) {
-                _db.add(METHOD_ANNOTATION, result, aTag.getType());
+                _db.add(METHOD_ANNOTATION, result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
             }
         }
         return result;
@@ -890,7 +891,7 @@ public class FactWriter {
         _db.add(ASSIGN_UNOP, insn, str(index), _rep.local(m, left), methodId);
 
         if (right instanceof LengthExpr) {
-            _db.add(ASSIGN_OPER_TYPE, insn, " lenght ");
+            _db.add(ASSIGN_OPER_TYPE, insn, " length ");
         }
         else if (right instanceof NegExpr) {
             _db.add(ASSIGN_OPER_TYPE, insn, " !");

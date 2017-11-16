@@ -828,3 +828,9 @@ isType(?t), isReferenceType(?t), isClassType(?t), Type_object(?t) :- ?t = "java.
 
 .decl _Dacapo(?id:symbol, ?method:symbol)
 .input _Dacapo(IO="file", filename="Dacapo.facts", delimiter="\t")
+
+
+// Annotations
+// Method
+
+.input Method_Annotation(IO="file", filename="Method-Annotation.facts", delimiter="\t")
