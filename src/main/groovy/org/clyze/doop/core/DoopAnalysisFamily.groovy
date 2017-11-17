@@ -436,14 +436,6 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
-					id: "MINIMAL_INFORMATION_FLOW",
-					name: "minimal-information-flow",
-					description: "Load additional logic to perform information flow analysis with minimal defaults.",
-					webUI: true,
-					value: false,
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
 					id: "INFORMATION_FLOW_HIGH_SOUNDNESS",
 					name: "information-flow-high-soundness",
 					description: "Enter high soundness mode for information flow microbenchmarks.",
