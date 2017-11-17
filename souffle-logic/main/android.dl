@@ -59,8 +59,6 @@ ReifiedAndroidObjectValue(?value, ?type) :-
    Value_Type(?value, ?type),
    !AndroidAppComponent(?type).
 
-
-
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
 MockValueConsMacro(cat("<android component object ", cat(?type, ">")), ?type),
@@ -273,6 +271,14 @@ ReachableContext(?ctx, ?meth) :-
     AndroidViewType(?viewType),
     isImmutableContext(?ctx).
 
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+    Method_Modifier("public", ?meth),
+    FormalParam(0, ?meth, ?arg),
+    Var_Type(?arg, "android.view.View"),
+    Method_DeclaringType(?meth, ?class),
+    Activity(?class),
+    isImmutableContext(?ctx).
 
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type
