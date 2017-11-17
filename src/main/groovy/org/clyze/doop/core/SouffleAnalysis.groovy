@@ -164,17 +164,12 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${mainPath}/reflection/delta.dl")
         }
 
-        if (options.INFORMATION_FLOW.value || options.MINIMAL_INFORMATION_FLOW.value) {
+        if (options.INFORMATION_FLOW.value) {
             def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl", macros)
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl", macros)
-
-            if (options.MINIMAL_INFORMATION_FLOW.value) {
-                cpp.includeAtEnd("$analysis", "${infoFlowPath}/minimal-sources-and-sinks.dl", macros)
-            } else {
-                cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}-sources-and-sinks.dl", macros)
-            }
+            cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
         }
 
         if (options.OPEN_PROGRAMS.value) {

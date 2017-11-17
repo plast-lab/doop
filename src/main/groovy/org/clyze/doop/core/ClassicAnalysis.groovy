@@ -258,18 +258,15 @@ class ClassicAnalysis extends DoopAnalysis {
 
         String echo_analysis = "Pointer Analysis"
 
-        if (options.INFORMATION_FLOW.value || options.MINIMAL_INFORMATION_FLOW.value) {
+        if (options.INFORMATION_FLOW.value) {
             echo_analysis = "Pointer and Information-flow Analysis"
-            cpp.preprocess("${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
-            cpp.preprocess("${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
-            cpp.preprocess("${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
+            def infoFlowPath = "${Doop.addonsPath}/information-flow"
+            cpp.preprocess("${outDir}/information-flow-declarations.logic", "${infoFlowPath}/declarations.logic")
+            cpp.preprocess("${outDir}/information-flow-delta.logic", "${infoFlowPath}/delta.logic", macros)
+            cpp.preprocess("${outDir}/information-flow-rules.logic", "${infoFlowPath}/rules.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
+            cpp.preprocess("${outDir}/sources-and-sinks.logic", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.logic", macros)
 
-            if (options.MINIMAL_INFORMATION_FLOW.value) {
-                cpp.preprocess("${outDir}/sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/minimal-sources-and-sinks.logic", macros)
-            } else {
-                cpp.preprocess("${outDir}/sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/${options.INFORMATION_FLOW.value}-sources-and-sinks.logic", macros)
-            }
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/sources-and-sinks.logic")
 
             connector.queue()

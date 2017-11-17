@@ -88,7 +88,7 @@ ImplicitlyInstantiatedLibraryType(?type) :-
 MockValueConsMacro(cat("<android library object ", cat(?type, ">")), ?type),
 ReifiedLibraryObject(?type, cat("<android library object ", cat(?type, ">"))) :-
   ImplicitlyInstantiatedLibraryType(?type),
-  isType(?type)
+  isType(?type).
 
 
 // Main logic
@@ -268,9 +268,9 @@ ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
     Method_SimpleName(?meth, ?simplename),
     (match("set.*", ?simplename);
-     match("get.*", ?simplename),
+     match("get.*", ?simplename)),
     Method_DeclaringType(?meth, ?viewType),
-    AndoidViewType(?viewType),
+    AndroidViewType(?viewType),
     isImmutableContext(?ctx).
 
 
