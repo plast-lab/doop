@@ -227,6 +227,8 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
+            Options.v().set_process_multiple_dex(true);
+            Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
             android = new AndroidSupport(rOutDir, input0, sootParameters);
             android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
