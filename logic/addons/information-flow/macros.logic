@@ -7,7 +7,7 @@ LabelFromSource(?source, ?label) -> InformationLabel(?label), string(?source).
 #define DEFAULT_BREADCRUMB "ASSIGN"
 
 #define TaintedValueIntroduced(declaringType, id, type, label, value) \
-   Value:Mock:Cons[(id) + "::" + (Type:Id[(type)]) + "::" + DEFAULT_BREADCRUMB] = value, \
+   Value:Mock:Cons[(id) + ":::" + (Type:Id[(type)]) + ":::" + DEFAULT_BREADCRUMB] = value, \
    Value:Type[value] = type, \
    Value(value), \
    TaintedValue(value), \
@@ -16,7 +16,7 @@ LabelFromSource(?source, ?label) -> InformationLabel(?label), string(?source).
    Value:DeclaringType[value] = declaringType
 
 #define TaintedValueTransferred(oldvalue, type, breadcrumb, value) \
-   Value:Mock:Cons[SourceFromTaintedValue[(oldvalue)] + "::" + (Type:Id[(type)]) + "::" + (breadcrumb)] = value, \
+   Value:Mock:Cons[SourceFromTaintedValue[(oldvalue)] + ":::" + (Type:Id[(type)]) + ":::" + (breadcrumb)] = value, \
    Value(value), \
    TaintedValue(value), \
    Value:Type[value] = type, \
