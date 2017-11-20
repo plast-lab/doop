@@ -485,7 +485,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "HEAPDL_NOSTRINGS",
 					name: "heapdl-nostrings",
 					forCacheID: true,
-					description: "don't model string values uniquely in heap dump.",
+					description: "Do not model string values uniquely in a memory dump.",
 					value: false,
 					forPreprocessor: true
 			),
@@ -493,7 +493,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
 					argName: "FACTS_FILE",
-					description: "Use dynamic information",
+					description: "Use dynamic information from file.",
 					value: null,
 					forPreprocessor: true
 			),
