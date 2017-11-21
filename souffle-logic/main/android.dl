@@ -147,13 +147,12 @@ ProtectedMethodOfComponent(?meth) :-
   Method_Modifier("protected", ?meth).
 
 AppMethodOverridesAndroidLibraryMethod(?meth) :-
-  Method_DeclaringType(?meth, ?type),
   AndroidApplicationClass(?type),
-  // should be just args, since ret-type can be covariant?
-  Method_Descriptor(?meth, ?descriptor),
-  Method_SimpleName(?meth, ?simplename),
   SupertypeOf(?libraryType, ?type),
   AndroidLibraryType(?libraryType),
+  // Using MethodLookup for ?meth with the descriptor of the
+  // overridden method takes care of covariant return types.
+  MethodLookup(?simplename, ?descriptor, ?type, ?meth),
   MethodLookup(?simplename, ?descriptor, ?libraryType, _).
 
 // The protected method overrides one in a library type, hence it's

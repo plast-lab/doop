@@ -32,9 +32,59 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?type),
     ! Method_Modifier("abstract", ?method).
 
+// Relations used to find overridden methods with covariant return types.
+.decl MethodOverridesOther(?meth1:Method, ?meth2:Method)
+.decl MethodDoesntOverrideOther(?meth1:Method, ?meth2:Method)
+.decl MethodMightOverrideOther(?meth1:Method, ?meth2:Method)
+
+// Method ?meth1 has the same name as ?meth2, in a subtype.
+MethodMightOverrideOther(?meth1, ?meth2) :-
+   Method_SimpleName(?meth1, ?sameName),
+   Method_SimpleName(?meth2, ?sameName),
+   Method_DeclaringType(?meth1, ?type1),
+   Method_DeclaringType(?meth2, ?type2),
+   SubtypeOf(?type1, ?type2).
+
+// Limited to methods that have the same name, in subtypes. Method
+// ?meth1 *could* override ?meth2, but has different arg types.
+// REVIEW: using _Var_Type instead of Var_Type to avoid
+// recursion-through-negation.
+MethodDoesntOverrideOther(?meth1, ?meth2) :-
+   MethodMightOverrideOther(?meth1, ?meth2),
+   FormalParam(?sameIndex, ?meth1, ?formal1),
+   _Var_Type(?formal1, ?type1),
+   FormalParam(?sameIndex, ?meth2, ?formal2),
+   _Var_Type(?formal2, ?type2),
+   ?type1 != ?type2.
+
+MethodDoesntOverrideOther(?meth1, ?meth2) :-
+   MethodMightOverrideOther(?meth1, ?meth2),
+   FormalParam(?sameIndex, ?meth1, _),
+   !FormalParam(?sameIndex, ?meth2, _).
+
+MethodDoesntOverrideOther(?meth1, ?meth2) :-
+   MethodMightOverrideOther(?meth1, ?meth2),
+   FormalParam(?sameIndex, ?meth2, _),
+   !FormalParam(?sameIndex, ?meth1, _).
+
+MethodOverridesOther(?meth1, ?meth2) :-
+   MethodMightOverrideOther(?meth1, ?meth2),
+   !MethodDoesntOverrideOther(?meth1, ?meth2).
+
+// If another method is defined, having the same name & arguments but
+// a covariant return type, also register it in MethodImplemented
+// using the overridden method's descriptor.
+MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
+    MethodImplemented(?name, _, ?type, ?comethod),
+    MethodOverridesOther(?comethod, ?method),
+    Method_SimpleName(?method, ?name),
+    Method_ReturnType(?method, ?type1),
+    Method_ReturnType(?comethod, ?type2),
+    SubtypeOf(?type2, ?type1),
+    Method_Descriptor(?method, ?descriptor).
+
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
-    // should be just args, since ret-type can be covariant?
     VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
     VirtualMethodInvocation_Base(?invocation, ?base),
     Var_Type(?base, ?basetype),

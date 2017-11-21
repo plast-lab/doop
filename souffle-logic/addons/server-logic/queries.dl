@@ -186,6 +186,20 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_SimpleName(?subMethod, ?name),
   Method_Descriptor(?subMethod, ?desc).
 
+// Rule to handle covariant return types.
+Server_Method_Subtype(?method, ?subMethod) :-
+  Method_DeclaringType(?method, ?type),
+  Method_SimpleName(?method, ?name),
+  Method_Descriptor(?method, ?desc),
+  ?name != "<clinit>",
+  ?name != "<init>",
+  SubtypeOf(?subType, ?type),
+  ?subType != ?type,
+  _Valid_Type(?type),
+  _Valid_Type(?subType),
+  MethodImplemented(?name, _, ?subType, ?subMethod),
+  MethodLookup(?name, ?desc, ?subType, ?subMethod).
+
 
 // All the methods reachable from a method (transitive call-graph)
 //.decl Server_Method_ReachesMethod(?fromMethod:Method, ?toMethod:Method)
