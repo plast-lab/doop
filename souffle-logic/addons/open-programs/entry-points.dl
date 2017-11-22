@@ -6,6 +6,7 @@ ClassHasPossibleEntryPoint(?class),
 PossibleEntryPoint(?method) :-
   Method_DeclaringType(?method, ?class),
   Method_Modifier("public", ?method),
+  !Method_Modifier("abstract", ?method),
 //// Remove comment for original behavior
 //   !Method_Modifier("static", ?method),
   !ClassModifier("private", ?class).
