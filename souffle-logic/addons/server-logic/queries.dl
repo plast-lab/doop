@@ -137,7 +137,9 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 // Var-- //
 
 .decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:Value)
+.decl Server_Var_Return(?var:Var, ?method:Method)
 .output Server_Var_Values
+.output Server_Var_Return
 
 .decl _VPT(?var:Var, ?value:Value)
 .decl _VPT_Count(?var:Var, ?n:number)
@@ -162,6 +164,10 @@ Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
   ?count > X_SERVER_LOGIC_THRESHOLD,
   Var_DeclaringMethod(?var, ?method),
   Method_DeclaringType(?method, ?class).
+
+Server_Var_Return(?var, ?method) :-
+  ReturnVar(?var, ?method) ;
+  NativeReturnVar(?var, ?method).
 
 // --Var //
 
