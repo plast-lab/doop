@@ -181,8 +181,7 @@ Server_Var_Return(?var, ?method) :-
 .decl _AIPT_Count(?arrayValue:Value, ?n:number)
 
 _AIPT(?arrayValue, ?value) :-
-  ArrayIndexPointsTo(_, ?value, _, ?arrayValue),
-  HeapAllocation_Type(?arrayValue, ?t).
+  ArrayIndexPointsTo(_, ?value, _, ?arrayValue).
 
 _AIPT_Count(?arrayValue, ?n) :-
   _AIPT(?arrayValue, _),
