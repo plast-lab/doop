@@ -194,6 +194,7 @@ class JimpleListenerImpl extends JimpleBaseListener {
 		def lastToken = getLastToken(ctx)
 		int startCol, endCol
 		TerminalNode newToken
+		boolean isArray = false
 
 		if ((newToken = findToken(ctx, "new"))) {
 			startCol = newToken.symbol.charPositionInLine + 1
@@ -202,12 +203,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 			type = "$type[]" as String
 			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + 2
+			isArray = true
 		} else if ((newToken = findToken(ctx, "newmultiarray"))) {
 			def lastIsEmpty = lastToken.text == "[]"
 			def dimensions = ctx.value().size() + (lastIsEmpty ? 1 : 0)
 			type = type + (1..dimensions).collect { "[]" }.join()
 			startCol = newToken.symbol.charPositionInLine + 1
 			endCol = lastToken.symbol.charPositionInLine + (lastIsEmpty ? 3 : 2)
+			isArray = true
 		}
 
 		def c = heapCounters[type] ?: 0
@@ -218,8 +221,9 @@ class JimpleListenerImpl extends JimpleBaseListener {
 				filename,
 				"${method.doopId}/new $type/$c", //doopId
 				type,
-				method.doopId //allocatingMethodDoopId
-		)
+				method.doopId, //allocatingMethodDoopId
+				false, //inIIB
+				isArray)
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
