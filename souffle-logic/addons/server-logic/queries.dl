@@ -172,6 +172,34 @@ Server_Var_Return(?var, ?method) :-
 // --Var //
 
 
+// Array-- //
+
+.decl Server_Array_Values(?arrayValue:Value, ?value:Value)
+.output Server_Array_Values
+
+.decl _AIPT(?arrayValue:Value, ?value:Value)
+.decl _AIPT_Count(?arrayValue:Value, ?n:number)
+
+_AIPT(?arrayValue, ?value) :-
+  ArrayIndexPointsTo(_, ?value, _, ?arrayValue),
+  HeapAllocation_Type(?arrayValue, ?t).
+
+_AIPT_Count(?arrayValue, ?n) :-
+  _AIPT(?arrayValue, _),
+  ?n = count:{_AIPT(?arrayValue, _)}.
+
+Server_Array_Values(?arrayValue, ?value) :-
+  _AIPT(?arrayValue, ?value),
+  _AIPT_Count(?arrayValue, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD.
+
+Server_Array_Values(?arrayValue, "<<XL-pt-set>>") :-
+  _AIPT_Count(?arrayValue, ?count),
+  ?count > X_SERVER_LOGIC_THRESHOLD.
+
+// --Array //
+
+
 // Method-- //
 
 // ?method is implemented/overriden by ?subMethod
