@@ -34,7 +34,7 @@ if (project.hasProperty('heapDLVersion'))
     heapDLVersion = project.property('heapDLVersion')
 
 task wrapper(type: Wrapper) {
-    gradleVersion = "3.1"
+    gradleVersion = "3.5"
 }
 
 repositories {
@@ -173,13 +173,15 @@ test {
     }
 }
 
-task veryClean << {
-    def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
-    def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
-    file(out      ).list().each { f -> delete "$out/$f" }
-    file(cache    ).list().each { f -> delete "$cache/$f" }
-    file('results').list().each { f -> delete "results/$f" }
-    org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
+task veryClean {
+    doLast {
+        def out   = System.getenv('DOOP_OUT')   ?: "$projectDir/out"
+        def cache = System.getenv('DOOP_CACHE') ?: "$projectDir/cache"
+        file(out      ).list().each { f -> delete "$out/$f" }
+        file(cache    ).list().each { f -> delete "$cache/$f" }
+        file('results').list().each { f -> delete "results/$f" }
+        org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
+    }
 }
 veryClean.dependsOn clean
 
