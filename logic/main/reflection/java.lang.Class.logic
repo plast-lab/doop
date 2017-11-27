@@ -57,7 +57,7 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
   ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
   Instruction:Method[?invocation] = ?inmethod,
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  AssignHeapInMethod(?inmethod, ?constantHeap),
   (NumberOfClassesMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    ClassNameMatchingStringConstant:Type(?type, ?constantHeap)).
 
@@ -208,12 +208,16 @@ ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
    // Banning method propagation this way seems too restrictive
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
-   _OptVarToMethod[?to] = ?inmethod,
-   AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  _OptVarToMethod[?to] = ?inmethod,
+  AssignHeapInMethod(?inmethod, ?constantHeap),
 #endif
 #endif
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
+
+AssignHeapInMethod(?inmethod, ?constantHeap) <-
+   AssignContextInsensitiveHeapAllocation(?constantHeap, _, ?inmethod) ;
+   AssignNormalHeapAllocation(?constantHeap, _, ?inmethod).
 
 // TODO: Method objects derived from dynamic info have higher confidence.
 
@@ -359,7 +363,7 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
   ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
   _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  AssignHeapInMethod(?inmethod, ?constantHeap),
   (NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
