@@ -55,9 +55,9 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
 
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
-  ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
+  ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?mergeHeap),
   Instruction:Method[?invocation] = ?inmethod,
-  AssignHeapInMethod(?inmethod, ?constantHeap),
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap),
   (NumberOfClassesMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    ClassNameMatchingStringConstant:Type(?type, ?constantHeap)).
 
@@ -204,20 +204,24 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
 
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
-   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
+   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?mergeHeap),
    // Banning method propagation this way seems too restrictive
 #ifndef REFLECTION_HIGH_SOUNDNESS_MODE
 #ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
   _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapInMethod(?inmethod, ?constantHeap),
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap),
 #endif
 #endif
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
-AssignHeapInMethod(?inmethod, ?constantHeap) <-
-   AssignContextInsensitiveHeapAllocation(?constantHeap, _, ?inmethod) ;
+AssignHeapInMethod(?constantHeap, ?inmethod, ?constantHeap) <-
    AssignNormalHeapAllocation(?constantHeap, _, ?inmethod).
+
+AssignHeapInMethod(?heap, ?inmethod, ?mergeHeap) <-
+  AssignHeapAllocation(?heap, _, ?inmethod),
+  HeapAllocation:Merge[?heap] = ?mergeHeap.
+
 
 // TODO: Method objects derived from dynamic info have higher confidence.
 
@@ -361,9 +365,9 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
-  ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
+  ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?mergeHeap),
   _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapInMethod(?inmethod, ?constantHeap),
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap),
   (NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
