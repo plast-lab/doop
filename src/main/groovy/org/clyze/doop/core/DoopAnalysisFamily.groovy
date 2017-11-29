@@ -442,6 +442,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forPreprocessor: true
 			),
+			new AnalysisOption<String>(
+					id: "INFORMATION_FLOW_EXTRA_CONTROLS",
+					name: "information-flow-extra-controls",
+					argName: "CONTROLS",
+					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
+					value: null,
+					forPreprocessor: true
+			),
 			new AnalysisOption(
 					id: "OPEN_PROGRAMS",
 					name: "open-programs",
