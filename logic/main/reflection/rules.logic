@@ -449,31 +449,36 @@ ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee) <-
 
 // Surprising as it may seem, this join is not always performed first if
 // inlined below.
+
+
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base).
 
-#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
-  <-
-  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
-  ThisVar[?callee] = ?this,
-  SupertypeOf(Var:Type[?this], Value:Type[?value]).
+ <-
+   ThisVar[?callee] = ?this,
+   OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
+   SupertypeOf(Var:Type[?this], Value:Type[?value]).
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
-  <-
-  OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
-  ThisVar[?callee] = ?this,
-  ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+ <-
+   OptReflectiveSpecialMethodInvocationBaseValue(?callerCtx, ?invocation, ?hctx, ?value, ?callee),
+   ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+   ThisVar[?callee] = ?this,
 // Check if object is an instance of the class declaring the method. It's a
 // special method. Should they be identical types? Probably not. Can use
 // special reflective calls to call private superclass methods.
   SupertypeOf(Var:Type[?this], Value:Type[?value]).
-#endif
 
+OptReflectiveSpecialMethodInvocationBaseValue(?callerCtx, ?invocation, ?hctx, ?value, ?callee) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base).
+#endif
 
 // Virtual methods
 
@@ -991,13 +996,31 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
   Instruction:Method[?invocation] = ?inmethod,
   ReachableContext(?ctx, ?inmethod).
 
+
+
+
+// Even though there was one more step in the special object propagation,
+// in the end Constructor.newInstance is handled similarly to Class.newInstance.
+ConstructorNewInstancePointsToOpt(?to, ?ctx, ?specialConstructor) <- 
+  java:lang:reflect:Constructor:newInstance(_, ?to, ?var),
+  VarPointsTo(_, ?specialConstructor, ?ctx, ?var).
+
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
+  ConstructorNewInstancePointsToOpt(?to, ?ctx, ?specialConstructor),
+  OptSpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructor),
+  SpecialMissingNewInstanceValue[?forNameInvocation] = ?specialvalue.
+
+
 // Special object just to designate the unknown values returned by
 // Class.newInstance. At every newInstance to which an unknown object
 // created by forName flows, we return a new unknown object 
 // (of type Object and not Class) that remembers the forName site.
-VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
+ClassNewInstancePointsToOpt(?ctx, ?to, ?specialclass) <-
   java:lang:Class:newInstance(_, ?to, ?var),
-  VarPointsTo(_, ?specialclass, ?ctx, ?var),
+  VarPointsTo(_, ?specialclass, ?ctx, ?var).
+
+VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
+  ClassNewInstancePointsToOpt(?ctx, ?to, ?specialclass),
   OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass), 
   SpecialMissingNewInstanceValue[?forNameInvocation] = ?specialvalue.
 
@@ -1023,13 +1046,7 @@ OptForNameFromGetConstructors(?forNameInvocation, ?ctx, ?to) <-
   VarPointsTo(_, ?specialclass, ?ctx, ?var),
   OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass).
 
-// Even though there was one more step in the special object propagation,
-// in the end Constructor.newInstance is handled similarly to Class.newInstance.
-VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
-  java:lang:reflect:Constructor:newInstance(_, ?to, ?var),
-  VarPointsTo(_, ?specialConstructor, ?ctx, ?var),
-  OptSpecialMissingGetConstructorValue(?forNameInvocation, ?specialConstructor),
-  SpecialMissingNewInstanceValue[?forNameInvocation] = ?specialvalue.
+
 
 
 // some auxiliary stuff
