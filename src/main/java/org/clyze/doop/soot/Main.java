@@ -42,6 +42,7 @@ public class Main {
 
     public static void main(String[] args) {
         SootParameters sootParameters = new SootParameters();
+        String extraSensitiveControls = "";
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
@@ -130,6 +131,10 @@ public class Main {
                         i = shift(args, i);
                         sootParameters._rOutDir = args[i];
                         break;
+                    case "--extra-sensitive-controls":
+                        i = shift(args, i);
+                        extraSensitiveControls = args[i];
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -146,7 +151,7 @@ public class Main {
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
                         System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
-
+                        System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
                         throw new DoopErrorCodeException(0);
@@ -192,7 +197,7 @@ public class Main {
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
-            produceFacts(sootParameters);
+            produceFacts(sootParameters, extraSensitiveControls);
         }
         catch(DoopErrorCodeException errCode) {
             int n = errCode.getErrorCode();
@@ -204,7 +209,7 @@ public class Main {
         }
     }
 
-    private static void produceFacts(SootParameters sootParameters) throws Exception {
+    private static void produceFacts(SootParameters sootParameters, String extraSensitiveControls) throws Exception {
         Options.v().set_output_dir(sootParameters._outputDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
@@ -230,7 +235,7 @@ public class Main {
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
-            android = new AndroidSupport(rOutDir, input0, sootParameters);
+            android = new AndroidSupport(rOutDir, input0, sootParameters, extraSensitiveControls);
             android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);

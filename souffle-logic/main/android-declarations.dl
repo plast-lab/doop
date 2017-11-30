@@ -35,3 +35,5 @@
 .decl LayoutControlObjectValueFromId(?controlValue:Value, ?numId:NumConstant)
 .decl UninitialisedArray(?hctx:HContext, ?value:Value, ?invocation:MethodInvocation, ?type:Type)
 .decl MultiDimensionalArrayTemp(?value:Value, ?invocation:MethodInvocation, ?type:Type, ?ctx:Context, ?from:Var)
+.decl SubtypeOfWebClientType(?type:Type)
+.decl WebClientType(?type:Type)

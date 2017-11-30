@@ -266,6 +266,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
         }
 
+        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
+            params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
+        }
+
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"

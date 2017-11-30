@@ -279,6 +279,30 @@ ReachableContext(?ctx, ?meth) :-
     Activity(?class),
     isImmutableContext(?ctx).
 
+//The following predicates cover the two clients that can be attached to
+//a WebView adding functionality, the WebViewClient and the WebChromeClient
+//Both the overriden methods and the non overriden are kept, not sure 
+//if the latter are needed.
+SubtypeOfWebClientType(?type):-
+    SubtypeOf(?type, ?supertype),
+    (?supertype = "android.webkit.WebViewClient",
+    isType(?supertype);
+    ?supertype = "android.webkit.WebChromeClient",
+    isType(?supertype)).
+
+WebClientType(?type) :-
+    isType(?type),
+    (?type = "android.webkit.WebViewClient";
+     ?type = "android.webkit.WebChromeClient").
+	
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+    Method_DeclaringType(?meth, ?class),
+    ReachableApplicationObjectOfType(_, _, ?class),
+    (WebClientType(?class);
+    SubtypeOfWebClientType(?class)),
+    isImmutableContext(?ctx).
+
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type
 
