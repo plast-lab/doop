@@ -467,17 +467,22 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
  <-
-   OptReflectiveSpecialMethodInvocationBaseValue(?callerCtx, ?invocation, ?hctx, ?value, ?callee),
-   ImmutableContextFromHContext[?hctx] = ?calleeCtx,
-   ThisVar[?callee] = ?this,
-// Check if object is an instance of the class declaring the method. It's a
-// special method. Should they be identical types? Probably not. Can use
-// special reflective calls to call private superclass methods.
-  SupertypeOf(Var:Type[?this], Value:Type[?value]).
+   OptReflectiveSpecialMethodInvocationBaseValue(?value, ?callerCtx, ?invocation, ?hctx, ?valueType, ?callee),
+   PossibleReceiverValueType(?this, ?valueType, ?callee),
+   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
 
-OptReflectiveSpecialMethodInvocationBaseValue(?callerCtx, ?invocation, ?hctx, ?value, ?callee) <-
+PossibleReceiverValueType(?this, ?valueType, ?callee) <-
+  SupertypeOf(Var:Type[?this], ?valueType),
+  ThisVar[?callee] = ?this,
+  ReflectiveSpecialMethodInvocationCallee(?callee).
+
+ReflectiveSpecialMethodInvocationCallee(?callee) <-
+   ReflectiveSpecialMethodInvocation(_, ?callee, _, _).
+
+OptReflectiveSpecialMethodInvocationBaseValue(?value, ?callerCtx, ?invocation, ?hctx, Value:Type[?value], ?callee) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base).
+
 #endif
 
 // Virtual methods
