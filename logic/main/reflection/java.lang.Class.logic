@@ -480,9 +480,16 @@ UrlReflectiveAllocation[?invocation] = ?value <-
  *************************************************************/
 NumberOfClassesMatchingConstant[?constant] = ?n <-
   agg<<?n = count()>>(ClassNameMatchingStringConstant:Type(_, ?constant)).
+
+NumberOfMethodsMatchingMergedConstant[?constant] = ?n <-
+   agg<<?n = count()>>(MethodNameMatchingStringConstant:Signature(_, ?constant)).
 NumberOfMethodsMatchingConstant[?constant] = ?n <-
-  agg<<?n = count()>>(MethodNameMatchingStringConstant:Signature(_, ?constant)).
-NumberOfFieldsMatchingConstant[?constant] = ?n <-
+   agg<<?n = count()>>(PreMethodNameMatchingStringConstant:Signature(_, ?constant)).
+
+                                             
+NumberOfFieldsMatchingMergedConstant[?constant] = ?n <-
   agg<<?n = count()>>(FieldNameMatchingStringConstant:Signature(_, ?constant)).
+NumberOfFieldsMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(PreFieldNameMatchingStringConstant:Signature(_, ?constant)).
 
 StringPrecisionThreshold[] = 10.
