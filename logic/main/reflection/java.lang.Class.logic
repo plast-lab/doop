@@ -463,12 +463,17 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
  *************************************************************/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
+  ReachableGetResource(?to, ?ctx, ?invocation),
+  UrlReflectiveAllocation[?invocation] = ?value.
+
+ReachableGetResource(?to, ?ctx, ?invocation) <-
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
-  ReachableContext(?ctx, ?method),
+  ReachableContext(?ctx, ?method).
+
+UrlReflectiveAllocation[?invocation] = ?value <-
   Type:Id(?type:"java.net.URL"),
   ReflectiveAllocation[?invocation, ?type] = ?value.
-
 
 /*************************************************************
  * Auxiliaries
