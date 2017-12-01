@@ -202,12 +202,12 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  Value:Null[] != ?basevalue,
   NotSpecialObject(?value).
 #endif
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <- InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
+  Value:Null[] != ?basevalue,
   OptStoreInstanceField(?from, ?signature, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 
