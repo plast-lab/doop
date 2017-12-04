@@ -1,70 +1,71 @@
-#include "../../addons/cfg-analysis/analysis.logic"
-#include "../2-object-sensitive+heap/analysis.logic"
+#include "../../addons/cfg-analysis/analysis.dl"
+#include "../2-object-sensitive+heap/analysis.dl"
 
 /* Made for optimizing TaintedLoad */
-AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) <-
+AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) :-
     DependentInstruction(?ctx, ?dependent),
     StoreFldTo(?var, ?fld, ?dependent),
     VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 /* An instruction that loads a field that a dependent instruction wrote to */
-TaintedLoad(?ctx, ?insn) <-
+TaintedLoad(?ctx, ?insn) :-
     AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value),
     LoadFldFrom(?insn, ?var2, ?fld),
     VarPointsTo(?hctx, ?value, ?ctx, ?var2).
 
 /* Made for optimizing TaintedLoad */
-LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) <-
-    LoadArrayIndex:Base[?insn] = ?var,
+LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) :-
+    LoadArrayIndex_Base(?insn, ?var),
     VarPointsTo(?hctx, ?value, ?ctx, ?var).
 
 /* An instruction that loads data from an array that a dependent instruction wrote to */
-TaintedLoad(?loadCtx, ?insn) <-
+TaintedLoad(?loadCtx, ?insn) :-
     DependentInstruction(?storeCtx, ?dependent),
-    StoreArrayIndex:Base[?dependent] = ?var1,
-    LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?value),
-    VarPointsTo(?hctx, ?value, ?storeCtx, ?var1).
+    StoreArrayIndex_Base(?dependent, ?var1),
+    VarPointsTo(?hctx, ?value, ?storeCtx, ?var1),
+    LoadArrayHeapInsn(?loadCtx, ?insn, ?hctx, ?value).
 
 
 /* Data dependency between the formal and actual param */
-CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
-    FormalParam[?paramIndex, ?meth] = ?formalParam,
-    ActualParam[?paramIndex, ?callsite] = ?actParam,
+CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) :-
     CallGraphEdge(?prevCtx, ?callsite, ?nextCtx, ?meth),
+    ActualParam(?paramIndex, ?callsite, ?actParam),
+    FormalParam(?paramIndex, ?meth, ?formalParam),
     InstructionDefinesVar(?prevInsn, ?actParam),
     InstructionUsesVar(?nextInsn, ?formalParam),
     !SecureMethod(?meth).
 
 /* Data dependency between the return instruction and the caller */
-CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) <-
-    ReturnNonvoid:Insn(?prevInsn),
-    Instruction:Method[?prevInsn] = ?meth,
+CallReturnDependency(?nextCtx, ?nextInsn, ?prevCtx, ?prevInsn) :-
+    isReturnNonvoid_Insn(?prevInsn),
+    Instruction_Method(?prevInsn, ?meth),
     CallGraphEdge(?nextCtx, ?nextInsn, ?prevCtx, ?meth).
 
 
 /* Dependency source */
-DependentInstruction(?ctx, ?insn) <-
-    Instruction:Method[?insn] = ?meth,
-    ReachableContext(?ctx, ?meth),
-    DependencySourceInstruction(?insn).
+DependentInstruction(?ctx, ?insn) :-
+    DependencySourceInstruction(?insn),
+    Instruction_Method(?insn, ?meth),
+    ReachableContext(?ctx, ?meth).
 
 /* All kinds of intra-procedural dependency */
-DependentInstruction(?ctx, ?insn)  <-
+DependentInstruction(?ctx, ?insn)  :-
     DependentInstruction(?ctx, ?prevInsn),
-    IntraProceduralDependencyOpt(?insn, ?prevInsn),
+    IntraProceduralDependency(?prevInsn, ?insn),
     !SecureInstruction(?insn).
 
 /* Mark dependent loads as dependent instructions across all contexts */
-DependentInstruction(?ctx, ?insn) <-
+DependentInstruction(?ctx, ?insn) :-
     TaintedLoad(?ctx, ?insn),
-    !SecureMethod(Instruction:Method[?insn]),
+    Instruction_Method(?insn, ?meth),
+    !SecureMethod(?meth),
     !SecureInstruction(?insn).
 
 /**
  * If an instruction is inter-procedurally dependent on a dependent instruction
  * mark that instruction as dependent in its context
  */
-DependentInstruction(?ctx, ?insn) <-
+DependentInstruction(?ctx, ?insn) :-
     DependentInstruction(?prevCtx, ?prevInsn),
     CallReturnDependency(?ctx, ?insn, ?prevCtx, ?prevInsn).
 
@@ -72,65 +73,65 @@ DependentInstruction(?ctx, ?insn) <-
  * If a method call has a control dependency on an instruction, every instruction
  * in that method is control dependent on that instruction
  */
-DependentInstruction(?ctx, ?insn) <-
+DependentInstruction(?ctx, ?insn) :-
     DependentInstruction(?prevCtx, ?prevInsnControlDep),
     IntraProceduralControlDep(?prevInsn, ?prevInsnControlDep),
     CallGraphEdge(?prevCtx, ?prevInsn, ?ctx, ?meth),
-    Instruction:Method[?insn] = ?meth.
+    Instruction_Method(?insn, ?meth).
 
 /* Insn stores to base.fld */
-StoreFldTo(?base, ?fld, ?insn) <-
-    FieldInstruction:Signature[?insn] = ?fld,
-    StoreInstanceField:Base[?insn] = ?base.
+StoreFldTo(?base, ?fld, ?insn) :-
+    StoreInstanceField_Base(?insn, ?base),
+    FieldInstruction_Signature(?insn, ?fld).
 
 /* Insn loads from base.fld */
-LoadFldFrom(?insn, ?base, ?fld) <-
-    FieldInstruction:Signature[?insn] = ?fld,
-    LoadInstanceField:Base[?insn] = ?base.
+LoadFldFrom(?insn, ?base, ?fld) :-
+    LoadInstanceField_Base(?insn, ?base),
+    FieldInstruction_Signature(?insn, ?fld).
 
 /* Var is in instruction's use set */
-InstructionUsesVar(?instruction, ?var) <-
-    AssignLocal:From[?instruction] = ?var ;
-    AssignOper:From(?instruction, ?var) ;
-    AssignCast:From[?instruction] = ?var ;
-    AssignInstanceOf:From[?instruction] = ?var ;
-    If:Var(?instruction, ?var) ;
-    VirtualMethodInvocation:Base[?instruction] = ?var ;
-    Switch:Key[?instruction] = ?var ;
-    ActualParam[_, ?instruction] = ?var ;
-    ReturnNonvoid:Var[?instruction] = ?var ;
-    Throw:Var[?instruction] = ?var ;
-    LoadArrayIndex:Base[?instruction] = ?var ;
-    StoreStaticField:From[?instruction] = ?var ;
-    StoreInstanceField:From[?instruction] = ?var ;
-    StoreArrayIndex:From[?instruction] = ?var ;
-    ArrayInsnIndex[?instruction] = ?var.
+InstructionUsesVar(?instruction, ?var) :-
+    AssignLocal_From(?instruction, ?var) ;
+    AssignOper_From(?instruction, ?var) ;
+    AssignCast_From(?instruction, ?var) ;
+    AssignInstanceOf_From(?instruction, ?var) ;
+    If_Var(?instruction, ?var) ;
+    VirtualMethodInvocation_Base(?instruction, ?var) ;
+    Switch_Key(?instruction, ?var) ;
+    ActualParam(_, ?instruction, ?var) ;
+    ReturnNonvoid_Var(?instruction, ?var) ;
+    Throw_Var(?instruction, ?var) ;
+    LoadArrayIndex_Base(?instruction, ?var) ;
+    StoreStaticField_From(?instruction, ?var) ;
+    StoreInstanceField_From(?instruction, ?var) ;
+    StoreArrayIndex_From(?instruction, ?var) ;
+    ArrayInsnIndex(?instruction, ?var).
 
 /* Var is in instruction's def set */
-InstructionDefinesVar(?instruction, ?var) <-
-    AssignInstruction:To[?instruction] = ?var ;
-    LoadArrayIndex:To(?instruction, ?var) ;
-    StoreArrayIndex:Base(?instruction, ?var) ;
-    LoadInstanceField:To[?instruction] =  ?var ;
-    LoadStaticField:To[?instruction] =  ?var ;
-    AssignReturnValue[?instruction] = ?var.
+InstructionDefinesVar(?instruction, ?var) :-
+    AssignInstruction_To(?instruction, ?var) ;
+    LoadArrayIndex_To(?instruction, ?var) ;
+    StoreArrayIndex_Base(?instruction, ?var) ;
+    LoadInstanceField_To(?instruction,  ?var) ;
+    LoadStaticField_To(?instruction,  ?var) ;
+    AssignReturnValue(?instruction, ?var).
 
 
 /* An instruction is a CFG leaf if it ends with a throw */
-CFGLeaf(?headInsn, ?method) <-
+CFGLeaf(?headInsn, ?method) :-
     Throw(?insn, _),
-    BasicBlockHead[?insn] = ?headInsn,
-    Instruction:Method[?headInsn] = ?method.
+    BasicBlockHead(?insn, ?headInsn),
+    Instruction_Method(?headInsn, ?method).
 
 /* An instruction is a CFG leaf if it ends with a return */
-CFGLeaf(?headInsn, ?method) <-
-    ReturnInstruction(?insn),
-    BasicBlockHead[?insn] = ?headInsn,
-    Instruction:Method[?headInsn] = ?method.
+CFGLeaf(?headInsn, ?method) :-
+    isReturnInstruction(?insn),
+    BasicBlockHead(?insn, ?headInsn),
+    Instruction_Method(?headInsn, ?method).
 
 
 /* Nothing post-dominates a CFG leaf */
-DoesNotPostDominate(?postDomCandidate, ?insn) <-
+DoesNotPostDominate(?postDomCandidate, ?insn) :-
     BBHeadInMethod(?postDomCandidate, ?method),
     CFGLeaf(?insn, ?method),
     ?postDomCandidate != ?insn.
@@ -141,7 +142,7 @@ DoesNotPostDominate(?postDomCandidate, ?insn) <-
  * This is a lot more intuitive when one thinks that "DoesNotPostDominate(a,b) =
  * exists path from b to some exit of the method, such that the path skips a".
  */
-DoesNotPostDominate(?postDomCandidate, ?insn) <-
+DoesNotPostDominate(?postDomCandidate, ?insn) :-
     DoesNotPostDominate(?postDomCandidate, ?otherInsn),
     MayPredecessorBBModuloThrow(?insn, ?otherInsn),
     ?insn != ?postDomCandidate.
@@ -150,13 +151,13 @@ DoesNotPostDominate(?postDomCandidate, ?insn) <-
 /* If we can't prove A does not post-dominate B with the other rules, then A post-dominates B.
  * The definition is such that we always get reflexivity: PostDominates(x,x).
  */
-PostDominates(?dominator, ?insn) <-
+PostDominates(?dominator, ?insn) :-
     SameMethodBBHeads(?dominator, ?insn),
     !DoesNotPostDominate(?dominator, ?insn).
 
 
 /* An intra procedural data dep exists when an instruction uses a var defined by another one */
-IntraProceduralDataDep(?prev, ?next) <-
+IntraProceduralDataDep(?prev, ?next) :-
     InstructionDefinesVar(?prev, ?var),
     InstructionUsesVar(?next, ?var).
 
@@ -165,42 +166,39 @@ IntraProceduralDataDep(?prev, ?next) <-
  * Invariant of this relation: ?prev is the
  * last instruction of a BB, ?nextBlock is the first of a different one.
  */
-IntraProceduralBlockControlDep(?nextBlock, ?prev) <-
+IntraProceduralBlockControlDep(?nextBlock, ?prev) :-
     BasicBlockBegin(?nextBlock),
     MaySuccessorModuloThrow(?nextBlock, ?prev),
-    BasicBlockHead[?prev] = ?prevBlockStart,
+    BasicBlockHead(?prev, ?prevBlockStart),
     !PostDominates(?nextBlock, ?prevBlockStart).
 
 /**
  * This block postdominates a block that depends on an instruction
  * which this block doesn't postdominate
  */
-IntraProceduralBlockControlDep(?nextBlock, ?prev) <-
-    PostDominates(?nextBlock, ?interm),
+IntraProceduralBlockControlDep(?nextBlock, ?prev) :-
+    BasicBlockHead(?prev, ?prevBlockStart),
     IntraProceduralBlockControlDep(?interm, ?prev),
-    BasicBlockHead[?prev] = ?prevBlockStart,
+    PostDominates(?nextBlock, ?interm),
     !PostDominates(?nextBlock, ?prevBlockStart).
 
 
 /* Same as above, but per instruction */
-IntraProceduralControlDep(?next, ?prev) <-
+IntraProceduralControlDep(?next, ?prev) :-
     IntraProceduralBlockControlDep(?nextBlock, ?prev),
-    BasicBlockHead[?next] = ?nextBlock.
+    BasicBlockHead(?next, ?nextBlock).
 
 
 /* Intra procedural dependency base */
-IntraProceduralDependencyBase(?next, ?prev) <-
-    IntraProceduralDataDep(?prev, ?next) ;
-    IntraProceduralControlDep(?next, ?prev).
+IntraProceduralDependencyBase(?next, ?prev) :-
+    IntraProceduralDataDep(?prev, ?next)/* ;
+    IntraProceduralControlDep(?next, ?prev)*/.
 
 /* Intra procedural dependency - base case */
-IntraProceduralDependency(?prev, ?next) <-
+IntraProceduralDependency(?prev, ?next) :-
     IntraProceduralDependencyBase(?next, ?prev).
 
 /* Intra procedural dependency step */
-IntraProceduralDependency(?prev, ?next) <-
+IntraProceduralDependency(?prev, ?next) :-
     IntraProceduralDependency(?prev, ?inter),
     IntraProceduralDependencyBase(?next, ?inter).
-
-/* Inverted for optimization */
-IntraProceduralDependencyOpt(?next, ?prev) <- IntraProceduralDependency(?prev, ?next).
