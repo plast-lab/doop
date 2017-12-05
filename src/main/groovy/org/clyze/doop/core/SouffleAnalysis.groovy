@@ -287,6 +287,10 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.X_STATS_FULL.value) {
             cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl", macros)
         }
+
+        if (options.X_EXTRA_METRICS.value) {
+            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
+        }
     }
 
     @Override

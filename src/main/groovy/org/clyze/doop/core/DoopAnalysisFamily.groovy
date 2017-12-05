@@ -568,6 +568,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					nonStandard: true,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_EXTRA_METRICS",
+					name: "Xextra-metrics",
+					description: "Run extra metrics logic under addons/statistics",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
