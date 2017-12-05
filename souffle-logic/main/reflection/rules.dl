@@ -179,9 +179,9 @@ java_lang_Class_getDeclaredField(?to, ?param, ?from) :-
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS
-CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat("<reflective Class.newInstance/", ?invocation), ?type), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat(cat("<reflective Class.newInstance/", ?invocation), "/new "), ?type), ">")),
 #else
-CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.newInstance/", ?type), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Class.newInstance/new ", ?type), ">")),
 #endif
 java_lang_Class_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.Object newInstance()>"),
@@ -218,9 +218,9 @@ java_lang_reflect_Array_newInstance(?invocation, ?to, ?param) :-
 
 // TODO Better filtering of class types
 #ifdef REFLECTION_REFINED_OBJECTS
-CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat("<reflective Constructor.newInstance/", ?invocation), ?type), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat(cat(cat("<reflective Constructor.newInstance/", ?invocation), "/new "), ?type), ">")),
 #else
-CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Constructor.newInstance/", ?type), ">")),
+CreateReflectiveAllocationMacro(?invocation, ?type, cat(cat("<reflective Constructor.newInstance/new ", ?type), ">")),
 #endif
 java_lang_reflect_Constructor_newInstance(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.reflect.Constructor: java.lang.Object newInstance(java.lang.Object[])>"),
