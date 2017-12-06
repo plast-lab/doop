@@ -142,5 +142,5 @@ In order to use LogicBlox instead of the Soufflé engine you can provide the --l
 UPL (see [LICENSE](LICENSE)).
 
 
-## Doop Coding Guidelines
-If you intend to develop code for the Doop framework, please consult the [Doop Coding Guidelines](docs/guide.md) document.
+## Development on Doop
+The `doop` command is a script for gradle build tasks. If you want to see all available tasks (e.g., how to build stand-alone packages of Doop for offline use), try `./gradlew tasks`. Generally, for development and integration instructions, please consult the [Doop Developer Guide](docs/documentation.md).
