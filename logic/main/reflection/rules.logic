@@ -464,12 +464,30 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
    OptReflectiveSpecialMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?callee),
    SupertypeOf(Var:Type[?this], Value:Type[?value]).
 #else
-ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee),
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?callee)
  <-
-   OptReflectiveSpecialMethodInvocationBaseValue(?value, ?callerCtx, ?invocation, ?hctx, ?valueType, ?callee),
+   ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base),
+   ReflectiveSpecialMethodInvocationBaseVarPointsTo(?calleeCtx, ?valueType, ?callerCtx, ?base),
+   PossibleReceiverValueType(_, ?valueType, ?callee).
+
+ReflectiveSpecialMethodInvocationBaseVarPointsTo(?calleeCtx, ?valueType, ?callerCtx, ?base) <-
+   Value:Type[?value] = ?valueType,
+   ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+   ReflectiveSpecialMethodInvocationBase(?callerCtx, ?base),
+   VarPointsTo(?hctx, ?value, ?callerCtx, ?base).
+
+ReflectiveSpecialMethodInvocationBase(?callerCtx, ?base) <-
+   ReflectiveSpecialMethodInvocation(_, _, ?callerCtx, ?base).
+
+PossibleReflectiveSpecialMethodInvocationCalleeReceiver(?hctx, ?value, ?callee) <-
+   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+   ReflectiveSpecialMethodInvocation(_, ?callee, ?callerCtx, ?base).
+                                    
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
+   ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+   Value:Type[?value] = ?valueType,
    PossibleReceiverValueType(?this, ?valueType, ?callee),
-   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
+   PossibleReflectiveSpecialMethodInvocationCalleeReceiver(?hctx, ?value, ?callee).
 
 PossibleReceiverValueType(?this, ?valueType, ?callee) <-
   SupertypeOf(Var:Type[?this], ?valueType),
@@ -478,12 +496,11 @@ PossibleReceiverValueType(?this, ?valueType, ?callee) <-
 
 ReflectiveSpecialMethodInvocationCallee(?callee) <-
    ReflectiveSpecialMethodInvocation(_, ?callee, _, _).
-
-OptReflectiveSpecialMethodInvocationBaseValue(?value, ?callerCtx, ?invocation, ?hctx, Value:Type[?value], ?callee) <-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ReflectiveSpecialMethodInvocation(?invocation, ?callee, ?callerCtx, ?base).
-
 #endif
+
+
+
+ 
 
 // Virtual methods
 
