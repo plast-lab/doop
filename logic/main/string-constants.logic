@@ -534,7 +534,7 @@ StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
   VarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?var),
   StringFactoryVar(?var).
 
-VarAssignedToStringFactoryVar(?param, ?base) <-
+VarAssignedToStringFactoryVar(?base, ?param) <-
   VirtualMethodInvocation:SimpleName[?invocation] = "append",
   VirtualMethodInvocation:Base[?invocation] = ?base,
   StringFactoryVar(?base),
@@ -550,9 +550,12 @@ VarAssignedFromStringFactoryVar(?ret, ?base) <-
 // (merge reflection strings), less coverage (require that string
 // in/out operations on Builders/Buffers are in the same method).  The
 // current approach (precise) seems to work ok.
-VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
+VarOfReflectionInterestAssignedToStringFactoryVar(?ctx, ?var, ?factoryVar) <-
   VarOfReflectionInterest(?ctx, ?var),
-  VarAssignedToStringFactoryVar(?var, ?factoryVar),
+  VarAssignedToStringFactoryVar(?factoryVar, ?var).
+
+VarFlowsIntoStringFactory(?factoryHctx, ?factoryValue, ?ctx, ?var) <-
+  VarOfReflectionInterestAssignedToStringFactoryVar(?ctx, ?var, ?factoryVar),
   StringFactoryVarPointsTo(?factoryHctx, ?factoryValue, ?ctx, ?factoryVar).
 
 VarFlowsFromStringFactory(?ctx, ?var, ?factoryHctx, ?factoryValue) <-
