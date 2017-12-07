@@ -172,12 +172,11 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
         }
 
-        if (options.OPEN_PROGRAMS.value) {
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
-        } else if (name != "sound-may-point-to") {
-            // This needs cleaning up. We are including one version by default, but distinguishing
-            // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
+        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+            if (options.OPEN_PROGRAMS.value)
+                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
+            else
+                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)

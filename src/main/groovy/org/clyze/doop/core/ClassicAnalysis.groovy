@@ -282,17 +282,12 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/addons.logic", options.IMPORT_PARTITIONS.value.toString())
         }
 
-        if (options.OPEN_PROGRAMS.value) {
-            cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
+        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+            if (options.OPEN_PROGRAMS.value)
+                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
+            else
+                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-
-        } else {
-            //if (!(name == "naive" || name == "micro")) {
-                // This needs cleaning up. We are including one version by default, but distinguishing
-                // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-            //    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
-            //    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-            //}
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
