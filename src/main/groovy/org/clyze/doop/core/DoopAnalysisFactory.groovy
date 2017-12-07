@@ -284,18 +284,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 options[(jreOption.id)] = jreOption
                 break
             case "android":
-                if (platformInfo.size < 3)
+                if (platformInfo.size < 3) {
                     throw new RuntimeException("Invalid Android platform: $platformInfo")
+                }
                 // If the user has given a platform ending in
-                // "_fulljars", then use the "full" subdirectory of
+                // "_fulljars", then use the "fulljars" subdirectory of
                 // the platforms library, otherwise use the "stubs"
                 // one. This permits use of two Android system JARs
                 // side-by-side: either the stubs provided by the
                 // official Android SDK or a custom Android build.
-                if (platformInfo[2] != "stubs" && platformInfo[2] != "fulljars")
+                String libFlavor = platformInfo[2]
+                if (![ "stubs", "fulljars", "robolectric" ].contains(libFlavor)) {
                     throw new RuntimeException("Invalid Android platform: $platformInfo")
-                String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
-                String path = "${options.PLATFORMS_LIB.value}/Android/$androidLibFlavor/Android/Sdk/platforms/android-$version"
+                }
+                String path = "${options.PLATFORMS_LIB.value}/Android/${libFlavor}/Android/Sdk/platforms/android-${version}"
                 options.ANDROID.value = true
 
                 switch(version) {
@@ -328,6 +330,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         break
                     case 24:
                     case 25:
+                    case 26:
                         files = ["${path}/android.jar",
                                  "${path}/android-stubs-src.jar",
                                  "${path}/optional/org.apache.http.legacy.jar",
