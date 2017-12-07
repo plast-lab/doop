@@ -534,34 +534,32 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   ThisVar[?tomethod] = ?this.
 #else
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
-  BLA(?callerCtx, ?calleeCtx, ?invocation, ?valuetype, ?signature),
-  Method:DeclaringType[?signature] = ?type,
-  SupertypeOf(?type, ?valuetype), // TODO need nicer check
-  Method:SimpleName[?signature] = ?simplename,
-  Method:Descriptor[?signature] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod.
+  BLA(?callerCtx, ?calleeCtx, ?invocation, ?signature, ?valuetype),
+  OptMethodLookup[?signature, ?valuetype] = ?tomethod.
 
-BLA(?callerCtx, ?calleeCtx, ?invocation, ?valuetype, ?signature) <-
+BLA(?callerCtx, ?calleeCtx, ?invocation, ?signature, ?valuetype) <-
   ImmutableContextFromHContext[?hctx] = ?calleeCtx,
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
   Value:Type[?value] = ?valuetype.
 
-BLA2(?hctx, ?value, ?signature) <-
-  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
-  ReflectiveVirtualMethodInvocation(?signature, _, ?callerCtx, ?base).
-
-VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
-   <-
-  BLA2(?hctx, ?value, ?signature),
-  Value:Type[?value] = ?valuetype,
-  Method:DeclaringType[?signature] = ?type,
-  SupertypeOf(?type, ?valuetype), // TODO need nicer check
-  Method:SimpleName[?signature] = ?simplename,
-  Method:Descriptor[?signature] = ?descriptor,
-  MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod,
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)  <-
+  BLA2(?hctx, ?value, ?signature, ?valuetype),
+  OptMethodLookup[?signature, ?valuetype] = ?tomethod,
   ThisVar[?tomethod] = ?this,
   ImmutableContextFromHContext[?hctx] = ?calleeCtx.
+
+BLA2(?hctx, ?value, ?signature, ?valuetype) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  Value:Type[?value] = ?valuetype,
+  ReflectiveVirtualMethodInvocation(?signature, _, ?callerCtx, ?base).
+
+OptMethodLookup[?signature, ?valuetype] = ?tomethod <-
+  SupertypeOf(?type, ?valuetype),
+  MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod,
+  Method:SimpleName[?signature] = ?simplename,
+  Method:Descriptor[?signature] = ?descriptor,
+  Method:DeclaringType[?signature] = ?type.
 #endif
 
 // Return values of reflective method invocations
