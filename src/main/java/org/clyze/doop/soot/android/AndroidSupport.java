@@ -195,10 +195,13 @@ public class AndroidSupport {
     // The extra sensitive controls are given as a String
     // "id1,type1,parentId1,id2,type2,parentId2,...".
     void writeExtraSensitiveControls(FactWriter writer) {
+        if (extraSensitiveControls.equals("")) {
+            return;
+        }
         String[] parts = extraSensitiveControls.split(",");
         int partsLen = parts.length;
         if (partsLen % 3 != 0) {
-            System.err.println("List size not a multiple of 3: " + extraSensitiveControls);
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + extraSensitiveControls + "\"");
             return;
         }
         for (int i = 0; i < partsLen; i += 3) {
