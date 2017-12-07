@@ -485,15 +485,15 @@ ReflectiveSpecialMethodInvocationBaseVarPointsTo(?calleeCtx, ?valueType, ?caller
 ReflectiveSpecialMethodInvocationBase(?callerCtx, ?base) <-
    ReflectiveSpecialMethodInvocation(_, _, ?callerCtx, ?base).
 
-PossibleReflectiveSpecialMethodInvocationCalleeReceiver(?hctx, ?value, ?callee) <-
+PossibleReflectiveSpecialMethodInvocationCalleeReceiver(?hctx, ?value, ?valueType, ?callee) <-
    VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+   Value:Type[?value] = ?valueType,
    ReflectiveSpecialMethodInvocation(_, ?callee, ?callerCtx, ?base).
                                     
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) <-
    ImmutableContextFromHContext[?hctx] = ?calleeCtx,
-   Value:Type[?value] = ?valueType,
    PossibleReceiverValueType(?this, ?valueType, ?callee),
-   PossibleReflectiveSpecialMethodInvocationCalleeReceiver(?hctx, ?value, ?callee).
+   PossibleReflectiveSpecialMethodInvocationCalleeReceiver(?hctx, ?value, ?valueType, ?callee).
 
 PossibleReceiverValueType(?this, ?valueType, ?callee) <-
   SupertypeOf(Var:Type[?this], ?valueType),

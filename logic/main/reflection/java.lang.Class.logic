@@ -202,16 +202,14 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
   Method:DeclaringType[?signature] = ?superClass,
   Method:Modifier("public", ?signature).
 
+LocalForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
+  ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?mergeHeap),
+  _OptVarToMethod[?to] = ?inmethod,
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap).
+  
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
-   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?mergeHeap),
-   // Banning method propagation this way seems too restrictive
-#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
-#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
-  _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap),
-#endif
-#endif
+  LocalForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 

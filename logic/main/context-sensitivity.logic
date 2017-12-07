@@ -112,8 +112,11 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
-  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
   Value:byHeap[?heap] = ?value,
+  ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap).
+
+ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap) <-
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 
 /**
