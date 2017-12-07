@@ -1065,11 +1065,15 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?to) <-
 
 // Similar flow of special object through get[Declared]Constructor
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialConstructorValue, ?ctx, ?to) <-
-  (java:lang:Class:getConstructor(?to, ?var);
-   java:lang:Class:getDeclaredConstructor(?to, ?var)),
-  VarPointsTo(_, ?specialclass, ?ctx, ?var),
+  GetConstructorReturnPointsTo(?ctx, ?to, ?specialclass),
   OptSpecialMissingForNameValue(?forNameInvocation, ?specialclass), 
   SpecialMissingGetConstructorValue[?forNameInvocation] = ?specialConstructorValue.
+
+GetConstructorReturnPointsTo(?ctx, ?to, ?specialclass) <-
+  (java:lang:Class:getConstructor(?to, ?var);
+   java:lang:Class:getDeclaredConstructor(?to, ?var)),
+  VarPointsTo(_, ?specialclass, ?ctx, ?var).
+
 
 // Pretty similar for get[Declared]Constructors. The array that the
 // return var points to (established by forward logic) is populated
@@ -1248,11 +1252,14 @@ VarPointsTo(ImmutableHContextFromContext[?ctx], ?value, ?ctx, ?return) <-
 // its "getMethod" origin), return a new special object that remembers
 // the original getMethod invocation site.
 VarPointsTo(ImmutableHContextFromContext[?ctx], ?specialvalue, ?ctx, ?var) <-
-  java:lang:reflect:Method:invoke(?invocation, ?methodVar),
-  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
+  ReflectiveMethodInvocationValue(?ctx, ?invocation, ?specialMethodValue),
   OptSpecialMissingGetMethodValue(?getMethodInvocation, ?specialMethodValue),
   SpecialMissingInvokeValueFromGetMethod[?getMethodInvocation] = ?specialvalue,
   AssignReturnValue[?invocation] = ?var.
+
+ReflectiveMethodInvocationValue(?ctx, ?invocation, ?specialMethodValue) <-
+  java:lang:reflect:Method:invoke(?invocation, ?methodVar),
+  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar).
 
 // a cast (to ?type) receives the result of an invoke call on a value
 // returned from a getMethod.
@@ -1370,8 +1377,7 @@ OptGetMethodsClass(?type, ?getMethodsInvocation) <-
 
 
 OptInvokeOnSpecialMissingGetMethodsValue(?getMethodsInvocation , ?ctx, ?invocation) <-
-  java:lang:reflect:Method:invoke(?invocation, ?methodVar),
-  VarPointsTo(_, ?specialMethodValue, ?ctx, ?methodVar),
+  ReflectiveMethodInvocationValue(?ctx, ?invocation, ?specialMethodValue),
   OptSpecialMissingGetMethodsValue(?getMethodsInvocation, ?specialMethodValue).
 
 
