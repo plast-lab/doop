@@ -340,10 +340,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
-                // FIXME: When "full" JARs are used, pick only the first
-                // one (assumed to be android.jar) or XML parsing fails.
-                if (androidLibFlavor.equals("full"))
-                    files = [ files[0] ]
         }
         return files
     }
