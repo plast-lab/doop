@@ -386,6 +386,10 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) ->
 
 // Private method invocations are special methods, unless they are static.
 
+ResolveInvocationByVarType(?method, ?varType) <-
+   ResolveInvocation[?valueType, _] = ?method,
+   SubtypeOf(?valueType, ?varType).
+
 // Note that (for now) the other special method invocation cases are
 // not possible: 1) instance initialization methods cannot be invoked
 // reflectively using Method.invoke and 2) overridden superclass
@@ -396,7 +400,8 @@ ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
   Method:Modifier(?private, ?signature),
   Modifier:Id(?static:"static"),
   ! Method:Modifier(?static, ?signature),
-  ReflectiveBaseVar[?invocation] = ?base.
+  ReflectiveBaseVar[?invocation] = ?base,
+  ResolveInvocationByVarType(?signature, Var:Type[?base]).
 
 // Static method invocations
 ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
@@ -411,7 +416,8 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) <-
   ! Method:Modifier(?private, ?signature),
   Modifier:Id(?static:"static"),
   ! Method:Modifier(?static, ?signature),
-  ReflectiveBaseVar[?invocation] = ?base.
+  ReflectiveBaseVar[?invocation] = ?base,
+  ResolveInvocationByVarType(?signature, Var:Type[?base]).
 
 
 // Reflective call graph edges.
@@ -507,11 +513,13 @@ ReflectiveSpecialMethodInvocationCallee(?callee) <-
 // TODO Check if object is an instance of the class declaring the
 //      method (only overapproximation)
 
+
+
+#ifdef REFLECTION_CONTEXT_SENSITIVITY
 OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature) <-
   VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
   ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base).
 
-#ifdef REFLECTION_CONTEXT_SENSITIVITY
 ReflectiveMergeMacro(?callerCtx, ?invocation, ?hctx, ?value, ?calleeCtx),
 ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
@@ -525,10 +533,27 @@ VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
   MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod,
   ThisVar[?tomethod] = ?this.
 #else
-ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod),
+ReflectiveCallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod) <-
+  BLA(?callerCtx, ?calleeCtx, ?invocation, ?valuetype, ?signature),
+  Method:DeclaringType[?signature] = ?type,
+  SupertypeOf(?type, ?valuetype), // TODO need nicer check
+  Method:SimpleName[?signature] = ?simplename,
+  Method:Descriptor[?signature] = ?descriptor,
+  MethodLookup[?simplename, ?descriptor, ?valuetype] = ?tomethod.
+
+BLA(?callerCtx, ?calleeCtx, ?invocation, ?valuetype, ?signature) <-
+  ImmutableContextFromHContext[?hctx] = ?calleeCtx,
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?callerCtx, ?base),
+  Value:Type[?value] = ?valuetype.
+
+BLA2(?hctx, ?value, ?signature) <-
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  ReflectiveVirtualMethodInvocation(?signature, _, ?callerCtx, ?base).
+
 VarPointsTo(?hctx, ?value, ?calleeCtx, ?this)
-  <-
-  OptReflectiveVirtualMethodInvocationBaseValue(?hctx, ?value, ?callerCtx, ?invocation, ?signature),
+   <-
+  BLA2(?hctx, ?value, ?signature),
   Value:Type[?value] = ?valuetype,
   Method:DeclaringType[?signature] = ?type,
   SupertypeOf(?type, ?valuetype), // TODO need nicer check
