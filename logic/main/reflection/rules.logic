@@ -386,10 +386,6 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) ->
 
 // Private method invocations are special methods, unless they are static.
 
-ResolveInvocationByVarType(?method, ?varType) <-
-   ResolveInvocation[?valueType, _] = ?method,
-   SubtypeOf(?valueType, ?varType).
-
 // Note that (for now) the other special method invocation cases are
 // not possible: 1) instance initialization methods cannot be invoked
 // reflectively using Method.invoke and 2) overridden superclass
@@ -400,8 +396,7 @@ ReflectiveSpecialMethodInvocation(?invocation, ?signature, ?ctx, ?base) <-
   Method:Modifier(?private, ?signature),
   Modifier:Id(?static:"static"),
   ! Method:Modifier(?static, ?signature),
-  ReflectiveBaseVar[?invocation] = ?base,
-  ResolveInvocationByVarType(?signature, Var:Type[?base]).
+  ReflectiveBaseVar[?invocation] = ?base.
 
 // Static method invocations
 ReflectiveStaticMethodInvocation(?ctx, ?invocation, ?signature) <-
@@ -416,8 +411,7 @@ ReflectiveVirtualMethodInvocation(?signature, ?invocation, ?ctx, ?base) <-
   ! Method:Modifier(?private, ?signature),
   Modifier:Id(?static:"static"),
   ! Method:Modifier(?static, ?signature),
-  ReflectiveBaseVar[?invocation] = ?base,
-  ResolveInvocationByVarType(?signature, Var:Type[?base]).
+  ReflectiveBaseVar[?invocation] = ?base.
 
 
 // Reflective call graph edges.
