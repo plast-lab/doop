@@ -295,7 +295,11 @@ WebClientType(?type) :-
     isType(?type),
     (?type = "android.webkit.WebViewClient";
      ?type = "android.webkit.WebChromeClient").
-	
+
+.decl ForcedReachableFromJavascriptContext(?ctx:Context, ?meth:Method)
+
+
+ForcedReachableFromJavascriptContext(?ctx, ?meth),
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
     MethodLookup(_,_,?class,?meth),
@@ -304,6 +308,18 @@ ReachableContext(?ctx, ?meth) :-
     ReachableApplicationObjectOfType(_, _, ?class),
     WebClientType(?class),
     isImmutableContext(?ctx).
+
+.decl FormalOfForcedReachableFromJavascriptContext(?ctx:Context, ?formal:Var, ?formalType:Type)
+
+FormalOfForcedReachableFromJavascriptContext(?ctx, ?formal, ?formalType) :-
+  ForcedReachableFromJavascriptContext(?ctx, ?meth),
+  FormalParam(_, ?meth, ?formal),
+  Var_Type(?formal, ?formalType).
+
+MockValueConsMacro(cat("<android javascript object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<android javascript object ", cat(?type, ">")), ?type) :-
+  FormalOfForcedReachableFromJavascriptContext(_, _, ?type),
+  isType(?type).
 
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type
