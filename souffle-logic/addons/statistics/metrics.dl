@@ -32,7 +32,8 @@ ReachableApplicationClass(?class) :-
 ReachableSDKClass(?class) :-
     Reachable(?method),
     Method_DeclaringType(?method, ?class),
-    (match("android.*", ?class);
+    ((match("android.*", ?class),
+      !match("android.support.*", ?class));
      match("java.*", ?class)),
     !ApplicationClass(?class).
 
@@ -98,4 +99,3 @@ SDKMethodDirectlyReachableFromSDK(?sdkMethod) :-
     !SDKMethodDirectlyReachableFromDependency(?sdkMethod),
     Method_DeclaringType(?sdkMethod, ?sdkClass),
     ReachableSDKClass(?sdkClass).
-
