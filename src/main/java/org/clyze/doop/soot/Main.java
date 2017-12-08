@@ -1,28 +1,27 @@
 package org.clyze.doop.soot;
 
+import org.apache.commons.io.FileUtils;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
-
 import org.objectweb.asm.ClassReader;
-import soot.*;
+import soot.PackManager;
+import soot.Scene;
+import soot.SootClass;
+import soot.SourceLocator;
 import soot.SourceLocator.FoundFile;
 import soot.options.Options;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
-
-import org.apache.commons.io.FileUtils;
-
-import org.clyze.doop.soot.android.AndroidSupport;
 
 public class Main {
 
@@ -307,7 +306,7 @@ public class Main {
         }
 
         scene.loadNecessaryClasses();
-        
+
         /*
         * This part should definitely appear after the call to
         * `Scene.loadNecessaryClasses()', since the latter may alter

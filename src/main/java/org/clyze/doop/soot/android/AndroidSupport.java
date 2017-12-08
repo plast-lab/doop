@@ -1,19 +1,21 @@
 package org.clyze.doop.soot.android;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-
 import org.clyze.doop.soot.FactWriter;
 import org.clyze.doop.soot.Main;
 import org.clyze.doop.soot.PropertyProvider;
 import org.clyze.doop.soot.SootParameters;
 import org.clyze.utils.AARUtils;
-import soot.*;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
-import soot.options.Options;
-import static org.clyze.doop.soot.android.AndroidManifest.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
 import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 

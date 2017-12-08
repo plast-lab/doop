@@ -1,13 +1,13 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.datalog.LBWorkspaceConnector
-import heapdl.core.MemoryAnalyser
+import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
@@ -72,7 +72,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * Interface with the underlying workspace
      */
-    LBWorkspaceConnector connector
+	LBBuilder lbBuilder
 
     /**
      * Total time for the soot invocation

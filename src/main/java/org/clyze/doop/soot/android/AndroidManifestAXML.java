@@ -2,15 +2,15 @@
 
 package org.clyze.doop.soot.android;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import soot.jimple.infoflow.android.axml.AXmlNode;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.jimple.infoflow.android.resources.ARSCFileParser;
 import soot.jimple.infoflow.android.resources.DirectLayoutFileParser;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class AndroidManifestAXML implements AndroidManifest {
     private ProcessManifest pm;

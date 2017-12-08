@@ -1,8 +1,13 @@
 package org.clyze.doop.core
 
-import org.clyze.analysis.*
-import static org.apache.commons.io.FilenameUtils.*
+import org.clyze.analysis.AnalysisFamily
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.BooleanAnalysisOption
+import org.clyze.analysis.IntegerAnalysisOption
+
 import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
+import static org.apache.commons.io.FilenameUtils.getExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {

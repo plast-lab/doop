@@ -34,11 +34,11 @@ class Main {
 
         try {
             // The builder for displaying usage should not include non-standard flags
-            CliBuilder usageBuilder = CommandLineAnalysisFactory.createCliBuilder(false)
+            def usageBuilder = CommandLineAnalysisFactory.createCliBuilder(false)
             // The builder for displaying usage of non-standard flags
-            CliBuilder nonStandardUsageBuilder = CommandLineAnalysisFactory.createNonStandardCliBuilder()
+            def nonStandardUsageBuilder = CommandLineAnalysisFactory.createNonStandardCliBuilder()
             // The builder for actually parsing the arguments needs to include non-standard flags
-            CliBuilder builder = CommandLineAnalysisFactory.createCliBuilder(true)
+            def builder = CommandLineAnalysisFactory.createCliBuilder(true)
 
             if (!args) {
                 usageBuilder.usage()

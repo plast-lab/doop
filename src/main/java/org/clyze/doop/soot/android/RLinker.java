@@ -1,18 +1,19 @@
 package org.clyze.doop.soot.android;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.zip.*;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-
 import org.clyze.Constants;
 import org.clyze.utils.AARUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /** A linker of R-class data.
  *

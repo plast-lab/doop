@@ -2,9 +2,10 @@
 
 package org.clyze.doop.soot.android;
 
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+
 import java.io.IOException;
 import java.util.Set;
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
 public interface AndroidManifest {
     String getApplicationName();

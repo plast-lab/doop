@@ -31,10 +31,9 @@ class CrudeSpec extends Specification {
 	}
 
 	void equals(String metric, long expectedVal) {
-		long actualVal
-		analysis.connector.processQuery("_(v) <- Stats:Metrics(_, \"$metric\", v).") {
-			line -> actualVal = line as long
-		}
+		long actualVal = -1
+		def cmd = [analysis.options.BLOXBATCH.value as String, '-db', analysis.database as String, '-query', "_(v) <- Stats:Metrics(_, \"$metric\", v)."]
+		analysis.executor.execute(analysis.outDir, cmd) { line -> actualVal = line as long }
 		assert actualVal == expectedVal
 	}
 }

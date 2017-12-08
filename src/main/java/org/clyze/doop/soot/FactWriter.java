@@ -11,7 +11,6 @@ import soot.tagkit.LineNumberTag;
 import soot.tagkit.VisibilityAnnotationTag;
 import soot.util.backend.ASMBackendUtils;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
