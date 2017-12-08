@@ -259,7 +259,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         def executionCommand = [souffleAnalysisCacheFile, "-j$jobs", "-F$factsDir", "-D$database"]
         if (options.SOUFFLE_PROFILE.value)
-            executionCommand << "-p${outDir}/profile.txt"
+            executionCommand << "-p${outDir}/profile.txt" as String
 
         logger.debug "Execution command: $executionCommand"
         logger.info "Running analysis"
