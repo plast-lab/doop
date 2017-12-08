@@ -243,6 +243,7 @@ PublicOnMethodOfReachableListener(?meth) :-
   match("^on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
+
 ProtectedOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
@@ -283,7 +284,7 @@ ReachableContext(?ctx, ?meth) :-
 //a WebView adding functionality, the WebViewClient and the WebChromeClient
 //Both the overriden methods and the non overriden are kept, not sure 
 //if the latter are needed.
-SubtypeOfWebClientType(?type):-
+WebClientType(?type):-
     SubtypeOf(?type, ?supertype),
     (?supertype = "android.webkit.WebViewClient",
     isType(?supertype);
@@ -297,10 +298,11 @@ WebClientType(?type) :-
 	
 ForcedReachableAndroidContext(?ctx, ?meth),
 ReachableContext(?ctx, ?meth) :-
-    Method_DeclaringType(?meth, ?class),
+    MethodLookup(_,_,?class,?meth),
+    ( Method_Modifier("protected", ?meth);
+    Method_Modifier("public", ?meth)),
     ReachableApplicationObjectOfType(_, _, ?class),
-    (WebClientType(?class);
-    SubtypeOfWebClientType(?class)),
+    WebClientType(?class),
     isImmutableContext(?ctx).
 
 // For all the above forced reachable methods, supply a receiver
