@@ -220,11 +220,9 @@ class SouffleAnalysis extends DoopAnalysis {
             def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
 
             if (options.SOUFFLE_PROFILE.value)
-                compilationCommand << "-p${outDir}/profile.txt" as String
-                //compilationCommand += " -p${outDir}/profile.txt"
+                compilationCommand << ("-p${outDir}/profile.txt" as String)
             if (options.SOUFFLE_DEBUG.value)
-                compilationCommand << "-r${outDir}/report.html" as String
-                //compilationCommand += " -r${outDir}/report.html"
+                compilationCommand << ("-r${outDir}/report.html" as String)
 
             logger.info "Compiling Datalog to C++ program and executable"
             logger.debug "Compilation command: $compilationCommand"
@@ -259,7 +257,7 @@ class SouffleAnalysis extends DoopAnalysis {
 
         def executionCommand = [souffleAnalysisCacheFile, "-j$jobs", "-F$factsDir", "-D$database"]
         if (options.SOUFFLE_PROFILE.value)
-            executionCommand << "-p${outDir}/profile.txt" as String
+            executionCommand << ("-p${outDir}/profile.txt" as String)
 
         logger.debug "Execution command: $executionCommand"
         logger.info "Running analysis"
