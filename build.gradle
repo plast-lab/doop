@@ -180,7 +180,7 @@ task veryClean {
         file(out      ).list().each { f -> delete "$out/$f" }
         file(cache    ).list().each { f -> delete "$cache/$f" }
         file('results').list().each { f -> delete "results/$f" }
-        deleteQuietly(new File('last-analysis'))
+        org.apache.commons.io.FileUtils.deleteQuietly(new File('last-analysis'))
     }
 }
 veryClean.dependsOn clean
