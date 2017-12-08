@@ -227,11 +227,14 @@ class JimpleListenerImpl extends JimpleBaseListener {
 	}
 
 	void exitInvokeStmt(InvokeStmtContext ctx) {
-		if (hasToken(ctx, "=")) {
-			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
-			addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
-		} else
-			addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_READ)
+		if (ctx.IDENTIFIER(0)) {
+			if (hasToken(ctx, "=")) {
+				addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_WRITE)
+				if (ctx.IDENTIFIER(1))
+					addVarUsage(ctx.IDENTIFIER(1), UsageKind.DATA_READ)
+			} else
+				addVarUsage(ctx.IDENTIFIER(0), UsageKind.DATA_READ)
+		}
 
 		def methodClassId = ctx.methodSig().IDENTIFIER(0)
 		def methodClass = methodClassId.text
