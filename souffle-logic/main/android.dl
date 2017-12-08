@@ -59,8 +59,6 @@ ReifiedAndroidObjectValue(?value, ?type) :-
    Value_Type(?value, ?type),
    !AndroidAppComponent(?type).
 
-
-
 // Create a new heap object per component declared in layout
 // (XML) resources. (REVIEW) These are normal heap objects.
 MockValueConsMacro(cat("<android component object ", cat(?type, ">")), ?type),
@@ -149,13 +147,12 @@ ProtectedMethodOfComponent(?meth) :-
   Method_Modifier("protected", ?meth).
 
 AppMethodOverridesAndroidLibraryMethod(?meth) :-
-  Method_DeclaringType(?meth, ?type),
   AndroidApplicationClass(?type),
-  // should be just args, since ret-type can be covariant?
-  Method_Descriptor(?meth, ?descriptor),
-  Method_SimpleName(?meth, ?simplename),
   SupertypeOf(?libraryType, ?type),
   AndroidLibraryType(?libraryType),
+  // Using MethodLookup for ?meth with the descriptor of the
+  // overridden method takes care of covariant return types.
+  MethodLookup(?simplename, ?descriptor, ?type, ?meth),
   MethodLookup(?simplename, ?descriptor, ?libraryType, _).
 
 // The protected method overrides one in a library type, hence it's
@@ -246,6 +243,7 @@ PublicOnMethodOfReachableListener(?meth) :-
   match("^on.*", ?simplename),
   Method_Modifier("public", ?meth).
 
+
 ProtectedOnMethodOfReachableListener(?meth) :-
   MethodDeclaredOrInherited(?meth, ?class),
   LibraryReachableAppListenerType(?class),
@@ -262,6 +260,66 @@ ReachableContext(?ctx, ?meth) :-
   (PublicOnMethodOfReachableListener(?meth);
    OverridingProtectedOnMethodOfReachableListener(?meth)),
   isImmutableContext(?ctx).
+
+// anantoni: Make the getters and setters of classes extending View reachable
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+    Method_SimpleName(?meth, ?simplename),
+    (match("set.*", ?simplename);
+     match("get.*", ?simplename)),
+    Method_DeclaringType(?meth, ?viewType),
+    AndroidViewType(?viewType),
+    isImmutableContext(?ctx).
+
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+    Method_Modifier("public", ?meth),
+    FormalParam(0, ?meth, ?arg),
+    Var_Type(?arg, "android.view.View"),
+    Method_DeclaringType(?meth, ?class),
+    Activity(?class),
+    isImmutableContext(?ctx).
+
+//The following predicates cover the two clients that can be attached to
+//a WebView adding functionality, the WebViewClient and the WebChromeClient
+//Both the overriden methods and the non overriden are kept, not sure 
+//if the latter are needed.
+WebClientType(?type):-
+    SubtypeOf(?type, ?supertype),
+    (?supertype = "android.webkit.WebViewClient",
+    isType(?supertype);
+    ?supertype = "android.webkit.WebChromeClient",
+    isType(?supertype)).
+
+WebClientType(?type) :-
+    isType(?type),
+    (?type = "android.webkit.WebViewClient";
+     ?type = "android.webkit.WebChromeClient").
+
+.decl ForcedReachableFromJavascriptContext(?ctx:Context, ?meth:Method)
+
+
+ForcedReachableFromJavascriptContext(?ctx, ?meth),
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+    MethodLookup(_,_,?class,?meth),
+    ( Method_Modifier("protected", ?meth);
+    Method_Modifier("public", ?meth)),
+    ReachableApplicationObjectOfType(_, _, ?class),
+    WebClientType(?class),
+    isImmutableContext(?ctx).
+
+.decl FormalOfForcedReachableFromJavascriptContext(?ctx:Context, ?formal:Var, ?formalType:Type)
+
+FormalOfForcedReachableFromJavascriptContext(?ctx, ?formal, ?formalType) :-
+  ForcedReachableFromJavascriptContext(?ctx, ?meth),
+  FormalParam(_, ?meth, ?formal),
+  Var_Type(?formal, ?formalType).
+
+MockValueConsMacro(cat("<android javascript object ", cat(?type, ">")), ?type),
+ReifiedAndroidObjectValue(cat("<android javascript object ", cat(?type, ">")), ?type) :-
+  FormalOfForcedReachableFromJavascriptContext(_, _, ?type),
+  isType(?type).
 
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type
@@ -321,8 +379,6 @@ VarPointsTo(?hctx, ?value, ?ctx, ?formal) :-
 
 // Support view retrieval by id. If a call to an appropriate method is
 // found, we short-circuit it and return the right view object.
-
-
 ViewRetrievalByArg0MethodInvocation(?invo) :-
   (?calleeName = "inflate";
    ?calleeName = "getView";
@@ -338,30 +394,40 @@ ViewRetrievalByArg0MethodInvocation(?invo) :-
   //  Method:Id(?signature:"<android.view.View: android.view.View findViewById(int)>")
   // ).
 
-// the variables holding the view id and the retrieved view at one of
-// these invocations.
+// Support fragment retrieval by id (similar to rule about view retrieval).
+FragmentRetrievalByArg0MethodInvocation(?invo) :-
+  Method_SimpleName(?method, "findFragmentById"),
+  (?retType = "android.app.Fragment";
+   ?retType = "android.support.v4.app.Fragment"),
+  Method_ReturnType(?method, ?retType),
+  isType(?retType),
+  MethodInvocation_Method(?invo, ?method).
 
-VarsAtInvocationRetrievingView(?ret, ?var) :-
-  ViewRetrievalByArg0MethodInvocation(?invo),
+// The variables holding the layout control id and the retrieved
+// layout control at one of these invocations.
+
+VarsAtInvocationRetrievingLayoutControl(?ret, ?var) :-
+  (FragmentRetrievalByArg0MethodInvocation(?invo);
+   ViewRetrievalByArg0MethodInvocation(?invo)),
   AssignReturnValue(?invo, ?ret),
   ActualParam(0, ?invo, ?var).
 
 
-ViewObjectValueFromId(?viewValue, ?numId) :-
+LayoutControlObjectValueFromId(?controlValue, ?numId) :-
   LayoutControl(?numId, ?type, _),
-  ReifiedLayoutControl(?type, ?numId, ?viewValue).
+  ReifiedLayoutControl(?type, ?numId, ?controlValue).
 
-// ... and the clincher: given an id for a view object, at one of the
-// invocation sites of methods retrieving views, return the
-// appropriate view object. REVIEW: the ?hctx is a hack, which
-// currently doesn't matter since it's the immutable hctx anyway.
-// I can't see why we'd need to RecordMacro-create a new hctxt, since
-// these layout objects are unique.
-VarPointsTo(?hctx, ?viewValue, ?ctx, ?ret) :-
-  VarsAtInvocationRetrievingView(?ret, ?var),
+// ... and the clincher: given an id for a layout control object, at
+// one of the invocation sites of methods retrieving layout controls,
+// return the appropriate layout control object. REVIEW: the ?hctx is
+// a hack, which currently doesn't matter since it's the immutable
+// hctx anyway.  I can't see why we'd need to RecordMacro-create a new
+// hctxt, since these layout objects are unique.
+VarPointsTo(?hctx, ?controlValue, ?ctx, ?ret) :-
+  VarsAtInvocationRetrievingLayoutControl(?ret, ?var),
   VarPointsTo(?hctx, ?value, ?ctx, ?var),
   Value_Num(?value, ?numId),
-  ViewObjectValueFromId(?viewValue, ?numId).
+  LayoutControlObjectValueFromId(?controlValue, ?numId).
 
 
 

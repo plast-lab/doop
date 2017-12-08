@@ -1,4 +1,4 @@
-#include "../../addons/cfg-analysis/declarations.logic"
+#include "../../addons/cfg-analysis/declarations.dl"
 
 /* Methods for instruction-by-instruction analysis */
 
@@ -12,11 +12,7 @@
  * ?hctx        The heap context
  * ?value       The value containing the field
  */
-AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) ->
-    Field(?fld),
-    HContext(?hctx),
-    Value(?value).
-
+.decl AllCtxDependentStoreHeapFld(?fld: Field, ?hctx: HContext, ?value: Value)
 
 /**
  * LoadArrayHeapInsn(?ctx, ?insn, ?value)
@@ -28,11 +24,7 @@ AllCtxDependentStoreHeapFld(?fld, ?hctx, ?value) ->
  * ?hctx        The heap context
  * ?value       The value that can be loaded
  */
-LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) ->
-    Context(?ctx),
-    Instruction(?insn),
-    HContext(?hctx),
-    Value(?value).
+.decl LoadArrayHeapInsn(?ctx: Context, ?insn: Instruction, ?hctx: HContext, ?value: Value)
 
 /**
  * Load instruction that loads dependent data
@@ -40,9 +32,8 @@ LoadArrayHeapInsn(?ctx, ?insn, ?hctx, ?value) ->
  * ?ctx         The calling context in which the instruction is dependent
  * ?insn        The dependent instruction
  */
-TaintedLoad(?ctx, ?insn) ->
-    Instruction(?insn),
-    Context(?ctx).
+.decl TaintedLoad(?ctx: Context, ?insn: Instruction)
+.output TaintedLoad
 
 /**
  * Data dependency between instructions in different methods
@@ -56,11 +47,7 @@ TaintedLoad(?ctx, ?insn) ->
  * ?prevCtx     Calling context of the source instruction
  * ?prev        Data source instruction
  */
-CallReturnDependency(?nextCtx, ?next, ?prevCtx, ?prev) ->
-    Context(?nextCtx),
-    Context(?prevCtx),
-    Instruction(?next),
-    Instruction(?prev).
+.decl CallReturnDependency(?nextCtx: Context, ?next: Instruction, ?prevCtx: Context, ?prev: Instruction)
 
 
 /**
@@ -69,10 +56,8 @@ CallReturnDependency(?nextCtx, ?next, ?prevCtx, ?prev) ->
  * ?ctx         The calling context of the dependent instruction
  * ?insn        The dependent instruction
  */
-DependentInstruction(?ctx, ?insn) ->
-    Context(?ctx),
-    Instruction(?insn).
-
+.decl DependentInstruction(?ctx: Context, ?insn: Instruction)
+.output DependentInstruction
 
 /**
  * Instructions that can be considered secure 
@@ -80,18 +65,14 @@ DependentInstruction(?ctx, ?insn) ->
  *
  * ?insn        The secure instruction
  */
-SecureInstruction(?insn) ->
-    Instruction(?insn).
-
+.decl SecureInstruction(?insn: Instruction)
 
 /**
  * A method that DependentInstruction will never propagate to
  *
  * ?meth        The secure method
  */
- SecureMethod(?meth) ->
-    Method(?meth).
-
+.decl SecureMethod(?meth: Method)
 
 /**
  * An instruction storing to an object's field
@@ -100,10 +81,7 @@ SecureInstruction(?insn) ->
  * ?fld         The field being stored
  * ?insn        The store instruction
  */
-StoreFldTo(?base, ?fld, ?insn) ->
-    Var(?base),
-    Field(?fld),
-    StoreInstanceField:Insn(?insn).
+.decl StoreFldTo(?base: Var, ?fld: Field, ?insn: Instruction)
 
 /**
  * An instruction loading from an object's field
@@ -112,11 +90,7 @@ StoreFldTo(?base, ?fld, ?insn) ->
  * ?base        The object base
  * ?fld         The field being loaded
  */
-LoadFldFrom(?insn, ?base, ?fld) ->
-    LoadInstanceField:Insn(?insn),
-    Var(?base),
-    Field(?fld).
-
+.decl LoadFldFrom(?insn: Instruction, ?base: Var, ?fld: Field)
 
 /**
  * Instruction reads from var
@@ -124,10 +98,7 @@ LoadFldFrom(?insn, ?base, ?fld) ->
  * ?instruction The instruction using the var
  * ?var         The var being used
  */
-InstructionUsesVar(?instruction, ?var) ->
-    Instruction(?instruction),
-    Var(?var).
-
+.decl InstructionUsesVar(?instruction: Instruction, ?var: Var)
 
 /**
  * Instruction writes to var
@@ -135,10 +106,7 @@ InstructionUsesVar(?instruction, ?var) ->
  * ?instruction The instruction defining the var
  * ?var         The var being defined
  */
-InstructionDefinesVar(?instruction, ?var) ->
-    Instruction(?instruction),
-    Var(?var).
-
+.decl InstructionDefinesVar(?instruction: Instruction, ?var: Var)
 
 /**
  * A basic block that is a leaf in its method's CFG
@@ -146,9 +114,7 @@ InstructionDefinesVar(?instruction, ?var) ->
  * ?headInsn    The leaf basic block's first instruction
  * ?method      The method containing the basic block
  */
-CFGLeaf(?headInsn, ?method) ->
-    Instruction(?headInsn),
-    Method(?method).
+.decl CFGLeaf(?headInsn: Instruction, ?method: Method)
 
 /**
  * A basic block does not dominate another one
@@ -156,9 +122,7 @@ CFGLeaf(?headInsn, ?method) ->
  * ?dominator   The non-dominating basic block's first instruction
  * ?insn        The first instruction of the basic block not being dominated
  */
-DoesNotPostDominate(?postDomCandidate, ?insn) ->
-    Instruction(?postDomCandidate),
-    Instruction(?insn).
+.decl DoesNotPostDominate(?postDomCandidate: Instruction, ?insn: Instruction)
 
 /**
  * A basic block dominates another one
@@ -166,10 +130,7 @@ DoesNotPostDominate(?postDomCandidate, ?insn) ->
  * ?dominator   The dominating basic block's first instruction
  * ?insn        The first instruction of basic block being dominated
  */
-PostDominates(?dominator, ?insn) ->
-    Instruction(?dominator),
-    Instruction(?insn).
-
+.decl PostDominates(?dominator: Instruction, ?insn: Instruction)
 
 /**
  * Intra procedural data dependency, requires SSA
@@ -182,10 +143,7 @@ PostDominates(?dominator, ?insn) ->
  * ?next        Data destination instruction
  * ?prev        Data source instruction
  */
-IntraProceduralDataDep(?next, ?prev) ->
-    Instruction(?next),
-    Instruction(?prev).
-
+.decl IntraProceduralDataDep(?next: Instruction, ?prev: Instruction)
 
 /**
  * Basic block depends on instruction
@@ -198,9 +156,7 @@ IntraProceduralDataDep(?next, ?prev) ->
  * ?nextBlock   The dependent basic block's first instruction
  * ?prev        The instruction that the basic block depends on
  */
-IntraProceduralBlockControlDep(?nextBlock, ?prev) ->
-    Instruction(?nextBlock),
-    Instruction(?prev).
+.decl IntraProceduralBlockControlDep(?nextBlock: Instruction, ?prev: Instruction)
 
 /**
  * Instruction is control dependent on another instruction
@@ -209,9 +165,7 @@ IntraProceduralBlockControlDep(?nextBlock, ?prev) ->
  * ?next        The dependent instruction
  * ?prev        The instruction that the other instruction depends on
  */
-IntraProceduralControlDep(?next, ?prev) ->
-    Instruction(?next),
-    Instruction(?prev).
+.decl IntraProceduralControlDep(?next: Instruction, ?prev: Instruction)
 
 /**
  * Intra procedural dependency base, for dependencies such as
@@ -222,9 +176,7 @@ IntraProceduralControlDep(?next, ?prev) ->
  * ?next        Data destination instruction
  * ?prev        Data source instruction
  */
-IntraProceduralDependencyBase(?next, ?prev) ->
-    Instruction(?next),
-    Instruction(?prev).
+.decl IntraProceduralDependencyBase(?next: Instruction, ?prev: Instruction)
 
 /**
  * Intra procedural dependency - transitively closed
@@ -233,20 +185,11 @@ IntraProceduralDependencyBase(?next, ?prev) ->
  * ?prev        Data source instruction
  * ?next        Data destination instruction
  */
-IntraProceduralDependency(?prev, ?next) ->
-    Instruction(?prev),
-    Instruction(?next).
-
-/* Same as above, inverted for optimizing some rules */
-IntraProceduralDependencyOpt(?next, ?prev) ->
-    Instruction(?next),
-    Instruction(?prev).
-
+.decl IntraProceduralDependency(?prev: Instruction, ?next: Instruction)
 
 /**
  * Instructions to perform a forward slice on
  *
  * ?insn        The instruction that will be considered tha taint source
  */
-DependencySourceInstruction(?insn) ->
-    Instruction(?insn).
+.decl DependencySourceInstruction(?insn: Instruction)

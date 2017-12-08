@@ -22,6 +22,7 @@ public class SootParameters {
      boolean _runFlowdroid = false;
      boolean _noFacts = false;
      boolean _uniqueFacts = false;
+     String _rOutDir = null;
      boolean _generateJimple = false;
      boolean _toStdout = false;
 

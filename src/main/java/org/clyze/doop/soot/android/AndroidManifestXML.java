@@ -1,20 +1,19 @@
 package org.clyze.doop.soot.android;
 
+import org.w3c.dom.*;
+import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.*;
-
-import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
-
-import static org.clyze.doop.soot.android.AndroidManifest.*;
 
 public class AndroidManifestXML implements AndroidManifest {
     private File archive;
@@ -96,10 +95,25 @@ public class AndroidManifestXML implements AndroidManifest {
     public Set<String> getProviders()  { return providers;       }
     public Set<String> getReceivers()  { return receivers;       }
 
+    private InputStream getZipEntryInputStreamLayout(String entry) {
+        try {
+            return getZipEntryInputStream(entry);
+        } catch (Exception ex) {
+            final String[] altLayouts = { "v11", "v16", "v17", "v21", "v22" };
+            for (String v : altLayouts ) {
+                String l = entry.replaceAll("res/layout/", "res/layout-"+v+"/");
+                try {
+                    return getZipEntryInputStream(l);
+                } catch (Exception ex0) { }
+            }
+        }
+        throw new RuntimeException("Cannot find layout " + entry);
+    }
+
     private InputStream getZipEntryInputStream(String entry) throws IOException {
         ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
         for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
-            if (e.getName().equals(entry)) {
+            if (e.getName().equals(entry) || e.getName().equals(entry + ".xml")) {
                 return zin;
             }
         }
@@ -155,8 +169,110 @@ public class AndroidManifestXML implements AndroidManifest {
     }
 
     public Set<PossibleLayoutControl> getUserControls() {
-        System.out.println("WARNING: getUserControls() not yet implemented for plain-text XML files.");
-        return new HashSet<>();
+        Set<String> layoutFiles = new HashSet<>();
+        Set<PossibleLayoutControl> controls = new HashSet<>();
+        try {
+            ZipInputStream zin = new ZipInputStream(new FileInputStream(archive));
+            for (ZipEntry e; (e = zin.getNextEntry()) != null;) {
+                String name = e.getName();
+                if (name.startsWith("res/layout") && name.endsWith(".xml"))
+                    layoutFiles.add(name);
+            }
+            for (String layoutFile : layoutFiles)
+                getUserControlsForLayoutFile(layoutFile, -1, controls);
+        } catch (Exception ex) {
+            System.err.println("Error while reading user controls:");
+            ex.printStackTrace();
+        }
+        return controls;
+    }
+
+    void getUserControlsForLayoutFile(String layoutFile, int parentId,
+                                      Set<PossibleLayoutControl> controls) throws Exception {
+        InputStream is = getZipEntryInputStreamLayout(layoutFile);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        Document doc = dbf.newDocumentBuilder().parse(is);
+        Element docElem = doc.getDocumentElement();
+        NodeList l0 = docElem.getChildNodes();
+        for (int i0 = 0; i0 < l0.getLength(); i0++) {
+            getUserControlsForNode(l0.item(i0), parentId, controls);
+        }
+    }
+
+    // Layout controls are triplets (id, control name, parent id) and
+    // can be sensitive.
+    private void getUserControlsForNode(Node node, int parentId,
+                                        Set<PossibleLayoutControl> controls) throws Exception {
+        String name = node.getNodeName();
+        if (name.equals("dummy") || name.equals("#comment") || name.equals("#text")) {
+            return;
+        } else if (name.equals("include")) {
+            String includedLayout = attrOrDefault(node, "layout", null);
+            if (includedLayout != null) {
+                if (includedLayout.startsWith("@layout/")) {
+                    String layoutFile = "res/" + includedLayout.substring(1);
+                    getUserControlsForLayoutFile(layoutFile, parentId, controls);
+                } else {
+                    System.err.println("unsupported include: " + includedLayout);
+                }
+            }
+            return;
+        }
+
+        // Default control id, if no matching R entry is found.
+        int intId = -1;
+        // 'Merge' elements don't represent controls, skip to process children.
+        if (!name.equals("merge")) {
+            if (name.equals("fragment"))
+                name = attrOrDefault(node, "android:name", "-1");
+            String id = attrOrDefault(node, "android:id", "-1");
+            if (id.startsWith("@+"))
+                id = id.substring(2);
+            if (id.indexOf("/") != -1) {
+                String[] parts = id.split("/");
+                Integer c = RLinker.getInstance().lookupConst(packageName, parts[0], parts[1]);
+                if (c != null)
+                    intId = c;
+            }
+
+            // Add a layout control with empty attributes.
+            Map<String, Object> attrs = new HashMap<String, Object>();
+            controls.add(new PossibleLayoutControl(intId, name, isSensitive(node), attrs, parentId));
+
+            // Heuristic: if the name is unqualified, it comes from
+            // android.view or android.widget ("Android Programming:
+            // The Big Nerd Ranch Guide", chapter 32).
+            if (name.lastIndexOf(".") == -1) {
+                controls.add(new PossibleLayoutControl(intId, "android.view." + name, isSensitive(node), attrs, parentId));
+                controls.add(new PossibleLayoutControl(intId, "android.widget." + name, isSensitive(node), attrs, parentId));
+            }
+        }
+
+        NodeList l1 = node.getChildNodes();
+        for (int i1 = 0; i1 < l1.getLength(); i1++)
+            getUserControlsForNode(l1.item(i1), intId, controls);
+    }
+
+    private static boolean isSensitive(Node node) {
+        String androidPassword = attrOrDefault(node, "android:password", null);
+        if ((androidPassword != null) && androidPassword.equals("true"))
+            return true;
+        String inputT = attrOrDefault(node, "android:inputType", null);
+        return (inputT != null) && (inputT.equals("textPassword") ||
+                                    inputT.equals("textVisiblePassword") ||
+                                    inputT.equals("textWebPassword") ||
+                                    inputT.equals("numberPassword"));
+    }
+
+    // Read XML element attribute. On failure, return last default value.
+    private static String attrOrDefault(Node node, String attr, String val) {
+        NamedNodeMap attrs = node.getAttributes();
+        if (attrs != null) {
+            Node n = attrs.getNamedItem(attr);
+            if (n != null)
+                return n.getNodeValue();
+        }
+        return val;
     }
 
 }

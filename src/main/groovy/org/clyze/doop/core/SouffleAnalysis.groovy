@@ -9,6 +9,9 @@ import org.clyze.utils.CheckSum
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.apache.commons.io.FileUtils.sizeOfDirectory
 
@@ -164,25 +167,19 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${mainPath}/reflection/delta.dl")
         }
 
-        if (options.INFORMATION_FLOW.value || options.MINIMAL_INFORMATION_FLOW.value) {
+        if (options.INFORMATION_FLOW.value) {
             def infoFlowPath = "${Doop.souffleAddonsPath}/information-flow"
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/declarations.dl")
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/delta.dl", macros)
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/rules.dl", macros)
-
-            if (options.MINIMAL_INFORMATION_FLOW.value) {
-                cpp.includeAtEnd("$analysis", "${infoFlowPath}/minimal-sources-and-sinks.dl", macros)
-            } else {
-                cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}-sources-and-sinks.dl", macros)
-            }
+            cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
         }
 
-        if (options.OPEN_PROGRAMS.value) {
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
-        } else if (name != "sound-may-point-to") {
-            // This needs cleaning up. We are including one version by default, but distinguishing
-            // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-            cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
+        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+            if (options.OPEN_PROGRAMS.value)
+                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
+            else
+                cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-concrete-types.dl", macros, commonMacros)
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
@@ -220,25 +217,19 @@ class SouffleAnalysis extends DoopAnalysis {
         souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
 
         if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
-            def compilationCommand = "souffle -c -o ${outDir}/${name} $analysis"
+            def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
 
             if (options.SOUFFLE_PROFILE.value)
-                compilationCommand += " -p${outDir}/profile.txt"
+                compilationCommand << ("-p${outDir}/profile.txt" as String)
             if (options.SOUFFLE_DEBUG.value)
-                compilationCommand += " -r${outDir}/report.html"
+                compilationCommand << ("-r${outDir}/report.html" as String)
 
             logger.info "Compiling Datalog to C++ program and executable"
             logger.debug "Compilation command: $compilationCommand"
 
-            // Create a subshell to temporarely cd to the analysis cache directory and execute the compilation
-            // command, as the analysis executable is created at the directory level of the command's invocation.
-            def subshellCommand = "(${compilationCommand} && cp ${outDir}/${name} ${souffleAnalysisCacheFile.canonicalPath}" + ")"
-
-            logger.debug "Setup subshell command: $subshellCommand"
-
             def ignoreCounter = 0
             compilationTime = Helper.timing {
-                executor.execute(subshellCommand) { String line ->
+                executor.execute(compilationCommand.collect { it as String }) { String line ->
                     if (ignoreCounter != 0) ignoreCounter--
                     else if (line.startsWith("Warning: No rules/facts defined for relation") ||
                             line.startsWith("Warning: Deprecated output qualifier was used")) {
@@ -249,6 +240,8 @@ class SouffleAnalysis extends DoopAnalysis {
                     else logger.info line
                 }
             }
+            // Keep execute permission
+            Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
 
             logger.info "Analysis compilation time (sec): $compilationTime"
             logger.info "Caching analysis executable in $souffleAnalysesCache"
@@ -262,13 +255,13 @@ class SouffleAnalysis extends DoopAnalysis {
         deleteQuietly(database)
         database.mkdirs()
 
-        def executionCommand = "${souffleAnalysisCacheFile} -j$jobs -F$factsDir -D$database"
+        def executionCommand = [souffleAnalysisCacheFile, "-j$jobs", "-F$factsDir", "-D$database"]
         if (options.SOUFFLE_PROFILE.value)
-            executionCommand += " -p${outDir}/profile.txt"
+            executionCommand << ("-p${outDir}/profile.txt" as String)
 
         logger.debug "Execution command: $executionCommand"
         logger.info "Running analysis"
-        executionTime = Helper.timing { executor.execute(executionCommand) }
+        executionTime = Helper.timing { executor.execute(executionCommand.collect { it as String }) }
         logger.info "Analysis execution time (sec): $executionTime"
     }
 
@@ -279,7 +272,7 @@ class SouffleAnalysis extends DoopAnalysis {
         if (options.X_STATS_AROUND.value) {
         }
         // Special case of X_STATS_AROUND (detected automatically)
-        def specialStats       = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
+        def specialStats = new File("${Doop.souffleAnalysesPath}/${name}/statistics.dl")
         if (specialStats.exists()) {
             cpp.includeAtEnd("$analysis", specialStats.toString())
             return
@@ -291,6 +284,10 @@ class SouffleAnalysis extends DoopAnalysis {
 
         if (options.X_STATS_FULL.value) {
             cpp.includeAtEnd("$analysis", "${statsPath}/statistics.dl", macros)
+        }
+
+        if (options.X_EXTRA_METRICS.value) {
+            cpp.includeAtEnd("$analysis", "${statsPath}/metrics.dl")
         }
     }
 

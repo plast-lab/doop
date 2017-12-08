@@ -137,7 +137,9 @@ Server_SField_Values(?fld, "<<XL-pt-set>>") :-
 // Var-- //
 
 .decl Server_Var_Values(?class:ClassType, ?var:Var, ?value:Value)
+.decl Server_Var_Return(?var:Var, ?method:Method)
 .output Server_Var_Values
+.output Server_Var_Return
 
 .decl _VPT(?var:Var, ?value:Value)
 .decl _VPT_Count(?var:Var, ?n:number)
@@ -163,7 +165,38 @@ Server_Var_Values(?class, ?var, "<<XL-pt-set>>") :-
   Var_DeclaringMethod(?var, ?method),
   Method_DeclaringType(?method, ?class).
 
+Server_Var_Return(?var, ?method) :-
+  ReturnVar(?var, ?method) ;
+  NativeReturnVar(?var, ?method).
+
 // --Var //
+
+
+// Array-- //
+
+.decl Server_Array_Values(?arrayValue:Value, ?value:Value)
+.output Server_Array_Values
+
+.decl _AIPT(?arrayValue:Value, ?value:Value)
+.decl _AIPT_Count(?arrayValue:Value, ?n:number)
+
+_AIPT(?arrayValue, ?value) :-
+  ArrayIndexPointsTo(_, ?value, _, ?arrayValue).
+
+_AIPT_Count(?arrayValue, ?n) :-
+  _AIPT(?arrayValue, _),
+  ?n = count:{_AIPT(?arrayValue, _)}.
+
+Server_Array_Values(?arrayValue, ?value) :-
+  _AIPT(?arrayValue, ?value),
+  _AIPT_Count(?arrayValue, ?count),
+  ?count <= X_SERVER_LOGIC_THRESHOLD.
+
+Server_Array_Values(?arrayValue, "<<XL-pt-set>>") :-
+  _AIPT_Count(?arrayValue, ?count),
+  ?count > X_SERVER_LOGIC_THRESHOLD.
+
+// --Array //
 
 
 // Method-- //
@@ -185,6 +218,20 @@ Server_Method_Subtype(?method, ?subMethod) :-
   Method_DeclaringType(?subMethod, ?subType),
   Method_SimpleName(?subMethod, ?name),
   Method_Descriptor(?subMethod, ?desc).
+
+// Rule to handle covariant return types.
+Server_Method_Subtype(?method, ?subMethod) :-
+  Method_DeclaringType(?method, ?type),
+  Method_SimpleName(?method, ?name),
+  Method_Descriptor(?method, ?desc),
+  ?name != "<clinit>",
+  ?name != "<init>",
+  SubtypeOf(?subType, ?type),
+  ?subType != ?type,
+  _Valid_Type(?type),
+  _Valid_Type(?subType),
+  MethodImplemented(?name, _, ?subType, ?subMethod),
+  MethodLookup(?name, ?desc, ?subType, ?subMethod).
 
 
 // All the methods reachable from a method (transitive call-graph)

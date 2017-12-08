@@ -112,8 +112,11 @@ VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
 
 VarPointsTo(?hctx, ?value, ?ctx, ?var) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
-  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
   Value:byHeap[?heap] = ?value,
+  ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap).
+
+ReachableAssignContextInsensitiveHeapAllocation(?var, ?ctx, ?heap) <-
+  AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod),
   ReachableContext(?ctx, ?inmethod).
 
 /**
@@ -202,12 +205,12 @@ OptLoadInstanceField(?to, ?sig, ?base) <-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
-  Value:Null[] != ?basevalue,
   NotSpecialObject(?value).
 #endif
-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <-InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) <- InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
 
 StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) <-
+  Value:Null[] != ?basevalue,
   OptStoreInstanceField(?from, ?signature, ?base),
   VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
 

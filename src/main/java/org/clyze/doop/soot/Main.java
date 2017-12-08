@@ -1,28 +1,27 @@
 package org.clyze.doop.soot;
 
+import org.apache.commons.io.FileUtils;
 import org.clyze.doop.common.Database;
+import org.clyze.doop.soot.android.AndroidSupport;
 import org.clyze.doop.util.filter.GlobClassFilter;
 import org.clyze.utils.AARUtils;
-
 import org.objectweb.asm.ClassReader;
-import soot.*;
+import soot.PackManager;
+import soot.Scene;
+import soot.SootClass;
+import soot.SourceLocator;
 import soot.SourceLocator.FoundFile;
 import soot.options.Options;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
-
-import org.apache.commons.io.FileUtils;
-
-import org.clyze.doop.soot.android.AndroidSupport;
 
 public class Main {
 
@@ -42,6 +41,7 @@ public class Main {
 
     public static void main(String[] args) {
         SootParameters sootParameters = new SootParameters();
+        String extraSensitiveControls = "";
         try {
             if (args.length == 0) {
                 System.err.println("usage: [options] file...");
@@ -126,6 +126,14 @@ public class Main {
                     case "--uniqueFacts":
                         sootParameters._uniqueFacts = true;
                         break;
+                    case "--R-out-dir":
+                        i = shift(args, i);
+                        sootParameters._rOutDir = args[i];
+                        break;
+                    case "--extra-sensitive-controls":
+                        i = shift(args, i);
+                        extraSensitiveControls = args[i];
+                        break;
                     case "-h":
                     case "--help":
                     case "-help":
@@ -141,7 +149,8 @@ public class Main {
                         System.err.println("  --only-application-classes-fact-gen   Generate facts only for application classes");
                         System.err.println("  --noFacts                             Don't generate facts (just empty files -- used for debugging)");
                         System.err.println("  --uniqueFacts                         Eliminate redundancy from facts");
-
+                        System.err.println("  --R-out-dir <directory>               Specify when to generate R code (when linking AAR inputs)");
+                        System.err.println("  --extra-sensitive-controls <controls> A list of extra sensitive layout controls (format: \"id1,type1,parent_id1,id2,...\").");
                         System.err.println("  --generate-jimple                     Generate Jimple/Shimple files instead of facts");
                         System.err.println("  --generate-jimple-help                Show help information regarding bytecode2jimple");
                         throw new DoopErrorCodeException(0);
@@ -187,7 +196,7 @@ public class Main {
             else if (!sootParameters._toStdout && sootParameters._outputDir == null) {
                 sootParameters._outputDir = System.getProperty("user.dir");
             }
-            produceFacts(sootParameters);
+            produceFacts(sootParameters, extraSensitiveControls);
         }
         catch(DoopErrorCodeException errCode) {
             int n = errCode.getErrorCode();
@@ -199,7 +208,7 @@ public class Main {
         }
     }
 
-    private static void produceFacts(SootParameters sootParameters) throws Exception {
+    private static void produceFacts(SootParameters sootParameters, String extraSensitiveControls) throws Exception {
         Options.v().set_output_dir(sootParameters._outputDir);
         Options.v().setPhaseOption("jb", "use-original-names:true");
 
@@ -222,7 +231,10 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
-            android = new AndroidSupport(input0, sootParameters);
+            Options.v().set_process_multiple_dex(true);
+            Options.v().set_src_prec(Options.src_prec_apk);
+            String rOutDir = sootParameters._rOutDir;
+            android = new AndroidSupport(rOutDir, input0, sootParameters, extraSensitiveControls);
             android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
@@ -232,7 +244,7 @@ public class Main {
         Scene scene = Scene.v();
         scene.setSootClassPath("");
         for (String input : sootParameters._inputs) {
-            if (input.endsWith(".jar") || input.endsWith(".jar")) {
+            if (input.endsWith(".jar")) {
                 System.out.println("Adding archive: " + input);
             }
             else {
@@ -294,7 +306,7 @@ public class Main {
         }
 
         scene.loadNecessaryClasses();
-        
+
         /*
         * This part should definitely appear after the call to
         * `Scene.loadNecessaryClasses()', since the latter may alter

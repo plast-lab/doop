@@ -222,6 +222,7 @@
 
 .decl Stats_Simple_Application_DynamicReachableMethod(?method:Method)
 .output Stats_Simple_Application_DynamicReachableMethod
+.output DynamicReachableMethod
 
 .decl Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth:Method, ?invocation:MethodInvocation, ?toMeth:Method)
 .output Stats_Simple_InsensDynamicCallGraphEdge

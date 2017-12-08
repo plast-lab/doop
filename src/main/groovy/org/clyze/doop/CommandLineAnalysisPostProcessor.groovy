@@ -70,9 +70,9 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
 
     protected void linkResult(Analysis analysis) {
         if (analysis.options.X_STOP_AT_FACTS.value) {
-            def facts = new File(analysis.options.X_STOP_AT_FACTS.value)
+            def facts = new File(analysis.options.X_STOP_AT_FACTS.value as String)
             logger.info "Making facts available at $facts"
-            analysis.executor.execute("ln -s -f ${analysis.factsDir} \"$facts\"")
+            analysis.executor.execute(['ln', '-s', '-f', analysis.factsDir as String, facts as String])
             return
         }
 
@@ -87,11 +87,11 @@ class CommandLineAnalysisPostProcessor implements AnalysisPostProcessor<DoopAnal
         def humanDatabase = new File("${Doop.doopHome}/results/${inputName}/${analysis.name}/${platform}/${analysis.id}")
         humanDatabase.mkdirs()
         logger.info "Making database available at $humanDatabase"
-        analysis.executor.execute("ln -s -f ${analysis.database} \"$humanDatabase\"")
+        analysis.executor.execute(['ln', '-s', '-f', analysis.database as String, humanDatabase as String])
 
         def lastAnalysis = "${Doop.doopHome}/last-analysis"
         logger.info "Making database available at $lastAnalysis"
-        analysis.executor.execute("ln -s -f -n ${analysis.database} \"$lastAnalysis\"")
+        analysis.executor.execute(['ln', '-s', '-f', '-n', analysis.database as String, lastAnalysis as String])
     }
 
     protected boolean filterOutLBWarn(String line) {

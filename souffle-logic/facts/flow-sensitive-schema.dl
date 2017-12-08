@@ -483,3 +483,6 @@
 .decl AndroidApplication(?t:ClassType)
 
 #endif
+
+// Annotations
+.decl Method_Annotation(?method:symbol, ?annotation:symbol)

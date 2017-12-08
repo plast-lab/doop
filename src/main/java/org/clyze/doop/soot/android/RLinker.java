@@ -1,16 +1,19 @@
 package org.clyze.doop.soot.android;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipEntry;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-
+import org.clyze.Constants;
 import org.clyze.utils.AARUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /** A linker of R-class data.
  *
@@ -26,71 +29,160 @@ import org.clyze.utils.AARUtils;
  */
 public class RLinker {
 
-    /** The entry point of the linker. Takes a list of archives
-     *  (containing paths of AAR files) and a map of AAR paths to
-     *  package names. Returns the path of the generated JAR (or null
-     *  if no code generation was done).
-     */
-    public static String linkRs(List<String> archives, Map<String, String> pkgs,
-                                Set<String> tmpDirs) {
-        // The basic data that guide code generation: a map from
-        // package names to R nested class names, to contents.
-        Map<String, Map<String, Set<String> > > rs = new HashMap<>();
-        final String tmpDir = AARUtils.createTmpDir(tmpDirs);
+    // A map from package names -> nested class -> field -> element
+    // ids. Used by lookupConst() and XML parsing for layout controls.
+    private Map<String, Map<String, Map<String, Integer> > > constants;
 
-        for (String ar : archives) {
-            if (ar.endsWith(".aar")) {
-                try {
-                    String rText = getZipEntry(new ZipFile(ar), "R.txt");
-                    if (rText != null) {
-                        for (String line : rText.split("\n|\r"))
-                            if (line.length() != 0)
-                                processRLine(ar, line, pkgs, rs);
-                    }
-                } catch (IOException ex) {
-                    System.err.println("Error while reading R.txt: " + ar);
-                    System.err.println(ex.getMessage());
-                }
+    // A map from package names -> nested class -> set of text
+    // entries. Used for code generation.
+    private Map<String, Map<String, Set<String> > > rs;
+
+    // Singleton instance.
+    private static RLinker instance;
+
+    private RLinker() {
+        this.constants = new HashMap<>();
+        this.rs = new HashMap<>();
+    }
+
+    public static RLinker getInstance() {
+        if (instance == null)
+            instance = new RLinker();
+        return instance;
+    }
+
+    public Integer lookupConst(String packageName, String nestedName, String fld) {
+        Map<String, Map<String, Integer> > pkgEntry = constants.get(packageName);
+        if (pkgEntry != null) {
+            Map<String, Integer> fieldEntry = pkgEntry.get(nestedName);
+            if (fieldEntry != null) {
+                Integer c = fieldEntry.get(fld);
+                if (c != null)
+                    return c;
             }
         }
+        return null;
+    }
 
-        if (rs.isEmpty()) {
+    /**
+     * The entry point of the linker. Takes a list of archives
+     * (containing paths of AAR files) and a map of AAR paths to
+     * package names. Returns the path of the generated JAR (or null
+     * if no code generation was done).
+     *
+     * @param rDir     The directory to place the generated R code. Can
+     *                 be null (in which case a temporary location is used).
+     *
+     * @param tmpDirs  The temporary directory will be added to this set.
+     */
+    public String linkRs(String rDir, Set<String> tmpDirs) {
+        if ((rs == null) || rs.isEmpty()) {
             return null;
         } else {
+            final String tmpDir = AARUtils.createTmpDir(tmpDirs);
             rs.forEach ((k, v) -> runProcess("javac " + genR(tmpDir, k, v)));
-            String jarName = tmpDir + "/doop-autogen-R.jar";
-            runProcess("jar cf " + jarName + " -C " + tmpDir + " .");
-            return jarName;
+
+            // Compile JAR and optionally copy to output directory.
+            String tmpJarName = tmpDir + "/" + Constants.R_AUTOGEN_JAR;
+            runProcess("jar cf " + tmpJarName + " -C " + tmpDir + " .");
+            if (rDir != null) {
+                String outJarName = rDir + "/" + Constants.R_AUTOGEN_JAR;
+                try {
+                    FileUtils.copyFile(new File(tmpJarName), new File(outJarName));
+                    return outJarName;
+                } catch (IOException ex) {
+                    System.err.println("Failed to copy " + tmpJarName + " to " + outJarName + " : " + ex.getMessage());
+                }
+            }
+
+            return tmpJarName;
         }
     }
 
-    private static void processRLine(String ar, String line, Map<String, String> pkgs,
-                                     Map<String, Map<String, Set<String> > > rs) {
+    /**
+     * Given an AAR input and a package name, the R constants are read
+     * from the R.txt file contained in the archive and the
+     * appropriate data structures of the linker are filled in.
+     *
+     * @param ar   The path of the input.
+     * @param pkg  The package name of the input.
+     */
+    public void readRConstants(String ar, String pkg) {
+        if (!ar.endsWith(".aar"))
+            return;
+        try {
+            String rText = getZipEntry(new ZipFile(ar), "R.txt");
+            if (rText != null) {
+                for (String line : rText.split("\n|\r"))
+                    if (line.length() != 0)
+                        processRLine(ar, line, pkg);
+            }
+        } catch (IOException ex) {
+            System.err.println("Error while reading R.txt: " + ar);
+            System.err.println(ex.getMessage());
+        }
+    }
+
+    /**
+     * Process each line in R.txt and (a) generate Java code for later
+     * use (in 'rs') and (b) remember constant ids (in 'constants').
+     *
+     * @param ar    The path of the archive.
+     * @param line  The line of text to be processed.
+     * @param pkg   The package name of the archive.
+     */
+    private void processRLine(String ar, String line, String pkg) {
         final String delim = " ";
         String[] parts = line.split(delim);
         if (parts.length < 2) {
             System.err.println("Error processing R.txt line: " + line);
+        } else if (pkg == null) {
+            System.err.println("Warning: no package: " + ar);
         } else {
-            String pkg = pkgs.get(ar);
-            if (pkg == null) {
-                System.err.println("Warning: no package: " + ar);
-            } else {
-                Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, Set<String>>());
-                String nestedR = parts[1];
-                Set<String> set = pkgEntry.getOrDefault(nestedR, new HashSet<>());
-                String rName = pkg + "." + "R$" + nestedR;
-                String[] newParts = new String[parts.length];
-                newParts[0] = parts[0];
-                newParts[1] = parts[2];
-                newParts[2] = "=";
-                for (int i = 3; i < parts.length; i++) {
-                    newParts[i] = parts[i];
-                }
-                set.add("        public static " + String.join(delim, newParts) + ";");
-                pkgEntry.put(nestedR, set);
-                rs.put(pkg, pkgEntry);
+
+            // Extract information from the line text.
+            String nestedR = parts[1];
+            String rName = pkg + "." + "R$" + nestedR;
+            String[] newParts = new String[parts.length];
+            newParts[0] = parts[0];
+            newParts[1] = parts[2];
+            newParts[2] = "=";
+            for (int i = 3; i < parts.length; i++) { newParts[i] = parts[i]; }
+
+            // Remember int constants.
+            if (newParts[0].equals("int") && (newParts.length > 3)) {
+                String num = newParts[3];
+                int val = num.startsWith("0x") ?
+                    (int)(Long.parseLong(num.substring(2), 16)) :
+                    Integer.parseInt(num);
+                addConstant(pkg, nestedR, newParts[1], val);
+            }
+
+            // Generate Java code.
+            Map<String, Set<String>> pkgEntry = rs.getOrDefault(pkg, new HashMap<String, Set<String>>());
+            Set<String> set = pkgEntry.getOrDefault(nestedR, new HashSet<>());
+            set.add("        public static " + String.join(delim, newParts) + ";");
+            pkgEntry.put(nestedR, set);
+            rs.put(pkg, pkgEntry);
+        }
+    }
+
+    /**
+     * Adds a tuple (packageName, nested, f, c) to 'constants'.
+     */
+    private void addConstant(String packageName, String nested, String f, int c) {
+        Map<String, Map<String, Integer>> packageEntry = constants.getOrDefault(packageName, new HashMap<>());
+        Map<String, Integer> nestedEntry = packageEntry.getOrDefault(nested, new HashMap<>());
+        Integer val = nestedEntry.get(f);
+        if (val == null) {
+            nestedEntry.put(f, c);
+        } else {
+            if (!val.equals(c)) {
+                System.err.println("Warning: duplicate values for " + nested + "$" + f + ": " + val + ", " + c);
             }
         }
+        packageEntry.put(nested, nestedEntry);
+        constants.put(packageName, packageEntry);
     }
 
     private static void runProcess(String cmd) {
@@ -114,6 +206,7 @@ public class RLinker {
         String rFile = subdir + "/R.java";
         System.out.println("Generating " + rFile);
         List<String> lines = new ArrayList<>();
+        lines.add("// Auto-generated R.java by Doop.\n");
         lines.add("package " + pkg + ";\n");
         lines.add("public final class R {");
         rData.forEach ((k, v) -> genNestedR(k, v, lines));
@@ -131,7 +224,7 @@ public class RLinker {
 
     private static void genNestedR(String nestedName, Set<String> data,
                                    List<String> lines) {
-        lines.add("    public static final class " + nestedName + "{\n");
+        lines.add("    public static final class " + nestedName + " {\n");
         lines.addAll(data);
         lines.add("    }\n");
     }
@@ -152,4 +245,5 @@ public class RLinker {
         }
         return null;
     }
+
 }

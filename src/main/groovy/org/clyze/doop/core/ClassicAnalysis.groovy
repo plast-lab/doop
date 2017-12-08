@@ -3,8 +3,9 @@ package org.clyze.doop.core
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.datalog.LBWorkspaceConnector
+import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
+import org.clyze.utils.Executor
 import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
@@ -41,10 +42,7 @@ class ClassicAnalysis extends DoopAnalysis {
     @Override
     void run() {
         //Initialize the instance here and not in the constructor, in order to allow an analysis to be re-runnable.
-        connector = new LBWorkspaceConnector(outDir,
-                options.BLOXBATCH.value as String,
-                (options.BLOX_OPTS.value ?: '') as String,
-                executor, cpp)
+        lbBuilder = new LBBuilder(cpp, outDir)
 
         generateFacts()
         if (options.X_STOP_AT_FACTS.value) return
@@ -70,13 +68,12 @@ class ClassicAnalysis extends DoopAnalysis {
         }
 
         logger.info "\nAnalysis START"
-        long t = Helper.timing { connector.processQueue() }
+        long t = Helper.timing { lbBuilder.invoke(logger, options.BLOXBATCH.value as String, (options.BLOX_OPTS.value ?: '') as String, executor) }
         logger.info "Analysis END\n"
         int dbSize = (sizeOfDirectory(database) / 1024).intValue()
-        connector
-                .connect(database.toString())
-                .addBlock("""Stats:Runtime("script wall-clock time (sec)", $t).
-                         Stats:Runtime("disk footprint (KB)", $dbSize).""")
+        def cmdData = "Stats:Runtime(\"script wall-clock time (sec)\", $t). Stats:Runtime(\"disk footprint (KB)\", $dbSize)."
+        def cmd = [options.BLOXBATCH.value as String, '-db', database as String, '-addBlock', cmdData as String]
+        executor.execute(outDir as String, cmd, Executor.STDOUT_PRINTER)
     }
 
     @Override
@@ -92,7 +89,7 @@ class ClassicAnalysis extends DoopAnalysis {
         cpp.preprocess("${outDir}/post-process.logic", "${Doop.factsPath}/post-process.logic", commonMacros)
         cpp.preprocess("${outDir}/mock-heap.logic", "${Doop.factsPath}/mock-heap.logic", commonMacros)
 
-        connector.queue()
+        lbBuilder
                 .createDB(database.getName())
                 .timedTransaction("-- Init DB (import) --")
                 .addBlockFile("flow-sensitive-schema.logic")
@@ -107,16 +104,16 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/tamiflex-import.logic", "${tamiflexDir}/import.logic")
             cpp.preprocess("${outDir}/tamiflex-post-import.logic", "${tamiflexDir}/post-import.logic")
 
-            connector.queue()
+            lbBuilder
                     .addBlockFile("tamiflex-fact-declarations.logic")
                     .executeFile("tamiflex-import.logic")
                     .addBlockFile("tamiflex-post-import.logic")
         }
 
         if (options.MAIN_CLASS.value)
-            connector.queue().addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
+            lbBuilder.addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
-        connector.queue()
+        lbBuilder
                 .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
                 .commit()
                 .elapsedTime()
@@ -139,7 +136,7 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/import-dynamic-facts.logic", "${Doop.factsPath}/import-dynamic-facts.logic")
             cpp.preprocess("${outDir}/import-dynamic-facts2.logic", "${Doop.factsPath}/import-dynamic-facts2.logic")
             cpp.preprocess("${outDir}/externalheaps.logic", "${Doop.factsPath}/externalheaps.logic", commonMacros)
-            connector.queue()
+            lbBuilder
                     .echo("-- Importing dynamic facts ---")
                     .startTimer()
                     .transaction()
@@ -170,24 +167,24 @@ class ClassicAnalysis extends DoopAnalysis {
                                               toPredicate,Config:DynamicClass,type,inv
                                               """.toString().stripIndent()
 
-                connector.queue().eval("import -f $dynImport")
+                lbBuilder.eval("import -f $dynImport")
             }
         }
 
         def commonMacros = "${Doop.logicPath}/commonMacros.logic"
         cpp.preprocess("${outDir}/basic.logic", "${Doop.logicPath}/basic/basic.logic", commonMacros)
 
-        connector.queue()
+        lbBuilder
                 .timedTransaction("-- Basic Analysis --")
                 .addBlockFile("basic.logic")
 
         if (options.CFG_ANALYSIS.value) {
             cpp.preprocess("${outDir}/cfg-analysis.logic", "${Doop.addonsPath}/cfg-analysis/analysis.logic",
                     "${Doop.addonsPath}/cfg-analysis/declarations.logic")
-            connector.queue().addBlockFile("cfg-analysis.logic")
+            lbBuilder.addBlockFile("cfg-analysis.logic")
         }
 
-        connector.queue()
+        lbBuilder
                 .commit()
                 .elapsedTime()
     }
@@ -226,7 +223,7 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/${name}.logic", "${analysisPath}/analysis.logic")
         }
 
-        connector.queue()
+        lbBuilder
                 .timedTransaction("-- Prologue --")
                 .addBlockFile("${name}-declarations.logic")
                 .addBlockFile("prologue.logic")
@@ -238,7 +235,7 @@ class ClassicAnalysis extends DoopAnalysis {
         if (options.REFLECTION.value) {
             cpp.preprocess("${outDir}/reflection-delta.logic", "${mainPath}/reflection/delta.logic")
 
-            connector.queue()
+            lbBuilder
                     .commit()
                     .transaction()
                     .executeFile("reflection-delta.logic")
@@ -258,21 +255,18 @@ class ClassicAnalysis extends DoopAnalysis {
 
         String echo_analysis = "Pointer Analysis"
 
-        if (options.INFORMATION_FLOW.value || options.MINIMAL_INFORMATION_FLOW.value) {
+        if (options.INFORMATION_FLOW.value) {
             echo_analysis = "Pointer and Information-flow Analysis"
-            cpp.preprocess("${outDir}/information-flow-declarations.logic", "${Doop.addonsPath}/information-flow/declarations.logic")
-            cpp.preprocess("${outDir}/information-flow-delta.logic", "${Doop.addonsPath}/information-flow/delta.logic", macros)
-            cpp.preprocess("${outDir}/information-flow-rules.logic", "${Doop.addonsPath}/information-flow/rules.logic", macros)
+            def infoFlowPath = "${Doop.addonsPath}/information-flow"
+            cpp.preprocess("${outDir}/information-flow-declarations.logic", "${infoFlowPath}/declarations.logic")
+            cpp.preprocess("${outDir}/information-flow-delta.logic", "${infoFlowPath}/delta.logic", macros)
+            cpp.preprocess("${outDir}/information-flow-rules.logic", "${infoFlowPath}/rules.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/information-flow-rules.logic")
+            cpp.preprocess("${outDir}/sources-and-sinks.logic", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.logic", macros)
 
-            if (options.MINIMAL_INFORMATION_FLOW.value) {
-                cpp.preprocess("${outDir}/sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/minimal-sources-and-sinks.logic", macros)
-            } else {
-                cpp.preprocess("${outDir}/sources-and-sinks.logic", "${Doop.addonsPath}/information-flow/${options.INFORMATION_FLOW.value}-sources-and-sinks.logic", macros)
-            }
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/sources-and-sinks.logic")
 
-            connector.queue()
+            lbBuilder
                     .addBlockFile("information-flow-declarations.logic")
                     .commit()
                     .transaction()
@@ -285,17 +279,12 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/addons.logic", options.IMPORT_PARTITIONS.value.toString())
         }
 
-        if (options.OPEN_PROGRAMS.value) {
-            cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
+        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+            if (options.OPEN_PROGRAMS.value)
+                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.logic", macros)
+            else
+                cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
             cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-
-        } else {
-            //if (!(name == "naive" || name == "micro")) {
-                // This needs cleaning up. We are including one version by default, but distinguishing
-                // inside the file (using #ifdefs) whether we are in OPEN_PROGRAMS mode or not.
-            //    cpp.preprocess("${outDir}/open-programs.logic", "${Doop.addonsPath}/open-programs/rules-concrete-types.logic", macros)
-            //    cpp.includeAtStart("${outDir}/addons.logic", "${outDir}/open-programs.logic")
-            //}
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value)
@@ -306,7 +295,7 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/tamiflex-delta.logic", "${Doop.addonsPath}/tamiflex/delta.logic")
             cpp.includeAtStart("${outDir}/addons.logic", "${Doop.addonsPath}/tamiflex/rules.logic", commonMacros)
 
-            connector.queue()
+            lbBuilder
                     .addBlockFile("tamiflex-declarations.logic")
                     .executeFile("tamiflex-delta.logic")
         }
@@ -316,13 +305,13 @@ class ClassicAnalysis extends DoopAnalysis {
 
         cpp.includeAtStart("${outDir}/${name}.logic", "${outDir}/addons.logic")
 
-        connector.queue()
+        lbBuilder
                 .commit()
                 .elapsedTime()
 
         if (isRefineStep) importRefinement()
 
-        connector.queue()
+        lbBuilder
                 .timedTransaction("-- " + echo_analysis + " --")
                 .addBlockFile("${name}.logic")
                 .commit()
@@ -332,7 +321,7 @@ class ClassicAnalysis extends DoopAnalysis {
             cpp.preprocess("${outDir}/must-point-to-may-pre-analysis.logic", "${Doop.analysesPath}/must-point-to/may-pre-analysis.logic")
             cpp.preprocess("${outDir}/must-point-to.logic", "${Doop.analysesPath}/must-point-to/analysis-simple.logic")
 
-            connector.queue()
+            lbBuilder
                     .echo("-- Pre Analysis (for Must) --")
                     .startTimer()
                     .transaction()
@@ -351,7 +340,7 @@ class ClassicAnalysis extends DoopAnalysis {
         if (!options.X_STOP_AT_FACTS.value && options.X_SERVER_LOGIC.value) {
             cpp.preprocess("${outDir}/server.logic", "${Doop.addonsPath}/server-logic/queries.logic")
 
-            connector.queue()
+            lbBuilder
                     .timedTransaction("-- Server Logic --")
                     .addBlockFile("server.logic")
                     .commit()
@@ -364,14 +353,14 @@ class ClassicAnalysis extends DoopAnalysis {
         if (options.X_STATS_NONE.value) return;
 
         if (options.X_STATS_AROUND.value) {
-            connector.queue().include(options.X_STATS_AROUND.value as String)
+            lbBuilder.include(options.X_STATS_AROUND.value as String)
             return
         }
 
         // Special case of X_STATS_AROUND (detected automatically)
         def specialStatsScript = new File("${Doop.analysesPath}/${name}/statistics.part.lb")
         if (specialStatsScript.exists()) {
-            connector.queue().include(specialStatsScript.toString())
+            lbBuilder.include(specialStatsScript.toString())
             return
         }
 
@@ -379,16 +368,16 @@ class ClassicAnalysis extends DoopAnalysis {
         def statsPath = "${Doop.addonsPath}/statistics"
         cpp.preprocess("${outDir}/statistics-simple.logic", "${statsPath}/statistics-simple.logic", macros)
 
-        connector.queue()
+        lbBuilder
                 .timedTransaction("-- Statistics --")
                 .addBlockFile("statistics-simple.logic")
 
         if (options.X_STATS_FULL.value) {
             cpp.preprocess("${outDir}/statistics.logic", "${statsPath}/statistics.logic", macros)
-            connector.queue().addBlockFile("statistics.logic")
+            lbBuilder.addBlockFile("statistics.logic")
         }
 
-        connector.queue()
+        lbBuilder
                 .commit()
                 .elapsedTime()
     }
@@ -396,7 +385,7 @@ class ClassicAnalysis extends DoopAnalysis {
     @Override
     protected void runTransformInput() {
         cpp.preprocess("${outDir}/transform.logic", "${Doop.addonsPath}/transform/rules.logic", "${Doop.addonsPath}/transform/declarations.logic")
-        connector.queue()
+        lbBuilder
                 .echo("-- Transforming Facts --")
                 .startTimer()
                 .transaction()
@@ -404,13 +393,13 @@ class ClassicAnalysis extends DoopAnalysis {
                 .commit()
 
         2.times { int i ->
-            connector.queue()
+            lbBuilder
                     .echo(""" "-- Transformation (step $i) --" """)
                     .transaction()
                     .executeFile("${Doop.addonsPath}/transform/delta.logic")
                     .commit()
         }
-        connector.queue().elapsedTime()
+        lbBuilder.elapsedTime()
     }
 
     private void reanalyze() {
@@ -418,7 +407,7 @@ class ClassicAnalysis extends DoopAnalysis {
         cpp.preprocess("${outDir}/export-refinement.logic", "${Doop.logicPath}/main/export-refinement.logic")
         cpp.preprocess("${outDir}/import-refinement.logic", "${Doop.logicPath}/main/import-refinement.logic")
 
-        connector.queue()
+        lbBuilder
                 .echo("++++ Refinement ++++")
                 .echo("-- Export --")
                 .startTimer()
@@ -437,7 +426,7 @@ class ClassicAnalysis extends DoopAnalysis {
     }
 
     private void importRefinement() {
-        connector.queue()
+        lbBuilder
                 .echo("-- Import --")
                 .startTimer()
                 .transaction()
@@ -447,7 +436,8 @@ class ClassicAnalysis extends DoopAnalysis {
     }
 
     @Override
-    void processRelation(String query, Closure outputLineProcessor) {
-        connector.processRelation(query, outputLineProcessor)
+    void processRelation(String relation, Closure outputLineProcessor) {
+        def cmd = [options.BLOXBATCH.value as String, '-db', database as String, '-query', relation]
+        executor.execute(outDir as String, cmd, outputLineProcessor)
     }
 }

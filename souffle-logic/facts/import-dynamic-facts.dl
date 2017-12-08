@@ -112,11 +112,18 @@ UnmatchedDynamicReachableMethod(?method) :-
 
 .decl ReconstructedUnmatchedDynamicHeapAllocation(?representation:symbol, ?heap:HeapAllocation)
 
+#define RAllocName(method, t) cat(method, cat("/new ", t))
+#define RAllocNameU(t) cat("<Unknown dynamic object of type ", cat(?type, ">"))
 
-MockHeapConsMacro(cat(?inMethod, ?type), ?type),
-ReconstructedUnmatchedDynamicHeapAllocation(?representation, cat(?inMethod, ?type)) :-
-   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod).
+MockHeapConsMacro(RAllocName(?inMethod, ?type), ?type),
+ReconstructedUnmatchedDynamicHeapAllocation(?representation, RAllocName(?inMethod, ?type)) :-
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod),
+   ?inMethod != "Unknown".
 
+MockHeapConsMacro(RAllocNameU(?type), ?type),
+ReconstructedUnmatchedDynamicHeapAllocation(?representation, RAllocNameU(?type)) :-
+   UnmatchedDynamicNormalHeapAllocation(?type, ?representation, _, ?inMethod),
+   ?inMethod = "Unknown".
 
 DynamicHeapAllocation(?representation, ?heap) :-
    ReconstructedUnmatchedDynamicHeapAllocation(?representation, ?heap).

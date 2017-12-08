@@ -1,6 +1,13 @@
 package org.clyze.doop.core
 
-import org.clyze.analysis.*
+import org.clyze.analysis.AnalysisFamily
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.BooleanAnalysisOption
+import org.clyze.analysis.IntegerAnalysisOption
+
+import static DoopAnalysis.INFORMATION_FLOW_SUFFIX
+import static org.apache.commons.io.FilenameUtils.getExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 @Singleton
 class DoopAnalysisFamily implements AnalysisFamily {
@@ -358,6 +365,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					isAdvanced: true
 			),
 			new BooleanAnalysisOption(
+					id: "GROUP_REFLECTION_STRINGS",
+					name: "reflection-coloring",
+					value: false,
+					forPreprocessor: true
+			),
+			new BooleanAnalysisOption(
 					id: "DISABLE_METHOD_HANDLES",
 					name: "disable-method-handles",
 					value: false,
@@ -424,14 +437,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					argName: "APPLICATION_PLATFORM",
 					description: "Load additional logic to perform information flow analysis.",
 					value: null,
-					forPreprocessor: true
-			),
-			new BooleanAnalysisOption(
-					id: "MINIMAL_INFORMATION_FLOW",
-					name: "minimal-information-flow",
-					description: "Load additional logic to perform information flow analysis with minimal defaults.",
-					webUI: true,
-					value: false,
+					validValues: informationFlowPlatforms(Doop.addonsPath, Doop.souffleAddonsPath),
 					forPreprocessor: true
 			),
 			new BooleanAnalysisOption(
@@ -439,6 +445,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					name: "information-flow-high-soundness",
 					description: "Enter high soundness mode for information flow microbenchmarks.",
 					value: false,
+					forPreprocessor: true
+			),
+			new AnalysisOption<String>(
+					id: "INFORMATION_FLOW_EXTRA_CONTROLS",
+					name: "information-flow-extra-controls",
+					argName: "CONTROLS",
+					description: "Load additional sensitive layout control from string triplets \"id1,type1,parent_id1,...\".",
+					value: null,
 					forPreprocessor: true
 			),
 			new AnalysisOption(
@@ -477,12 +491,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: null,
 					isFile: true,
 					webUI: true,
+					forCacheID: true,
 					forPreprocessor: true
 			),
 			new AnalysisOption<String>(
 					id: "HEAPDL_NOSTRINGS",
 					name: "heapdl-nostrings",
-					description: "don't model string values uniquely in heap dump.",
+					forCacheID: true,
+					description: "Do not model string values uniquely in a memory dump.",
 					value: false,
 					forPreprocessor: true
 			),
@@ -490,7 +506,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "IMPORT_DYNAMIC_FACTS",
 					name: "import-dynamic-facts",
 					argName: "FACTS_FILE",
-					description: "Use dynamic information",
+					description: "Use dynamic information from file.",
 					value: null,
 					forPreprocessor: true
 			),
@@ -557,6 +573,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					nonStandard: true,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "X_EXTRA_METRICS",
+					name: "Xextra-metrics",
+					description: "Run extra metrics logic under addons/statistics",
+					value: false,
+					nonStandard: true,
+					forPreprocessor: true
+			),
 			new AnalysisOption<String>(
 					id: "X_START_AFTER_FACTS",
 					name: "Xstart-after-facts",
@@ -576,6 +600,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true,
 					forPreprocessor: true,
 					isAdvanced: true
+			),
+			new AnalysisOption<String>(
+					id: "X_R_OUT_DIR",
+					name: "XR-out-dir",
+					description: "When linking AAR inputs, place generated R code in R_OUT_DIR",
+					argName: "R_OUT_DIR",
+					isDir: true,
+					nonStandard: true
 			),
 			/* End non-standard flags */
 
@@ -633,4 +665,39 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			}
 		return analyses.sort()
 	}
+
+    private static List<String> informationFlowPlatforms(String lbDir,
+                                                         String souffleDir) {
+        List<String> platforms_LB = []
+        List<String> platforms_Souffle = []
+
+        Closure scan = { ifDir ->
+            if (ifDir) {
+                new File("${ifDir}/information-flow")?.eachFile { File f ->
+                    String n = f.getName()
+                    String base = removeExtension(n)
+                    int platformEndIdx = base.lastIndexOf(INFORMATION_FLOW_SUFFIX)
+                    if (platformEndIdx != -1) {
+                        String ext = getExtension(n)
+                        if (ext.equals("logic")) {
+                            platforms_LB << base.substring(0, platformEndIdx)
+                        } else if (ext.equals("dl")) {
+                            platforms_Souffle << base.substring(0, platformEndIdx)
+                        }
+                    }
+                }
+            }
+        }
+
+        scan(lbDir)
+        scan(souffleDir)
+
+        List<String> platforms =
+            (platforms_Souffle.collect {
+                it + ((it in platforms_LB) ? "" : " (Souffle-only)")
+            }) +
+            (platforms_LB.findAll { !(it in platforms_Souffle) }
+                         .collect { it + " (LB-only)"})
+        return platforms.sort()
+    }
 }

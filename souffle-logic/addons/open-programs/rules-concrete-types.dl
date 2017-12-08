@@ -188,6 +188,7 @@ ContextForEntryPoint(?calleeCtx, ?method) :-
   isImmutableHContext(?hctx),
   isImmutableContext(?calleeCtx),
   Method_Modifier("static", ?method),
+  !Method_Modifier("abstract", ?method),
   EntryPoint(?method).
 
 .decl TypeToConcreteImplementationOrd(?staticType:Type, ?classOrd:number)
@@ -245,3 +246,9 @@ ReachableContext(?ctx, ?method) :-
 #endif
   ContextForEntryPoint(?ctx, ?method).
 
+
+// "Arbitrary" methods might be made reachable. Initialize the corresponding
+// classes as well.
+InitializedClass(?class) :-
+  ReachableContext(_, ?method),
+  Method_DeclaringType(?method, ?class).

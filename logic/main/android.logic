@@ -361,11 +361,14 @@ MockValueConsMacro((Instruction:Id[?invocation] + ":" + Type:Id[?type]), ?type, 
 UninitialisedArray(?hctx, ?value, ?invocation, ?type),
 RecordMacro(?ctx, ?value, ?hctx),
 VarPointsTo(?hctx, ?value, ?ctx, ?from) <-
-   Method:Id(?method:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>"),
-   StaticMethodInvocation(?invocation, ?method, ?inmethod),
-   ReachableContext(?ctx, ?inmethod),
+   ReachableArrayNewInstance(?ctx, ?invocation),
    AssignReturnValue(?invocation, ?from),
    OptAssignCast(?type, _, ?from).
+
+ReachableArrayNewInstance(?ctx, ?invocation) <-
+   Method:Id(?method:"<java.lang.reflect.Array: java.lang.Object newInstance(java.lang.Class,int[])>"),
+   StaticMethodInvocation(?invocation, ?method, ?inmethod),
+   ReachableContext(?ctx, ?inmethod).
 
 NotSpecialObject(?value),
 NotEmptyArrayValue(?value),

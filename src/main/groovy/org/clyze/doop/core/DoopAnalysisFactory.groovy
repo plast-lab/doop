@@ -4,7 +4,10 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.clyze.analysis.*
+import org.clyze.analysis.AnalysisFactory
+import org.clyze.analysis.AnalysisFamily
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.BooleanAnalysisOption
 import org.clyze.doop.input.DefaultInputResolutionContext
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
@@ -208,6 +211,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected List<String> platform(Map<String, AnalysisOption> options) {
         def platformInfo = options.PLATFORM.value.toString().tokenize("_")
+        if (platformInfo.size() < 2) {
+            throw new RuntimeException("Invalid platform ${platformInfo}")
+        }
         def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
         def files = []
@@ -281,18 +287,20 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 options[(jreOption.id)] = jreOption
                 break
             case "android":
-                if (platformInfo.size < 3)
+                if (platformInfo.size < 3) {
                     throw new RuntimeException("Invalid Android platform: $platformInfo")
+                }
                 // If the user has given a platform ending in
-                // "_fulljars", then use the "full" subdirectory of
+                // "_fulljars", then use the "fulljars" subdirectory of
                 // the platforms library, otherwise use the "stubs"
                 // one. This permits use of two Android system JARs
                 // side-by-side: either the stubs provided by the
                 // official Android SDK or a custom Android build.
-                if (platformInfo[2] != "stubs" && platformInfo[2] != "fulljars")
+                String libFlavor = platformInfo[2]
+                if (![ "stubs", "fulljars", "robolectric" ].contains(libFlavor)) {
                     throw new RuntimeException("Invalid Android platform: $platformInfo")
-                String androidLibFlavor = (platformInfo[2] == "fulljars" ? "full" : "stubs")
-                String path = "${options.PLATFORMS_LIB.value}/Android/$androidLibFlavor/Android/Sdk/platforms/android-$version"
+                }
+                String path = "${options.PLATFORMS_LIB.value}/Android/${libFlavor}/Android/Sdk/platforms/android-${version}"
                 options.ANDROID.value = true
 
                 switch(version) {
@@ -325,6 +333,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         break
                     case 24:
                     case 25:
+                    case 26:
                         files = ["${path}/android.jar",
                                  "${path}/android-stubs-src.jar",
                                  "${path}/optional/org.apache.http.legacy.jar",
@@ -337,10 +346,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 break
             default:
                 throw new RuntimeException("Invalid platform: $platform")
-                // FIXME: When "full" JARs are used, pick only the first
-                // one (assumed to be android.jar) or XML parsing fails.
-                if (androidLibFlavor.equals("full"))
-                    files = [ files[0] ]
         }
         return files
     }
@@ -454,14 +459,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             options.REFLECTION.value = true
             options.REFLECTION_SUBSTRING_ANALYSIS.value = true
             options.DISTINGUISH_STRING_BUFFERS_PER_PACKAGE.value = true
+            options.TAMIFLEX.value = null
         }
 
         if (options.TAMIFLEX.value) {
             options.REFLECTION.value = false
-        }
-
-        if (options.MINIMAL_INFORMATION_FLOW.value) {
-            options.INFORMATION_FLOW.value = options.MINIMAL_INFORMATION_FLOW.value
         }
 
         if (options.NO_SSA.value) {

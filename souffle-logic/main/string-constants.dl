@@ -149,7 +149,7 @@ HeapRepresentative("<<string-constant>>", ?heap) :-
   !ReflectionStringConstant(?heap),
   !HeapAllocation_Keep(?heap).
 #endif
-//#ifdef GROUP_REFLECTION_STRINGS
+#ifdef GROUP_REFLECTION_STRINGS
 
 // ///// Naive Merging strategy: all strings that map to same reflection object
 // ///// are merged. Not too effective.
@@ -189,19 +189,26 @@ HeapRepresentative("<<string-constant>>", ?heap) :-
 //   methods (and similar for fields), not with any member.
 //  -we lose precision because we may merge strings that match different class
 //   names.
-.decl MemberOfClassMatchesString(?heap:HeapAllocation, ?type:Type)
+.decl MethodOfClassMatchesString(?heap:HeapAllocation, ?type:Type)
+.decl FieldOfClassMatchesString(?heap:HeapAllocation, ?type:Type)
 
-MemberOfClassMatchesString(?heap, ?type) :-
+MethodOfClassMatchesString(?heap, ?type) :-
   PreMethodNameMatchingStringConstant_Signature(?sig, ?heap),
   Method_DeclaringType(?sig, ?type).
 
-MemberOfClassMatchesString(?heap, ?type) :-
+FieldOfClassMatchesString(?heap, ?type) :-
   PreFieldNameMatchingStringConstant_Signature(?sig, ?heap),
   Field_DeclaringType(?sig, ?type).
 
 // Important to not forget NullType: it derives from everything!
-MemberOfClassMatchesString(?heap, ?type) :-
-  MemberOfClassMatchesString(?heap, ?superType),
+MethodOfClassMatchesString(?heap, ?type) :-
+  MethodOfClassMatchesString(?heap, ?superType),
+  SubtypeOf(?type, ?superType),
+  !isNullType(?type).
+
+// Important to not forget NullType: it derives from everything!
+FieldOfClassMatchesString(?heap, ?type) :-
+  FieldOfClassMatchesString(?heap, ?superType),
   SubtypeOf(?type, ?superType),
   !isNullType(?type).
 
@@ -213,8 +220,13 @@ MemberOfClassMatchesString(?heap, ?type) :-
 .decl StringGreaterThanOtherInSameClass(?heap1:HeapAllocation, ?heap2:HeapAllocation, ?type:Type)
 
 StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) :-
-  MemberOfClassMatchesString(?heap1, ?type),
-  MemberOfClassMatchesString(?heap2, ?type),
+  FieldOfClassMatchesString(?heap1, ?type),
+  FieldOfClassMatchesString(?heap2, ?type),
+  ord(?heap1) > ord(?heap2).
+
+StringGreaterThanOtherInSameClass(?heap1, ?heap2, ?type) :-
+  MethodOfClassMatchesString(?heap1, ?type),
+  MethodOfClassMatchesString(?heap2, ?type),
   ord(?heap1) > ord(?heap2).
 
 .decl MinStringOrdinalGreaterThanOtherInSameClass(?heap:HeapAllocation, ?heapGreaterOrd:number, ?type:Type)
@@ -236,7 +248,8 @@ StringImmediatelyGreaterThanOtherInSomeClass(?heapGreater, ?heap) :-
 .decl StringColorGreaterThan(?num:number, ?heap:HeapAllocation)
 
 StringColorGreaterThan(0, ?heap) :-
-  MemberOfClassMatchesString(?heap, _).
+  FieldOfClassMatchesString(?heap, _);
+  MethodOfClassMatchesString(?heap, _).
 
 StringColorGreaterThan(?num + 1, ?heap) :-
   StringImmediatelyGreaterThanOtherInSomeClass(?heap, ?heapLower),
@@ -283,7 +296,7 @@ MethodNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
 FieldNameMatchingStringConstant_Signature(?sig, ?heapRepr) :-
   HeapAllocation_Merge(?heap, ?heapRepr),
   PreFieldNameMatchingStringConstant_Signature(?sig, ?heap).
-//#endif // GROUP_REFLECTION_STRINGS
+#endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
 
 HeapAllocation_ContextInsensitive(?heap) :-

@@ -1,7 +1,10 @@
 package org.clyze.doop
 
 import org.apache.commons.cli.Option
-import org.clyze.analysis.*
+import org.clyze.analysis.AnalysisFamily
+import org.clyze.analysis.AnalysisOption
+import org.clyze.analysis.BooleanAnalysisOption
+import org.clyze.analysis.IntegerAnalysisOption
 import org.clyze.doop.core.Doop
 import org.clyze.doop.core.DoopAnalysis
 import org.clyze.doop.core.DoopAnalysisFactory

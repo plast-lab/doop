@@ -1,13 +1,13 @@
 package org.clyze.doop.core
 
 import groovy.transform.TypeChecked
+import heapdl.core.MemoryAnalyser
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.clyze.analysis.Analysis
 import org.clyze.analysis.AnalysisOption
-import org.clyze.doop.datalog.LBWorkspaceConnector
-import heapdl.core.MemoryAnalyser
+import org.clyze.doop.LBBuilder
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CPreprocessor
 import org.clyze.utils.Executor
@@ -72,12 +72,17 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * Interface with the underlying workspace
      */
-    LBWorkspaceConnector connector
+	LBBuilder lbBuilder
 
     /**
      * Total time for the soot invocation
      */
     protected long sootTime
+
+    /**
+     * The suffix of information flow platforms.
+     */
+    static final INFORMATION_FLOW_SUFFIX = "-sources-and-sinks"
 
     /*
      * Use a java-way to construct the instance (instead of using Groovy's automatically generated Map constructor)
@@ -255,6 +260,14 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         if (options.UNIQUE_FACTS.value) {
             params += ["--uniqueFacts"]
+        }
+
+        if (options.X_R_OUT_DIR.value) {
+            params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
+        }
+
+        if (options.INFORMATION_FLOW_EXTRA_CONTROLS.value) {
+            params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
         params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]

@@ -55,9 +55,9 @@ ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHe
 
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignClassConstant(?ctx, ?invocation, ?type) <-
-  ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap),
+  ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?mergeHeap),
   Instruction:Method[?invocation] = ?inmethod,
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap),
   (NumberOfClassesMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    ClassNameMatchingStringConstant:Type(?type, ?constantHeap)).
 
@@ -202,18 +202,24 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
   Method:DeclaringType[?signature] = ?superClass,
   Method:Modifier("public", ?signature).
 
+LocalForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
+  ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?mergeHeap),
+  _OptVarToMethod[?to] = ?inmethod,
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap).
+  
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
-   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
-   // Banning method propagation this way seems too restrictive
-#ifndef REFLECTION_HIGH_SOUNDNESS_MODE
-#ifndef INFORMATION_FLOW_HIGH_SOUNDNESS
-   _OptVarToMethod[?to] = ?inmethod,
-   AssignHeapAllocation(?constantHeap, _, ?inmethod),
-#endif
-#endif
+  LocalForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap),
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
+
+AssignHeapInMethod(?constantHeap, ?inmethod, ?constantHeap) <-
+   AssignNormalHeapAllocation(?constantHeap, _, ?inmethod).
+
+AssignHeapInMethod(?heap, ?inmethod, ?mergeHeap) <-
+  AssignHeapAllocation(?heap, _, ?inmethod),
+  HeapAllocation:Merge[?heap] = ?mergeHeap.
+
 
 // TODO: Method objects derived from dynamic info have higher confidence.
 
@@ -357,9 +363,9 @@ ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap)
 
 // If it is a local and precise string, consider it a high-confidence inference
 ForwardHighConfidenceReflectiveAssignFieldConstant(?ctx, ?to, ?signature) <-
-  ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?constantHeap),
+  ForwardReflectiveAssignFieldConstantString(?ctx, ?to, ?signature, ?mergeHeap),
   _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapAllocation(?constantHeap, _, ?inmethod),
+  AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap),
   (NumberOfFieldsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    FieldNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
@@ -455,21 +461,33 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
  *************************************************************/
 VarPointsTo(?hctx, ?value, ?ctx, ?to) <-
   ImmutableHContextFromContext[?ctx] = ?hctx,
+  ReachableGetResource(?to, ?ctx, ?invocation),
+  UrlReflectiveAllocation[?invocation] = ?value.
+
+ReachableGetResource(?to, ?ctx, ?invocation) <-
   java:lang:ClassLoader:getResource(?invocation, ?to, ?from),
   Var:DeclaringMethod(?from, ?method),
-  ReachableContext(?ctx, ?method),
+  ReachableContext(?ctx, ?method).
+
+UrlReflectiveAllocation[?invocation] = ?value <-
   Type:Id(?type:"java.net.URL"),
   ReflectiveAllocation[?invocation, ?type] = ?value.
-
 
 /*************************************************************
  * Auxiliaries
  *************************************************************/
 NumberOfClassesMatchingConstant[?constant] = ?n <-
   agg<<?n = count()>>(ClassNameMatchingStringConstant:Type(_, ?constant)).
+
+NumberOfMethodsMatchingMergedConstant[?constant] = ?n <-
+   agg<<?n = count()>>(MethodNameMatchingStringConstant:Signature(_, ?constant)).
 NumberOfMethodsMatchingConstant[?constant] = ?n <-
-  agg<<?n = count()>>(MethodNameMatchingStringConstant:Signature(_, ?constant)).
-NumberOfFieldsMatchingConstant[?constant] = ?n <-
+   agg<<?n = count()>>(PreMethodNameMatchingStringConstant:Signature(_, ?constant)).
+
+                                             
+NumberOfFieldsMatchingMergedConstant[?constant] = ?n <-
   agg<<?n = count()>>(FieldNameMatchingStringConstant:Signature(_, ?constant)).
+NumberOfFieldsMatchingConstant[?constant] = ?n <-
+  agg<<?n = count()>>(PreFieldNameMatchingStringConstant:Signature(_, ?constant)).
 
 StringPrecisionThreshold[] = 10.

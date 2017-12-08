@@ -1,24 +1,27 @@
 package org.clyze.doop.soot.android;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-
 import org.clyze.doop.soot.FactWriter;
 import org.clyze.doop.soot.Main;
 import org.clyze.doop.soot.PropertyProvider;
 import org.clyze.doop.soot.SootParameters;
 import org.clyze.utils.AARUtils;
-import soot.*;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
-import soot.options.Options;
-import static org.clyze.doop.soot.android.AndroidManifest.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
 import static soot.DexClassProvider.classesOfDex;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class AndroidSupport {
 
+    String rOutDir;
     String appInput;
     SootParameters sootParameters;
     SootMethod dummyMain;
@@ -29,10 +32,13 @@ public class AndroidSupport {
     Set<String> appBroadcastReceivers = new HashSet<>();
     Set<String> appCallbackMethods = new HashSet<>();
     Set<PossibleLayoutControl> appUserControls = new HashSet<>();
+    String extraSensitiveControls;
 
-    public AndroidSupport(String appInput, SootParameters sootParameters) {
+    public AndroidSupport(String rOutDir, String appInput, SootParameters sootParameters, String extraSensitiveControls) {
+        this.rOutDir = rOutDir;
         this.appInput = appInput;
         this.sootParameters = sootParameters;
+        this.extraSensitiveControls = extraSensitiveControls;
     }
 
     public SootMethod getDummyMain() {
@@ -42,8 +48,6 @@ public class AndroidSupport {
     public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
             SetupApplication app = new SetupApplication(androidJars, appInput);
-            Options.v().set_process_multiple_dex(true);
-            Options.v().set_src_prec(Options.src_prec_apk);
             app.getConfig().setCallbackAnalyzer(Fast);
             String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
             try {
@@ -60,6 +64,9 @@ public class AndroidSupport {
             List<String> inputsAndLibs = sootParameters.getInputsAndLibraries();
             // Map AAR files to their package name.
             Map<String, String> pkgs = new HashMap<>();
+
+            // R class linker used for AAR inputs.
+            RLinker rLinker = RLinker.getInstance();
 
             // We merge the information from all manifests, not just
             // the application's. There are Android apps that use
@@ -82,19 +89,20 @@ public class AndroidSupport {
                         System.err.println("Error while reading callbacks:");
                         ex.printStackTrace();
                     }
-                    try {
-                        appUserControls.addAll(processMan.getUserControls());
-                    } catch (IOException ex) {
-                        System.err.println("Error while reading user controls:");
-                        ex.printStackTrace();
-                    }
 
-                    processMan.printManifestInfo();
+                    // Read R ids and then read controls. The
+                    // order is important (controls read R ids).
+                    rLinker.readRConstants(i, pkgs.get(i));
+                    appUserControls.addAll(processMan.getUserControls());
+
+                    processMan.printManifestHeader();
                 }
             }
 
-            // Process the R.txt entries in AAR files.
-            String generatedR = RLinker.linkRs(inputsAndLibs, pkgs, tmpDirs);
+            printCollectedComponents();
+
+            // Produce a JAR of the missing R classes.
+            String generatedR = rLinker.linkRs(rOutDir, tmpDirs);
             if (generatedR != null) {
                 System.out.println("Adding " + generatedR + "...");
                 sootParameters.getLibraries().add(generatedR);
@@ -106,6 +114,16 @@ public class AndroidSupport {
 
             Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
         }
+    }
+
+    private void printCollectedComponents() {
+        System.out.println("Collected components:");
+        System.out.println("activities: " + appActivities);
+        System.out.println("content providers: " + appContentProviders);
+        System.out.println("broadcast receivers: " + appBroadcastReceivers);
+        System.out.println("services: " + appServices);
+        System.out.println("callbacks: " + appCallbackMethods);
+        System.out.println("possible layout controls: " + appUserControls.size());
     }
 
     public void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {
@@ -171,6 +189,33 @@ public class AndroidSupport {
             writer.writeLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
             if (possibleLayoutControl.isSensitive()) {
                 writer.writeSensitiveLayoutControl(possibleLayoutControl.getID(), possibleLayoutControl.getViewClassName(), possibleLayoutControl.getParentID());
+            }
+        }
+        writeExtraSensitiveControls(writer);
+    }
+
+    // The extra sensitive controls are given as a String
+    // "id1,type1,parentId1,id2,type2,parentId2,...".
+    void writeExtraSensitiveControls(FactWriter writer) {
+        if (extraSensitiveControls.equals("")) {
+            return;
+        }
+        String[] parts = extraSensitiveControls.split(",");
+        int partsLen = parts.length;
+        if (partsLen % 3 != 0) {
+            System.err.println("List size (" + partsLen + ") not a multiple of 3: \"" + extraSensitiveControls + "\"");
+            return;
+        }
+        for (int i = 0; i < partsLen; i += 3) {
+            String control = parts[i] + "," + parts[i+1] + "," + parts[i+2];
+            try {
+                int controlId = Integer.parseInt(parts[i]);
+                String typeId = parts[i+1].trim();
+                int parentId  = Integer.parseInt(parts[i+2]);
+                System.out.println("Adding sensitive layout control: " + control);
+                writer.writeSensitiveLayoutControl(controlId, typeId, parentId);
+            } catch (Exception ex) {
+                System.err.println("Ignoring control: " + control);
             }
         }
     }
