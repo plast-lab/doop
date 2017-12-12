@@ -321,6 +321,17 @@ ReifiedAndroidObjectValue(cat("<android javascript object ", cat(?type, ">")), ?
   FormalOfForcedReachableFromJavascriptContext(_, _, ?type),
   isType(?type).
 
+ForcedReachableAndroidContext(?ctx, ?meth),
+ReachableContext(?ctx, ?meth) :-
+  Method_SimpleName(?addjsmethod, "addJavascriptInterface"),
+  Method_DeclaringType(?addjsmethod,"android.webkit.WebView"),
+  MethodInvocation_Method(?invocation, ?addjsmethod),
+  ActualParam(0, ?invocation, ?var),
+  Var_Type(?var, ?type),
+  Method_DeclaringType(?meth,?type),
+  //Method_Annotation(?meth,"JavascriptInterface"),
+  isImmutableContext(?ctx).
+
 // For all the above forced reachable methods, supply a receiver
 // object of the appropriate type
 
