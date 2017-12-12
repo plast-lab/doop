@@ -214,9 +214,11 @@ ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
 AssignHeapInMethod(?constantHeap, ?inmethod, ?constantHeap) <-
+   Value:Type[?constantHeap] = "java.lang.String",
    AssignNormalHeapAllocation(?constantHeap, _, ?inmethod).
 
 AssignHeapInMethod(?heap, ?inmethod, ?mergeHeap) <-
+  Value:Type[?heap] = "java.lang.String",
   AssignHeapAllocation(?heap, _, ?inmethod),
   HeapAllocation:Merge[?heap] = ?mergeHeap.
 
