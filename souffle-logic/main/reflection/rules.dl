@@ -659,6 +659,16 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   Field_Type(?signature, ?fieldtype),
   SupertypeOf(?fieldtype, ?valuetype).
 #endif
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+StaticFieldPointsTo(?hctx, ?value, ?signature) :-
+  ReflectiveStoreStaticField(?signature, ?ctx, ?from),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?signature, ?fieldtype),
+  SupertypeOf(?fieldtype, ?valuetype),
+  isImmutableHContext(?hctx).
+#endif
+
 /*************************************************************
  * Reflective load of an instance field
  *************************************************************/
@@ -711,6 +721,16 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   Field_Type(?signature, ?fieldtype),
   SupertypeOf(?fieldtype, ?valuetype).
 #endif
+#if defined(FEATHERWEIGHT_ANALYSIS) && defined(INFORMATION_FLOW)
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  ReflectiveStoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  TaintedVarPointsTo(?value, ?ctx, ?from),
+  !Value_Null(?basevalue),
+  Value_Type(?value, ?valuetype),
+  Field_Type(?signature, ?fieldtype),
+  SupertypeOf(?fieldtype, ?valuetype).
+#endif
+ 
 /*************************************************************
  * END forward reflection logic
  *************************************************************/
