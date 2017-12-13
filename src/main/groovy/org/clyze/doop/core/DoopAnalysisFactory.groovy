@@ -38,8 +38,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         String name
         Map<String, AnalysisOption> options
         List<String> inputFilePaths
+        List<String> libraryFilePaths
         List<String> platformFilePaths
-        List<File> inputFiles
+        List<File>   inputFiles
+        List<File>   libraryFiles
         List<File>   platformFiles
 
         @Override
@@ -48,8 +50,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     name:              name,
                     options:           options.values().toString(),
                     inputFilePaths:    inputFilePaths.toString(),
+                    libraryFilePaths:  libraryFilePaths.toString(),
                     platformFilePaths: platformFilePaths.toString(),
                     inputFiles:        inputFiles.toString(),
+                    libraryFiles:      libraryFiles.toString(),
                     platformFiles:     platformFiles.toString()
             ].toString()
         }
@@ -104,6 +108,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         outDir,
                         cacheDir,
                         vars.inputFiles,
+                        vars.libraryFiles,
                         vars.platformFiles,
                         commandsEnv)
             } else {
@@ -115,6 +120,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                         outDir,
                         cacheDir,
                         vars.inputFiles,
+                        vars.libraryFiles,
                         vars.platformFiles,
                         commandsEnv)
             }
@@ -128,6 +134,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     outDir,
                     cacheDir,
                     vars.inputFiles,
+                    vars.libraryFiles,
                     vars.platformFiles,
                     commandsEnv)
         }
@@ -140,9 +147,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      * the default input resolution mechanism.
      */
     @Override
-    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths) {
+    DoopAnalysis newAnalysis(AnalysisFamily family, String id, String name, Map<String, AnalysisOption> options, List<String> inputFilePaths, List<String> libraryFilePaths) {
         DefaultInputResolutionContext context = new DefaultInputResolutionContext()
-        context.add(inputFilePaths)
+        context.add(inputFilePaths, false)
+        context.add(libraryFilePaths, true)
         return newAnalysis(id, name, options, context)
     }
 
@@ -179,7 +187,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }.collect {
             String option -> return vars.options.get(option).toString()
         }
-        idComponents = [vars.name] + vars.inputFilePaths + idComponents
+        idComponents = [vars.name] + vars.inputFilePaths + vars.libraryFilePaths + idComponents
         logger.debug("ID components: $idComponents")
         def id = idComponents.join('-')
 
@@ -193,6 +201,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
         Collection<String> checksums = []
         checksums += vars.inputFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
+        checksums += vars.libraryFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
         checksums += vars.platformFiles.collect { file -> CheckSum.checksum(file, HASH_ALGO) }
 
         if (vars.options.TAMIFLEX.value && vars.options.TAMIFLEX.value != "dummy")
@@ -359,28 +368,38 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
 
 
         def inputFilePaths
+        def libraryFilePaths
         def platformFilePaths
         def inputFiles
+        def libraryFiles
         def platformFiles
 
         if (!options.X_START_AFTER_FACTS.value) {
             inputFilePaths = context.inputs()
+            logger.debug "${inputFilePaths}"
+            libraryFilePaths = context.libraries()
+            logger.debug "Library file paths: ${libraryFilePaths}"
             platformFilePaths = platform(options)
+            logger.debug "${platformFilePaths}"
 
             context.resolve()
-            inputFiles = context.getAll()
-            platformFiles = resolve(platformFilePaths)
+            inputFiles = context.getAllInputs()
+            libraryFiles = context.getAllLibraries()
+            platformFiles = resolve(platformFilePaths, true)
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
             if (!options.X_START_AFTER_FACTS.value) {
                 def inputJarName = inputFilePaths[0]
                 def deps = inputJarName.replace(".jar", "-deps.jar")
-                if (!inputFilePaths.contains(deps))
-                    inputFilePaths.add(deps)
+                if (!inputFilePaths.contains(deps) && !libraryFilePaths.contains(deps)) {
+                    libraryFilePaths.add(deps)
+                    context.resolve()
+                    libraryFiles = context.getAllLibraries()
+                }
 
                 if (!options.REFLECTION.value && !options.TAMIFLEX.value)
-                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")])[0]
+                    options.TAMIFLEX.value = resolve([inputJarName.replace(".jar", "-tamiflex.log")], false)[0]
 
                 def benchmark = FilenameUtils.getBaseName(inputJarName)
                 logger.info "Running " + (options.DACAPO.value ? "dacapo" : "dacapo-bach") + " benchmark: $benchmark"
@@ -401,13 +420,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 //Try to read the main class from the manifest contained in the jar
                 def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
                 if (main) {
-                    logger.debug "The main class is automatically set to ${main}"
+                    logger.debug "The main class is automatically setInput to ${main}"
                     options.MAIN_CLASS.value = main
                 } else {
                     //Check whether the jar contains a class with the same name
                     def jarName = FilenameUtils.getBaseName(jarFile.getName())
                     if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically set to ${jarName}"
+                        logger.debug "The main class is automatically setInput to ${jarName}"
                         options.MAIN_CLASS.value = jarName
                     } else {
                         logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
@@ -420,7 +439,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
                 FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-                logger.debug "The DYNAMIC option has been set to ${dynFile}"
+                logger.debug "The DYNAMIC option has been setInput to ${dynFile}"
             }
         }
 
@@ -490,7 +509,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
                     options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
                     options.REFLECTION_REFINED_OBJECTS.value) {
-                logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
+                logger.warn "\nWARNING: Probable inconsistent setInput of Java reflection flags!\n"
             } else if (options.TAMIFLEX.value) {
                 logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
             } else {
@@ -512,8 +531,10 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 name:              name,
                 options:           options,
                 inputFilePaths:    inputFilePaths,
+                libraryFilePaths:  libraryFilePaths,
                 platformFilePaths: platformFilePaths,
                 inputFiles:        inputFiles,
+                libraryFiles:      libraryFiles,
                 platformFiles:     platformFiles
         )
         logger.debug vars
@@ -522,11 +543,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return vars
     }
 
-    List<File> resolve(List<String> filePaths) {
+    List<File> resolve(List<String> filePaths, boolean isLib) {
         def context = new DefaultInputResolutionContext()
-        filePaths.each { f -> context.add(f) }
+        filePaths.each { f -> context.add(f, isLib) }
         context.resolve()
-        return context.getAll()
+        return isLib? context.getAllLibraries() : context.getAllInputs()
     }
 
     /**
@@ -557,7 +578,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected void checkLogicBlox(AnalysisVars vars) {
 
-        //BLOX_OPTS is set by the main method
+        //BLOX_OPTS is setInput by the main method
 
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
 
@@ -595,12 +616,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         if (vars.options.LB3.value) {
             String lbHome = vars.options.LOGICBLOX_HOME.value
             env.LOGICBLOX_HOME = lbHome
-            //We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
+            //We addInput these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
             env.LB_PAGER_FORCE_START = "true"
             env.LB_MEM_NOWARN = "true"
             env.DOOP_HOME = Doop.doopHome
 
-            //We add the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
+            //We addInput the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
             String path = env.PATH
             env.PATH = "${lbHome}/bin:${path ?: ""}" as String
 

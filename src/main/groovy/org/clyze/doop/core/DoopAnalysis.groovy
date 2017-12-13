@@ -95,9 +95,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                            File outDir,
                            File cacheDir,
                            List<File> inputFiles,
+                           List<File> libraryFiles,
                            List<File> platformLibs,
                            Map<String, String> commandsEnvironment) {
-        super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles)
+        super(DoopAnalysisFamily.instance, id, name, options, outDir, inputFiles, libraryFiles)
         this.ctx = ctx
         this.cacheDir = cacheDir
         this.platformLibs = platformLibs
@@ -149,15 +150,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             touch(new File(factsDir, "ApplicationClass.facts"))
             touch(new File(factsDir, "Properties.facts"))
 
-            def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
-            def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
             if (options.DACAPO.value) {
+                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
             }
             else if (options.DACAPO_BACH.value) {
+                def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
+                def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
+
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
@@ -208,13 +212,15 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         def platform = options.PLATFORM.value.toString().tokenize("_")[0]
         assert platform == "android" || platform == "java"
 
+        def inputArgs = inputFiles.collect(){File f -> ["-i", f.toString()]}.flatten() as Collection<String>
+
         if (options.RUN_AVERROES.value) {
             //change linked arg and injar accordingly
             inputFiles[0] = FileOps.findFileOrThrow("$averroesDir/organizedApplication.jar", "Averroes invocation failed")
             depArgs = ["-l", "$averroesDir/placeholderLibrary.jar".toString()]
         }
         else {
-            def deps = inputFiles.drop(1).collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
+            def deps = libraryFiles.collect{ File f -> ["-l", f.toString()]}.flatten() as Collection<String>
             depArgs = (platformLibs.collect{ lib -> ["-l", lib.toString()] }.flatten() as Collection<String>) + deps
         }
 
@@ -222,13 +228,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         switch(platform) {
             case "java":
-                params = ["--full"] + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
+                params = ["--full"] + inputArgs + depArgs + ["--application-regex", options.APP_REGEX.value.toString()]
                 break
             case "android":
                 // This uses all platformLibs.
                 // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
                 // This uses just platformLibs[0], assumed to be android.jar.
-                params = ["--full"] + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
+                params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
         break
             default:
                 throw new RuntimeException("Unsupported platform")
@@ -270,7 +276,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        params = params + ["-d", factsDir.toString(), inputFiles[0].toString()]
+        params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
@@ -303,7 +309,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         ClassLoader loader = phantomClassLoader()
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
-        //set the jar of the analysis to the complemented one
+        //setInput the jar of the analysis to the complemented one
         inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 

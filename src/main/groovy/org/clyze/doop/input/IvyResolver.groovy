@@ -29,7 +29,7 @@ class IvyResolver implements InputResolver {
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
         try {
             //Create temp ivy.xml file
             File ivyfile = File.createTempFile('ivy', '.xml')
@@ -60,7 +60,7 @@ class IvyResolver implements InputResolver {
                 rpt.getLocalFile()
             }
 
-            ctx.set(input, files)
+            isLib? ctx.setLibrary(input, files) : ctx.setInput(input, files)
 
         } catch (e) {
             throw new RuntimeException("Not a valid Ivy input: $input", e)
@@ -92,7 +92,7 @@ class IvyResolver implements InputResolver {
         Ivy ivy = Ivy.newInstance()
         ivy.configureDefault()
 
-        //and then add custom settings for Maven Central
+        //and then addInput custom settings for Maven Central
         org.apache.ivy.plugins.resolver.URLResolver resolver = new org.apache.ivy.plugins.resolver.URLResolver()
         resolver.setM2compatible(true)
         resolver.setName('central')

@@ -82,13 +82,13 @@ class Main {
                     File propsBaseDir = f.getAbsoluteFile().getParentFile()
                     Properties props = FileOps.loadProperties(f)
 
-                    changeLogLevel(cli['l'] ?: props.getProperty("level"))
+                    changeLogLevel(cli['L'] ?: props.getProperty("level"))
 
                     userTimeout = cli['t'] ?: props.getProperty("timeout")
 
                     analysis = new CommandLineAnalysisFactory().newAnalysis(propsBaseDir, props, cli)
                 } else {
-                    changeLogLevel(cli['l'])
+                    changeLogLevel(cli['L'])
 
                     userTimeout = cli['t']
 
@@ -108,7 +108,7 @@ class Main {
                     @Override
                     void run() {
                         if (!analysis.options.X_START_AFTER_FACTS.value)
-                            logger.info "Starting ${analysis.name} analysis on ${analysis.inputFiles[0]} - id: $analysis.id"
+                            logger.info "Starting ${analysis.name} analysis on ${analysis.inputFiles} - id: $analysis.id"
                         else
                             logger.info "Starting ${analysis.name} analysis on user imported-facts at${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
                         logger.debug analysis

@@ -15,10 +15,7 @@ import soot.options.Options;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -73,6 +70,10 @@ public class Main {
                         sootParameters._allowPhantom = true;
                         sootParameters._android = true;
                         sootParameters._androidJars = args[i];
+                        break;
+                    case "-i":
+                        i = shift(args, i);
+                        sootParameters._inputs.add(args[i]);
                         break;
                     case "-l":
                         i = shift(args, i);
@@ -169,8 +170,6 @@ public class Main {
                         if (args[i].charAt(0) == '-') {
                             System.err.println("error: unrecognized option: " + args[i]);
                             throw new DoopErrorCodeException(0);
-                        } else {
-                            sootParameters._inputs.add(args[i]);
                         }
                         break;
                 }
@@ -223,7 +222,7 @@ public class Main {
 
         PropertyProvider propertyProvider = new PropertyProvider();
         Set<SootClass> classes = new HashSet<>();
-        Set<String> classesInApplicationJar = new HashSet<>();
+        Set<String> classesInApplicationJars = new HashSet<>();
 
         String input0 = sootParameters._inputs.get(0);
         AndroidSupport android = null;
@@ -231,14 +230,16 @@ public class Main {
         // Set of temporary directories to be cleaned up after analysis ends.
         Set<String> tmpDirs = new HashSet<>();
         if (sootParameters._android) {
+            if (sootParameters._inputs.size() > 1)
+                System.out.println("Warning -- Android mode -- Only " + input0 + " will be considered as application file. The rest of the input files will be ignored");
             Options.v().set_process_multiple_dex(true);
             Options.v().set_src_prec(Options.src_prec_apk);
             String rOutDir = sootParameters._rOutDir;
             android = new AndroidSupport(rOutDir, input0, sootParameters, extraSensitiveControls);
-            android.processInputs(propertyProvider, classesInApplicationJar, sootParameters._androidJars, tmpDirs);
+            android.processInputs(propertyProvider, classesInApplicationJars, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            populateClassesInAppJar(input0, classesInApplicationJar, propertyProvider);
+            populateClassesInAppJar(sootParameters._inputs, classesInApplicationJars, propertyProvider);
         }
 
         Scene scene = Scene.v();
@@ -251,6 +252,8 @@ public class Main {
                 System.out.println("Adding file: " + input);
             }
             scene.extendSootClassPath(input);
+            if (sootParameters._android)
+                break;
         }
 
         for (String lib : AARUtils.toJars(sootParameters._libraries, false, tmpDirs)) {
@@ -274,12 +277,12 @@ public class Main {
             if (android == null) {
                 System.err.println("Internal error when adding Android classes.");
             } else {
-                android.addClasses(classesInApplicationJar, classes, scene);
+                android.addClasses(classesInApplicationJars, classes, scene);
             }
         } else {
-            addClasses(classesInApplicationJar, classes, scene);
+            addClasses(classesInApplicationJars, classes, scene);
 
-            System.out.println("Classes in application jar: " + classesInApplicationJar.size());
+            System.out.println("Classes in application jar(s): " + classesInApplicationJars.size());
 
             /*
              * Set resolution level for sun.net.www.protocol.ftp.FtpURLConnection
@@ -310,7 +313,7 @@ public class Main {
         /*
         * This part should definitely appear after the call to
         * `Scene.loadNecessaryClasses()', since the latter may alter
-        * the set of application classes by explicitly specifying
+        * the setInput of application classes by explicitly specifying
         * that some classes are library code (ignoring any previous
         * call to `setApplicationClass()').
         */
@@ -366,7 +369,7 @@ public class Main {
 
             scene.getOrMakeFastHierarchy();
             // avoids a concurrent modification exception, since we may
-            // later be asking soot to add phantom classes to the scene's hierarchy
+            // later be asking soot to addInput phantom classes to the scene's hierarchy
             driver.doInParallel(classes);
         }
 
@@ -388,44 +391,48 @@ public class Main {
     /**
      * Helper method to read classes and property files from JAR/AAR files.
      *
-     * @param jarFileName              the name of the JAR to read
-     * @param classesInApplicationJAR  the set to populate
+     * @param jarFileNames             the list of all input jar file names
+     * @param classesInApplicationJar  the setInput to populate
      * @param propertyProvider         the provider to use for .properties files
-     * @param androidMode              if set, process classes.jar in .aar files
+     * @param androidMode              if setInput, process classes.jar in .aar files
      *
      * @return the name of the JAR file that was processed; this is
      * either the original first parameter, or the locally saved
      * classes.jar found in the .aar file (if such a file was given)
      *
      */
-    public static String populateClassesInAppJar(String jarFileName,
+    public static List<String> populateClassesInAppJar(List<String> jarFileNames,
                                                  Set<String> classesInApplicationJar,
                                                  PropertyProvider propertyProvider) throws Exception {
-        JarEntry entry;
 
-        System.out.println("Processing application JAR: " + jarFileName);
-        try (JarInputStream jin = new JarInputStream(new FileInputStream(jarFileName));
-             JarFile jarFile = new JarFile(jarFileName)) {
+        for (String jarFileName : jarFileNames) {
+
+            JarEntry entry;
+
+            System.out.println("Processing application JAR: " + jarFileName);
+            try (JarInputStream jin = new JarInputStream(new FileInputStream(jarFileName));
+                 JarFile jarFile = new JarFile(jarFileName)) {
 
             /* List all JAR entries */
-            while ((entry = jin.getNextJarEntry()) != null) {
+                while ((entry = jin.getNextJarEntry()) != null) {
                 /* Skip directories */
-                if (entry.isDirectory())
-                    continue;
+                    if (entry.isDirectory())
+                        continue;
 
-                String entryName = entry.getName();
-                if (entryName.endsWith(".class")) {
-                    ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
-                    classesInApplicationJar.add(reader.getClassName().replace("/", "."));
-                } else if (entryName.endsWith(".properties")) {
-                    propertyProvider.addProperties((new FoundFile(jarFileName, entryName)));
-                } else {
+                    String entryName = entry.getName();
+                    if (entryName.endsWith(".class")) {
+                        ClassReader reader = new ClassReader(jarFile.getInputStream(entry));
+                        classesInApplicationJar.add(reader.getClassName().replace("/", "."));
+                    } else if (entryName.endsWith(".properties")) {
+                        propertyProvider.addProperties((new FoundFile(jarFileName, entryName)));
+                    } else {
                     /* Skip non-class files and non-property files */
-                    continue;
+                        continue;
+                    }
                 }
             }
-            return jarFileName;
         }
+        return jarFileNames;
     }
 
     public static void addClasses(Set<String> classesInApplicationJar, Set<SootClass> classes, Scene scene) {

@@ -112,7 +112,8 @@ public class AndroidSupport {
             sootParameters.setInputs(AARUtils.toJars(sootParameters.getInputs(), false, tmpDirs));
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
-            Main.populateClassesInAppJar(sootParameters.getInputs().get(0), classesInApplicationJar, propertyProvider);
+            sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
+            Main.populateClassesInAppJar(sootParameters.getInputs(), classesInApplicationJar, propertyProvider);
         }
     }
 

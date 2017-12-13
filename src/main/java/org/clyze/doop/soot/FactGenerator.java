@@ -72,7 +72,7 @@ class FactGenerator implements Runnable {
                             // for (Iterator<Thread> i = liveThreads.keySet().iterator(); i.hasNext(); ) {
                             //     Thread key = i.next();
                             //     System.err.println("Thread " + key.getName());
-                            //     StackTraceElement[] trace = liveThreads.get(key);
+                            //     StackTraceElement[] trace = liveThreads.getLibrary(key);
                             //     for (int j = 0; j < trace.length; j++) {
                             //         System.err.println("\tat " + trace[j]);
                             //     }
@@ -483,7 +483,7 @@ class FactGenerator implements Runnable {
             }
             else if(op instanceof NumericConstant)
             {
-                // seems to always get optimized out, do we need this?
+                // seems to always getLibrary optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
             else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)

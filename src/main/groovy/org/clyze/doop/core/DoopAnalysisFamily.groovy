@@ -31,12 +31,12 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					cli: false
 			),
 			new AnalysisOption<String>(
-					id: "LD_LIBRARY_PATH", //the value is set based on LOGICBLOX_HOME
+					id: "LD_LIBRARY_PATH", //the value is setInput based on LOGICBLOX_HOME
 					value: null,
 					cli: false
 			),
 			new AnalysisOption<String>(
-					id: "BLOXBATCH", //the value is set based on LOGICBLOX_HOME
+					id: "BLOXBATCH", //the value is setInput based on LOGICBLOX_HOME
 					value: null,
 					cli: false
 			),
@@ -68,6 +68,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "INPUTS",
 					name: "inputFiles",
 					argName: "FILES",
+					value: null,
+					isMandatory: false,
+					webUI: true
+			),
+			new AnalysisOption<String>(
+					id: "LIBRARIES",
+					name: "libraryFiles",
+					argName: "LIBRARIES",
 					value: null,
 					isMandatory: false,
 					webUI: true
@@ -594,7 +602,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "X_SERVER_LOGIC_THRESHOLD",
 					name: "Xserver-logic-threshold",
 					argName: "THRESHOLD",
-					description: "Threshold when reporting point-to information in server logic (per points-to set). default: 1000",
+					description: "Threshold when reporting point-to information in server logic (per points-to setInput). default: 1000",
 					value: 1000,
 					nonStandard: true,
 					webUI: true,

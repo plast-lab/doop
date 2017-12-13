@@ -259,7 +259,7 @@ public class FactWriter {
         // what is a normal object?
         String heap = _rep.heapAlloc(m, expr, session);
 
-        _db.add("NormalObject",
+        _db.addInput("NormalObject",
                 _db.asEntity(heap),
                 writeType(expr.getType()));
 
@@ -284,7 +284,7 @@ public class FactWriter {
         int index = session.calcUnitNumber(stmt);
         String rep = _rep.instruction(m, stmt, session, index);
 
-        _db.add("AssignMultiArrayAllocation",
+        _db.addInput("AssignMultiArrayAllocation",
                 _db.asEntity(rep),
                 _db.asIntColumn(str(index)),
                 _db.asEntity(heap),

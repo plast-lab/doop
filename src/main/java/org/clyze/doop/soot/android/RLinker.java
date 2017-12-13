@@ -33,7 +33,7 @@ public class RLinker {
     // ids. Used by lookupConst() and XML parsing for layout controls.
     private Map<String, Map<String, Map<String, Integer> > > constants;
 
-    // A map from package names -> nested class -> set of text
+    // A map from package names -> nested class -> setInput of text
     // entries. Used for code generation.
     private Map<String, Map<String, Set<String> > > rs;
 
@@ -73,7 +73,7 @@ public class RLinker {
      * @param rDir     The directory to place the generated R code. Can
      *                 be null (in which case a temporary location is used).
      *
-     * @param tmpDirs  The temporary directory will be added to this set.
+     * @param tmpDirs  The temporary directory will be added to this setInput.
      */
     public String linkRs(String rDir, Set<String> tmpDirs) {
         if ((rs == null) || rs.isEmpty()) {

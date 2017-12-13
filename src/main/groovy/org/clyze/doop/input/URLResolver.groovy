@@ -14,13 +14,13 @@ class URLResolver implements InputResolver{
     }
 
     @Override
-    void resolve(String input, InputResolutionContext ctx) {
+    void resolve(String input, InputResolutionContext ctx, boolean isLib) {
         try {
             URL url = new URL(input)
             File tmpFile = File.createTempFile(FilenameUtils.getBaseName(input) + "_", "." + FilenameUtils.getExtension(input))
             FileUtils.copyURLToFile(url, tmpFile)
             tmpFile.deleteOnExit()
-            ctx.set(input, tmpFile)
+            ctx.set(input, tmpFile, isLib)
         }
         catch(e) {
             throw new RuntimeException("Not a valid URL input: $input", e)
