@@ -7,7 +7,6 @@ package org.clyze.jimple;
 program
 	: klass ;
 
-
 klass
 	: modifier* ('class'|'interface') IDENTIFIER ('extends' IDENTIFIER)? ('implements' identifierList)? '{' (field|method)* '}' ;
 
