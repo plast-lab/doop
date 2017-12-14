@@ -728,7 +728,8 @@ InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   !Value_Null(?basevalue),
   Value_Type(?value, ?valuetype),
   Field_Type(?signature, ?fieldtype),
-  SupertypeOf(?fieldtype, ?valuetype).
+  SupertypeOf(?fieldtype, ?valuetype),
+  isImmutableHContext(?hctx).
 #endif
  
 /*************************************************************
