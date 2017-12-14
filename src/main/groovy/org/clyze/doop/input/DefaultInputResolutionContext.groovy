@@ -24,7 +24,7 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     List<String> inputs = new LinkedList<>()
     List<String> libraries = new LinkedList<>()
 
-    //The setInput of resolved inputFiles
+    //The set of resolved inputFiles
     protected final Map<String, ResolvedInput> resolvedInputs = new LinkedHashMap<>()
     protected final Map<String, ResolvedInput> resolvedLibraries = new LinkedHashMap<>()
 

@@ -309,7 +309,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
         ClassLoader loader = phantomClassLoader()
         Helper.execJava(loader, "org.clyze.jphantom.Driver", params)
 
-        //setInput the jar of the analysis to the complemented one
+        //set the jar of the analysis to the complemented one
         inputFiles[0] = FileOps.findFileOrThrow("$outDir/$newJar", "jphantom invocation failed")
     }
 

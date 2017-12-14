@@ -483,7 +483,7 @@ class FactGenerator implements Runnable {
             }
             else if(op instanceof NumericConstant)
             {
-                // seems to always getLibrary optimized out, do we need this?
+                // seems to always get optimized out, do we need this?
                 _writer.writeAssignCastNumericConstant(inMethod, stmt, left, (NumericConstant) op, cast.getCastType(), session);
             }
             else if (op instanceof NullConstant || op instanceof  ClassConstant || op instanceof  StringConstant)

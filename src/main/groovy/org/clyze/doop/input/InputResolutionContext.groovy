@@ -2,7 +2,7 @@ package org.clyze.doop.input
 
 /**
  * The input resolution mechanism.
- * Resolves inputFiles (given as strings) to a setInput of files.
+ * Resolves inputFiles (given as strings) to a set of files.
  */
 interface InputResolutionContext {
 

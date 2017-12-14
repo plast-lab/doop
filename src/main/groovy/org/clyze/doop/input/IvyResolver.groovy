@@ -92,7 +92,7 @@ class IvyResolver implements InputResolver {
         Ivy ivy = Ivy.newInstance()
         ivy.configureDefault()
 
-        //and then addInput custom settings for Maven Central
+        //and then add custom settings for Maven Central
         org.apache.ivy.plugins.resolver.URLResolver resolver = new org.apache.ivy.plugins.resolver.URLResolver()
         resolver.setM2compatible(true)
         resolver.setName('central')

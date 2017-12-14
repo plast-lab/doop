@@ -420,13 +420,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 //Try to read the main class from the manifest contained in the jar
                 def main = jarFile.getManifest()?.getMainAttributes()?.getValue(Attributes.Name.MAIN_CLASS)
                 if (main) {
-                    logger.debug "The main class is automatically setInput to ${main}"
+                    logger.debug "The main class is automatically set to ${main}"
                     options.MAIN_CLASS.value = main
                 } else {
                     //Check whether the jar contains a class with the same name
                     def jarName = FilenameUtils.getBaseName(jarFile.getName())
                     if (jarFile.getJarEntry("${jarName}.class")) {
-                        logger.debug "The main class is automatically setInput to ${jarName}"
+                        logger.debug "The main class is automatically set to ${jarName}"
                         options.MAIN_CLASS.value = jarName
                     } else {
                         logger.debug "\nWARNING: No main class was found. This will trigger open-program analysis!\n"
@@ -439,7 +439,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             List<String> dynFiles = options.DYNAMIC.value as List<String>
             dynFiles.each { String dynFile ->
                 FileOps.findFileOrThrow(dynFile, "The DYNAMIC option is invalid: ${dynFile}")
-                logger.debug "The DYNAMIC option has been setInput to ${dynFile}"
+                logger.debug "The DYNAMIC option has been set to ${dynFile}"
             }
         }
 
@@ -509,7 +509,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     options.REFLECTION_SPECULATIVE_USE_BASED_ANALYSIS.value ||
                     options.REFLECTION_INVENT_UNKNOWN_OBJECTS.value ||
                     options.REFLECTION_REFINED_OBJECTS.value) {
-                logger.warn "\nWARNING: Probable inconsistent setInput of Java reflection flags!\n"
+                logger.warn "\nWARNING: Probable inconsistent set of Java reflection flags!\n"
             } else if (options.TAMIFLEX.value) {
                 logger.warn "\nWARNING: Handling of Java reflection via Tamiflex logic!\n"
             } else {
@@ -578,7 +578,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
      */
     protected void checkLogicBlox(AnalysisVars vars) {
 
-        //BLOX_OPTS is setInput by the main method
+        //BLOX_OPTS is set by the main method
 
         AnalysisOption lbhome = vars.options.LOGICBLOX_HOME
 
@@ -616,12 +616,12 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         if (vars.options.LB3.value) {
             String lbHome = vars.options.LOGICBLOX_HOME.value
             env.LOGICBLOX_HOME = lbHome
-            //We addInput these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
+            //We add these LB specific env vars here to make the server deployment more flexible (and the cli user's life easier)
             env.LB_PAGER_FORCE_START = "true"
             env.LB_MEM_NOWARN = "true"
             env.DOOP_HOME = Doop.doopHome
 
-            //We addInput the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
+            //We add the following for pa-datalog to function properly (copied from the lib-env-bin.sh script)
             String path = env.PATH
             env.PATH = "${lbHome}/bin:${path ?: ""}" as String
 

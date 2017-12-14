@@ -313,7 +313,7 @@ public class Main {
         /*
         * This part should definitely appear after the call to
         * `Scene.loadNecessaryClasses()', since the latter may alter
-        * the setInput of application classes by explicitly specifying
+        * the set of application classes by explicitly specifying
         * that some classes are library code (ignoring any previous
         * call to `setApplicationClass()').
         */
@@ -369,7 +369,7 @@ public class Main {
 
             scene.getOrMakeFastHierarchy();
             // avoids a concurrent modification exception, since we may
-            // later be asking soot to addInput phantom classes to the scene's hierarchy
+            // later be asking soot to add phantom classes to the scene's hierarchy
             driver.doInParallel(classes);
         }
 
@@ -392,9 +392,9 @@ public class Main {
      * Helper method to read classes and property files from JAR/AAR files.
      *
      * @param jarFileNames             the list of all input jar file names
-     * @param classesInApplicationJar  the setInput to populate
+     * @param classesInApplicationJar  the set to populate
      * @param propertyProvider         the provider to use for .properties files
-     * @param androidMode              if setInput, process classes.jar in .aar files
+     * @param androidMode              if set, process classes.jar in .aar files
      *
      * @return the name of the JAR file that was processed; this is
      * either the original first parameter, or the locally saved

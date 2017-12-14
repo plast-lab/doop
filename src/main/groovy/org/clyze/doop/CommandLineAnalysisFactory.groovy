@@ -47,14 +47,10 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
             option.cli
         }
 
-        List<String> inputs = []
-        List<String> libraries = []
         //Get the inputFiles of the analysis (short option: i)
         //Get the libraryFiles of the analysis (short option: l)
-        if (!options.X_START_AFTER_FACTS.value) {
-            inputs = cli.is
-            libraries = cli.ls
-        }
+        List<String> inputs = (!options.X_START_AFTER_FACTS.value && cli.is) ? cli.is : []
+        List<String> libraries = (!options.X_START_AFTER_FACTS.value && cli.ls) ? cli.ls : []
 
         return newAnalysis(FAMILY, id, name, options, inputs, libraries)
     }
@@ -67,7 +63,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
         //Get the name of the analysis
         String name = cli.a ?: props.getProperty("analysis")
 
-        //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we getLibrary them from the properties.
+        //Get the inputFiles of the analysis. If there are no inputFiles in the CLI, we get them from the properties.
         List<String> inputs
         List<String> libraries
         if (!cli.is) {
@@ -114,7 +110,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
     }
 
     /**
-     * Creates the cli args from the respective analysis options (the ones with their cli property setInput to true).
+     * Creates the cli args from the respective analysis options (the ones with their cli property set to true).
      * This method provides special handling for the DYNAMIC option, in order to support multiple values for it.
      */
     static CliBuilder createCliBuilder(boolean includeNonStandard) {
@@ -146,7 +142,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
     }
 
     /**
-     * Creates the nonStandard args from the respective analysis options (the ones with their nonStandard property setInput to true).
+     * Creates the nonStandard args from the respective analysis options (the ones with their nonStandard property set to true).
      */
     static CliBuilder createNonStandardCliBuilder() {
 
@@ -265,7 +261,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
     /**
      * Adds the list of analysis options to the cli builder.
-     * @param options - the list of AnalysisOption items to addInput.
+     * @param options - the list of AnalysisOption items to add.
      * @param cli - the cli builder.
      */
     private static void addAnalysisOptionsToCliBuilder(List<AnalysisOption> options, CliBuilder cli) {

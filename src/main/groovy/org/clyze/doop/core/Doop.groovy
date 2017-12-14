@@ -48,7 +48,7 @@ class Doop {
     static void initDoop(String homePath, String outPath, String cachePath) {
 
         doopHome = homePath
-        if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not setInput")
+        if (!doopHome) throw new RuntimeException("DOOP_HOME environment variable is not set")
         FileOps.findDirOrThrow(doopHome, "DOOP_HOME environment variable is invalid: $doopHome")
 
         doopOut              = outPath ?: "$doopHome/out"
@@ -92,7 +92,7 @@ class Doop {
 
     /**
      * Creates the analysis options by overriding the default options with the
-     * ones contained in the given CLI options. An option is setInput only if
+     * ones contained in the given CLI options. An option is set only if
      * filtered (the supplied filter returns true for the option).
      * @param cli - the CLI option accessor.
      * @param filter - optional filter to apply before setting the option.
@@ -107,7 +107,7 @@ class Doop {
     /**
      * Creates the analysis options by overriding the default options with the
      * ones contained in the given properties and CLI options. A CLI option
-     * superseeds a property one. An option is setInput only if filtered (the
+     * superseeds a property one. An option is set only if filtered (the
      * supplied filter returns true for the option).
      * @param props - the properties.
      * @param cli - the CLI option accessor.
@@ -125,7 +125,7 @@ class Doop {
 
     /**
      * Overrides the values of the map (the options values) with the values
-     * contained in the properties. An option is setInput only if filtered (the
+     * contained in the properties. An option is set only if filtered (the
      * supplied filter returns true for the option).
      * @param options - the options to override.
      * @param properties - the properties to use.
@@ -156,7 +156,7 @@ class Doop {
 
     /**
      * Overrides the values of the map (the options values) with the values
-     * contained in the CLI options. An option is setInput only if filtered (the
+     * contained in the CLI options. An option is set only if filtered (the
      * supplied filter returns true for the option).
      * @param options - the options to override.
      * @param properties - the properties to use.
@@ -172,7 +172,7 @@ class Doop {
                 if (optionValue) { //Only true-ish values are of interest (false or null values are ignored)
                     boolean filtered = filter ? filter.call(option) : true
                     if (filtered) {
-                        // NOTE: Obscure cli builder feature: to getLibrary the value of a cl option
+                        // NOTE: Obscure cli builder feature: to get the value of a cl option
                         // as a List, you need to append an s to its short name
                         if (option.id == "DYNAMIC") {
                             option.value = cli.ds
