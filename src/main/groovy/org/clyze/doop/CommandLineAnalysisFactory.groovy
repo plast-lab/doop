@@ -130,7 +130,7 @@ class CommandLineAnalysisFactory extends DoopAnalysisFactory {
 
         cli.with {
             h(longOpt: 'help', 'Display help and exit.')
-            L(longOpt: 'level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
+            L(longOpt: 'Level', LOGLEVEL, args:1, argName: 'LOG_LEVEL')
             p(longOpt: 'properties', PROPS, args:1, argName: "properties")
             t(longOpt: 'timeout', TIMEOUT, args:1, argName: 'TIMEOUT')
             X(longOpt: 'X', 'Display information about non-standard options and exit.')
