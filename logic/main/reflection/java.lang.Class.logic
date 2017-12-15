@@ -202,6 +202,10 @@ ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap
   Method:DeclaringType[?signature] = ?superClass,
   Method:Modifier("public", ?signature).
 
+
+LocalForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) ->
+   HeapAllocation(?constantHeap), Method(?signature), Var(?to), Context(?ctx).
+
 LocalForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?constantHeap) <-
   ForwardReflectiveAssignMethodConstantString(?ctx, ?to, ?signature, ?mergeHeap),
   _OptVarToMethod[?to] = ?inmethod,
@@ -213,12 +217,14 @@ ForwardHighConfidenceReflectiveAssignMethodConstant(?ctx, ?to, ?signature) <-
   (NumberOfMethodsMatchingConstant[?constantHeap] < StringPrecisionThreshold[];
    MethodNameMatchingStringConstant:Signature(?signature, ?constantHeap)).
 
+AssignHeapInMethod(?constantHeap, ?inmethod, ?mergeHeap) -> HeapAllocation(?mergeHeap), HeapAllocation(?constantHeap), Method(?inmethod).
+
 AssignHeapInMethod(?constantHeap, ?inmethod, ?constantHeap) <-
-   Value:Type[?constantHeap] = "java.lang.String",
+   StringConstant(?constantHeap),
    AssignNormalHeapAllocation(?constantHeap, _, ?inmethod).
 
 AssignHeapInMethod(?heap, ?inmethod, ?mergeHeap) <-
-  Value:Type[?heap] = "java.lang.String",
+  StringConstant(?heap),
   AssignHeapAllocation(?heap, _, ?inmethod),
   HeapAllocation:Merge[?heap] = ?mergeHeap.
 
