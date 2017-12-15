@@ -177,15 +177,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					id: "DACAPO",
 					name: "dacapo",
 					description: "Load additional logic for DaCapo (2006) benchmarks properties.",
-					value: false,
-					webUI: true
+					value: false
 			),
 			new BooleanAnalysisOption(
 					id: "DACAPO_BACH",
 					name: "dacapo-bach",
 					description: "Load additional logic for DaCapo (Bach) benchmarks properties.",
-					value: false,
-					webUI: true
+					value: false
 			),
 			new BooleanAnalysisOption(
 					id: "ONLY_APPLICATION_CLASSES_FACT_GEN",
