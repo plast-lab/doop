@@ -215,7 +215,7 @@ StaticFieldPointsTo(?hctx, ?value, ?signature) :-
   ReachableStoreStaticFieldFrom(?from),
   StoreStaticField(?from, ?signature, _),
   TaintedVarPointsTo(?value, _, ?from),
-  ImmutableHContext(?hctx).
+  isImmutableHContext(?hctx).
 #endif
 
 .decl ReachableStoreStaticFieldFrom(?from:Var)
