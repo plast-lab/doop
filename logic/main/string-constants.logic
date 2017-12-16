@@ -272,8 +272,18 @@ MethodNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
 
+// Not all strings are merged
+MethodNameMatchingStringConstant:Signature(?sig, ?heap) <-
+  !(HeapAllocation:Merge[?heap] = _),
+  PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
+
 FieldNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
+  PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
+
+// Not all strings are merged
+FieldNameMatchingStringConstant:Signature(?sig, ?heap) <-
+  (HeapAllocation:Merge[?heap] = _),
   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
 #endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
