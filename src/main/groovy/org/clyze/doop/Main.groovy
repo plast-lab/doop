@@ -107,8 +107,12 @@ class Main {
                 executorService.submit(new Runnable() {
                     @Override
                     void run() {
-                        if (!analysis.options.X_START_AFTER_FACTS.value)
-                            logger.info "Starting ${analysis.name} analysis on ${analysis.inputFiles} - id: $analysis.id"
+                        if (!analysis.options.X_START_AFTER_FACTS.value) {
+                            logger.info "Starting ${analysis.name} analysis"
+                            logger.info "Id       : $analysis.id"
+                            logger.info "Inputs   : ${analysis.inputFiles.join(', ')}"
+                            logger.info "Libraries: ${analysis.libraryFiles.join(', ')}"
+                        }
                         else
                             logger.info "Starting ${analysis.name} analysis on user imported-facts at${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
                         logger.debug analysis

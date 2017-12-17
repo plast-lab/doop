@@ -69,12 +69,14 @@ class DefaultInputResolutionContext implements InputResolutionContext {
     @Override
     void resolve() {
         inputs.each { input ->
+            logger.debug "Resolving input $input"
             ResolvedInput resolvedInput = resolvedInputs.get(input)
             if (!resolvedInput)
                 resolver.resolve(input, this, false)
         }
 
         libraries.each { input ->
+            logger.debug "Resolving library $input"
             ResolvedInput resolvedInput = resolvedLibraries.get(input)
             if (!resolvedInput)
                 resolver.resolve(input, this, true)

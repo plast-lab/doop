@@ -375,17 +375,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         def platformFiles
 
         if (!options.X_START_AFTER_FACTS.value) {
-            inputFilePaths = context.inputs()
-            logger.debug "${inputFilePaths}"
-            libraryFilePaths = context.libraries()
-            logger.debug "Library file paths: ${libraryFilePaths}"
-            platformFilePaths = platform(options)
-            logger.debug "${platformFilePaths}"
+            inputFilePaths = context.inputs()            
+            libraryFilePaths = context.libraries()            
+            platformFilePaths = platform(options)            
 
+            logger.debug "Resolving inputs and libraries"
             context.resolve()
+            
             inputFiles = context.getAllInputs()
+            logger.debug "Input file paths: $inputFilePaths -> $inputFiles"
             libraryFiles = context.getAllLibraries()
+            logger.debug "Library file paths: $libraryFilePaths -> $libraryFiles"
             platformFiles = resolve(platformFilePaths, true)
+            logger.debug "Platform file paths: $platformFilePaths -> $platformFiles"
         }
 
         if (options.DACAPO.value || options.DACAPO_BACH.value) {
