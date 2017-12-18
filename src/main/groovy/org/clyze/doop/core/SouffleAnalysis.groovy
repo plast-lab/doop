@@ -176,7 +176,9 @@ class SouffleAnalysis extends DoopAnalysis {
             cpp.includeAtEnd("$analysis", "${infoFlowPath}/${options.INFORMATION_FLOW.value}${INFORMATION_FLOW_SUFFIX}.dl", macros)
         }
 
-        if (!options.MAIN_CLASS && !options.TAMIFLEX && !options.HEAPDL && !options.ANDROID && !options.DACAPO && !options.DACAPO_BACH) {
+        if (!options.MAIN_CLASS.value && !options.TAMIFLEX.value &&
+            !options.HEAPDL.value && !options.ANDROID.value &&
+            !options.DACAPO.value && !options.DACAPO_BACH.value) {
             if (options.OPEN_PROGRAMS.value)
                 cpp.includeAtEnd("$analysis", "${Doop.souffleAddonsPath}/open-programs/rules-${options.OPEN_PROGRAMS.value}.dl", macros, commonMacros)
             else
