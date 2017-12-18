@@ -6,6 +6,7 @@
 #define VarPointsTo(hctx, heap, ctx, var) CollapsedVarPointsTo(hctx, heap, ctx, var)
 #endif // MULTIPLE_SEGREGATED_ANALYSES
 
+#include "statistics-output.dl"
 #include "statistics-simple-declarations.dl"
 #include "macros.dl"
 
@@ -342,10 +343,10 @@ NotLibraryHeapAllocation(?heap) :-
 Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld, ?heap, ?baseHeap) :-
   MostPreciseDynamicInstanceFieldPointsTo(?fld, _, ?heap, _, ?baseHeap).
 
-.output MostPreciseDynamicInstanceFieldPointsTo
-.output MostPreciseDynamicStaticFieldPointsTo
-.output MostPreciseDynamicCallGraphEdge
-.output MostPreciseDynamicArrayIndexPointsTo
+OUTPUT_STATS(MostPreciseDynamicInstanceFieldPointsTo)
+OUTPUT_STATS(MostPreciseDynamicStaticFieldPointsTo)
+OUTPUT_STATS(MostPreciseDynamicCallGraphEdge)
+OUTPUT_STATS(MostPreciseDynamicArrayIndexPointsTo)
 
 NotLibraryHeapAllocation(?heap) :-
   ApplicationMethod(?meth),
@@ -393,7 +394,7 @@ NewMetricMacro("95.0", "App Dynamic reachable methods (INS)", Stats_Simple_Appli
 NewMetricMacro("96.0", "Unmatched dynamic reachable methods (INS)", UnmatchedDynamicReachableMethod(_)).
 
 .decl Stats_Simple_Application_DynamicCallGraphEdge(?invocation:Instruction, ?toMeth:Method)
-.output Stats_Simple_Application_DynamicCallGraphEdge
+OUTPUT_STATS(Stats_Simple_Application_DynamicCallGraphEdge)
 
 Stats_Simple_Application_DynamicCallGraphEdge(?invocation, ?toMeth) :-
   Stats_Simple_InsensDynamicCallGraphEdge(_, ?invocation, ?toMeth),
@@ -404,7 +405,7 @@ Stats_Simple_Application_DynamicCallGraphEdge(?invocation, ?toMeth) :-
 #endif
 
 .decl Stats_Simple_Application_InsensCallGraphEdge(?invocation:Instruction, ?toMeth:Method)
-.output Stats_Simple_Application_InsensCallGraphEdge
+OUTPUT_STATS(Stats_Simple_Application_InsensCallGraphEdge)
 
 Stats_Simple_Application_InsensCallGraphEdge(?invocation, ?toMeth) :-
   Stats_Simple_InsensCallGraphEdge(?invocation, ?toMeth),

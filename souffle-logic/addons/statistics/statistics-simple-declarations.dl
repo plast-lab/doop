@@ -1,5 +1,3 @@
-#include "statistics-output.dl"
-
 /***************************************************
  * Variables
  ***************************************************/
@@ -202,7 +200,7 @@ OUTPUT_STATS(Stats_Simple_OriginalTaintedValue)
 
 #ifdef HEAPDL
 .decl NotLibraryHeapAllocation(?heap:HeapAllocation)
-.output NotLibraryHeapAllocation
+OUTPUT_STATS(NotLibraryHeapAllocation)
 
 .decl Stats_Simple_InsensDynamicInstanceFieldPointsTo(?fld:Field, ?heap:HeapAllocation, ?baseHeap:HeapAllocation)
 OUTPUT_STATS(Stats_Simple_InsensDynamicInstanceFieldPointsTo)
@@ -221,7 +219,7 @@ OUTPUT_STATS(Stats_Simple_InsensDynamicArrayIndexPointsTo)
 
 .decl Stats_Simple_Application_DynamicReachableMethod(?method:Method)
 OUTPUT_STATS(Stats_Simple_Application_DynamicReachableMethod)
-.output DynamicReachableMethod
+OUTPUT_STATS(DynamicReachableMethod)
 
 .decl Stats_Simple_InsensDynamicCallGraphEdge(?fromMeth:Method, ?invocation:MethodInvocation, ?toMeth:Method)
 OUTPUT_STATS(Stats_Simple_InsensDynamicCallGraphEdge)
