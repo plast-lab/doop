@@ -1,0 +1,10 @@
+// This macro enables the output of statistics. If Xstats-none has
+// been given, output is controlled by export.dl.
+
+#ifdef X_STATS_NONE
+#define OUTPUT_STATS(x)
+#else
+// An output statement like ".output A" is just a shorthand for
+// ".output AB(IO="file",filename="A.csv",delimiter="\t")".
+#define OUTPUT_STATS(x) .output x
+#endif // X_STATS_NONE

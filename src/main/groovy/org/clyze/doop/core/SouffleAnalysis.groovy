@@ -67,8 +67,7 @@ class SouffleAnalysis extends DoopAnalysis {
         initDatabase()
         basicAnalysis()
         mainAnalysis()
-        if (!options.X_SERVER_LOGIC.value)
-            produceStats()
+        produceStats()
 
         compileAnalysis()
         executeAnalysis(options.SOUFFLE_JOBS.value as Integer)
