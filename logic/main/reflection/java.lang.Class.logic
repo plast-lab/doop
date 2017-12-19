@@ -41,9 +41,6 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) <-
 /**
  * Class.forName invocations with string constant parameters
  */
-// TODO Do we need this flag at all?
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
-// mode. The constant will never flow to the ?param.
 ForwardReflectiveAssignClassConstant(?ctx, ?invocation, ?type),
 ForwardReflectiveAssignClassConstantString(?ctx, ?invocation, ?type, ?constantHeap) <-
   java:lang:Class:forName(?invocation, ?inmethod),

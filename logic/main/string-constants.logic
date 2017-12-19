@@ -39,20 +39,8 @@ HeapAllocation:Merge[?heap] = ?mergeHeap ->
 // The ones that absolutely have to be kept distinct
 HeapAllocation:Keep(?heap) -> HeapAllocation(?heap).
 
-NonMergedReflectiveStringConstant(?heap) <-
-  (java:lang:Class:getField(?to, _, _) ;
-  java:lang:Class:getDeclaredField(?to, _, _)),
-  PreFieldNameMatchingStringConstant(?heap),
-  _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapAllocation(?heap, _, ?inmethod).
-
-NonMergedReflectiveStringConstant(?heap) <-
-  (java:lang:Class:getMethod(?to, _, _) ;
-  java:lang:Class:getDeclaredMethod(?to, _, _)),
-  PreMethodNameMatchingStringConstant(?heap),
-  _OptVarToMethod[?to] = ?inmethod,
-  AssignHeapAllocation(?heap, _, ?inmethod).
-
+HeapAllocation:ContextInsensitive(?heap) <-
+   NonMergedReflectiveStringConstant(?heap).
 /**
  * This is the handling for objects that are explicitly allocated in
  * the program text. There will also be other objects: pseudo objects
@@ -267,23 +255,13 @@ HeapRepresentative(?mergeHeap, ?heap) <-
 ClassNameMatchingStringConstant:Type(?type, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreClassNameMatchingStringConstant:Type(?type, ?heap).
-   
+
 MethodNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
   PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
 
-// Not all strings are merged
-MethodNameMatchingStringConstant:Signature(?sig, ?heap) <-
-  !(HeapAllocation:Merge[?heap] = _),
-  PreMethodNameMatchingStringConstant:Signature(?sig, ?heap).
-
 FieldNameMatchingStringConstant:Signature(?sig, ?heapRepr) <-
   HeapAllocation:Merge[?heap] = ?heapRepr,
-  PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
-
-// Not all strings are merged
-FieldNameMatchingStringConstant:Signature(?sig, ?heap) <-
-  (HeapAllocation:Merge[?heap] = _),
   PreFieldNameMatchingStringConstant:Signature(?sig, ?heap).
 #endif // GROUP_REFLECTION_STRINGS
 #endif // DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS
