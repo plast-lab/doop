@@ -44,7 +44,7 @@ VarPointsTo(?hctx, ?classValue, ?ctx, ?to) :-
  * Class.forName invocations with string constant parameters
  */
 // TODO Do we need this flag at all?
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
+// NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to the ?param.
 .decl ForwardReflectiveAssignClassConstant(?ctx:Context, ?invocation:MethodInvocation, ?type:Type)
 .decl ForwardReflectiveAssignClassConstantString(?ctx:Context, ?invocation:MethodInvocation, ?type:Type, ?constantHeap:Value)
@@ -215,7 +215,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ReflectiveAllocation(?invocation, _, ?arrayValue),
   ImmutableHContextFromContext(?ctx, ?hctx).
 
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
+// NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.
 .decl ForwardReflectiveAssignMethodConstant(?ctx:Context, ?to:Var, ?signature:Method)
 .decl ForwardReflectiveAssignMethodConstantString(?ctx:Context, ?to:Var, ?signature:Method, ?constantHeap:Value)
@@ -383,7 +383,7 @@ VarPointsTo(?hctx, ?arrayValue, ?ctx, ?to) :-
   ReifiedClass(?type, ?classValue),
   ReflectiveAllocation(?invocation, _, ?arrayValue).
 
-// NOTE that this won't fire when we are in DISTINGUISH_NO_STRING_CONSTANTS
+// NOTE that this won't fire when we are in distinguish-no-string-constants
 // mode. The constant will never flow to ?param.
 .decl ForwardReflectiveAssignFieldConstant(?ctx:Context, ?to:Var, ?signature:Field)
 .decl ForwardReflectiveAssignFieldConstantString(?ctx:Context, ?to:Var, ?signature:Field, ?constantHeap:Value)
