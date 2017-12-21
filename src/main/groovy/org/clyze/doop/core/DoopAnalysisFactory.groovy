@@ -475,6 +475,9 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         if (options.REFLECTION_CLASSIC.value) {
+            if (options.DISTINGUISH_ALL_STRING_CONSTANTS.value) {
+                throw new RuntimeException("Error: options " + options.REFLECTION_CLASSIC.name + " and " + options.DISTINGUISH_ALL_STRING_CONSTANTS.name + " are mutually exclusive.\n")
+            }
             options.DISTINGUISH_ALL_STRING_CONSTANTS.value = false
             options.DISTINGUISH_REFLECTION_ONLY_STRING_CONSTANTS.value = true
             options.REFLECTION.value = true
