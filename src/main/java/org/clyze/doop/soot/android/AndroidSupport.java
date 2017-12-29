@@ -21,18 +21,18 @@ import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.Callback
 
 public class AndroidSupport {
 
-    String rOutDir;
-    String appInput;
-    SootParameters sootParameters;
-    SootMethod dummyMain;
+    private String rOutDir;
+    private String appInput;
+    private SootParameters sootParameters;
+    private SootMethod dummyMain;
 
-    Set<String> appServices = new HashSet<>();
-    Set<String> appActivities = new HashSet<>();
-    Set<String> appContentProviders = new HashSet<>();
-    Set<String> appBroadcastReceivers = new HashSet<>();
-    Set<String> appCallbackMethods = new HashSet<>();
-    Set<PossibleLayoutControl> appUserControls = new HashSet<>();
-    String extraSensitiveControls;
+    private Set<String> appServices = new HashSet<>();
+    private Set<String> appActivities = new HashSet<>();
+    private Set<String> appContentProviders = new HashSet<>();
+    private Set<String> appBroadcastReceivers = new HashSet<>();
+    private Set<String> appCallbackMethods = new HashSet<>();
+    private Set<PossibleLayoutControl> appUserControls = new HashSet<>();
+    private String extraSensitiveControls;
 
     public AndroidSupport(String rOutDir, String appInput, SootParameters sootParameters, String extraSensitiveControls) {
         this.rOutDir = rOutDir;
@@ -45,7 +45,7 @@ public class AndroidSupport {
         return dummyMain;
     }
 
-    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, String androidJars, Set<String> tmpDirs) throws Exception {
+    public void processInputs(PropertyProvider propertyProvider, Set<String> classesInApplicationJar, Map<String, Set<String>> classToArtifactMap, String androidJars, Set<String> tmpDirs) throws Exception {
         if (sootParameters.getRunFlowdroid()) {
             SetupApplication app = new SetupApplication(androidJars, appInput);
             app.getConfig().setCallbackAnalyzer(Fast);
@@ -113,7 +113,7 @@ public class AndroidSupport {
             sootParameters.setLibraries(AARUtils.toJars(sootParameters.getLibraries(), false, tmpDirs));
 
             sootParameters.getInputs().subList(1, sootParameters.getInputs().size()).clear();
-            Main.populateClassesInAppJar(sootParameters.getInputs(), classesInApplicationJar, propertyProvider);
+            Main.populateClassesInAppJar(sootParameters.getInputs(), sootParameters.getLibraries(), classesInApplicationJar, classToArtifactMap, propertyProvider);
         }
     }
 

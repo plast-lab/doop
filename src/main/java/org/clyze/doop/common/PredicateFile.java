@@ -92,7 +92,8 @@ public enum PredicateFile
     ASSIGN_PHANTOM_INVOKE("AssignPhantomInvoke"),
     PHANTOM_INVOKE("PhantomInvoke"),
     BREAKPOINT_STMT("BreakpointStmt"),
-    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction");
+    UNSUPPORTED_INSTRUCTION("UnsupportedInstruction"),
+    CLASS_ARTIFACT("Class-Artifact");
 
     private final String name;
 

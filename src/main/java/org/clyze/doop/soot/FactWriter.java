@@ -72,6 +72,8 @@ public class FactWriter {
         return result;
     }
 
+    void writeClassArtifact(String artifact, String className) { _db.add(CLASS_ARTIFACT, artifact, className); }
+
     void writeAndroidEntryPoint(SootMethod m) {
         _db.add(ANDROID_ENTRY_POINT, _rep.signature(m));
     }
