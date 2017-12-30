@@ -18,16 +18,14 @@ class FactGenerator implements Runnable {
 
     private FactWriter _writer;
     private boolean _ssa;
-    private boolean _generateJimple;
     private Set<SootClass> _sootClasses;
     private final int maxRetries = 10;
 
-    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses, boolean generateJimple)
+    FactGenerator(FactWriter writer, boolean ssa, Set<SootClass> sootClasses)
     {
         this._writer = writer;
         this._ssa = ssa;
         this._sootClasses = sootClasses;
-        this._generateJimple = generateJimple;
     }
 
     @Override
@@ -80,13 +78,6 @@ class FactGenerator implements Runnable {
 
                             System.err.println("Error while processing method: " + m);
                             throw exc;
-                        }
-                    }
-
-                    if (_generateJimple) {
-                        PackManager.v().writeClass(_sootClass);
-                        for (SootMethod m : new ArrayList<>(_sootClass.getMethods())) {
-                            m.releaseActiveBody();
                         }
                     }
                 } catch (Exception exc) {
@@ -244,9 +235,6 @@ class FactGenerator implements Runnable {
                 }
                 DoopRenamer.transform(b);
                 generate(m, b, session);
-                if (!_generateJimple) {
-                    m.releaseActiveBody();
-                }
             }
         }
     }

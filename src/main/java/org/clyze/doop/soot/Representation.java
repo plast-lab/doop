@@ -161,7 +161,7 @@ public class Representation {
         return kind;
     }
 
-    String unsupported(SootMethod inMethod, Stmt stmt, Session session, int index)
+    String unsupported(SootMethod inMethod, Stmt stmt, int index)
     {
         return getMethodSignature(inMethod) +
             "/unsupported " + getKind(stmt) +
@@ -208,7 +208,7 @@ public class Representation {
                      (bootMethName.equals(ALT_L_METAFACTORY)))) {
                     SootMethodRef smr = ((MethodHandle)val1).getMethodRef();
                     return DynamicMethodInvocation.genId(smr.declaringClass().toString(),
-                                                         smr.name().toString());
+                            smr.name());
                 }
                 else
                     System.out.println("Representation: Unsupported invokedynamic, unknown boot method " + bootMethName + ", arity=" + bootArity);

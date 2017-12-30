@@ -2,6 +2,7 @@ package org.clyze.doop.soot;
 
 import org.clyze.doop.common.Database;
 import org.clyze.doop.common.FactEncoders;
+import org.clyze.doop.common.PredicateFile;
 import soot.*;
 import soot.jimple.*;
 import soot.jimple.internal.JimpleLocal;
@@ -31,11 +32,11 @@ public class FactWriter {
         _varTypeMap = new ConcurrentHashMap<>();
     }
 
-    String str(int i) {
+    private String str(int i) {
         return String.valueOf(i);
     }
 
-    String writeStringConstant(String constant) {
+    private String writeStringConstant(String constant) {
         String raw = FactEncoders.encodeStringConstant(constant);
 
         String result;
@@ -50,7 +51,7 @@ public class FactWriter {
         return result;
     }
 
-    String hashMethodNameIfLong(String methodRaw) {
+    private String hashMethodNameIfLong(String methodRaw) {
         if (methodRaw.length() <= 1024)
             return methodRaw;
         else
@@ -104,7 +105,7 @@ public class FactWriter {
         _db.add(DIRECT_SUPER_IFACE, writeType(clazz), writeType(iface));
     }
 
-    String writeType(SootClass c) {
+    private String writeType(SootClass c) {
         String classStr = c.getName();
         // The type itself is already taken care of by writing the
         // SootClass declaration, so we don't actually write the type
@@ -112,7 +113,7 @@ public class FactWriter {
         return classStr;
     }
 
-    String writeType(Type t) {
+    private String writeType(Type t) {
         String result = t.toString();
 
         if (t instanceof ArrayType) {
@@ -213,7 +214,7 @@ public class FactWriter {
         }
     }
 
-    Type getComponentType(ArrayType type) {
+    private Type getComponentType(ArrayType type) {
         // Soot calls the component type of an array type the "element
         // type", which is rather confusing, since in an array type
         // A[][][], the JVM Spec defines A to be the element type, and
@@ -229,7 +230,7 @@ public class FactWriter {
         writeAssignNewMultiArrayExprHelper(m, stmt, l, _rep.local(m,l), expr, (ArrayType) expr.getType(), session);
     }
 
-    void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
+    private void writeAssignNewMultiArrayExprHelper(SootMethod m, Stmt stmt, Local l, String assignTo, NewMultiArrayExpr expr, ArrayType arrayType, Session session) {
         String heap = _rep.heapMultiArrayAlloc(m, expr, arrayType, session);
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
@@ -327,7 +328,7 @@ public class FactWriter {
         _db.add(ASSIGN_NUM_CONST, insn, str(index), constant.toString(), _rep.local(m, l), methodId);
     }
 
-    void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
+    private void writeAssignMethodHandleConstant(SootMethod m, Stmt stmt, Local l, MethodHandle constant, Session session) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String handleName = constant.getMethodRef().toString();
@@ -407,58 +408,53 @@ public class FactWriter {
     }
 
     void writeStoreInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local from, Session session) {
-        int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = writeMethod(m);
-
-        String fieldId = writeField(f);
-        _db.add(STORE_INST_FIELD, insn, str(index), _rep.local(m, from), _rep.local(m, base), fieldId, methodId);
+        writeInstanceField(m, stmt, f, base, from, session, STORE_INST_FIELD);
     }
 
     void writeLoadInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local to, Session session) {
+        writeInstanceField(m, stmt, f, base, to, session, LOAD_INST_FIELD);
+    }
+
+    private void writeInstanceField(SootMethod m, Stmt stmt, SootField f, Local base, Local var, Session session, PredicateFile storeInstField) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
-        _db.add(LOAD_INST_FIELD, insn, str(index), _rep.local(m, to), _rep.local(m, base), fieldId, methodId);
+        _db.add(storeInstField, insn, str(index), _rep.local(m, var), _rep.local(m, base), fieldId, methodId);
     }
 
     void writeStoreStaticField(SootMethod m, Stmt stmt, SootField f, Local from, Session session) {
-        int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = writeMethod(m);
-
-        String fieldId = writeField(f);
-        _db.add(STORE_STATIC_FIELD, insn, str(index), _rep.local(m, from), fieldId, methodId);
+        writeStaticField(m, stmt, f, from, session, STORE_STATIC_FIELD);
     }
 
     void writeLoadStaticField(SootMethod m, Stmt stmt, SootField f, Local to, Session session) {
+        writeStaticField(m, stmt, f, to, session, LOAD_STATIC_FIELD);
+    }
+
+    private void writeStaticField(SootMethod m, Stmt stmt, SootField f, Local var, Session session, PredicateFile loadStaticField) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
         String fieldId = writeField(f);
-        _db.add(LOAD_STATIC_FIELD, insn, str(index), _rep.local(m, to), fieldId, methodId);
+        _db.add(loadStaticField, insn, str(index), _rep.local(m, var), fieldId, methodId);
     }
 
     void writeLoadArrayIndex(SootMethod m, Stmt stmt, Local base, Local to, Local arrIndex, Session session) {
-        int index = session.calcUnitNumber(stmt);
-        String insn = _rep.instruction(m, stmt, session, index);
-        String methodId = writeMethod(m);
-
-        _db.add(LOAD_ARRAY_INDEX, insn, str(index), _rep.local(m, to), _rep.local(m, base), methodId);
-
-        if (arrIndex != null)
-            _db.add(ARRAY_INSN_INDEX, insn, _rep.local(m, arrIndex));
+        writeFieldOrIndex(m, stmt, base, to, arrIndex, session, LOAD_ARRAY_INDEX);
     }
 
     void writeStoreArrayIndex(SootMethod m, Stmt stmt, Local base, Local from, Local arrIndex, Session session) {
+        writeFieldOrIndex(m, stmt, base, from, arrIndex, session, STORE_ARRAY_INDEX);
+    }
+
+    private void writeFieldOrIndex(SootMethod m, Stmt stmt, Local base, Local var, Local arrIndex, Session session, PredicateFile predicateFile) {
         int index = session.calcUnitNumber(stmt);
         String insn = _rep.instruction(m, stmt, session, index);
         String methodId = writeMethod(m);
 
-        _db.add(STORE_ARRAY_INDEX, insn, str(index), _rep.local(m, from), _rep.local(m, base), methodId);
+        _db.add(predicateFile, insn, str(index), _rep.local(m, var), _rep.local(m, base), methodId);
 
         if (arrIndex != null)
             _db.add(ARRAY_INSN_INDEX, insn, _rep.local(m, arrIndex));
@@ -619,7 +615,7 @@ public class FactWriter {
 
     void writeUnsupported(SootMethod m, Stmt stmt, Session session) {
         int index = session.calcUnitNumber(stmt);
-        String insn = _rep.unsupported(m, stmt, session, index);
+        String insn = _rep.unsupported(m, stmt, index);
         String methodId = writeMethod(m);
 
         _db.add(UNSUPPORTED_INSTRUCTION, insn, str(index), methodId);
@@ -753,7 +749,7 @@ public class FactWriter {
         return l;
     }
 
-    Local writeMethodHandleConstantExpression(SootMethod inMethod, Stmt stmt, MethodHandle constant, Session session) {
+    private Local writeMethodHandleConstantExpression(SootMethod inMethod, Stmt stmt, MethodHandle constant, Session session) {
         // introduce a new temporary variable
         String basename = "$mhandleconstant";
         String varname = basename + session.nextNumber(basename);
@@ -854,7 +850,7 @@ public class FactWriter {
         return insn;
     }
 
-    Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
+    private Value writeImmediate(SootMethod inMethod, Stmt stmt, Value v, Session session) {
         if (v instanceof StringConstant)
             v = writeStringConstantExpression(inMethod, stmt, (StringConstant) v, session);
         else if (v instanceof ClassConstant)

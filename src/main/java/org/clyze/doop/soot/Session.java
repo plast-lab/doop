@@ -35,10 +35,7 @@ public class Session
     index++;
 
     // record the first unit number for this units (to handle jumps)
-    Integer val = _units.get(u);
-    if(val == null) {
-      _units.put(u, index);
-    }
+    _units.putIfAbsent(u, index);
 
     return index;
   }

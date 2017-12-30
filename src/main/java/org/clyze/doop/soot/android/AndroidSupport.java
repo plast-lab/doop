@@ -49,7 +49,7 @@ public class AndroidSupport {
         if (sootParameters.getRunFlowdroid()) {
             SetupApplication app = new SetupApplication(androidJars, appInput);
             app.getConfig().setCallbackAnalyzer(Fast);
-            String filename = Main.class.getClassLoader().getResource("SourcesAndSinks.txt").getFile();
+            String filename = Objects.requireNonNull(Main.class.getClassLoader().getResource("SourcesAndSinks.txt")).getFile();
             try {
                 app.calculateSourcesSinksEntrypoints(filename);
             } catch (Exception ex) {

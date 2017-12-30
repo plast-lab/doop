@@ -18,7 +18,6 @@ class Driver {
     private int _classCounter;
     private Set<SootClass> _tmpClassGroup;
     private int _totalClasses;
-    private int _cores;
     private int _classSplit = 80;
 
     Driver(ThreadFactory factory, int totalClasses, boolean generateJimple) {
@@ -27,10 +26,10 @@ class Driver {
         _tmpClassGroup = new HashSet<>();
         _totalClasses = totalClasses;
         _generateJimple = generateJimple;
-        _cores = readCores();
+        int _cores = readCores();
 
         if (_cores > 2) {
-            _executor = new ThreadPoolExecutor(_cores/2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+            _executor = new ThreadPoolExecutor(_cores /2, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         } else {
             _executor = new ThreadPoolExecutor(1, _cores, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         }
@@ -54,8 +53,16 @@ class Driver {
     }
 
     void doInParallel(Set<SootClass> classesToProcess) {
-
         classesToProcess.forEach(this::generate);
+
+    }
+
+    void writeInParallel(Set<SootClass> classesToProcess) {
+        classesToProcess.forEach(this::write);
+
+    }
+
+    void shutdown() {
         _executor.shutdown();
         try {
             _executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -64,13 +71,8 @@ class Driver {
         }
     }
 
-    void doInSequentialOrder(Set<SootClass> sootClasses) {
-        FactGenerator factGenerator = new FactGenerator(_factory.get_factWriter(), _factory.getSSA(), sootClasses, _generateJimple);
-        factGenerator.run();
-    }
-
     void doAndroidInSequentialOrder(SootMethod dummyMain, Set<SootClass> sootClasses, FactWriter writer, boolean ssa) {
-        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses, _generateJimple);
+        FactGenerator factGenerator = new FactGenerator(writer, ssa, sootClasses);
         factGenerator.generate(dummyMain, new Session());
         writer.writeAndroidEntryPoint(dummyMain);
         factGenerator.run();
@@ -81,9 +83,21 @@ class Driver {
         _tmpClassGroup.add(curClass);
 
         if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
-            Runnable runnable = _factory.newRunnable(_tmpClassGroup);
+            Runnable runnable = _factory.newFactGenRunnable(_tmpClassGroup);
             _executor.execute(runnable);
             _tmpClassGroup = new HashSet<>();
         }
     }
+
+    private void write(SootClass curClass) {
+        _classCounter++;
+        _tmpClassGroup.add(curClass);
+
+        if ((_classCounter % _classSplit == 0) || (_classCounter == _totalClasses)) {
+            Runnable runnable = _factory.newJimpleGenRunnable(_tmpClassGroup);
+            _executor.execute(runnable);
+            _tmpClassGroup = new HashSet<>();
+        }
+    }
+
 }
