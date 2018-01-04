@@ -4,6 +4,9 @@
 .type Modifier
 .decl isModifier(?m:Modifier)
 
+.type Annotation
+.decl isAnnotation(?a:Annotation)
+
 .decl Modifier_abstract(?mod:Modifier)
 .decl Modifier_final(?mod:Modifier)
 .decl Modifier_public(?mod:Modifier)
@@ -485,4 +488,7 @@
 #endif
 
 // Annotations
-.decl Method_Annotation(?method:symbol, ?annotation:symbol)
+.decl Class_Annotation(?class:ClassType, ?annotation:Annotation)
+.decl Method_Annotation(?method:Method, ?annotation:Annotation)
+.decl Field_Annotation(?fld:Field, ?annotation:Annotation)
+.decl Param_Annotation(?method:Method, ?index:number, ?annotation:Annotation)

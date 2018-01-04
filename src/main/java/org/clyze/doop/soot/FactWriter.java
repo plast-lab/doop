@@ -10,9 +10,11 @@ import soot.jimple.toolkits.typing.fast.BottomType;
 import soot.tagkit.AnnotationTag;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.VisibilityAnnotationTag;
+import soot.tagkit.VisibilityParameterAnnotationTag;
 import soot.util.backend.ASMBackendUtils;
 
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.clyze.doop.common.PredicateFile.*;
@@ -70,6 +72,18 @@ public class FactWriter {
                 _db.add(METHOD_ANNOTATION, result, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
             }
         }
+        if (m.getTag("VisibilityParameterAnnotationTag") != null) {
+            VisibilityParameterAnnotationTag vTag = (VisibilityParameterAnnotationTag) m.getTag("VisibilityParameterAnnotationTag");
+
+            ArrayList<VisibilityAnnotationTag> annList = vTag.getVisibilityAnnotations();
+            for (int i = 0; i < annList.size(); i++) {
+                if (annList.get(i) != null) {
+                    for (AnnotationTag aTag : annList.get(i).getAnnotations()) {
+                        _db.add(PARAM_ANNOTATION, result, str(i), soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+                    }
+                }
+            }
+        }
         return result;
     }
 
@@ -95,6 +109,12 @@ public class FactWriter {
             _db.add(CLASS_TYPE, classStr);
         }
         _db.add(CLASS_HEAP, _rep.classConstant(c), classStr);
+        if (c.getTag("VisibilityAnnotationTag") != null) {
+            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) c.getTag("VisibilityAnnotationTag");
+            for (AnnotationTag aTag : vTag.getAnnotations()) {
+                _db.add(CLASS_ANNOTATION, classStr, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+            }
+        }
     }
 
     void writeDirectSuperclass(SootClass sub, SootClass sup) {
@@ -467,6 +487,12 @@ public class FactWriter {
     String writeField(SootField f) {
         String fieldId = _rep.signature(f);
         _db.add(FIELD_SIGNATURE, fieldId, writeType(f.getDeclaringClass()), _rep.simpleName(f), writeType(f.getType()));
+        if (f.getTag("VisibilityAnnotationTag") != null) {
+            VisibilityAnnotationTag vTag = (VisibilityAnnotationTag) f.getTag("VisibilityAnnotationTag");
+            for (AnnotationTag aTag : vTag.getAnnotations()) {
+                _db.add(FIELD_ANNOTATION, fieldId, soot.coffi.Util.v().jimpleTypeOfFieldDescriptor(aTag.getType()).getEscapedName());
+            }
+        }
         return fieldId;
     }
 
