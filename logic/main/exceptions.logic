@@ -38,13 +38,13 @@ VarPointsTo(?hctx, ?value, ?ctx, ?param) <-
  * This will only used to check that an exception is *not* caught (negated).
  * Merge handlers with the same catch block for further optimization.
  */
-ExceptionHandler:TypeIsCaughtAll(?type, ?block, ?handler) <-
+ExceptionHandler:TypeIsCaughtAll(?block, ?handler) <-
   ExceptionHandler:InRange(?handler, ?insn),
   ExceptionHandler:SameInsn:Repr[?insn] = ?repr,
   ExceptionHandler:SameBlock:Repr[?repr] = ?block.
 
 ExceptionHandler:TypeIsCaught(?type, ?block, ?handler) <-
-  ExceptionHandler:TypeIsCaughtAll(?type, ?block, ?handler),
+  ExceptionHandler:TypeIsCaughtAll(?block, ?handler),
   SubtypeOf(?type, ExceptionHandler:Type[?handler]),
   ConcreteClass(?type).
 
