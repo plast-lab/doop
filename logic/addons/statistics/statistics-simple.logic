@@ -214,12 +214,11 @@ NewMetricMacro(37.1, _t441, "String Colors", StringRepresentativeForColor[_]=_).
 #endif
  
  // reflection string constant var points-to
-Stats:Simple:Reflection:ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
-  VarPointsTo(?hctx, ?value, ?ctx, ?var),
-  Value:Heap[?value] = ?heap,
-  ReflectionStringConstant(?heap).
+Stats:Simple:Reflection:StringVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+   VarPointsTo(?hctx, ?value, ?ctx, ?var),
+   Value:Type[?value] = "java.lang.String".
 
-NewMetricMacro(37.2, _t442, "reflection string constant var points-to", Stats:Simple:Reflection:ReflectionStringConstantVarPointsTo(_,_,_,_)).
+NewMetricMacro(37.2, _t442, "string var points-to", Stats:Simple:Reflection:StringVarPointsTo(_,_,_,_)).
 
 #endif
 
