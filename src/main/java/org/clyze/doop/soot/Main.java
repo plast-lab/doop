@@ -278,7 +278,7 @@ public class Main {
             addClasses(classesInApplicationJars, classes, scene);
             addBasicClasses(scene);
 
-            System.out.println("Classes in input(application) jar(s): " + classesInApplicationJars.size());
+            System.out.println("Classes in input (application) jar(s): " + classesInApplicationJars.size());
         }
 
         scene.loadNecessaryClasses();
