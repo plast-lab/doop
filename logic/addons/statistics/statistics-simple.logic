@@ -213,8 +213,13 @@ NewMetricMacro(37.0, _t44, "reachable 'Constructor.newInstance' (INS)", Stats:Si
 NewMetricMacro(37.1, _t441, "String Colors", StringRepresentativeForColor[_]=_).
 #endif
  
-// reflection string constant var points-to
-NewMetricMacro(37.2, _t442, "reflection string constant var points-to", ReflectionStringConstantVarPointsTo(_,_,_,_)).
+ // reflection string constant var points-to
+Stats:Simple:Reflection:ReflectionStringConstantVarPointsTo(?hctx, ?value, ?ctx, ?var) <-
+  VarPointsTo(?hctx, ?value, ?ctx, ?var),
+  Value:Heap[?value] = ?heap,
+  ReflectionStringConstant(?heap).
+
+NewMetricMacro(37.2, _t442, "reflection string constant var points-to", Stats:Simple:Reflection:ReflectionStringConstantVarPointsTo(_,_,_,_)).
 
 #endif
 
