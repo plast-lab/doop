@@ -43,7 +43,7 @@ ExceptionHandler:TypeIsCaughtAll(?block, ?handler) <-
   ExceptionHandler:SameInsn:Repr[?insn] = ?repr,
   ExceptionHandler:SameBlock:Repr[?repr] = ?block.
 
-ExceptionHandler:TypeIsCaught(?type, ?block, ?handler) <-
+ExceptionHandler:TypeIsCaught(?type, ?block) <-
   ExceptionHandler:TypeIsCaughtAll(?block, ?handler),
   SubtypeOf(?type, ExceptionHandler:Type[?handler]),
   ConcreteClass(?type).
