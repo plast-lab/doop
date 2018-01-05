@@ -207,6 +207,14 @@ NewMetricMacro(35.0, _t42, "reachable 'forName' (INS)", Stats:Simple:forName(_))
 NewMetricMacro(36.0, _t43, "reachable 'Class.newInstance' (INS)", Stats:Simple:Class:newInstance(_)).
 NewMetricMacro(37.0, _t44, "reachable 'Constructor.newInstance' (INS)", Stats:Simple:Constructor:newInstance(_)).
 
+// String coloring metrics
+
+// Number of colors
+NewMetricMacro(37.1, _t441, "String Colors", StringRepresentativeForColor[_]=_).
+   
+// reflection string constant var points-to
+NewMetricMacro(37.2, _t442, "reflection string constant var points-to", ReflectionStringConstantVarPointsTo(_,_,_,_)).
+
 #endif
 
 /***************************************************/
