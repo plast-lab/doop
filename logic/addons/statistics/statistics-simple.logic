@@ -210,7 +210,7 @@ NewMetricMacro(37.0, _t44, "reachable 'Constructor.newInstance' (INS)", Stats:Si
 // String coloring metrics
 #ifdef GROUP_REFLECTION_STRINGS
 // Number of colors
-NewMetricMacro(37.1, _t441, "String Colors", StringRepresentativeForColor[_]=_).
+NewMetricMacro(37.1, _t441, "string colors", StringRepresentativeForColor[_]=_).
 #endif
  
  // reflection string constant var points-to
