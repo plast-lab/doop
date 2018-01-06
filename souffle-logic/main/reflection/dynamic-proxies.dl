@@ -175,6 +175,15 @@ CallToMethodOfProxyObject(?value, ?ctx, ?invo) :-
    VarPointsTo(_, ?value, ?ctx, ?base),
    ProxyObject_Invocation(?value, _).
 
+// Since dynamic proxies are subclasses of java.lang.reflect.Proxy, their
+// constructor calls super.<init>(handlerObj).
+ReachableContext(?calleeCtx, ?init),
+VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?h) :-
+   ImmutableContextFromHContext(?hctxHandler, ?calleeCtx),
+   ?init = "<java.lang.reflect.Proxy: void <init>(java.lang.reflect.InvocationHandler)>",
+   FormalParam(0, ?init, ?h),
+   ProxyObject_Handler(?handlerObj, ?proxy),
+   ProxyObject_HandlerHctx(?hctxHandler, ?proxy).
 
 //// REVIEW
 // #ifdef REFLECTION_CONTEXT_SENSITIVITY
