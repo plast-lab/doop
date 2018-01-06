@@ -164,7 +164,7 @@ ProxyObject_Interface(?value, ?iface)
    ProxyClassInstance(?iface, ?invo, ?value).
 
 
-// And the clincher_ if a method gets invoked on a proxy object, simulate
+// And the clincher: if a method gets invoked on a proxy object, simulate
 // a call to the proxy object handler's "invoke" method, with the right
 // arguments passed in.
 .decl CallToMethodOfProxyObject(?value:Value, ?ctx:Context, ?invo:MethodInvocation)
@@ -206,7 +206,7 @@ VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
 ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    ProxyCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?handlerInvokeMeth),
    CallToMethodOfProxyObject(?proxyValue, ?callerCtx, ?invo),
-   FormalParam(0, ?handlerInvokeMeth,?proxyArg),
+   FormalParam(0, ?handlerInvokeMeth, ?proxyArg),
    FormalParam(1, ?handlerInvokeMeth, ?methArg),
    FormalParam(2, ?handlerInvokeMeth, ?argsArg),
    ImmutableHContextFromContext(?calleeCtx, ?hctx),
