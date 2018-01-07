@@ -58,7 +58,14 @@ class SouffleAnalysis extends DoopAnalysis {
     @Override
     void run() {
         generateFacts()
+
         if (options.X_STOP_AT_FACTS.value) return
+
+        // Souffle has no persistent database.
+        if (options.X_STOP_AT_INIT.value) {
+            logger.info "Option ${options.X_STOP_AT_INIT.name} is equivalent to ${options.X_STOP_AT_INIT.name} for Souffle-based analyses."
+            return
+        }
 
         analysis = new File(outDir, "${name}.dl")
         deleteQuietly(analysis)
