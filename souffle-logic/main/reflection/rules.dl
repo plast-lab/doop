@@ -194,6 +194,13 @@ java_lang_Class_getClassLoader(?invocation, ?to, ?from) :-
   ?type = "java.lang.ClassLoader",
   isReferenceType(?type).
 
+java_lang_Class_getPrimitiveClass(?invocation, ?to, ?name) :-
+  ?sig = "<java.lang.Class: java.lang.Class getPrimitiveClass(java.lang.String)>",
+  isMethod(?sig),
+  StaticMethodInvocation(?invocation, ?sig, _),
+  AssignReturnValue(?invocation, ?to),
+  ActualParam(0, ?invocation, ?name).
+
 CreateReflectiveAllocationMacro(?invocation, ?type, "<reflective dummy URL resource>"),
 java_lang_ClassLoader_getResource(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.ClassLoader: java.net.URL getResource(java.lang.String)>"),
