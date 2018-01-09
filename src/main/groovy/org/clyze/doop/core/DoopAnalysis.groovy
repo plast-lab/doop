@@ -443,7 +443,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
     protected void runHeapDL(String filename) {
         try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL.value ? true : false)
+            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
             int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
             logger.info("Generated " + n + " addditional facts from memory dump")
         } catch (Exception e) {
