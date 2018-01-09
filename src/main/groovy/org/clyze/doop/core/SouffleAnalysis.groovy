@@ -310,14 +310,4 @@ class SouffleAnalysis extends DoopAnalysis {
         if (!file.exists()) throw new FileNotFoundException(file.canonicalPath)
         file.eachLine { outputLineProcessor.call(it.replaceAll("\t", ", ")) }
     }
-
-    protected void runHeapDL(String filename) {
-        try {
-            MemoryAnalyser memoryAnalyser = new MemoryAnalyser(filename, options.HEAPDL_NOSTRINGS.value ? false : true)
-            int n = memoryAnalyser.getAndOutputFactsToDB(factsDir, "2ObjH")
-            logger.info("Generated " + n + " addditional facts from memory dump")
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
