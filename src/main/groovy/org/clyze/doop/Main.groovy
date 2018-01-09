@@ -114,7 +114,7 @@ class Main {
                             logger.info "Libraries: ${analysis.libraryFiles.join(', ')}"
                         }
                         else
-                            logger.info "Starting ${analysis.name} analysis on user imported-facts at${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
+                            logger.info "Starting ${analysis.name} analysis on user-provided facts at ${analysis.options.X_START_AFTER_FACTS.value} - id: $analysis.id"
                         logger.debug analysis
                         analysis.options.BLOX_OPTS.value = bloxOptions
                         analysis.run()

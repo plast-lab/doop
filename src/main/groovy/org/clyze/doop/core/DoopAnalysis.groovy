@@ -131,7 +131,8 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             FileOps.copyDirContents(cacheDir, factsDir)
         }
         else if (cacheDir.exists() && options.X_START_AFTER_FACTS.value) {
-            logger.info "Using user-provided facts from $factsDir"
+            String importedFactsDir = options.X_START_AFTER_FACTS.value
+            logger.info "Using user-provided facts from ${importedFactsDir} in ${factsDir}"
             FileOps.copyDirContents(cacheDir, factsDir)
         }
         else {
