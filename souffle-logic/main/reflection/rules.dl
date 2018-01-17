@@ -265,7 +265,7 @@ java_lang_reflect_Method_invoke(?invocation, ?method) :-
 // abstraction for a given type.
 
 // Many of these already have a meta-object representing them in the input.
-// This appears explicitly in the program source, e.g., "Foo.Class".
+// This appears explicitly in the program source, e.g., "Foo.class".
 ReifiedClass(?type, ?classHeap) :-
   isReferenceType(?type),
   ClassHeap_InstanceType(?classHeap, ?type),
