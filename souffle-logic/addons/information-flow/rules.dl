@@ -236,9 +236,6 @@ VarPointsTo(?hctx, ValueIdMacro(?source, ?type, DEFAULT_BREADCRUMB), ?ctx, ?var)
   isImmutableHContext(?hctx).
 #endif
 
-/**
- * Sanitization TODO
- */
 #ifdef INFORMATION_FLOW_HIGH_SOUNDNESS
 // Option 1
 .decl MethodInvocationInMethod(?tomethod:Method, ?invocation:MethodInvocation, ?inmethod:Method)

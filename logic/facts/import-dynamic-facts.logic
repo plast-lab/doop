@@ -38,14 +38,23 @@ _HeapAllocationInformationNoLine(?methodId, ?typeStr, ?heap) <-
 _OptDynamicNormalHeapAllocation(?representation, ?type, ?lineNumber, ?inMethod) <-
    _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
 
+// 0) try to map by representation
+_MatchedHeapAllocation0(?representation, ?heap) <-
+  _DynamicNormalHeapAllocation(_, _, _, ?representation),
+  HeapAllocation:Id[?heap] = ?representation.
+
+
 // 1) let's try to map by method name, type and line number
 _MatchedHeapAllocation1(?representation, ?heap) <-
    _HeapAllocationInformation(?lineNumber, ?inMethod, ?type, ?heap),
-   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation).
+   _DynamicNormalHeapAllocation(?lineNumber, ?inMethod, ?type, ?representation),
+   !_MatchedHeapAllocation0(?representation, _).
 
 _UnmatchedDynamicNormalHeapAllocation1(?inMethod, ?type, ?representation) <-
    !_MatchedHeapAllocation1(?representation, _),
+   !_MatchedHeapAllocation0(?representation, _),
    _OptDynamicNormalHeapAllocation(?representation, ?type, _, ?inMethod).
+
 
 // 2) let's try to map by method name and type
 _MatchedHeapAllocation2(?representation, ?heap) <-
@@ -54,6 +63,7 @@ _MatchedHeapAllocation2(?representation, ?heap) <-
 
 // 3) create dynamic heap allocations
 +DynamicHeapAllocation(?representation, ?heap) <-
+   _MatchedHeapAllocation0(?representation, ?heap) ;
    _MatchedHeapAllocation1(?representation, ?heap) ;
    _MatchedHeapAllocation2(?representation, ?heap).
 // For unmatched heap allocations, we record the shallowest (most specific) level of the stack trace
@@ -61,6 +71,7 @@ _MatchedHeapAllocation2(?representation, ?heap) <-
 
 // 4) store dynamic heap allocations that still have not been mapped 
 +UnmatchedDynamicNormalHeapAllocation(?type, ?representation, ?linenumber, ?inMethod) <-
+   !_MatchedHeapAllocation0(?representation, _),
    !_MatchedHeapAllocation1(?representation, _),
    !_MatchedHeapAllocation2(?representation, _),
    _OptDynamicNormalHeapAllocation(?representation, ?type, ?linenumber, ?inMethod).
