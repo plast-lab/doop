@@ -33,6 +33,10 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     ! Method_Modifier("abstract", ?method).
 
 // Relations used to find overridden methods with covariant return types.
+// Guarded by a macro, so that they can be disabled (the rules are expensive).
+#define COVARIANT_METHODS
+#ifdef COVARIANT_METHODS
+
 .decl MethodOverridesOther(?meth1:Method, ?meth2:Method)
 .decl MethodDoesntOverrideOther(?meth1:Method, ?meth2:Method)
 .decl MethodMightOverrideOther(?meth1:Method, ?meth2:Method)
@@ -82,6 +86,8 @@ MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
     Method_ReturnType(?comethod, ?type2),
     SubtypeOf(?type2, ?type1),
     Method_Descriptor(?method, ?descriptor).
+
+#endif // COVARIANT_METHODS
 
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
