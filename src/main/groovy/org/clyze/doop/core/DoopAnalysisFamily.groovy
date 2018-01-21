@@ -191,6 +191,13 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					value: false,
 					forCacheID: true
 			),
+			new IntegerAnalysisOption(
+					id: "FACTGEN_CORES",
+					name: "fact-gen-cores",
+					description: "Number of cores to use for parallel fact generation.",
+					argName: "NUMBER",
+					value: null
+			),
 			new AnalysisOption<String>(
 					id: "APP_REGEX",
 					name: "regex",

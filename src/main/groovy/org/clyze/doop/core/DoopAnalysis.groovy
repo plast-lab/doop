@@ -269,6 +269,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--uniqueFacts"]
         }
 
+        if (options.FACTGEN_CORES.value) {
+            params += ["--fact-gen-cores", options.FACTGEN_CORES.value.toString()]
+        }
+
         if (options.X_R_OUT_DIR.value) {
             params += ["--R-out-dir", options.X_R_OUT_DIR.value.toString()]
         }

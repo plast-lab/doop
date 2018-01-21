@@ -124,6 +124,14 @@ public class Main {
                     case "--uniqueFacts":
                         sootParameters._uniqueFacts = true;
                         break;
+                    case "--fact-gen-cores":
+                        i = shift(args, i);
+                        try {
+                            sootParameters._cores = new Integer(args[i]);
+                        } catch (NumberFormatException nfe) {
+                            System.out.println("Invalid cores argument: " + args[i]);
+                        }
+                        break;
                     case "--R-out-dir":
                         i = shift(args, i);
                         sootParameters._rOutDir = args[i];
@@ -308,7 +316,7 @@ public class Main {
         Database db = new Database(new File(sootParameters._outputDir), sootParameters._uniqueFacts);
         FactWriter writer = new FactWriter(db);
         ThreadFactory factory = new ThreadFactory(writer, sootParameters._ssa);
-        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple);
+        Driver driver = new Driver(factory, classes.size(), sootParameters._generateJimple, sootParameters._cores);
 
         writePreliminaryFacts(classes, propertyProvider, classToArtifactMap, writer);
 
