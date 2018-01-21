@@ -89,6 +89,8 @@ MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
     Method_SimpleName(?method, ?name),
     Method_ReturnType(?method, ?type1),
     Method_ReturnType(?comethod, ?type2),
+    !Type_void(?type1),
+    !Type_void(?type2),
     SubtypeOf(?type2, ?type1),
     Method_Descriptor(?method, ?descriptor).
 
