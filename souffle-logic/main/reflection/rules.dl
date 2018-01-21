@@ -781,9 +781,9 @@ ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
 // REVIEW (for the far future)_ no context sensitivity from just backwards inference.
 // Would require storing contexts with special objects.
 ReflectiveAssignClassConstant(?ctx, ?invocation, ?type) :-
+  BackwardHighConfidenceReflectiveAssignClassConstant(?invocation, ?type),
   Instruction_Method(?invocation, ?inmethod),
-  ReachableContext(?ctx, ?inmethod),
-  BackwardHighConfidenceReflectiveAssignClassConstant(?invocation, ?type).
+  ReachableContext(?ctx, ?inmethod).
 
 // Same for methods
 ReflectiveAssignMethodConstant(?ctx, ?to, ?signature) :-

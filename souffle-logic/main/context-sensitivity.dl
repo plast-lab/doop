@@ -194,13 +194,12 @@ ConstructorVar(?var) :-
 InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
   StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
   ConstructorVar(?from),
-  Value_byDynamicHeap(_, ?value),
-  NoInformationOnSignature(?signature),
   VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  NoInformationOnSignature(?signature),
+  Value_byDynamicHeap(_, ?value),
   NotSpecialObject(?value),
   !Value_Null(?basevalue).
-
-//.plan 1:(4,1,2,3,5,6)
+.plan 1:(3,2,1,4,5,6)
 #endif
         
         
