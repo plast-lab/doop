@@ -223,7 +223,8 @@ class SouffleAnalysis extends DoopAnalysis {
         def analysisChecksum = CheckSum.checksum(stringToHash, DoopAnalysisFactory.HASH_ALGO)
         souffleAnalysesCache = new File("${Doop.souffleAnalysesCache}")
         souffleAnalysesCache.mkdirs()
-        souffleAnalysisCacheFile = new File("${Doop.souffleAnalysesCache}/${analysisChecksum}")
+        def souffleAnalysisCacheFileName = "${Doop.souffleAnalysesCache}/${analysisChecksum}"
+        souffleAnalysisCacheFile = new File(souffleAnalysisCacheFileName)
 
         if (!souffleAnalysisCacheFile.exists() || options.SOUFFLE_DEBUG.value) {
             def compilationCommand = ['souffle', '-c', '-o', "${outDir}/${name}" as String, analysis as String]
@@ -256,7 +257,7 @@ class SouffleAnalysis extends DoopAnalysis {
             logger.info "Caching analysis executable in $souffleAnalysesCache"
         }
         else {
-            logger.info "Using cached analysis executable ${souffleAnalysesCache}"
+            logger.info "Using cached analysis executable ${souffleAnalysisCacheFileName}"
         }
     }
 
