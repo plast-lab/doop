@@ -48,6 +48,8 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
 MethodMightOverrideOther(?meth1, ?meth2) :-
    Method_SimpleName(?meth1, ?sameName),
    Method_SimpleName(?meth2, ?sameName),
+   ?sameName != "<clinit>",
+   ?sameName != "<init>",
    Method_DeclaringType(?meth1, ?type1),
    Method_DeclaringType(?meth2, ?type2),
    SubtypeOf(?type1, ?type2).
