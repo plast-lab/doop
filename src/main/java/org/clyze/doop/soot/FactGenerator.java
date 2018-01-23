@@ -143,19 +143,29 @@ class FactGenerator implements Runnable {
     public static boolean phantomBased(SootMethod m) {
         /* Check for phantom classes */
 
-        if (m.isPhantom())
+        if (m.isPhantom()) {
+            System.out.println("Method " + m.getSignature() + " is phantom.");
             return true;
+        }
 
         for(SootClass clazz: m.getExceptions())
-            if (clazz.isPhantom())
+            if (clazz.isPhantom()) {
+                System.out.println("Class " + clazz.getName() + " is phantom.");
                 return true;
+            }
 
         for(int i = 0 ; i < m.getParameterCount(); i++)
-            if(phantomBased(m.getParameterType(i)))
+            if(phantomBased(m.getParameterType(i))) {
+                System.out.println("Parameter type " + m.getParameterType(i) + " of " + m.getSignature() + " is phantom.");
                 return true;
+            }
 
-        return phantomBased(m.getReturnType());
+        if (phantomBased(m.getReturnType())) {
+            System.out.println("Return type " + m.getReturnType() + " of " + m.getSignature() + " is phantom.");
+            return true;
+        }
 
+        return false;
     }
 
     void generate(SootMethod m, Session session)
