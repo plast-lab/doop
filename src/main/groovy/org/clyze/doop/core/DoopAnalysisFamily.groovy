@@ -416,6 +416,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true,
 					isAdvanced: true
 			),
+			new BooleanAnalysisOption(
+					id: "DISCOVER_TESTS",
+					name: "discover-tests",
+					description: "Discover testing code (e.g. marked with JUnit annotations).",
+					value: false,
+					webUI: true,
+					forPreprocessor: true
+			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
 			new IntegerAnalysisOption(

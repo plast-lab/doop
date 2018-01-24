@@ -67,4 +67,33 @@ ImplicitReachable(?m) :-
 ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 */
 
-#endif
+// Make test entry points implicitly reachable by discovering their
+// annotations. This can also discover the entry points of
+// XCorpus. Testing frameworks supported: TestNG, JUnit.
+#ifdef DISCOVER_TESTS
+
+ImplicitReachable(?m) :- Method_Annotation(?m, "org.testng.annotations.Test").
+ImplicitReachable(?m) :- Method_Annotation(?m, "org.testng.annotations.BeforeMethod").
+
+.decl JUnitAnnotatedMethod(?m:Method)
+.output JUnitAnnotatedMethod
+
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Test").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Before").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.After").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.BeforeClass").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.AfterClass").
+
+ImplicitReachable(?m) :- JUnitAnnotatedMethod(?m).
+
+// If a type contains JUnit test code and a method that returns a
+// JUnit Test, we assume that method is a reachable test generator.
+ImplicitReachable(?testGen) :-
+  Method_DeclaringType(?m, ?t),
+  JUnitAnnotatedMethod(?m),
+  Method_DeclaringType(?testGen, ?t),
+  Method_ReturnType(?testGen, "junit.framework.Test").
+
+#endif // DISCOVER_TESTS
+
+#endif // EXCLUDE_IMPLICITLY_REACHABLE_CODE
