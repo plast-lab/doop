@@ -238,13 +238,18 @@ class FactGenerator implements Runnable {
             }
 
             Body b = m.getActiveBody();
-            if (b != null) {
-                if (_ssa) {
-                    b = Shimple.v().newBody(b);
-                    m.setActiveBody(b);
+            try {
+                if (b != null) {
+                    if (_ssa) {
+                        b = Shimple.v().newBody(b);
+                        m.setActiveBody(b);
+                    }
+                    DoopRenamer.transform(b);
+                    generate(m, b, session);
                 }
-                DoopRenamer.transform(b);
-                generate(m, b, session);
+            } catch (RuntimeException ex) {
+                System.err.println("Fact generation failed for method " + m.getSignature() + ":");
+                ex.printStackTrace();
             }
         }
     }
