@@ -69,7 +69,7 @@ ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 
 // Make test entry points implicitly reachable by discovering their
 // annotations. This can also discover the entry points of
-// XCorpus. Testing frameworks supported: TestNG, JUnit.
+// XCorpus. Testing frameworks supported: TestNG, JUnit, EvoSuite.
 #ifdef DISCOVER_TESTS
 
 ImplicitReachable(?m) :- Method_Annotation(?m, "org.testng.annotations.Test").
@@ -93,6 +93,16 @@ ImplicitReachable(?testGen) :-
   JUnitAnnotatedMethod(?m),
   Method_DeclaringType(?testGen, ?t),
   Method_ReturnType(?testGen, "junit.framework.Test").
+
+// EvoSuite: if a call to Runtime.getInstance() is found in a method
+// where a string constant refers to some class type, assume the class
+// methods become entry points.
+ImplicitReachable(?m) :-
+  MethodInvocation_Method(?invo, "<org.evosuite.runtime.Runtime: org.evosuite.runtime.Runtime getInstance()>"),
+  Instruction_Method(?invo, ?containerMeth),
+  _AssignHeapAllocation(_, _, ?t, _, ?containerMeth, _),
+  isClassType(?t),
+  Method_DeclaringType(?m, ?t).
 
 #endif // DISCOVER_TESTS
 
