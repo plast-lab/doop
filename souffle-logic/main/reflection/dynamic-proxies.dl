@@ -319,3 +319,44 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
    ReturnVar(?handlerReturnVar, ?handlerInvokeMeth),
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
    AssignReturnValue(?invo, ?ret).
+
+#define DYNAMIC_PROXY_DEBUG
+#ifdef DYNAMIC_PROXY_DEBUG
+
+.output ProxyClassOfInterface
+.output ProxyClass
+.output java_lang_reflect_Proxy_newProxyInstance
+.output ArrayContentsPointToInterface
+.output java_lang_reflect_Proxy_getProxyClass
+.output ProxyClassInstance
+.output MethodOfInterface
+.output ArgArrayOfProxyMethod
+.output PrimitiveType_Boxed
+.output PrimitiveFormalOfInterface
+.output BoxAllocationOfPrimitiveFormal
+.output ProxyObject_Invocation
+.output ProxyObject_Handler
+.output ProxyObject_HandlerHctx
+.output ProxyObject_Interface
+.output CallToMethodOfProxyObject
+.output ProxyCallGraphEdge
+.output ProxyCallArgArray
+.output ArgArrayAndActualArg
+.output ProxyInvokeResult
+
+.decl ReachableInvocationHandler(?meth:Method)
+.output ReachableInvocationHandler
+
+ReachableInvocationHandler(?m) :-
+  SubtypeOf(?customInvocationHandlerType, "java.lang.reflect.InvocationHandler"),
+  Method_DeclaringType(?m, ?customInvocationHandlerType),
+  Reachable(?m).
+
+.decl ProxiedMethod(?meth:Method)
+.output ProxiedMethod
+
+ProxiedMethod(?meth) :-
+  ProxyCallGraphEdge(_, ?i, _, _),
+  VirtualMethodInvocation(?i, ?meth, _).
+
+#endif // DYNAMIC_PROXY_DEBUG
