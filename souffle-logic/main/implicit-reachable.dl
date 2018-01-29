@@ -94,6 +94,13 @@ ImplicitReachable(?testGen) :-
   Method_DeclaringType(?testGen, ?t),
   Method_ReturnType(?testGen, "junit.framework.Test").
 
+// Subclassing JUnit's TestCase usually indicates a test case.
+ImplicitReachable(?m) :-
+  isClassType(?junitTestCase),
+  ?junitTestCase = "junit.framework.TestCase",
+  SubtypeOf(?t, ?junitTestCase),
+  Method_DeclaringType(?m, ?t).
+
 // EvoSuite: if a call to Runtime.getInstance() is found in a method
 // where a string constant refers to some class type, assume the class
 // methods become entry points.
