@@ -95,7 +95,7 @@ ProxyClassOfInterface(?iface, ?class) :-
 
 java_lang_reflect_Proxy_newProxyInstance(?invo, ?ret, ?handler, ?interfaces) :-
    StaticMethodInvocation_SimpleName(?invo, "newProxyInstance"),
-   MethodInvocation_Method(?invo, "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"),
+   MethodInvocation_Method(?invo, NEW_PROXY_INSTANCE),
    ActualParam(1, ?invo, ?interfaces),
    ActualParam(2, ?invo, ?handler),
    AssignReturnValue(?invo, ?ret).

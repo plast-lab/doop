@@ -1564,8 +1564,3 @@ VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
 /*************************************************************
  * END invention of objects
  *************************************************************/
-
-#ifdef REFLECTION_DYNAMIC_PROXIES
-#include "dynamic-proxies.dl"
-#endif
-
