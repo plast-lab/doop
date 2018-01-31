@@ -169,6 +169,11 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             }
             else {
                 touch(new File(factsDir, "Dacapo.facts"))
+                if (options.MAIN_CLASS.value) {
+                    new File(factsDir, "MainClass.facts").withWriter { w ->
+                        w << options.MAIN_CLASS.value
+                    }
+                }
             }
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())

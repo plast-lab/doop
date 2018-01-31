@@ -1,3 +1,12 @@
+// MainClass
+lang:physical:storageModel[`_MainClass] = "DelimitedFile".
+lang:physical:filePath[`_MainClass] = "facts/MainClass".
+lang:physical:delimiter[`_MainClass] = "\t".
+lang:physical:hasColumnNames[`_MainClass] = false.
+
++MainClass(?class) <-
+  _MainClass(?class).
+
 // NormalHeap
 lang:physical:storageModel[`_NormalHeap] = "DelimitedFile".
 lang:physical:filePath[`_NormalHeap] = "facts/NormalHeap.facts".

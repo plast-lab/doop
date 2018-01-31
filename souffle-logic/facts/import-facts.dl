@@ -1,3 +1,10 @@
+// MainClass
+.decl _MainClass(?class:symbol)
+.input _MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
+
+MainClass(?class) :-
+  _MainClass(?class).
+
 // NormalHeap
 
 .decl _NormalHeap(?id:symbol, ?type:symbol)
