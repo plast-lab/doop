@@ -1,8 +1,11 @@
 // MainClass
 lang:physical:storageModel[`_MainClass] = "DelimitedFile".
-lang:physical:filePath[`_MainClass] = "facts/MainClass".
+lang:physical:filePath[`_MainClass] = "facts/MainClass.facts".
 lang:physical:delimiter[`_MainClass] = "\t".
 lang:physical:hasColumnNames[`_MainClass] = false.
+
+_MainClass(?class) ->
+  string(?class).
 
 +MainClass(?class) <-
   _MainClass(?class).

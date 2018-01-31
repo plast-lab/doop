@@ -111,8 +111,8 @@ class ClassicAnalysis extends DoopAnalysis {
                     .addBlockFile("tamiflex-post-import.logic")
         }
 
-        if (options.MAIN_CLASS.value)
-            lbBuilder.addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
+//        if (options.MAIN_CLASS.value)
+//            lbBuilder.addBlock("""MainClass(x) <- ClassType(x), Type:Id(x:"${options.MAIN_CLASS.value}").""")
 
         lbBuilder
                 .addBlock("""Stats:Runtime("soot-fact-generation time (sec)", $sootTime).""")
