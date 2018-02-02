@@ -72,7 +72,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
     /**
      * Interface with the underlying workspace
      */
-	LBBuilder lbBuilder
+    LBBuilder lbBuilder
 
     /**
      * Total time for the soot invocation
@@ -157,6 +157,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
 
+                logger.debug "Setting main-class: dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
@@ -165,18 +166,18 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
 
+
+                logger.debug "Setting main-class: org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
             }
-            else {
-                if (options.MAIN_CLASS.value) {
-                    new File(factsDir, "MainClass.facts").withWriter { w ->
-                        w << "${options.MAIN_CLASS.value}"
-                    }
+            if (options.MAIN_CLASS.value) {
+                new File(factsDir, "MainClass.facts").withWriter { w ->
+                    w << "${options.MAIN_CLASS.value}"
                 }
             }
-            
+
             if (options.TAMIFLEX.value) {
                 File origTamFile = new File(options.TAMIFLEX.value.toString())
 
@@ -243,7 +244,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 // params = ["--full"] + depArgs + ["--android-jars"] + platformLibs.collect({ f -> f.getAbsolutePath() })
                 // This uses just platformLibs[0], assumed to be android.jar.
                 params = ["--full"] + inputArgs + depArgs + ["--android-jars"] + [platformLibs[0].getAbsolutePath()]
-        break
+                break
             default:
                 throw new RuntimeException("Unsupported platform")
         }
