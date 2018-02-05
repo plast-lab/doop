@@ -424,6 +424,14 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					webUI: true,
 					forPreprocessor: true
 			),
+			new BooleanAnalysisOption(
+					id: "DISCOVER_MAIN_METHODS",
+					name: "discover-main-methods",
+					description: "Discover main() methods.",
+					value: false,
+					webUI: true,
+					forPreprocessor: true
+			),
 			/* End preprocessor normal flags */
 			/* Start Souffle related options */
 			new IntegerAnalysisOption(
