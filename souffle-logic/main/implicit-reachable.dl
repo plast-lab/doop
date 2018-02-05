@@ -69,67 +69,16 @@ ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 
 // Make test entry points implicitly reachable by discovering their
 // annotations. This can also discover the entry points of
-// XCorpus. Testing frameworks supported: TestNG, JUnit, EvoSuite.
+// XCorpus.
 #ifdef DISCOVER_TESTS
 
-ImplicitReachable(?m) :- Method_Annotation(?m, "org.testng.annotations.Test").
-ImplicitReachable(?m) :- Method_Annotation(?m, "org.testng.annotations.BeforeMethod").
+#include "addons/testing/test-discovery.dl"
 
-.decl JUnitAnnotatedMethod(?m:Method)
-.output JUnitAnnotatedMethod
-
-JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Test").
-JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Before").
-JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.After").
-JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.BeforeClass").
-JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.AfterClass").
-
+ImplicitReachable(?m) :- TestNGAnnotatedMethod(?m).
 ImplicitReachable(?m) :- JUnitAnnotatedMethod(?m).
-
-// If a type contains JUnit test code and a method that returns a
-// JUnit Test, we assume that method is a reachable test generator.
-ImplicitReachable(?testGen) :-
-  Method_DeclaringType(?m, ?t),
-  JUnitAnnotatedMethod(?m),
-  Method_DeclaringType(?testGen, ?t),
-  Method_ReturnType(?testGen, "junit.framework.Test").
-
-// Subclassing JUnit's TestCase usually indicates a test case.
-
-.decl TestCase(?t:ClassType, ?tInstance:Value)
-
-#define TEST_INSTANCE(t) cat("Test instance for ", t)
-
-// Create a mock instance for "this".
-MockValueConsMacro(TEST_INSTANCE(?t), ?t),
-TestCase(?t, TEST_INSTANCE(?t)) :-
-  isClassType(?junitTestCase),
-  ?junitTestCase = "junit.framework.TestCase",
-  SubtypeOf(?t, ?junitTestCase),
-  Method_DeclaringType(?m, ?t),
-  Method_SimpleName(?m, "setUp").
-
-.decl TestCaseMethod(?m:Method)
-
-TestCaseMethod(?m),
-VarPointsTo(?hctx, ?tInstance, ?ctx, ?this) :-
-  TestCase(?t, ?tInstance),
-  ThisVar(?m, ?this),
-  isImmutableContext(?ctx),
-  isImmutableHContext(?hctx),
-  Method_DeclaringType(?m, ?t).
-
-ImplicitReachable(?m) :- TestCaseMethod(?m).
-
-// EvoSuite: if a call to Runtime.getInstance() is found in a method
-// where a string constant refers to some class type, assume the class
-// methods become entry points.
-ImplicitReachable(?m) :-
-  MethodInvocation_Method(?invo, "<org.evosuite.runtime.Runtime: org.evosuite.runtime.Runtime getInstance()>"),
-  Instruction_Method(?invo, ?containerMeth),
-  _AssignHeapAllocation(_, _, ?t, _, ?containerMeth, _),
-  isClassType(?t),
-  Method_DeclaringType(?m, ?t).
+ImplicitReachable(?m) :- JUnitGenerator(?m).
+ImplicitReachable(?m) :- JUnitTestCaseMethod(?m).
+ImplicitReachable(?m) :- EvoSuiteEntryPoint(?m).
 
 #endif // DISCOVER_TESTS
 

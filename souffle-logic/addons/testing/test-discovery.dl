@@ -1,0 +1,66 @@
+// Helper relations to handle tests. Testing frameworks supported:
+// TestNG, JUnit, EvoSuite.
+
+.decl JUnitAnnotatedMethod(?m:Method)
+.output JUnitAnnotatedMethod
+
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Test").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Before").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.After").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.BeforeClass").
+JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.AfterClass").
+
+.decl JUnitGenerator(?m:Method)
+.output JUnitGenerator
+
+// If a type contains JUnit test code and a method that returns a
+// JUnit Test, we assume that method is a test generator.
+JUnitGenerator(?testGen) :-
+  Method_DeclaringType(?m, ?t),
+  JUnitAnnotatedMethod(?m),
+  Method_DeclaringType(?testGen, ?t),
+  Method_ReturnType(?testGen, "junit.framework.Test").
+
+// Subclassing JUnit's TestCase usually indicates a test case.
+.decl TestCase(?t:ClassType, ?tInstance:Value)
+.decl JUnitTestCaseMethod(?m:Method)
+.output JUnitTestCaseMethod
+
+#define TEST_INSTANCE(t) cat("Test instance for ", t)
+
+// Create a mock instance for "this".
+MockValueConsMacro(TEST_INSTANCE(?t), ?t),
+TestCase(?t, TEST_INSTANCE(?t)) :-
+  isClassType(?junitTestCase),
+  ?junitTestCase = "junit.framework.TestCase",
+  SubtypeOf(?t, ?junitTestCase),
+  Method_DeclaringType(?m, ?t),
+  Method_SimpleName(?m, "setUp").
+
+JUnitTestCaseMethod(?m),
+VarPointsTo(?hctx, ?tInstance, ?ctx, ?this) :-
+  TestCase(?t, ?tInstance),
+  ThisVar(?m, ?this),
+  isImmutableContext(?ctx),
+  isImmutableHContext(?hctx),
+  Method_DeclaringType(?m, ?t).
+
+.decl EvoSuiteEntryPoint(?m:Method)
+.output EvoSuiteEntryPoint
+
+// EvoSuite: if a call to Runtime.getInstance() is found in a method
+// where a string constant refers to some class type, assume the class
+// methods become entry points.
+EvoSuiteEntryPoint(?m) :-
+  MethodInvocation_Method(?invo, "<org.evosuite.runtime.Runtime: org.evosuite.runtime.Runtime getInstance()>"),
+  Instruction_Method(?invo, ?containerMeth),
+  _AssignHeapAllocation(_, _, ?t, _, ?containerMeth, _),
+  isClassType(?t),
+  Method_DeclaringType(?m, ?t).
+
+// TestNG.
+.decl TestNGAnnotatedMethod(?m:Method)
+.output TestNGAnnotatedMethod
+
+TestNGAnnotatedMethod(?m) :- Method_Annotation(?m, "org.testng.annotations.Test").
+TestNGAnnotatedMethod(?m) :- Method_Annotation(?m, "org.testng.annotations.BeforeMethod").
