@@ -72,7 +72,7 @@ ImplicitReachable("<java.lang.ref.Finalizer: void runFinalizer()>").
 // XCorpus.
 #ifdef DISCOVER_TESTS
 
-#include "addons/testing/test-discovery.dl"
+#include "../addons/testing/test-discovery.dl"
 
 ImplicitReachable(?m) :- TestNGAnnotatedMethod(?m).
 ImplicitReachable(?m) :- JUnitAnnotatedMethod(?m).
