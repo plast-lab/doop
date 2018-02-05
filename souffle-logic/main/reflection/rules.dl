@@ -156,6 +156,11 @@ java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors()>"),
   ReflectiveKnownArrayMacro(?invocation, ?arrayType, "java.lang.reflect.Constructor[]").
 
+CreateReflectiveAllocationMacro(?invocation, ?arrayType, cat(cat(cat(cat("<reflective ", ?invocation), "/new "), ?arrayType), ">")),
+java_lang_Class_getDeclaredConstructors(?invocation, ?to, ?from) :-
+  VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor[] getDeclaredConstructors0(boolean)>"),
+  ReflectiveKnownArrayMacro(?invocation, ?arrayType, "java.lang.reflect.Constructor[]").
+
 java_lang_Class_getDeclaredConstructor(?to, ?from) :-
   VirtualMethodMacro(?invocation, ?to, ?from, "<java.lang.Class: java.lang.reflect.Constructor getDeclaredConstructor(java.lang.Class[])>").
 
