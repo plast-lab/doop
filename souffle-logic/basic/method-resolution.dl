@@ -34,8 +34,8 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
 
 // Relations used to find overridden methods with covariant return types.
 // Guarded by a macro, so that they can be disabled (the rules are expensive).
-#ifndef FEATHERWEIGHT_ANALYSIS
-#define COVARIANT_METHODS
+#ifdef FEATHERWEIGHT_ANALYSIS
+#undef COVARIANT_METHODS
 #endif
  
 #ifdef COVARIANT_METHODS
