@@ -259,12 +259,13 @@ VarPointsTo(?hctxHandler, ?handlerObj, ?calleeCtx, ?this)
    MethodLookup(?invokeMethName, ?invokeMethDescriptor, ?handlerType, ?handlerInvokeMeth),
    ThisVar(?handlerInvokeMeth, ?this).
 
+#ifdef REFLECTION
+
 //// TODO From spec_ if method has same name/signature as Object's
 //// hashCode(), equals(), or toString(), then the reified Method
 //// always comes from Object.
 .decl ProxyCallArgArray(?invo:MethodInvocation, ?methSig:Method, ?argsArrValue:Value)
 
-#ifdef REFLECTION
 VarPointsTo(?hctx, ?proxyValue, ?calleeCtx, ?proxyArg),
 VarPointsTo(?hctx, ?methValue, ?calleeCtx, ?methArg),
 VarPointsTo(?hctx, ?argsArrValue, ?calleeCtx, ?argsArg),
@@ -279,10 +280,6 @@ ProxyCallArgArray(?invo, ?methSig, ?argsArrValue) :-
    ReifiedMethod(?methSig, ?methValue),
    ProxyObject_Invocation(?proxyValue, ?invocation),
    ArgArrayOfProxyMethod(?methSig, ?invocation, ?argsArrValue).
-#endif // REFLECTION
-
-ReachableContext(?calleeCtx, ?callee) :-
-   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
 .decl ArgArrayAndActualArg(?argsArrValue:Value, ?methSig:Method, ?actual:Var)
 
@@ -305,6 +302,11 @@ ArrayIndexPointsTo(?hctx, ?actualVal, ?hctx, ?arrValue) :-
    BoxAllocationOfPrimitiveFormal(?formal, ?actualVal),
    isImmutableHContext(?hctx).
 // REVIEW_ contexts.
+
+#endif // REFLECTION
+
+ReachableContext(?calleeCtx, ?callee) :-
+   ProxyCallGraphEdge(_, _, ?calleeCtx, ?callee).
 
 // Handle return values_ connect the return value of handler.invoke()
 // to the return value of the wrapped method. The exceptions mandated
@@ -340,9 +342,11 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
 .output ProxyObject_Interface
 .output CallToMethodOfProxyObject
 .output ProxyCallGraphEdge
+.output ProxyInvokeResult
+#ifdef REFLECTION
 .output ProxyCallArgArray
 .output ArgArrayAndActualArg
-.output ProxyInvokeResult
+#endif // REFLECTION
 
 .decl ReachableInvocationHandler(?meth:Method)
 .output ReachableInvocationHandler
