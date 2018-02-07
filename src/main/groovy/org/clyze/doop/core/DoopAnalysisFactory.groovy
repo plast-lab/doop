@@ -30,6 +30,33 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
+    static final Set<String> availablePlatforms = ["java_3", "java_4", "java_5", "java_6", "java_7", "java_8",
+                                                "android_22_fulljars", "android_25_fulljars"]
+    static String platformsLib
+
+    static final Map<String, Set<String>> artifactsForPlatform =
+            ["java_3" : ["rt.jar"],
+             "java_4" : ["rt.jar", "jce.jar", "jsse.jar"],
+             "java_5" : ["rt.jar", "jce.jar", "jsse.jar"],
+             "java_6" : ["rt.jar", "jce.jar", "jsse.jar"],
+             "java_7" : ["rt.jar", "jce.jar", "jsse.jar", "tools.jar"],
+             "java_8" : ["rt.jar", "jce.jar", "jsse.jar"],
+             "android_17" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+             "android_18" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+             "android_19" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+             "android_20" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+             "android_21" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar"],
+             "android_22" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                             "optional/org.apache.http.legacy.jar"],
+             "android_23" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+             "android_24" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+             "android_25" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"],
+             "android_26" : ["android.jar", "data/icu4j.jar", "data/layoutlib.jar", "uiautomator.jar",
+                             "optional/org.apache.http.legacy.jar", "android-stubs-src.jar"]
+            ]
 
     /**
      * A helper class that acts as an intermediate holder of the analysis variables.
@@ -160,7 +187,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         FileOps.findFileOrThrow(analysisPath, "Unsupported analysis: $name")
     }
 
-    protected String validateUserSuppliedId(String id) {
+    protected static String validateUserSuppliedId(String id) {
         def trimmed = id.trim()
         def isValid = trimmed.toCharArray().every {
             c -> Character.isLetter(c) || Character.isDigit(c) || c in EXTRA_ID_CHARACTERS
@@ -173,7 +200,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return trimmed
     }
 
-    protected File createOutputDirectory(AnalysisVars vars, String id) {
+    protected static File createOutputDirectory(AnalysisVars vars, String id) {
         def outDir = new File("${Doop.doopOut}/${vars.name}/${id}")
         FileUtils.deleteQuietly(outDir)
         outDir.mkdirs()
@@ -218,67 +245,32 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     /**
      * Generates a list of the platform library arguments for soot
      */
-    protected List<String> platform(Map<String, AnalysisOption> options) {
+    protected static List<String> platform(Map<String, AnalysisOption> options) {
         def platformInfo = options.PLATFORM.value.toString().tokenize("_")
         if (platformInfo.size() < 2) {
             throw new RuntimeException("Invalid platform ${platformInfo}")
         }
         def (platform, version) = [platformInfo[0], platformInfo[1].toInteger()]
 
-        def files = []
+        def platformArtifactPaths = []
         switch(platform) {
             case "java":
                 if (platformInfo.size == 2) {
-                    String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}/lib"
-                    switch (version) {
-                        case 3:
-                            files = ["${path}/rt.jar"]
-                            break
-                        case 4:
-                        case 5:
-                        case 6:
-                        case 8:
-                            files = ["${path}/rt.jar",
-                                     "${path}/jce.jar",
-                                     "${path}/jsse.jar"]
-                            break
-                        case 7:
-                            files = ["${path}/rt.jar",
-                                     "${path}/jce.jar",
-                                     "${path}/jsse.jar"]
-                            // Add optional tools.jar.
-                            String toolsJar = "${path}/tools.jar"
-                            if ((new File(toolsJar)).exists()) {
-                                files << toolsJar
-                            }
-                            break
-                        default:
-                            throw new RuntimeException("Invalid JRE version: $version")
-                    }
+                    def files = getArtifactsForPlatform(options.PLATFORM.value.toString(), options.PLATFORMS_LIB.value.toString())
+                    files.each({File file ->
+                        platformArtifactPaths.add(file.canonicalPath)
+                    })
                 }
-                else if (platformInfo.size == 3 && platformInfo[2] == "debug") {
-                    String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}_${platformInfo[2]}/lib"
-                    switch (version) {
-                        case 7:
-                        case 8:
-                            files = ["${path}/rt.jar",
-                                     "${path}/jce.jar",
-                                     "${path}/jsse.jar"]
-                            break
-                        default:
-                            throw new RuntimeException("Invalid JRE version: $version")
-                    }
-                }
-                else if (platformInfo.size == 3 && platformInfo[2] != "debug") {
+                else if (platformInfo.size == 3) {
                     String minorVersion = platformInfo[2]
 
                     switch (version) {
                         case 7:
                         case 8:
-                            String path = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}.0_${minorVersion}/lib"
-                            files = ["${path}/rt.jar",
-                                     "${path}/jce.jar",
-                                     "${path}/jsse.jar"]
+                            String platformPath = "${options.PLATFORMS_LIB.value}/JREs/jre1.${version}.0_${minorVersion}/lib"
+                            platformArtifactPaths = ["${platformPath}/rt.jar",
+                                     "${platformPath}/jce.jar",
+                                     "${platformPath}/jsse.jar"]
                             break
                         default:
                             throw new RuntimeException("Invalid JRE version: $version")
@@ -315,11 +307,11 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                 switch(version) {
                     case 7:
                     case 15:
-                        files = ["${path}/android.jar",
+                        platformArtifactPaths = ["${path}/android.jar",
                                  "${path}/data/layoutlib.jar"]
                         break
                     case 16:
-                        files = ["${path}/android.jar",
+                        platformArtifactPaths = ["${path}/android.jar",
                                  "${path}/data/layoutlib.jar",
                                  "${path}/uiautomator.jar"]
                         break
@@ -329,13 +321,13 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     case 20:
                     case 21:
                     case 22:
-                        files = ["${path}/android.jar",
+                        platformArtifactPaths = ["${path}/android.jar",
                                  "${path}/data/icu4j.jar",
                                  "${path}/data/layoutlib.jar",
                                  "${path}/uiautomator.jar"]
                         break
                     case 23:
-                        files = ["${path}/android.jar",
+                        platformArtifactPaths = ["${path}/android.jar",
                                  "${path}/optional/org.apache.http.legacy.jar",
                                  "${path}/data/layoutlib.jar",
                                  "${path}/uiautomator.jar"]
@@ -343,7 +335,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
                     case 24:
                     case 25:
                     case 26:
-                        files = ["${path}/android.jar",
+                        platformArtifactPaths = ["${path}/android.jar",
                                  "${path}/android-stubs-src.jar",
                                  "${path}/optional/org.apache.http.legacy.jar",
                                  "${path}/data/layoutlib.jar",
@@ -356,7 +348,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
             default:
                 throw new RuntimeException("Invalid platform: $platform")
         }
-        return files
+        return platformArtifactPaths
     }
 
     /**
@@ -553,7 +545,7 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return vars
     }
 
-    List<File> resolve(List<String> filePaths, boolean isLib) {
+    static List<File> resolve(List<String> filePaths, boolean isLib) {
         def context = new DefaultInputResolutionContext()
         filePaths.each { f -> context.add(f, isLib) }
         context.resolve()
@@ -640,5 +632,31 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
 
         return env
+    }
+
+    public static Set<String> availablePlatforms() {
+        return availablePlatforms
+    }
+
+    public static Set<File> getArtifactsForPlatform(String platformID, String platformsLib) {
+        def platformInfo = platformID.tokenize("_")
+        if (platformInfo.size() < 2) {
+            throw new RuntimeException("Invalid platform ${platformInfo}")
+        }
+        def version = platformInfo[1].toInteger()
+        String path = "${platformsLib}/JREs/jre1.${version}/lib/"
+
+        Set<File> files = []
+        if (artifactsForPlatform.get(platformID) == null) {
+            throw new RuntimeException("Unsupported platform: $platformID")
+        }
+        else {
+            artifactsForPlatform.get(platformID).each({String fileName ->
+                System.out.println(fileName)
+                files.add(new File(path+fileName))
+            })
+        }
+
+        return files
     }
 }

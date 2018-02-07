@@ -244,7 +244,6 @@ public class Main {
             android.processInputs(propertyProvider, classesInApplicationJars, classToArtifactMap, sootParameters._androidJars, tmpDirs);
         } else {
             Options.v().set_src_prec(Options.src_prec_class);
-            //Options.v().set_debug_resolver(true);
             populateClassesInAppJar(sootParameters._inputs, sootParameters._libraries, classesInApplicationJars, classToArtifactMap, propertyProvider);
         }
 
