@@ -30,8 +30,19 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
     Log logger = LogFactory.getLog(getClass())
     static final char[] EXTRA_ID_CHARACTERS = '_-+.'.toCharArray()
     static final String HASH_ALGO = "SHA-256"
-    static final Set<String> availablePlatforms = ["java_3", "java_4", "java_5", "java_6", "java_7", "java_8",
-                                                "android_22_fulljars", "android_25_fulljars"]
+    static final Set<String> availablePlatforms =
+        [ // JDKs
+          "java_3", "java_4", "java_5", "java_6", "java_7", "java_8",
+          // Android compiled from sources
+          "android_22_fulljars", "android_25_fulljars",
+          // Android API stubs (from the SDK)
+          "android_7_stubs" , "android_15_stubs", "android_16_stubs", "android_17_stubs",
+          "android_18_stubs", "android_19_stubs", "android_20_stubs", "android_21_stubs",
+          "android_22_stubs", "android_23_stubs", "android_24_stubs", "android_25_stubs",
+          "android_26_stubs",
+          // Android-Robolectric
+          "android_26_robolectric"
+        ]
     static String platformsLib
 
     static final Map<String, Set<String>> artifactsForPlatform =
