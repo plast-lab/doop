@@ -2,7 +2,6 @@
 // TestNG, JUnit, EvoSuite.
 
 .decl JUnitAnnotatedMethod(?m:Method)
-.output JUnitAnnotatedMethod
 
 JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Test").
 JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.Before").
@@ -11,7 +10,6 @@ JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.BeforeClass").
 JUnitAnnotatedMethod(?m) :- Method_Annotation(?m, "org.junit.AfterClass").
 
 .decl JUnitGenerator(?m:Method)
-.output JUnitGenerator
 
 // If a type contains JUnit test code and a method that returns a
 // JUnit Test, we assume that method is a test generator.
@@ -24,7 +22,6 @@ JUnitGenerator(?testGen) :-
 // Subclassing JUnit's TestCase usually indicates a test case.
 .decl TestCase(?t:ClassType, ?tInstance:Value)
 .decl JUnitTestCaseMethod(?m:Method)
-.output JUnitTestCaseMethod
 
 #define TEST_INSTANCE(t) cat("Test instance for ", t)
 
@@ -46,7 +43,6 @@ VarPointsTo(?hctx, ?tInstance, ?ctx, ?this) :-
   Method_DeclaringType(?m, ?t).
 
 .decl EvoSuiteEntryPoint(?m:Method)
-.output EvoSuiteEntryPoint
 
 // EvoSuite: if a call to Runtime.getInstance() is found in a method
 // where a string constant refers to some class type, assume the class
@@ -60,7 +56,6 @@ EvoSuiteEntryPoint(?m) :-
 
 // TestNG.
 .decl TestNGAnnotatedMethod(?m:Method)
-.output TestNGAnnotatedMethod
 
 TestNGAnnotatedMethod(?m) :- Method_Annotation(?m, "org.testng.annotations.Test").
 TestNGAnnotatedMethod(?m) :- Method_Annotation(?m, "org.testng.annotations.BeforeMethod").
