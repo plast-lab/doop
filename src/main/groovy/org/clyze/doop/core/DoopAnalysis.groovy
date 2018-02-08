@@ -105,7 +105,13 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
 
         logger      = LogFactory.getLog(getClass())
 
-        factsDir    = new File(outDir, "facts")
+        if (options.X_STOP_AT_FACTS.value) {
+            factsDir = new File(options.X_STOP_AT_FACTS.value.toString())
+        }
+        else {
+            factsDir = new File(outDir, "facts")
+
+        }
         database    = new File(outDir, "database")
         averroesDir = new File(outDir, "averroes")
 
@@ -286,10 +292,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        if (options.X_STOP_AT_FACTS.value)
-            params = params + ['-d', options.X_STOP_AT_FACTS.value.toString()]
-        else
-            params = params + ["-d", factsDir.toString()]
+        params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 
