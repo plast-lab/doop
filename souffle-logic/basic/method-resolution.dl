@@ -52,10 +52,9 @@ MethodMightOverrideOther(?meth1, ?meth2) :-
    ?sameName != "<init>",
    !Type_void(?type1),
    !Type_void(?type2),
-   ?type1 != ?type2,
    Method_DeclaringType(?meth1, ?type1),
    Method_DeclaringType(?meth2, ?type2),
-   SubtypeOf(?type1, ?type2).
+   SubtypeOfDifferent(?type1, ?type2).
 
 // Limited to methods that have the same name, in subtypes. Method
 // ?meth1 *could* override ?meth2, but has different arg types.
