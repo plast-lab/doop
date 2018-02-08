@@ -5,9 +5,12 @@ import org.clyze.doop.soot.Main;
 import org.clyze.doop.soot.PropertyProvider;
 import org.clyze.doop.soot.SootParameters;
 import org.clyze.utils.AARUtils;
+import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.coffi.Util;
+import soot.dexpler.DexFileProvider;
 import soot.jimple.infoflow.android.SetupApplication;
 import soot.jimple.infoflow.android.resources.PossibleLayoutControl;
 
@@ -17,6 +20,7 @@ import java.util.*;
 
 import static org.clyze.doop.soot.android.AndroidManifest.getAndroidManifest;
 import static soot.DexClassProvider.classesOfDex;
+import static soot.dexpler.DexFileProvider.*;
 import static soot.jimple.infoflow.android.InfoflowAndroidConfiguration.CallbackAnalyzer.Fast;
 
 public class AndroidSupport {
@@ -132,12 +136,17 @@ public class AndroidSupport {
             File apk = new File(appInput);
             System.out.println("Android mode, APK = " + appInput);
             try {
-                Set<String> dexClasses = classesOfDex(apk);
-                for (String className : dexClasses) {
-                    SootClass c = scene.loadClass(className, SootClass.BODIES);
-                    classes.add(c);
+                List<DexContainer> listContainers = DexFileProvider.v().getDexFromSource(apk);
+                Set allDexClasses = new HashSet<>();
+                for (DexContainer dexContainer : listContainers) {
+                    allDexClasses.addAll(dexContainer.getBase().getClasses());
+                    for (Object dexBackedClassDef : allDexClasses) {
+                        String escapeClassName = Util.v().jimpleTypeOfFieldDescriptor(((DexBackedClassDef) dexBackedClassDef).getType()).getEscapedName();
+                        SootClass c = scene.loadClass(escapeClassName, SootClass.BODIES);
+                        classes.add(c);
+                    }
                 }
-                System.out.println("Classes found in apk: " + dexClasses.size());
+                System.out.println("Classes found in apk: " + allDexClasses.size());
             } catch (IOException ex) {
                 System.err.println("Could not read dex classes in " + apk);
                 ex.printStackTrace();
