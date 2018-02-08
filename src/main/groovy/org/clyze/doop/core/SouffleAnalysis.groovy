@@ -2,7 +2,6 @@ package org.clyze.doop.core
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
-import heapdl.core.MemoryAnalyser
 import org.clyze.analysis.AnalysisOption
 import org.clyze.doop.input.InputResolutionContext
 import org.clyze.utils.CheckSum
