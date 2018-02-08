@@ -27,12 +27,14 @@
   ?tInvocationHandler = "java.lang.reflect.InvocationHandler"
 
 #define NEW_PROXY_INSTANCE "<java.lang.reflect.Proxy: java.lang.Object newProxyInstance(java.lang.ClassLoader,java.lang.Class[],java.lang.reflect.InvocationHandler)>"
+#define DYNAMIC_PROXY_EXPORT
 
 #if defined(REFLECTION_DYNAMIC_PROXIES)
 #include "reflection/dynamic-proxies.dl"
 #include "reflection/dynamic-proxies-delta.dl"
 #endif // REFLECTION_DYNAMIC_PROXIES
 
+#ifdef DYNAMIC_PROXY_EXPORT
 .decl ReachableProxyInvoke(?invokeMeth:Method)
 .output ReachableProxyInvoke
 
@@ -46,6 +48,8 @@ ReachableProxyInvoke(?invokeMeth) :-
 ReachableNewProxyInstance(?meth) :-
   Reachable(?meth),
   ?meth = NEW_PROXY_INSTANCE.
+
+#endif // DYNAMIC_PROXY_EXPORT
 
 #if defined(HEAPDL) || defined(IMPORT_DYNAMIC_FACTS)
 #include "dynamicanalysis.dl"

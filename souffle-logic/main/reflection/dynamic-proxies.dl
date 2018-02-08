@@ -322,8 +322,8 @@ ProxyInvokeResult(?callerCtx, ?invo, ?calleeCtx, ?handlerReturnVar)
    VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?handlerReturnVar),
    AssignReturnValue(?invo, ?ret).
 
-#define DYNAMIC_PROXY_DEBUG
-#ifdef DYNAMIC_PROXY_DEBUG
+#define DYNAMIC_PROXY_EXPORT
+#ifdef DYNAMIC_PROXY_EXPORT
 
 .output ProxyClassOfInterface
 .output ProxyClass
@@ -363,4 +363,4 @@ ProxiedMethod(?meth) :-
   ProxyCallGraphEdge(_, ?i, _, _),
   VirtualMethodInvocation(?i, ?meth, _).
 
-#endif // DYNAMIC_PROXY_DEBUG
+#endif // DYNAMIC_PROXY_EXPORT
