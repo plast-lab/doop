@@ -157,7 +157,6 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
 
-                logger.debug "Setting main-class: dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "dacapo.${benchmark}.${benchmarkCap}Harness" + "\t" + "<dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
@@ -165,9 +164,7 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             else if (options.DACAPO_BACH.value) {
                 def benchmark = FilenameUtils.getBaseName(inputFiles[0].toString())
                 def benchmarkCap = (benchmark as String).toLowerCase().capitalize()
-
-
-                logger.debug "Setting main-class: org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
+                
                 new File(factsDir, "Dacapo.facts").withWriter { w ->
                     w << "org.dacapo.harness.${benchmarkCap}" + "\t" + "<org.dacapo.parser.Config: void setClass(java.lang.String)>"
                 }
@@ -289,7 +286,10 @@ abstract class DoopAnalysis extends Analysis implements Runnable {
             params += ["--extra-sensitive-controls", options.INFORMATION_FLOW_EXTRA_CONTROLS.value.toString()]
         }
 
-        params = params + ["-d", factsDir.toString()]
+        if (options.X_STOP_AT_FACTS.value)
+            params = params + ['-d', options.X_STOP_AT_FACTS.value.toString()]
+        else
+            params = params + ["-d", factsDir.toString()]
 
         logger.debug "Params of soot: ${params.join(' ')}"
 

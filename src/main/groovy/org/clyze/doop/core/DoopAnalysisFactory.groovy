@@ -645,10 +645,24 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         return env
     }
 
+    /**
+     * Returns a set of all the available analysis platforms
+     *
+     * @return the set of the available platforms
+     */
     public static Set<String> availablePlatforms() {
         return availablePlatforms
     }
 
+    /**
+     * Given the platform id e.g., java_7, java_8, android_25 etc and platforms lib path,
+     * it returns the set of (.jar) files associated with that platform
+     *
+     * @param platformID The platform id
+     * @param platformsLib The platforms lib path, currently necessary since the method is static and platform libs path
+     * is part of the analysis options
+     * @return the set of jar files
+     */
     public static Set<File> getArtifactsForPlatform(String platformID, String platformsLib) {
         def platformInfo = platformID.tokenize("_")
         if (platformInfo.size() < 2) {
@@ -663,7 +677,6 @@ class DoopAnalysisFactory implements AnalysisFactory<DoopAnalysis> {
         }
         else {
             artifactsForPlatform.get(platformID).each({String fileName ->
-                System.out.println(fileName)
                 files.add(new File(path+fileName))
             })
         }

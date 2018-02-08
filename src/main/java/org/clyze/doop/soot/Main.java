@@ -340,14 +340,13 @@ public class Main {
             // later be asking soot to add phantom classes to the scene's hierarchy
             driver.doInParallel(classes);
             if (sootParameters._generateJimple) {
-                Options.v().set_app(true);
                 Set<SootClass> jimpleClasses = new HashSet<>(classes);
-                List<String> allNonPlatformClassNames = new ArrayList<>();
+                List<String> allClassNames = new ArrayList<>();
                 for (String artifact : classToArtifactMap.keySet()) {
-                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
-                        allNonPlatformClassNames.addAll(classToArtifactMap.get(artifact));
+//                    if (!artifact.equals("rt.jar") && !artifact.equals("jce.jar") && !artifact.equals("jsse.jar") && !artifact.equals("android.jar"))
+                        allClassNames.addAll(classToArtifactMap.get(artifact));
                 }
-                forceResolveClasses(allNonPlatformClassNames, jimpleClasses, scene);
+                forceResolveClasses(allClassNames, jimpleClasses, scene);
                 System.out.println("Total classes (application, dependencies and SDK) to generate Jimple for: " + jimpleClasses.size());
                 driver.writeInParallel(jimpleClasses);
             }
