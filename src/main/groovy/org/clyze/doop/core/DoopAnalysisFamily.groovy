@@ -386,6 +386,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 			new BooleanAnalysisOption(
 					id: "DISABLE_METHOD_HANDLES",
 					name: "disable-method-handles",
+					description: "Disable handling of 'invokedynamic' and method handles.",
 					value: false,
 					webUI: false,
 					forPreprocessor: true,
