@@ -32,14 +32,9 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
     Method_DeclaringType(?method, ?type),
     ! Method_Modifier("abstract", ?method).
 
-// Relations used to find overridden methods with covariant return types.
-// Guarded by a macro, so that they can be disabled (the rules are expensive).
-#ifdef FEATHERWEIGHT_ANALYSIS
-#undef COVARIANT_METHODS
-#endif
- 
-#ifdef COVARIANT_METHODS
+#ifndef FEATHERWEIGHT_ANALYSIS
 
+// Logic that finds overridden methods with covariant return types.
 .decl MethodOverridesOther(?meth1:Method, ?meth2:Method)
 .decl MethodDoesntOverrideOther(?meth1:Method, ?meth2:Method)
 .decl MethodMightOverrideOther(?meth1:Method, ?meth2:Method)
@@ -94,7 +89,7 @@ MethodImplemented(?name, ?descriptor, ?type, ?comethod) :-
     SubtypeOf(?type2, ?type1),
     Method_Descriptor(?method, ?descriptor).
 
-#endif // COVARIANT_METHODS
+#endif // FEATHERWEIGHT_ANALYSIS
 
 ResolveInvocation(?type, ?invocation, ?tomethod) :-
     VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
