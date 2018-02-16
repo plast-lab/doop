@@ -9,6 +9,7 @@ import org.clyze.utils.FileOps
 import org.clyze.utils.Helper
 
 import java.nio.file.Files
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.StandardCopyOption
 
 import static org.apache.commons.io.FileUtils.deleteQuietly
@@ -249,8 +250,14 @@ class SouffleAnalysis extends DoopAnalysis {
                     else logger.info line
                 }
             }
-            // Keep execute permission
-            Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+            try {
+                // Keep execute permission
+                Files.copy(new File("${outDir}/${name}").toPath(), souffleAnalysisCacheFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+            } catch (FileAlreadyExistsException ex) {
+                // If a cached file is already there, don't overwrite
+                // it (it might be used by another analysis), just reuse it.
+                logger.info "Copy failed, someone else has already created ${souffleAnalysisCacheFile.toPath()}"
+            }
 
             logger.info "Analysis compilation time (sec): $compilationTime"
             logger.info "Caching analysis executable in $souffleAnalysesCache"
