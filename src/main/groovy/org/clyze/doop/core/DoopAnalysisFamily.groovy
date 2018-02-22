@@ -192,7 +192,7 @@ class DoopAnalysisFamily implements AnalysisFamily {
 					forCacheID: true
 			),
 			new IntegerAnalysisOption(
-					id: "FACTGEN_CORES",
+					id: "FACT_GEN_CORES",
 					name: "fact-gen-cores",
 					description: "Number of cores to use for parallel fact generation.",
 					argName: "NUMBER",
